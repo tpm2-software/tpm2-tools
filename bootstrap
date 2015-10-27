@@ -1,0 +1,9 @@
+#! /bin/sh
+
+git clone https://github.com/01org/TPM2.0-TSS.git tss
+cd tss; ./bootstrap; ./configure; cd ..
+
+aclocal \
+&& autoconf \
+&& automake --add-missing
+

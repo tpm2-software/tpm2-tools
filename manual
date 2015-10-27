@@ -1,0 +1,653 @@
+tpm2.0-tools Manual
+===================
+1. Common steps before running any tools from tpm2.0-tools
+
+So far, tpm2.0-tools build process will clone TPM2.0-TSS code into ./tss dir.
+The build scripts of tpm2.0-tools will handle the build of TPM2.0-TSS.
+
+Build:
+$ ./bootstrap
+$ ./configure
+$ make
+
+Launch resourcemgr daemon:
+$ cd tss/resourcemgr
+$ ./resourcemgr
+
+The resourcemgr can connect to either physical tpm or remote MS simulator,
+refer to the help of resourcemgr for details.
+
+2. running tools
+All tool executables are built under ./sapi-tools/. So once resourcemgr is up:
+$ cd ./sapi-tools
+$ ./tpm2_xxx -x...
+
+3. tool usages
+Common options:
+  -h/--help                 display this help and exit.
+  -v/--version              display version information and exit.
+  -p/--port <port>          specifies the port number of resourcemgr,
+                            default: 2323, optional.
+  -d/--dbg <dbgLevel>       specifies level of debug messages output by
+                            resourcemgr, optional:
+                            0 (high level test results)
+                            1 (test app send/receive byte streams)
+                            2 (resource manager send/receive byte streams)
+                            3 (resource manager tables)
+
+Subset 1: NV tools
+------------------
+* tpm2_nvdefine
+Define NV index with given auth value, if passwd not given, assume NULL
+
+Usage:
+tpm2_nvdefine [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>]
+              [-s/--size <size>] [-t/--attribute <attributeDWord>]
+              [-P/--handlePasswd <string>] [-X/--indexPasswd <string>]
+
+where:
+    -x/--index <nvIdx>              specifies the index of the NV area.
+    -a/--authHandle <hexHandle>     specifies the handle used to authorize:
+                                      0x40000001 (TPM_RH_OWNER)
+                                      0x4000000C (TPM_RH_PLATFORM)
+    -s/--size <size>                specifies the size of data area.
+    -t/--attribute <attributeDWord> specifies the value of attribute in
+                                    publicInfo struct (need calculate outside).
+    -P/--handlePasswd <string>      specifies the password of authHandle.
+    -X/--indexPasswd <string>       specifies the password of NV Index when
+                                    created.
+
+example:
+    /tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A
+
+* tpm2_nvrelease
+release NV index, if any passwd option is missing, assume NULL.
+
+Usage:
+tpm2_nvrelease [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>]
+               [-P/--handlePasswd <string>]
+
+where:
+   -x/--index <nvIdx>              specifies the index of the NV area.
+   -a/--authHandle <hexHandle>     specifies the handle used to authorize:
+                                     0x40000001 (TPM_RH_OWNER)
+                                     0x4000000C (TPM_RH_PLATFORM)
+   -P/--handlePasswd <string>      specifies the password of authHandle.
+
+example:
+    /tpm2_nvrelease -x 0x1500016 -a 0x40000001 -P passwd
+
+* tpm2_nvread
+read content from NV index, if any passwd option is missing, assume NULL.
+
+Usage:
+tpm2_nvread [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>]
+            [-P/--handlePasswd <string>] [-s/--size <size>]
+            [-o/--offset <offset>]
+
+where:
+  -x/--index <nvIdx>              specifies the index of the NV area.
+  -a/--authHandle <hexHandle>     specifies the handle used to authorize:
+                                    0x40000001 (TPM_RH_OWNER)
+                                    0x4000000C (TPM_RH_PLATFORM)
+                                    {NV_INDEX_FIRST:NV_INDEX_LAST}
+  -P/--handlePasswd <string>      specifies the password of authHandle.
+  -s/--size <size>                specifies the number of octets to read.
+  -o/--offset <offset>            specifies octet offset into the area
+                                  This value shall be less than or equal to the size of the nvIndex data.
+
+example:
+    /tpm2_nvread -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0
+
+* tpm2_nvwrite
+write content from a file to a specified index, if any passwd option is
+missing, assume NULL.
+
+Usage:
+tpm2_nvwrite [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] 
+             [-P/--handlePasswd <string>] [-f/--file <filename>]
+
+where:
+  -x/--index <nvIdx>              specifies the index of the NV area.
+  -a/--authHandle <hexHandle>     specifies the handle used to authorize:
+                                    0x40000001 (TPM_RH_OWNER)
+                                    0x4000000C (TPM_RH_PLATFORM)
+                                    {NV_INDEX_FIRST:NV_INDEX_LAST}
+  -P/--handlePasswd <string>      specifies the password of authHandle.
+  -f/--file <filename>            specifies the nv data file.
+
+example:
+    /tpm2_nvwrite -x 0x1500016 -a 0x40000001 -P passwd -f nv.data
+
+* tpm2_nvlist
+display all defined NV indices.
+
+Usage:
+tpm2_nvlist [-h/--help]
+
+where:
+  -h/--help                       display help info and exit.
+
+example:
+    /tpm2_nvlist
+
+
+
+Subset 2: Attestation tools
+---------------------------
+* tpm2_takeownership
+Inserting authorization values for the ownerAuth, endorsementAuth, and
+lockoutAuth, if any passwd option is missing, assume NULL.
+
+Usage:
+tpm2_takeownership [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] 
+                   [-l/--lockPasswd <password>] [-E/--oldEndorsePasswd <password>] 
+                   [-O/--oldOwnerPasswd <password>] [-L/--oldLockPasswd <password>]
+
+where:
+    -o/--ownerPasswd <password>      new Owner authorization value.
+    -e/--endorsePasswd <password>    new Endorsement authorization value.
+    -l/--lockPasswd <password>       new Lockout authorization value.
+    -O/--oldOwnerPasswd <password>   old Owner authorization (string,optional,default:NULL).
+    -E/--oldEndorsePasswd <password> old Endorsement authorization (string,optional,default:NULL).
+    -L/--oldLockPasswd <password>    old Lockout authorization (string,optional,default:NULL).
+
+example:
+  Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: 
+  ./tpm2_takeownership -c
+  Set ownerAuth, endorsementAuth and lockoutAuth to a newAuth: 
+  ./tpm2_takeownership -o new -e new -l new -O old -E Old -L old
+
+* tpm2_getpubek
+Generate endorsement key(endorsement hierarchy primary object), make it
+persistent with give ek handle, and return public EK, if any passwd option
+is missing, assume NULL, default type/alg is 0x1(RSA)
+
+Usage:
+tpm2_getpubek [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] 
+              [-P/--ekPasswd <password>] [-H/--handle <hexHandle>] 
+              [-g/--alg <hexAlg>] [-f/--file <outputFile>]
+
+where:
+    -e/--endorsePasswd <password>   specifies current endorse password (string,optional,default:NULL).
+    -o/--ownerPasswd   <password>   specifies current owner password (string,optional,default:NULL).
+    -P/--ekPasswd      <password>   specifies the EK password when created (string,optional,default:NULL).
+    -H/--handle        <hexHandle>  specifies the handle used to make EK persistent (hex).
+    -g/--alg           <hexAlg>     specifies the algorithm type of EK (default:0x01/TPM_ALG_RSA).
+                                      TPM_ALG_RSA             0x0001
+                                      TPM_ALG_KEYEDHASH       0x0008
+                                      TPM_ALG_ECC             0x0023
+                                      TPM_ALG_SYMCIPHER       0x0025
+    -f/--file          <outputFile> specifies the file used to save the public portion of EK.
+
+example:
+    ./tpm2_getpubek -e abc123 -o abc123 -P passwd -H 0x81010001 -g 0x01 -f ek.pub
+
+* tpm2_getpubak
+Generate attestation key with given algorithm under endorsement hierarchy,
+make it persistent with given ak handle, and return pub AK and AK name,
+if any passwd option is missing, assume NULL, default type/alg is 0x1(RSA),
+default digestAlg is 0xb(SHA256), default signAlg is 0x14(RSASSA) for RSA,
+0x18(ECDSA) for ECC
+
+Usage:
+tpm2_getpubak [-a/--ekPasswd <password>] [-P/--akPasswd <password>] 
+              [-o/--ownerPasswd <password>] [-e/--ekHandle <hexHandle>]
+              [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] 
+              [-D/--digestAlg <hexAlg>] [-s/--signAlg <hexAlg>] 
+              [-f/--file <outputFile>] [-n/--akName <aknameFile>]   
+
+where:
+    -a/--ekPasswd    <password>     specifies current EK password (string,optional,default:NULL).
+    -P/--akPasswd    <password>     specifies the AK password when created (string,optional,default:NULL).
+    -o/--ownerPasswd <password>     specifies current owner password (string,optional,default:NULL).
+    -e/--ekHandle    <hexHandle>    specifies the handle of EK (hex).
+    -k/--akHandle    <hexHandle>    specifies the handle used to make AK persistent (hex).
+    -g/--alg         <hexAlg>       specifies the algorithm type of AK (default:0x01/TPM_ALG_RSA):
+                                      TPM_ALG_RSA             0x0001
+                                      TPM_ALG_KEYEDHASH       0x0008
+                                      TPM_ALG_ECC             0x0023
+    -D/--digestAlg  <hexAlg>        specifies the algorithm of digest.
+                                        0x0004  TPM_ALG_SHA1
+                                        0x000B  TPM_ALG_SHA256
+                                        0x000C  TPM_ALG_SHA384
+                                        0x000D  TPM_ALG_SHA512
+                                        0x0012  TPM_ALG_SM3_256
+    -s/--signAlg    <hexAlg>        specifies the algorithm of sign.
+                                        0x0005  TPM_ALG_HMAC
+                                        0x0014  TPM_ALG_RSASSA
+                                        0x0016  TPM_ALG_RSAPSS
+                                        0x0018  TPM_ALG_ECDSA
+                                        0x001A  TPM_ALG_ECDAA
+                                        0x001B  TPM_ALG_SM2
+                                        0x001C  TPM_ALG_ECSCHNORR
+    -f/--file       <outputFile>     specifies the file used to save the public portion of AK.
+    -n/--akName     <aknameFile>     specifies the file used to save the ak name.
+
+example:
+    ./tpm2_getpubak -a abc123 -P abc123 -o passwd -e 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+
+* tpm2_akparse
+parse the algorithm and key values in TPM2B_PUBLIC struct which input via
+file inputFile, and output the key into file akKeyFile.
+
+Usage:
+tpm2_akparse [-f inputFile][-k akKeyFile]
+
+where:
+    -f    Specifies the file used to be parsed.
+    -k    Specifies the file used to save ak key.
+
+example:
+    ./tpm2_akparse -f ./ak.data -k ./ak.key
+
+* tpm2_makecredential
+Use the given tpm public key to protect the given secret which are used to
+encrypt the AK cert.
+
+Usage:
+    -e, --encKey<keyFile>    A tpm Public Key which was used to wrap the seed
+    -s, --sec   <secFile>    The secret which will be protected by the key derived from the random seed
+    -n, --name  <hexString>  The name of the key for which certificate is to be created
+    -o, --outFile<filePath>  output file path, recording the two structures output by tpm2_makecredential function
+
+example:
+    ./tpm2_makecredential -e <keyFile> -s <secFile> -n <hexString> -o <outFile>
+
+* tpm2_activatecredential
+Verify that the given content is protected with given keyHandle for given
+handle, and then decrypt and return the secret, if any passwd option is
+missing, assume NULL.
+
+Usage:
+    -H, --handle   <hexHandle>  Handle of the object associated with the created certificate by CA
+    -c, --context   <filename>  filename for handle context
+    -k, --keyHandle<hexHandle>  Loaded key used to decrypt the the random seed
+    -C, --keyContext<filename>  filename for keyHandle context
+    -P, --Password    <string>  the handle's password, optional
+    -K, --keyPassword <string>  the keyHandle's password, optional
+    -f, --inFile   <filePath>   Input file path, containing the two structures needed by tpm2_activatecredential function
+    -o, --outFile  <filePath>   Output file path, record the secret to decrypt the certificate
+
+example:
+    ./tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P abc123 -K abc123 -f <filePath> -o <filePath>
+    ./tpm2_activatecredential -c ak.context -C ek.context -P abc123 -K abc123 -f <filePath> -o <filePath>
+
+* tpm2_listpcrs
+display all PCR values in given algorithm, if no algorithm is given, output
+all algs. Output file just contains 24 PCR values in binary format and in
+0~23 order. Assume the caller know the pcr value length corresponding to the
+given  bank/algorithm.
+
+Usage:
+    g, --algorithim <hexAlg>     The algorithm id, optional
+                                        0x0004  TPM_ALG_SHA1
+                                        0x000B  TPM_ALG_SHA256
+                                        0x000C  TPM_ALG_SHA384
+                                        0x000D  TPM_ALG_SHA512
+                                        0x0012  TPM_ALG_SM3_256
+    o, --output  <filename>      The file to hold the PCR values in binary format, optional
+
+example:
+    display all PCR values:  
+        ./tpm2_listpcrs
+    display the PCR values with specified bank:
+        ./tpm2_listpcrs -g 0x04
+
+* tpm2_quote
+Provide quote and signature for given list of PCRs in given algorithm/bank.
+
+Usage:
+    -k, --akHandle <hexHandle>    Handle of existing AK
+    -c, --akContext <filename>    filename for the existing AK's context
+    -P, --akPassword <akPassword> AK handle's Password
+    -l, --idList  <num1,...,numN> The list of selected PCR's id, 0~23
+    -g, --algorithm <hexAlg>      The algorithm id
+    -o, --outFile<filePath>       output file path, recording the two structures output by tpm2_quote function
+
+example:
+    ./tpm2_quote -k 0x81010002 -P abc123 -g 0x4 -l 16,17,18 -o outFile001
+    ./tpm2_quote -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001
+
+
+
+Subset 3: Key management tools
+------------------------------
+* tpm2_createprimary
+create a Primary Object under one of the Primary Seeds or a Temporary Object
+under TPM_RH_NULL.
+
+Usage:
+    -A, --auth <o | p |...>  the authorization used to authorize thecommands
+            o  TPM_RH_OWNER
+            p  TPM_RH_PLATFORM
+            e  TPM_RH_ENDORSEMENT
+            n  TPM_RH_NULL
+    -P, --pwdp <string>      password for hierarchy, optional
+    -K, --pwdk <string>      password for key, optional
+    -g, --halg <sha1,...>    algorithm used for computing the Name of the object
+            0x0004  TPM_ALG_SHA1
+            0x000B  TPM_ALG_SHA256
+            0x000C  TPM_ALG_SHA384
+            0x000D  TPM_ALG_SHA512
+            0x0012  TPM_ALG_SM3_256
+    -G, --kalg <rsa,...>     algorithm associated with this object
+            0x0001  TPM_ALG_RSA
+            0x0008  TPM_ALG_KEYEDHASH
+            0x0023  TPM_ALG_ECC
+            0x0025  TPM_ALG_SYMCIPHER
+    -C, --context <filename> The file to save the object context, optional
+
+example:
+    ./tpm2_createprimary -A e -P abc123 -K def456 -g 0x000B -G 0x0008
+    ./tpm2_createprimary -A e -P abc123 -K def456 -g 0x000B -G 0x0008 -C ek.context
+
+* tpm2_create
+create an object that can be loaded into a TPM using tpm2_load. The object
+will need to be loaded before it may be used.
+
+Usage:
+    -H, --parent <handle>  parent handle
+    -c, --contextParent <filename> filename for parent context
+    -P, --pwdp   <string>  password for parent key, optional
+    -K, --pwdk   <string>  password for key, optional
+    -g, --halg   <hexAlg>  algorithm used for computing the Name of the object
+            0x0004  TPM_ALG_SHA1
+            0x000B  TPM_ALG_SHA256
+            0x000C  TPM_ALG_SHA384
+            0x000D  TPM_ALG_SHA512
+            0x0012  TPM_ALG_SM3_256
+    -G, --kalg   <hexAlg>  algorithm associated with this object
+            0x0001  TPM_ALG_RSA
+            0x0008  TPM_ALG_KEYEDHASH
+            0x0023  TPM_ALG_ECC
+            0x0025  TPM_ALG_SYMCIPHER
+    -A, --objectAttribute <hexAttributeDWord>  object attributes, optional
+    -I, --inFile          <dataFileToBeSealed>  data file to be sealed, optional
+    -L, --pol <policyFile>         the input policy file, optional
+    -o, --opu <publicKeyFileName>  the output file which contains the public key, optional
+    -O, --opr <privateKeyFileName> the output file which contains the private key, optional
+
+example:
+    ./tpm2_create -H 0x81010001 -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
+    ./tpm2_create -c parent.context -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
+
+* tpm2_evictcontrol
+allows a transient object to be made persistent or a persistent object to
+be evicted.
+
+Usage:
+    -A, --auth <o | p>   the authorization used to authorize the commands
+            o  TPM_RH_OWNER
+            p  TPM_RH_PLATFORM
+    -H, --handle    <objectHandle>        the handle of a loaded object
+    -c, --context <filename>              filename for object context
+    -S, --persistent<persistentHandle>    the persistent handle for objectHandle
+    -P, --pwda      <authorizationPassword>   authrization password, optional
+
+example:
+    ./tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
+    ./tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P abc123
+
+* tpm2_load
+load objects into the TPM, both pub/priv portion are needed.
+
+Usage:
+    -H, --parent    <parentHandle>        parent handle
+    -c, --contextParent <filename>        filename for parent context
+    -P, --pwdp      <parentKeyPassword>   parent key password, optional
+    -u, --pubfile   <publicKeyFileName>   The public portion of the object
+    -r, --privfile  <privateKeyFileName>  The sensitive portion of the object
+    -n, --name      <outPutFilename>      Output file name, containing the name structure
+    -C, --context <filename>   The file to save the object context, optional
+
+example:
+    ./tpm2_load  -H 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
+    ./tpm2_load  -c parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -C object.context
+
+* tpm2_loadexternal
+load an object that is not a Protected Object into the TPM. The command allows
+loading of a public area or both a public and sensitive area.
+
+Usage:
+    -H, --hierarchy <e|o|p|n>   Hierarchy with which the object area is associated
+            e  TPM_RH_ENDORSEMENT
+            o  TPM_RH_OWNER
+            p  TPM_RH_PLATFORM
+            n  TPM_RH_NULL
+    -u, --pubfile   <publicKeyFileName>   The public portion of the object
+    -r, --privfile  <privateKeyFileName>  The sensitive portion of the object, optional
+    -C, --context <filename>   The file to save the object context, optional
+
+example:
+   . /tpm2_loadexternal -H <e|o|p|n> -u <pubKeyFileName> -r <privKeyFileName> -C object.context
+
+
+Subset 4: Encryption tools
+--------------------------
+* tpm2_encryptdecrypt
+performs symmetric encryption or decryption. keyHandle shall reference a
+symmetric cipher object.
+
+Usage:
+    -k, --keyHandle<hexHandle>  the symmetric key used for the operation(encryption/decryption)
+    -c, --keyContext <filename>  filename of the key context used for the operation
+    -P, --pwdk     <password>   the password of key, optional
+    -D, --decrypt  <YES | NO>   the operation type, default NO, optional
+            YES     the operation is decryption
+            NO      the operation is encryption
+    -I, --inFile   <filePath>   Input file path, containing the data to be operated
+    -o, --outFile  <filePath>   Output file path, record the operated data
+
+example:
+    ./tpm2_encryptdecrypt -k 0x81010001 -P abc123 -D NO -I <filePath> -o <filePath>
+    ./tpm2_encryptdecrypt -c key.context -P abc123 -D NO -I <filePath> -o <filePath>
+
+* tpm2_rsaencrypt
+performs RSA encryption using the indicated padding scheme according to
+IETF RFC 3447. The scheme of keyHandle should not be TPM_ALG_NULL. The key
+referenced by keyHandle is required to be an RSA key (TPM_RC_KEY) with the
+decrypt attribute SET (TPM_RC_ATTRIBUTES).
+
+Usage:
+    -k, --keyHandle<hexHandle>  the public portion of RSA key to use for encryption
+    -c, --keyContext <filename>  filename of the key context used for the operation
+    -I, --inFile   <filePath>   Input file path, containing the data to be encrypted
+    -o, --outFile  <filePath>   Output file path, record the encrypted data
+
+example:
+    ./tpm2_rsaencrypt -k 0x81010001 -I <filePath> -o <filePath>
+    ./tpm2_rsaencrypt -c key.context -I <filePath> -o <filePath>
+
+* tpm2_rsadecrypt
+performs RSA decryption using the indicated padding scheme according to
+IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be TPM_ALG_NULL.
+The key referenced by keyHandle is required to be an RSA key (TPM_RC_KEY)
+with the decrypt attribute SET (TPM_RC_ATTRIBUTES).
+
+Usage:
+    -k, --keyHandle<hexHandle>  the public portion of RSA key to use for decryption
+    -c, --keyContext <filename> filename of the key context used for the operation
+    -P, --pwdk     <password>   the password of key, optional
+    -I, --inFile   <filePath>   Input file path, containing the data to be decrypted
+    -o, --outFile  <filePath>   Output file path, record the decrypted data
+
+example:
+    ./tpm2_rsadecrypt -k 0x81010001 -I <filePath> -o <filePath>
+
+* tpm2_unseal
+returns the data in a loaded Sealed Data Object.
+
+Usage:
+    -H, --item    <itemHandle>     item handle, handle of a loaded data object
+    -c, --itemContext <filename>   filename for item context
+    -P, --pwdi    <itemPassword>   item handle password, optional
+    -o, --outfile <outPutFilename> Output file name, containing the unsealed data
+
+example:
+    ./tpm2_unseal -H 0x81010001 -P abc123 -o <outPutFileName>
+    ./tpm2_unseal -c item.context -P abc123 -o <outPutFileName>
+
+
+Subset 5: Signing tools
+-----------------------
+* tpm2_sign
+sign an externally provided hash with the specified symmetric or asymmetric
+signing key. If keyHandle references a restricted signing key, then validation
+shall be provided, indicating that the TPM performed the hash of the data and
+validation shall indicate that hashed data did not start with
+TPM_GENERATED_VALUE. The scheme of keyHandle should not be TPM_ALG_NULL.
+
+Usage:
+    -k, --keyHandle<hexHandle>  Handle of key that will perform signing
+    -c, --keyContext <filename>  filename of the key context used for the operation
+    -P, --pwdk     <password>   the password of key, optional
+    -g, --halg     <hexAlg>     the hash algorithm used to digest the message
+            0x0004  TPM_ALG_SHA1
+            0x000B  TPM_ALG_SHA256
+            0x000C  TPM_ALG_SHA384
+            0x000D  TPM_ALG_SHA512
+            0x0012  TPM_ALG_SM3_256
+    -m, --msg      <filePath>   the message file, containning the content to be digested
+    -t, --ticket   <filePath>   the ticket file, containning the validation structure, optional
+    -s, --sig      <filePath>   the signature file, record the signature structure
+
+example:
+    ./tpm2_sign -k 0x81010001 -P abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+    ./tpm2_sign -c key.context - abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+
+* tpm2_verifysignature
+uses loaded keys to validate a signature on a message with the message digest
+passed to the TPM. If the signature check succeeds, then the TPM will produce
+a TPMT_TK_VERIFIED. Otherwise, the TPM shall return TPM_RC_SIGNATURE. If
+keyHandle references an asymmetric key, only the public portion of the key
+needs to be loaded. If keyHandle references a symmetric key, both the public
+and private portions need to be loaded.
+
+Usage:
+    -k, --keyHandle<hexHandle>  handle of public key that will be used in the validation
+    -c, --keyContext <filename>  filename of the key context used for the operation
+    -g, --halg     <hexAlg>     the hash algorithm used to digest the message
+            0x0004  TPM_ALG_SHA1
+            0x000B  TPM_ALG_SHA256
+            0x000C  TPM_ALG_SHA384
+            0x000D  TPM_ALG_SHA512
+            0x0012  TPM_ALG_SM3_256
+    -m, --msg      <filePath>   the input message file, containning the content to be digested
+    -D, --digest   <filePath>   the input hash file, containning the hash of the message
+                                if this argument been chosed, the argument '-m(--msg)' and '-g(--halg)' is no need
+    -s, --sig      <filePath>   the input signature file, containning the signature to be tested
+    -r, --raw                   set the input signature file to raw type, default TPMT_SIGNATURE, optional
+    -t, --ticket   <filePath>   the ticket file, record the validation structure
+
+example:
+    ./tpm2_verifysignature -k 0x81010001 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+    ./tpm2_verifysignature -k 0x81010001 -D <filePath> -s <filePath> -t <filePath>
+    ./tpm2_verifysignature -c key.context -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+
+* tpm2_certify
+prove that an object with a specific Name is loaded in the TPM. By certifying
+that the object is loaded, the TPM warrants that a public area with a given
+Name is self-consistent and associated with a valid sensitive area. If a
+relying party has a public area that has the same Name as a Name certified
+with this command, then the values in that public area are correct. The object
+may be any object that is loaded with TPM2_Load() or TPM2_CreatePrimary().
+An object that only has its public area loaded cannot be certified.
+
+Usage:
+    -H, --objHandle <hexHandle>  handle of the object to be certified
+    -C, --objContext <filename>  filename of the object context to be certified
+    -k, --keyHandle    <hexHandle>  handle of the key used to sign the attestation structure
+    -c, --keyContext <filename>  filename of the key context used to sign the attestation structure
+    -P, --pwdo         <string>     the object handle's password, optional
+    -K, --pwdk         <string>     the keyHandle's password, optional
+    -g, --halg         <hexAlg>     the hash algorithm used to digest the message
+            0x0004  TPM_ALG_SHA1
+            0x000B  TPM_ALG_SHA256
+            0x000C  TPM_ALG_SHA384
+            0x000D  TPM_ALG_SHA512
+            0x0012  TPM_ALG_SM3_256
+    -a, --attestFile   <fileName>   output file name, record the attestation structure
+    -s, --sigFile      <fileName>   output file name, record the signature structure
+
+example:
+    ./tpm2_certify -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
+    ./tpm2_certify -C obj.context -c key.context -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
+
+
+Subset 6: utilities
+-------------------
+* tpm2_getrandom
+returns the next bytesRequested octets from the random number generator.
+
+Usage:
+    tpm2_getrandom  [-s/--size <bytesRequested>] [-o/--of <outfilename>]
+
+where:
+    -s/--size <bytesRequested>      specifies the size of the bytesRequested.
+    -o/--of <outfilename>           specifies the filename of output.
+
+example:
+    ./tpm2_getrandom -s 20 -o random.out
+
+* tpm2_hash
+performs a hash operation on a data buffer and returns the results. If the
+results of the hash will be used in a signing operation that uses a restricted
+signing key, then the ticket returned by this command can indicate that the
+hash is safe to sign.
+
+Usage:
+    -H, --hierarchy <e|o|p|n>   hierarchy to use for the ticket
+            e  TPM_RH_ENDORSEMENT
+            o  TPM_RH_OWNER
+            p  TPM_RH_PLATFORM
+            n  TPM_RH_NULL
+    -g, --halg      <hexAlg>   algorithm for the hash being computed
+            0x0004  TPM_ALG_SHA1
+            0x000B  TPM_ALG_SHA256
+            0x000C  TPM_ALG_SHA384
+            0x000D  TPM_ALG_SHA512
+            0x0012  TPM_ALG_SM3_256
+    -I, --infile    <inputFilename>  file containning the data to be hashed
+    -o, --outfile   <hashFilename>   file record the hash result
+    -t, --ticket    <ticketFilename> file record the ticket
+
+example:
+./tpm2_hash -H <e|o|p|n> -g 0x004 -I <inputFilename> -o <hashFilename> -t <ticketFilename>
+
+* tpm2_hmac
+performs an HMAC on the supplied data using the indicated hash algorithm. The
+caller shall provide proper authorization for use of handle.
+
+Usage:
+    -k, --keyHandle <hexHandle> handle for the symmetric signing key providing the HMAC key
+    -c, --keyContext <filename>  filename of the key context used for the operation
+    -P, --pwdk      <string>    the keyHandle's password, optional
+    -g, --halg      <hexAlg>    algorithm for the hash being computed
+            0x0004  TPM_ALG_SHA1
+            0x000B  TPM_ALG_SHA256
+            0x000C  TPM_ALG_SHA384
+            0x000D  TPM_ALG_SHA512
+            0x0012  TPM_ALG_SM3_256
+    -I, --infile    <inputFilename>  file containning the data to be HMACed
+    -o, --outfile   <hmacFilename>   file record the HMAC result
+
+example:
+    ./tpm2_hmac  -k 0x81010002 -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename>
+    ./tpm2_hmac  -c key.context -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename>
+
+* tpm2_readpublic
+Access to the public area of a loaded object.
+
+    Usage:
+    -H, --object <objectHandle>   The loaded object handle
+    -c, --contextObject <filename>    filename for object context
+    -o, --opu    <publicKeyFileName>  The output file path,
+                                      recording the readout public portion of the object
+
+example:
+    ./tpm2_readpublic -H 0x81010002 -opu <pubKeyFileName>
+    ./tpm2_readpublic -c obj.context -opu <pubKeyFileName>
+
+
+

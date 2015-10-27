@@ -1,0 +1,19 @@
+To build and install the tpm2.0-tools software the following software is required:
+GNU Autoconf
+GNU Autoconf archive
+GNU Automake
+GNU Libtool
+C compiler
+C++ compiler
+C Library Development Libraries and Header Files (for pthreads headers)
+
+To obtain the tpm2.0-tools sources you must clone them as below:
+git clone https://github.com/01org/tpm2.0-tools
+
+To compile tpm2.0-tools execute the following commands from the root of the
+source directory:
+$ ./bootstrap
+$ ./configure
+$ make
+
+All executables are generated under ./sapi-tools/ directory.
