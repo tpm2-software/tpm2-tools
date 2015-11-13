@@ -1,7 +1,18 @@
 #! /bin/sh
 
-git clone https://github.com/01org/TPM2.0-TSS.git tss
-cd tss; ./bootstrap; ./configure; cd ..
+TSS_DIR=./tss
+TSS_REPO=https://github.com/01org/TPM2.0-TSS.git
+TSS_TAG=1.0-alpha_0
+
+if ! test -d TSS_DIR; then
+    git clone ${TSS_REPO} --branch ${TSS_TAG} ${TSS_DIR} && \
+    cd ${TSS_DIR} && \
+    ./bootstrap && \
+    ./configure && \
+    cd ..
+else
+    echo "${TSS_DIR} already exists, skipping"
+fi
 
 aclocal \
 && autoconf \
