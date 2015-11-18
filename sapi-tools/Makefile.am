@@ -52,25 +52,10 @@ SAMPLE_SRC = \
     ../tss/test/common/sample/TpmHash.c \
     ../tss/test/common/sample/TpmHmac.c \
     ../tss/test/common/sample/sample.h
-SYSAPI_SRC = \
-    ../tss/sysapi/include/basetypes.h \
-    ../tss/sysapi/include/endianConv.h \
-    ../tss/sysapi/include/implementation.h \
-    ../tss/sysapi/include/tpm20.h \
-    ../tss/sysapi/include/tpmb.h \
-    ../tss/sysapi/include/tss2_common.h \
-    ../tss/sysapi/include/tss2_sys_api_marshalUnmarshal.h \
-    ../tss/sysapi/include/tss2_sys_api_part3.h \
-    ../tss/sysapi/include/tss2_sysapi_util.h \
-    ../tss/sysapi/include/tss2_sys.h \
-    ../tss/sysapi/include/tss2_tcti.h \
-    ../tss/sysapi/include/tss2_tcti_util.h \
-    ../tss/sysapi/include/tss2_tpm2_types.h
 
 TPMTOOLS_COMMON_SRC = \
     ../tss/test/tpmclient/tpmclient.h \
     $(SAMPLE_SRC) \
-    $(SYSAPI_SRC) \
     $(COMMON_SRC) \
     common.cpp common.h
 
@@ -81,11 +66,6 @@ INCLUDE_DIRS = -I$(srcdir)/../tss/sysapi/include -I$(srcdir) \
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
-
-LIBTPM = ../tss/sysapi/libtpm.a
-
-$(LIBTPM):
-	$(MAKE) -C $(top_srcdir)/tss
 
 noinst_PROGRAMS = tpm2_listpcrs \
 		  tpm2_quote \
@@ -116,7 +96,7 @@ noinst_PROGRAMS = tpm2_listpcrs \
 		  tpm2_sign \
 		  tpm2_unseal \
 		  tpm2_verifysignature
-LDADD = $(LIBTPM) -ltpm2tctisock
+LDADD = -ltpm2sapi -ltpm2tctisock
 tpm2_listpcrs_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_listpcrs.cpp
 tpm2_quote_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_quote.cpp
 tpm2_takeownership_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_takeownership.cpp
