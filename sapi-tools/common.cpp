@@ -65,7 +65,7 @@
 #include "resourcemgr.h"
 #include "tpmclient.h"
 #include "tss2_sysapi_util.h"
-#include "tpmsockets.h"
+#include <tpm2tcti/tpmsockets.h>
 #include "syscontext.h"
 #include "debug.h"
 #include "common.h"

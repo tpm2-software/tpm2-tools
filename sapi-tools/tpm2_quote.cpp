@@ -59,7 +59,7 @@
 #include <arpa/inet.h>
 
 #include "tpm20.h"
-#include "tpmsockets.h"
+#include <tpm2tcti/tpmsockets.h>
 #include "common.h"
 
 int debugLevel = 0;
