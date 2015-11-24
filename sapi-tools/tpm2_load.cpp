@@ -57,8 +57,8 @@
 #include <ctype.h>
 #include <getopt.h>
 
-#include "tpm20.h"
-#include "tpmsockets.h"
+#include <tpm2sapi/tpm20.h>
+#include <tpm2tcti/tpmsockets.h>
 #include "common.h"
 
 TPM_HANDLE handle2048rsa;

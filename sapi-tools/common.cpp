@@ -60,12 +60,12 @@
 #include <getopt.h>
 
 
-#include "tpm20.h"
+#include <tpm2sapi/tpm20.h>
 #include "sample.h"
 #include "resourcemgr.h"
 #include "tpmclient.h"
-#include "tss2_sysapi_util.h"
-#include "tpmsockets.h"
+#include <tpm2sapi/tss2_sysapi_util.h>
+#include <tpm2tcti/tpmsockets.h>
 #include "syscontext.h"
 #include "debug.h"
 #include "common.h"
