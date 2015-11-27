@@ -489,7 +489,7 @@ int saveTpmContextToFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle, const 
     rval = Tss2_Sys_ContextSave( sysContext, handle, &context);
     if( rval == TPM_RC_SUCCESS &&
         saveDataToFile(fileName, (UINT8 *)&context, sizeof(TPMS_CONTEXT)) )
-        rval == TPM_RC_FAILURE;
+        rval = TPM_RC_FAILURE;
 
     if( rval != TPM_RC_SUCCESS )
     {
