@@ -57,10 +57,6 @@
 #include <ctype.h>
 #include <getopt.h>
 
-#ifdef _WIN32
-#include <arpa/inet.h>
-#endif
-
 #include <tpm2sapi/tpm20.h>
 #include <tpm2tcti/tpmsockets.h>
 #include "common.h"
