@@ -61,8 +61,7 @@ TPMTOOLS_COMMON_SRC = \
 
 INCLUDE_DIRS = -I$(srcdir)/../tss/sysapi/include -I$(srcdir) \
     -I$(srcdir)/../tss/tcti/tpmsockets -I$(srcdir)/../tss/common \
-    -I$(srcdir)/../tss/test/common/sample -I$(srcdir)/../tss/resourcemgr \
-    -I$(srcdir)/../tss/test/tpmclient
+    -I$(srcdir)/../tss/test/common/sample -I$(srcdir)/../tss/test/tpmclient
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
