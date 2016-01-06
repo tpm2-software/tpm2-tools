@@ -62,7 +62,6 @@
 
 #include <tpm2sapi/tpm20.h>
 #include "sample.h"
-#include "resourcemgr.h"
 #include "tpmclient.h"
 #include <tpm2sapi/tss2_sysapi_util.h>
 #include <tpm2tcti/tpmsockets.h>
