@@ -31,33 +31,27 @@
 #;**********************************************************************;
 
 COMMON_SRC = \
-    ../tss/common/debug.c ../tss/common/debug.h \
-    ../tss/common/getcommands.c \
-    ../tss/common/platformcommand.c ../tss/common/platform.h \
-    ../tss/common/syscontext.c ../tss/common/syscontext.h
+    ../tss/common/debug.c \
+    ../tss/common/platformcommand.c \
+    ../tss/common/syscontext.c
 SAMPLE_SRC = \
     ../tss/test/common/sample/CatSizedByteBuffer.c \
     ../tss/test/common/sample/CopySizedBuffer.c \
-    ../tss/test/common/sample/CreateNullSession.c \
     ../tss/test/common/sample/DecryptEncrypt.c \
     ../tss/test/common/sample/Entity.c \
     ../tss/test/common/sample/kdfa.c \
     ../tss/test/common/sample/LoadExternalHMACKey.c \
-    ../tss/test/common/sample/sample.h \
     ../tss/test/common/sample/SessionHmac.c \
-    ../tss/test/common/sample/SetLocality.c \
     ../tss/test/common/sample/StartAuthSession.c \
     ../tss/test/common/sample/TpmCalcPHash.c \
     ../tss/test/common/sample/TpmHandleToName.c \
     ../tss/test/common/sample/TpmHash.c \
-    ../tss/test/common/sample/TpmHmac.c \
-    ../tss/test/common/sample/sample.h
+    ../tss/test/common/sample/TpmHmac.c
 
 TPMTOOLS_COMMON_SRC = \
-    ../tss/test/tpmclient/tpmclient.h \
     $(SAMPLE_SRC) \
     $(COMMON_SRC) \
-    common.cpp common.h
+    common.cpp
 
 INCLUDE_DIRS = -I$(srcdir)/../tss/sysapi/include -I$(srcdir) \
     -I$(srcdir)/../tss/tcti/tpmsockets -I$(srcdir)/../tss/common \
