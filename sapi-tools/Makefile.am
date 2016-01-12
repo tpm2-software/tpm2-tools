@@ -31,37 +31,29 @@
 #;**********************************************************************;
 
 COMMON_SRC = \
-    ../tss/common/debug.c ../tss/common/debug.h \
-    ../tss/common/getcommands.c \
-    ../tss/common/platformcommand.c ../tss/common/platform.h \
-    ../tss/common/syscontext.c ../tss/common/syscontext.h
+    debug.c \
+    platformcommand.c \
+    syscontext.c
 SAMPLE_SRC = \
-    ../tss/test/common/sample/CatSizedByteBuffer.c \
-    ../tss/test/common/sample/CopySizedBuffer.c \
-    ../tss/test/common/sample/CreateNullSession.c \
-    ../tss/test/common/sample/DecryptEncrypt.c \
-    ../tss/test/common/sample/Entity.c \
-    ../tss/test/common/sample/kdfa.c \
-    ../tss/test/common/sample/LoadExternalHMACKey.c \
-    ../tss/test/common/sample/sample.h \
-    ../tss/test/common/sample/SessionHmac.c \
-    ../tss/test/common/sample/SetLocality.c \
-    ../tss/test/common/sample/StartAuthSession.c \
-    ../tss/test/common/sample/TpmCalcPHash.c \
-    ../tss/test/common/sample/TpmHandleToName.c \
-    ../tss/test/common/sample/TpmHash.c \
-    ../tss/test/common/sample/TpmHmac.c \
-    ../tss/test/common/sample/sample.h
+    CatSizedByteBuffer.c \
+    CopySizedBuffer.c \
+    DecryptEncrypt.c \
+    Entity.c \
+    kdfa.c \
+    LoadExternalHMACKey.c \
+    SessionHmac.c \
+    StartAuthSession.c \
+    TpmCalcPHash.c \
+    TpmHandleToName.c \
+    TpmHash.c \
+    TpmHmac.c
 
 TPMTOOLS_COMMON_SRC = \
-    ../tss/test/tpmclient/tpmclient.h \
     $(SAMPLE_SRC) \
     $(COMMON_SRC) \
-    common.cpp common.h
+    common.cpp
 
-INCLUDE_DIRS = -I$(srcdir)/../tss/sysapi/include -I$(srcdir) \
-    -I$(srcdir)/../tss/tcti/tpmsockets -I$(srcdir)/../tss/common \
-    -I$(srcdir)/../tss/test/common/sample -I$(srcdir)/../tss/test/tpmclient
+INCLUDE_DIRS = -I$(srcdir)
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
