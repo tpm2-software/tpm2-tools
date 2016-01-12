@@ -31,31 +31,29 @@
 #;**********************************************************************;
 
 COMMON_SRC = \
-    ../tss/common/debug.c \
-    ../tss/common/platformcommand.c \
-    ../tss/common/syscontext.c
+    debug.c \
+    platformcommand.c \
+    syscontext.c
 SAMPLE_SRC = \
-    ../tss/test/common/sample/CatSizedByteBuffer.c \
-    ../tss/test/common/sample/CopySizedBuffer.c \
-    ../tss/test/common/sample/DecryptEncrypt.c \
-    ../tss/test/common/sample/Entity.c \
-    ../tss/test/common/sample/kdfa.c \
-    ../tss/test/common/sample/LoadExternalHMACKey.c \
-    ../tss/test/common/sample/SessionHmac.c \
-    ../tss/test/common/sample/StartAuthSession.c \
-    ../tss/test/common/sample/TpmCalcPHash.c \
-    ../tss/test/common/sample/TpmHandleToName.c \
-    ../tss/test/common/sample/TpmHash.c \
-    ../tss/test/common/sample/TpmHmac.c
+    CatSizedByteBuffer.c \
+    CopySizedBuffer.c \
+    DecryptEncrypt.c \
+    Entity.c \
+    kdfa.c \
+    LoadExternalHMACKey.c \
+    SessionHmac.c \
+    StartAuthSession.c \
+    TpmCalcPHash.c \
+    TpmHandleToName.c \
+    TpmHash.c \
+    TpmHmac.c
 
 TPMTOOLS_COMMON_SRC = \
     $(SAMPLE_SRC) \
     $(COMMON_SRC) \
     common.cpp
 
-INCLUDE_DIRS = -I$(srcdir)/../tss/sysapi/include -I$(srcdir) \
-    -I$(srcdir)/../tss/tcti/tpmsockets -I$(srcdir)/../tss/common \
-    -I$(srcdir)/../tss/test/common/sample -I$(srcdir)/../tss/test/tpmclient
+INCLUDE_DIRS = -I$(srcdir)
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
