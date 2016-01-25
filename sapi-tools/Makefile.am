@@ -32,7 +32,6 @@
 
 COMMON_SRC = \
     debug.c \
-    platformcommand.c \
     syscontext.c
 SAMPLE_SRC = \
     CatSizedByteBuffer.c \
