@@ -69,19 +69,22 @@ char ekPasswd[sizeof(TPMU_HA)];
 TPM_HANDLE persistentHandle;
 UINT32 algorithmType = TPM_ALG_RSA;
 
+BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24, 0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA};
 int setKeyAlgorithm(UINT16 algorithm, TPM2B_SENSITIVE_CREATE &inSensitive, TPM2B_PUBLIC &inPublic)
 {
     inPublic.t.publicArea.nameAlg = TPM_ALG_SHA256;
     // First clear attributes bit field.
     *(UINT32 *)&(inPublic.t.publicArea.objectAttributes) = 0;
     inPublic.t.publicArea.objectAttributes.restricted = 1;
-    inPublic.t.publicArea.objectAttributes.userWithAuth = 1;
+    inPublic.t.publicArea.objectAttributes.userWithAuth = 0;
+    inPublic.t.publicArea.objectAttributes.adminWithPolicy = 1;
     inPublic.t.publicArea.objectAttributes.sign = 0;
     inPublic.t.publicArea.objectAttributes.decrypt = 1;
     inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
     inPublic.t.publicArea.objectAttributes.fixedParent = 1;
     inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    inPublic.t.publicArea.authPolicy.t.size = 0;
+    inPublic.t.publicArea.authPolicy.t.size = 32;
+    memcpy(inPublic.t.publicArea.authPolicy.t.buffer, authPolicy, 32);
 
     inPublic.t.publicArea.type = algorithm;
 
@@ -94,7 +97,7 @@ int setKeyAlgorithm(UINT16 algorithm, TPM2B_SENSITIVE_CREATE &inSensitive, TPM2B
         inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
         inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048;
         inPublic.t.publicArea.parameters.rsaDetail.exponent = 0;
-        inPublic.t.publicArea.unique.rsa.t.size = 0;
+        inPublic.t.publicArea.unique.rsa.t.size = 256;
         break;
     case TPM_ALG_KEYEDHASH:
         inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
@@ -109,8 +112,8 @@ int setKeyAlgorithm(UINT16 algorithm, TPM2B_SENSITIVE_CREATE &inSensitive, TPM2B
         inPublic.t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
         inPublic.t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
         inPublic.t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.unique.ecc.x.t.size = 0;
-        inPublic.t.publicArea.unique.ecc.y.t.size = 0;
+        inPublic.t.publicArea.unique.ecc.x.t.size = 32;
+        inPublic.t.publicArea.unique.ecc.y.t.size = 32;
         break;
     case TPM_ALG_SYMCIPHER:
         inPublic.t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
