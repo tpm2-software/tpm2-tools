@@ -102,7 +102,7 @@ int readCrtSecFromFile(const char *path,TPM2B_ID_OBJECT *credentialBlob, TPM2B_E
 int activateCredential()
 {
     UINT32 rval;
-    TPM2B_DIGEST certInfoData;
+    TPM2B_DIGEST certInfoData = { { sizeof(certInfoData)-2, } };
 
     printf("\nACTIVATE CREDENTIAL TESTS:\n");
 

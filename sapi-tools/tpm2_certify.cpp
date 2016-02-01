@@ -72,13 +72,9 @@ int getKeyType(TPMI_DH_OBJECT objectHandle, TPMI_ALG_PUBLIC *type)
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1] = {&sessionDataOut};
     TSS2_SYS_RSP_AUTHS sessionsDataOut = {1, &sessionDataOutArray[0]};
 
-    TPM2B_PUBLIC outPublic;
-    TPM2B_NAME   name;
-    TPM2B_NAME   qualifiedName;
-
-    outPublic.t.size = 0;
-    name.t.size = 0;
-    qualifiedName.t.size = 0;
+    TPM2B_PUBLIC outPublic = { { 0, } };
+    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
 
     rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
     if(rval == TPM_RC_SUCCESS)
@@ -125,7 +121,7 @@ int certify( TPMI_DH_OBJECT objectHandle, TPMI_DH_OBJECT keyHandle, TPMI_ALG_HAS
     TPM2B_DATA qualifyingData;
     UINT8 qualDataString[] = { 0x00, 0xff, 0x55,0xaa };
     TPMT_SIG_SCHEME inScheme;
-    TPM2B_ATTEST certifyInfo;
+    TPM2B_ATTEST certifyInfo = { { sizeof(TPM2B_ATTEST)-2, } };
     TPMT_SIGNATURE signature;
 
     TPMS_AUTH_COMMAND *cmdSessionArray[2] = { &cmdAuth, &cmdAuth2 };

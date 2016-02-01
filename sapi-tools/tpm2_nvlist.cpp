@@ -66,10 +66,9 @@ int debugLevel = 0;
 int NVReadPublic(TPMI_RH_NV_INDEX nvIndex)
 {
     UINT32 rval;
-    TPM2B_NAME nvName;
-    TPM2B_NV_PUBLIC nvPublic;
+    TPM2B_NAME nvName = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NV_PUBLIC nvPublic = { { 0, } };
 
-    nvPublic.t.size = 0;
     rval = Tss2_Sys_NV_ReadPublic( sysContext, nvIndex, 0, &nvPublic, &nvName, 0 );
     if(rval != TPM_RC_SUCCESS)
     {

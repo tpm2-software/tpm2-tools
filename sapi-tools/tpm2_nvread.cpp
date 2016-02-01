@@ -76,7 +76,7 @@ int nvRead(TPMI_RH_NV_AUTH authHandle, TPMI_RH_NV_INDEX nvIndex, UINT16 size, UI
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPM2B_MAX_NV_BUFFER nvData;
+    TPM2B_MAX_NV_BUFFER nvData = { { sizeof(TPM2B_MAX_NV_BUFFER)-2, } };
 
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];

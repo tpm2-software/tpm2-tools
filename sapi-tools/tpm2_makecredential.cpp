@@ -105,8 +105,8 @@ int makeCredential()
 
     TPM2B_NAME              nameExt     = { { sizeof(TPM2B_NAME)-2, } };
 
-    TPM2B_ID_OBJECT         credentialBlob = { { 0 }, };
-    TPM2B_ENCRYPTED_SECRET  secret;
+    TPM2B_ID_OBJECT         credentialBlob = { { sizeof(TPM2B_ID_OBJECT)-2, }, };
+    TPM2B_ENCRYPTED_SECRET  secret = { { sizeof(TPM2B_ENCRYPTED_SECRET)-2, }, };
 
     sessionDataOutArray[0] = &sessionDataOut;
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];

@@ -95,7 +95,7 @@ int hash(TPMI_RH_HIERARCHY hierarchyValue, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH
 {
     UINT32 rval;
 
-    TPM2B_DIGEST outHash;
+    TPM2B_DIGEST outHash = { { sizeof(TPM2B_DIGEST)-2, } };
     TPMT_TK_HASHCHECK validation;
 
     rval = Tss2_Sys_Hash(sysContext, 0, data, halg, hierarchyValue, &outHash, &validation, 0);

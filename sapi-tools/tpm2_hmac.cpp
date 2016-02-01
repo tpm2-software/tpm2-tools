@@ -73,7 +73,7 @@ int hmac(TPMI_DH_OBJECT keyHandle, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, c
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_DIGEST outHMAC;
+    TPM2B_DIGEST outHMAC = { { sizeof(TPM2B_DIGEST)-2, } };
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;

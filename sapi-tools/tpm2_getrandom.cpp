@@ -90,7 +90,7 @@ void showHelp(const char *name)
 int getRandom(const char *outFileName, UINT16 bytesRequested)
 {
     TPM_RC rval;
-    TPM2B_DIGEST        randomBytes;
+    TPM2B_DIGEST        randomBytes = { { sizeof(TPM2B_DIGEST)-2, } };
 
     rval = Tss2_Sys_GetRandom(sysContext, NULL, bytesRequested, &randomBytes, NULL);
     if (rval != TSS2_RC_SUCCESS)

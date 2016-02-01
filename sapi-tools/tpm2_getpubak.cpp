@@ -211,16 +211,16 @@ int createAK()
 
     TPM2B_SENSITIVE_CREATE  inSensitive = { { sizeof(TPM2B_SENSITIVE_CREATE)-2, } };
     TPM2B_PUBLIC            inPublic = { { sizeof(TPM2B_PUBLIC)-2, } };
-    TPM2B_DATA              outsideInfo = { { sizeof(TPM2B_DATA)-2, } };
+    TPM2B_DATA              outsideInfo = { { 0, } };
     TPML_PCR_SELECTION      creationPCR;
 
     TPM2B_NAME              name = { { sizeof(TPM2B_NAME)-2, } };
 
     TPM2B_PRIVATE           outPrivate = { { sizeof( TPM2B_PRIVATE ) - 2, } };
-    TPM2B_PUBLIC            outPublic = { { sizeof(TPM2B_PUBLIC)-2, } };
-    TPM2B_CREATION_DATA     creationData = { { sizeof(TPM2B_CREATION_DATA)-2, } };
+    TPM2B_PUBLIC            outPublic = { { 0, } };
+    TPM2B_CREATION_DATA     creationData = { { 0, } };
     TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
-    TPMT_TK_CREATION        creationTicket = { 0, 0, { { sizeof(TPM2B_DIGEST)-2, } } };
+    TPMT_TK_CREATION        creationTicket = { 0, };
 
     TPM_HANDLE handle2048rsa = persistentEKHandle;
     TPM_HANDLE loadedSha1KeyHandle;
@@ -249,20 +249,11 @@ int createAK()
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
-    outsideInfo.t.size = 0;
     creationPCR.count = 0;
-
-    outPublic.t.size = 0;
-    creationData.t.size = sizeof(TPM2B_CREATION_DATA)-2;
-    outPublic.t.publicArea.authPolicy.t.size = sizeof(TPM2B_DIGEST)-2;
-    outPublic.t.publicArea.unique.keyedHash.t.size = sizeof(TPM2B_DIGEST)-2;
 
     if( setKeyAlgorithm(algorithmType, inSensitive, inPublic) )
         return -1;
 
-    outsideInfo.t.size = 0;
-    outPublic.t.size = 0;
-    creationData.t.size = 0;
     sessionData.hmac.t.size = 0;
 
     if( strlen( ekPasswd ) > 0 )

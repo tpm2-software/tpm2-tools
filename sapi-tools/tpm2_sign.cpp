@@ -71,13 +71,9 @@ int getKeyType(TPMI_DH_OBJECT objectHandle, TPMI_ALG_PUBLIC *type)
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1] = {&sessionDataOut};
     TSS2_SYS_RSP_AUTHS sessionsDataOut = {1, &sessionDataOutArray[0]};
 
-    TPM2B_PUBLIC outPublic;
-    TPM2B_NAME   name;
-    TPM2B_NAME   qualifiedName;
-
-    outPublic.t.size = 0;
-    name.t.size = 0;
-    qualifiedName.t.size = 0;
+    TPM2B_PUBLIC outPublic = { { 0, } };
+    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
 
     rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
     if(rval == TPM_RC_SUCCESS)

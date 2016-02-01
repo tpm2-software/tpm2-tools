@@ -138,15 +138,15 @@ int createEKHandle()
 
     TPM2B_SENSITIVE_CREATE  inSensitive = { { sizeof(TPM2B_SENSITIVE_CREATE)-2, } };
     TPM2B_PUBLIC            inPublic = { { sizeof(TPM2B_PUBLIC)-2, } };
-    TPM2B_DATA              outsideInfo = { { sizeof(TPM2B_DATA)-2, } };
+    TPM2B_DATA              outsideInfo = { { 0, } };
     TPML_PCR_SELECTION      creationPCR;
 
     TPM2B_NAME              name = { { sizeof(TPM2B_NAME)-2, } };
 
-    TPM2B_PUBLIC            outPublic = { { sizeof(TPM2B_PUBLIC)-2, } };
-    TPM2B_CREATION_DATA     creationData = { { sizeof(TPM2B_CREATION_DATA)-2, } };
+    TPM2B_PUBLIC            outPublic = { { 0, } };
+    TPM2B_CREATION_DATA     creationData = { { 0, } };
     TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
-    TPMT_TK_CREATION        creationTicket = { 0, 0, { { sizeof(TPM2B_DIGEST)-2, } } };
+    TPMT_TK_CREATION        creationTicket = { 0, };
 
     TPM_HANDLE handle2048ek;
 
@@ -182,12 +182,7 @@ int createEKHandle()
     if( setKeyAlgorithm(algorithmType, inSensitive, inPublic) )
         return -1;
 
-    outsideInfo.t.size = 0;
     creationPCR.count = 0;
-    outPublic.t.size = 0;
-    creationData.t.size = sizeof(TPM2B_CREATION_DATA)-2;
-    outPublic.t.publicArea.authPolicy.t.size = sizeof(TPM2B_DIGEST)-2;
-    outPublic.t.publicArea.unique.keyedHash.t.size = sizeof(TPM2B_DIGEST)-2;
 
     /*To Create EK*/
     rval = Tss2_Sys_CreatePrimary(sysContext, TPM_RH_ENDORSEMENT, &sessionsData, &inSensitive, &inPublic,

@@ -70,7 +70,7 @@ int rsaDecrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *cipherText, const
     UINT32 rval;
     TPMT_RSA_DECRYPT inScheme;
     TPM2B_DATA label;
-    TPM2B_PUBLIC_KEY_RSA message;
+    TPM2B_PUBLIC_KEY_RSA message = { { sizeof(TPM2B_PUBLIC_KEY_RSA)-2, } };
 
     TSS2_SYS_CMD_AUTHS sessionsData;
     TPMS_AUTH_RESPONSE sessionDataOut;

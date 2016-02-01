@@ -153,14 +153,14 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_DATA              outsideInfo = { { sizeof(TPM2B_DATA)-2, } };
+    TPM2B_DATA              outsideInfo = { { 0, } };
     TPML_PCR_SELECTION      creationPCR;
-    TPM2B_PUBLIC            outPublic = { { sizeof(TPM2B_PUBLIC)-2, } };
+    TPM2B_PUBLIC            outPublic = { { 0, } };
     TPM2B_PRIVATE           outPrivate = { { sizeof(TPM2B_PRIVATE)-2, } };
 
-    TPM2B_CREATION_DATA     creationData = { { sizeof(TPM2B_CREATION_DATA)-2, } };
+    TPM2B_CREATION_DATA     creationData = { { 0, } };
     TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
-    TPMT_TK_CREATION        creationTicket = { 0, 0, { { sizeof(TPM2B_DIGEST)-2, } } };
+    TPMT_TK_CREATION        creationTicket = { 0, };
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -185,12 +185,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
         inPublic->t.publicArea.objectAttributes.val = objectAttributes;
     printf("ObjectAttribute: 0x%08X\n",inPublic->t.publicArea.objectAttributes.val);
 
-    outsideInfo.t.size = 0;
     creationPCR.count = 0;
-    outPublic.t.size = 0;
-    creationData.t.size = sizeof(TPM2B_CREATION_DATA)-2;
-    outPublic.t.publicArea.authPolicy.t.size = sizeof(TPM2B_DIGEST)-2;
-    outPublic.t.publicArea.unique.keyedHash.t.size = sizeof(TPM2B_DIGEST)-2;
 
     rval = Tss2_Sys_Create(sysContext, parentHandle, &sessionsData, inSensitive, inPublic,
             &outsideInfo, &creationPCR, &outPrivate,&outPublic,&creationData, &creationHash,

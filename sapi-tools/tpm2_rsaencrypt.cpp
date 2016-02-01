@@ -71,7 +71,7 @@ int rsaEncrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *message, const ch
     TPMT_RSA_DECRYPT inScheme;
     TPM2B_DATA label;
     // Outputs
-    TPM2B_PUBLIC_KEY_RSA outData;
+    TPM2B_PUBLIC_KEY_RSA outData = { { sizeof(TPM2B_PUBLIC_KEY_RSA)-2, } };
 
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;

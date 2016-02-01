@@ -243,7 +243,7 @@ int quote(TPM_HANDLE akHandle, PCR_LIST pcrList, TPMI_ALG_HASH algorithmId)
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPM2B_ATTEST quoted;
+    TPM2B_ATTEST quoted = { { sizeof(TPM2B_ATTEST)-2, } };
     TPMT_SIGNATURE signature;
 
     TPMS_AUTH_COMMAND *sessionDataArray[1];
@@ -283,7 +283,6 @@ int quote(TPM_HANDLE akHandle, PCR_LIST pcrList, TPMI_ALG_HASH algorithmId)
         pcrSelection.pcrSelections[0].pcrSelect[( pcrId/8 )] |= ( 1 << ( pcrId) % 8);
     }
 
-    memset( (void *)&quoted, 0, sizeof(quoted) );
     memset( (void *)&signature, 0, sizeof(signature) );
 
     rval = Tss2_Sys_Quote(sysContext, akHandle, &sessionsData,
