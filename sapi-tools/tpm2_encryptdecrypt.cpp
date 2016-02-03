@@ -73,8 +73,8 @@ int encryptDecrypt(TPMI_DH_OBJECT keyHandle, TPMI_YES_NO decryptVal, TPM2B_MAX_B
     TPMI_ALG_SYM_MODE mode;
     TPM2B_IV ivIn;
     // Outputs
-    TPM2B_MAX_BUFFER outData = { { 0, } };
-    TPM2B_IV ivOut = { { 0, } };
+    TPM2B_MAX_BUFFER outData = { { sizeof(TPM2B_MAX_BUFFER)-2, } };
+    TPM2B_IV ivOut = { { sizeof(TPM2B_IV)-2, } };
 
     TSS2_SYS_CMD_AUTHS sessionsData;
 
