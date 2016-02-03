@@ -36,7 +36,6 @@ tpm2_getrandom
 tpm2_hash
 tpm2_hmac
 tpm2_readpublic
-tpm2_getmanufec
 
 ## Build and Installation instructions:
 Instructions for building and installing the tpm2.0-tools are provided in the [INSTALL](https://github.com/01org/tpm2.0-tools/blob/master/INSTALL) file.
