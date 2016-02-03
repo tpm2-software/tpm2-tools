@@ -121,7 +121,7 @@ noinst_PROGRAMS = tpm2_listpcrs \
 		  tpm2_unseal \
 		  tpm2_verifysignature \
 		  tpm2_getmanufec
-LDADD = $(LIBTPM) -lcurl -lssl -lcrypto
+LDADD = $(LIBTPM)  -lcurl -lssl -lcrypto
 tpm2_listpcrs_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_listpcrs.cpp
 tpm2_quote_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_quote.cpp
 tpm2_takeownership_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_takeownership.cpp
