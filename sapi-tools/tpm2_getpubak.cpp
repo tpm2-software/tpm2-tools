@@ -73,19 +73,6 @@ UINT32 algorithmType = TPM_ALG_RSA;
 UINT32 digestAlg = TPM_ALG_SHA256;
 UINT32 signAlg = TPM_ALG_NULL;
 
-void PrintSizedBuffer( TPM2B *sizedBuffer  )
-{
-    int i;
-
-    for( i = 0; i < sizedBuffer->size; i++  )
-    {
-        printf( "%2.2x ", sizedBuffer->buffer[i] );
-        if( ( (i+1) % 16  ) == 0  )
-            printf( "\n" );
-    }
-    printf( "\n" );
-}
-
 int setRSASigningAlg(TPM2B_PUBLIC &inPublic)
 {
     if (signAlg == TPM_ALG_NULL)

@@ -28,6 +28,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
+#ifndef COMMON_H
+#define COMMON_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 extern TSS2_SYS_CONTEXT *sysContext;
 
@@ -82,3 +88,10 @@ inline char *safeStrNCpy(char *dest, const char *src, size_t n)
     }
     return dest;
 }
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // COMMON_H
+

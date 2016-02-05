@@ -146,9 +146,11 @@ int TpmClientPrintf( UINT8 type, const char *format, ...)
 
 int CompareTPM2B( TPM2B *buffer1, TPM2B *buffer2 )
 {
+    int i;
+
     if( buffer1->size != buffer2->size )
         return -1;
-    for( int i = 0; i < buffer1->size; i++ )
+    for( i = 0; i < buffer1->size; i++ )
     {
         if( buffer1->buffer[0] != buffer2->buffer[0] )
             return -2;

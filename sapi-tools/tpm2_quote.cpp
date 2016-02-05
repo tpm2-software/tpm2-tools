@@ -80,22 +80,6 @@ void PrintBuffer( UINT8 *buffer, UINT32 size )
     printf( "\n" );
 }
 
-void PrintSizedBuffer( TPM2B *sizedBuffer )
-{
-    int i;
-
-    for( i = 0; i < sizedBuffer->size; i++ )
-    {
-        printf( "%2.2x ", sizedBuffer->buffer[i] );
-
-        if( ( (i+1) % 16 ) == 0 )
-        {
-            printf( "\n" );
-        }
-    }
-    printf( "\n" );
-}
-
 #if 0
 void PrintTPM2B_ATTEST( TPM2B_ATTEST *attest )
 {

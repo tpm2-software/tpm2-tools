@@ -64,26 +64,6 @@
 char akDataFile[PATH_MAX];
 char akKeyFile[PATH_MAX];
 
-#if 1
-void PrintSizedBuffer( TPM2B *sizedBuffer  )
-{
-    int i;
-
-    for( i = 0; i < sizedBuffer->size; i++  )
-    {
-        printf( "%2.2x ", sizedBuffer->buffer[i] );
-
-        if( ( (i+1) % 16  ) == 0  )
-        {
-            printf( "\n" );
-
-        }
-
-    }
-    printf( "\n" );
-}
-#endif
-
 void SaveWithBigEndian(FILE *file, const UINT16 &data)
 {
     BYTE tmp = (const BYTE)((data & 0xFF00) >> 8);
