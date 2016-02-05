@@ -61,6 +61,7 @@
 #include <tpm2sapi/tpm20.h>
 #include <tpm2tcti/tpmsockets.h>
 #include "common.h"
+#include "sample.h"
 
 int debugLevel = 0;
 char outFilePath[PATH_MAX] = {0};
@@ -72,6 +73,7 @@ TPM2B_ENCRYPTED_SECRET secret;
 
 TPMS_AUTH_COMMAND cmdAuth;
 TPMS_AUTH_COMMAND cmdAuth2;
+TPMS_AUTH_COMMAND cmdAuth3;
 
 int readCrtSecFromFile(const char *path,TPM2B_ID_OBJECT *credentialBlob, TPM2B_ENCRYPTED_SECRET *secret)
 {
@@ -109,19 +111,63 @@ int activateCredential()
     cmdAuth.sessionHandle = TPM_RS_PW;
     cmdAuth2.sessionHandle = TPM_RS_PW;
     *((UINT8 *)((void *)&cmdAuth.sessionAttributes)) = 0;
-
     *((UINT8 *)((void *)&cmdAuth2.sessionAttributes)) = 0;
+    *((UINT8 *)((void *)&cmdAuth3.sessionAttributes)) = 0;
 
-    TPMS_AUTH_COMMAND *cmdSessionArray[2] = { &cmdAuth, &cmdAuth2 };
+    TPMS_AUTH_COMMAND *cmdSessionArray[2] = { &cmdAuth, &cmdAuth3 };
     TSS2_SYS_CMD_AUTHS cmdAuthArray = { 2, &cmdSessionArray[0] };
 
-    rval = Tss2_Sys_ActivateCredential(sysContext,activateHandle ,keyHandle , &cmdAuthArray, &credentialBlob, &secret, &certInfoData, 0);
+    TPMS_AUTH_COMMAND *cmdSessionArray1[1] = { &cmdAuth2 };
+    TSS2_SYS_CMD_AUTHS cmdAuthArray1 = { 1, &cmdSessionArray1[0] };
+    SESSION *session;
+    TPM2B_ENCRYPTED_SECRET  encryptedSalt = { { 0, } };
+    TPM2B_NONCE         nonceCaller = { { 0, } };
+    TPMT_SYM_DEF symmetric;
+
+    symmetric.algorithm = TPM_ALG_NULL;
+
+    rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
+            0, &nonceCaller, &encryptedSalt, TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256 );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......StartAuthSessionWithParams Error. TPM Error:0x%x......\n", rval);
+        return -1;
+    }
+    printf("\nStartAuthSessionWithParams succ.......\n");
+
+    rval = Tss2_Sys_PolicySecret(sysContext, TPM_RH_ENDORSEMENT, session->sessionHandle, &cmdAuthArray1, 0, 0, 0, 0, 0, 0, 0);
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......Tss2_Sys_PolicySecret Error. TPM Error:0x%x......\n", rval);
+        return -2;
+    }
+    printf("\nTss2_Sys_PolicySecret succ.......\n");
+
+    cmdAuth3.sessionHandle = session->sessionHandle;
+    cmdAuth3.sessionAttributes.continueSession = 1;
+    cmdAuth3.hmac.t.size = 0;
+    rval = Tss2_Sys_ActivateCredential(sysContext, activateHandle, keyHandle, &cmdAuthArray, &credentialBlob, &secret, &certInfoData, 0);
     if(rval != TPM_RC_SUCCESS)
     {
         printf("\n......ActivateCredential failed. TPM Error:0x%x......\n", rval);
-        return -1;
+        return -3;
     }
     printf("\nActivate Credential succ.\n");
+
+    // Need to flush the session here.
+    rval = Tss2_Sys_FlushContext( sysContext, session->sessionHandle );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......TPM2_Sys_FlushContext Error. TPM Error:0x%x......\n", rval);
+        return -4;
+    }
+    // And remove the session from sessions table.
+    rval = EndAuthSession( session );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......EndAuthSession Error. TPM Error:0x%x......\n", rval);
+        return -5;
+    }
 
     printf("\nCertInfoData :\n");
     for (int k = 0; k<certInfoData.t.size; k++)
@@ -133,7 +179,7 @@ int activateCredential()
     if(saveDataToFile(outFilePath, certInfoData.t.buffer, certInfoData.t.size) == 0)
         printf("OutFile %s completed!\n",outFilePath);
     else
-        return -2;
+        return -6;
 
     return 0;
 }
@@ -149,7 +195,7 @@ void showHelp(const char *name)
         "-k, --keyHandle<hexHandle>  Loaded key used to decrypt the the random seed\n"
         "-C, --keyContext<filename>  filename for keyHandle context\n"
         "-P, --Password    <string>  the handle's password, optional\n"
-        "-K, --keyPassword <string>  the keyHandle's password, optional\n"
+        "-e, --endorsePasswd <string> the endorsement password, optional\n"
 
         "-f, --inFile   <filePath>   Input file path, containing the two structures needed by tpm2_activatecredential function\n"
         "-o, --outFile  <filePath>   Output file path, record the secret to decrypt the certificate\n"
@@ -161,7 +207,7 @@ void showHelp(const char *name)
         "\t3 (resource manager tables)\n"
     "\n"
         "Example:\n"
-        "%s -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -f <filePath> -o <filePath>\n"
+        "%s -H 0x81010002 -k 0x81010001 -P passwd -e new -f <filePath> -o <filePath>\n"
         , name, DEFAULT_RESMGR_TPM_PORT, name);
 }
 
@@ -176,7 +222,7 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:c:k:C:P:K:f:o:p:d:";
+    const char *optstring = "hvH:c:k:C:P:e:f:o:p:d:";
     struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
@@ -185,7 +231,7 @@ int main(int argc, char* argv[])
       {"keyHandle",1,NULL,'k'},
       {"keyContext",1,NULL,'C'},
       {"Password",1,NULL,'P'},
-      {"keyPassword",1,NULL,'K'},
+      {"endorsePasswd",1,NULL,'e'},
       {"inFile",1,NULL,'f'},
       {"outFile",1,NULL,'o'},
       {"port",1,NULL,'p'},
@@ -201,7 +247,7 @@ int main(int argc, char* argv[])
         c_flag = 0,
         k_flag = 0,
         C_flag = 0,
-        K_flag = 0,
+        e_flag = 0,
         P_flag = 0,
         f_flag = 0,
         o_flag = 0;
@@ -270,14 +316,14 @@ int main(int argc, char* argv[])
             }
             P_flag = 1;
             break;
-        case 'K':
+        case 'e':
             cmdAuth2.hmac.t.size = sizeof(cmdAuth2.hmac.t) - 2;
             if(str2ByteStructure(optarg,&cmdAuth2.hmac.t.size,cmdAuth2.hmac.t.buffer) != 0)
             {
                 returnVal = -6;
                 break;
             }
-            K_flag = 1;
+            e_flag = 1;
             break;
         case 'f':
             if(readCrtSecFromFile(optarg,&credentialBlob,&secret) != 0)
