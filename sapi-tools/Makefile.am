@@ -50,7 +50,7 @@ SAMPLE_SRC = \
 TPMTOOLS_COMMON_SRC = \
     $(SAMPLE_SRC) \
     $(COMMON_SRC) \
-    common.cpp
+    common.c
 
 INCLUDE_DIRS = -I$(srcdir)
 

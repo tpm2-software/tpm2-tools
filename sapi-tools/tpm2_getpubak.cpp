@@ -60,11 +60,12 @@
 #include <tpm2sapi/tpm20.h>
 #include <tpm2tcti/tpmsockets.h>
 #include "common.h"
+#include "sample.h"
 
 int debugLevel = 0;
 TPM_HANDLE persistentEKHandle;
 TPM_HANDLE persistentAKHandle;
-char ekPasswd[sizeof(TPMU_HA)];
+char endorsePasswd[sizeof(TPMU_HA)];
 char akPasswd[sizeof(TPMU_HA)];
 char ownerPasswd[sizeof(TPMU_HA)];
 char outputFile[PATH_MAX];
@@ -72,19 +73,6 @@ char aknameFile[PATH_MAX];
 UINT32 algorithmType = TPM_ALG_RSA;
 UINT32 digestAlg = TPM_ALG_SHA256;
 UINT32 signAlg = TPM_ALG_NULL;
-
-void PrintSizedBuffer( TPM2B *sizedBuffer  )
-{
-    int i;
-
-    for( i = 0; i < sizedBuffer->size; i++  )
-    {
-        printf( "%2.2x ", sizedBuffer->buffer[i] );
-        if( ( (i+1) % 16  ) == 0  )
-            printf( "\n" );
-    }
-    printf( "\n" );
-}
 
 int setRSASigningAlg(TPM2B_PUBLIC &inPublic)
 {
@@ -225,6 +213,11 @@ int createAK()
     TPM_HANDLE handle2048rsa = persistentEKHandle;
     TPM_HANDLE loadedSha1KeyHandle;
 
+    SESSION *session;
+    TPM2B_ENCRYPTED_SECRET  encryptedSalt = { { 0, } };
+    TPM2B_NONCE         nonceCaller = { { 0, } };
+    TPMT_SYM_DEF symmetric;
+
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
 
@@ -255,12 +248,34 @@ int createAK()
         return -1;
 
     sessionData.hmac.t.size = 0;
-
-    if( strlen( ekPasswd ) > 0 )
+    if( strlen( endorsePasswd ) > 0 )
     {
-        sessionData.hmac.t.size = strlen( ekPasswd );
-        memcpy( &( sessionData.hmac.t.buffer[0] ), &( ekPasswd[0] ), sessionData.hmac.t.size );
+        sessionData.hmac.t.size = strlen( endorsePasswd );
+        memcpy( &( sessionData.hmac.t.buffer[0] ), &( endorsePasswd[0] ), sessionData.hmac.t.size );
     }
+
+    symmetric.algorithm = TPM_ALG_NULL;
+
+    rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
+            0, &nonceCaller, &encryptedSalt, TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256 );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......StartAuthSessionWithParams Error. TPM Error:0x%x......\n", rval);
+        return -2;
+    }
+    printf("\nStartAuthSessionWithParams succ.......\n");
+
+    rval = Tss2_Sys_PolicySecret(sysContext, TPM_RH_ENDORSEMENT, session->sessionHandle, &sessionsData, 0, 0, 0, 0, 0, 0, 0);
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......Tss2_Sys_PolicySecret Error. TPM Error:0x%x......\n", rval);
+        return -3;
+    }
+    printf("\nTss2_Sys_PolicySecret succ.......\n");
+
+    sessionData.sessionHandle = session->sessionHandle;
+    sessionData.sessionAttributes.continueSession = 1;
+    sessionData.hmac.t.size = 0;
 
     rval = Tss2_Sys_Create( sysContext, handle2048rsa, &sessionsData, &inSensitive, &inPublic,
             &outsideInfo, &creationPCR, &outPrivate, &outPublic, &creationData,
@@ -268,16 +283,61 @@ int createAK()
     if( rval != TPM_RC_SUCCESS )
     {
         printf("\n......TPM2_Create Error. TPM Error:0x%x......\n", rval);
-        return -2;
+        return -4;
     }
     printf("\nTPM2_Create succ.......\n");
+
+    // Need to flush the session here.
+    rval = Tss2_Sys_FlushContext( sysContext, session->sessionHandle );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......TPM2_Sys_FlushContext Error. TPM Error:0x%x......\n", rval);
+        return -5;
+    }
+    // And remove the session from sessions table.
+    rval = EndAuthSession( session );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......EndAuthSession Error. TPM Error:0x%x......\n", rval);
+        return -6;
+    }
+
+    sessionData.sessionHandle = TPM_RS_PW;
+    sessionData.sessionAttributes.continueSession = 0;
+    sessionData.hmac.t.size = 0;
+    if( strlen( endorsePasswd ) > 0 )
+    {
+        sessionData.hmac.t.size = strlen( endorsePasswd );
+        memcpy( &( sessionData.hmac.t.buffer[0] ), &( endorsePasswd[0] ), sessionData.hmac.t.size );
+    }
+
+    rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
+            0, &nonceCaller, &encryptedSalt, TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256 );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......StartAuthSessionWithParams Error. TPM Error:0x%x......\n", rval);
+        return -7;
+    }
+    printf("\nStartAuthSessionWithParams succ.......\n");
+
+    rval = Tss2_Sys_PolicySecret(sysContext, TPM_RH_ENDORSEMENT, session->sessionHandle, &sessionsData, 0, 0, 0, 0, 0, 0, 0);
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......Tss2_Sys_PolicySecret Error. TPM Error:0x%x......\n", rval);
+        return -8;
+    }
+    printf("\nTss2_Sys_PolicySecret succ.......\n");
+
+    sessionData.sessionHandle = session->sessionHandle;
+    sessionData.sessionAttributes.continueSession = 1;
+    sessionData.hmac.t.size = 0;
 
     rval = Tss2_Sys_Load ( sysContext, handle2048rsa, &sessionsData, &outPrivate, &outPublic,
             &loadedSha1KeyHandle, &name, &sessionsDataOut);
     if( rval != TPM_RC_SUCCESS )
     {
         printf("\n......TPM2_Load Error. TPM Error:0x%x......\n", rval);
-        return -3;
+        return -9;
     }
 
     printf( "\nName of loaded key: \n" );
@@ -289,21 +349,40 @@ int createAK()
     if( saveDataToFile(aknameFile, &name.t.name[0], name.t.size) )
     {
        printf("\n......Failed to save AK name into file(%s)......\n", aknameFile);
-       return -4;
+       return -10;
     }
 
-    // use the owner auth here.
+    // Need to flush the session here.
+    rval = Tss2_Sys_FlushContext( sysContext, session->sessionHandle );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......TPM2_Sys_FlushContext Error. TPM Error:0x%x......\n", rval);
+        return -11;
+    }
+
+    // And remove the session from sessions table.
+    rval = EndAuthSession( session );
+    if( rval != TPM_RC_SUCCESS )
+    {
+        printf("\n......EndAuthSession Error. TPM Error:0x%x......\n", rval);
+        return -12;
+    }
+
+    sessionData.sessionHandle = TPM_RS_PW;
+    sessionData.sessionAttributes.continueSession = 0;
     sessionData.hmac.t.size = 0;
+    // use the owner auth here.
     if( strlen( ownerPasswd ) > 0 )
     {
         sessionData.hmac.t.size = strlen( ownerPasswd );
         memcpy( &( sessionData.hmac.t.buffer[0] ), &( ownerPasswd[0] ), sessionData.hmac.t.size );
     }
+
     rval = Tss2_Sys_EvictControl(sysContext, TPM_RH_OWNER, loadedSha1KeyHandle, &sessionsData, persistentAKHandle, &sessionsDataOut);
     if( rval != TPM_RC_SUCCESS )
     {
         printf("\n......TPM2_EvictControl Error. TPM Error:0x%x......\n", rval);
-        return -5;
+        return -13;
     }
     printf("\nEvictControl: Make AK persistent succ.\n");
 
@@ -311,15 +390,15 @@ int createAK()
     if( rval != TPM_RC_SUCCESS )
     {
         printf("\n......Flush transient AK error. TPM Error:0x%x......\n", rval);
-        return -6;
+        return -14;
     }
-    printf("Flush transient AK succ.\n");
+    printf("\nFlush transient AK succ.\n");
 
     // save ak public
     if( saveDataToFile(outputFile, (UINT8 *)&outPublic, sizeof(outPublic)) )
     {
         printf("\n......Failed to save AK pub key into file(%s)......\n", outputFile);
-        return -7;
+        return -15;
     }
 
     return 0;
@@ -330,20 +409,20 @@ void showHelp(const char *name)
     showVersion(name);
     printf("Usage: %s [-h/--help]\n"
            "   or: %s [-v/--version]\n"
-           "   or: %s [-a/--ekPasswd <password>] [-P/--akPasswd <password>] [-o/--ownerPasswd <password>]\n"
-           "                     [-e/--ekHandle <hexHandle>] [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] [-D/--digestAlg <hexAlg>]\n"
+           "   or: %s [-e/--endorsePasswd <password>] [-P/--akPasswd <password>] [-o/--ownerPasswd <password>]\n"
+           "                     [-E/--ekHandle <hexHandle>] [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] [-D/--digestAlg <hexAlg>]\n"
            "                     [-s/--signAlg <hexAlg>] [-f/--file <outputFile>] [-n/--akName <aknameFile>]\n"
-           "   or: %s [-a/--ekPasswd <password>] [-P/--akPasswd <password>] [-o/--ownerPasswd <password>]\n"
-           "                     [-e/--ekHandle <hexHandle>] [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] [-D/--digestAlg <hexAlg>]\n"
+           "   or: %s [-e/--endorsePasswd <password>] [-P/--akPasswd <password>] [-o/--ownerPasswd <password>]\n"
+           "                     [-E/--ekHandle <hexHandle>] [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] [-D/--digestAlg <hexAlg>]\n"
            "                     [-s/--signAlg <hexAlg>] [-f/--file <outputFile>] [-n/--akName <aknameFile>]\n"
            "                     [-i/--ip <ipAddress>] [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
            "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
            "   -v/--version                    display version information and exit.\n"
-           "   -a/--ekPasswd    <password>     specifies current EK password (string,optional,default:NULL).\n"
+           "   -e/--endorsePasswd <password>   specifies current endorsement password (string,optional,default:NULL).\n"
            "   -P/--akPasswd    <password>     specifies the AK password when created (string,optional,default:NULL).\n"
            "   -o/--ownerPasswd <password>     specifies current owner password (string,optional,default:NULL).\n"
-           "   -e/--ekHandle    <hexHandle>    specifies the handle of EK (hex).\n"
+           "   -E/--ekHandle    <hexHandle>    specifies the handle of EK (hex).\n"
            "   -k/--akHandle    <hexHandle>    specifies the handle used to make AK persistent (hex).\n"
            "   -g/--alg         <hexAlg>       specifies the algorithm type of AK (default:0x01/TPM_ALG_RSA):\n"
            "                                      TPM_ALG_RSA             0x0001\n"
@@ -372,7 +451,7 @@ void showHelp(const char *name)
            "                                     2 (resource manager send/receive byte streams)\n"
            "                                     3 (resource manager tables)\n"
            "\nexample:\n"
-           "   %s -a abc123 -P abc123 -o passwd -e 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name\n"
+           "   %s -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name\n"
            , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
 }
 
@@ -387,8 +466,8 @@ int main(int argc, char *argv[])
     struct option sOpts[] =
     {
         { "ownerPasswd", required_argument, NULL, 'o' },
-        { "ekPasswd"   , required_argument, NULL, 'a' },
-        { "ekHandle"   , required_argument, NULL, 'e' },
+        { "endorsePasswd", required_argument, NULL, 'e' },
+        { "ekHandle"   , required_argument, NULL, 'E' },
         { "akHandle"   , required_argument, NULL, 'k' },
         { "alg"        , required_argument, NULL, 'g' },
         { "digestAlg"  , required_argument, NULL, 'D' },
@@ -416,7 +495,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "o:a:e:k:g:D:s:P:f:n:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "o:E:e:k:g:D:s:P:f:n:p:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -427,7 +506,7 @@ int main(int argc, char *argv[])
             showVersion(argv[0]);
             return 0;
 
-        case 'e':
+        case 'E':
             if( getSizeUint32Hex(optarg, &persistentEKHandle) )
             {
                 printf("\nPlease input the persistent EK handle(hex) in correct format.\n");
@@ -476,13 +555,13 @@ int main(int argc, char *argv[])
             safeStrNCpy(ownerPasswd, optarg, sizeof(ownerPasswd));
             break;
 
-        case 'a':
+        case 'e':
             if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
             {
-                printf("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
+                printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -8;
             }
-            safeStrNCpy(ekPasswd, optarg, sizeof(ekPasswd));
+            safeStrNCpy(endorsePasswd, optarg, sizeof(endorsePasswd));
             break;
 
         case 'P':
