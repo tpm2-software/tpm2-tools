@@ -25,16 +25,48 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <tss2/tpm20.h>
+#ifndef ENDIANCONV_H
+#define ENDIANCONV_H
 
-void CatSizedByteBuffer( TPM2B *dest, TPM2B *src )
-{
-    int i;
+#ifndef TSS2_API_VERSION_1_1_1_1
+#error Version mismatch among TSS2 header files !
+#endif  /* TSS2_API_VERSION_1_1_1_1 */
 
-    if( dest != 0  && src != 0 )
-    {
-        for( i = 0; i < src->size; i++ )
-            dest->buffer[ dest->size + i] = src->buffer[i];
-        dest->size += src->size;
-    }
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+//
+// Comment out following line for big endian CPUs.
+//
+#define LITTLE_ENDIAN_CPU
+
+#ifdef LITTLE_ENDIAN_CPU
+
+UINT64 ChangeEndianQword( UINT64 p );
+UINT32 ChangeEndianDword( UINT32 p );
+UINT16 ChangeEndianWord( UINT16 p );
+
+// CPU is little endian, so bytes need to be swapped.
+#define CHANGE_ENDIAN_WORD(p) ( ChangeEndianWord (p) )
+
+#define CHANGE_ENDIAN_DWORD(p) ( ChangeEndianDword(p) )
+
+#define CHANGE_ENDIAN_QWORD(p) ( ChangeEndianQword(p) )
+#else
+ // If CPU is big-endian, no need to do endianness swapping.
+
+#define CHANGE_ENDIAN_WORD(p)  p
+
+#define CHANGE_ENDIAN_DWORD(p) p
+
+#define CHANGE_ENDIAN_QWORD(p) p
+#endif
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif

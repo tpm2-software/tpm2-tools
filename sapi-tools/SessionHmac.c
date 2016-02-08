@@ -25,11 +25,10 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <tpm2sapi/tpm20.h>   
+#include <tss2/tpm20.h>
 #include "sample.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <tpm2sapi/tss2_sysapi_util.h>
 
 //
 // This function calculates the session HMAC and updates session state.

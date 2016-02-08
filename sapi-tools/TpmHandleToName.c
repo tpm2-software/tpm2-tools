@@ -25,9 +25,9 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <tpm2sapi/tpm20.h>   
+#include <tss2/tpm20.h>
+#include "changeEndian.h"
 #include "sample.h"
-#include <tpm2sapi/tss2_sysapi_util.h>
 
 //
 //

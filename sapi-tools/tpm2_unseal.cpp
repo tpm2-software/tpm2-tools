@@ -57,9 +57,9 @@
 #include <ctype.h>
 #include <getopt.h>
 
-#include <tpm2sapi/tpm20.h>
+#include <tss2/tpm20.h>
 //#include "sample.h"
-#include <tpm2tcti/tpmsockets.h>
+#include <tcti/tpmsockets.h>
 #include "common.h"
 
 int debugLevel = 0;

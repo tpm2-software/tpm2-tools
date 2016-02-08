@@ -60,9 +60,9 @@
 #include <getopt.h>
 
 
-#include <tpm2sapi/tpm20.h>
+#include <tss2/tpm20.h>
 #include "sample.h"
-#include <tpm2tcti/tpmsockets.h>
+#include <tcti/tpmsockets.h>
 #include "syscontext.h"
 #include "debug.h"
 #include "common.h"
@@ -72,8 +72,6 @@ char errorString[errorStringSize];
 
 #define rmInterfaceConfigSize 250
 char rmInterfaceConfig[rmInterfaceConfigSize];
-
-TSS2_TCTI_DRIVER_INFO resMgrInterfaceInfo = { "resMgr", "", InitSocketsTcti, TeardownSocketsTcti };
 
 TSS2_TCTI_CONTEXT *resMgrTctiContext = 0;
 TSS2_ABI_VERSION abiVersion = { TSSWG_INTEROP, TSS_SAPI_FIRST_FAMILY, TSS_SAPI_FIRST_LEVEL, TSS_SAPI_FIRST_VERSION };
@@ -223,7 +221,7 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
 
     TSS2_RC rval;
 
-    rval = resMgrInterfaceInfo.initialize(NULL, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
+    rval = InitSocketsTcti(NULL, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
     if( rval != TSS2_RC_SUCCESS )
         return rval;
 
@@ -231,7 +229,7 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
 
     if( *tctiContext )
     {
-        rval = resMgrInterfaceInfo.initialize(*tctiContext, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
+        rval = InitSocketsTcti(*tctiContext, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
     }
     else
     {
@@ -242,7 +240,7 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
 
 TSS2_RC TeardownTctiResMgrContext( char *interfaceConfig, TSS2_TCTI_CONTEXT *tctiContext, char *name )
 {
-    return resMgrInterfaceInfo.teardown( tctiContext, interfaceConfig, name );
+    return TeardownSocketsTcti(tctiContext, interfaceConfig, name);
 }
 
 void Cleanup()
@@ -274,12 +272,8 @@ int prepareTest(const char *hostName, const int port, int debugLevel)
     rval = InitTctiResMgrContext( rmInterfaceConfig, &resMgrTctiContext, &resMgrInterfaceName[0] );
     if( rval != TSS2_RC_SUCCESS )
     {
-        printf( "Resource Mgr, %s, failed initialization: 0x%x.  Exiting...\n", resMgrInterfaceInfo.shortName, rval );
+        printf( "Resource Mgr, %s, failed initialization: 0x%x.  Exiting...\n", "resMgr", rval );
         Cleanup();
-    }
-    else
-    {
-        (( TSS2_TCTI_CONTEXT_INTEL *)resMgrTctiContext )->status.debugMsgLevel = debugLevel;
     }
 
     sysContext = InitSysContext( 0, resMgrTctiContext, &abiVersion );

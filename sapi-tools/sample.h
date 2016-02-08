@@ -33,7 +33,7 @@ extern "C" {
 #endif
 
 
-#include <tpm2sapi/tss2_tpm2_types.h>
+#include <tss2/tss2_tpm2_types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "syscontext.h"

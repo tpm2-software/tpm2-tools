@@ -35,6 +35,7 @@ COMMON_SRC = \
     syscontext.c
 SAMPLE_SRC = \
     CatSizedByteBuffer.c \
+    changeEndian.c \
     CopySizedBuffer.c \
     DecryptEncrypt.c \
     Entity.c \
