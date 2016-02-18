@@ -37,7 +37,7 @@ AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
 LDADD = -ltss2 -ltctisocket src/libcommon.a
 
 noinst_LIBRARIES = src/libcommon.a
-noinst_PROGRAMS = src/tpm2_listpcrs \
+sbin_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_quote \
 		  src/tpm2_takeownership \
 		  src/tpm2_getpubek \
