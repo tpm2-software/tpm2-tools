@@ -30,6 +30,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+ACLOCAL_AMFLAGS = -I m4
+
 INCLUDE_DIRS = -I$(srcdir)
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
