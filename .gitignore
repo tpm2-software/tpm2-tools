@@ -12,6 +12,7 @@ missing
 Makefile
 Makefile.in
 tss/
+src/libcommon.a
 src/tpm2_activatecredential
 src/tpm2_hash
 src/tpm2_nvlist

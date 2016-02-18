@@ -30,33 +30,13 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-COMMON_SRC = \
-    src/debug.c \
-    src/syscontext.c
-SAMPLE_SRC = \
-    src/CatSizedByteBuffer.c \
-    src/CopySizedBuffer.c \
-    src/DecryptEncrypt.c \
-    src/Entity.c \
-    src/kdfa.c \
-    src/LoadExternalHMACKey.c \
-    src/SessionHmac.c \
-    src/StartAuthSession.c \
-    src/TpmCalcPHash.c \
-    src/TpmHandleToName.c \
-    src/TpmHash.c \
-    src/TpmHmac.c
-
-TPMTOOLS_COMMON_SRC = \
-    $(SAMPLE_SRC) \
-    $(COMMON_SRC) \
-    src/common.c
-
 INCLUDE_DIRS = -I$(srcdir)
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
+LDADD = -ltss2 -ltctisocket src/libcommon.a
 
+noinst_LIBRARIES = src/libcommon.a
 noinst_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_quote \
 		  src/tpm2_takeownership \
@@ -86,33 +66,51 @@ noinst_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_sign \
 		  src/tpm2_unseal \
 		  src/tpm2_verifysignature
-LDADD = -ltss2 -ltctisocket
-src_tpm2_listpcrs_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_listpcrs.cpp
-src_tpm2_quote_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_quote.cpp
-src_tpm2_takeownership_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_takeownership.cpp
-src_tpm2_getpubek_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_getpubek.cpp
-src_tpm2_getpubak_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_getpubak.cpp
-src_tpm2_akparse_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_akparse.cpp
-src_tpm2_makecredential_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_makecredential.cpp
-src_tpm2_activatecredential_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_activatecredential.cpp
-src_tpm2_hash_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_hash.cpp
-src_tpm2_nvlist_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_nvlist.cpp
-src_tpm2_nvread_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_nvread.cpp
-src_tpm2_nvwrite_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_nvwrite.cpp
-src_tpm2_nvdefine_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_nvdefine.cpp
-src_tpm2_nvrelease_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_nvrelease.cpp
-src_tpm2_createprimary_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_createprimary.cpp
-src_tpm2_create_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_create.cpp
-src_tpm2_hmac_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_hmac.cpp
-src_tpm2_certify_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_certify.cpp
-src_tpm2_readpublic_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_readpublic.cpp
-src_tpm2_getrandom_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_getrandom.cpp
-src_tpm2_encryptdecrypt_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_encryptdecrypt.cpp
-src_tpm2_evictcontrol_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_evictcontrol.cpp
-src_tpm2_load_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_load.cpp
-src_tpm2_loadexternal_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_loadexternal.cpp
-src_tpm2_rsadecrypt_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_rsadecrypt.cpp
-src_tpm2_rsaencrypt_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_rsaencrypt.cpp
-src_tpm2_sign_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_sign.cpp
-src_tpm2_unseal_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_unseal.cpp
-src_tpm2_verifysignature_SOURCES = $(TPMTOOLS_COMMON_SRC) src/tpm2_verifysignature.cpp
+
+COMMON_SRC = \
+    src/common.c \
+    src/debug.c \
+    src/syscontext.c \
+    src/CatSizedByteBuffer.c \
+    src/CopySizedBuffer.c \
+    src/DecryptEncrypt.c \
+    src/Entity.c \
+    src/kdfa.c \
+    src/LoadExternalHMACKey.c \
+    src/SessionHmac.c \
+    src/StartAuthSession.c \
+    src/TpmCalcPHash.c \
+    src/TpmHandleToName.c \
+    src/TpmHash.c \
+    src/TpmHmac.c
+
+src_libcommon_a_SOURCES = $(COMMON_SRC)
+src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.cpp
+src_tpm2_quote_SOURCES = src/tpm2_quote.cpp
+src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.cpp
+src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.cpp
+src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.cpp
+src_tpm2_akparse_SOURCES = src/tpm2_akparse.cpp
+src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.cpp
+src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.cpp
+src_tpm2_hash_SOURCES = src/tpm2_hash.cpp
+src_tpm2_nvlist_SOURCES = src/tpm2_nvlist.cpp
+src_tpm2_nvread_SOURCES = src/tpm2_nvread.cpp
+src_tpm2_nvwrite_SOURCES = src/tpm2_nvwrite.cpp
+src_tpm2_nvdefine_SOURCES = src/tpm2_nvdefine.cpp
+src_tpm2_nvrelease_SOURCES = src/tpm2_nvrelease.cpp
+src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.cpp
+src_tpm2_create_SOURCES = src/tpm2_create.cpp
+src_tpm2_hmac_SOURCES = src/tpm2_hmac.cpp
+src_tpm2_certify_SOURCES = src/tpm2_certify.cpp
+src_tpm2_readpublic_SOURCES = src/tpm2_readpublic.cpp
+src_tpm2_getrandom_SOURCES = src/tpm2_getrandom.cpp
+src_tpm2_encryptdecrypt_SOURCES = src/tpm2_encryptdecrypt.cpp
+src_tpm2_evictcontrol_SOURCES = src/tpm2_evictcontrol.cpp
+src_tpm2_load_SOURCES = src/tpm2_load.cpp
+src_tpm2_loadexternal_SOURCES = src/tpm2_loadexternal.cpp
+src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.cpp
+src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.cpp
+src_tpm2_sign_SOURCES = src/tpm2_sign.cpp
+src_tpm2_unseal_SOURCES = src/tpm2_unseal.cpp
+src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.cpp
