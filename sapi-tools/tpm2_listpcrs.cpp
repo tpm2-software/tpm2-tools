@@ -57,8 +57,8 @@
 #include <ctype.h>
 #include <getopt.h>
 
-#include <tpm2sapi/tpm20.h>
-#include <tpm2tcti/tpmsockets.h>
+#include <tss2/tpm20.h>
+#include <tcti/tcti_socket.h>
 #include "common.h"
 
 #define SET_PCR_SELECT_BIT( pcrSelection, pcr ) \

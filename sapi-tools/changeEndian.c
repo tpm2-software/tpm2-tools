@@ -27,14 +27,28 @@
 
 #include <tss2/tpm20.h>
 
-void CatSizedByteBuffer( TPM2B *dest, TPM2B *src )
+UINT64 ChangeEndianQword( UINT64 p )
 {
-    int i;
-
-    if( dest != 0  && src != 0 )
-    {
-        for( i = 0; i < src->size; i++ )
-            dest->buffer[ dest->size + i] = src->buffer[i];
-        dest->size += src->size;
-    }
+    return( ((const UINT64)(((p)& 0xFF) << 56))    | \
+          ((const UINT64)(((p)& 0xFF00) << 40))   | \
+          ((const UINT64)(((p)& 0xFF0000) << 24)) | \
+          ((const UINT64)(((p)& 0xFF000000) << 8)) | \
+          ((const UINT64)(((p)& 0xFF00000000) >> 8)) | \
+          ((const UINT64)(((p)& 0xFF0000000000) >> 24)) | \
+          ((const UINT64)(((p)& 0xFF000000000000) >> 40)) | \
+          ((const UINT64)(((p)& 0xFF00000000000000) >> 56)) );
 }
+
+UINT32 ChangeEndianDword( UINT32 p )
+{
+    return( ((const UINT32)(((p)& 0xFF) << 24))    | \
+          ((const UINT32)(((p)& 0xFF00) << 8))   | \
+          ((const UINT32)(((p)& 0xFF0000) >> 8)) | \
+          ((const UINT32)(((p)& 0xFF000000) >> 24)));
+}
+
+UINT16 ChangeEndianWord( UINT16 p )
+{
+    return( ((const UINT16)(((p)& 0xFF) << 8)) | ((const UINT16)(((p)& 0xFF00) >> 8)));
+}
+
