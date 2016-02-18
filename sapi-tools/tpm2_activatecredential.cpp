@@ -59,7 +59,7 @@
 #include <getopt.h>
 
 #include <tss2/tpm20.h>
-#include <tcti/tpmsockets.h>
+#include <tcti/tcti_socket.h>
 #include "common.h"
 #include "sample.h"
 

@@ -62,7 +62,7 @@
 
 #include <tss2/tpm20.h>
 #include "sample.h"
-#include <tcti/tpmsockets.h>
+#include <tcti/tcti_socket.h>
 #include "syscontext.h"
 #include "debug.h"
 #include "common.h"
@@ -221,7 +221,7 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
 
     TSS2_RC rval;
 
-    rval = InitSocketsTcti(NULL, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
+    rval = InitSocketTcti(NULL, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
     if( rval != TSS2_RC_SUCCESS )
         return rval;
 
@@ -229,7 +229,7 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
 
     if( *tctiContext )
     {
-        rval = InitSocketsTcti(*tctiContext, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
+        rval = InitSocketTcti(*tctiContext, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
     }
     else
     {
@@ -240,7 +240,7 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
 
 TSS2_RC TeardownTctiResMgrContext( char *interfaceConfig, TSS2_TCTI_CONTEXT *tctiContext, char *name )
 {
-    return TeardownSocketsTcti(tctiContext, interfaceConfig, name);
+    return TeardownSocketTcti(tctiContext, interfaceConfig, name);
 }
 
 void Cleanup()

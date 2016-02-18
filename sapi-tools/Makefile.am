@@ -87,7 +87,7 @@ noinst_PROGRAMS = tpm2_listpcrs \
 		  tpm2_sign \
 		  tpm2_unseal \
 		  tpm2_verifysignature
-LDADD = -ltpm2sapi -ltpm2tctisock
+LDADD = -ltss2 -ltctisocket
 tpm2_listpcrs_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_listpcrs.cpp
 tpm2_quote_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_quote.cpp
 tpm2_takeownership_SOURCES = $(TPMTOOLS_COMMON_SRC) tpm2_takeownership.cpp
