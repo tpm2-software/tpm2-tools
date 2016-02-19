@@ -36,7 +36,7 @@ INCLUDE_DIRS = -I$(srcdir)
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
-LDADD = -ltss2 -ltctisocket src/libcommon.a
+LDADD = src/libcommon.a -ltss2 -ltctisocket
 
 noinst_LIBRARIES = src/libcommon.a
 sbin_PROGRAMS = src/tpm2_listpcrs \
