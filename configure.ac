@@ -21,4 +21,6 @@ AC_CHECK_HEADER([tcti/tcti_socket.h],
                  ],
                 [AC_MSG_ERROR([Missing TCTI socket header.])],
                 [#include <tss2/tpm20.h>])
+AC_CHECK_LIB([tss2], [Tss2_Sys_GetContextSize], [],
+             [AC_MSG_ERROR([Missing TSS2 library.])], [])
 AC_OUTPUT
