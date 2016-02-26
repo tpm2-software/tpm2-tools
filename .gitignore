@@ -47,3 +47,4 @@ src/tpm2_evictcontrol
 src/tpm2_getpubek
 src/tpm2_takeownership
 src/tpm2_loadexternal
+src/tpm2_getmanufec
