@@ -21,6 +21,24 @@ AC_CHECK_HEADER([tcti/tcti_socket.h],
                  ],
                 [AC_MSG_ERROR([Missing TCTI socket header.])],
                 [#include <tss2/tpm20.h>])
+AC_CHECK_HEADER([openssl/sha.h],
+                [
+                 AC_DEFINE([HAVE_OPENSSL_H],
+                           [1],
+                           [Define if sha.h exists.])
+                 ],
+                [AC_MSG_ERROR([Missing OPENSSL headers.])])
+AC_CHECK_HEADER([curl/curl.h],
+                [
+                 AC_DEFINE([HAVE_CURL_H],
+                           [1],
+                           [Define if curl.h exists.])
+                 ],
+                [AC_MSG_ERROR([Missing CURL headers.])])
 AC_CHECK_LIB([tss2], [Tss2_Sys_GetContextSize], [],
              [AC_MSG_ERROR([Missing TSS2 library.])], [])
+AC_CHECK_LIB([crypto], [SHA256_Init], [],
+             [AC_MSG_ERROR([Missing CRYPTO library.])], [])
+AC_CHECK_LIB([curl], [curl_easy_init], [],
+             [AC_MSG_ERROR([Missing CURL library.])], [])
 AC_OUTPUT
