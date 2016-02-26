@@ -7,6 +7,8 @@ C++ compiler
 C Library Development Libraries and Header Files (for pthreads headers)
 TPM2.0 TSS socket TCTI library and header files
 TPM2.0 TSS SAPI library and header files
+OpenSSL library and header files
+Curl library and header files
 
 To obtain the tpm2.0-tools sources you must clone them as below:
 git clone https://github.com/01org/tpm2.0-tools
@@ -16,5 +18,7 @@ source directory:
 $ ./bootstrap
 $ ./configure
 $ make
+$ sudo make install
 
-All executables are generated under ./sapi-tools/ directory.
+All executables are generated under ./src/ directory, and will be installed under
+/usr/local/sbin/ directory.
