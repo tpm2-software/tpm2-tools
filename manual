@@ -187,6 +187,41 @@ where:
 example:
     ./tpm2_getpubek -e abc123 -o abc123 -P passwd -H 0x81010001 -g 0x01 -f ek.pub
 
+* tpm2_getmanufec
+Retrieve the Endorsement Credential Certificate for the TPM endorsement key from the TPM manufacturer's endorsement certificate hosting server
+
+Usage: ./tpm2_getmanufec [-h/--help]
+   or: ./tpm2_getmanufec [-v/--version]
+   or: ./tpm2_getmanufec [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] [-P/--ekPasswd <password>]
+                     [-H/--handle <hexHandle>] [-g/--alg <hexAlg>] [-f/--file <outputFile>]
+                     [-S/--EKserverAddr <EKserverAddr>] [-E/--ECcertFile <ECcertFile>]
+                     [-i/--ip <ipAddress>] [-p/--port <port>] [-d/--dbg <dbgLevel>]
+
+where:
+
+   -h/--help                         display this help and exit.
+   -v/--version                      display version information and exit.
+   -e/--endorsePasswd <password>     specifies current endorse password (string,optional,default:NULL).
+   -o/--ownerPasswd   <password>     specifies current owner password (string,optional,default:NULL).
+   -P/--ekPasswd      <password>     specifies the EK password when created (string,optional,default:NULL).
+   -H/--handle        <hexHandle>    specifies the handle used to make EK persistent (hex).
+   -g/--alg           <hexAlg>       specifies the algorithm type of EK (default:0x01/TPM_ALG_RSA).
+   -f/--file          <outputFile>   specifies the file used to save the public portion of EK.
+   -p/--port          <port>         specifies the port number (optional,default:2323).
+   -N/--NonPersistent                specifies to readout the EK public without making it persistent
+   -O/--OfflineProv                  specifies that the file specifier from '-f' is an EK retrieved from offline platform that needs to be provisioned
+   -E/--ECcertFile    <ECcertFile>   specifies the file used to save the Endorsement Credentials retrieved from the TPM manufacturer provisioning server
+   -S/--EKserverAddr  <EKserverAddr> specifies to attempt retrieving the Endorsement Credentials from the specified TPM manufacturer provisioning server
+   -U/--SSL_NO_VERIFY                specifies to attempt connecting with the TPM manufacturer provisioning server with SSL_NO_VERIFY option
+   -d/--dbg           <dbgLevel>     specifies level of debug messages(optional,default:0):
+                                     0 (high level test results)
+                                     1 (test app send/receive byte streams)
+                                     2 (resource manager send/receive byte streams)
+                                     3 (resource manager tables)
+
+example:
+   ./tpm2_getmanufec -e abc123 -o abc123 -P passwd -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/ 
+
 * tpm2_getpubak
 Generate attestation key with given algorithm under endorsement hierarchy,
 make it persistent with given ak handle, and return pub AK and AK name,

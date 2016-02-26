@@ -10,6 +10,7 @@ tpm2_nvlist
 ##Subset 2: Attestation tools
 tpm2_takeownership
 tpm2_getpubek
+tpm2_getmanufec
 tpm2_getpubak
 tpm2_akparse
 tpm2_makecredential

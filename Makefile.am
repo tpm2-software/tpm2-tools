@@ -36,7 +36,7 @@ INCLUDE_DIRS = -I$(srcdir)
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
-LDADD = src/libcommon.a -ltctisocket
+LDADD = src/libcommon.a -ltctisocket -lcrypto -lssl -lcurl
 
 noinst_LIBRARIES = src/libcommon.a
 sbin_PROGRAMS = src/tpm2_listpcrs \
@@ -44,6 +44,7 @@ sbin_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_takeownership \
 		  src/tpm2_getpubek \
 		  src/tpm2_getpubak \
+		  src/tpm2_getmanufec \
 		  src/tpm2_akparse \
 		  src/tpm2_makecredential \
 		  src/tpm2_activatecredential \
@@ -92,6 +93,7 @@ src_tpm2_quote_SOURCES = src/tpm2_quote.cpp
 src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.cpp
 src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.cpp
 src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.cpp
+src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.cpp
 src_tpm2_akparse_SOURCES = src/tpm2_akparse.cpp
 src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.cpp
 src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.cpp
