@@ -118,7 +118,7 @@ int setScheme(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *inS
 int sign(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, BYTE *msg, UINT16 length, TPMT_TK_HASHCHECK *validation, const char *outFilePath)
 {
     UINT32 rval;
-    TPM2B_DIGEST digest;
+    TPM2B_DIGEST digest = { {sizeof(TPM2B_DIGEST)-2, } };
     TPMT_SIG_SCHEME inScheme;
     TPMT_SIGNATURE signature;
 
