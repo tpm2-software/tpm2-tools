@@ -64,7 +64,7 @@
 int debugLevel = 0;
 BYTE *msg = NULL;
 UINT16 msgLen = 0;
-TPM2B_DIGEST msgHash;
+TPM2B_DIGEST msgHash = { { sizeof(TPM2B_DIGEST)-2, } };
 
 int verifySignature(TPMI_DH_OBJECT keyHandle, int D_flag, TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature, const char *outFilePath)
 {
