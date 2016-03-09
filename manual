@@ -11,6 +11,9 @@ $ ./bootstrap
 $ ./configure
 $ make
 
+Install:
+$ sudo make install
+
 Launch resourcemgr daemon:
 $ resourcemgr
 or
@@ -20,9 +23,12 @@ The resourcemgr can connect to either physical tpm or remote MS/IBM simulator,
 refer to the help of resourcemgr for details.
 
 2. running tools
-All tool executables are built under ./sapi-tools/. So once resourcemgr is up:
-$ cd ./sapi-tools
+All tool executables are built under ./src/. So once resourcemgr is up:
+$ cd ./src
 $ ./tpm2_xxx -x...
+
+Or if the tools are installed:
+$ tpm2_xxx -x...
 
 3. tool usages
 Common options:
