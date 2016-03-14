@@ -5,6 +5,7 @@ Below is the name list of the implemented tools:
 tpm2_nvdefine
 tpm2_nvrelease
 tpm2_nvread
+tpm2_nvreadlock
 tpm2_nvwrite
 tpm2_nvlist
 ##Subset 2: Attestation tools
