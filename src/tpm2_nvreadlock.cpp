@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "x:a:s:o:P:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "x:a:P:p:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
