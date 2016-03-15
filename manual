@@ -11,6 +11,9 @@ $ ./bootstrap
 $ ./configure
 $ make
 
+Install:
+$ sudo make install
+
 Launch resourcemgr daemon:
 $ resourcemgr
 or
@@ -20,9 +23,12 @@ The resourcemgr can connect to either physical tpm or remote MS/IBM simulator,
 refer to the help of resourcemgr for details.
 
 2. running tools
-All tool executables are built under ./sapi-tools/. So once resourcemgr is up:
-$ cd ./sapi-tools
+All tool executables are built under ./src/. So once resourcemgr is up:
+$ cd ./src
 $ ./tpm2_xxx -x...
+
+Or if the tools are installed:
+$ tpm2_xxx -x...
 
 3. tool usages
 Common options:
@@ -101,6 +107,10 @@ where:
 example:
     /tpm2_nvread -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0
 
+* tpm2_nvwrite
+write content from a file to a specified index, if any passwd option is
+missing, assume NULL.
+
 * tpm2_nvreadlock
 lock the NV index for further reads until the machine is restarted
 
@@ -128,10 +138,6 @@ where:
 
 example:
    tpm2_nvreadlock -x 0x1500016 -a 0x40000001 -P passwd
-
-* tpm2_nvwrite
-write content from a file to a specified index, if any passwd option is
-missing, assume NULL.
 
 Usage:
 tpm2_nvwrite [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] 
@@ -716,6 +722,3 @@ Access to the public area of a loaded object.
 example:
     ./tpm2_readpublic -H 0x81010002 -opu <pubKeyFileName>
     ./tpm2_readpublic -c obj.context -opu <pubKeyFileName>
-
-
-
