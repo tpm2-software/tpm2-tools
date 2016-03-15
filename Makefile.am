@@ -51,6 +51,7 @@ sbin_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_hash \
 		  src/tpm2_nvlist \
 		  src/tpm2_nvread \
+		  src/tpm2_nvreadlock \
 		  src/tpm2_nvwrite \
 		  src/tpm2_nvdefine \
 		  src/tpm2_nvrelease \
@@ -100,6 +101,7 @@ src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.cpp
 src_tpm2_hash_SOURCES = src/tpm2_hash.cpp
 src_tpm2_nvlist_SOURCES = src/tpm2_nvlist.cpp
 src_tpm2_nvread_SOURCES = src/tpm2_nvread.cpp
+src_tpm2_nvreadlock_SOURCES = src/tpm2_nvreadlock.cpp
 src_tpm2_nvwrite_SOURCES = src/tpm2_nvwrite.cpp
 src_tpm2_nvdefine_SOURCES = src/tpm2_nvdefine.cpp
 src_tpm2_nvrelease_SOURCES = src/tpm2_nvrelease.cpp
