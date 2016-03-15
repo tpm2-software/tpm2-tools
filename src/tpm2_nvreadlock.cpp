@@ -1,5 +1,6 @@
 //**********************************************************************;
-// Copyright (c) 2015, Atom Software Studios, s.r.o.
+// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2016, Atom Software Studios
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -115,8 +116,7 @@ void showHelp(const char *name)
 {
     printf("Usage: %s [-h/--help]\n"
            "   or: %s [-v/--version]\n"
-           "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>] [-s/--size <size>] [-o/--offset <offset>]\n"
-           "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>] [-s/--size <size>] [-o/--offset <offset>]\n"
+           "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>]\n"
            "                   [-p/--port <port>] [-d/--dbg <dbglevel>]\n"
        "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
@@ -127,9 +127,6 @@ void showHelp(const char *name)
            "                                     0x4000000C (TPM_RH_PLATFORM)\n"
            "                                     {NV_INDEX_FIRST:NV_INDEX_LAST}\n"
            "   -P/--handlePasswd <string>      specifies the password of authHandle.\n"
-           "   -s/--size <size>                specifies the number of octets to read.\n"
-           "   -o/--offset <offset>            specifies octet offset into the area\n"
-           "                                   This value shall be less than or equal to the size of the nvIndex data.\n"
            "   -p/--port <port>                specifies the port number, default:%d, optional\n"
            "   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:\n"
            "                                     0 (high level test results)\n"
@@ -137,8 +134,8 @@ void showHelp(const char *name)
            "                                     2 (resource manager send/receive byte streams)\n"
            "                                     3 (resource manager tables)\n"
            "\nexample:\n"
-           "   %s -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
+           "   %s -x 0x1500016 -a 0x40000001 -P passwd\n"
+           , name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
 }
 
 int main(int argc, char* argv[])
@@ -224,7 +221,6 @@ int main(int argc, char* argv[])
             return -9;
         }
     }
-
 
 
     if( nvIndex == 0 )
