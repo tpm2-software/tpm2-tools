@@ -107,10 +107,6 @@ where:
 example:
     /tpm2_nvread -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0
 
-* tpm2_nvwrite
-write content from a file to a specified index, if any passwd option is
-missing, assume NULL.
-
 * tpm2_nvreadlock
 lock the NV index for further reads until the machine is restarted
 
@@ -138,6 +134,10 @@ where:
 
 example:
    tpm2_nvreadlock -x 0x1500016 -a 0x40000001 -P passwd
+
+* tpm2_nvwrite
+write content from a file to a specified index, if any passwd option is
+missing, assume NULL.
 
 Usage:
 tpm2_nvwrite [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] 
