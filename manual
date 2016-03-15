@@ -11,9 +11,6 @@ $ ./bootstrap
 $ ./configure
 $ make
 
-Install:
-$ sudo make install
-
 Launch resourcemgr daemon:
 $ resourcemgr
 or
@@ -23,12 +20,9 @@ The resourcemgr can connect to either physical tpm or remote MS/IBM simulator,
 refer to the help of resourcemgr for details.
 
 2. running tools
-All tool executables are built under ./src/. So once resourcemgr is up:
-$ cd ./src
+All tool executables are built under ./sapi-tools/. So once resourcemgr is up:
+$ cd ./sapi-tools
 $ ./tpm2_xxx -x...
-
-Or if the tools are installed:
-$ tpm2_xxx -x...
 
 3. tool usages
 Common options:
@@ -106,6 +100,34 @@ where:
 
 example:
     /tpm2_nvread -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0
+
+* tpm2_nvreadlock
+lock the NV index for further reads until the machine is restarted
+
+Usage: tpm2_nvreadlock [-h/--help]
+   or: tpm2_nvreadlock [-v/--version]
+   or: tpm2_nvreadlock [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>]
+                   [-p/--port <port>] [-d/--dbg <dbglevel>]
+
+where:
+
+   -h/--help                       display this help and exit.
+   -v/--version                    display version information and exit.
+   -x/--index <nvIdx>              specifies the index of the NV area.
+   -a/--authHandle <hexHandle>     specifies the handle used to authorize:
+                                     0x40000001 (TPM_RH_OWNER)
+                                     0x4000000C (TPM_RH_PLATFORM)
+                                     {NV_INDEX_FIRST:NV_INDEX_LAST}
+   -P/--handlePasswd <string>      specifies the password of authHandle.
+   -p/--port <port>                specifies the port number, default:2323, optional
+   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:
+                                     0 (high level test results)
+                                     1 (test app send/receive byte streams)
+                                     2 (resource manager send/receive byte streams)
+                                     3 (resource manager tables)
+
+example:
+   tpm2_nvreadlock -x 0x1500016 -a 0x40000001 -P passwd
 
 * tpm2_nvwrite
 write content from a file to a specified index, if any passwd option is
