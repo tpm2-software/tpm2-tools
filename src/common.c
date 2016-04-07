@@ -70,9 +70,6 @@
 #define errorStringSize 200
 char errorString[errorStringSize];
 
-#define rmInterfaceConfigSize 250
-char rmInterfaceConfig[rmInterfaceConfigSize];
-
 TSS2_TCTI_CONTEXT *resMgrTctiContext = 0;
 TSS2_ABI_VERSION abiVersion = { TSSWG_INTEROP, TSS_SAPI_FIRST_FAMILY, TSS_SAPI_FIRST_LEVEL, TSS_SAPI_FIRST_VERSION };
 
@@ -215,13 +212,13 @@ void ErrorHandler( UINT32 rval )
 
 char resMgrInterfaceName[] = "Resource Manager";
 
-TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tctiContext, char *name )
+TSS2_RC InitTctiResMgrContext( TCTI_SOCKET_CONF *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tctiContext, char *name )
 {
     size_t size;
 
     TSS2_RC rval;
 
-    rval = InitSocketTcti(NULL, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
+    rval = InitSocketTcti(NULL, &size, rmInterfaceConfig, 0 );
     if( rval != TSS2_RC_SUCCESS )
         return rval;
 
@@ -229,7 +226,7 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
 
     if( *tctiContext )
     {
-        rval = InitSocketTcti(*tctiContext, &size, rmInterfaceConfig, TCTI_MAGIC, TCTI_VERSION, resMgrInterfaceName, 0 );
+        rval = InitSocketTcti(*tctiContext, &size, rmInterfaceConfig, 0 );
     }
     else
     {
@@ -238,9 +235,9 @@ TSS2_RC InitTctiResMgrContext( char *rmInterfaceConfig, TSS2_TCTI_CONTEXT **tcti
     return rval;
 }
 
-TSS2_RC TeardownTctiResMgrContext( char *interfaceConfig, TSS2_TCTI_CONTEXT *tctiContext, char *name )
+TSS2_RC TeardownTctiResMgrContext( TSS2_TCTI_CONTEXT *tctiContext )
 {
-    return TeardownSocketTcti(tctiContext, interfaceConfig, name);
+    return TeardownSocketTcti(tctiContext);
 }
 
 void Cleanup()
@@ -249,7 +246,7 @@ void Cleanup()
 
     PlatformCommand( resMgrTctiContext, MS_SIM_POWER_OFF );
 
-    TeardownTctiResMgrContext( rmInterfaceConfig, resMgrTctiContext, &resMgrInterfaceName[0] );
+    TeardownTctiResMgrContext( resMgrTctiContext );
 
 #ifdef _WIN32
     WSACleanup();
@@ -263,13 +260,19 @@ void InitSysContextFailure()
     Cleanup();
 }
 
+TCTI_SOCKET_CONF rmInterfaceConfig = {
+    DEFAULT_HOSTNAME,
+    DEFAULT_RESMGR_TPM_PORT
+};
+
 int prepareTest(const char *hostName, const int port, int debugLevel)
 {
     TSS2_RC rval;
 
-    sprintf_s( rmInterfaceConfig, rmInterfaceConfigSize, "%s %d ", hostName, port );
+    rmInterfaceConfig.hostname = hostName;
+    rmInterfaceConfig.port = port;
 
-    rval = InitTctiResMgrContext( rmInterfaceConfig, &resMgrTctiContext, &resMgrInterfaceName[0] );
+    rval = InitTctiResMgrContext( &rmInterfaceConfig, &resMgrTctiContext, &resMgrInterfaceName[0] );
     if( rval != TSS2_RC_SUCCESS )
     {
         printf( "Resource Mgr, %s, failed initialization: 0x%x.  Exiting...\n", "resMgr", rval );
@@ -291,7 +294,7 @@ int prepareTest(const char *hostName, const int port, int debugLevel)
 
 void finishTest()
 {
-    TeardownTctiResMgrContext( rmInterfaceConfig, resMgrTctiContext, &resMgrInterfaceName[0] );
+    TeardownTctiResMgrContext( resMgrTctiContext );
     TeardownSysContext( &sysContext );
 }
 
