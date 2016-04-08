@@ -44,10 +44,6 @@ void OpenOutFile( FILE **outFp );
 
 void CloseOutFile( FILE **outFp );
 
-extern int (*printfFunction)( UINT8 type, const char *format, ...);
-
-enum printf_types { NO_PREFIX = 0, RM_PREFIX = 1 };
-
 extern FILE *outFp;
 
 extern UINT8 rmDebugPrefix;
