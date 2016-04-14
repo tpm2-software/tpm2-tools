@@ -288,8 +288,12 @@ char *Base64Encode(const unsigned char* buffer)
     BIO_free_all(bio);
     char *b64text = (*bufferPtr).data;
     for (int i = 0; i < strlen(b64text); i++)
+    {
         if (b64text[i] == '+')
             b64text[i] = '-';
+        if (b64text[i] == '/')
+            b64text[i] = '_';
+    }
     CURL *curl = curl_easy_init();
     if (curl) 
     {
