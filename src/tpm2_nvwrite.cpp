@@ -65,7 +65,7 @@ int debugLevel = 0;
 UINT32 nvIndex = 0;
 UINT32 authHandle = TPM_RH_PLATFORM;
 UINT16 dataSize = 0;
-unsigned char nvBuffer[MAX_NV_BUFFER_SIZE];
+unsigned char nvBuffer[MAX_NV_INDEX_SIZE];
 char fileName[PATH_MAX];
 char handlePasswd[sizeof(TPMU_HA)];
 
@@ -76,7 +76,7 @@ int nvWrite()
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    int i;
+    UINT16 i, offset = 0;
     TPM2B_MAX_NV_BUFFER nvWriteData;
 
     TPMS_AUTH_COMMAND *sessionDataArray[1] = { &sessionData };
@@ -99,22 +99,28 @@ int nvWrite()
         memcpy( &sessionData.hmac.t.buffer[0], handlePasswd, sessionData.hmac.t.size );
     }
 
-    nvWriteData.t.size = dataSize;
-    printf("\nThe data(size=%d) to be written:\n", dataSize);
-    for( i = 0; i<(int)dataSize; i++ )
+    while (dataSize > 0)
     {
-        nvWriteData.t.buffer[i] = nvBuffer[i];
-        printf("%02x\t", nvBuffer[i]);
-    }
-    printf("\n\n");
+        nvWriteData.t.size = dataSize > MAX_NV_BUFFER_SIZE ? MAX_NV_BUFFER_SIZE : dataSize;
+        printf("\nThe data(size=%d) to be written:\n", nvWriteData.t.size);
+        for( i = 0; i<(int)nvWriteData.t.size; i++ )
+        {
+            nvWriteData.t.buffer[i] = nvBuffer[offset+i];
+            printf("%02x ", nvBuffer[offset+i]);
+        }
+        printf("\n\n");
 
-    rval = Tss2_Sys_NV_Write( sysContext, authHandle, nvIndex, &sessionsData, &nvWriteData, 0, &sessionsDataOut );
-    if(rval != TSS2_RC_SUCCESS)
-    {
-        printf( "Failed to write NV area at index 0x%x (%d).Error:0x%x\n", nvIndex, nvIndex, rval );
-        return -1;
+        rval = Tss2_Sys_NV_Write( sysContext, authHandle, nvIndex, &sessionsData, &nvWriteData, offset, &sessionsDataOut );
+        if(rval != TSS2_RC_SUCCESS)
+        {
+            printf( "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x\n", nvIndex, nvIndex, offset, rval );
+            return -1;
+        }
+        printf( "Success to write NV area at index 0x%x (%d) offset 0x%x.\n", nvIndex, nvIndex, offset );
+
+        dataSize -= nvWriteData.t.size;
+        offset += nvWriteData.t.size;        
     }
-    printf( "Success to write NV area at index 0x%x (%d).\n", nvIndex, nvIndex );
 
     return 0;
 }
@@ -255,7 +261,7 @@ int main(int argc, char* argv[])
         return -10;
     }
 
-    dataSize = MAX_NV_BUFFER_SIZE;
+    dataSize = MAX_NV_INDEX_SIZE;
     if(loadDataFromFile(fileName, nvBuffer, &dataSize))
     {
         printf("Failed to read data from %s\n", fileName);
