@@ -66,13 +66,14 @@ tpm2_getpubek  -H $ekHandle  -g 0x01 -f ek.pub1.out
 
 
 tpm2_getpubak  -E $ekHandle -k $akHandle -f ak.pub1.out -n ak.name_1.out |tee output_ak
-  if [ $? != 0 ] || [ ! -e ak.nake_1.out ];then
+  if [ $? != 0 ] || [ ! -e ak.name_1.out ];then
 	fail getpubak 
   fi
  
   grep  -A 3 "Name of loaded key:" output_ak|tr "\n" " " >grep.txt
   Loadkeyname=`sed -e 's/ //g'  grep.txt | awk  -F':' '{print $2}'`
 
+echo 123456 | xxd -r -ps > secret.data
 tpm2_makecredential -e ek.pub1.out  -s secret.data  -n $Loadkeyname -o makecredential.out
 
   if [ $? != 0 ];then
@@ -85,7 +86,7 @@ tpm2_activatecredential  -H $akHandle -k $ekHandle -f makecredential.out  -o act
 	fail activatecredential
   fi
 
-tpm2_akparse -f ak.pub1  -k akparse.out
+tpm2_akparse -f ak.pub1.out  -k akparse.out
 
   if [ $? != 0 ];then
 	fail akparse 
