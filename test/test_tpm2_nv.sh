@@ -33,6 +33,11 @@
  nv_test_index=0x1500018
  nv_auth_handle=0x40000001
 
+tpm2_takeownership -c 
+ if [ $? != 0 ];then 
+	echo "clean ownership Fail!"
+	exit 1
+ fi
 tpm2_nvlist|grep -i $nv_test_index
 if [ $? = 0 ];then
 tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle 
