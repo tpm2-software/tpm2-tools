@@ -66,7 +66,7 @@ where:
                                     created.
 
 example:
-    /tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A
+    tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A
 
 * tpm2_nvrelease
 release NV index, if any passwd option is missing, assume NULL.
@@ -83,7 +83,7 @@ where:
    -P/--handlePasswd <string>      specifies the password of authHandle.
 
 example:
-    /tpm2_nvrelease -x 0x1500016 -a 0x40000001 -P passwd
+    tpm2_nvrelease -x 0x1500016 -a 0x40000001 -P passwd
 
 * tpm2_nvread
 read content from NV index, if any passwd option is missing, assume NULL.
@@ -105,7 +105,7 @@ where:
                                   This value shall be less than or equal to the size of the nvIndex data.
 
 example:
-    /tpm2_nvread -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0
+    tpm2_nvread -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0
 
 * tpm2_nvreadlock
 lock the NV index for further reads until the machine is restarted
@@ -153,7 +153,7 @@ where:
   -f/--file <filename>            specifies the nv data file.
 
 example:
-    /tpm2_nvwrite -x 0x1500016 -a 0x40000001 -P passwd -f nv.data
+    tpm2_nvwrite -x 0x1500016 -a 0x40000001 -P passwd -f nv.data
 
 * tpm2_nvlist
 display all defined NV indices.
@@ -165,7 +165,7 @@ where:
   -h/--help                       display help info and exit.
 
 example:
-    /tpm2_nvlist
+    tpm2_nvlist
 
 
 
@@ -190,9 +190,9 @@ where:
 
 example:
   Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: 
-  ./tpm2_takeownership -c
+  tpm2_takeownership -c
   Set ownerAuth, endorsementAuth and lockoutAuth to a newAuth: 
-  ./tpm2_takeownership -o new -e new -l new -O old -E Old -L old
+  tpm2_takeownership -o new -e new -l new -O old -E Old -L old
 
 * tpm2_getpubek
 Generate TCG profile compliant endorsement key(endorsement hierarchy primary
@@ -219,7 +219,7 @@ where:
     -f/--file          <outputFile> specifies the file used to save the public portion of EK.
 
 example:
-    ./tpm2_getpubek -e abc123 -o abc123 -P passwd -H 0x81010001 -g 0x01 -f ek.pub
+    tpm2_getpubek -e abc123 -o abc123 -P passwd -H 0x81010001 -g 0x01 -f ek.pub
 
 * tpm2_getmanufec
 Retrieve the Endorsement Credential Certificate for the TPM endorsement key from the TPM manufacturer's endorsement certificate hosting server
@@ -254,7 +254,7 @@ where:
                                      3 (resource manager tables)
 
 example:
-   ./tpm2_getmanufec -e abc123 -o abc123 -P passwd -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/ 
+   tpm2_getmanufec -e abc123 -o abc123 -P passwd -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/ 
 
 * tpm2_getpubak
 Generate attestation key with given algorithm under endorsement hierarchy,
@@ -298,7 +298,7 @@ where:
     -n/--akName     <aknameFile>     specifies the file used to save the ak name.
 
 example:
-    ./tpm2_getpubak -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+    tpm2_getpubak -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
 
 * tpm2_akparse
 parse the algorithm and key values in TPM2B_PUBLIC struct which input via
@@ -312,7 +312,7 @@ where:
     -k    Specifies the file used to save ak key.
 
 example:
-    ./tpm2_akparse -f ./ak.data -k ./ak.key
+    tpm2_akparse -f ./ak.data -k ./ak.key
 
 * tpm2_makecredential
 Use the given tpm public key to protect the given secret which are used to
@@ -325,7 +325,7 @@ Usage:
     -o, --outFile<filePath>  output file path, recording the two structures output by tpm2_makecredential function
 
 example:
-    ./tpm2_makecredential -e <keyFile> -s <secFile> -n <hexString> -o <outFile>
+    tpm2_makecredential -e <keyFile> -s <secFile> -n <hexString> -o <outFile>
 
 * tpm2_activatecredential
 Verify that the given content is protected with given keyHandle for given
@@ -344,8 +344,8 @@ Usage:
     -o, --outFile  <filePath>   Output file path, record the secret to decrypt the certificate
 
 example:
-    ./tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P abc123 -e abc123 -f <filePath> -o <filePath>
-    ./tpm2_activatecredential -c ak.context -C ek.context -P abc123 -e abc123 -f <filePath> -o <filePath>
+    tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P abc123 -e abc123 -f <filePath> -o <filePath>
+    tpm2_activatecredential -c ak.context -C ek.context -P abc123 -e abc123 -f <filePath> -o <filePath>
 
 * tpm2_listpcrs
 display all PCR values in given algorithm, if no algorithm is given, output
@@ -380,8 +380,8 @@ Usage:
     -o, --outFile<filePath>       output file path, recording the two structures output by tpm2_quote function
 
 example:
-    ./tpm2_quote -k 0x81010002 -P abc123 -g 0x4 -l 16,17,18 -o outFile001
-    ./tpm2_quote -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001
+    tpm2_quote -k 0x81010002 -P abc123 -g 0x4 -l 16,17,18 -o outFile001
+    tpm2_quote -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001
 
 
 
@@ -413,8 +413,8 @@ Usage:
     -C, --context <filename> The file to save the object context, optional
 
 example:
-    ./tpm2_createprimary -A e -P abc123 -K def456 -g 0x000B -G 0x0008
-    ./tpm2_createprimary -A e -P abc123 -K def456 -g 0x000B -G 0x0008 -C ek.context
+    tpm2_createprimary -A e -P abc123 -K def456 -g 0x000B -G 0x0008
+    tpm2_createprimary -A e -P abc123 -K def456 -g 0x000B -G 0x0008 -C ek.context
 
 * tpm2_create
 create an object that can be loaded into a TPM using tpm2_load. The object
@@ -443,8 +443,8 @@ Usage:
     -O, --opr <privateKeyFileName> the output file which contains the private key, optional
 
 example:
-    ./tpm2_create -H 0x81010001 -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
-    ./tpm2_create -c parent.context -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
+    tpm2_create -H 0x81010001 -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
+    tpm2_create -c parent.context -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
 
 * tpm2_evictcontrol
 allows a transient object to be made persistent or a persistent object to
@@ -460,8 +460,8 @@ Usage:
     -P, --pwda      <authorizationPassword>   authrization password, optional
 
 example:
-    ./tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
-    ./tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P abc123
+    tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
+    tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P abc123
 
 * tpm2_load
 load objects into the TPM, both pub/priv portion are needed.
@@ -476,8 +476,8 @@ Usage:
     -C, --context <filename>   The file to save the object context, optional
 
 example:
-    ./tpm2_load  -H 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
-    ./tpm2_load  -c parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -C object.context
+    tpm2_load  -H 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
+    tpm2_load  -c parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -C object.context
 
 * tpm2_loadexternal
 load an object that is not a Protected Object into the TPM. The command allows
@@ -494,7 +494,7 @@ Usage:
     -C, --context <filename>   The file to save the object context, optional
 
 example:
-   . /tpm2_loadexternal -H <e|o|p|n> -u <pubKeyFileName> -r <privKeyFileName> -C object.context
+   tpm2_loadexternal -H <e|o|p|n> -u <pubKeyFileName> -r <privKeyFileName> -C object.context
 
 
 Subset 4: Encryption tools
@@ -514,8 +514,8 @@ Usage:
     -o, --outFile  <filePath>   Output file path, record the operated data
 
 example:
-    ./tpm2_encryptdecrypt -k 0x81010001 -P abc123 -D NO -I <filePath> -o <filePath>
-    ./tpm2_encryptdecrypt -c key.context -P abc123 -D NO -I <filePath> -o <filePath>
+    tpm2_encryptdecrypt -k 0x81010001 -P abc123 -D NO -I <filePath> -o <filePath>
+    tpm2_encryptdecrypt -c key.context -P abc123 -D NO -I <filePath> -o <filePath>
 
 * tpm2_rsaencrypt
 performs RSA encryption using the indicated padding scheme according to
@@ -530,8 +530,8 @@ Usage:
     -o, --outFile  <filePath>   Output file path, record the encrypted data
 
 example:
-    ./tpm2_rsaencrypt -k 0x81010001 -I <filePath> -o <filePath>
-    ./tpm2_rsaencrypt -c key.context -I <filePath> -o <filePath>
+    tpm2_rsaencrypt -k 0x81010001 -I <filePath> -o <filePath>
+    tpm2_rsaencrypt -c key.context -I <filePath> -o <filePath>
 
 * tpm2_rsadecrypt
 performs RSA decryption using the indicated padding scheme according to
@@ -547,7 +547,7 @@ Usage:
     -o, --outFile  <filePath>   Output file path, record the decrypted data
 
 example:
-    ./tpm2_rsadecrypt -k 0x81010001 -I <filePath> -o <filePath>
+    tpm2_rsadecrypt -k 0x81010001 -I <filePath> -o <filePath>
 
 * tpm2_unseal
 returns the data in a loaded Sealed Data Object.
@@ -559,8 +559,8 @@ Usage:
     -o, --outfile <outPutFilename> Output file name, containing the unsealed data
 
 example:
-    ./tpm2_unseal -H 0x81010001 -P abc123 -o <outPutFileName>
-    ./tpm2_unseal -c item.context -P abc123 -o <outPutFileName>
+    tpm2_unseal -H 0x81010001 -P abc123 -o <outPutFileName>
+    tpm2_unseal -c item.context -P abc123 -o <outPutFileName>
 
 
 Subset 5: Signing tools
@@ -587,8 +587,8 @@ Usage:
     -s, --sig      <filePath>   the signature file, record the signature structure
 
 example:
-    ./tpm2_sign -k 0x81010001 -P abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
-    ./tpm2_sign -c key.context - abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+    tpm2_sign -k 0x81010001 -P abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+    tpm2_sign -c key.context - abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
 
 * tpm2_verifysignature
 uses loaded keys to validate a signature on a message with the message digest
@@ -615,9 +615,9 @@ Usage:
     -t, --ticket   <filePath>   the ticket file, record the validation structure
 
 example:
-    ./tpm2_verifysignature -k 0x81010001 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
-    ./tpm2_verifysignature -k 0x81010001 -D <filePath> -s <filePath> -t <filePath>
-    ./tpm2_verifysignature -c key.context -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+    tpm2_verifysignature -k 0x81010001 -g 0x000B -m <filePath> -s <filePath> -t <filePath>
+    tpm2_verifysignature -k 0x81010001 -D <filePath> -s <filePath> -t <filePath>
+    tpm2_verifysignature -c key.context -g 0x000B -m <filePath> -s <filePath> -t <filePath>
 
 * tpm2_certify
 prove that an object with a specific Name is loaded in the TPM. By certifying
@@ -645,8 +645,8 @@ Usage:
     -s, --sigFile      <fileName>   output file name, record the signature structure
 
 example:
-    ./tpm2_certify -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
-    ./tpm2_certify -C obj.context -c key.context -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
+    tpm2_certify -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
+    tpm2_certify -C obj.context -c key.context -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
 
 
 Subset 6: utilities
@@ -662,7 +662,7 @@ where:
     -o/--of <outfilename>           specifies the filename of output.
 
 example:
-    ./tpm2_getrandom -s 20 -o random.out
+    tpm2_getrandom -s 20 -o random.out
 
 * tpm2_hash
 performs a hash operation on a data buffer and returns the results. If the
@@ -687,7 +687,7 @@ Usage:
     -t, --ticket    <ticketFilename> file record the ticket
 
 example:
-./tpm2_hash -H <e|o|p|n> -g 0x004 -I <inputFilename> -o <hashFilename> -t <ticketFilename>
+    tpm2_hash -H <e|o|p|n> -g 0x004 -I <inputFilename> -o <hashFilename> -t <ticketFilename>
 
 * tpm2_hmac
 performs an HMAC on the supplied data using the indicated hash algorithm. The
@@ -707,8 +707,8 @@ Usage:
     -o, --outfile   <hmacFilename>   file record the HMAC result
 
 example:
-    ./tpm2_hmac  -k 0x81010002 -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename>
-    ./tpm2_hmac  -c key.context -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename>
+    tpm2_hmac  -k 0x81010002 -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename>
+    tpm2_hmac  -c key.context -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename>
 
 * tpm2_readpublic
 Access to the public area of a loaded object.
@@ -720,5 +720,5 @@ Access to the public area of a loaded object.
                                       recording the readout public portion of the object
 
 example:
-    ./tpm2_readpublic -H 0x81010002 -opu <pubKeyFileName>
-    ./tpm2_readpublic -c obj.context -opu <pubKeyFileName>
+    tpm2_readpublic -H 0x81010002 -opu <pubKeyFileName>
+    tpm2_readpublic -c obj.context -opu <pubKeyFileName>
