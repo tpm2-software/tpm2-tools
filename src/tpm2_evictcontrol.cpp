@@ -108,7 +108,7 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-A, --auth <o | p | n>   the authorization used to authorize the commands\n"
+        "-A, --auth <o | p>   the authorization used to authorize the commands\n"
             "\to  TPM_RH_OWNER\n"
             "\tp  TPM_RH_PLATFORM\n"
         "-H, --handle    <objectHandle>        the handle of a loaded object\n"
