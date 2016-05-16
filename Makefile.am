@@ -69,7 +69,8 @@ sbin_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_rsaencrypt \
 		  src/tpm2_sign \
 		  src/tpm2_unseal \
-		  src/tpm2_verifysignature
+		  src/tpm2_verifysignature \
+		  src/tpm2_listpersistent
 
 COMMON_SRC = \
     src/common.c \
@@ -120,3 +121,4 @@ src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.cpp
 src_tpm2_sign_SOURCES = src/tpm2_sign.cpp
 src_tpm2_unseal_SOURCES = src/tpm2_unseal.cpp
 src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.cpp
+src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.cpp

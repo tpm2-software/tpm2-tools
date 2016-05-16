@@ -18,6 +18,7 @@ tpm2_makecredential
 tpm2_activatecredential
 tpm2_listpcrs
 tpm2_quote
+tpm2_listpersistent
 ##Subset 3: Key management tools
 tpm2_createprimary
 tpm2_create
