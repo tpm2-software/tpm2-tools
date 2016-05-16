@@ -49,7 +49,7 @@ handle_signing_key=0x81010005
 
 alg_hash=0x000B
 alg_primary_key=0x0001
-alg_signing_key=0x0008
+alg_signing_key=0x0001
 
 fail()
 {
