@@ -133,9 +133,9 @@ void showHelp(const char *name)
     printf("Usage: %s [-h/--help]\n"
            "   or: %s [-v/--version]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-s/--size <size>] [-t/--attribute <attributeDWord>]\n"
-           "                     [-P/--handlePasswd <string>] [-X/--indexPasswd <string>]\n"
+           "                     [-P/--handlePasswd <string>] [-I/--indexPasswd <string>]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-s/--size <size>] [-t/--attribute <attributeDWord>]\n"
-           "                     [-P/--handlePasswd <string>] [-X/--indexPasswd <string>]\n"
+           "                     [-P/--handlePasswd <string>] [-I/--indexPasswd <string>]\n"
            "                     [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
            "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
@@ -147,7 +147,7 @@ void showHelp(const char *name)
            "   -s/--size <size>                specifies the size of data area.\n"
            "   -t/--attribute <attributeDWord> specifies the value of attribute in publicInfo struct (need calculate outside).\n"
            "   -P/--handlePasswd <string>      specifies the password of authHandle.\n"
-           "   -X/--indexPasswd <string>       specifies the password of NV Index when created.\n"
+           "   -I/--indexPasswd <string>       specifies the password of NV Index when created.\n"
            "   -p/--port <port>                specifies the port number, default:%d, optional\n"
            "   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:\n"
            "                                     0 (high level test results)\n"
@@ -172,7 +172,7 @@ int main(int argc, char* argv[])
         { "size"        , required_argument, NULL, 's' },
         { "attribute"   , required_argument, NULL, 't' },
         { "handlePasswd", required_argument, NULL, 'P' },
-        { "indexPasswd" , required_argument, NULL, 'X' },
+        { "indexPasswd" , required_argument, NULL, 'I' },
         { "port"        , required_argument, NULL, 'p' },
         { "dbg"         , required_argument, NULL, 'd' },
         { "help"        , no_argument,       NULL, 'h' },
@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "x:a:s:t:P:X:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "x:a:s:t:P:I:p:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -232,7 +232,7 @@ int main(int argc, char* argv[])
             safeStrNCpy(handlePasswd, optarg, sizeof(handlePasswd));
             break;
 
-        case 'X':
+        case 'I':
             if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
             {
                 printf("\nPlease input the index password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);

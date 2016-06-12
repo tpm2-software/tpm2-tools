@@ -51,7 +51,7 @@ Define NV index with given auth value, if passwd not given, assume NULL
 Usage:
 tpm2_nvdefine [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>]
               [-s/--size <size>] [-t/--attribute <attributeDWord>]
-              [-P/--handlePasswd <string>] [-X/--indexPasswd <string>]
+              [-P/--handlePasswd <string>] [-I/--indexPasswd <string>]
 
 where:
     -x/--index <nvIdx>              specifies the index of the NV area.
@@ -62,7 +62,7 @@ where:
     -t/--attribute <attributeDWord> specifies the value of attribute in
                                     publicInfo struct (need calculate outside).
     -P/--handlePasswd <string>      specifies the password of authHandle.
-    -X/--indexPasswd <string>       specifies the password of NV Index when
+    -I/--indexPasswd <string>       specifies the password of NV Index when
                                     created.
 
 example:
