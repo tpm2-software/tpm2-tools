@@ -120,7 +120,7 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -H 0x80000000 -opu <pubKeyFileName> \n"
+        "%s -H 0x80000000 --opu <pubKeyFileName> \n"
         , name, DEFAULT_RESMGR_TPM_PORT, name);
 }
 
