@@ -188,6 +188,7 @@ void showHelp(const char *name)
            "   -E/--oldEndorsePasswd <password> old Endorsement authorization (string,optional,default:NULL).\n"
            "   -L/--oldLockPasswd <password>    old Lockout authorization (string,optional,default:NULL).\n"
            "   -p/--port <port>                 specifies the port number. default %d.\n"
+           "   -c/--clear                       clears the 3 authorizations values.\n"
            "   -d/--dbg <dbgLevel>              specifies level of debug messages:\n"
            "                                      0 (high level test results)\n"
            "                                      1 (test app send/receive byte streams)\n"
