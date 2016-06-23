@@ -68,6 +68,7 @@ typedef struct {
     UINT32 id[24];
 } PCR_LIST;
 TPMS_AUTH_COMMAND sessionData;
+bool hexPasswd = false;
 char outFilePath[PATH_MAX];
 
 void PrintBuffer( UINT8 *buffer, UINT32 size )
@@ -245,6 +246,17 @@ int quote(TPM_HANDLE akHandle, PCR_LIST pcrList, TPMI_ALG_HASH algorithmId)
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
+    if (sessionData.hmac.t.size > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+                              &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for AK Passwd.\n");
+            return -1;
+        }
+    }
 
     qualifyingData.t.size = sizeof( qualDataString );
     memcpy( &qualifyingData.t.buffer[0], qualDataString, sizeof( qualDataString ) );
@@ -319,6 +331,7 @@ void showHelp(const char *name)
             "-l, --idList  <num1,...,numN> The list of selected PCR's id, 0~23\n"
             "-g, --algorithm <hexAlg>      The algorithm id\n"
             "-o, --outFile<filePath>       output file path, recording the two structures output by tpm2_quote function\n"
+            "-X, --passwdInHex             passwords given by any options are hex format.\n"
             "-p, --port    <port number>   The Port number, default is %d, optional\n"
             "-d, --debugLevel <0|1|2|3>    The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -334,7 +347,8 @@ void showHelp(const char *name)
             "\t %s -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001\n"
             "\t %s -k 0x80000001 -g 0x4 -l 16,17,18 -o outFile001 \n\n"
             "\t %s -c ak.context -g 0x4 -l 16,17,18 -o outFile001 \n\n"
-            , name, DEFAULT_RESMGR_TPM_PORT, name, name, name, name, name, name);
+            "\t %s -k 0x80000001 -P 123abc -X -g 0x4 -l 16,17,18 -o outFile001\n"
+            , name, DEFAULT_RESMGR_TPM_PORT, name, name, name, name, name, name, name);
 }
 
 int parseList(const char *arg, PCR_LIST *pcrList)
@@ -416,7 +430,7 @@ int main(int argc, char *argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:o:p:d:";
+    const char *optstring = "hvk:c:P:l:g:o:Xp:d:";
     static struct option long_options[] = {
         {"help",0,NULL,'h'},
         {"version",0,NULL,'v'},
@@ -426,6 +440,7 @@ int main(int argc, char *argv[])
         {"idList",1,NULL,'l'},
         {"algorithm",1,NULL,'g'},
         {"outFile",1,NULL,'o'},
+        {"passwdInHex",0,NULL,'X'},
         {"port",1,NULL,'p'},
         {"debugLevel",1,NULL,'d'},
         {0,0,0,0}
@@ -516,6 +531,9 @@ int main(int argc, char *argv[])
                 break;
             }
             o_flag = 1;
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case 'p':
             if( getPort(optarg, &port) )

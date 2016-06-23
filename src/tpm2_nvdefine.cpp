@@ -68,6 +68,7 @@ UINT32 size = 0;
 UINT32 nvAttribute = 0;
 char handlePasswd[sizeof(TPMU_HA)];
 char indexPasswd[sizeof(TPMU_HA)];
+bool hexPasswd = false;
 
 int nvSpaceDefine()
 {
@@ -93,10 +94,20 @@ int nvSpaceDefine()
     sessionData.hmac.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
-    if (strlen(handlePasswd) > 0)
+    if (strlen(handlePasswd) > 0 && !hexPasswd)
     {
         sessionData.hmac.t.size = strlen(handlePasswd);
-        memcpy( &( sessionData.hmac.t.buffer[0] ), &( handlePasswd[0] ), sessionData.hmac.t.size );
+        memcpy( &sessionData.hmac.t.buffer[0], handlePasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(handlePasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(handlePasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for handlePasswd.\n");
+            return -1;
+        }
     }
 
     publicInfo.t.size = sizeof( TPMI_RH_NV_INDEX ) +
@@ -111,10 +122,19 @@ int nvSpaceDefine()
     publicInfo.t.nvPublic.dataSize = size;
 
     nvAuth.t.size = 0;
-    if (strlen(indexPasswd) > 0)
+    if (strlen(indexPasswd) > 0 && !hexPasswd)
     {
         nvAuth.t.size = strlen(indexPasswd);
         memcpy( &nvAuth.t.buffer[0], indexPasswd, nvAuth.t.size );
+    }
+    else if (strlen(indexPasswd) > 0 && hexPasswd)
+    {
+        nvAuth.t.size = sizeof(nvAuth) - 2;
+        if (hex2ByteStructure(indexPasswd,&nvAuth.t.size,nvAuth.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for indexPasswd.\n");
+            return -1;
+        }
     }
 
     rval = Tss2_Sys_NV_DefineSpace( sysContext, authHandle, &sessionsData, &nvAuth, &publicInfo, &sessionsDataOut );
@@ -133,9 +153,10 @@ void showHelp(const char *name)
     printf("Usage: %s [-h/--help]\n"
            "   or: %s [-v/--version]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-s/--size <size>] [-t/--attribute <attributeDWord>]\n"
-           "                     [-P/--handlePasswd <string>] [-X/--indexPasswd <string>]\n"
+           "                     [-P/--handlePasswd <string>] [-I/--indexPasswd <string>]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-s/--size <size>] [-t/--attribute <attributeDWord>]\n"
-           "                     [-P/--handlePasswd <string>] [-X/--indexPasswd <string>]\n"
+           "                     [-P/--handlePasswd <string>] [-I/--indexPasswd <string>]\n"
+           "                     [-X/--passwdInHex]\n"
            "                     [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
            "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
@@ -147,7 +168,8 @@ void showHelp(const char *name)
            "   -s/--size <size>                specifies the size of data area.\n"
            "   -t/--attribute <attributeDWord> specifies the value of attribute in publicInfo struct (need calculate outside).\n"
            "   -P/--handlePasswd <string>      specifies the password of authHandle.\n"
-           "   -X/--indexPasswd <string>       specifies the password of NV Index when created.\n"
+           "   -I/--indexPasswd <string>       specifies the password of NV Index when created.\n"
+           "   -X/--passwdInHex                passwords given by any options are hex format.\n"
            "   -p/--port <port>                specifies the port number, default:%d, optional\n"
            "   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:\n"
            "                                     0 (high level test results)\n"
@@ -156,7 +178,8 @@ void showHelp(const char *name)
            "                                     3 (resource manager tables)\n"
            "\nexample:\n"
            "   %s -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
+           "   %s -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -I 1a1b1c -X\n"
+           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -172,7 +195,8 @@ int main(int argc, char* argv[])
         { "size"        , required_argument, NULL, 's' },
         { "attribute"   , required_argument, NULL, 't' },
         { "handlePasswd", required_argument, NULL, 'P' },
-        { "indexPasswd" , required_argument, NULL, 'X' },
+        { "indexPasswd" , required_argument, NULL, 'I' },
+        { "passwdInHex" , no_argument,       NULL, 'X' },
         { "port"        , required_argument, NULL, 'p' },
         { "dbg"         , required_argument, NULL, 'd' },
         { "help"        , no_argument,       NULL, 'h' },
@@ -192,7 +216,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "x:a:s:t:P:X:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "x:a:s:t:P:I:Xp:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -232,13 +256,16 @@ int main(int argc, char* argv[])
             safeStrNCpy(handlePasswd, optarg, sizeof(handlePasswd));
             break;
 
-        case 'X':
+        case 'I':
             if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
             {
                 printf("\nPlease input the index password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -9;
             }
             safeStrNCpy(indexPasswd, optarg, sizeof(indexPasswd));
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case 'p':
             if( getPort(optarg, &port) )

@@ -67,6 +67,7 @@ UINT32 authHandle = TPM_RH_PLATFORM;
 UINT32 sizeToRead = 0;
 UINT32 offset = 0;
 char handlePasswd[sizeof(TPMU_HA)];
+bool hexPasswd = false;
 
 
 int nvRead(TPMI_RH_NV_AUTH authHandle, TPMI_RH_NV_INDEX nvIndex, UINT16 size, UINT16 offset)
@@ -95,10 +96,20 @@ int nvRead(TPMI_RH_NV_AUTH authHandle, TPMI_RH_NV_INDEX nvIndex, UINT16 size, UI
     sessionData.hmac.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
-    if (strlen(handlePasswd) > 0)
+    if (strlen(handlePasswd) > 0 && !hexPasswd)
     {
         sessionData.hmac.t.size = strlen(handlePasswd);
         memcpy( &sessionData.hmac.t.buffer[0], handlePasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(handlePasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(handlePasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for handlePasswd.\n");
+            return -1;
+        }
     }
 
     rval = Tss2_Sys_NV_Read( sysContext, authHandle, nvIndex, &sessionsData, size, offset, &nvData, &sessionsDataOut );
@@ -122,6 +133,7 @@ void showHelp(const char *name)
            "   or: %s [-v/--version]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>] [-s/--size <size>] [-o/--offset <offset>]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>] [-s/--size <size>] [-o/--offset <offset>]\n"
+           "                   [-X/--passwdInHex]\n"
            "                   [-p/--port <port>] [-d/--dbg <dbglevel>]\n"
        "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
@@ -135,6 +147,7 @@ void showHelp(const char *name)
            "   -s/--size <size>                specifies the number of octets to read.\n"
            "   -o/--offset <offset>            specifies octet offset into the area\n"
            "                                   This value shall be less than or equal to the size of the nvIndex data.\n"
+           "   -X/--passwdInHex                passwords given by any options are hex format.\n"
            "   -p/--port <port>                specifies the port number, default:%d, optional\n"
            "   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:\n"
            "                                     0 (high level test results)\n"
@@ -143,7 +156,8 @@ void showHelp(const char *name)
            "                                     3 (resource manager tables)\n"
            "\nexample:\n"
            "   %s -x 0x1500016 -a 0x40000001 -P passwd -s 32 -o 0\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
+           "   %s -x 0x1500016 -a 0x40000001 -P 1a1b1c -s 32 -o 0 -X\n"
+           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -159,6 +173,7 @@ int main(int argc, char* argv[])
         { "size"        , required_argument, NULL, 's' },
         { "offset"      , required_argument, NULL, 'o' },
         { "handlePasswd", required_argument, NULL, 'P' },
+        { "passwdInHex" , no_argument,       NULL, 'X' },
         { "port"        , required_argument, NULL, 'p' },
         { "dbg"         , required_argument, NULL, 'd' },
         { "help"        , no_argument,       NULL, 'h' },
@@ -178,7 +193,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "x:a:s:o:P:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "x:a:s:o:P:Xp:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -224,6 +239,9 @@ int main(int argc, char* argv[])
             {
                 return -6;
             }
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case 'p':
             if( getPort(optarg, &port) )

@@ -66,6 +66,7 @@ char outputFile[PATH_MAX];
 char ownerPasswd[sizeof(TPMU_HA)];
 char endorsePasswd[sizeof(TPMU_HA)];
 char ekPasswd[sizeof(TPMU_HA)];
+bool hexPasswd = false;
 TPM_HANDLE persistentHandle;
 UINT32 algorithmType = TPM_ALG_RSA;
 
@@ -168,16 +169,37 @@ int createEKHandle()
     *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
 
     // use enAuth in Tss2_Sys_CreatePrimary
-    if( strlen( endorsePasswd ) > 0 )
+    if (strlen(endorsePasswd) > 0 && !hexPasswd)
     {
-        sessionData.hmac.t.size = strlen( endorsePasswd );
-        memcpy( &( sessionData.hmac.t.buffer[0] ), &( endorsePasswd[0] ), sessionData.hmac.t.size );
+        sessionData.hmac.t.size = strlen(endorsePasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], endorsePasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(endorsePasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for endorsePasswd.\n");
+            return -1;
+        }
     }
 
-    inSensitive.t.sensitive.userAuth.t.size = strlen( ekPasswd );
-    if( strlen( ekPasswd ) > 0 )
+    if (strlen(ekPasswd) > 0 && !hexPasswd)
     {
-        memcpy( &( inSensitive.t.sensitive.userAuth.t.buffer[0] ), &( ekPasswd[0] ), inSensitive.t.sensitive.userAuth.t.size );
+        sessionData.hmac.t.size = strlen(ekPasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], ekPasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(ekPasswd) > 0 && hexPasswd)
+    {
+        inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
+        if (hex2ByteStructure(ekPasswd,
+                              &inSensitive.t.sensitive.userAuth.t.size,
+                              inSensitive.t.sensitive.userAuth.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for ekPasswd.\n");
+            return -1;
+        }
     }
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
@@ -199,9 +221,22 @@ int createEKHandle()
     printf("\nEK create succ.. Handle: 0x%8.8x\n", handle2048ek);
 
     // To make EK persistent, use own auth
-    sessionData.hmac.t.size = strlen( ownerPasswd );
-    if( strlen( ownerPasswd ) > 0 )
-        memcpy( &( sessionData.hmac.t.buffer[0] ), &( ownerPasswd[0] ), sessionData.hmac.t.size );
+    sessionData.hmac.t.size = 0;
+    if (strlen(ownerPasswd) > 0 && !hexPasswd)
+    {
+        sessionData.hmac.t.size = strlen(ownerPasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], ownerPasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(ownerPasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(ownerPasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for ownerPasswd.\n");
+            return -1;
+        }
+    }
 
     rval = Tss2_Sys_EvictControl(sysContext, TPM_RH_OWNER, handle2048ek, &sessionsData, persistentHandle, &sessionsDataOut);
     if( rval != TPM_RC_SUCCESS )
@@ -238,6 +273,7 @@ void showHelp(const char *name)
            "                     [-H/--handle <hexHandle>] [-g/--alg <hexAlg>] [-f/--file <outputFile>]\n"
            "   or: %s [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] [-P/--ekPasswd <password>]\n"
            "                     [-H/--handle <hexHandle>] [-g/--alg <hexAlg>] [-f/--file <outputFile>]\n"
+           "                     [-X/--passwdInHex]\n"
            "                     [-i/--ip <ipAddress>] [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
            "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
@@ -248,6 +284,7 @@ void showHelp(const char *name)
            "   -H/--handle        <hexHandle>  specifies the handle used to make EK persistent (hex).\n"
            "   -g/--alg           <hexAlg>     specifies the algorithm type of EK (default:0x01/TPM_ALG_RSA).\n"
            "   -f/--file          <outputFile> specifies the file used to save the public portion of EK.\n"
+           "   -X/--passwdInHex                passwords given by any options are hex format.\n"
            "   -p/--port          <port>       specifies the port number (optional,default:%d).\n"
            "   -d/--dbg           <dbgLevel>   specifies level of debug messages(optional,default:0):\n"
            "                                     0 (high level test results)\n"
@@ -256,7 +293,8 @@ void showHelp(const char *name)
            "                                     3 (resource manager tables)\n"
            "\nexample:\n"
            "   %s -e abc123 -o abc123 -P passwd -H 0x81010001 -g 0x01 -f ek.pub\n"
-        , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
+           "   %s -e 1a1b1c -o 1a1b1c -P 123abc -X -H 0x81010001 -g 0x01 -f ek.pub\n"
+        , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char *argv[])
@@ -274,6 +312,7 @@ int main(int argc, char *argv[])
         { "ekPasswd"     , required_argument, NULL, 'P' },
         { "alg"          , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
+        { "passwdInHex"  , no_argument,       NULL, 'X' },
         { "port"         , required_argument, NULL, 'p' },
         { "dbg"          , required_argument, NULL, 'd' },
         { "help"         , no_argument,       NULL, 'h' },
@@ -293,7 +332,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "e:o:H:P:g:f:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "e:o:H:P:g:f:Xp:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -354,6 +393,10 @@ int main(int argc, char *argv[])
                 return -7;
             }
             safeStrNCpy(outputFile, optarg, sizeof(outputFile));
+            break;
+
+        case 'X':
+            hexPasswd = true;
             break;
 
         case 'p':

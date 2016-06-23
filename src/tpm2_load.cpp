@@ -63,6 +63,7 @@
 
 TPM_HANDLE handle2048rsa;
 TPMS_AUTH_COMMAND sessionData;
+bool hexPasswd = false;
 int debugLevel = 0;
 
 int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inPrivate, const char *outFileName, int P_flag)
@@ -92,6 +93,17 @@ int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inP
         sessionData.hmac.t.size = 0;
 
     *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
+    if (sessionData.hmac.t.size > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+                              &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for parent Passwd.\n");
+            return -1;
+        }
+    }
 
     rval = Tss2_Sys_Load(sysContext, parentHandle, &sessionsData, inPrivate , inPublic, &handle2048rsa, &nameExt, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
@@ -120,6 +132,7 @@ void showHelp(const char *name)
         "-r, --privfile  <privateKeyFileName>  The sensitive portion of the object\n"
         "-n, --name      <outPutFilename>      Output file name, containing the name structure\n"
         "-C, --context <filename>   The file to save the object context, optional"
+        "-X, --passwdInHex          passwords given by any options are hex format.\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -130,7 +143,8 @@ void showHelp(const char *name)
         "Example:\n"
         "%s -H 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>\n"
         "%s -H 0x80000000 -u <pubKeyFileName>  -r <privKeyFileName> -n <outPutFileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name);
+        "%s -H 0x80000000 -P 123abc -X -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>\n"
+        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -154,7 +168,7 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:P:u:r:n:p:d:C:c:";
+    const char *optstring = "hvH:P:u:r:n:p:d:C:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
@@ -167,6 +181,7 @@ int main(int argc, char* argv[])
       {"debugLevel",1,NULL,'d'},
       {"context",1,NULL,'C'},
       {"contextParent",1,NULL,'c'},
+      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -277,6 +292,9 @@ int main(int argc, char* argv[])
             }
             printf("contextFile = %s\n", contextFile);
             C_flag = 1;
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);

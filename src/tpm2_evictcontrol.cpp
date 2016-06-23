@@ -63,6 +63,7 @@
 
 int debugLevel = 0;
 TPMS_AUTH_COMMAND sessionData;
+bool hexPasswd = false;
 
 int evictControl(TPMI_RH_PROVISION auth, TPMI_DH_OBJECT objectHandle,TPMI_DH_OBJECT persistentHandle, int P_flag)
 {
@@ -89,6 +90,17 @@ int evictControl(TPMI_RH_PROVISION auth, TPMI_DH_OBJECT objectHandle,TPMI_DH_OBJ
         sessionData.hmac.t.size = 0;
 
     *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
+    if (sessionData.hmac.t.size > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+                              &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for authorization Passwd.\n");
+            return -1;
+        }
+    }
 
     rval = Tss2_Sys_EvictControl(sysContext, auth, objectHandle, &sessionsData, persistentHandle,&sessionsDataOut);
 
@@ -115,6 +127,7 @@ void showHelp(const char *name)
         "-c, --context <filename>              filename for object context\n"
         "-S, --persistent<persistentHandle>    the persistent handle for objectHandle\n"
         "-P, --pwda      <authorizationPassword>   authrization password, optional\n"
+        "-X, --passwdInHex                     passwords given by any options are hex format.\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -123,9 +136,10 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -A n -H 0x80000000 -S 0x8101002 -P abc123 \n"
+        "%s -A o -H 0x80000000 -S 0x8101002 -P abc123 \n"
         "%s -A p -H 0x80000000 -S 0x8101002\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name);
+        "%s -A o -H 0x80000000 -S 0x8101002 -P 123abc -X\n"
+        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -142,7 +156,7 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvA:H:S:P:p:d:c:";
+    const char *optstring = "hvA:H:S:P:p:d:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
@@ -153,6 +167,7 @@ int main(int argc, char* argv[])
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
       {"context",1,NULL,'c'},
+      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -251,6 +266,9 @@ int main(int argc, char* argv[])
             }
             printf("contextFile = %s\n", contextFile);
             c_flag = 1;
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
