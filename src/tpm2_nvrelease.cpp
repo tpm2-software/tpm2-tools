@@ -65,6 +65,7 @@ int debugLevel = 0;
 UINT32 nvIndex;
 UINT32 authHandle;
 char handlePasswd[sizeof(TPMU_HA)];
+bool hexPasswd = false;
 
 int nvSpaceRelease()
 {
@@ -81,10 +82,20 @@ int nvSpaceRelease()
     sessionData.hmac.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
-    if (strlen(handlePasswd) > 0)
+    if (strlen(handlePasswd) > 0 && !hexPasswd)
     {
         sessionData.hmac.t.size = strlen(handlePasswd);
         memcpy( &sessionData.hmac.t.buffer[0], handlePasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(handlePasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(handlePasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for handlePasswd.\n");
+            return -1;
+        }
     }
 
     rval = Tss2_Sys_NV_UndefineSpace( sysContext, authHandle, nvIndex, &sessionsData, 0 );
@@ -104,6 +115,7 @@ void showHelp(const char *name)
            "   or: %s [-v/--version]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>]\n"
            "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>]\n"
+           "                      [-X/--passwdInHex]\n"
            "                      [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
            "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
@@ -113,6 +125,7 @@ void showHelp(const char *name)
            "                                     0x40000001 (TPM_RH_OWNER)\n"
            "                                     0x4000000C (TPM_RH_PLATFORM)\n"
            "   -P/--handlePasswd <string>      specifies the password of authHandle.\n"
+           "   -X/--passwdInHex                passwords given by any options are hex format.\n"
            "   -p/--port <port>                specifies the port number, default:%d, optional\n"
            "   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:\n"
            "                                     0 (high level test results)\n"
@@ -121,7 +134,8 @@ void showHelp(const char *name)
            "                                     3 (resource manager tables)\n"
            "\nexample:\n"
            "   %s -x 0x1500016 -a 0x40000001 -P passwd\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
+           "   %s -x 0x1500016 -a 0x40000001 -P 1a1b1c -X"
+           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -136,6 +150,7 @@ int main(int argc, char* argv[])
         { "index"       , required_argument, NULL, 'x' },
         { "authHandle"  , required_argument, NULL, 'a' },
         { "handlePasswd", required_argument, NULL, 'P' },
+        { "passwdInHex" , no_argument,       NULL, 'X' },
         { "port"        , required_argument, NULL, 'p' },
         { "dbg"         , required_argument, NULL, 'd' },
         { "help"        , no_argument,       NULL, 'h' },
@@ -155,7 +170,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "x:a:P:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "x:a:P:Xp:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -187,6 +202,9 @@ int main(int argc, char* argv[])
                 return -4;
             }
             safeStrNCpy(handlePasswd, optarg, sizeof(handlePasswd));
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case 'p':
             if( getPort(optarg, &port) )

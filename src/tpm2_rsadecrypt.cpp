@@ -64,6 +64,7 @@
 int debugLevel = 0;
 
 TPMS_AUTH_COMMAND sessionData;
+bool hexPasswd = false;
 
 int rsaDecrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *cipherText, const char *outFilePath)
 {
@@ -88,6 +89,17 @@ int rsaDecrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *cipherText, const
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
     *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
+    if (sessionData.hmac.t.size > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+                              &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for key Passwd.\n");
+            return -1;
+        }
+    }
 
     inScheme.scheme = TPM_ALG_RSAES;
     label.t.size = 0;
@@ -121,6 +133,7 @@ void showHelp(const char *name)
         "-P, --pwdk     <password>   the password of key, optional\n"
         "-I, --inFile   <filePath>   Input file path, containing the data to be decrypted\n"
         "-o, --outFile  <filePath>   Output file path, record the decrypted data\n"
+        "-X, --passwdInHex           passwords given by any options are hex format.\n"
         "-p, --port   <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
         "\t0 (high level test results)\n"
@@ -130,7 +143,8 @@ void showHelp(const char *name)
     "\n"
         "Example:\n"
         "%s -k 0x81010001 -I <filePath> -o <filePath>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name);
+        "%s -k 0x81010001 -P 123abc -X -I <filePath> -o <filePath>\n"
+        ,name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -147,7 +161,7 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvk:P:I:o:p:d:c:";
+    const char *optstring = "hvk:P:I:o:p:d:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
@@ -158,6 +172,7 @@ int main(int argc, char* argv[])
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
       {"keyContext",1,NULL,'c'},
+      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -245,6 +260,9 @@ int main(int argc, char* argv[])
             }
             printf("contextKeyFile = %s\n", contextKeyFile);
             c_flag = 1;
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);

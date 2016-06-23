@@ -68,6 +68,7 @@ TPM_HANDLE persistentAKHandle;
 char endorsePasswd[sizeof(TPMU_HA)];
 char akPasswd[sizeof(TPMU_HA)];
 char ownerPasswd[sizeof(TPMU_HA)];
+bool hexPasswd = false;
 char outputFile[PATH_MAX];
 char aknameFile[PATH_MAX];
 UINT32 algorithmType = TPM_ALG_RSA;
@@ -239,6 +240,22 @@ int createAK()
         inSensitive.t.sensitive.userAuth.t.size = strlen( akPasswd );
         memcpy( &( inSensitive.t.sensitive.userAuth.t.buffer[0] ), &( akPasswd[0] ), inSensitive.t.sensitive.userAuth.t.size );
     }
+    if (strlen(akPasswd) > 0 && !hexPasswd)
+    {
+        sessionData.hmac.t.size = strlen(akPasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], akPasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(akPasswd) > 0 && hexPasswd)
+    {
+        inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
+        if (hex2ByteStructure(akPasswd,
+                              &inSensitive.t.sensitive.userAuth.t.size,
+                              inSensitive.t.sensitive.userAuth.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for akPasswd.\n");
+            return -1;
+        }
+    }
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
@@ -248,10 +265,20 @@ int createAK()
         return -1;
 
     sessionData.hmac.t.size = 0;
-    if( strlen( endorsePasswd ) > 0 )
+    if (strlen(endorsePasswd) > 0 && !hexPasswd)
     {
-        sessionData.hmac.t.size = strlen( endorsePasswd );
-        memcpy( &( sessionData.hmac.t.buffer[0] ), &( endorsePasswd[0] ), sessionData.hmac.t.size );
+        sessionData.hmac.t.size = strlen(endorsePasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], endorsePasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(endorsePasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for endorsePasswd.\n");
+            return -1;
+        }
     }
 
     symmetric.algorithm = TPM_ALG_NULL;
@@ -305,10 +332,20 @@ int createAK()
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.sessionAttributes.continueSession = 0;
     sessionData.hmac.t.size = 0;
-    if( strlen( endorsePasswd ) > 0 )
+    if (strlen(endorsePasswd) > 0 && !hexPasswd)
     {
-        sessionData.hmac.t.size = strlen( endorsePasswd );
-        memcpy( &( sessionData.hmac.t.buffer[0] ), &( endorsePasswd[0] ), sessionData.hmac.t.size );
+        sessionData.hmac.t.size = strlen(endorsePasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], endorsePasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(endorsePasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for endorsePasswd.\n");
+            return -1;
+        }
     }
 
     rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
@@ -372,10 +409,20 @@ int createAK()
     sessionData.sessionAttributes.continueSession = 0;
     sessionData.hmac.t.size = 0;
     // use the owner auth here.
-    if( strlen( ownerPasswd ) > 0 )
+    if (strlen(ownerPasswd) > 0 && !hexPasswd)
     {
-        sessionData.hmac.t.size = strlen( ownerPasswd );
-        memcpy( &( sessionData.hmac.t.buffer[0] ), &( ownerPasswd[0] ), sessionData.hmac.t.size );
+        sessionData.hmac.t.size = strlen(ownerPasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], ownerPasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(ownerPasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(ownerPasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for ownerPasswd.\n");
+            return -1;
+        }
     }
 
     rval = Tss2_Sys_EvictControl(sysContext, TPM_RH_OWNER, loadedSha1KeyHandle, &sessionsData, persistentAKHandle, &sessionsDataOut);
@@ -415,7 +462,8 @@ void showHelp(const char *name)
            "   or: %s [-e/--endorsePasswd <password>] [-P/--akPasswd <password>] [-o/--ownerPasswd <password>]\n"
            "                     [-E/--ekHandle <hexHandle>] [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] [-D/--digestAlg <hexAlg>]\n"
            "                     [-s/--signAlg <hexAlg>] [-f/--file <outputFile>] [-n/--akName <aknameFile>]\n"
-           "                     [-i/--ip <ipAddress>] [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
+           "                     [-X/--passwdInHex]\n"
+           "                     [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
            "\nwhere:\n\n"
            "   -h/--help                       display this help and exit.\n"
            "   -v/--version                    display version information and exit.\n"
@@ -444,6 +492,7 @@ void showHelp(const char *name)
             "\t0x001C  TPM_ALG_ECSCHNORR\n"
            "   -f/--file       <outputFile>     specifies the file used to save the public portion of AK.\n"
            "   -n/--akName     <aknameFile>     specifies the file used to save the ak name.\n"
+           "   -X/--passwdInHex                 passwords given by any options are hex format.\n"
            "   -p/--port       <port>           specifies the port number (default:%d).\n"
            "   -d/--dbg        <dbgLevel>       specifies level of debug messages:\n"
            "                                     0 (high level test results)\n"
@@ -452,7 +501,8 @@ void showHelp(const char *name)
            "                                     3 (resource manager tables)\n"
            "\nexample:\n"
            "   %s -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name);
+           "   %s -e 1a2b3c -P 123abc -o 1a1b1c -X -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name\n"
+           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char *argv[])
@@ -475,6 +525,7 @@ int main(int argc, char *argv[])
         { "akPasswd"   , required_argument, NULL, 'P' },
         { "file"       , required_argument, NULL, 'f' },
         { "akName"     , required_argument, NULL, 'n' },
+        { "passwdInHex", no_argument,       NULL, 'X' },
         { "port"       , required_argument, NULL, 'p' },
         { "dbg"        , required_argument, NULL, 'd' },
         { "help"       , no_argument,       NULL, 'h' },
@@ -495,7 +546,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "o:E:e:k:g:D:s:P:f:n:p:d:hv", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "o:E:e:k:g:D:s:P:f:n:Xp:d:hv", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -589,6 +640,9 @@ int main(int argc, char *argv[])
                 return -11;
             }
             safeStrNCpy(aknameFile, optarg, sizeof(aknameFile));
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case 'p':
             if( getPort(optarg, &port) )

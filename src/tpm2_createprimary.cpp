@@ -63,6 +63,7 @@
 
 int debugLevel = 0;
 TPMS_AUTH_COMMAND sessionData;
+bool hexPasswd = false;
 TPM_HANDLE handle2048rsa;
 
 int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic)
@@ -170,9 +171,31 @@ int createPrimary(TPMI_RH_HIERARCHY hierarchy, TPM2B_PUBLIC *inPublic, TPM2B_SEN
         sessionData.hmac.t.size = 0;
 
     *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
+    if (sessionData.hmac.t.size > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+                              &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for hierarchy Passwd.\n");
+            return -1;
+        }
+    }
 
     if(K_flag == 0)
         inSensitive->t.sensitive.userAuth.t.size = 0;
+    if (inSensitive->t.sensitive.userAuth.t.size > 0 && hexPasswd)
+    {
+        inSensitive->t.sensitive.userAuth.t.size = sizeof(inSensitive->t.sensitive.userAuth) - 2;
+        if (hex2ByteStructure((char *)inSensitive->t.sensitive.userAuth.t.buffer,
+                              &inSensitive->t.sensitive.userAuth.t.size,
+                              inSensitive->t.sensitive.userAuth.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for primary Passwd.\n");
+            return -1;
+        }
+    }
 
     inSensitive->t.sensitive.data.t.size = 0;
     inSensitive->t.size = inSensitive->t.sensitive.userAuth.b.size + 2;
@@ -217,6 +240,7 @@ void showHelp(const char *name)
             "\t0x0023  TPM_ALG_ECC\n"
             "\t0x0025  TPM_ALG_SYMCIPHER\n"
         "-C, --context <filename> The file to save the object context, optional\n"
+        "-X, --passwdInHex        passwords given by any options are hex format.\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -227,7 +251,8 @@ void showHelp(const char *name)
         "Example:\n"
         "%s -A e -P abc123 -K def456 -g 0x000B -G 0x0008 \n"
         "%s -A p -g 0x000B -G 0x0008\n\n"//-i <simulator IP>\n\n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name, name);
+        "%s -A e -P 1a1b1c -K 456def -X -g 0x000B -G 0x0008 \n"
+        , name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -246,7 +271,7 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvA:P:K:g:G:p:d:C:";
+    const char *optstring = "hvA:P:K:g:G:p:d:C:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
@@ -258,6 +283,7 @@ int main(int argc, char* argv[])
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
       {"context",1,NULL,'C'},
+      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -369,6 +395,9 @@ int main(int argc, char* argv[])
             }
             printf("contextFile = %s\n", contextFile);
             C_flag = 1;
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);

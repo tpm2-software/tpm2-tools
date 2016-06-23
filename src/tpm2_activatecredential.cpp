@@ -74,6 +74,7 @@ TPM2B_ENCRYPTED_SECRET secret;
 TPMS_AUTH_COMMAND cmdAuth;
 TPMS_AUTH_COMMAND cmdAuth2;
 TPMS_AUTH_COMMAND cmdAuth3;
+bool hexPasswd = false;
 
 int readCrtSecFromFile(const char *path,TPM2B_ID_OBJECT *credentialBlob, TPM2B_ENCRYPTED_SECRET *secret)
 {
@@ -125,6 +126,30 @@ int activateCredential()
     TPMT_SYM_DEF symmetric;
 
     symmetric.algorithm = TPM_ALG_NULL;
+
+    if (cmdAuth.hmac.t.size > 0 && hexPasswd)
+    {
+        cmdAuth.hmac.t.size = sizeof(cmdAuth.hmac) - 2;
+        if (hex2ByteStructure((char *)cmdAuth.hmac.t.buffer,
+                              &cmdAuth.hmac.t.size,
+                              cmdAuth.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for handlePasswd.\n");
+            return -1;
+        }
+    }
+
+    if (cmdAuth2.hmac.t.size > 0 && hexPasswd)
+    {
+        cmdAuth2.hmac.t.size = sizeof(cmdAuth2.hmac) - 2;
+        if (hex2ByteStructure((char *)cmdAuth2.hmac.t.buffer,
+                              &cmdAuth2.hmac.t.size,
+                              cmdAuth2.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for endorsePasswd.\n");
+            return -1;
+        }
+    }
 
     rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
             0, &nonceCaller, &encryptedSalt, TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256 );
@@ -199,6 +224,7 @@ void showHelp(const char *name)
 
         "-f, --inFile   <filePath>   Input file path, containing the two structures needed by tpm2_activatecredential function\n"
         "-o, --outFile  <filePath>   Output file path, record the secret to decrypt the certificate\n"
+        "-X, --passwdInHex           passwords given by any options are hex format.\n"
         "-p, --port   <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
         "\t0 (high level test results)\n"
@@ -208,7 +234,8 @@ void showHelp(const char *name)
     "\n"
         "Example:\n"
         "%s -H 0x81010002 -k 0x81010001 -P passwd -e new -f <filePath> -o <filePath>\n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name);
+        "%s -H 0x81010002 -k 0x81010001 -P 123abc -e 1a1a1c -X -f <filePath> -o <filePath>\n"
+        , name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -222,7 +249,7 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:c:k:C:P:e:f:o:p:d:";
+    const char *optstring = "hvH:c:k:C:P:e:f:o:Xp:d:";
     struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
@@ -234,6 +261,7 @@ int main(int argc, char* argv[])
       {"endorsePasswd",1,NULL,'e'},
       {"inFile",1,NULL,'f'},
       {"outFile",1,NULL,'o'},
+      {"passwdInHex",0,NULL,'X'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
       {0,0,0,0},
@@ -343,6 +371,9 @@ int main(int argc, char* argv[])
             }
 #endif
             o_flag = 1;
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case 'p':
             if( getPort(optarg, &port) )

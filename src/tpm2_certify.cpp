@@ -64,6 +64,7 @@
 
 int debugLevel = 0;
 TPMS_AUTH_COMMAND cmdAuth, cmdAuth2;
+bool hexPasswd = false;
 
 int getKeyType(TPMI_DH_OBJECT objectHandle, TPMI_ALG_PUBLIC *type)
 {
@@ -136,6 +137,29 @@ int certify( TPMI_DH_OBJECT objectHandle, TPMI_DH_OBJECT keyHandle, TPMI_ALG_HAS
     cmdAuth2.sessionHandle = TPM_RS_PW;
     *((UINT8 *)((void *)&cmdAuth.sessionAttributes)) = 0;
     *((UINT8 *)((void *)&cmdAuth2.sessionAttributes)) = 0;
+    if (cmdAuth.hmac.t.size > 0 && hexPasswd)
+    {
+        cmdAuth.hmac.t.size = sizeof(cmdAuth.hmac) - 2;
+        if (hex2ByteStructure((char *)cmdAuth.hmac.t.buffer,
+                              &cmdAuth.hmac.t.size,
+                              cmdAuth.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for object Passwd.\n");
+            return -1;
+        }
+    }
+
+    if (cmdAuth2.hmac.t.size > 0 && hexPasswd)
+    {
+        cmdAuth2.hmac.t.size = sizeof(cmdAuth2.hmac) - 2;
+        if (hex2ByteStructure((char *)cmdAuth2.hmac.t.buffer,
+                              &cmdAuth2.hmac.t.size,
+                              cmdAuth2.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for key Passwd.\n");
+            return -1;
+        }
+    }
 
     qualifyingData.t.size = sizeof( qualDataString );
     memcpy( &( qualifyingData.t.buffer[0] ), qualDataString, sizeof( qualDataString ) );
@@ -185,6 +209,7 @@ void showHelp(const char *name)
         "\t0x0012  TPM_ALG_SM3_256\n"
         "-a, --attestFile   <fileName>   output file name, record the attestation structure\n"
         "-s, --sigFile      <fileName>   output file name, record the signature structure\n"
+        "-X, --passwdInHex               passwords given by any options are hex format.\n"
         "-p, --port   <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
         "\t0 (high level test results)\n"
@@ -195,7 +220,8 @@ void showHelp(const char *name)
         "Example:\n"
         "%s -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>\n"
         "%s -H 0x81010002 -k 0x81010001 -g 0x00B -a <fileName> -s <fileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        , name, DEFAULT_RESMGR_TPM_PORT, name, name);
+        "%s -H 0x81010002 -k 0x81010001 -P 0011 -K 00FF -X -g 0x00B -a <fileName> -s <fileName>\n"
+        , name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -214,7 +240,7 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:k:P:K:g:a:s:p:d:C:c:";
+    const char *optstring = "hvH:k:P:K:g:a:s:p:d:C:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
@@ -229,6 +255,7 @@ int main(int argc, char* argv[])
       {"debugLevel",1,NULL,'d'},
       {"objContext",1,NULL,'C'},
       {"keyContext",1,NULL,'c'},
+      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -359,6 +386,9 @@ int main(int argc, char* argv[])
             }
             printf("contextFile = %s\n", contextFile);
             C_flag = 1;
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);

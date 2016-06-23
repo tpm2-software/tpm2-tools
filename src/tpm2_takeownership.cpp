@@ -69,6 +69,7 @@ char oldLockoutPasswd[sizeof(TPMU_HA)];
 char newOwnerPasswd[sizeof(TPMU_HA)];
 char newEndorsePasswd[sizeof(TPMU_HA)];
 char newLockoutPasswd[sizeof(TPMU_HA)];
+bool hexPasswd = false;
 
 int clearHierarchyAuth()
 {
@@ -121,11 +122,39 @@ int changeHierarchyAuth()
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
     // Change Owner Auth
-    newAuth.t.size = strlen( newOwnerPasswd );
-    memcpy( &newAuth.t.buffer[0], newOwnerPasswd, newAuth.t.size );
+    newAuth.t.size = 0;
+    if (strlen(newOwnerPasswd) > 0 && !hexPasswd)
+    {
+        newAuth.t.size = strlen(newOwnerPasswd);
+        memcpy( &newAuth.t.buffer[0], newOwnerPasswd, newAuth.t.size );
+    }
+    else if (strlen(newOwnerPasswd) > 0 && hexPasswd)
+    {
+        newAuth.t.size = sizeof(newAuth) - 2;
+        if (hex2ByteStructure(newOwnerPasswd, &newAuth.t.size,
+                              newAuth.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for newOwnerPasswd.\n");
+            return -1;
+        }
+    }
 
-    sessionData.hmac.t.size = strlen( oldOwnerPasswd );
-    memcpy( &sessionData.hmac.t.buffer[0], oldOwnerPasswd, sessionData.hmac.t.size );
+    sessionData.hmac.t.size = 0;
+    if (strlen(oldOwnerPasswd) > 0 && !hexPasswd)
+    {
+        sessionData.hmac.t.size = strlen(oldOwnerPasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], oldOwnerPasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(oldOwnerPasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(oldOwnerPasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for oldOwnerPasswd.\n");
+            return -1;
+        }
+    }
 
     rval = Tss2_Sys_HierarchyChangeAuth( sysContext, TPM_RH_OWNER, &sessionsData, &newAuth, 0 );
     if( rval != TPM_RC_SUCCESS )
@@ -136,11 +165,39 @@ int changeHierarchyAuth()
     printf("\n......Change Hierarchy Owner Auth Succ......\n");
 
     // Change Endorsement Auth
-    newAuth.t.size = strlen( newEndorsePasswd );
-    memcpy( &newAuth.t.buffer[0], newEndorsePasswd, newAuth.t.size );
+    newAuth.t.size = 0;
+    if (strlen(newEndorsePasswd) > 0 && !hexPasswd)
+    {
+        newAuth.t.size = strlen(newEndorsePasswd);
+        memcpy( &newAuth.t.buffer[0], newEndorsePasswd, newAuth.t.size );
+    }
+    else if (strlen(newEndorsePasswd) > 0 && hexPasswd)
+    {
+        newAuth.t.size = sizeof(newAuth) - 2;
+        if (hex2ByteStructure(newEndorsePasswd, &newAuth.t.size,
+                              newAuth.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for newEndorsePasswd.\n");
+            return -1;
+        }
+    }
 
-    sessionData.hmac.t.size = strlen( oldEndorsePasswd );
-    memcpy( &sessionData.hmac.t.buffer[0], oldEndorsePasswd, sessionData.hmac.t.size );
+    sessionData.hmac.t.size = 0;
+    if (strlen(oldEndorsePasswd) > 0 && !hexPasswd)
+    {
+        sessionData.hmac.t.size = strlen(oldEndorsePasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], oldEndorsePasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(oldEndorsePasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(oldEndorsePasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for oldEndorsePasswd.\n");
+            return -1;
+        }
+    }
 
     rval = Tss2_Sys_HierarchyChangeAuth( sysContext, TPM_RH_ENDORSEMENT, &sessionsData, &newAuth, 0 );
     if( rval != TPM_RC_SUCCESS )
@@ -156,6 +213,39 @@ int changeHierarchyAuth()
 
     sessionData.hmac.t.size = strlen( oldLockoutPasswd );
     memcpy( &sessionData.hmac.t.buffer[0], oldLockoutPasswd, sessionData.hmac.t.size );
+    newAuth.t.size = 0;
+    if (strlen(newLockoutPasswd) > 0 && !hexPasswd)
+    {
+        newAuth.t.size = strlen(newLockoutPasswd);
+        memcpy( &newAuth.t.buffer[0], newLockoutPasswd, newAuth.t.size );
+    }
+    else if (strlen(newLockoutPasswd) > 0 && hexPasswd)
+    {
+        newAuth.t.size = sizeof(newAuth) - 2;
+        if (hex2ByteStructure(newLockoutPasswd, &newAuth.t.size,
+                              newAuth.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for newLockoutPasswd.\n");
+            return -1;
+        }
+    }
+
+    sessionData.hmac.t.size = 0;
+    if (strlen(oldLockoutPasswd) > 0 && !hexPasswd)
+    {
+        sessionData.hmac.t.size = strlen(oldLockoutPasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], oldLockoutPasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(oldLockoutPasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(oldLockoutPasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for oldLockoutPasswd.\n");
+            return -1;
+        }
+    }
     rval = Tss2_Sys_HierarchyChangeAuth( sysContext, TPM_RH_LOCKOUT, &sessionsData, &newAuth, 0 );
     if( rval != TPM_RC_SUCCESS )
     {
@@ -177,6 +267,7 @@ void showHelp(const char *name)
            "                          [-E/--oldEndorsePasswd <password>] [-O/--oldOwnerPasswd <password>] [-L/--oldLockPasswd <password>]\n"
            "   or: %s [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] [-l/--lockPasswd <password>]\n"
            "                          [-E/--oldEndorsePasswd <password>] [-O/--oldOwnerPasswd <password>] [-L/--oldLockPasswd <password>]\n"
+           "                          [-X/--passwdInHex]\n"
            "                          [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
            "\nwhere:\n\n"
            "   -h/--help                        display this help and exit.\n"
@@ -187,6 +278,7 @@ void showHelp(const char *name)
            "   -O/--oldOwnerPasswd <password>   old Owner authorization (string,optional,default:NULL).\n"
            "   -E/--oldEndorsePasswd <password> old Endorsement authorization (string,optional,default:NULL).\n"
            "   -L/--oldLockPasswd <password>    old Lockout authorization (string,optional,default:NULL).\n"
+           "   -X/--passwdInHex                 passwords given by any options are hex format.\n"
            "   -p/--port <port>                 specifies the port number. default %d.\n"
            "   -d/--dbg <dbgLevel>              specifies level of debug messages:\n"
            "                                      0 (high level test results)\n"
@@ -195,8 +287,10 @@ void showHelp(const char *name)
            "                                      3 (resource manager tables)\n"
            "\nexample:\n"
            "   Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: %s -c\n"
-           "   Set ownerAuth, endorsementAuth and lockoutAuth to a newAuth: %s -o new -e new -l new -O old -E Old -L old\n"
-           , name, name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
+           "   Set ownerAuth, endorsementAuth and lockoutAuth to a newAuth:\n"
+           "     %s -o new -e new -l new -O old -E old -L old\n"
+           "     %s -o 2a2b2c -e 2a2b2c -l 2a2b2c -O 1a1b1c -E 1a1b1c -L 1a1b1c -X\n"
+           , name, name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char *argv[])
@@ -216,6 +310,7 @@ int main(int argc, char *argv[])
         { "oldOwnerPasswd"  , required_argument, NULL, 'O' },
         { "oldEndorsePasswd", required_argument, NULL, 'E' },
         { "oldLockPasswd"   , required_argument, NULL, 'L' },
+        { "passwdInHex"     , no_argument,       NULL, 'X' },
         { "port"            , required_argument, NULL, 'p' },
         { "dbg"             , required_argument, NULL, 'd' },
         { "help"            , no_argument,       NULL, 'h' },
@@ -236,7 +331,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "o:e:l:O:E:L:p:d:hvc", sOpts, NULL ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "o:e:l:O:E:L:Xp:d:hvc", sOpts, NULL ) ) != -1 )
     {
         switch ( opt ) {
         case 'h':
@@ -302,6 +397,9 @@ int main(int argc, char *argv[])
                 return -4;
             }
             safeStrNCpy(oldLockoutPasswd, optarg, sizeof(oldLockoutPasswd));
+            break;
+        case 'X':
+            hexPasswd = true;
             break;
         case 'p':
             if( getPort(optarg, &port) )
