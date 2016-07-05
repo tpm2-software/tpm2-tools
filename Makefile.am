@@ -34,9 +34,9 @@ ACLOCAL_AMFLAGS = -I m4
 
 INCLUDE_DIRS = -I$(srcdir)
 
-AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS)
-AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS)
-LDADD = src/libcommon.a -ltctisocket
+AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS) $(TPM20_TSS_CFLAGS)
+AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS) $(TPM20_TSS_CXXFLAGS)
+LDADD = src/libcommon.a $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
 
 noinst_LIBRARIES = src/libcommon.a
 sbin_PROGRAMS = src/tpm2_listpcrs \
@@ -96,6 +96,8 @@ src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.cpp
 src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.cpp
 src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.cpp
 src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.cpp
+src_tpm2_getmanufec_CFLAG = $(AM_CXXFLAGS) $(CURL_CFLAGS)
+src_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
 src_tpm2_akparse_SOURCES = src/tpm2_akparse.cpp
 src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.cpp
 src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.cpp

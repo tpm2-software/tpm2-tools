@@ -6,21 +6,8 @@ LT_INIT
 AM_INIT_AUTOMAKE([foreign
                   subdir-objects])
 AC_CONFIG_FILES([Makefile])
-AC_CHECK_HEADER([openssl/sha.h],
-                [
-                 AC_DEFINE([HAVE_OPENSSL_H],
-                           [1],
-                           [Define if sha.h exists.])
-                 ],
-                [AC_MSG_ERROR([Missing OPENSSL headers.])])
-AC_CHECK_HEADER([curl/curl.h],
-                [
-                 AC_DEFINE([HAVE_CURL_H],
-                           [1],
-                           [Define if curl.h exists.])
-                 ],
-                [AC_MSG_ERROR([Missing CURL headers.])])
 PKG_CHECK_MODULES([SAPI],[sapi])
 PKG_CHECK_MODULES([TCTI_SOCK],[tcti-socket])
 PKG_CHECK_MODULES([TCTI_DEV],[tcti-device])
+PKG_CHECK_MODULES([CURL],[libcurl libcrypto])
 AC_OUTPUT
