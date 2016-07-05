@@ -2,6 +2,7 @@ To build and install the tpm2.0-tools software the following software is require
 GNU Autoconf
 GNU Automake
 GNU Libtool
+pkg-config
 C compiler
 C++ compiler
 C Library Development Libraries and Header Files (for pthreads headers)
