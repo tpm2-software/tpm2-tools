@@ -70,6 +70,7 @@ typedef struct {
 TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
 char outFilePath[PATH_MAX];
+TPM2B_DATA qualifyingData = {{0,}};
 
 void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -221,8 +222,6 @@ UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
 int quote(TPM_HANDLE akHandle, PCR_LIST pcrList, TPMI_ALG_HASH algorithmId)
 {
     UINT32 rval;
-    TPM2B_DATA qualifyingData;
-    UINT8 qualDataString[] = { 0x00, 0xff, 0x55, 0xaa };
     TPMT_SIG_SCHEME inScheme;
     TPML_PCR_SELECTION  pcrSelection;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -257,9 +256,6 @@ int quote(TPM_HANDLE akHandle, PCR_LIST pcrList, TPMI_ALG_HASH algorithmId)
             return -1;
         }
     }
-
-    qualifyingData.t.size = sizeof( qualDataString );
-    memcpy( &qualifyingData.t.buffer[0], qualDataString, sizeof( qualDataString ) );
 
     inScheme.scheme = TPM_ALG_NULL;
 
@@ -332,6 +328,7 @@ void showHelp(const char *name)
             "-g, --algorithm <hexAlg>      The algorithm id\n"
             "-o, --outFile<filePath>       output file path, recording the two structures output by tpm2_quote function\n"
             "-X, --passwdInHex             passwords given by any options are hex format.\n"
+            "-q, --qualifyData <hexData>   Data given as a Hex string to qualify the quote, optional.\n"
             "-p, --port    <port number>   The Port number, default is %d, optional\n"
             "-d, --debugLevel <0|1|2|3>    The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -345,9 +342,9 @@ void showHelp(const char *name)
             "quote the selected PCR values:\n"
             "\t %s -k 0x80000001 -P abc123 -g 0x4 -l 16,17,18 -o outFile001\n"
             "\t %s -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001\n"
-            "\t %s -k 0x80000001 -g 0x4 -l 16,17,18 -o outFile001 \n\n"
-            "\t %s -c ak.context -g 0x4 -l 16,17,18 -o outFile001 \n\n"
-            "\t %s -k 0x80000001 -P 123abc -X -g 0x4 -l 16,17,18 -o outFile001\n"
+            "\t %s -k 0x80000001 -g 0x4 -l 16,17,18 -o outFile001 \n"
+            "\t %s -c ak.context -g 0x4 -l 16,17,18 -o outFile001 \n"
+            "\t %s -k 0x80000001 -P 123abc -X -g 0x4 -l 16,17,18 -o outFile001 -q 11aa22bb\n"
             , name, DEFAULT_RESMGR_TPM_PORT, name, name, name, name, name, name, name);
 }
 
@@ -430,7 +427,7 @@ int main(int argc, char *argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:o:Xp:d:";
+    const char *optstring = "hvk:c:P:l:g:o:Xq:p:d:";
     static struct option long_options[] = {
         {"help",0,NULL,'h'},
         {"version",0,NULL,'v'},
@@ -441,6 +438,7 @@ int main(int argc, char *argv[])
         {"algorithm",1,NULL,'g'},
         {"outFile",1,NULL,'o'},
         {"passwdInHex",0,NULL,'X'},
+        {"qualifyData",1,NULL,'q'},
         {"port",1,NULL,'p'},
         {"debugLevel",1,NULL,'d'},
         {0,0,0,0}
@@ -534,6 +532,14 @@ int main(int argc, char *argv[])
             break;
         case 'X':
             hexPasswd = true;
+            break;
+        case 'q':
+            qualifyingData.t.size = sizeof(qualifyingData) - 2;
+            if(hex2ByteStructure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
+            {
+                returnVal = -14;
+                break;
+            }
             break;
         case 'p':
             if( getPort(optarg, &port) )
