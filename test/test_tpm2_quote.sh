@@ -50,9 +50,11 @@ file_quote_output=quote_"$file_quote_key_ctx"
 Handle_ak_quote=0x81010016
 Handle_ek_quote=0x81010017
 
+nonce=12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde
+
 fail()
 {
-	    echo "$1 test fail, pelase check the environment or parameters!"
+	    echo "$1 test fail, please check the environment or parameters!"
 #			    echo ""$1" fail" >>test_encryptdecrypt_error.log
  exit 1
 }
@@ -82,9 +84,9 @@ if [ $? != 0 ];then
 	fail load   
 fi
 
-tpm2_quote -c $file_quote_key_ctx  -g 0x4 -l 16,17,18 -o $file_quote_output
+tpm2_quote -c $file_quote_key_ctx  -g 0x4 -l 16,17,18 -o $file_quote_output -q $nonce
 if [ $? != 0 ];then
-	fail decrypt 
+	fail quote 
 fi
 
 #####handle testing
@@ -94,7 +96,7 @@ if [ $? != 0 ];then
 fi
  
 rm quote_handle_output_"$Handle_ak_quote" -rf
-tpm2_quote -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -o quote_handle_output_"$Handle_ak_quote"
+tpm2_quote -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -o quote_handle_output_"$Handle_ak_quote" -q $nonce
 if [ $? != 0 ];then
 	fail quote_handle 
 fi
@@ -113,7 +115,7 @@ if [ $? != 0 ];then
 fi
 
 rm quote_handle_output_"$Handle_ak_quote" -rf
-tpm2_quote -k  $Handle_ak_quote -g $alg_quote -l 16,17,18 -o quote_handle_output_"$Handle_ak_quote"
+tpm2_quote -k  $Handle_ak_quote -g $alg_quote -l 16,17,18 -o quote_handle_output_"$Handle_ak_quote" -q $nonce
 if [ $? != 0 ];then
 	fail quote_handle_ak 
 fi
