@@ -60,7 +60,7 @@
 #include <getopt.h>
 
 
-#include <tss2/tpm20.h>
+#include <sapi/tpm20.h>
 #include "sample.h"
 #include <tcti/tcti_socket.h>
 #include "syscontext.h"

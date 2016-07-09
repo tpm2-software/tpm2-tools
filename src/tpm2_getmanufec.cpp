@@ -64,7 +64,7 @@
 #include <openssl/buffer.h>
 #include <curl/curl.h>
 
-#include <tss2/tpm20.h>
+#include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 #include "common.h"
 

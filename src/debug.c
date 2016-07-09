@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>   // Needed for _wtoi
 
-#include <tss2/tpm20.h>
+#include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 #include "debug.h"
 
