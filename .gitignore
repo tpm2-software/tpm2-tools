@@ -53,3 +53,4 @@ src/tpm2_loadexternal
 src/tpm2_getmanufec
 test-driver
 test/tpm2-rc-decode_unit
+test/tpm2-rc-entry_unit
