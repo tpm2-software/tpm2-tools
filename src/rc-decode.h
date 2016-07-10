@@ -31,6 +31,15 @@
 #include <sapi/tpm20.h>
 #include <stdbool.h>
 
+/* struct / type used to map TPM_RC error code parts to string representations of
+ * their identifier and description.
+ */
+typedef struct tpm2_rc_entry {
+    uint32_t  id;
+    char     *name;
+    char     *description;
+} tpm2_rc_entry_t;
+
 /* To understand the TPM_RC you need to read a 2 different parts of the
  * spec:
  * Section 39.4 of TPM 2.0 Part 1: Architecture
@@ -267,4 +276,15 @@ tpm2_rc_get_tss_err_code (TPM_RC response_code)
 {
     return 0X0000ffff & response_code;
 }
+/* Functions to retrieve tpm2_rc_entry with strings for RC decoding.
+ */
+tpm2_rc_entry_t* tpm2_get_tss_base_rc_entry (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_parameter_entry   (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_handle_entry      (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_session_entry     (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_layer_entry       (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_fmt0_entry        (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_fmt1_entry        (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_warn_entry        (TPM_RC rc);
+
 #endif /* RC_DECODE_H */
