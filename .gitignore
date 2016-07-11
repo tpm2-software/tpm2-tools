@@ -1,5 +1,8 @@
 .deps/
+.dirstamp
+*.log
 *.o
+*.trs
 aclocal.m4
 autom4te.cache/
 compile
@@ -48,3 +51,6 @@ src/tpm2_getpubek
 src/tpm2_takeownership
 src/tpm2_loadexternal
 src/tpm2_getmanufec
+test-driver
+test/tpm2-rc-decode_unit
+test/tpm2-rc-entry_unit
