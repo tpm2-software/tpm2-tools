@@ -1,3 +1,7 @@
+Unreleased
+Added
+* tpm2_rc_decode tool: Decode TPM_RC error codes.
+
 2015-10-19 Gang Wei <gang.wei@intel.com>
 * 1.0 release
 * 29 tools included
