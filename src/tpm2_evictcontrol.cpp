@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
                 returnVal = -2;
                 break;
             }
-            printf("\nobjecttHanlde: 0x%x\n\n",objectHandle);
+            printf("\nobjecttHandle: 0x%x\n\n",objectHandle);
             H_flag = 1;
             break;
         case 'S':
@@ -211,7 +211,7 @@ int main(int argc, char* argv[])
                 returnVal = -3;
                 break;
             }
-            printf("\npersistentHanlde: 0x%x\n\n",persistentHandle);
+            printf("\npersistentHandle: 0x%x\n\n",persistentHandle);
             S_flag = 1;
             break;
         case 'P':
