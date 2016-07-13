@@ -219,7 +219,7 @@ int main(int argc, char* argv[])
                 returnVal = -1;
                 break;
             }
-            printf("\nparentHanlde: 0x%x\n\n",parentHandle);
+            printf("\nparentHandle: 0x%x\n\n",parentHandle);
             H_flag = 1;
             break;
         case 'P':
