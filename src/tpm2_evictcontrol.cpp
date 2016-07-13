@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
                 returnVal = -2;
                 break;
             }
-            printf("\nobjecttHandle: 0x%x\n\n",objectHandle);
+            printf("\nobjectHandle: 0x%x\n\n",objectHandle);
             H_flag = 1;
             break;
         case 'S':
