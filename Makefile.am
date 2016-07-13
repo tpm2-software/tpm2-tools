@@ -32,11 +32,12 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-INCLUDE_DIRS = -I$(srcdir)
+INCLUDE_DIRS = -I$(srcdir)/src
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS) $(TPM20_TSS_CFLAGS)
 AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS) $(TPM20_TSS_CXXFLAGS)
 LDADD = src/libcommon.a $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
+TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = src/libcommon.a
 sbin_PROGRAMS = src/tpm2_listpcrs \
@@ -70,7 +71,12 @@ sbin_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_sign \
 		  src/tpm2_unseal \
 		  src/tpm2_verifysignature \
-		  src/tpm2_listpersistent
+		  src/tpm2_listpersistent \
+		  src/tpm2_rc_decode
+
+check_PROGRAMS = \
+    test/tpm2-rc-decode_unit \
+    test/tpm2-rc-entry_unit
 
 COMMON_SRC = \
     src/common.c \
@@ -124,3 +130,12 @@ src_tpm2_sign_SOURCES = src/tpm2_sign.cpp
 src_tpm2_unseal_SOURCES = src/tpm2_unseal.cpp
 src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.cpp
 src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.cpp
+src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
+
+test_tpm2_rc_decode_unit_CFLAGS  = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
+test_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS)
+test_tpm2_rc_decode_unit_SOURCES = test/tpm2-rc-decode_unit.c
+
+test_tpm2_rc_entry_unit_CFLAGS   = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
+test_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS)
+test_tpm2_rc_entry_unit_SOURCES  = src/rc-decode.c test/tpm2-rc-entry_unit.c

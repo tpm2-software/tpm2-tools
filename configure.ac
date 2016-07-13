@@ -10,4 +10,5 @@ PKG_CHECK_MODULES([SAPI],[sapi])
 PKG_CHECK_MODULES([TCTI_SOCK],[tcti-socket])
 PKG_CHECK_MODULES([TCTI_DEV],[tcti-device])
 PKG_CHECK_MODULES([CURL],[libcurl libcrypto])
+PKG_CHECK_MODULES([CMOCKA],[cmocka])
 AC_OUTPUT
