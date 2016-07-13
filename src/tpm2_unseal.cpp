@@ -192,7 +192,7 @@ int main(int argc, char* argv[])
                 returnVal = -1;
                 break;
             }
-            printf("\nitemHanlde: 0x%x\n\n",itemHandle);
+            printf("\nitemHandle: 0x%x\n\n",itemHandle);
             H_flag = 1;
             break;
         case 'P':
