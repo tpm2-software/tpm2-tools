@@ -132,7 +132,7 @@ void showHelp(const char *name)
             "\tn  TPM_RH_NULL\n"
         "-u, --pubfile   <publicKeyFileName>   The public portion of the object\n"
         "-r, --privfile  <privateKeyFileName>  The sensitive portion of the object, optional\n"
-        "-C, --context <filename>   The file to save the object context, optional"
+        "-C, --context <filename>   The file to save the object context, optional\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
