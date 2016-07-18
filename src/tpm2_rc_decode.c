@@ -69,10 +69,10 @@ process_cmdline (int   argc,
                  char *argv[])
 {
     int opt = -1;
-    const char *optstring = "hr";
+    const char *optstring = "hv";
     static struct option long_options[] = {
         { "help", 0 , NULL, 'h' },
-        { "version", 0, NULL, 'r' },
+        { "version", 0, NULL, 'v' },
         { 0 }
     };
     while ((opt = getopt_long (argc, argv, optstring, long_options, NULL)) != -1)
@@ -82,7 +82,7 @@ process_cmdline (int   argc,
             case 'h':
                 showHelp (argv[0]);
                 exit (0);
-            case 'r':
+            case 'v':
                 showVersion (argv[0]);
                 exit (0);
             case '?':
