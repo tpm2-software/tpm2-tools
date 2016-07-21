@@ -420,26 +420,34 @@ example:
         tpm2_listpcrs -g 0x04
 
 * tpm2_quote
-Provide quote and signature for given list of PCRs in given algorithm/bank.
+Provide quote and signature for given list of PCRs in given algorithm/banks.
 
 Usage:
   -k, --akHandle <hexHandle>    Handle of existing AK
   -c, --akContext <filename>    filename for the existing AK's context
   -P, --akPassword <akPassword> AK handle's Password
-  -l, --idList  <num1,...,numN> The list of selected PCR's id, 0~23
+  -l, --idList  <num1,...,numN> The list of selected PCRs' ids, 0~23
   -g, --algorithm <hexAlg>      The algorithm id
+  -L, --selList <hexAlg1:num1,...,numN+hexAlg2:num2_1,...,num2_M+...>
+                                The list of pcr banks and selected PCRs' ids
+                                (0~23) for each bank
   -o, --outFile<filePath>       output file path, recording the two structures
                                 output by tpm2_quote function
   -X, --passwdInHex             passwords given by any options are hex format.
   -q, --qualifyData <hexData>   Data given as a Hex string to qualify the
                                 quote, optional.
 
+Note:
+-L option & -g/-l options are mutually exclusive. -g/-l can be used to specify
+PCRs in one bank, and -L can be used to specify PCRs in any number of existing
+banks.
+
 example:
     tpm2_quote -k 0x81010002 -P abc123 -g 0x4 -l 16,17,18 -o outFile001
     tpm2_quote -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001
     tpm2_quote -k 0x81010002 -g 0x4 -l 16,17,18 -o outFile001
     tpm2_quote -c ak.context -g 0x4 -l 16,17,18 -o outFile001
-    tpm2_quote -k 0x81010002 -P 123abc -X -g 0x4 -l 16,17,18 -o outFile001 -q 11aa22bb
+    tpm2_quote -k 0x81010002 -P 123abc -X -L 0x4:16,17,18+0xb:16,17,18 -o outFile001 -q 11aa22bb
 
 
 * tpm2_listpersistent
