@@ -71,6 +71,7 @@ TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
 char outFilePath[PATH_MAX];
 TPM2B_DATA qualifyingData = {{0,}};
+TPML_PCR_SELECTION  pcrSelections;
 
 void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -219,11 +220,10 @@ UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
     return size > sizeof(*sig) ? sizeof(*sig) : size;
 }
 
-int quote(TPM_HANDLE akHandle, PCR_LIST pcrList, TPMI_ALG_HASH algorithmId)
+int quote(TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 {
     UINT32 rval;
     TPMT_SIG_SCHEME inScheme;
-    TPML_PCR_SELECTION  pcrSelection;
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -259,26 +259,10 @@ int quote(TPM_HANDLE akHandle, PCR_LIST pcrList, TPMI_ALG_HASH algorithmId)
 
     inScheme.scheme = TPM_ALG_NULL;
 
-    pcrSelection.count = 1;
-    pcrSelection.pcrSelections[0].hash = algorithmId;
-    pcrSelection.pcrSelections[0].sizeofSelect = 3;
-
-    // Clear out PCR select bit field
-    pcrSelection.pcrSelections[0].pcrSelect[0] = 0;
-    pcrSelection.pcrSelections[0].pcrSelect[1] = 0;
-    pcrSelection.pcrSelections[0].pcrSelect[2] = 0;
-
-    // Now set the PCR you want
-    for(int l=0;l<pcrList.size; l++)
-    {
-        UINT32 pcrId = pcrList.id[l];
-        pcrSelection.pcrSelections[0].pcrSelect[( pcrId/8 )] |= ( 1 << ( pcrId) % 8);
-    }
-
     memset( (void *)&signature, 0, sizeof(signature) );
 
     rval = Tss2_Sys_Quote(sysContext, akHandle, &sessionsData,
-            &qualifyingData, &inScheme, &pcrSelection,  &quoted,
+            &qualifyingData, &inScheme, pcrSelection, &quoted,
             &signature, &sessionsDataOut );
     if(rval != TPM_RC_SUCCESS)
     {
@@ -324,8 +308,9 @@ void showHelp(const char *name)
             "-k, --akHandle <hexHandle>    Handle of existing AK\n"
             "-c, --akContext <filename>    filename for the existing AK's context\n"
             "-P, --akPassword <akPassword> AK handle's Password\n"
-            "-l, --idList  <num1,...,numN> The list of selected PCR's id, 0~23\n"
+            "-l, --idList  <num1,...,numN> The list of selected PCRs' ids, 0~23\n"
             "-g, --algorithm <hexAlg>      The algorithm id\n"
+            "-L, --selList <hexAlg1:num1,...,numN+hexAlg2:num2_1,...,num2_M+...> The list of pcr banks and selected PCRs' ids(0~23) for each bank\n"
             "-o, --outFile<filePath>       output file path, recording the two structures output by tpm2_quote function\n"
             "-X, --passwdInHex             passwords given by any options are hex format.\n"
             "-q, --qualifyData <hexData>   Data given as a Hex string to qualify the quote, optional.\n"
@@ -336,6 +321,8 @@ void showHelp(const char *name)
             "\t2 (resource manager send/receive byte streams)\n"
             "\t3 (resource manager tables)\n"
             "\n"
+            "Note: -L option & -g/-l options are mutually exclusive. -g/-l can be used to specify PCRs in one bank, and -L can be used to specify PCRs in any number of existing banks.\n"
+            "\n"
             "Example:\n"
             "display usage:   %s -h\n"
             "display version: %s -v\n"
@@ -344,77 +331,131 @@ void showHelp(const char *name)
             "\t %s -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001\n"
             "\t %s -k 0x80000001 -g 0x4 -l 16,17,18 -o outFile001 \n"
             "\t %s -c ak.context -g 0x4 -l 16,17,18 -o outFile001 \n"
-            "\t %s -k 0x80000001 -P 123abc -X -g 0x4 -l 16,17,18 -o outFile001 -q 11aa22bb\n"
+            "\t %s -k 0x80000001 -P 123abc -X -L 0x4:16,17,18+0xb:16,17,18 -o outFile001 -q 11aa22bb\n"
             , name, DEFAULT_RESMGR_TPM_PORT, name, name, name, name, name, name, name);
 }
 
-int parseList(const char *arg, PCR_LIST *pcrList)
+const char *findChar(const char *str, int len, char c)
 {
-    char tmpStrCnt[128] = {0};
-    char tmpStrParse[128] = {0};
-    char tmpNum[10] = {0};
-    int strLenth = strlen(arg);
-    int listSize = 0;
-    UINT32 selectedId = 0;
-    if(strLenth == 0)
+    if(str == NULL || len <= 0)
+        return NULL;
+
+    for(int i = 0; i < len; i++)
     {
-        printf("The list can not be NULL!\n");
+        if(str[i] == c)
+            return &str[i];
+    }
+
+    return NULL;
+}
+
+int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel)
+{
+    char buf[3];
+    const char *strCurrent;
+    int lenCurrent;
+    UINT32 pcr;
+
+    if(str == NULL || len == 0)
         return -1;
-    }
-    safeStrNCpy(tmpStrCnt, arg, sizeof(tmpStrCnt));
-    safeStrNCpy(tmpStrParse, arg, sizeof(tmpStrParse));
-    if(tmpStrCnt[0] == ',' || tmpStrCnt[strLenth-1] == ',')
+
+    pcrSel->sizeofSelect = 3;
+    pcrSel->pcrSelect[0] = 0;
+    pcrSel->pcrSelect[1] = 0;
+    pcrSel->pcrSelect[2] = 0;
+
+    do
     {
-        printf("Wrong list: %s\n",arg);
-        return -2;
-    }
-    for(int i=0; i<strLenth; i++)
-    {
-        if(tmpStrCnt[i] == ',')
-            listSize++;
-    }
-    if(listSize == 0)
-    {
-        if( getPcrId(arg,&selectedId)!= 0 )
+        strCurrent = str;
+        str = findChar(strCurrent, len, ',');
+        if(str)
         {
-            printf("Wrong list: %s\n",arg);
-            return -3;
-        }
-        pcrList->size = listSize +1;
-        pcrList->id[0]= selectedId;
-        printf("size = 1; value=%d",pcrList->id[0]);
-        return 0;
-    }
-    pcrList->size = listSize + 1;
-    printf("pcrList->size = %d\n",pcrList->size);
-    listSize = 0;
-    for(int j=0,n=0; j<strLenth; j++,n++)
-    {
-        if(tmpStrParse[j] != ',')
-        {
-            tmpNum[n] = tmpStrParse[j];
+            lenCurrent = str - strCurrent;
+            str++;
+            len -= lenCurrent + 1;
         }
         else
         {
-            n = -1;
-            if(getPcrId(tmpNum, &selectedId)!= 0)
-            {
-                printf("Wrong list: %s\n",arg);
-                return -4;
-            }
-            memset(tmpNum,0,10);
-            pcrList->id[listSize] = selectedId;
-            printf("pcrList->id[%d] = %d\n",listSize,pcrList->id[listSize]);
-            listSize ++;
+            lenCurrent = len;
+            len = 0;
         }
-    }
-    if(getPcrId(tmpNum, &selectedId) != 0)
+
+        if(lenCurrent > sizeof(buf) - 1)
+            return -1;
+
+        safeStrNCpy(buf, strCurrent, lenCurrent + 1);
+
+        if(getPcrId(buf, &pcr)!= 0)
+            return -1;
+
+        pcrSel->pcrSelect[pcr/8] |= (1 << (pcr % 8));
+    } while(str);
+
+    return 0;
+}
+
+int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel)
+{
+    const char *strLeft;
+    char buf[7];
+
+    if(str == NULL || len == 0)
+        return -1;
+
+    strLeft = findChar(str, len, ':');
+
+    if(strLeft == NULL)
+        return -1;
+    if(strLeft - str > sizeof(buf) - 1)
+        return -1;
+
+    safeStrNCpy(buf, str, strLeft - str + 1);
+    if(getSizeUint16Hex(buf, &pcrSel->hash) != 0)
+        return -1;
+
+    strLeft++;
+
+    if(strLeft - str >= len)
+        return -1;
+
+    if(parsePCRList(strLeft, str + len - strLeft, pcrSel))
+        return -1;
+
+    return 0;
+}
+
+int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels)
+{
+    const char *strLeft = arg;
+    const char *strCurrent = arg;
+    int lenCurrent = 0;
+
+    if(arg == NULL || pcrSels == NULL)
+        return -1;
+
+    pcrSels->count = 0;
+
+    do
     {
-        printf("Wrong list: %s\n",arg);
-        return -5;
-    }
-    pcrList->id[listSize] = selectedId;
-    printf("pcrList->id[%d] = %d\n",listSize,pcrList->id[listSize]);
+        strCurrent = strLeft;
+
+        strLeft = findChar(strCurrent, strlen(strCurrent), '+');
+        if(strLeft)
+        {
+            lenCurrent = strLeft - strCurrent;
+            strLeft++;
+        }
+        else
+            lenCurrent = strlen(strCurrent);
+
+        if(parsePCRSelection(strCurrent, lenCurrent, &pcrSels->pcrSelections[pcrSels->count]))
+            return -1;
+
+        pcrSels->count++;
+    } while(strLeft);
+
+    if(pcrSels->count == 0)
+        return -1;
     return 0;
 }
 
@@ -427,7 +468,7 @@ int main(int argc, char *argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:o:Xq:p:d:";
+    const char *optstring = "hvk:c:P:l:g:L:o:Xq:p:d:";
     static struct option long_options[] = {
         {"help",0,NULL,'h'},
         {"version",0,NULL,'v'},
@@ -436,6 +477,7 @@ int main(int argc, char *argv[])
         {"akPassword",1,NULL,'P'},  //add ak auth
         {"idList",1,NULL,'l'},
         {"algorithm",1,NULL,'g'},
+        {"selList",1,NULL,'L'},
         {"outFile",1,NULL,'o'},
         {"passwdInHex",0,NULL,'X'},
         {"qualifyData",1,NULL,'q'},
@@ -446,8 +488,6 @@ int main(int argc, char *argv[])
 
     char *contextFilePath = NULL;
     TPM_HANDLE akHandle;
-    TPMI_ALG_HASH algorithmId;
-    PCR_LIST pcrList;
 
     int returnVal = 0;
     int flagCnt = 0;
@@ -458,6 +498,7 @@ int main(int argc, char *argv[])
         P_flag = 0,
         l_flag = 0,
         g_flag = 0,
+        L_flag = 0,
         o_flag = 0;
 
     if(argc == 1)
@@ -488,6 +529,7 @@ int main(int argc, char *argv[])
             contextFilePath = optarg;
             if(contextFilePath == NULL || contextFilePath[0] == '\0')
             {
+                showArgError(optarg, argv[0]);
                 returnVal = -2;
                 break;
             }
@@ -499,32 +541,45 @@ int main(int argc, char *argv[])
             sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
             if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
             {
+                showArgError(optarg, argv[0]);
                 returnVal = -3;
                 break;
             }
             P_flag = 1;
             break;
         case 'l':
-            if(parseList(optarg, &pcrList) != 0)
+            if(parsePCRList(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]) != 0)
             {
+                showArgError(optarg, argv[0]);
                 returnVal = -4;
                 break;
             }
             l_flag = 1;
             break;
         case 'g':
-            if(getSizeUint16Hex(optarg,&algorithmId) != 0)
+            if(getSizeUint16Hex(optarg,&pcrSelections.pcrSelections[0].hash) != 0)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
                 break;
             }
+            pcrSelections.count = 1;
             g_flag = 1;
+            break;
+        case 'L':
+            if(parsePCRSelections(optarg, &pcrSelections) != 0)
+            {
+                showArgError(optarg, argv[0]);
+                returnVal = -15;
+                break;
+            }
+            L_flag = 1;
             break;
         case 'o':
             safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
             if(checkOutFile(outFilePath) != 0)
             {
+                showArgError(optarg, argv[0]);
                 returnVal = -6;
                 break;
             }
@@ -537,6 +592,7 @@ int main(int argc, char *argv[])
             qualifyingData.t.size = sizeof(qualifyingData) - 2;
             if(hex2ByteStructure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
             {
+                showArgError(optarg, argv[0]);
                 returnVal = -14;
                 break;
             }
@@ -573,7 +629,7 @@ int main(int argc, char *argv[])
     if(returnVal != 0)
         return returnVal;
 
-    flagCnt = h_flag + v_flag + k_flag + c_flag + l_flag + g_flag + o_flag;
+    flagCnt = h_flag + v_flag + k_flag + c_flag + l_flag + g_flag + L_flag + o_flag;
     if(flagCnt == 1)
     {
         if(h_flag == 1)
@@ -586,7 +642,8 @@ int main(int argc, char *argv[])
             return -11;
         }
     }
-    else if(flagCnt == 4 && ((k_flag || c_flag) && l_flag && g_flag && o_flag))
+    else if(((flagCnt == 3 && L_flag) || (flagCnt == 4 && (g_flag && l_flag)))
+             && (k_flag || c_flag) && o_flag)
     {
         if(P_flag == 0)
             sessionData.hmac.t.size = 0;
@@ -596,7 +653,7 @@ int main(int argc, char *argv[])
         if(c_flag)
             returnVal = loadTpmContextFromFile(sysContext, &akHandle, contextFilePath);
         if(returnVal == TPM_RC_SUCCESS)
-            returnVal = quote(akHandle, pcrList, algorithmId);
+            returnVal = quote(akHandle, &pcrSelections);
 
         finishTest();
 

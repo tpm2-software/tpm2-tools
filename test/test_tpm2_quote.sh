@@ -39,6 +39,7 @@ alg_create_obj=0x000B
 alg_create_key=0x0008
 
 alg_quote=0x0004
+alg_quote1=0x000b
 
 file_primary_key_ctx=context.p_"$alg_primary_obj"_"$alg_primary_key"
 file_quote_key_pub=opu_"$alg_create_obj"_"$alg_create_key"
@@ -84,7 +85,13 @@ if [ $? != 0 ];then
 	fail load   
 fi
 
-tpm2_quote -c $file_quote_key_ctx  -g 0x4 -l 16,17,18 -o $file_quote_output -q $nonce
+tpm2_quote -c $file_quote_key_ctx  -g $alg_quote -l 16,17,18 -o $file_quote_output -q $nonce
+if [ $? != 0 ];then
+	fail quote 
+fi
+
+rm $file_quote_output -rf
+tpm2_quote -c $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -o $file_quote_output -q $nonce
 if [ $? != 0 ];then
 	fail quote 
 fi
@@ -97,6 +104,12 @@ fi
  
 rm quote_handle_output_"$Handle_ak_quote" -rf
 tpm2_quote -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -o quote_handle_output_"$Handle_ak_quote" -q $nonce
+if [ $? != 0 ];then
+	fail quote_handle 
+fi
+
+rm quote_handle_output_"$Handle_ak_quote" -rf
+tpm2_quote -k $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -o quote_handle_output_"$Handle_ak_quote" -q $nonce
 if [ $? != 0 ];then
 	fail quote_handle 
 fi
