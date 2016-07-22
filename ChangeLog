@@ -1,9 +1,41 @@
 Unreleased
 Added
 * tpm2_rc_decode tool: Decode TPM_RC error codes.
+* Android Make file
+* tpm2_listpersistent: list all persistent objects
+* test scripts for tpm2-tools
+* tpm2_nvreadlock
+* tpm2_getmanufec: retrieve EC from tpm manufacturer server.
+* Copy 'common' and 'sample' code from the TPM2.0-TSS repo.
 
 Modified
-* tpm2_quote: added -L option to support selection of multiple banks
+* tpm2_listpcrs: add options -L and -s, rewrite to increase performance.
+* tpm2_quote: added -L option to support selection of multiple banks.
+* tpm2_quote: add -q option to get qualifying data.
+* configure: Use pkg-config to get info about libcurl and libcrypto.
+* configure: Use pkg-config to locate SAPI and TCTI headers / libraries.
+* tpm2_x: Add -X option to enable password input in Hex format.
+* tpm2_nvdefine: Change -X option to -I.
+* tpm2-nvwrite: fix for unable to write 1024B+ data.
+* tpm2_getmanufec: Fix base64 encoding.
+* tpm2_x: fixed a lot of TPM2B failures caused by wrong initialization.
+* tpm2_getmanufec: let configure handle libs.
+* tpm2_getmanufec: Convert from dos to unix format.
+* build: Check for TSS2 library @ configure time.
+* build: Detect required TSS2 and TCTI headers.
+* build: Use libtool to build the common library
+* build: Install all binaries into sbin.
+* build: Build common sources into library.
+* build: Move all source files to 'src'.
+* Makefile.am: Move all build rules into single Makefile.am.
+* everything: Use new TCTI headers and fixup API calls.
+* everything: Update source to cope with sapi header cleanup.
+* tpm2_activatecredential: Updated to support TCG compatible EK
+* tpm2_getpubak: Updated to use TCG compatible EK
+* tpm2_getpubek: fix ek creation to follow TCG EK profile spec.
+
+Removed
+* depenedency on the TPM2.0-TSS repo source code
 
 2015-10-19 Gang Wei <gang.wei@intel.com>
 * 1.0 release
