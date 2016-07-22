@@ -37,6 +37,27 @@ tpm2_listpcrs
 if [ $? != 0 ];then 
  echo "listpcrs  fail!"
  exit 1
-else
- echo "listpcrs  OK!"
 fi
+
+tpm2_listpcrs -g 0x04
+
+if [ $? != 0 ];then 
+ echo "listpcrs  fail!"
+ exit 1
+fi
+
+tpm2_listpcrs -L 0x04:17,18,19+0x0b:0,17,18,19 -o pcrs
+
+if [ $? != 0 ];then 
+ echo "listpcrs  fail!"
+ exit 1
+fi
+
+tpm2_listpcrs -s
+
+if [ $? != 0 ];then 
+ echo "listpcrs  fail!"
+ exit 1
+fi
+
+echo "listpcrs  OK!"

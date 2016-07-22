@@ -398,10 +398,11 @@ example:
     tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P 123abc -e 1a1b1c -X -f <filePath> -o <filePath>
 
 * tpm2_listpcrs
-display all PCR values in given algorithm, if no algorithm is given, output
-all algs. Output file just contains 24 PCR values in binary format and in
-0~23 order. Assume the caller know the pcr value length corresponding to the
-given  bank/algorithm.
+display all PCR values in given algorithm with -g, display given PCR values
+in given algorithms with -L, or if no algorithm is given, output all algs.
+Output file just contains all returned PCR values in binary format and in
+0~23 order and in the requested order if multiple algs were requested. Assume
+the caller know the pcr value length corresponding to the given bank/algorithm.
 
 Usage:
   -g, --algorithim <hexAlg>     The algorithm id, optional
@@ -412,12 +413,20 @@ Usage:
                                   0x0012  TPM_ALG_SM3_256
   -o, --output  <filename>      The file to hold the PCR values in binary
                                 format, optional
+  -L, --selList <hexAlg1:num1,...,numN+hexAlg2:num2_1,...,num2_M+...>
+                                The list of pcr banks and selected PCRs' ids
+                                (0~23) for each bank
+  -s, --algs                    Show the supported algs in the PCR banks
 
 example:
     display all PCR values:  
         tpm2_listpcrs
     display the PCR values with specified bank:
         tpm2_listpcrs -g 0x04
+    display the PCR values with specified banks and store in a file:
+        tpm2_listpcrs -L 0x04:16,17,18+0x0b:16,17,18 -o pcrs
+    display the supported algs in the PCR banks:
+        tpm2_listpcrs -s
 
 * tpm2_quote
 Provide quote and signature for given list of PCRs in given algorithm/banks.
