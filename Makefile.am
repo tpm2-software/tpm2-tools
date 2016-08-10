@@ -74,9 +74,11 @@ sbin_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_listpersistent \
 		  src/tpm2_rc_decode
 
+if UNIT
 check_PROGRAMS = \
     test/tpm2-rc-decode_unit \
     test/tpm2-rc-entry_unit
+endif
 
 COMMON_SRC = \
     src/common.c \
@@ -132,6 +134,7 @@ src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.cpp
 src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.cpp
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
 
+if UNIT
 test_tpm2_rc_decode_unit_CFLAGS  = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
 test_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS)
 test_tpm2_rc_decode_unit_SOURCES = test/tpm2-rc-decode_unit.c
@@ -139,3 +142,4 @@ test_tpm2_rc_decode_unit_SOURCES = test/tpm2-rc-decode_unit.c
 test_tpm2_rc_entry_unit_CFLAGS   = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
 test_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS)
 test_tpm2_rc_entry_unit_SOURCES  = src/rc-decode.c test/tpm2-rc-entry_unit.c
+endif

@@ -10,5 +10,15 @@ PKG_CHECK_MODULES([SAPI],[sapi])
 PKG_CHECK_MODULES([TCTI_SOCK],[tcti-socket])
 PKG_CHECK_MODULES([TCTI_DEV],[tcti-device])
 PKG_CHECK_MODULES([CURL],[libcurl libcrypto])
-PKG_CHECK_MODULES([CMOCKA],[cmocka])
+AC_ARG_ENABLE([unit],
+            [AS_HELP_STRING([--enable-unit],
+                            [build cmocka unit tests (default is no)])],
+            [enable_unit=$enableval],
+            [enable_unit=no])
+AS_IF([test "x$enable_unit" != xno],
+      [PKG_CHECK_MODULES([CMOCKA],
+                         [cmocka],
+                         [AC_DEFINE([HAVE_CMOCKA],
+                                    [1])])])
+AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
 AC_OUTPUT
