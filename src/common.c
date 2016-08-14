@@ -235,9 +235,10 @@ TSS2_RC InitTctiResMgrContext( TCTI_SOCKET_CONF *rmInterfaceConfig, TSS2_TCTI_CO
     return rval;
 }
 
-TSS2_RC TeardownTctiResMgrContext( TSS2_TCTI_CONTEXT *tctiContext )
+void TeardownTctiResMgrContext( TSS2_TCTI_CONTEXT *tctiContext )
 {
-    return TeardownSocketTcti(tctiContext);
+    tss2_tcti_finalize (tctiContext);
+    free (tctiContext);
 }
 
 void Cleanup()
