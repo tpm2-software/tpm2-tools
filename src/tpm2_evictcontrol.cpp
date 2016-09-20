@@ -136,9 +136,9 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -A o -H 0x80000000 -S 0x8101002 -P abc123 \n"
-        "%s -A p -H 0x80000000 -S 0x8101002\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -A o -H 0x80000000 -S 0x8101002 -P 123abc -X\n"
+        "%s -A o -H 0x80000000 -S 0x81010002 -P abc123 \n"
+        "%s -A p -H 0x80000000 -S 0x81010002\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
+        "%s -A o -H 0x80000000 -S 0x81010002 -P 123abc -X\n"
         ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
