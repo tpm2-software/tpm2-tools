@@ -201,8 +201,8 @@ int createEKHandle()
 
     if (strlen(ekPasswd) > 0 && !hexPasswd)
     {
-        sessionData.hmac.t.size = strlen(ekPasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], ekPasswd, sessionData.hmac.t.size );
+        inSensitive.t.sensitive.userAuth.t.size = strlen(ekPasswd);
+        memcpy( &inSensitive.t.sensitive.userAuth.t.buffer[0], ekPasswd, inSensitive.t.sensitive.userAuth.t.size );
     }
     else if (strlen(ekPasswd) > 0 && hexPasswd)
     {
