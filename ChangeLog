@@ -37,6 +37,7 @@ Modified
 * tpm2_getpubek: fix ek creation to follow TCG EK profile spec.
 
 Removed
+* Windows related code
 * depenedency on the TPM2.0-TSS repo source code
 
 2015-10-19 Gang Wei <gang.wei@intel.com>
