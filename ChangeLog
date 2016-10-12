@@ -10,6 +10,7 @@ Added
 * Copy 'common' and 'sample' code from the TPM2.0-TSS repo.
 
 Modified
+* tpm2_takeownership: update option -c to use lockout password to clear.
 * tpm2_listpcrs: add options -L and -s, rewrite to increase performance.
 * tpm2_quote: added -L option to support selection of multiple banks.
 * tpm2_quote: add -q option to get qualifying data.
