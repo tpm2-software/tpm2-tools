@@ -29,28 +29,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#ifdef _WIN32
-#include "stdafx.h"
-#else
 #include <stdarg.h>
-#endif
-
-#ifndef UNICODE
-#define UNICODE 1
-#endif
-
-#ifdef _WIN32
-// link with Ws2_32.lib
-#pragma comment(lib,"Ws2_32.lib")
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#define sprintf_s   snprintf
-#define sscanf_s    sscanf
-#endif
-
-
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -58,7 +37,6 @@
 #include <limits.h>
 #include <ctype.h>
 #include <getopt.h>
-
 
 #include <sapi/tpm20.h>
 #include "sample.h"
@@ -207,7 +185,7 @@ void ErrorHandler( UINT32 rval )
             break;
     }
 
-    sprintf_s( errorString, errorStringSize, "%s Error: 0x%x\n", levelString, rval );
+    snprintf( errorString, errorStringSize, "%s Error: 0x%x\n", levelString, rval );
 }
 
 char resMgrInterfaceName[] = "Resource Manager";
@@ -249,9 +227,6 @@ void Cleanup()
 
     TeardownTctiResMgrContext( resMgrTctiContext );
 
-#ifdef _WIN32
-    WSACleanup();
-#endif
     exit(1);
 }
 
