@@ -200,10 +200,11 @@ where:
   -L/--oldLockPasswd <password>    old Lockout authorization (string, optional,
                                    default:NULL).
   -X/--passwdInHex                 passwords given by any options are hex format
+  -c/--clear                       clears the 3 authorizations values.
 
 example:
 Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: 
-    tpm2_takeownership -c
+    tpm2_takeownership -c -L old
 Set ownerAuth, endorsementAuth and lockoutAuth to a newAuth: 
     tpm2_takeownership -o new -e new -l new -O old -E old -L old
     tpm2_takeownership -o 2a2b2c -e 2a2b2c -l 2a2b2c -O 1a1b1c -E 1a1b1c -L 1a1b1c -X

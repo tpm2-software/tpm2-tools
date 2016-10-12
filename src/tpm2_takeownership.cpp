@@ -87,15 +87,23 @@ int clearHierarchyAuth()
     sessionData.hmac.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
-    printf("\nStart to clear the Hierarchy auth....\n");
-    rval = Tss2_Sys_ClearControl ( sysContext, TPM_RH_PLATFORM, &sessionsData, NO, 0 );
-    if(rval != TPM_RC_SUCCESS)
+    if (strlen(oldLockoutPasswd) > 0 && !hexPasswd)
     {
-        printf("\nClearControl Failed ! ErrorCode: 0x%0x\n\n", rval);
-        return -1;
+        sessionData.hmac.t.size = strlen(oldLockoutPasswd);
+        memcpy( &sessionData.hmac.t.buffer[0], oldLockoutPasswd, sessionData.hmac.t.size );
+    }
+    else if (strlen(oldLockoutPasswd) > 0 && hexPasswd)
+    {
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure(oldLockoutPasswd, &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for oldLockoutPasswd.\n");
+            return -1;
+        }
     }
 
-    rval = Tss2_Sys_Clear ( sysContext, TPM_RH_PLATFORM, &sessionsData, 0 );
+    rval = Tss2_Sys_Clear ( sysContext, TPM_RH_LOCKOUT, &sessionsData, 0 );
     if(rval != TPM_RC_SUCCESS)
     {
         printf("\nClear Failed ! ErrorCode: 0x%0x\n\n", rval);
@@ -287,7 +295,7 @@ void showHelp(const char *name)
            "                                      2 (resource manager send/receive byte streams)\n"
            "                                      3 (resource manager tables)\n"
            "\nexample:\n"
-           "   Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: %s -c\n"
+           "   Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: %s -c -L old\n"
            "   Set ownerAuth, endorsementAuth and lockoutAuth to a newAuth:\n"
            "     %s -o new -e new -l new -O old -E old -L old\n"
            "     %s -o 2a2b2c -e 2a2b2c -l 2a2b2c -O 1a1b1c -E 1a1b1c -L 1a1b1c -X\n"
