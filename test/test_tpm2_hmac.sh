@@ -92,7 +92,7 @@ fi
 rm -f $file_hmac_output  
 tpm2_evictcontrol -A o -c $file_hmac_key_ctx -S $handle_hmac_key |tee evict.log
 c1="$?"
-grep "persistentHanlde: "$handle_hmac_key"" evict.log
+grep "persistentHandle: "$handle_hmac_key"" evict.log
 c2="$?"
 
 if [ $c1 != 0 ] || [ $c2 != 0  ];then

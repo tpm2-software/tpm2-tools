@@ -235,15 +235,10 @@ int createAK()
 
     // set the object Auth value
     inSensitive.t.sensitive.userAuth.t.size = 0;
-    if( strlen( akPasswd ) > 0 )
+    if (strlen(akPasswd) > 0 && !hexPasswd)
     {
         inSensitive.t.sensitive.userAuth.t.size = strlen( akPasswd );
         memcpy( &( inSensitive.t.sensitive.userAuth.t.buffer[0] ), &( akPasswd[0] ), inSensitive.t.sensitive.userAuth.t.size );
-    }
-    if (strlen(akPasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(akPasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], akPasswd, sessionData.hmac.t.size );
     }
     else if (strlen(akPasswd) > 0 && hexPasswd)
     {
