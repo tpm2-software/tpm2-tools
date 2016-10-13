@@ -35,32 +35,39 @@
 
 context_p=
 halg=
+new_path=`dirname $0`
+PATH="$PATH":"$new_path"
 
 ctx_count=`ls |grep -c context_load`
 if [ $ctx_count -le 1 ];then
 	echo "we should execute test_algs.sh first!"
 	wait 5
-    ./test_algs.sh
+	test_algs.sh
 fi
 
 rm test_algs_encryptdecrypt_*.log
+
+if [ ! -e "secret.data" ]   
+  then    
+echo "12345678" > secret.data
+fi 
 
 #for  halg_p in 0x0004 0x000B 0x000C 0x000D 0x0012  
 for  context_p in `ls context_load*`   
   do
 	
-	./tpm2_encryptdecrypt -c  $context_p  -D NO -I secret.data -o endecrypt_"$context_p".f
+	tpm2_encryptdecrypt -c  $context_p  -D NO -I secret.data -o endecrypt_"$context_p".f
 
 
 	 if [ $? != 0 ];then
-	 echo "encryptdecrypt  for  endecrypt_"$context_p".f fail, pelase check the environment or parameters!"
+	 echo "encryptdecrypt  for  endecrypt_"$context_p".f fail, please check the environment or parameters!"
 	 echo "encryptdecrypt  for  endecrypt_"$context_p".f fail" >>test_encryptdecrypt_error.log
 	else
 	 echo "encryptdecrypt  for  endecrypt_"$context_p".f pass" >>test_encryptdecrypt_pass.log
-   ./tpm2_encryptdecrypt -c  $context_p  -D YES -I  endecrypt_"$context_p".f -o decrypt_"$context_p".f
+        tpm2_encryptdecrypt -c  $context_p  -D YES -I  endecrypt_"$context_p".f -o decrypt_"$context_p".f
 	
 	  if [ $? != 0 ];then
-	  echo "encryptdecrypt  for  decrypt_"$context_p".f fail, pelase check the environment or parameters!"
+	  echo "encryptdecrypt  for  decrypt_"$context_p".f fail, please check the environment or parameters!"
 	  echo "encryptdecrypt  for  decrypt_"$context_p".f fail" >>test_encryptdecrypt_error.log
 	 else
 	  echo "encryptdecrypt  for  decrypt_"$context_p".f pass" >>test_encryptdecrypt_pass.log

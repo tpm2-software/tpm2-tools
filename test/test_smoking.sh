@@ -30,7 +30,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 #!/bin/sh
-new_path=`pwd`
+new_path=`dirname $0`
 PATH="$PATH":"$new_path"
 
 ekHandle=0x81010007 
@@ -39,7 +39,7 @@ akHandle=0x81010008
 
 fail()
 {
-	    echo "$1 test fail, pelase check the environment or parameters!"
+	    echo "$1 test fail, please check the environment or parameters!"
  exit 1
 }
 Pass()
@@ -56,7 +56,7 @@ tpm2_takeownership -c
 	fail takeownership 
   fi
 
-./test_tpm2_nv.sh
+test_tpm2_nv.sh
 
 tpm2_getpubek  -H $ekHandle  -g 0x01 -f ek.pub1.out 
 

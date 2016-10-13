@@ -46,7 +46,7 @@ output_actcredential=actcredential.out
 
 fail()
 {
-	    echo "$1 test fail, pelase check the environment or parameters!"
+	    echo "$1 test fail, please check the environment or parameters!"
 		exit 1
 }
 

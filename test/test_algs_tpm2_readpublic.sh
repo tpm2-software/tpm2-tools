@@ -30,22 +30,24 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
  #!/bin/bash
- context_p=
- halg=
+context_p=
+halg=
+new_path=`dirname $0`
+PATH="$PATH":"$new_path"
 
 ctx_count=`ls |grep -c context_load`
 if [ $ctx_count -le 1 ];then
 	echo "we should execute test_algs.sh first!"
 	wait 5
-    ./test_algs.sh
+	test_algs.sh
 fi
  rm test_readpublic_*.log
 
  for  context_p in `ls context_load*`
    do
-     ./tpm2_readpublic -c $context_p  -o rd-opu_"$context_p"
+     tpm2_readpublic -c $context_p  -o rd-opu_"$context_p"
      if [ $? != 0 ];then
-     echo "readpublic for "$context_p" fail, pelase check the environment or  parameters!"
+     echo "readpublic for "$context_p" fail, please check the environment or  parameters!"
      echo "readpublic for "$context_p" fail" >>test_readpublic_error.log
      else
      echo "readpublic for "$context_p"  pass" >>test_readpublic__pass.log

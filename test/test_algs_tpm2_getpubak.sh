@@ -41,7 +41,7 @@ signAlg=
 
 fail()
 {
-	echo "$1 test fail, pelase check the environment or parameters!"
+	echo "$1 test fail, please check the environment or parameters!"
 	echo ""$1" fail" >>test_getpubak_error.log
 }	
 
@@ -68,7 +68,7 @@ for  ak_alg in 0x0001 0x0008 0x0023
     for  signAlg in 0x0005 0x0014 0x0016 0x0018 0x001A 0x001B 0x001C
     do
 
-   ./tpm2_getpubak  -E "$handle_ek" -k $handle_ak  -g $ak_alg -D $digestAlg -s $signAlg -f ak.pub_"$ak_alg"_"$digestAlg"_"$signAlg" -n ak.name_"$ak_alg"_"$digestAlg"_"$signAlg"
+  tpm2_getpubak  -E "$handle_ek" -k $handle_ak  -g $ak_alg -D $digestAlg -s $signAlg -f ak.pub_"$ak_alg"_"$digestAlg"_"$signAlg" -n ak.name_"$ak_alg"_"$digestAlg"_"$signAlg"
   if [ $? != 0 ];then
     fail "Ak_alg_"$ak_alg"_"$digestAlg"_"$signAlg""
   else

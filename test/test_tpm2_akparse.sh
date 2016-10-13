@@ -31,7 +31,7 @@
 #;**********************************************************************;
 #!/bin/bash
  
-new_path=`pwd`
+new_path=`dirname $0`
 PATH="$PATH":"$new_path"
 
 file_input_data=ak_pub.out
@@ -46,7 +46,7 @@ fi
 
  tpm2_akparse -f $file_input_data  -k $output_akparse
 if [ $? != 0 ];then
-	echo "akparse fail, pelase check the environment or parameters!"
+	echo "akparse fail, please check the environment or parameters!"
 	exit 1
 fi
 

@@ -31,6 +31,8 @@
 #;**********************************************************************;
 #!/bin/sh
 
+new_path=`dirname $0`
+PATH="$PATH":"$new_path"
 pCtx=
 gAlg=
 GAlg=
@@ -41,7 +43,7 @@ ctx_count=`ls |grep -c context_load`
 if [ $ctx_count -le 1 ];then
 	echo "we should execute test_tpm2_createprimary_all.sh first!"
 	wait 5
-    ./test_tpm2_createprimary_all.sh
+    test_tpm2_createprimary_all.sh
 fi
 
 for pCtx in `ls ctx.cpri*`

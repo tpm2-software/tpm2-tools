@@ -48,7 +48,7 @@ alg_signing_key=0x0008
 
 fail()
 {
-	    echo "$1 test fail, pelase check the environment or parameters!"
+	    echo "$1 test fail, please check the environment or parameters!"
  exit 1
 }
 Pass()
