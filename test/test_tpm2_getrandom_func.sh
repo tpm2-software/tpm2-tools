@@ -42,7 +42,7 @@ i=
 for i in `seq 100`; do
 	tpm2_getrandom -s 32  -o random_"$i".out 
 	 if  [ $? != 0 ];then
-	  echo " create random_"$i".out fail, pelase check the environment or parameters!"
+	  echo " create random_"$i".out fail, please check the environment or parameters!"
 	  exit 2
 	 else
 	  echo  "create random_"$i".out Pass" >>$LOG_FILE

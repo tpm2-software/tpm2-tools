@@ -48,7 +48,7 @@ do
 	
 	tpm2_hash -H $Hierarchy -g $halg -I hash.in -o hash_out_"$Hierarchy"_"$halg" -t hash_tk_"$Hierarchy"_"$halg"
 	if [ $? != 0 ];then
-	    echo "hash for hash_out_"$Hierarchy"_"$halg" fail, pelase check the environment or parameters!"
+	    echo "hash for hash_out_"$Hierarchy"_"$halg" fail, please check the environment or parameters!"
 	 else
 	    echo "hash for hash_out_"$Hierarchy"_"$halg" pass" >>test_hash_pass.log
 	fi

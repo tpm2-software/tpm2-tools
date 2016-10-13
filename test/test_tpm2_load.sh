@@ -30,9 +30,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 #!/bin/bash
-new_path=`pwd`
-PATH="$PATH":"$new_path"
-
 alg_primary_obj=0x000B
 alg_primary_key=0x0001
 alg_create_obj=0x000B
@@ -52,7 +49,7 @@ Handle_ek_load=0x81010017
 
 fail()
 {
-	    echo "$1 test fail, pelase check the environment or parameters!"
+	    echo "$1 test fail, please check the environment or parameters!"
 #			    echo ""$1" fail" >>test_encryptdecrypt_error.log
  exit 1
 }

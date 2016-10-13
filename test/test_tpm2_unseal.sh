@@ -30,9 +30,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 #!/bin/bash
-new_path=`pwd`
-PATH="$PATH":"$new_path"
-
 alg_primary_obj=0x0004
 alg_primary_key=0x0001
 alg_create_obj=0x000B
@@ -56,26 +53,26 @@ fi
 tpm2_takeownership -c
 tpm2_createprimary -A p -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 if [ $? != 0 ];then
-echo "createprimary fail, pelase check the environment or parameters!"
+echo "createprimary fail, please check the environment or parameters!"
 exit 1
 fi
 #./tpm2_create -g 0x000B -G 0x0008 -o opu9.out -O opr9.out -c context.p9.out -I secret.data
 tpm2_create -g $alg_create_obj -G $alg_create_key -o $file_unseal_key_pub -O $file_unseal_key_priv  -I $file_input_data -c $file_primary_key_ctx
 if [ $? != 0 ];then
-echo "create fail, pelase check the environment or parameters!"
+echo "create fail, please check the environment or parameters!"
 exit 1
 fi
 #./tpm2_load -c context.p9.out  -u opu9.out -r opr9.out -n name.load9.out -C context_load_out9.out 
 tpm2_load -c $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -C $file_unseal_key_ctx
 if [ $? != 0 ];then
-echo "load fail, pelase check the environment or parameters!"
+echo "load fail, please check the environment or parameters!"
 exit 1
 fi
 
 #tpm2_unseal -c context_load_out1.out -o usl.data.out
 tpm2_unseal -c $file_unseal_key_ctx $ -o $file_unseal_output_data 
 if [ $? != 0 ];then
-echo "unseal fail, pelase check the environment or parameters!"
+echo "unseal fail, please check the environment or parameters!"
 exit 1
 fi
 

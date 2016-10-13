@@ -40,7 +40,7 @@ signAlg=
 
 fail()
 {
-	echo "getpubek  for ek.pub_"$1" fail, pelase check the environment or parameters!"
+	echo "getpubek  for ek.pub_"$1" fail, please check the environment or parameters!"
 	echo "getpubek  for ek.pub_"$1" fail" >>test_getpubek_error.log
 }	
 

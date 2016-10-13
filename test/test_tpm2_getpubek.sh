@@ -38,7 +38,7 @@ rm $output_ek_pub
 
  tpm2_getpubek  -H $handle_ek -g $ek_alg -f $output_ek_pub 
 if [ $? != 0 ] || [ ! -e $output_ek_pub ];then
-echo "getpubek fail, pelase check the environment or parameters!"
+echo "getpubek fail, please check the environment or parameters!"
 exit 1
 fi
 

@@ -30,9 +30,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 #!/bin/bash
-new_path=`pwd`
-PATH="$PATH":"$new_path"
-
 file_primary_key_ctx=context.p_B1
 file_signing_key_pub=opuB1_B8
 file_signing_key_priv=oprB1_B8
@@ -53,7 +50,7 @@ alg_signing_key=0x0001
 
 fail()
 {
-	    echo "$1 test fail, pelase check the environment or parameters!"
+	    echo "$1 test fail, please check the environment or parameters!"
  exit 1
 }
 Pass()
