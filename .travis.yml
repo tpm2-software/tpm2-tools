@@ -1,0 +1,43 @@
+language: cpp
+compiler:
+  - gcc
+
+# This is a lie: we don't need sudo but this is required to get an
+# Ubuntu image with a libc that isn't ancient, and with cmocka libs.
+sudo: required
+dist: trusty
+
+addons:
+  apt:
+    packages:
+    - autoconf-archive
+    - libcmocka0
+    - libcmocka-dev
+    - openssl
+    - libssl-dev
+    - libcurl4-openssl-dev
+
+install: 
+    - wget http://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm532.tar
+    - mkdir ibmtpm532 && pushd ibmtpm532 && tar xzf ../ibmtpm532.tar && pushd ./src && make
+    - ./tpm_server &
+    - popd && popd
+    - git clone https://github.com/01org/TPM2.0-TSS.git
+    - pushd TPM2.0-TSS && ./bootstrap && CONFIG_SITE=./lib/default_config.site ./configure && make -j$(nproc) && sudo make install && popd
+    - sudo ldconfig /usr/local/lib
+    - resourcemgr -sim -tpmhost 127.0.0.1 &
+
+before_script:
+  - ./bootstrap
+
+script:
+  - mkdir ./build
+  - pushd ./build
+  - ../configure --enable-unit
+  - make -j$(nproc)
+  - make -j$(nproc) check
+  - sudo make install
+  - popd
+  - pushd ./test
+  - ./test_all.sh
+  - popd      

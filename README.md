@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/01org/tpm2.0-tools.svg?branch=master)](https://travis-ci.org/01org/tpm2.0-tools)
+
 **This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on TPM2.0-TSS**
 
 Below is the name list of the implemented tools:

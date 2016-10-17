@@ -47,9 +47,9 @@ $1
 	sleep 1 
 	echo "$1 pass" >>test_all_pass.log
   else
-	echo -e "\033[31m $1 Fail, press any key to continue.... \033[0m"
+	echo -e "\033[31m $1 Fail \033[0m"
 	echo "$1 fail" >>test_all_fail.log
-	read
+	sleep 1
 	fi
 }
  

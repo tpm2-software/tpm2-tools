@@ -1,5 +1,6 @@
 Unreleased
 Added
+* travis ci support.
 * Allow for unit tests to be enabled selectively.
 * tpm2_rc_decode tool: Decode TPM_RC error codes.
 * Android Make file
