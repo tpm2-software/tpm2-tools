@@ -200,7 +200,8 @@ where:
   -L/--oldLockPasswd <password>    old Lockout authorization (string, optional,
                                    default:NULL).
   -X/--passwdInHex                 passwords given by any options are hex format
-  -c/--clear                       clears the 3 authorizations values.
+  -c/--clear [-L <password> [-X]]  clears the 3 authorizations values with
+                                   lockout auth.
 
 example:
 Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: 

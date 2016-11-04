@@ -269,7 +269,7 @@ void showHelp(const char *name)
            "   -L/--oldLockPasswd <password>    old Lockout authorization (string,optional,default:NULL).\n"
            "   -X/--passwdInHex                 passwords given by any options are hex format.\n"
            "   -p/--port <port>                 specifies the port number. default %d.\n"
-           "   -c/--clear                       clears the 3 authorizations values.\n"
+           "   -c/--clear [-L <password> [-X]]  clears the 3 authorizations values with lockout auth.\n"
            "   -d/--dbg <dbgLevel>              specifies level of debug messages:\n"
            "                                      0 (high level test results)\n"
            "                                      1 (test app send/receive byte streams)\n"
