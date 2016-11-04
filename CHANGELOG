@@ -1,4 +1,4 @@
-Unreleased
+v1.1 - 2016-11-04
 Added
 * travis ci support.
 * Allow for unit tests to be enabled selectively.
@@ -41,6 +41,6 @@ Removed
 * Windows related code
 * depenedency on the TPM2.0-TSS repo source code
 
-2015-10-19 Gang Wei <gang.wei@intel.com>
+v1.0 - 2015-10-19
 * 1.0 release
 * 29 tools included
