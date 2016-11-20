@@ -40,7 +40,16 @@ LDADD = src/libcommon.a $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = src/libcommon.a
-sbin_PROGRAMS = src/tpm2_listpcrs \
+COMMON_SRC = \
+    src/context-util.c \
+    src/options.c
+
+# The tools within this conditional are hard coded to the socket TCTI.
+# As they're migrated to support dynamic TCTI configuration they should be
+# removed from this block and added directly to the sbin_PROGRAMS variable
+# above.
+if HAVE_TCTI_SOCK
+sbin_PROGRAMS += src/tpm2_listpcrs \
 		  src/tpm2_quote \
 		  src/tpm2_takeownership \
 		  src/tpm2_getpubek \
@@ -73,14 +82,7 @@ sbin_PROGRAMS = src/tpm2_listpcrs \
 		  src/tpm2_verifysignature \
 		  src/tpm2_listpersistent \
 		  src/tpm2_rc_decode
-
-if UNIT
-check_PROGRAMS = \
-    test/tpm2-rc-decode_unit \
-    test/tpm2-rc-entry_unit
-endif
-
-COMMON_SRC = \
+COMMON_SRC += \
     src/common.c \
     src/debug.c \
     src/syscontext.c \
@@ -97,7 +99,16 @@ COMMON_SRC = \
     src/TpmHash.c \
     src/TpmHmac.c
 
+endif
+
+if UNIT
+check_PROGRAMS = \
+    test/tpm2-rc-decode_unit \
+    test/tpm2-rc-entry_unit
+endif
+
 src_libcommon_a_SOURCES = $(COMMON_SRC)
+if HAVE_TCTI_SOCK
 src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.cpp
 src_tpm2_quote_SOURCES = src/tpm2_quote.cpp
 src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.cpp
@@ -132,6 +143,7 @@ src_tpm2_sign_SOURCES = src/tpm2_sign.cpp
 src_tpm2_unseal_SOURCES = src/tpm2_unseal.cpp
 src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.cpp
 src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.cpp
+endif
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
 
 if UNIT
@@ -143,3 +155,20 @@ test_tpm2_rc_entry_unit_CFLAGS   = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
 test_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS)
 test_tpm2_rc_entry_unit_SOURCES  = src/rc-decode.c test/tpm2-rc-entry_unit.c
 endif
+
+man/man8/%.8 : man/%.8.in man/tcti-options.troff man/tcti-environment.troff
+	rm -f $@
+	mkdir -p man/man8
+if HAVE_TCTI_DEV
+	echo ".nr HAVE_TCTI_DEV 1" >> $@
+endif
+if HAVE_TCTI_SOCK
+	echo ".nr HAVE_TCTI_SOCK 1" >> $@
+endif
+	sed -e '/@COMMON_OPTIONS_INCLUDE@/r man/common-options.troff' \
+	    -e '/@COMMON_OPTIONS_INCLUDE@/d' \
+	    -e '/@TCTI_OPTIONS_INCLUDE@/r man/tcti-options.troff' \
+	    -e '/@TCTI_OPTIONS_INCLUDE@/d' \
+	    -e '/@TCTI_ENVIRONMENT_INCLUDE@/r man/tcti-environment.troff' \
+	    -e '/@TCTI_ENVIRONMENT_INCLUDE@/d' \
+	    < $< >> $@

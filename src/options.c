@@ -1,0 +1,333 @@
+/*
+ * Copyright (c) 2016, Intel Corporation
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of Intel Corporation nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#include <errno.h>
+#include <getopt.h>
+#include <libgen.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "options.h"
+
+/*
+ * A structure to map a string name to an element in the TCTI_TYPE
+ * enumeration.
+ */
+typedef struct {
+    char       *name;
+    TCTI_TYPE   type;
+} tcti_map_entry_t;
+/*
+ * A table of tcti_map_entry_t structures. This is how we map a string
+ * provided on the command line to the enumeration.
+ */
+tcti_map_entry_t tcti_map_table[] = {
+#ifdef HAVE_TCTI_DEV
+    {
+        .name = "device",
+        .type = DEVICE_TCTI,
+    },
+#endif
+#ifdef HAVE_TCTI_SOCK
+    {
+        .name = "socket",
+        .type = SOCKET_TCTI,
+    },
+#endif
+    {
+        .name = "unknown",
+        .type = UNKNOWN_TCTI,
+    },
+};
+/*
+ * Convert from a string to an element in the TCTI_TYPE enumeration.
+ * An unkonwn name / string will map to UNKNOWN_TCTI.
+ */
+TCTI_TYPE
+tcti_type_from_name (char const *tcti_str)
+{
+    int i;
+
+    if (tcti_str == NULL)
+        goto out;
+    for (i = 0; i < N_TCTI; ++i)
+        if (strcmp (tcti_str, tcti_map_table[i].name) == 0)
+            return tcti_map_table[i].type;
+out:
+    return UNKNOWN_TCTI;
+}
+/*
+ * Convert from an element in the TCTI_TYPE enumeration to a string
+ * representation.
+ */
+char* const
+tcti_name_from_type (TCTI_TYPE tcti_type)
+{
+    int i;
+    for (i = 0; i < N_TCTI; ++i)
+        if (tcti_type == tcti_map_table[i].type)
+            return tcti_map_table[i].name;
+    return NULL;
+}
+/*
+ * Test a common_opts_t structure to be sure the member data has been
+ * populated. We don't do any tests on the data for appropriate formats
+ * (like testing socket_address for a valid IP address).
+ * return 0 if sanity test passes
+ * return 1 if help message was explicitly requested
+ * return 2 if sanity test fails
+ */
+int
+sanity_check_common (common_opts_t  *opts)
+{
+    if (opts->help)
+        return 1;
+    switch (opts->tcti_type) {
+#ifdef HAVE_TCTI_DEV
+    case DEVICE_TCTI:
+        if (opts->device_file == NULL) {
+            fprintf (stderr, "missing --device-file, see --help\n");
+            return 2;
+        }
+        break;
+#endif
+#ifdef HAVE_TCTI_SOCK
+    case SOCKET_TCTI:
+        if (opts->socket_address == NULL) {
+            fprintf (stderr, "missing --socket-address, see --help\n");
+            return 2;
+        }
+        if (opts->socket_port == 0) {
+            fprintf (stderr, "missing --socket-port, see --help\n");
+            return 2;
+        }
+        break;
+#endif
+    default:
+        fprintf (stderr, "invalid TCTI, see --help\n");
+        return 2;
+    }
+    return 0;
+}
+/*
+ * Populate the provided common_opts_t structure with data provided through
+ * the environment.
+ */
+void
+get_common_opts_from_env (common_opts_t *common_opts)
+{
+    char *env_str, *end_ptr;
+
+    if (common_opts == NULL)
+        return;
+    env_str = getenv (TPM2TOOLS_ENV_TCTI_NAME);
+    if (env_str != NULL)
+        common_opts->tcti_type = tcti_type_from_name (env_str);
+    env_str = getenv (TPM2TOOLS_ENV_DEVICE_FILE);
+    if (env_str != NULL)
+        common_opts->device_file = env_str;
+    env_str = getenv (TPM2TOOLS_ENV_SOCKET_ADDRESS);
+    if (env_str != NULL)
+        common_opts->socket_address = env_str;
+    env_str = getenv (TPM2TOOLS_ENV_SOCKET_PORT);
+    if (env_str != NULL)
+        common_opts->socket_port = strtol (env_str, &end_ptr, 10);
+}
+/*
+ * Get data from the environment and the caller (by way of the argument
+ * vector) to populate the provided common_opts_t structure. The data we get
+ * from the command line / argument vector takes presedence so we fill in the
+ * structure with data from the environment first, then from argv. Anything
+ * retrieved from the environment will just be over written with whatever we
+ * get from argv.
+ */
+int
+get_common_opts (int                     argc,
+                 char                   *argv[],
+                 common_opts_t          *common_opts)
+{
+    int c = 0, option_index = 0, ret = 0;
+    char *arg_str = "T:d:R:p:hvV";
+    struct option long_options [] = {
+        {
+            .name    = "tcti",
+            .has_arg = required_argument,
+            .flag    = NULL,
+            .val     = 'T',
+        },
+#ifdef HAVET_TCTI_DEV
+        {
+            .name    = "device-file",
+            .has_arg = required_argument,
+            .flag    = NULL,
+            .val     = 'd',
+        },
+#endif
+#ifdef HAVE_TCTI_SOCK
+        {
+            .name    = "socket-address",
+            .has_arg = required_argument,
+            .flag    = NULL,
+            .val     = 'R',
+        },
+        {
+            .name    = "socket-port",
+            .has_arg = required_argument,
+            .flag    = NULL,
+            .val     = 'p',
+        },
+#endif
+        {
+            .name    = "help",
+            .has_arg = no_argument,
+            .flag    = &common_opts->help,
+            .val     = true,
+        },
+        {
+            .name    = "verbose",
+            .has_arg = no_argument,
+            .flag    = NULL,
+            .val     = 'V',
+        },
+        {
+            .name    = "version",
+            .has_arg = no_argument,
+            .flag    = NULL,
+            .val     = 'v',
+        },
+        { NULL },
+    };
+    /*
+     * Start by populating the provided common_opts_t structure with data
+     * provided in the environment. Whatever we get here will be overriden
+     * by stuff from argv.
+     */
+    get_common_opts_from_env (common_opts);
+    /*
+     * Keep getopt_long quiet when we see options that aren't in the 'common'
+     * category. Reset option processing.
+     */
+    char *endptr;
+    extern int opterr, optind;
+
+    opterr = 0;
+    optind = 0;
+    while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
+           != -1)
+    {
+        switch (c) {
+        case 't':
+            common_opts->tcti_type = tcti_type_from_name (optarg);
+            break;
+#ifdef HAVE_TCTI_DEV
+        case 'd':
+            common_opts->device_file = optarg;
+            break;
+#endif
+#ifdef HAVE_TCTI_SOCK
+        case 'a':
+            common_opts->socket_address = optarg;
+            break;
+        case 'p':
+            common_opts->socket_port = strtol (optarg, &endptr, 10);
+            break;
+#endif
+        case 'h':
+            common_opts->help = true;
+            break;
+        case 'V':
+            common_opts->verbose = true;
+            break;
+        case 'v':
+            common_opts->version = true;
+            break;
+        }
+    }
+    return ret;
+}
+/*
+ * Dump the contents of the common_opts_t structure to stdout.
+ */
+void
+dump_common_opts (common_opts_t *opts)
+{
+    printf ("common_opts_t:\n");
+    printf ("  tcti_type:        %s\n", tcti_name_from_type (opts->tcti_type));
+#ifdef HAVE_TCTI_DEV
+    printf ("  device_file_name: %s\n", opts->device_file);
+#endif
+#ifdef HAVE_TCTI_SOCK
+    printf ("  address:          %s\n", opts->socket_address);
+    printf ("  port:             %d\n", opts->socket_port);
+#endif
+    printf ("  help:             %s\n", opts->help    ? "true" : "false");
+    printf ("  verbose:          %s\n", opts->verbose ? "true" : "false");
+    printf ("  version:          %s\n", opts->version ? "true" : "false");
+}
+/*
+ * Execute man page for the appropriate command.
+ */
+void
+execute_man (char *prog_name,
+             char *envp[])
+{
+    char *prog_basename = basename (prog_name);
+    char *path_string = strdup (getenv ("PATH"));
+    char *path_string_tmp = path_string;
+    char *path_man_bin, *path_sep;
+    char *man_argv[3] = { NULL, };
+    size_t path_length;
+
+    man_argv[1] = prog_basename;
+    do {
+        /* get poniter to next ':' in PATH string */
+        path_sep = strchr (path_string_tmp, ':');
+        if (path_sep != NULL)
+            path_sep[0] = '\0';
+        /* in path_man_bin, build string: path_string_tmp + '/' + "man"*/
+        path_length = strlen (path_string_tmp) + 5;
+        path_man_bin = malloc (path_length);
+        strncpy (path_man_bin, path_string_tmp, path_length);
+        strncpy (path_man_bin + strlen (path_man_bin), "/man", 5);
+        /* stick to convention and put path to executable in argv[0] */
+        man_argv[0] = path_man_bin;
+        execve (path_man_bin, man_argv, envp);
+        free (path_man_bin);
+        path_string_tmp = path_sep + 1;
+    } while (path_sep != NULL);
+    /*
+     * Unless we did something very wrong we should never reach here:
+     * execve doesn't return when it succeeds.
+     */
+    free (path_string);
+}

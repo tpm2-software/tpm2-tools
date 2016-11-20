@@ -1,0 +1,14 @@
+.TP
+[\fBCOMMON OPTIONS\fR ]
+This collection of options are common to many programs and provide
+information that many users may expect.
+.TP
+\fB\-h,\ \-\-help\fR
+Display a manual describing the tool and its usage.
+.TP
+\fB\-v,\ \-\-version\fR
+Display version information for this tool.
+.TP
+\fB\-V,\ \-\-verbose\fR
+Increase the information that the tool prints to the console during its
+execution.

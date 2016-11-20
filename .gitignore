@@ -19,6 +19,7 @@ ltmain.sh
 missing
 Makefile
 Makefile.in
+man/man8/*
 src/.dirstamp
 src/libcommon.a
 src/tpm2_activatecredential
