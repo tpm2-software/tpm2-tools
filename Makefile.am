@@ -40,9 +40,13 @@ LDADD = src/libcommon.a $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
 TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = src/libcommon.a
+sbin_PROGRAMS = \
+    src/tpm2_send_command
+
 COMMON_SRC = \
     src/context-util.c \
-    src/options.c
+    src/options.c \
+    src/tpm2-header.c
 
 # The tools within this conditional are hard coded to the socket TCTI.
 # As they're migrated to support dynamic TCTI configuration they should be
@@ -82,6 +86,7 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 		  src/tpm2_verifysignature \
 		  src/tpm2_listpersistent \
 		  src/tpm2_rc_decode
+
 COMMON_SRC += \
     src/common.c \
     src/debug.c \
@@ -100,6 +105,8 @@ COMMON_SRC += \
     src/TpmHmac.c
 
 endif
+
+man8_MANS = man/man8/tpm2_send_command.8
 
 if UNIT
 check_PROGRAMS = \
@@ -145,6 +152,7 @@ src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.cpp
 src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.cpp
 endif
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
+src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
 
 if UNIT
 test_tpm2_rc_decode_unit_CFLAGS  = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
