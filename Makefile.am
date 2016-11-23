@@ -42,7 +42,8 @@ TESTS = $(check_PROGRAMS)
 noinst_LIBRARIES = src/libcommon.a
 sbin_PROGRAMS = \
     src/tpm2_send_command \
-    src/tpm2_dump_capability
+    src/tpm2_dump_capability \
+    src/tpm2_startup
 
 COMMON_SRC = \
     src/context-util.c \
@@ -109,7 +110,8 @@ endif
 
 man8_MANS = \
     man/man8/tpm2_dump_capability.8 \
-    man/man8/tpm2_send_command.8
+    man/man8/tpm2_send_command.8 \
+    man/man8/tpm2_startup.8
 
 if UNIT
 check_PROGRAMS = \
@@ -157,6 +159,7 @@ endif
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
 src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
+src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
 
 if UNIT
 test_tpm2_rc_decode_unit_CFLAGS  = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
