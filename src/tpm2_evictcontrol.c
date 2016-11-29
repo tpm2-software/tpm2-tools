@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,42 +44,54 @@
 #include "common.h"
 
 int debugLevel = 0;
+TPMS_AUTH_COMMAND sessionData;
+bool hexPasswd = false;
 
-int readPublic(TPMI_DH_OBJECT objectHandle, const char *outFilePath)
+int evictControl(TPMI_RH_PROVISION auth, TPMI_DH_OBJECT objectHandle,TPMI_DH_OBJECT persistentHandle, int P_flag)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
+    TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
+    TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_PUBLIC outPublic = { { 0, } };
-    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
-    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
-
+    sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
 
-    rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
+    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
+    sessionsData.cmdAuths = &sessionDataArray[0];
+
+    sessionsDataOut.rspAuthsCount = 1;
+    sessionsData.cmdAuthsCount = 1;
+
+    sessionData.sessionHandle = TPM_RS_PW;
+    sessionData.nonce.t.size = 0;
+
+    if(P_flag == 0)
+        sessionData.hmac.t.size = 0;
+
+    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
+    if (sessionData.hmac.t.size > 0 && hexPasswd)
     {
-        printf("\nTPM2_ReadPublic error: rval = 0x%0x\n\n",rval);
-        return -1;
+        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+                              &sessionData.hmac.t.size,
+                              sessionData.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for authorization Passwd.\n");
+            return -1;
+        }
     }
 
-    printf("\nTPM2_ReadPublic OutPut: \n");
-    printf("name: \n");
-    for(UINT16 i = 0; i < name.t.size; i++)
-        printf("%02x ",name.t.name[i]);
-    printf("\n");
+    rval = Tss2_Sys_EvictControl(sysContext, auth, objectHandle, &sessionsData, persistentHandle,&sessionsDataOut);
 
-    printf("qualifiedName: \n");
-    for(UINT16 j = 0; j < qualifiedName.t.size; j++)
-        printf("%02x ",qualifiedName.t.name[j]);
-    printf("\n");
-
-    if(saveDataToFile(outFilePath, (UINT8 *)&outPublic, sizeof(outPublic)))
-        return -2;
+    if(rval != TPM_RC_SUCCESS)
+    {
+        printf("\nEvictControl Failed, error code: 0x%0x\n\n",rval);
+        return -1;
+    }
+    printf("\nEvictControl succ.\n");
 
     return 0;
 }
@@ -89,10 +102,14 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-H, --object <objectHandle>   The loaded object handle \n"
-        "-c, --contextObject <filename>    filename for object context\n"
-        "-o, --opu    <publicKeyFileName>  The output file path,\n"
-        "                                  recording the readout public portion of the object\n"
+        "-A, --auth <o | p>   the authorization used to authorize the commands\n"
+            "\to  TPM_RH_OWNER\n"
+            "\tp  TPM_RH_PLATFORM\n"
+        "-H, --handle    <objectHandle>        the handle of a loaded object\n"
+        "-c, --context <filename>              filename for object context\n"
+        "-S, --persistent<persistentHandle>    the persistent handle for objectHandle\n"
+        "-P, --pwda      <authorizationPassword>   authrization password, optional\n"
+        "-X, --passwdInHex                     passwords given by any options are hex format.\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -101,32 +118,38 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -H 0x80000000 --opu <pubKeyFileName> \n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name);
+        "%s -A o -H 0x80000000 -S 0x81010002 -P abc123 \n"
+        "%s -A p -H 0x80000000 -S 0x81010002\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
+        "%s -A o -H 0x80000000 -S 0x81010002 -P 123abc -X\n"
+        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
 {
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
 
+    char hostName[200] = DEFAULT_HOSTNAME;
+    int port = DEFAULT_RESMGR_TPM_PORT; //DEFAULT_TPM_PORT;
+
+    TPMI_RH_PROVISION auth = TPM_RH_NULL;
     TPMI_DH_OBJECT objectHandle;
-    char outFilePath[PATH_MAX] = {0};
-    char *contextFile = NULL;
+    TPMI_DH_OBJECT persistentHandle;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:o:p:d:c:";
+    const char *optstring = "hvA:H:S:P:p:d:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
-      {"object",1,NULL,'H'},
-      {"opu",1,NULL,'o'},
+      {"auth",1,NULL,'A'},
+      {"handle",1,NULL,'H'},
+      {"persistent",1,NULL,'S'},
+      {"pwda",1,NULL,'P'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
-      {"contextObject",1,NULL,'c'},
+      {"context",1,NULL,'c'},
+      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -134,9 +157,12 @@ int main(int argc, char* argv[])
     int flagCnt = 0;
     int h_flag = 0,
         v_flag = 0,
+        A_flag = 0,
         H_flag = 0,
+        S_flag = 0,
         c_flag = 0,
-        o_flag = 0;
+        P_flag = 0;
+    char *contextFile = NULL;
 
     if(argc == 1)
     {
@@ -154,55 +180,85 @@ int main(int argc, char* argv[])
         case 'v':
             v_flag = 1;
             break;
-        case 'H':
-            if(getSizeUint32Hex(optarg,&objectHandle) != 0)
+        case 'A':
+            if(strcmp(optarg,"o") == 0 || strcmp(optarg,"O") == 0)
+                auth = TPM_RH_OWNER;
+            else if(strcmp(optarg,"p") == 0 || strcmp(optarg,"P") == 0)
+                auth = TPM_RH_PLATFORM;
+            else
             {
+                printf("ERROR: auth '%s' not supported!\n", optarg);
                 returnVal = -1;
                 break;
             }
-            printf("\nobject handle: 0x%x\n\n",objectHandle);
-            H_flag = 1;
+            A_flag = 1;
             break;
-        case 'o':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
-            if(checkOutFile(outFilePath) != 0)
+        case 'H':
+            if(getSizeUint32Hex(optarg, &objectHandle) != 0)
             {
                 returnVal = -2;
                 break;
             }
-            o_flag = 1;
+            printf("\nobjectHandle: 0x%x\n\n",objectHandle);
+            H_flag = 1;
+            break;
+        case 'S':
+            if(getSizeUint32Hex(optarg, &persistentHandle) != 0)
+            {
+                returnVal = -3;
+                break;
+            }
+            printf("\npersistentHandle: 0x%x\n\n",persistentHandle);
+            S_flag = 1;
+            break;
+        case 'P':
+            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
+            {
+                printf("\nPlease input the authenticating password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
+                returnVal = -4;
+                break;
+            }
+            if( strlen(optarg) > 0 )
+            {
+                sessionData.hmac.t.size = strlen(optarg);
+                safeStrNCpy( (char *)&sessionData.hmac.t.buffer[0], optarg, sizeof(sessionData.hmac.t.buffer) );
+            }
+            P_flag = 1;
             break;
         case 'p':
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -3;
+                returnVal = -5;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -4;
+                returnVal = -6;
             }
             break;
         case 'c':
             contextFile = optarg;
             if(contextFile == NULL || contextFile[0] == '\0')
             {
-                returnVal = -5;
+                returnVal = -7;
                 break;
             }
             printf("contextFile = %s\n", contextFile);
             c_flag = 1;
             break;
+        case 'X':
+            hexPasswd = true;
+            break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -6;
+            returnVal = -8;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -7;
+            returnVal = -9;
             break;
         //default:
         //  break;
@@ -213,8 +269,7 @@ int main(int argc, char* argv[])
 
     if(returnVal != 0)
         return returnVal;
-
-    flagCnt = h_flag + v_flag + H_flag + o_flag + c_flag;
+    flagCnt = h_flag + v_flag + A_flag + H_flag + S_flag + c_flag;
     if(flagCnt == 1)
     {
         if(h_flag == 1)
@@ -224,27 +279,27 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            return -8;
+            return -10;
         }
     }
-    else if(flagCnt == 2 && (H_flag == 1 || c_flag) && o_flag == 1)
+    else if(flagCnt == 3 && A_flag == 1 && (H_flag == 1 || c_flag) && S_flag == 1)
     {
         prepareTest(hostName, port, debugLevel);
 
         if(c_flag)
             returnVal = loadTpmContextFromFile(sysContext, &objectHandle, contextFile);
-        if(returnVal == 0)
-            returnVal = readPublic(objectHandle, outFilePath);
+        if (returnVal == 0)
+            returnVal = evictControl(auth, objectHandle, persistentHandle, P_flag);
 
         finishTest();
 
         if(returnVal)
-            return -9;
+            return -11;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -10;
+        return -12;
     }
 
     return 0;

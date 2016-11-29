@@ -44,63 +44,42 @@
 
 int debugLevel = 0;
 
-int getHierarchyValue(const char *argValue, TPMI_RH_HIERARCHY *hierarchyValue)
-{
-    if(strlen(argValue) != 1)
-    {
-        printf("Wrong Hierarchy Value: %s\n",argValue);
-        return -1;
-    }
-    switch(argValue[0])
-    {
-        case 'e':
-            *hierarchyValue = TPM_RH_ENDORSEMENT;
-            break;
-        case 'o':
-            *hierarchyValue = TPM_RH_OWNER;
-            break;
-        case 'p':
-            *hierarchyValue = TPM_RH_PLATFORM;
-            break;
-        case 'n':
-            *hierarchyValue = TPM_RH_NULL;
-            break;
-        default:
-            printf("Wrong Hierarchy Value: %s\n",argValue);
-            return -2;
-    }
-    return 0;
-}
-
-int hash(TPMI_RH_HIERARCHY hierarchyValue, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, const char *outHashFilePath, const char *outTicketFilePath)
+int readPublic(TPMI_DH_OBJECT objectHandle, const char *outFilePath)
 {
     UINT32 rval;
+    TPMS_AUTH_RESPONSE sessionDataOut;
+    TSS2_SYS_RSP_AUTHS sessionsDataOut;
+    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_DIGEST outHash = { { sizeof(TPM2B_DIGEST)-2, } };
-    TPMT_TK_HASHCHECK validation;
+    TPM2B_PUBLIC outPublic = { { 0, } };
+    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
 
-    rval = Tss2_Sys_Hash(sysContext, 0, data, halg, hierarchyValue, &outHash, &validation, 0);
+    sessionDataOutArray[0] = &sessionDataOut;
+    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
+    sessionsDataOut.rspAuthsCount = 1;
+
+    rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\n......TPM2_Hash Error. TPM Error:0x%x......\n", rval);
+        printf("\nTPM2_ReadPublic error: rval = 0x%0x\n\n",rval);
         return -1;
     }
-    printf("\ntpm2_hash succ.\n\n");
 
-    printf("\nhash value(hex type): ");
-    for(UINT16 i = 0; i < outHash.t.size; i++)
-        printf("%02x ", outHash.t.buffer[i]);
+    printf("\nTPM2_ReadPublic OutPut: \n");
+    printf("name: \n");
+    UINT16 i;
+    for(i = 0; i < name.t.size; i++)
+        printf("%02x ",name.t.name[i]);
     printf("\n");
 
-    printf("\nvalidation value(hex type): ");
-    for(INT16 j = 0; j < validation.digest.t.size; j++)
-        printf("%02x ", validation.digest.t.buffer[j]);
+    printf("qualifiedName: \n");
+    for(i = 0; i < qualifiedName.t.size; i++)
+        printf("%02x ",qualifiedName.t.name[i]);
     printf("\n");
 
-    if(saveDataToFile(outHashFilePath, (UINT8 *)&outHash, sizeof(outHash)))
+    if(saveDataToFile(outFilePath, (UINT8 *)&outPublic, sizeof(outPublic)))
         return -2;
-    if(saveDataToFile(outTicketFilePath, (UINT8 *)&validation, sizeof(validation)))
-        return -3;
 
     return 0;
 }
@@ -111,20 +90,10 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-H, --hierarchy <e|o|p|n>   hierarchy to use for the ticket\n"
-            "\te  TPM_RH_ENDORSEMENT\n"
-            "\to  TPM_RH_OWNER\n"
-            "\tp  TPM_RH_PLATFORM\n"
-            "\tn  TPM_RH_NULL\n"
-        "-g, --halg      <hexAlg>   algorithm for the hash being computed\n"
-            "\t0x0004  TPM_ALG_SHA1\n"
-            "\t0x000B  TPM_ALG_SHA256\n"
-            "\t0x000C  TPM_ALG_SHA384\n"
-            "\t0x000D  TPM_ALG_SHA512\n"
-            "\t0x0012  TPM_ALG_SM3_256\n"
-        "-I, --infile    <inputFilename>  file containning the data to be hashed\n"
-        "-o, --outfile   <hashFilename>   file record the hash result\n"
-        "-t, --ticket    <ticketFilename> file record the ticket\n"
+        "-H, --object <objectHandle>   The loaded object handle \n"
+        "-c, --contextObject <filename>    filename for object context\n"
+        "-o, --opu    <publicKeyFileName>  The output file path,\n"
+        "                                  recording the readout public portion of the object\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -133,7 +102,7 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -H <e|o|p|n> -g 0x004 -I <inputFilename> -o <hashFilename> -t <ticketFilename> \n"
+        "%s -H 0x80000000 --opu <pubKeyFileName> \n"
         , name, DEFAULT_RESMGR_TPM_PORT, name);
 }
 
@@ -142,28 +111,23 @@ int main(int argc, char* argv[])
     char hostName[200] = DEFAULT_HOSTNAME;
     int port = DEFAULT_RESMGR_TPM_PORT;
 
-    TPMI_RH_HIERARCHY hierarchyValue;
-    TPM2B_MAX_BUFFER data;
-    TPMI_ALG_HASH  halg;
-    char outHashFilePath[PATH_MAX] = {0};
-    char outTicketFilePath[PATH_MAX] = {0};
-    long fileSize = 0;
+    TPMI_DH_OBJECT objectHandle;
+    char outFilePath[PATH_MAX] = {0};
+    char *contextFile = NULL;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:g:I:o:t:p:d:";
+    const char *optstring = "hvH:o:p:d:c:";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
-      {"Hierachy",1,NULL,'H'},
-      {"halg",1,NULL,'g'},
-      {"infile",1,NULL,'I'},
-      {"outfile",1,NULL,'o'},
-      {"ticket",1,NULL,'t'},
+      {"object",1,NULL,'H'},
+      {"opu",1,NULL,'o'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
+      {"contextObject",1,NULL,'c'},
       {0,0,0,0}
     };
 
@@ -172,10 +136,8 @@ int main(int argc, char* argv[])
     int h_flag = 0,
         v_flag = 0,
         H_flag = 0,
-        g_flag = 0,
-        I_flag = 0,
-        o_flag = 0,
-        t_flag = 0;
+        c_flag = 0,
+        o_flag = 0;
 
     if(argc == 1)
     {
@@ -194,83 +156,54 @@ int main(int argc, char* argv[])
             v_flag = 1;
             break;
         case 'H':
-            if(getHierarchyValue(optarg,&hierarchyValue) != 0)
+            if(getSizeUint32Hex(optarg,&objectHandle) != 0)
             {
                 returnVal = -1;
                 break;
             }
-            printf("\nhierarchyValue: 0x%x\n\n",hierarchyValue);
+            printf("\nobject handle: 0x%x\n\n",objectHandle);
             H_flag = 1;
             break;
-        case 'g':
-            if(getSizeUint16Hex(optarg,&halg) != 0)
+        case 'o':
+            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
+            if(checkOutFile(outFilePath) != 0)
             {
-                showArgError(optarg, argv[0]);
                 returnVal = -2;
                 break;
             }
-            printf("halg = 0x%4.4x\n", halg);
-            g_flag = 1;
-            break;
-        case 'I':
-            if( getFileSize(optarg, &fileSize) != 0)
-            {
-                returnVal = -3;
-                break;
-            }
-            if(fileSize > MAX_DIGEST_BUFFER)
-            {
-                printf("Input data too long: %ld, should be less than %d bytes\n", fileSize, MAX_DIGEST_BUFFER);
-                returnVal = -4;
-                break;
-            }
-            data.t.size = fileSize;
-            if(loadDataFromFile(optarg, data.t.buffer, &data.t.size) != 0)
-            {
-                returnVal = -5;
-                break;
-            }
-            I_flag = 1;
-            break;
-        case 'o':
-            safeStrNCpy(outHashFilePath, optarg, sizeof(outHashFilePath));
-            if(checkOutFile(outHashFilePath) != 0)
-            {
-                returnVal = -6;
-                break;
-            }
             o_flag = 1;
-            break;
-        case 't':
-            safeStrNCpy(outTicketFilePath, optarg, sizeof(outTicketFilePath));
-            if(checkOutFile(outTicketFilePath) != 0)
-            {
-                returnVal = -7;
-                 break;
-            }
-            t_flag = 1;
             break;
         case 'p':
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -8;
+                returnVal = -3;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -9;
+                returnVal = -4;
             }
+            break;
+        case 'c':
+            contextFile = optarg;
+            if(contextFile == NULL || contextFile[0] == '\0')
+            {
+                returnVal = -5;
+                break;
+            }
+            printf("contextFile = %s\n", contextFile);
+            c_flag = 1;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -10;
+            returnVal = -6;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -11;
+            returnVal = -7;
             break;
         //default:
         //  break;
@@ -281,7 +214,8 @@ int main(int argc, char* argv[])
 
     if(returnVal != 0)
         return returnVal;
-    flagCnt = h_flag + v_flag + H_flag + g_flag + I_flag + o_flag + t_flag;
+
+    flagCnt = h_flag + v_flag + H_flag + o_flag + c_flag;
     if(flagCnt == 1)
     {
         if(h_flag == 1)
@@ -291,24 +225,27 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            return -12;
+            return -8;
         }
     }
-    else if(flagCnt == 5 && h_flag != 1 && v_flag != 1)
+    else if(flagCnt == 2 && (H_flag == 1 || c_flag) && o_flag == 1)
     {
         prepareTest(hostName, port, debugLevel);
 
-        returnVal = hash(hierarchyValue, &data, halg, outHashFilePath, outTicketFilePath);
+        if(c_flag)
+            returnVal = loadTpmContextFromFile(sysContext, &objectHandle, contextFile);
+        if(returnVal == 0)
+            returnVal = readPublic(objectHandle, outFilePath);
 
         finishTest();
 
         if(returnVal)
-            return -13;
+            return -9;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -14;
+        return -10;
     }
 
     return 0;

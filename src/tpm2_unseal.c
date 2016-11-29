@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -39,15 +40,15 @@
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
+//#include "sample.h"
 #include <tcti/tcti_socket.h>
 #include "common.h"
 
-TPM_HANDLE handle2048rsa;
+int debugLevel = 0;
 TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
-int debugLevel = 0;
 
-int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inPrivate, const char *outFileName, int P_flag)
+UINT32 unseal(TPMI_DH_OBJECT itemHandle, const char *outFileName, int P_flag)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -56,7 +57,7 @@ int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inP
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_NAME              nameExt     = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_SENSITIVE_DATA outData = {{sizeof(TPM2B_SENSITIVE_DATA)-2, }};
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -69,11 +70,9 @@ int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inP
 
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
-
+    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
     if(P_flag == 0)
         sessionData.hmac.t.size = 0;
-
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
     if (sessionData.hmac.t.size > 0 && hexPasswd)
     {
         sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
@@ -81,21 +80,29 @@ int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inP
                               &sessionData.hmac.t.size,
                               sessionData.hmac.t.buffer) != 0)
         {
-            printf( "Failed to convert Hex format password for parent Passwd.\n");
+            printf( "Failed to convert Hex format password for item Passwd.\n");
             return -1;
         }
     }
 
-    rval = Tss2_Sys_Load(sysContext, parentHandle, &sessionsData, inPrivate , inPublic, &handle2048rsa, &nameExt, &sessionsDataOut);
+    rval = Tss2_Sys_Unseal(sysContext, itemHandle, &sessionsData, &outData, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\nLoad Object Failed ! ErrorCode: 0x%0x\n\n",rval);
+        printf("Unseal failed. Error Code: 0x%x\n", rval);
         return -1;
     }
-    printf("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
-    if(saveDataToFile(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
+    printf("\nUnseal succ.\nUnsealed data: ");
+    UINT16 i;
+    for(i = 0; i < outData.t.size; i++)
+        printf(" 0x%02x", outData.t.buffer[i]);
+    printf("\n");
+
+    if(saveDataToFile(outFileName, (UINT8 *)&outData, sizeof(outData)))
+    {
+        printf("Failed to save unsealed data into %s\n", outFileName);
         return -2;
+    }
 
     return 0;
 }
@@ -106,14 +113,11 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-H, --parent    <parentHandle>        parent handle\n"
-        "-c, --contextParent <filename>        filename for parent context\n"
-        "-P, --pwdp      <parentKeyPassword>   parent key password, optional\n"
-        "-u, --pubfile   <publicKeyFileName>   The public portion of the object\n"
-        "-r, --privfile  <privateKeyFileName>  The sensitive portion of the object\n"
-        "-n, --name      <outPutFilename>      Output file name, containing the name structure\n"
-        "-C, --context <filename>   The file to save the object context, optional"
-        "-X, --passwdInHex          passwords given by any options are hex format.\n"
+        "-H, --item    <itemHandle>     item handle, handle of a loaded data object\n"
+        "-c, --itemContext <filename>   filename for item context\n"
+        "-P, --pwdi    <itemPassword>   item handle password, optional\n"
+        "-o, --outfile <outPutFilename> Output file name, containing the unsealed data\n"
+        "-X, --passwdInHex              passwords given by any options are hex format.\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -122,46 +126,35 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -H 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>\n"
-        "%s -H 0x80000000 -u <pubKeyFileName>  -r <privKeyFileName> -n <outPutFileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -H 0x80000000 -P 123abc -X -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>\n"
+        "%s -H 0x80000000 -P abc123 -o <outPutFileName>\n"
+        "%s -H 0x80000000 -o <outPutFileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
+        "%s -H 0x80000000 -P 123abc -X -o <outPutFileName>\n"
         ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
 {
-
     char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;//DEFAULT_TPM_PORT;
+    int port = DEFAULT_RESMGR_TPM_PORT;
 
-    TPMI_DH_OBJECT parentHandle;
-    TPM2B_PUBLIC  inPublic;
-    TPM2B_PRIVATE inPrivate;
-    UINT16 size;
+    TPMI_DH_OBJECT itemHandle;
     char outFilePath[PATH_MAX] = {0};
-    char *contextFile = NULL;
-    char *contextParentFilePath = NULL;
-
-    memset(&inPublic,0,sizeof(TPM2B_PUBLIC));
-    memset(&inPrivate,0,sizeof(TPM2B_SENSITIVE));
+    char *contextItemFile = NULL;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:P:u:r:n:p:d:C:c:X";
+    const char *optstring = "hvH:P:o:p:d:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
-      {"parent",1,NULL,'H'},
-      {"pwdp",1,NULL,'P'},
-      {"pubfile",1,NULL,'u'},
-      {"privfile",1,NULL,'r'},
-      {"name",1,NULL,'n'},
+      {"item",1,NULL,'H'},
+      {"pwdi",1,NULL,'P'},
+      {"outfile",1,NULL,'o'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
-      {"context",1,NULL,'C'},
-      {"contextParent",1,NULL,'c'},
+      {"itemContext",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
@@ -172,11 +165,8 @@ int main(int argc, char* argv[])
         v_flag = 0,
         H_flag = 0,
         P_flag = 0,
-        u_flag = 0,
-        r_flag = 0,
         c_flag = 0,
-        C_flag = 0,
-        n_flag = 0;
+        o_flag = 0;
 
     if(argc == 1)
     {
@@ -195,12 +185,12 @@ int main(int argc, char* argv[])
             v_flag = 1;
             break;
         case 'H':
-            if(getSizeUint32Hex(optarg, &parentHandle) != 0)
+            if(getSizeUint32Hex(optarg, &itemHandle) != 0)
             {
                 returnVal = -1;
                 break;
             }
-            printf("\nparentHandle: 0x%x\n\n",parentHandle);
+            printf("\nitemHandle: 0x%x\n\n",itemHandle);
             H_flag = 1;
             break;
         case 'P':
@@ -212,78 +202,49 @@ int main(int argc, char* argv[])
             }
             P_flag = 1;
             break;
-
-        case 'u':
-            size = sizeof(inPublic);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPublic, &size) != 0)
+        case 'o':
+            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
+            if(checkOutFile(outFilePath) != 0)
             {
                 returnVal = -3;
                 break;
             }
-            u_flag = 1;
-            break;
-        case 'r':
-            size = sizeof(inPrivate);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPrivate, &size) != 0)
-            {
-                returnVal = -4;
-                break;
-            }
-            r_flag = 1;
-            break;
-        case 'n':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -5;
-                break;
-            }
-            n_flag = 1;
+            o_flag = 1;
             break;
         case 'p':
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -6;
+                returnVal = -4;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -7;
+                returnVal = -5;
             }
             break;
         case 'c':
-            contextParentFilePath = optarg;
-            if(contextParentFilePath == NULL || contextParentFilePath[0] == '\0')
+            contextItemFile = optarg;
+            if(contextItemFile == NULL || contextItemFile[0] == '\0')
             {
-                returnVal = -8;
+                returnVal = -6;
                 break;
             }
-            printf("contextParentFile = %s\n", contextParentFilePath);
+            printf("contextItemFile = %s\n", contextItemFile);
             c_flag = 1;
-            break;
-        case 'C':
-            contextFile = optarg;
-            if(contextFile == NULL || contextFile[0] == '\0')
-            {
-                returnVal = -9;
-                break;
-            }
-            printf("contextFile = %s\n", contextFile);
-            C_flag = 1;
             break;
         case 'X':
             hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -10;
+            returnVal = -7;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -11;
+            returnVal = -8;
             break;
         //default:
         //  break;
@@ -295,7 +256,7 @@ int main(int argc, char* argv[])
     if(returnVal != 0)
         return returnVal;
 
-    flagCnt = h_flag + v_flag + H_flag + u_flag +r_flag + n_flag + c_flag;
+    flagCnt = h_flag + v_flag + H_flag + o_flag + c_flag;
     if(flagCnt == 1)
     {
         if(h_flag == 1)
@@ -305,30 +266,27 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            return -12;
+            return -9;
         }
     }
-    else if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
+    else if(flagCnt == 2 && (H_flag == 1 || c_flag ==1) && o_flag == 1)
     {
-
         prepareTest(hostName, port, debugLevel);
 
         if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &parentHandle, contextParentFilePath);
+            returnVal = loadTpmContextFromFile(sysContext, &itemHandle, contextItemFile);
         if (returnVal == 0)
-            returnVal = load(parentHandle, &inPublic, &inPrivate,outFilePath, P_flag);
-        if (returnVal == 0 && C_flag)
-            returnVal = saveTpmContextToFile(sysContext, handle2048rsa, contextFile);
+            returnVal = unseal(itemHandle, outFilePath, P_flag);
 
         finishTest();
 
         if(returnVal)
-            return -13;
+            return -10;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -14;
+        return -11;
     }
 
     return 0;

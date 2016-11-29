@@ -29,6 +29,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+
 #include <stdarg.h>
 
 #include <stdlib.h>
@@ -37,26 +38,32 @@
 #include <limits.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <stdbool.h>
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 #include "common.h"
 
 int debugLevel = 0;
-
 TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
 
-int rsaDecrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *cipherText, const char *outFilePath)
+int encryptDecrypt(TPMI_DH_OBJECT keyHandle, TPMI_YES_NO decryptVal, TPM2B_MAX_BUFFER *inData, const char *outFilePath)
 {
     UINT32 rval;
-    TPMT_RSA_DECRYPT inScheme;
-    TPM2B_DATA label;
-    TPM2B_PUBLIC_KEY_RSA message = { { sizeof(TPM2B_PUBLIC_KEY_RSA)-2, } };
+
+    // Inputs
+    TPMI_ALG_SYM_MODE mode;
+    TPM2B_IV ivIn;
+    // Outputs
+    TPM2B_MAX_BUFFER outData = { { sizeof(TPM2B_MAX_BUFFER)-2, } };
+    TPM2B_IV ivOut = { { sizeof(TPM2B_IV)-2, } };
 
     TSS2_SYS_CMD_AUTHS sessionsData;
+
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
+
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
@@ -65,7 +72,6 @@ int rsaDecrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *cipherText, const
     sessionDataOutArray[0] = &sessionDataOut;
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
 
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
@@ -82,24 +88,31 @@ int rsaDecrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *cipherText, const
         }
     }
 
-    inScheme.scheme = TPM_ALG_RSAES;
-    label.t.size = 0;
+    sessionsData.cmdAuthsCount = 1;
+    sessionsData.cmdAuths[0] = &sessionData;
 
-    rval = Tss2_Sys_RSA_Decrypt(sysContext, keyHandle, &sessionsData, cipherText, &inScheme, &label, &message, &sessionsDataOut);
+    mode = TPM_ALG_NULL;
+    ivIn.t.size = MAX_SYM_BLOCK_SIZE;
+    memset(ivIn.t.buffer, 0, MAX_SYM_BLOCK_SIZE);
+
+    if(decryptVal == NO)
+        printf("\nENCRYPTDECRYPT: ENCRYPT\n");
+    if(decryptVal == YES)
+        printf("\nENCRYPTDECRYPT: DECRYPT\n");
+
+    rval = Tss2_Sys_EncryptDecrypt(sysContext, keyHandle, &sessionsData, decryptVal, mode, &ivIn, inData, &outData, &ivOut, &sessionsDataOut);
+
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("rsaDecrypt failed, error code: 0x%x\n", rval);
+        printf("EncryptDecrypt failed, error code: 0x%x\n", rval);
         return -1;
     }
-    printf("\nRSA Decrypt succ.\n");
+    printf("\nEncryptDecrypt succ.\n");
 
-    if(saveDataToFile(outFilePath, message.t.buffer, message.t.size))
-    {
-        printf("OutFile %s failed!\n", outFilePath);
-        return -1;
-    }
+    if(saveDataToFile(outFilePath, (UINT8 *)outData.t.buffer, outData.t.size))
+        return -2;
+
     printf("OutFile %s completed!\n", outFilePath);
-
     return 0;
 }
 
@@ -109,11 +122,14 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-k, --keyHandle<hexHandle>  the public portion of RSA key to use for decryption  \n"
-        "-c, --keyContext <filename> filename of the key context used for the operation\n"
+        "-k, --keyHandle<hexHandle>  the symmetric key used for the operation(encryption/decryption)\n"
+        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
         "-P, --pwdk     <password>   the password of key, optional\n"
-        "-I, --inFile   <filePath>   Input file path, containing the data to be decrypted\n"
-        "-o, --outFile  <filePath>   Output file path, record the decrypted data\n"
+        "-D, --decrypt  <YES | NO>   the operation type, default NO, optional\n"
+        "\tYES  the operation is decryption\n"
+        "\tNO   the operation is encryption\n"
+        "-I, --inFile   <filePath>   Input file path, containing the data to be operated\n"
+        "-o, --outFile  <filePath>   Output file path, record the operated data\n"
         "-X, --passwdInHex           passwords given by any options are hex format.\n"
         "-p, --port   <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
@@ -123,31 +139,33 @@ void showHelp(const char *name)
         "\t3 (resource manager tables)\n"
     "\n"
         "Example:\n"
-        "%s -k 0x81010001 -I <filePath> -o <filePath>\n"
-        "%s -k 0x81010001 -P 123abc -X -I <filePath> -o <filePath>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name);
+        "%s -k 0x81010001 -P abc123 -D NO -I <filePath> -o <filePath>\n"
+        "%s -k 0x81010001 -I <filePath> -o <filePath>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
+        "%s -k 0x81010001 -P 123abc -X -D NO -I <filePath> -o <filePath>\n"
+        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
 {
     char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
+    int port = DEFAULT_RESMGR_TPM_PORT; //DEFAULT_TPM_PORT;
 
     TPMI_DH_OBJECT keyHandle;
-    TPM2B_PUBLIC_KEY_RSA cipherText;
+    TPMI_YES_NO decryptVal = NO;
+    TPM2B_MAX_BUFFER inData;
     char outFilePath[PATH_MAX] = {0};
-    char *contextKeyFile = NULL;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvk:P:I:o:p:d:c:X";
+    const char *optstring = "hvk:P:D:I:o:p:d:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
       {"keyHandle",1,NULL,'k'},
       {"pwdk",1,NULL,'P'},
+      {"decrypt",1,NULL,'D'},
       {"inFile",1,NULL,'I'},
       {"outFile",1,NULL,'o'},
       {"port",1,NULL,'p'},
@@ -166,6 +184,7 @@ int main(int argc, char* argv[])
         I_flag = 0,
         c_flag = 0,
         o_flag = 0;
+    char *contextKeyFile = NULL;
 
     if(argc == 1)
     {
@@ -200,11 +219,23 @@ int main(int argc, char* argv[])
             }
             P_flag = 1;
             break;
-        case 'I':
-            cipherText.t.size = sizeof(cipherText) - 2;
-            if(loadDataFromFile(optarg, cipherText.t.buffer, &cipherText.t.size) != 0)
+        case 'D':
+            if(strcmp("YES", optarg) == 0)
+                decryptVal = YES;
+            else if(strcmp("NO", optarg) == 0)
+                decryptVal = NO;
+            else
             {
                 returnVal = -3;
+                showArgError(optarg, argv[0]);
+                break;
+            }
+            break;
+        case 'I':
+            inData.t.size = sizeof(inData) - 2;
+            if(loadDataFromFile(optarg, inData.t.buffer, &inData.t.size) != 0)
+            {
+                returnVal = -4;
                 break;
             }
             I_flag = 1;
@@ -213,7 +244,7 @@ int main(int argc, char* argv[])
             safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
             if(checkOutFile(outFilePath) != 0)
             {
-                returnVal = -4;
+                returnVal = -5;
                 break;
             }
             o_flag = 1;
@@ -222,21 +253,21 @@ int main(int argc, char* argv[])
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -5;
+                returnVal = -6;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -6;
+                returnVal = -7;
             }
             break;
         case 'c':
             contextKeyFile = optarg;
             if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
             {
-                returnVal = -7;
+                returnVal = -8;
                 break;
             }
             printf("contextKeyFile = %s\n", contextKeyFile);
@@ -247,11 +278,11 @@ int main(int argc, char* argv[])
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -8;
+            returnVal = -9;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -9;
+            returnVal = -10;
             break;
         //default:
         //  break;
@@ -262,7 +293,6 @@ int main(int argc, char* argv[])
 
     if(returnVal != 0)
         return returnVal;
-
     if(P_flag == 0)
         sessionData.hmac.t.size = 0;
 
@@ -277,7 +307,7 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            return -10;
+            return -11;
         }
     }
     else if((flagCnt == 3) && (k_flag == 1 || c_flag == 1) && (I_flag == 1) && (o_flag == 1))
@@ -286,19 +316,18 @@ int main(int argc, char* argv[])
 
         if(c_flag)
             returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
-        if(returnVal == 0)
-            returnVal = rsaDecrypt(keyHandle, &cipherText, outFilePath);
+        if (returnVal == 0)
+            returnVal = encryptDecrypt(keyHandle, decryptVal, &inData, outFilePath);
 
         finishTest();
 
         if(returnVal)
-            return -11;
+            return -12;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -12;
+        return -13;
     }
-
     return 0;
 }

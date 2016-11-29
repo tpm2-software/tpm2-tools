@@ -1,7 +1,6 @@
 AC_INIT([tpm2.0-tools], [1.1.0])
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CC
-AC_PROG_CXX
 LT_INIT
 AM_INIT_AUTOMAKE([foreign
                   subdir-objects])

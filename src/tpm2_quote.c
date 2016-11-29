@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -321,7 +322,8 @@ const char *findChar(const char *str, int len, char c)
     if(str == NULL || len <= 0)
         return NULL;
 
-    for(int i = 0; i < len; i++)
+    int i;
+    for(i = 0; i < len; i++)
     {
         if(str[i] == c)
             return &str[i];

@@ -43,54 +43,65 @@
 #include "common.h"
 
 int debugLevel = 0;
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
 
-int evictControl(TPMI_RH_PROVISION auth, TPMI_DH_OBJECT objectHandle,TPMI_DH_OBJECT persistentHandle, int P_flag)
+int getHierarchyValue(const char *argValue, TPMI_RH_HIERARCHY *hierarchyValue)
 {
-    UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
-
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
-
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
-
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
+    if(strlen(argValue) != 1)
     {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for authorization Passwd.\n");
-            return -1;
-        }
-    }
-
-    rval = Tss2_Sys_EvictControl(sysContext, auth, objectHandle, &sessionsData, persistentHandle,&sessionsDataOut);
-
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\nEvictControl Failed, error code: 0x%0x\n\n",rval);
+        printf("Wrong Hierarchy Value: %s\n",argValue);
         return -1;
     }
-    printf("\nEvictControl succ.\n");
+    switch(argValue[0])
+    {
+        case 'e':
+            *hierarchyValue = TPM_RH_ENDORSEMENT;
+            break;
+        case 'o':
+            *hierarchyValue = TPM_RH_OWNER;
+            break;
+        case 'p':
+            *hierarchyValue = TPM_RH_PLATFORM;
+            break;
+        case 'n':
+            *hierarchyValue = TPM_RH_NULL;
+            break;
+        default:
+            printf("Wrong Hierarchy Value: %s\n",argValue);
+            return -2;
+    }
+    return 0;
+}
+
+int hash(TPMI_RH_HIERARCHY hierarchyValue, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, const char *outHashFilePath, const char *outTicketFilePath)
+{
+    UINT32 rval;
+
+    TPM2B_DIGEST outHash = { { sizeof(TPM2B_DIGEST)-2, } };
+    TPMT_TK_HASHCHECK validation;
+
+    rval = Tss2_Sys_Hash(sysContext, 0, data, halg, hierarchyValue, &outHash, &validation, 0);
+    if(rval != TPM_RC_SUCCESS)
+    {
+        printf("\n......TPM2_Hash Error. TPM Error:0x%x......\n", rval);
+        return -1;
+    }
+    printf("\ntpm2_hash succ.\n\n");
+
+    printf("\nhash value(hex type): ");
+    UINT16 i;
+    for(i = 0; i < outHash.t.size; i++)
+        printf("%02x ", outHash.t.buffer[i]);
+    printf("\n");
+
+    printf("\nvalidation value(hex type): ");
+    for(i = 0; i < validation.digest.t.size; i++)
+        printf("%02x ", validation.digest.t.buffer[i]);
+    printf("\n");
+
+    if(saveDataToFile(outHashFilePath, (UINT8 *)&outHash, sizeof(outHash)))
+        return -2;
+    if(saveDataToFile(outTicketFilePath, (UINT8 *)&validation, sizeof(validation)))
+        return -3;
 
     return 0;
 }
@@ -101,14 +112,20 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-A, --auth <o | p>   the authorization used to authorize the commands\n"
+        "-H, --hierarchy <e|o|p|n>   hierarchy to use for the ticket\n"
+            "\te  TPM_RH_ENDORSEMENT\n"
             "\to  TPM_RH_OWNER\n"
             "\tp  TPM_RH_PLATFORM\n"
-        "-H, --handle    <objectHandle>        the handle of a loaded object\n"
-        "-c, --context <filename>              filename for object context\n"
-        "-S, --persistent<persistentHandle>    the persistent handle for objectHandle\n"
-        "-P, --pwda      <authorizationPassword>   authrization password, optional\n"
-        "-X, --passwdInHex                     passwords given by any options are hex format.\n"
+            "\tn  TPM_RH_NULL\n"
+        "-g, --halg      <hexAlg>   algorithm for the hash being computed\n"
+            "\t0x0004  TPM_ALG_SHA1\n"
+            "\t0x000B  TPM_ALG_SHA256\n"
+            "\t0x000C  TPM_ALG_SHA384\n"
+            "\t0x000D  TPM_ALG_SHA512\n"
+            "\t0x0012  TPM_ALG_SM3_256\n"
+        "-I, --infile    <inputFilename>  file containning the data to be hashed\n"
+        "-o, --outfile   <hashFilename>   file record the hash result\n"
+        "-t, --ticket    <ticketFilename> file record the ticket\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -117,38 +134,37 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -A o -H 0x80000000 -S 0x81010002 -P abc123 \n"
-        "%s -A p -H 0x80000000 -S 0x81010002\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -A o -H 0x80000000 -S 0x81010002 -P 123abc -X\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
+        "%s -H <e|o|p|n> -g 0x004 -I <inputFilename> -o <hashFilename> -t <ticketFilename> \n"
+        , name, DEFAULT_RESMGR_TPM_PORT, name);
 }
 
 int main(int argc, char* argv[])
 {
-
     char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT; //DEFAULT_TPM_PORT;
+    int port = DEFAULT_RESMGR_TPM_PORT;
 
-    TPMI_RH_PROVISION auth = TPM_RH_NULL;
-    TPMI_DH_OBJECT objectHandle;
-    TPMI_DH_OBJECT persistentHandle;
+    TPMI_RH_HIERARCHY hierarchyValue;
+    TPM2B_MAX_BUFFER data;
+    TPMI_ALG_HASH  halg;
+    char outHashFilePath[PATH_MAX] = {0};
+    char outTicketFilePath[PATH_MAX] = {0};
+    long fileSize = 0;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvA:H:S:P:p:d:c:X";
+    const char *optstring = "hvH:g:I:o:t:p:d:";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
-      {"auth",1,NULL,'A'},
-      {"handle",1,NULL,'H'},
-      {"persistent",1,NULL,'S'},
-      {"pwda",1,NULL,'P'},
+      {"Hierachy",1,NULL,'H'},
+      {"halg",1,NULL,'g'},
+      {"infile",1,NULL,'I'},
+      {"outfile",1,NULL,'o'},
+      {"ticket",1,NULL,'t'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
-      {"context",1,NULL,'c'},
-      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -156,12 +172,11 @@ int main(int argc, char* argv[])
     int flagCnt = 0;
     int h_flag = 0,
         v_flag = 0,
-        A_flag = 0,
         H_flag = 0,
-        S_flag = 0,
-        c_flag = 0,
-        P_flag = 0;
-    char *contextFile = NULL;
+        g_flag = 0,
+        I_flag = 0,
+        o_flag = 0,
+        t_flag = 0;
 
     if(argc == 1)
     {
@@ -179,85 +194,84 @@ int main(int argc, char* argv[])
         case 'v':
             v_flag = 1;
             break;
-        case 'A':
-            if(strcmp(optarg,"o") == 0 || strcmp(optarg,"O") == 0)
-                auth = TPM_RH_OWNER;
-            else if(strcmp(optarg,"p") == 0 || strcmp(optarg,"P") == 0)
-                auth = TPM_RH_PLATFORM;
-            else
+        case 'H':
+            if(getHierarchyValue(optarg,&hierarchyValue) != 0)
             {
-                printf("ERROR: auth '%s' not supported!\n", optarg);
                 returnVal = -1;
                 break;
             }
-            A_flag = 1;
+            printf("\nhierarchyValue: 0x%x\n\n",hierarchyValue);
+            H_flag = 1;
             break;
-        case 'H':
-            if(getSizeUint32Hex(optarg, &objectHandle) != 0)
+        case 'g':
+            if(getSizeUint16Hex(optarg,&halg) != 0)
             {
+                showArgError(optarg, argv[0]);
                 returnVal = -2;
                 break;
             }
-            printf("\nobjectHandle: 0x%x\n\n",objectHandle);
-            H_flag = 1;
+            printf("halg = 0x%4.4x\n", halg);
+            g_flag = 1;
             break;
-        case 'S':
-            if(getSizeUint32Hex(optarg, &persistentHandle) != 0)
+        case 'I':
+            if( getFileSize(optarg, &fileSize) != 0)
             {
                 returnVal = -3;
                 break;
             }
-            printf("\npersistentHandle: 0x%x\n\n",persistentHandle);
-            S_flag = 1;
-            break;
-        case 'P':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
+            if(fileSize > MAX_DIGEST_BUFFER)
             {
-                printf("\nPlease input the authenticating password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
+                printf("Input data too long: %ld, should be less than %d bytes\n", fileSize, MAX_DIGEST_BUFFER);
                 returnVal = -4;
                 break;
             }
-            if( strlen(optarg) > 0 )
+            data.t.size = fileSize;
+            if(loadDataFromFile(optarg, data.t.buffer, &data.t.size) != 0)
             {
-                sessionData.hmac.t.size = strlen(optarg);
-                safeStrNCpy( (char *)&sessionData.hmac.t.buffer[0], optarg, sizeof(sessionData.hmac.t.buffer) );
+                returnVal = -5;
+                break;
             }
-            P_flag = 1;
+            I_flag = 1;
+            break;
+        case 'o':
+            safeStrNCpy(outHashFilePath, optarg, sizeof(outHashFilePath));
+            if(checkOutFile(outHashFilePath) != 0)
+            {
+                returnVal = -6;
+                break;
+            }
+            o_flag = 1;
+            break;
+        case 't':
+            safeStrNCpy(outTicketFilePath, optarg, sizeof(outTicketFilePath));
+            if(checkOutFile(outTicketFilePath) != 0)
+            {
+                returnVal = -7;
+                 break;
+            }
+            t_flag = 1;
             break;
         case 'p':
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -5;
+                returnVal = -8;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -6;
+                returnVal = -9;
             }
-            break;
-        case 'c':
-            contextFile = optarg;
-            if(contextFile == NULL || contextFile[0] == '\0')
-            {
-                returnVal = -7;
-                break;
-            }
-            printf("contextFile = %s\n", contextFile);
-            c_flag = 1;
-            break;
-        case 'X':
-            hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -8;
+            returnVal = -10;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -9;
+            returnVal = -11;
             break;
         //default:
         //  break;
@@ -268,7 +282,7 @@ int main(int argc, char* argv[])
 
     if(returnVal != 0)
         return returnVal;
-    flagCnt = h_flag + v_flag + A_flag + H_flag + S_flag + c_flag;
+    flagCnt = h_flag + v_flag + H_flag + g_flag + I_flag + o_flag + t_flag;
     if(flagCnt == 1)
     {
         if(h_flag == 1)
@@ -278,27 +292,24 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            return -10;
+            return -12;
         }
     }
-    else if(flagCnt == 3 && A_flag == 1 && (H_flag == 1 || c_flag) && S_flag == 1)
+    else if(flagCnt == 5 && h_flag != 1 && v_flag != 1)
     {
         prepareTest(hostName, port, debugLevel);
 
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &objectHandle, contextFile);
-        if (returnVal == 0)
-            returnVal = evictControl(auth, objectHandle, persistentHandle, P_flag);
+        returnVal = hash(hierarchyValue, &data, halg, outHashFilePath, outTicketFilePath);
 
         finishTest();
 
         if(returnVal)
-            return -11;
+            return -13;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -12;
+        return -14;
     }
 
     return 0;

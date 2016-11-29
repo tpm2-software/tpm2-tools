@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -56,16 +57,16 @@ UINT32 algorithmType = TPM_ALG_RSA;
 UINT32 digestAlg = TPM_ALG_SHA256;
 UINT32 signAlg = TPM_ALG_NULL;
 
-int setRSASigningAlg(TPM2B_PUBLIC &inPublic)
+int setRSASigningAlg(TPM2B_PUBLIC *inPublic)
 {
     if (signAlg == TPM_ALG_NULL)
         signAlg = TPM_ALG_RSASSA;
-    inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = signAlg;
+    inPublic->t.publicArea.parameters.rsaDetail.scheme.scheme = signAlg;
     switch(signAlg)
     {
     case TPM_ALG_RSASSA:
     case TPM_ALG_RSAPSS:
-        inPublic.t.publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg = digestAlg;
+        inPublic->t.publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg = digestAlg;
         break;
     default:
         printf("\n......The RSA signing algorithm type input(%4.4x) is not supported!......\n", signAlg);
@@ -75,18 +76,18 @@ int setRSASigningAlg(TPM2B_PUBLIC &inPublic)
     return 0;
 }
 
-int setECCSigningAlg(TPM2B_PUBLIC &inPublic)
+static int setECCSigningAlg(TPM2B_PUBLIC *inPublic)
 {
     if (signAlg == TPM_ALG_NULL)
         signAlg = TPM_ALG_ECDSA;
-    inPublic.t.publicArea.parameters.eccDetail.scheme.scheme = signAlg;
+    inPublic->t.publicArea.parameters.eccDetail.scheme.scheme = signAlg;
     switch(signAlg)
     {
     case TPM_ALG_ECDSA:
     case TPM_ALG_SM2:
     case TPM_ALG_ECSCHNORR:
     case TPM_ALG_ECDAA:
-        inPublic.t.publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg = digestAlg;
+        inPublic->t.publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg = digestAlg;
     case TPM_ALG_NULL:
         break;
     default:
@@ -97,15 +98,15 @@ int setECCSigningAlg(TPM2B_PUBLIC &inPublic)
     return 0;
 }
 
-int setKeyedhashSigningAlg(TPM2B_PUBLIC &inPublic)
+static int setKeyedhashSigningAlg(TPM2B_PUBLIC *inPublic)
 {
     if (signAlg == TPM_ALG_NULL)
         signAlg = TPM_ALG_HMAC;
-    inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = signAlg;
+    inPublic->t.publicArea.parameters.keyedHashDetail.scheme.scheme = signAlg;
     switch(signAlg)
     {
     case TPM_ALG_HMAC:
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = digestAlg;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = digestAlg;
     case TPM_ALG_NULL:
         break;
     default:
@@ -116,47 +117,47 @@ int setKeyedhashSigningAlg(TPM2B_PUBLIC &inPublic)
     return 0;
 }
 
-int setKeyAlgorithm(UINT16 algorithm, TPM2B_SENSITIVE_CREATE &inSensitive, TPM2B_PUBLIC &inPublic)
+static int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
 {
-    inPublic.t.publicArea.nameAlg = TPM_ALG_SHA256;
+    inPublic->t.publicArea.nameAlg = TPM_ALG_SHA256;
     // First clear attributes bit field.
-    *(UINT32 *)&(inPublic.t.publicArea.objectAttributes) = 0;
-    inPublic.t.publicArea.objectAttributes.restricted = 1;
-    inPublic.t.publicArea.objectAttributes.userWithAuth = 1;
-    inPublic.t.publicArea.objectAttributes.sign = 1;
-    inPublic.t.publicArea.objectAttributes.decrypt = 0;
-    inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
-    inPublic.t.publicArea.objectAttributes.fixedParent = 1;
-    inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    inPublic.t.publicArea.authPolicy.t.size = 0;
+    *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
+    inPublic->t.publicArea.objectAttributes.restricted = 1;
+    inPublic->t.publicArea.objectAttributes.userWithAuth = 1;
+    inPublic->t.publicArea.objectAttributes.sign = 1;
+    inPublic->t.publicArea.objectAttributes.decrypt = 0;
+    inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
+    inPublic->t.publicArea.objectAttributes.fixedParent = 1;
+    inPublic->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    inPublic->t.publicArea.authPolicy.t.size = 0;
 
-    inPublic.t.publicArea.type = algorithm;
+    inPublic->t.publicArea.type = algorithm;
 
     switch(algorithm)
     {
     case TPM_ALG_RSA:
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 0;
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048;
-        inPublic.t.publicArea.parameters.rsaDetail.exponent = 0;
-        inPublic.t.publicArea.unique.rsa.t.size = 0;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 0;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.rsaDetail.keyBits = 2048;
+        inPublic->t.publicArea.parameters.rsaDetail.exponent = 0;
+        inPublic->t.publicArea.unique.rsa.t.size = 0;
         if(setRSASigningAlg(inPublic))
            return -1;
         break;
     case TPM_ALG_ECC:
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.keyBits.sym = 0;
-        inPublic.t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        inPublic.t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.unique.ecc.x.t.size = 0;
-        inPublic.t.publicArea.unique.ecc.y.t.size = 0;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.keyBits.sym = 0;
+        inPublic->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
+        inPublic->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.unique.ecc.x.t.size = 0;
+        inPublic->t.publicArea.unique.ecc.y.t.size = 0;
         if(setECCSigningAlg(inPublic))
            return -2;
         break;
     case TPM_ALG_KEYEDHASH:
-        inPublic.t.publicArea.unique.keyedHash.t.size = 0;
+        inPublic->t.publicArea.unique.keyedHash.t.size = 0;
         if(setKeyedhashSigningAlg(inPublic))
            return -3;
         break;
@@ -169,7 +170,7 @@ int setKeyAlgorithm(UINT16 algorithm, TPM2B_SENSITIVE_CREATE &inSensitive, TPM2B
     return 0;
 }
 
-int createAK()
+static int createAK()
 {
     UINT32 rval = TPM_RC_SUCCESS;
     TPMS_AUTH_COMMAND sessionData;
@@ -237,7 +238,7 @@ int createAK()
 
     creationPCR.count = 0;
 
-    if( setKeyAlgorithm(algorithmType, inSensitive, inPublic) )
+    if( setKeyAlgorithm(algorithmType, &inPublic) )
         return -1;
 
     sessionData.hmac.t.size = 0;
@@ -427,7 +428,7 @@ int createAK()
     return 0;
 }
 
-void showHelp(const char *name)
+static void showHelp(const char *name)
 {
     showVersion(name);
     printf("Usage: %s [-h/--help]\n"

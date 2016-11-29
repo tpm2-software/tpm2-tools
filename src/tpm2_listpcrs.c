@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -96,14 +97,15 @@ int findAlgorithm(TPMI_ALG_HASH algId)
 
 void updatePcrSelections(TPML_PCR_SELECTION *s1, TPML_PCR_SELECTION *s2)
 {
-    for(int i2 = 0; i2 < s2->count; i2++)
+    int i1, i2, j;
+    for(i2 = 0; i2 < s2->count; i2++)
     {
-        for(int i1 = 0; i1 < s1->count; i1++)
+        for(i1 = 0; i1 < s1->count; i1++)
         {
             if(s2->pcrSelections[i2].hash != s1->pcrSelections[i1].hash)
                 continue;
 
-            for(int j = 0; j < s1->pcrSelections[i1].sizeofSelect; j++)
+            for(j = 0; j < s1->pcrSelections[i1].sizeofSelect; j++)
                 s1->pcrSelections[i1].pcrSelect[j] &=
                     ~s2->pcrSelections[i2].pcrSelect[j];
         }
@@ -112,8 +114,9 @@ void updatePcrSelections(TPML_PCR_SELECTION *s1, TPML_PCR_SELECTION *s2)
 
 bool emptyPcrSections(TPML_PCR_SELECTION *s)
 {
-    for(int i = 0; i < s->count; i++)
-        for(int j = 0; j < s->pcrSelections[i].sizeofSelect; j++)
+    int i,j;
+    for(i = 0; i < s->count; i++)
+        for(j = 0; j < s->pcrSelections[i].sizeofSelect; j++)
             if(s->pcrSelections[i].pcrSelect[j])
                 return false;
 
@@ -179,7 +182,8 @@ void preparePcrSelections()
     UINT32 pcrId = 0;
 
     g_pcrSelections.count = 0;
-    for( int i = 0; i < g_banks.count; i++ )
+    int i;
+    for( i = 0; i < g_banks.count; i++ )
     {
         g_pcrSelections.pcrSelections[i].hash = g_banks.alg[i];
         SET_PCR_SELECT_SIZE(g_pcrSelections.pcrSelections[i], 3);
@@ -196,16 +200,17 @@ void preparePcrSelections()
 // show all PCR banks according to g_pcrSelection & g_pcrs.
 int showPcrValues()
 {
-    int vi = 0, di = 0;
+    int vi = 0, di = 0, i;
 
-    for( int i = 0; i < g_pcrSelections.count; i++)
+    for( i = 0; i < g_pcrSelections.count; i++)
     {
         int alg_i = findAlgorithm(g_pcrSelections.pcrSelections[i].hash);
 
         printf("\nBank/Algorithm: %s(0x%04x)\n",
                g_algs[alg_i].desc, g_pcrSelections.pcrSelections[i].hash);
 
-        for(UINT32 pcrId = 0; pcrId < 24; pcrId++)
+        UINT32 pcrId;
+        for(pcrId = 0; pcrId < 24; pcrId++)
         {
             if(!TEST_PCR_SELECT_BIT(g_pcrSelections.pcrSelections[i], pcrId))
                 continue;
@@ -216,7 +221,8 @@ int showPcrValues()
             }
 
             printf("PCR_%02d:", pcrId);
-            for(int k = 0; k < g_pcrs.pcrValues[vi].digests[di].t.size; k++)
+            int k;
+            for(k = 0; k < g_pcrs.pcrValues[vi].digests[di].t.size; k++)
                 printf(" %02x", g_pcrs.pcrValues[vi].digests[di].t.buffer[k]);
             printf("\n");
 
@@ -295,7 +301,8 @@ int getBanks()
         return -1;
     }
 
-    for( int i=0; i < capabilityData.data.assignedPCR.count; i++ )
+    int i;
+    for( i=0; i < capabilityData.data.assignedPCR.count; i++ )
     {
         g_banks.alg[i] = capabilityData.data.assignedPCR.pcrSelections[i].hash;
     }
@@ -307,7 +314,8 @@ int getBanks()
 void showBanks()
 {
     printf("Supported Bank/Algorithm:");
-    for(int i = 0; i < g_banks.count; i++)
+    int i;
+    for( i = 0; i < g_banks.count; i++)
     {
         int j = findAlgorithm(g_banks.alg[i]);
         printf(" %s(0x%04x)", g_algs[j].desc, g_banks.alg[i]);
@@ -353,7 +361,8 @@ const char *findChar(const char *str, int len, char c)
     if(str == NULL || len <= 0)
         return NULL;
 
-    for(int i = 0; i < len; i++)
+    int i;
+    for(i = 0; i < len; i++)
     {
         if(str[i] == c)
             return &str[i];

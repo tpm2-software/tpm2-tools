@@ -32,6 +32,7 @@
 
 #include "context-util.h"
 #include "main.h"
+#include "common.h"
 
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does

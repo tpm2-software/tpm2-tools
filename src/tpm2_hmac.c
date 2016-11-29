@@ -37,17 +37,17 @@
 #include <limits.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <stdbool.h>
 
 #include <sapi/tpm20.h>
-//#include "sample.h"
 #include <tcti/tcti_socket.h>
 #include "common.h"
 
-int debugLevel = 0;
 TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
+int debugLevel = 0;
 
-UINT32 unseal(TPMI_DH_OBJECT itemHandle, const char *outFileName, int P_flag)
+int hmac(TPMI_DH_OBJECT keyHandle, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, const char *outHmacFilePath)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -56,7 +56,7 @@ UINT32 unseal(TPMI_DH_OBJECT itemHandle, const char *outFileName, int P_flag)
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_SENSITIVE_DATA outData = {{sizeof(TPM2B_SENSITIVE_DATA)-2, }};
+    TPM2B_DIGEST outHMAC = { { sizeof(TPM2B_DIGEST)-2, } };
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -70,8 +70,6 @@ UINT32 unseal(TPMI_DH_OBJECT itemHandle, const char *outFileName, int P_flag)
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
     *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
     if (sessionData.hmac.t.size > 0 && hexPasswd)
     {
         sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
@@ -79,28 +77,27 @@ UINT32 unseal(TPMI_DH_OBJECT itemHandle, const char *outFileName, int P_flag)
                               &sessionData.hmac.t.size,
                               sessionData.hmac.t.buffer) != 0)
         {
-            printf( "Failed to convert Hex format password for item Passwd.\n");
+            printf( "Failed to convert Hex format password for key Passwd.\n");
             return -1;
         }
     }
 
-    rval = Tss2_Sys_Unseal(sysContext, itemHandle, &sessionsData, &outData, &sessionsDataOut);
+    rval = Tss2_Sys_HMAC(sysContext, keyHandle, &sessionsData, data, halg, &outHMAC, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("Unseal failed. Error Code: 0x%x\n", rval);
+        printf("\n......TPM2_HMAC Error. TPM Error:0x%x......\n", rval);
         return -1;
     }
+    printf("\ntpm2_hmac succ.\n\n");
 
-    printf("\nUnseal succ.\nUnsealed data: ");
-    for(UINT16 i = 0; i < outData.t.size; i++)
-        printf(" 0x%02x", outData.t.buffer[i]);
+    printf("\nhmac value(hex type): ");
+    UINT16 i;
+    for( i = 0; i < outHMAC.t.size; i++)
+        printf("%02x ", outHMAC.t.buffer[i]);
     printf("\n");
 
-    if(saveDataToFile(outFileName, (UINT8 *)&outData, sizeof(outData)))
-    {
-        printf("Failed to save unsealed data into %s\n", outFileName);
+    if( saveDataToFile(outHmacFilePath, (UINT8 *)&outHMAC, sizeof(outHMAC)) )
         return -2;
-    }
 
     return 0;
 }
@@ -111,11 +108,18 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-H, --item    <itemHandle>     item handle, handle of a loaded data object\n"
-        "-c, --itemContext <filename>   filename for item context\n"
-        "-P, --pwdi    <itemPassword>   item handle password, optional\n"
-        "-o, --outfile <outPutFilename> Output file name, containing the unsealed data\n"
-        "-X, --passwdInHex              passwords given by any options are hex format.\n"
+        "-k, --keyHandle <hexHandle> handle for the symmetric signing key providing the HMAC key\n"
+        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
+        "-P, --pwdk      <string>    the keyHandle's password, optional\n"
+        "-g, --halg      <hexAlg>    algorithm for the hash being computed\n"
+            "\t0x0004  TPM_ALG_SHA1\n"
+            "\t0x000B  TPM_ALG_SHA256\n"
+            "\t0x000C  TPM_ALG_SHA384\n"
+            "\t0x000D  TPM_ALG_SHA512\n"
+            "\t0x0012  TPM_ALG_SM3_256\n"
+        "-I, --infile    <inputFilename>  file containning the data to be HMACed\n"
+        "-o, --outfile   <hmacFilename>   file record the HMAC result\n"
+        "-X, --passwdInHex                passwords given by any options are hex format.\n"
         "-p, --port  <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
             "\t0 (high level test results)\n"
@@ -124,10 +128,10 @@ void showHelp(const char *name)
             "\t3 (resource manager tables)\n"
         "\n"
         "Example:\n"
-        "%s -H 0x80000000 -P abc123 -o <outPutFileName>\n"
-        "%s -H 0x80000000 -o <outPutFileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -H 0x80000000 -P 123abc -X -o <outPutFileName>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
+        "%s -k 0x80000001 -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename> \n"
+        "%s -k 0x80000001 -g 0x004 -I <inputFilename> -o <hmacFilename>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
+        "%s -k 0x80000001 -P 123abc -X -g 0x004 -I <inputFilename> -o <hmacFilename> \n"
+        , name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -135,24 +139,29 @@ int main(int argc, char* argv[])
     char hostName[200] = DEFAULT_HOSTNAME;
     int port = DEFAULT_RESMGR_TPM_PORT;
 
-    TPMI_DH_OBJECT itemHandle;
-    char outFilePath[PATH_MAX] = {0};
-    char *contextItemFile = NULL;
+    TPMI_DH_OBJECT keyHandle;
+    TPM2B_MAX_BUFFER data;
+    TPMI_ALG_HASH  halg;
+    char outHmacFilePath[PATH_MAX] = {0};
+    char *contextKeyFile = NULL;
+    long fileSize = 0;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:P:o:p:d:c:X";
+    const char *optstring = "hvk:P:g:I:o:p:d:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
-      {"item",1,NULL,'H'},
-      {"pwdi",1,NULL,'P'},
+      {"keyHandle",1,NULL,'k'},
+      {"pwdk",1,NULL,'P'},
+      {"halg",1,NULL,'g'},
+      {"infile",1,NULL,'I'},
       {"outfile",1,NULL,'o'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
-      {"itemContext",1,NULL,'c'},
+      {"keyContext",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
@@ -161,8 +170,10 @@ int main(int argc, char* argv[])
     int flagCnt = 0;
     int h_flag = 0,
         v_flag = 0,
-        H_flag = 0,
+        k_flag = 0,
         P_flag = 0,
+        g_flag = 0,
+        I_flag = 0,
         c_flag = 0,
         o_flag = 0;
 
@@ -182,14 +193,13 @@ int main(int argc, char* argv[])
         case 'v':
             v_flag = 1;
             break;
-        case 'H':
-            if(getSizeUint32Hex(optarg, &itemHandle) != 0)
+        case 'k':
+            if(getSizeUint32Hex(optarg,&keyHandle) != 0)
             {
                 returnVal = -1;
                 break;
             }
-            printf("\nitemHandle: 0x%x\n\n",itemHandle);
-            H_flag = 1;
+            k_flag = 1;
             break;
         case 'P':
             sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
@@ -200,11 +210,42 @@ int main(int argc, char* argv[])
             }
             P_flag = 1;
             break;
-        case 'o':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
-            if(checkOutFile(outFilePath) != 0)
+        case 'g':
+            if(getSizeUint16Hex(optarg,&halg) != 0)
             {
+                showArgError(optarg, argv[0]);
                 returnVal = -3;
+                break;
+            }
+            printf("halg = 0x%4.4x\n", halg);
+            g_flag = 1;
+            break;
+        case 'I':
+//              long fileSize = 0;
+            if( getFileSize(optarg, &fileSize) != 0)
+            {
+                returnVal = -4;
+                break;
+            }
+            if(fileSize > MAX_DIGEST_BUFFER)
+            {
+                printf("Input data too long: %ld, should be less than %d bytes\n", fileSize, MAX_DIGEST_BUFFER);
+                returnVal = -5;
+                break;
+            }
+            data.t.size = sizeof(data) - 2;
+            if(loadDataFromFile(optarg, (UINT8 *)data.t.buffer, &data.t.size) != 0)
+            {
+                returnVal = -6;
+                break;
+            }
+            I_flag = 1;
+            break;
+        case 'o':
+            safeStrNCpy(outHmacFilePath, optarg, sizeof(outHmacFilePath));
+            if(checkOutFile(outHmacFilePath) != 0)
+            {
+                returnVal = -7;
                 break;
             }
             o_flag = 1;
@@ -213,24 +254,24 @@ int main(int argc, char* argv[])
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -4;
+                returnVal = -8;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -5;
+                returnVal = -9;
             }
             break;
-        case 'c':
-            contextItemFile = optarg;
-            if(contextItemFile == NULL || contextItemFile[0] == '\0')
+         case 'c':
+            contextKeyFile = optarg;
+            if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
             {
-                returnVal = -6;
+                returnVal = -10;
                 break;
             }
-            printf("contextItemFile = %s\n", contextItemFile);
+            printf("contextKeyFile = %s\n", contextKeyFile);
             c_flag = 1;
             break;
         case 'X':
@@ -238,11 +279,11 @@ int main(int argc, char* argv[])
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -7;
+            returnVal = -11;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -8;
+            returnVal = -12;
             break;
         //default:
         //  break;
@@ -254,7 +295,9 @@ int main(int argc, char* argv[])
     if(returnVal != 0)
         return returnVal;
 
-    flagCnt = h_flag + v_flag + H_flag + o_flag + c_flag;
+    if(P_flag != 1)
+        sessionData.hmac.t.size = 0;
+    flagCnt = h_flag + v_flag + k_flag + g_flag + I_flag + o_flag + c_flag;
     if(flagCnt == 1)
     {
         if(h_flag == 1)
@@ -264,27 +307,27 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            return -9;
+            return -13;
         }
     }
-    else if(flagCnt == 2 && (H_flag == 1 || c_flag ==1) && o_flag == 1)
+    else if((flagCnt == 4) && (k_flag == 1 || c_flag == 1) && (I_flag == 1) && (o_flag == 1) && g_flag == 1)
     {
         prepareTest(hostName, port, debugLevel);
 
         if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &itemHandle, contextItemFile);
-        if (returnVal == 0)
-            returnVal = unseal(itemHandle, outFilePath, P_flag);
+            returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
+        if(returnVal == 0)
+            returnVal = hmac(keyHandle, &data, halg, outHmacFilePath);
 
         finishTest();
 
         if(returnVal)
-            return -10;
+            return -14;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -11;
+        return -15;
     }
 
     return 0;

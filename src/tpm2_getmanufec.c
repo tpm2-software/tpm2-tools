@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -66,56 +67,56 @@ unsigned int SSL_NO_VERIFY = 0;
 unsigned int OfflineProv = 0;
 
 BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24, 0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA};
-int setKeyAlgorithm(UINT16 algorithm, TPM2B_SENSITIVE_CREATE &inSensitive, TPM2B_PUBLIC &inPublic)
+int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
 {
-    inPublic.t.publicArea.nameAlg = TPM_ALG_SHA256;
+    inPublic->t.publicArea.nameAlg = TPM_ALG_SHA256;
     // First clear attributes bit field.
-    *(UINT32 *)&(inPublic.t.publicArea.objectAttributes) = 0;
-    inPublic.t.publicArea.objectAttributes.restricted = 1;
-    inPublic.t.publicArea.objectAttributes.userWithAuth = 0;
-    inPublic.t.publicArea.objectAttributes.adminWithPolicy = 1;
-    inPublic.t.publicArea.objectAttributes.sign = 0;
-    inPublic.t.publicArea.objectAttributes.decrypt = 1;
-    inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
-    inPublic.t.publicArea.objectAttributes.fixedParent = 1;
-    inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    inPublic.t.publicArea.authPolicy.t.size = 32;
-    memcpy(inPublic.t.publicArea.authPolicy.t.buffer, authPolicy, 32);
+    *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
+    inPublic->t.publicArea.objectAttributes.restricted = 1;
+    inPublic->t.publicArea.objectAttributes.userWithAuth = 0;
+    inPublic->t.publicArea.objectAttributes.adminWithPolicy = 1;
+    inPublic->t.publicArea.objectAttributes.sign = 0;
+    inPublic->t.publicArea.objectAttributes.decrypt = 1;
+    inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
+    inPublic->t.publicArea.objectAttributes.fixedParent = 1;
+    inPublic->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    inPublic->t.publicArea.authPolicy.t.size = 32;
+    memcpy(inPublic->t.publicArea.authPolicy.t.buffer, authPolicy, 32);
 
-    inPublic.t.publicArea.type = algorithm;
+    inPublic->t.publicArea.type = algorithm;
 
     switch (algorithm)
     {
     case TPM_ALG_RSA:
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
-        inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048;
-        inPublic.t.publicArea.parameters.rsaDetail.exponent = 0x0;
-        inPublic.t.publicArea.unique.rsa.t.size = 256;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
+        inPublic->t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.rsaDetail.keyBits = 2048;
+        inPublic->t.publicArea.parameters.rsaDetail.exponent = 0x0;
+        inPublic->t.publicArea.unique.rsa.t.size = 256;
         break;
     case TPM_ALG_KEYEDHASH:
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_SHA256;
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
-        inPublic.t.publicArea.unique.keyedHash.t.size = 0;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_SHA256;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
+        inPublic->t.publicArea.unique.keyedHash.t.size = 0;
         break;
     case TPM_ALG_ECC:
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_AES;
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_CFB;
-        inPublic.t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        inPublic.t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.unique.ecc.x.t.size = 32;
-        inPublic.t.publicArea.unique.ecc.y.t.size = 32;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_AES;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_CFB;
+        inPublic->t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
+        inPublic->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.unique.ecc.x.t.size = 32;
+        inPublic->t.publicArea.unique.ecc.y.t.size = 32;
         break;
     case TPM_ALG_SYMCIPHER:
-        inPublic.t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
-        inPublic.t.publicArea.parameters.symDetail.sym.keyBits.aes = 128;
-        inPublic.t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
-        inPublic.t.publicArea.unique.sym.t.size = 0;
+        inPublic->t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
+        inPublic->t.publicArea.parameters.symDetail.sym.keyBits.aes = 128;
+        inPublic->t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
+        inPublic->t.publicArea.unique.sym.t.size = 0;
         break;
     default:
         printf("\n......The algorithm type input(%4.4x) is not supported!......\n", algorithm);
@@ -199,7 +200,7 @@ int createEKHandle()
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
-    if ( setKeyAlgorithm(algorithmType, inSensitive, inPublic) )
+    if ( setKeyAlgorithm(algorithmType, &inPublic) )
         return -1;
 
     creationPCR.count = 0;
@@ -215,7 +216,7 @@ int createEKHandle()
     }
     printf("\nEK create succ.. Handle: 0x%8.8x\n", handle2048ek);
 
-    if (!nonPersistentRead) 
+    if (!nonPersistentRead)
     {
         // To make EK persistent, use own auth
         sessionData.hmac.t.size = 0;
@@ -267,22 +268,35 @@ unsigned char *HashEKPublicKey(void)
     printf("Calculating the SHA256 hash of the Endorsement Public Key\n");
     FILE *fp;
     unsigned char EKpubKey[259];
-    unsigned char *hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
     fp = fopen(outputFile, "rb");
     if (fp == NULL)
         printf("File Open Error\n");
-    else 
+    else
     {
         fseek(fp, 0x66, 0);
-        fread(EKpubKey, 1, 256, fp);
+        size_t read = fread(EKpubKey, 1, 256, fp);
+        if (read != 256)
+        {
+            printf ("Could not read whole file.");
+            return NULL;
+        }
     }
     fclose(fp);
+
+    unsigned char *hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
+    if (hash == NULL)
+    {
+        printf ("Memory allocation failed.");
+        return NULL;
+    }
+
     EKpubKey[256] = 0x01; EKpubKey[257] = 0x00; EKpubKey[258] = 0x01; //Exponent
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, EKpubKey, sizeof(EKpubKey));
     SHA256_Final(hash, &sha256);
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+    int i;
+    for (i = 0; i < SHA256_DIGEST_LENGTH; i++)
         printf("%02X", hash[i]);
     printf("\n");
     return hash;
@@ -303,7 +317,8 @@ char *Base64Encode(const unsigned char* buffer)
     BIO_set_close(bio, BIO_NOCLOSE);
     BIO_free_all(bio);
     char *b64text = (*bufferPtr).data;
-    for (int i = 0; i < strlen(b64text); i++)
+    int i;
+    for (i = 0; i < strlen(b64text); i++)
     {
         if (b64text[i] == '+')
             b64text[i] = '-';
@@ -311,10 +326,10 @@ char *Base64Encode(const unsigned char* buffer)
             b64text[i] = '_';
     }
     CURL *curl = curl_easy_init();
-    if (curl) 
+    if (curl)
     {
         char *output = curl_easy_escape(curl, b64text, strlen(b64text));
-        if (output) 
+        if (output)
         {
             strncpy(b64text, output, strlen(output));
             curl_free(output);
@@ -458,7 +473,7 @@ int main(int argc, char *argv[])
 
     while ( ( opt = getopt_long( argc, argv, "e:o:H:P:g:f:Xp:d:S:E:OUNhv", sOpts, NULL ) ) != -1 )
     {
-        switch ( opt ) 
+        switch ( opt )
         {
         case 'h':
         case '?':

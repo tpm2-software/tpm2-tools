@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2016, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,47 +45,60 @@
 
 int debugLevel = 0;
 
-int NVReadPublic(TPMI_RH_NV_INDEX nvIndex)
+int readPublic(TPMI_DH_OBJECT objectHandle)
 {
     UINT32 rval;
-    TPM2B_NAME nvName = { { sizeof(TPM2B_NAME)-2, } };
-    TPM2B_NV_PUBLIC nvPublic = { { 0, } };
+    TPMS_AUTH_RESPONSE sessionDataOut;
+    TSS2_SYS_RSP_AUTHS sessionsDataOut;
+    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    rval = Tss2_Sys_NV_ReadPublic( sysContext, nvIndex, 0, &nvPublic, &nvName, 0 );
+    TPM2B_PUBLIC outPublic = { { 0, } };
+    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
+
+    sessionDataOutArray[0] = &sessionDataOut;
+    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
+    sessionsDataOut.rspAuthsCount = 1;
+
+    rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\nNVReadPublic Failed ! ErrorCode: 0x%0x\n\n", rval);
+        printf("\nTPM2_ReadPublic error: rval = 0x%0x\n\n",rval);
         return -1;
     }
 
     printf("  {\n");
-    printf("\tHash algorithm(nameAlg):%d\n ", nvPublic.t.nvPublic.nameAlg);
-    printf("\tThe Index attributes(attributes):0x%x\n ", nvPublic.t.nvPublic.attributes.val);
-    printf("\tThe size of the data area(dataSize):%d\n ", nvPublic.t.nvPublic.dataSize);
+    printf("\tType: 0x%x\n ", outPublic.t.publicArea.type);
+    printf("\tHash algorithm(nameAlg): 0x%x\n ", outPublic.t.publicArea.nameAlg);
+    printf("\tAttributes: 0x%x\n", outPublic.t.publicArea.objectAttributes.val);
     printf("  }\n");
 
     return 0;
 }
 
-int nvList()
+int listPersistent()
 {
     TPMI_YES_NO moreData;
     TPMS_CAPABILITY_DATA capabilityData;
     UINT32 rval;
 
-    rval = Tss2_Sys_GetCapability( sysContext, 0, TPM_CAP_HANDLES, CHANGE_ENDIAN_DWORD(TPM_HT_NV_INDEX),
-                                   TPM_PT_NV_INDEX_MAX, &moreData, &capabilityData, 0 );
+    rval = Tss2_Sys_GetCapability( sysContext, 0, TPM_CAP_HANDLES,
+                                   CHANGE_ENDIAN_DWORD(TPM_HT_PERSISTENT),
+                                   TPM_PT_HR_PERSISTENT, &moreData,
+                                   &capabilityData, 0 );
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\n......GetCapability:Get NV Index list Error. TPM Error:0x%x......\n", rval);
+        printf("\n......GetCapability: Get persistent object list Error."
+               " TPM Error:0x%x......\n", rval);
         return -1;
     }
 
-    printf( "%d NV indexes defined.\n", capabilityData.data.handles.count);
-    for( UINT32 i=0; i < capabilityData.data.handles.count; i++ )
+    printf( "%d persistent objects defined.\n", capabilityData.data.handles.count);
+    UINT32 i;
+    for( i=0; i < capabilityData.data.handles.count; i++ )
     {
-        printf("\n  %d. NV Index: 0x%x\n", i, capabilityData.data.handles.handle[i]);
-        if(NVReadPublic(capabilityData.data.handles.handle[i]))
+        printf("\n  %d. Persistent handle: 0x%x\n", i, capabilityData.data.handles.handle[i]);
+        if(readPublic(capabilityData.data.handles.handle[i]))
             return -2;
     }
     printf("\n");
@@ -165,7 +178,7 @@ int main(int argc, char *argv[])
 
     prepareTest(hostName, port, debugLevel);
 
-    returnVal = nvList();
+    returnVal = listPersistent();
 
     finishTest();
 
