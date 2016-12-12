@@ -7,8 +7,44 @@ AM_INIT_AUTOMAKE([foreign
                   subdir-objects])
 AC_CONFIG_FILES([Makefile])
 PKG_CHECK_MODULES([SAPI],[sapi])
-PKG_CHECK_MODULES([TCTI_SOCK],[tcti-socket])
-PKG_CHECK_MODULES([TCTI_DEV],[tcti-device])
+# disable libtcti-device selectively (enabled by default)
+AC_ARG_WITH(
+    [tcti-device],
+    [AS_HELP_STRING([--with-tcti-device],
+        [Build tools with support for the device TCTI.])],
+    [],
+    [with_tcti_device=check])
+AS_IF(
+    [test "x$with_tcti_device" = "xcheck"],
+    [PKG_CHECK_MODULES(
+        [TCTI_DEV],
+        [tcti-device],
+        [AC_DEFINE([HAVE_TCTI_DEV],[1])
+         with_tcti_device=yes],
+        [with_tcti_device=no])])
+AM_CONDITIONAL([HAVE_TCTI_DEV],[test "x$with_tcti_device" = "xyes"])
+# disable libtcti-socket selectively (enabled by default)
+AC_ARG_WITH(
+    [tcti-socket],
+    [AS_HELP_STRING([--with-tcti-socket],
+        [Build tools with support for the socket TCTI.])],
+    [],
+    [with_tcti_socket=check])
+AS_IF(
+    [test "x$with_tcti_socket" = "xcheck"],
+    [PKG_CHECK_MODULES(
+        [TCTI_SOCK],
+        [tcti-socket],
+        [AC_DEFINE([HAVE_TCTI_SOCK],[1])
+         with_tcti_socket=yes],
+        [with_tcti_socket=no])])
+AM_CONDITIONAL([HAVE_TCTI_SOCK],[test "x$with_tcti_socket" = "xyes"])
+# ensure we have at least one TCTI enabled, can't do much without one
+AS_IF(
+    [test "x$with_tcti_device" = "xno" -a "x$with_tcti_socket" = "xno"],
+    [AC_MSG_ERROR(
+        [no TCTIs: at least one TCTI library must be enabled],
+        [1])])
 PKG_CHECK_MODULES([CURL],[libcurl libcrypto])
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],

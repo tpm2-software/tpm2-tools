@@ -1,0 +1,29 @@
+.TP
+[\fBTCTI OPTIONS\fR ]
+This collection of options are used to configure the varous TCTI modules
+available.
+.TP
+\fB\-T,\ \-\-tcti\fR
+Select the TCTI used for communication with the next component down the TSS
+stack.
+In most configurations this will be the TPM but it could be a simulator or
+proxy.
+Supported TCTIs are
+.if (\n[HAVE_TCTI_DEV]) or \fB\*(lqdevice\*(rq\fR
+.if (\n[HAVE_TCTI_SOCK]) or \fB\*(lqsocket\*(rq\fR
+\[char46]
+.TP
+.if (\n[HAVE_TCTI_DEV] \{
+\fB\-d,\ \-\-device-file\fR
+Specify the TPM device file for use by the device TCTI. The default is
+/dev/tpm0.
+\}
+.if (\n[HAVE_TCTI_SOCK] \{
+.TP
+\fB\-R,\ \-\-socket-address\fR
+Specify the domain name or IP address used by the socket TCTI. The default
+is 127.0.0.1.
+.TP
+\fB\-p,\ \-\-socket-port\fR
+Specify the port number used by the socket TCTI. The default is 2321.
+\}

@@ -19,9 +19,11 @@ ltmain.sh
 missing
 Makefile
 Makefile.in
+man/man8/*
 src/.dirstamp
 src/libcommon.a
 src/tpm2_activatecredential
+src/tpm2_dump_capability
 src/tpm2_hash
 src/tpm2_nvlist
 src/tpm2_nvread
@@ -53,6 +55,8 @@ src/tpm2_getpubek
 src/tpm2_takeownership
 src/tpm2_loadexternal
 src/tpm2_getmanufec
+src/tpm2_send_command
+src/tpm2_startup
 src/tpm2_rc_decode
 test-driver
 test/tpm2-rc-decode_unit

@@ -90,6 +90,6 @@ func test_tpm2_rsadecrypt.sh
 func test_tpm2_encryptdecrypt.sh
 func test_tpm2_sign.sh
 func test_tpm2_verifysignature.sh
-
-
-
+func test_tpm2_send_command.sh
+func test_tpm2_dump_capability.sh
+func test_tpm2_startup.sh
