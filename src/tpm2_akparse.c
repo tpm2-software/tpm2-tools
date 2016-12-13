@@ -141,29 +141,33 @@ int parseAKPublicArea()
     TPM2B *sizedBuffer;
     int rc = -1;
 
-    if ( loadDataFromFile(akDataFile, (UINT8 *)&outPublic, &size) )
+    if( loadDataFromFile(akDataFile, (UINT8 *)&outPublic, &size) )
     {
         return -1;
     }
 
-    switch ( outPublic.t.publicArea.type )
+    if( outPublic.t.publicArea.type == TPM_ALG_ECC )
     {
+        rc = SaveEccKeyToFile (akKeyFile, outPublic.t.publicArea.type, &outPublic.t.publicArea.unique.ecc) ? -2 : 0;
+    }
+    else
+    {
+        switch( outPublic.t.publicArea.type )
+        {
         case TPM_ALG_RSA:
             sizedBuffer = &outPublic.t.publicArea.unique.rsa.b;
-            /* no break */
+            break;
         case TPM_ALG_KEYEDHASH:
             sizedBuffer = &outPublic.t.publicArea.unique.keyedHash.b;
-            /* no break */
+            break;
         case TPM_ALG_SYMCIPHER:
             sizedBuffer = &outPublic.t.publicArea.unique.sym.b;
-            rc = SaveKeyToFile(akKeyFile, outPublic.t.publicArea.type, sizedBuffer) ? -2 : 0;
-        break;
-        case TPM_ALG_ECC:
-            rc = SaveEccKeyToFile (akKeyFile, outPublic.t.publicArea.type, &outPublic.t.publicArea.unique.ecc) ? -3 : 0;
             break;
         default:
-                printf("\nThe algorithm type(0x%4.4x) is not supported\n", outPublic.t.publicArea.type);
-                return -4;
+            printf("\nThe algorithm type(0x%4.4x) is not supported\n", outPublic.t.publicArea.type);
+            return -3;
+        }
+        rc = SaveKeyToFile(akKeyFile, outPublic.t.publicArea.type, sizedBuffer) ? -4 : 0;
     }
 
     return rc;
