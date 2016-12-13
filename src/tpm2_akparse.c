@@ -45,7 +45,7 @@
 char akDataFile[PATH_MAX];
 char akKeyFile[PATH_MAX];
 
-void SaveWithBigEndian(FILE *file, const UINT16 &data)
+void SaveWithBigEndian(FILE *file, const UINT16 data)
 {
     BYTE tmp = (const BYTE)((data & 0xFF00) >> 8);
     fwrite(&tmp, sizeof(BYTE), 1, file);
@@ -55,8 +55,7 @@ void SaveWithBigEndian(FILE *file, const UINT16 &data)
 }
 
 // CPU is little endian, so bytes need to be swapped in order to use bt java.
-template <typename T>
-int SaveKeyToFile(const char keyfile[], UINT16 algType, const T &t)
+int SaveKeyToFile(const char keyfile[], UINT16 algType, TPM2B *sizedBuffer)
 {
     FILE *f;
     UINT32 count;
@@ -68,11 +67,12 @@ int SaveKeyToFile(const char keyfile[], UINT16 algType, const T &t)
     printf("file(%s) open success.\n ", keyfile);
 
     SaveWithBigEndian(f, algType);
-    SaveWithBigEndian(f, t.size);
+    SaveWithBigEndian(f, sizedBuffer->size);
 //    fwrite(&algType, sizeof(UINT16), 1, f);// or we can use ChangeEndianWord() to swap the byte.
 //    fwrite(&t.size, sizeof(UINT16), 1, f);
 
-    if( ( count = fwrite(&t.buffer[0], sizeof(BYTE), t.size, f) ) != t.size )
+    count = fwrite(sizedBuffer->buffer, sizeof(BYTE), sizedBuffer->size, f);
+    if( count != sizedBuffer->size )
     {
         printf("write key file error\n");
         fclose(f);
@@ -82,12 +82,12 @@ int SaveKeyToFile(const char keyfile[], UINT16 algType, const T &t)
     f = NULL;
 
     printf("write data count: %d, %s: \n", count, keyfile);
-    PrintSizedBuffer((TPM2B *)&t);
+    PrintSizedBuffer(sizedBuffer);
 
     return 0;
 }
 
-int SaveEccKeyToFile(const char keyfile[], UINT16 algType, const TPMS_ECC_POINT &ecc)
+int SaveEccKeyToFile(const char keyfile[], UINT16 algType, const TPMS_ECC_POINT *ecc)
 {
     FILE *f;
     UINT16 count, size;
@@ -102,31 +102,31 @@ int SaveEccKeyToFile(const char keyfile[], UINT16 algType, const TPMS_ECC_POINT 
 //    fwrite(&algType, sizeof(UINT16), 1, f);
     SaveWithBigEndian(f, algType);
 
-    size = ecc.x.t.size;
+    size = ecc->x.t.size;
 //    fwrite(&size, sizeof(UINT16), 1, f);
     SaveWithBigEndian(f, size);
 
-    if( ( count = fwrite(&ecc.x.t.buffer[0], sizeof(BYTE), size, f) ) != size )
+    if( ( count = fwrite(ecc->x.t.buffer, sizeof(BYTE), size, f) ) != size )
     {
         printf("write X coordinate to file error\n");
         fclose(f);
         return -2;
     }
     printf("write X coordinate count: %d, X coordinate: \n", count);
-    PrintSizedBuffer((TPM2B *)&ecc.x);
+    PrintSizedBuffer((TPM2B *)&ecc->x);
 
-    size = ecc.y.t.size;
+    size = ecc->y.t.size;
 //    fwrite(&size, sizeof(UINT16), 1, f);
     SaveWithBigEndian(f, size);
 
-    if( ( count = fwrite(&ecc.y.t.buffer[0], sizeof(BYTE), size, f) ) != size )
+    if( ( count = fwrite(ecc->y.t.buffer, sizeof(BYTE), size, f) ) != size )
     {
         printf("write Y coordinate to file error\n");
         fclose(f);
         return -3;
     }
     printf("write Y coordinate count: %d, Y coordinate: \n", count);
-    PrintSizedBuffer((TPM2B *)&ecc.y);
+    PrintSizedBuffer((TPM2B *)&ecc->y);
 
     fclose(f);
     f = NULL;
@@ -138,38 +138,35 @@ int parseAKPublicArea()
 {
     TPM2B_PUBLIC outPublic;
     UINT16 size = sizeof(outPublic);
-    if( loadDataFromFile(akDataFile, (UINT8 *)&outPublic, &size) )
+    TPM2B *sizedBuffer;
+    int rc = -1;
+
+    if ( loadDataFromFile(akDataFile, (UINT8 *)&outPublic, &size) )
     {
         return -1;
     }
 
-    if( TPM_ALG_RSA == outPublic.t.publicArea.type )
+    switch ( outPublic.t.publicArea.type )
     {
-        if(SaveKeyToFile(akKeyFile, TPM_ALG_RSA, outPublic.t.publicArea.unique.rsa.t))
-            return -2;
-    }
-    else if( TPM_ALG_ECC == outPublic.t.publicArea.type )
-    {
-        if(SaveEccKeyToFile(akKeyFile, TPM_ALG_ECC, outPublic.t.publicArea.unique.ecc))
-            return -3;
-    }
-    else if( TPM_ALG_KEYEDHASH == outPublic.t.publicArea.type )
-    {
-        if(SaveKeyToFile(akKeyFile, TPM_ALG_KEYEDHASH, outPublic.t.publicArea.unique.keyedHash.t))
-            return -4;
-    }
-    else if( TPM_ALG_SYMCIPHER == outPublic.t.publicArea.type )
-    {
-        if(SaveKeyToFile(akKeyFile, TPM_ALG_SYMCIPHER, outPublic.t.publicArea.unique.sym.t))
-            return -5;
-    }
-    else
-    {
-        printf("\nThe algorithm type(0x%4.4x) is not supported\n", outPublic.t.publicArea.type);
-        return -6;
+        case TPM_ALG_RSA:
+            sizedBuffer = &outPublic.t.publicArea.unique.rsa.b;
+            /* no break */
+        case TPM_ALG_KEYEDHASH:
+            sizedBuffer = &outPublic.t.publicArea.unique.keyedHash.b;
+            /* no break */
+        case TPM_ALG_SYMCIPHER:
+            sizedBuffer = &outPublic.t.publicArea.unique.sym.b;
+            rc = SaveKeyToFile(akKeyFile, outPublic.t.publicArea.type, sizedBuffer) ? -2 : 0;
+        break;
+        case TPM_ALG_ECC:
+            rc = SaveEccKeyToFile (akKeyFile, outPublic.t.publicArea.type, &outPublic.t.publicArea.unique.ecc) ? -3 : 0;
+            break;
+        default:
+                printf("\nThe algorithm type(0x%4.4x) is not supported\n", outPublic.t.publicArea.type);
+                return -4;
     }
 
-    return 0;
+    return rc;
 }
 
 void showHelp(const char *name)

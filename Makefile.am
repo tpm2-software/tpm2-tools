@@ -35,7 +35,6 @@ ACLOCAL_AMFLAGS = -I m4
 INCLUDE_DIRS = -I$(srcdir)/src
 
 AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS) $(TPM20_TSS_CFLAGS)
-AM_CXXFLAGS = -DSAPI_CLIENT $(INCLUDE_DIRS) $(TPM20_TSS_CXXFLAGS)
 LDADD = src/libcommon.a $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
 TESTS = $(check_PROGRAMS)
 
@@ -121,40 +120,40 @@ endif
 
 src_libcommon_a_SOURCES = $(COMMON_SRC)
 if HAVE_TCTI_SOCK
-src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.cpp
-src_tpm2_quote_SOURCES = src/tpm2_quote.cpp
-src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.cpp
-src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.cpp
-src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.cpp
-src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.cpp
-src_tpm2_getmanufec_CFLAG = $(AM_CXXFLAGS) $(CURL_CFLAGS)
+src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.c
+src_tpm2_quote_SOURCES = src/tpm2_quote.c
+src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.c
+src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.c
+src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.c
+src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.c
+src_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
 src_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
-src_tpm2_akparse_SOURCES = src/tpm2_akparse.cpp
-src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.cpp
-src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.cpp
-src_tpm2_hash_SOURCES = src/tpm2_hash.cpp
-src_tpm2_nvlist_SOURCES = src/tpm2_nvlist.cpp
-src_tpm2_nvread_SOURCES = src/tpm2_nvread.cpp
-src_tpm2_nvreadlock_SOURCES = src/tpm2_nvreadlock.cpp
-src_tpm2_nvwrite_SOURCES = src/tpm2_nvwrite.cpp
-src_tpm2_nvdefine_SOURCES = src/tpm2_nvdefine.cpp
-src_tpm2_nvrelease_SOURCES = src/tpm2_nvrelease.cpp
-src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.cpp
-src_tpm2_create_SOURCES = src/tpm2_create.cpp
-src_tpm2_hmac_SOURCES = src/tpm2_hmac.cpp
-src_tpm2_certify_SOURCES = src/tpm2_certify.cpp
-src_tpm2_readpublic_SOURCES = src/tpm2_readpublic.cpp
-src_tpm2_getrandom_SOURCES = src/tpm2_getrandom.cpp
-src_tpm2_encryptdecrypt_SOURCES = src/tpm2_encryptdecrypt.cpp
-src_tpm2_evictcontrol_SOURCES = src/tpm2_evictcontrol.cpp
-src_tpm2_load_SOURCES = src/tpm2_load.cpp
-src_tpm2_loadexternal_SOURCES = src/tpm2_loadexternal.cpp
-src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.cpp
-src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.cpp
-src_tpm2_sign_SOURCES = src/tpm2_sign.cpp
-src_tpm2_unseal_SOURCES = src/tpm2_unseal.cpp
-src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.cpp
-src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.cpp
+src_tpm2_akparse_SOURCES = src/tpm2_akparse.c
+src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.c
+src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.c
+src_tpm2_hash_SOURCES = src/tpm2_hash.c
+src_tpm2_nvlist_SOURCES = src/tpm2_nvlist.c
+src_tpm2_nvread_SOURCES = src/tpm2_nvread.c
+src_tpm2_nvreadlock_SOURCES = src/tpm2_nvreadlock.c
+src_tpm2_nvwrite_SOURCES = src/tpm2_nvwrite.c
+src_tpm2_nvdefine_SOURCES = src/tpm2_nvdefine.c
+src_tpm2_nvrelease_SOURCES = src/tpm2_nvrelease.c
+src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c
+src_tpm2_create_SOURCES = src/tpm2_create.c
+src_tpm2_hmac_SOURCES = src/tpm2_hmac.c
+src_tpm2_certify_SOURCES = src/tpm2_certify.c
+src_tpm2_readpublic_SOURCES = src/tpm2_readpublic.c
+src_tpm2_getrandom_SOURCES = src/tpm2_getrandom.c
+src_tpm2_encryptdecrypt_SOURCES = src/tpm2_encryptdecrypt.c
+src_tpm2_evictcontrol_SOURCES = src/tpm2_evictcontrol.c
+src_tpm2_load_SOURCES = src/tpm2_load.c
+src_tpm2_loadexternal_SOURCES = src/tpm2_loadexternal.c
+src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.c
+src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.c
+src_tpm2_sign_SOURCES = src/tpm2_sign.c
+src_tpm2_unseal_SOURCES = src/tpm2_unseal.c
+src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.c
+src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.c
 endif
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
@@ -162,11 +161,11 @@ src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
 src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
 
 if UNIT
-test_tpm2_rc_decode_unit_CFLAGS  = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
+test_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS)
 test_tpm2_rc_decode_unit_SOURCES = test/tpm2-rc-decode_unit.c
 
-test_tpm2_rc_entry_unit_CFLAGS   = $(AM_CXXFLAGS) $(CMOCKA_CFLAGS)
+test_tpm2_rc_entry_unit_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS)
 test_tpm2_rc_entry_unit_SOURCES  = src/rc-decode.c test/tpm2-rc-entry_unit.c
 endif

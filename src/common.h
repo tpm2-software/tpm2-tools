@@ -62,24 +62,24 @@ int getFileSize(const char *path, long *fileSize);
 int getPort(const char *arg, int *port);
 int getDebugLevel(const char *arg, int *dl);
 
-inline void showArgError(const char *arg, const char *name)
+static inline void showArgError(const char *arg, const char *name)
 {
     printf("Argument error: %s\n",arg);
     printf("Please type \"%s -h\" get the usage!\n", name);
 }
 
-inline void showArgMismatch(const char *name)
+static inline void showArgMismatch(const char *name)
 {
     printf("Argument mismatched!\n");
     printf("Please type \"%s -h\" get the usage!\n", name);
 }
 
-inline void showVersion(const char *name)
+static inline void showVersion(const char *name)
 {
     printf("%s, version %s\n", name, VERSION);
 }
 
-inline char *safeStrNCpy(char *dest, const char *src, size_t n)
+static inline char *safeStrNCpy(char *dest, const char *src, size_t n)
 {
     if(strlen(src) > 0)
     {

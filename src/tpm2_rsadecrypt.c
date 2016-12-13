@@ -37,32 +37,34 @@
 #include <limits.h>
 #include <ctype.h>
 #include <getopt.h>
+#include <stdbool.h>
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 #include "common.h"
 
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
 int debugLevel = 0;
 
-int hmac(TPMI_DH_OBJECT keyHandle, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, const char *outHmacFilePath)
+TPMS_AUTH_COMMAND sessionData;
+bool hexPasswd = false;
+
+int rsaDecrypt(TPMI_DH_OBJECT keyHandle, TPM2B_PUBLIC_KEY_RSA *cipherText, const char *outFilePath)
 {
     UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
+    TPMT_RSA_DECRYPT inScheme;
+    TPM2B_DATA label;
+    TPM2B_PUBLIC_KEY_RSA message = { { sizeof(TPM2B_PUBLIC_KEY_RSA)-2, } };
+
     TSS2_SYS_CMD_AUTHS sessionsData;
+    TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_DIGEST outHMAC = { { sizeof(TPM2B_DIGEST)-2, } };
-
     sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsData.cmdAuths = &sessionDataArray[0];
-
+    sessionDataOutArray[0] = &sessionDataOut;
+    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
@@ -81,21 +83,23 @@ int hmac(TPMI_DH_OBJECT keyHandle, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, c
         }
     }
 
-    rval = Tss2_Sys_HMAC(sysContext, keyHandle, &sessionsData, data, halg, &outHMAC, &sessionsDataOut);
+    inScheme.scheme = TPM_ALG_RSAES;
+    label.t.size = 0;
+
+    rval = Tss2_Sys_RSA_Decrypt(sysContext, keyHandle, &sessionsData, cipherText, &inScheme, &label, &message, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\n......TPM2_HMAC Error. TPM Error:0x%x......\n", rval);
+        printf("rsaDecrypt failed, error code: 0x%x\n", rval);
         return -1;
     }
-    printf("\ntpm2_hmac succ.\n\n");
+    printf("\nRSA Decrypt succ.\n");
 
-    printf("\nhmac value(hex type): ");
-    for(UINT16 i = 0; i < outHMAC.t.size; i++)
-        printf("%02x ", outHMAC.t.buffer[i]);
-    printf("\n");
-
-    if( saveDataToFile(outHmacFilePath, (UINT8 *)&outHMAC, sizeof(outHMAC)) )
-        return -2;
+    if(saveDataToFile(outFilePath, message.t.buffer, message.t.size))
+    {
+        printf("OutFile %s failed!\n", outFilePath);
+        return -1;
+    }
+    printf("OutFile %s completed!\n", outFilePath);
 
     return 0;
 }
@@ -106,30 +110,23 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-k, --keyHandle <hexHandle> handle for the symmetric signing key providing the HMAC key\n"
-        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
-        "-P, --pwdk      <string>    the keyHandle's password, optional\n"
-        "-g, --halg      <hexAlg>    algorithm for the hash being computed\n"
-            "\t0x0004  TPM_ALG_SHA1\n"
-            "\t0x000B  TPM_ALG_SHA256\n"
-            "\t0x000C  TPM_ALG_SHA384\n"
-            "\t0x000D  TPM_ALG_SHA512\n"
-            "\t0x0012  TPM_ALG_SM3_256\n"
-        "-I, --infile    <inputFilename>  file containning the data to be HMACed\n"
-        "-o, --outfile   <hmacFilename>   file record the HMAC result\n"
-        "-X, --passwdInHex                passwords given by any options are hex format.\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
+        "-k, --keyHandle<hexHandle>  the public portion of RSA key to use for decryption  \n"
+        "-c, --keyContext <filename> filename of the key context used for the operation\n"
+        "-P, --pwdk     <password>   the password of key, optional\n"
+        "-I, --inFile   <filePath>   Input file path, containing the data to be decrypted\n"
+        "-o, --outFile  <filePath>   Output file path, record the decrypted data\n"
+        "-X, --passwdInHex           passwords given by any options are hex format.\n"
+        "-p, --port   <port number>  The Port number, default is %d, optional\n"
+        "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
+        "\t0 (high level test results)\n"
+        "\t1 (test app send/receive byte streams)\n"
+        "\t2 (resource manager send/receive byte streams)\n"
+        "\t3 (resource manager tables)\n"
+    "\n"
         "Example:\n"
-        "%s -k 0x80000001 -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename> \n"
-        "%s -k 0x80000001 -g 0x004 -I <inputFilename> -o <hmacFilename>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -k 0x80000001 -P 123abc -X -g 0x004 -I <inputFilename> -o <hmacFilename> \n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
+        "%s -k 0x81010001 -I <filePath> -o <filePath>\n"
+        "%s -k 0x81010001 -P 123abc -X -I <filePath> -o <filePath>\n"
+        ,name, DEFAULT_RESMGR_TPM_PORT, name, name);
 }
 
 int main(int argc, char* argv[])
@@ -138,25 +135,22 @@ int main(int argc, char* argv[])
     int port = DEFAULT_RESMGR_TPM_PORT;
 
     TPMI_DH_OBJECT keyHandle;
-    TPM2B_MAX_BUFFER data;
-    TPMI_ALG_HASH  halg;
-    char outHmacFilePath[PATH_MAX] = {0};
+    TPM2B_PUBLIC_KEY_RSA cipherText;
+    char outFilePath[PATH_MAX] = {0};
     char *contextKeyFile = NULL;
-    long fileSize = 0;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvk:P:g:I:o:p:d:c:X";
+    const char *optstring = "hvk:P:I:o:p:d:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
       {"keyHandle",1,NULL,'k'},
       {"pwdk",1,NULL,'P'},
-      {"halg",1,NULL,'g'},
-      {"infile",1,NULL,'I'},
-      {"outfile",1,NULL,'o'},
+      {"inFile",1,NULL,'I'},
+      {"outFile",1,NULL,'o'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
       {"keyContext",1,NULL,'c'},
@@ -170,7 +164,6 @@ int main(int argc, char* argv[])
         v_flag = 0,
         k_flag = 0,
         P_flag = 0,
-        g_flag = 0,
         I_flag = 0,
         c_flag = 0,
         o_flag = 0;
@@ -208,42 +201,20 @@ int main(int argc, char* argv[])
             }
             P_flag = 1;
             break;
-        case 'g':
-            if(getSizeUint16Hex(optarg,&halg) != 0)
-            {
-                showArgError(optarg, argv[0]);
-                returnVal = -3;
-                break;
-            }
-            printf("halg = 0x%4.4x\n", halg);
-            g_flag = 1;
-            break;
         case 'I':
-//              long fileSize = 0;
-            if( getFileSize(optarg, &fileSize) != 0)
+            cipherText.t.size = sizeof(cipherText) - 2;
+            if(loadDataFromFile(optarg, cipherText.t.buffer, &cipherText.t.size) != 0)
             {
-                returnVal = -4;
-                break;
-            }
-            if(fileSize > MAX_DIGEST_BUFFER)
-            {
-                printf("Input data too long: %ld, should be less than %d bytes\n", fileSize, MAX_DIGEST_BUFFER);
-                returnVal = -5;
-                break;
-            }
-            data.t.size = sizeof(data) - 2;
-            if(loadDataFromFile(optarg, (UINT8 *)data.t.buffer, &data.t.size) != 0)
-            {
-                returnVal = -6;
+                returnVal = -3;
                 break;
             }
             I_flag = 1;
             break;
         case 'o':
-            safeStrNCpy(outHmacFilePath, optarg, sizeof(outHmacFilePath));
-            if(checkOutFile(outHmacFilePath) != 0)
+            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
+            if(checkOutFile(outFilePath) != 0)
             {
-                returnVal = -7;
+                returnVal = -4;
                 break;
             }
             o_flag = 1;
@@ -252,21 +223,21 @@ int main(int argc, char* argv[])
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -8;
+                returnVal = -5;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -9;
+                returnVal = -6;
             }
             break;
-         case 'c':
+        case 'c':
             contextKeyFile = optarg;
             if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
             {
-                returnVal = -10;
+                returnVal = -7;
                 break;
             }
             printf("contextKeyFile = %s\n", contextKeyFile);
@@ -277,11 +248,11 @@ int main(int argc, char* argv[])
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -11;
+            returnVal = -8;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -12;
+            returnVal = -9;
             break;
         //default:
         //  break;
@@ -293,9 +264,11 @@ int main(int argc, char* argv[])
     if(returnVal != 0)
         return returnVal;
 
-    if(P_flag != 1)
+    if(P_flag == 0)
         sessionData.hmac.t.size = 0;
-    flagCnt = h_flag + v_flag + k_flag + g_flag + I_flag + o_flag + c_flag;
+
+    flagCnt = h_flag + v_flag + k_flag + I_flag + o_flag + c_flag;
+
     if(flagCnt == 1)
     {
         if(h_flag == 1)
@@ -305,27 +278,27 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            return -13;
+            return -10;
         }
     }
-    else if((flagCnt == 4) && (k_flag == 1 || c_flag == 1) && (I_flag == 1) && (o_flag == 1) && g_flag == 1)
+    else if((flagCnt == 3) && (k_flag == 1 || c_flag == 1) && (I_flag == 1) && (o_flag == 1))
     {
         prepareTest(hostName, port, debugLevel);
 
         if(c_flag)
             returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
         if(returnVal == 0)
-            returnVal = hmac(keyHandle, &data, halg, outHmacFilePath);
+            returnVal = rsaDecrypt(keyHandle, &cipherText, outFilePath);
 
         finishTest();
 
         if(returnVal)
-            return -14;
+            return -11;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -15;
+        return -12;
     }
 
     return 0;

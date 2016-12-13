@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -101,7 +102,8 @@ int nvRead(TPMI_RH_NV_AUTH authHandle, TPMI_RH_NV_INDEX nvIndex, UINT16 size, UI
     }
 
     printf("\nThe size of data:%d\n", nvData.t.size);
-    for (int i=0; i<nvData.t.size; i++)
+    int i;
+    for (i=0; i<nvData.t.size; i++)
         printf(" %2.2x ", nvData.t.buffer[i]);
     printf("\n");
 

@@ -31,6 +31,7 @@
 
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -176,7 +177,8 @@ int activateCredential()
     }
 
     printf("\nCertInfoData :\n");
-    for (int k = 0; k<certInfoData.t.size; k++)
+    int k;
+    for (k = 0; k<certInfoData.t.size; k++)
     {
         printf("0x%.2x ", certInfoData.t.buffer[k]);
     }

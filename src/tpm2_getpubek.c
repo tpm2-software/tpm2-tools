@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,56 +53,56 @@ TPM_HANDLE persistentHandle;
 UINT32 algorithmType = TPM_ALG_RSA;
 
 BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24, 0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA};
-int setKeyAlgorithm(UINT16 algorithm, TPM2B_SENSITIVE_CREATE &inSensitive, TPM2B_PUBLIC &inPublic)
+static int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
 {
-    inPublic.t.publicArea.nameAlg = TPM_ALG_SHA256;
+    inPublic->t.publicArea.nameAlg = TPM_ALG_SHA256;
     // First clear attributes bit field.
-    *(UINT32 *)&(inPublic.t.publicArea.objectAttributes) = 0;
-    inPublic.t.publicArea.objectAttributes.restricted = 1;
-    inPublic.t.publicArea.objectAttributes.userWithAuth = 0;
-    inPublic.t.publicArea.objectAttributes.adminWithPolicy = 1;
-    inPublic.t.publicArea.objectAttributes.sign = 0;
-    inPublic.t.publicArea.objectAttributes.decrypt = 1;
-    inPublic.t.publicArea.objectAttributes.fixedTPM = 1;
-    inPublic.t.publicArea.objectAttributes.fixedParent = 1;
-    inPublic.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    inPublic.t.publicArea.authPolicy.t.size = 32;
-    memcpy(inPublic.t.publicArea.authPolicy.t.buffer, authPolicy, 32);
+    *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
+    inPublic->t.publicArea.objectAttributes.restricted = 1;
+    inPublic->t.publicArea.objectAttributes.userWithAuth = 0;
+    inPublic->t.publicArea.objectAttributes.adminWithPolicy = 1;
+    inPublic->t.publicArea.objectAttributes.sign = 0;
+    inPublic->t.publicArea.objectAttributes.decrypt = 1;
+    inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
+    inPublic->t.publicArea.objectAttributes.fixedParent = 1;
+    inPublic->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    inPublic->t.publicArea.authPolicy.t.size = 32;
+    memcpy(inPublic->t.publicArea.authPolicy.t.buffer, authPolicy, 32);
 
-    inPublic.t.publicArea.type = algorithm;
+    inPublic->t.publicArea.type = algorithm;
 
     switch(algorithm)
     {
     case TPM_ALG_RSA:
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        inPublic.t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
-        inPublic.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.rsaDetail.keyBits = 2048;
-        inPublic.t.publicArea.parameters.rsaDetail.exponent = 0;
-        inPublic.t.publicArea.unique.rsa.t.size = 256;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
+        inPublic->t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.rsaDetail.keyBits = 2048;
+        inPublic->t.publicArea.parameters.rsaDetail.exponent = 0;
+        inPublic->t.publicArea.unique.rsa.t.size = 256;
         break;
     case TPM_ALG_KEYEDHASH:
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_SHA256;
-        inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
-        inPublic.t.publicArea.unique.keyedHash.t.size = 0;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_SHA256;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
+        inPublic->t.publicArea.unique.keyedHash.t.size = 0;
         break;
     case TPM_ALG_ECC:
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_AES;
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
-        inPublic.t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_CFB;
-        inPublic.t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        inPublic.t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        inPublic.t.publicArea.unique.ecc.x.t.size = 32;
-        inPublic.t.publicArea.unique.ecc.y.t.size = 32;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_AES;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_CFB;
+        inPublic->t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
+        inPublic->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.unique.ecc.x.t.size = 32;
+        inPublic->t.publicArea.unique.ecc.y.t.size = 32;
         break;
     case TPM_ALG_SYMCIPHER:
-        inPublic.t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
-        inPublic.t.publicArea.parameters.symDetail.sym.keyBits.aes = 128;
-        inPublic.t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
-        inPublic.t.publicArea.unique.sym.t.size = 0;
+        inPublic->t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
+        inPublic->t.publicArea.parameters.symDetail.sym.keyBits.aes = 128;
+        inPublic->t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
+        inPublic->t.publicArea.unique.sym.t.size = 0;
         break;
     default:
         printf("\n......The algorithm type input(%4.4x) is not supported!......\n", algorithm);
@@ -185,7 +186,7 @@ int createEKHandle()
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
-    if( setKeyAlgorithm(algorithmType, inSensitive, inPublic) )
+    if( setKeyAlgorithm(algorithmType, &inPublic) )
         return -1;
 
     creationPCR.count = 0;
@@ -412,4 +413,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-

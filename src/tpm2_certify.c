@@ -29,7 +29,9 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+
 #include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -43,12 +45,12 @@
 #include "common.h"
 
 int debugLevel = 0;
-TPMS_AUTH_COMMAND sessionData;
+TPMS_AUTH_COMMAND cmdAuth, cmdAuth2;
 bool hexPasswd = false;
 
 int getKeyType(TPMI_DH_OBJECT objectHandle, TPMI_ALG_PUBLIC *type)
 {
-    UINT32 rval;
+    TPM_RC rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1] = {&sessionDataOut};
     TSS2_SYS_RSP_AUTHS sessionsDataOut = {1, &sessionDataOutArray[0]};
@@ -93,75 +95,78 @@ int setScheme(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *inS
     default:
         return -2;
     }
-
     return 0;
 }
 
-int sign(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, BYTE *msg, UINT16 length, TPMT_TK_HASHCHECK *validation, const char *outFilePath)
+int certify( TPMI_DH_OBJECT objectHandle, TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH  halg, const char *attestFilePath, const char *sigFilePath)
 {
-    UINT32 rval;
-    TPM2B_DIGEST digest = { {sizeof(TPM2B_DIGEST)-2, } };
+    TPM_RC rval;
+    TPM2B_DATA qualifyingData;
+    UINT8 qualDataString[] = { 0x00, 0xff, 0x55,0xaa };
     TPMT_SIG_SCHEME inScheme;
+    TPM2B_ATTEST certifyInfo = { { sizeof(TPM2B_ATTEST)-2, } };
     TPMT_SIGNATURE signature;
 
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TPMS_AUTH_COMMAND *cmdSessionArray[2] = { &cmdAuth, &cmdAuth2 };
+    TSS2_SYS_CMD_AUTHS cmdAuthArray = { 2, &cmdSessionArray[0] };
+    TPMS_AUTH_RESPONSE sessionDataOut1, sessionDataOut2;
+    TPMS_AUTH_RESPONSE *sessionDataOutArray[2] = {&sessionDataOut1, &sessionDataOut2};
+    TSS2_SYS_RSP_AUTHS sessionsDataOut = {2, &sessionDataOutArray[0]};
 
-    sessionDataArray[0] = &sessionData;
-    sessionsData.cmdAuths = &sessionDataArray[0];
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
+    printf("\nCERTIFY TESTS:\n");
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
+    cmdAuth.sessionHandle = TPM_RS_PW;
+    cmdAuth2.sessionHandle = TPM_RS_PW;
+    *((UINT8 *)((void *)&cmdAuth.sessionAttributes)) = 0;
+    *((UINT8 *)((void *)&cmdAuth2.sessionAttributes)) = 0;
+    if (cmdAuth.hmac.t.size > 0 && hexPasswd)
     {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
+        cmdAuth.hmac.t.size = sizeof(cmdAuth.hmac) - 2;
+        if (hex2ByteStructure((char *)cmdAuth.hmac.t.buffer,
+                              &cmdAuth.hmac.t.size,
+                              cmdAuth.hmac.t.buffer) != 0)
+        {
+            printf( "Failed to convert Hex format password for object Passwd.\n");
+            return -1;
+        }
+    }
+
+    if (cmdAuth2.hmac.t.size > 0 && hexPasswd)
+    {
+        cmdAuth2.hmac.t.size = sizeof(cmdAuth2.hmac) - 2;
+        if (hex2ByteStructure((char *)cmdAuth2.hmac.t.buffer,
+                              &cmdAuth2.hmac.t.size,
+                              cmdAuth2.hmac.t.buffer) != 0)
         {
             printf( "Failed to convert Hex format password for key Passwd.\n");
             return -1;
         }
     }
 
-    if(computeDataHash(msg, length, halg, &digest))
+    qualifyingData.t.size = sizeof( qualDataString );
+    memcpy( &( qualifyingData.t.buffer[0] ), qualDataString, sizeof( qualDataString ) );
+
+    if ( setScheme(keyHandle, halg, &inScheme) )
     {
-        printf("Compute message hash failed !\n");
+        printf("No suitable signing scheme!\n");
         return -1;
     }
 
-    printf("\ndigest(hex type):\n ");
-    for(UINT16 i = 0; i < digest.t.size; i++)
-         printf("%02x ", digest.t.buffer[i]);
-    printf("\n");
-
-    if(setScheme(keyHandle, halg, &inScheme))
-    {
-        printf("No suitable signing scheme!\n");
-        return -2;
-    }
-
-    rval = Tss2_Sys_Sign(sysContext, keyHandle, &sessionsData, &digest, &inScheme, validation, &signature, &sessionsDataOut);
+    rval = Tss2_Sys_Certify( sysContext, objectHandle, keyHandle, &cmdAuthArray, &qualifyingData, &inScheme, &certifyInfo, &signature, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("tpm2_sign failed, error code: 0x%x\n", rval);
-        return -3;
+        printf("TPM2_Certify failed. Error Code: 0x%x\n",rval);
+        return -2;
     }
-    printf("\ntpm2_sign succ.\n");
+    printf("\nCertify succ.\n");
 
-    if(saveDataToFile(outFilePath, (UINT8 *)&signature, sizeof(signature)))
-    {
-        printf("failed to save signature into %s\n", outFilePath);
+    if(saveDataToFile(attestFilePath, (UINT8 *)certifyInfo.t.attestationData, certifyInfo.t.size))
+        return -3;
+    printf("attestFile %s completed!\n",attestFilePath);
+
+    if(saveDataToFile(sigFilePath, (UINT8 *)&signature, sizeof(signature)))
         return -4;
-    }
+    printf("sigFile  %s completed!\n",sigFilePath);
 
     return 0;
 }
@@ -172,19 +177,21 @@ void showHelp(const char *name)
         "\n"
         "-h, --help               Display command tool usage info;\n"
         "-v, --version            Display command tool version info\n"
-        "-k, --keyHandle<hexHandle>  Handle of key that will perform signing\n"
-        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
-        "-P, --pwdk     <password>   the password of key, optional\n"
-        "-g, --halg     <hexAlg>     the hash algorithm used to digest the message \n"
+        "-H, --objHandle <hexHandle>  handle of the object to be certified\n"
+        "-C, --objContext <filename>  filename of the object context to be certified\n"
+        "-k, --keyHandle    <hexHandle>  handle of the key used to sign the attestation structure\n"
+        "-c, --keyContext <filename>  filename of the key context used to sign the attestation structure\n"
+        "-P, --pwdo         <string>     the object handle's password, optional\n"
+        "-K, --pwdk         <string>     the keyHandle's password, optional\n"
+        "-g, --halg         <hexAlg>     the hash algorithm used to digest the message\n"
         "\t0x0004  TPM_ALG_SHA1\n"
         "\t0x000B  TPM_ALG_SHA256\n"
         "\t0x000C  TPM_ALG_SHA384\n"
         "\t0x000D  TPM_ALG_SHA512\n"
         "\t0x0012  TPM_ALG_SM3_256\n"
-        "-m, --msg      <filePath>   the message file, containning the content to be digested\n"
-        "-t, --ticket   <filePath>   the ticket file, containning the validation structure, optional\n"
-        "-s, --sig      <filePath>   the signature file, record the signature structure\n"
-        "-X, --passwdInHex           passwords given by any options are hex format.\n"
+        "-a, --attestFile   <fileName>   output file name, record the attestation structure\n"
+        "-s, --sigFile      <fileName>   output file name, record the signature structure\n"
+        "-X, --passwdInHex               passwords given by any options are hex format.\n"
         "-p, --port   <port number>  The Port number, default is %d, optional\n"
         "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
         "\t0 (high level test results)\n"
@@ -193,45 +200,42 @@ void showHelp(const char *name)
         "\t3 (resource manager tables)\n"
     "\n"
         "Example:\n"
-        "%s -k 0x81010001 -P abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>\n"
-        "%s -k 0x81010001 -g 0x00B -m <filePath> -s <filePath>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -k 0x81010001 -P 123abc -X -g 0x000B -m <filePath> -s <filePath> -t <filePath>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
+        "%s -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>\n"
+        "%s -H 0x81010002 -k 0x81010001 -g 0x00B -a <fileName> -s <fileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
+        "%s -H 0x81010002 -k 0x81010001 -P 0011 -K 00FF -X -g 0x00B -a <fileName> -s <fileName>\n"
+        , name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
 }
 
 int main(int argc, char* argv[])
 {
     char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
+    int port = DEFAULT_RESMGR_TPM_PORT;//DEFAULT_TPM_PORT;
 
+    char attestFilePath[PATH_MAX] = {0};
+    char sigFilePath[PATH_MAX] = {0};
+
+    TPMI_DH_OBJECT objectHandle;
     TPMI_DH_OBJECT keyHandle;
-    BYTE *msg = NULL;
-    UINT16 length = 0;
-    UINT16 size = 0;
-    long fileSize = 0;
-
-    TPMT_TK_HASHCHECK validation;
-    TPMI_ALG_HASH halg;
-    char outFilePath[PATH_MAX] = {0};
-    char inMsgFileName[PATH_MAX] = {0};
-    char *contextKeyFile = NULL;
+    TPMI_ALG_HASH  halg;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvk:P:g:m:t:s:p:d:c:X";
+    const char *optstring = "hvH:k:P:K:g:a:s:p:d:C:c:X";
     static struct option long_options[] = {
       {"help",0,NULL,'h'},
       {"version",0,NULL,'v'},
+      {"objectHandle",1,NULL,'H'},
       {"keyHandle",1,NULL,'k'},
-      {"pwdk",1,NULL,'P'},
+      {"pwdo",1,NULL,'P'},
+      {"pwdk",1,NULL,'K'},
       {"halg",1,NULL,'g'},
-      {"msg",1,NULL,'m'},
-      {"sig",1,NULL,'s'},
-      {"ticket",1,NULL,'t'},
+      {"attestFile",1,NULL,'a'},
+      {"sigFile",1,NULL,'s'},
       {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
+      {"objContext",1,NULL,'C'},
       {"keyContext",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
@@ -241,13 +245,17 @@ int main(int argc, char* argv[])
     int flagCnt = 0;
     int h_flag = 0,
         v_flag = 0,
+        H_flag = 0,
         k_flag = 0,
         P_flag = 0,
+        K_flag = 0,
         g_flag = 0,
-        m_flag = 0,
-        t_flag = 0,
+        a_flag = 0,
         c_flag = 0,
+        C_flag = 0,
         s_flag = 0;
+    char *contextFile = NULL;
+    char *contextKeyFile = NULL;
 
     if(argc == 1)
     {
@@ -265,51 +273,64 @@ int main(int argc, char* argv[])
         case 'v':
             v_flag = 1;
             break;
+        case 'H':
+            if(getSizeUint32Hex(optarg,&objectHandle) != 0)
+            {
+                returnVal = -1;
+                break;
+            }
+            H_flag = 1;
+            break;
         case 'k':
             if(getSizeUint32Hex(optarg,&keyHandle) != 0)
             {
-                returnVal = -1;
+                returnVal = -2;
                 break;
             }
             k_flag = 1;
             break;
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            cmdAuth.hmac.t.size = sizeof(cmdAuth.hmac.t) - 2;
+            if(str2ByteStructure(optarg,&cmdAuth.hmac.t.size,cmdAuth.hmac.t.buffer) != 0)
             {
-                returnVal = -2;
+                returnVal = -3;
                 break;
             }
             P_flag = 1;
+            break;
+        case 'K':
+            cmdAuth2.hmac.t.size = sizeof(cmdAuth2.hmac.t) - 2;
+            if(str2ByteStructure(optarg,&cmdAuth2.hmac.t.size,cmdAuth2.hmac.t.buffer) != 0)
+            {
+                returnVal = -4;
+                break;
+            }
+            K_flag = 1;
             break;
         case 'g':
             if(getSizeUint16Hex(optarg,&halg) != 0)
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -3;
+                returnVal = -5;
                 break;
             }
             printf("halg = 0x%4.4x\n", halg);
             g_flag = 1;
             break;
-        case 'm':
-            safeStrNCpy(inMsgFileName, optarg, sizeof(inMsgFileName));
-            m_flag = 1;
-            break;
-        case 't':
-            size = sizeof(validation);
-            if(loadDataFromFile(optarg, (UINT8 *)&validation, &size) != 0)
+        case 'a':
+            safeStrNCpy(attestFilePath, optarg, sizeof(attestFilePath));
+            if(checkOutFile(attestFilePath) != 0)
             {
-                returnVal = -4;
+                returnVal = -6;
                 break;
             }
-            t_flag = 1;
+            a_flag = 1;
             break;
         case 's':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
-            if(checkOutFile(outFilePath) != 0)
+            safeStrNCpy(sigFilePath, optarg, sizeof(sigFilePath));
+            if(checkOutFile(sigFilePath) != 0)
             {
-                returnVal = -5;
+                returnVal = -7;
                 break;
             }
             s_flag = 1;
@@ -318,36 +339,46 @@ int main(int argc, char* argv[])
             if( getPort(optarg, &port) )
             {
                 printf("Incorrect port number.\n");
-                returnVal = -6;
+                returnVal = -8;
             }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
                 printf("Incorrect debug level.\n");
-                returnVal = -7;
+                returnVal = -9;
             }
             break;
         case 'c':
             contextKeyFile = optarg;
             if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
             {
-                returnVal = -8;
+                returnVal = -10;
                 break;
             }
             printf("contextKeyFile = %s\n", contextKeyFile);
             c_flag = 1;
+            break;
+        case 'C':
+            contextFile = optarg;
+            if(contextFile == NULL || contextFile[0] == '\0')
+            {
+                returnVal = -11;
+                break;
+            }
+            printf("contextFile = %s\n", contextFile);
+            C_flag = 1;
             break;
         case 'X':
             hexPasswd = true;
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -9;
+            returnVal = -12;
             break;
         case '?':
 //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -10;
+            returnVal = -13;
             break;
         //default:
         //  break;
@@ -357,63 +388,12 @@ int main(int argc, char* argv[])
     };
 
     if(returnVal != 0)
-        goto end;
-
-    if(m_flag)
-    {
-        if(getFileSize(inMsgFileName, &fileSize))
-        {
-            returnVal = -11;
-            goto end;
-        }
-        if(fileSize == 0)
-        {
-            printf("the message file is empty !\n");
-            returnVal = -12;
-            goto end;
-        }
-        if(fileSize > 0xffff)
-        {
-            printf("the message file was too long !\n");
-            returnVal = -13;
-            goto end;
-        }
-        msg = (BYTE*)malloc(fileSize);
-        if(msg == NULL)
-        {
-            returnVal = -14;
-            goto end;
-        }
-        memset(msg, 0, fileSize);
-
-        length = fileSize;
-        if(loadDataFromFile(inMsgFileName, msg, &length) != 0)
-        {
-            returnVal = -15;
-            goto end;
-        }
-#if 0
-        printf("\nmsg length: %d\n",length);
-        printf("msg content: ");
-        for(int i = 0; i < length; i++)
-        {
-            printf("%02x ", msg[i]);
-        }
-        printf("\n");
-        return -1;
-#endif
-    }
-
+        return returnVal;
+    flagCnt = h_flag + v_flag + H_flag + k_flag + g_flag + a_flag + s_flag + c_flag + C_flag;
     if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
-    if(t_flag == 0)
-    {
-        validation.tag = TPM_ST_HASHCHECK;
-        validation.hierarchy = TPM_RH_NULL;
-        validation.digest.t.size = 0;
-    }
-
-    flagCnt = h_flag + v_flag + k_flag + g_flag + m_flag + s_flag + c_flag;
+        cmdAuth.hmac.t.size = 0;
+    if(K_flag == 0)
+        cmdAuth2.hmac.t.size = 0;
 
     if(flagCnt == 1)
     {
@@ -424,31 +404,30 @@ int main(int argc, char* argv[])
         else
         {
             showArgMismatch(argv[0]);
-            returnVal = -16;
+            return -14;
         }
     }
-    else if((flagCnt == 4) && (k_flag == 1 || c_flag == 1) && (g_flag == 1) && (m_flag == 1) && (s_flag == 1))
+    else if((flagCnt == 5) && (H_flag == 1 || C_flag) && (k_flag == 1 || c_flag) && (g_flag == 1) && (a_flag == 1) && (s_flag == 1))
     {
         prepareTest(hostName, port, debugLevel);
 
-        if(c_flag)
+        if(C_flag)
+            returnVal = loadTpmContextFromFile(sysContext, &objectHandle, contextFile);
+        if(returnVal == 0 && c_flag)
             returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
         if(returnVal == 0)
-            returnVal = sign(keyHandle, halg, msg, length, &validation, outFilePath);
+            returnVal = certify(objectHandle, keyHandle, halg, attestFilePath, sigFilePath);
 
         finishTest();
 
         if(returnVal)
-            returnVal = -17;
+            return -15;
     }
     else
     {
         showArgMismatch(argv[0]);
-        returnVal = -18;
+        return -16;
     }
 
-end:
-    if(msg)
-        free(msg);
-    return returnVal;
+    return 0;
 }

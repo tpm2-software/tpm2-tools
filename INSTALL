@@ -4,7 +4,6 @@ GNU Automake
 GNU Libtool
 pkg-config
 C compiler
-C++ compiler
 C Library Development Libraries and Header Files (for pthreads headers)
 TPM2.0 TSS socket TCTI library and header files
 TPM2.0 TSS SAPI library and header files

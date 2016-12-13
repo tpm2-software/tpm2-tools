@@ -73,7 +73,8 @@ int verifySignature(TPMI_DH_OBJECT keyHandle, int D_flag, TPMI_ALG_HASH halg, TP
     }
 
     printf("\nmsgHash(hex type):\n ");
-    for(UINT16 i = 0; i < msgHash.t.size; i++)
+    UINT16 i;
+    for(i = 0; i < msgHash.t.size; i++)
         printf("%02x ", msgHash.t.buffer[i]);
     printf("\n");
 

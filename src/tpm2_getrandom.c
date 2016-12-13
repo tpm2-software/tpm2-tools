@@ -81,7 +81,8 @@ int getRandom(const char *outFileName, UINT16 bytesRequested)
     }
     printf("\nGetRandom succ...\n");
     printf("byte size: %d\n",randomBytes.t.size);
-    for(UINT16 i = 0; i < randomBytes.t.size; i++)
+    UINT16 i;
+    for(i = 0; i < randomBytes.t.size; i++)
         printf(" 0x%2.2X",randomBytes.t.buffer[i]);
     printf("\n");
 
