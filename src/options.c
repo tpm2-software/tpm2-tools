@@ -246,7 +246,7 @@ get_common_opts (int                     argc,
            != -1)
     {
         switch (c) {
-        case 't':
+        case 'T':
             common_opts->tcti_type = tcti_type_from_name (optarg);
             break;
 #ifdef HAVE_TCTI_DEV
@@ -255,7 +255,7 @@ get_common_opts (int                     argc,
             break;
 #endif
 #ifdef HAVE_TCTI_SOCK
-        case 'a':
+        case 'R':
             common_opts->socket_address = optarg;
             break;
         case 'p':
