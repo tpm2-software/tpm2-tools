@@ -345,6 +345,11 @@ int RetrieveEndorsementCredentials(char *b64h)
 {
     printf("Retrieving Endorsement Credential Certificate from the TPM Manufacturer EK Provisioning Server\n");
     char *weblink = (char*)malloc(1 + strlen(b64h) + strlen(EKserverAddr));
+    if (weblink == NULL)
+    {
+        printf ("Memory allocation failed.");
+        return -1;
+    }
     memset(weblink, 0, (1 + strlen(b64h) + strlen(EKserverAddr)));
     strcat(weblink, EKserverAddr);
     strcat(weblink, b64h);
@@ -580,6 +585,11 @@ int main(int argc, char *argv[])
                 return -99;
             }
             EKserverAddr = (char *)malloc(strlen(optarg));
+            if (EKserverAddr == NULL)
+            {
+                printf ("Memory allocation failed.");
+                return -99;
+            }
             strncpy(EKserverAddr, optarg, strlen(optarg));
             printf("TPM Manufacturer EK provisioning address -- %s\n", EKserverAddr);
             break;
