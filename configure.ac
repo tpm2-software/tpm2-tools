@@ -14,13 +14,15 @@ AC_ARG_WITH(
     [],
     [with_tcti_device=check])
 AS_IF(
-    [test "x$with_tcti_device" = "xcheck"],
+    [test "x$with_tcti_device" != "xno"],
     [PKG_CHECK_MODULES(
         [TCTI_DEV],
         [tcti-device],
         [AC_DEFINE([HAVE_TCTI_DEV],[1])
          with_tcti_device=yes],
-        [with_tcti_device=no])])
+        [if test "x$with_tcti_device" = "xyes"; then
+             AC_MSG_FAILURE([--with-tcti-device option provided but libtcti-device not detected.])
+         fi])])
 AM_CONDITIONAL([HAVE_TCTI_DEV],[test "x$with_tcti_device" = "xyes"])
 # disable libtcti-socket selectively (enabled by default)
 AC_ARG_WITH(
@@ -30,17 +32,19 @@ AC_ARG_WITH(
     [],
     [with_tcti_socket=check])
 AS_IF(
-    [test "x$with_tcti_socket" = "xcheck"],
+    [test "x$with_tcti_socket" != "xno"],
     [PKG_CHECK_MODULES(
         [TCTI_SOCK],
         [tcti-socket],
         [AC_DEFINE([HAVE_TCTI_SOCK],[1])
          with_tcti_socket=yes],
-        [with_tcti_socket=no])])
+        [if test "x$with_tcti_socket" = "xyes"; then
+             AC_MSG_FAILURE([--with-tcti-socket option provided but libtcti-socket not detected.])
+         fi])])
 AM_CONDITIONAL([HAVE_TCTI_SOCK],[test "x$with_tcti_socket" = "xyes"])
 # ensure we have at least one TCTI enabled, can't do much without one
 AS_IF(
-    [test "x$with_tcti_device" = "xno" -a "x$with_tcti_socket" = "xno"],
+    [test "x$with_tcti_device" != "xyes" -a "x$with_tcti_socket" != "xyes"],
     [AC_MSG_ERROR(
         [no TCTIs: at least one TCTI library must be enabled],
         [1])])
