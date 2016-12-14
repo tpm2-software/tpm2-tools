@@ -317,21 +317,6 @@ void showHelp(const char *name)
             , name, DEFAULT_RESMGR_TPM_PORT, name, name, name, name, name, name, name);
 }
 
-const char *findChar(const char *str, int len, char c)
-{
-    if(str == NULL || len <= 0)
-        return NULL;
-
-    int i;
-    for(i = 0; i < len; i++)
-    {
-        if(str[i] == c)
-            return &str[i];
-    }
-
-    return NULL;
-}
-
 int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel)
 {
     char buf[3];
@@ -350,7 +335,7 @@ int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel)
     do
     {
         strCurrent = str;
-        str = findChar(strCurrent, len, ',');
+        str = memchr(strCurrent, ',', len);
         if(str)
         {
             lenCurrent = str - strCurrent;
@@ -385,7 +370,7 @@ int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel)
     if(str == NULL || len == 0)
         return -1;
 
-    strLeft = findChar(str, len, ':');
+    strLeft = memchr(str, ':', len);
 
     if(strLeft == NULL)
         return -1;
@@ -422,7 +407,7 @@ int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels)
     {
         strCurrent = strLeft;
 
-        strLeft = findChar(strCurrent, strlen(strCurrent), '+');
+        strLeft = strchr(strCurrent, '+');
         if(strLeft)
         {
             lenCurrent = strLeft - strCurrent;
