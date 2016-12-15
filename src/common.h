@@ -61,6 +61,9 @@ int checkOutFile(const char *path);
 int getFileSize(const char *path, long *fileSize);
 int getPort(const char *arg, int *port);
 int getDebugLevel(const char *arg, int *dl);
+int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels);
+int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
+int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
 
 static inline void showArgError(const char *arg, const char *name)
 {
