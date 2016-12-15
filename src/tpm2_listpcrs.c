@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
             g_flag = 1;
             break;
         case 'o':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
+            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
             if(checkOutFile(outFilePath) != 0)
             {
                 returnVal = -2;

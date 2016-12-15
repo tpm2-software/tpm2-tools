@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
             r_flag = 1;
             break;
         case 'n':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
+            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
             if(checkOutFile(outFilePath) != 0)
             {
                 returnVal = -5;

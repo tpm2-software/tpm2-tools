@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
                 printf("\nPlease input the handle password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -4;
             }
-            safeStrNCpy( handlePasswd, optarg, sizeof(handlePasswd) );
+            snprintf(handlePasswd, sizeof(handlePasswd), "%s", optarg);
             break;
 
         case 'X':

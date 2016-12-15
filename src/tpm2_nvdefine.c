@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
                 printf("\nPlease input the handle password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -8;
             }
-            safeStrNCpy(handlePasswd, optarg, sizeof(handlePasswd));
+            snprintf(handlePasswd, sizeof(handlePasswd), "%s", optarg);
             break;
 
         case 'I':
@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
                 printf("\nPlease input the index password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -9;
             }
-            safeStrNCpy(indexPasswd, optarg, sizeof(indexPasswd));
+            snprintf(indexPasswd, sizeof(indexPasswd), "%s", optarg);
             break;
         case 'X':
             hexPasswd = true;

@@ -242,7 +242,7 @@ int main(int argc, char* argv[])
             I_flag = 1;
             break;
         case 'o':
-            safeStrNCpy(outHmacFilePath, optarg, sizeof(outHmacFilePath));
+            snprintf(outHmacFilePath, sizeof(outHmacFilePath), "%s", optarg);
             if(checkOutFile(outHmacFilePath) != 0)
             {
                 returnVal = -7;

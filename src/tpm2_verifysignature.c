@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
             g_flag = 1;
             break;
         case 'm':
-            safeStrNCpy(inMsgFilePath, optarg, sizeof(inMsgFilePath));
+            snprintf(inMsgFilePath, sizeof(inMsgFilePath), "%s", optarg);
             m_flag = 1;
             break;
         case 'D':
@@ -229,11 +229,11 @@ int main(int argc, char* argv[])
             r_flag = 1;
             break;
         case 's':
-            safeStrNCpy(inSigFilePath, optarg, sizeof(inSigFilePath));
+            snprintf(inSigFilePath, sizeof(inSigFilePath), "%s", optarg);
             s_flag = 1;
             break;
         case 't':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
+            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
             if(checkOutFile(outFilePath) != 0)
             {
                 returnVal = -4;

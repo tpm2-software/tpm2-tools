@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
             g_flag = 1;
             break;
         case 'm':
-            safeStrNCpy(inMsgFileName, optarg, sizeof(inMsgFileName));
+            snprintf(inMsgFileName, sizeof(inMsgFileName), "%s", optarg);
             m_flag = 1;
             break;
         case 't':
@@ -308,7 +308,7 @@ int main(int argc, char* argv[])
             t_flag = 1;
             break;
         case 's':
-            safeStrNCpy(outFilePath, optarg, sizeof(outFilePath));
+            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
             if(checkOutFile(outFilePath) != 0)
             {
                 returnVal = -5;

@@ -497,7 +497,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
                 return -3;
             }
-            safeStrNCpy(endorsePasswd, optarg, sizeof(endorsePasswd));
+            snprintf(endorsePasswd, sizeof(endorsePasswd), "%s", optarg);
             break;
 
         case 'o':
@@ -506,7 +506,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
                 return -4;
             }
-            safeStrNCpy(ownerPasswd, optarg, sizeof(ownerPasswd));
+            snprintf(ownerPasswd, sizeof(ownerPasswd), "%s", optarg);
             break;
 
         case 'P':
@@ -515,7 +515,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
                 return -5;
             }
-            safeStrNCpy(ekPasswd, optarg, sizeof(ekPasswd));
+            snprintf(ekPasswd, sizeof(ekPasswd), "%s", optarg);
             break;
 
         case 'g':
@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the file used to save the pub ek.\n");
                 return -7;
             }
-            safeStrNCpy(outputFile, optarg, sizeof(outputFile));
+            snprintf(outputFile, sizeof(outputFile), "%s", optarg);
             break;
 
         case 'X':
@@ -559,7 +559,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the file used to save the EC Certificate retrieved from server\n");
                 return -99;
             }
-            safeStrNCpy(ECcertFile, optarg, sizeof(ECcertFile));
+            snprintf(ECcertFile, sizeof(ECcertFile), "%s", optarg);
             break;
         case 'N':
             nonPersistentRead = 1;

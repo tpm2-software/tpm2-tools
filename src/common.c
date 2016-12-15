@@ -282,7 +282,7 @@ int getSizeUint16Hex(const char *arg, UINT16 *num)
     long tmpSize = 0;
     if (arg == NULL || num == NULL)
         return -1;
-    safeStrNCpy(tmpArg, arg, sizeof(tmpArg));
+    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
     tmpSize = strtol(tmpArg,&errPtr,16);
     if(strlen(errPtr) != 0)
         return -2;
@@ -299,7 +299,7 @@ int getSizeUint16(const char *arg, UINT16 *num)
     long tmpSize = 0;
     if (arg == NULL || num == NULL)
         return -1;
-    safeStrNCpy(tmpArg, arg, sizeof(tmpArg));
+    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
     tmpSize = strtol(tmpArg,&errPtr,10);
     if(strlen(errPtr) != 0)
         return -2;
@@ -316,7 +316,7 @@ int getSizeUint32Hex(const char *arg, UINT32 *num)
     long long tmpSize = 0;
     if (arg == NULL || num == NULL)
         return -1;
-    safeStrNCpy(tmpArg, arg, sizeof(tmpArg));
+    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
     tmpSize = strtoll(tmpArg,&errPtr,16);
     if(strlen(errPtr) != 0)
         return -2;
@@ -333,7 +333,7 @@ int getSizeUint32(const char *arg, UINT32 *num)
     long tmpSize = 0;
     if (arg == NULL || num == NULL)
         return -1;
-    safeStrNCpy(tmpArg, arg, sizeof(tmpArg));
+    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
     tmpSize = strtol(tmpArg,&errPtr,10);
     if(strlen(errPtr) != 0)
         return -2;
@@ -711,7 +711,8 @@ int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel)
     if(strLeft - str > sizeof(buf) - 1)
         return -1;
 
-    safeStrNCpy(buf, str, strLeft - str + 1);
+    snprintf(buf, strLeft - str + 1, "%s", str);
+
     if(getSizeUint16Hex(buf, &pcrSel->hash) != 0)
         return -1;
 
@@ -760,7 +761,7 @@ int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel)
         if(lenCurrent > sizeof(buf) - 1)
             return -1;
 
-        safeStrNCpy(buf, strCurrent, lenCurrent + 1);
+        snprintf(buf, lenCurrent + 1, "%s", strCurrent);
 
         if(getPcrId(buf, &pcr)!= 0)
             return -1;
