@@ -41,22 +41,20 @@ rm test_all_pass.log test_all_fail.log
 pass=0
 fail=0
 
+fail_summary=""
+
 test_wrapper()
 {
 $1
-  if [ $? = 0 ];then
-	clear
-	echo -e "\033[32m $1 pass \033[0m"
-	sleep 1 
-	echo "$1 pass" >>test_all_pass.log
-	let "pass++"
+  if [ $? -eq 0 ]; then
+    echo -e "\033[32m $1 pass \033[0m"
+    let "pass++"
   else
-	echo -e "\033[31m $1 Fail \033[0m"
-	echo "$1 fail" >>test_all_fail.log
-	let "fail++"
-	sleep 1
-
-fi
+    echo -e "\033[31m $1 Fail \033[0m"
+    let "fail++"
+    fail_summary="$fail_summary\n$1"
+  fi
+  sleep 1
 }
  
 test_wrapper  test_tpm2_takeownership_all.sh
@@ -102,5 +100,9 @@ test_wrapper test_tpm2_startup.sh
 
 echo -e "\033[32m Tests passed: $pass \033[0m"
 echo -e "\033[31m Tests Failed: $fail  \033[0m"
+
+if [ $fail -gt 0 ]; then
+  echo -e "$fail_summary"
+fi
 
 exit $fail
