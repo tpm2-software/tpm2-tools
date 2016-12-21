@@ -112,12 +112,6 @@ man8_MANS = \
     man/man8/tpm2_send_command.8 \
     man/man8/tpm2_startup.8
 
-if UNIT
-check_PROGRAMS = \
-    test/unit/tpm2-rc-decode_unit \
-    test/unit/tpm2-rc-entry_unit
-endif
-
 src_libcommon_a_SOURCES = $(COMMON_SRC)
 if HAVE_TCTI_SOCK
 src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.c
@@ -168,6 +162,10 @@ test_unit_tpm2_rc_decode_unit_SOURCES = test/unit/tpm2-rc-decode_unit.c
 test_unit_tpm2_rc_entry_unit_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS)
 test_unit_tpm2_rc_entry_unit_SOURCES  = src/rc-decode.c test/unit/tpm2-rc-entry_unit.c
+
+check_PROGRAMS = \
+    test/unit/tpm2-rc-decode_unit \
+    test/unit/tpm2-rc-entry_unit
 endif
 
 man/man8/%.8 : man/%.8.in man/tcti-options.troff man/tcti-environment.troff
