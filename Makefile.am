@@ -91,7 +91,6 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 
 COMMON_SRC += \
     src/common.c \
-    src/debug.c \
     src/syscontext.c \
     src/CatSizedByteBuffer.c \
     src/CopySizedBuffer.c \

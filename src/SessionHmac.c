@@ -109,13 +109,6 @@ UINT32 TpmComputeSessionHmac(
         rval = ConcatSizedByteBuffer( (TPM2B_MAX_BUFFER *)&hmacKey, &( authValue.b ) );
     }
 
-#ifdef  DEBUG
-    OpenOutFile( &outFp );
-    TpmClientPrintf( 0, "\n\nhmacKey = " );
-    PrintSizedBuffer( &(hmacKey.b) );
-    CloseOutFile( &outFp );
-#endif
-    
     // Create buffer list
     i = 0;
     bufferList[i++] = &pHash.b;
@@ -130,16 +123,6 @@ UINT32 TpmComputeSessionHmac(
     cmdCodePtr = (UINT32 *)&commandCode[0];
     cmdCode = *cmdCodePtr;
 
-#ifdef  DEBUG
-    OpenOutFile( &outFp );
-    for( i = 0; bufferList[i] != 0; i++ )
-    {
-        TpmClientPrintf( 0, "\n\nbufferlist[%d]:\n", i );
-        PrintSizedBuffer( bufferList[i] );
-    }
-    CloseOutFile( &outFp );
-#endif
-    
     rval = (*HmacFunctionPtr)( pSession->authHash, &hmacKey.b, &( bufferList[0] ), result );
     if( rval != TPM_RC_SUCCESS )
         return rval;
