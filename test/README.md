@@ -21,5 +21,5 @@ test_tpm2_XXX_func.sh for adding some test cases in furture.
 3.must start resourcemgr before run all test scripts
 4.clean up all log files
 5.run xxx.sh for automatic test
-6.results record in XXX_pass.log or XXX_fail.log 
+6.results are printed to stdout and an exit code of 0 indicates success.
 
