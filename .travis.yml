@@ -39,6 +39,6 @@ script:
   - make -j$(nproc) check
   - sudo make install
   - popd
-  - pushd ./test
+  - pushd ./test/system
   - ./test_all.sh
-  - popd      
+  - popd

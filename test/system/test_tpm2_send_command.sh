@@ -32,7 +32,7 @@
 #;**********************************************************************;
 
 # assume this script is run from the test/ directory
-TPM2_COMMAND_FILE=get-capability-tpm-prop-fixed.bin
+TPM2_COMMAND_FILE=fixtures/get-capability-tpm-prop-fixed.bin
 
 if [ ! -f "${TPM2_COMMAND_FILE}" ]; then
     echo "No TPM2 command file, cannot run $0"

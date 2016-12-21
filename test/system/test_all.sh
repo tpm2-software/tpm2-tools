@@ -30,13 +30,10 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-####before this script, please make sure all test scripts copy here, TPM is initialized.
-
 #!/bin/bash
-new_path=`dirname $0`
-PATH="$PATH":"$new_path"
 
-rm test_all_pass.log test_all_fail.log
+SRC_DIR=`realpath ../../src/`
+PATH=$SRC_DIR:$PATH
 
 pass=0
 fail=0
@@ -45,7 +42,7 @@ fail_summary=""
 
 test_wrapper()
 {
-$1
+  ./$1
   if [ $? -eq 0 ]; then
     echo -e "\033[32m $1 pass \033[0m"
     let "pass++"
@@ -54,43 +51,35 @@ $1
     let "fail++"
     fail_summary="$fail_summary\n$1"
   fi
+
+  # Scripts are sloppy, perform cleanup
+  rm `find . -maxdepth 1 -type f ! -name '*.sh' ! -name 'README.md'` 2>/dev/null
   sleep 1
 }
- 
-test_wrapper  test_tpm2_takeownership_all.sh
 
+test_wrapper test_tpm2_takeownership_all.sh
 test_wrapper test_tpm2_nv.sh
-
 test_wrapper test_tpm2_listpcrs.sh
-
 test_wrapper test_tpm2_getrandom.sh
-
-##test_wrapper test_tpm2_createprimary_all.sh
-##test_wrapper test_tpm2_create_all.sh
+#test_wrapper test_tpm2_createprimary_all.sh
+#test_wrapper test_tpm2_create_all.sh
 test_wrapper test_tpm2_load.sh
 test_wrapper test_tpm2_loadexternal.sh
-
 test_wrapper test_tpm2_evictcontrol.sh
-
 test_wrapper test_tpm2_hash.sh
 test_wrapper test_tpm2_hmac.sh
-
 test_wrapper test_tpm2_quote.sh
 test_wrapper test_tpm2_unseal.sh
-
 test_wrapper test_tpm2_akparse.sh
 test_wrapper test_tpm2_certify.sh
-
 test_wrapper test_tpm2_evictcontrol.sh
 test_wrapper test_tpm2_getpubek.sh
 test_wrapper test_tpm2_getpubak.sh
-
 test_wrapper test_tpm2_makecredential.sh
 test_wrapper test_tpm2_activecredential.sh
 test_wrapper test_tpm2_readpublic.sh
 test_wrapper test_tpm2_rsaencrypt.sh
 test_wrapper test_tpm2_rsadecrypt.sh
-
 test_wrapper test_tpm2_encryptdecrypt.sh
 test_wrapper test_tpm2_sign.sh
 test_wrapper test_tpm2_verifysignature.sh
