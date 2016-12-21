@@ -213,7 +213,7 @@ int main(int argc, char* argv[])
                 printf("\nPlease input the handle password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -4;
             }
-            safeStrNCpy(&handlePasswd[0], optarg, sizeof(handlePasswd));
+            snprintf(handlePasswd, sizeof(handlePasswd), "%s", optarg);
             break;
 
         case 'f':
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
                 printf("\nPlease input the nv data file.\n");
                 return -5;
             }
-            safeStrNCpy(&fileName[0], optarg, sizeof(fileName));
+            snprintf(fileName, sizeof(fileName), "%s", optarg);
             break;
 
         case 'X':

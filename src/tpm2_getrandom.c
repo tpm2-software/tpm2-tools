@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
                 returnVal = -4;
                 break;
             }
-            safeStrNCpy(outFileName, optarg, sizeof(outFileName));
+            snprintf(outFileName, sizeof(outFileName), "%s", optarg);
             o_flag=1;
             break;
         case 'p':

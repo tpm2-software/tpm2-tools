@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the file that used to be parsed.\n");
                 return -3;
             }
-            safeStrNCpy( &akDataFile[0], optarg, sizeof(akDataFile) );
+            snprintf(akDataFile, sizeof(akDataFile), "%s", optarg);
             break;
 
         case 'k':
@@ -241,7 +241,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the file that used to save ak key.\n");
                 return -4;
             }
-            safeStrNCpy( &akKeyFile[0], optarg, sizeof(akKeyFile) );
+            snprintf(akKeyFile, sizeof(akKeyFile), "%s", optarg);
             break;
 
         default:

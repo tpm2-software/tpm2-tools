@@ -221,7 +221,7 @@ int main(int argc, char* argv[])
             if( strlen(optarg) > 0 )
             {
                 sessionData.hmac.t.size = strlen(optarg);
-                safeStrNCpy( (char *)&sessionData.hmac.t.buffer[0], optarg, sizeof(sessionData.hmac.t.buffer) );
+                snprintf((char *)sessionData.hmac.t.buffer, sizeof(sessionData.hmac.t.buffer), "%s", optarg);
             }
             P_flag = 1;
             break;

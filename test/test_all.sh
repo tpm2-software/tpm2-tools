@@ -38,58 +38,71 @@ PATH="$PATH":"$new_path"
 
 rm test_all_pass.log test_all_fail.log
 
-func()
+pass=0
+fail=0
+
+fail_summary=""
+
+test_wrapper()
 {
 $1
-  if [ $? = 0 ];then
-	clear
-	echo -e "\033[32m $1 pass \033[0m"
-	sleep 1 
-	echo "$1 pass" >>test_all_pass.log
+  if [ $? -eq 0 ]; then
+    echo -e "\033[32m $1 pass \033[0m"
+    let "pass++"
   else
-	echo -e "\033[31m $1 Fail \033[0m"
-	echo "$1 fail" >>test_all_fail.log
-	sleep 1
-	fi
+    echo -e "\033[31m $1 Fail \033[0m"
+    let "fail++"
+    fail_summary="$fail_summary\n$1"
+  fi
+  sleep 1
 }
  
-func  test_tpm2_takeownership_all.sh
+test_wrapper  test_tpm2_takeownership_all.sh
 
-func test_tpm2_nv.sh
+test_wrapper test_tpm2_nv.sh
 
-func test_tpm2_listpcrs.sh
+test_wrapper test_tpm2_listpcrs.sh
 
-func test_tpm2_getrandom.sh
+test_wrapper test_tpm2_getrandom.sh
 
-##func test_tpm2_createprimary_all.sh
-##func test_tpm2_create_all.sh
-func test_tpm2_load.sh
-func test_tpm2_loadexternal.sh
+##test_wrapper test_tpm2_createprimary_all.sh
+##test_wrapper test_tpm2_create_all.sh
+test_wrapper test_tpm2_load.sh
+test_wrapper test_tpm2_loadexternal.sh
 
-func test_tpm2_evictcontrol.sh
+test_wrapper test_tpm2_evictcontrol.sh
 
-func test_tpm2_hash.sh
-func test_tpm2_hmac.sh
+test_wrapper test_tpm2_hash.sh
+test_wrapper test_tpm2_hmac.sh
 
-func test_tpm2_quote.sh
-func test_tpm2_unseal.sh
+test_wrapper test_tpm2_quote.sh
+test_wrapper test_tpm2_unseal.sh
 
-func test_tpm2_akparse.sh
-func test_tpm2_certify.sh
+test_wrapper test_tpm2_akparse.sh
+test_wrapper test_tpm2_certify.sh
 
-func test_tpm2_evictcontrol.sh
-func test_tpm2_getpubek.sh
-func test_tpm2_getpubak.sh
+test_wrapper test_tpm2_evictcontrol.sh
+test_wrapper test_tpm2_getpubek.sh
+test_wrapper test_tpm2_getpubak.sh
 
-func test_tpm2_makecredential.sh
-func test_tpm2_activecredential.sh
-func test_tpm2_readpublic.sh
-func test_tpm2_rsaencrypt.sh
-func test_tpm2_rsadecrypt.sh
+test_wrapper test_tpm2_makecredential.sh
+test_wrapper test_tpm2_activecredential.sh
+test_wrapper test_tpm2_readpublic.sh
+test_wrapper test_tpm2_rsaencrypt.sh
+test_wrapper test_tpm2_rsadecrypt.sh
 
-func test_tpm2_encryptdecrypt.sh
-func test_tpm2_sign.sh
-func test_tpm2_verifysignature.sh
-func test_tpm2_send_command.sh
-func test_tpm2_dump_capability.sh
-func test_tpm2_startup.sh
+test_wrapper test_tpm2_encryptdecrypt.sh
+test_wrapper test_tpm2_sign.sh
+test_wrapper test_tpm2_verifysignature.sh
+test_wrapper test_tpm2_send_command.sh
+test_wrapper test_tpm2_dump_capability.sh
+test_wrapper test_tpm2_startup.sh
+
+echo -e "\033[32m Tests passed: $pass \033[0m"
+echo -e "\033[31m Tests Failed: $fail  \033[0m"
+
+if [ $fail -gt 0 ]; then
+  echo -e "$fail_summary"
+fi
+
+exit $fail

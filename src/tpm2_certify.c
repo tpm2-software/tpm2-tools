@@ -318,7 +318,7 @@ int main(int argc, char* argv[])
             g_flag = 1;
             break;
         case 'a':
-            safeStrNCpy(attestFilePath, optarg, sizeof(attestFilePath));
+            snprintf(attestFilePath, sizeof(attestFilePath), "%s", optarg);
             if(checkOutFile(attestFilePath) != 0)
             {
                 returnVal = -6;
@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
             a_flag = 1;
             break;
         case 's':
-            safeStrNCpy(sigFilePath, optarg, sizeof(sigFilePath));
+            snprintf(sigFilePath, sizeof(sigFilePath), "%s", optarg);
             if(checkOutFile(sigFilePath) != 0)
             {
                 returnVal = -7;

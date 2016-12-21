@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
                 argsError = true;
                 break;
             }
-            safeStrNCpy(newOwnerPasswd, optarg, sizeof(newOwnerPasswd));
+            snprintf(newOwnerPasswd, sizeof(newOwnerPasswd), "%s", optarg);
             break;
 
         case 'e':
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
                 argsError = true;
                 break;
             }
-            safeStrNCpy(newEndorsePasswd, optarg, sizeof(newEndorsePasswd));
+            snprintf(newEndorsePasswd, sizeof(newEndorsePasswd), "%s", optarg);
             break;
 
         case 'l':
@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
                 argsError = true;
                 break;
             }
-            safeStrNCpy(newLockoutPasswd, optarg, sizeof(newLockoutPasswd));
+            snprintf(newLockoutPasswd, sizeof(newLockoutPasswd), "%s", optarg);
             break;
 
         case 'O':
@@ -369,7 +369,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input current Owner authorization value(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -2;
             }
-            safeStrNCpy(oldOwnerPasswd, optarg, sizeof(oldOwnerPasswd));
+            snprintf(oldOwnerPasswd, sizeof(oldOwnerPasswd), "%s", optarg);
             break;
 
         case 'E':
@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input current Endorsement authorization value(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -3;
             }
-            safeStrNCpy(oldEndorsePasswd, optarg, sizeof(oldEndorsePasswd));
+            snprintf(oldEndorsePasswd, sizeof(oldEndorsePasswd), "%s", optarg);
             break;
 
         case 'L':
@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input current Lockout authorization value(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -4;
             }
-            safeStrNCpy(oldLockoutPasswd, optarg, sizeof(oldLockoutPasswd));
+            snprintf(oldLockoutPasswd, sizeof(oldLockoutPasswd), "%s", optarg);
             break;
         case 'X':
             hexPasswd = true;

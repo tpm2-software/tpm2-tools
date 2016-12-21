@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
             I_flag = 1;
             break;
         case 'o':
-            safeStrNCpy(outHashFilePath, optarg, sizeof(outHashFilePath));
+            snprintf(outHashFilePath, sizeof(outHashFilePath), "%s", optarg);
             if(checkOutFile(outHashFilePath) != 0)
             {
                 returnVal = -6;
@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
             o_flag = 1;
             break;
         case 't':
-            safeStrNCpy(outTicketFilePath, optarg, sizeof(outTicketFilePath));
+            snprintf(outTicketFilePath, sizeof(outTicketFilePath), "%s", optarg) ;
             if(checkOutFile(outTicketFilePath) != 0)
             {
                 returnVal = -7;

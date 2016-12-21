@@ -410,7 +410,7 @@ int main(int argc, char* argv[])
             L_flag = 1;
             break;
         case 'o':
-            safeStrNCpy(opuFilePath, optarg, sizeof(opuFilePath));
+            snprintf(opuFilePath, sizeof(opuFilePath), "%s", optarg);
             if(checkOutFile(opuFilePath) != 0)
             {
                 returnVal = -9;
@@ -419,7 +419,7 @@ int main(int argc, char* argv[])
             o_flag = 1;
             break;
         case 'O':
-            safeStrNCpy(oprFilePath, optarg, sizeof(oprFilePath));
+            snprintf(oprFilePath, sizeof(oprFilePath), "%s", optarg);
             if(checkOutFile(oprFilePath) != 0)
             {
                 returnVal = -10;

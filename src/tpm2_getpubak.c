@@ -580,7 +580,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -7;
             }
-            safeStrNCpy(ownerPasswd, optarg, sizeof(ownerPasswd));
+            snprintf(ownerPasswd, sizeof(ownerPasswd), "%s", optarg);
             break;
 
         case 'e':
@@ -589,7 +589,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -8;
             }
-            safeStrNCpy(endorsePasswd, optarg, sizeof(endorsePasswd));
+            snprintf(endorsePasswd, sizeof(endorsePasswd), "%s", optarg);
             break;
 
         case 'P':
@@ -598,7 +598,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the AK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
                 return -9;
             }
-            safeStrNCpy(akPasswd, optarg, sizeof(akPasswd));
+            snprintf(akPasswd, sizeof(akPasswd), "%s", optarg);
             break;
 
         case 'f':
@@ -607,7 +607,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the file used to save the pub ek.\n");
                 return -10;
             }
-            safeStrNCpy(outputFile, optarg, sizeof(outputFile));
+            snprintf(outputFile, sizeof(outputFile), "%s", optarg);
             break;
 
         case 'n':
@@ -616,7 +616,7 @@ int main(int argc, char *argv[])
                 printf("\nPlease input the file used to save ak name.\n");
                 return -11;
             }
-            safeStrNCpy(aknameFile, optarg, sizeof(aknameFile));
+            snprintf(aknameFile, sizeof(aknameFile), "%s", optarg);
             break;
         case 'X':
             hexPasswd = true;

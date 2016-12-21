@@ -61,6 +61,9 @@ int checkOutFile(const char *path);
 int getFileSize(const char *path, long *fileSize);
 int getPort(const char *arg, int *port);
 int getDebugLevel(const char *arg, int *dl);
+int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels);
+int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
+int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
 
 static inline void showArgError(const char *arg, const char *name)
 {
@@ -77,16 +80,6 @@ static inline void showArgMismatch(const char *name)
 static inline void showVersion(const char *name)
 {
     printf("%s, version %s\n", name, VERSION);
-}
-
-static inline char *safeStrNCpy(char *dest, const char *src, size_t n)
-{
-    if(strlen(src) > 0)
-    {
-        strncpy(dest, src, n - 1);
-        dest[n - 1] = '\0';
-    }
-    return dest;
 }
 
 #ifdef __cplusplus
