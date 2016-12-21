@@ -42,7 +42,6 @@
 #include "sample.h"
 #include <tcti/tcti_socket.h>
 #include "syscontext.h"
-#include "debug.h"
 #include "common.h"
 
 #define errorStringSize 200
@@ -77,45 +76,7 @@ UINT32 (*HashFunctionPtr)( TPMI_ALG_HASH hashAlg, UINT16 size, BYTE *data, TPM2B
 
 UINT32 (*HandleToNameFunctionPtr)( TPM_HANDLE handle, TPM2B_NAME *name ) = TpmHandleToName;
 
-FILE *outFp;
-UINT8 simulator = 1;
-
 TSS2_SYS_CONTEXT *sysContext;
-
-#if 1
-int TpmClientPrintf( UINT8 type, const char *format, ...)
-{
-    return 0;
-}
-#else
-int TpmClientPrintf( UINT8 type, const char *format, ...)
-{
-    va_list args;
-    int rval = 0;
-
-    OpenOutFile( &outFp );
-
-    if( outFp )
-    {
-        if( type == RM_PREFIX )
-        {
-            PrintRMDebugPrefix();
-        }
-
-        va_start( args, format );
-        rval = vfprintf( outFp, format, args );
-        va_end (args);
-
-        CloseOutFile( &outFp );
-    }
-    else
-    {
-        printf( "TpmClientPrintf failed\n" );
-    }
-
-    return rval;
-}
-#endif
 
 int CompareTPM2B( TPM2B *buffer1, TPM2B *buffer2 )
 {

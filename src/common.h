@@ -38,7 +38,6 @@ extern "C" {
 extern TSS2_SYS_CONTEXT *sysContext;
 
 void copyData( UINT8 *to, UINT8 *from, UINT32 length );
-int TpmClientPrintf( UINT8 type, const char *format, ...);
 int CompareTPM2B( TPM2B *buffer1, TPM2B *buffer2 );
 void PrintSizedBufferOpen( TPM2B *sizedBuffer );
 void PrintSizedBuffer( TPM2B *sizedBuffer );
