@@ -36,8 +36,6 @@
 new_path=`dirname $0`
 PATH="$PATH":"$new_path"
 
-rm test_all_pass.log test_all_fail.log
-
 pass=0
 fail=0
 
@@ -54,6 +52,9 @@ $1
     let "fail++"
     fail_summary="$fail_summary\n$1"
   fi
+
+  # Scripts are sloppy, perform cleanup
+  rm `find . -maxdepth 1 -type f ! -name '*.sh' ! -name 'README.md'`
   sleep 1
 }
  
