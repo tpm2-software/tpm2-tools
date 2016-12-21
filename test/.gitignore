@@ -1,0 +1,8 @@
+# Ignore everything
+*
+# But not these files...
+!.gitignore
+!README.md
+!get-capability-tpm-prop-fixed.bin
+!*.sh
+!*.c
