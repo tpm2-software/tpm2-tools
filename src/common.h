@@ -32,6 +32,7 @@
 #define COMMON_H
 
 #include "files.h"
+#include "options.h"
 #include "string-bytes.h"
 
 #ifdef __cplusplus
@@ -54,23 +55,6 @@ int getDebugLevel(const char *arg, int *dl);
 int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels);
 int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
 int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
-
-static inline void showArgError(const char *arg, const char *name)
-{
-    printf("Argument error: %s\n",arg);
-    printf("Please type \"%s -h\" get the usage!\n", name);
-}
-
-static inline void showArgMismatch(const char *name)
-{
-    printf("Argument mismatched!\n");
-    printf("Please type \"%s -h\" get the usage!\n", name);
-}
-
-static inline void showVersion(const char *name)
-{
-    printf("%s, version %s\n", name, VERSION);
-}
 
 #ifdef __cplusplus
 }
