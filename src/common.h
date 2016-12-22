@@ -32,6 +32,7 @@
 #define COMMON_H
 
 #include "files.h"
+#include "string-bytes.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,13 +47,7 @@ void PrintSizedBuffer( TPM2B *sizedBuffer );
 void ErrorHandler( UINT32 rval );
 int prepareTest(const char *hostName, const int port, int debugLevel);
 void finishTest();
-int getSizeUint16(const char *arg, UINT16 *num);
-int getSizeUint16Hex(const char *arg, UINT16 *num);
-int getSizeUint32(const char *arg, UINT32 *num);
-int getSizeUint32Hex(const char *arg, UINT32 *num);
 int getPcrId(const char *arg, UINT32 *num);
-int str2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
-int hex2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 int computeDataHash(BYTE *buffer, UINT16 length, TPMI_ALG_HASH halg, TPM2B_DIGEST *result);
 int getPort(const char *arg, int *port);
 int getDebugLevel(const char *arg, int *dl);
