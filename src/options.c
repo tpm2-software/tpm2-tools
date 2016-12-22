@@ -165,20 +165,54 @@ get_common_opts_from_env (common_opts_t *common_opts)
         common_opts->socket_port = strtol (env_str, &end_ptr, 10);
 }
 /*
+ * Append a string to the parameter argv array. We realloc this array adding
+ * a new char* to point to the appended entry. The argc parameter is updated
+ * to account for the new element in the array. We return the address of the
+ * newly reallocated array. If the realloc fails we return NULL.
+ */
+char**
+append_arg_to_vector (int*  argc,
+                      char* argv[],
+                      char* arg_string)
+{
+    char **new_argv;
+
+    ++(*argc);
+    new_argv = realloc (argv, sizeof (char*) * (*argc));
+    if (new_argv != NULL)
+        new_argv[*argc - 1] = arg_string;
+    else
+        fprintf (stderr,
+                 "Failed to realloc new_argv to append string %s: %s\n",
+                 arg_string,
+                 strerror (errno));
+
+    return new_argv;
+}
+
+/*
  * Get data from the environment and the caller (by way of the argument
  * vector) to populate the provided common_opts_t structure. The data we get
  * from the command line / argument vector takes presedence so we fill in the
  * structure with data from the environment first, then from argv. Anything
  * retrieved from the environment will just be over written with whatever we
  * get from argv.
+ * All options from argv that aren't from the common option set are ignored
+ * and copied to a newly allocated vector. These are assumed to be options
+ * specific to the tool. This new augmented argument vector and count are
+ * returned to the caller through the argc_param and argv_param. The vector
+ * must be freed by the caller.
  */
 int
-get_common_opts (int                     argc,
-                 char                   *argv[],
+get_common_opts (int                    *argc_param,
+                 char                   **argv_param[],
                  common_opts_t          *common_opts)
 {
-    int c = 0, option_index = 0, ret = 0;
-    char *arg_str = "T:d:R:p:hvV";
+    int argc = *argc_param;
+    char **argv = *argv_param;
+
+    int c = 0, option_index = 0;
+    char *arg_str = "-T:d:R:p:hvV";
     struct option long_options [] = {
         {
             .name    = "tcti",
@@ -238,15 +272,28 @@ get_common_opts (int                     argc,
      * Keep getopt_long quiet when we see options that aren't in the 'common'
      * category. Reset option processing.
      */
-    char *endptr;
+    char *endptr, **new_argv = { NULL, };
+    int new_argc = 1;
     extern int opterr, optind;
 
     opterr = 0;
-    optind = 0;
+    optind = 1;
+    new_argv = calloc (1, sizeof (char*));
+    if (new_argv == NULL) {
+        fprintf (stderr, "Failed to allocate memory for tool argument "
+                 "vector: %s\n", strerror (errno));
+        return 2;
+    }
+    new_argv[0] = argv[0];
     while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
            != -1)
     {
         switch (c) {
+        case 1: /* positional arguments */
+            new_argv = append_arg_to_vector (&new_argc, new_argv, optarg);
+            if (new_argv == NULL)
+                return 2;
+            break;
         case 'T':
             common_opts->tcti_type = tcti_type_from_name (optarg);
             break;
@@ -272,9 +319,18 @@ get_common_opts (int                     argc,
         case 'v':
             common_opts->version = true;
             break;
+        case '?':
+            new_argv = append_arg_to_vector (&new_argc, new_argv, argv[optind - 1]);
+            if (new_argv == NULL)
+                return 2;
+            break;
         }
     }
-    return ret;
+    /* return the new argument vector info to the caller */
+    *argc_param = new_argc;
+    *argv_param = new_argv;
+
+    return 0;
 }
 /*
  * Dump the contents of the common_opts_t structure to stdout.
