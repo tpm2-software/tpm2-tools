@@ -37,17 +37,11 @@
 
 #include "main.h"
 #include "tpm2-header.h"
+#include "log.h"
 
 #define MAX_BUF 4096
 #define COMMAND_HEADER_SIZE (sizeof (TPMI_ST_COMMAND_TAG) + sizeof (UINT32) + sizeof (TPM_CC))
 #define RESPONSE_HEADER_SIZE (sizeof (TPM_ST) + sizeof (UINT32) + sizeof (TPM_RC))
-
-/* global to control debug output, set in main via --verbose option */
-bool verbose = false;
-
-/* verbose logging macro, relies on global 'verbose' data */
-#define LOG_VERBOSE(fstream, fmt, ...) \
-    do { if (verbose) fprintf (fstream, fmt, ##__VA_ARGS__); } while (false)
 
 /*
  * Read a TPM command buffer from a 'file_stream'. Store this buffer in
@@ -61,39 +55,35 @@ read_command_from_file (FILE              *file_stream,
     size_t ret;
     UINT32 command_size;
 
-    LOG_VERBOSE (stderr, "read_command_from_file\n");
+    LOG_INFO ("read_command_from_file");
     ret = fread (buf, COMMAND_HEADER_SIZE, 1, file_stream);
     /* I'm not sure if fread will actually set errno from the docs */
     if (ret != 1 && ferror (file_stream)) {
-        fprintf (stderr,
-                 "Failed to read command header: %s\n",
+        LOG_ERR ("Failed to read command header: %s",
                  strerror (errno));
         return 0;
     }
-    LOG_VERBOSE (stderr,
-                 "  read %zd command header of size: 0x%lx\n",
+    LOG_INFO ("read %zd command header of size: 0x%lx",
                  ret, COMMAND_HEADER_SIZE);
     command_size = get_command_size (buf);
     if (command_size > buf_size) {
-        fprintf (stderr,
-                 "buf_size is insufficient: %u > %zd\n",
+        LOG_ERR("buf_size is insufficient: %u > %zd",
                  command_size, buf_size);
         return 0;
     }
-    LOG_VERBOSE (stderr, "  command tag:  0x%04x\n", get_command_tag  (buf));
-    LOG_VERBOSE (stderr, "  command size: 0x%08x\n", get_command_size (buf));
-    LOG_VERBOSE (stderr, "  command code: 0x%08x\n", get_command_code (buf));
+    LOG_INFO ("command tag:  0x%04x", get_command_tag  (buf));
+    LOG_INFO ("command size: 0x%08x", get_command_size (buf));
+    LOG_INFO ("command code: 0x%08x", get_command_code (buf));
     ret = fread (buf + COMMAND_HEADER_SIZE,
                  command_size - COMMAND_HEADER_SIZE,
                  1,
                  file_stream);
     if (ret != 1 && ferror (file_stream)) {
-        fprintf (stderr,
-                 "Failed to read command body: %s\n",
+        LOG_ERR ("Failed to read command body: %s",
                  strerror (errno));
         return 0;
     }
-    LOG_VERBOSE (stderr, "  read command body successfully\n");
+    LOG_INFO ("read command body successfully");
     return command_size;
 }
 /*
@@ -108,39 +98,35 @@ write_response_to_file (FILE           *file_stream,
     size_t num_write;
     UINT32 response_size;
 
-    LOG_VERBOSE (stderr, "write_response_to_file\n");
+    LOG_INFO ("write_response_to_file");
     num_write = fwrite (buf, RESPONSE_HEADER_SIZE, 1, file_stream);
     if (num_write != 1 && ferror (stdout)) {
-        fprintf (stderr, "failed to write to stdout\n");
+        LOG_ERR ("failed to write to stdout");
         return 0;
     }
-    LOG_VERBOSE (stderr,
-                 "  wrote response header: %ld members of size 0x%lx\n",
+    LOG_INFO ("wrote response header: %ld members of size 0x%lx",
                  num_write, RESPONSE_HEADER_SIZE);
     response_size = get_command_size (buf);
     if (response_size > buf_size) {
-        fprintf (stderr,
-                 "buf_size is insufficient: %u > %ld\n",
+        LOG_ERR ("buf_size is insufficient: %u > %ld",
                  response_size, buf_size);
         return 0;
     }
-    LOG_VERBOSE (stderr, "  response tag:  0x%04x\n", get_response_tag  (buf));
-    LOG_VERBOSE (stderr, "  response size: 0x%08x\n", get_response_size (buf));
-    LOG_VERBOSE (stderr, "  response code: 0x%08x\n", get_response_code (buf));
+    LOG_INFO ("response tag:  0x%04x", get_response_tag  (buf));
+    LOG_INFO ("response size: 0x%08x", get_response_size (buf));
+    LOG_INFO ("response code: 0x%08x", get_response_code (buf));
 
     num_write = fwrite (buf + RESPONSE_HEADER_SIZE,
                         response_size - RESPONSE_HEADER_SIZE,
                         1,
                         file_stream);
     if (num_write != 1 && ferror (file_stream)) {
-        fprintf (stderr,
-                 "Failed to write response to file: %s\n",
+        LOG_ERR ("Failed to write response to file: %s",
                  strerror (errno));
         return 0;
 
     }
-    LOG_VERBOSE (stderr,
-                 "  wrote response body: %zd members of size 0x%x\n",
+    LOG_INFO ("wrote response body: %zd members of size 0x%x",
                  num_write, response_size);
     return response_size;
 }
@@ -164,24 +150,21 @@ execute_tool (int              argc,
     UINT32 written_size, command_size;
     TSS2_RC rc;
 
-    verbose = opts->verbose;
-
     command_size = read_command_from_file (stdin, buf, MAX_BUF);
     if (command_size == 0) {
-        fprintf (stderr, "failed to read TPM2 command buffer from stdin\n");
+        LOG_ERR ("failed to read TPM2 command buffer from stdin");
         return 1;
     }
 
     rc = Tss2_Sys_GetTctiContext (sapi_context, &tcti_context);
     if (rc != TSS2_RC_SUCCESS) {
-        fprintf (stderr,
-                 "Failed to get TCTI context from SAPI context: 0x%x\n",
+        LOG_ERR ("Failed to get TCTI context from SAPI context: 0x%x",
                  rc);
         return 1;
     }
     rc = tss2_tcti_transmit (tcti_context, command_size, buf);
     if (rc != TSS2_RC_SUCCESS) {
-        fprintf (stderr, "tss2_tcti_transmit failed: 0x%x\n", rc);
+        LOG_ERR ("tss2_tcti_transmit failed: 0x%x", rc);
         return 1;
     }
     rc = tss2_tcti_receive (tcti_context,
@@ -189,12 +172,12 @@ execute_tool (int              argc,
                             buf,
                             TSS2_TCTI_TIMEOUT_BLOCK);
     if (rc != TSS2_RC_SUCCESS) {
-        fprintf (stderr, "tss2_tcti_receive failed: 0x%x\n", rc);
+        LOG_ERR ("tss2_tcti_receive failed: 0x%x", rc);
         return 1;
     }
     written_size = write_response_to_file (stdout, buf, response_size);
     if (written_size < response_size) {
-        fprintf (stderr, "write_command_to_file failed\n");
+        LOG_ERR ("write_command_to_file failed");
         return 1;
     }
     return 0;
