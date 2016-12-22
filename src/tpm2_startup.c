@@ -34,6 +34,7 @@
 #include <stdlib.h>
 
 #include "main.h"
+#include "log.h"
 
 /*
  * Both the Microsoft and IBM TPM2 simulators require some specific setup
@@ -103,8 +104,7 @@ sanity_check_startup_opts (startup_opts_t *startup_opts)
      * not which (but we don't care).
      */
     if (startup_opts->clear == startup_opts->state) {
-        fprintf (stderr,
-                 "Select either '--clear' or '--state'. Try --help.\n");
+        LOG_ERR ("Select either '--clear' or '--state'. Try --help.");
         return 1;
     }
     return 0;
@@ -136,17 +136,16 @@ execute_tool (int               argc,
         startup_type = TPM_SU_CLEAR;
     else
         startup_type = TPM_SU_STATE;
-    if (common_opts->verbose)
-        printf ("Sending TPM_Startup command with type: %s\n",
-                startup_opts.clear ? "TPM_SU_CLEAR" : "TPM_SU_STATE");
+
+    LOG_INFO ("Sending TPM_Startup command with type: %s",
+            startup_opts.clear ? "TPM_SU_CLEAR" : "TPM_SU_STATE");
     rc = Tss2_Sys_Startup (sapi_context, startup_type);
     if (rc != TSS2_RC_SUCCESS && rc != TPM_RC_INITIALIZE) {
-        fprintf (stderr,
-                 "Tss2_Sys_Startup failed: 0x%x\n",
+        LOG_ERR ("Tss2_Sys_Startup failed: 0x%x",
                  rc);
         return 1;
     }
-    if (common_opts->verbose)
-        printf ("Success. TSS2_RC: 0x%x\n", rc);
+
+    LOG_INFO ("Success. TSS2_RC: 0x%x", rc);
     return 0;
 }
