@@ -99,8 +99,8 @@ typedef struct {
 
 /* functions to get common options from the user and to print helpful stuff */
 void        dump_common_opts           (common_opts_t        *opts);
-int         get_common_opts            (int                   argc,
-                                        char                 *argv[],
+int         get_common_opts            (int                  *argc,
+                                        char                 **argv[],
                                         common_opts_t        *common_opts);
 int         sanity_check_common        (common_opts_t        *opts);
 void        execute_man                (char                 *cmd_name,
