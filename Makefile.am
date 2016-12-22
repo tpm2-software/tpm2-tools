@@ -46,6 +46,7 @@ sbin_PROGRAMS = \
 
 COMMON_SRC = \
     src/context-util.c \
+    src/files.c \
     src/options.c \
     src/tpm2-header.c \
     src/log.c
