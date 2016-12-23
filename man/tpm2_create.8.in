@@ -1,0 +1,91 @@
+." Copyright (c) 2016, Intel Corporation
+." All rights reserved.
+."
+." Redistribution and use in source and binary forms, with or without
+." modification, are permitted provided that the following conditions are met:
+."
+." 1. Redistributions of source code must retain the above copyright notice,
+." this list of conditions and the following disclaimer.
+."
+." 2. Redistributions in binary form must reproduce the above copyright notice,
+." this list of conditions and the following disclaimer in the documentation
+." and/or other materials provided with the distribution.
+."
+." 3. Neither the name of Intel Corporation nor the names of its contributors
+." may be used to endorse or promote products derived from this software without
+." specific prior written permission.
+."
+." THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+." AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+." IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+." ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+." LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+." CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+." SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+." INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+." CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+." ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+." THE POSSIBILITY OF SUCH DAMAGE.
+.TH tpm2_create 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.SH NAME
+tpm2_create\ - create an object that can be loaded into a TPM using tpm2_load. The object
+will need to be loaded before it may be used.
+.SH SYNOPSIS
+.B tpm2_create[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-kalg\fR|\fB\-\-objectAttribute\fR|\fB\-\-inFile\fR|\fB\-\-pol\fR|\fB\-\-opu\fR|\fB\-\-opr\fR|\fB\-\-passwdInHex\fR|\fB ]
+.PP
+create an object that can be loaded into a TPM using tpm2_load. The object
+will need to be loaded before it may be used.
+.SH DESCRIPTION
+.B tpm2_create
+create an object that can be loaded into a TPM using tpm2_load. The object
+will need to be loaded before it may be used.
+.SH OPTIONS
+.TP
+\fB\-H ,\-\-parent\fR
+parent handle
+.TP
+\fB\-c ,\-\-contextParent\fR
+filename for parent context
+.TP
+\fB\-P ,\-\-pwdp\fR
+password for parent key, optional
+.TP
+\fB\-K ,\-\-pwdk\fR
+password for key, optional
+.TP
+\fB\-g ,\-\-halg\fR
+algorithm used for computing the Name of the  object   0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+.TP
+\fB\-G ,\-\-kalg\fR
+algorithm associated with this object  0x0001 TPM_ALG_RSA   0x0008 TPM_ALG_KEYEDHASH   0x0023 TPM_ALG_ECC   0x0025 TPM_ALG_SYMCIPHER 
+.TP
+\fB\-A ,\-\-objectAttribute\fR
+object attributes, optional
+.TP
+\fB\-I ,\-\-inFile\fR
+data file to be sealed, optional
+.TP
+\fB\-L ,\-\-pol\fR
+the input policy file, optional
+.TP
+\fB\-o ,\-\-opu\fR
+the output file which contains the public key,  optional 
+.TP
+\fB\-O ,\-\-opr\fR
+the output file which contains the private key,  optional 
+.TP
+\fB\-X ,\-\-passwdInHex\fR
+passwords given by any options are hex format.
+@COMMON_OPTIONS_INCLUDE@
+@TCTI_OPTIONS_INCLUDE@
+.SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
+.SH EXAMPLES
+.B tpm2_create
+.PP
+.nf
+.RS
+tpm2_create -H 0x81010001 -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
+tpm2_create -c parent.context -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
+tpm2_create -H 0x81010001 -P 123abc -K 456def -X -g 0x000B -G 0x0008 -I data.File -o opu.File
+.RE
+.fi

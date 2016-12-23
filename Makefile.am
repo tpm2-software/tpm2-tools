@@ -110,7 +110,38 @@ endif
 man8_MANS = \
     man/man8/tpm2_dump_capability.8 \
     man/man8/tpm2_send_command.8 \
-    man/man8/tpm2_startup.8
+    man/man8/tpm2_startup.8 \
+    man/man8/tpm2_listpcrs.8 \
+    man/man8/tpm2_quote.8 \
+    man/man8/tpm2_takeownership.8 \
+    man/man8/tpm2_getpubek.8 \
+    man/man8/tpm2_getpubak.8 \
+    man/man8/tpm2_getmanufec.8 \
+    man/man8/tpm2_akparse.8 \
+    man/man8/tpm2_makecredential.8 \
+    man/man8/tpm2_activatecredential.8 \
+    man/man8/tpm2_hash.8 \
+    man/man8/tpm2_nvlist.8 \
+    man/man8/tpm2_nvread.8 \
+    man/man8/tpm2_nvreadlock.8 \
+    man/man8/tpm2_nvwrite.8 \
+    man/man8/tpm2_nvdefine.8 \
+    man/man8/tpm2_nvrelease.8 \
+    man/man8/tpm2_create.8 \
+    man/man8/tpm2_hmac.8 \
+    man/man8/tpm2_certify.8 \
+    man/man8/tpm2_readpublic.8 \
+    man/man8/tpm2_getrandom.8 \
+    man/man8/tpm2_encryptdecrypt.8 \
+    man/man8/tpm2_evictcontrol.8 \
+    man/man8/tpm2_load.8 \
+    man/man8/tpm2_loadexternal.8 \
+    man/man8/tpm2_rsadecrypt.8 \
+    man/man8/tpm2_rsaencrypt.8 \
+    man/man8/tpm2_sign.8 \
+    man/man8/tpm2_unseal.8 \
+    man/man8/tpm2_verifysignature.8 \
+    man/man8/tpm2_listpersistent.8
 
 if UNIT
 check_PROGRAMS = \
