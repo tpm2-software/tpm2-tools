@@ -1,0 +1,76 @@
+." Copyright (c) 2016, Intel Corporation
+." All rights reserved.
+."
+." Redistribution and use in source and binary forms, with or without
+." modification, are permitted provided that the following conditions are met:
+."
+." 1. Redistributions of source code must retain the above copyright notice,
+." this list of conditions and the following disclaimer.
+."
+." 2. Redistributions in binary form must reproduce the above copyright notice,
+." this list of conditions and the following disclaimer in the documentation
+." and/or other materials provided with the distribution.
+."
+." 3. Neither the name of Intel Corporation nor the names of its contributors
+." may be used to endorse or promote products derived from this software without
+." specific prior written permission.
+."
+." THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+." AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+." IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+." ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+." LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+." CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+." SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+." INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+." CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+." ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+." THE POSSIBILITY OF SUCH DAMAGE.
+.TH tpm2_encryptdecrypt 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.SH NAME
+tpm2_encryptdecrypt\ - performs symmetric encryption or decryption. keyHandle shall reference a
+symmetric cipher object.
+.SH SYNOPSIS
+.B tpm2_encryptdecrypt[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-keyHandle\fR|\fB\-\-keyContext\fR|\fB\-\-pwdk\fR|\fB\-\-decrypt\fR|\fB\-\-inFile\fR|\fB\-\-outFile\fR|\fB\-\-passwdInHex\fR|\fB ]
+.PP
+performs symmetric encryption or decryption. keyHandle shall reference a
+symmetric cipher object.
+.SH DESCRIPTION
+.B tpm2_encryptdecrypt
+performs symmetric encryption or decryption. keyHandle shall reference a
+symmetric cipher object.
+.SH OPTIONS
+.TP
+\fB\-k ,\-\-keyHandle\fR
+the symmetric key used for the operation  (encryption/decryption) 
+.TP
+\fB\-c ,\-\-keyContext\fR
+filename of the key context used for the  operation 
+.TP
+\fB\-P ,\-\-pwdk\fR
+the password of key, optional
+.TP
+\fB\-D ,\-\-decrypt\fR
+the operation type, default NO, optional  YES the operation is decryption   NO the operation is encryption 
+.TP
+\fB\-I ,\-\-inFile\fR
+Input file path, containing the data to be  operated 
+.TP
+\fB\-o ,\-\-outFile\fR
+Output file path, record the operated data
+.TP
+\fB\-X ,\-\-passwdInHex\fR
+passwords given by any options are hex format.
+@COMMON_OPTIONS_INCLUDE@
+@TCTI_OPTIONS_INCLUDE@
+.SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
+.SH EXAMPLES
+.B tpm2_encryptdecrypt
+.PP
+.nf
+.RS
+tpm2_encryptdecrypt -k 0x81010001 -P abc123 -D NO -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -c key.context -P abc123 -D NO -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -k 0x81010001 -P 123abca -X -D NO -I <filePath> -o <filePath>
+.RE
+.fi

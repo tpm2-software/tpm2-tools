@@ -1,0 +1,81 @@
+." Copyright (c) 2016, Intel Corporation
+." All rights reserved.
+."
+." Redistribution and use in source and binary forms, with or without
+." modification, are permitted provided that the following conditions are met:
+."
+." 1. Redistributions of source code must retain the above copyright notice,
+." this list of conditions and the following disclaimer.
+."
+." 2. Redistributions in binary form must reproduce the above copyright notice,
+." this list of conditions and the following disclaimer in the documentation
+." and/or other materials provided with the distribution.
+."
+." 3. Neither the name of Intel Corporation nor the names of its contributors
+." may be used to endorse or promote products derived from this software without
+." specific prior written permission.
+."
+." THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+." AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+." IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+." ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+." LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+." CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+." SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+." INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+." CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+." ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+." THE POSSIBILITY OF SUCH DAMAGE.
+.TH tpm2_listpcrs 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.SH NAME
+tpm2_listpcrs\ - display all PCR values in given algorithm with -g, display given PCR values
+in given algorithms with -L, or if no algorithm is given, output all algs.
+Output file just contains all returned PCR values in binary format and in
+0~23 order and in the requested order if multiple algs were requested. Assume
+the caller know the pcr value length corresponding to the given bank/algorithm.
+.SH SYNOPSIS
+.B tpm2_listpcrs[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-algorithim\fR|\fB\-\-output\fR|\fB\-\-selList\fR|\fB\-\-algs\fR|\fB ]
+.PP
+display all PCR values in given algorithm with -g, display given PCR values
+in given algorithms with -L, or if no algorithm is given, output all algs.
+Output file just contains all returned PCR values in binary format and in
+0~23 order and in the requested order if multiple algs were requested. Assume
+the caller know the pcr value length corresponding to the given bank/algorithm.
+.SH DESCRIPTION
+.B tpm2_listpcrs
+display all PCR values in given algorithm with -g, display given PCR values
+in given algorithms with -L, or if no algorithm is given, output all algs.
+Output file just contains all returned PCR values in binary format and in
+0~23 order and in the requested order if multiple algs were requested. Assume
+the caller know the pcr value length corresponding to the given bank/algorithm.
+.SH OPTIONS
+.TP
+\fB\-g ,\-\-algorithim\fR
+The algorithm id, optional  0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+.TP
+\fB\-o ,\-\-output\fR
+The file to hold the PCR values in binary  format, optional 
+.TP
+\fB\-L ,\-\-selList\fR
+The list of pcr banks and selected PCRs' ids   (0~23) for each bank 
+.TP
+\fB\-s ,\-\-algs\fR
+Show the supported algs in the PCR banks
+@COMMON_OPTIONS_INCLUDE@
+@TCTI_OPTIONS_INCLUDE@
+.SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
+.SH EXAMPLES
+.B tpm2_listpcrs
+.PP
+.nf
+.RS
+display all PCR values:  
+tpm2_listpcrs
+display the PCR values with specified bank:
+tpm2_listpcrs -g 0x04
+display the PCR values with specified banks and store in a file:
+tpm2_listpcrs -L 0x04:16,17,18+0x0b:16,17,18 -o pcrs
+display the supported algs in the PCR banks:
+tpm2_listpcrs -s
+.RE
+.fi
