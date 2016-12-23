@@ -41,7 +41,9 @@
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
-#include "common.h"
+
+#include "main.h"
+#include "options.h"
 
 int debugLevel = 0;
 TPMS_AUTH_COMMAND sessionData;
@@ -120,7 +122,7 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic)
     return 0;
 }
 
-int createPrimary(TPMI_RH_HIERARCHY hierarchy, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, int P_flag, int K_flag)
+int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, int P_flag, int K_flag)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -197,51 +199,15 @@ int createPrimary(TPMI_RH_HIERARCHY hierarchy, TPM2B_PUBLIC *inPublic, TPM2B_SEN
     return 0;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-A, --auth <o | p |...>  the authorization used to authorize thecommands\n"
-            "\to  TPM_RH_OWNER\n"
-            "\tp  TPM_RH_PLATFORM\n"
-            "\te  TPM_RH_ENDORSEMENT\n"
-            "\tn  TPM_RH_NULL\n"
-        "-P, --pwdp <string>      password for hierarchy, optional\n"
-        "-K, --pwdk <string>      password for key, optional\n"
-        "-g, --halg <sha1,...>    algorithm used for computing the Name of the object\n"
-            "\t0x0004  TPM_ALG_SHA1\n"
-            "\t0x000B  TPM_ALG_SHA256\n"
-            "\t0x000C  TPM_ALG_SHA384\n"
-            "\t0x000D  TPM_ALG_SHA512\n"
-            "\t0x0012  TPM_ALG_SM3_256\n"
-        "-G, --kalg <rsa,...>     algorithm associated with this object\n"
-            "\t0x0001  TPM_ALG_RSA\n"
-            "\t0x0008  TPM_ALG_KEYEDHASH\n"
-            "\t0x0023  TPM_ALG_ECC\n"
-            "\t0x0025  TPM_ALG_SYMCIPHER\n"
-        "-C, --context <filename> The file to save the object context, optional\n"
-        "-X, --passwdInHex        passwords given by any options are hex format.\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -A e -P abc123 -K def456 -g 0x000B -G 0x0008 \n"
-        "%s -A p -g 0x000B -G 0x0008\n\n"//-i <simulator IP>\n\n"
-        "%s -A e -P 1a1b1c -K 456def -X -g 0x000B -G 0x0008 \n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
-
-int main(int argc, char* argv[])
+int
+execute_tool (int               argc,
+              char             *argv[],
+              char             *envp[],
+              common_opts_t    *opts,
+              TSS2_SYS_CONTEXT *sapi_context)
 {
 
     char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
 
     TPM2B_SENSITIVE_CREATE  inSensitive;
     TPM2B_PUBLIC            inPublic;
@@ -253,16 +219,13 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvA:P:K:g:G:p:d:C:X";
+    const char *optstring = "A:P:K:g:G:d:C:X";
     static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
       {"auth",1,NULL,'A'},
       {"pwdp",1,NULL,'P'},
       {"pwdk",1,NULL,'K'},
       {"halg",1,NULL,'g'},
       {"kalg",1,NULL,'G'},
-      {"port",1,NULL,'p'},
       {"debugLevel",1,NULL,'d'},
       {"context",1,NULL,'C'},
       {"passwdInHex",0,NULL,'X'},
@@ -271,10 +234,7 @@ int main(int argc, char* argv[])
 
 
     int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        A_flag = 0,
+    int A_flag = 0,
         P_flag = 0,
         K_flag = 0,
         g_flag = 0,
@@ -282,22 +242,10 @@ int main(int argc, char* argv[])
         C_flag = 0;
     char *contextFile = NULL;
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
-    }
-
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)
         {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
         case 'A':
             if(strcmp(optarg,"o") == 0 || strcmp(optarg,"O") == 0)
                 hierarchy = TPM_RH_OWNER;
@@ -354,13 +302,6 @@ int main(int argc, char* argv[])
             printf("type = 0x%4.4x\n", type);
             G_flag = 1;
             break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -6;
-            }
-            break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
             {
@@ -398,31 +339,12 @@ int main(int argc, char* argv[])
 
     if(returnVal != 0)
         return returnVal;
-    flagCnt = h_flag + v_flag + A_flag + g_flag + G_flag;
-    if(flagCnt == 1)
+    if(A_flag == 1 && g_flag == 1 && G_flag == 1)
     {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -11;
-        }
-    }
-    else if(flagCnt == 3 && A_flag == 1 && g_flag == 1 && G_flag == 1)
-    {
-
-        prepareTest(hostName, port, debugLevel);
-
-        returnVal = createPrimary(hierarchy, &inPublic, &inSensitive, type, nameAlg, P_flag, K_flag);
+        returnVal = createPrimary(sapi_context, hierarchy, &inPublic, &inSensitive, type, nameAlg, P_flag, K_flag);
 
         if (returnVal == 0 && C_flag)
-            returnVal = saveTpmContextToFile(sysContext, handle2048rsa, contextFile);
-
-        finishTest();
-
+            returnVal = saveTpmContextToFile(sapi_context, handle2048rsa, contextFile);
         if(returnVal)
             return -12;
     }
