@@ -43,8 +43,8 @@ void
 showHelp (const char *name)
 {
     printf ("%s [--version|--help] TPM_RC\n"
-            "-h, --help\t\tDisplay help message\n"
             "-v, --version\t\tDisplay version info\n"
+            "-h, --help\t\tDisplay help message\n"
             "\nExample:\n"
             "Decode hex TPM return code: %s 0xffffffff\n", name, name);
 }
