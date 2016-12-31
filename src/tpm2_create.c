@@ -43,9 +43,9 @@
 #include <tcti/tcti_socket.h>
 #include "common.h"
 
+TSS2_SYS_CONTEXT *sysContext;
 TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
-int debugLevel = 0;
 
 int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag)
 {
@@ -216,51 +216,14 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     return 0;
 }
 
-void showHelp(const char *name)
+int
+execute_tool (int              argc,
+              char             *argv[],
+              char             *envp[],
+              common_opts_t    *opts,
+              TSS2_SYS_CONTEXT *sapi_context)
 {
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help             Display command tool usage info;\n"
-        "-v, --version          Display command tool version info\n"
-        "-H, --parent <handle>  parent handle\n"
-        "-c, --contextParent <filename> filename for parent context\n"
-        "-P, --pwdp   <string>  password for parent key, optional\n"
-        "-K, --pwdk   <string>  password for key, optional\n"
-        "-g, --halg   <hexAlg>  algorithm used for computing the Name of the object\n"
-            "\t0x0004  TPM_ALG_SHA1\n"
-            "\t0x000B  TPM_ALG_SHA256\n"
-            "\t0x000C  TPM_ALG_SHA384\n"
-            "\t0x000D  TPM_ALG_SHA512\n"
-            "\t0x0012  TPM_ALG_SM3_256\n"
-        "-G, --kalg   <hexAlg>  algorithm associated with this object\n"
-            "\t0x0001  TPM_ALG_RSA\n"
-            "\t0x0008  TPM_ALG_KEYEDHASH\n"
-            "\t0x0023  TPM_ALG_ECC\n"
-            "\t0x0025  TPM_ALG_SYMCIPHER\n"
-        "-A, --objectAttribute <hexAttributeDWord>  object attributes, optional\n"
-        "-I, --inFile          <dataFileToBeSealed>  data file to be sealed, optional\n"
-        "-L, --pol <policyFile>         the input policy file, optional\n"
-        "-o, --opu <publicKeyFileName>  the output file which contains the public key, optional\n"
-        "-O, --opr <privateKeyFileName> the output file which contains the private key, optional\n"
-        "-X, --passwdInHex              passwords given by any options are hex format.\n"
-
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -H 0x80000000 -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File\n"
-        "%s -H 0x80000000 -g 0x000B -G 0x0008 -I data.File -o opu.File -O opr.File\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -H 0x80000000 -P 123abc -K 456def -X -g 0x000B -G 0x0008 -I data.File -o opu.File\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
-
-int main(int argc, char* argv[])
-{
-
+    sysContext = sapi_context;
     char hostName[200] = DEFAULT_HOSTNAME;
     int port = DEFAULT_RESMGR_TPM_PORT;
 
@@ -279,10 +242,8 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:P:K:g:G:A:I:L:o:O:p:d:c:X";
+    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:X";
     static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
       {"pwdk",1,NULL,'K'},
@@ -295,17 +256,13 @@ int main(int argc, char* argv[])
       {"opr",1,NULL,'O'},
       {"contextParent",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
       {0,0,0,0}
     };
 
 
     int returnVal = 0;
     int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        H_flag = 0,
+    int H_flag = 0,
         P_flag = 0,
         K_flag = 0,
         g_flag = 0,
@@ -317,22 +274,11 @@ int main(int argc, char* argv[])
         c_flag = 0,
         O_flag = 0/*,
         f_flag = 0*/;
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
-    }
 
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)
         {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
         case 'H':
             if(getSizeUint32Hex(optarg,&parentHandle) != 0)
             {
@@ -440,20 +386,6 @@ int main(int argc, char* argv[])
         case 'X':
             hexPasswd = true;
             break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -12;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -13;
-            }
-            break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
             returnVal = -14;
@@ -483,29 +415,18 @@ int main(int argc, char* argv[])
 
     *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
 
-    flagCnt = h_flag + v_flag + H_flag + g_flag + G_flag + c_flag ;
+    flagCnt = H_flag + g_flag + G_flag + c_flag ;
     if(flagCnt == 1)
     {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -16;
-        }
+        showArgMismatch(argv[0]);
+        return -16;
     }
     else if(flagCnt == 3 && (H_flag == 1 || c_flag == 1) && g_flag == 1 && G_flag == 1)
     {
-        prepareTest(hostName, port, debugLevel);
-
         if(c_flag)
             returnVal = loadTpmContextFromFile(sysContext, &parentHandle, contextParentFilePath);
         if(returnVal == 0)
             returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes);
-
-        finishTest();
 
         if(returnVal)
             return -17;

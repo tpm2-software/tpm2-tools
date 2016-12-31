@@ -40,6 +40,7 @@ TESTS = $(check_PROGRAMS)
 
 noinst_LIBRARIES = src/libcommon.a
 sbin_PROGRAMS = \
+    src/tpm2_create \
     src/tpm2_createprimary \
     src/tpm2_send_command \
     src/tpm2_dump_capability \
@@ -74,7 +75,6 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 		  src/tpm2_nvwrite \
 		  src/tpm2_nvdefine \
 		  src/tpm2_nvrelease \
-		  src/tpm2_create \
 		  src/tpm2_hmac \
 		  src/tpm2_certify \
 		  src/tpm2_readpublic \
@@ -166,7 +166,6 @@ src_tpm2_nvreadlock_SOURCES = src/tpm2_nvreadlock.c
 src_tpm2_nvwrite_SOURCES = src/tpm2_nvwrite.c
 src_tpm2_nvdefine_SOURCES = src/tpm2_nvdefine.c
 src_tpm2_nvrelease_SOURCES = src/tpm2_nvrelease.c
-src_tpm2_create_SOURCES = src/tpm2_create.c
 src_tpm2_hmac_SOURCES = src/tpm2_hmac.c
 src_tpm2_certify_SOURCES = src/tpm2_certify.c
 src_tpm2_readpublic_SOURCES = src/tpm2_readpublic.c
@@ -182,6 +181,7 @@ src_tpm2_unseal_SOURCES = src/tpm2_unseal.c
 src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.c
 src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.c
 endif
+src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
 src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
