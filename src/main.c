@@ -33,6 +33,7 @@
 #include "context-util.h"
 #include "main.h"
 #include "common.h"
+#include "log.h"
 
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
@@ -53,9 +54,9 @@ main (int   argc,
      * Get common options and reset getopt global variables. This allows the
      * tools to use getopt as they normally would.
      */
-    get_common_opts (argc, argv, &opts);
+    get_common_opts (&argc, &argv, &opts);
     opterr = 0;
-    optind = 0;
+    optind = 1;
     switch (sanity_check_common (&opts)) {
     case 1:
         execute_man (argv[0], envp);
@@ -68,6 +69,9 @@ main (int   argc,
         showVersion (argv[0]);
         exit (0);
     }
+    if (opts.verbose)
+        log_set_level(log_level_verbose);
+
     sapi_context = sapi_init_from_options (&opts);
     if (sapi_context == NULL)
         exit (1);
@@ -76,6 +80,11 @@ main (int   argc,
      * 'main'.
      */
     ret = execute_tool (argc, argv, envp, &opts, sapi_context);
+    /*
+     * Cleanup contexts & memmory allocated for the modified argument vector
+     * passed to execute_tool.
+     */
     sapi_teardown_full (sapi_context);
+    free (argv);
     exit (ret);
 }

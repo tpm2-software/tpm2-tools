@@ -99,11 +99,33 @@ typedef struct {
 
 /* functions to get common options from the user and to print helpful stuff */
 void        dump_common_opts           (common_opts_t        *opts);
-int         get_common_opts            (int                   argc,
-                                        char                 *argv[],
+int         get_common_opts            (int                  *argc,
+                                        char                 **argv[],
                                         common_opts_t        *common_opts);
 int         sanity_check_common        (common_opts_t        *opts);
 void        execute_man                (char                 *cmd_name,
                                         char                 *envp[]);
+
+/* inline functions to print messages related to option processing*/
+static inline void
+showArgError (const char *arg,
+              const char *name)
+{
+    printf("Argument error: %s\n",arg);
+    printf("Please type \"%s -h\" get the usage!\n", name);
+}
+
+static inline void
+showArgMismatch (const char *name)
+{
+    printf("Argument mismatched!\n");
+    printf("Please type \"%s -h\" get the usage!\n", name);
+}
+
+static inline void
+showVersion (const char *name)
+{
+    printf("%s, version %s\n", name, VERSION);
+}
 
 #endif /* OPTIONS_H */

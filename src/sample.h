@@ -316,8 +316,6 @@ UINT32 TpmHash( TPMI_ALG_HASH hashAlg, UINT16 size, BYTE *data, TPM2B_DIGEST *re
 
 UINT32 TpmHandleToName( TPM_HANDLE handle, TPM2B_NAME *name );
 
-int TpmClientPrintf( UINT8 type, const char *format, ...);
-
 void OpenOutFile( FILE **outFp );
 
 void CloseOutFile( FILE **outFp );

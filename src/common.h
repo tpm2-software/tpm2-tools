@@ -31,6 +31,10 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "files.h"
+#include "options.h"
+#include "string-bytes.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,49 +42,19 @@ extern "C" {
 extern TSS2_SYS_CONTEXT *sysContext;
 
 void copyData( UINT8 *to, UINT8 *from, UINT32 length );
-int TpmClientPrintf( UINT8 type, const char *format, ...);
 int CompareTPM2B( TPM2B *buffer1, TPM2B *buffer2 );
 void PrintSizedBufferOpen( TPM2B *sizedBuffer );
 void PrintSizedBuffer( TPM2B *sizedBuffer );
 void ErrorHandler( UINT32 rval );
 int prepareTest(const char *hostName, const int port, int debugLevel);
 void finishTest();
-int getSizeUint16(const char *arg, UINT16 *num);
-int getSizeUint16Hex(const char *arg, UINT16 *num);
-int getSizeUint32(const char *arg, UINT32 *num);
-int getSizeUint32Hex(const char *arg, UINT32 *num);
 int getPcrId(const char *arg, UINT32 *num);
-int str2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
-int hex2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
-int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size);
-int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size);
-int saveTpmContextToFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle, const char *fileName);
-int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, const char *fileName);
 int computeDataHash(BYTE *buffer, UINT16 length, TPMI_ALG_HASH halg, TPM2B_DIGEST *result);
-int checkOutFile(const char *path);
-int getFileSize(const char *path, long *fileSize);
 int getPort(const char *arg, int *port);
 int getDebugLevel(const char *arg, int *dl);
 int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels);
 int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
 int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
-
-static inline void showArgError(const char *arg, const char *name)
-{
-    printf("Argument error: %s\n",arg);
-    printf("Please type \"%s -h\" get the usage!\n", name);
-}
-
-static inline void showArgMismatch(const char *name)
-{
-    printf("Argument mismatched!\n");
-    printf("Please type \"%s -h\" get the usage!\n", name);
-}
-
-static inline void showVersion(const char *name)
-{
-    printf("%s, version %s\n", name, VERSION);
-}
 
 #ifdef __cplusplus
 }
