@@ -44,8 +44,6 @@ TPM_RC AddSession( SESSION_LIST_ENTRY **sessionEntry )
 {
     SESSION_LIST_ENTRY **newEntry;
     
-//    TpmClientPrintf( 0, "In AddSession\n" );
-
     // find end of list.
     for( newEntry = &sessionsList; *newEntry != 0; *newEntry = ( (SESSION_LIST_ENTRY *)*newEntry)->nextEntry )
         ;
@@ -71,8 +69,6 @@ void DeleteSession( SESSION *session )
     SESSION_LIST_ENTRY *predSession;
     void *newNextEntry;
 
-//    TpmClientPrintf( 0, "In DeleteSession\n" );
-    
     if( session == &sessionsList->session )
         sessionsList = 0;
     else
@@ -102,8 +98,6 @@ TPM_RC GetSessionStruct( TPMI_SH_AUTH_SESSION sessionHandle, SESSION **session )
     TPM_RC rval = TSS2_APP_RC_GET_SESSION_STRUCT_FAILED;
     SESSION_LIST_ENTRY *sessionEntry;
 
-    TpmClientPrintf( 0, "In GetSessionStruct\n" );
-
     if( session != 0 )
     {
         //
@@ -128,8 +122,6 @@ TPM_RC GetSessionAlgId( TPMI_SH_AUTH_SESSION sessionHandle, TPMI_ALG_HASH *sessi
     TPM_RC rval = TSS2_APP_RC_GET_SESSION_ALG_ID_FAILED;
     SESSION *session;
 
-    TpmClientPrintf( 0, "In GetSessionAlgId\n" );
-    
     rval = GetSessionStruct( sessionHandle, &session );
 
     if( rval == TSS2_RC_SUCCESS )

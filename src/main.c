@@ -33,6 +33,7 @@
 #include "context-util.h"
 #include "main.h"
 #include "common.h"
+#include "log.h"
 
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
@@ -68,6 +69,9 @@ main (int   argc,
         showVersion (argv[0]);
         exit (0);
     }
+    if (opts.verbose)
+        log_set_level(log_level_verbose);
+
     sapi_context = sapi_init_from_options (&opts);
     if (sapi_context == NULL)
         exit (1);

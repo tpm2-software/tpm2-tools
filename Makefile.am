@@ -47,7 +47,8 @@ sbin_PROGRAMS = \
 COMMON_SRC = \
     src/context-util.c \
     src/options.c \
-    src/tpm2-header.c
+    src/tpm2-header.c \
+    src/log.c
 
 # The tools within this conditional are hard coded to the socket TCTI.
 # As they're migrated to support dynamic TCTI configuration they should be
@@ -90,7 +91,6 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 
 COMMON_SRC += \
     src/common.c \
-    src/debug.c \
     src/syscontext.c \
     src/CatSizedByteBuffer.c \
     src/CopySizedBuffer.c \
