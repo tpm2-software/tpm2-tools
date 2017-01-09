@@ -33,6 +33,7 @@
 
 #include "files.h"
 #include "options.h"
+#include "pcr.h"
 #include "string-bytes.h"
 
 #ifdef __cplusplus
@@ -48,14 +49,10 @@ void PrintSizedBuffer( TPM2B *sizedBuffer );
 void ErrorHandler( UINT32 rval );
 int prepareTest(const char *hostName, const int port, int debugLevel);
 void finishTest();
-int getPcrId(const char *arg, UINT32 *num);
 /* please use tpm_hash_compute_data instead of computeDataHash, last user please delete */
 int computeDataHash(BYTE *buffer, UINT16 length, TPMI_ALG_HASH halg, TPM2B_DIGEST *result) __attribute__((deprecated));
 int getPort(const char *arg, int *port);
 int getDebugLevel(const char *arg, int *dl);
-int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels);
-int parsePCRSelection(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
-int parsePCRList(const char *str, int len, TPMS_PCR_SELECTION *pcrSel);
 
 #ifdef __cplusplus
 }

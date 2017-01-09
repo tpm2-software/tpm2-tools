@@ -45,6 +45,7 @@ sbin_PROGRAMS = \
     src/tpm2_load \
     src/tpm2_send_command \
     src/tpm2_dump_capability \
+    src/tpm2_listpcrs \
     src/tpm2_listpersistent \
     src/tpm2_startup \
     src/tpm2_rc_decode \
@@ -53,8 +54,9 @@ sbin_PROGRAMS = \
 COMMON_SRC = \
     src/context-util.c \
     src/files.c \
-    src/options.c \
     src/log.c \
+    src/options.c \
+    src/pcr.c \
     src/string-bytes.c \
     src/tpm2-header.c \
     src/tpm_hash.c
@@ -64,7 +66,7 @@ COMMON_SRC = \
 # removed from this block and added directly to the sbin_PROGRAMS variable
 # above.
 if HAVE_TCTI_SOCK
-sbin_PROGRAMS += src/tpm2_listpcrs \
+sbin_PROGRAMS += \
 		  src/tpm2_quote \
 		  src/tpm2_takeownership \
 		  src/tpm2_getpubek \
@@ -150,7 +152,6 @@ man8_MANS = \
 
 src_libcommon_a_SOURCES = $(COMMON_SRC)
 if HAVE_TCTI_SOCK
-src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.c
 src_tpm2_quote_SOURCES = src/tpm2_quote.c
 src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.c
 src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.c
@@ -183,6 +184,7 @@ endif
 src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
 src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
+src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.c src/main.c
 src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.c src/main.c
 src_tpm2_load_SOURCES = src/tpm2_load.c src/main.c
 src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
