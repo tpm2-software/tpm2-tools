@@ -35,19 +35,10 @@
 #include <sapi/tpm20.h>
 
 #include "common.h"
+#include "log.h"
 #include "rc-decode.h"
 
 #define TPM_RC_MAX 0xffffffff
-
-void
-showHelp (const char *name)
-{
-    printf ("%s [--version|--help] TPM_RC\n"
-            "-h, --help\t\tDisplay help message\n"
-            "-v, --version\t\tDisplay version info\n"
-            "\nExample:\n"
-            "Decode hex TPM return code: %s 0xffffffff\n", name, name);
-}
 
 TPM_RC
 str_to_tpm_rc (const char *rc_str)
@@ -57,7 +48,7 @@ str_to_tpm_rc (const char *rc_str)
 
     rc_read = strtoumax (rc_str, &end_ptr, 0);
     if (rc_read > TPM_RC_MAX) {
-        fprintf (stderr, "invalid TPM_RC\n");
+        LOG_ERR("invalid TPM_RC");
         exit (1);
     }
     /* apply the TPM_RC_MAX mask to the possibly larger uintmax_t */
@@ -66,7 +57,8 @@ str_to_tpm_rc (const char *rc_str)
 
 int
 process_cmdline (int   argc,
-                 char *argv[])
+                 char *argv[],
+                 char *envp[])
 {
     int opt = -1;
     const char *optstring = "hv";
@@ -80,7 +72,7 @@ process_cmdline (int   argc,
         switch (opt)
         {
             case 'h':
-                showHelp (argv[0]);
+                execute_man (argv[0], envp);
                 exit (0);
             case 'v':
                 showVersion (argv[0]);
@@ -103,7 +95,7 @@ print_tpm_rc_format_zero (TPM_RC rc)
 
     rc_tmp = tpm2_rc_get_code_7bit (rc);
     if (tpm2_rc_is_vendor_defined (rc)) {
-        fprintf (stderr, "vendor defined TPM_RCs are not supported\n");
+        LOG_ERR("vendor defined TPM_RCs are not supported");
         return -1;
     } else if (tpm2_rc_is_warning_code (rc)) {
         entry = tpm2_get_warn_entry (rc_tmp);
@@ -122,10 +114,10 @@ print_tpm_rc_format_zero (TPM_RC rc)
         else
             printf ("failed to decode TPM_RC error: 0x%02x\n", rc_tmp);
     } else if (tpm2_rc_is_tpm12 (rc_tmp)) {
-        fprintf (stderr, "version 1.2 TPM_RCs are not supproted\n");
+        LOG_ERR("version 1.2 TPM_RCs are not supported");
         return -1;
     } else {
-        fprintf (stderr, "Unknown TPM_RC format\n");
+        LOG_ERR("Unknown TPM_RC format");
         return -1;
     }
     /* decode warning / error code */
@@ -243,7 +235,7 @@ print_tpm_rc_tpm_error_code (TPM_RC rc)
     else if (tpm2_rc_is_format_one (rc))
         print_tpm_rc_format_one (rc);
     else {
-        fprintf (stderr, "Unknown TPM_RC format\n");
+        LOG_ERR("Unknown TPM_RC format");
         return -1;
     }
 }
@@ -255,7 +247,7 @@ print_tpm_rc (TPM_RC rc)
     int ret;
     TPM_RC rc_tmp;
 
-    /* determin which layer in the stack produced the error */
+    /* Determine which layer in the stack produced the error */
     rc_tmp = tpm2_rc_get_layer (rc);
     ret = print_tpm_rc_tss_layer (rc);
     switch (rc_tmp) {
@@ -275,14 +267,14 @@ print_tpm_rc (TPM_RC rc)
 }
 
 int
-main (int argc, char *argv[])
+main (int argc, char *argv[], char *envp[])
 {
     TPM_RC rc = 0;
     int pos_ind = -1, ret = -1;
 
-    pos_ind = process_cmdline (argc, argv);
+    pos_ind = process_cmdline (argc, argv, envp);
     if (pos_ind + 1 != argc) {
-        printf ("No error code provided, try --help\n");
+        LOG_ERR ("No error code provided, try --help");
         exit (1);
     }
     rc = str_to_tpm_rc (argv[pos_ind]);
