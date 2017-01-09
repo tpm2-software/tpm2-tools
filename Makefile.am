@@ -44,7 +44,8 @@ sbin_PROGRAMS = \
     src/tpm2_createprimary \
     src/tpm2_send_command \
     src/tpm2_dump_capability \
-    src/tpm2_startup
+    src/tpm2_startup \
+    src/tpm2_rc_decode
 
 COMMON_SRC = \
     src/context-util.c \
@@ -88,8 +89,7 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 		  src/tpm2_sign \
 		  src/tpm2_unseal \
 		  src/tpm2_verifysignature \
-		  src/tpm2_listpersistent \
-		  src/tpm2_rc_decode
+		  src/tpm2_listpersistent
 
 COMMON_SRC += \
     src/common.c \
@@ -144,7 +144,8 @@ man8_MANS = \
     man/man8/tpm2_sign.8 \
     man/man8/tpm2_unseal.8 \
     man/man8/tpm2_verifysignature.8 \
-    man/man8/tpm2_listpersistent.8
+    man/man8/tpm2_listpersistent.8 \
+    man/man8/tpm2_rc_decode.8
 
 src_libcommon_a_SOURCES = $(COMMON_SRC)
 if HAVE_TCTI_SOCK
@@ -184,9 +185,11 @@ endif
 src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
 src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
-src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
 src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
 src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
+
+# rc_decode does not use common main, since it does not need a dynamic TCTI.
+src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
 
 if UNIT
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
