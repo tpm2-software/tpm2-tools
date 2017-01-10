@@ -81,7 +81,7 @@ main (int   argc,
      */
     ret = execute_tool (argc, argv, envp, &opts, sapi_context);
     /*
-     * Cleanup contexts & memmory allocated for the modified argument vector
+     * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
      */
     sapi_teardown_full (sapi_context);
