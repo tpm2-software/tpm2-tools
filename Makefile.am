@@ -44,6 +44,7 @@ sbin_PROGRAMS = \
     src/tpm2_createprimary \
     src/tpm2_send_command \
     src/tpm2_dump_capability \
+    src/tpm2_listpersistent \
     src/tpm2_startup \
     src/tpm2_rc_decode
 
@@ -88,8 +89,7 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 		  src/tpm2_rsaencrypt \
 		  src/tpm2_sign \
 		  src/tpm2_unseal \
-		  src/tpm2_verifysignature \
-		  src/tpm2_listpersistent
+		  src/tpm2_verifysignature
 
 COMMON_SRC += \
     src/common.c \
@@ -180,11 +180,11 @@ src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.c
 src_tpm2_sign_SOURCES = src/tpm2_sign.c
 src_tpm2_unseal_SOURCES = src/tpm2_unseal.c
 src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.c
-src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.c
 endif
 src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
 src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
+src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.c src/main.c
 src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
 src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
 

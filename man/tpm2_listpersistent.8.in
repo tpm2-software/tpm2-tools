@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_listpersistent\ - display all defined persistent objects.
 .SH SYNOPSIS
-.B tpm2_listpersistent[ COMMON OPTIONS ] [ TCTI OPTIONS ]
+.B tpm2_listpersistent [ COMMON OPTIONS ] [ TCTI OPTIONS ]
 .PP
 display all defined persistent objects.
 .SH DESCRIPTION
@@ -39,7 +39,8 @@ display all defined persistent objects.
 .SH OPTIONS
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
-.SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
+.SH ENVIRONMENT
+@TCTI_ENVIRONMENT_INCLUDE@
 .SH EXAMPLES
 .B tpm2_listpersistent
 .PP

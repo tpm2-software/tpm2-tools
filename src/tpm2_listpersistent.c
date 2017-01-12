@@ -76,13 +76,18 @@ int readPublic(TPMI_DH_OBJECT objectHandle)
     return 0;
 }
 
-int listPersistent()
+int
+execute_tool (int              argc,
+              char             *argv[],
+              char             *envp[],
+              common_opts_t    *opts,
+              TSS2_SYS_CONTEXT *sapi_context)
 {
     TPMI_YES_NO moreData;
     TPMS_CAPABILITY_DATA capabilityData;
     UINT32 rval;
 
-    rval = Tss2_Sys_GetCapability( sysContext, 0, TPM_CAP_HANDLES,
+    rval = Tss2_Sys_GetCapability( sapi_context, 0, TPM_CAP_HANDLES,
                                    CHANGE_ENDIAN_DWORD(TPM_HT_PERSISTENT),
                                    TPM_PT_HR_PERSISTENT, &moreData,
                                    &capabilityData, 0 );
@@ -90,7 +95,7 @@ int listPersistent()
     {
         printf("\n......GetCapability: Get persistent object list Error."
                " TPM Error:0x%x......\n", rval);
-        return -1;
+        return 1;
     }
 
     printf( "%d persistent objects defined.\n", capabilityData.data.handles.count);
@@ -99,91 +104,9 @@ int listPersistent()
     {
         printf("\n  %d. Persistent handle: 0x%x\n", i, capabilityData.data.handles.handle[i]);
         if(readPublic(capabilityData.data.handles.handle[i]))
-            return -2;
+            return 2;
     }
     printf("\n");
-
-    return 0;
-}
-
-void showHelp(const char *name)
-{
-    printf("Usage: %s [-h/--help]\n"
-           "   or: %s [-v/--version]\n"
-           "   or: %s\n"
-           "   or: %s [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
-           "\nwhere:\n\n"
-           "   -h/--help                       display this help and exit.\n"
-           "   -v/--version                    display version information and exit.\n"
-           "   -p/--port <port>                specifies the port number, default %d, optional\n"
-           "   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:\n"
-           "                                     0 (high level test results)\n"
-           "                                     1 (test app send/receive byte streams)\n"
-           "                                     2 (resource manager send/receive byte streams)\n"
-           "                                     3 (resource manager tables)\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT);
-}
-
-int main(int argc, char *argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-    int opt = -1;
-    int returnVal = 0;
-
-    struct option sOptions[] =
-    {
-        { "port"     , required_argument, NULL, 'p' },
-        { "dbg"      , required_argument, NULL, 'd' },
-        { "help"     , no_argument,       NULL, 'h' },
-        { "version"  , no_argument,       NULL, 'v' },
-        { 0          , 0,                    0,  0  },
-    };
-
-    if( argc > (int)(2*sizeof(sOptions)/sizeof(struct option)) )
-    {
-        showArgMismatch(argv[0]);
-        return -1;
-    }
-
-    while( ( opt = getopt_long(argc, argv, "p:d:hv", sOptions, NULL) ) != -1 )
-    {
-        switch(opt)
-        {
-        case 'h':
-        case '?':
-            showHelp(argv[0]);
-            return 0;
-        case 'v':
-            showVersion(argv[0]);
-            return 0;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                return -2;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                return -3;
-            }
-            break;
-        default:
-            break;
-        }
-    };
-
-    prepareTest(hostName, port, debugLevel);
-
-    returnVal = listPersistent();
-
-    finishTest();
-
-    if(returnVal)
-        return -4;
 
     return 0;
 }
