@@ -48,7 +48,13 @@ TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
 int debugLevel = 0;
 
-int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inPrivate, const char *outFileName, int P_flag)
+int
+load (TSS2_SYS_CONTEXT *sapi_context,
+      TPMI_DH_OBJECT    parentHandle,
+      TPM2B_PUBLIC     *inPublic,
+      TPM2B_PRIVATE    *inPrivate,
+      const char       *outFileName,
+      int               P_flag)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -87,7 +93,14 @@ int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inP
         }
     }
 
-    rval = Tss2_Sys_Load(sysContext, parentHandle, &sessionsData, inPrivate , inPublic, &handle2048rsa, &nameExt, &sessionsDataOut);
+    rval = Tss2_Sys_Load (sapi_context,
+                          parentHandle,
+                          &sessionsData,
+                          inPrivate,
+                          inPublic,
+                          &handle2048rsa,
+                          &nameExt,
+                          &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
         printf("\nLoad Object Failed ! ErrorCode: 0x%0x\n\n",rval);
@@ -101,40 +114,13 @@ int load(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_PRIVATE *inP
     return 0;
 }
 
-void showHelp(const char *name)
+int
+execute_tool (int              argc,
+              char             *argv[],
+              char             *envp[],
+              common_opts_t    *opts,
+              TSS2_SYS_CONTEXT *sapi_context)
 {
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-H, --parent    <parentHandle>        parent handle\n"
-        "-c, --contextParent <filename>        filename for parent context\n"
-        "-P, --pwdp      <parentKeyPassword>   parent key password, optional\n"
-        "-u, --pubfile   <publicKeyFileName>   The public portion of the object\n"
-        "-r, --privfile  <privateKeyFileName>  The sensitive portion of the object\n"
-        "-n, --name      <outPutFilename>      Output file name, containing the name structure\n"
-        "-C, --context <filename>   The file to save the object context, optional"
-        "-X, --passwdInHex          passwords given by any options are hex format.\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -H 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>\n"
-        "%s -H 0x80000000 -u <pubKeyFileName>  -r <privKeyFileName> -n <outPutFileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -H 0x80000000 -P 123abc -X -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
-
-int main(int argc, char* argv[])
-{
-
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;//DEFAULT_TPM_PORT;
-
     TPMI_DH_OBJECT parentHandle;
     TPM2B_PUBLIC  inPublic;
     TPM2B_PRIVATE inPrivate;
@@ -150,17 +136,13 @@ int main(int argc, char* argv[])
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "hvH:P:u:r:n:p:d:C:c:X";
+    const char *optstring = "H:P:u:r:n:C:c:X";
     static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
       {"pubfile",1,NULL,'u'},
       {"privfile",1,NULL,'r'},
       {"name",1,NULL,'n'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
       {"context",1,NULL,'C'},
       {"contextParent",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
@@ -169,9 +151,7 @@ int main(int argc, char* argv[])
 
     int returnVal = 0;
     int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        H_flag = 0,
+    int H_flag = 0,
         P_flag = 0,
         u_flag = 0,
         r_flag = 0,
@@ -179,22 +159,10 @@ int main(int argc, char* argv[])
         C_flag = 0,
         n_flag = 0;
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
-    }
-
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)
         {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
         case 'H':
             if(getSizeUint32Hex(optarg, &parentHandle) != 0)
             {
@@ -240,13 +208,6 @@ int main(int argc, char* argv[])
                 break;
             }
             n_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -6;
-            }
             break;
         case 'd':
             if( getDebugLevel(optarg, &debugLevel) )
@@ -296,33 +257,27 @@ int main(int argc, char* argv[])
     if(returnVal != 0)
         return returnVal;
 
-    flagCnt = h_flag + v_flag + H_flag + u_flag +r_flag + n_flag + c_flag;
-    if(flagCnt == 1)
+    flagCnt = H_flag + u_flag +r_flag + n_flag + c_flag;
+    if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
     {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -12;
+        if(c_flag) {
+            returnVal = loadTpmContextFromFile (sapi_context,
+                                                &parentHandle,
+                                                contextParentFilePath);
         }
-    }
-    else if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
-    {
-
-        prepareTest(hostName, port, debugLevel);
-
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &parentHandle, contextParentFilePath);
-        if (returnVal == 0)
-            returnVal = load(parentHandle, &inPublic, &inPrivate,outFilePath, P_flag);
-        if (returnVal == 0 && C_flag)
-            returnVal = saveTpmContextToFile(sysContext, handle2048rsa, contextFile);
-
-        finishTest();
-
+        if (returnVal == 0) {
+            returnVal = load (sapi_context,
+                              parentHandle,
+                              &inPublic,
+                              &inPrivate,
+                              outFilePath,
+                              P_flag);
+        }
+        if (returnVal == 0 && C_flag) {
+            returnVal = saveTpmContextToFile (sapi_context,
+                                              handle2048rsa,
+                                              contextFile);
+        }
         if(returnVal)
             return -13;
     }

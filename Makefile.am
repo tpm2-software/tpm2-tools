@@ -42,6 +42,7 @@ noinst_LIBRARIES = src/libcommon.a
 sbin_PROGRAMS = \
     src/tpm2_create \
     src/tpm2_createprimary \
+    src/tpm2_load \
     src/tpm2_send_command \
     src/tpm2_dump_capability \
     src/tpm2_startup \
@@ -82,7 +83,6 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 		  src/tpm2_getrandom \
 		  src/tpm2_encryptdecrypt \
 		  src/tpm2_evictcontrol \
-		  src/tpm2_load \
 		  src/tpm2_loadexternal \
 		  src/tpm2_rsadecrypt \
 		  src/tpm2_rsaencrypt \
@@ -173,7 +173,6 @@ src_tpm2_readpublic_SOURCES = src/tpm2_readpublic.c
 src_tpm2_getrandom_SOURCES = src/tpm2_getrandom.c
 src_tpm2_encryptdecrypt_SOURCES = src/tpm2_encryptdecrypt.c
 src_tpm2_evictcontrol_SOURCES = src/tpm2_evictcontrol.c
-src_tpm2_load_SOURCES = src/tpm2_load.c
 src_tpm2_loadexternal_SOURCES = src/tpm2_loadexternal.c
 src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.c
 src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.c
@@ -185,6 +184,7 @@ endif
 src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
 src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
+src_tpm2_load_SOURCES = src/tpm2_load.c src/main.c
 src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
 src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
 
