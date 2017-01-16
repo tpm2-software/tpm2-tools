@@ -46,7 +46,6 @@
 TPM_HANDLE handle2048rsa;
 TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
-int debugLevel = 0;
 
 int
 load (TSS2_SYS_CONTEXT *sapi_context,
@@ -208,13 +207,6 @@ execute_tool (int              argc,
                 break;
             }
             n_flag = 1;
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -7;
-            }
             break;
         case 'c':
             contextParentFilePath = optarg;

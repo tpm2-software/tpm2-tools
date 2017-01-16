@@ -45,7 +45,8 @@
 
 int debugLevel = 0;
 
-int readPublic(TPMI_DH_OBJECT objectHandle)
+int readPublic(TSS2_SYS_CONTEXT *sapi_context,
+               TPMI_DH_OBJECT    objectHandle)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -60,7 +61,7 @@ int readPublic(TPMI_DH_OBJECT objectHandle)
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
 
-    rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
+    rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
         printf("\nTPM2_ReadPublic error: rval = 0x%0x\n\n",rval);
@@ -103,7 +104,7 @@ execute_tool (int              argc,
     for( i=0; i < capabilityData.data.handles.count; i++ )
     {
         printf("\n  %d. Persistent handle: 0x%x\n", i, capabilityData.data.handles.handle[i]);
-        if(readPublic(capabilityData.data.handles.handle[i]))
+        if(readPublic(sapi_context, capabilityData.data.handles.handle[i]))
             return 2;
     }
     printf("\n");
