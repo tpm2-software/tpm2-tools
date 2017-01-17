@@ -37,6 +37,14 @@ script:
   - ../configure --enable-unit
   - make -j$(nproc)
   - make -j$(nproc) check
+  - make -j$(nproc) clean
+  - ../configure --enable-unit --without-tcti-socket
+  - make -j$(nproc)
+  - make -j$(nproc) check
+  - make -j$(nproc) clean
+  - ../configure --enable-unit --without-tcti-device
+  - make -j$(nproc)
+  - make -j$(nproc) check
   - popd
   - pushd ./test/system
   - PATH=$(pwd)/../../build/src:${PATH} ./test_all.sh
