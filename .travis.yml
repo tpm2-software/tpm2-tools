@@ -37,8 +37,7 @@ script:
   - ../configure --enable-unit
   - make -j$(nproc)
   - make -j$(nproc) check
-  - sudo make install
   - popd
   - pushd ./test/system
-  - ./test_all.sh
+  - PATH=$(pwd)/../../build/src:${PATH} ./test_all.sh
   - popd
