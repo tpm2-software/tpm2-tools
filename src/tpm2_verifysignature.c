@@ -41,14 +41,39 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 #include "common.h"
+#include "log.h"
+#include "tpm_hash.h"
 
-int debugLevel = 0;
-BYTE *msg = NULL;
-UINT16 msgLen = 0;
-TPM2B_DIGEST msgHash = { { sizeof(TPM2B_DIGEST)-2, } };
+typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
+struct tpm2_verifysig_ctx {
+    struct {
+        union {
+            struct {
+                uint8_t key_handle :1;
+                uint8_t digest :1;
+                uint8_t halg :1;
+                uint8_t msg :1;
+                uint8_t raw :1;
+                uint8_t sig :1;
+                uint8_t ticket :1;
+                uint8_t key_context :1;
+            };
+            uint8_t all;
+        };
+    } flags;
+    TPMI_ALG_HASH halg;
+    TPM2B_DIGEST msgHash;
+    TPMI_DH_OBJECT keyHandle;
+    TPMT_SIGNATURE signature;
+    char *msg_file_path;
+    char *sig_file_path;
+    char *out_file_path;
+    char *context_key_file_path;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-int verifySignature(TPMI_DH_OBJECT keyHandle, int D_flag, TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature, const char *outFilePath)
-{
+static bool verify_signature(tpm2_verifysig_ctx *ctx) {
+
     UINT32 rval;
     TPMT_TK_VERIFIED validation;
 
@@ -60,350 +85,285 @@ int verifySignature(TPMI_DH_OBJECT keyHandle, int D_flag, TPMI_ALG_HASH halg, TP
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
 
-    printf("\nTPM2_VerifySignature TESTS:\n");
-
-    if(D_flag == 0)
-    {
-        if(computeDataHash(msg, msgLen, halg, &msgHash))
-        {
-            printf("Compute message hash failed !\n");
-            return -1;
-        }
-        printf("\nVerifySignature: computing message hash succeeded!\n");
-    }
-
-    printf("\nmsgHash(hex type):\n ");
     UINT16 i;
-    for(i = 0; i < msgHash.t.size; i++)
-        printf("%02x ", msgHash.t.buffer[i]);
+    for (i = 0; i < ctx->msgHash.t.size; i++)
+        printf("%02x ", ctx->msgHash.t.buffer[i]);
     printf("\n");
 
-    rval = Tss2_Sys_VerifySignature(sysContext, keyHandle, NULL, &msgHash, signature, &validation, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("tpm2_verifysignature failed, error code: 0x%x\n", rval);
-        return -2;
-    }
-    printf("\ntpm2_verifysignature succ.\n\n");
-
-    if(saveDataToFile(outFilePath, (UINT8 *)&validation, sizeof(validation)))
-    {
-        printf("failed to save validation into %s\n", outFilePath);
-        return -3;
+    rval = Tss2_Sys_VerifySignature(ctx->sapi_context, ctx->keyHandle, NULL,
+            &ctx->msgHash, &ctx->signature, &validation, &sessionsDataOut);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Tss2_Sys_VerifySignature failed, error code: 0x%x\n", rval);
+        return false;
     }
 
-    return 0;
+    if (saveDataToFile(ctx->out_file_path, (UINT8 *) &validation,
+            sizeof(validation))) {
+        LOG_ERR("failed to save validation into \"%s\"\n", ctx->out_file_path);
+        return false;
+    }
+
+    return true;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-k, --keyHandle<hexHandle>  handle of public key that will be used in the validation\n"
-        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
-        "-g, --halg     <hexAlg>     the hash algorithm used to digest the message \n"
-        "\t0x0004  TPM_ALG_SHA1\n"
-        "\t0x000B  TPM_ALG_SHA256\n"
-        "\t0x000C  TPM_ALG_SHA384\n"
-        "\t0x000D  TPM_ALG_SHA512\n"
-        "\t0x0012  TPM_ALG_SM3_256\n"
-        "-m, --msg      <filePath>   the input message file, containning the content to be digested\n"
-        "-D, --digest   <filePath>   the input hash file, containning the hash of the message\n"
-        "\tif this argument been chosed, the argument '-m(--msg)' and '-g(--halg)' is no need\n"
-        "-s, --sig      <filePath>   the input signature file, containning the signature to be tested\n"
-        "-r, --raw                   set the input signature file to raw type, default TPMT_SIGNATURE, optional\n"
-        "-t, --ticket   <filePath>   the ticket file, record the validation structure\n"
-        "-p, --port   <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
-        "\t0 (high level test results)\n"
-        "\t1 (test app send/receive byte streams)\n"
-        "\t2 (resource manager send/receive byte streams)\n"
-        "\t3 (resource manager tables)\n"
-    "\n"
-        "Example:\n"
-        "%s -k 0x81010001 -g 0x000B -m <filePath> -s <filePath> -t <filePath>\n"
-        "%s -k 0x81010001 -D <filePath> -s <filePath> -t <filePath>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name);
+static TPM2B *message_from_file(const char *msg_file_path) {
+
+    long size;
+
+    int rc = getFileSize(msg_file_path, &size);
+    if (rc) {
+        return NULL;
+    }
+
+    if (!size) {
+        LOG_ERR("The msg file \"%s\" is empty", msg_file_path);
+        return NULL;
+    }
+
+    TPM2B *msg = (TPM2B *) calloc(1, sizeof(TPM2B) + size);
+    if (!msg) {
+        LOG_ERR("OOM");
+        return NULL;
+    }
+
+    UINT16 tmp = msg->size = size;
+    if (loadDataFromFile(msg_file_path, msg->buffer, &tmp) != 0) {
+        free(msg);
+        return NULL;
+    }
+    return msg;
 }
 
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
+static bool generate_signature(tpm2_verifysig_ctx *ctx) {
 
-    TPMI_DH_OBJECT keyHandle;
-    long fileSize = 0;
     UINT16 size;
+    UINT8 *buffer;
 
-    TPMI_ALG_HASH halg = TPM_ALG_SHA256;
-    TPMT_SIGNATURE  signature;
-    char inSigFilePath[PATH_MAX] = {0};
-    char outFilePath[PATH_MAX] = {0};
-    char inMsgFilePath[PATH_MAX] = {0};
-    char *contextKeyFile = NULL;
+    if (ctx->flags.raw) {
+        ctx->signature.sigAlg = TPM_ALG_RSASSA;
+        ctx->signature.signature.rsassa.hash = ctx->halg;
+        ctx->signature.signature.rsassa.sig.t.size =
+                sizeof(ctx->signature.signature.rsassa.sig) - 2;
 
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+        buffer = ctx->signature.signature.rsassa.sig.t.buffer;
+        size = ctx->signature.signature.rsassa.sig.t.size;
+    } else {
+        size = sizeof(ctx->signature);
+        buffer = (UINT8 *) &ctx->signature;
+    }
 
-    int opt = -1;
-    const char *optstring = "hvk:g:m:D:rs:t:p:d:c:";
-    static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"keyHandle",1,NULL,'k'},
-      {"digest",1,NULL,'D'},
-      {"halg",1,NULL,'g'},
-      {"msg",1,NULL,'m'},
-      {"raw",0,NULL,'r'},
-      {"sig",1,NULL,'s'},
-      {"ticket",1,NULL,'t'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {"keyContext",1,NULL,'c'},
-      {0,0,0,0}
+    int rc = loadDataFromFile(ctx->sig_file_path, buffer, &size);
+    if (rc) {
+        LOG_ERR("Could not create %s signature from file: \"%s\"",
+                ctx->flags.raw ? "raw" : "\0", ctx->sig_file_path);
+    }
+    return !rc;
+}
+
+static bool string_dup(char **new, char *old) {
+
+    *new = strdup(old);
+    if (!*new) {
+        LOG_ERR("OOM while duplicating \"%s\"", old);
+        return false;
+    }
+    return true;
+}
+
+static bool init(tpm2_verifysig_ctx *ctx) {
+
+    TPM2B *msg = NULL;
+    bool return_value = false;
+
+    if (ctx->flags.msg) {
+        msg = message_from_file(ctx->msg_file_path);
+        if (!msg) {
+            /* message_from_file() logs specific error no need to here */
+            return false;
+        }
+    }
+
+    if (ctx->flags.sig) {
+        bool res = generate_signature(ctx);
+        if (!res) {
+            goto err;
+        }
+    }
+
+    if (ctx->flags.key_context) {
+        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->keyHandle,
+                ctx->context_key_file_path);
+        if (rc) {
+            goto err;
+        }
+    }
+
+    /* If no digest is specified, compute it */
+    if (!ctx->flags.digest) {
+        int rc = tpm_hash_compute_data(ctx->sapi_context, msg->buffer, msg->size,
+                ctx->halg, &ctx->msgHash);
+        if (rc) {
+            LOG_ERR("Compute message hash failed!\n");
+            goto err;
+        }
+    }
+    return_value = true;
+
+err:
+    free(msg);
+    return return_value;
+}
+
+static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *ctx) {
+
+    const char *optstring = "k:g:m:D:rs:t:c:";
+    const struct option long_options[] = {
+            { "keyHandle",  1, NULL, 'k' },
+            { "digest",     1, NULL, 'D' },
+            { "halg",       1, NULL, 'g' },
+            { "msg",        1, NULL, 'm' },
+            { "raw",        0, NULL, 'r' },
+            { "sig",        1, NULL, 's' },
+            { "ticket",     1, NULL, 't' },
+            { "keyContext", 1, NULL, 'c' },
+            { NULL,         0, NULL, '\0' }
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        k_flag = 0,
-        g_flag = 0,
-        m_flag = 0,
-        D_flag = 0,
-        r_flag = 0,
-        s_flag = 0,
-        c_flag = 0,
-        t_flag = 0;
-
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    if (argc == 1) {
+        LOG_ERR("Invalid usage. Try --help for help.");
+        return false;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
-        case 'k':
-            if(getSizeUint32Hex(optarg,&keyHandle) != 0)
-            {
-                returnVal = -1;
-                break;
+    int opt;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
+        switch (opt) {
+        case 'k': {
+            int rc = getSizeUint32Hex(optarg, &ctx->keyHandle);
+            if (rc) {
+                LOG_ERR("Unable to convert key handle, got: \"%s\"", optarg);
+                return false;
             }
-            k_flag = 1;
+            ctx->flags.key_handle = 1;
+        }
             break;
-        case 'g':
-            if(getSizeUint16Hex(optarg,&halg) != 0)
-            {
-                showArgError(optarg, argv[0]);
-                returnVal = -2;
-                break;
+        case 'g': {
+            int rc = getSizeUint16Hex(optarg, &ctx->halg);
+            if (rc) {
+                LOG_ERR("Unable to convert algorithm, got: \"%s\"", optarg);
+                return false;
             }
-            printf("halg = 0x%4.4x\n", halg);
-            g_flag = 1;
+            ctx->flags.halg = 1;
+        }
             break;
-        case 'm':
-            snprintf(inMsgFilePath, sizeof(inMsgFilePath), "%s", optarg);
-            m_flag = 1;
-            break;
-        case 'D':
-            size = sizeof(msgHash);
-            if(loadDataFromFile(optarg, (UINT8 *)&msgHash, &size) != 0)
-            {
-                returnVal = -3;
-                break;
+        case 'm': {
+            bool res = string_dup(&ctx->msg_file_path, optarg);
+            if (!res) {
+                return false;
             }
-            D_flag = 1;
+            ctx->flags.msg = 1;
+        }
+            break;
+        case 'D': {
+            UINT16 size = sizeof(ctx->msgHash);
+            if (loadDataFromFile(optarg, (UINT8 *) &ctx->msgHash, &size) != 0) {
+                LOG_ERR("Could not load digest from file!");
+                return false;
+            }
+            ctx->flags.digest = 1;
+        }
             break;
         case 'r':
-            r_flag = 1;
+            ctx->flags.raw = 1;
             break;
         case 's':
-            snprintf(inSigFilePath, sizeof(inSigFilePath), "%s", optarg);
-            s_flag = 1;
+            if (!string_dup(&ctx->sig_file_path, optarg)) {
+                return false;
+            }
+            ctx->flags.sig = 1;
             break;
         case 't':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -4;
-                break;
+            if (!string_dup(&ctx->out_file_path, optarg)) {
+                return false;
             }
-            t_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -5;
+
+            if (checkOutFile(ctx->out_file_path) != 0) {
+                return false;
             }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -6;
-            }
+            ctx->flags.ticket = 1;
             break;
         case 'c':
-            contextKeyFile = optarg;
-            if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
-            {
-                returnVal = -7;
-                break;
+            if (!string_dup(&ctx->context_key_file_path, optarg)) {
+                return false;
             }
-            printf("contextKeyFile = %s\n", contextKeyFile);
-            c_flag = 1;
+            ctx->flags.key_context = 1;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -8;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
             break;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -9;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
             break;
-        //default:
-        //  break;
+            /* no default */
         }
-        if(returnVal)
-            break;
     };
 
-    if(returnVal != 0)
-        goto end;
-
-    if(m_flag)
-    {
-        if(getFileSize(inMsgFilePath, &fileSize) != 0)
-        {
-            returnVal = -10;
-            goto end;
-        }
-        if(fileSize == 0)
-        {
-            printf("the message file is empty !\n");
-            returnVal = -11;
-            goto end;
-        }
-        if(fileSize > 0xffff)
-        {
-            printf("the message file was too long !\n");
-            returnVal = -12;
-            goto end;
-        }
-#if 0
-        printf("\nmsg length: %d\n",length);
-        printf("msg content: ");
-        for(int i = 0; i < length; i++)
-        {
-            printf("%02x ", msg[i]);
-        }
-        printf("\n");
-        return -1;
-#endif
-        msg = (BYTE*)malloc(fileSize);
-        if(msg == NULL)
-        {
-            returnVal = -13;
-            goto end;
-        }
-        memset(msg, 0, fileSize);
-
-        msgLen = fileSize;
-        if(loadDataFromFile(inMsgFilePath, msg, &msgLen) != 0)
-        {
-            returnVal = -14;
-            goto end;
-        }
+    /* check flags for mismatches */
+    if (ctx->flags.digest && (ctx->flags.msg || ctx->flags.halg)) {
+        LOG_ERR(
+                "Cannot specify --digest (-D) and ( --msg (-m) or --halg (-g) )");
+        return false;
     }
 
-    if(D_flag == 1 && (m_flag == 1 || g_flag == 1))
-    {
-        showArgMismatch(argv[0]);
-        returnVal = -15;
-        goto end;
-    }
-    if(D_flag == 1)
-    {
-        printf("\nVerifySignature: using the input hash file!\n");
+    if (!((ctx->flags.key_handle || ctx->flags.key_context) && ctx->flags.sig
+            && ctx->flags.ticket)) {
+        LOG_ERR(
+                "--keyHandle (-k) or --keyContext (-c) and --sig (-s) and --ticket (-t) must be specified");
+        return false;
     }
 
-    if(s_flag ==1)  //construct the signature
-    {
-        if(r_flag == 0)
-        {
-            UINT16 size = sizeof(signature);
-            if(loadDataFromFile(inSigFilePath, (UINT8 *)&signature, &size))
-            {
-                returnVal = -16;
-                goto end;
-            }
-            printf("VerifySignature: using the input signature file as sig structure!\n");
-        }
-        else
-        {
-            signature.sigAlg = TPM_ALG_RSASSA;
-            signature.signature.rsassa.hash = halg;
-            signature.signature.rsassa.sig.t.size = sizeof(signature.signature.rsassa.sig) - 2;
-            if(loadDataFromFile(inSigFilePath, signature.signature.rsassa.sig.t.buffer,
-                        &signature.signature.rsassa.sig.t.size))
-            {
-                returnVal = -17;
-                goto end;
-            }
-            printf("VerifySignature: using the input signature file as raw data!\n");
-        }
+    /* initialize and process */
+    return init(ctx);
+}
+
+static void tpm_verifysig_ctx_dealloc(tpm2_verifysig_ctx *ctx) {
+
+    free(ctx->sig_file_path);
+    free(ctx->out_file_path);
+    free(ctx->msg_file_path);
+    free(ctx->context_key_file_path);
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    int normalized_return_code = 1;
+
+    tpm2_verifysig_ctx ctx = {
+            .flags = { 0 },
+            .halg = TPM_ALG_SHA256,
+            .msgHash = { { sizeof(TPM2B_DIGEST) - 2, } },
+            .sig_file_path = NULL,
+            .msg_file_path = NULL,
+            .out_file_path = NULL,
+            .context_key_file_path = NULL,
+            .sapi_context = sapi_context
+    };
+
+    bool res = handle_options_and_init(argc, argv, &ctx);
+    if (!res) {
+        goto err;
     }
 
-    flagCnt = h_flag + v_flag + k_flag + g_flag + m_flag + D_flag + s_flag + t_flag + c_flag;
-
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            returnVal = -18;
-        }
-    }
-    else if(((flagCnt==4 && D_flag==1) || (flagCnt==5 && D_flag==0)) &&
-            (h_flag==0  && v_flag==0) &&
-            ((k_flag==1 || c_flag == 1) && s_flag==1 && t_flag==1) )
-    {
-        prepareTest(hostName, port, debugLevel);
-
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
-        if(returnVal == 0)
-            returnVal = verifySignature(keyHandle, D_flag, halg, &signature, outFilePath);
-
-        finishTest();
-
-        if(returnVal)
-            returnVal = -19;
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
-        returnVal = -20;
+    res = verify_signature(&ctx);
+    if (!res) {
+        LOG_ERR("Verify signature failed!");
+        goto err;
     }
 
-end:
-    if(msg)
-        free(msg);
-    return returnVal;
+    normalized_return_code = 0;
+
+err:
+    tpm_verifysig_ctx_dealloc(&ctx);
+
+    return normalized_return_code;
 }
