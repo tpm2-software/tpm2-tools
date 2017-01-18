@@ -1,73 +1,51 @@
-#include "string-bytes.h"
-
+#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 
-int getSizeUint16Hex(const char *arg, UINT16 *num)
-{
-    char tmpArg[1024] = {0};
-    char *errPtr;
-    long tmpSize = 0;
-    if (arg == NULL || num == NULL)
-        return -1;
-    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
-    tmpSize = strtol(tmpArg,&errPtr,16);
-    if(strlen(errPtr) != 0)
-        return -2;
-    if( tmpSize > 0xffff || tmpSize < 0)
-        return -3;
-    *num = tmpSize;
-    return 0;
+#include "string-bytes.h"
+bool string_bytes_get_uint16(const char *str, uint16_t *value) {
+
+    uint32_t tmp;
+    bool result = string_bytes_get_uint32(str, &tmp);
+    if (!result) {
+        return false;
+    }
+
+    /* overflow on 16 bits? */
+    if (tmp > UINT16_MAX) {
+        return false;
+    }
+
+    *value = (uint16_t)tmp;
+    return true;
 }
 
-int getSizeUint16(const char *arg, UINT16 *num)
-{
-    char tmpArg[1024] = {0};
-    char *errPtr;
-    long tmpSize = 0;
-    if (arg == NULL || num == NULL)
-        return -1;
-    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
-    tmpSize = strtol(tmpArg,&errPtr,10);
-    if(strlen(errPtr) != 0)
-        return -2;
-    if( tmpSize > 0xffff || tmpSize < 0)
-        return -3;
-    *num = tmpSize;
-    return 0;
-}
+bool string_bytes_get_uint32(const char *str, uint32_t *value) {
 
-int getSizeUint32Hex(const char *arg, UINT32 *num)
-{
-    char tmpArg[1024] = {0};
-    char *errPtr;
-    long long tmpSize = 0;
-    if (arg == NULL || num == NULL)
-        return -1;
-    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
-    tmpSize = strtoll(tmpArg,&errPtr,16);
-    if(strlen(errPtr) != 0)
-        return -2;
-    if(tmpSize > 0xffffffff || tmpSize < 0)
-        return -3;
-    *num = tmpSize;
-    return 0;
-}
+    char *endptr;
 
-int getSizeUint32(const char *arg, UINT32 *num)
-{
-    char tmpArg[1024] = {0};
-    char *errPtr;
-    long tmpSize = 0;
-    if (arg == NULL || num == NULL)
-        return -1;
-    snprintf(tmpArg, sizeof(tmpArg), "%s", arg);
-    tmpSize = strtol(tmpArg,&errPtr,10);
-    if(strlen(errPtr) != 0)
-        return -2;
-    if(tmpSize > 0xffffffff || tmpSize < 0)
-        return -3;
-    *num = tmpSize;
-    return 0;
+    if (str == NULL || *str == '\0') {
+        return false;
+    }
+
+    /* clear errno before the call, should be 0 afterwards */
+    errno = 0;
+    uint32_t tmp = strtoul(str, &endptr, 0);
+    if (errno) {
+        return false;
+    }
+
+    /*
+     * The entire string should be able to be converted or fail
+     * We already checked that str starts with a null byte, so no
+     * need to check that again per the man page.
+     */
+    if (*endptr != '\0') {
+        return false;
+    }
+
+    *value = tmp;
+    return true;
 }
 
 int str2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)

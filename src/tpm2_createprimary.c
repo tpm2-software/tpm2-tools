@@ -44,6 +44,7 @@
 
 #include "main.h"
 #include "options.h"
+#include "string-bytes.h"
 
 TPMS_AUTH_COMMAND sessionData;
 bool hexPasswd = false;
