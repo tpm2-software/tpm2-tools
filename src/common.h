@@ -49,7 +49,8 @@ void ErrorHandler( UINT32 rval );
 int prepareTest(const char *hostName, const int port, int debugLevel);
 void finishTest();
 int getPcrId(const char *arg, UINT32 *num);
-int computeDataHash(BYTE *buffer, UINT16 length, TPMI_ALG_HASH halg, TPM2B_DIGEST *result);
+/* please use tpm_hash_compute_data instead of computeDataHash, last user please delete */
+int computeDataHash(BYTE *buffer, UINT16 length, TPMI_ALG_HASH halg, TPM2B_DIGEST *result) __attribute__((deprecated));
 int getPort(const char *arg, int *port);
 int getDebugLevel(const char *arg, int *dl);
 int parsePCRSelections(const char *arg, TPML_PCR_SELECTION *pcrSels);
