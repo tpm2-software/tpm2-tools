@@ -406,7 +406,7 @@ int main(int argc, char *argv[])
             P_flag = 1;
             break;
         case 'l':
-            if(parsePCRList(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]) != 0)
+            if(pcr_parse_list(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]) != 0)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -425,7 +425,7 @@ int main(int argc, char *argv[])
             g_flag = 1;
             break;
         case 'L':
-            if(parsePCRSelections(optarg, &pcrSelections) != 0)
+            if(pcr_parse_selections(optarg, &pcrSelections) != 0)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -15;
