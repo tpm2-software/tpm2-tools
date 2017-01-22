@@ -1,7 +1,8 @@
+#include <errno.h>
 #include <stdio.h>
 
 #include "files.h"
-
+#include "log.h"
 static TPMS_CONTEXT context;
 
 int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size)
@@ -121,15 +122,25 @@ int checkOutFile(const char *path)
 
 int getFileSize(const char *path, long *fileSize)
 {
+    int rc = -1;
     FILE *fp = fopen(path,"rb");
     if(NULL == fp)
     {
-        printf("File: %s  Not Found OR Access Error !\n",path);
+        LOG_ERR("fopen on file: \"%s\"  failed: %s !\n", path, strerror(errno));
         return -1;
     }
     fseek(fp, 0, SEEK_SET);
     fseek(fp, 0, SEEK_END);
-    *fileSize = ftell(fp);
+    long size = ftell(fp);
+    if (size < 0) {
+        LOG_ERR("ftell on file \"%s\" failed: %s", path, strerror(errno));
+        goto err;
+    }
+
+    *fileSize = size;
+    rc = 0;
+
+err:
     fclose(fp);
-    return 0;
+    return rc;
 }

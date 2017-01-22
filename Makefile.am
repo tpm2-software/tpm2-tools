@@ -47,7 +47,8 @@ sbin_PROGRAMS = \
     src/tpm2_dump_capability \
     src/tpm2_listpersistent \
     src/tpm2_startup \
-    src/tpm2_rc_decode
+    src/tpm2_rc_decode \
+    src/tpm2_verifysignature
 
 COMMON_SRC = \
     src/context-util.c \
@@ -55,7 +56,8 @@ COMMON_SRC = \
     src/options.c \
     src/log.c \
     src/string-bytes.c \
-    src/tpm2-header.c
+    src/tpm2-header.c \
+    src/tpm_hash.c
 
 # The tools within this conditional are hard coded to the socket TCTI.
 # As they're migrated to support dynamic TCTI configuration they should be
@@ -88,8 +90,7 @@ sbin_PROGRAMS += src/tpm2_listpcrs \
 		  src/tpm2_rsadecrypt \
 		  src/tpm2_rsaencrypt \
 		  src/tpm2_sign \
-		  src/tpm2_unseal \
-		  src/tpm2_verifysignature
+		  src/tpm2_unseal
 
 COMMON_SRC += \
     src/common.c \
@@ -178,7 +179,6 @@ src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.c
 src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.c
 src_tpm2_sign_SOURCES = src/tpm2_sign.c
 src_tpm2_unseal_SOURCES = src/tpm2_unseal.c
-src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.c
 endif
 src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
 src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
@@ -187,6 +187,7 @@ src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.c src/main.c
 src_tpm2_load_SOURCES = src/tpm2_load.c src/main.c
 src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
 src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
+src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.c src/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c

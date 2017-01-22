@@ -312,7 +312,8 @@ TSS2_RC SetLocality( TSS2_SYS_CONTEXT *sysContext, UINT8 locality );
 
 TPM_RC TpmHmac( TPMI_ALG_HASH hashAlg, TPM2B *key,TPM2B **bufferList, TPM2B_DIGEST *result );
 
-UINT32 TpmHash( TPMI_ALG_HASH hashAlg, UINT16 size, BYTE *data, TPM2B_DIGEST *result );
+/* TpmHash is deprecated, please use tpm_hash */
+UINT32 TpmHash( TPMI_ALG_HASH hashAlg, UINT16 size, BYTE *data, TPM2B_DIGEST *result ) __attribute__((deprecated));
 
 UINT32 TpmHandleToName( TPM_HANDLE handle, TPM2B_NAME *name );
 
