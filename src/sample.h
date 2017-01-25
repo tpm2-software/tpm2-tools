@@ -287,8 +287,6 @@ extern UINT32 (*HandleToNameFunctionPtr)( TPM_HANDLE handle, TPM2B_NAME *name );
 extern TPM_RC ( *CalcPHash )( TSS2_SYS_CONTEXT *sysContext,TPM_HANDLE handle1, TPM_HANDLE handle2, TPMI_ALG_HASH authHash,
     TPM_RC responseCode, TPM2B_DIGEST *pHash );
 
-void PrintSizedBuffer( TPM2B *sizedBuffer );
-
 void InitNullSession( TPMS_AUTH_COMMAND *nullSessionData );
 
 TPM_RC LoadExternalHMACKey( TPMI_ALG_HASH hashAlg, TPM2B *key, TPM_HANDLE *keyHandle, TPM2B_NAME *keyName );
