@@ -50,7 +50,8 @@ sbin_PROGRAMS = \
     src/tpm2_listpersistent \
     src/tpm2_startup \
     src/tpm2_rc_decode \
-    src/tpm2_verifysignature
+    src/tpm2_verifysignature \
+    src/tpm2_getmanufec
 
 COMMON_SRC = \
     src/context-util.c \
@@ -72,7 +73,6 @@ sbin_PROGRAMS += \
 		  src/tpm2_takeownership \
 		  src/tpm2_getpubek \
 		  src/tpm2_getpubak \
-		  src/tpm2_getmanufec \
 		  src/tpm2_akparse \
 		  src/tpm2_makecredential \
 		  src/tpm2_activatecredential \
@@ -157,9 +157,6 @@ src_tpm2_quote_SOURCES = src/tpm2_quote.c
 src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.c
 src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.c
 src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.c
-src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.c
-src_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
-src_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
 src_tpm2_akparse_SOURCES = src/tpm2_akparse.c
 src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.c
 src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.c
@@ -191,6 +188,9 @@ src_tpm2_load_SOURCES = src/tpm2_load.c src/main.c
 src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
 src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
 src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.c src/main.c
+src_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
+src_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
+src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.c src/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
