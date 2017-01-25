@@ -45,7 +45,6 @@ extern TSS2_SYS_CONTEXT *sysContext;
 void copyData( UINT8 *to, UINT8 *from, UINT32 length );
 int CompareTPM2B( TPM2B *buffer1, TPM2B *buffer2 );
 void PrintSizedBufferOpen( TPM2B *sizedBuffer );
-void PrintSizedBuffer( TPM2B *sizedBuffer );
 void ErrorHandler( UINT32 rval );
 int prepareTest(const char *hostName, const int port, int debugLevel);
 void finishTest();

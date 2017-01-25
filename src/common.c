@@ -92,22 +92,6 @@ int CompareTPM2B( TPM2B *buffer1, TPM2B *buffer2 )
     return 0;
 }
 
-void PrintSizedBuffer( TPM2B *sizedBuffer )
-{
-    int i;
-
-    for( i = 0; i < sizedBuffer->size; i++ )
-    {
-        printf( "%2.2x ", sizedBuffer->buffer[i] );
-
-        if( ( (i+1) % 16 ) == 0 )
-        {
-            printf( "\n" );
-        }
-    }
-    printf( "\n" );
-}
-
 #define LEVEL_STRING_SIZE 50
 
 void ErrorHandler( UINT32 rval )

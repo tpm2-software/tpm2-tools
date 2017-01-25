@@ -90,3 +90,16 @@ int hex2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
     }
     return 0;
 }
+
+void string_bytes_print_tpm2b(TPM2B *buffer) {
+
+    unsigned i;
+    for (i = 0; i < buffer->size; i++) {
+        printf("%2.2x ", buffer->buffer[i]);
+
+        if (((i + 1) % 16) == 0) {
+            printf("\n");
+        }
+    }
+    printf("\n");
+}

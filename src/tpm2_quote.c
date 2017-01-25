@@ -41,9 +41,12 @@
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "pcr.h"
+#include "string-bytes.h"
 
 typedef struct {
     int size;
@@ -202,7 +205,7 @@ UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
     return size > sizeof(*sig) ? sizeof(*sig) : size;
 }
 
-int quote(TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
+int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 {
     UINT32 rval;
     TPMT_SIG_SCHEME inScheme;
@@ -243,7 +246,7 @@ int quote(TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 
     memset( (void *)&signature, 0, sizeof(signature) );
 
-    rval = Tss2_Sys_Quote(sysContext, akHandle, &sessionsData,
+    rval = Tss2_Sys_Quote(sapi_context, akHandle, &sessionsData,
             &qualifyingData, &inScheme, pcrSelection, &quoted,
             &signature, &sessionsDataOut );
     if(rval != TPM_RC_SUCCESS)
@@ -253,7 +256,7 @@ int quote(TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
     }
 
     printf( "\nquoted:\n " );
-    PrintSizedBuffer( (TPM2B *)&quoted );
+    string_bytes_print_tpm2b( (TPM2B *)&quoted );
     //PrintTPM2B_ATTEST(&quoted);
     printf( "\nsignature:\n " );
     PrintBuffer( (UINT8 *)&signature, sizeof(signature) );
@@ -282,51 +285,11 @@ int quote(TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
     return 0;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-            "-h, --help               Display command tool usage info;\n"
-            "-v, --version            Display command tool version info;\n"
-            "-k, --akHandle <hexHandle>    Handle of existing AK\n"
-            "-c, --akContext <filename>    filename for the existing AK's context\n"
-            "-P, --akPassword <akPassword> AK handle's Password\n"
-            "-l, --idList  <num1,...,numN> The list of selected PCRs' ids, 0~23\n"
-            "-g, --algorithm <hexAlg>      The algorithm id\n"
-            "-L, --selList <hexAlg1:num1,...,numN+hexAlg2:num2_1,...,num2_M+...> The list of pcr banks and selected PCRs' ids(0~23) for each bank\n"
-            "-o, --outFile<filePath>       output file path, recording the two structures output by tpm2_quote function\n"
-            "-X, --passwdInHex             passwords given by any options are hex format.\n"
-            "-q, --qualifyData <hexData>   Data given as a Hex string to qualify the quote, optional.\n"
-            "-p, --port    <port number>   The Port number, default is %d, optional\n"
-            "-d, --debugLevel <0|1|2|3>    The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-            "\n"
-            "Note: -L option & -g/-l options are mutually exclusive. -g/-l can be used to specify PCRs in one bank, and -L can be used to specify PCRs in any number of existing banks.\n"
-            "\n"
-            "Example:\n"
-            "display usage:   %s -h\n"
-            "display version: %s -v\n"
-            "quote the selected PCR values:\n"
-            "\t %s -k 0x80000001 -P abc123 -g 0x4 -l 16,17,18 -o outFile001\n"
-            "\t %s -c ak.context -P abc123 -g 0x4 -l 16,17,18 -o outFile001\n"
-            "\t %s -k 0x80000001 -g 0x4 -l 16,17,18 -o outFile001 \n"
-            "\t %s -c ak.context -g 0x4 -l 16,17,18 -o outFile001 \n"
-            "\t %s -k 0x80000001 -P 123abc -X -L 0x4:16,17,18+0xb:16,17,18 -o outFile001 -q 11aa22bb\n"
-            , name, DEFAULT_RESMGR_TPM_PORT, name, name, name, name, name, name, name);
-}
-
-int main(int argc, char *argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
+              TSS2_SYS_CONTEXT *sapi_context) {
 
     int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:L:o:Xq:p:d:";
+    const char *optstring = "hvk:c:P:l:g:L:o:Xq:";
     static struct option long_options[] = {
         {"help",0,NULL,'h'},
         {"version",0,NULL,'v'},
@@ -339,8 +302,6 @@ int main(int argc, char *argv[])
         {"outFile",1,NULL,'o'},
         {"passwdInHex",0,NULL,'X'},
         {"qualifyData",1,NULL,'q'},
-        {"port",1,NULL,'p'},
-        {"debugLevel",1,NULL,'d'},
         {0,0,0,0}
     };
 
@@ -349,9 +310,7 @@ int main(int argc, char *argv[])
 
     int returnVal = 0;
     int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        k_flag = 0,
+    int k_flag = 0,
         c_flag = 0,
         P_flag = 0,
         l_flag = 0,
@@ -361,21 +320,15 @@ int main(int argc, char *argv[])
 
     if(argc == 1)
     {
-        showHelp(argv[0]);
+        LOG_ERR("Invalid usage, try --help for help!");
         return 0;
     }
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)
         {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
         case 'k':
-            if(getSizeUint32Hex(optarg,&akHandle) != 0)
+            if(!string_bytes_get_uint32(optarg,&akHandle))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -1;
@@ -415,7 +368,7 @@ int main(int argc, char *argv[])
             l_flag = 1;
             break;
         case 'g':
-            if(getSizeUint16Hex(optarg,&pcrSelections.pcrSelections[0].hash) != 0)
+            if(!string_bytes_get_uint16(optarg,&pcrSelections.pcrSelections[0].hash))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
@@ -455,20 +408,6 @@ int main(int argc, char *argv[])
                 break;
             }
             break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -7;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -8;
-            }
-            break;
        case ':':
             //              printf("Argument %c needs a value!\n",optopt);
             returnVal = -9;
@@ -487,34 +426,17 @@ int main(int argc, char *argv[])
     if(returnVal != 0)
         return returnVal;
 
-    flagCnt = h_flag + v_flag + k_flag + c_flag + l_flag + g_flag + L_flag + o_flag;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -11;
-        }
-    }
-    else if(((flagCnt == 3 && L_flag) || (flagCnt == 4 && (g_flag && l_flag)))
+    flagCnt = k_flag + c_flag + l_flag + g_flag + L_flag + o_flag;
+    if(((flagCnt == 3 && L_flag) || (flagCnt == 4 && (g_flag && l_flag)))
              && (k_flag || c_flag) && o_flag)
     {
         if(P_flag == 0)
             sessionData.hmac.t.size = 0;
 
-        prepareTest(hostName, port, debugLevel);
-
         if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &akHandle, contextFilePath);
+            returnVal = loadTpmContextFromFile(sapi_context, &akHandle, contextFilePath);
         if(returnVal == TPM_RC_SUCCESS)
-            returnVal = quote(akHandle, &pcrSelections);
-
-        finishTest();
-
+            returnVal = quote(sapi_context, akHandle, &pcrSelections);
         if(returnVal)
             return -12;
     }

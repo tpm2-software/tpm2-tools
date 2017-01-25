@@ -31,6 +31,12 @@ bool string_bytes_get_uint32(const char *str, uint32_t *value);
  */
 bool string_bytes_get_uint16(const char *str, uint16_t *value);
 
+/**
+ * Prints a TPM2B as a hex dump
+ * @param buffer the TPM2B to print.
+ */
+void string_bytes_print_tpm2b(TPM2B *buffer);
+
 /*
  * Leave the old interfaces for now and mark as deprecated,
  * on porting activities fix-up callers of these.
@@ -55,6 +61,11 @@ static inline int deprecated getSizeUint32Hex(const char *arg, UINT32 *num) {
 
     return !string_bytes_get_uint32(arg, num);
 }
+
+static inline void deprecated PrintSizedBuffer(TPM2B *buffer) {
+    string_bytes_print_tpm2b(buffer);
+}
+
 #undef deprecated
 
 #endif /* STRING_BYTES_H */
