@@ -41,21 +41,52 @@
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
+#include "log.h"
+#include "options.h"
+#include "main.h"
+#include "string-bytes.h"
 
-char oldOwnerPasswd[sizeof(TPMU_HA)];
-char oldEndorsePasswd[sizeof(TPMU_HA)];
-char oldLockoutPasswd[sizeof(TPMU_HA)];
-char newOwnerPasswd[sizeof(TPMU_HA)];
-char newEndorsePasswd[sizeof(TPMU_HA)];
-char newLockoutPasswd[sizeof(TPMU_HA)];
-bool hexPasswd = false;
+#define MAX_PASSWD (sizeof(TPMU_HA))
 
-int clearHierarchyAuth()
-{
-    UINT32 rval;
+typedef struct password password;
+struct password {
+    char old[MAX_PASSWD];
+    char new[MAX_PASSWD];
+};
+
+typedef struct takeownership_ctx takeownership_ctx;
+struct takeownership_ctx {
+    struct {
+        password owner;
+        password endorse;
+        password lockout;
+    } passwords;
+    bool is_hex_passwords;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
+
+static bool passwd_to_tpm2b_auth(const char *passwd, bool is_hex, TPM2B_AUTH *auth) {
+
+    auth->t.size = 0;
+
+    /* already NULL checked and overflow checked by init() options handling */
+    size_t len = strlen(passwd);
+    if (!len) {
+        return true;
+    }
+
+    if (is_hex) {
+        auth->t.size = sizeof(auth) - 2;
+        return !hex2ByteStructure(passwd, &auth->t.size, auth->t.buffer);
+    }
+    auth->t.size = len;
+    memcpy(&auth->t.buffer[0], passwd, auth->t.size);
+    return true;
+}
+
+bool clear_hierarchy_auth(takeownership_ctx *ctx) {
+
     TPMS_AUTH_COMMAND sessionData;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
@@ -67,38 +98,28 @@ int clearHierarchyAuth()
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
     sessionData.hmac.t.size = 0;
-    *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
+    *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
-    if (strlen(oldLockoutPasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(oldLockoutPasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], oldLockoutPasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(oldLockoutPasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(oldLockoutPasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for oldLockoutPasswd.\n");
-            return -1;
-        }
+    bool result = passwd_to_tpm2b_auth(ctx->passwords.lockout.old, ctx->is_hex_passwords, &sessionData.hmac);
+    if (!result) {
+        LOG_ERR("Failed to convert hex format password for old lockout password.");
+        return false;
     }
 
-    rval = Tss2_Sys_Clear ( sysContext, TPM_RH_LOCKOUT, &sessionsData, 0 );
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\nClear Failed ! ErrorCode: 0x%0x\n\n", rval);
-        return -2;
+    UINT32 rval = Tss2_Sys_Clear(ctx->sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Clearing Failed! TPM error code: 0x%0x", rval);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-int changeHierarchyAuth()
-{
-    UINT32 rval;
-    TPM2B_AUTH      newAuth;
+#define ARRAY_LEN(x) (sizeof(x)/sizeof(*x))
+
+static bool change_hierarchy_auth(takeownership_ctx *ctx) {
+
+    TPM2B_AUTH newAuth;
     TPMS_AUTH_COMMAND sessionData;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
@@ -109,327 +130,190 @@ int changeHierarchyAuth()
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
     sessionData.hmac.t.size = 0;
-    *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
+    *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
-    // Change Owner Auth
-    newAuth.t.size = 0;
-    if (strlen(newOwnerPasswd) > 0 && !hexPasswd)
-    {
-        newAuth.t.size = strlen(newOwnerPasswd);
-        memcpy( &newAuth.t.buffer[0], newOwnerPasswd, newAuth.t.size );
-    }
-    else if (strlen(newOwnerPasswd) > 0 && hexPasswd)
-    {
-        newAuth.t.size = sizeof(newAuth) - 2;
-        if (hex2ByteStructure(newOwnerPasswd, &newAuth.t.size,
-                              newAuth.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for newOwnerPasswd.\n");
-            return -1;
-        }
-    }
-
-    sessionData.hmac.t.size = 0;
-    if (strlen(oldOwnerPasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(oldOwnerPasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], oldOwnerPasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(oldOwnerPasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(oldOwnerPasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for oldOwnerPasswd.\n");
-            return -1;
-        }
-    }
-
-    rval = Tss2_Sys_HierarchyChangeAuth( sysContext, TPM_RH_OWNER, &sessionsData, &newAuth, 0 );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Change Hierarchy Owner Auth Error. TPM Error:0x%x......\n", rval);
-        return -1;
-    }
-    printf("\n......Change Hierarchy Owner Auth Succ......\n");
-
-    // Change Endorsement Auth
-    newAuth.t.size = 0;
-    if (strlen(newEndorsePasswd) > 0 && !hexPasswd)
-    {
-        newAuth.t.size = strlen(newEndorsePasswd);
-        memcpy( &newAuth.t.buffer[0], newEndorsePasswd, newAuth.t.size );
-    }
-    else if (strlen(newEndorsePasswd) > 0 && hexPasswd)
-    {
-        newAuth.t.size = sizeof(newAuth) - 2;
-        if (hex2ByteStructure(newEndorsePasswd, &newAuth.t.size,
-                              newAuth.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for newEndorsePasswd.\n");
-            return -1;
-        }
-    }
-
-    sessionData.hmac.t.size = 0;
-    if (strlen(oldEndorsePasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(oldEndorsePasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], oldEndorsePasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(oldEndorsePasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(oldEndorsePasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for oldEndorsePasswd.\n");
-            return -1;
-        }
-    }
-
-    rval = Tss2_Sys_HierarchyChangeAuth( sysContext, TPM_RH_ENDORSEMENT, &sessionsData, &newAuth, 0 );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Change Hierarchy Endorsement Auth Error. TPM Error:0x%x......\n", rval);
-        return -2;
-    }
-    printf("\n......Change Hierarchy Endorsement Auth Succ......\n");
-
-    // Change Lockout Auth
-    newAuth.t.size = strlen( newLockoutPasswd );
-    memcpy( &newAuth.t.buffer[0], newLockoutPasswd, newAuth.t.size );
-
-    sessionData.hmac.t.size = strlen( oldLockoutPasswd );
-    memcpy( &sessionData.hmac.t.buffer[0], oldLockoutPasswd, sessionData.hmac.t.size );
-    newAuth.t.size = 0;
-    if (strlen(newLockoutPasswd) > 0 && !hexPasswd)
-    {
-        newAuth.t.size = strlen(newLockoutPasswd);
-        memcpy( &newAuth.t.buffer[0], newLockoutPasswd, newAuth.t.size );
-    }
-    else if (strlen(newLockoutPasswd) > 0 && hexPasswd)
-    {
-        newAuth.t.size = sizeof(newAuth) - 2;
-        if (hex2ByteStructure(newLockoutPasswd, &newAuth.t.size,
-                              newAuth.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for newLockoutPasswd.\n");
-            return -1;
-        }
-    }
-
-    sessionData.hmac.t.size = 0;
-    if (strlen(oldLockoutPasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(oldLockoutPasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], oldLockoutPasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(oldLockoutPasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(oldLockoutPasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for oldLockoutPasswd.\n");
-            return -1;
-        }
-    }
-    rval = Tss2_Sys_HierarchyChangeAuth( sysContext, TPM_RH_LOCKOUT, &sessionsData, &newAuth, 0 );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Change Hierarchy Lockout Auth Error. TPM Error:0x%x......\n", rval);
-        return -3;
-    }
-    printf("\n......Change Hierarchy Lockout Auth Succ......\n");
-
-    return 0;
-}
-
-
-void showHelp(const char *name)
-{
-    printf("\n%s: inserting authorization values for the owner, endorsement, and lockout.\n"
-           "Usage: %s [-h/--help]\n"
-           "   or: %s [-v/--version]\n"
-           "   or: %s [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] [-l/--lockPasswd <password>]\n"
-           "                          [-E/--oldEndorsePasswd <password>] [-O/--oldOwnerPasswd <password>] [-L/--oldLockPasswd <password>]\n"
-           "   or: %s [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] [-l/--lockPasswd <password>]\n"
-           "                          [-E/--oldEndorsePasswd <password>] [-O/--oldOwnerPasswd <password>] [-L/--oldLockPasswd <password>]\n"
-           "                          [-X/--passwdInHex]\n"
-           "                          [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
-           "\nwhere:\n\n"
-           "   -h/--help                        display this help and exit.\n"
-           "   -v/--version                     display version information and exit.\n"
-           "   -o/--ownerPasswd <password>      new Owner authorization value.\n"
-           "   -e/--endorsePasswd <password>    new Endorsement authorization value.\n"
-           "   -l/--lockPasswd <password>       new Lockout authorization value.\n"
-           "   -O/--oldOwnerPasswd <password>   old Owner authorization (string,optional,default:NULL).\n"
-           "   -E/--oldEndorsePasswd <password> old Endorsement authorization (string,optional,default:NULL).\n"
-           "   -L/--oldLockPasswd <password>    old Lockout authorization (string,optional,default:NULL).\n"
-           "   -X/--passwdInHex                 passwords given by any options are hex format.\n"
-           "   -p/--port <port>                 specifies the port number. default %d.\n"
-           "   -c/--clear [-L <password> [-X]]  clears the 3 authorizations values with lockout auth.\n"
-           "   -d/--dbg <dbgLevel>              specifies level of debug messages:\n"
-           "                                      0 (high level test results)\n"
-           "                                      1 (test app send/receive byte streams)\n"
-           "                                      2 (resource manager send/receive byte streams)\n"
-           "                                      3 (resource manager tables)\n"
-           "\nexample:\n"
-           "   Set ownerAuth, endorsementAuth and lockoutAuth to emptyAuth: %s -c -L old\n"
-           "   Set ownerAuth, endorsementAuth and lockoutAuth to a newAuth:\n"
-           "     %s -o new -e new -l new -O old -E old -L old\n"
-           "     %s -o 2a2b2c -e 2a2b2c -l 2a2b2c -O 1a1b1c -E 1a1b1c -L 1a1b1c -X\n"
-           , name, name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
-
-int main(int argc, char *argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-    int opt;
-    int clearAuth = 0;
-    bool argsError = false;
-    int returnVal = 0;
-
-    struct option sOpts[] =
-    {
-        { "ownerPasswd"     , required_argument, NULL, 'o' },
-        { "endorsePasswd"   , required_argument, NULL, 'e' },
-        { "lockPasswd"      , required_argument, NULL, 'l' },
-        { "oldOwnerPasswd"  , required_argument, NULL, 'O' },
-        { "oldEndorsePasswd", required_argument, NULL, 'E' },
-        { "oldLockPasswd"   , required_argument, NULL, 'L' },
-        { "passwdInHex"     , no_argument,       NULL, 'X' },
-        { "port"            , required_argument, NULL, 'p' },
-        { "dbg"             , required_argument, NULL, 'd' },
-        { "help"            , no_argument,       NULL, 'h' },
-        { "version"         , no_argument,       NULL, 'v' },
-        { "clear"           , no_argument,       NULL, 'c' },
-        { NULL              , no_argument,       NULL,  0  },
+    struct {
+        char *new_passwd;
+        char *old_passwd;
+        TPMI_RH_HIERARCHY_AUTH auth_handle;
+        char *desc;
+    } sources[] = {
+            {
+                    .new_passwd = ctx->passwords.owner.new,
+                    .old_passwd = ctx->passwords.owner.old,
+                    .auth_handle = TPM_RH_OWNER,
+                    .desc = "Owner"
+            },
+            {
+                    .new_passwd = ctx->passwords.endorse.new,
+                    .old_passwd = ctx->passwords.endorse.old,
+                    .auth_handle = TPM_RH_ENDORSEMENT,
+                    .desc = "Endorsement"
+            },
+            {
+                    .new_passwd = ctx->passwords.lockout.new,
+                    .old_passwd = ctx->passwords.lockout.old,
+                    .auth_handle = TPM_RH_LOCKOUT,
+                    .desc = "Lockout"
+            }
     };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    unsigned i;
+    for (i = 0; i < ARRAY_LEN(sources); i++) {
+
+        unsigned j;
+        for (j = 0; j < 2; j++) {
+            char *passwd =
+                    j == 0 ? sources[i].new_passwd : sources[i].old_passwd;
+            TPM2B_AUTH *auth_dest = j == 0 ? &newAuth : &sessionData.hmac;
+            bool result = passwd_to_tpm2b_auth(passwd, ctx->is_hex_passwords, auth_dest);
+            if (!result) {
+                LOG_ERR("Failed to convert hex formated password for"
+                        "%s %s password.", j == 0 ? "new" : "old",
+                        sources[i].desc);
+                return false;
+            }
+        }
+
+        UINT32 rval = Tss2_Sys_HierarchyChangeAuth(ctx->sapi_context,
+                sources[i].auth_handle, &sessionsData, &newAuth, 0);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Could not change hierarchy for %s. TPM Error:0x%x",
+                    sources[i].desc, rval);
+            return false;
+        }
+
+        LOG_INFO("Successfully changed hierarchy for %s", sources[i].desc);
     }
 
-    if( argc > (int)(2*sizeof(sOpts)/sizeof(struct option)) )
-    {
+    return true;
+}
+
+static bool copy_password(const char *source, const char *msg, char *dest) {
+
+    size_t len = source ? strlen(source) : 0;
+    if (!source || len >= MAX_PASSWD) {
+        LOG_ERR(
+                "Invalid character count for %s, got: %zu,"
+                "expected greater than 0 or less than %zu",
+                msg, len, MAX_PASSWD - 1);
+        return false;
+    }
+    snprintf(dest, MAX_PASSWD, "%s", source);
+    return true;
+}
+
+static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
+        bool *clear_auth) {
+
+    struct option sOpts[] = {
+            { "ownerPasswd",      required_argument, NULL, 'o' },
+            {"endorsePasswd",     required_argument, NULL, 'e' },
+            { "lockPasswd",       required_argument, NULL, 'l' },
+            { "oldOwnerPasswd",   required_argument, NULL, 'O' },
+            { "oldEndorsePasswd", required_argument, NULL, 'E' },
+            { "oldLockPasswd",    required_argument, NULL, 'L' },
+            { "passwdInHex",      no_argument,       NULL, 'X' },
+            { "clear",            no_argument,       NULL, 'c' },
+            { NULL,               no_argument,       NULL, '\0' },
+    };
+
+    if (argc == 1) {
+        execute_man(argv[0], envp);
+        return false;
+    }
+
+    if (argc > (int) (2 * sizeof(sOpts) / sizeof(struct option))) {
         showArgMismatch(argv[0]);
-        return -1;
+        return false;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "o:e:l:O:E:L:Xp:d:hvc", sOpts, NULL ) ) != -1 )
-    {
-        switch ( opt ) {
-        case 'h':
-        case '?':
-            showHelp(argv[0]);
-            return 0;
-        case 'v':
-            showVersion(argv[0]);
-            return 0;
+    *clear_auth = false;
+
+    int opt;
+    bool result;
+    while ((opt = getopt_long(argc, argv, "o:e:l:O:E:L:Xc", sOpts, NULL))
+            != -1) {
+
+        switch (opt) {
         case 'c':
-            clearAuth = 1;
+            *clear_auth = true;
             break;
 
         case 'o':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                argsError = true;
-                break;
+            result = copy_password(optarg, "new owner password",
+                    ctx->passwords.owner.new);
+            if (!result) {
+                return false;
             }
-            snprintf(newOwnerPasswd, sizeof(newOwnerPasswd), "%s", optarg);
             break;
-
         case 'e':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                argsError = true;
-                break;
+            result = copy_password(optarg, "new endorse password",
+                    ctx->passwords.endorse.new);
+            if (!result) {
+                return false;
             }
-            snprintf(newEndorsePasswd, sizeof(newEndorsePasswd), "%s", optarg);
             break;
-
         case 'l':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                argsError = true;
-                break;
+            result = copy_password(optarg, "new lockout password",
+                    ctx->passwords.lockout.new);
+            if (!result) {
+                return false;
             }
-            snprintf(newLockoutPasswd, sizeof(newLockoutPasswd), "%s", optarg);
             break;
-
         case 'O':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input current Owner authorization value(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -2;
+            result = copy_password(optarg, "current owner password",
+                    ctx->passwords.owner.old);
+            if (!result) {
+                return false;
             }
-            snprintf(oldOwnerPasswd, sizeof(oldOwnerPasswd), "%s", optarg);
             break;
-
         case 'E':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input current Endorsement authorization value(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -3;
+            result = copy_password(optarg, "current endorse password",
+                    ctx->passwords.endorse.old);
+            if (!result) {
+                return false;
             }
-            snprintf(oldEndorsePasswd, sizeof(oldEndorsePasswd), "%s", optarg);
             break;
-
         case 'L':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input current Lockout authorization value(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -4;
+            result = copy_password(optarg, "current lockout password",
+                    ctx->passwords.lockout.old);
+            if (!result) {
+                return false;
             }
-            snprintf(oldLockoutPasswd, sizeof(oldLockoutPasswd), "%s", optarg);
             break;
         case 'X':
-            hexPasswd = true;
+            ctx->is_hex_passwords = true;
             break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                return -5;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                return -6;
-            }
-            break;
-
+        case '?':
         default:
-            showHelp(argv[0]);
-            return -7;
+            showArgMismatch(argv[0]);
+            return false;
         }
     }
+    return true;
+}
 
-    if( argsError == true )
-    {
-        showArgMismatch(argv[0]);
-        return -8;
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts is unused */
+    (void) opts;
+
+    takeownership_ctx ctx = {
+            .passwords = { 0 },
+            .sapi_context = sapi_context,
+            .is_hex_passwords = false
+    };
+
+    bool clear_auth = false;
+    bool result = init(argc, argv, envp, &ctx, &clear_auth);
+    if (!result) {
+        return 1;
     }
 
-    prepareTest(hostName, port, debugLevel) != 0;
+    int rc = (clear_auth ? clear_hierarchy_auth(&ctx) : change_hierarchy_auth(&ctx));
 
-    if( clearAuth )
-        returnVal = clearHierarchyAuth();
-    else
-        returnVal = changeHierarchyAuth();
-
-    finishTest();
-
-    if(returnVal)
-        return -9;
-
-    return 0;
+    /* true is success, coerce to 0 for program success */
+    return rc == false;
 }
