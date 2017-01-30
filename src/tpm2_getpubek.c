@@ -29,35 +29,50 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 #include <limits.h>
-#include <ctype.h>
+
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
-char outputFile[PATH_MAX];
-char ownerPasswd[sizeof(TPMU_HA)];
-char endorsePasswd[sizeof(TPMU_HA)];
-char ekPasswd[sizeof(TPMU_HA)];
-bool hexPasswd = false;
-TPM_HANDLE persistentHandle;
-UINT32 algorithmType = TPM_ALG_RSA;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "string-bytes.h"
 
-BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24, 0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA};
-static int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
+#define PASSWORD_MAX (sizeof(TPMU_HA))
+
+typedef struct getpubek_context getpubek_context;
+struct getpubek_context {
+    struct {
+        bool is_hex;
+        char owner[PASSWORD_MAX];
+        char endorse[PASSWORD_MAX];
+        char ek[PASSWORD_MAX];
+    } passwords;
+    char out_file_path[PATH_MAX];
+    TPM_HANDLE persistent_handle;
+    UINT32 algorithm;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
+
+static bool set_key_algorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
 {
+
+    static BYTE auth_policy[] = {
+            0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 0x1A, 0x90, 0xCC,
+            0x8D, 0x46, 0xA5, 0xD7, 0x24, 0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52,
+            0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA
+    };
+
     inPublic->t.publicArea.nameAlg = TPM_ALG_SHA256;
+
     // First clear attributes bit field.
-    *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
+    *(UINT32 *) &(inPublic->t.publicArea.objectAttributes) = 0;
     inPublic->t.publicArea.objectAttributes.restricted = 1;
     inPublic->t.publicArea.objectAttributes.userWithAuth = 0;
     inPublic->t.publicArea.objectAttributes.adminWithPolicy = 1;
@@ -67,74 +82,119 @@ static int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
     inPublic->t.publicArea.objectAttributes.fixedParent = 1;
     inPublic->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
     inPublic->t.publicArea.authPolicy.t.size = 32;
-    memcpy(inPublic->t.publicArea.authPolicy.t.buffer, authPolicy, 32);
+    memcpy(inPublic->t.publicArea.authPolicy.t.buffer, auth_policy, 32);
 
     inPublic->t.publicArea.type = algorithm;
 
-    switch(algorithm)
-    {
-    case TPM_ALG_RSA:
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+    switch (algorithm) {
+    case TPM_ALG_RSA :
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm =
+                TPM_ALG_AES;
         inPublic->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
-        inPublic->t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.rsaDetail.symmetric.mode.aes =
+                TPM_ALG_CFB;
+        inPublic->t.publicArea.parameters.rsaDetail.scheme.scheme =
+                TPM_ALG_NULL;
         inPublic->t.publicArea.parameters.rsaDetail.keyBits = 2048;
         inPublic->t.publicArea.parameters.rsaDetail.exponent = 0;
         inPublic->t.publicArea.unique.rsa.t.size = 256;
         break;
-    case TPM_ALG_KEYEDHASH:
-        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
-        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_SHA256;
-        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
+    case TPM_ALG_KEYEDHASH :
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.scheme =
+                TPM_ALG_XOR;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
+                TPM_ALG_SHA256;
+        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf =
+                TPM_ALG_KDF1_SP800_108;
         inPublic->t.publicArea.unique.keyedHash.t.size = 0;
         break;
-    case TPM_ALG_ECC:
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_AES;
+    case TPM_ALG_ECC :
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.algorithm =
+                TPM_ALG_AES;
         inPublic->t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_CFB;
-        inPublic->t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
+        inPublic->t.publicArea.parameters.eccDetail.symmetric.mode.sym =
+                TPM_ALG_CFB;
+        inPublic->t.publicArea.parameters.eccDetail.scheme.scheme =
+                TPM_ALG_NULL;
         inPublic->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
         inPublic->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
         inPublic->t.publicArea.unique.ecc.x.t.size = 32;
         inPublic->t.publicArea.unique.ecc.y.t.size = 32;
         break;
-    case TPM_ALG_SYMCIPHER:
+    case TPM_ALG_SYMCIPHER :
         inPublic->t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
         inPublic->t.publicArea.parameters.symDetail.sym.keyBits.aes = 128;
         inPublic->t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
         inPublic->t.publicArea.unique.sym.t.size = 0;
         break;
     default:
-        printf("\n......The algorithm type input(%4.4x) is not supported!......\n", algorithm);
-        return -1;
+        LOG_ERR("The algorithm type input(%4.4x) is not supported!", algorithm);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-int createEKHandle()
-{
-    UINT32 rval;
+static bool password_to_auth(const char *password, bool is_hex,
+        TPM2B_AUTH *auth, const char *description) {
+
+    /* length was verified in init() */
+    size_t len = strlen(password);
+
+    if (is_hex) {
+        auth->t.size = sizeof(auth) - 2;
+        if (hex2ByteStructure(password, &auth->t.size, auth->t.buffer)
+                != 0) {
+            LOG_ERR("Failed to convert hex format password for %s.",
+                    description);
+            return false;
+        }
+    } else {
+        auth->t.size = strlen(password);
+        memcpy(auth->t.buffer, password, auth->t.size);
+    }
+    return true;
+}
+
+static bool create_ek_handle(getpubek_context *ctx) {
+
     TPMS_AUTH_COMMAND sessionData;
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TPML_PCR_SELECTION creationPCR;
 
-    TPM2B_SENSITIVE_CREATE  inSensitive = { { sizeof(TPM2B_SENSITIVE_CREATE)-2, } };
-    TPM2B_PUBLIC            inPublic = { { sizeof(TPM2B_PUBLIC)-2, } };
-    TPM2B_DATA              outsideInfo = { { 0, } };
-    TPML_PCR_SELECTION      creationPCR;
+    TPM2B_SENSITIVE_CREATE inSensitive = {
+            { sizeof(TPM2B_SENSITIVE_CREATE) - 2 }
+    };
 
-    TPM2B_NAME              name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_PUBLIC inPublic = {
+            { sizeof(TPM2B_PUBLIC) - 2 }
+    };
 
-    TPM2B_PUBLIC            outPublic = { { 0, } };
-    TPM2B_CREATION_DATA     creationData = { { 0, } };
-    TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
-    TPMT_TK_CREATION        creationTicket = { 0, };
+    TPM2B_DATA outsideInfo = {
+            { 0, }
+    };
 
-    TPM_HANDLE handle2048ek;
+    TPM2B_NAME name = {
+            { sizeof(TPM2B_NAME) - 2, }
+    };
+
+    TPM2B_PUBLIC outPublic = {
+            { 0, }
+    };
+
+    TPM2B_CREATION_DATA creationData = {
+            { 0, }
+    };
+
+    TPM2B_DIGEST creationHash = {
+            { sizeof(TPM2B_DIGEST) - 2, }
+    };
+
+    TPMT_TK_CREATION creationTicket = { 0, };
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -148,145 +208,101 @@ int createEKHandle()
     sessionData.sessionHandle = TPM_RS_PW;
     sessionData.nonce.t.size = 0;
     sessionData.hmac.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
+    *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
-    // use enAuth in Tss2_Sys_CreatePrimary
-    if (strlen(endorsePasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(endorsePasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], endorsePasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(endorsePasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for endorsePasswd.\n");
-            return -1;
-        }
+    bool result = password_to_auth(ctx->passwords.endorse,
+            ctx->passwords.is_hex, &sessionData.hmac, "endorse");
+    if (!result) {
+        return false;
     }
 
-    if (strlen(ekPasswd) > 0 && !hexPasswd)
-    {
-        inSensitive.t.sensitive.userAuth.t.size = strlen(ekPasswd);
-        memcpy( &inSensitive.t.sensitive.userAuth.t.buffer[0], ekPasswd, inSensitive.t.sensitive.userAuth.t.size );
+    result = password_to_auth(ctx->passwords.ek, ctx->passwords.is_hex,
+            &inSensitive.t.sensitive.userAuth, "ek");
+    if (!result) {
+        return false;
     }
-    else if (strlen(ekPasswd) > 0 && hexPasswd)
-    {
-        inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
-        if (hex2ByteStructure(ekPasswd,
-                              &inSensitive.t.sensitive.userAuth.t.size,
-                              inSensitive.t.sensitive.userAuth.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for ekPasswd.\n");
-            return -1;
-        }
-    }
+
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
-    if( setKeyAlgorithm(algorithmType, &inPublic) )
-        return -1;
+    result = set_key_algorithm(ctx->algorithm, &inPublic);
+    if (!result) {
+        return false;
+    }
 
     creationPCR.count = 0;
 
-    /*To Create EK*/
-    rval = Tss2_Sys_CreatePrimary(sysContext, TPM_RH_ENDORSEMENT, &sessionsData, &inSensitive, &inPublic,
-        &outsideInfo, &creationPCR, &handle2048ek, &outPublic, &creationData, &creationHash,
-        &creationTicket, &name, &sessionsDataOut);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......TPM2_CreatePrimary Error. TPM Error:0x%x......\n", rval);
-        return -2;
+    /* Create EK and get a handle to the key */
+    TPM_HANDLE handle2048ek;
+    UINT32 rval = Tss2_Sys_CreatePrimary(ctx->sapi_context, TPM_RH_ENDORSEMENT,
+            &sessionsData, &inSensitive, &inPublic, &outsideInfo, &creationPCR,
+            &handle2048ek, &outPublic, &creationData, &creationHash,
+            &creationTicket, &name, &sessionsDataOut);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_CreatePrimary Error. TPM Error:0x%x", rval);
+        return false;
     }
-    printf("\nEK create succ.. Handle: 0x%8.8x\n", handle2048ek);
+
+    LOG_INFO("EK create success. Got handle: 0x%8.8x", handle2048ek);
 
     // To make EK persistent, use own auth
     sessionData.hmac.t.size = 0;
-    if (strlen(ownerPasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(ownerPasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], ownerPasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(ownerPasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(ownerPasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for ownerPasswd.\n");
-            return -1;
-        }
+    result = password_to_auth(ctx->passwords.owner, ctx->passwords.is_hex,
+            &sessionData.hmac, "owner");
+    if (!result) {
+        return false;
     }
 
-    rval = Tss2_Sys_EvictControl(sysContext, TPM_RH_OWNER, handle2048ek, &sessionsData, persistentHandle, &sessionsDataOut);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......EvictControl:Make EK persistent Error. TPM Error:0x%x......\n", rval);
-        return -3;
+    rval = Tss2_Sys_EvictControl(ctx->sapi_context, TPM_RH_OWNER, handle2048ek,
+            &sessionsData, ctx->persistent_handle, &sessionsDataOut);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("EvictControl failed. Could not make EK persistent."
+                "TPM Error:0x%x", rval);
+        return false;
     }
-    printf("EvictControl EK persistent succ.\n");
 
-    rval = Tss2_Sys_FlushContext(sysContext, handle2048ek);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Flush transient EK failed. TPM Error:0x%x......\n", rval);
-        return -4;
+    LOG_INFO("EvictControl EK persistent success.");
+
+    rval = Tss2_Sys_FlushContext(ctx->sapi_context, handle2048ek);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Flush transient EK failed. TPM Error:0x%x",
+                rval);
+        return false;
     }
-    printf("Flush transient EK succ.\n");
+
+    LOG_INFO("Flush transient EK success.");
 
     // save ek public
-    if( saveDataToFile(outputFile, (UINT8 *)&outPublic, sizeof(outPublic)) )
-    {
-        printf("\n......Failed to save EK pub key into file(%s)......\n", outputFile);
-        return -5;
+    if (saveDataToFile(ctx->out_file_path, (UINT8 *) &outPublic,
+            sizeof(outPublic))) {
+        LOG_ERR("Failed to save EK pub key into file \"%s\"",
+                ctx->out_file_path);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-void showHelp(const char *name)
-{
-    showVersion(name);
-    printf("Usage: %s [-h/--help]\n"
-           "   or: %s [-v/--version]\n"
-           "   or: %s [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] [-P/--ekPasswd <password>]\n"
-           "                     [-H/--handle <hexHandle>] [-g/--alg <hexAlg>] [-f/--file <outputFile>]\n"
-           "   or: %s [-e/--endorsePasswd <password>] [-o/--ownerPasswd <password>] [-P/--ekPasswd <password>]\n"
-           "                     [-H/--handle <hexHandle>] [-g/--alg <hexAlg>] [-f/--file <outputFile>]\n"
-           "                     [-X/--passwdInHex]\n"
-           "                     [-i/--ip <ipAddress>] [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
-           "\nwhere:\n\n"
-           "   -h/--help                       display this help and exit.\n"
-           "   -v/--version                    display version information and exit.\n"
-           "   -e/--endorsePasswd <password>   specifies current endorse password (string,optional,default:NULL).\n"
-           "   -o/--ownerPasswd   <password>   specifies current owner password (string,optional,default:NULL).\n"
-           "   -P/--ekPasswd      <password>   specifies the EK password when created (string,optional,default:NULL).\n"
-           "   -H/--handle        <hexHandle>  specifies the handle used to make EK persistent (hex).\n"
-           "   -g/--alg           <hexAlg>     specifies the algorithm type of EK (default:0x01/TPM_ALG_RSA).\n"
-           "   -f/--file          <outputFile> specifies the file used to save the public portion of EK.\n"
-           "   -X/--passwdInHex                passwords given by any options are hex format.\n"
-           "   -p/--port          <port>       specifies the port number (optional,default:%d).\n"
-           "   -d/--dbg           <dbgLevel>   specifies level of debug messages(optional,default:0):\n"
-           "                                     0 (high level test results)\n"
-           "                                     1 (test app send/receive byte streams)\n"
-           "                                     2 (resource manager send/receive byte streams)\n"
-           "                                     3 (resource manager tables)\n"
-           "\nexample:\n"
-           "   %s -e abc123 -o abc123 -P passwd -H 0x81010001 -g 0x01 -f ek.pub\n"
-           "   %s -e 1a1b1c -o 1a1b1c -P 123abc -X -H 0x81010001 -g 0x01 -f ek.pub\n"
-        , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
+static bool copy_password(const char *password, char *dest, const char *description) {
+
+    if (!optarg) {
+        LOG_ERR("Please input the %s password!", description);
+        return false;
+    }
+
+    size_t len = strlen(optarg);
+    if (len >= PASSWORD_MAX) {
+        LOG_ERR("Over-length password for %s. Got %zu expected less than %zu!", description, len, PASSWORD_MAX);
+        return false;
+    }
+
+    snprintf(dest, PASSWORD_MAX, "%s", password);
+    return true;
 }
 
-int main(int argc, char *argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-    int opt;
-    int returnVal = 0;
+static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
 
-    struct option sOpts[] =
+    struct option options[] =
     {
         { "endorsePasswd", required_argument, NULL, 'e' },
         { "ownerPasswd"  , required_argument, NULL, 'o' },
@@ -295,121 +311,104 @@ int main(int argc, char *argv[])
         { "alg"          , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
         { "passwdInHex"  , no_argument,       NULL, 'X' },
-        { "port"         , required_argument, NULL, 'p' },
         { "dbg"          , required_argument, NULL, 'd' },
         { "help"         , no_argument,       NULL, 'h' },
-        { "version"      , no_argument,       NULL, 'v' },
-        { NULL           , no_argument,       NULL,  0  },
+        { NULL           , no_argument,       NULL,  '\0' },
     };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    if (argc == 1) {
+        execute_man(argv[0], envp);
+        return 1;
     }
 
-    if( argc > (int)(2*sizeof(sOpts)/sizeof(struct option)) )
-    {
+    if (argc > (int) (2 * sizeof(options) / sizeof(struct option))) {
         showArgMismatch(argv[0]);
         return -1;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "e:o:H:P:g:f:Xp:d:hv", sOpts, NULL ) ) != -1 )
-    {
-        switch ( opt ) {
-        case 'h':
-        case '?':
-            showHelp(argv[0]);
-            return 0;
-        case 'v':
-            showVersion(argv[0]);
-            return 0;
-
+    int opt;
+    while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:Xp:d:hv", options, NULL))
+            != -1) {
+        bool result;
+        switch (opt) {
         case 'H':
-            if( getSizeUint32Hex(optarg, &persistentHandle) )
-            {
-                printf("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
-                return -2;
+            result = string_bytes_get_uint32(optarg, &ctx->persistent_handle);
+            if (!result) {
+                LOG_ERR("Could not convert EK persistent from hex format.\n");
+                return false;
             }
             break;
 
         case 'e':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -3;
+            result = copy_password(optarg, ctx->passwords.endorse,
+                    "endorsement password");
+            if (!result) {
+                return false;
             }
-            snprintf(endorsePasswd, sizeof(endorsePasswd), "%s", optarg);
             break;
-
         case 'o':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -4;
+            result = copy_password(optarg, ctx->passwords.owner,
+                    "owner password");
+            if (!result) {
+                return false;
             }
-            snprintf(ownerPasswd, sizeof(ownerPasswd), "%s", optarg);
             break;
-
         case 'P':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -5;
+            result = copy_password(optarg, ctx->passwords.ek, "EK password");
+            if (!result) {
+                return false;
             }
-            snprintf(ekPasswd, sizeof(ekPasswd), "%s", optarg);
             break;
-
         case 'g':
-            if( getSizeUint32Hex(optarg, &algorithmType) )
-            {
-                printf("\nPlease input the algorithm type in correct format.\n");
-                return -6;
+            result = string_bytes_get_uint32(optarg, &ctx->algorithm);
+            if (!result) {
+                LOG_ERR("Could not convert algorithm to value, got: %s",
+                        optarg);
+                return false;
             }
             break;
-
         case 'f':
-            if( optarg == NULL )
-            {
-                printf("\nPlease input the file used to save the pub ek.\n");
-                return -7;
+            if (!optarg) {
+                LOG_ERR("Please specify an output file to save the pub ek to.");
+                return false;
             }
-            snprintf(outputFile, sizeof(outputFile), "%s", optarg);
+            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
+                    optarg);
             break;
-
         case 'X':
-            hexPasswd = true;
+            ctx->passwords.is_hex = true;
             break;
-
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                return -8;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                return -9;
-            }
-            break;
-
+        case ':':
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
+        case '?':
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
         default:
-            showHelp(argv[0]);
-            return -10;
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
         }
+
+    }
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* common options are not used, avoid compiler warning */
+    (void) opts;
+
+    getpubek_context ctx = {
+            .passwords = { 0 },
+            .algorithm = TPM_ALG_RSA,
+            .sapi_context = sapi_context
+    };
+
+    bool result = init(argc, argv, envp, &ctx);
+    if (!init) {
+        return false;
     }
 
-    prepareTest(hostName, port, debugLevel);
-
-    returnVal = createEKHandle();
-
-    finishTest();
-
-    if( returnVal )
-        return -11;
-
-    return 0;
+    /* normalize 0 success 1 failure */
+    return create_ek_handle(&ctx) != true;
 }
