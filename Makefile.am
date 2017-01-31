@@ -64,7 +64,8 @@ COMMON_SRC = \
     src/pcr.c \
     src/string-bytes.c \
     src/tpm2-header.c \
-    src/tpm_hash.c
+    src/tpm_hash.c \
+    src/password_util.c
 
 # The tools within this conditional are hard coded to the socket TCTI.
 # As they're migrated to support dynamic TCTI configuration they should be

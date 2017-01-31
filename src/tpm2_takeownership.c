@@ -45,14 +45,13 @@
 #include "log.h"
 #include "options.h"
 #include "main.h"
+#include "password_util.h"
 #include "string-bytes.h"
-
-#define MAX_PASSWD (sizeof(TPMU_HA))
 
 typedef struct password password;
 struct password {
-    char old[MAX_PASSWD];
-    char new[MAX_PASSWD];
+    TPM2B_AUTH old;
+    TPM2B_AUTH new;
 };
 
 typedef struct takeownership_ctx takeownership_ctx;
@@ -65,25 +64,6 @@ struct takeownership_ctx {
     bool is_hex_passwords;
     TSS2_SYS_CONTEXT *sapi_context;
 };
-
-static bool passwd_to_tpm2b_auth(const char *passwd, bool is_hex, TPM2B_AUTH *auth) {
-
-    auth->t.size = 0;
-
-    /* already NULL checked and overflow checked by init() options handling */
-    size_t len = strlen(passwd);
-    if (!len) {
-        return true;
-    }
-
-    if (is_hex) {
-        auth->t.size = sizeof(auth) - 2;
-        return !hex2ByteStructure(passwd, &auth->t.size, auth->t.buffer);
-    }
-    auth->t.size = len;
-    memcpy(&auth->t.buffer[0], passwd, auth->t.size);
-    return true;
-}
 
 bool clear_hierarchy_auth(takeownership_ctx *ctx) {
 
@@ -100,9 +80,8 @@ bool clear_hierarchy_auth(takeownership_ctx *ctx) {
     sessionData.hmac.t.size = 0;
     *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
-    bool result = passwd_to_tpm2b_auth(ctx->passwords.lockout.old, ctx->is_hex_passwords, &sessionData.hmac);
+    bool result = password_util_to_auth(&ctx->passwords.lockout.old, ctx->is_hex_passwords, "old lockout", &sessionData.hmac);
     if (!result) {
-        LOG_ERR("Failed to convert hex format password for old lockout password.");
         return false;
     }
 
@@ -133,26 +112,26 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
     *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
     struct {
-        char *new_passwd;
-        char *old_passwd;
+        TPM2B_AUTH *new_passwd;
+        TPM2B_AUTH *old_passwd;
         TPMI_RH_HIERARCHY_AUTH auth_handle;
         char *desc;
     } sources[] = {
             {
-                    .new_passwd = ctx->passwords.owner.new,
-                    .old_passwd = ctx->passwords.owner.old,
+                    .new_passwd = &ctx->passwords.owner.new,
+                    .old_passwd = &ctx->passwords.owner.old,
                     .auth_handle = TPM_RH_OWNER,
                     .desc = "Owner"
             },
             {
-                    .new_passwd = ctx->passwords.endorse.new,
-                    .old_passwd = ctx->passwords.endorse.old,
+                    .new_passwd = &ctx->passwords.endorse.new,
+                    .old_passwd = &ctx->passwords.endorse.old,
                     .auth_handle = TPM_RH_ENDORSEMENT,
                     .desc = "Endorsement"
             },
             {
-                    .new_passwd = ctx->passwords.lockout.new,
-                    .old_passwd = ctx->passwords.lockout.old,
+                    .new_passwd = &ctx->passwords.lockout.new,
+                    .old_passwd = &ctx->passwords.lockout.old,
                     .auth_handle = TPM_RH_LOCKOUT,
                     .desc = "Lockout"
             }
@@ -163,14 +142,17 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
 
         unsigned j;
         for (j = 0; j < 2; j++) {
-            char *passwd =
+            TPM2B_AUTH *passwd =
                     j == 0 ? sources[i].new_passwd : sources[i].old_passwd;
             TPM2B_AUTH *auth_dest = j == 0 ? &newAuth : &sessionData.hmac;
-            bool result = passwd_to_tpm2b_auth(passwd, ctx->is_hex_passwords, auth_dest);
+
+            char desc[256];
+            snprintf(desc, sizeof(desc), "%s %s",
+                    j == 0 ? "new" : "old", sources[i].desc);
+
+            bool result = password_util_to_auth(passwd, ctx->is_hex_passwords, desc,
+                    auth_dest);
             if (!result) {
-                LOG_ERR("Failed to convert hex formated password for"
-                        "%s %s password.", j == 0 ? "new" : "old",
-                        sources[i].desc);
                 return false;
             }
         }
@@ -186,20 +168,6 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
         LOG_INFO("Successfully changed hierarchy for %s", sources[i].desc);
     }
 
-    return true;
-}
-
-static bool copy_password(const char *source, const char *msg, char *dest) {
-
-    size_t len = source ? strlen(source) : 0;
-    if (!source || len >= MAX_PASSWD) {
-        LOG_ERR(
-                "Invalid character count for %s, got: %zu,"
-                "expected greater than 0 or less than %zu",
-                msg, len, MAX_PASSWD - 1);
-        return false;
-    }
-    snprintf(dest, MAX_PASSWD, "%s", source);
     return true;
 }
 
@@ -241,43 +209,43 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
             break;
 
         case 'o':
-            result = copy_password(optarg, "new owner password",
-                    ctx->passwords.owner.new);
+            result = password_util_copy_password(optarg, "new owner password",
+                    &ctx->passwords.owner.new);
             if (!result) {
                 return false;
             }
             break;
         case 'e':
-            result = copy_password(optarg, "new endorse password",
-                    ctx->passwords.endorse.new);
+            result = password_util_copy_password(optarg, "new endorse password",
+                    &ctx->passwords.endorse.new);
             if (!result) {
                 return false;
             }
             break;
         case 'l':
-            result = copy_password(optarg, "new lockout password",
-                    ctx->passwords.lockout.new);
+            result = password_util_copy_password(optarg, "new lockout password",
+                    &ctx->passwords.lockout.new);
             if (!result) {
                 return false;
             }
             break;
         case 'O':
-            result = copy_password(optarg, "current owner password",
-                    ctx->passwords.owner.old);
+            result = password_util_copy_password(optarg, "current owner password",
+                    &ctx->passwords.owner.old);
             if (!result) {
                 return false;
             }
             break;
         case 'E':
-            result = copy_password(optarg, "current endorse password",
-                    ctx->passwords.endorse.old);
+            result = password_util_copy_password(optarg, "current endorse password",
+                    &ctx->passwords.endorse.old);
             if (!result) {
                 return false;
             }
             break;
         case 'L':
-            result = copy_password(optarg, "current lockout password",
-                    ctx->passwords.lockout.old);
+            result = password_util_copy_password(optarg, "current lockout password",
+                    &ctx->passwords.lockout.old);
             if (!result) {
                 return false;
             }
