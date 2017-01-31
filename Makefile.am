@@ -54,7 +54,8 @@ sbin_PROGRAMS = \
     src/tpm2_getmanufec \
     src/tpm2_quote \
     src/tpm2_takeownership \
-    src/tpm2_getpubek
+    src/tpm2_getpubek \
+    src/tpm2_getpubak
 
 COMMON_SRC = \
     src/context-util.c \
@@ -76,7 +77,6 @@ COMMON_SRC = \
 # above.
 if HAVE_TCTI_SOCK
 sbin_PROGRAMS += \
-		  src/tpm2_getpubak \
 		  src/tpm2_akparse \
 		  src/tpm2_makecredential \
 		  src/tpm2_activatecredential \
@@ -155,7 +155,6 @@ man8_MANS = \
 
 src_libcommon_a_SOURCES = $(COMMON_SRC)
 if HAVE_TCTI_SOCK
-src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.c
 src_tpm2_akparse_SOURCES = src/tpm2_akparse.c
 src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.c
 src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.c
@@ -193,6 +192,7 @@ src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.c src/main.c
 src_tpm2_quote_SOURCES = src/tpm2_quote.c src/main.c
 src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.c src/main.c
 src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.c src/main.c
+src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.c src/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c

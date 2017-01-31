@@ -29,9 +29,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -40,457 +38,392 @@
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
+
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
 #include "sample.h"
+#include "string-bytes.h"
+#include "tpm_session.h"
 
-int debugLevel = 0;
-TPM_HANDLE persistentEKHandle;
-TPM_HANDLE persistentAKHandle;
-char endorsePasswd[sizeof(TPMU_HA)];
-char akPasswd[sizeof(TPMU_HA)];
-char ownerPasswd[sizeof(TPMU_HA)];
-bool hexPasswd = false;
-char outputFile[PATH_MAX];
-char aknameFile[PATH_MAX];
-UINT32 algorithmType = TPM_ALG_RSA;
-UINT32 digestAlg = TPM_ALG_SHA256;
-UINT32 signAlg = TPM_ALG_NULL;
+typedef struct getpubak_context getpubak_context;
+struct getpubak_context {
+    struct {
+        TPM_HANDLE ek;
+        TPM_HANDLE ak;
+    } persistent_handle;
+    struct {
+        TPM2B_AUTH endorse;
+        TPM2B_AUTH ak;
+        TPM2B_AUTH owner;
+    } passwords;
+    bool hexPasswd;
+    char outputFile[PATH_MAX];
+    char aknameFile[PATH_MAX];
+    UINT32 algorithmType;
+    UINT32 digestAlg;
+    UINT32 signAlg;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-int setRSASigningAlg(TPM2B_PUBLIC *inPublic)
-{
-    if (signAlg == TPM_ALG_NULL)
-        signAlg = TPM_ALG_RSASSA;
-    inPublic->t.publicArea.parameters.rsaDetail.scheme.scheme = signAlg;
-    switch(signAlg)
-    {
-    case TPM_ALG_RSASSA:
-    case TPM_ALG_RSAPSS:
-        inPublic->t.publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg = digestAlg;
-        break;
-    default:
-        printf("\n......The RSA signing algorithm type input(%4.4x) is not supported!......\n", signAlg);
-        return -1;
+/*
+ * TODO: All these set_xxx_signing_algorithm() routines could likely somehow be refactored into one.
+ */
+static bool set_rsa_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg, TPM2B_PUBLIC *in_public) {
+
+    if (sign_alg == TPM_ALG_NULL) {
+        sign_alg = TPM_ALG_RSASSA;
     }
 
-    return 0;
-}
-
-static int setECCSigningAlg(TPM2B_PUBLIC *inPublic)
-{
-    if (signAlg == TPM_ALG_NULL)
-        signAlg = TPM_ALG_ECDSA;
-    inPublic->t.publicArea.parameters.eccDetail.scheme.scheme = signAlg;
-    switch(signAlg)
-    {
-    case TPM_ALG_ECDSA:
-    case TPM_ALG_SM2:
-    case TPM_ALG_ECSCHNORR:
-    case TPM_ALG_ECDAA:
-        inPublic->t.publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg = digestAlg;
-    case TPM_ALG_NULL:
+    in_public->t.publicArea.parameters.rsaDetail.scheme.scheme = sign_alg;
+    switch (sign_alg) {
+    case TPM_ALG_RSASSA :
+    case TPM_ALG_RSAPSS :
+        in_public->t.publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg =
+                digest_alg;
         break;
     default:
-        printf("\n......The ECC signing algorithm type input(%4.4x) is not supported!......\n", signAlg);
-        return -1;
+        LOG_ERR("The RSA signing algorithm type input(%4.4x) is not supported!",
+                sign_alg);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-static int setKeyedhashSigningAlg(TPM2B_PUBLIC *inPublic)
-{
-    if (signAlg == TPM_ALG_NULL)
-        signAlg = TPM_ALG_HMAC;
-    inPublic->t.publicArea.parameters.keyedHashDetail.scheme.scheme = signAlg;
-    switch(signAlg)
-    {
-    case TPM_ALG_HMAC:
-        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = digestAlg;
-    case TPM_ALG_NULL:
+static bool set_ecc_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
+        TPM2B_PUBLIC *in_public) {
+
+    if (sign_alg == TPM_ALG_NULL) {
+        sign_alg = TPM_ALG_ECDSA;
+    }
+
+    in_public->t.publicArea.parameters.eccDetail.scheme.scheme = sign_alg;
+    switch (sign_alg) {
+    case TPM_ALG_ECDSA :
+    case TPM_ALG_SM2 :
+    case TPM_ALG_ECSCHNORR :
+    case TPM_ALG_ECDAA :
+        in_public->t.publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg =
+                digest_alg;
+        break;
+    case TPM_ALG_NULL :
+        /* nothing to do */
         break;
     default:
-        printf("\n......The Keyedhash signing algorithm type input(%4.4x) is not supported!......\n", signAlg);
-        return -1;
+        LOG_ERR("The ECC signing algorithm type input(%4.4x) is not supported!",
+                sign_alg);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-static int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
+static bool set_keyed_hash_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
+        TPM2B_PUBLIC *in_public) {
+
+    if (sign_alg == TPM_ALG_NULL) {
+        sign_alg = TPM_ALG_HMAC;
+    }
+
+    in_public->t.publicArea.parameters.keyedHashDetail.scheme.scheme = sign_alg;
+    switch (sign_alg) {
+    case TPM_ALG_HMAC :
+        in_public->t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg =
+                digest_alg;
+        break;
+    case TPM_ALG_NULL :
+        /* nothing to do */
+        break;
+    default:
+        LOG_ERR(
+                "The Keyedhash signing algorithm type input(%4.4x) is not supported!",
+                sign_alg);
+        return false;
+    }
+
+    return true;
+}
+
+static bool set_key_algorithm(getpubak_context *ctx, TPM2B_PUBLIC *in_public)
 {
-    inPublic->t.publicArea.nameAlg = TPM_ALG_SHA256;
+    in_public->t.publicArea.nameAlg = TPM_ALG_SHA256;
     // First clear attributes bit field.
-    *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
-    inPublic->t.publicArea.objectAttributes.restricted = 1;
-    inPublic->t.publicArea.objectAttributes.userWithAuth = 1;
-    inPublic->t.publicArea.objectAttributes.sign = 1;
-    inPublic->t.publicArea.objectAttributes.decrypt = 0;
-    inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
-    inPublic->t.publicArea.objectAttributes.fixedParent = 1;
-    inPublic->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    inPublic->t.publicArea.authPolicy.t.size = 0;
+    *(UINT32 *)&(in_public->t.publicArea.objectAttributes) = 0;
+    in_public->t.publicArea.objectAttributes.restricted = 1;
+    in_public->t.publicArea.objectAttributes.userWithAuth = 1;
+    in_public->t.publicArea.objectAttributes.sign = 1;
+    in_public->t.publicArea.objectAttributes.decrypt = 0;
+    in_public->t.publicArea.objectAttributes.fixedTPM = 1;
+    in_public->t.publicArea.objectAttributes.fixedParent = 1;
+    in_public->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    in_public->t.publicArea.authPolicy.t.size = 0;
 
-    inPublic->t.publicArea.type = algorithm;
+    in_public->t.publicArea.type = ctx->algorithmType;
 
-    switch(algorithm)
+    switch(ctx->algorithmType)
     {
     case TPM_ALG_RSA:
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 0;
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_NULL;
-        inPublic->t.publicArea.parameters.rsaDetail.keyBits = 2048;
-        inPublic->t.publicArea.parameters.rsaDetail.exponent = 0;
-        inPublic->t.publicArea.unique.rsa.t.size = 0;
-        if(setRSASigningAlg(inPublic))
-           return -1;
-        break;
+        in_public->t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
+        in_public->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 0;
+        in_public->t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_NULL;
+        in_public->t.publicArea.parameters.rsaDetail.keyBits = 2048;
+        in_public->t.publicArea.parameters.rsaDetail.exponent = 0;
+        in_public->t.publicArea.unique.rsa.t.size = 0;
+        return set_rsa_signing_algorithm(ctx->signAlg, ctx->digestAlg, in_public);
     case TPM_ALG_ECC:
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_NULL;
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.keyBits.sym = 0;
-        inPublic->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        inPublic->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        inPublic->t.publicArea.unique.ecc.x.t.size = 0;
-        inPublic->t.publicArea.unique.ecc.y.t.size = 0;
-        if(setECCSigningAlg(inPublic))
-           return -2;
-        break;
+        in_public->t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
+        in_public->t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_NULL;
+        in_public->t.publicArea.parameters.eccDetail.symmetric.keyBits.sym = 0;
+        in_public->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
+        in_public->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+        in_public->t.publicArea.unique.ecc.x.t.size = 0;
+        in_public->t.publicArea.unique.ecc.y.t.size = 0;
+        return set_ecc_signing_algorithm(ctx->signAlg, ctx->digestAlg, in_public);
     case TPM_ALG_KEYEDHASH:
-        inPublic->t.publicArea.unique.keyedHash.t.size = 0;
-        if(setKeyedhashSigningAlg(inPublic))
-           return -3;
-        break;
+        in_public->t.publicArea.unique.keyedHash.t.size = 0;
+        return set_keyed_hash_signing_algorithm(ctx->signAlg, ctx->digestAlg, in_public);
     case TPM_ALG_SYMCIPHER:
     default:
-        printf("\n......The algorithm type input(%4.4x) is not supported!......\n", algorithm);
-        return -4;
+        LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx->algorithmType);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-static int createAK()
-{
-    UINT32 rval = TPM_RC_SUCCESS;
-    TPMS_AUTH_COMMAND sessionData;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+static bool create_ak(getpubak_context *ctx) {
 
-    TPM2B_SENSITIVE_CREATE  inSensitive = { { sizeof(TPM2B_SENSITIVE_CREATE)-2, } };
-    TPM2B_PUBLIC            inPublic = { { sizeof(TPM2B_PUBLIC)-2, } };
-    TPM2B_DATA              outsideInfo = { { 0, } };
-    TPML_PCR_SELECTION      creationPCR;
+    TPML_PCR_SELECTION creation_pcr;
+    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_CMD_AUTHS sessions_data;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_COMMAND *session_data_array[1];
+    TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_NAME              name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_DATA outsideInfo = { { 0, } };
+    TPM2B_PUBLIC out_public = {{ 0, } };
+    TPM2B_NONCE nonce_caller = { { 0, } };
+    TPMT_TK_CREATION creation_ticket = { 0, };
+    TPM2B_CREATION_DATA creation_data = { { 0, } };
+    TPM2B_ENCRYPTED_SECRET encrypted_salt = { { 0, } };
 
-    TPM2B_PRIVATE           outPrivate = { { sizeof( TPM2B_PRIVATE ) - 2, } };
-    TPM2B_PUBLIC            outPublic = { { 0, } };
-    TPM2B_CREATION_DATA     creationData = { { 0, } };
-    TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
-    TPMT_TK_CREATION        creationTicket = { 0, };
+    TPMT_SYM_DEF symmetric = {
+            .algorithm = TPM_ALG_NULL,
+    };
 
-    TPM_HANDLE handle2048rsa = persistentEKHandle;
-    TPM_HANDLE loadedSha1KeyHandle;
+    TPM2B_SENSITIVE_CREATE inSensitive = {
+            { sizeof(TPM2B_SENSITIVE_CREATE) - 2, }
+    };
 
-    SESSION *session;
-    TPM2B_ENCRYPTED_SECRET  encryptedSalt = { { 0, } };
-    TPM2B_NONCE         nonceCaller = { { 0, } };
-    TPMT_SYM_DEF symmetric;
+    TPM2B_PUBLIC inPublic = {
+            { sizeof(TPM2B_PUBLIC) - 2, }
+    };
 
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
+    TPM2B_NAME name = {
+            { sizeof(TPM2B_NAME) - 2, }
+    };
 
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
+    TPM2B_PRIVATE out_private = {
+            { sizeof(TPM2B_PRIVATE) - 2, }
+    };
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    sessionData.hmac.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
+    TPM2B_DIGEST creation_hash = {
+            { sizeof(TPM2B_DIGEST) - 2, }
+    };
 
-    sessionsData.cmdAuthsCount = 1;
-    sessionsDataOut.rspAuthsCount = 1;
+    TPM_HANDLE handle_2048_rsa = ctx->persistent_handle.ek;
 
-    // set the object Auth value
-    inSensitive.t.sensitive.userAuth.t.size = 0;
-    if (strlen(akPasswd) > 0 && !hexPasswd)
-    {
-        inSensitive.t.sensitive.userAuth.t.size = strlen( akPasswd );
-        memcpy( &( inSensitive.t.sensitive.userAuth.t.buffer[0] ), &( akPasswd[0] ), inSensitive.t.sensitive.userAuth.t.size );
-    }
-    else if (strlen(akPasswd) > 0 && hexPasswd)
-    {
-        inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
-        if (hex2ByteStructure(akPasswd,
-                              &inSensitive.t.sensitive.userAuth.t.size,
-                              inSensitive.t.sensitive.userAuth.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for akPasswd.\n");
-            return -1;
-        }
-    }
+    session_data_array[0] = &session_data;
+    session_data_out_array[0] = &session_data_out;
+
+    sessions_data_out.rspAuths = &session_data_out_array[0];
+    sessions_data.cmdAuths = &session_data_array[0];
+
+    session_data.sessionHandle = TPM_RS_PW;
+    session_data.nonce.t.size = 0;
+    session_data.hmac.t.size = 0;
+    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
+
+    sessions_data.cmdAuthsCount = 1;
+    sessions_data_out.rspAuthsCount = 1;
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
+    creation_pcr.count = 0;
 
-    creationPCR.count = 0;
-
-    if( setKeyAlgorithm(algorithmType, &inPublic) )
-        return -1;
-
-    sessionData.hmac.t.size = 0;
-    if (strlen(endorsePasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(endorsePasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], endorsePasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(endorsePasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for endorsePasswd.\n");
-            return -1;
-        }
+    bool result = password_util_to_auth(&ctx->passwords.ak, ctx->hexPasswd, "AK",
+            &inSensitive.t.sensitive.userAuth);
+    if (!result) {
+        return false;
     }
 
-    symmetric.algorithm = TPM_ALG_NULL;
-
-    rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
-            0, &nonceCaller, &encryptedSalt, TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256 );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......StartAuthSessionWithParams Error. TPM Error:0x%x......\n", rval);
-        return -2;
+    result = set_key_algorithm(ctx, &inPublic);
+    if (!result) {
+        return false;
     }
-    printf("\nStartAuthSessionWithParams succ.......\n");
 
-    rval = Tss2_Sys_PolicySecret(sysContext, TPM_RH_ENDORSEMENT, session->sessionHandle, &sessionsData, 0, 0, 0, 0, 0, 0, 0);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Tss2_Sys_PolicySecret Error. TPM Error:0x%x......\n", rval);
-        return -3;
+    result = password_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
+            "endorse", &session_data.hmac);
+    if (!result) {
+        return false;
     }
-    printf("\nTss2_Sys_PolicySecret succ.......\n");
 
-    sessionData.sessionHandle = session->sessionHandle;
-    sessionData.sessionAttributes.continueSession = 1;
-    sessionData.hmac.t.size = 0;
-
-    rval = Tss2_Sys_Create( sysContext, handle2048rsa, &sessionsData, &inSensitive, &inPublic,
-            &outsideInfo, &creationPCR, &outPrivate, &outPublic, &creationData,
-            &creationHash, &creationTicket, &sessionsDataOut );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......TPM2_Create Error. TPM Error:0x%x......\n", rval);
-        return -4;
+    SESSION *session;
+    UINT32 rval = tpm_session_start_auth_with_params(ctx->sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
+            &nonce_caller, &encrypted_salt, TPM_SE_POLICY, &symmetric,
+            TPM_ALG_SHA256);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("tpm_session_start_auth_with_params Error. TPM Error:0x%x", rval);
+        return false;
     }
-    printf("\nTPM2_Create succ.......\n");
+
+    LOG_INFO("tpm_session_start_auth_with_params succ");
+
+    rval = Tss2_Sys_PolicySecret(ctx->sapi_context, TPM_RH_ENDORSEMENT,
+            session->sessionHandle, &sessions_data, 0, 0, 0, 0, 0, 0, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
+        return false;
+    }
+
+    LOG_INFO("Tss2_Sys_PolicySecret succ");
+
+    session_data.sessionHandle = session->sessionHandle;
+    session_data.sessionAttributes.continueSession = 1;
+    session_data.hmac.t.size = 0;
+
+    rval = Tss2_Sys_Create(ctx->sapi_context, handle_2048_rsa, &sessions_data,
+            &inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
+            &out_public, &creation_data, &creation_hash, &creation_ticket,
+            &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_Create Error. TPM Error:0x%x", rval);
+        return false;
+    }
+    LOG_INFO("TPM2_Create succ");
 
     // Need to flush the session here.
-    rval = Tss2_Sys_FlushContext( sysContext, session->sessionHandle );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......TPM2_Sys_FlushContext Error. TPM Error:0x%x......\n", rval);
-        return -5;
+    rval = Tss2_Sys_FlushContext(ctx->sapi_context, session->sessionHandle);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_INFO("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
+        return false;
     }
     // And remove the session from sessions table.
-    rval = EndAuthSession( session );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......EndAuthSession Error. TPM Error:0x%x......\n", rval);
-        return -6;
+    rval = tpm_session_auth_end(session);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("tpm_session_auth_end Error. TPM Error:0x%x", rval);
+        return false;
     }
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.sessionAttributes.continueSession = 0;
-    sessionData.hmac.t.size = 0;
-    if (strlen(endorsePasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(endorsePasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], endorsePasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(endorsePasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for endorsePasswd.\n");
-            return -1;
-        }
+    session_data.sessionHandle = TPM_RS_PW;
+    session_data.sessionAttributes.continueSession = 0;
+    session_data.hmac.t.size = 0;
+
+    result = password_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
+            "endorse", &session_data.hmac);
+    if (!result) {
+        return false;
     }
 
-    rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
-            0, &nonceCaller, &encryptedSalt, TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256 );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......StartAuthSessionWithParams Error. TPM Error:0x%x......\n", rval);
-        return -7;
+    rval = tpm_session_start_auth_with_params(ctx->sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
+            &nonce_caller, &encrypted_salt, TPM_SE_POLICY, &symmetric,
+            TPM_ALG_SHA256);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("tpm_session_start_auth_with_params Error. TPM Error:0x%x", rval);
+        return false;
     }
-    printf("\nStartAuthSessionWithParams succ.......\n");
+    LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    rval = Tss2_Sys_PolicySecret(sysContext, TPM_RH_ENDORSEMENT, session->sessionHandle, &sessionsData, 0, 0, 0, 0, 0, 0, 0);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Tss2_Sys_PolicySecret Error. TPM Error:0x%x......\n", rval);
-        return -8;
+    rval = Tss2_Sys_PolicySecret(ctx->sapi_context, TPM_RH_ENDORSEMENT,
+            session->sessionHandle, &sessions_data, 0, 0, 0, 0, 0, 0, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
+        return false;
     }
-    printf("\nTss2_Sys_PolicySecret succ.......\n");
+    LOG_INFO("Tss2_Sys_PolicySecret succ");
 
-    sessionData.sessionHandle = session->sessionHandle;
-    sessionData.sessionAttributes.continueSession = 1;
-    sessionData.hmac.t.size = 0;
+    session_data.sessionHandle = session->sessionHandle;
+    session_data.sessionAttributes.continueSession = 1;
+    session_data.hmac.t.size = 0;
 
-    rval = Tss2_Sys_Load ( sysContext, handle2048rsa, &sessionsData, &outPrivate, &outPublic,
-            &loadedSha1KeyHandle, &name, &sessionsDataOut);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......TPM2_Load Error. TPM Error:0x%x......\n", rval);
-        return -9;
+    TPM_HANDLE loaded_sha1_key_handle;
+    rval = Tss2_Sys_Load(ctx->sapi_context, handle_2048_rsa, &sessions_data, &out_private,
+            &out_public, &loaded_sha1_key_handle, &name, &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_Load Error. TPM Error:0x%x", rval);
+        return false;
     }
 
-    printf( "\nName of loaded key: \n" );
-    PrintSizedBuffer( (TPM2B *)&name );
+    /* required output of testing scripts */
+    printf("Name of loaded key: ");
+    string_bytes_print_tpm2b(&name.b);
     printf("\n");
-    printf( "\nLoaded key handle:  %8.8x\n", loadedSha1KeyHandle );
+    printf("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
     // write name to ak.name file
-    if( saveDataToFile(aknameFile, &name.t.name[0], name.t.size) )
-    {
-       printf("\n......Failed to save AK name into file(%s)......\n", aknameFile);
-       return -10;
+    int rc = saveDataToFile(ctx->aknameFile, &name.t.name[0], name.t.size);
+    if (rc) {
+        LOG_ERR("Failed to save AK name into file \"%s\"", ctx->aknameFile);
+        return false;
     }
 
     // Need to flush the session here.
-    rval = Tss2_Sys_FlushContext( sysContext, session->sessionHandle );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......TPM2_Sys_FlushContext Error. TPM Error:0x%x......\n", rval);
-        return -11;
+    rval = Tss2_Sys_FlushContext(ctx->sapi_context, session->sessionHandle);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
+        return false;
     }
 
     // And remove the session from sessions table.
-    rval = EndAuthSession( session );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......EndAuthSession Error. TPM Error:0x%x......\n", rval);
-        return -12;
+    rval = tpm_session_auth_end(session);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("tpm_session_auth_end Error. TPM Error:0x%x", rval);
+        return false;
     }
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.sessionAttributes.continueSession = 0;
-    sessionData.hmac.t.size = 0;
+    session_data.sessionHandle = TPM_RS_PW;
+    session_data.sessionAttributes.continueSession = 0;
+    session_data.hmac.t.size = 0;
+
     // use the owner auth here.
-    if (strlen(ownerPasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(ownerPasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], ownerPasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(ownerPasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(ownerPasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for ownerPasswd.\n");
-            return -1;
-        }
+    result = password_util_to_auth(&ctx->passwords.owner, ctx->hexPasswd, "owner",
+            &session_data.hmac);
+    if (!result) {
+        return false;
     }
 
-    rval = Tss2_Sys_EvictControl(sysContext, TPM_RH_OWNER, loadedSha1KeyHandle, &sessionsData, persistentAKHandle, &sessionsDataOut);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......TPM2_EvictControl Error. TPM Error:0x%x......\n", rval);
-        return -13;
+    rval = Tss2_Sys_EvictControl(ctx->sapi_context, TPM_RH_OWNER, loaded_sha1_key_handle,
+            &sessions_data, ctx->persistent_handle.ak, &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("\n......TPM2_EvictControl Error. TPM Error:0x%x......\n",
+                rval);
+        return false;
     }
-    printf("\nEvictControl: Make AK persistent succ.\n");
+    LOG_INFO("EvictControl: Make AK persistent succ.");
 
-    rval = Tss2_Sys_FlushContext(sysContext, loadedSha1KeyHandle);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Flush transient AK error. TPM Error:0x%x......\n", rval);
-        return -14;
+    rval = Tss2_Sys_FlushContext(ctx->sapi_context, loaded_sha1_key_handle);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Flush transient AK error. TPM Error:0x%x", rval);
+        return false;
     }
-    printf("\nFlush transient AK succ.\n");
+    LOG_INFO("Flush transient AK succ.");
 
     // save ak public
-    if( saveDataToFile(outputFile, (UINT8 *)&outPublic, sizeof(outPublic)) )
-    {
-        printf("\n......Failed to save AK pub key into file(%s)......\n", outputFile);
-        return -15;
+    rc = saveDataToFile(ctx->outputFile, (UINT8 *) &out_public, sizeof(out_public));
+    if (rc) {
+        LOG_ERR("Failed to save AK pub key into file \"%s\"", ctx->outputFile);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-static void showHelp(const char *name)
-{
-    showVersion(name);
-    printf("Usage: %s [-h/--help]\n"
-           "   or: %s [-v/--version]\n"
-           "   or: %s [-e/--endorsePasswd <password>] [-P/--akPasswd <password>] [-o/--ownerPasswd <password>]\n"
-           "                     [-E/--ekHandle <hexHandle>] [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] [-D/--digestAlg <hexAlg>]\n"
-           "                     [-s/--signAlg <hexAlg>] [-f/--file <outputFile>] [-n/--akName <aknameFile>]\n"
-           "   or: %s [-e/--endorsePasswd <password>] [-P/--akPasswd <password>] [-o/--ownerPasswd <password>]\n"
-           "                     [-E/--ekHandle <hexHandle>] [-k/--akHandle <hexHandle>] [-g/--alg <hexAlg>] [-D/--digestAlg <hexAlg>]\n"
-           "                     [-s/--signAlg <hexAlg>] [-f/--file <outputFile>] [-n/--akName <aknameFile>]\n"
-           "                     [-X/--passwdInHex]\n"
-           "                     [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
-           "\nwhere:\n\n"
-           "   -h/--help                       display this help and exit.\n"
-           "   -v/--version                    display version information and exit.\n"
-           "   -e/--endorsePasswd <password>   specifies current endorsement password (string,optional,default:NULL).\n"
-           "   -P/--akPasswd    <password>     specifies the AK password when created (string,optional,default:NULL).\n"
-           "   -o/--ownerPasswd <password>     specifies current owner password (string,optional,default:NULL).\n"
-           "   -E/--ekHandle    <hexHandle>    specifies the handle of EK (hex).\n"
-           "   -k/--akHandle    <hexHandle>    specifies the handle used to make AK persistent (hex).\n"
-           "   -g/--alg         <hexAlg>       specifies the algorithm type of AK (default:0x01/TPM_ALG_RSA):\n"
-           "                                      TPM_ALG_RSA             0x0001\n"
-           "                                      TPM_ALG_KEYEDHASH       0x0008\n"
-           "                                      TPM_ALG_ECC             0x0023\n"
-           "   -D/--digestAlg  <hexAlg>         specifies the algorithm of digest.\n"
-            "\t0x0004  TPM_ALG_SHA1\n"
-            "\t0x000B  TPM_ALG_SHA256\n"
-            "\t0x000C  TPM_ALG_SHA384\n"
-            "\t0x000D  TPM_ALG_SHA512\n"
-            "\t0x0012  TPM_ALG_SM3_256\n"
-           "   -s/--signAlg    <hexAlg>         specifies the algorithm of sign.\n"
-            "\t0x0005  TPM_ALG_HMAC\n"
-            "\t0x0014  TPM_ALG_RSASSA\n"
-            "\t0x0016  TPM_ALG_RSAPSS\n"
-            "\t0x0018  TPM_ALG_ECDSA\n"
-            "\t0x001A  TPM_ALG_ECDAA\n"
-            "\t0x001B  TPM_ALG_SM2\n"
-            "\t0x001C  TPM_ALG_ECSCHNORR\n"
-           "   -f/--file       <outputFile>     specifies the file used to save the public portion of AK.\n"
-           "   -n/--akName     <aknameFile>     specifies the file used to save the ak name.\n"
-           "   -X/--passwdInHex                 passwords given by any options are hex format.\n"
-           "   -p/--port       <port>           specifies the port number (default:%d).\n"
-           "   -d/--dbg        <dbgLevel>       specifies level of debug messages:\n"
-           "                                     0 (high level test results)\n"
-           "                                     1 (test app send/receive byte streams)\n"
-           "                                     2 (resource manager send/receive byte streams)\n"
-           "                                     3 (resource manager tables)\n"
-           "\nexample:\n"
-           "   %s -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name\n"
-           "   %s -e 1a2b3c -P 123abc -o 1a1b1c -X -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
-}
+static bool init(int argc, char *argv[], char **envp, getpubak_context *ctx) {
 
-int main(int argc, char *argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-    int opt;
-    int returnVal = 0;
-
-
-    struct option sOpts[] =
+    struct option opts[] =
     {
         { "ownerPasswd", required_argument, NULL, 'o' },
         { "endorsePasswd", required_argument, NULL, 'e' },
@@ -503,152 +436,125 @@ int main(int argc, char *argv[])
         { "file"       , required_argument, NULL, 'f' },
         { "akName"     , required_argument, NULL, 'n' },
         { "passwdInHex", no_argument,       NULL, 'X' },
-        { "port"       , required_argument, NULL, 'p' },
-        { "dbg"        , required_argument, NULL, 'd' },
-        { "help"       , no_argument,       NULL, 'h' },
-        { "version"    , no_argument,       NULL, 'v' },
         { NULL         , no_argument,       NULL,  0  },
     };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
-    }
-
-
-    if( argc > (int)(2*sizeof(sOpts)/sizeof(struct option)) )
-    {
+    if (argc == 1 || argc > (int) (2 * sizeof(opts) / sizeof(opts[0]))) {
         showArgMismatch(argv[0]);
-        return -1;
+        return false;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "o:E:e:k:g:D:s:P:f:n:Xp:d:hv", sOpts, NULL ) ) != -1 )
-    {
-        switch ( opt ) {
-        case 'h':
-        case '?':
-            showHelp(argv[0]);
-            return 0;
-        case 'v':
-            showVersion(argv[0]);
-            return 0;
-
+    int opt;
+    bool result;
+    while ((opt = getopt_long(argc, argv, "o:E:e:k:g:D:s:P:f:n:Xp:", opts, NULL))
+            != -1) {
+        switch (opt) {
         case 'E':
-            if( getSizeUint32Hex(optarg, &persistentEKHandle) )
-            {
-                printf("\nPlease input the persistent EK handle(hex) in correct format.\n");
-                return -2;
+            result = string_bytes_get_uint32(optarg, &ctx->persistent_handle.ek);
+            if (!result) {
+                LOG_ERR("Could not convert persistent EK handle.");
+                return false;
             }
             break;
-
         case 'k':
-            if( getSizeUint32Hex(optarg, &persistentAKHandle) )
-            {
-                printf("\nPlease input the persistent handle used to make AK persistent(hex) in correct format.\n");
-                return -3;
+            result = string_bytes_get_uint32(optarg, &ctx->persistent_handle.ak);
+            if (!result) {
+                LOG_ERR("Could not convert persistent AK handle.");
+                return false;
             }
             break;
-
         case 'g':
-            if( getSizeUint32Hex(optarg, &algorithmType) )
-            {
-                printf("\nPlease input the algorithm type in correct format.\n");
-                return -4;
+            result = string_bytes_get_uint32(optarg, &ctx->algorithmType);
+            if (!result) {
+                LOG_ERR("Could not convert algorithm.");
+                return false;
             }
             break;
-
         case 'D':
-            if( getSizeUint32Hex(optarg, &digestAlg) )
-            {
-                printf("\nPlease input the digest algorithm in correct format.\n");
-                return -5;
+            result = string_bytes_get_uint32(optarg, &ctx->digestAlg);
+            if (!result) {
+                LOG_ERR("Could not convert digest algorithm.");
+                return false;
             }
             break;
-
         case 's':
-            if( getSizeUint32Hex(optarg, &signAlg) )
-            {
-                printf("\nPlease input the signing algorithm in correct format.\n");
-                return -6;
+            result = string_bytes_get_uint32(optarg, &ctx->signAlg);
+            if (!result) {
+                LOG_ERR("Could not convert signing algorithm.");
+                return false;
             }
             break;
-
         case 'o':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -7;
+            result = password_util_copy_password(optarg, "owner",
+                    &ctx->passwords.owner);
+            if (!result) {
+                return false;
             }
-            snprintf(ownerPasswd, sizeof(ownerPasswd), "%s", optarg);
             break;
-
         case 'e':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -8;
+            result = password_util_copy_password(optarg, "endorse",
+                    &ctx->passwords.endorse);
+            if (!result) {
+                return false;
             }
-            snprintf(endorsePasswd, sizeof(endorsePasswd), "%s", optarg);
             break;
-
         case 'P':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the AK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -9;
+            result = password_util_copy_password(optarg, "AK", &ctx->passwords.ak);
+            if (!result) {
+                return false;
             }
-            snprintf(akPasswd, sizeof(akPasswd), "%s", optarg);
             break;
-
         case 'f':
-            if( optarg == NULL )
-            {
-                printf("\nPlease input the file used to save the pub ek.\n");
-                return -10;
+            if (!optarg) {
+                LOG_ERR(
+                        "Please specify the output file used to save the pub ek.");
+                return false;
             }
-            snprintf(outputFile, sizeof(outputFile), "%s", optarg);
+            snprintf(ctx->outputFile, sizeof(ctx->outputFile), "%s", optarg);
             break;
-
         case 'n':
-            if( optarg == NULL )
-            {
-                printf("\nPlease input the file used to save ak name.\n");
-                return -11;
+            if (!optarg) {
+                LOG_ERR(
+                        "Please specify the output file used to save the ak name.");
+                return false;
             }
-            snprintf(aknameFile, sizeof(aknameFile), "%s", optarg);
+            snprintf(ctx->aknameFile, sizeof(ctx->aknameFile), "%s", optarg);
             break;
         case 'X':
-            hexPasswd = true;
+            ctx->hexPasswd = true;
             break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                return -12;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                return -13;
-            }
-            break;
+        case ':':
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
+        case '?':
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
         default:
-            showHelp(argv[0]);
-            return -14;
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
     }
+    return true;
+}
 
-    prepareTest(hostName, port, debugLevel);
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
 
-    returnVal = createAK();
+    /* opts is unused, avoid compiler warning */
+    (void)opts;
 
-    finishTest();
+    getpubak_context ctx = {
+            .hexPasswd = false,
+            .algorithmType = TPM_ALG_RSA,
+            .digestAlg = TPM_ALG_SHA256,
+            .signAlg = TPM_ALG_NULL,
+            .sapi_context = sapi_context
+    };
 
-    if(returnVal)
-        return -15;
+    bool result = init(argc, argv, envp, &ctx);
+    if (!result) {
+        return 1;
+    }
 
-    return 0;
+    return !create_ak(&ctx);
 }
