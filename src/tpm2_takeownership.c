@@ -40,7 +40,6 @@
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
 
 #include "log.h"
 #include "options.h"
