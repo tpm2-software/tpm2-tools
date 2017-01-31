@@ -42,17 +42,16 @@
 #include "files.h"
 #include "log.h"
 #include "main.h"
+#include "password_util.h"
 #include "string-bytes.h"
-
-#define PASSWORD_MAX (sizeof(TPMU_HA))
 
 typedef struct getpubek_context getpubek_context;
 struct getpubek_context {
     struct {
         bool is_hex;
-        char owner[PASSWORD_MAX];
-        char endorse[PASSWORD_MAX];
-        char ek[PASSWORD_MAX];
+        TPM2B_AUTH owner;
+        TPM2B_AUTH endorse;
+        TPM2B_AUTH ek;
     } passwords;
     char out_file_path[PATH_MAX];
     TPM_HANDLE persistent_handle;
@@ -135,27 +134,6 @@ static bool set_key_algorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
     return true;
 }
 
-static bool password_to_auth(const char *password, bool is_hex,
-        TPM2B_AUTH *auth, const char *description) {
-
-    /* length was verified in init() */
-    size_t len = strlen(password);
-
-    if (is_hex) {
-        auth->t.size = sizeof(auth) - 2;
-        if (hex2ByteStructure(password, &auth->t.size, auth->t.buffer)
-                != 0) {
-            LOG_ERR("Failed to convert hex format password for %s.",
-                    description);
-            return false;
-        }
-    } else {
-        auth->t.size = strlen(password);
-        memcpy(auth->t.buffer, password, auth->t.size);
-    }
-    return true;
-}
-
 static bool create_ek_handle(getpubek_context *ctx) {
 
     TPMS_AUTH_COMMAND sessionData;
@@ -210,14 +188,14 @@ static bool create_ek_handle(getpubek_context *ctx) {
     sessionData.hmac.t.size = 0;
     *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
-    bool result = password_to_auth(ctx->passwords.endorse,
-            ctx->passwords.is_hex, &sessionData.hmac, "endorse");
+    bool result = password_util_to_auth(&ctx->passwords.endorse,
+            ctx->passwords.is_hex, "endorse", &sessionData.hmac);
     if (!result) {
         return false;
     }
 
-    result = password_to_auth(ctx->passwords.ek, ctx->passwords.is_hex,
-            &inSensitive.t.sensitive.userAuth, "ek");
+    result = password_util_to_auth(&ctx->passwords.ek, ctx->passwords.is_hex,
+            "ek", &inSensitive.t.sensitive.userAuth);
     if (!result) {
         return false;
     }
@@ -247,8 +225,8 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     // To make EK persistent, use own auth
     sessionData.hmac.t.size = 0;
-    result = password_to_auth(ctx->passwords.owner, ctx->passwords.is_hex,
-            &sessionData.hmac, "owner");
+    result = password_util_to_auth(&ctx->passwords.owner, ctx->passwords.is_hex,
+            "owner", &sessionData.hmac);
     if (!result) {
         return false;
     }
@@ -280,23 +258,6 @@ static bool create_ek_handle(getpubek_context *ctx) {
         return false;
     }
 
-    return true;
-}
-
-static bool copy_password(const char *password, char *dest, const char *description) {
-
-    if (!optarg) {
-        LOG_ERR("Please input the %s password!", description);
-        return false;
-    }
-
-    size_t len = strlen(optarg);
-    if (len >= PASSWORD_MAX) {
-        LOG_ERR("Over-length password for %s. Got %zu expected less than %zu!", description, len, PASSWORD_MAX);
-        return false;
-    }
-
-    snprintf(dest, PASSWORD_MAX, "%s", password);
     return true;
 }
 
@@ -340,21 +301,21 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
             break;
 
         case 'e':
-            result = copy_password(optarg, ctx->passwords.endorse,
-                    "endorsement password");
+            result = password_util_copy_password(optarg, "endorsement password",
+                    &ctx->passwords.endorse);
             if (!result) {
                 return false;
             }
             break;
         case 'o':
-            result = copy_password(optarg, ctx->passwords.owner,
-                    "owner password");
+            result = password_util_copy_password(optarg, "owner password",
+                    &ctx->passwords.owner);
             if (!result) {
                 return false;
             }
             break;
         case 'P':
-            result = copy_password(optarg, ctx->passwords.ek, "EK password");
+            result = password_util_copy_password(optarg, "EK password", &ctx->passwords.ek);
             if (!result) {
                 return false;
             }
