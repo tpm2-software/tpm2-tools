@@ -103,3 +103,25 @@ void string_bytes_print_tpm2b(TPM2B *buffer) {
     }
     printf("\n");
 }
+
+/* TODO OPTIMIZE ME */
+UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src) {
+    int i;
+    UINT16 rval = 0;
+
+    if (dest != 0) {
+        if (src == 0) {
+            dest->size = 0;
+            rval = 0;
+        } else {
+            dest->size = src->size;
+            for (i = 0; i < src->size; i++)
+                dest->buffer[i] = src->buffer[i];
+            rval = (sizeof(UINT16) + src->size);
+        }
+    } else {
+        rval = 0;
+    }
+
+    return rval;
+}

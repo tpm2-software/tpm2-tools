@@ -25,24 +25,41 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#ifndef SRC_TPM_SESSION_H_
+#define SRC_TPM_SESSION_H_
+
 #include <sapi/tpm20.h>
+
+/* For SESSION definition */
 #include "sample.h"
 
-#include "tpm_hmac.h"
+/* TODO DOCUMENT ME */
+/**
+ *
+ * @param sapi_context
+ * @param session
+ * @param tpmKey
+ * @param salt
+ * @param bind
+ * @param bindAuth
+ * @param nonceCaller
+ * @param encryptedSalt
+ * @param sessionType
+ * @param symmetric
+ * @param algId
+ * @return
+ */
+TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSION **session,
+    TPMI_DH_OBJECT tpmKey, TPM2B_MAX_BUFFER *salt,
+    TPMI_DH_ENTITY bind, TPM2B_AUTH *bindAuth, TPM2B_NONCE *nonceCaller,
+    TPM2B_ENCRYPTED_SECRET *encryptedSalt,
+    TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId );
 
-//
-// This function does an HMAC on a null-terminated list of input buffers.
-//
-UINT32 TpmHmac( TPMI_ALG_HASH hashAlg, TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result )
-{
-    TSS2_SYS_CONTEXT *sysContext = InitSysContext( 3000, resMgrTctiContext, &abiVersion );
-    if( sysContext == 0 )
-        return TSS2_APP_ERROR_LEVEL + TPM_RC_FAILURE;
+/**
+ *
+ * @param session
+ * @return
+ */
+TPM_RC tpm_session_auth_end( SESSION *session);
 
-    UINT32 rval = tpm_hmac(sysContext, hashAlg, key, bufferList, result);
-
-    TeardownSysContext( &sysContext );
-
-    return rval;
-
-}
+#endif /* SRC_TPM_SESSION_H_ */

@@ -37,6 +37,18 @@ bool string_bytes_get_uint16(const char *str, uint16_t *value);
  */
 void string_bytes_print_tpm2b(TPM2B *buffer);
 
+/**
+ * Copies a tpm2b from dest to src and clears dest if src is NULL.
+ * If src is NULL, it is a NOP.
+ * @param dest
+ *  The destination TPM2B
+ * @param src
+ *  The source TPM2B
+ * @return
+ *  The number of bytes copied.
+ */
+UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src);
+
 /*
  * Leave the old interfaces for now and mark as deprecated,
  * on porting activities fix-up callers of these.
