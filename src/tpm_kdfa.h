@@ -25,24 +25,25 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#ifndef SRC_TPM_KDFA_H_
+#define SRC_TPM_KDFA_H_
+
 #include <sapi/tpm20.h>
-#include "sample.h"
 
-#include "tpm_hmac.h"
+/* TODO DOCUMENT ME */
+/**
+ *
+ * @param hashAlg
+ * @param key
+ * @param label
+ * @param contextU
+ * @param contextV
+ * @param bits
+ * @param resultKey
+ * @return
+ */
+TPM_RC tpm_kdfa(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
+        TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV,
+        UINT16 bits, TPM2B_MAX_BUFFER *resultKey );
 
-//
-// This function does an HMAC on a null-terminated list of input buffers.
-//
-UINT32 TpmHmac( TPMI_ALG_HASH hashAlg, TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result )
-{
-    TSS2_SYS_CONTEXT *sysContext = InitSysContext( 3000, resMgrTctiContext, &abiVersion );
-    if( sysContext == 0 )
-        return TSS2_APP_ERROR_LEVEL + TPM_RC_FAILURE;
-
-    UINT32 rval = tpm_hmac(sysContext, hashAlg, key, bufferList, result);
-
-    TeardownSysContext( &sysContext );
-
-    return rval;
-
-}
+#endif /* SRC_TPM_KDFA_H_ */

@@ -150,7 +150,10 @@ TPM_RC GetEntityAuth( TPM_HANDLE entityHandle, TPM2B_AUTH *auth );
 TPM_RC GetEntity( TPM_HANDLE entityHandle, ENTITY **entity );
 TPM_RC GetSessionStruct( TPMI_SH_AUTH_SESSION authHandle, SESSION **pSession );
 TPM_RC GetSessionAlgId( TPMI_SH_AUTH_SESSION authHandle, TPMI_ALG_HASH *sessionAlgId );
-TPM_RC EndAuthSession( SESSION *session );
+
+/* use tpm_session_auth_end() instead */
+TPM_RC EndAuthSession( SESSION *session ) __attribute__((deprecated));
+
 TPM_RC ComputeCommandHmacs( TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle1,
     TPM_HANDLE handle2, TSS2_SYS_CMD_AUTHS *pSessionsData,
     TPM_RC sessionCmdRval );
@@ -180,9 +183,10 @@ extern TPM_RC CheckResponseHMACs( TSS2_SYS_CONTEXT *sysContext,
     TSS2_SYS_CMD_AUTHS *pSessionsDataIn, TPM_HANDLE handle1, TPM_HANDLE handle2,
     TSS2_SYS_RSP_AUTHS *pSessionsDataOut );
 
-TPM_RC StartAuthSessionWithParams( SESSION **session, TPMI_DH_OBJECT tpmKey, TPM2B_MAX_BUFFER *salt,
+/* deprecated, please use tpm_start_auth_session_with_params() */
+TPM_RC StartAuthSessionWithParams(SESSION **session, TPMI_DH_OBJECT tpmKey, TPM2B_MAX_BUFFER *salt,
     TPMI_DH_ENTITY bind, TPM2B_AUTH *bindAuth, TPM2B_NONCE *nonceCaller, TPM2B_ENCRYPTED_SECRET *encryptedSalt,
-    TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId );
+    TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId ) __attribute__((deprecated));
 
 //
 // Used by upper layer code to save and update entity data
@@ -243,7 +247,8 @@ TPM_RC TpmCalcPHash( TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle1,
 //                  determined by the HMAC routine that gets called.  In the case
 //                  of the errors returned will be TPM 2.0 error codes.
 //
-extern UINT32 (*HmacFunctionPtr)( TPMI_ALG_HASH hashAlg, TPM2B *key,TPM2B **bufferList, TPM2B_DIGEST *result );
+// DEPRECATED: use TpmHmac() instead.
+extern UINT32 (*HmacFunctionPtr)( TPMI_ALG_HASH hashAlg, TPM2B *key,TPM2B **bufferList, TPM2B_DIGEST *result )__attribute__((deprecated));
 
 //
 // Pointer to generic hash wrapper function.  
@@ -289,16 +294,16 @@ extern TPM_RC ( *CalcPHash )( TSS2_SYS_CONTEXT *sysContext,TPM_HANDLE handle1, T
 
 void InitNullSession( TPMS_AUTH_COMMAND *nullSessionData );
 
-TPM_RC LoadExternalHMACKey( TPMI_ALG_HASH hashAlg, TPM2B *key, TPM_HANDLE *keyHandle, TPM2B_NAME *keyName );
-
-UINT16 CopySizedByteBuffer( TPM2B *dest, TPM2B *src );
+/* deprecated, use string_bytes_copy_tpm2b() */
+UINT16 CopySizedByteBuffer( TPM2B *dest, TPM2B *src ) __attribute__((deprecated));
 
 TSS2_RC EncryptCommandParam( SESSION *session, TPM2B_MAX_BUFFER *encryptedData, TPM2B_MAX_BUFFER *clearData, TPM2B_AUTH *authValue );
 
 TSS2_RC DecryptResponseParam( SESSION *session, TPM2B_MAX_BUFFER *clearData, TPM2B_MAX_BUFFER *encryptedData, TPM2B_AUTH *authValue );
 
+/* deprecated use tpm_kdfa() */
 TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV,
-    UINT16 bits, TPM2B_MAX_BUFFER *resultKey );
+    UINT16 bits, TPM2B_MAX_BUFFER *resultKey )__attribute__((deprecated));
 
 UINT32 TpmHashSequence( TPMI_ALG_HASH hashAlg, UINT8 numBuffers, TPM2B_DIGEST *bufferList, TPM2B_DIGEST *result );
 
@@ -308,7 +313,8 @@ void RollNonces( SESSION *session, TPM2B_NONCE *newNonce  );
 
 TSS2_RC SetLocality( TSS2_SYS_CONTEXT *sysContext, UINT8 locality );
 
-TPM_RC TpmHmac( TPMI_ALG_HASH hashAlg, TPM2B *key,TPM2B **bufferList, TPM2B_DIGEST *result );
+/* TpmHmac is deprecated, please use tpm_hmac() instead */
+TPM_RC TpmHmac( TPMI_ALG_HASH hashAlg, TPM2B *key,TPM2B **bufferList, TPM2B_DIGEST *result ) __attribute__((deprecated));
 
 /* TpmHash is deprecated, please use tpm_hash */
 UINT32 TpmHash( TPMI_ALG_HASH hashAlg, UINT16 size, BYTE *data, TPM2B_DIGEST *result ) __attribute__((deprecated));

@@ -65,7 +65,10 @@ COMMON_SRC = \
     src/string-bytes.c \
     src/tpm2-header.c \
     src/tpm_hash.c \
-    src/password_util.c
+    src/password_util.c \
+    src/tpm_kdfa.c \
+    src/tpm_hmac.c \
+    src/tpm_session.c
 
 # The tools within this conditional are hard coded to the socket TCTI.
 # As they're migrated to support dynamic TCTI configuration they should be
@@ -104,14 +107,12 @@ COMMON_SRC += \
     src/DecryptEncrypt.c \
     src/Entity.c \
     src/kdfa.c \
-    src/LoadExternalHMACKey.c \
     src/SessionHmac.c \
     src/StartAuthSession.c \
     src/TpmCalcPHash.c \
     src/TpmHandleToName.c \
     src/TpmHash.c \
     src/TpmHmac.c
-
 endif
 
 man8_MANS = \

@@ -29,6 +29,8 @@
 #include "sample.h"
 #include <stdlib.h>
 
+#include "tpm_session.h"
+
 #define SESSIONS_ARRAY_COUNT MAX_NUM_SESSIONS+1
 
 typedef struct {
@@ -141,96 +143,6 @@ void RollNonces( SESSION *session, TPM2B_NONCE *newNonce  )
 
 
 //
-// This is a wrapper function around the TPM2_StartAuthSession command.
-// It performs the command, calculates the session key, and updates a
-// SESSION structure.
-//
-TPM_RC StartAuthSession( SESSION *session )
-{
-    TPM_RC rval;
-    TPM2B_ENCRYPTED_SECRET key;
-    char label[] = "ATH";
-    TSS2_SYS_CONTEXT *tmpSysContext;
-    UINT16 bytes;
-    int i;
-    
-    key.t.size = 0;
-
-    tmpSysContext = InitSysContext( 1000, resMgrTctiContext, &abiVersion );
-    if( tmpSysContext == 0 )
-        return TSS2_APP_RC_INIT_SYS_CONTEXT_FAILED;
-
-    if( session->nonceOlder.t.size == 0 )
-    {
-        session->nonceOlder.t.size = GetDigestSize( TPM_ALG_SHA1 );
-        for( i = 0; i < session->nonceOlder.t.size; i++ )
-            session->nonceOlder.t.buffer[i] = 0; 
-    }
-
-    session->nonceNewer.t.size = session->nonceOlder.t.size;
-    rval = Tss2_Sys_StartAuthSession( tmpSysContext, session->tpmKey, session->bind, 0,
-            &( session->nonceOlder ), &( session->encryptedSalt ), session->sessionType,
-            &( session->symmetric ), session->authHash, &( session->sessionHandle ),
-            &( session->nonceNewer ), 0 );
-
-    if( rval == TPM_RC_SUCCESS )
-    {
-        if( session->tpmKey == TPM_RH_NULL )
-            session->salt.t.size = 0;
-        if( session->bind == TPM_RH_NULL )
-            session->authValueBind.t.size = 0;
-
-        if( session->tpmKey == TPM_RH_NULL && session->bind == TPM_RH_NULL )
-        {
-            session->sessionKey.b.size = 0;
-        }
-        else
-        {
-            // Generate the key used as input to the KDF.
-            rval = ConcatSizedByteBuffer( (TPM2B_MAX_BUFFER *)&key, &( session->authValueBind.b ) );
-            if( rval != TPM_RC_SUCCESS )
-            {
-                TeardownSysContext( &tmpSysContext );
-                return(  rval );
-            }
-
-            rval = ConcatSizedByteBuffer( (TPM2B_MAX_BUFFER *)&key, &( session->salt.b ) );
-            if( rval != TPM_RC_SUCCESS )
-            {
-                TeardownSysContext( &tmpSysContext );
-                return( rval );
-            }
-
-            bytes = GetDigestSize( session->authHash );
-
-            if( key.t.size == 0 )
-            {
-                session->sessionKey.t.size = 0;
-            }
-            else
-            {
-                rval = KDFa( session->authHash, &(key.b), label, &( session->nonceNewer.b ), 
-                        &( session->nonceOlder.b ), bytes * 8, (TPM2B_MAX_BUFFER *)&( session->sessionKey ) );
-            }
-
-            if( rval != TPM_RC_SUCCESS )
-            {
-                TeardownSysContext( &tmpSysContext );
-                return( TSS2_APP_RC_CREATE_SESSION_KEY_FAILED );
-            }
-        }
-
-        session->nonceTpmDecrypt.b.size = 0;
-        session->nonceTpmEncrypt.b.size = 0;
-        session->nvNameChanged = 0;
-    }
-
-    TeardownSysContext( &tmpSysContext );
-
-    return rval;
-}
-
-//
 // This version of StartAuthSession initializes the fields
 // of the session structure using the passed in
 // parameters, then calls StartAuthSession
@@ -245,74 +157,18 @@ TPM_RC StartAuthSessionWithParams( SESSION **session,
     TPM2B_ENCRYPTED_SECRET *encryptedSalt,
     TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId )
 {
-    TPM_RC rval;
-    SESSION_LIST_ENTRY *sessionEntry;
-    
-    rval = AddSession( &sessionEntry );
-    if( rval == TSS2_RC_SUCCESS )
-    {
-        *session = &sessionEntry->session;
-        
-        // Copy handles to session struct.
-        (*session)->bind = bind;
-        (*session)->tpmKey = tpmKey;
 
-        // Copy nonceCaller to nonceOlder in session struct.
-        // This will be used as nonceCaller when StartAuthSession
-        // is called.
-        CopySizedByteBuffer( &(*session)->nonceOlder.b, &nonceCaller->b );
-
-        // Copy encryptedSalt
-        CopySizedByteBuffer( &(*session)->encryptedSalt.b, &encryptedSalt->b );
-
-        // Copy sessionType.
-        (*session)->sessionType = sessionType;
-
-        // Init symmetric.
-        (*session)->symmetric.algorithm = symmetric->algorithm;
-        (*session)->symmetric.keyBits.sym = symmetric->keyBits.sym;
-        (*session)->symmetric.mode.sym = symmetric->mode.sym;
-        (*session)->authHash = algId;
-
-        // Copy bind' authValue.
-        if( bindAuth == 0 )
-        {
-            (*session)->authValueBind.b.size = 0;   
-        }
-        else
-        {
-            CopySizedByteBuffer( &( (*session)->authValueBind.b ), &( bindAuth->b ) );
-        }
-
-        // Calculate sessionKey
-        if( (*session)->tpmKey == TPM_RH_NULL )
-        {
-            (*session)->salt.t.size = 0;
-        }
-        else
-        {
-            CopySizedByteBuffer( &(*session)->salt.b, &salt->b );
-        }
-
-        if( (*session)->bind == TPM_RH_NULL )
-            (*session)->authValueBind.t.size = 0;
-
-
-        rval = StartAuthSession( *session );
-    }
-    else
-    {
-        DeleteSession( *session );
-    }
-    return( rval );
+    TSS2_SYS_CONTEXT *tmpSysContext = InitSysContext( 1000, resMgrTctiContext, &abiVersion );
+    if (!tmpSysContext)
+        return TSS2_APP_RC_INIT_SYS_CONTEXT_FAILED;
+    TPM_RC rval = tpm_session_start_auth_with_params(tmpSysContext, session, tpmKey,
+            salt, bind, bindAuth, nonceCaller, encryptedSalt, sessionType, symmetric, algId);
+    TeardownSysContext( &tmpSysContext );
+    return rval;
 }
 
 TPM_RC EndAuthSession( SESSION *session )
 {
-    TPM_RC rval = TPM_RC_SUCCESS;
-    
-    DeleteSession( session );
-
-    return rval;
+    return tpm_session_auth_end(session);
 }   
 

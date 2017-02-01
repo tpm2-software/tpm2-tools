@@ -25,24 +25,24 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <sapi/tpm20.h>
-#include "sample.h"
+#ifndef SRC_TPM_HMAC_H_
+#define SRC_TPM_HMAC_H_
 
-#include "tpm_hmac.h"
+/**
+ * Replaces TpmHmac.
+ * @param sapi_context
+ *  The system api context from execute_tool()
+ * @param hashAlg
+ *  The algorithm to perform
+ * @param key
+ *  The key
+ * @param bufferList
+ *  The list of NULL terminated buffers to perform the hmac on.
+ * @param result
+ *  The tpm error code, TPM_RC_SUCCESS on success.
+ * @return
+ */
+TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
+        TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result );
 
-//
-// This function does an HMAC on a null-terminated list of input buffers.
-//
-UINT32 TpmHmac( TPMI_ALG_HASH hashAlg, TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result )
-{
-    TSS2_SYS_CONTEXT *sysContext = InitSysContext( 3000, resMgrTctiContext, &abiVersion );
-    if( sysContext == 0 )
-        return TSS2_APP_ERROR_LEVEL + TPM_RC_FAILURE;
-
-    UINT32 rval = tpm_hmac(sysContext, hashAlg, key, bufferList, result);
-
-    TeardownSysContext( &sysContext );
-
-    return rval;
-
-}
+#endif /* SRC_TPM_HMAC_H_ */
