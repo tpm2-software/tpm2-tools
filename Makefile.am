@@ -55,7 +55,8 @@ sbin_PROGRAMS = \
     src/tpm2_quote \
     src/tpm2_takeownership \
     src/tpm2_getpubek \
-    src/tpm2_getpubak
+    src/tpm2_getpubak \
+    src/tpm2_createpolicy
 
 COMMON_SRC = \
     src/context-util.c \
@@ -123,6 +124,7 @@ man8_MANS = \
     man/man8/tpm2_listpcrs.8 \
     man/man8/tpm2_quote.8 \
     man/man8/tpm2_takeownership.8 \
+    man/man8/tpm2_createpolicy.8 \
     man/man8/tpm2_getpubek.8 \
     man/man8/tpm2_getpubak.8 \
     man/man8/tpm2_getmanufec.8 \
@@ -193,6 +195,7 @@ src_tpm2_quote_SOURCES = src/tpm2_quote.c src/main.c
 src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.c src/main.c
 src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.c src/main.c
 src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.c src/main.c
+src_tpm2_createpolicy_SOURCES = src/tpm2_createpolicy.c src/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c

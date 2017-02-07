@@ -97,3 +97,53 @@ int tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, BYTE *buffer,
     free(bufferList);
     return rval == TPM_RC_SUCCESS ? 0 : -3;
 }
+
+//
+// This function does a hash on an array of data strings and re-uses syscontext
+//
+UINT32 tpm_hash_sequence( TSS2_SYS_CONTEXT *sysContext, TPMI_ALG_HASH hashAlg,
+    UINT8 numBuffers, TPM2B_DIGEST *bufferList, TPM2B_DIGEST *result ) {
+
+    TPMT_TK_HASHCHECK validation;
+    TPMS_AUTH_COMMAND cmdAuth;
+    TPMS_AUTH_COMMAND *cmdSessionArray[1] = { &cmdAuth };
+    TSS2_SYS_CMD_AUTHS cmdAuthArray = { 1, &cmdSessionArray[0] };
+    TPMI_DH_OBJECT sequenceHandle;
+    TPM2B_AUTH nullAuth = {
+        .t.size = 0
+    };
+    TPM2B emptyBuffer = {
+        .size = 0
+    };
+
+    // Set result size to 0, in case any errors occur
+    result->b.size = 0;
+    
+    // Init input sessions struct
+    cmdAuth.sessionHandle = TPM_RS_PW;
+    cmdAuth.nonce.t.size = 0;
+    *( (UINT8 *)((void *)&cmdAuth.sessionAttributes ) ) = 0;
+    cmdAuth.hmac.t.size = 0;
+    
+    UINT32 rval;
+    rval = Tss2_Sys_HashSequenceStart( sysContext, 0, &nullAuth, hashAlg, &sequenceHandle, 0 );
+    if( rval != TPM_RC_SUCCESS ) {
+        return( rval );        
+    }
+
+    unsigned i;
+    for( i = 0; i < numBuffers; i++ ) {
+        rval = Tss2_Sys_SequenceUpdate ( sysContext, sequenceHandle, &cmdAuthArray, (TPM2B_MAX_BUFFER *)&bufferList[i], 0 );
+
+        if( rval != TPM_RC_SUCCESS ) {
+            return( rval );            
+        }
+    }
+
+    result->t.size = sizeof( *result ) - 2;
+    rval = Tss2_Sys_SequenceComplete ( sysContext, sequenceHandle, &cmdAuthArray, ( TPM2B_MAX_BUFFER *)&emptyBuffer,
+            TPM_RH_PLATFORM, result, &validation, 0 );
+
+    return rval;
+}
+
