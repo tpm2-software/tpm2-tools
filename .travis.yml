@@ -34,15 +34,15 @@ before_script:
 script:
   - mkdir ./build
   - pushd ./build
-  - ../configure --enable-unit
+  - CONFIG_SITE=../lib/default_config.site ../configure --enable-unit
   - make -j$(nproc)
   - make -j$(nproc) check
   - make -j$(nproc) clean
-  - ../configure --enable-unit --without-tcti-socket
+  - CONFIG_SITE=../lib/default_config.site ../configure --enable-unit --without-tcti-socket
   - make -j$(nproc)
   - make -j$(nproc) check
   - make -j$(nproc) clean
-  - ../configure --enable-unit --without-tcti-device
+  - CONFIG_SITE=../lib/default_config.site ../configure --enable-unit --without-tcti-device
   - make -j$(nproc)
   - make -j$(nproc) check
   - popd
