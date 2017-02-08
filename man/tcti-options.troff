@@ -13,12 +13,12 @@ Supported TCTIs are
 .if (\n[HAVE_TCTI_SOCK]) or \fB\*(lqsocket\*(rq\fR
 \[char46]
 .TP
-.if (\n[HAVE_TCTI_DEV] \{
+.if (\n[HAVE_TCTI_DEV]) \{
 \fB\-d,\ \-\-device-file\fR
 Specify the TPM device file for use by the device TCTI. The default is
 /dev/tpm0.
 \}
-.if (\n[HAVE_TCTI_SOCK] \{
+.if (\n[HAVE_TCTI_SOCK]) \{
 .TP
 \fB\-R,\ \-\-socket-address\fR
 Specify the domain name or IP address used by the socket TCTI. The default

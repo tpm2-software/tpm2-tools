@@ -12,11 +12,11 @@ In most configurations this will be the TPM but it could be a simulator or
 proxy.
 See '\fBOPTIONS\fR' section for the names of supported TCTIs.
 .TP
-.if (\n[HAVE_TCTI_DEV] \{
+.if (\n[HAVE_TCTI_DEV]) \{
 \fBTPM2TOOLS_DEVICE_FILE\fR
 Specify the TPM device file for use by the device TCTI.
 \}
-.if (\n[HAVE_TCTI_SOCK] \{
+.if (\n[HAVE_TCTI_SOCK]) \{
 .TP
 \fBTPM2TOOLS_SOCKET_ADDRESS\fR
 Specify the domain name or IP address used by the socket TCTI.
