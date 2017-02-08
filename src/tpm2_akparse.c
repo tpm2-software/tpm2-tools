@@ -29,229 +29,204 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-
+#include <errno.h>
+#include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
+
 #include <getopt.h>
-
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-char akDataFile[PATH_MAX];
-char akKeyFile[PATH_MAX];
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "string-bytes.h"
 
-void SaveWithBigEndian(FILE *file, const UINT16 data)
-{
-    BYTE tmp = (const BYTE)((data & 0xFF00) >> 8);
-    fwrite(&tmp, sizeof(BYTE), 1, file);
+typedef struct tpm_akparse_ctx tpm_akparse_ctx;
+struct tpm_akparse_ctx {
+    char ak_data_file_path[PATH_MAX];
+    char ak_key_file_path[PATH_MAX];
+};
 
-    tmp = (const BYTE)(data & 0x00FF);
-    fwrite(&tmp, sizeof(BYTE), 1, file);
+static bool is_big_endian() {
+
+    uint32_t test_word;
+    uint8_t *test_byte;
+
+    test_word = 0xFF000000;
+    test_byte = (uint8_t *) (&test_word);
+
+    return test_byte[0] == 0xFF;
 }
 
-// CPU is little endian, so bytes need to be swapped in order to use bt java.
-int SaveKeyToFile(const char keyfile[], UINT16 algType, TPM2B *sizedBuffer)
-{
-    FILE *f;
-    UINT32 count;
-    if( (f = fopen(keyfile, "wb+")) == NULL )
-    {
-        printf("file(%s) open error.\n", keyfile);
-        return -1;
-    }
-    printf("file(%s) open success.\n ", keyfile);
+static bool write_be_convert(FILE *file, UINT16 data) {
 
-    SaveWithBigEndian(f, algType);
-    SaveWithBigEndian(f, sizedBuffer->size);
-//    fwrite(&algType, sizeof(UINT16), 1, f);// or we can use ChangeEndianWord() to swap the byte.
-//    fwrite(&t.size, sizeof(UINT16), 1, f);
-
-    count = fwrite(sizedBuffer->buffer, sizeof(BYTE), sizedBuffer->size, f);
-    if( count != sizedBuffer->size )
-    {
-        printf("write key file error\n");
-        fclose(f);
-        return -2;
+    bool is_big_endian_arch = is_big_endian();
+    if (!is_big_endian_arch) {
+        BYTE *from = (BYTE *) &data;
+        UINT16 tmp;
+        BYTE *to = (BYTE *) &tmp;
+        to[1] = from[0];
+        to[0] = from[1];
+        data = tmp;
     }
+
+    size_t size = fwrite(&data, 1, sizeof(UINT16), file);
+    if (size != sizeof(UINT16)) {
+        LOG_ERR("Short write, expected %zu, got: %zu", sizeof(UINT16), size);
+        return false;
+    }
+    return true;
+}
+
+static bool save_alg_and_key_to_file(const char *key_file, UINT16 alg_type,
+        TPM2B **key_data, size_t key_data_len) {
+
+    FILE *f = fopen(key_file, "wb+");
+    if (!f) {
+        LOG_ERR("Could not open file \"%s\" due to error: \"%s\".", key_file,
+                strerror(errno));
+        return false;
+    }
+
+    bool res = write_be_convert(f, alg_type);
+    if (!res) {
+        /* write_be_convert prints error */
+        goto out;
+    }
+
+    /*
+     * For each TPM2B buffer in the list, save its size in be format, write it
+     * to the output file and output it to stdout.
+     */
+    unsigned i;
+    for (i=0; i < key_data_len; i++) {
+        TPM2B *tmp = key_data[i];
+
+        res = write_be_convert(f, tmp->size);
+        if (!res) {
+            /* write_be_convert prints error */
+            goto out;
+        }
+
+        size_t count = fwrite(tmp->buffer, sizeof(BYTE), tmp->size, f);
+        if (count != tmp->size) {
+            if (count < 0) {
+                LOG_ERR("Error writing to file \"%s\", error: \"%s\"", key_file,
+                        strerror(errno));
+            } else {
+                LOG_ERR("Did not write all bytes to file, got %zu expected %u",
+                        count, tmp->size);
+            }
+            goto out;
+        }
+
+        string_bytes_print_tpm2b(tmp);
+    }
+out:
     fclose(f);
-    f = NULL;
 
-    printf("write data count: %d, %s: \n", count, keyfile);
-    PrintSizedBuffer(sizedBuffer);
-
-    return 0;
+    return true;
 }
 
-int SaveEccKeyToFile(const char keyfile[], UINT16 algType, const TPMS_ECC_POINT *ecc)
-{
-    FILE *f;
-    UINT16 count, size;
+static bool parse_and_save_ak_public(tpm_akparse_ctx *ctx) {
 
-    if( (f = fopen(keyfile, "wb+")) == NULL )
-    {
-        printf("file(%s) open error.\n", keyfile);
-        return -1;
-    }
-    printf("file(%s) open success.\n ", keyfile);
-
-//    fwrite(&algType, sizeof(UINT16), 1, f);
-    SaveWithBigEndian(f, algType);
-
-    size = ecc->x.t.size;
-//    fwrite(&size, sizeof(UINT16), 1, f);
-    SaveWithBigEndian(f, size);
-
-    if( ( count = fwrite(ecc->x.t.buffer, sizeof(BYTE), size, f) ) != size )
-    {
-        printf("write X coordinate to file error\n");
-        fclose(f);
-        return -2;
-    }
-    printf("write X coordinate count: %d, X coordinate: \n", count);
-    PrintSizedBuffer((TPM2B *)&ecc->x);
-
-    size = ecc->y.t.size;
-//    fwrite(&size, sizeof(UINT16), 1, f);
-    SaveWithBigEndian(f, size);
-
-    if( ( count = fwrite(ecc->y.t.buffer, sizeof(BYTE), size, f) ) != size )
-    {
-        printf("write Y coordinate to file error\n");
-        fclose(f);
-        return -3;
-    }
-    printf("write Y coordinate count: %d, Y coordinate: \n", count);
-    PrintSizedBuffer((TPM2B *)&ecc->y);
-
-    fclose(f);
-    f = NULL;
-
-    return 0;
-}
-
-int parseAKPublicArea()
-{
     TPM2B_PUBLIC outPublic;
     UINT16 size = sizeof(outPublic);
-    TPM2B *sizedBuffer;
-    int rc = -1;
 
-    if( loadDataFromFile(akDataFile, (UINT8 *)&outPublic, &size) )
-    {
-        return -1;
+    int rc = loadDataFromFile(ctx->ak_data_file_path, (UINT8 *)&outPublic, &size);
+    if (rc != 0) {
+        /* loadDataFromFile prints error */
+        return false;
     }
 
-    if( outPublic.t.publicArea.type == TPM_ALG_ECC )
-    {
-        rc = SaveEccKeyToFile (akKeyFile, outPublic.t.publicArea.type, &outPublic.t.publicArea.unique.ecc) ? -2 : 0;
-    }
-    else
-    {
-        switch( outPublic.t.publicArea.type )
-        {
-        case TPM_ALG_RSA:
-            sizedBuffer = &outPublic.t.publicArea.unique.rsa.b;
-            break;
-        case TPM_ALG_KEYEDHASH:
-            sizedBuffer = &outPublic.t.publicArea.unique.keyedHash.b;
-            break;
-        case TPM_ALG_SYMCIPHER:
-            sizedBuffer = &outPublic.t.publicArea.unique.sym.b;
-            break;
-        default:
-            printf("\nThe algorithm type(0x%4.4x) is not supported\n", outPublic.t.publicArea.type);
-            return -3;
-        }
-        rc = SaveKeyToFile(akKeyFile, outPublic.t.publicArea.type, sizedBuffer) ? -4 : 0;
+    size_t key_data_len = 1;
+    TPM2B *key_data[key_data_len + 1];
+    switch (outPublic.t.publicArea.type) {
+    case TPM_ALG_RSA:
+        key_data[0] = &outPublic.t.publicArea.unique.rsa.b;
+        break;
+    case TPM_ALG_KEYEDHASH:
+        key_data[0] = &outPublic.t.publicArea.unique.keyedHash.b;
+        break;
+    case TPM_ALG_SYMCIPHER:
+        key_data[0] = &outPublic.t.publicArea.unique.sym.b;
+        break;
+    case TPM_ALG_ECC:
+        key_data_len = 2;
+        key_data[0] = &outPublic.t.publicArea.unique.ecc.x.b;
+        key_data[1] = &outPublic.t.publicArea.unique.ecc.y.b;
+        break;
+    default:
+        LOG_ERR("The algorithm type(0x%4.4x) is not supported",
+                outPublic.t.publicArea.type);
+        return false;
     }
 
-    return rc;
+    return save_alg_and_key_to_file(ctx->ak_key_file_path, outPublic.t.publicArea.type,
+            key_data, key_data_len);
 }
 
-void showHelp(const char *name)
-{
-    showVersion(name);
-    printf("\nUsed to parse the algorithm and key values in TPM2B_PUBLIC struct\n"
-           "Usage: %s [-h/--help]\n"
-           "   or: %s [-v/--version]\n"
-           "   or: %s [-f inputFile][-k akKeyFile]\n"
-           "  -h\tDisplay command tool usage info.\n"
-           "  -v\tDisplay command tool version info.\n"
-           "  -f\tSpecifies the file used to be parsed.\n"
-           "  -k\tSpecifies the file used to save ak key.\n"
-           "\nFor Example:\n"
-           "  %s -f ./ak.data -k ./ak.key\n"
-           , name, name, name, name);
-}
+static bool init(int argc, char *argv[], tpm_akparse_ctx *ctx) {
 
-int main(int argc, char *argv[])
-{
-    int opt;
-    int rval = 0;
-
-    struct option sOpts[] =
-    {
-        { "file"     , required_argument, NULL, 'f' },
-        { "keyFile"  , required_argument, NULL, 'k' },
-        { "help"     , no_argument,       NULL, 'h' },
-        { "version"  , no_argument,       NULL, 'v' },
-        { NULL       , no_argument,       NULL,  0  },
+    struct option options[] = {
+            { "file",    required_argument, NULL, 'f' },
+            { "keyFile", required_argument, NULL, 'k' },
+            { NULL,      no_argument,       NULL, '\0' }
     };
 
-    if(argc <= 1)
-    {
-        showHelp(argv[0]);
-        return -1;
-    }
-
-    if( argc > (int)(2*sizeof(sOpts)/sizeof(struct option)) )
-    {
+    if (argc <=1 || argc > (int) (2 * sizeof(options) / sizeof(struct option))) {
         showArgMismatch(argv[0]);
-        return -2;
+        return false;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "f:k:hv", sOpts, NULL ) ) != -1 )
-    {
-        switch ( opt ) {
-        case 'h':
-        case '?':
-            showHelp(argv[0]);
-            return 0;
-        case 'v':
-            showVersion(argv[0]);
-            return 0;
-
+    int opt;
+    while ((opt = getopt_long(argc, argv, "f:k:hv", options, NULL)) != -1) {
+        switch (opt) {
         case 'f':
-            if( optarg == NULL )
-            {
-                printf("\nPlease input the file that used to be parsed.\n");
-                return -3;
+            if (!optarg) {
+                LOG_ERR("Please input the file that used to be parsed.");
+                return false;
             }
-            snprintf(akDataFile, sizeof(akDataFile), "%s", optarg);
+            snprintf(ctx->ak_data_file_path, sizeof(ctx->ak_data_file_path), "%s", optarg);
             break;
-
         case 'k':
-            if( optarg == NULL )
-            {
-                printf("\nPlease input the file that used to save ak key.\n");
-                return -4;
+            if (!optarg) {
+                LOG_ERR("Please input the file that used to save ak key.");
+                return false;
             }
-            snprintf(akKeyFile, sizeof(akKeyFile), "%s", optarg);
+            snprintf(ctx->ak_key_file_path, sizeof(ctx->ak_key_file_path), "%s", optarg);
             break;
-
+        case ':':
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
+        case '?':
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
         default:
-            showHelp(argv[0]);
-            return -5;
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
     }
-
-    rval = parseAKPublicArea();
-
-    return rval ? -6 : 0;
+    return true;
 }
 
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts is unused, avoid compiler warning */
+    (void)opts;
+
+    struct tpm_akparse_ctx ctx;
+
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return 1;
+    }
+
+    /* 0 on success 1 on error */
+    return parse_and_save_ak_public(&ctx) != true;
+}
