@@ -125,3 +125,33 @@ UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src) {
 
     return rval;
 }
+
+bool string_bytes_is_host_big_endian(void) {
+
+    uint32_t test_word;
+    uint8_t *test_byte;
+
+    test_word = 0xFF000000;
+    test_byte = (uint8_t *) (&test_word);
+
+    return test_byte[0] == 0xFF;
+}
+
+#define STRING_BYTES_ENDIAN_CONVERT(size) \
+    UINT##size string_bytes_endian_convert_##size(UINT##size data) { \
+    \
+        UINT##size converted; \
+        UINT8 *bytes = (UINT8 *)&data; \
+        UINT8 *tmp = (UINT8 *)&converted; \
+    \
+        size_t i; \
+        for(i=0; i < sizeof(UINT##size); i ++) { \
+            tmp[i] = bytes[sizeof(UINT##size) - i - 1]; \
+        } \
+        \
+        return converted; \
+    }
+
+STRING_BYTES_ENDIAN_CONVERT(16)
+STRING_BYTES_ENDIAN_CONVERT(32)
+STRING_BYTES_ENDIAN_CONVERT(64)

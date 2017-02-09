@@ -1,8 +1,11 @@
 #include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "files.h"
 #include "log.h"
+#include "string-bytes.h"
+
 static TPMS_CONTEXT context;
 
 int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size)
@@ -143,4 +146,158 @@ int getFileSize(const char *path, long *fileSize)
 err:
     fclose(fp);
     return rc;
+}
+
+/**
+ * This is the magic for the file header. The header is organized
+ * as a big endian U32 (BEU32) of MAGIC followed by a BEU32 of the
+ * version number. Tools can define their own, individual file
+ * formats as they make sense, but they should always have the header.
+ */
+static const UINT32 MAGIC = 0xBADCC0DE;
+
+/**
+ * Writes size bytes to a file, continuing on EINTR short writes.
+ * @param f
+ *  The file to write to.
+ * @param data
+ *  The data to write.
+ * @param size
+ *  The size, in bytes, of that data.
+ * @return
+ *  True on success, False otherwise.
+ */
+static bool writex(FILE *f, UINT8 *data, size_t size) {
+
+    size_t wrote = 0;
+    do {
+        wrote = fwrite(&data[wrote], 1, size, f);
+        if (wrote != size) {
+            if (errno != EINTR) {
+                return false;
+            }
+            /* continue on EINTR */
+        }
+        size -= wrote;
+    } while (size > 0);
+
+    return true;
+}
+
+/**
+ * Reads size bytes from a file, continuing on EINTR short reads.
+ * @param f
+ *  The file to read from.
+ * @param data
+ *  The data buffer to read into.
+ * @param size
+ *  The size of the buffer, which is also the amount of bytes to read.
+ * @return
+ *  True on success, False otherwise.
+ */
+static bool readx(FILE *f, UINT8 *data, size_t size) {
+
+    size_t bread = 0;
+    do {
+        bread = fread(&data[bread], 1, size, f);
+        if (bread != size) {
+            if (feof(f) || (errno != EINTR)) {
+                return false;
+            }
+            /* continue on EINTR */
+        }
+        size -= bread;
+    } while (size > 0);
+
+    return true;
+}
+
+#define BAIL_ON_NULL(param, x) \
+    do { \
+        if (!x) { \
+            LOG_ERR(param" must be specified"); \
+            return false; \
+        } \
+    } while(0)
+
+#define BE_CONVERT(value, size) \
+    do { \
+        if (!string_bytes_is_host_big_endian()) { \
+            string_bytes_endian_convert_##size(value); \
+        } \
+    } while (0)
+
+#define FILE_WRITE(size) \
+    bool files_write_##size(FILE *out, UINT##size data) { \
+        BAIL_ON_NULL("FILE", out); \
+        BE_CONVERT(&data, size); \
+        return writex(out, (UINT8 *)&data, sizeof(data)); \
+    }
+
+#define FILE_READ(size) \
+    bool files_read_##size(FILE *out, UINT##size *data) { \
+	    BAIL_ON_NULL("FILE", out); \
+	    BAIL_ON_NULL("data", data); \
+        bool res = readx(out, (UINT8 *)data, sizeof(*data)); \
+        if (res) { \
+            BE_CONVERT(data, size); \
+        } \
+        return res; \
+    }
+
+/*
+ * all the files_read|write_bytes_16|32|64 functions
+ */
+FILE_READ(16);
+FILE_WRITE(16)
+
+FILE_READ(32);
+FILE_WRITE(32)
+
+FILE_READ(64)
+FILE_WRITE(64)
+
+bool files_read_bytes(FILE *out, UINT8 bytes[], size_t len) {
+
+    BAIL_ON_NULL("FILE", out);
+    BAIL_ON_NULL("bytes", bytes);
+    return readx(out, bytes, len);
+}
+
+bool files_write_bytes(FILE *out, uint8_t bytes[], size_t len) {
+
+    BAIL_ON_NULL("FILE", out);
+    BAIL_ON_NULL("bytes", bytes);
+    return writex(out, bytes, len);
+}
+
+bool files_write_header(FILE *out, UINT32 version) {
+
+    BAIL_ON_NULL("FILE", out);
+
+    bool res = files_write_32(out, MAGIC);
+    if (!res) {
+        return false;
+    }
+    return files_write_32(out, version);
+}
+
+bool files_read_header(FILE *out, uint32_t *version) {
+
+    BAIL_ON_NULL("FILE", out);
+    BAIL_ON_NULL("version", version);
+
+    UINT32 magic;
+    bool res = files_read_32(out, &magic);
+    if (!res) {
+        return false;
+    }
+
+    if (magic != MAGIC) {
+        LOG_ERR("Found magic 0x%x did not match expected magic of 0x%x!",
+                magic, MAGIC);
+        return false;
+    }
+
+    return files_read_32(out, version);
 }

@@ -206,9 +206,19 @@ test_unit_tpm2_rc_entry_unit_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS)
 test_unit_tpm2_rc_entry_unit_SOURCES  = src/rc-decode.c test/unit/tpm2-rc-entry_unit.c
 
+test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) src/libcommon.a
+test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
+
+test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_files_LDADD    = src/libcommon.a $(CMOCKA_LIBS) $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
+test_unit_test_files_SOURCES  = test/unit/test_files.c
+
 check_PROGRAMS = \
     test/unit/tpm2-rc-decode_unit \
-    test/unit/tpm2-rc-entry_unit
+    test/unit/tpm2-rc-entry_unit \
+    test/unit/test_string_bytes \
+    test/unit/test_files
 endif
 
 man/man8/%.8 : man/%.8.in man/tcti-options.troff man/tcti-environment.troff
