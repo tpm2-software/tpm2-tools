@@ -11,8 +11,6 @@ addons:
   apt:
     packages:
     - autoconf-archive
-    - libcmocka0
-    - libcmocka-dev
     - openssl
     - libssl-dev
     - libcurl4-openssl-dev
@@ -27,6 +25,12 @@ install:
     - pushd TPM2.0-TSS && ./bootstrap && CONFIG_SITE=./lib/default_config.site ./configure && make -j$(nproc) && sudo make install && popd
     - sudo ldconfig /usr/local/lib
     - resourcemgr -sim -tpmhost 127.0.0.1 &
+    - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.0.1-2_amd64.deb
+    - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka0_1.0.1-2_amd64.deb
+    - sha256sum libcmocka-dev_1.0.1-2_amd64.deb | grep -q edb0dcfa14893b0a03375c4fe3b852043ce8fca8f2397cde340562554f6d50eb
+    - sha256sum libcmocka0_1.0.1-2_amd64.deb | grep -q 797155b45a8288a860c4ed9dd3f161420f09ebf362de30166d9f6b98bfc27dd0
+    - sudo dpkg -i libcmocka0_1.0.1-2_amd64.deb
+    - sudo dpkg -i libcmocka-dev_1.0.1-2_amd64.deb
 
 before_script:
   - ./bootstrap
