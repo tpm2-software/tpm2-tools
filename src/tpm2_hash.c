@@ -29,8 +29,6 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -39,278 +37,195 @@
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "string-bytes.h"
 
-int getHierarchyValue(const char *argValue, TPMI_RH_HIERARCHY *hierarchyValue)
-{
-    if(strlen(argValue) != 1)
-    {
-        printf("Wrong Hierarchy Value: %s\n",argValue);
-        return -1;
+typedef struct tpm_hash_ctx tpm_hash_ctx;
+struct tpm_hash_ctx {
+    TPMI_RH_HIERARCHY hierarchyValue;
+    TPM2B_MAX_BUFFER data;
+    TPMI_ALG_HASH  halg;
+    char outHashFilePath[PATH_MAX];
+    char outTicketFilePath[PATH_MAX];
+    TSS2_SYS_CONTEXT *sapi_context;
+};
+
+static bool get_hierarchy_value(const char *hiearchy_code,
+        TPMI_RH_HIERARCHY *hierarchy_value) {
+
+    size_t len = strlen(hiearchy_code);
+    if (len != 1) {
+        LOG_ERR("Hierarchy Values are single characters, got: %s\n",
+                hiearchy_code);
+        return false;
     }
-    switch(argValue[0])
-    {
-        case 'e':
-            *hierarchyValue = TPM_RH_ENDORSEMENT;
-            break;
-        case 'o':
-            *hierarchyValue = TPM_RH_OWNER;
-            break;
-        case 'p':
-            *hierarchyValue = TPM_RH_PLATFORM;
-            break;
-        case 'n':
-            *hierarchyValue = TPM_RH_NULL;
-            break;
-        default:
-            printf("Wrong Hierarchy Value: %s\n",argValue);
-            return -2;
+
+    switch (hiearchy_code[0]) {
+    case 'e':
+        *hierarchy_value = TPM_RH_ENDORSEMENT;
+        break;
+    case 'o':
+        *hierarchy_value = TPM_RH_OWNER;
+        break;
+    case 'p':
+        *hierarchy_value = TPM_RH_PLATFORM;
+        break;
+    case 'n':
+        *hierarchy_value = TPM_RH_NULL;
+        break;
+    default:
+        LOG_ERR("Unknown hierarchy value: %s\n", hiearchy_code);
+        return false;
     }
-    return 0;
+    return true;
 }
 
-int hash(TPMI_RH_HIERARCHY hierarchyValue, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, const char *outHashFilePath, const char *outTicketFilePath)
-{
-    UINT32 rval;
+static bool hash_and_save(tpm_hash_ctx *ctx) {
 
-    TPM2B_DIGEST outHash = { { sizeof(TPM2B_DIGEST)-2, } };
+    TPM2B_DIGEST outHash = { { sizeof(TPM2B_DIGEST) - 2, } };
     TPMT_TK_HASHCHECK validation;
 
-    rval = Tss2_Sys_Hash(sysContext, 0, data, halg, hierarchyValue, &outHash, &validation, 0);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\n......TPM2_Hash Error. TPM Error:0x%x......\n", rval);
-        return -1;
+    UINT32 rval = Tss2_Sys_Hash(ctx->sapi_context, 0, &ctx->data, ctx->halg,
+            ctx->hierarchyValue, &outHash, &validation, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_Sys_Hash Error. TPM Error:0x%x", rval);
+        return false;
     }
-    printf("\ntpm2_hash succ.\n\n");
 
     printf("\nhash value(hex type): ");
     UINT16 i;
-    for(i = 0; i < outHash.t.size; i++)
+    for (i = 0; i < outHash.t.size; i++)
         printf("%02x ", outHash.t.buffer[i]);
     printf("\n");
 
     printf("\nvalidation value(hex type): ");
-    for(i = 0; i < validation.digest.t.size; i++)
+    for (i = 0; i < validation.digest.t.size; i++)
         printf("%02x ", validation.digest.t.buffer[i]);
     printf("\n");
 
-    if(saveDataToFile(outHashFilePath, (UINT8 *)&outHash, sizeof(outHash)))
-        return -2;
-    if(saveDataToFile(outTicketFilePath, (UINT8 *)&validation, sizeof(validation)))
-        return -3;
-
-    return 0;
-}
-
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-H, --hierarchy <e|o|p|n>   hierarchy to use for the ticket\n"
-            "\te  TPM_RH_ENDORSEMENT\n"
-            "\to  TPM_RH_OWNER\n"
-            "\tp  TPM_RH_PLATFORM\n"
-            "\tn  TPM_RH_NULL\n"
-        "-g, --halg      <hexAlg>   algorithm for the hash being computed\n"
-            "\t0x0004  TPM_ALG_SHA1\n"
-            "\t0x000B  TPM_ALG_SHA256\n"
-            "\t0x000C  TPM_ALG_SHA384\n"
-            "\t0x000D  TPM_ALG_SHA512\n"
-            "\t0x0012  TPM_ALG_SM3_256\n"
-        "-I, --infile    <inputFilename>  file containning the data to be hashed\n"
-        "-o, --outfile   <hashFilename>   file record the hash result\n"
-        "-t, --ticket    <ticketFilename> file record the ticket\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -H <e|o|p|n> -g 0x004 -I <inputFilename> -o <hashFilename> -t <ticketFilename> \n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name);
-}
-
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-
-    TPMI_RH_HIERARCHY hierarchyValue;
-    TPM2B_MAX_BUFFER data;
-    TPMI_ALG_HASH  halg;
-    char outHashFilePath[PATH_MAX] = {0};
-    char outTicketFilePath[PATH_MAX] = {0};
-    long fileSize = 0;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    int opt = -1;
-    const char *optstring = "hvH:g:I:o:t:p:d:";
-    static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"Hierachy",1,NULL,'H'},
-      {"halg",1,NULL,'g'},
-      {"infile",1,NULL,'I'},
-      {"outfile",1,NULL,'o'},
-      {"ticket",1,NULL,'t'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {0,0,0,0}
-    };
-
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        H_flag = 0,
-        g_flag = 0,
-        I_flag = 0,
-        o_flag = 0,
-        t_flag = 0;
-
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    int rc = saveDataToFile(ctx->outHashFilePath, (UINT8 *) &outHash,
+            sizeof(outHash));
+    if (rc) {
+        return false;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
+    return saveDataToFile(ctx->outTicketFilePath, (UINT8 *) &validation,
+            sizeof(validation)) == 0;
+}
+
+static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
+
+    static struct option long_options[] = {
+        {"Hierachy", required_argument, NULL, 'H'},
+        {"halg",     required_argument, NULL, 'g'},
+        {"infile",   required_argument, NULL, 'I'},
+        {"outfile",  required_argument, NULL, 'o'},
+        {"ticket",   required_argument, NULL, 't'},
+        {NULL,       no_argument,       NULL, '\0'}
+    };
+
+    if (argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
+    }
+
+    int opt;
+    bool res;
+    long fileSize;
+    unsigned flags = 0;
+    while ((opt = getopt_long(argc, argv, "H:g:I:o:t:", long_options, NULL))
+            != -1) {
+        switch (opt) {
         case 'H':
-            if(getHierarchyValue(optarg,&hierarchyValue) != 0)
-            {
-                returnVal = -1;
-                break;
+            flags++;
+            res = get_hierarchy_value(optarg, &ctx->hierarchyValue);
+            if (!res) {
+                return false;
             }
-            printf("\nhierarchyValue: 0x%x\n\n",hierarchyValue);
-            H_flag = 1;
             break;
         case 'g':
-            if(getSizeUint16Hex(optarg,&halg) != 0)
-            {
+            flags++;
+            res = string_bytes_get_uint16(optarg, &ctx->halg);
+            if (!res) {
                 showArgError(optarg, argv[0]);
-                returnVal = -2;
-                break;
+                return false;
             }
-            printf("halg = 0x%4.4x\n", halg);
-            g_flag = 1;
             break;
         case 'I':
-            if( getFileSize(optarg, &fileSize) != 0)
-            {
-                returnVal = -3;
-                break;
+            flags++;
+            res = getFileSize(optarg, &fileSize) == 0;
+            if (!res) {
+                return false;
             }
-            if(fileSize > MAX_DIGEST_BUFFER)
-            {
-                printf("Input data too long: %ld, should be less than %d bytes\n", fileSize, MAX_DIGEST_BUFFER);
-                returnVal = -4;
-                break;
+            if (fileSize > MAX_DIGEST_BUFFER) {
+                LOG_ERR(
+                        "Input data too long: %ld, should be less than %d bytes\n",
+                        fileSize, MAX_DIGEST_BUFFER);
+                return false;
             }
-            data.t.size = fileSize;
-            if(loadDataFromFile(optarg, data.t.buffer, &data.t.size) != 0)
-            {
-                returnVal = -5;
-                break;
+            ctx->data.t.size = fileSize;
+            res = loadDataFromFile(optarg, ctx->data.t.buffer, &ctx->data.t.size) == 0;
+            if (!res) {
+                return false;
             }
-            I_flag = 1;
             break;
         case 'o':
-            snprintf(outHashFilePath, sizeof(outHashFilePath), "%s", optarg);
-            if(checkOutFile(outHashFilePath) != 0)
-            {
-                returnVal = -6;
-                break;
+            flags++;
+            snprintf(ctx->outHashFilePath, sizeof(ctx->outHashFilePath), "%s",
+                    optarg);
+            res = checkOutFile(ctx->outHashFilePath) == 0;
+            if (!res) {
+                return false;
             }
-            o_flag = 1;
             break;
         case 't':
-            snprintf(outTicketFilePath, sizeof(outTicketFilePath), "%s", optarg) ;
-            if(checkOutFile(outTicketFilePath) != 0)
-            {
-                returnVal = -7;
-                 break;
-            }
-            t_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -8;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -9;
+            flags++;
+            snprintf(ctx->outTicketFilePath, sizeof(ctx->outTicketFilePath),
+                    "%s", optarg);
+            res = checkOutFile(ctx->outTicketFilePath) == 0;
+            if (!res) {
+                return false;
             }
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -10;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -11;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
-        if(returnVal)
-            break;
+    }
+
+    /* all flags must be specified */
+    if (flags != 5) {
+        showArgMismatch(argv[0]);
+        return false;
+    }
+
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts is unused, avoid compiler warning */
+    (void)opts;
+
+    tpm_hash_ctx ctx = {
+            .sapi_context = sapi_context,
     };
 
-    if(returnVal != 0)
-        return returnVal;
-    flagCnt = h_flag + v_flag + H_flag + g_flag + I_flag + o_flag + t_flag;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -12;
-        }
-    }
-    else if(flagCnt == 5 && h_flag != 1 && v_flag != 1)
-    {
-        prepareTest(hostName, port, debugLevel);
-
-        returnVal = hash(hierarchyValue, &data, halg, outHashFilePath, outTicketFilePath);
-
-        finishTest();
-
-        if(returnVal)
-            return -13;
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
-        return -14;
+    bool res = init(argc, argv, &ctx);
+    if (!res) {
+        return 1;
     }
 
-    return 0;
+    return hash_and_save(&ctx) != true;
 }
