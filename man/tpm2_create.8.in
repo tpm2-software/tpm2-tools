@@ -31,7 +31,7 @@
 tpm2_create\ - create an object that can be loaded into a TPM using tpm2_load. The object
 will need to be loaded before it may be used.
 .SH SYNOPSIS
-.B tpm2_create[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-kalg\fR|\fB\-\-objectAttribute\fR|\fB\-\-inFile\fR|\fB\-\-pol\fR|\fB\-\-opu\fR|\fB\-\-opr\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_create[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-kalg\fR|\fB\-\-objectAttribute\fR|\fB\-\-inFile\fR|\fB\-\-pol\fR|\fB\-\-enforcepolicy\fR|\fB\-\-opu\fR|\fB\-\-opr\fR|\fB\-\-passwdInHex\fR|\fB ]
 .PP
 create an object that can be loaded into a TPM using tpm2_load. The object
 will need to be loaded before it may be used.
@@ -54,10 +54,19 @@ password for parent key, optional
 password for key, optional
 .TP
 \fB\-g ,\-\-halg\fR
-algorithm used for computing the Name of the  object   0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+algorithm used for computing the Name of the  object   
+0x0004 TPM_ALG_SHA1   
+0x000B TPM_ALG_SHA256   
+0x000C TPM_ALG_SHA384   
+0x000D TPM_ALG_SHA512   
+0x0012 TPM_ALG_SM3_256 
 .TP
 \fB\-G ,\-\-kalg\fR
-algorithm associated with this object  0x0001 TPM_ALG_RSA   0x0008 TPM_ALG_KEYEDHASH   0x0023 TPM_ALG_ECC   0x0025 TPM_ALG_SYMCIPHER 
+algorithm associated with this object  
+0x0001 TPM_ALG_RSA   
+0x0008 TPM_ALG_KEYEDHASH   
+0x0023 TPM_ALG_ECC   
+0x0025 TPM_ALG_SYMCIPHER 
 .TP
 \fB\-A ,\-\-objectAttribute\fR
 object attributes, optional
@@ -67,6 +76,9 @@ data file to be sealed, optional
 .TP
 \fB\-L ,\-\-pol\fR
 the input policy file, optional
+.TP
+\fB\-E ,\-\-enforcepolicy\fR
+enforce policy for authorization, optional
 .TP
 \fB\-o ,\-\-opu\fR
 the output file which contains the public key,  optional 

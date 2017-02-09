@@ -53,63 +53,20 @@ UINT32 TpmHash( TPMI_ALG_HASH hashAlg, UINT16 size, BYTE *data, TPM2B_DIGEST *re
     return rval;
 }
 
-
 //
-// This function does a hash on an array of data strings.
+// This function does a hash on an array of data strings and creates syscontext
 //
-UINT32 TpmHashSequence( TPMI_ALG_HASH hashAlg, UINT8 numBuffers, TPM2B_DIGEST *bufferList, TPM2B_DIGEST *result )
-{
-    UINT32 rval;
-    TSS2_SYS_CONTEXT *sysContext;
-    TPM2B_AUTH nullAuth;
-    TPMI_DH_OBJECT sequenceHandle;
-    int i;
-    TPM2B emptyBuffer;
-    TPMT_TK_HASHCHECK validation;
+UINT32 TpmHashSequence( TPMI_ALG_HASH hashAlg, UINT8 numBuffers, 
+    TPM2B_DIGEST *bufferList, TPM2B_DIGEST *result ) {
+    TSS2_SYS_CONTEXT *sysContext=InitSysContext(3000, resMgrTctiContext, &abiVersion);
 
-    TPMS_AUTH_COMMAND cmdAuth;
-    TPMS_AUTH_COMMAND *cmdSessionArray[1] = { &cmdAuth };
-    TSS2_SYS_CMD_AUTHS cmdAuthArray = { 1, &cmdSessionArray[0] };
-
-    nullAuth.t.size = 0;
-    emptyBuffer.size = 0;
-
-    // Set result size to 0, in case any errors occur
-    result->b.size = 0;
-    
-    // Init input sessions struct
-    cmdAuth.sessionHandle = TPM_RS_PW;
-    cmdAuth.nonce.t.size = 0;
-    *( (UINT8 *)((void *)&cmdAuth.sessionAttributes ) ) = 0;
-    cmdAuth.hmac.t.size = 0;
-    
-    sysContext = InitSysContext( 3000, resMgrTctiContext, &abiVersion );
-    if( sysContext == 0 )
+    if( sysContext == 0 ){
         return TSS2_APP_RC_INIT_SYS_CONTEXT_FAILED;
-    
-    rval = Tss2_Sys_HashSequenceStart( sysContext, 0, &nullAuth, hashAlg, &sequenceHandle, 0 );
-
-    if( rval != TPM_RC_SUCCESS )
-        return( rval );
-
-    for( i = 0; i < numBuffers; i++ )
-    {
-        rval = Tss2_Sys_SequenceUpdate ( sysContext, sequenceHandle, &cmdAuthArray, (TPM2B_MAX_BUFFER *)&bufferList[i], 0 );
-
-        if( rval != TPM_RC_SUCCESS )
-            return( rval );
     }
-
-    result->t.size = sizeof( *result ) - 2;
-    rval = Tss2_Sys_SequenceComplete ( sysContext, sequenceHandle, &cmdAuthArray, ( TPM2B_MAX_BUFFER *)&emptyBuffer,
-            TPM_RH_PLATFORM, result, &validation, 0 );
-
-    if( rval != TPM_RC_SUCCESS )
-        return( rval );
+    TPM_RC rval = tpm_hash_sequence(sysContext, hashAlg, numBuffers, 
+        bufferList, result);
 
     TeardownSysContext( &sysContext );
-
     return rval;
-
 }
 
