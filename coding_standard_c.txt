@@ -35,10 +35,10 @@ unsigned int table_index = find_index(jacket_table, “color”, COLOR_RED);
 Boolean variables should be named to reflect the true condition... even if the variable is used to detect false conditions. Boolean variables should be declared as type bool using <stdbool.h>.
 
 int last_item = 0;
-while(!last_item)
-{
+while(!last_item) {
      /* ... */
 }
+
 int char_found = is_alpha(c);
 
 
@@ -56,13 +56,14 @@ Abbreviated words in variable names should be avoided.  Exceptions are:
 “pos” = position
 “rem” = remainder
 
-Function names should follow the naming conventions of variables and clearly imply not only what the function does, but also the nature of what it returns (if anything).  Functions that return boolean integers should be named to reflect the true condition... even if they are created to detect false conditions.
+Function names should follow the naming conventions of variables and clearly imply not only what the function does, but also the nature of what it returns (if anything).  Functions that return boolean integers should be named to reflect the true condition... even if they are created to detect false conditions. Functions should never be hidden in conditional statements, with the exception of loops where it makes the code simpler. 
 
-if(is_prime(i)) {
+bool is_number_prime = is_prime(i);
+if(is_number_prime) {
      /* ... */
 }
 
-while(!labeled_correctly(sample)) {
+while(!labeled_correctly(sample[i])) {
      /* ... */
 }
 
@@ -142,6 +143,9 @@ void some_function(arg1, arg2) {
 Conditional statements (such as if, else, while, for, switch, etc) should always be followed by such block statements, even if they contain only one line statement.  These formatting conditions are contrary to Kernighan and Ritchie's “one true brace style”. [3]
 
 Line Length should not exceed 80 characters and should be split on the nearest whitespace or delimiter character.
+
+Formatters:
+Code formatters can found under misc/formatters
 
 References
 1: Alan Bridger, Mick Brooks, and Jim Pisano, C Coding Standards, 2001, http://www.alma.nrao.edu/development/computing/docs/joint/0009/2001-02-28.pdf
