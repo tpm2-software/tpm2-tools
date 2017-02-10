@@ -50,3 +50,6 @@ Instructions for building and installing the tpm2.0-tools are provided in the [I
 ## Resources
 TPM 2.0 specifications can be found at [Trusted Computing Group](http://www.trustedcomputinggroup.org/).
 
+## Contributing
+Instructions for contributing to the project are provided in the [CONTRIBUTING](https://github.com/01org/tpm2.0-tools/blob/master/CONTRIBUTING) file.
+
