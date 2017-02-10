@@ -10,7 +10,7 @@ this the window for comments.
 
 All tests must pass on Travis CI for the merge to occur.
 All changes must not introduce superfluous whitespace changes or whitespace errors.
-All changes should adhere to the coding standard.
+All changes should adhere to the coding standard documented under misc.
 
 Guideline for merging changes:
 Changes should be merged with the "rebase" option on github to avoid merge commits.
