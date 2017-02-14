@@ -8,19 +8,24 @@
 
 #define PASSWORD_MAX (sizeof(((TPM2B_DIGEST *)NULL)->t.buffer))
 
-bool password_util_to_auth(const TPM2B_AUTH *password, bool is_hex, const char *description,
+bool password_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *description,
         TPM2B_AUTH *auth) {
 
     if (is_hex) {
         auth->t.size = sizeof(auth) - 2;
+        /* this routine is safe on overlapping memory areas */
         if (hex2ByteStructure(password->t.buffer, &auth->t.size, auth->t.buffer)
                 != 0) {
             LOG_ERR("Failed to convert hex format password for %s.",
                     description);
             return false;
         }
-    } else {
-        memcpy(auth, password, sizeof(*auth));
+        /*
+         * we only claim sanity on same memory, not overlapping, but well use
+         * memove anyways at the expense of speed.
+         */
+    } else if (password != auth) {
+        memmove(auth, password, sizeof(*auth));
     }
     return true;
 }

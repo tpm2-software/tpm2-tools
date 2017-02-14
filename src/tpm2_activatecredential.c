@@ -29,400 +29,370 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-
-#include <stdarg.h>
+#include <errno.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <limits.h>
 #include <ctype.h>
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
-#include "sample.h"
 
-int debugLevel = 0;
-char outFilePath[PATH_MAX] = {0};
-TPMI_DH_OBJECT activateHandle;
-TPMI_DH_OBJECT keyHandle;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "sample.h" // for SESSION struct
+#include "string-bytes.h"
+#include "tpm_session.h"
 
-TPM2B_ID_OBJECT credentialBlob;
-TPM2B_ENCRYPTED_SECRET secret;
+typedef struct tpm_activatecred_ctx tpm_activatecred_ctx;
+struct tpm_activatecred_ctx {
 
-TPMS_AUTH_COMMAND cmdAuth;
-TPMS_AUTH_COMMAND cmdAuth2;
-TPMS_AUTH_COMMAND cmdAuth3;
-bool hexPasswd = false;
+    struct {
+        TPMI_DH_OBJECT activate;
+        TPMI_DH_OBJECT key;
+    } handle;
 
-int readCrtSecFromFile(const char *path,TPM2B_ID_OBJECT *credentialBlob, TPM2B_ENCRYPTED_SECRET *secret)
-{
-    FILE *fp = fopen(path,"rb");
-    if(NULL == fp)
-    {
-        printf("File: %s Not Found OR Access Error !\n",path);
-        return -1;
+    TPM2B_ID_OBJECT credentialBlob;
+    TPM2B_ENCRYPTED_SECRET secret;
+    bool hexPasswd;
+
+    TPMS_AUTH_COMMAND password;
+    TPMS_AUTH_COMMAND endorse_password;
+
+    struct {
+        char output[PATH_MAX];
+        char *context;
+        char *key_context;
+    } file ;
+};
+
+static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *credentialBlob,
+        TPM2B_ENCRYPTED_SECRET *secret) {
+
+    bool result = false;
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
+        LOG_ERR("Could not open file \"%s\" error: \"%s\"", path,
+                strerror(errno));
+        return false;
     }
-    if(fread(credentialBlob,sizeof(TPM2B_ID_OBJECT),1,fp) != 1)
-    {
-        fclose(fp);
-        printf("Read credentialBlob from file  %s Error!\n",path);
-        return -2;
-    }
-    if(fread(secret,sizeof(TPM2B_ENCRYPTED_SECRET),1,fp)!= 1)
-    {
-        fclose(fp);
-        printf("Read secret form file %s error !\n",path);
-        return -3;
-    }
-    fclose(fp);
 
-    return 0;
+    size_t items = fread(credentialBlob, sizeof(TPM2B_ID_OBJECT), 1, fp);
+    if (items != 1) {
+        const char *fmt_msg =
+                "Reading credential from file \"%s\" failed, error: \"%s\"";
+        const char *err_msg = "Unknown error";
+        if (ferror(fp)) {
+            err_msg = strerror(errno);
+        } else if (feof(fp)) {
+            err_msg = "end of file";
+        }
+        LOG_ERR(fmt_msg, path, err_msg);
+        goto out;
+    }
 
+    items = fread(secret, sizeof(TPM2B_ENCRYPTED_SECRET), 1, fp);
+    if (items != 1) {
+        const char *fmt_msg =
+                "Reading secret from file \"%s\" failed, error: \"%s\"";
+        const char *err_msg = "Unknown error";
+        if (ferror(fp)) {
+            err_msg = strerror(errno);
+        } else if (feof(fp)) {
+            err_msg = "end of file";
+        }
+        LOG_ERR(fmt_msg, path, err_msg);
+        goto out;
+    }
+
+    result = true;
+    out: fclose(fp);
+
+    return result;
 }
 
-int activateCredential()
-{
-    UINT32 rval;
-    TPM2B_DIGEST certInfoData = { { sizeof(certInfoData)-2, } };
-
-    printf("\nACTIVATE CREDENTIAL TESTS:\n");
-
-    cmdAuth.sessionHandle = TPM_RS_PW;
-    cmdAuth2.sessionHandle = TPM_RS_PW;
-    *((UINT8 *)((void *)&cmdAuth.sessionAttributes)) = 0;
-    *((UINT8 *)((void *)&cmdAuth2.sessionAttributes)) = 0;
-    *((UINT8 *)((void *)&cmdAuth3.sessionAttributes)) = 0;
-
-    TPMS_AUTH_COMMAND *cmdSessionArray[2] = { &cmdAuth, &cmdAuth3 };
-    TSS2_SYS_CMD_AUTHS cmdAuthArray = { 2, &cmdSessionArray[0] };
-
-    TPMS_AUTH_COMMAND *cmdSessionArray1[1] = { &cmdAuth2 };
-    TSS2_SYS_CMD_AUTHS cmdAuthArray1 = { 1, &cmdSessionArray1[0] };
-    SESSION *session;
-    TPM2B_ENCRYPTED_SECRET  encryptedSalt = { { 0, } };
-    TPM2B_NONCE         nonceCaller = { { 0, } };
-    TPMT_SYM_DEF symmetric;
-
-    symmetric.algorithm = TPM_ALG_NULL;
-
-    if (cmdAuth.hmac.t.size > 0 && hexPasswd)
-    {
-        cmdAuth.hmac.t.size = sizeof(cmdAuth.hmac) - 2;
-        if (hex2ByteStructure((char *)cmdAuth.hmac.t.buffer,
-                              &cmdAuth.hmac.t.size,
-                              cmdAuth.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for handlePasswd.\n");
-            return -1;
-        }
-    }
-
-    if (cmdAuth2.hmac.t.size > 0 && hexPasswd)
-    {
-        cmdAuth2.hmac.t.size = sizeof(cmdAuth2.hmac) - 2;
-        if (hex2ByteStructure((char *)cmdAuth2.hmac.t.buffer,
-                              &cmdAuth2.hmac.t.size,
-                              cmdAuth2.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for endorsePasswd.\n");
-            return -1;
-        }
-    }
-
-    rval = StartAuthSessionWithParams( &session, TPM_RH_NULL, 0, TPM_RH_NULL,
-            0, &nonceCaller, &encryptedSalt, TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256 );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......StartAuthSessionWithParams Error. TPM Error:0x%x......\n", rval);
-        return -1;
-    }
-    printf("\nStartAuthSessionWithParams succ.......\n");
-
-    rval = Tss2_Sys_PolicySecret(sysContext, TPM_RH_ENDORSEMENT, session->sessionHandle, &cmdAuthArray1, 0, 0, 0, 0, 0, 0, 0);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Tss2_Sys_PolicySecret Error. TPM Error:0x%x......\n", rval);
-        return -2;
-    }
-    printf("\nTss2_Sys_PolicySecret succ.......\n");
-
-    cmdAuth3.sessionHandle = session->sessionHandle;
-    cmdAuth3.sessionAttributes.continueSession = 1;
-    cmdAuth3.hmac.t.size = 0;
-    rval = Tss2_Sys_ActivateCredential(sysContext, activateHandle, keyHandle, &cmdAuthArray, &credentialBlob, &secret, &certInfoData, 0);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\n......ActivateCredential failed. TPM Error:0x%x......\n", rval);
-        return -3;
-    }
-    printf("\nActivate Credential succ.\n");
-
-    // Need to flush the session here.
-    rval = Tss2_Sys_FlushContext( sysContext, session->sessionHandle );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......TPM2_Sys_FlushContext Error. TPM Error:0x%x......\n", rval);
-        return -4;
-    }
-    // And remove the session from sessions table.
-    rval = EndAuthSession( session );
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......EndAuthSession Error. TPM Error:0x%x......\n", rval);
-        return -5;
-    }
+static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
 
     printf("\nCertInfoData :\n");
-    int k;
-    for (k = 0; k<certInfoData.t.size; k++)
-    {
-        printf("0x%.2x ", certInfoData.t.buffer[k]);
+
+    unsigned k;
+    for (k = 0; k < digest->t.size; k++) {
+        printf("0x%.2x ", digest->t.buffer[k]);
     }
     printf("\n\n");
 
-    if(saveDataToFile(outFilePath, certInfoData.t.buffer, certInfoData.t.size) == 0)
-        printf("OutFile %s completed!\n",outFilePath);
-    else
-        return -6;
-
-    return 0;
+    return saveDataToFile(path, digest->t.buffer, digest->t.size) == 0;
 }
 
-void showHelp(const char *name)
-{
-    printf("%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-H, --handle   <hexHandle>  Handle of the object associated with the created certificate by CA\n"
-        "-c, --context   <filename>  filename for handle context\n"
-        "-k, --keyHandle<hexHandle>  Loaded key used to decrypt the the random seed\n"
-        "-C, --keyContext<filename>  filename for keyHandle context\n"
-        "-P, --Password    <string>  the handle's password, optional\n"
-        "-e, --endorsePasswd <string> the endorsement password, optional\n"
+static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
+        tpm_activatecred_ctx *ctx) {
 
-        "-f, --inFile   <filePath>   Input file path, containing the two structures needed by tpm2_activatecredential function\n"
-        "-o, --outFile  <filePath>   Output file path, record the secret to decrypt the certificate\n"
-        "-X, --passwdInHex           passwords given by any options are hex format.\n"
-        "-p, --port   <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
-        "\t0 (high level test results)\n"
-        "\t1 (test app send/receive byte streams)\n"
-        "\t2 (resource manager send/receive byte streams)\n"
-        "\t3 (resource manager tables)\n"
-    "\n"
-        "Example:\n"
-        "%s -H 0x81010002 -k 0x81010001 -P passwd -e new -f <filePath> -o <filePath>\n"
-        "%s -H 0x81010002 -k 0x81010001 -P 123abc -e 1a1a1c -X -f <filePath> -o <filePath>\n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name, name);
-}
+    TPM2B_DIGEST certInfoData = { { sizeof(certInfoData) - 2, } };
+    TPMS_AUTH_COMMAND tmp_auth;
 
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT; //DEFAULT_TPM_PORT;
-    char *contextFilePath = NULL;
-    char *keyContextFilePath = NULL;
+    ctx->password.sessionHandle = TPM_RS_PW;
+    ctx->endorse_password.sessionHandle = TPM_RS_PW;
+    *((UINT8 *) ((void *) &ctx->password.sessionAttributes)) = 0;
+    *((UINT8 *) ((void *) &ctx->endorse_password.sessionAttributes)) = 0;
+    *((UINT8 *) ((void *) &tmp_auth.sessionAttributes)) = 0;
 
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    int opt = -1;
-    const char *optstring = "hvH:c:k:C:P:e:f:o:Xp:d:";
-    struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"handle",1,NULL,'H'},
-      {"context",1,NULL,'c'},
-      {"keyHandle",1,NULL,'k'},
-      {"keyContext",1,NULL,'C'},
-      {"Password",1,NULL,'P'},
-      {"endorsePasswd",1,NULL,'e'},
-      {"inFile",1,NULL,'f'},
-      {"outFile",1,NULL,'o'},
-      {"passwdInHex",0,NULL,'X'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {0,0,0,0},
+    TPMS_AUTH_COMMAND *cmd_session_array_password[2] = {
+        &ctx->password,
+        &tmp_auth
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        H_flag = 0,
-        c_flag = 0,
-        k_flag = 0,
-        C_flag = 0,
-        e_flag = 0,
-        P_flag = 0,
-        f_flag = 0,
-        o_flag = 0;
+    TSS2_SYS_CMD_AUTHS cmd_auth_array_password = {
+        2, &cmd_session_array_password[0]
+    };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    TPMS_AUTH_COMMAND *cmd_session_array_endorse[1] = {
+        &ctx->endorse_password
+    };
+
+    TSS2_SYS_CMD_AUTHS cmd_auth_array_endorse = {
+        1, &cmd_session_array_endorse[0]
+    };
+
+    TPM2B_ENCRYPTED_SECRET encryptedSalt = {
+        { 0, }
+    };
+
+    TPM2B_NONCE nonceCaller = {
+        { 0, }
+    };
+
+    TPMT_SYM_DEF symmetric = {
+        .algorithm = TPM_ALG_NULL
+    };
+
+    bool result = password_util_to_auth(&ctx->password.hmac, ctx->hexPasswd,
+            "handlePasswd", &ctx->password.hmac);
+    if (!result) {
+        return false;
     }
 
-    cmdAuth.hmac.t.size = 0;
-    cmdAuth2.hmac.t.size = 0;
+    result = password_util_to_auth(&ctx->endorse_password.hmac, ctx->hexPasswd,
+            "endorsePasswd", &ctx->endorse_password.hmac);
+    if (!result) {
+        return false;
+    }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
+    SESSION *session;
+    UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session,
+            TPM_RH_NULL, 0, TPM_RH_NULL, 0, &nonceCaller, &encryptedSalt,
+            TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("tpm_session_start_auth_with_params Error. TPM Error:0x%x",
+                rval);
+        return false;
+    }
+
+    rval = Tss2_Sys_PolicySecret(sapi_context, TPM_RH_ENDORSEMENT,
+            session->sessionHandle, &cmd_auth_array_endorse, 0, 0, 0, 0, 0, 0, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
+        return false;
+    }
+
+    tmp_auth.sessionHandle = session->sessionHandle;
+    tmp_auth.sessionAttributes.continueSession = 1;
+    tmp_auth.hmac.t.size = 0;
+
+    rval = Tss2_Sys_ActivateCredential(sapi_context, ctx->handle.activate,
+            ctx->handle.key, &cmd_auth_array_password, &ctx->credentialBlob, &ctx->secret,
+            &certInfoData, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("ActivateCredential failed. TPM Error:0x%x", rval);
+        return false;
+    }
+
+    // Need to flush the session here.
+    rval = Tss2_Sys_FlushContext(sapi_context, session->sessionHandle);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
+        return false;
+    }
+
+    // And remove the session from sessions table.
+    rval = tpm_session_auth_end(session);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("EndAuthSession Error. TPM Error:0x%x", rval);
+        return false;
+    }
+
+    return output_and_save(&certInfoData, ctx->file.output);
+}
+
+static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
+
+    static const char *optstring = "H:c:k:C:P:e:f:o:X";
+    static const struct option long_options[] = {
+        {"handle",        required_argument, NULL, 'H'},
+        {"context",       required_argument, NULL, 'c'},
+        {"keyHandle",     required_argument, NULL, 'k'},
+        {"keyContext",    required_argument, NULL, 'C'},
+        {"Password",      required_argument, NULL, 'P'},
+        {"endorsePasswd", required_argument, NULL, 'e'},
+        {"inFile",        required_argument, NULL, 'f'},
+        {"outFile",       required_argument, NULL, 'o'},
+        {"passwdInHex",   no_argument,       NULL, 'X'},
+        {NULL,            no_argument,       NULL,  '\0'},
+    };
+
+    if (argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
+    }
+
+    int flag_cnt = 0;
+    int H_flag = 0, c_flag = 0, k_flag = 0, C_flag = 0, e_flag = 0, P_flag = 0,
+            f_flag = 0, o_flag = 0;
+
+    int opt;
+    int rc;
+    bool result;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
+            != -1) {
+        switch (opt) {
         case 'H':
-            if(getSizeUint32Hex(optarg,&activateHandle) != 0)
-            {
-                returnVal = -1;
-                break;
+            result = string_bytes_get_uint32(optarg, &ctx->handle.activate);
+            if (!result) {
+                LOG_ERR("Could not convert -H argument to a number, "
+                        "got \"%s\"!", optarg);
+                return false;
             }
             H_flag = 1;
             break;
         case 'c':
-            contextFilePath = optarg;
-            if(contextFilePath == NULL || contextFilePath[0] == '\0')
-            {
-                returnVal = -2;
-                break;
+            ctx->file.context = strdup(optarg);
+            if (!ctx->file.context) {
+                LOG_ERR("oom");
+                return false;
             }
-            printf("contextFile = %s\n", contextFilePath);
             c_flag = 1;
             break;
         case 'k':
-            if(getSizeUint32Hex(optarg,&keyHandle) != 0)
-            {
-                returnVal = -3;
-                break;
+            result = string_bytes_get_uint32(optarg, &ctx->handle.key);
+            if (!result) {
+                return false;
             }
             k_flag = 1;
             break;
         case 'C':
-            keyContextFilePath = optarg;
-            if(keyContextFilePath == NULL || keyContextFilePath[0] == '\0')
-            {
-                returnVal = -4;
-                break;
+            ctx->file.key_context = strdup(optarg);
+            if (!ctx->file.key_context) {
+                LOG_ERR("oom");
+                return false;
             }
-            printf("keyContextFile = %s\n", keyContextFilePath);
             C_flag = 1;
             break;
         case 'P':
-            cmdAuth.hmac.t.size = sizeof(cmdAuth.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&cmdAuth.hmac.t.size,cmdAuth.hmac.t.buffer) != 0)
-            {
-                returnVal = -5;
-                break;
+            ctx->password.hmac.t.size = sizeof(ctx->password.hmac.t) - 2;
+            rc = str2ByteStructure(optarg, &ctx->password.hmac.t.size,
+                    ctx->password.hmac.t.buffer);
+            if (rc) {
+                LOG_ERR("Could not convert password \"%s\" into byte array",
+                        optarg);
+                return false;
             }
             P_flag = 1;
             break;
         case 'e':
-            cmdAuth2.hmac.t.size = sizeof(cmdAuth2.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&cmdAuth2.hmac.t.size,cmdAuth2.hmac.t.buffer) != 0)
-            {
-                returnVal = -6;
-                break;
+            ctx->endorse_password.hmac.t.size =
+                    sizeof(ctx->endorse_password.hmac.t) - 2;
+            rc = str2ByteStructure(optarg, &ctx->endorse_password.hmac.t.size,
+                    ctx->endorse_password.hmac.t.buffer);
+            if (rc) {
+                LOG_ERR(
+                        "Could not convert endorsePassword \"%s\" into byte array",
+                        optarg);
+                return false;
             }
             e_flag = 1;
             break;
         case 'f':
-            if(readCrtSecFromFile(optarg,&credentialBlob,&secret) != 0)
-            {
-                returnVal = -7;
-                break;
+            /* logs errors */
+            result = read_cert_secret(optarg, &ctx->credentialBlob,
+                    &ctx->secret);
+            if (!result) {
+                return false;
             }
             f_flag = 1;
             break;
         case 'o':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-#if 0
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -1;
-                break;
-            }
-#endif
+            snprintf(ctx->file.output, sizeof(ctx->file.output), "%s", optarg);
             o_flag = 1;
             break;
         case 'X':
-            hexPasswd = true;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -8;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -9;
-            }
+            ctx->hexPasswd = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -10;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -11;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
-        if(returnVal)
-            break;
     };
 
-    if(returnVal != 0)
-        return returnVal;
-    flagCnt = h_flag + v_flag + H_flag + c_flag + k_flag + C_flag + f_flag + o_flag;
-
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -12;
-        }
-    }
-    else if((flagCnt == 4) && (H_flag == 1 || c_flag == 1) && (k_flag == 1 || C_flag == 1) && (f_flag == 1) && (o_flag == 1))
-    {
-        prepareTest(hostName, port, debugLevel);
-
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &activateHandle, contextFilePath);
-        if(C_flag && returnVal == 0)
-            returnVal = loadTpmContextFromFile(sysContext, &keyHandle, keyContextFilePath);
-        if(returnVal == 0)
-            returnVal = activateCredential();
-
-        finishTest();
-
-        if(returnVal)
-            return -13;
-    }
-    else
-    {
+    if ((flag_cnt == 4) && (H_flag == 1 || c_flag == 1)
+            && (k_flag == 1 || C_flag == 1) && (f_flag == 1) && (o_flag == 1)) {
         showArgMismatch(argv[0]);
-        return -14;
+        return false;
     }
-    return 0;
+
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts is unused, avoid compiler warning */
+    (void) opts;
+
+    tpm_activatecred_ctx ctx = { 0 };
+
+    int rc = 1;
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        LOG_ERR("Initialization failed\n");
+        goto out;
+    }
+
+    int returnVal;
+
+    if (ctx.file.context)
+        returnVal = loadTpmContextFromFile(sapi_context, &ctx.handle.activate,
+                ctx.file.context);
+    if (returnVal != 0) {
+        goto out;
+    }
+
+    if (ctx.file.key_context)
+        returnVal = loadTpmContextFromFile(sapi_context, &ctx.handle.key,
+                ctx.file.key_context);
+    if (returnVal != 0) {
+        goto out;
+    }
+
+    result = activate_credential_and_output(sapi_context, &ctx);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+    free(ctx.file.key_context);
+    free(ctx.file.context);
+    return rc;
 }
