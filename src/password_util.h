@@ -4,8 +4,8 @@
 #include <sapi/tpm20.h>
 
 /**
- * Copies a password stored in a TPM2B_AUTH structure, converting from hex if nessisary, into
- * another TPM2B_AUTh structure.
+ * Copies a password stored in a TPM2B_AUTH structure, converting from hex if necessary, into
+ * another TPM2B_AUTh structure. Source password and auth structures can be the same pointer.
  * @param password
  *  The source password.
  * @param is_hex
@@ -17,7 +17,7 @@
  * @return
  *  True on success and False on failure.
  */
-bool password_util_to_auth(const TPM2B_AUTH *password, bool is_hex, const char *description,
+bool password_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *description,
         TPM2B_AUTH *auth);
 
 /**
