@@ -29,9 +29,8 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-
 #include <stdlib.h>
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -39,259 +38,186 @@
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
-TPM_HANDLE handle2048rsa;
-//declaretion for read and write file
-TPM2B_NAME objectName;
-char outFilePath[PATH_MAX] = {0};
-TPM2B_PUBLIC inPublic;
-TPM2B_DIGEST inCredential;
+#include "log.h"
+#include "files.h"
+#include "main.h"
+#include "options.h"
+#include "string-bytes.h"
 
-int writeCrtSecToFile(const char *path,TPM2B_ID_OBJECT *credentialBlob, TPM2B_ENCRYPTED_SECRET *secret)
-{
-    FILE *fp = fopen(path,"w+");
-    if(NULL == fp)
-    {
-        printf("OutFile: %s Can Not Be Created !\n",path);
-        return -1;
+typedef struct tpm_makecred_ctx tpm_makecred_ctx;
+struct tpm_makecred_ctx {
+    TPM_HANDLE rsa2048_handle;
+    TPM2B_NAME object_name;
+    char out_file_path[PATH_MAX];
+    TPM2B_PUBLIC public;
+    TPM2B_DIGEST credential;
+};
+
+static bool write_cred_and_secret(const char *path, TPM2B_ID_OBJECT *cred,
+        TPM2B_ENCRYPTED_SECRET *secret) {
+
+    bool result = false;
+
+    FILE *fp = fopen(path, "w+");
+    if (!fp) {
+        LOG_ERR("Could not open file \"%s\" error: \"%s\"", path,
+                strerror(errno));
+        return false;
     }
-    else
-    {
-        if(fwrite(credentialBlob,sizeof(TPM2B_ID_OBJECT),1,fp) != 1)
-        {
-            fclose(fp);
-            printf("OutFile: %s Write Data In Error!\n",path);
-            return -2;
-        }
-        if(fwrite(secret, sizeof(TPM2B_ENCRYPTED_SECRET), 1, fp) != 1)
-        {
-            fclose(fp);
-            printf("OutFile: %s Write Data In Error!\n",path);
-            return -3;
-        }
+
+    size_t items = fwrite(cred, sizeof(TPM2B_ID_OBJECT), 1, fp);
+    if (items != 1) {
+        LOG_ERR("writing credential to file \"%s\" failed, error: \"%s\"", path,
+                strerror(errno));
+        goto out;
     }
+
+    items = fwrite(secret, sizeof(TPM2B_ENCRYPTED_SECRET), 1, fp);
+    if (items != 1) {
+        LOG_ERR("writing secret to file \"%s\" failed, error: \"%s\"", path,
+                strerror(errno));
+        goto out;
+    }
+
+    result = true;
+
+out:
     fclose(fp);
-    return 0;
+    return result;
 }
 
-int makeCredential()
+static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context, tpm_makecred_ctx *ctx)
 {
-    UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_NAME              nameExt     = { { sizeof(TPM2B_NAME)-2, } };
-
-    TPM2B_ID_OBJECT         credentialBlob = { { sizeof(TPM2B_ID_OBJECT)-2, }, };
-    TPM2B_ENCRYPTED_SECRET  secret = { { sizeof(TPM2B_ENCRYPTED_SECRET)-2, }, };
-
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
-
-    rval = Tss2_Sys_LoadExternal(sysContext, 0, NULL , &inPublic,TPM_RH_NULL,&handle2048rsa, &nameExt, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\n......LoadExternal failed. TPM Error:0x%x......\n", rval);
-        return -1;
-    }
-    printf("LoadExternal succ.\n");
-
-    rval = Tss2_Sys_MakeCredential(sysContext, handle2048rsa, 0, &inCredential, &objectName,&credentialBlob, &secret, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\n......MakeCredential failed. TPM Error:0x%x......\n", rval);
-        return -2;
-    }
-    printf("MakeCredential succ.\n");
-
-    rval = Tss2_Sys_FlushContext(sysContext, handle2048rsa);
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......Flush loaded key failed. TPM Error:0x%x......\n", rval);
-        return -3;
-    }
-    printf("Flush loaded key succ.\n");
-
-    if(writeCrtSecToFile(outFilePath,&credentialBlob,&secret))
-        return -4;
-    printf("OutFile: %s completed!\n\n",outFilePath);
-
-    return 0;
-}
-
-void showHelp(const char *name)
-{
-    printf("%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-e, --encKey<keyFile>    A tpm Public Key which was used to wrap the seed\n"
-        "-s, --sec   <secFile>    The secret which will be protected by the key derived from the random seed\n"
-        "-n, --name  <hexString>  The name of the key for which certificate is to be created\n"
-        "-o, --outFile<filePath>  output file path, recording the two structures output by tpm2_makecredential function\n"
-//      "-i, --ip <simulator IP>  The IP address of simulator, optional\n"
-        "-p, --port<port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel<0|1|2|3> The level of debug message, default is 0, optional\n"
-        "\t0 (high level test results)\n"
-        "\t1 (test app send/receive byte streams)\n"
-        "\t2 (resource manager send/receive byte streams)\n"
-        "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -e <keyFile> -s <secFile> -n <hexString> -o <outFile>\n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name);
-}
-
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-    UINT16 size;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    int opt = -1;
-    const char *optstring = "hve:s:n:o:p:d:";
-    static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"encKey",1,NULL,'e'},
-      {"sec",1,NULL,'s'},
-      {"name",1,NULL,'n'},
-      {"outFile",1,NULL,'o'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {0,0,0,0}
+    TPM2B_NAME name_ext = {
+            { sizeof(TPM2B_NAME)-2, }
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        e_flag = 0,
-        s_flag = 0,
-        n_flag = 0,
-        o_flag = 0;
+    TPM2B_ID_OBJECT cred_blob = {
+            { sizeof(TPM2B_ID_OBJECT)-2, }
+    };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    TPM2B_ENCRYPTED_SECRET secret = {
+            { sizeof(TPM2B_ENCRYPTED_SECRET)-2, }
+    };
+
+    session_data_out_array[0] = &session_data_out;
+    sessions_data_out.rspAuths = &session_data_out_array[0];
+    sessions_data_out.rspAuthsCount = 1;
+
+    UINT32 rval = Tss2_Sys_LoadExternal(sapi_context, 0, NULL, &ctx->public,
+            TPM_RH_NULL, &ctx->rsa2048_handle, &name_ext, &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("LoadExternal failed. TPM Error:0x%x", rval);
+        return false;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
+    rval = Tss2_Sys_MakeCredential(sapi_context, ctx->rsa2048_handle, 0,
+            &ctx->credential, &ctx->object_name, &cred_blob, &secret,
+            &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("MakeCredential failed. TPM Error:0x%x", rval);
+        return false;
+    }
+
+    rval = Tss2_Sys_FlushContext(sapi_context, ctx->rsa2048_handle);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Flush loaded key failed. TPM Error:0x%x", rval);
+        return false;
+    }
+
+    return write_cred_and_secret(ctx->out_file_path, &cred_blob, &secret);
+}
+
+static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
+
+    static const char *optstring = "e:s:n:o:";
+    static const struct option long_options[] = {
+      {"encKey"  ,required_argument, NULL, 'e'},
+      {"sec"     ,required_argument, NULL, 's'},
+      {"name"    ,required_argument, NULL, 'n'},
+      {"outFile" ,required_argument, NULL, 'o'},
+      {NULL      ,no_argument      , NULL, '\0'}
+    };
+
+    if (argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
+    }
+
+    UINT16 size;
+    int flagCnt = 0;
+    int opt = -1;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
+            != -1) {
+        switch (opt) {
         case 'e':
-            size = sizeof(inPublic);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPublic, &size) != 0)
-            {
-                returnVal = -1;
-                break;
+            size = sizeof(ctx->public);
+            if (loadDataFromFile(optarg, (UINT8 *) &ctx->public, &size) != 0) {
+                return false;
             }
-            e_flag = 1;
+            flagCnt++;
             break;
         case 's':
-            inCredential.t.size = sizeof(inCredential) - 2;
-            if(loadDataFromFile(optarg, inCredential.t.buffer, &inCredential.t.size) != 0)
-            {
-                returnVal = -2;
-                break;
+            ctx->credential.t.size = sizeof(ctx->credential) - 2;
+            if (loadDataFromFile(optarg, ctx->credential.t.buffer,
+                    &ctx->credential.t.size) != 0) {
+                return false;
             }
-            s_flag = 1;
+            flagCnt++;
             break;
         case 'n':
-            objectName.t.size = sizeof(objectName) - 2;
-            if(hex2ByteStructure(optarg,&objectName.t.size,objectName.t.name) != 0)
-            {
-                returnVal = -3;
-                break;
+            ctx->object_name.t.size = sizeof(ctx->object_name) - 2;
+            if (hex2ByteStructure(optarg, &ctx->object_name.t.size,
+                    ctx->object_name.t.name) != 0) {
+                return false;
             }
-            n_flag = 1;
+            flagCnt++;
             break;
         case 'o':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -4;
-                break;
+            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
+                    optarg);
+            if (checkOutFile(ctx->out_file_path) != 0) {
+                return false;
             }
-            o_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -5;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -6;
-            }
+            flagCnt++;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -7;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -8;
-            break;
-        //default:
-        //  break;
-        }
-        if(returnVal)
-            break;
-    };
-
-    if(returnVal != 0)
-        return returnVal;
-
-    flagCnt = h_flag + v_flag + e_flag + s_flag + n_flag + o_flag;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -9;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
     }
-    else if(flagCnt == 4 && h_flag != 1 && v_flag != 1)
-    {
-        prepareTest(hostName, port, debugLevel);
 
-        returnVal = makeCredential();
-
-        finishTest();
-
-        if(returnVal)
-            return -10;
-    }
-    else
-    {
+    if (flagCnt != 4) {
         showArgMismatch(argv[0]);
-        return -11;
+        return false;
     }
 
-    return 0;
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts is unused, avoid compiler warning */
+    (void) opts;
+
+    tpm_makecred_ctx ctx = { 0 };
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        LOG_ERR("Initialization failed");
+        return 1;
+    }
+
+    return make_credential_and_save(sapi_context, &ctx) != true;
 }
