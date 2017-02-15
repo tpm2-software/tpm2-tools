@@ -1,0 +1,57 @@
+
+Release Instructions
+
+Version Information
+
+Releases shall be tagged following semantic version guidelines found at:
+http://semver.org/
+
+Versions after v1.1.0 will no longer have the "v" prefix. Autoconf now sets
+the VERSION #define based on the output of git describe. See commit 2e8a07bc
+for the details.
+
+Version tags after v1.1.0 shall be signed. Valid known public keys can be reached by
+referencing the annotated tags listed below:
+
+william-roberts-pub
+
+Verifying tags
+
+Import the key into your keyring:
+$ git show [annotated-tag-name] | gpg --import
+
+Example:
+$ git show william-roberts-pub | gpg --import
+
+Verify the release tag:
+$ git tag --verify [signed-tag-name]
+
+Signing Release Tags
+
+Ensure you have a key set up:
+
+$ gpg --list-keys
+
+If you don't generate one:
+$ gpg --gen-key
+
+Add that key to the gitconfig:
+$ git config user.signingkey [gpg-key-id]
+
+Make sure that key is reachable as an object in the repository:
+$ gpg -a --export [gpg-key-id] | git hash-object -w --stdin [object SHA]
+$ git tag -a [your-name-here]-pub [object SHA]
+
+Make sure you push that tag:
+$ git push origin [your-name-here]-pub
+NOTE: this assumes origin is the tpm2.0-tools official repo.
+
+After that, you can sign tags:
+$ git tag --sign [signed-tag-name]
+
+Push the tag to the repo:
+$ git push origin [signed-tag-name]
+NOTE: this assumes origin is the tpm2.0-tools official repo.
+
+A lot of this git/gpg information was edited from:
+https://blog.thesoftwarecraft.com/2013/03/signing-git-tags.html
