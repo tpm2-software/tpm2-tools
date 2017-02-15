@@ -76,7 +76,6 @@
 }
 
 typedef enum {
-    TCTI_0,
 #ifdef HAVE_TCTI_DEV
     DEVICE_TCTI,
 #endif
