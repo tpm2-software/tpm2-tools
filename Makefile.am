@@ -59,7 +59,8 @@ sbin_PROGRAMS = \
     src/tpm2_akparse \
     src/tpm2_hash \
     src/tpm2_activatecredential \
-    src/tpm2_makecredential    
+    src/tpm2_makecredential \
+    src/tpm2_nvlist
 
 COMMON_SRC = \
     src/context-util.c \
@@ -81,7 +82,6 @@ COMMON_SRC = \
 # above.
 if HAVE_TCTI_SOCK
 sbin_PROGRAMS += \
-		  src/tpm2_nvlist \
 		  src/tpm2_nvread \
 		  src/tpm2_nvreadlock \
 		  src/tpm2_nvwrite \
@@ -155,7 +155,6 @@ man8_MANS = \
 
 src_libcommon_a_SOURCES = $(COMMON_SRC)
 if HAVE_TCTI_SOCK
-src_tpm2_nvlist_SOURCES = src/tpm2_nvlist.c
 src_tpm2_nvread_SOURCES = src/tpm2_nvread.c
 src_tpm2_nvreadlock_SOURCES = src/tpm2_nvreadlock.c
 src_tpm2_nvwrite_SOURCES = src/tpm2_nvwrite.c
@@ -193,6 +192,7 @@ src_tpm2_akparse_SOURCES = src/tpm2_akparse.c src/main.c
 src_tpm2_hash_SOURCES = src/tpm2_hash.c src/main.c
 src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.c src/main.c
 src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.c src/main.c
+src_tpm2_nvlist_SOURCES = src/tpm2_nvlist.c src/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
