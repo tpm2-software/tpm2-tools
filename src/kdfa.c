@@ -29,7 +29,7 @@
 #include "sample.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "changeEndian.h"
+#include "string-bytes.h"
 
 //
 //
@@ -51,7 +51,7 @@ TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
     tpm2b_i_2.t.size = 4;
 
     tpm2bBits.t.size = 4;
-    bitsSwizzled = CHANGE_ENDIAN_DWORD( bits );
+    bitsSwizzled = string_bytes_endian_convert_32( bits );
     *(UINT32 *)tpm2bBitsPtr = bitsSwizzled;
 
     for(i = 0; label[i] != 0 ;i++ );
@@ -70,7 +70,7 @@ TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
     {
         // Inner loop
 
-        i_Swizzled = CHANGE_ENDIAN_DWORD( i );
+        i_Swizzled = string_bytes_endian_convert_32( i );
         *(UINT32 *)tpm2b_i_2Ptr = i_Swizzled;
 
         j = 0;
