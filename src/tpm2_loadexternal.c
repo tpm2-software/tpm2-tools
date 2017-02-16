@@ -29,260 +29,188 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-
+#include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
+
 #include <getopt.h>
-
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-TPM_HANDLE handle2048rsa;
-int debugLevel = 0;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "string-bytes.h"
 
-int getHierarchyValue(const char *argValue, TPMI_RH_HIERARCHY *hierarchyValue)
-{
-    if(strlen(argValue) != 1)
-    {
-        printf("Wrong Hierarchy Value: %s\n",argValue);
-        return -1;
+typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
+struct tpm_loadexternal_ctx {
+    char context_file_path[PATH_MAX];
+    TPMI_RH_HIERARCHY hierarchy_value;
+    TPM_HANDLE rsa2048_handle;
+    TPM2B_PUBLIC public_key;
+    TPM2B_SENSITIVE private_key;
+    bool has_private_key;
+    bool save_to_context_file;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
+
+static bool get_hierarchy_value(const char *argument_opt,
+        TPMI_RH_HIERARCHY *hierarchy_value) {
+
+    if (strlen(argument_opt) != 1) {
+        LOG_ERR("Wrong Hierarchy Value, got: \"%s\", expected one of e,o,p,n",
+                argument_opt);
+        return false;
     }
-    switch(argValue[0])
-    {
-        case 'e':
-            *hierarchyValue = TPM_RH_ENDORSEMENT;
-            break;
-        case 'o':
-            *hierarchyValue = TPM_RH_OWNER;
-            break;
-        case 'p':
-            *hierarchyValue = TPM_RH_PLATFORM;
-            break;
-        case 'n':
-            *hierarchyValue = TPM_RH_NULL;
-            break;
-        default:
-            printf("Wrong Hierarchy Value: %s\n",argValue);
-            return -2;
+
+    switch (argument_opt[0]) {
+    case 'e':
+        *hierarchy_value = TPM_RH_ENDORSEMENT;
+        break;
+    case 'o':
+        *hierarchy_value = TPM_RH_OWNER;
+        break;
+    case 'p':
+        *hierarchy_value = TPM_RH_PLATFORM;
+        break;
+    case 'n':
+        *hierarchy_value = TPM_RH_NULL;
+        break;
+    default:
+        LOG_ERR("Wrong Hierarchy Value, got: \"%s\", expected one of e,o,p,n",
+                argument_opt);
+        return false;
     }
-    return 0;
+
+    return true;
 }
 
-int loadExternal(TPMI_RH_HIERARCHY hierarchyValue, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE *inPrivate, int r_flag)
-{
-    UINT32 rval;
+static bool load_external(tpm_loadexternal_ctx *ctx) {
+
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_NAME nameExt = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME nameExt = { { sizeof(TPM2B_NAME) - 2, } };
 
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
 
-    if(r_flag == 0)
-        rval = Tss2_Sys_LoadExternal(sysContext, 0, NULL, inPublic, hierarchyValue, &handle2048rsa, &nameExt, &sessionsDataOut);
-    else
-        rval = Tss2_Sys_LoadExternal(sysContext, 0, inPrivate , inPublic, hierarchyValue, &handle2048rsa, &nameExt, &sessionsDataOut);
-
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\nLoadExternal Failed ! ErrorCode: 0x%0x\n\n", rval);
-        return -1;
+    TPM_RC rval = Tss2_Sys_LoadExternal(ctx->sapi_context, 0,
+            ctx->has_private_key ? &ctx->private_key : NULL, &ctx->public_key,
+            ctx->hierarchy_value, &ctx->rsa2048_handle, &nameExt,
+            &sessionsDataOut);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("LoadExternal Failed ! ErrorCode: 0x%0x", rval);
+        return false;
     }
-    printf("\nLoadExternal succ.\nLoadedHandle: 0x%08x\n\n", handle2048rsa);
 
-    return 0;
+    return true;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-H, --hierarchy <e|o|p|n>   Hierarchy with which the object area is associated\n"
-            "\te  TPM_RH_ENDORSEMENT\n"
-            "\to  TPM_RH_OWNER\n"
-            "\tp  TPM_RH_PLATFORM\n"
-            "\tn  TPM_RH_NULL\n"
-        "-u, --pubfile   <publicKeyFileName>   The public portion of the object\n"
-        "-r, --privfile  <privateKeyFileName>  The sensitive portion of the object, optional\n"
-        "-C, --context <filename>   The file to save the object context, optional\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -H <e|o|p|n> -u <pubKeyFileName> -r <privKeyFileName> \n"
-        "%s -H <e|o|p|n> -u <pubKeyFileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name);
-}
+static bool init(int argc, char *argv[], tpm_loadexternal_ctx *ctx) {
 
-int main(int argc, char* argv[])
-{
-
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-
-    TPMI_RH_HIERARCHY hierarchyValue;
-    TPM2B_PUBLIC inPublic;
-    TPM2B_SENSITIVE inPrivate;
-    UINT16 size;
-
-    memset(&inPublic,0,sizeof(TPM2B_PUBLIC));
-    memset(&inPrivate,0,sizeof(TPM2B_SENSITIVE));
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    int opt = -1;
-    const char *optstring = "hvH:u:r:p:d:C:";
+    const char *optstring = "H:u:r:C:";
     static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"Hierachy",1,NULL,'H'},
-      {"pubfile",1,NULL,'u'},
-      {"privfile",1,NULL,'r'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {"context",1,NULL,'C'},
-      {0,0,0,0}
+      { "Hierachy", required_argument, NULL, 'H'},
+      { "pubfile",  required_argument, NULL, 'u'},
+      { "privfile", required_argument, NULL, 'r'},
+      { "context",  required_argument, NULL, 'C'},
+      { NULL,       no_argument,       NULL, '\0' }
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        H_flag = 0,
-        u_flag = 0,
-        C_flag = 0,
-        r_flag = 0;
-    char *contextFile = NULL;
+    struct {
+        UINT8 H : 1;
+        UINT8 u : 1;
+        UINT8 unused : 6;
+    } flags = { 0 };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    if(argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
     }
 
+    int opt = -1;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)
         {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
-        case 'H':
-            if(getHierarchyValue(optarg,&hierarchyValue) != 0)
-            {
-                returnVal = -1;
-                break;
+        case 'H': {
+            bool result = get_hierarchy_value(optarg, &ctx->hierarchy_value);
+            if (!result) {
+                return false;
             }
-            printf("\nhierarchyValue: 0x%x\n\n",hierarchyValue);
-            H_flag = 1;
-            break;
-        case 'u':
-            size = sizeof(inPublic);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPublic, &size) != 0)
-            {
-                returnVal = -2;
-                break;
+        }
+        flags.H = 1;
+        break;
+        case 'u': {
+            UINT16 size = sizeof(ctx->public_key);
+            int rc = loadDataFromFile(optarg, (UINT8 *)&ctx->public_key, &size);
+            if(rc) {
+                return false;
             }
-            u_flag = 1;
-            break;
-        case 'r':
-            size = sizeof(inPrivate);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPrivate, &size) != 0)
-            {
-                returnVal = -3;
-                break;
+            flags.u = 1;
+        } break;
+        case 'r': {
+            UINT16 size = sizeof(ctx->private_key);
+            int rc = loadDataFromFile(optarg, (UINT8 *)&ctx->private_key, &size);
+            if(rc) {
+                return false;
             }
-            r_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -4;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -5;
-            }
-            break;
+            ctx->has_private_key = true;
+        } break;
         case 'C':
-            contextFile = optarg;
-            if(contextFile == NULL || contextFile[0] == '\0')
-            {
-                returnVal = -6;
-                break;
-            }
-            printf("contextFile = %s\n", contextFile);
-            C_flag = 1;
+            snprintf(ctx->context_file_path, sizeof(ctx->context_file_path), "%s", optarg);
+            ctx->save_to_context_file = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -7;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -8;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
-        if(returnVal)
-            break;
+    }
+
+    if (!(flags.H && flags.u)) {
+        LOG_ERR("Expected H and u options");
+        return false;
+    }
+
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts and envp are unused, avoid compiler warning */
+    (void)opts;
+    (void) envp;
+
+    tpm_loadexternal_ctx ctx = {
+            .has_private_key = false,
+            .save_to_context_file = false,
+            .sapi_context = sapi_context
     };
 
-    if(returnVal != 0)
-        return returnVal;
-    flagCnt = h_flag + v_flag + H_flag + u_flag ;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -9;
-        }
+    bool result = init(argc, argv, &ctx);
+    if(!result) {
+        return 1;
     }
-    else if(flagCnt == 2 && H_flag == 1 && u_flag == 1)
-    {
 
-        prepareTest(hostName, port, debugLevel);
-
-        returnVal = loadExternal(hierarchyValue, &inPublic, &inPrivate, r_flag);
-        if(returnVal == 0 && C_flag)
-            returnVal = saveTpmContextToFile(sysContext, handle2048rsa, contextFile);
-
-        finishTest();
-
-        if(returnVal)
-            return -10;
+    result = load_external(&ctx);
+    if (!result) {
+        return false;
     }
-    else
-    {
-        showArgMismatch(argv[0]);
-        return -11;
+
+    if(ctx.save_to_context_file) {
+            return saveTpmContextToFile(ctx.sapi_context, ctx.rsa2048_handle,
+                    ctx.context_file_path) != 0;
     }
 
     return 0;
