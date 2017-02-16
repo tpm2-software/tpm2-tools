@@ -29,224 +29,164 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-
+#include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
+
 #include <getopt.h>
-
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "string-bytes.h"
 
-int readPublic(TPMI_DH_OBJECT objectHandle, const char *outFilePath)
-{
-    UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+typedef struct tpm_readpub_ctx tpm_readpub_ctx;
+struct tpm_readpub_ctx {
+    TPMI_DH_OBJECT objectHandle;
+    char outFilePath[PATH_MAX];
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-    TPM2B_PUBLIC outPublic = { { 0, } };
-    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
-    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
+#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
 
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
+static int read_public_and_save(tpm_readpub_ctx *ctx) {
 
-    rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\nTPM2_ReadPublic error: rval = 0x%0x\n\n",rval);
-        return -1;
+    TPMS_AUTH_RESPONSE session_out_data;
+    TSS2_SYS_RSP_AUTHS sessions_out_data;
+    TPMS_AUTH_RESPONSE *session_out_data_array[1];
+
+    TPM2B_PUBLIC public = {
+            { 0, }
+    };
+
+    TPM2B_NAME name = {
+            { sizeof(TPM2B_NAME) - 2, }
+    };
+
+    TPM2B_NAME qualified_name = {
+            { sizeof(TPM2B_NAME) - 2, }
+    };
+
+    session_out_data_array[0] = &session_out_data;
+    sessions_out_data.rspAuths = &session_out_data_array[0];
+    sessions_out_data.rspAuthsCount = ARRAY_LEN(session_out_data_array);
+
+    TPM_RC rval = Tss2_Sys_ReadPublic(ctx->sapi_context, ctx->objectHandle, 0,
+            &public, &name, &qualified_name, &sessions_out_data);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_ReadPublic error: rval = 0x%0x", rval);
+        return false;
     }
 
     printf("\nTPM2_ReadPublic OutPut: \n");
     printf("name: \n");
     UINT16 i;
-    for(i = 0; i < name.t.size; i++)
-        printf("%02x ",name.t.name[i]);
+    for (i = 0; i < name.t.size; i++)
+        printf("%02x ", name.t.name[i]);
     printf("\n");
 
-    printf("qualifiedName: \n");
-    for(i = 0; i < qualifiedName.t.size; i++)
-        printf("%02x ",qualifiedName.t.name[i]);
+    printf("qualified_name: \n");
+    for (i = 0; i < qualified_name.t.size; i++)
+        printf("%02x ", qualified_name.t.name[i]);
     printf("\n");
 
-    if(saveDataToFile(outFilePath, (UINT8 *)&outPublic, sizeof(outPublic)))
-        return -2;
+    int rc = saveDataToFile(ctx->outFilePath, (UINT8 *) &public,
+            sizeof(public));
+    if (rc) {
+        return false;
+    }
 
-    return 0;
+    return true;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-H, --object <objectHandle>   The loaded object handle \n"
-        "-c, --contextObject <filename>    filename for object context\n"
-        "-o, --opu    <publicKeyFileName>  The output file path,\n"
-        "                                  recording the readout public portion of the object\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -H 0x80000000 --opu <pubKeyFileName> \n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name);
-}
+static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
 
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-
-    TPMI_DH_OBJECT objectHandle;
-    char outFilePath[PATH_MAX] = {0};
-    char *contextFile = NULL;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    int opt = -1;
-    const char *optstring = "hvH:o:p:d:c:";
+    const char *short_options = "H:o:c:";
     static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"object",1,NULL,'H'},
-      {"opu",1,NULL,'o'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {"contextObject",1,NULL,'c'},
-      {0,0,0,0}
+        {"object",        required_argument, NULL,'H'},
+        {"opu",           required_argument, NULL,'o'},
+        {"contextObject", required_argument, NULL,'c'},
+        {NULL,            no_argument,       NULL, '\0'}
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        H_flag = 0,
-        c_flag = 0,
-        o_flag = 0;
+    struct {
+        UINT8 H      : 1;
+        UINT8 o      : 1;
+        UINT8 c      : 1;
+        UINT8 unused : 5;
+    } flags = { 0 };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
+    if (argc == 1) {
+        showArgMismatch(argv[0]);
         return 0;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
+    int opt = -1;
+    bool result;
+    char context_file[PATH_MAX] = {0};
+    while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
+            != -1) {
+        switch (opt) {
         case 'H':
-            if(getSizeUint32Hex(optarg,&objectHandle) != 0)
-            {
-                returnVal = -1;
-                break;
+            result = string_bytes_get_uint32(optarg, &ctx->objectHandle);
+            if (!result) {
+                return false;
             }
-            printf("\nobject handle: 0x%x\n\n",objectHandle);
-            H_flag = 1;
+            flags.H = 1;
             break;
-        case 'o':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -2;
-                break;
+        case 'o': {
+            int rc = checkOutFile(optarg);
+            if (rc) {
+                return false;
             }
-            o_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -3;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -4;
-            }
+            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            flags.o = 1;
+        }
             break;
         case 'c':
-            contextFile = optarg;
-            if(contextFile == NULL || contextFile[0] == '\0')
-            {
-                returnVal = -5;
-                break;
-            }
-            printf("contextFile = %s\n", contextFile);
-            c_flag = 1;
+            snprintf(context_file, sizeof(context_file), "%s", optarg);
+            flags.c = 1;
             break;
-        case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -6;
-            break;
-        case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -7;
-            break;
-        //default:
-        //  break;
         }
-        if(returnVal)
-            break;
     };
 
-    if(returnVal != 0)
-        return returnVal;
+    if (!((flags.H || flags.c) && flags.o)) {
+        showArgMismatch(argv[0]);
+        return false;
+    }
 
-    flagCnt = h_flag + v_flag + H_flag + o_flag + c_flag;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -8;
+    if (flags.c) {
+        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->objectHandle,
+                context_file);
+        if (rc) {
+            return false;
         }
     }
-    else if(flagCnt == 2 && (H_flag == 1 || c_flag) && o_flag == 1)
-    {
-        prepareTest(hostName, port, debugLevel);
 
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &objectHandle, contextFile);
-        if(returnVal == 0)
-            returnVal = readPublic(objectHandle, outFilePath);
+    return true;
+}
 
-        finishTest();
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
 
-        if(returnVal)
-            return -9;
+    (void)opts;
+    (void)envp;
+
+    tpm_readpub_ctx ctx = {
+            .objectHandle = 0,
+            .outFilePath = { 0 },
+            .sapi_context = sapi_context
+    };
+
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return 1;
     }
-    else
-    {
-        showArgMismatch(argv[0]);
-        return -10;
-    }
 
-    return 0;
+    return read_public_and_save(&ctx) != true;
 }
