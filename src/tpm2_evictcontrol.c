@@ -29,278 +29,202 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-#include <stdbool.h>
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <limits.h>
 #include <ctype.h>
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "string-bytes.h"
 
-int evictControl(TPMI_RH_PROVISION auth, TPMI_DH_OBJECT objectHandle,TPMI_DH_OBJECT persistentHandle, int P_flag)
-{
-    UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
+struct tpm_evictcontrol_ctx {
+    TPMS_AUTH_COMMAND session_data;
+    TPMI_RH_PROVISION auth;
+    struct {
+        TPMI_DH_OBJECT object;
+        TPMI_DH_OBJECT persist;
+    } handle;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
+static int evict_control(tpm_evictcontrol_ctx *ctx) {
 
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_CMD_AUTHS sessions_data;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_COMMAND *session_data_array[1];
+    TPMS_AUTH_RESPONSE *session_ata_out_array[1];
 
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
+    session_data_array[0] = &ctx->session_data;
+    session_ata_out_array[0] = &session_data_out;
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
+    sessions_data_out.rspAuths = &session_ata_out_array[0];
+    sessions_data.cmdAuths = &session_data_array[0];
 
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
+    sessions_data_out.rspAuthsCount = 1;
+    sessions_data.cmdAuthsCount = 1;
 
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for authorization Passwd.\n");
-            return -1;
-        }
+    TPM_RC rval = Tss2_Sys_EvictControl(ctx->sapi_context, ctx->auth, ctx->handle.object, &sessions_data, ctx->handle.persist,&sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("EvictControl failed, error code: 0x%x\n", rval);
+        return false;
     }
-
-    rval = Tss2_Sys_EvictControl(sysContext, auth, objectHandle, &sessionsData, persistentHandle,&sessionsDataOut);
-
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\nEvictControl Failed, error code: 0x%0x\n\n",rval);
-        return -1;
-    }
-    printf("\nEvictControl succ.\n");
-
-    return 0;
+    return true;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-A, --auth <o | p>   the authorization used to authorize the commands\n"
-            "\to  TPM_RH_OWNER\n"
-            "\tp  TPM_RH_PLATFORM\n"
-        "-H, --handle    <objectHandle>        the handle of a loaded object\n"
-        "-c, --context <filename>              filename for object context\n"
-        "-S, --persistent<persistentHandle>    the persistent handle for objectHandle\n"
-        "-P, --pwda      <authorizationPassword>   authrization password, optional\n"
-        "-X, --passwdInHex                     passwords given by any options are hex format.\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -A o -H 0x80000000 -S 0x81010002 -P abc123 \n"
-        "%s -A p -H 0x80000000 -S 0x81010002\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -A o -H 0x80000000 -S 0x81010002 -P 123abc -X\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
+static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
 
-int main(int argc, char* argv[])
-{
-
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT; //DEFAULT_TPM_PORT;
-
-    TPMI_RH_PROVISION auth = TPM_RH_NULL;
-    TPMI_DH_OBJECT objectHandle;
-    TPMI_DH_OBJECT persistentHandle;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    int opt = -1;
-    const char *optstring = "hvA:H:S:P:p:d:c:X";
+    const char *optstring = "A:H:S:P:c:X";
     static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"auth",1,NULL,'A'},
-      {"handle",1,NULL,'H'},
-      {"persistent",1,NULL,'S'},
-      {"pwda",1,NULL,'P'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {"context",1,NULL,'c'},
-      {"passwdInHex",0,NULL,'X'},
-      {0,0,0,0}
+      {"auth",        required_argument, NULL, 'A'},
+      {"handle",      required_argument, NULL, 'H'},
+      {"persistent",  required_argument, NULL, 'S'},
+      {"pwda",        required_argument, NULL, 'P'},
+      {"context",     required_argument, NULL, 'c'},
+      {"passwdInHex", no_argument,       NULL, 'X'},
+      {NULL,          no_argument,       NULL, '\0'}
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        A_flag = 0,
-        H_flag = 0,
-        S_flag = 0,
-        c_flag = 0,
-        P_flag = 0;
-    char *contextFile = NULL;
+    struct {
+        UINT8 A : 1;
+        UINT8 H : 1;
+        UINT8 S : 1;
+        UINT8 c : 1;
+        UINT8 P : 1;
+    } flags = { 0 };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    char contextFile[PATH_MAX];
+
+    bool is_hex_passwd;
+
+    if (argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
+    int opt;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
+            != -1) {
+        switch (opt) {
         case 'A':
-            if(strcmp(optarg,"o") == 0 || strcmp(optarg,"O") == 0)
-                auth = TPM_RH_OWNER;
-            else if(strcmp(optarg,"p") == 0 || strcmp(optarg,"P") == 0)
-                auth = TPM_RH_PLATFORM;
-            else
-            {
-                printf("ERROR: auth '%s' not supported!\n", optarg);
-                returnVal = -1;
-                break;
+            if (!strcasecmp(optarg, "o")) {
+                ctx->auth = TPM_RH_OWNER;
+            } else if (!strcasecmp(optarg, "p")) {
+                ctx->auth = TPM_RH_PLATFORM;
+            } else {
+                LOG_ERR("Incorrect auth value, got: \"%s\", expected [o|O|p|P!",
+                        optarg);
+                return false;
             }
-            A_flag = 1;
+            flags.A = 1;
             break;
-        case 'H':
-            if(getSizeUint32Hex(optarg, &objectHandle) != 0)
-            {
-                returnVal = -2;
-                break;
+        case 'H': {
+            bool result = string_bytes_get_uint32(optarg, &ctx->handle.object);
+            if (!result) {
+                LOG_ERR(
+                        "Could not convert object handle to a number, got: \"%s\"",
+                        optarg);
+                return false;
             }
-            printf("\nobjectHandle: 0x%x\n\n",objectHandle);
-            H_flag = 1;
+            flags.H = 1;
+        }
             break;
-        case 'S':
-            if(getSizeUint32Hex(optarg, &persistentHandle) != 0)
-            {
-                returnVal = -3;
-                break;
+        case 'S': {
+            bool result = string_bytes_get_uint32(optarg, &ctx->handle.persist);
+            if (!result) {
+                LOG_ERR(
+                        "Could not convert persistent handle to a number, got: \"%s\"",
+                        optarg);
+                return false;
             }
-            printf("\npersistentHandle: 0x%x\n\n",persistentHandle);
-            S_flag = 1;
+            flags.S = 1;
+        }
             break;
-        case 'P':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the authenticating password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                returnVal = -4;
-                break;
+        case 'P': {
+            bool result = password_util_copy_password(optarg, "authenticating",
+                    &ctx->session_data.hmac);
+            if (result) {
+                return false;
             }
-            if( strlen(optarg) > 0 )
-            {
-                sessionData.hmac.t.size = strlen(optarg);
-                snprintf((char *)sessionData.hmac.t.buffer, sizeof(sessionData.hmac.t.buffer), "%s", optarg);
-            }
-            P_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -5;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -6;
-            }
+            flags.P = 1;
+        }
             break;
         case 'c':
-            contextFile = optarg;
-            if(contextFile == NULL || contextFile[0] == '\0')
-            {
-                returnVal = -7;
-                break;
-            }
-            printf("contextFile = %s\n", contextFile);
-            c_flag = 1;
+            snprintf(contextFile, sizeof(contextFile), "%s", optarg);
+            flags.c = 1;
             break;
         case 'X':
-            hexPasswd = true;
+            is_hex_passwd = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -8;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -9;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
-        if(returnVal)
-            break;
+    }
+
+    if (!(flags.A && (flags.H || flags.c) && flags.S)) {
+        LOG_ERR("Invalid arguments");
+        return false;
+    }
+
+    bool result = password_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
+            "authenticating", &ctx->session_data.hmac);
+    if (!result) {
+        return false;
+    }
+
+    if (flags.c) {
+        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->handle.object,
+                contextFile);
+        if (rc) {
+            return false;
+        }
+    }
+
+    return  true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts and envp are unused, avoid compiler warning */
+    (void) opts;
+    (void) envp;
+
+    tpm_evictcontrol_ctx ctx = {
+            .auth = 0,
+            .handle = { 0 },
+            .session_data = { 0 },
+            .sapi_context = sapi_context
     };
 
-    if(returnVal != 0)
-        return returnVal;
-    flagCnt = h_flag + v_flag + A_flag + H_flag + S_flag + c_flag;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -10;
-        }
-    }
-    else if(flagCnt == 3 && A_flag == 1 && (H_flag == 1 || c_flag) && S_flag == 1)
-    {
-        prepareTest(hostName, port, debugLevel);
+    ctx.session_data.sessionHandle = TPM_RS_PW;
 
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &objectHandle, contextFile);
-        if (returnVal == 0)
-            returnVal = evictControl(auth, objectHandle, persistentHandle, P_flag);
-
-        finishTest();
-
-        if(returnVal)
-            return -11;
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
-        return -12;
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return 1;
     }
 
-    return 0;
+    /* FIXME required output for testing scripts */
+    printf("persistentHandle: 0x%x\n", ctx.handle.persist);
+
+    return evict_control(&ctx) != true;
 }
