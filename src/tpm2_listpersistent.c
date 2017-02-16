@@ -40,8 +40,8 @@
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
-#include "changeEndian.h"
 #include "common.h"
+#include "string-bytes.h"
 
 int debugLevel = 0;
 
@@ -88,9 +88,9 @@ execute_tool (int              argc,
     TPMS_CAPABILITY_DATA capabilityData;
     UINT32 rval;
 
+    UINT32 property = string_bytes_endian_convert_32(TPM_HT_PERSISTENT);
     rval = Tss2_Sys_GetCapability( sapi_context, 0, TPM_CAP_HANDLES,
-                                   CHANGE_ENDIAN_DWORD(TPM_HT_PERSISTENT),
-                                   TPM_PT_HR_PERSISTENT, &moreData,
+                                   property, TPM_PT_HR_PERSISTENT, &moreData,
                                    &capabilityData, 0 );
     if(rval != TPM_RC_SUCCESS)
     {

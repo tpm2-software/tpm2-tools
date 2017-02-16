@@ -27,8 +27,8 @@
 
 #include <sapi/tpm20.h>
 
+#include "string-bytes.h"
 #include "tpm_hmac.h"
-#include "changeEndian.h"
 
 TPM_RC tpm_kdfa(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,
@@ -49,7 +49,7 @@ TPM_RC tpm_kdfa(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
     tpm2b_i_2.t.size = 4;
 
     tpm2bBits.t.size = 4;
-    bitsSwizzled = CHANGE_ENDIAN_DWORD( bits );
+    bitsSwizzled = string_bytes_endian_convert_32( bits );
     *(UINT32 *)tpm2bBitsPtr = bitsSwizzled;
 
     for(i = 0; label[i] != 0 ;i++ );
@@ -68,7 +68,7 @@ TPM_RC tpm_kdfa(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
     {
         // Inner loop
 
-        i_Swizzled = CHANGE_ENDIAN_DWORD( i );
+        i_Swizzled = string_bytes_endian_convert_32( i );
         *(UINT32 *)tpm2b_i_2Ptr = i_Swizzled;
 
         j = 0;

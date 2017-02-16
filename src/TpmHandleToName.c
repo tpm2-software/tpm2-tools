@@ -26,9 +26,8 @@
 //**********************************************************************;
 
 #include <sapi/tpm20.h>
-#include "changeEndian.h"
 #include "sample.h"
-
+#include "string-bytes.h"
 //
 //
 UINT32 TpmHandleToName( TPM_HANDLE handle, TPM2B_NAME *name )
@@ -77,7 +76,7 @@ UINT32 TpmHandleToName( TPM_HANDLE handle, TPM2B_NAME *name )
             default:
                 rval = TPM_RC_SUCCESS;
                 name->b.size = sizeof( TPM_HANDLE );
-                *(TPM_HANDLE *)namePtr = CHANGE_ENDIAN_DWORD( handle );
+                *(TPM_HANDLE *)namePtr = string_bytes_endian_convert_32( handle );
         }
     }
     return rval;
