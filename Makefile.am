@@ -70,8 +70,8 @@ sbin_PROGRAMS = \
     src/tpm2_certify \
     src/tpm2_readpublic \
     src/tpm2_getrandom \
-    src/tpm2_encryptdecrypt
-    
+    src/tpm2_encryptdecrypt \
+    src/tpm2_evictcontrol
 
 COMMON_SRC = \
     src/context-util.c \
@@ -93,7 +93,6 @@ COMMON_SRC = \
 # above.
 if HAVE_TCTI_SOCK
 sbin_PROGRAMS += \
-		  src/tpm2_evictcontrol \
 		  src/tpm2_loadexternal \
 		  src/tpm2_rsadecrypt \
 		  src/tpm2_rsaencrypt \
@@ -156,7 +155,6 @@ man8_MANS = \
 
 src_libcommon_a_SOURCES = $(COMMON_SRC)
 if HAVE_TCTI_SOCK
-src_tpm2_evictcontrol_SOURCES = src/tpm2_evictcontrol.c
 src_tpm2_loadexternal_SOURCES = src/tpm2_loadexternal.c
 src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.c
 src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.c
@@ -194,6 +192,7 @@ src_tpm2_certify_SOURCES = src/tpm2_certify.c src/main.c
 src_tpm2_readpublic_SOURCES = src/tpm2_readpublic.c src/main.c
 src_tpm2_getrandom_SOURCES = src/tpm2_getrandom.c src/main.c
 src_tpm2_encryptdecrypt_SOURCES = src/tpm2_encryptdecrypt.c src/main.c
+src_tpm2_evictcontrol_SOURCES = src/tpm2_evictcontrol.c src/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c
