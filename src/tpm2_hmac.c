@@ -29,306 +29,240 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
+
 #include <getopt.h>
-#include <stdbool.h>
-
+#include <limits.h>
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
-int debugLevel = 0;
+#include "log.h"
+#include "files.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "string-bytes.h"
 
-int hmac(TPMI_DH_OBJECT keyHandle, TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH halg, const char *outHmacFilePath)
-{
-    UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+typedef struct tpm_hmac_ctx tpm_hmac_ctx;
+struct tpm_hmac_ctx {
+    TPMS_AUTH_COMMAND session_data;
+    TPMI_DH_OBJECT key_handle;
+    TPMI_ALG_HASH algorithm;
+    char hmac_output_file_path[PATH_MAX];
+    TPM2B_MAX_BUFFER data;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-    TPM2B_DIGEST outHMAC = { { sizeof(TPM2B_DIGEST)-2, } };
+static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
 
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_CMD_AUTHS sessions_data;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_COMMAND *session_data_array[1];
+    TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
+    TPM2B_DIGEST hmac_out = { { sizeof(TPM2B_DIGEST) - 2, } };
 
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
+    session_data_array[0] = &ctx->session_data;
+    session_data_out_array[0] = &session_data_out;
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for key Passwd.\n");
-            return -1;
-        }
-    }
+    sessions_data_out.rspAuths = &session_data_out_array[0];
+    sessions_data.cmdAuths = &session_data_array[0];
 
-    rval = Tss2_Sys_HMAC(sysContext, keyHandle, &sessionsData, data, halg, &outHMAC, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("\n......TPM2_HMAC Error. TPM Error:0x%x......\n", rval);
+    sessions_data_out.rspAuthsCount = 1;
+    sessions_data.cmdAuthsCount = 1;
+
+    ctx->session_data.sessionHandle = TPM_RS_PW;
+    ctx->session_data.nonce.t.size = 0;
+    *((UINT8 *) ((void *) &ctx->session_data.sessionAttributes)) = 0;
+
+    TPM_RC rval = Tss2_Sys_HMAC(ctx->sapi_context, ctx->key_handle,
+            &sessions_data, &ctx->data, ctx->algorithm, &hmac_out,
+            &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("TPM2_HMAC Error. TPM Error:0x%x", rval);
         return -1;
     }
-    printf("\ntpm2_hmac succ.\n\n");
 
     printf("\nhmac value(hex type): ");
     UINT16 i;
-    for( i = 0; i < outHMAC.t.size; i++)
-        printf("%02x ", outHMAC.t.buffer[i]);
+    for (i = 0; i < hmac_out.t.size; i++)
+        printf("%02x ", hmac_out.t.buffer[i]);
     printf("\n");
 
-    if( saveDataToFile(outHmacFilePath, (UINT8 *)&outHMAC, sizeof(outHMAC)) )
-        return -2;
-
-    return 0;
+    return saveDataToFile(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
+            sizeof(hmac_out)) == 0;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-k, --keyHandle <hexHandle> handle for the symmetric signing key providing the HMAC key\n"
-        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
-        "-P, --pwdk      <string>    the keyHandle's password, optional\n"
-        "-g, --halg      <hexAlg>    algorithm for the hash being computed\n"
-            "\t0x0004  TPM_ALG_SHA1\n"
-            "\t0x000B  TPM_ALG_SHA256\n"
-            "\t0x000C  TPM_ALG_SHA384\n"
-            "\t0x000D  TPM_ALG_SHA512\n"
-            "\t0x0012  TPM_ALG_SM3_256\n"
-        "-I, --infile    <inputFilename>  file containning the data to be HMACed\n"
-        "-o, --outfile   <hmacFilename>   file record the HMAC result\n"
-        "-X, --passwdInHex                passwords given by any options are hex format.\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -k 0x80000001 -P abc123 -g 0x004 -I <inputFilename> -o <hmacFilename> \n"
-        "%s -k 0x80000001 -g 0x004 -I <inputFilename> -o <hmacFilename>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -k 0x80000001 -P 123abc -X -g 0x004 -I <inputFilename> -o <hmacFilename> \n"
-        , name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
+#define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
 
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
+static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
 
-    TPMI_DH_OBJECT keyHandle;
-    TPM2B_MAX_BUFFER data;
-    TPMI_ALG_HASH  halg;
-    char outHmacFilePath[PATH_MAX] = {0};
+    bool result = false;
+    bool is_hex_passwd = false;
     char *contextKeyFile = NULL;
-    long fileSize = 0;
 
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+    const char *optstring = "k:P:g:I:o:c:X";
+    static struct option long_options[] = {
+        {"keyHandle",   required_argument, NULL, 'k'},
+        {"keyContext",  required_argument, NULL, 'c'},
+        {"pwdk",        required_argument, NULL, 'P'},
+        {"algorithm",        required_argument, NULL, 'g'},
+        {"infile",      required_argument, NULL, 'I'},
+        {"outfile",     required_argument, NULL, 'o'},
+        {"passwdInHex", no_argument,       NULL, 'X'},
+        {NULL,          no_argument,       NULL, '\0'}
+    };
+
+    struct {
+        UINT8 k : 1;
+        UINT8 P : 1;
+        UINT8 g : 1;
+        UINT8 I : 1;
+        UINT8 o : 1;
+        UINT8 c : 1;
+        UINT8 unused : 2;
+    } flags = { 0 };
+
+    /*
+     * argc should be bound by the maximum and minimum option count.
+     * subtract 1 from argc to disregard argv[0]
+     */
+    if ((argc - 1) < 1 || (argc - 1) > ARG_CNT(0)) {
+        showArgMismatch(argv[0]);
+        return false;
+    }
 
     int opt = -1;
-    const char *optstring = "hvk:P:g:I:o:p:d:c:X";
-    static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"keyHandle",1,NULL,'k'},
-      {"pwdk",1,NULL,'P'},
-      {"halg",1,NULL,'g'},
-      {"infile",1,NULL,'I'},
-      {"outfile",1,NULL,'o'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {"keyContext",1,NULL,'c'},
-      {"passwdInHex",0,NULL,'X'},
-      {0,0,0,0}
-    };
-
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        k_flag = 0,
-        P_flag = 0,
-        g_flag = 0,
-        I_flag = 0,
-        c_flag = 0,
-        o_flag = 0;
-
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
-    }
-
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
+            != -1) {
+        switch (opt) {
         case 'k':
-            if(getSizeUint32Hex(optarg,&keyHandle) != 0)
-            {
-                returnVal = -1;
-                break;
+            result = string_bytes_get_uint32(optarg, &ctx->key_handle);
+            if (!result) {
+                LOG_ERR("Could not convert key handle to number, got \"%s\"",
+                        optarg);
+                goto out;
             }
-            k_flag = 1;
+            flags.k = 1;
             break;
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
-            {
-                returnVal = -2;
-                break;
+            result = password_util_copy_password(optarg, "key handle",
+                    &ctx->session_data.hmac);
+            if (!result) {
+                goto out;
             }
-            P_flag = 1;
+            flags.P = 1;
             break;
         case 'g':
-            if(getSizeUint16Hex(optarg,&halg) != 0)
-            {
-                showArgError(optarg, argv[0]);
-                returnVal = -3;
-                break;
+            result = string_bytes_get_uint16(optarg, &ctx->algorithm);
+            if (!result) {
+                LOG_ERR("Could not convert algorithm to number, got \"%s\"",
+                        optarg);
+                goto out;
             }
-            printf("halg = 0x%4.4x\n", halg);
-            g_flag = 1;
+            flags.g = 1;
             break;
-        case 'I':
-//              long fileSize = 0;
-            if( getFileSize(optarg, &fileSize) != 0)
-            {
-                returnVal = -4;
-                break;
+        case 'I': {
+            long fileSize = 0;
+            int rc = getFileSize(optarg, &fileSize);
+            if (rc) {
+                goto out;
             }
-            if(fileSize > MAX_DIGEST_BUFFER)
-            {
-                printf("Input data too long: %ld, should be less than %d bytes\n", fileSize, MAX_DIGEST_BUFFER);
-                returnVal = -5;
-                break;
+
+            if (fileSize > MAX_DIGEST_BUFFER) {
+                LOG_ERR(
+                        "Input data too long: %ld, should be less than %d bytes\n",
+                        fileSize, MAX_DIGEST_BUFFER);
+                goto out;
             }
-            data.t.size = sizeof(data) - 2;
-            if(loadDataFromFile(optarg, (UINT8 *)data.t.buffer, &data.t.size) != 0)
-            {
-                returnVal = -6;
-                break;
+            ctx->data.t.size = sizeof(ctx->data) - 2;
+            rc = loadDataFromFile(optarg, ctx->data.t.buffer,
+                    &ctx->data.t.size);
+            if (rc) {
+                goto out;
             }
-            I_flag = 1;
+            flags.I = 1;
+        }
             break;
-        case 'o':
-            snprintf(outHmacFilePath, sizeof(outHmacFilePath), "%s", optarg);
-            if(checkOutFile(outHmacFilePath) != 0)
-            {
-                returnVal = -7;
-                break;
+        case 'o': {
+            int rc = checkOutFile(optarg);
+            if (rc) {
+                goto out;
             }
-            o_flag = 1;
+            snprintf(ctx->hmac_output_file_path, sizeof(ctx->hmac_output_file_path), "%s",
+                    optarg);
+            flags.o = 1;
+        }
             break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -8;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -9;
-            }
-            break;
-         case 'c':
-            contextKeyFile = optarg;
-            if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
-            {
-                returnVal = -10;
-                break;
-            }
-            printf("contextKeyFile = %s\n", contextKeyFile);
-            c_flag = 1;
+        case 'c':
+            contextKeyFile = strdup(optarg);
+            flags.c = 1;
             break;
         case 'X':
-            hexPasswd = true;
+            is_hex_passwd = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -11;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            goto out;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -12;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            goto out;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            goto out;
         }
-        if(returnVal)
-            break;
+    }
+
+    /*
+     * Options g, i, o must be specified and k or c must be specified.
+     */
+    if (!((flags.k || flags.c) && flags.I && flags.o && flags.g)) {
+        LOG_ERR("Must specify options g, i, o and k or c");
+        return false;
+    }
+
+    if (flags.c) {
+        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle,
+                contextKeyFile);
+        if (rc) {
+            LOG_ERR("Loading tpm context from file \"%s\" failed.",
+                    contextKeyFile);
+            return false;
+        }
+    }
+
+    /* convert a hex password if needed */
+    result = password_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
+            "key handle", &ctx->session_data.hmac);
+    if (!result) {
+        goto out;
+    }
+
+    result = true;
+
+    out: free(contextKeyFile);
+    return result;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    (void)opts;
+    (void)envp;
+
+    tpm_hmac_ctx ctx = {
+            .session_data = { 0 },
+            .key_handle = 0,
+            .sapi_context = sapi_context
     };
 
-    if(returnVal != 0)
-        return returnVal;
-
-    if(P_flag != 1)
-        sessionData.hmac.t.size = 0;
-    flagCnt = h_flag + v_flag + k_flag + g_flag + I_flag + o_flag + c_flag;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -13;
-        }
-    }
-    else if((flagCnt == 4) && (k_flag == 1 || c_flag == 1) && (I_flag == 1) && (o_flag == 1) && g_flag == 1)
-    {
-        prepareTest(hostName, port, debugLevel);
-
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
-        if(returnVal == 0)
-            returnVal = hmac(keyHandle, &data, halg, outHmacFilePath);
-
-        finishTest();
-
-        if(returnVal)
-            return -14;
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
-        return -15;
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return 1;
     }
 
-    return 0;
+    return do_hmac_and_output(&ctx) != true;
 }
