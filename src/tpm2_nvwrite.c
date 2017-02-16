@@ -29,254 +29,203 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
+#include <stdbool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
 #include <getopt.h>
-#include <stdbool.h>
+#include <limits.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
-UINT32 nvIndex = 0;
-UINT32 authHandle = TPM_RH_PLATFORM;
-UINT16 dataSize = 0;
-unsigned char nvBuffer[MAX_NV_INDEX_SIZE];
-char fileName[PATH_MAX];
-char handlePasswd[sizeof(TPMU_HA)];
-bool hexPasswd = false;
+#include "log.h"
+#include "files.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "string-bytes.h"
 
-int nvWrite()
-{
-    UINT32 rval;
-    TPMS_AUTH_COMMAND sessionData;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    UINT16 i, offset = 0;
-    TPM2B_MAX_NV_BUFFER nvWriteData;
+typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
+struct tpm_nvwrite_ctx {
+    UINT32 nv_index;
+    UINT32 auth_handle;
+    UINT16 data_size;
+    UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
+    TPM2B_AUTH handle_passwd;
+    bool hex_passwd;
+    char input_file[PATH_MAX];
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-    TPMS_AUTH_COMMAND *sessionDataArray[1] = { &sessionData };
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1] = { &sessionDataOut };
+static int nv_write(tpm_nvwrite_ctx *ctx) {
 
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
+    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_CMD_AUTHS sessions_data;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPM2B_MAX_NV_BUFFER nv_write_data;
 
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
+    TPMS_AUTH_COMMAND *session_data_array[1] = { &session_data };
+    TPMS_AUTH_RESPONSE *session_data_out_array[1] = { &session_data_out };
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    sessionData.hmac.t.size = 0;
-    *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
+    sessions_data_out.rspAuths = &session_data_out_array[0];
+    sessions_data.cmdAuths = &session_data_array[0];
 
-    if (strlen(handlePasswd) > 0 && !hexPasswd)
-    {
-        sessionData.hmac.t.size = strlen(handlePasswd);
-        memcpy( &sessionData.hmac.t.buffer[0], handlePasswd, sessionData.hmac.t.size );
-    }
-    else if (strlen(handlePasswd) > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure(handlePasswd, &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for handlePasswd.\n");
-            return -1;
-        }
+    sessions_data_out.rspAuthsCount = 1;
+    sessions_data.cmdAuthsCount = 1;
+
+    session_data.sessionHandle = TPM_RS_PW;
+    session_data.nonce.t.size = 0;
+    session_data.hmac.t.size = 0;
+    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
+
+    bool result = password_util_to_auth(&ctx->handle_passwd, ctx->hex_passwd,
+            "handle password", &session_data.hmac);
+    if (!result) {
+        return false;
     }
 
-    while (dataSize > 0)
-    {
-        nvWriteData.t.size = dataSize > MAX_NV_BUFFER_SIZE ? MAX_NV_BUFFER_SIZE : dataSize;
-        printf("\nThe data(size=%d) to be written:\n", nvWriteData.t.size);
-        for( i = 0; i<(int)nvWriteData.t.size; i++ )
-        {
-            nvWriteData.t.buffer[i] = nvBuffer[offset+i];
-            printf("%02x ", nvBuffer[offset+i]);
+    while (ctx->data_size > 0) {
+
+        nv_write_data.t.size =
+                ctx->data_size > MAX_NV_BUFFER_SIZE ?
+                MAX_NV_BUFFER_SIZE : ctx->data_size;
+
+        LOG_INFO("The data(size=%d) to be written:\n", nv_write_data.t.size);
+
+        UINT16 i;
+        UINT16 offset = 0;
+        for (i = 0; i < nv_write_data.t.size; i++) {
+            nv_write_data.t.buffer[i] = ctx->nv_buffer[offset + i];
+            printf("%02x ", ctx->nv_buffer[offset + i]);
         }
         printf("\n\n");
 
-        rval = Tss2_Sys_NV_Write( sysContext, authHandle, nvIndex, &sessionsData, &nvWriteData, offset, &sessionsDataOut );
-        if(rval != TSS2_RC_SUCCESS)
-        {
-            printf( "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x\n", nvIndex, nvIndex, offset, rval );
-            return -1;
+        TPM_RC rval = Tss2_Sys_NV_Write(ctx->sapi_context, ctx->auth_handle,
+                ctx->nv_index, &sessions_data, &nv_write_data, offset,
+                &sessions_data_out);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_ERR(
+                    "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x",
+                    ctx->nv_index, ctx->nv_index, offset, rval);
+            return false;
         }
-        printf( "Success to write NV area at index 0x%x (%d) offset 0x%x.\n", nvIndex, nvIndex, offset );
 
-        dataSize -= nvWriteData.t.size;
-        offset += nvWriteData.t.size;        
+        LOG_INFO("Success to write NV area at index 0x%x (%d) offset 0x%x.",
+                ctx->nv_index, ctx->nv_index, offset);
+
+        ctx->data_size -= nv_write_data.t.size;
+        offset += nv_write_data.t.size;
     }
 
-    return 0;
+    return true;
 }
 
-void showHelp(const char *name)
-{
-    printf("Usage: %s [-h/--help]\n"
-           "   or: %s [-v/--version]\n"
-           "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>] [-f/--file <filename>]\n"
-           "   or: %s [-x/--index <nvIdx>] [-a/--authHandle <hexHandle>] [-P/--handlePasswd <string>] [-f/--file <filename>]\n"
-           "                    [-X/--passwdInHex]\n"
-           "                    [-p/--port <port>] [-d/--dbg <dbgLevel>]\n"
-           "\nwhere:\n\n"
-           "   -h/--help                       display this help and exit.\n"
-           "   -v/--version                    display version information and exit.\n"
-           "   -x/--index <nvIdx>              specifies the index of the NV area.\n"
-           "   -a/--authHandle <hexHandle>     specifies the handle used to authorize:\n"
-           "                                     0x40000001 (TPM_RH_OWNER)\n"
-           "                                     0x4000000C (TPM_RH_PLATFORM)\n"
-           "                                     {NV_INDEX_FIRST:NV_INDEX_LAST}\n"
-           "   -P/--handlePasswd <string>      specifies the password of authHandle.\n"
-           "   -f/--file <filename>            specifies the nv data file.\n"
-           "   -X/--passwdInHex                passwords given by any options are hex format.\n"
-           "   -p/--port <port>                specifies the port number, default:%d, optional\n"
-           "   -d/--dbg <dbgLevel>             specifies level of debug messages, optional:\n"
-           "                                     0 (high level test results)\n"
-           "                                     1 (test app send/receive byte streams)\n"
-           "                                     2 (resource manager send/receive byte streams)\n"
-           "                                     3 (resource manager tables)\n"
-           "\nexample:\n"
-           "   %s -x 0x1500016 -a 0x40000001 -P passwd -f nv.data\n"
-           "   %s -x 0x1500016 -a 0x40000001 -P 1a1b1c -X -f nv.data\n"
-           , name, name, name, name, DEFAULT_RESMGR_TPM_PORT, name, name);
-}
+#define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
 
-int main(int argc, char* argv[])
-{
-    int opt;
-    char type[100] = "local";
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-    int returnVal = 0;
+static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
 
-    struct option sOpts[] = {
+    struct option long_options[] = {
         { "index"       , required_argument, NULL, 'x' },
         { "authHandle"  , required_argument, NULL, 'a' },
         { "file"        , required_argument, NULL, 'f' },
         { "handlePasswd", required_argument, NULL, 'P' },
         { "passwdInHex" , no_argument,       NULL, 'X' },
-        { "port"        , required_argument, NULL, 'p' },
-        { "dbg"         , required_argument, NULL, 'd' },
-        { "help"        , no_argument,       NULL, 'h' },
-        { "version"     , no_argument,       NULL, 'v' },
         { NULL          , no_argument,       NULL,  0  },
     };
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
-    }
-
-    if( argc > (int)(2*sizeof(sOpts)/sizeof(struct option)) )
-    {
+    /* subtract 1 from argc to disregard argv[0] */
+    if ((argc - 1) < ARG_CNT(2) || (argc - 1) > ARG_CNT(0)) {
         showArgMismatch(argv[0]);
-        return -1;
+        return false;
     }
 
-    while ( ( opt = getopt_long( argc, argv, "x:a:f:P:Xp:d:hv", sOpts, NULL ) ) != -1 )
-    {
-        switch ( opt ) {
-        case 'h':
-        case '?':
-            showHelp(argv[0]);
-            return 0;
-        case 'v':
-            showVersion(argv[0]);
-            return 0;
-
+    int opt;
+    bool result;
+    while ((opt = getopt_long(argc, argv, "x:a:f:P:X", long_options, NULL))
+            != -1) {
+        switch (opt) {
         case 'x':
-            if( getSizeUint32Hex(optarg, &nvIndex) != 0 )
-            {
-                return -2;
+            result = string_bytes_get_uint32(optarg, &ctx->nv_index);
+            if (!result) {
+                LOG_ERR("Could not convert NV index to number, got: \"%s\"",
+                        optarg);
+                return false;
+            }
+
+            if (ctx->nv_index == 0) {
+                LOG_ERR("NV Index cannot be 0");
+                return false;
             }
             break;
-
         case 'a':
-            if( getSizeUint32Hex(optarg, &authHandle) != 0 )
-            {
-                return -3;
+            result = string_bytes_get_uint32(optarg, &ctx->auth_handle);
+            if (!result) {
+                LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
+                        optarg);
+                return false;
+            }
+
+            if (ctx->auth_handle == 0) {
+                LOG_ERR("Auth handle cannot be 0");
+                return false;
             }
             break;
-
-        case 'P':
-            if( optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) )
-            {
-                printf("\nPlease input the handle password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA)-1);
-                return -4;
-            }
-            snprintf(handlePasswd, sizeof(handlePasswd), "%s", optarg);
-            break;
-
         case 'f':
-            if( optarg == NULL )
-            {
-                printf("\nPlease input the nv data file.\n");
-                return -5;
-            }
-            snprintf(fileName, sizeof(fileName), "%s", optarg);
+            snprintf(ctx->input_file, sizeof(ctx->input_file), "%s", optarg);
             break;
-
+        case 'P':
+            result = password_util_copy_password(optarg, "handle password",
+                    &ctx->handle_passwd);
+            if (!result) {
+                return false;
+            }
+            break;
         case 'X':
-            hexPasswd = true;
+            ctx->hex_passwd = true;
             break;
-
-         case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                return -6;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                return -7;
-            }
-            break;
-
+        case ':':
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
+        case '?':
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
         default:
-            showArgMismatch(argv[0]);
-            return -8;
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
     }
 
-    if( nvIndex == 0 )
-    {
-        printf("You must provide an index (!= 0) for the NVRAM area.\n");
-        return -9;
+    ctx->data_size = MAX_NV_INDEX_SIZE;
+    int rc = loadDataFromFile(ctx->input_file, ctx->nv_buffer, &ctx->data_size);
+    if (rc) {
+        LOG_ERR("Failed to read data from %s\n", ctx->input_file);
+        return -false;
     }
 
-    if( authHandle == 0 )
-    {
-        printf("You must provide an right auth handle for this operation.\n");
-        return -10;
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    (void)opts;
+    (void)envp;
+
+    tpm_nvwrite_ctx ctx = {
+        .nv_index = 0,
+        .auth_handle = TPM_RH_PLATFORM,
+        .data_size = 0,
+        .handle_passwd = { 0 },
+        .hex_passwd = false,
+        .sapi_context = sapi_context
+    };
+
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return 1;
     }
 
-    dataSize = MAX_NV_INDEX_SIZE;
-    if(loadDataFromFile(fileName, nvBuffer, &dataSize))
-    {
-        printf("Failed to read data from %s\n", fileName);
-        return -11;
-    }
-
-    prepareTest(hostName, port, debugLevel);
-
-    returnVal = nvWrite();
-
-    finishTest();
-
-    if(returnVal)
-        return -12;
-
-    return 0;
+    return nv_write(&ctx) != true;
 }
