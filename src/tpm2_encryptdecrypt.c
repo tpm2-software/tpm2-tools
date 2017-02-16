@@ -29,305 +29,225 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-
-#include <stdarg.h>
-
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <limits.h>
 #include <ctype.h>
 #include <getopt.h>
-#include <stdbool.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "string-bytes.h"
 
-int encryptDecrypt(TPMI_DH_OBJECT keyHandle, TPMI_YES_NO decryptVal, TPM2B_MAX_BUFFER *inData, const char *outFilePath)
-{
-    UINT32 rval;
+typedef struct tpm_encrypt_decrypt_ctx tpm_encrypt_decrypt_ctx;
+struct tpm_encrypt_decrypt_ctx {
+    TPMS_AUTH_COMMAND session_data;
+    TPMI_YES_NO is_decrypt;
+    TPMI_DH_OBJECT key_handle;
+    TPM2B_MAX_BUFFER data;
+    char out_file_path[PATH_MAX];
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-    // Inputs
-    TPMI_ALG_SYM_MODE mode;
-    TPM2B_IV ivIn;
-    // Outputs
-    TPM2B_MAX_BUFFER outData = { { sizeof(TPM2B_MAX_BUFFER)-2, } };
-    TPM2B_IV ivOut = { { sizeof(TPM2B_IV)-2, } };
+static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
 
-    TSS2_SYS_CMD_AUTHS sessionsData;
+    TPM2B_MAX_BUFFER out_data = {
+            { sizeof(TPM2B_MAX_BUFFER) - 2, }
+    };
 
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
+    TPM2B_IV iv_out = {
+            { sizeof(TPM2B_IV) - 2, }
+    };
 
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2_SYS_CMD_AUTHS sessions_data;
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_COMMAND *session_data_array[1];
+    TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    sessionDataArray[0] = &sessionData;
-    sessionsData.cmdAuths = &sessionDataArray[0];
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
+    session_data_array[0] = &ctx->session_data;
+    sessions_data.cmdAuths = &session_data_array[0];
+    session_data_out_array[0] = &session_data_out;
+    sessions_data_out.rspAuths = &session_data_out_array[0];
+    sessions_data_out.rspAuthsCount = 1;
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for key Passwd.\n");
-            return -1;
-        }
+    sessions_data.cmdAuthsCount = 1;
+    sessions_data.cmdAuths[0] = &ctx->session_data;
+
+    TPM2B_IV iv_in = {
+        .t = {
+            .size = MAX_SYM_BLOCK_SIZE,
+            .buffer = { 0 }
+        },
+    };
+
+    TPM_RC rval = Tss2_Sys_EncryptDecrypt(ctx->sapi_context, ctx->key_handle,
+            &sessions_data, ctx->is_decrypt, TPM_ALG_NULL, &iv_in, &ctx->data, &out_data,
+            &iv_out, &sessions_data);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("EncryptDecrypt failed, error code: 0x%x\n", rval);
+        return false;
     }
 
-    sessionsData.cmdAuthsCount = 1;
-    sessionsData.cmdAuths[0] = &sessionData;
-
-    mode = TPM_ALG_NULL;
-    ivIn.t.size = MAX_SYM_BLOCK_SIZE;
-    memset(ivIn.t.buffer, 0, MAX_SYM_BLOCK_SIZE);
-
-    if(decryptVal == NO)
-        printf("\nENCRYPTDECRYPT: ENCRYPT\n");
-    if(decryptVal == YES)
-        printf("\nENCRYPTDECRYPT: DECRYPT\n");
-
-    rval = Tss2_Sys_EncryptDecrypt(sysContext, keyHandle, &sessionsData, decryptVal, mode, &ivIn, inData, &outData, &ivOut, &sessionsDataOut);
-
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("EncryptDecrypt failed, error code: 0x%x\n", rval);
-        return -1;
-    }
-    printf("\nEncryptDecrypt succ.\n");
-
-    if(saveDataToFile(outFilePath, (UINT8 *)outData.t.buffer, outData.t.size))
-        return -2;
-
-    printf("OutFile %s completed!\n", outFilePath);
-    return 0;
+    return saveDataToFile(ctx->out_file_path, (UINT8 *) out_data.t.buffer,
+            out_data.t.size) == 0;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-k, --keyHandle<hexHandle>  the symmetric key used for the operation(encryption/decryption)\n"
-        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
-        "-P, --pwdk     <password>   the password of key, optional\n"
-        "-D, --decrypt  <YES | NO>   the operation type, default NO, optional\n"
-        "\tYES  the operation is decryption\n"
-        "\tNO   the operation is encryption\n"
-        "-I, --inFile   <filePath>   Input file path, containing the data to be operated\n"
-        "-o, --outFile  <filePath>   Output file path, record the operated data\n"
-        "-X, --passwdInHex           passwords given by any options are hex format.\n"
-        "-p, --port   <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
-        "\t0 (high level test results)\n"
-        "\t1 (test app send/receive byte streams)\n"
-        "\t2 (resource manager send/receive byte streams)\n"
-        "\t3 (resource manager tables)\n"
-    "\n"
-        "Example:\n"
-        "%s -k 0x81010001 -P abc123 -D NO -I <filePath> -o <filePath>\n"
-        "%s -k 0x81010001 -I <filePath> -o <filePath>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -k 0x81010001 -P 123abc -X -D NO -I <filePath> -o <filePath>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
+static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
 
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT; //DEFAULT_TPM_PORT;
-
-    TPMI_DH_OBJECT keyHandle;
-    TPMI_YES_NO decryptVal = NO;
-    TPM2B_MAX_BUFFER inData;
-    char outFilePath[PATH_MAX] = {0};
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+    bool result = false;
+    bool is_hex_passwd = false;
 
     int opt = -1;
-    const char *optstring = "hvk:P:D:I:o:p:d:c:X";
+    const char *optstring = "k:P:D:I:o:c:X";
     static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
-      {"keyHandle",1,NULL,'k'},
-      {"pwdk",1,NULL,'P'},
-      {"decrypt",1,NULL,'D'},
-      {"inFile",1,NULL,'I'},
-      {"outFile",1,NULL,'o'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
-      {"keyContext",1,NULL,'c'},
-      {"passwdInHex",0,NULL,'X'},
-      {0,0,0,0}
+      {"keyHandle",   required_argument, NULL, 'k'},
+      {"pwdk",        required_argument, NULL, 'P'},
+      {"decrypt",     required_argument, NULL, 'D'},
+      {"inFile",      required_argument, NULL, 'I'},
+      {"outFile",     required_argument, NULL, 'o'},
+      {"keyContext",  required_argument, NULL, 'c'},
+      {"passwdInHex", no_argument,       NULL, 'X'},
+      {NULL,          no_argument,       NULL, '\0'}
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        k_flag = 0,
-        P_flag = 0,
-        I_flag = 0,
-        c_flag = 0,
-        o_flag = 0;
+    struct {
+        UINT8 k : 1;
+        UINT8 P : 1;
+        UINT8 D : 1;
+        UINT8 I : 1;
+        UINT8 o : 1;
+        UINT8 c : 1;
+        UINT8 X : 1;
+        UINT8 unused : 1;
+    } flags = { 0 };
+
     char *contextKeyFile = NULL;
 
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    if (argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
+        switch (opt) {
         case 'k':
-            if(getSizeUint32Hex(optarg,&keyHandle) != 0)
-            {
-                returnVal = -1;
-                break;
+            result = string_bytes_get_uint32(optarg, &ctx->key_handle);
+            if (!result) {
+                LOG_ERR("Could not convert keyhandle to number, got: \"%s\"",
+                        optarg);
+                goto out;
             }
-            k_flag = 1;
+            flags.k = 1;
             break;
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
-            {
-                returnVal = -2;
-                break;
+            result = password_util_copy_password(optarg, "key", &ctx->session_data.hmac);
+            if (!result) {
+                goto out;
             }
-            P_flag = 1;
+            flags.P = 1;
             break;
         case 'D':
-            if(strcmp("YES", optarg) == 0)
-                decryptVal = YES;
-            else if(strcmp("NO", optarg) == 0)
-                decryptVal = NO;
-            else
-            {
-                returnVal = -3;
+            if (!strcasecmp("YES", optarg)) {
+                ctx->is_decrypt = YES;
+            } else if (!strcasecmp("NO", optarg)) {
+                ctx->is_decrypt = NO;
+            } else {
                 showArgError(optarg, argv[0]);
-                break;
+                goto out;
             }
             break;
-        case 'I':
-            inData.t.size = sizeof(inData) - 2;
-            if(loadDataFromFile(optarg, inData.t.buffer, &inData.t.size) != 0)
-            {
-                returnVal = -4;
-                break;
+        case 'I': {
+            ctx->data.t.size = sizeof(ctx->data) - 2;
+            int rc = loadDataFromFile(optarg, ctx->data.t.buffer, &ctx->data.t.size);
+            if (rc) {
+                goto out;
             }
-            I_flag = 1;
+            flags.I = 1;
+        }
             break;
-        case 'o':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -5;
-                break;
+        case 'o': {
+            int rc = checkOutFile(optarg);
+            if (rc) {
+                goto out;
             }
-            o_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -6;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -7;
-            }
+            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s", optarg);
+            flags.o = 1;
+        }
             break;
         case 'c':
-            contextKeyFile = optarg;
-            if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
-            {
-                returnVal = -8;
-                break;
+            contextKeyFile = strdup(optarg);
+            if (!contextKeyFile) {
+                LOG_ERR("oom");
+                goto out;
             }
-            printf("contextKeyFile = %s\n", contextKeyFile);
-            c_flag = 1;
+            flags.c = 1;
             break;
         case 'X':
-            hexPasswd = true;
+            is_hex_passwd = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -9;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            goto out;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -10;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            goto out;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            goto out;
         }
-        if(returnVal)
-            break;
+    }
+
+    if (!((flags.k || flags.c) && flags.I && flags.o)) {
+        LOG_ERR("Invalid arguments");
+        goto out;
+    }
+
+    if (flags.c) {
+        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle, contextKeyFile);
+        if (rc) {
+            goto out;
+        }
+    }
+
+    result = password_util_to_auth(&ctx->session_data.hmac, is_hex_passwd, "key",
+            &ctx->session_data.hmac);
+
+out:
+    free(contextKeyFile);
+
+    return result;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts and envp are unused, avoid compiler warning */
+    (void) opts;
+    (void) envp;
+
+    tpm_encrypt_decrypt_ctx ctx = {
+        .session_data = { 0 },
+        .is_decrypt = NO,
+        .data = { 0 },
+        .session_data = 0,
+        .sapi_context = sapi_context
     };
 
-    if(returnVal != 0)
-        return returnVal;
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
+    ctx.session_data.sessionHandle = TPM_RS_PW;
 
-    flagCnt = h_flag + v_flag + k_flag + I_flag + o_flag + c_flag;
-
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -11;
-        }
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return false;
     }
-    else if((flagCnt == 3) && (k_flag == 1 || c_flag == 1) && (I_flag == 1) && (o_flag == 1))
-    {
-        prepareTest(hostName, port, debugLevel);
 
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
-        if (returnVal == 0)
-            returnVal = encryptDecrypt(keyHandle, decryptVal, &inData, outFilePath);
-
-        finishTest();
-
-        if(returnVal)
-            return -12;
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
-        return -13;
-    }
-    return 0;
+    return encryptDecrypt(&ctx) != true;
 }
