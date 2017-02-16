@@ -67,7 +67,7 @@ int getKeyType(TPMI_DH_OBJECT objectHandle, TPMI_ALG_PUBLIC *type)
     return -1;
 }
 
-int setScheme(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *inScheme)
+int set_scheme(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *inScheme)
 {
     TPM_ALG_ID type;
 
@@ -145,7 +145,7 @@ int sign(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, BYTE *msg, UINT16 length,
          printf("%02x ", digest.t.buffer[i]);
     printf("\n");
 
-    if(setScheme(keyHandle, halg, &inScheme))
+    if(set_scheme(keyHandle, halg, &inScheme))
     {
         printf("No suitable signing scheme!\n");
         return -2;
