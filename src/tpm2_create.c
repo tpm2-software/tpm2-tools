@@ -40,8 +40,11 @@
 #include <stdbool.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
+
+#include "files.h"
+#include "main.h"
+#include "options.h"
+#include "string-bytes.h"
 
 TSS2_SYS_CONTEXT *sysContext;
 TPMS_AUTH_COMMAND sessionData;
@@ -224,8 +227,6 @@ execute_tool (int              argc,
               TSS2_SYS_CONTEXT *sapi_context)
 {
     sysContext = sapi_context;
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
 
     TPM2B_SENSITIVE_CREATE  inSensitive;
     inSensitive.t.sensitive.data.t.size = 0;

@@ -47,8 +47,11 @@
 #include <curl/curl.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
+
+#include "main.h"
+#include "options.h"
+#include "string-bytes.h"
+#include "tpm_hash.h"
 
 
 int debugLevel = 0;
