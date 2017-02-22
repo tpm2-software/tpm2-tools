@@ -30,8 +30,79 @@
 
 #include <sapi/tpm20.h>
 
-/* For SESSION definition */
-#include "sample.h"
+typedef struct {
+    // Inputs to StartAuthSession; these need to be saved
+    // so that HMACs can be calculated.
+    TPMI_DH_OBJECT tpmKey;
+    TPMI_DH_ENTITY bind;
+    TPM2B_ENCRYPTED_SECRET encryptedSalt;
+    TPM2B_MAX_BUFFER salt;
+    TPM_SE sessionType;
+    TPMT_SYM_DEF symmetric;
+    TPMI_ALG_HASH authHash;
+
+    // Outputs from StartAuthSession; these also need
+    // to be saved for calculating HMACs and
+    // other session related functions.
+    TPMI_SH_AUTH_SESSION sessionHandle;
+    TPM2B_NONCE nonceTPM;
+
+    // Internal state for the session
+    TPM2B_DIGEST sessionKey;
+    TPM2B_DIGEST authValueBind;     // authValue of bind object
+    TPM2B_NONCE nonceNewer;
+    TPM2B_NONCE nonceOlder;
+    TPM2B_NONCE nonceTpmDecrypt;
+    TPM2B_NONCE nonceTpmEncrypt;
+    TPM2B_NAME name;                // Name of the object the session handle
+                                    // points to.  Used for computing HMAC for
+                                    // any HMAC sessions present.
+                                    //
+    void *hmacPtr;                  // Pointer to HMAC field in the marshalled
+                                    // data stream for the session.
+                                    // This allows the function to calculate
+                                    // and fill in the HMAC after marshalling
+                                    // of all the inputs.
+                                    //
+                                    // This is only used if the session is an
+                                    // HMAC session.
+                                    //
+    UINT8 nvNameChanged;            // Used for some special case code
+                                    // dealing with the NV written state.
+} SESSION;
+
+enum TSS2_APP_RC_CODE
+{
+    APP_RC_PASSED,
+    APP_RC_GET_NAME_FAILED,
+    APP_RC_CREATE_SESSION_KEY_FAILED,
+    APP_RC_SESSION_SLOT_NOT_FOUND,
+    APP_RC_BAD_ALGORITHM,
+    APP_RC_SYS_CONTEXT_CREATE_FAILED,
+    APP_RC_GET_SESSION_STRUCT_FAILED,
+    APP_RC_GET_SESSION_ALG_ID_FAILED,
+    APP_RC_INIT_SYS_CONTEXT_FAILED,
+    APP_RC_TEARDOWN_SYS_CONTEXT_FAILED,
+    APP_RC_BAD_LOCALITY
+};
+
+// Add this to application-specific error codes so they overlap
+// with TSS ones which may be re-used for app level errors.
+#define APP_RC_OFFSET 0x100
+
+// These are app specific error codes, so they have
+// APP_RC_OFFSET added.
+#define TSS2_APP_RC_PASSED                      (APP_RC_PASSED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_GET_NAME_FAILED             (APP_RC_GET_NAME_FAILED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_CREATE_SESSION_KEY_FAILED   (APP_RC_CREATE_SESSION_KEY_FAILED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_SESSION_SLOT_NOT_FOUND      (APP_RC_SESSION_SLOT_NOT_FOUND + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_BAD_ALGORITHM               (APP_RC_BAD_ALGORITHM + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_SYS_CONTEXT_CREATE_FAILED   (APP_RC_SYS_CONTEXT_CREATE_FAILED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_GET_SESSION_STRUCT_FAILED   (APP_RC_GET_SESSION_STRUCT_FAILED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_GET_SESSION_ALG_ID_FAILED   (APP_RC_GET_SESSION_ALG_ID_FAILED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_INIT_SYS_CONTEXT_FAILED     (APP_RC_INIT_SYS_CONTEXT_FAILED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_TEARDOWN_SYS_CONTEXT_FAILED (APP_RC_TEARDOWN_SYS_CONTEXT_FAILED + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_RC_BAD_LOCALITY                (APP_RC_BAD_LOCALITY + APP_RC_OFFSET + TSS2_APP_ERROR_LEVEL)
 
 /* TODO DOCUMENT ME */
 /**

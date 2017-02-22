@@ -46,7 +46,6 @@
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "sample.h" // for SESSION struct
 #include "string-bytes.h"
 #include "tpm_session.h"
 
