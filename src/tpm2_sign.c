@@ -29,428 +29,351 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
-
+#include <limits.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
+
 #include <getopt.h>
-#include <stdbool.h>
-
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "string-bytes.h"
+#include "tpm_hash.h"
 
-int getKeyType(TPMI_DH_OBJECT objectHandle, TPMI_ALG_PUBLIC *type)
-{
-    UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1] = {&sessionDataOut};
-    TSS2_SYS_RSP_AUTHS sessionsDataOut = {1, &sessionDataOutArray[0]};
+typedef struct tpm_sign_ctx tpm_sign_ctx;
+struct tpm_sign_ctx {
+    TPMT_TK_HASHCHECK validation;
+    TPMS_AUTH_COMMAND sessionData;
+    TPMI_DH_OBJECT keyHandle;
+    TPMI_ALG_HASH halg;
+    char outFilePath[PATH_MAX];
+    BYTE *msg;
+    UINT16 length;
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-    TPM2B_PUBLIC outPublic = { { 0, } };
-    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
-    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
+static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle,
+        TPMI_ALG_PUBLIC *type) {
 
-    rval = Tss2_Sys_ReadPublic(sysContext, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
-    if(rval == TPM_RC_SUCCESS)
-    {
-        *type = outPublic.t.publicArea.type;
-        return 0;
+    TPMS_AUTH_RESPONSE session_data_out;
+
+    TPMS_AUTH_RESPONSE *session_data_out_array[1] = {
+            &session_data_out
+    };
+
+    TSS2_SYS_RSP_AUTHS sessions_data_out = {
+            1,
+            &session_data_out_array[0]
+    };
+
+    TPM2B_PUBLIC out_public = {
+            { 0, }
+    };
+
+    TPM2B_NAME name = {
+            { sizeof(TPM2B_NAME) - 2, }
+    };
+
+    TPM2B_NAME qaulified_name = {
+            { sizeof(TPM2B_NAME) - 2, }
+    };
+
+    TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
+            &qaulified_name, &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Sys_ReadPublic failed, error code: 0x%x", rval);
+        return false;
     }
-    return -1;
+    *type = out_public.t.publicArea.type;
+    return true;
 }
 
-int set_scheme(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *inScheme)
-{
+static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT keyHandle,
+        TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *inScheme) {
+
     TPM_ALG_ID type;
+    bool result = get_key_type(sapi_context, keyHandle, &type);
+    if (!result) {
+        return false;
+    }
 
-    if(getKeyType(keyHandle, &type))
-        return -1;
-
-    printf("\nkeyType: 0x%04x\n", type);
-
-    switch(type)
-    {
-    case TPM_ALG_RSA:
+    switch (type) {
+    case TPM_ALG_RSA :
         inScheme->scheme = TPM_ALG_RSASSA;
         inScheme->details.rsassa.hashAlg = halg;
         break;
-    case TPM_ALG_KEYEDHASH:
+    case TPM_ALG_KEYEDHASH :
         inScheme->scheme = TPM_ALG_HMAC;
         inScheme->details.hmac.hashAlg = halg;
         break;
-    case TPM_ALG_ECC:
+    case TPM_ALG_ECC :
         inScheme->scheme = TPM_ALG_ECDSA;
         inScheme->details.ecdsa.hashAlg = halg;
         break;
-    case TPM_ALG_SYMCIPHER:
+    case TPM_ALG_SYMCIPHER :
     default:
-        return -2;
+        LOG_ERR("Unknown key type, got: 0x%x", type);
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
-int sign(TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg, BYTE *msg, UINT16 length, TPMT_TK_HASHCHECK *validation, const char *outFilePath)
-{
-    UINT32 rval;
-    TPM2B_DIGEST digest = { {sizeof(TPM2B_DIGEST)-2, } };
-    TPMT_SIG_SCHEME inScheme;
+static bool sign_and_save(tpm_sign_ctx *ctx) {
+
+    TPM2B_DIGEST digest = {
+            { sizeof(TPM2B_DIGEST) - 2, }
+    };
+
+    TPMT_SIG_SCHEME in_scheme;
     TPMT_SIGNATURE signature;
 
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2_SYS_CMD_AUTHS sessions_data;
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_COMMAND *session_data_array[1];
+    TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    sessionDataArray[0] = &sessionData;
-    sessionsData.cmdAuths = &sessionDataArray[0];
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
+    session_data_array[0] = &ctx->sessionData;
+    sessions_data.cmdAuths = &session_data_array[0];
+    session_data_out_array[0] = &session_data_out;
+    sessions_data_out.rspAuths = &session_data_out_array[0];
+    sessions_data_out.rspAuthsCount = 1;
+    sessions_data.cmdAuthsCount = 1;
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for key Passwd.\n");
-            return -1;
-        }
+    int rc = tpm_hash_compute_data(ctx->sapi_context, ctx->msg, ctx->length,
+            ctx->halg, &digest);
+    if (rc) {
+        LOG_ERR("Compute message hash failed!");
+        return false;
     }
 
-    if(computeDataHash(msg, length, halg, &digest))
-    {
-        printf("Compute message hash failed !\n");
-        return -1;
+//    printf("\ndigest(hex type):\n ");
+//    UINT16 i;
+//    for (i = 0; i < digest.t.size; i++)
+//        printf("%02x ", digest.t.buffer[i]);
+//    printf("\n");
+
+    bool result = set_scheme(ctx->sapi_context, ctx->keyHandle, ctx->halg, &in_scheme);
+    if (!result) {
+        return false;
     }
 
-    printf("\ndigest(hex type):\n ");
-    UINT16 i;
-    for(i = 0; i < digest.t.size; i++)
-         printf("%02x ", digest.t.buffer[i]);
-    printf("\n");
-
-    if(set_scheme(keyHandle, halg, &inScheme))
-    {
-        printf("No suitable signing scheme!\n");
-        return -2;
+    TPM_RC rval = Tss2_Sys_Sign(ctx->sapi_context, ctx->keyHandle,
+            &sessions_data, &digest, &in_scheme, &ctx->validation, &signature,
+            &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Sys_Sign failed, error code: 0x%x", rval);
+        return false;
     }
 
-    rval = Tss2_Sys_Sign(sysContext, keyHandle, &sessionsData, &digest, &inScheme, validation, &signature, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("tpm2_sign failed, error code: 0x%x\n", rval);
-        return -3;
-    }
-    printf("\ntpm2_sign succ.\n");
-
-    if(saveDataToFile(outFilePath, (UINT8 *)&signature, sizeof(signature)))
-    {
-        printf("failed to save signature into %s\n", outFilePath);
-        return -4;
-    }
-
-    return 0;
+    return saveDataToFile(ctx->outFilePath, (UINT8 *) &signature,
+            sizeof(signature)) == 0;
 }
 
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-k, --keyHandle<hexHandle>  Handle of key that will perform signing\n"
-        "-c, --keyContext <filename>  filename of the key context used for the operation\n"
-        "-P, --pwdk     <password>   the password of key, optional\n"
-        "-g, --halg     <hexAlg>     the hash algorithm used to digest the message \n"
-        "\t0x0004  TPM_ALG_SHA1\n"
-        "\t0x000B  TPM_ALG_SHA256\n"
-        "\t0x000C  TPM_ALG_SHA384\n"
-        "\t0x000D  TPM_ALG_SHA512\n"
-        "\t0x0012  TPM_ALG_SM3_256\n"
-        "-m, --msg      <filePath>   the message file, containning the content to be digested\n"
-        "-t, --ticket   <filePath>   the ticket file, containning the validation structure, optional\n"
-        "-s, --sig      <filePath>   the signature file, record the signature structure\n"
-        "-X, --passwdInHex           passwords given by any options are hex format.\n"
-        "-p, --port   <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3>  The level of debug message, default is 0, optional\n"
-        "\t0 (high level test results)\n"
-        "\t1 (test app send/receive byte streams)\n"
-        "\t2 (resource manager send/receive byte streams)\n"
-        "\t3 (resource manager tables)\n"
-    "\n"
-        "Example:\n"
-        "%s -k 0x81010001 -P abc123 -g 0x000B -m <filePath> -s <filePath> -t <filePath>\n"
-        "%s -k 0x81010001 -g 0x00B -m <filePath> -s <filePath>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -k 0x81010001 -P 123abc -X -g 0x000B -m <filePath> -s <filePath> -t <filePath>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
+static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
 
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-
-    TPMI_DH_OBJECT keyHandle;
-    BYTE *msg = NULL;
-    UINT16 length = 0;
-    UINT16 size = 0;
-    long fileSize = 0;
-
-    TPMT_TK_HASHCHECK validation;
-    TPMI_ALG_HASH halg;
-    char outFilePath[PATH_MAX] = {0};
-    char inMsgFileName[PATH_MAX] = {0};
-    char *contextKeyFile = NULL;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    int opt = -1;
-    const char *optstring = "hvk:P:g:m:t:s:p:d:c:X";
-    static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
+    static const char *optstring = "k:P:g:m:t:s:c:X";
+    static const struct option long_options[] = {
       {"keyHandle",1,NULL,'k'},
       {"pwdk",1,NULL,'P'},
       {"halg",1,NULL,'g'},
       {"msg",1,NULL,'m'},
       {"sig",1,NULL,'s'},
       {"ticket",1,NULL,'t'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
       {"keyContext",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        k_flag = 0,
-        P_flag = 0,
-        g_flag = 0,
-        m_flag = 0,
-        t_flag = 0,
-        c_flag = 0,
-        s_flag = 0;
-
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    if(argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
-        case 'k':
-            if(getSizeUint32Hex(optarg,&keyHandle) != 0)
-            {
-                returnVal = -1;
-                break;
+    struct {
+        UINT8 k : 1;
+        UINT8 P : 1;
+        UINT8 g : 1;
+        UINT8 m : 1;
+        UINT8 t : 1;
+        UINT8 s : 1;
+        UINT8 c : 1;
+        UINT8 unused : 1;
+    } flags = { 0 };
+
+    int opt;
+    bool hexPasswd = false;
+    char contextKeyFile[PATH_MAX];
+    char inMsgFileName[PATH_MAX];
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
+        switch (opt) {
+        case 'k': {
+            bool result = string_bytes_get_uint32(optarg, &ctx->keyHandle);
+            if (!result) {
+                LOG_ERR("Could not format key handle to number, got: \"%s\"",
+                        optarg);
+                return false;
             }
-            k_flag = 1;
+            flags.k = 1;
+        }
             break;
-        case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
-            {
-                returnVal = -2;
-                break;
+        case 'P': {
+            bool result = password_util_copy_password(optarg, "key",
+                    &ctx->sessionData.hmac);
+            if (!result) {
+                return false;
             }
-            P_flag = 1;
+            flags.P = 1;
+        }
             break;
-        case 'g':
-            if(getSizeUint16Hex(optarg,&halg) != 0)
-            {
-                showArgError(optarg, argv[0]);
-                returnVal = -3;
-                break;
+        case 'g': {
+            bool result = string_bytes_get_uint16(optarg, &ctx->halg);
+            if (!result) {
+                LOG_ERR("Could not format algorithm to number, got: \"%s\"",
+                        optarg);
+                return false;
             }
-            printf("halg = 0x%4.4x\n", halg);
-            g_flag = 1;
+            flags.g = 1;
+        }
             break;
         case 'm':
             snprintf(inMsgFileName, sizeof(inMsgFileName), "%s", optarg);
-            m_flag = 1;
+            flags.m = 1;
             break;
-        case 't':
-            size = sizeof(validation);
-            if(loadDataFromFile(optarg, (UINT8 *)&validation, &size) != 0)
-            {
-                returnVal = -4;
-                break;
+        case 't': {
+            UINT16 size = sizeof(ctx->validation);
+            int rc = loadDataFromFile(optarg, (UINT8 *) &ctx->validation,
+                    &size);
+            if (rc) {
+                return false;
             }
-            t_flag = 1;
+            flags.t = 1;
+        }
             break;
-        case 's':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -5;
-                break;
+        case 's': {
+            int rc = checkOutFile(optarg);
+            if (rc) {
+                return false;
             }
-            s_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -6;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -7;
-            }
+            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            flags.s = 1;
+        }
             break;
         case 'c':
-            contextKeyFile = optarg;
-            if(contextKeyFile == NULL || contextKeyFile[0] == '\0')
-            {
-                returnVal = -8;
-                break;
-            }
-            printf("contextKeyFile = %s\n", contextKeyFile);
-            c_flag = 1;
+            snprintf(contextKeyFile, sizeof(contextKeyFile), "%s", optarg);
+            flags.c = 1;
             break;
         case 'X':
             hexPasswd = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -9;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -10;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
-        if(returnVal)
-            break;
+    }
+
+    if (!((flags.k || flags.c) && flags.g && flags.m && flags.s)) {
+        LOG_ERR("Expected options (k or c) and g and m and s");
+        return false;
+    }
+
+    if (!flags.t) {
+        ctx->validation.tag = TPM_ST_HASHCHECK;
+        ctx->validation.hierarchy = TPM_RH_NULL;
+    }
+
+    bool result = password_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
+            "key", &ctx->sessionData.hmac);
+    if (!result) {
+        return false;
+    }
+
+    /*
+     * load tpm context from a file if -c is provided
+     */
+    if (flags.c) {
+        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->keyHandle,
+                contextKeyFile);
+        if (rc) {
+            return false;
+        }
+    }
+
+    /*
+     * Process the msg file
+     */
+    long fileSize;
+    int rc = getFileSize(inMsgFileName, &fileSize);
+    if (rc) {
+        return false;
+    }
+    if (fileSize == 0) {
+        LOG_ERR("The message file \"%s\" is empty!", inMsgFileName);
+        return false;
+    }
+
+    if (fileSize > 0xffff) {
+        LOG_ERR(
+                "The message file was longer than a 16 bit length, got: %ld, expected less than: %d!",
+                fileSize, 0x10000);
+        return false;
+    }
+
+    ctx->msg = (BYTE*) calloc(1, fileSize);
+    if (!ctx->msg) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    ctx->length = fileSize;
+    rc = loadDataFromFile(inMsgFileName, ctx->msg, &ctx->length);
+    if (rc) {
+        free(ctx->msg);
+        return false;
+    }
+
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts and envp are unused, avoid compiler warning */
+    (void)opts;
+    (void) envp;
+
+    tpm_sign_ctx ctx = {
+            .msg = NULL,
+            .sessionData = { 0 },
+            .halg = 0,
+            .keyHandle = 0,
+            .validation = { 0 },
+            .sapi_context = sapi_context
     };
 
-    if(returnVal != 0)
-        goto end;
+    ctx.sessionData.sessionHandle = TPM_RS_PW;
 
-    if(m_flag)
-    {
-        if(getFileSize(inMsgFileName, &fileSize))
-        {
-            returnVal = -11;
-            goto end;
-        }
-        if(fileSize == 0)
-        {
-            printf("the message file is empty !\n");
-            returnVal = -12;
-            goto end;
-        }
-        if(fileSize > 0xffff)
-        {
-            printf("the message file was too long !\n");
-            returnVal = -13;
-            goto end;
-        }
-        msg = (BYTE*)malloc(fileSize);
-        if(msg == NULL)
-        {
-            returnVal = -14;
-            goto end;
-        }
-        memset(msg, 0, fileSize);
-
-        length = fileSize;
-        if(loadDataFromFile(inMsgFileName, msg, &length) != 0)
-        {
-            returnVal = -15;
-            goto end;
-        }
-#if 0
-        printf("\nmsg length: %d\n",length);
-        printf("msg content: ");
-        for(int i = 0; i < length; i++)
-        {
-            printf("%02x ", msg[i]);
-        }
-        printf("\n");
-        return -1;
-#endif
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return 1;
     }
 
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
-    if(t_flag == 0)
-    {
-        validation.tag = TPM_ST_HASHCHECK;
-        validation.hierarchy = TPM_RH_NULL;
-        validation.digest.t.size = 0;
-    }
+    result = sign_and_save(&ctx);
 
-    flagCnt = h_flag + v_flag + k_flag + g_flag + m_flag + s_flag + c_flag;
+    free(ctx.msg);
 
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            returnVal = -16;
-        }
-    }
-    else if((flagCnt == 4) && (k_flag == 1 || c_flag == 1) && (g_flag == 1) && (m_flag == 1) && (s_flag == 1))
-    {
-        prepareTest(hostName, port, debugLevel);
-
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &keyHandle, contextKeyFile);
-        if(returnVal == 0)
-            returnVal = sign(keyHandle, halg, msg, length, &validation, outFilePath);
-
-        finishTest();
-
-        if(returnVal)
-            returnVal = -17;
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
-        returnVal = -18;
-    }
-
-end:
-    if(msg)
-        free(msg);
-    return returnVal;
+    return result != true;
 }
