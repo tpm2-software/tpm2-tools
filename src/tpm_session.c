@@ -33,7 +33,6 @@
 #include "tpm_session.h"
 
 /* for APP_RC_CREATE_SESSION_KEY_FAILED error code */
-#include "sample.h"
 
 #define SESSIONS_ARRAY_COUNT MAX_NUM_SESSIONS+1
 
