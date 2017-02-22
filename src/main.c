@@ -31,9 +31,9 @@
 #include <stdbool.h>
 
 #include "context-util.h"
-#include "main.h"
-#include "common.h"
 #include "log.h"
+#include "main.h"
+#include "options.h"
 
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does

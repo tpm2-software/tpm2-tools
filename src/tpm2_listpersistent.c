@@ -39,8 +39,10 @@
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
-#include "common.h"
+
+#include "files.h"
+#include "main.h"
+#include "options.h"
 #include "string-bytes.h"
 
 int debugLevel = 0;

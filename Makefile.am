@@ -98,7 +98,6 @@ COMMON_SRC = \
 # above.
 if HAVE_TCTI_SOCK
 COMMON_SRC += \
-    src/common.c \
     src/syscontext.c \
     src/CatSizedByteBuffer.c \
     src/CopySizedBuffer.c \

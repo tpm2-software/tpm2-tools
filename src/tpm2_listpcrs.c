@@ -37,12 +37,11 @@
 
 #include <getopt.h>
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
 
-#include "common.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
+#include "string-bytes.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {
