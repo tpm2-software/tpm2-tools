@@ -47,7 +47,7 @@ static INT16 local_session_entries_used = 0;
 static TPM_RC AddSession( SESSION_LIST_ENTRY **sessionEntry )
 {
     SESSION_LIST_ENTRY **newEntry;
-    
+
     // find end of list.
     for( newEntry = &local_sessions_list; *newEntry != 0; *newEntry = ( (SESSION_LIST_ENTRY *)*newEntry)->nextEntry )
         ;
@@ -65,7 +65,7 @@ static TPM_RC AddSession( SESSION_LIST_ENTRY **sessionEntry )
     {
         return TSS2_APP_RC_SESSION_SLOT_NOT_FOUND;
     }
-} 
+}
 
 
 static void DeleteSession( SESSION *session )
@@ -108,7 +108,7 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
     char label[] = "ATH";
     UINT16 bytes;
     int i;
-    
+
     key.t.size = 0;
 
     if( session->nonceOlder.t.size == 0 )
@@ -116,7 +116,7 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
         /* this is an internal routine to TSS and should be removed */
         session->nonceOlder.t.size = GetDigestSize( TPM_ALG_SHA1 );
         for( i = 0; i < session->nonceOlder.t.size; i++ )
-            session->nonceOlder.t.buffer[i] = 0; 
+            session->nonceOlder.t.buffer[i] = 0;
     }
 
     session->nonceNewer.t.size = session->nonceOlder.t.size;
@@ -197,19 +197,19 @@ TPM_RC tpm_session_auth_end( SESSION *session )
 // some uses.
 //
 TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSION **session,
-    TPMI_DH_OBJECT tpmKey, TPM2B_MAX_BUFFER *salt, 
+    TPMI_DH_OBJECT tpmKey, TPM2B_MAX_BUFFER *salt,
     TPMI_DH_ENTITY bind, TPM2B_AUTH *bindAuth, TPM2B_NONCE *nonceCaller,
     TPM2B_ENCRYPTED_SECRET *encryptedSalt,
     TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId )
 {
     TPM_RC rval;
     SESSION_LIST_ENTRY *sessionEntry;
-    
+
     rval = AddSession( &sessionEntry );
     if( rval == TSS2_RC_SUCCESS )
     {
         *session = &sessionEntry->session;
-        
+
         // Copy handles to session struct.
         (*session)->bind = bind;
         (*session)->tpmKey = tpmKey;
@@ -234,7 +234,7 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
         // Copy bind' authValue.
         if( bindAuth == 0 )
         {
-            (*session)->authValueBind.b.size = 0;   
+            (*session)->authValueBind.b.size = 0;
         }
         else
         {
@@ -263,4 +263,3 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
     }
     return( rval );
 }
-
