@@ -29,265 +29,180 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
+#include <limits.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
+
 #include <getopt.h>
-
 #include <sapi/tpm20.h>
-//#include "sample.h"
-#include <tcti/tcti_socket.h>
-#include "common.h"
 
-int debugLevel = 0;
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
+#include "files.h"
+#include "log.h"
+#include "main.h"
+#include "options.h"
+#include "password_util.h"
+#include "string-bytes.h"
 
-UINT32 unseal(TPMI_DH_OBJECT itemHandle, const char *outFileName, int P_flag)
-{
-    UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-
-    TPM2B_SENSITIVE_DATA outData = {{sizeof(TPM2B_SENSITIVE_DATA)-2, }};
-
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
-
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
-
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for item Passwd.\n");
-            return -1;
-        }
-    }
-
-    rval = Tss2_Sys_Unseal(sysContext, itemHandle, &sessionsData, &outData, &sessionsDataOut);
-    if(rval != TPM_RC_SUCCESS)
-    {
-        printf("Unseal failed. Error Code: 0x%x\n", rval);
-        return -1;
-    }
-
-    printf("\nUnseal succ.\nUnsealed data: ");
-    UINT16 i;
-    for(i = 0; i < outData.t.size; i++)
-        printf(" 0x%02x", outData.t.buffer[i]);
-    printf("\n");
-
-    if(saveDataToFile(outFileName, (UINT8 *)&outData, sizeof(outData)))
-    {
-        printf("Failed to save unsealed data into %s\n", outFileName);
-        return -2;
-    }
-
-    return 0;
-}
-
-void showHelp(const char *name)
-{
-    printf("\n%s  [options]\n"
-        "\n"
-        "-h, --help               Display command tool usage info;\n"
-        "-v, --version            Display command tool version info\n"
-        "-H, --item    <itemHandle>     item handle, handle of a loaded data object\n"
-        "-c, --itemContext <filename>   filename for item context\n"
-        "-P, --pwdi    <itemPassword>   item handle password, optional\n"
-        "-o, --outfile <outPutFilename> Output file name, containing the unsealed data\n"
-        "-X, --passwdInHex              passwords given by any options are hex format.\n"
-        "-p, --port  <port number>  The Port number, default is %d, optional\n"
-        "-d, --debugLevel <0|1|2|3> The level of debug message, default is 0, optional\n"
-            "\t0 (high level test results)\n"
-            "\t1 (test app send/receive byte streams)\n"
-            "\t2 (resource manager send/receive byte streams)\n"
-            "\t3 (resource manager tables)\n"
-        "\n"
-        "Example:\n"
-        "%s -H 0x80000000 -P abc123 -o <outPutFileName>\n"
-        "%s -H 0x80000000 -o <outPutFileName>\n\n"// -i <simulator IP>\n\n",DEFAULT_TPM_PORT);
-        "%s -H 0x80000000 -P 123abc -X -o <outPutFileName>\n"
-        ,name, DEFAULT_RESMGR_TPM_PORT, name, name, name);
-}
-
-int main(int argc, char* argv[])
-{
-    char hostName[200] = DEFAULT_HOSTNAME;
-    int port = DEFAULT_RESMGR_TPM_PORT;
-
+typedef struct tpm_unseal_ctx tpm_unseal_ctx;
+struct tpm_unseal_ctx {
+    TPMS_AUTH_COMMAND sessionData;
     TPMI_DH_OBJECT itemHandle;
-    char outFilePath[PATH_MAX] = {0};
-    char *contextItemFile = NULL;
+    char outFilePath[PATH_MAX];
+    TSS2_SYS_CONTEXT *sapi_context;
+};
 
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+bool unseal_and_save(tpm_unseal_ctx *ctx) {
 
-    int opt = -1;
-    const char *optstring = "hvH:P:o:p:d:c:X";
-    static struct option long_options[] = {
-      {"help",0,NULL,'h'},
-      {"version",0,NULL,'v'},
+    TPMS_AUTH_RESPONSE session_data_out;
+    TSS2_SYS_CMD_AUTHS sessions_data;
+    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_COMMAND *session_data_array[1];
+    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+
+    TPM2B_SENSITIVE_DATA outData = {
+            { sizeof(TPM2B_SENSITIVE_DATA) - 2, }
+    };
+
+    session_data_array[0] = &ctx->sessionData;
+    session_data_out_array[0] = &session_data_out;
+
+    sessions_data_out.rspAuths = &session_data_out_array[0];
+    sessions_data.cmdAuths = &session_data_array[0];
+
+    sessions_data_out.rspAuthsCount = 1;
+    sessions_data.cmdAuthsCount = 1;
+
+    TPM_RC rval = Tss2_Sys_Unseal(ctx->sapi_context, ctx->itemHandle,
+            &sessions_data, &outData, &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Sys_Unseal failed. Error Code: 0x%x", rval);
+        return false;
+    }
+
+    return saveDataToFile(ctx->outFilePath, (UINT8 *) &outData, sizeof(outData))
+            == 0;
+}
+
+static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
+
+    static const char *optstring = "H:P:o:c:X";
+    static const struct option long_options[] = {
       {"item",1,NULL,'H'},
       {"pwdi",1,NULL,'P'},
       {"outfile",1,NULL,'o'},
-      {"port",1,NULL,'p'},
-      {"debugLevel",1,NULL,'d'},
       {"itemContext",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
-    int returnVal = 0;
-    int flagCnt = 0;
-    int h_flag = 0,
-        v_flag = 0,
-        H_flag = 0,
-        P_flag = 0,
-        c_flag = 0,
-        o_flag = 0;
-
-    if(argc == 1)
-    {
-        showHelp(argv[0]);
-        return 0;
+    if (argc == 1) {
+        showArgMismatch(argv[0]);
+        return false;
     }
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'h':
-            h_flag = 1;
-            break;
-        case 'v':
-            v_flag = 1;
-            break;
-        case 'H':
-            if(getSizeUint32Hex(optarg, &itemHandle) != 0)
-            {
-                returnVal = -1;
-                break;
+    struct {
+        UINT8 H : 1;
+        UINT8 o : 1;
+        UINT8 c : 1;
+        UINT8 P : 1;
+    } flags = { 0 };
+
+    int opt;
+    bool hexPasswd = false;
+    char contextItemFile[PATH_MAX];
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
+        switch (opt) {
+        case 'H': {
+            bool result = string_bytes_get_uint32(optarg, &ctx->itemHandle);
+            if (!result) {
+                LOG_ERR("Could not cobvert item handle to number, got: \"%s\"",
+                        optarg);
+                return false;
             }
-            printf("\nitemHandle: 0x%x\n\n",itemHandle);
-            H_flag = 1;
+            flags.H = 1;
+        }
             break;
-        case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
-            {
-                returnVal = -2;
-                break;
+        case 'P': {
+            bool result = password_util_copy_password(optarg, "key",
+                    &ctx->sessionData.hmac);
+            if (!result) {
+                return false;
             }
-            P_flag = 1;
+            flags.P = 1;
+        }
             break;
-        case 'o':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
-            {
-                returnVal = -3;
-                break;
+        case 'o': {
+            int rc = checkOutFile(optarg);
+            if (rc) {
+                return false;
             }
-            o_flag = 1;
-            break;
-        case 'p':
-            if( getPort(optarg, &port) )
-            {
-                printf("Incorrect port number.\n");
-                returnVal = -4;
-            }
-            break;
-        case 'd':
-            if( getDebugLevel(optarg, &debugLevel) )
-            {
-                printf("Incorrect debug level.\n");
-                returnVal = -5;
-            }
+            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            flags.o = 1;
+        }
             break;
         case 'c':
-            contextItemFile = optarg;
-            if(contextItemFile == NULL || contextItemFile[0] == '\0')
-            {
-                returnVal = -6;
-                break;
-            }
-            printf("contextItemFile = %s\n", contextItemFile);
-            c_flag = 1;
+            snprintf(contextItemFile, sizeof(contextItemFile), "%s", optarg);
+            flags.c = 1;
             break;
         case 'X':
             hexPasswd = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -7;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -8;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
         }
-        if(returnVal)
-            break;
+    }
+
+    if (!((flags.H || flags.c) && flags.o)) {
+        LOG_ERR("Expected options (H or c) and o");
+        return false;
+    }
+
+    if (flags.P) {
+        bool result = password_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
+                "key", &ctx->sessionData.hmac);
+        if (!result) {
+            return false;
+        }
+    }
+
+    if (flags.c) {
+        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->itemHandle,
+                contextItemFile);
+        if (rc) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
+
+    /* opts and envp are unused, avoid compiler warning */
+    (void)opts;
+    (void) envp;
+
+    tpm_unseal_ctx ctx = {
+            .sessionData = { 0 },
+            .sapi_context = sapi_context
     };
 
-    if(returnVal != 0)
-        return returnVal;
+    ctx.sessionData.sessionHandle = TPM_RS_PW;
 
-    flagCnt = h_flag + v_flag + H_flag + o_flag + c_flag;
-    if(flagCnt == 1)
-    {
-        if(h_flag == 1)
-            showHelp(argv[0]);
-        else if(v_flag == 1)
-            showVersion(argv[0]);
-        else
-        {
-            showArgMismatch(argv[0]);
-            return -9;
-        }
-    }
-    else if(flagCnt == 2 && (H_flag == 1 || c_flag ==1) && o_flag == 1)
-    {
-        prepareTest(hostName, port, debugLevel);
-
-        if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &itemHandle, contextItemFile);
-        if (returnVal == 0)
-            returnVal = unseal(itemHandle, outFilePath, P_flag);
-
-        finishTest();
-
-        if(returnVal)
-            return -10;
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
-        return -11;
+    bool result = init(argc, argv, &ctx);
+    if (!result) {
+        return 1;
     }
 
-    return 0;
+    return unseal_and_save(&ctx) != true;
 }

@@ -75,7 +75,8 @@ sbin_PROGRAMS = \
     src/tpm2_loadexternal \
     src/tpm2_rsadecrypt \
     src/tpm2_rsaencrypt \
-    src/tpm2_sign
+    src/tpm2_sign \
+    src/tpm2_unseal
 
 COMMON_SRC = \
     src/context-util.c \
@@ -96,9 +97,6 @@ COMMON_SRC = \
 # removed from this block and added directly to the sbin_PROGRAMS variable
 # above.
 if HAVE_TCTI_SOCK
-sbin_PROGRAMS += \
-		  src/tpm2_unseal
-
 COMMON_SRC += \
     src/common.c \
     src/syscontext.c \
@@ -154,9 +152,6 @@ man8_MANS = \
     man/man8/tpm2_rc_decode.8
 
 src_libcommon_a_SOURCES = $(COMMON_SRC)
-if HAVE_TCTI_SOCK
-src_tpm2_unseal_SOURCES = src/tpm2_unseal.c
-endif
 src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
 src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
 src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
@@ -193,6 +188,7 @@ src_tpm2_loadexternal_SOURCES = src/tpm2_loadexternal.c src/main.c
 src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.c src/main.c
 src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.c src/main.c
 src_tpm2_sign_SOURCES = src/tpm2_sign.c src/main.c
+src_tpm2_unseal_SOURCES = src/tpm2_unseal.c src/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 src_tpm2_rc_decode_SOURCES = src/rc-decode.c src/tpm2_rc_decode.c

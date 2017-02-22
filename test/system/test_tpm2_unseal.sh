@@ -70,7 +70,7 @@ exit 1
 fi
 
 #tpm2_unseal -c context_load_out1.out -o usl.data.out
-tpm2_unseal -c $file_unseal_key_ctx $ -o $file_unseal_output_data 
+tpm2_unseal -c $file_unseal_key_ctx -o $file_unseal_output_data
 if [ $? != 0 ];then
 echo "unseal fail, please check the environment or parameters!"
 exit 1
