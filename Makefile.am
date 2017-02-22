@@ -92,26 +92,6 @@ COMMON_SRC = \
     src/tpm_hmac.c \
     src/tpm_session.c
 
-# The tools within this conditional are hard coded to the socket TCTI.
-# As they're migrated to support dynamic TCTI configuration they should be
-# removed from this block and added directly to the sbin_PROGRAMS variable
-# above.
-if HAVE_TCTI_SOCK
-COMMON_SRC += \
-    src/syscontext.c \
-    src/CatSizedByteBuffer.c \
-    src/CopySizedBuffer.c \
-    src/DecryptEncrypt.c \
-    src/Entity.c \
-    src/kdfa.c \
-    src/SessionHmac.c \
-    src/StartAuthSession.c \
-    src/TpmCalcPHash.c \
-    src/TpmHandleToName.c \
-    src/TpmHash.c \
-    src/TpmHmac.c
-endif
-
 man8_MANS = \
     man/man8/tpm2_createprimary.8 \
     man/man8/tpm2_dump_capability.8 \
