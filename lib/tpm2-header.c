@@ -90,4 +90,3 @@ get_response_code (uint8_t *response_header)
 {
     return be32toh (*(TSS2_RC*)(response_header + sizeof (TPM_ST) + sizeof (UINT32)));
 }
-
