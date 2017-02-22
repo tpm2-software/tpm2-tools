@@ -79,7 +79,7 @@ main (int   argc,
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = execute_tool (argc, argv, envp, &opts, sapi_context);
+    ret = execute_tool (argc, argv, envp, &opts, sapi_context) ? 1 : 0;
     /*
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
