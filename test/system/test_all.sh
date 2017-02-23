@@ -32,7 +32,7 @@
 
 #!/bin/bash
 
-SRC_DIR=`realpath ../../src/`
+SRC_DIR=`realpath ../../tools/`
 PATH=$SRC_DIR:$PATH
 
 pass=0

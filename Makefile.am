@@ -38,42 +38,42 @@ AM_CFLAGS   = -DSAPI_CLIENT $(INCLUDE_DIRS) $(TPM20_TSS_CFLAGS)
 LDADD = $(LIB_COMMON) $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
 
 sbin_PROGRAMS = \
-    src/tpm2_create \
-    src/tpm2_createprimary \
-    src/tpm2_load \
-    src/tpm2_send_command \
-    src/tpm2_dump_capability \
-    src/tpm2_listpcrs \
-    src/tpm2_listpersistent \
-    src/tpm2_startup \
-    src/tpm2_rc_decode \
-    src/tpm2_verifysignature \
-    src/tpm2_getmanufec \
-    src/tpm2_quote \
-    src/tpm2_takeownership \
-    src/tpm2_getpubek \
-    src/tpm2_getpubak \
-    src/tpm2_akparse \
-    src/tpm2_hash \
-    src/tpm2_activatecredential \
-    src/tpm2_makecredential \
-    src/tpm2_nvlist \
-    src/tpm2_nvread \
-    src/tpm2_nvreadlock \
-    src/tpm2_nvwrite \
-    src/tpm2_nvdefine \
-    src/tpm2_nvrelease \
-    src/tpm2_hmac \
-    src/tpm2_certify \
-    src/tpm2_readpublic \
-    src/tpm2_getrandom \
-    src/tpm2_encryptdecrypt \
-    src/tpm2_evictcontrol \
-    src/tpm2_loadexternal \
-    src/tpm2_rsadecrypt \
-    src/tpm2_rsaencrypt \
-    src/tpm2_sign \
-    src/tpm2_unseal
+    tools/tpm2_create \
+    tools/tpm2_createprimary \
+    tools/tpm2_load \
+    tools/tpm2_send_command \
+    tools/tpm2_dump_capability \
+    tools/tpm2_listpcrs \
+    tools/tpm2_listpersistent \
+    tools/tpm2_startup \
+    tools/tpm2_rc_decode \
+    tools/tpm2_verifysignature \
+    tools/tpm2_getmanufec \
+    tools/tpm2_quote \
+    tools/tpm2_takeownership \
+    tools/tpm2_getpubek \
+    tools/tpm2_getpubak \
+    tools/tpm2_akparse \
+    tools/tpm2_hash \
+    tools/tpm2_activatecredential \
+    tools/tpm2_makecredential \
+    tools/tpm2_nvlist \
+    tools/tpm2_nvread \
+    tools/tpm2_nvreadlock \
+    tools/tpm2_nvwrite \
+    tools/tpm2_nvdefine \
+    tools/tpm2_nvrelease \
+    tools/tpm2_hmac \
+    tools/tpm2_certify \
+    tools/tpm2_readpublic \
+    tools/tpm2_getrandom \
+    tools/tpm2_encryptdecrypt \
+    tools/tpm2_evictcontrol \
+    tools/tpm2_loadexternal \
+    tools/tpm2_rsadecrypt \
+    tools/tpm2_rsaencrypt \
+    tools/tpm2_sign \
+    tools/tpm2_unseal
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
@@ -91,46 +91,46 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_kdfa.c \
     lib/tpm_session.c
 
-src_tpm2_create_SOURCES = src/tpm2_create.c src/main.c
-src_tpm2_createprimary_SOURCES = src/tpm2_createprimary.c src/main.c
-src_tpm2_dump_capability_SOURCES = src/tpm2_dump_capability.c src/main.c
-src_tpm2_listpcrs_SOURCES = src/tpm2_listpcrs.c src/main.c
-src_tpm2_listpersistent_SOURCES = src/tpm2_listpersistent.c src/main.c
-src_tpm2_load_SOURCES = src/tpm2_load.c src/main.c
-src_tpm2_send_command_SOURCES = src/tpm2_send_command.c src/main.c
-src_tpm2_startup_SOURCES = src/tpm2_startup.c src/main.c
-src_tpm2_verifysignature_SOURCES = src/tpm2_verifysignature.c src/main.c
-src_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
-src_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
-src_tpm2_getmanufec_SOURCES = src/tpm2_getmanufec.c src/main.c
-src_tpm2_quote_SOURCES = src/tpm2_quote.c src/main.c
-src_tpm2_takeownership_SOURCES = src/tpm2_takeownership.c src/main.c
-src_tpm2_getpubek_SOURCES = src/tpm2_getpubek.c src/main.c
-src_tpm2_getpubak_SOURCES = src/tpm2_getpubak.c src/main.c
-src_tpm2_akparse_SOURCES = src/tpm2_akparse.c src/main.c
-src_tpm2_hash_SOURCES = src/tpm2_hash.c src/main.c
-src_tpm2_activatecredential_SOURCES = src/tpm2_activatecredential.c src/main.c
-src_tpm2_makecredential_SOURCES = src/tpm2_makecredential.c src/main.c
-src_tpm2_nvlist_SOURCES = src/tpm2_nvlist.c src/main.c
-src_tpm2_nvread_SOURCES = src/tpm2_nvread.c src/main.c
-src_tpm2_nvreadlock_SOURCES = src/tpm2_nvreadlock.c src/main.c
-src_tpm2_nvwrite_SOURCES = src/tpm2_nvwrite.c src/main.c
-src_tpm2_nvdefine_SOURCES = src/tpm2_nvdefine.c src/main.c
-src_tpm2_nvrelease_SOURCES = src/tpm2_nvrelease.c src/main.c
-src_tpm2_hmac_SOURCES = src/tpm2_hmac.c src/main.c
-src_tpm2_certify_SOURCES = src/tpm2_certify.c src/main.c
-src_tpm2_readpublic_SOURCES = src/tpm2_readpublic.c src/main.c
-src_tpm2_getrandom_SOURCES = src/tpm2_getrandom.c src/main.c
-src_tpm2_encryptdecrypt_SOURCES = src/tpm2_encryptdecrypt.c src/main.c
-src_tpm2_evictcontrol_SOURCES = src/tpm2_evictcontrol.c src/main.c
-src_tpm2_loadexternal_SOURCES = src/tpm2_loadexternal.c src/main.c
-src_tpm2_rsadecrypt_SOURCES = src/tpm2_rsadecrypt.c src/main.c
-src_tpm2_rsaencrypt_SOURCES = src/tpm2_rsaencrypt.c src/main.c
-src_tpm2_sign_SOURCES = src/tpm2_sign.c src/main.c
-src_tpm2_unseal_SOURCES = src/tpm2_unseal.c src/main.c
+tools_tpm2_create_SOURCES = tools/tpm2_create.c tools/main.c
+tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c tools/main.c
+tools_tpm2_dump_capability_SOURCES = tools/tpm2_dump_capability.c tools/main.c
+tools_tpm2_listpcrs_SOURCES = tools/tpm2_listpcrs.c tools/main.c
+tools_tpm2_listpersistent_SOURCES = tools/tpm2_listpersistent.c tools/main.c
+tools_tpm2_load_SOURCES = tools/tpm2_load.c tools/main.c
+tools_tpm2_send_command_SOURCES = tools/tpm2_send_command.c tools/main.c
+tools_tpm2_startup_SOURCES = tools/tpm2_startup.c tools/main.c
+tools_tpm2_verifysignature_SOURCES = tools/tpm2_verifysignature.c tools/main.c
+tools_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
+tools_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
+tools_tpm2_getmanufec_SOURCES = tools/tpm2_getmanufec.c tools/main.c
+tools_tpm2_quote_SOURCES = tools/tpm2_quote.c tools/main.c
+tools_tpm2_takeownership_SOURCES = tools/tpm2_takeownership.c tools/main.c
+tools_tpm2_getpubek_SOURCES = tools/tpm2_getpubek.c tools/main.c
+tools_tpm2_getpubak_SOURCES = tools/tpm2_getpubak.c tools/main.c
+tools_tpm2_akparse_SOURCES = tools/tpm2_akparse.c tools/main.c
+tools_tpm2_hash_SOURCES = tools/tpm2_hash.c tools/main.c
+tools_tpm2_activatecredential_SOURCES = tools/tpm2_activatecredential.c tools/main.c
+tools_tpm2_makecredential_SOURCES = tools/tpm2_makecredential.c tools/main.c
+tools_tpm2_nvlist_SOURCES = tools/tpm2_nvlist.c tools/main.c
+tools_tpm2_nvread_SOURCES = tools/tpm2_nvread.c tools/main.c
+tools_tpm2_nvreadlock_SOURCES = tools/tpm2_nvreadlock.c tools/main.c
+tools_tpm2_nvwrite_SOURCES = tools/tpm2_nvwrite.c tools/main.c
+tools_tpm2_nvdefine_SOURCES = tools/tpm2_nvdefine.c tools/main.c
+tools_tpm2_nvrelease_SOURCES = tools/tpm2_nvrelease.c tools/main.c
+tools_tpm2_hmac_SOURCES = tools/tpm2_hmac.c tools/main.c
+tools_tpm2_certify_SOURCES = tools/tpm2_certify.c tools/main.c
+tools_tpm2_readpublic_SOURCES = tools/tpm2_readpublic.c tools/main.c
+tools_tpm2_getrandom_SOURCES = tools/tpm2_getrandom.c tools/main.c
+tools_tpm2_encryptdecrypt_SOURCES = tools/tpm2_encryptdecrypt.c tools/main.c
+tools_tpm2_evictcontrol_SOURCES = tools/tpm2_evictcontrol.c tools/main.c
+tools_tpm2_loadexternal_SOURCES = tools/tpm2_loadexternal.c tools/main.c
+tools_tpm2_rsadecrypt_SOURCES = tools/tpm2_rsadecrypt.c tools/main.c
+tools_tpm2_rsaencrypt_SOURCES = tools/tpm2_rsaencrypt.c tools/main.c
+tools_tpm2_sign_SOURCES = tools/tpm2_sign.c tools/main.c
+tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c tools/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
-src_tpm2_rc_decode_SOURCES = lib/rc-decode.c src/tpm2_rc_decode.c
+tools_tpm2_rc_decode_SOURCES = lib/rc-decode.c tools/tpm2_rc_decode.c
 
 if UNIT
 TESTS = $(check_PROGRAMS)

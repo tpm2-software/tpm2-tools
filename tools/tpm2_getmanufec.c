@@ -69,9 +69,9 @@ unsigned int nonPersistentRead = 0;
 unsigned int SSL_NO_VERIFY = 0;
 unsigned int OfflineProv = 0;
 
-BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8, 
-                     0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24, 
-                     0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64, 
+BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8,
+                     0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24,
+                     0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64,
                      0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA};
 int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
 {
@@ -180,7 +180,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     else {
         if (strlen(endorsePasswd) > 0 && hexPasswd) {
                 sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-    
+
                 if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
                                       sessionData.hmac.t.buffer) != 0) {
                         printf( "Failed to convert Hex format password for endorsePasswd.\n");
@@ -191,7 +191,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     if (strlen(ekPasswd) > 0 && !hexPasswd) {
         inSensitive.t.sensitive.userAuth.t.size = strlen(ekPasswd);
-        memcpy( &inSensitive.t.sensitive.userAuth.t.buffer[0], ekPasswd, 
+        memcpy( &inSensitive.t.sensitive.userAuth.t.buffer[0], ekPasswd,
                 inSensitive.t.sensitive.userAuth.t.size );
     }
     else {
@@ -213,10 +213,10 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     creationPCR.count = 0;
 
-    rval = Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT, &sessionsData, 
-                                  &inSensitive, &inPublic, &outsideInfo, 
-                                  &creationPCR, &handle2048ek, &outPublic, 
-                                  &creationData, &creationHash, &creationTicket, 
+    rval = Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT, &sessionsData,
+                                  &inSensitive, &inPublic, &outsideInfo,
+                                  &creationPCR, &handle2048ek, &outPublic,
+                                  &creationData, &creationHash, &creationTicket,
                                   &name, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS ) {
           printf("\nTPM2_CreatePrimary Error. TPM Error:0x%x\n", rval);
@@ -244,7 +244,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
             }
         }
 
-        rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek, 
+        rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
                                      &sessionsData, persistentHandle, &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS ) {
             printf("\nEvictControl:Make EK persistent Error. TPM Error:0x%x\n", rval);
@@ -253,13 +253,13 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
         printf("EvictControl EK persistent succ.\n");
     }
 
-    rval = Tss2_Sys_FlushContext(sapi_context, 
+    rval = Tss2_Sys_FlushContext(sapi_context,
                                  handle2048ek);
     if (rval != TPM_RC_SUCCESS ) {
         printf("\nFlush transient EK failed. TPM Error:0x%x\n", rval);
         return -4;
     }
-    
+
     printf("Flush transient EK succ.\n");
 
     if (saveDataToFile(outputFile, (UINT8 *)&outPublic, sizeof(outPublic)) ) {
@@ -295,8 +295,8 @@ unsigned char *HashEKPublicKey(void)
         return NULL;
     }
 
-    EKpubKey[256] = 0x01; 
-    EKpubKey[257] = 0x00; 
+    EKpubKey[256] = 0x01;
+    EKpubKey[257] = 0x00;
     EKpubKey[258] = 0x01; //Exponent
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
@@ -374,7 +374,7 @@ int RetrieveEndorsementCredentials(char *b64h)
          * should not be used - Used only on platforms with older CA certificates.
          */
         if (SSL_NO_VERIFY) {
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0); 
+            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         }
         curl_easy_setopt(curl, CURLOPT_URL, weblink);
         curl_easy_setopt(curl, CURLOPT_VERBOSE, respfile);
@@ -404,7 +404,7 @@ int TPMinitialProvisioning(void)
 
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                   TSS2_SYS_CONTEXT *sapi_context)
-{       
+{
     static const *optstring = "e:o:H:P:g:f:X:N:O:E:S:U";
 
     static struct option long_options[] =
@@ -438,7 +438,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                         return -2;
                     }
                     break;
-        
+
                 case 'e':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
@@ -446,7 +446,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     }
                     snprintf(endorsePasswd, sizeof(endorsePasswd), "%s", optarg);
                     break;
-        
+
                 case 'o':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         printf("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
@@ -454,7 +454,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     }
                     snprintf(ownerPasswd, sizeof(ownerPasswd), "%s", optarg);
                     break;
-        
+
                 case 'P':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         printf("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
@@ -462,14 +462,14 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     }
                     snprintf(ekPasswd, sizeof(ekPasswd), "%s", optarg);
                     break;
-        
+
                 case 'g':
                     if (getSizeUint32Hex(optarg, &algorithmType) ) {
                         printf("\nPlease input the algorithm type in correct format.\n");
                         return -6;
                     }
                     break;
-        
+
                 case 'f':
                     if (optarg == NULL ) {
                         printf("\nPlease input the file used to save the pub ek.\n");
@@ -477,11 +477,11 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     }
                     snprintf(outputFile, sizeof(outputFile), "%s", optarg);
                     break;
-        
+
                 case 'X':
                     hexPasswd = true;
                     break;
-        
+
                 case 'E':
                     if (optarg == NULL ) {
                         printf("\nPlease input the file used to save the EC Certificate retrieved from server\n");
@@ -525,11 +525,11 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
     else {
         if (!OfflineProv) {
-            return_val  = createEKHandle(sapi_context); 
+            return_val  = createEKHandle(sapi_context);
         }
         provisioning_return_val = TPMinitialProvisioning();
     }
-    
+
     if (return_val && provisioning_return_val) {
         return -11;
     }
