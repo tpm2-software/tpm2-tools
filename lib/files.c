@@ -223,14 +223,14 @@ static bool readx(FILE *f, UINT8 *data, size_t size) {
 #define BE_CONVERT(value, size) \
     do { \
         if (!string_bytes_is_host_big_endian()) { \
-            string_bytes_endian_convert_##size(value); \
+            value = string_bytes_endian_convert_##size(value); \
         } \
     } while (0)
 
 #define FILE_WRITE(size) \
     bool files_write_##size(FILE *out, UINT##size data) { \
         BAIL_ON_NULL("FILE", out); \
-        BE_CONVERT(&data, size); \
+        BE_CONVERT(data, size); \
         return writex(out, (UINT8 *)&data, sizeof(data)); \
     }
 
@@ -240,7 +240,7 @@ static bool readx(FILE *f, UINT8 *data, size_t size) {
 	    BAIL_ON_NULL("data", data); \
         bool res = readx(out, (UINT8 *)data, sizeof(*data)); \
         if (res) { \
-            BE_CONVERT(data, size); \
+            BE_CONVERT(*data, size); \
         } \
         return res; \
     }
