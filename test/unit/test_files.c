@@ -242,6 +242,25 @@ static void test_file_size_bad_args(void **state) {
     assert_false(res);
 }
 
+static void test_file_exists(void **state) {
+
+    test_file *tf = test_file_from_state(state);
+
+    bool res = files_does_file_exist(tf->path);
+    assert_true(res);
+}
+
+static void test_file_exists_bad_args(void **state) {
+
+    test_file *tf = test_file_from_state(state);
+
+    bool res = files_does_file_exist("this_should_be_a_bad_path");
+    assert_false(res);
+
+    res = files_does_file_exist(NULL);
+    assert_false(res);
+}
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
@@ -272,6 +291,11 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test_setup_teardown(test_file_size,
                 test_setup, test_teardown),
         cmocka_unit_test_setup_teardown(test_file_size_bad_args,
+                test_setup, test_teardown),
+
+        cmocka_unit_test_setup_teardown(test_file_exists,
+                test_setup, test_teardown),
+        cmocka_unit_test_setup_teardown(test_file_exists_bad_args,
                 test_setup, test_teardown),
     };
 

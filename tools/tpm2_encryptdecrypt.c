@@ -174,14 +174,14 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             flags.I = 1;
         }
             break;
-        case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+        case 'o':
+            result = files_does_file_exist(optarg);
+            if (result) {
                 goto out;
             }
-            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s", optarg);
+            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
+                    optarg);
             flags.o = 1;
-        }
             break;
         case 'c':
             contextKeyFile = strdup(optarg);

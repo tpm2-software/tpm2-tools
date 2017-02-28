@@ -177,8 +177,8 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             flags++;
             snprintf(ctx->outHashFilePath, sizeof(ctx->outHashFilePath), "%s",
                     optarg);
-            res = checkOutFile(ctx->outHashFilePath) == 0;
-            if (!res) {
+            res = files_does_file_exist(ctx->outHashFilePath);
+            if (res) {
                 return false;
             }
             break;
@@ -186,8 +186,8 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             flags++;
             snprintf(ctx->outTicketFilePath, sizeof(ctx->outTicketFilePath),
                     "%s", optarg);
-            res = checkOutFile(ctx->outTicketFilePath) == 0;
-            if (!res) {
+            res = files_does_file_exist(ctx->outTicketFilePath);
+            if (res) {
                 return false;
             }
             break;

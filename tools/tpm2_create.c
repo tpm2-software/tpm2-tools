@@ -358,7 +358,7 @@ execute_tool (int              argc,
             break;
         case 'o':
             snprintf(opuFilePath, sizeof(opuFilePath), "%s", optarg);
-            if(checkOutFile(opuFilePath) != 0)
+            if(files_does_file_exist(opuFilePath) != 0)
             {
                 returnVal = -9;
                 break;
@@ -367,7 +367,7 @@ execute_tool (int              argc,
             break;
         case 'O':
             snprintf(oprFilePath, sizeof(oprFilePath), "%s", optarg);
-            if(checkOutFile(oprFilePath) != 0)
+            if(files_does_file_exist(oprFilePath) != 0)
             {
                 returnVal = -10;
                 break;

@@ -181,7 +181,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         case 'o':
             snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
                     optarg);
-            if (checkOutFile(ctx->out_file_path) != 0) {
+            if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
             }
             flagCnt++;

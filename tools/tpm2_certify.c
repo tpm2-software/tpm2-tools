@@ -206,8 +206,8 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
 
 static bool check_and_set_file(const char *path, char *dest, size_t dest_size) {
 
-    int rc = checkOutFile(path);
-    if (rc) {
+    bool result = files_does_file_exist(path);
+    if (result) {
         return false;
     }
     snprintf(dest, dest_size, "%s", path);

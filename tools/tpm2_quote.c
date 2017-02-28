@@ -388,7 +388,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             break;
         case 'o':
             snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
+            if(files_does_file_exist(outFilePath))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -6;
