@@ -17,10 +17,15 @@ int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size) __attribute__ 
 int saveTpmContextToFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle, const char *fileName) __attribute__ ((deprecated));
 int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, const char *fileName) __attribute__ ((deprecated));
 
-/*
- * These two need there interfaces updated to something consistent with the coding standard.
+/**
+ * Checks a file for existence.
+ * @param path
+ *  The file to check for existence.
+ * @return
+ * true if a file exists with read permissions, false if it doesn't exist or an error occurs.
+ *
  */
-int checkOutFile(const char *path) __attribute__ ((deprecated));
+bool files_does_file_exist(const char *path);
 
 /**
  * Retrieves a files size given a file path.

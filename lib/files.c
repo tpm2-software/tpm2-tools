@@ -111,16 +111,21 @@ int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, con
     return 0;
 }
 
-int checkOutFile(const char *path)
-{
-    FILE *fp = fopen(path,"rb");
-    if(NULL != fp)
-    {
-        fclose(fp);
-        printf("OutFile: %s Already Exist, Please Rename OR Delete It!\n",path);
-        return -1;
+bool files_does_file_exist(const char *path) {
+
+    if (!path) {
+        LOG_ERR("Path cannot be NULL");
+        return false;
     }
-    return 0;
+
+    FILE *fp = fopen(path,"rb");
+    if (fp) {
+        fclose(fp);
+        LOG_ERR("Path: %s already exists. Please rename or delete the file!",
+                path);
+        return true;
+    }
+    return false;
 }
 
 bool files_get_file_size(const char *path, long *file_size) {

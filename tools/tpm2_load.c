@@ -204,7 +204,7 @@ execute_tool (int              argc,
             break;
         case 'n':
             snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
+            if(files_does_file_exist(outFilePath))
             {
                 returnVal = -5;
                 break;

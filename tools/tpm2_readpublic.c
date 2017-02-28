@@ -139,14 +139,13 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
             }
             flags.H = 1;
             break;
-        case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+        case 'o':
+            result = files_does_file_exist(optarg);
+            if (result) {
                 return false;
             }
             snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
             flags.o = 1;
-        }
             break;
         case 'c':
             snprintf(context_file, sizeof(context_file), "%s", optarg);

@@ -289,7 +289,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
                 return false;
             }
 
-            if (checkOutFile(ctx->out_file_path) != 0) {
+            if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
             }
             ctx->flags.ticket = 1;

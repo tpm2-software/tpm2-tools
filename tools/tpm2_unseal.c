@@ -134,8 +134,8 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
             break;
         case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+            bool result = files_does_file_exist(optarg);
+            if (result) {
                 return false;
             }
             snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
