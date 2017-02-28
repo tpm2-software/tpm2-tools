@@ -194,9 +194,9 @@ static bool init(tpm2_verifysig_ctx *ctx) {
     }
 
     if (ctx->flags.key_context) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->keyHandle,
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->keyHandle,
                 ctx->context_key_file_path);
-        if (rc) {
+        if (!result) {
             goto err;
         }
     }

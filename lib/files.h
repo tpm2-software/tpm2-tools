@@ -14,8 +14,34 @@
  */
 int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size) __attribute__ ((deprecated));
 int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size) __attribute__ ((deprecated));
-int saveTpmContextToFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle, const char *fileName) __attribute__ ((deprecated));
-int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, const char *fileName) __attribute__ ((deprecated));
+
+/**
+ * Saves the TPM context for an object handle to disk by calling Tss2_Sys_ContextSave() and serializing the
+ * resulting TPMS_CONTEXT structure to disk.
+ * @param sapi_context
+ *  The system api context
+ * @param handle
+ *  The object handle for the object to save.
+ * @param path
+ *  The output path of the file.
+ *
+ * @return
+ *  True on success, False on error.
+ */
+bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE handle, const char *path);
+
+/**
+ * Loads a TPM object context from disk.
+ * @param sapi_context
+ *  The system API context
+ * @param handle
+ *  The object handle that was saved.
+ * @param path
+ *  The path to the input file.
+ * @return
+ *  True on Success, false on error.
+ */
+bool file_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE *handle, const char *path);
 
 /**
  * Checks a file for existence.

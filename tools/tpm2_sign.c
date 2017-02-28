@@ -305,9 +305,9 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
      * load tpm context from a file if -c is provided
      */
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->keyHandle,
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->keyHandle,
                 contextKeyFile);
-        if (rc) {
+        if (!result) {
             return false;
         }
     }

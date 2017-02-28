@@ -224,9 +224,9 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle,
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle,
                 contextKeyFile);
-        if (rc) {
+        if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",
                     contextKeyFile);
             return false;

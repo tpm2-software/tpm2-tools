@@ -209,8 +209,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     if(ctx.save_to_context_file) {
-            return saveTpmContextToFile(ctx.sapi_context, ctx.rsa2048_handle,
-                    ctx.context_file_path) != 0;
+            return files_save_tpm_context_to_file(ctx.sapi_context, ctx.rsa2048_handle,
+                    ctx.context_file_path) != true;
     }
 
     return 0;

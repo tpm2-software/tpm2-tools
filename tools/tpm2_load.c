@@ -256,9 +256,9 @@ execute_tool (int              argc,
     if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
     {
         if(c_flag) {
-            returnVal = loadTpmContextFromFile (sapi_context,
+            returnVal = file_load_tpm_context_from_file (sapi_context,
                                                 &parentHandle,
-                                                contextParentFilePath);
+                                                contextParentFilePath) != true;
         }
         if (returnVal == 0) {
             returnVal = load (sapi_context,
@@ -269,9 +269,9 @@ execute_tool (int              argc,
                               P_flag);
         }
         if (returnVal == 0 && C_flag) {
-            returnVal = saveTpmContextToFile (sapi_context,
+            returnVal = files_save_tpm_context_to_file (sapi_context,
                                               handle2048rsa,
-                                              contextFile);
+                                              contextFile) != true;
         }
         if(returnVal)
             return -13;
