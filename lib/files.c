@@ -6,8 +6,6 @@
 #include "log.h"
 #include "string-bytes.h"
 
-static TPMS_CONTEXT context;
-
 int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size)
 {
     UINT16 count = 1, left;
@@ -77,6 +75,7 @@ int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size)
 int saveTpmContextToFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle, const char *fileName)
 {
     TPM_RC rval;
+    TPMS_CONTEXT context;
 
     rval = Tss2_Sys_ContextSave( sysContext, handle, &context);
     if( rval == TPM_RC_SUCCESS &&
@@ -96,6 +95,7 @@ int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, con
 {
     TPM_RC rval = TPM_RC_SUCCESS;
     UINT16 size = sizeof(TPMS_CONTEXT);
+    TPMS_CONTEXT context;
 
     if( loadDataFromFile(fileName, (UINT8 *)&context, &size) )
         rval = TPM_RC_FAILURE;
@@ -123,29 +123,44 @@ int checkOutFile(const char *path)
     return 0;
 }
 
-int getFileSize(const char *path, long *fileSize)
-{
-    int rc = -1;
-    FILE *fp = fopen(path,"rb");
-    if(NULL == fp)
-    {
-        LOG_ERR("fopen on file: \"%s\"  failed: %s !\n", path, strerror(errno));
-        return -1;
+bool files_get_file_size(const char *path, long *file_size) {
+
+    bool result = false;
+
+    if (!path) {
+        LOG_ERR("Must specify a path argument, cannot be NULL!");
+        return false;
     }
-    fseek(fp, 0, SEEK_SET);
-    fseek(fp, 0, SEEK_END);
+
+    if (!file_size) {
+        LOG_ERR("Must specify a file size argument, cannot be NULL!");
+        return false;
+    }
+
+    FILE *fp = fopen(path,"rb");
+    if(!fp) {
+        LOG_ERR("Could not open file: \"%s\" error: %s", path, strerror(errno));
+        return false;
+    }
+
+    int rc = fseek(fp, 0, SEEK_END);
+    if (rc < 0) {
+        LOG_ERR("Error seeking to end of file \"%s\" error: %s", path, strerror(errno));
+        goto err;
+    }
+
     long size = ftell(fp);
     if (size < 0) {
         LOG_ERR("ftell on file \"%s\" failed: %s", path, strerror(errno));
         goto err;
     }
 
-    *fileSize = size;
-    rc = 0;
+    *file_size = size;
+    result = true;
 
 err:
     fclose(fp);
-    return rc;
+    return result;
 }
 
 /**

@@ -40,6 +40,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
@@ -112,8 +113,8 @@ static TPM2B *message_from_file(const char *msg_file_path) {
 
     long size;
 
-    int rc = getFileSize(msg_file_path, &size);
-    if (rc) {
+    bool result = files_get_file_size(msg_file_path, &size);
+    if (!result) {
         return NULL;
     }
 
