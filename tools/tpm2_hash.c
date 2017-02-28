@@ -157,7 +157,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             break;
         case 'I':
             flags++;
-            res = getFileSize(optarg, &fileSize) == 0;
+            res = files_get_file_size(optarg, &fileSize);
             if (!res) {
                 return false;
             }

@@ -21,7 +21,19 @@ int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, con
  * These two need there interfaces updated to something consistent with the coding standard.
  */
 int checkOutFile(const char *path) __attribute__ ((deprecated));
-int getFileSize(const char *path, long *fileSize) __attribute__ ((deprecated));
+
+/**
+ * Retrieves a files size given a file path.
+ * @param path
+ *  The path of the file to retreive the size of.
+ * @param file_size
+ *  A pointer to a long to return the file size. The
+ *  pointed to value is valid only on a true return.
+ *
+ * @return
+ *  True for success or False for error.
+ */
+bool files_get_file_size(const char *path, long *file_size);
 
 /**
  * Writes a TPM2.0 header to a file.

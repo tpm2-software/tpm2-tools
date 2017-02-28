@@ -166,20 +166,20 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.g = 1;
             break;
         case 'I': {
-            long fileSize = 0;
-            int rc = getFileSize(optarg, &fileSize);
-            if (rc) {
+            long file_size = 0;
+            result = files_get_file_size(optarg, &file_size);
+            if (!result) {
                 goto out;
             }
 
-            if (fileSize > MAX_DIGEST_BUFFER) {
+            if (file_size > MAX_DIGEST_BUFFER) {
                 LOG_ERR(
                         "Input data too long: %ld, should be less than %d bytes\n",
-                        fileSize, MAX_DIGEST_BUFFER);
+                        file_size, MAX_DIGEST_BUFFER);
                 goto out;
             }
             ctx->data.t.size = sizeof(ctx->data) - 2;
-            rc = loadDataFromFile(optarg, ctx->data.t.buffer,
+            int rc = loadDataFromFile(optarg, ctx->data.t.buffer,
                     &ctx->data.t.size);
             if (rc) {
                 goto out;

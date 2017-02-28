@@ -315,31 +315,31 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     /*
      * Process the msg file
      */
-    long fileSize;
-    int rc = getFileSize(inMsgFileName, &fileSize);
-    if (rc) {
+    long file_size;
+    result = files_get_file_size(inMsgFileName, &file_size);
+    if (!result) {
         return false;
     }
-    if (fileSize == 0) {
+    if (file_size == 0) {
         LOG_ERR("The message file \"%s\" is empty!", inMsgFileName);
         return false;
     }
 
-    if (fileSize > 0xffff) {
+    if (file_size > 0xffff) {
         LOG_ERR(
                 "The message file was longer than a 16 bit length, got: %ld, expected less than: %d!",
-                fileSize, 0x10000);
+                file_size, 0x10000);
         return false;
     }
 
-    ctx->msg = (BYTE*) calloc(1, fileSize);
+    ctx->msg = (BYTE*) calloc(1, file_size);
     if (!ctx->msg) {
         LOG_ERR("oom");
         return false;
     }
 
-    ctx->length = fileSize;
-    rc = loadDataFromFile(inMsgFileName, ctx->msg, &ctx->length);
+    ctx->length = file_size;
+    int rc = loadDataFromFile(inMsgFileName, ctx->msg, &ctx->length);
     if (rc) {
         free(ctx->msg);
         return false;
