@@ -117,7 +117,7 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
             bool result = string_bytes_get_uint32(optarg, &ctx->key_handle);
             if (!result) {
                 LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                        ctx->key_handle);
+                        optarg);
                 return false;
             }
             flags.k = 1;
