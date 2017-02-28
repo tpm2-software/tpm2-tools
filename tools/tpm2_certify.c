@@ -383,19 +383,17 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
 
     /* Load input files */
     if (flags.C) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->handle.obj,
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.obj,
                 context_file);
-        if (rc) {
-            result = false;
+        if (!result) {
             goto out;
         }
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->handle.key,
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.key,
                 context_key_file);
-        if (rc) {
-            result = false;
+        if (!result) {
             goto out;
         }
     }

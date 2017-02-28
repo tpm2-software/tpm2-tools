@@ -370,15 +370,15 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     int returnVal;
 
     if (ctx.file.context)
-        returnVal = loadTpmContextFromFile(sapi_context, &ctx.handle.activate,
+        returnVal = file_load_tpm_context_from_file(sapi_context, &ctx.handle.activate,
                 ctx.file.context);
     if (returnVal != 0) {
         goto out;
     }
 
     if (ctx.file.key_context)
-        returnVal = loadTpmContextFromFile(sapi_context, &ctx.handle.key,
-                ctx.file.key_context);
+        returnVal = file_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
+                ctx.file.key_context) != true;
     if (returnVal != 0) {
         goto out;
     }

@@ -434,7 +434,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             sessionData.hmac.t.size = 0;
 
         if(c_flag)
-            returnVal = loadTpmContextFromFile(sapi_context, &akHandle, contextFilePath);
+            returnVal = file_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath) != true;
         if(returnVal == TPM_RC_SUCCESS)
             returnVal = quote(sapi_context, akHandle, &pcrSelections);
         if(returnVal)

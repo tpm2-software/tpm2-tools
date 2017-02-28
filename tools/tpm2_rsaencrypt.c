@@ -165,9 +165,9 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle,
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle,
                 context_key_file);
-        if (rc) {
+        if (!result) {
             return false;
         }
     }

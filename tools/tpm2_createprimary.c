@@ -336,7 +336,7 @@ execute_tool (int               argc,
         returnVal = createPrimary(sapi_context, hierarchy, &inPublic, &inSensitive, type, nameAlg, P_flag, K_flag);
 
         if (returnVal == 0 && C_flag)
-            returnVal = saveTpmContextToFile(sapi_context, handle2048rsa, contextFile);
+            returnVal = files_save_tpm_context_to_file(sapi_context, handle2048rsa, contextFile) != true;
         if(returnVal)
             return -12;
     }
