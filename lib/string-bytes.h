@@ -75,35 +75,4 @@ UINT32 string_bytes_endian_convert_32(UINT32 data);
  */
 UINT64 string_bytes_endian_convert_64(UINT64 data);
 
-/*
- * Leave the old interfaces for now and mark as deprecated,
- * on porting activities fix-up callers of these.
- */
-#define deprecated __attribute__ ((deprecated))
-static inline int deprecated getSizeUint16(const char *arg, UINT16 *num) {
-
-    return !string_bytes_get_uint16(arg, num);
-}
-
-static inline int deprecated getSizeUint16Hex(const char *arg, UINT16 *num) {
-
-    return !string_bytes_get_uint16(arg, num);
-}
-
-static inline int deprecated getSizeUint32(const char *arg, UINT32 *num) {
-
-    return !string_bytes_get_uint32(arg, num);
-}
-
-static inline int deprecated getSizeUint32Hex(const char *arg, UINT32 *num) {
-
-    return !string_bytes_get_uint32(arg, num);
-}
-
-static inline void deprecated PrintSizedBuffer(TPM2B *buffer) {
-    string_bytes_print_tpm2b(buffer);
-}
-
-#undef deprecated
-
 #endif /* STRING_BYTES_H */

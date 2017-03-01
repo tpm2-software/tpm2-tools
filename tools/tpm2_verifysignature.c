@@ -237,8 +237,8 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'k': {
-            int rc = getSizeUint32Hex(optarg, &ctx->keyHandle);
-            if (rc) {
+            bool res = string_bytes_get_uint32(optarg, &ctx->keyHandle);
+            if (!res) {
                 LOG_ERR("Unable to convert key handle, got: \"%s\"", optarg);
                 return false;
             }
@@ -246,8 +246,8 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
         }
             break;
         case 'g': {
-            int rc = getSizeUint16Hex(optarg, &ctx->halg);
-            if (rc) {
+            bool result = string_bytes_get_uint16(optarg, &ctx->halg);
+            if (!result) {
                 LOG_ERR("Unable to convert algorithm, got: \"%s\"", optarg);
                 return false;
             }
