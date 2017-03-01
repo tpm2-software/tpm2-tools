@@ -238,6 +238,7 @@ print_tpm_rc_tpm_error_code (TPM_RC rc)
         LOG_ERR("Unknown TPM_RC format");
         return -1;
     }
+    return 0;
 }
 /* Top level function to dump human readable data about TPM_RCs.
  */
