@@ -14,7 +14,7 @@ static int pcr_get_id(const char *arg, UINT32 *pcrId)
     if(arg == NULL || pcrId == NULL)
         return -1;
 
-    if(getSizeUint32(arg, &n))
+    if(!string_bytes_get_uint32(arg, &n))
         return -2;
 
     if(n > 23)
@@ -44,7 +44,7 @@ static int pcr_parse_selection(const char *str, int len, TPMS_PCR_SELECTION *pcr
 
     snprintf(buf, strLeft - str + 1, "%s", str);
 
-    if (getSizeUint16Hex(buf, &pcrSel->hash) != 0) {
+    if (!string_bytes_get_uint16(buf, &pcrSel->hash)) {
         return -1;
     }
 

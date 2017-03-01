@@ -434,7 +434,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     while ( ( opt = getopt_long( argc, argv, optstring, long_options, NULL ) ) != -1 ) {
               switch ( opt ) {
                 case 'H':
-                    if (getSizeUint32Hex(optarg, &persistentHandle) ) {
+                    if (!string_bytes_get_uint32(optarg, &persistentHandle)) {
                         printf("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
                         return -2;
                     }
@@ -465,7 +465,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     break;
 
                 case 'g':
-                    if (getSizeUint32Hex(optarg, &algorithmType) ) {
+                    if (!string_bytes_get_uint32(optarg, &algorithmType)) {
                         printf("\nPlease input the algorithm type in correct format.\n");
                         return -6;
                     }

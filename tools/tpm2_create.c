@@ -284,7 +284,7 @@ execute_tool (int              argc,
         switch(opt)
         {
         case 'H':
-            if(getSizeUint32Hex(optarg,&parentHandle) != 0)
+            if(!string_bytes_get_uint32(optarg,&parentHandle))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -1;
@@ -312,7 +312,7 @@ execute_tool (int              argc,
             K_flag = 1;
             break;
         case 'g':
-            if(getSizeUint16Hex(optarg,&nameAlg) != 0)
+            if(!string_bytes_get_uint16(optarg,&nameAlg))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -322,7 +322,7 @@ execute_tool (int              argc,
             g_flag = 1;
             break;
         case 'G':
-            if(getSizeUint16Hex(optarg,&type) != 0)
+            if(!string_bytes_get_uint16(optarg,&type))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
@@ -332,7 +332,7 @@ execute_tool (int              argc,
             G_flag = 1;
             break;
         case 'A':
-            if(getSizeUint32Hex(optarg,&objectAttributes) != 0)
+            if(!string_bytes_get_uint32(optarg,&objectAttributes))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -6;

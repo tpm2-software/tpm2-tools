@@ -167,7 +167,7 @@ execute_tool (int              argc,
         switch(opt)
         {
         case 'H':
-            if(getSizeUint32Hex(optarg, &parentHandle) != 0)
+            if (!string_bytes_get_uint32(optarg, &parentHandle))
             {
                 returnVal = -1;
                 break;

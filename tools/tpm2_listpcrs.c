@@ -353,7 +353,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     while (getopt_long(argc, argv, "g:o:L:s", long_options, NULL) != -1) {
         switch (optopt) {
         case 'g':
-            if (getSizeUint16Hex(optarg, &selected_algorithm) != 0) {
+            if (!string_bytes_get_uint16(optarg, &selected_algorithm)) {
                 showArgError(optarg, argv[0]);
                 goto error;
             }
