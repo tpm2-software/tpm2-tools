@@ -91,7 +91,7 @@ static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
 
     TPM_RC rval = Tss2_Sys_EncryptDecrypt(ctx->sapi_context, ctx->key_handle,
             &sessions_data, ctx->is_decrypt, TPM_ALG_NULL, &iv_in, &ctx->data, &out_data,
-            &iv_out, &sessions_data);
+            &iv_out, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EncryptDecrypt failed, error code: 0x%x\n", rval);
         return false;

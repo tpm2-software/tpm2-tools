@@ -48,6 +48,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
 #include "main.h"
 #include "options.h"
 #include "string-bytes.h"
@@ -406,7 +407,7 @@ int TPMinitialProvisioning(void)
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                   TSS2_SYS_CONTEXT *sapi_context)
 {
-    static const char*optstring = "e:o:H:P:g:f:X:N:O:E:S:U";
+    static const char *optstring = "e:o:H:P:g:f:X:N:O:E:S:U";
 
     static struct option long_options[] =
     {

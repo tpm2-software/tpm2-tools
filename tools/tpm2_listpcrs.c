@@ -41,6 +41,7 @@
 #include "log.h"
 #include "main.h"
 #include "options.h"
+#include "pcr.h"
 #include "string-bytes.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
