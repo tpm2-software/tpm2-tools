@@ -405,7 +405,7 @@ int TPMinitialProvisioning(void)
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                   TSS2_SYS_CONTEXT *sapi_context)
 {
-    static const *optstring = "e:o:H:P:g:f:X:N:O:E:S:U";
+    static const char*optstring = "e:o:H:P:g:f:X:N:O:E:S:U";
 
     static struct option long_options[] =
     {
