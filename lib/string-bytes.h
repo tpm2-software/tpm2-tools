@@ -10,6 +10,17 @@ int str2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 int hex2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 
 /**
+ * Appends a TPM2B buffer to a MAX buffer.
+ * @param result
+ *  The MAX buffer to append to
+ * @param append
+ *  The buffer to append to result.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append);
+
+/**
  * Converts a numerical string into a uint32 value.
  * @param str
  *  The numerical string to convert.
