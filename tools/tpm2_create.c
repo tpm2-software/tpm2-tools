@@ -205,14 +205,17 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     }
     printf("\nCreate Object Succeed !\n");
 
+    /*
+     * TODO These public and private serializations are not safe since its outputting size as well.
+     */
     if(o_flag == 1)
     {
-        if(saveDataToFile(opuFilePath, (UINT8 *)&outPublic, sizeof(outPublic)))
+        if(!files_save_bytes_to_file(opuFilePath, (UINT8 *)&outPublic, sizeof(outPublic)))
             return -3;
     }
     if(O_flag == 1)
     {
-        if(saveDataToFile(oprFilePath, (UINT8 *)&outPrivate, sizeof(outPrivate)))
+        if(!files_save_bytes_to_file(oprFilePath, (UINT8 *)&outPrivate, sizeof(outPrivate)))
             return -4;
     }
 
@@ -339,7 +342,7 @@ execute_tool (int              argc,
             break;
         case 'I':
             inSensitive.t.sensitive.data.t.size = sizeof(inSensitive.t.sensitive.data) - 2;
-            if(loadDataFromFile(optarg, inSensitive.t.sensitive.data.t.buffer, &inSensitive.t.sensitive.data.t.size) != 0)
+            if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer, &inSensitive.t.sensitive.data.t.size))
             {
                 returnVal = -7;
                 break;
@@ -349,7 +352,7 @@ execute_tool (int              argc,
             break;
         case 'L':
             inPublic.t.publicArea.authPolicy.t.size = sizeof(inPublic.t.publicArea.authPolicy) - 2;
-            if(loadDataFromFile(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size) != 0)
+            if(!files_load_bytes_from_file(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
             {
                 returnVal = -8;
                 break;

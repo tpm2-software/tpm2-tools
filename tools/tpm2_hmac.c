@@ -92,8 +92,9 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
         printf("%02x ", hmac_out.t.buffer[i]);
     printf("\n");
 
-    return saveDataToFile(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
-            sizeof(hmac_out)) == 0;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
+            sizeof(hmac_out));
 }
 
 #define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
@@ -165,27 +166,14 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             }
             flags.g = 1;
             break;
-        case 'I': {
-            long file_size = 0;
-            result = files_get_file_size(optarg, &file_size);
+        case 'I':
+            ctx->data.t.size = sizeof(ctx->data) - 2;
+            result = files_load_bytes_from_file(optarg, ctx->data.t.buffer,
+                    &ctx->data.t.size);
             if (!result) {
                 goto out;
             }
-
-            if (file_size > MAX_DIGEST_BUFFER) {
-                LOG_ERR(
-                        "Input data too long: %ld, should be less than %d bytes\n",
-                        file_size, MAX_DIGEST_BUFFER);
-                goto out;
-            }
-            ctx->data.t.size = sizeof(ctx->data) - 2;
-            int rc = loadDataFromFile(optarg, ctx->data.t.buffer,
-                    &ctx->data.t.size);
-            if (rc) {
-                goto out;
-            }
             flags.I = 1;
-        }
             break;
         case 'o':
             result = files_does_file_exist(optarg);

@@ -126,7 +126,7 @@ static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
     }
     printf("\n\n");
 
-    return saveDataToFile(path, digest->t.buffer, digest->t.size) == 0;
+    return files_save_bytes_to_file(path, digest->t.buffer, digest->t.size);
 }
 
 static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,

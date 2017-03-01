@@ -184,24 +184,15 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
     }
 
     /* serialization is safe here, since it's just a byte array */
-    int rc = saveDataToFile(ctx->file_path.attest,
+    result = files_save_bytes_to_file(ctx->file_path.attest,
             (UINT8 *) certify_info.t.attestationData, certify_info.t.size);
-    if (rc) {
+    if (!result) {
         return false;
     }
 
-    /*
-     * XXX: The below is saving compound structures in a way that doesn't
-     * respect compiler/padding/endianess concerns.
-     * https://github.com/01org/tpm2.0-tools/issues/229
-     */
-    rc = saveDataToFile(ctx->file_path.sig, (UINT8 *) &signature,
+    /* TODO serialization is not safe here */
+    return files_save_bytes_to_file(ctx->file_path.sig, (UINT8 *) &signature,
             sizeof(signature));
-    if (rc) {
-        return false;
-    }
-
-    return true;
 }
 
 static bool check_and_set_file(const char *path, char *dest, size_t dest_size) {

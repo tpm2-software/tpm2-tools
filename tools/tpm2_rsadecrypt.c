@@ -86,13 +86,8 @@ static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
         return false;
     }
 
-    int rc = saveDataToFile(ctx->output_file_path, message.t.buffer,
+    return files_save_bytes_to_file(ctx->output_file_path, message.t.buffer,
             message.t.size);
-    if (rc) {
-        return false;
-    }
-
-    return true;
 }
 
 static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
@@ -149,9 +144,9 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
             break;
         case 'I': {
             ctx->cipher_text.t.size = sizeof(ctx->cipher_text) - 2;
-            int rc = loadDataFromFile(optarg, ctx->cipher_text.t.buffer,
+            bool result = files_load_bytes_from_file(optarg, ctx->cipher_text.t.buffer,
                     &ctx->cipher_text.t.size);
-            if (rc) {
+            if (!result) {
                 return false;
             }
             flags.I = 1;

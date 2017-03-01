@@ -80,8 +80,8 @@ static bool rsa_encrypt_and_save(tpm_rsaencrypt_ctx *ctx) {
         return false;
     }
 
-    return saveDataToFile(ctx->output_file_path, out_data.t.buffer,
-            out_data.t.size) == 0;
+    return files_save_bytes_to_file(ctx->output_file_path, out_data.t.buffer,
+            out_data.t.size);
 }
 
 static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
@@ -125,9 +125,9 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
             break;
         case 'I': {
             ctx->message.t.size = sizeof(ctx->message) - 2;
-            int rc = loadDataFromFile(optarg, ctx->message.t.buffer,
+            bool result = files_load_bytes_from_file(optarg, ctx->message.t.buffer,
                     &ctx->message.t.size);
-            if (rc) {
+            if (!result) {
                 return false;
             }
             flags.I = 1;

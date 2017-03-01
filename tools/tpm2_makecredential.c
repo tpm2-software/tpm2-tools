@@ -157,15 +157,15 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         switch (opt) {
         case 'e':
             size = sizeof(ctx->public);
-            if (loadDataFromFile(optarg, (UINT8 *) &ctx->public, &size) != 0) {
+            if (!files_load_bytes_from_file(optarg, (UINT8 *) &ctx->public, &size)) {
                 return false;
             }
             flagCnt++;
             break;
         case 's':
             ctx->credential.t.size = sizeof(ctx->credential) - 2;
-            if (loadDataFromFile(optarg, ctx->credential.t.buffer,
-                    &ctx->credential.t.size) != 0) {
+            if (!files_load_bytes_from_file(optarg, ctx->credential.t.buffer,
+                    &ctx->credential.t.size)) {
                 return false;
             }
             flagCnt++;

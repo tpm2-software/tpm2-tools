@@ -363,8 +363,8 @@ static bool create_ak(getpubak_context *ctx) {
     printf("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
     // write name to ak.name file
-    int rc = saveDataToFile(ctx->aknameFile, &name.t.name[0], name.t.size);
-    if (rc) {
+    result = files_save_bytes_to_file(ctx->aknameFile, &name.t.name[0], name.t.size);
+    if (!result) {
         LOG_ERR("Failed to save AK name into file \"%s\"", ctx->aknameFile);
         return false;
     }
@@ -410,9 +410,9 @@ static bool create_ak(getpubak_context *ctx) {
     }
     LOG_INFO("Flush transient AK succ.");
 
-    // save ak public
-    rc = saveDataToFile(ctx->outputFile, (UINT8 *) &out_public, sizeof(out_public));
-    if (rc) {
+    /* TODO fix this serialization */
+    result = files_save_bytes_to_file(ctx->outputFile, (UINT8 *) &out_public, sizeof(out_public));
+    if (!result) {
         LOG_ERR("Failed to save AK pub key into file \"%s\"", ctx->outputFile);
         return false;
     }

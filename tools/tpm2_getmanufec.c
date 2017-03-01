@@ -262,7 +262,8 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     printf("Flush transient EK succ.\n");
 
-    if (saveDataToFile(outputFile, (UINT8 *)&outPublic, sizeof(outPublic)) ) {
+    /* TODO this serialization is not correct */
+    if (!files_save_bytes_to_file(outputFile, (UINT8 *)&outPublic, sizeof(outPublic))) {
         printf("\nFailed to save EK pub key into file(%s)\n", outputFile);
         return -5;
     }

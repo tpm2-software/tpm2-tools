@@ -7,70 +7,91 @@
 #include "log.h"
 #include "string-bytes.h"
 
-int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size)
-{
-    UINT16 count = 1, left;
-    FILE *f;
-    if ( size == NULL || buf == NULL || fileName == NULL )
-        return -1;
+static bool get_file_size(FILE *fp, long *file_size, const char *path) {
 
-    f = fopen(fileName, "rb+");
-    if( f == NULL )
-    {
-        printf("File(%s) open error.\n", fileName);
-        return -2;
+    long current = ftell(fp);
+    if (current < 0) {
+        LOG_ERR("Error getting current file offset for file \"%s\" error: %s", path, strerror(errno));
+        return false;
     }
 
-    left = *size;
-    *size = 0;
-    while( left > 0 && count > 0 )
-    {
-        count = fread(buf, 1, left, f);
-        *size += count;
-        left -= count;
-        buf += count;
+    int rc = fseek(fp, 0, SEEK_END);
+    if (rc < 0) {
+        LOG_ERR("Error seeking to end of file \"%s\" error: %s", path, strerror(errno));
+        return false;
     }
 
-    if( *size == 0 )
-    {
-        printf("File read error\n");
-        fclose(f);
-        return -3;
+    long size = ftell(fp);
+    if (size < 0) {
+        LOG_ERR("ftell on file \"%s\" failed: %s", path, strerror(errno));
+        return false;
     }
-    fclose(f);
-    return 0;
+
+    rc = fseek(fp, current, SEEK_SET);
+    if (rc < 0) {
+        LOG_ERR("Could not restore initial stream position for file \"%s\" failed: %s", path, strerror(errno));
+        return false;
+    }
+
+    *file_size = size;
+    return true;
 }
 
-int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size)
-{
-    FILE *f;
-    UINT16 count = 1;
-    if( fileName == NULL || buf == NULL || size == 0 )
-        return -1;
+bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size) {
 
-    f = fopen(fileName, "wb+");
-    if( f == NULL )
-    {
-        printf("File(%s) open error.\n", fileName);
-        return -2;
+    if (!buf || !size || !path) {
+        return false;
     }
 
-    while( size > 0 && count > 0 )
-    {
-        count = fwrite(buf, 1, size, f);
-        size -= count;
-        buf += count;
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("Could not open file \"%s\" error %s", path, strerror(errno));
+        return false;
     }
 
-    if( size > 0 )
-    {
-        printf("File write error\n");
-        fclose(f);
-        return -3;
+    long file_size;
+    bool result = get_file_size(f, &file_size, path);
+    if (!result) {
+        /* get_file_size() logs errors */
+        goto err;
     }
 
+    /* max is bounded on UINT16 */
+    if (file_size > *size) {
+        LOG_ERR(
+                "File \"%s\" size is larger than buffer, got %ld expected less than %u",
+                path, file_size, *size);
+        goto err;
+    }
+
+    result = files_read_bytes(f, buf, file_size);
+    if (!result) {
+        LOG_ERR("Could not read data from file \"%s\"", path);
+        goto err;
+    }
+
+    *size = file_size;
+    /* result set on files_read_bytes */
+
+err:
     fclose(f);
-    return 0;
+    return result;
+}
+
+bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
+
+    if (!path || !buf) {
+        return false;
+    }
+
+    FILE *fp = fopen(path, "wb+");
+
+    bool result = files_write_bytes(fp, buf, size);
+    if (!result) {
+        LOG_ERR("Could not write data to file \"%s\"", path);
+    }
+    fclose(fp);
+    return result;
 }
 
 /*
@@ -290,22 +311,8 @@ bool files_get_file_size(const char *path, long *file_size) {
         return false;
     }
 
-    int rc = fseek(fp, 0, SEEK_END);
-    if (rc < 0) {
-        LOG_ERR("Error seeking to end of file \"%s\" error: %s", path, strerror(errno));
-        goto err;
-    }
+    result = get_file_size(fp, file_size, path);
 
-    long size = ftell(fp);
-    if (size < 0) {
-        LOG_ERR("ftell on file \"%s\" failed: %s", path, strerror(errno));
-        goto err;
-    }
-
-    *file_size = size;
-    result = true;
-
-err:
     fclose(fp);
     return result;
 }

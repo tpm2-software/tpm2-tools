@@ -69,13 +69,8 @@ static bool get_random_and_save(tpm_random_ctx *ctx) {
         printf(" 0x%2.2X", random_bytes.t.buffer[i]);
     printf("\n");
 
-    int rc = saveDataToFile(ctx->output_file, (UINT8 *) random_bytes.t.buffer,
+    return files_save_bytes_to_file(ctx->output_file, (UINT8 *) random_bytes.t.buffer,
             random_bytes.t.size);
-    if (rc) {
-        return false;
-    }
-
-    return true;
 }
 
 #define ARG_CNT (2 * (sizeof(long_options)/sizeof(long_options[0]) - 1))

@@ -173,8 +173,9 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
         return false;
     }
 
-    return saveDataToFile(ctx->outFilePath, (UINT8 *) &signature,
-            sizeof(signature)) == 0;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &signature,
+            sizeof(signature));
 }
 
 static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
@@ -249,9 +250,9 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             break;
         case 't': {
             UINT16 size = sizeof(ctx->validation);
-            int rc = loadDataFromFile(optarg, (UINT8 *) &ctx->validation,
+            bool result = files_load_bytes_from_file(optarg, (UINT8 *) &ctx->validation,
                     &size);
-            if (rc) {
+            if (!result) {
                 return false;
             }
             flags.t = 1;
@@ -339,8 +340,8 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     }
 
     ctx->length = file_size;
-    int rc = loadDataFromFile(inMsgFileName, ctx->msg, &ctx->length);
-    if (rc) {
+    result = files_load_bytes_from_file(inMsgFileName, ctx->msg, &ctx->length);
+    if (!result) {
         free(ctx->msg);
         return false;
     }

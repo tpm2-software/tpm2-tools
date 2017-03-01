@@ -107,14 +107,16 @@ static bool hash_and_save(tpm_hash_ctx *ctx) {
         printf("%02x ", validation.digest.t.buffer[i]);
     printf("\n");
 
-    int rc = saveDataToFile(ctx->outHashFilePath, (UINT8 *) &outHash,
+    /* TODO fix serialization */
+    bool result = files_save_bytes_to_file(ctx->outHashFilePath, (UINT8 *) &outHash,
             sizeof(outHash));
-    if (rc) {
+    if (!result) {
         return false;
     }
 
-    return saveDataToFile(ctx->outTicketFilePath, (UINT8 *) &validation,
-            sizeof(validation)) == 0;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->outTicketFilePath, (UINT8 *) &validation,
+            sizeof(validation));
 }
 
 static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
@@ -168,7 +170,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
                 return false;
             }
             ctx->data.t.size = fileSize;
-            res = loadDataFromFile(optarg, ctx->data.t.buffer, &ctx->data.t.size) == 0;
+            res = files_load_bytes_from_file(optarg, ctx->data.t.buffer, &ctx->data.t.size);
             if (!res) {
                 return false;
             }

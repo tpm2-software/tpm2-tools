@@ -249,8 +249,8 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     LOG_INFO("Flush transient EK success.");
 
-    // save ek public
-    if (saveDataToFile(ctx->out_file_path, (UINT8 *) &outPublic,
+    /* TODO fix this serialization */
+    if (!files_save_bytes_to_file(ctx->out_file_path, (UINT8 *) &outPublic,
             sizeof(outPublic))) {
         LOG_ERR("Failed to save EK pub key into file \"%s\"",
                 ctx->out_file_path);
