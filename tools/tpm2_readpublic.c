@@ -95,13 +95,9 @@ static int read_public_and_save(tpm_readpub_ctx *ctx) {
         printf("%02x ", qualified_name.t.name[i]);
     printf("\n");
 
-    int rc = saveDataToFile(ctx->outFilePath, (UINT8 *) &public,
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &public,
             sizeof(public));
-    if (rc) {
-        return false;
-    }
-
-    return true;
 }
 
 static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {

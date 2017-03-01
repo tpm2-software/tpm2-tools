@@ -110,7 +110,8 @@ load (TSS2_SYS_CONTEXT *sapi_context,
     }
     printf("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
-    if(saveDataToFile(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
+    /* TODO fix serialization */
+    if(!files_save_bytes_to_file(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
         return -2;
 
     return 0;
@@ -186,7 +187,7 @@ execute_tool (int              argc,
 
         case 'u':
             size = sizeof(inPublic);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPublic, &size) != 0)
+            if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPublic, &size))
             {
                 returnVal = -3;
                 break;
@@ -195,7 +196,7 @@ execute_tool (int              argc,
             break;
         case 'r':
             size = sizeof(inPrivate);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPrivate, &size) != 0)
+            if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPrivate, &size))
             {
                 returnVal = -4;
                 break;

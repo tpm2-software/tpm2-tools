@@ -100,13 +100,9 @@ static bool verify_signature(tpm2_verifysig_ctx *ctx) {
         return false;
     }
 
-    if (saveDataToFile(ctx->out_file_path, (UINT8 *) &validation,
-            sizeof(validation))) {
-        LOG_ERR("failed to save validation into \"%s\"\n", ctx->out_file_path);
-        return false;
-    }
-
-    return true;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->out_file_path, (UINT8 *) &validation,
+            sizeof(validation));
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
@@ -130,7 +126,7 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     }
 
     UINT16 tmp = msg->size = size;
-    if (loadDataFromFile(msg_file_path, msg->buffer, &tmp) != 0) {
+    if (!files_load_bytes_from_file(msg_file_path, msg->buffer, &tmp)) {
         free(msg);
         return NULL;
     }
@@ -155,12 +151,12 @@ static bool generate_signature(tpm2_verifysig_ctx *ctx) {
         buffer = (UINT8 *) &ctx->signature;
     }
 
-    int rc = loadDataFromFile(ctx->sig_file_path, buffer, &size);
-    if (rc) {
+    bool result = files_load_bytes_from_file(ctx->sig_file_path, buffer, &size);
+    if (!result) {
         LOG_ERR("Could not create %s signature from file: \"%s\"",
                 ctx->flags.raw ? "raw" : "\0", ctx->sig_file_path);
     }
-    return !rc;
+    return result;
 }
 
 static bool string_dup(char **new, char *old) {
@@ -268,7 +264,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             break;
         case 'D': {
             UINT16 size = sizeof(ctx->msgHash);
-            if (loadDataFromFile(optarg, (UINT8 *) &ctx->msgHash, &size) != 0) {
+            if (!files_load_bytes_from_file(optarg, (UINT8 *) &ctx->msgHash, &size)) {
                 LOG_ERR("Could not load digest from file!");
                 return false;
             }

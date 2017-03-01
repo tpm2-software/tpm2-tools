@@ -6,14 +6,36 @@
 
 #include <sapi/tpm20.h>
 
-/*
- * These old routines are not aware of endianess and lack the tpm2 tools file header,
- * the should be updated and replaced with something using the new files_write_* api
- * documented below. Mark all of them as deprecated as a constant reminder this needs
- * to be done.
+/**
+ * Reads a series of bytes froma file as a byte array. This is similar to files_read_bytes(),
+ * but opens and closes the FILE for the caller. Size is both an input and output value where
+ * the size value is the max buffer size on call and the returned size is how much was read.
+ *
+ * This interface could be cleaned up in a later revision.
+ * @param path
+ *  The path to the file to open.
+ * @param buf
+ *  The buffer to read the data into
+ * @param size
+ *  The max size of the buffer on call, and the size of the data read on return.
+ * @return
+ *  True on success, false otherwise.
  */
-int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size) __attribute__ ((deprecated));
-int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size) __attribute__ ((deprecated));
+bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size);
+
+/**
+ * Similar to files_write_bytes(), in that it writes an array of bytes to disk,
+ * but this routine opens and closes the file on the callers behalf.
+ * @param path
+ *  The path to the file to write the data to.
+ * @param buf
+ *  The buffer of data to write
+ * @param size
+ *  The size of the data to write in bytes.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
 
 /**
  * Saves the TPM context for an object handle to disk by calling Tss2_Sys_ContextSave() and serializing the

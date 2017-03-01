@@ -198,8 +198,8 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
     }
 
     ctx->data_size = MAX_NV_INDEX_SIZE;
-    int rc = loadDataFromFile(ctx->input_file, ctx->nv_buffer, &ctx->data_size);
-    if (rc) {
+    result = files_load_bytes_from_file(ctx->input_file, ctx->nv_buffer, &ctx->data_size);
+    if (!result) {
         LOG_ERR("Failed to read data from %s\n", ctx->input_file);
         return -false;
     }

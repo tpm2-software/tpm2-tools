@@ -97,8 +97,8 @@ static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
         return false;
     }
 
-    return saveDataToFile(ctx->out_file_path, (UINT8 *) out_data.t.buffer,
-            out_data.t.size) == 0;
+    return files_save_bytes_to_file(ctx->out_file_path, (UINT8 *) out_data.t.buffer,
+            out_data.t.size);
 }
 
 static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
@@ -165,14 +165,13 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
                 goto out;
             }
             break;
-        case 'I': {
+        case 'I':
             ctx->data.t.size = sizeof(ctx->data) - 2;
-            int rc = loadDataFromFile(optarg, ctx->data.t.buffer, &ctx->data.t.size);
-            if (rc) {
+            result = files_load_bytes_from_file(optarg, ctx->data.t.buffer, &ctx->data.t.size);
+            if (!result) {
                 goto out;
             }
             flags.I = 1;
-        }
             break;
         case 'o':
             result = files_does_file_exist(optarg);
