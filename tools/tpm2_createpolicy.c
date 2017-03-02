@@ -28,12 +28,14 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
+#include <errno.h>
+#include <limits.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <getopt.h>
-#include <limits.h>
-#include <string.h>
+#include <sapi/tpm20.h>
 
 #include "files.h"
 #include "log.h"
@@ -71,12 +73,15 @@ TPM_RC build_pcr_policy(createpolicypcr_ctx *ctx) {
 
     TPML_PCR_SELECTION pcrs = { 
         .count = 1, 
-        .pcrSelections[0].hash = ctx->hash_alg, 
-        .pcrSelections[0].sizeofSelect = 3,
-        .pcrSelections[0].pcrSelect[0] = 0, 
-        .pcrSelections[0].pcrSelect[1] = 0, 
-        .pcrSelections[0].pcrSelect[2] = 0 
+        .pcrSelections[0] = {
+            .hash = ctx->hash_alg,
+            .sizeofSelect = 3,
+            .pcrSelect[0] = 0,
+            .pcrSelect[1] = 0,
+            .pcrSelect[2] = 0
+        },
     };
+
     SET_PCR_SELECT_BIT(pcrs.pcrSelections[0], ctx->pcr_index);
 
     //digests[count{2:}]{:8}
@@ -86,8 +91,6 @@ TPM_RC build_pcr_policy(createpolicypcr_ctx *ctx) {
     TPML_PCR_SELECTION pcr_selection_out;
 
     TPM_RC rval = TPM_RC_SUCCESS;
-    unsigned int i = 0; 
-    int sz = 0;
     long filesize = 0;
     if (ctx->pcr_flags.raw_pcr_flag) {
         bool result = files_get_file_size(ctx->raw_pcr_file, &filesize);
@@ -124,8 +127,24 @@ TPM_RC build_pcr_policy(createpolicypcr_ctx *ctx) {
         }
 
         FILE *fp = fopen(ctx->raw_pcr_file, "rb");
+        if (!fp) {
+            LOG_ERR("Could not open file \"%s\", error: %s", ctx->raw_pcr_file,
+                    strerror(errno));
+            return -1;
+        }
+
+        unsigned i;
+        // TODO is byte by byte the best way here?
         for (i = 0; i < pcr_values.digests[0].t.size; i++) {
-            sz = fread(&pcr_values.digests[0].t.buffer[i], 1, 1, fp);
+            size_t sz = fread(&pcr_values.digests[0].t.buffer[i], 1, 1, fp);
+            if (sz != 1) {
+                const char *msg = ferror(fp) ? strerror(errno) :
+                        "end of file reached";
+                LOG_ERR("Reading from file \"%s\" failed: %s",
+                        ctx->raw_pcr_file, msg);
+                fclose(fp);
+                return -1;
+            }
         }
         fclose(fp);
 
@@ -209,9 +228,7 @@ TPM_RC build_policy(createpolicypcr_ctx *ctx,
     }
 
     // And remove the session from sessions table.
-    rval = tpm_session_auth_end(ctx->policy_session);
-
-    return rval;
+    return tpm_session_auth_end(ctx->policy_session);
 }
 
 bool parse_policy_type(createpolicypcr_ctx *ctx, char *argv[]) {
@@ -234,7 +251,7 @@ bool parse_policy_type(createpolicypcr_ctx *ctx, char *argv[]) {
 }
 
 #define MAX_SUPPORTED_PCRS 24
-static bool init(int argc, char *argv[], char *envp[], createpolicypcr_ctx *ctx) {
+static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
 
     struct option sOpts[] = { 
         { "policy-file",    required_argument,  NULL,   'f' }, 
@@ -272,8 +289,9 @@ static bool init(int argc, char *argv[], char *envp[], createpolicypcr_ctx *ctx)
             if (string_bytes_get_uint32(optarg, &ctx->pcr_index) != true) {
                 return false;
             }
-            if (ctx->pcr_index > (MAX_SUPPORTED_PCRS - 1) || ctx->pcr_index < 0) {
-                LOG_ERR("Invalid pcr_index %d. Choose between 0..23\n",
+            // pcr_index is unsigned... never can be less than 0
+            if (ctx->pcr_index > (unsigned)(MAX_SUPPORTED_PCRS - 1)) {
+                LOG_ERR("Invalid pcr_index %u. Choose between 0..23\n",
                         ctx->pcr_index);
                 return false;
             }
@@ -304,25 +322,28 @@ static bool init(int argc, char *argv[], char *envp[], createpolicypcr_ctx *ctx)
     return true;
 }
 
+#define TPM2B_DIGEST_INIT { .t = { .size = 0 } }
+
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
-    /* opts is unused */
+    /* opts and envp are unused */
     (void) opts;
+    (void) envp;
 
     createpolicypcr_ctx ctx = { 
         .sapi_context = sapi_context, 
-        .policy_session = malloc(sizeof(SESSION)), 
-        .policy_digest = { 0 }, 
+        .policy_session = NULL,
+        .policy_digest = TPM2B_DIGEST_INIT,
         .pcr_index = 0,
-        .hash_alg = TPM_ALG_SHA1, 
-        .policy_file_flag = false, 
+        .hash_alg = TPM_ALG_SHA1,
+        .policy_file_flag = false,
         .pcr_flags.policy_type_pcr_flag = false,
-        .pcr_flags.pcr_index_flag = false, 
-        .pcr_flags.raw_pcr_flag = false 
+        .pcr_flags.pcr_index_flag = false,
+        .pcr_flags.raw_pcr_flag = false
     };
 
-    bool result = init(argc, argv, envp, &ctx);
+    bool result = init(argc, argv, &ctx);
     if (!result) {
         return 1;
     }
