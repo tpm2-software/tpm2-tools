@@ -252,7 +252,7 @@ static void test_file_exists(void **state) {
 
 static void test_file_exists_bad_args(void **state) {
 
-    test_file *tf = test_file_from_state(state);
+    (void) state;
 
     bool res = files_does_file_exist("this_should_be_a_bad_path");
     assert_false(res);

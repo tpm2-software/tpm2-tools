@@ -71,8 +71,8 @@ HASH_SIZE_INFO   hashSizes[] = {
 
 static UINT16 GetDigestSize( TPM_ALG_ID authHash )
 {
-    INT8  i;
-    for(i = 0; i < ( sizeof( hashSizes ) / sizeof( HASH_SIZE_INFO ) ); i++ )
+    UINT32 i;
+    for(i = 0; i < (sizeof(hashSizes)/sizeof(HASH_SIZE_INFO)); i++ )
     {
         if( hashSizes[i].algId == authHash )
             return hashSizes[i].size;

@@ -86,7 +86,7 @@ static bool nv_space_release(tpm_nvrelease_ctx *ctx) {
     return true;
 }
 
-#define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
+#define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
 
 static bool init(int argc, char* argv[], tpm_nvrelease_ctx *ctx) {
 

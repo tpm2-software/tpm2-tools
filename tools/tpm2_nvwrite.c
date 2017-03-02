@@ -122,7 +122,7 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
     return true;
 }
 
-#define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
+#define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
 
 static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
 
@@ -217,7 +217,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         .nv_index = 0,
         .auth_handle = TPM_RH_PLATFORM,
         .data_size = 0,
-        .handle_passwd = { 0 },
+        .handle_passwd = {{ 0 }},
         .hex_passwd = false,
         .sapi_context = sapi_context
     };

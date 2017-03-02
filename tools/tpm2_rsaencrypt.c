@@ -58,9 +58,7 @@ static bool rsa_encrypt_and_save(tpm_rsaencrypt_ctx *ctx) {
     TPMT_RSA_DECRYPT scheme;
     TPM2B_DATA label;
     // Outputs
-    TPM2B_PUBLIC_KEY_RSA out_data = {
-            { sizeof(TPM2B_PUBLIC_KEY_RSA) - 2, }
-    };
+    TPM2B_PUBLIC_KEY_RSA out_data = TPM2B_TYPE_INIT(TPM2B_PUBLIC_KEY_RSA, buffer);
 
     TPMS_AUTH_RESPONSE out_session_data;
     TSS2_SYS_RSP_AUTHS out_sessions_data;
@@ -184,7 +182,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_rsaencrypt_ctx ctx = {
             .key_handle = 0,
-            .message = { 0 },
+            .message = {{ 0 }},
             .output_file_path = { 0 },
             .sapi_context = sapi_context
     };

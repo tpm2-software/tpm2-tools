@@ -114,7 +114,7 @@ static bool save_alg_and_key_to_file(const char *key_file, UINT16 alg_type,
 
         size_t count = fwrite(tmp->buffer, sizeof(BYTE), tmp->size, f);
         if (count != tmp->size) {
-            if (count < 0) {
+            if (ferror(f)) {
                 LOG_ERR("Error writing to file \"%s\", error: \"%s\"", key_file,
                         strerror(errno));
             } else {
@@ -144,7 +144,7 @@ static bool parse_and_save_ak_public(tpm_akparse_ctx *ctx) {
     }
 
     size_t key_data_len = 1;
-    TPM2B *key_data[key_data_len + 1];
+    TPM2B *key_data[2];
     switch (outPublic.t.publicArea.type) {
     case TPM_ALG_RSA:
         key_data[0] = &outPublic.t.publicArea.unique.rsa.b;
@@ -219,6 +219,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* opts is unused, avoid compiler warning */
     (void)opts;
+    (void)sapi_context;
+    (void)envp;
 
     struct tpm_akparse_ctx ctx;
 

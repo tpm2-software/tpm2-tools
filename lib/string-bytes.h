@@ -6,6 +6,10 @@
 
 #include <sapi/tpm20.h>
 
+#define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
+
+#define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
+
 int str2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 int hex2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 

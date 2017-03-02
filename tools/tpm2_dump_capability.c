@@ -101,12 +101,13 @@ typedef struct capability_opts {
 int
 sanity_check_capability_opts (capability_opts_t *capability_opts)
 {
-    int i, cmp;
 
     if (capability_opts->capability_string == NULL) {
         fprintf (stderr, "missing capability string, see --help\n");
         return 2;
     }
+
+    size_t i;
     for (i = 0; i < CAPABILITY_MAP_COUNT; ++i) {
         int cmp = strncmp (capability_map [i].capability_string,
                            capability_opts->capability_string,
@@ -186,7 +187,7 @@ void
 dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
                            size_t               count)
 {
-    int i;
+    size_t i;
     char buf[5] = { 0, };
 
     for (i = 0; i < count; ++i) {
@@ -363,7 +364,7 @@ void
 dump_tpm_properties_var (TPMS_TAGGED_PROPERTY properties[],
                          size_t               count)
 {
-    int i;
+    size_t i;
 
     for (i = 0; i < count; ++i) {
         TPM_PT property = properties[i].property;
@@ -606,6 +607,9 @@ execute_tool (int               argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
+    (void) opts;
+    (void) envp;
+
     TSS2_RC              rc;
     TPMS_CAPABILITY_DATA capability_data = { 0, };
     int ret;

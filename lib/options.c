@@ -91,7 +91,7 @@ out:
  * Convert from an element in the TCTI_TYPE enumeration to a string
  * representation.
  */
-char* const
+char *
 tcti_name_from_type (TCTI_TYPE tcti_type)
 {
     int i;

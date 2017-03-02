@@ -79,13 +79,9 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
             { 0, }
     };
 
-    TPM2B_NAME name = {
-            { sizeof(TPM2B_NAME)-2, }
-    };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NAME qualified_name = {
-            { sizeof(TPM2B_NAME)-2, }
-    };
+    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
             &out_public, &name, &qualified_name, &sessions_data_out);
@@ -406,10 +402,10 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_certify_ctx ctx = {
             .cmd_auth = {
-                { .sessionHandle = TPM_RS_PW, .sessionAttributes = 0 }, // [0]
-                { .sessionHandle = TPM_RS_PW, .sessionAttributes = 0 }  // [1]
+                { .sessionHandle = TPM_RS_PW, .sessionAttributes = { .val = 0 } }, // [0]
+                { .sessionHandle = TPM_RS_PW, .sessionAttributes = { .val = 0 } }  // [1]
             },
-            .file_path = { 0 },
+            .file_path = {{ 0 }},
             .sapi_context = sapi_context
     };
 

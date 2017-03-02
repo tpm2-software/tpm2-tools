@@ -56,8 +56,8 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
     TPM2B_PUBLIC outPublic = { { 0, } };
-    TPM2B_NAME   name = { { sizeof(TPM2B_NAME)-2, } };
-    TPM2B_NAME   qualifiedName = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    TPM2B_NAME qualifiedName = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     sessionDataOutArray[0] = &sessionDataOut;
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
@@ -86,6 +86,11 @@ execute_tool (int              argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
+    (void) opts;
+    (void) envp;
+    (void) argc;
+    (void) argv;
+
     TPMI_YES_NO moreData;
     TPMS_CAPABILITY_DATA capabilityData;
     UINT32 rval;

@@ -52,7 +52,7 @@ struct tpm2_algorithm {
 
 typedef struct tpm2_pcrs tpm2_pcrs;
 struct tpm2_pcrs {
-    int count;
+    size_t count;
     TPML_DIGEST pcr_values[24]; //XXX Why 24?
 };
 
@@ -111,7 +111,7 @@ static const char *get_algorithm_name(TPMI_ALG_HASH alg_id) {
 
 static void update_pcr_selections(TPML_PCR_SELECTION *s1, TPML_PCR_SELECTION *s2) {
 
-    int i1, i2, j;
+    UINT32 i1, i2, j;
     for (i2 = 0; i2 < s2->count; i2++) {
         for (i1 = 0; i1 < s1->count; i1++) {
             if (s2->pcrSelections[i2].hash != s1->pcrSelections[i1].hash)
@@ -126,7 +126,7 @@ static void update_pcr_selections(TPML_PCR_SELECTION *s1, TPML_PCR_SELECTION *s2
 
 static bool unset_pcr_sections(TPML_PCR_SELECTION *s) {
 
-    int i, j;
+    UINT32 i, j;
     for (i = 0; i < s->count; i++) {
         for (j = 0; j < s->pcrSelections[i].sizeofSelect; j++) {
             if (s->pcrSelections[i].pcrSelect[j]) {
@@ -210,7 +210,7 @@ static void init_pcr_selection_all(tpm2_algorithm *algorithm,
 // show all PCR banks according to g_pcrSelection & g_pcrs->
 static bool show_pcr_values(listpcr_context *context) {
 
-    int vi = 0, di = 0, i;
+    UINT32 vi = 0, di = 0, i;
 
     for (i = 0; i < context->pcr_selections.count; i++) {
         const char *alg_name = get_algorithm_name(
@@ -338,7 +338,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     bool success = false;
     TPMI_ALG_HASH selected_algorithm;
-    unsigned o_flag = 0, L_flag = 0, s_flag = 0, g_flag = 0;
+    unsigned L_flag = 0, s_flag = 0, g_flag = 0;
 
     static struct option long_options[] = {
         { "algorithm", 1, NULL, 'g' },
@@ -350,6 +350,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* mark these as unused to prevent compiler warnings/errors */
     (void) opts;
+    (void) envp;
 
     while (getopt_long(argc, argv, "g:o:L:s", long_options, NULL) != -1) {
         switch (optopt) {
@@ -368,7 +369,6 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
                 goto error;
             }
             /* XXX Should o option only print to output file and nothing to stdout? */
-            o_flag = 1;
             break;
         case 'L':
             if (pcr_parse_selections(optarg, &context.pcr_selections) != 0) {
