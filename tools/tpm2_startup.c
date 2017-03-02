@@ -58,7 +58,7 @@ get_startup_opts (int                 argc,
                   char               *argv[],
                   startup_opts_t     *startup_opts)
 {
-    int c = 0, ret = 0, option_index = 0;
+    int c = 0, option_index = 0;
     char *arg_str = "cs";
     static struct option long_options [] = {
         {
@@ -96,8 +96,6 @@ get_startup_opts (int                 argc,
 int
 sanity_check_startup_opts (startup_opts_t *startup_opts)
 {
-    int ret;
-
     /*
      * Detect when both clear and state are 'true' or 'false'. If this
      * condition fails, then the know that either clear or state are set but
@@ -118,9 +116,12 @@ int
 execute_tool (int               argc,
               char             *argv[],
               char             *envp[],
-              common_opts_t    *common_opts,
+              common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
+    (void) opts;
+    (void) envp;
+
     TSS2_RC rc;
     TPM_SU startup_type;
     startup_opts_t startup_opts = {

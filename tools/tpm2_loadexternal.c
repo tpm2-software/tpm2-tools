@@ -89,11 +89,10 @@ static bool get_hierarchy_value(const char *argument_opt,
 
 static bool load_external(tpm_loadexternal_ctx *ctx) {
 
-    TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_NAME nameExt = { { sizeof(TPM2B_NAME) - 2, } };
+    TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;

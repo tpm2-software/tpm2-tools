@@ -65,7 +65,7 @@ load (TSS2_SYS_CONTEXT *sapi_context,
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_NAME              nameExt     = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -124,6 +124,9 @@ execute_tool (int              argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
+    (void) envp;
+    (void) opts;
+
     TPMI_DH_OBJECT parentHandle;
     TPM2B_PUBLIC  inPublic;
     TPM2B_PRIVATE inPrivate;

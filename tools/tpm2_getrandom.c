@@ -54,7 +54,7 @@ struct tpm_random_ctx {
 
 static bool get_random_and_save(tpm_random_ctx *ctx) {
 
-    TPM2B_DIGEST random_bytes = { { sizeof(TPM2B_DIGEST) - 2 } };
+    TPM2B_DIGEST random_bytes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     TPM_RC rval = Tss2_Sys_GetRandom(ctx->sapi_context, NULL, ctx->num_of_bytes,
             &random_bytes, NULL);

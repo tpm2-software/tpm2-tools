@@ -50,19 +50,14 @@
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
     struct {
-        union {
-            struct {
-                uint8_t key_handle :1;
-                uint8_t digest :1;
-                uint8_t halg :1;
-                uint8_t msg :1;
-                uint8_t raw :1;
-                uint8_t sig :1;
-                uint8_t ticket :1;
-                uint8_t key_context :1;
-            };
-            uint8_t all;
-        };
+        uint8_t key_handle :1;
+        uint8_t digest :1;
+        uint8_t halg :1;
+        uint8_t msg :1;
+        uint8_t raw :1;
+        uint8_t sig :1;
+        uint8_t ticket :1;
+        uint8_t key_context :1;
     } flags;
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST msgHash;
@@ -335,12 +330,15 @@ static void tpm_verifysig_ctx_dealloc(tpm2_verifysig_ctx *ctx) {
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
+    (void) opts;
+    (void) envp;
+
     int normalized_return_code = 1;
 
     tpm2_verifysig_ctx ctx = {
             .flags = { 0 },
             .halg = TPM_ALG_SHA256,
-            .msgHash = { { sizeof(TPM2B_DIGEST) - 2, } },
+            .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
             .sig_file_path = NULL,
             .msg_file_path = NULL,
             .out_file_path = NULL,

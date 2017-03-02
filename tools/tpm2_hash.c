@@ -86,7 +86,7 @@ static bool get_hierarchy_value(const char *hiearchy_code,
 
 static bool hash_and_save(tpm_hash_ctx *ctx) {
 
-    TPM2B_DIGEST outHash = { { sizeof(TPM2B_DIGEST) - 2, } };
+    TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
     UINT32 rval = Tss2_Sys_Hash(ctx->sapi_context, 0, &ctx->data, ctx->halg,
@@ -219,6 +219,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* opts is unused, avoid compiler warning */
     (void)opts;
+    (void)envp;
 
     tpm_hash_ctx ctx = {
             .sapi_context = sapi_context,

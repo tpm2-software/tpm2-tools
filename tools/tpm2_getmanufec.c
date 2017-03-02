@@ -143,16 +143,17 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_SENSITIVE_CREATE inSensitive = {{sizeof(TPM2B_SENSITIVE_CREATE)- 2,}};
-    TPM2B_PUBLIC inPublic = {{sizeof(TPM2B_PUBLIC) - 2,}};
+    TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
+    TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
+
     TPM2B_DATA outsideInfo = { { 0, } };
     TPML_PCR_SELECTION creationPCR;
 
-    TPM2B_NAME name = { { sizeof(TPM2B_NAME) - 2, } };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM2B_PUBLIC outPublic = { { 0, } };
     TPM2B_CREATION_DATA creationData = { { 0, } };
-    TPM2B_DIGEST creationHash = { { sizeof(TPM2B_DIGEST) - 2, } };
+    TPM2B_DIGEST creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION creationTicket = { 0, };
 
     TPM_HANDLE handle2048ek;
@@ -327,7 +328,7 @@ char *Base64Encode(const unsigned char* buffer)
     BIO_set_close(bio, BIO_NOCLOSE);
     BIO_free_all(bio);
     char *b64text = (*bufferPtr).data;
-    int i;
+    size_t i;
     for (i = 0; i < strlen(b64text); i++) {
         if (b64text[i] == '+') {
             b64text[i] = '-';
@@ -407,6 +408,9 @@ int TPMinitialProvisioning(void)
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                   TSS2_SYS_CONTEXT *sapi_context)
 {
+    (void) opts;
+    (void) envp;
+
     static const char *optstring = "e:o:H:P:g:f:X:N:O:E:S:U";
 
     static struct option long_options[] =
