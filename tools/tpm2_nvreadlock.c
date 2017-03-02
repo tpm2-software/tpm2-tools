@@ -62,7 +62,6 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPM2B_MAX_NV_BUFFER nv_data = { { sizeof(TPM2B_MAX_NV_BUFFER) - 2, } };
 
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
@@ -98,7 +97,7 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
     return true;
 }
 
-#define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
+#define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
 
 static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
 
@@ -183,7 +182,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .auth_handle = TPM_RH_PLATFORM,
             .size_to_read = 0,
             .offset = 0,
-            .handle_passwd = { 0 },
+            .handle_passwd = {{ 0 }},
             .is_hex_passwd = false,
             .sapi_context = sapi_context
     };

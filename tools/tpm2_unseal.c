@@ -61,9 +61,7 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_SENSITIVE_DATA outData = {
-            { sizeof(TPM2B_SENSITIVE_DATA) - 2, }
-    };
+    TPM2B_SENSITIVE_DATA outData = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_DATA, buffer);
 
     session_data_array[0] = &ctx->sessionData;
     session_data_out_array[0] = &session_data_out;

@@ -36,8 +36,6 @@ static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH h
     TPM2B keyAuth;
     TPM2B_SENSITIVE inPrivate;
     TPM2B_PUBLIC inPublic;
-    UINT32 rval;
-    TSS2_SYS_CONTEXT *sysContext;
 
     keyAuth.size = 0;
 
@@ -58,7 +56,7 @@ static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH h
     inPublic.t.publicArea.unique.keyedHash.t.size = 0;
 
     keyName->t.size = sizeof( TPM2B_NAME ) - 2;
-    return Tss2_Sys_LoadExternal( sysContext, 0, &inPrivate, &inPublic, TPM_RH_NULL, keyHandle, keyName, 0 );
+    return Tss2_Sys_LoadExternal(sapi_contex, 0, &inPrivate, &inPublic, TPM_RH_NULL, keyHandle, keyName, 0 );
 }
 
 

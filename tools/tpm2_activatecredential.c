@@ -132,7 +132,7 @@ static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
 static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         tpm_activatecred_ctx *ctx) {
 
-    TPM2B_DIGEST certInfoData = { { sizeof(certInfoData) - 2, } };
+    TPM2B_DIGEST certInfoData = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMS_AUTH_COMMAND tmp_auth;
 
     ctx->password.sessionHandle = TPM_RS_PW;
@@ -250,7 +250,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
     }
 
     int flag_cnt = 0;
-    int H_flag = 0, c_flag = 0, k_flag = 0, C_flag = 0, e_flag = 0, P_flag = 0,
+    int H_flag = 0, c_flag = 0, k_flag = 0, C_flag = 0,
             f_flag = 0, o_flag = 0;
 
     int opt;
@@ -300,7 +300,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
                         optarg);
                 return false;
             }
-            P_flag = 1;
+            //P_flag = 1;
             break;
         case 'e':
             ctx->endorse_password.hmac.t.size =
@@ -313,7 +313,6 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
                         optarg);
                 return false;
             }
-            e_flag = 1;
             break;
         case 'f':
             /* logs errors */
@@ -357,6 +356,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* opts is unused, avoid compiler warning */
     (void) opts;
+    (void) envp;
 
     tpm_activatecred_ctx ctx = { 0 };
 
@@ -367,20 +367,20 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         goto out;
     }
 
-    int returnVal;
-
-    if (ctx.file.context)
-        returnVal = file_load_tpm_context_from_file(sapi_context, &ctx.handle.activate,
+    if (ctx.file.context) {
+        bool res = file_load_tpm_context_from_file(sapi_context, &ctx.handle.activate,
                 ctx.file.context);
-    if (returnVal != 0) {
-        goto out;
+        if (!res) {
+            goto out;
+        }
     }
 
-    if (ctx.file.key_context)
-        returnVal = file_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
+    if (ctx.file.key_context) {
+        bool res = file_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
                 ctx.file.key_context) != true;
-    if (returnVal != 0) {
-        goto out;
+        if (!res) {
+            goto out;
+        }
     }
 
     result = activate_credential_and_output(sapi_context, &ctx);

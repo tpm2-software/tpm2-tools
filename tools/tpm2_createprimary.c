@@ -134,10 +134,10 @@ int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy, TPM
 
     TPM2B_DATA              outsideInfo = { { 0, } };
     TPML_PCR_SELECTION      creationPCR;
-    TPM2B_NAME              name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME              name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
     TPM2B_PUBLIC            outPublic = { { 0, } };
     TPM2B_CREATION_DATA     creationData = { { 0, } };
-    TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
+    TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION        creationTicket = { 0, };
 
     sessionDataArray[0] = &sessionData;
@@ -207,8 +207,8 @@ execute_tool (int               argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
-
-    char hostName[200] = DEFAULT_HOSTNAME;
+    (void) envp;
+    (void) opts;
 
     TPM2B_SENSITIVE_CREATE  inSensitive;
     TPM2B_PUBLIC            inPublic;

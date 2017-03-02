@@ -118,7 +118,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     return true;
 }
 
-#define MAX_ARG_CNT (2 * (sizeof(long_options)/sizeof(long_options[0]) - 1))
+#define MAX_ARG_CNT ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - 1)))
 
 static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
 
@@ -228,8 +228,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .authHandle = TPM_RH_PLATFORM,
             .size = 0,
             .nvAttribute = 0,
-            .handlePasswd = { 0 },
-            .indexPasswd = { 0 },
+            .handlePasswd = {{ 0 }},
+            .indexPasswd = {{ 0 }},
             .hexPasswd = false,
             .sapi_context = sapi_context
         };

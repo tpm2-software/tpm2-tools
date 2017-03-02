@@ -38,7 +38,7 @@ static int pcr_parse_selection(const char *str, int len, TPMS_PCR_SELECTION *pcr
         return -1;
     }
 
-    if (strLeft - str > sizeof(buf) - 1) {
+    if ((size_t)(strLeft - str) > sizeof(buf) - 1) {
         return -1;
     }
 
@@ -123,7 +123,7 @@ int pcr_parse_list(const char *str, int len, TPMS_PCR_SELECTION *pcrSel) {
             len = 0;
         }
 
-        if (lenCurrent > sizeof(buf) - 1) {
+        if ((size_t)lenCurrent > sizeof(buf) - 1) {
             return -1;
         }
 

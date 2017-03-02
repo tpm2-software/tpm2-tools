@@ -143,21 +143,16 @@ static bool create_ek_handle(getpubek_context *ctx) {
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
     TPML_PCR_SELECTION creationPCR;
 
-    TPM2B_SENSITIVE_CREATE inSensitive = {
-            { sizeof(TPM2B_SENSITIVE_CREATE) - 2 }
-    };
+    TPM2B_SENSITIVE_CREATE inSensitive =
+            TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
 
-    TPM2B_PUBLIC inPublic = {
-            { sizeof(TPM2B_PUBLIC) - 2 }
-    };
+    TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
 
     TPM2B_DATA outsideInfo = {
             { 0, }
     };
 
-    TPM2B_NAME name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM2B_PUBLIC outPublic = {
             { 0, }
@@ -167,9 +162,7 @@ static bool create_ek_handle(getpubek_context *ctx) {
             { 0, }
     };
 
-    TPM2B_DIGEST creationHash = {
-            { sizeof(TPM2B_DIGEST) - 2, }
-    };
+    TPM2B_DIGEST creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     TPMT_TK_CREATION creationTicket = { 0, };
 
@@ -365,7 +358,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     };
 
     bool result = init(argc, argv, envp, &ctx);
-    if (!init) {
+    if (!result) {
         return false;
     }
 
