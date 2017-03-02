@@ -14,7 +14,7 @@ bool password_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *descri
     if (is_hex) {
         auth->t.size = sizeof(auth) - 2;
         /* this routine is safe on overlapping memory areas */
-        if (hex2ByteStructure(password->t.buffer, &auth->t.size, auth->t.buffer)
+        if (hex2ByteStructure((char *)password->t.buffer, &auth->t.size, auth->t.buffer)
                 != 0) {
             LOG_ERR("Failed to convert hex format password for %s.",
                     description);
@@ -48,6 +48,6 @@ bool password_util_copy_password(const char *password, const char *description, 
     }
 
     dest->t.size = len;
-    snprintf(dest->t.buffer, PASSWORD_MAX, "%s", password);
+    snprintf((char *)dest->t.buffer, PASSWORD_MAX, "%s", password);
     return true;
 }

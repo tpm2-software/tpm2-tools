@@ -212,7 +212,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPM2B_ATTEST quoted = { { sizeof(TPM2B_ATTEST)-2, } };
+    TPM2B_ATTEST quoted = TPM2B_TYPE_INIT(TPM2B_ATTEST, attestationData);
     TPMT_SIGNATURE signature;
 
     TPMS_AUTH_COMMAND *sessionDataArray[1];
@@ -287,6 +287,9 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
 
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
               TSS2_SYS_CONTEXT *sapi_context) {
+
+    (void) envp;
+    (void) opts;
 
     int opt = -1;
     const char *optstring = "hvk:c:P:l:g:L:o:Xq:";

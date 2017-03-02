@@ -59,13 +59,9 @@ struct tpm_encrypt_decrypt_ctx {
 
 static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
 
-    TPM2B_MAX_BUFFER out_data = {
-            { sizeof(TPM2B_MAX_BUFFER) - 2, }
-    };
+    TPM2B_MAX_BUFFER out_data = TPM2B_TYPE_INIT(TPM2B_MAX_BUFFER, buffer);
 
-    TPM2B_IV iv_out = {
-            { sizeof(TPM2B_IV) - 2, }
-    };
+    TPM2B_IV iv_out = TPM2B_TYPE_INIT(TPM2B_IV, buffer);
 
     TSS2_SYS_CMD_AUTHS sessions_data;
     TPMS_AUTH_RESPONSE session_data_out;
@@ -236,8 +232,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     tpm_encrypt_decrypt_ctx ctx = {
         .session_data = { 0 },
         .is_decrypt = NO,
-        .data = { 0 },
-        .session_data = 0,
+        .data = {{ 0 }},
         .sapi_context = sapi_context
     };
 

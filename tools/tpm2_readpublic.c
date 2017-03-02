@@ -64,13 +64,9 @@ static int read_public_and_save(tpm_readpub_ctx *ctx) {
             { 0, }
     };
 
-    TPM2B_NAME name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NAME qualified_name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     session_out_data_array[0] = &session_out_data;
     sessions_out_data.rspAuths = &session_out_data_array[0];

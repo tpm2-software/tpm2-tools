@@ -63,7 +63,7 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_DIGEST hmac_out = { { sizeof(TPM2B_DIGEST) - 2, } };
+    TPM2B_DIGEST hmac_out = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     session_data_array[0] = &ctx->session_data;
     session_data_out_array[0] = &session_data_out;
@@ -75,8 +75,6 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
     sessions_data.cmdAuthsCount = 1;
 
     ctx->session_data.sessionHandle = TPM_RS_PW;
-    ctx->session_data.nonce.t.size = 0;
-    *((UINT8 *) ((void *) &ctx->session_data.sessionAttributes)) = 0;
 
     TPM_RC rval = Tss2_Sys_HMAC(ctx->sapi_context, ctx->key_handle,
             &sessions_data, &ctx->data, ctx->algorithm, &hmac_out,
@@ -97,7 +95,7 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
             sizeof(hmac_out));
 }
 
-#define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
+#define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
 
 static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
 

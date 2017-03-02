@@ -131,7 +131,6 @@ print_tpm_rc_format_one (TPM_RC rc)
 {
     TPM_RC rc_tmp;
     tpm2_rc_entry_t *entry;
-    int ret;
 
     printf ("format 1 error code\n");
     rc_tmp = tpm2_rc_get_code_6bit (rc);

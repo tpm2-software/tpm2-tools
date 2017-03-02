@@ -76,13 +76,9 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
             { 0, }
     };
 
-    TPM2B_NAME name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NAME qaulified_name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME qaulified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
             &qaulified_name, &sessions_data_out);
@@ -127,9 +123,7 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT keyHandle,
 
 static bool sign_and_save(tpm_sign_ctx *ctx) {
 
-    TPM2B_DIGEST digest = {
-            { sizeof(TPM2B_DIGEST) - 2, }
-    };
+    TPM2B_DIGEST digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     TPMT_SIG_SCHEME in_scheme;
     TPMT_SIGNATURE signature;

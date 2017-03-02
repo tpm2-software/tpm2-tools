@@ -268,7 +268,6 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
 
     takeownership_ctx ctx = {
-            .passwords = { 0 },
             .sapi_context = sapi_context,
             .is_hex_passwords = false
     };
