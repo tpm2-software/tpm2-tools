@@ -76,7 +76,8 @@ sbin_PROGRAMS = \
     tools/tpm2_rsadecrypt \
     tools/tpm2_rsaencrypt \
     tools/tpm2_sign \
-    tools/tpm2_unseal
+    tools/tpm2_unseal \
+    tools/tpm2_createpolicy
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
@@ -131,6 +132,7 @@ tools_tpm2_rsadecrypt_SOURCES = tools/tpm2_rsadecrypt.c tools/main.c
 tools_tpm2_rsaencrypt_SOURCES = tools/tpm2_rsaencrypt.c tools/main.c
 tools_tpm2_sign_SOURCES = tools/tpm2_sign.c tools/main.c
 tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c tools/main.c
+tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c tools/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 tools_tpm2_rc_decode_SOURCES = lib/rc-decode.c tools/tpm2_rc_decode.c
@@ -196,6 +198,7 @@ man8_MANS = \
     man/man8/tpm2_rsaencrypt.8 \
     man/man8/tpm2_sign.8 \
     man/man8/tpm2_unseal.8 \
+    man/man8/tpm2_createpolicy.8 \
     man/man8/tpm2_verifysignature.8 \
     man/man8/tpm2_listpersistent.8 \
     man/man8/tpm2_rc_decode.8
