@@ -22,7 +22,7 @@ install:
     - ./tpm_server &
     - popd && popd
     - git clone https://github.com/01org/TPM2.0-TSS.git
-    - pushd TPM2.0-TSS && ./bootstrap && CONFIG_SITE=./lib/default_config.site ./configure && make -j$(nproc) && sudo make install && popd
+    - pushd TPM2.0-TSS && ./bootstrap && ./configure && make -j$(nproc) && sudo make install && popd
     - sudo ldconfig /usr/local/lib
     - resourcemgr -sim -tpmhost 127.0.0.1 &
     - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.0.1-2_amd64.deb
@@ -38,15 +38,15 @@ before_script:
 script:
   - mkdir ./build
   - pushd ./build
-  - CONFIG_SITE=../lib/default_config.site ../configure --enable-unit
+  - ../configure --enable-unit
   - make -j$(nproc)
   - make -j$(nproc) check
   - make -j$(nproc) clean
-  - CONFIG_SITE=../lib/default_config.site ../configure --enable-unit --without-tcti-socket
+  - ../configure --enable-unit --without-tcti-socket
   - make -j$(nproc)
   - make -j$(nproc) check
   - make -j$(nproc) clean
-  - CONFIG_SITE=../lib/default_config.site ../configure --enable-unit --without-tcti-device
+  - ../configure --enable-unit --without-tcti-device
   - make -j$(nproc)
   - make -j$(nproc) check
   - popd
