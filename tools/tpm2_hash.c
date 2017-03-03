@@ -86,7 +86,7 @@ static bool get_hierarchy_value(const char *hiearchy_code,
 
 static bool hash_and_save(tpm_hash_ctx *ctx) {
 
-    TPM2B_DIGEST outHash = { { sizeof(TPM2B_DIGEST) - 2, } };
+    TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
     UINT32 rval = Tss2_Sys_Hash(ctx->sapi_context, 0, &ctx->data, ctx->halg,
@@ -107,14 +107,16 @@ static bool hash_and_save(tpm_hash_ctx *ctx) {
         printf("%02x ", validation.digest.t.buffer[i]);
     printf("\n");
 
-    int rc = saveDataToFile(ctx->outHashFilePath, (UINT8 *) &outHash,
+    /* TODO fix serialization */
+    bool result = files_save_bytes_to_file(ctx->outHashFilePath, (UINT8 *) &outHash,
             sizeof(outHash));
-    if (rc) {
+    if (!result) {
         return false;
     }
 
-    return saveDataToFile(ctx->outTicketFilePath, (UINT8 *) &validation,
-            sizeof(validation)) == 0;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->outTicketFilePath, (UINT8 *) &validation,
+            sizeof(validation));
 }
 
 static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
@@ -157,7 +159,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             break;
         case 'I':
             flags++;
-            res = getFileSize(optarg, &fileSize) == 0;
+            res = files_get_file_size(optarg, &fileSize);
             if (!res) {
                 return false;
             }
@@ -168,7 +170,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
                 return false;
             }
             ctx->data.t.size = fileSize;
-            res = loadDataFromFile(optarg, ctx->data.t.buffer, &ctx->data.t.size) == 0;
+            res = files_load_bytes_from_file(optarg, ctx->data.t.buffer, &ctx->data.t.size);
             if (!res) {
                 return false;
             }
@@ -177,8 +179,8 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             flags++;
             snprintf(ctx->outHashFilePath, sizeof(ctx->outHashFilePath), "%s",
                     optarg);
-            res = checkOutFile(ctx->outHashFilePath) == 0;
-            if (!res) {
+            res = files_does_file_exist(ctx->outHashFilePath);
+            if (res) {
                 return false;
             }
             break;
@@ -186,8 +188,8 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             flags++;
             snprintf(ctx->outTicketFilePath, sizeof(ctx->outTicketFilePath),
                     "%s", optarg);
-            res = checkOutFile(ctx->outTicketFilePath) == 0;
-            if (!res) {
+            res = files_does_file_exist(ctx->outTicketFilePath);
+            if (res) {
                 return false;
             }
             break;
@@ -217,6 +219,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* opts is unused, avoid compiler warning */
     (void)opts;
+    (void)envp;
 
     tpm_hash_ctx ctx = {
             .sapi_context = sapi_context,

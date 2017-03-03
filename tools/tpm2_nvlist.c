@@ -44,9 +44,7 @@
 static bool nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_RH_NV_INDEX nv_index) {
 
-    TPM2B_NAME nv_name = {
-            { sizeof(TPM2B_NAME)-2, }
-    };
+    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM2B_NV_PUBLIC nv_public = {
             { 0, }

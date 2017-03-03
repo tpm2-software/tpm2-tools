@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -6,146 +7,314 @@
 #include "log.h"
 #include "string-bytes.h"
 
-static TPMS_CONTEXT context;
+static bool get_file_size(FILE *fp, long *file_size, const char *path) {
 
-int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size)
-{
-    UINT16 count = 1, left;
-    FILE *f;
-    if ( size == NULL || buf == NULL || fileName == NULL )
-        return -1;
-
-    f = fopen(fileName, "rb+");
-    if( f == NULL )
-    {
-        printf("File(%s) open error.\n", fileName);
-        return -2;
+    long current = ftell(fp);
+    if (current < 0) {
+        LOG_ERR("Error getting current file offset for file \"%s\" error: %s", path, strerror(errno));
+        return false;
     }
 
-    left = *size;
-    *size = 0;
-    while( left > 0 && count > 0 )
-    {
-        count = fread(buf, 1, left, f);
-        *size += count;
-        left -= count;
-        buf += count;
+    int rc = fseek(fp, 0, SEEK_END);
+    if (rc < 0) {
+        LOG_ERR("Error seeking to end of file \"%s\" error: %s", path, strerror(errno));
+        return false;
     }
 
-    if( *size == 0 )
-    {
-        printf("File read error\n");
-        fclose(f);
-        return -3;
-    }
-    fclose(f);
-    return 0;
-}
-
-int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size)
-{
-    FILE *f;
-    UINT16 count = 1;
-    if( fileName == NULL || buf == NULL || size == 0 )
-        return -1;
-
-    f = fopen(fileName, "wb+");
-    if( f == NULL )
-    {
-        printf("File(%s) open error.\n", fileName);
-        return -2;
-    }
-
-    while( size > 0 && count > 0 )
-    {
-        count = fwrite(buf, 1, size, f);
-        size -= count;
-        buf += count;
-    }
-
-    if( size > 0 )
-    {
-        printf("File write error\n");
-        fclose(f);
-        return -3;
-    }
-
-    fclose(f);
-    return 0;
-}
-
-int saveTpmContextToFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle, const char *fileName)
-{
-    TPM_RC rval;
-
-    rval = Tss2_Sys_ContextSave( sysContext, handle, &context);
-    if( rval == TPM_RC_SUCCESS &&
-        saveDataToFile(fileName, (UINT8 *)&context, sizeof(TPMS_CONTEXT)) )
-        rval = TPM_RC_FAILURE;
-
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......ContextSave:Save handle 0x%x context failed. TPM Error:0x%x......\n", handle, rval);
-        return -1;
-    }
-
-    return 0;
-}
-
-int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, const char *fileName)
-{
-    TPM_RC rval = TPM_RC_SUCCESS;
-    UINT16 size = sizeof(TPMS_CONTEXT);
-
-    if( loadDataFromFile(fileName, (UINT8 *)&context, &size) )
-        rval = TPM_RC_FAILURE;
-    if( rval == TPM_RC_SUCCESS )
-        rval = Tss2_Sys_ContextLoad(sysContext, &context, handle);
-
-    if( rval != TPM_RC_SUCCESS )
-    {
-        printf("\n......ContextLoad Error. TPM Error:0x%x......\n", rval);
-        return -1;
-    }
-
-    return 0;
-}
-
-int checkOutFile(const char *path)
-{
-    FILE *fp = fopen(path,"rb");
-    if(NULL != fp)
-    {
-        fclose(fp);
-        printf("OutFile: %s Already Exist, Please Rename OR Delete It!\n",path);
-        return -1;
-    }
-    return 0;
-}
-
-int getFileSize(const char *path, long *fileSize)
-{
-    int rc = -1;
-    FILE *fp = fopen(path,"rb");
-    if(NULL == fp)
-    {
-        LOG_ERR("fopen on file: \"%s\"  failed: %s !\n", path, strerror(errno));
-        return -1;
-    }
-    fseek(fp, 0, SEEK_SET);
-    fseek(fp, 0, SEEK_END);
     long size = ftell(fp);
     if (size < 0) {
         LOG_ERR("ftell on file \"%s\" failed: %s", path, strerror(errno));
+        return false;
+    }
+
+    rc = fseek(fp, current, SEEK_SET);
+    if (rc < 0) {
+        LOG_ERR("Could not restore initial stream position for file \"%s\" failed: %s", path, strerror(errno));
+        return false;
+    }
+
+    *file_size = size;
+    return true;
+}
+
+bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size) {
+
+    if (!buf || !size || !path) {
+        return false;
+    }
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("Could not open file \"%s\" error %s", path, strerror(errno));
+        return false;
+    }
+
+    long file_size;
+    bool result = get_file_size(f, &file_size, path);
+    if (!result) {
+        /* get_file_size() logs errors */
         goto err;
     }
 
-    *fileSize = size;
-    rc = 0;
+    /* max is bounded on UINT16 */
+    if (file_size > *size) {
+        LOG_ERR(
+                "File \"%s\" size is larger than buffer, got %ld expected less than %u",
+                path, file_size, *size);
+        goto err;
+    }
+
+    result = files_read_bytes(f, buf, file_size);
+    if (!result) {
+        LOG_ERR("Could not read data from file \"%s\"", path);
+        goto err;
+    }
+
+    *size = file_size;
+    /* result set on files_read_bytes */
 
 err:
+    fclose(f);
+    return result;
+}
+
+bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
+
+    if (!path || !buf) {
+        return false;
+    }
+
+    FILE *fp = fopen(path, "wb+");
+
+    bool result = files_write_bytes(fp, buf, size);
+    if (!result) {
+        LOG_ERR("Could not write data to file \"%s\"", path);
+    }
     fclose(fp);
-    return rc;
+    return result;
+}
+
+/*
+ * Current version to write TPMS_CONTEXT to disk.
+ */
+#define CONTEXT_VERSION 1
+
+bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle,
+        const char *path) {
+
+    TPMS_CONTEXT context;
+
+    TPM_RC rval = Tss2_Sys_ContextSave(sysContext, handle, &context);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR(
+                "Tss2_Sys_ContextSave: Saving handle 0x%x context failed. TPM Error:0x%x",
+                handle, rval);
+        return false;
+    }
+
+    FILE *f = fopen(path, "w+b");
+    if (!f) {
+        LOG_ERR("Error opening file \"%s\" due to error: %s", path,
+                strerror(errno));
+        return false;
+    }
+
+    /*
+     * Saving the TPMS_CONTEXT structure to disk, format:
+     * TPM2.0-TOOLS HEADER
+     * U32 hiearchy
+     * U32 savedHandle
+     * U64 sequence
+     * U16 contextBlobLength
+     * BYTE[] contextBlob
+     */
+    bool result = files_write_header(f, CONTEXT_VERSION);
+    if (!result) {
+        LOG_ERR("Could not write header for file: \"%s\"", path);
+        goto out;
+    }
+
+    // UINT32
+    result = files_write_32(f, context.hierarchy);
+    if (!result) {
+        LOG_ERR("Could not write hierarchy for file: \"%s\"", path);
+        goto out;
+    }
+
+    result = files_write_32(f, context.savedHandle);
+    if (!result) {
+        LOG_ERR("Could not write savedHandle for file: \"%s\"", path);
+        goto out;
+    }
+
+    // UINT64
+    result = files_write_64(f, context.sequence);
+    if (!result) {
+        LOG_ERR("Could not write sequence for file: \"%s\"", path);
+        goto out;
+    }
+
+    // U16 LENGTH
+    result = files_write_16(f, context.contextBlob.t.size);
+    if (!result) {
+        LOG_ERR("Could not write contextBob size file: \"%s\"", path);
+        goto out;
+    }
+
+    // BYTE[] contextBlob
+    result = files_write_bytes(f, context.contextBlob.t.buffer,
+            context.contextBlob.t.size);
+    if (!result) {
+        LOG_ERR("Could not write contextBlob buffer for file: \"%s\"", path);
+    }
+    /* result is set by file_write_bytes() */
+
+out:
+    fclose(f);
+    return result;
+}
+
+bool file_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
+        TPM_HANDLE *handle, const char *path) {
+
+    TPM_RC rval;
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("Error opening file \"%s\" due to error: %s", path,
+                strerror(errno));
+        return false;
+    }
+
+    /*
+     * Reading the TPMS_CONTEXT structure to disk, format:
+     * TPM2.0-TOOLS HEADER
+     * U32 hiearchy
+     * U32 savedHandle
+     * U64 sequence
+     * U16 contextBlobLength
+     * BYTE[] contextBlob
+     */
+    UINT32 version;
+    TPMS_CONTEXT context;
+    bool result = files_read_header(f, &version);
+    if (!result) {
+        LOG_WARN(
+                "The tpm context file \"%s\" does not appear in the proper format, assuming old format, this will be converted on the next save.",
+                path);
+        rewind(f);
+        result = files_read_bytes(f, (UINT8 *) &context, sizeof(context));
+        if (!result) {
+            LOG_ERR("Could not load file \"%s\" into tpm context", path);
+            goto out;
+        }
+        /* Success load the context into the TPM */
+        goto load_to_tpm;
+    }
+
+    if (version != CONTEXT_VERSION) {
+        LOG_ERR("Unsupported context file format version found, got: %"PRIu32,
+                version);
+        result = false;
+        goto out;
+    }
+
+    result = files_read_32(f, &context.hierarchy);
+    if (!result) {
+        LOG_ERR("Error reading hierarchy!");
+        goto out;
+    }
+
+    result = files_read_32(f, &context.savedHandle);
+    if (!result) {
+        LOG_ERR("Error reading savedHandle!");
+        goto out;
+    }
+
+    result = files_read_64(f, &context.sequence);
+    if (!result) {
+        LOG_ERR("Error reading sequence!");
+        goto out;
+    }
+
+    result = files_read_16(f, &context.contextBlob.t.size);
+    if (!result) {
+        LOG_ERR("Error reading contextBlob.size!");
+        goto out;
+    }
+
+    if (context.contextBlob.t.size > sizeof(context.contextBlob.t.buffer)) {
+        LOG_ERR(
+                "Size mismatch found on contextBlob, got %"PRIu16" expected less than or equal to %zu",
+                context.contextBlob.t.size,
+                sizeof(context.contextBlob.t.buffer));
+        result = false;
+        goto out;
+    }
+
+    result = files_read_bytes(f, context.contextBlob.t.buffer,
+            context.contextBlob.t.size);
+    if (!result) {
+        LOG_ERR("Error reading contextBlob.size!");
+        goto out;
+    }
+
+load_to_tpm:
+    rval = Tss2_Sys_ContextLoad(sapi_context, &context, handle);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("ContextLoad Error. TPM Error:0x%x", rval);
+        result = false;
+        goto out;
+    }
+
+    result = true;
+
+out:
+    fclose(f);
+    return result;
+}
+
+bool files_does_file_exist(const char *path) {
+
+    if (!path) {
+        LOG_ERR("Path cannot be NULL");
+        return false;
+    }
+
+    FILE *fp = fopen(path,"rb");
+    if (fp) {
+        fclose(fp);
+        LOG_ERR("Path: %s already exists. Please rename or delete the file!",
+                path);
+        return true;
+    }
+    return false;
+}
+
+bool files_get_file_size(const char *path, long *file_size) {
+
+    bool result = false;
+
+    if (!path) {
+        LOG_ERR("Must specify a path argument, cannot be NULL!");
+        return false;
+    }
+
+    if (!file_size) {
+        LOG_ERR("Must specify a file size argument, cannot be NULL!");
+        return false;
+    }
+
+    FILE *fp = fopen(path,"rb");
+    if(!fp) {
+        LOG_ERR("Could not open file: \"%s\" error: %s", path, strerror(errno));
+        return false;
+    }
+
+    result = get_file_size(fp, file_size, path);
+
+    fclose(fp);
+    return result;
 }
 
 /**

@@ -6,8 +6,23 @@
 
 #include <sapi/tpm20.h>
 
+#define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
+
+#define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
+
 int str2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 int hex2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
+
+/**
+ * Appends a TPM2B buffer to a MAX buffer.
+ * @param result
+ *  The MAX buffer to append to
+ * @param append
+ *  The buffer to append to result.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append);
 
 /**
  * Converts a numerical string into a uint32 value.
@@ -74,36 +89,5 @@ UINT32 string_bytes_endian_convert_32(UINT32 data);
  * Just like string_bytes_endian_convert_16 but for 64 bit values.
  */
 UINT64 string_bytes_endian_convert_64(UINT64 data);
-
-/*
- * Leave the old interfaces for now and mark as deprecated,
- * on porting activities fix-up callers of these.
- */
-#define deprecated __attribute__ ((deprecated))
-static inline int deprecated getSizeUint16(const char *arg, UINT16 *num) {
-
-    return !string_bytes_get_uint16(arg, num);
-}
-
-static inline int deprecated getSizeUint16Hex(const char *arg, UINT16 *num) {
-
-    return !string_bytes_get_uint16(arg, num);
-}
-
-static inline int deprecated getSizeUint32(const char *arg, UINT32 *num) {
-
-    return !string_bytes_get_uint32(arg, num);
-}
-
-static inline int deprecated getSizeUint32Hex(const char *arg, UINT32 *num) {
-
-    return !string_bytes_get_uint32(arg, num);
-}
-
-static inline void deprecated PrintSizedBuffer(TPM2B *buffer) {
-    string_bytes_print_tpm2b(buffer);
-}
-
-#undef deprecated
 
 #endif /* STRING_BYTES_H */

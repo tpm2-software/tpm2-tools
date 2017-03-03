@@ -212,7 +212,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPM2B_ATTEST quoted = { { sizeof(TPM2B_ATTEST)-2, } };
+    TPM2B_ATTEST quoted = TPM2B_TYPE_INIT(TPM2B_ATTEST, attestationData);
     TPMT_SIGNATURE signature;
 
     TPMS_AUTH_COMMAND *sessionDataArray[1];
@@ -287,6 +287,9 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
 
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
               TSS2_SYS_CONTEXT *sapi_context) {
+
+    (void) envp;
+    (void) opts;
 
     int opt = -1;
     const char *optstring = "hvk:c:P:l:g:L:o:Xq:";
@@ -388,7 +391,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             break;
         case 'o':
             snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
+            if(files_does_file_exist(outFilePath))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -6;
@@ -434,7 +437,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             sessionData.hmac.t.size = 0;
 
         if(c_flag)
-            returnVal = loadTpmContextFromFile(sapi_context, &akHandle, contextFilePath);
+            returnVal = file_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath) != true;
         if(returnVal == TPM_RC_SUCCESS)
             returnVal = quote(sapi_context, akHandle, &pcrSelections);
         if(returnVal)

@@ -93,17 +93,11 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context, tpm_makecre
     TSS2_SYS_RSP_AUTHS sessions_data_out;
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_NAME name_ext = {
-            { sizeof(TPM2B_NAME)-2, }
-    };
+    TPM2B_NAME name_ext = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_ID_OBJECT cred_blob = {
-            { sizeof(TPM2B_ID_OBJECT)-2, }
-    };
+    TPM2B_ID_OBJECT cred_blob = TPM2B_TYPE_INIT(TPM2B_ID_OBJECT, credential);
 
-    TPM2B_ENCRYPTED_SECRET secret = {
-            { sizeof(TPM2B_ENCRYPTED_SECRET)-2, }
-    };
+    TPM2B_ENCRYPTED_SECRET secret = TPM2B_TYPE_INIT(TPM2B_ENCRYPTED_SECRET, secret);
 
     session_data_out_array[0] = &session_data_out;
     sessions_data_out.rspAuths = &session_data_out_array[0];
@@ -157,15 +151,15 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         switch (opt) {
         case 'e':
             size = sizeof(ctx->public);
-            if (loadDataFromFile(optarg, (UINT8 *) &ctx->public, &size) != 0) {
+            if (!files_load_bytes_from_file(optarg, (UINT8 *) &ctx->public, &size)) {
                 return false;
             }
             flagCnt++;
             break;
         case 's':
             ctx->credential.t.size = sizeof(ctx->credential) - 2;
-            if (loadDataFromFile(optarg, ctx->credential.t.buffer,
-                    &ctx->credential.t.size) != 0) {
+            if (!files_load_bytes_from_file(optarg, ctx->credential.t.buffer,
+                    &ctx->credential.t.size)) {
                 return false;
             }
             flagCnt++;
@@ -181,7 +175,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         case 'o':
             snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
                     optarg);
-            if (checkOutFile(ctx->out_file_path) != 0) {
+            if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
             }
             flagCnt++;
@@ -211,6 +205,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* opts is unused, avoid compiler warning */
     (void) opts;
+    (void) envp;
 
     tpm_makecred_ctx ctx = { 0 };
     bool result = init(argc, argv, &ctx);

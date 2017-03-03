@@ -58,9 +58,7 @@ static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
 
     TPMT_RSA_DECRYPT inScheme;
     TPM2B_DATA label;
-    TPM2B_PUBLIC_KEY_RSA message = {
-            { sizeof(TPM2B_PUBLIC_KEY_RSA)-2, }
-    };
+    TPM2B_PUBLIC_KEY_RSA message = TPM2B_TYPE_INIT(TPM2B_PUBLIC_KEY_RSA, buffer);
 
     TSS2_SYS_CMD_AUTHS sessions_data;
     TPMS_AUTH_RESPONSE session_data_out;
@@ -86,13 +84,8 @@ static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
         return false;
     }
 
-    int rc = saveDataToFile(ctx->output_file_path, message.t.buffer,
+    return files_save_bytes_to_file(ctx->output_file_path, message.t.buffer,
             message.t.size);
-    if (rc) {
-        return false;
-    }
-
-    return true;
 }
 
 static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
@@ -149,17 +142,17 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
             break;
         case 'I': {
             ctx->cipher_text.t.size = sizeof(ctx->cipher_text) - 2;
-            int rc = loadDataFromFile(optarg, ctx->cipher_text.t.buffer,
+            bool result = files_load_bytes_from_file(optarg, ctx->cipher_text.t.buffer,
                     &ctx->cipher_text.t.size);
-            if (rc) {
+            if (!result) {
                 return false;
             }
             flags.I = 1;
         }
             break;
         case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+            bool result = files_does_file_exist(optarg);
+            if (result) {
                 return false;
             }
             snprintf(ctx->output_file_path, sizeof(ctx->output_file_path), "%s",
@@ -192,8 +185,8 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle, context_key_file);
-        if (rc) {
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle, context_key_file);
+        if (!result) {
             return false;
         }
     }
@@ -211,7 +204,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_rsadecrypt_ctx ctx = {
             .key_handle = 0,
-            .cipher_text = { 0 },
+            .cipher_text = {{ 0 }},
             .output_file_path = { 0 },
             .session_data = { 0 },
             .sapi_context = sapi_context

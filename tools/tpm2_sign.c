@@ -76,13 +76,9 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
             { 0, }
     };
 
-    TPM2B_NAME name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NAME qaulified_name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME qaulified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
             &qaulified_name, &sessions_data_out);
@@ -127,9 +123,7 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT keyHandle,
 
 static bool sign_and_save(tpm_sign_ctx *ctx) {
 
-    TPM2B_DIGEST digest = {
-            { sizeof(TPM2B_DIGEST) - 2, }
-    };
+    TPM2B_DIGEST digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     TPMT_SIG_SCHEME in_scheme;
     TPMT_SIGNATURE signature;
@@ -173,8 +167,9 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
         return false;
     }
 
-    return saveDataToFile(ctx->outFilePath, (UINT8 *) &signature,
-            sizeof(signature)) == 0;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &signature,
+            sizeof(signature));
 }
 
 static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
@@ -249,17 +244,17 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             break;
         case 't': {
             UINT16 size = sizeof(ctx->validation);
-            int rc = loadDataFromFile(optarg, (UINT8 *) &ctx->validation,
+            bool result = files_load_bytes_from_file(optarg, (UINT8 *) &ctx->validation,
                     &size);
-            if (rc) {
+            if (!result) {
                 return false;
             }
             flags.t = 1;
         }
             break;
         case 's': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+            bool result = files_does_file_exist(optarg);
+            if (result) {
                 return false;
             }
             snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
@@ -305,9 +300,9 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
      * load tpm context from a file if -c is provided
      */
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->keyHandle,
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->keyHandle,
                 contextKeyFile);
-        if (rc) {
+        if (!result) {
             return false;
         }
     }
@@ -315,32 +310,32 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     /*
      * Process the msg file
      */
-    long fileSize;
-    int rc = getFileSize(inMsgFileName, &fileSize);
-    if (rc) {
+    long file_size;
+    result = files_get_file_size(inMsgFileName, &file_size);
+    if (!result) {
         return false;
     }
-    if (fileSize == 0) {
+    if (file_size == 0) {
         LOG_ERR("The message file \"%s\" is empty!", inMsgFileName);
         return false;
     }
 
-    if (fileSize > 0xffff) {
+    if (file_size > 0xffff) {
         LOG_ERR(
                 "The message file was longer than a 16 bit length, got: %ld, expected less than: %d!",
-                fileSize, 0x10000);
+                file_size, 0x10000);
         return false;
     }
 
-    ctx->msg = (BYTE*) calloc(1, fileSize);
+    ctx->msg = (BYTE*) calloc(1, file_size);
     if (!ctx->msg) {
         LOG_ERR("oom");
         return false;
     }
 
-    ctx->length = fileSize;
-    rc = loadDataFromFile(inMsgFileName, ctx->msg, &ctx->length);
-    if (rc) {
+    ctx->length = file_size;
+    result = files_load_bytes_from_file(inMsgFileName, ctx->msg, &ctx->length);
+    if (!result) {
         free(ctx->msg);
         return false;
     }

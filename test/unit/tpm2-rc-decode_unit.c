@@ -43,6 +43,8 @@
 static void
 tpm2_rc_is_format_zero_true (void **state)
 {
+    (void) state;
+
     TPM_RC rc = 0xffffff7f;
 
     assert_true (tpm2_rc_is_format_zero (rc));
@@ -50,6 +52,8 @@ tpm2_rc_is_format_zero_true (void **state)
 static void
 tpm2_rc_is_format_zero_false (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TPM_RC_ALL_1;
 
     assert_false (tpm2_rc_is_format_zero (rc));
@@ -57,6 +61,8 @@ tpm2_rc_is_format_zero_false (void **state)
 static void
 tpm2_rc_is_format_one_true (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TPM_RC_ALL_1;
 
     assert_true (tpm2_rc_is_format_one (rc));
@@ -64,6 +70,8 @@ tpm2_rc_is_format_one_true (void **state)
 static void
 tpm2_rc_is_format_one_false (void **state)
 {
+    (void) state;
+
     TPM_RC rc = 0xffffff7f;
 
     assert_false (tpm2_rc_is_format_one (rc));
@@ -76,6 +84,8 @@ tpm2_rc_is_format_one_false (void **state)
 static void
 tpm2_rc_is_tpm12_true (void **state)
 {
+    (void) state;
+
     /* bits 7 & 8 clear */
     TPM_RC rc = 0xfffffe7f;
 
@@ -84,6 +94,8 @@ tpm2_rc_is_tpm12_true (void **state)
 static void
 tpm2_rc_is_tpm12_false (void **state)
 {
+    (void) state;
+
     TPM_RC rc = 0xfffffe7f;
 
     assert_false (tpm2_rc_is_tpm2 (rc));
@@ -95,6 +107,8 @@ tpm2_rc_is_tpm12_false (void **state)
 static void
 tpm2_rc_is_tpm2_01 (void **state)
 {
+    (void) state;
+
     /* bit 7 set, bit 8 clear */
     TPM_RC rc = 0xfffffeff;
 
@@ -103,6 +117,8 @@ tpm2_rc_is_tpm2_01 (void **state)
 static void
 tpm2_rc_is_tpm2_10 (void **state)
 {
+    (void) state;
+
     /* bit 7 clear, bit 8 set */
     TPM_RC rc = 0xffffff7f;
 
@@ -111,6 +127,8 @@ tpm2_rc_is_tpm2_10 (void **state)
 static void
 tpm2_rc_is_tpm2_11 (void **state)
 {
+    (void) state;
+
     /* bit 7 and 8 set */
     TPM_RC rc = TPM_RC_ALL_1;
 
@@ -121,6 +139,8 @@ tpm2_rc_is_tpm2_11 (void **state)
 static void
 tpm2_rc_is_vendor_defined_code_all_but_7 (void **state)
 {
+    (void) state;
+
     /* bit 7 clear, bit 8 and 10 set */
     TPM_RC rc = 0xffffff7f;
 
@@ -130,6 +150,8 @@ tpm2_rc_is_vendor_defined_code_all_but_7 (void **state)
 static void
 tpm2_rc_is_vendor_defined_code_7_set (void **state)
 {
+    (void) state;
+
     /* bit 7, 8 and 10 set */
     TPM_RC rc = TPM_RC_ALL_1;
 
@@ -139,6 +161,8 @@ tpm2_rc_is_vendor_defined_code_7_set (void **state)
 static void
 tpm2_rc_is_vendor_defined_code_8_unset (void **state)
 {
+    (void) state;
+
     /* bit 7 and 8 clear, bit 10 set */
     TPM_RC rc = 0xfffffe7f;
 
@@ -148,6 +172,8 @@ tpm2_rc_is_vendor_defined_code_8_unset (void **state)
 static void
 tpm2_rc_is_vendor_defined_code_10_unset (void **state)
 {
+    (void) state;
+
     /* bit 7 and 10 clear, bit 8 set */
     TPM_RC rc = 0xfffffb7f;
 
@@ -157,6 +183,8 @@ tpm2_rc_is_vendor_defined_code_10_unset (void **state)
 static void
 tpm2_rc_is_vendor_defined_code_no_9 (void **state)
 {
+    (void) state;
+
     /* bit 7 and 9 clear, bit 8 and 10 set */
     TPM_RC rc = 0xfffffd7f;
 
@@ -167,6 +195,8 @@ tpm2_rc_is_vendor_defined_code_no_9 (void **state)
 static void
 tpm2_rc_is_warning_code_success (void **state)
 {
+    (void) state;
+
     /* bit 7 and 10 clear, bit 8 and 11 set */
     TPM_RC rc = 0xfffff97f;
 
@@ -176,6 +206,8 @@ tpm2_rc_is_warning_code_success (void **state)
 static void
 tpm2_rc_is_warning_code_8_unset (void **state)
 {
+    (void) state;
+
     /* bit 7, 8 and 10 clear, bit 11 set */
     TPM_RC rc = 0xfffffa7f;
 
@@ -185,6 +217,8 @@ tpm2_rc_is_warning_code_8_unset (void **state)
 static void
 tpm2_rc_is_warning_code_7_set (void **state)
 {
+    (void) state;
+
     /* bit 7, 8 and 11 set, bit 10 clear */
     TPM_RC rc = 0xfffff9ff;
 
@@ -194,6 +228,8 @@ tpm2_rc_is_warning_code_7_set (void **state)
 static void
 tpm2_rc_is_warning_code_10_set (void **state)
 {
+    (void) state;
+
     /* bit 8, 10 and 11 set, bit 7 clear */
     TPM_RC rc = 0xfffff7f;
 
@@ -204,6 +240,8 @@ tpm2_rc_is_warning_code_10_set (void **state)
 static void
 tpm2_rc_is_warning_code_11_unset (void **state)
 {
+    (void) state;
+
     /* bit 8 set, bits 7, 10 and 11 clear */
     TPM_RC rc = 0xfffff37f;
 
@@ -214,6 +252,8 @@ tpm2_rc_is_warning_code_11_unset (void **state)
 static void
 tpm2_rc_is_error_code_success (void **state)
 {
+    (void) state;
+
     TPM_RC rc = 0xfffff37f;
 
     assert_true (tpm2_rc_is_error_code (rc));
@@ -222,6 +262,8 @@ tpm2_rc_is_error_code_success (void **state)
 static void
 tpm2_rc_is_error_code_8_unset (void **state)
 {
+    (void) state;
+
     /* bit 7, 8, 10 and 11 clear */
     TPM_RC rc = 0xfffff27f;
 
@@ -231,6 +273,8 @@ tpm2_rc_is_error_code_8_unset (void **state)
 static void
 tpm2_rc_is_error_code_7_set (void **state)
 {
+    (void) state;
+
     /* bit 7 and 8 set, bit 10 and 11 clear*/
     TPM_RC rc = 0xfffff3ff;
 
@@ -240,6 +284,8 @@ tpm2_rc_is_error_code_7_set (void **state)
 static void
 tpm2_rc_is_error_code_10_set (void **state)
 {
+    (void) state;
+
     /* bit 8 and 10 set, bit 7 and 11 clear */
     TPM_RC rc = 0xfffff77f;
 
@@ -249,6 +295,8 @@ tpm2_rc_is_error_code_10_set (void **state)
 static void
 tpm2_rc_is_error_code_11_set (void **state)
 {
+    (void) state;
+
     /* bit 8 and 11 set, bit 7 and 10 clear*/
     TPM_RC rc = 0xfffffb7f;
 
@@ -260,6 +308,8 @@ tpm2_rc_is_error_code_11_set (void **state)
 static void
 tpm2_rc_is_error_code_with_parameter_success (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TPM_RC_ALL_1;
 
     assert_true (tpm2_rc_is_error_code_with_parameter (rc));
@@ -268,6 +318,8 @@ tpm2_rc_is_error_code_with_parameter_success (void **state)
 static void
 tpm2_rc_is_error_code_with_parameter_6_unset (void **state)
 {
+    (void) state;
+
     /* bit 6 clear, bit 7 set */
     TPM_RC rc = 0xffffffbf;
 
@@ -277,6 +329,8 @@ tpm2_rc_is_error_code_with_parameter_6_unset (void **state)
 static void
 tpm2_rc_is_error_code_with_parameter_7_unset (void **state)
 {
+    (void) state;
+
     /* bit 6 set, bit 7 clear */
     TPM_RC rc = 0xffffff7f;
 
@@ -288,6 +342,8 @@ tpm2_rc_is_error_code_with_parameter_7_unset (void **state)
 static void
 tpm2_rc_is_error_code_with_handle_success (void **state)
 {
+    (void) state;
+
     TPM_RC rc = 0xfffff7bf;
 
     assert_true (tpm2_rc_is_error_code_with_handle (rc));
@@ -296,6 +352,8 @@ tpm2_rc_is_error_code_with_handle_success (void **state)
 static void
 tpm2_rc_is_error_code_with_handle_6_set (void **state)
 {
+    (void) state;
+
     /* bit 6 and 7 set, bit 11 clear*/
     TPM_RC rc = 0xfffff7ff;
 
@@ -305,6 +363,8 @@ tpm2_rc_is_error_code_with_handle_6_set (void **state)
 static void
 tpm2_rc_is_error_code_with_handle_7_unset (void **state)
 {
+    (void) state;
+
     /* bit 6, 7 and 11 clear */
     TPM_RC rc = 0xfffff73f;
 
@@ -314,6 +374,8 @@ tpm2_rc_is_error_code_with_handle_7_unset (void **state)
 static void
 tpm2_rc_is_error_code_with_handle_11_set (void **state)
 {
+    (void) state;
+
     /* bit 6 clear, bit 7 and 11 clear */
     TPM_RC rc = 0xffffffbf;
 
@@ -325,6 +387,8 @@ tpm2_rc_is_error_code_with_handle_11_set (void **state)
 static void
 tpm2_rc_is_error_code_with_session_success (void **state)
 {
+    (void) state;
+
     /* bit 6 clear, bits 7 & 11 set */
     TPM_RC rc = 0xffffffbf;
 
@@ -334,6 +398,8 @@ tpm2_rc_is_error_code_with_session_success (void **state)
 static void
 tpm2_rc_is_error_code_with_session_6_set (void **state)
 {
+    (void) state;
+
     /* bits 6, 7 & 11 set */
     TPM_RC rc = TPM_RC_ALL_1;
 
@@ -343,6 +409,8 @@ tpm2_rc_is_error_code_with_session_6_set (void **state)
 static void
 tpm2_rc_is_error_code_with_session_7_unset (void **state)
 {
+    (void) state;
+
     /* bits 6 & 7 clear, bit 11 set */
     TPM_RC rc = 0xffffff3f;
 
@@ -352,6 +420,8 @@ tpm2_rc_is_error_code_with_session_7_unset (void **state)
 static void
 tpm2_rc_is_error_code_with_session_11_unset (void **state)
 {
+    (void) state;
+
     /* bits 6 & 11 clear, bit 7 set */
     TPM_RC rc = 0xfffff7bf;
 
@@ -364,6 +434,8 @@ tpm2_rc_is_error_code_with_session_11_unset (void **state)
 static void
 tpm2_rc_get_code_7bit_all (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TPM_RC_ALL_1;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), 0x0000003f);
@@ -371,6 +443,8 @@ tpm2_rc_get_code_7bit_all (void **state)
 static void
 tpm2_rc_get_code_7bit_general_failure (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_6BIT_ERROR_MASK | TSS2_BASE_RC_GENERAL_FAILURE;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), TSS2_BASE_RC_GENERAL_FAILURE);
@@ -382,6 +456,8 @@ tpm2_rc_get_code_7bit_general_failure (void **state)
 static void
 tpm2_rc_get_code_6bit_all (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TPM_RC_ALL_1;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), 0x0000003f);
@@ -389,6 +465,8 @@ tpm2_rc_get_code_6bit_all (void **state)
 static void
 tpm2_rc_get_code_6bit_general_failure (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_6BIT_ERROR_MASK | TSS2_BASE_RC_GENERAL_FAILURE;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), TSS2_BASE_RC_GENERAL_FAILURE);
@@ -398,6 +476,8 @@ tpm2_rc_get_code_6bit_general_failure (void **state)
 static void
 tpm2_rc_get_parameter_number_f (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_PARAMETER_MASK | TPM_RC_F;
 
     assert_int_equal (tpm2_rc_get_parameter_number (rc), TPM_RC_F);
@@ -405,6 +485,8 @@ tpm2_rc_get_parameter_number_f (void **state)
 static void
 tpm2_rc_get_parameter_number_9 (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_PARAMETER_MASK | TPM_RC_9;
 
     assert_int_equal (tpm2_rc_get_parameter_number (rc), TPM_RC_9);
@@ -414,6 +496,8 @@ tpm2_rc_get_parameter_number_9 (void **state)
 static void
 tpm2_rc_get_handle_number_1 (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_HANDLE_MASK | TPM_RC_1;
 
     assert_int_equal (tpm2_rc_get_handle_number (rc), TPM_RC_1);
@@ -422,6 +506,8 @@ tpm2_rc_get_handle_number_1 (void **state)
 static void
 tpm2_rc_get_handle_number_7 (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_HANDLE_MASK | TPM_RC_7;
 
     assert_int_equal (tpm2_rc_get_handle_number (rc), TPM_RC_7);
@@ -430,6 +516,8 @@ tpm2_rc_get_handle_number_7 (void **state)
 static void
 tpm2_rc_get_handle_number_f (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_HANDLE_MASK | TPM_RC_F;
 
     assert_int_not_equal (tpm2_rc_get_handle_number (rc), TPM_RC_F);
@@ -440,6 +528,8 @@ tpm2_rc_get_handle_number_f (void **state)
 static void
 tpm2_rc_get_session_number_1 (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_SESSION_MASK | TPM_RC_1;
 
     assert_int_equal (tpm2_rc_get_session_number (rc), TPM_RC_1);
@@ -447,6 +537,8 @@ tpm2_rc_get_session_number_1 (void **state)
 static void
 tpm2_rc_get_session_number_7 (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_SESSION_MASK | TPM_RC_7;
 
     assert_int_equal (tpm2_rc_get_session_number (rc), TPM_RC_7);
@@ -454,6 +546,8 @@ tpm2_rc_get_session_number_7 (void **state)
 static void
 tpm2_rc_get_session_number_f (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TPM_RC_SESSION_MASK | TPM_RC_F;
 
     assert_int_not_equal (tpm2_rc_get_session_number (rc), TPM_RC_F);
@@ -467,6 +561,8 @@ tpm2_rc_get_session_number_f (void **state)
 static void
 tpm2_rc_get_layer_tpm (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TPM_ERROR_LEVEL;
 
     assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TPM_ERROR_LEVEL);
@@ -474,6 +570,8 @@ tpm2_rc_get_layer_tpm (void **state)
 static void
 tpm2_rc_get_layer_sys (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_SYS_ERROR_LEVEL;
 
     assert_int_equal (tpm2_rc_get_layer (rc), TSS2_SYS_ERROR_LEVEL);
@@ -481,6 +579,8 @@ tpm2_rc_get_layer_sys (void **state)
 static void
 tpm2_rc_get_layer_tcti (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TCTI_ERROR_LEVEL;
 
     assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TCTI_ERROR_LEVEL);
@@ -490,6 +590,8 @@ tpm2_rc_get_layer_tcti (void **state)
 static void
 tpm2_rc_is_from_tss_sys (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_SYS_ERROR_LEVEL;
 
     assert_true (tpm2_rc_is_from_tss (rc));
@@ -497,6 +599,8 @@ tpm2_rc_is_from_tss_sys (void **state)
 static void
 tpm2_rc_is_from_tss_tpm (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TPM_ERROR_LEVEL;
 
     assert_false (tpm2_rc_is_from_tss (rc));
@@ -504,6 +608,8 @@ tpm2_rc_is_from_tss_tpm (void **state)
 static void
 tpm2_rc_is_from_tss_tcti (void **state)
 {
+    (void) state;
+
     TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TCTI_ERROR_LEVEL;
 
     assert_true (tpm2_rc_is_from_tss (rc));
@@ -513,6 +619,8 @@ tpm2_rc_is_from_tss_tcti (void **state)
 static void
 tpm2_rc_get_tss_err_code_general_from_tcti (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TSS2_TCTI_RC_GENERAL_FAILURE;
 
     assert_int_equal (TSS2_BASE_RC_GENERAL_FAILURE,
@@ -521,6 +629,8 @@ tpm2_rc_get_tss_err_code_general_from_tcti (void **state)
 static void
 tpm2_rc_get_tss_err_code_try_again_from_tcti (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TSS2_TCTI_RC_TRY_AGAIN;
 
     assert_int_equal (TSS2_BASE_RC_TRY_AGAIN,
@@ -529,6 +639,8 @@ tpm2_rc_get_tss_err_code_try_again_from_tcti (void **state)
 static void
 tpm2_rc_get_tss_err_code_abi_mismatch_from_sys (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TSS2_SYS_RC_ABI_MISMATCH;
 
     assert_int_equal (TSS2_BASE_RC_ABI_MISMATCH,
@@ -537,6 +649,8 @@ tpm2_rc_get_tss_err_code_abi_mismatch_from_sys (void **state)
 static void
 tpm2_rc_get_tss_err_code_bad_size_from_sys (void **state)
 {
+    (void) state;
+
     TPM_RC rc = TSS2_SYS_RC_BAD_SIZE;
 
     assert_int_equal (TSS2_BASE_RC_BAD_SIZE,
@@ -545,64 +659,68 @@ tpm2_rc_get_tss_err_code_bad_size_from_sys (void **state)
 int
 main (int argc, char* argv[])
 {
-    const UnitTest tests[] = {
-        unit_test (tpm2_rc_is_format_zero_true),
-        unit_test (tpm2_rc_is_format_zero_false),
-        unit_test (tpm2_rc_is_format_one_true),
-        unit_test (tpm2_rc_is_format_one_false),
-        unit_test (tpm2_rc_is_tpm12_true),
-        unit_test (tpm2_rc_is_tpm12_false),
-        unit_test (tpm2_rc_is_tpm2_01),
-        unit_test (tpm2_rc_is_tpm2_10),
-        unit_test (tpm2_rc_is_tpm2_11),
-        unit_test (tpm2_rc_is_vendor_defined_code_all_but_7),
-        unit_test (tpm2_rc_is_vendor_defined_code_7_set),
-        unit_test (tpm2_rc_is_vendor_defined_code_8_unset),
-        unit_test (tpm2_rc_is_vendor_defined_code_10_unset),
-        unit_test (tpm2_rc_is_vendor_defined_code_no_9),
-        unit_test (tpm2_rc_is_warning_code_success),
-        unit_test (tpm2_rc_is_warning_code_8_unset),
-        unit_test (tpm2_rc_is_warning_code_7_set),
-        unit_test (tpm2_rc_is_warning_code_10_set),
-        unit_test (tpm2_rc_is_warning_code_11_unset),
-        unit_test (tpm2_rc_is_error_code_success),
-        unit_test (tpm2_rc_is_error_code_8_unset),
-        unit_test (tpm2_rc_is_error_code_7_set),
-        unit_test (tpm2_rc_is_error_code_10_set),
-        unit_test (tpm2_rc_is_error_code_11_set),
-        unit_test (tpm2_rc_is_error_code_with_parameter_success),
-        unit_test (tpm2_rc_is_error_code_with_parameter_6_unset),
-        unit_test (tpm2_rc_is_error_code_with_parameter_7_unset),
-        unit_test (tpm2_rc_is_error_code_with_handle_success),
-        unit_test (tpm2_rc_is_error_code_with_handle_6_set),
-        unit_test (tpm2_rc_is_error_code_with_handle_7_unset),
-        unit_test (tpm2_rc_is_error_code_with_handle_11_set),
-        unit_test (tpm2_rc_is_error_code_with_session_success),
-        unit_test (tpm2_rc_is_error_code_with_session_6_set),
-        unit_test (tpm2_rc_is_error_code_with_session_7_unset),
-        unit_test (tpm2_rc_is_error_code_with_session_11_unset),
-        unit_test (tpm2_rc_get_code_7bit_all),
-        unit_test (tpm2_rc_get_code_7bit_general_failure),
-        unit_test (tpm2_rc_get_code_6bit_all),
-        unit_test (tpm2_rc_get_code_6bit_general_failure),
-        unit_test (tpm2_rc_get_parameter_number_f),
-        unit_test (tpm2_rc_get_parameter_number_9),
-        unit_test (tpm2_rc_get_handle_number_1),
-        unit_test (tpm2_rc_get_handle_number_7),
-        unit_test (tpm2_rc_get_handle_number_f),
-        unit_test (tpm2_rc_get_session_number_1),
-        unit_test (tpm2_rc_get_session_number_7),
-        unit_test (tpm2_rc_get_session_number_f),
-        unit_test (tpm2_rc_get_layer_tpm),
-        unit_test (tpm2_rc_get_layer_sys),
-        unit_test (tpm2_rc_get_layer_tcti),
-        unit_test (tpm2_rc_is_from_tss_tpm),
-        unit_test (tpm2_rc_is_from_tss_sys),
-        unit_test (tpm2_rc_is_from_tss_tcti),
-        unit_test (tpm2_rc_get_tss_err_code_general_from_tcti),
-        unit_test (tpm2_rc_get_tss_err_code_try_again_from_tcti),
-        unit_test (tpm2_rc_get_tss_err_code_abi_mismatch_from_sys),
-        unit_test (tpm2_rc_get_tss_err_code_bad_size_from_sys),
+    (void)argc;
+    (void)argv;
+
+    const struct CMUnitTest tests[] = {
+        cmocka_unit_test (tpm2_rc_is_format_zero_true),
+        cmocka_unit_test (tpm2_rc_is_format_zero_false),
+        cmocka_unit_test (tpm2_rc_is_format_one_true),
+        cmocka_unit_test (tpm2_rc_is_format_one_false),
+        cmocka_unit_test (tpm2_rc_is_tpm12_true),
+        cmocka_unit_test (tpm2_rc_is_tpm12_false),
+        cmocka_unit_test (tpm2_rc_is_tpm2_01),
+        cmocka_unit_test (tpm2_rc_is_tpm2_10),
+        cmocka_unit_test (tpm2_rc_is_tpm2_11),
+        cmocka_unit_test (tpm2_rc_is_vendor_defined_code_all_but_7),
+        cmocka_unit_test (tpm2_rc_is_vendor_defined_code_7_set),
+        cmocka_unit_test (tpm2_rc_is_vendor_defined_code_8_unset),
+        cmocka_unit_test (tpm2_rc_is_vendor_defined_code_10_unset),
+        cmocka_unit_test (tpm2_rc_is_vendor_defined_code_no_9),
+        cmocka_unit_test (tpm2_rc_is_warning_code_success),
+        cmocka_unit_test (tpm2_rc_is_warning_code_8_unset),
+        cmocka_unit_test (tpm2_rc_is_warning_code_7_set),
+        cmocka_unit_test (tpm2_rc_is_warning_code_10_set),
+        cmocka_unit_test (tpm2_rc_is_warning_code_11_unset),
+        cmocka_unit_test (tpm2_rc_is_error_code_success),
+        cmocka_unit_test (tpm2_rc_is_error_code_8_unset),
+        cmocka_unit_test (tpm2_rc_is_error_code_7_set),
+        cmocka_unit_test (tpm2_rc_is_error_code_10_set),
+        cmocka_unit_test (tpm2_rc_is_error_code_11_set),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_parameter_success),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_parameter_6_unset),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_parameter_7_unset),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_handle_success),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_handle_6_set),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_handle_7_unset),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_handle_11_set),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_session_success),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_session_6_set),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_session_7_unset),
+        cmocka_unit_test (tpm2_rc_is_error_code_with_session_11_unset),
+        cmocka_unit_test (tpm2_rc_get_code_7bit_all),
+        cmocka_unit_test (tpm2_rc_get_code_7bit_general_failure),
+        cmocka_unit_test (tpm2_rc_get_code_6bit_all),
+        cmocka_unit_test (tpm2_rc_get_code_6bit_general_failure),
+        cmocka_unit_test (tpm2_rc_get_parameter_number_f),
+        cmocka_unit_test (tpm2_rc_get_parameter_number_9),
+        cmocka_unit_test (tpm2_rc_get_handle_number_1),
+        cmocka_unit_test (tpm2_rc_get_handle_number_7),
+        cmocka_unit_test (tpm2_rc_get_handle_number_f),
+        cmocka_unit_test (tpm2_rc_get_session_number_1),
+        cmocka_unit_test (tpm2_rc_get_session_number_7),
+        cmocka_unit_test (tpm2_rc_get_session_number_f),
+        cmocka_unit_test (tpm2_rc_get_layer_tpm),
+        cmocka_unit_test (tpm2_rc_get_layer_sys),
+        cmocka_unit_test (tpm2_rc_get_layer_tcti),
+        cmocka_unit_test (tpm2_rc_is_from_tss_tpm),
+        cmocka_unit_test (tpm2_rc_is_from_tss_sys),
+        cmocka_unit_test (tpm2_rc_is_from_tss_tcti),
+        cmocka_unit_test (tpm2_rc_get_tss_err_code_general_from_tcti),
+        cmocka_unit_test (tpm2_rc_get_tss_err_code_try_again_from_tcti),
+        cmocka_unit_test (tpm2_rc_get_tss_err_code_abi_mismatch_from_sys),
+        cmocka_unit_test (tpm2_rc_get_tss_err_code_bad_size_from_sys),
     };
-    return run_tests (tests);
+
+    return cmocka_run_group_tests(tests, NULL, NULL);
 }

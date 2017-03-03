@@ -59,13 +59,9 @@ struct tpm_encrypt_decrypt_ctx {
 
 static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
 
-    TPM2B_MAX_BUFFER out_data = {
-            { sizeof(TPM2B_MAX_BUFFER) - 2, }
-    };
+    TPM2B_MAX_BUFFER out_data = TPM2B_TYPE_INIT(TPM2B_MAX_BUFFER, buffer);
 
-    TPM2B_IV iv_out = {
-            { sizeof(TPM2B_IV) - 2, }
-    };
+    TPM2B_IV iv_out = TPM2B_TYPE_INIT(TPM2B_IV, buffer);
 
     TSS2_SYS_CMD_AUTHS sessions_data;
     TPMS_AUTH_RESPONSE session_data_out;
@@ -91,14 +87,14 @@ static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
 
     TPM_RC rval = Tss2_Sys_EncryptDecrypt(ctx->sapi_context, ctx->key_handle,
             &sessions_data, ctx->is_decrypt, TPM_ALG_NULL, &iv_in, &ctx->data, &out_data,
-            &iv_out, &sessions_data);
+            &iv_out, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EncryptDecrypt failed, error code: 0x%x\n", rval);
         return false;
     }
 
-    return saveDataToFile(ctx->out_file_path, (UINT8 *) out_data.t.buffer,
-            out_data.t.size) == 0;
+    return files_save_bytes_to_file(ctx->out_file_path, (UINT8 *) out_data.t.buffer,
+            out_data.t.size);
 }
 
 static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
@@ -165,23 +161,22 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
                 goto out;
             }
             break;
-        case 'I': {
+        case 'I':
             ctx->data.t.size = sizeof(ctx->data) - 2;
-            int rc = loadDataFromFile(optarg, ctx->data.t.buffer, &ctx->data.t.size);
-            if (rc) {
+            result = files_load_bytes_from_file(optarg, ctx->data.t.buffer, &ctx->data.t.size);
+            if (!result) {
                 goto out;
             }
             flags.I = 1;
-        }
             break;
-        case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+        case 'o':
+            result = files_does_file_exist(optarg);
+            if (result) {
                 goto out;
             }
-            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s", optarg);
+            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
+                    optarg);
             flags.o = 1;
-        }
             break;
         case 'c':
             contextKeyFile = strdup(optarg);
@@ -212,8 +207,8 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle, contextKeyFile);
-        if (rc) {
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle, contextKeyFile);
+        if (!result) {
             goto out;
         }
     }
@@ -237,8 +232,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     tpm_encrypt_decrypt_ctx ctx = {
         .session_data = { 0 },
         .is_decrypt = NO,
-        .data = { 0 },
-        .session_data = 0,
+        .data = {{ 0 }},
         .sapi_context = sapi_context
     };
 

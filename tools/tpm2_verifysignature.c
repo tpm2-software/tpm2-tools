@@ -40,6 +40,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
@@ -49,19 +50,14 @@
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
     struct {
-        union {
-            struct {
-                uint8_t key_handle :1;
-                uint8_t digest :1;
-                uint8_t halg :1;
-                uint8_t msg :1;
-                uint8_t raw :1;
-                uint8_t sig :1;
-                uint8_t ticket :1;
-                uint8_t key_context :1;
-            };
-            uint8_t all;
-        };
+        uint8_t key_handle :1;
+        uint8_t digest :1;
+        uint8_t halg :1;
+        uint8_t msg :1;
+        uint8_t raw :1;
+        uint8_t sig :1;
+        uint8_t ticket :1;
+        uint8_t key_context :1;
     } flags;
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST msgHash;
@@ -99,21 +95,17 @@ static bool verify_signature(tpm2_verifysig_ctx *ctx) {
         return false;
     }
 
-    if (saveDataToFile(ctx->out_file_path, (UINT8 *) &validation,
-            sizeof(validation))) {
-        LOG_ERR("failed to save validation into \"%s\"\n", ctx->out_file_path);
-        return false;
-    }
-
-    return true;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->out_file_path, (UINT8 *) &validation,
+            sizeof(validation));
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
 
     long size;
 
-    int rc = getFileSize(msg_file_path, &size);
-    if (rc) {
+    bool result = files_get_file_size(msg_file_path, &size);
+    if (!result) {
         return NULL;
     }
 
@@ -129,7 +121,7 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     }
 
     UINT16 tmp = msg->size = size;
-    if (loadDataFromFile(msg_file_path, msg->buffer, &tmp) != 0) {
+    if (!files_load_bytes_from_file(msg_file_path, msg->buffer, &tmp)) {
         free(msg);
         return NULL;
     }
@@ -154,12 +146,12 @@ static bool generate_signature(tpm2_verifysig_ctx *ctx) {
         buffer = (UINT8 *) &ctx->signature;
     }
 
-    int rc = loadDataFromFile(ctx->sig_file_path, buffer, &size);
-    if (rc) {
+    bool result = files_load_bytes_from_file(ctx->sig_file_path, buffer, &size);
+    if (!result) {
         LOG_ERR("Could not create %s signature from file: \"%s\"",
                 ctx->flags.raw ? "raw" : "\0", ctx->sig_file_path);
     }
-    return !rc;
+    return result;
 }
 
 static bool string_dup(char **new, char *old) {
@@ -193,9 +185,9 @@ static bool init(tpm2_verifysig_ctx *ctx) {
     }
 
     if (ctx->flags.key_context) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->keyHandle,
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->keyHandle,
                 ctx->context_key_file_path);
-        if (rc) {
+        if (!result) {
             goto err;
         }
     }
@@ -240,8 +232,8 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'k': {
-            int rc = getSizeUint32Hex(optarg, &ctx->keyHandle);
-            if (rc) {
+            bool res = string_bytes_get_uint32(optarg, &ctx->keyHandle);
+            if (!res) {
                 LOG_ERR("Unable to convert key handle, got: \"%s\"", optarg);
                 return false;
             }
@@ -249,8 +241,8 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
         }
             break;
         case 'g': {
-            int rc = getSizeUint16Hex(optarg, &ctx->halg);
-            if (rc) {
+            bool result = string_bytes_get_uint16(optarg, &ctx->halg);
+            if (!result) {
                 LOG_ERR("Unable to convert algorithm, got: \"%s\"", optarg);
                 return false;
             }
@@ -267,7 +259,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             break;
         case 'D': {
             UINT16 size = sizeof(ctx->msgHash);
-            if (loadDataFromFile(optarg, (UINT8 *) &ctx->msgHash, &size) != 0) {
+            if (!files_load_bytes_from_file(optarg, (UINT8 *) &ctx->msgHash, &size)) {
                 LOG_ERR("Could not load digest from file!");
                 return false;
             }
@@ -288,7 +280,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
                 return false;
             }
 
-            if (checkOutFile(ctx->out_file_path) != 0) {
+            if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
             }
             ctx->flags.ticket = 1;
@@ -338,12 +330,15 @@ static void tpm_verifysig_ctx_dealloc(tpm2_verifysig_ctx *ctx) {
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
+    (void) opts;
+    (void) envp;
+
     int normalized_return_code = 1;
 
     tpm2_verifysig_ctx ctx = {
             .flags = { 0 },
             .halg = TPM_ALG_SHA256,
-            .msgHash = { { sizeof(TPM2B_DIGEST) - 2, } },
+            .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
             .sig_file_path = NULL,
             .msg_file_path = NULL,
             .out_file_path = NULL,

@@ -63,7 +63,7 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_DIGEST hmac_out = { { sizeof(TPM2B_DIGEST) - 2, } };
+    TPM2B_DIGEST hmac_out = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     session_data_array[0] = &ctx->session_data;
     session_data_out_array[0] = &session_data_out;
@@ -75,8 +75,6 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
     sessions_data.cmdAuthsCount = 1;
 
     ctx->session_data.sessionHandle = TPM_RS_PW;
-    ctx->session_data.nonce.t.size = 0;
-    *((UINT8 *) ((void *) &ctx->session_data.sessionAttributes)) = 0;
 
     TPM_RC rval = Tss2_Sys_HMAC(ctx->sapi_context, ctx->key_handle,
             &sessions_data, &ctx->data, ctx->algorithm, &hmac_out,
@@ -92,11 +90,12 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
         printf("%02x ", hmac_out.t.buffer[i]);
     printf("\n");
 
-    return saveDataToFile(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
-            sizeof(hmac_out)) == 0;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
+            sizeof(hmac_out));
 }
 
-#define ARG_CNT(optional) (2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1))
+#define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
 
 static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
 
@@ -165,37 +164,23 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             }
             flags.g = 1;
             break;
-        case 'I': {
-            long fileSize = 0;
-            int rc = getFileSize(optarg, &fileSize);
-            if (rc) {
-                goto out;
-            }
-
-            if (fileSize > MAX_DIGEST_BUFFER) {
-                LOG_ERR(
-                        "Input data too long: %ld, should be less than %d bytes\n",
-                        fileSize, MAX_DIGEST_BUFFER);
-                goto out;
-            }
+        case 'I':
             ctx->data.t.size = sizeof(ctx->data) - 2;
-            rc = loadDataFromFile(optarg, ctx->data.t.buffer,
+            result = files_load_bytes_from_file(optarg, ctx->data.t.buffer,
                     &ctx->data.t.size);
-            if (rc) {
+            if (!result) {
                 goto out;
             }
             flags.I = 1;
-        }
             break;
-        case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+        case 'o':
+            result = files_does_file_exist(optarg);
+            if (result) {
                 goto out;
             }
-            snprintf(ctx->hmac_output_file_path, sizeof(ctx->hmac_output_file_path), "%s",
-                    optarg);
+            snprintf(ctx->hmac_output_file_path,
+                    sizeof(ctx->hmac_output_file_path), "%s", optarg);
             flags.o = 1;
-        }
             break;
         case 'c':
             contextKeyFile = strdup(optarg);
@@ -225,9 +210,9 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle,
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle,
                 contextKeyFile);
-        if (rc) {
+        if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",
                     contextKeyFile);
             return false;

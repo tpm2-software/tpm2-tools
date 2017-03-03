@@ -48,7 +48,6 @@ main (int   argc,
     extern int opterr, optind;
     int ret;
     TSS2_SYS_CONTEXT *sapi_context;
-    TSS2_RC rc;
     common_opts_t opts = COMMON_OPTS_INITIALIZER;
     /*
      * Get common options and reset getopt global variables. This allows the

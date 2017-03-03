@@ -25,10 +25,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <sapi/tpm20.h>
-
+#include <stdbool.h>
 #include <stdlib.h>
 
+#include <sapi/tpm20.h>
+
+#include "string-bytes.h"
 #include "tpm_kdfa.h"
 #include "tpm_session.h"
 
@@ -43,6 +45,42 @@ typedef struct {
 
 static SESSION_LIST_ENTRY *local_sessions_list = 0;
 static INT16 local_session_entries_used = 0;
+
+/*
+ * GetDigestSize() was taken from the TSS code base
+ * and moved here since it was not part of the public
+ * exxported API at the time.
+ */
+typedef struct {
+    TPM_ALG_ID  algId;
+    UINT16      size;  // Size of digest
+} HASH_SIZE_INFO;
+
+HASH_SIZE_INFO   hashSizes[] = {
+    {TPM_ALG_SHA1,          SHA1_DIGEST_SIZE},
+    {TPM_ALG_SHA256,        SHA256_DIGEST_SIZE},
+#ifdef TPM_ALG_SHA384
+    {TPM_ALG_SHA384,        SHA384_DIGEST_SIZE},
+#endif
+#ifdef TPM_ALG_SHA512
+    {TPM_ALG_SHA512,        SHA512_DIGEST_SIZE},
+#endif
+    {TPM_ALG_SM3_256,       SM3_256_DIGEST_SIZE},
+    {TPM_ALG_NULL,0}
+};
+
+static UINT16 GetDigestSize( TPM_ALG_ID authHash )
+{
+    UINT32 i;
+    for(i = 0; i < (sizeof(hashSizes)/sizeof(HASH_SIZE_INFO)); i++ )
+    {
+        if( hashSizes[i].algId == authHash )
+            return hashSizes[i].size;
+    }
+
+    // If not found, return 0 size, and let TPM handle the error.
+    return( 0 );
+}
 
 static TPM_RC AddSession( SESSION_LIST_ENTRY **sessionEntry )
 {
@@ -140,16 +178,16 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
         {
             // Generate the key used as input to the KDF.
             // Generate the key used as input to the KDF.
-            rval = ConcatSizedByteBuffer( (TPM2B_MAX_BUFFER *)&key, &( session->authValueBind.b ) );
-            if( rval != TPM_RC_SUCCESS )
+            bool result = string_bytes_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->authValueBind.b ) );
+            if (!result)
             {
-               return rval;
+               return TSS2_SYS_RC_BAD_VALUE;
             }
 
-            rval = ConcatSizedByteBuffer( (TPM2B_MAX_BUFFER *)&key, &( session->salt.b ) );
-            if( rval != TPM_RC_SUCCESS )
+            result = string_bytes_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->salt.b ) );
+            if (!result)
             {
-                return rval;
+                return TSS2_SYS_RC_BAD_VALUE;
             }
 
             bytes = GetDigestSize( session->authHash );

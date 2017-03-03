@@ -214,25 +214,15 @@ static bool create_ak(getpubak_context *ctx) {
             .algorithm = TPM_ALG_NULL,
     };
 
-    TPM2B_SENSITIVE_CREATE inSensitive = {
-            { sizeof(TPM2B_SENSITIVE_CREATE) - 2, }
-    };
+    TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
 
-    TPM2B_PUBLIC inPublic = {
-            { sizeof(TPM2B_PUBLIC) - 2, }
-    };
+    TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
 
-    TPM2B_NAME name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_PRIVATE out_private = {
-            { sizeof(TPM2B_PRIVATE) - 2, }
-    };
+    TPM2B_PRIVATE out_private = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
-    TPM2B_DIGEST creation_hash = {
-            { sizeof(TPM2B_DIGEST) - 2, }
-    };
+    TPM2B_DIGEST creation_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     TPM_HANDLE handle_2048_rsa = ctx->persistent_handle.ek;
 
@@ -363,8 +353,8 @@ static bool create_ak(getpubak_context *ctx) {
     printf("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
     // write name to ak.name file
-    int rc = saveDataToFile(ctx->aknameFile, &name.t.name[0], name.t.size);
-    if (rc) {
+    result = files_save_bytes_to_file(ctx->aknameFile, &name.t.name[0], name.t.size);
+    if (!result) {
         LOG_ERR("Failed to save AK name into file \"%s\"", ctx->aknameFile);
         return false;
     }
@@ -410,9 +400,9 @@ static bool create_ak(getpubak_context *ctx) {
     }
     LOG_INFO("Flush transient AK succ.");
 
-    // save ak public
-    rc = saveDataToFile(ctx->outputFile, (UINT8 *) &out_public, sizeof(out_public));
-    if (rc) {
+    /* TODO fix this serialization */
+    result = files_save_bytes_to_file(ctx->outputFile, (UINT8 *) &out_public, sizeof(out_public));
+    if (!result) {
         LOG_ERR("Failed to save AK pub key into file \"%s\"", ctx->outputFile);
         return false;
     }
@@ -420,7 +410,7 @@ static bool create_ak(getpubak_context *ctx) {
     return true;
 }
 
-static bool init(int argc, char *argv[], char **envp, getpubak_context *ctx) {
+static bool init(int argc, char *argv[], getpubak_context *ctx) {
 
     struct option opts[] =
     {
@@ -541,6 +531,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* opts is unused, avoid compiler warning */
     (void)opts;
+    (void)envp;
 
     getpubak_context ctx = {
             .hexPasswd = false,
@@ -550,7 +541,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .sapi_context = sapi_context
     };
 
-    bool result = init(argc, argv, envp, &ctx);
+    bool result = init(argc, argv, &ctx);
     if (!result) {
         return 1;
     }

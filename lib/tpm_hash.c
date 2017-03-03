@@ -14,12 +14,11 @@ UINT32 tpm_hash(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
 
 static TPM_RC hash_sequence_ex(TSS2_SYS_CONTEXT *sapi_context,
 
-    TPMI_ALG_HASH hashAlg, UINT32 numBuffers, TPM2B_MAX_BUFFER *bufferList,
-    TPM2B_DIGEST *result) {
+TPMI_ALG_HASH hashAlg, UINT32 numBuffers, TPM2B_MAX_BUFFER *bufferList,
+        TPM2B_DIGEST *result) {
     TPM_RC rval;
     TPM2B_AUTH nullAuth;
     TPMI_DH_OBJECT sequenceHandle;
-    int i;
     TPM2B emptyBuffer;
     TPMT_TK_HASHCHECK validation;
 
@@ -45,6 +44,7 @@ static TPM_RC hash_sequence_ex(TSS2_SYS_CONTEXT *sapi_context,
         return rval;
     }
 
+    unsigned i;
     for (i = 0; i < numBuffers; i++) {
         rval = Tss2_Sys_SequenceUpdate(sapi_context, sequenceHandle,
                 &cmdAuthArray, &bufferList[i], 0);
@@ -55,8 +55,8 @@ static TPM_RC hash_sequence_ex(TSS2_SYS_CONTEXT *sapi_context,
     }
 
     rval = Tss2_Sys_SequenceComplete(sapi_context, sequenceHandle,
-            &cmdAuthArray, (TPM2B_MAX_BUFFER *) &emptyBuffer,
-            TPM_RH_PLATFORM, result, &validation, 0);
+            &cmdAuthArray, (TPM2B_MAX_BUFFER *) &emptyBuffer, TPM_RH_PLATFORM,
+            result, &validation, 0);
 
     if (rval != TPM_RC_SUCCESS) {
         return rval;
@@ -67,24 +67,24 @@ static TPM_RC hash_sequence_ex(TSS2_SYS_CONTEXT *sapi_context,
 
 int tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, BYTE *buffer,
         UINT16 length, TPMI_ALG_HASH halg, TPM2B_DIGEST *result) {
-    UINT8 numBuffers = 0;
-    UINT32 i;
+
     if (length <= MAX_DIGEST_BUFFER) {
-        if (tpm_hash(sapi_context, halg, length, buffer,
-                result) == TPM_RC_SUCCESS)
+        if (tpm_hash(sapi_context, halg, length, buffer, result)
+                == TPM_RC_SUCCESS)
             return 0;
         else
             return -1;
     }
 
-    numBuffers = (length - 1) / MAX_DIGEST_BUFFER + 1;
+    UINT8 numBuffers = (length - 1) / MAX_DIGEST_BUFFER + 1;
 
     TPM2B_MAX_BUFFER *bufferList = (TPM2B_MAX_BUFFER *) calloc(numBuffers,
             sizeof(TPM2B_MAX_BUFFER));
     if (bufferList == NULL)
         return -2;
 
-    for (i = 0; i < numBuffers - 1; i++) {
+    UINT32 i;
+    for (i = 0; i < (UINT32)(numBuffers - 1); i++) {
         bufferList[i].t.size = MAX_DIGEST_BUFFER;
         memcpy(bufferList[i].t.buffer, buffer + i * MAX_DIGEST_BUFFER,
                 MAX_DIGEST_BUFFER);
@@ -93,7 +93,50 @@ int tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, BYTE *buffer,
     memcpy(bufferList[i].t.buffer, buffer + i * MAX_DIGEST_BUFFER,
             bufferList[i].t.size);
 
-    TPM_RC rval = hash_sequence_ex(sapi_context, halg, numBuffers, bufferList, result);
+    TPM_RC rval = hash_sequence_ex(sapi_context, halg, numBuffers, bufferList,
+            result);
     free(bufferList);
     return rval == TPM_RC_SUCCESS ? 0 : -3;
+}
+
+//
+// This function does a hash on an array of data strings and re-uses syscontext
+//
+UINT32 tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
+        size_t num_buffers, TPM2B_DIGEST *buffer_list, TPM2B_DIGEST *result) {
+
+    TPMT_TK_HASHCHECK validation;
+    TPMS_AUTH_COMMAND cmd_auth = { 0 };
+    TPMS_AUTH_COMMAND *cmd_session_array[1] = { &cmd_auth };
+    TSS2_SYS_CMD_AUTHS cmd_auth_array = { 1, &cmd_session_array[0] };
+    TPMI_DH_OBJECT sequence_handle;
+    TPM2B_AUTH null_auth = { .t.size = 0 };
+    TPM2B empty_buffer = { .size = 0 };
+
+    // Set result size to 0, in case any errors occur
+    result->b.size = 0;
+
+    // Init input sessions struct
+    cmd_auth.sessionHandle = TPM_RS_PW;
+
+    UINT32 rval = Tss2_Sys_HashSequenceStart(sapi_context, 0, &null_auth,hash_alg,
+                        &sequence_handle, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        return rval;
+    }
+
+    unsigned i;
+    for (i = 0; i < num_buffers; i++) {
+        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
+                &cmd_auth_array, (TPM2B_MAX_BUFFER *) &buffer_list[i], 0);
+
+        if (rval != TPM_RC_SUCCESS) {
+            return rval;
+        }
+    }
+
+    result->t.size = sizeof(*result) - 2;
+    return Tss2_Sys_SequenceComplete(sapi_context, sequence_handle, &cmd_auth_array,
+                (TPM2B_MAX_BUFFER *) &empty_buffer, TPM_RH_PLATFORM, result,
+                &validation, 0);
 }

@@ -61,4 +61,81 @@ AS_IF([test "x$enable_unit" != xno],
                          [AC_DEFINE([HAVE_CMOCKA],
                                     [1])])])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
+
+AC_ARG_ENABLE([hardening],
+  [AS_HELP_STRING([--enable-hardening],
+    [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
+  [hardening="$enableval"],
+  [hardening="yes"])
+
+#
+# Good information on adding flags, and dealing with compilers can be found here:
+#   https://github.com/zcash/zcash/issues/1832
+#   https://github.com/kmcallister/autoharden/
+AS_IF([test x"$hardening" != x"no"], [
+
+  AC_DEFUN([add_hardened_c_flag], [
+    AX_CHECK_COMPILE_FLAG([$1],
+      [EXTRA_CFLAGS="$EXTRA_CFLAGS $1"],
+      [AC_MSG_ERROR([Cannot enable $1, consider configuring with --disable-hardening])]
+    )
+  ])
+
+  AC_DEFUN([add_hardened_ld_flag], [
+    AX_CHECK_LINK_FLAG([$1],
+      [EXTRA_LDFLAGS="$EXTRA_LDFLAGS $1"],
+      [AC_MSG_ERROR([Cannot enable $1, consider configuring with --disable-hardening])]
+    )
+  ])
+
+  AC_DEFUN([add_hardened_define_flag], [
+    AX_CHECK_PREPROC_FLAG([$1],
+      [EXTRA_CFLAGS="$EXTRA_CFLAGS $1"],
+      [AC_MSG_ERROR([Cannot enable $1, consider configuring with --disable-hardening])]
+    )
+  ])
+
+  add_hardened_c_flag([-Wall])
+  add_hardened_c_flag([-Wextra])
+  add_hardened_c_flag([-Werror])
+
+  add_hardened_c_flag([-Wformat])
+  add_hardened_c_flag([-Wformat-security])
+  add_hardened_c_flag([-Wstack-protector])
+  add_hardened_c_flag([-fstack-protector-all])
+
+  add_hardened_define_flag([-D_FORTIFY_SOURCE=2])
+  add_hardened_define_flag([-U_FORTIFY_SOURCE])
+
+  add_hardened_c_flag([-fPIC])
+  add_hardened_ld_flag([[-shared]])
+
+  add_hardened_c_flag([-fPIE])
+  add_hardened_ld_flag([[-pie]])
+
+  add_hardened_ld_flag([[-Wl,-z,relro]])
+  add_hardened_ld_flag([[-Wl,-z,now]])
+
+], [
+  AC_MSG_WARN([Compiling with --disable-hardening is dangerous!
+you should consider fixing the configure script compiler flags
+and submitting patches upstream!])
+])
+
+# Best attempt, strip unused stuff from the binary to reduce size.
+# Rather than nesting these and making them ugly just use a counter.
+AX_CHECK_COMPILE_FLAG([-fdata-sections], [strip+="y"])
+AX_CHECK_COMPILE_FLAG([-ffunction-sections], [strip+="y"])
+AX_CHECK_LINK_FLAG([[-Wl,--gc-sections]], [strip+="y"])
+
+AS_IF([test x"$strip" == x"yyy"], [
+  EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections"
+  EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections"
+],
+  AC_MSG_NOTICE([Not using compiler options to reduce binary size $strip!])
+)
+
+AC_SUBST([EXTRA_CFLAGS])
+AC_SUBST([EXTRA_LDFLAGS])
+
 AC_OUTPUT

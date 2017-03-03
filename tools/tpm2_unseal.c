@@ -61,9 +61,7 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_SENSITIVE_DATA outData = {
-            { sizeof(TPM2B_SENSITIVE_DATA) - 2, }
-    };
+    TPM2B_SENSITIVE_DATA outData = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_DATA, buffer);
 
     session_data_array[0] = &ctx->sessionData;
     session_data_out_array[0] = &session_data_out;
@@ -81,8 +79,8 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
         return false;
     }
 
-    return saveDataToFile(ctx->outFilePath, (UINT8 *) &outData, sizeof(outData))
-            == 0;
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &outData, sizeof(outData));
 }
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
@@ -134,8 +132,8 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
             break;
         case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+            bool result = files_does_file_exist(optarg);
+            if (result) {
                 return false;
             }
             snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
@@ -175,9 +173,9 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->itemHandle,
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->itemHandle,
                 contextItemFile);
-        if (rc) {
+        if (!result) {
             return false;
         }
     }

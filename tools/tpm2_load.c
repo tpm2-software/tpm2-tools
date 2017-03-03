@@ -65,7 +65,7 @@ load (TSS2_SYS_CONTEXT *sapi_context,
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_NAME              nameExt     = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -110,7 +110,8 @@ load (TSS2_SYS_CONTEXT *sapi_context,
     }
     printf("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
-    if(saveDataToFile(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
+    /* TODO fix serialization */
+    if(!files_save_bytes_to_file(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
         return -2;
 
     return 0;
@@ -123,6 +124,9 @@ execute_tool (int              argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
+    (void) envp;
+    (void) opts;
+
     TPMI_DH_OBJECT parentHandle;
     TPM2B_PUBLIC  inPublic;
     TPM2B_PRIVATE inPrivate;
@@ -166,7 +170,7 @@ execute_tool (int              argc,
         switch(opt)
         {
         case 'H':
-            if(getSizeUint32Hex(optarg, &parentHandle) != 0)
+            if (!string_bytes_get_uint32(optarg, &parentHandle))
             {
                 returnVal = -1;
                 break;
@@ -186,7 +190,7 @@ execute_tool (int              argc,
 
         case 'u':
             size = sizeof(inPublic);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPublic, &size) != 0)
+            if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPublic, &size))
             {
                 returnVal = -3;
                 break;
@@ -195,7 +199,7 @@ execute_tool (int              argc,
             break;
         case 'r':
             size = sizeof(inPrivate);
-            if(loadDataFromFile(optarg, (UINT8 *)&inPrivate, &size) != 0)
+            if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPrivate, &size))
             {
                 returnVal = -4;
                 break;
@@ -204,7 +208,7 @@ execute_tool (int              argc,
             break;
         case 'n':
             snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
-            if(checkOutFile(outFilePath) != 0)
+            if(files_does_file_exist(outFilePath))
             {
                 returnVal = -5;
                 break;
@@ -256,9 +260,9 @@ execute_tool (int              argc,
     if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
     {
         if(c_flag) {
-            returnVal = loadTpmContextFromFile (sapi_context,
+            returnVal = file_load_tpm_context_from_file (sapi_context,
                                                 &parentHandle,
-                                                contextParentFilePath);
+                                                contextParentFilePath) != true;
         }
         if (returnVal == 0) {
             returnVal = load (sapi_context,
@@ -269,9 +273,9 @@ execute_tool (int              argc,
                               P_flag);
         }
         if (returnVal == 0 && C_flag) {
-            returnVal = saveTpmContextToFile (sapi_context,
+            returnVal = files_save_tpm_context_to_file (sapi_context,
                                               handle2048rsa,
-                                              contextFile);
+                                              contextFile) != true;
         }
         if(returnVal)
             return -13;

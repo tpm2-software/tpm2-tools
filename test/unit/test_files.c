@@ -24,6 +24,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -35,25 +36,65 @@
 
 #include "files.h"
 
+typedef struct test_file test_file;
+struct test_file {
+    char *path;
+    FILE *file;
+};
+
+static test_file *test_file_new(void) {
+
+    test_file *tf = malloc(sizeof(test_file));
+    if (!tf) {
+        return NULL;
+    }
+
+    tf->path = strdup("xxx_test_files_xxx.test");
+    if (!tf->path) {
+        free(tf);
+        return NULL;
+    }
+
+    tf->file = fopen(tf->path, "w+b");
+    if (!tf->file) {
+        free(tf->path);
+        free(tf);
+        return NULL;
+    }
+
+    return tf;
+}
+
+static void test_file_free(test_file *tf) {
+
+    assert_non_null(tf);
+
+    int rc = remove(tf->path);
+    assert_return_code(rc, errno);
+
+    free(tf->path);
+    fclose(tf->file);
+    free(tf);
+}
+
 static int test_setup(void **state) {
 
-    FILE *f = tmpfile();
-    assert_non_null(f);
-    *state = f;
+    test_file *tf = test_file_new();
+    assert_non_null(tf);
+    *state = tf;
     return 0;
 }
 
 static int test_teardown(void **state) {
 
-    FILE *f = (FILE *)*state;
-    assert_non_null(f);
-    fclose(f);
+    test_file *tf = (test_file *)*state;
+    test_file_free(tf);
     return 0;
 }
 
-static FILE *file_from_state(void **state) {
+static test_file *test_file_from_state(void **state) {
 
-    FILE *f = (FILE *)*state;
+    test_file *f = (test_file *)*state;
     assert_non_null(f);
     return f;
 }
@@ -61,7 +102,7 @@ static FILE *file_from_state(void **state) {
 #define READ_WRITE_TEST(size, expected) \
 	static void test_file_read_write_##size(void **state) { \
     \
-        FILE *f = file_from_state(state); \
+        FILE *f = test_file_from_state(state)->file; \
     \
         bool res = files_write_##size(f, expected); \
         assert_true(res); \
@@ -81,7 +122,7 @@ READ_WRITE_TEST(64, 0x1122334455667788)
 
 static void test_file_read_write_bytes(void **state) {
 
-    FILE *f = file_from_state(state);
+    FILE *f = test_file_from_state(state)->file;
 
     UINT8 expected[1024];
     memset(expected, 0xBB, sizeof(expected));
@@ -99,7 +140,7 @@ static void test_file_read_write_bytes(void **state) {
 
 static void test_file_read_write_0_bytes(void **state) {
 
-    FILE *f = file_from_state(state);
+    FILE *f = test_file_from_state(state)->file;
 
     UINT8 data[1];
     bool res = files_write_bytes(f, data, 0);
@@ -111,7 +152,7 @@ static void test_file_read_write_0_bytes(void **state) {
 
 static void test_file_read_write_header(void **state) {
 
-    FILE *f = file_from_state(state);
+    FILE *f = test_file_from_state(state)->file;
 
     UINT32 expected = 0xAABBCCDD;
     bool res = files_write_header(f, expected);
@@ -130,7 +171,7 @@ static void test_file_read_write_header(void **state) {
     static void test_file_read_write_bad_params_##size(void **state) { \
     \
         UINT##size expected = 42; \
-        FILE *f = file_from_state(state); \
+        FILE *f = test_file_from_state(state)->file; \
         bool res = files_write_##size(NULL, expected); \
         assert_false(res); \
     \
@@ -151,7 +192,7 @@ READ_WRITE_TEST_BAD_PARAMS(64)
 
 static void test_file_read_write_bad_params_bytes(void **state) {
 
-    FILE *f = file_from_state(state);
+    FILE *f = test_file_from_state(state)->file;
 
     UINT8 data[1];
     bool res = files_write_bytes(f, NULL, sizeof(data));
@@ -164,6 +205,59 @@ static void test_file_read_write_bad_params_bytes(void **state) {
     assert_false(res);
 
     res = files_read_bytes(NULL, data, sizeof(data));
+    assert_false(res);
+}
+
+static void test_file_size(void **state) {
+
+    test_file *tf = test_file_from_state(state);
+
+    UINT8 data[128] = { 0 };
+
+    bool res = files_write_bytes(tf->file, data, sizeof(data));
+    assert_true(res);
+
+    int rc = fflush(tf->file);
+    assert_return_code(rc, errno);
+
+    long file_size;
+    res = files_get_file_size(tf->path, &file_size);
+    assert_true(res);
+
+    assert_int_equal(file_size, sizeof(data));
+}
+
+static void test_file_size_bad_args(void **state) {
+
+    long file_size;
+    bool res = files_get_file_size("this_should_be_a_bad_path", &file_size);
+    assert_false(res);
+
+    res = files_get_file_size(NULL, &file_size);
+    assert_false(res);
+
+    test_file *tf = test_file_from_state(state);
+
+    res = files_get_file_size(tf->path, NULL);
+    assert_false(res);
+}
+
+static void test_file_exists(void **state) {
+
+    test_file *tf = test_file_from_state(state);
+
+    bool res = files_does_file_exist(tf->path);
+    assert_true(res);
+}
+
+static void test_file_exists_bad_args(void **state) {
+
+    (void) state;
+
+    bool res = files_does_file_exist("this_should_be_a_bad_path");
+    assert_false(res);
+
+    res = files_does_file_exist(NULL);
     assert_false(res);
 }
 
@@ -192,6 +286,16 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test_setup_teardown(test_file_read_write_bad_params_64,
                 test_setup, test_teardown),
         cmocka_unit_test_setup_teardown(test_file_read_write_bad_params_bytes,
+                test_setup, test_teardown),
+
+        cmocka_unit_test_setup_teardown(test_file_size,
+                test_setup, test_teardown),
+        cmocka_unit_test_setup_teardown(test_file_size_bad_args,
+                test_setup, test_teardown),
+
+        cmocka_unit_test_setup_teardown(test_file_exists,
+                test_setup, test_teardown),
+        cmocka_unit_test_setup_teardown(test_file_exists_bad_args,
                 test_setup, test_teardown),
     };
 

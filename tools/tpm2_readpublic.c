@@ -64,13 +64,9 @@ static int read_public_and_save(tpm_readpub_ctx *ctx) {
             { 0, }
     };
 
-    TPM2B_NAME name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NAME qualified_name = {
-            { sizeof(TPM2B_NAME) - 2, }
-    };
+    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     session_out_data_array[0] = &session_out_data;
     sessions_out_data.rspAuths = &session_out_data_array[0];
@@ -95,13 +91,9 @@ static int read_public_and_save(tpm_readpub_ctx *ctx) {
         printf("%02x ", qualified_name.t.name[i]);
     printf("\n");
 
-    int rc = saveDataToFile(ctx->outFilePath, (UINT8 *) &public,
+    /* TODO fix serialization */
+    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &public,
             sizeof(public));
-    if (rc) {
-        return false;
-    }
-
-    return true;
 }
 
 static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
@@ -139,14 +131,13 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
             }
             flags.H = 1;
             break;
-        case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+        case 'o':
+            result = files_does_file_exist(optarg);
+            if (result) {
                 return false;
             }
             snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
             flags.o = 1;
-        }
             break;
         case 'c':
             snprintf(context_file, sizeof(context_file), "%s", optarg);
@@ -161,9 +152,9 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->objectHandle,
+        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->objectHandle,
                 context_file);
-        if (rc) {
+        if (!result) {
             return false;
         }
     }

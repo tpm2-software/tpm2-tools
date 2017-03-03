@@ -38,7 +38,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "log.h"
 #include "options.h"
+#include "string-bytes.h"
 
 /*
  * A structure to map a string name to an element in the TCTI_TYPE
@@ -91,7 +93,7 @@ out:
  * Convert from an element in the TCTI_TYPE enumeration to a string
  * representation.
  */
-char* const
+char *
 tcti_name_from_type (TCTI_TYPE tcti_type)
 {
     int i;
@@ -272,7 +274,7 @@ get_common_opts (int                    *argc_param,
      * Keep getopt_long quiet when we see options that aren't in the 'common'
      * category. Reset option processing.
      */
-    char *endptr, **new_argv = { NULL, };
+    char **new_argv = { NULL, };
     int new_argc = 1;
     extern int opterr, optind;
 
@@ -306,9 +308,14 @@ get_common_opts (int                    *argc_param,
         case 'R':
             common_opts->socket_address = optarg;
             break;
-        case 'p':
-            common_opts->socket_port = strtol (optarg, &endptr, 10);
-            break;
+        case 'p': {
+            bool res = string_bytes_get_uint16(optarg, &common_opts->socket_port);
+            if (!res) {
+                LOG_ERR("Could not convert port to a 16 bit unsigned number, "
+                        "got: %s", optarg);
+                return 2;
+            }
+        }   break;
 #endif
         case 'h':
             common_opts->help = true;

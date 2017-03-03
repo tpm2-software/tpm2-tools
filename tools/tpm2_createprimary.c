@@ -42,6 +42,7 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
+#include "files.h"
 #include "main.h"
 #include "options.h"
 #include "string-bytes.h"
@@ -133,10 +134,10 @@ int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy, TPM
 
     TPM2B_DATA              outsideInfo = { { 0, } };
     TPML_PCR_SELECTION      creationPCR;
-    TPM2B_NAME              name = { { sizeof(TPM2B_NAME)-2, } };
+    TPM2B_NAME              name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
     TPM2B_PUBLIC            outPublic = { { 0, } };
     TPM2B_CREATION_DATA     creationData = { { 0, } };
-    TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
+    TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION        creationTicket = { 0, };
 
     sessionDataArray[0] = &sessionData;
@@ -206,8 +207,8 @@ execute_tool (int               argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
-
-    char hostName[200] = DEFAULT_HOSTNAME;
+    (void) envp;
+    (void) opts;
 
     TPM2B_SENSITIVE_CREATE  inSensitive;
     TPM2B_PUBLIC            inPublic;
@@ -282,7 +283,7 @@ execute_tool (int               argc,
             K_flag = 1;
             break;
         case 'g':
-            if(getSizeUint16Hex(optarg,&nameAlg) != 0)
+            if(!string_bytes_get_uint16(optarg,&nameAlg))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -292,7 +293,7 @@ execute_tool (int               argc,
             g_flag = 1;
             break;
         case 'G':
-            if(getSizeUint16Hex(optarg,&type) != 0)
+            if(!string_bytes_get_uint16(optarg,&type))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
@@ -336,7 +337,7 @@ execute_tool (int               argc,
         returnVal = createPrimary(sapi_context, hierarchy, &inPublic, &inSensitive, type, nameAlg, P_flag, K_flag);
 
         if (returnVal == 0 && C_flag)
-            returnVal = saveTpmContextToFile(sapi_context, handle2048rsa, contextFile);
+            returnVal = files_save_tpm_context_to_file(sapi_context, handle2048rsa, contextFile) != true;
         if(returnVal)
             return -12;
     }

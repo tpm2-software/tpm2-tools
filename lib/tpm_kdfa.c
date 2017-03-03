@@ -84,7 +84,10 @@ TPM_RC tpm_kdfa(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
             return( rval );
         }
 
-        ConcatSizedByteBuffer( resultKey, &(tmpResult.b) );
+        bool res = string_bytes_concat_buffer(resultKey, &(tmpResult.b));
+        if (!res) {
+            return TSS2_SYS_RC_BAD_VALUE;
+        }
     }
 
     // Truncate the result to the desired size.

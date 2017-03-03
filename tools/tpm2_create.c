@@ -142,10 +142,10 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     TPM2B_DATA              outsideInfo = { { 0, } };
     TPML_PCR_SELECTION      creationPCR;
     TPM2B_PUBLIC            outPublic = { { 0, } };
-    TPM2B_PRIVATE           outPrivate = { { sizeof(TPM2B_PRIVATE)-2, } };
+    TPM2B_PRIVATE           outPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
     TPM2B_CREATION_DATA     creationData = { { 0, } };
-    TPM2B_DIGEST            creationHash = { { sizeof(TPM2B_DIGEST)-2, } };
+    TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION        creationTicket = { 0, };
 
     sessionDataArray[0] = &sessionData;
@@ -205,14 +205,17 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     }
     printf("\nCreate Object Succeed !\n");
 
+    /*
+     * TODO These public and private serializations are not safe since its outputting size as well.
+     */
     if(o_flag == 1)
     {
-        if(saveDataToFile(opuFilePath, (UINT8 *)&outPublic, sizeof(outPublic)))
+        if(!files_save_bytes_to_file(opuFilePath, (UINT8 *)&outPublic, sizeof(outPublic)))
             return -3;
     }
     if(O_flag == 1)
     {
-        if(saveDataToFile(oprFilePath, (UINT8 *)&outPrivate, sizeof(outPrivate)))
+        if(!files_save_bytes_to_file(oprFilePath, (UINT8 *)&outPrivate, sizeof(outPrivate)))
             return -4;
     }
 
@@ -226,6 +229,9 @@ execute_tool (int              argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
+    (void)envp;
+    (void)opts;
+
     sysContext = sapi_context;
 
     TPM2B_SENSITIVE_CREATE  inSensitive;
@@ -281,7 +287,7 @@ execute_tool (int              argc,
         switch(opt)
         {
         case 'H':
-            if(getSizeUint32Hex(optarg,&parentHandle) != 0)
+            if(!string_bytes_get_uint32(optarg,&parentHandle))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -1;
@@ -309,7 +315,7 @@ execute_tool (int              argc,
             K_flag = 1;
             break;
         case 'g':
-            if(getSizeUint16Hex(optarg,&nameAlg) != 0)
+            if(!string_bytes_get_uint16(optarg,&nameAlg))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -319,7 +325,7 @@ execute_tool (int              argc,
             g_flag = 1;
             break;
         case 'G':
-            if(getSizeUint16Hex(optarg,&type) != 0)
+            if(!string_bytes_get_uint16(optarg,&type))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
@@ -329,7 +335,7 @@ execute_tool (int              argc,
             G_flag = 1;
             break;
         case 'A':
-            if(getSizeUint32Hex(optarg,&objectAttributes) != 0)
+            if(!string_bytes_get_uint32(optarg,&objectAttributes))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -6;
@@ -339,7 +345,7 @@ execute_tool (int              argc,
             break;
         case 'I':
             inSensitive.t.sensitive.data.t.size = sizeof(inSensitive.t.sensitive.data) - 2;
-            if(loadDataFromFile(optarg, inSensitive.t.sensitive.data.t.buffer, &inSensitive.t.sensitive.data.t.size) != 0)
+            if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer, &inSensitive.t.sensitive.data.t.size))
             {
                 returnVal = -7;
                 break;
@@ -349,7 +355,7 @@ execute_tool (int              argc,
             break;
         case 'L':
             inPublic.t.publicArea.authPolicy.t.size = sizeof(inPublic.t.publicArea.authPolicy) - 2;
-            if(loadDataFromFile(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size) != 0)
+            if(!files_load_bytes_from_file(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
             {
                 returnVal = -8;
                 break;
@@ -358,7 +364,7 @@ execute_tool (int              argc,
             break;
         case 'o':
             snprintf(opuFilePath, sizeof(opuFilePath), "%s", optarg);
-            if(checkOutFile(opuFilePath) != 0)
+            if(files_does_file_exist(opuFilePath) != 0)
             {
                 returnVal = -9;
                 break;
@@ -367,7 +373,7 @@ execute_tool (int              argc,
             break;
         case 'O':
             snprintf(oprFilePath, sizeof(oprFilePath), "%s", optarg);
-            if(checkOutFile(oprFilePath) != 0)
+            if(files_does_file_exist(oprFilePath) != 0)
             {
                 returnVal = -10;
                 break;
@@ -425,7 +431,7 @@ execute_tool (int              argc,
     else if(flagCnt == 3 && (H_flag == 1 || c_flag == 1) && g_flag == 1 && G_flag == 1)
     {
         if(c_flag)
-            returnVal = loadTpmContextFromFile(sysContext, &parentHandle, contextParentFilePath);
+            returnVal = file_load_tpm_context_from_file(sysContext, &parentHandle, contextParentFilePath) != true;
         if(returnVal == 0)
             returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes);
 

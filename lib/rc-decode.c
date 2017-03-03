@@ -780,7 +780,7 @@ tpm2_strrc (TPM_RC  rc,
  */
 #define STR_ENTRY_ARRAY_LENGTH(name) (sizeof (name) / sizeof (struct tpm2_rc_entry))
 #define STR_ENTRY_ARRAY_LOOKUP(rc, array, select_func) \
-    int i; \
+    unsigned i; \
     for (i = 0; i < STR_ENTRY_ARRAY_LENGTH (array); ++i) \
         if (select_func (rc) == select_func (array[i].id)) \
             return &array[i]; \

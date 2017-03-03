@@ -58,9 +58,7 @@ static bool rsa_encrypt_and_save(tpm_rsaencrypt_ctx *ctx) {
     TPMT_RSA_DECRYPT scheme;
     TPM2B_DATA label;
     // Outputs
-    TPM2B_PUBLIC_KEY_RSA out_data = {
-            { sizeof(TPM2B_PUBLIC_KEY_RSA) - 2, }
-    };
+    TPM2B_PUBLIC_KEY_RSA out_data = TPM2B_TYPE_INIT(TPM2B_PUBLIC_KEY_RSA, buffer);
 
     TPMS_AUTH_RESPONSE out_session_data;
     TSS2_SYS_RSP_AUTHS out_sessions_data;
@@ -80,8 +78,8 @@ static bool rsa_encrypt_and_save(tpm_rsaencrypt_ctx *ctx) {
         return false;
     }
 
-    return saveDataToFile(ctx->output_file_path, out_data.t.buffer,
-            out_data.t.size) == 0;
+    return files_save_bytes_to_file(ctx->output_file_path, out_data.t.buffer,
+            out_data.t.size);
 }
 
 static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
@@ -117,7 +115,7 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
             bool result = string_bytes_get_uint32(optarg, &ctx->key_handle);
             if (!result) {
                 LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                        ctx->key_handle);
+                        optarg);
                 return false;
             }
             flags.k = 1;
@@ -125,17 +123,17 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
             break;
         case 'I': {
             ctx->message.t.size = sizeof(ctx->message) - 2;
-            int rc = loadDataFromFile(optarg, ctx->message.t.buffer,
+            bool result = files_load_bytes_from_file(optarg, ctx->message.t.buffer,
                     &ctx->message.t.size);
-            if (rc) {
+            if (!result) {
                 return false;
             }
             flags.I = 1;
         }
             break;
         case 'o': {
-            int rc = checkOutFile(optarg);
-            if (rc) {
+            bool result = files_does_file_exist(optarg);
+            if (result) {
                 return false;
             }
             snprintf(ctx->output_file_path, sizeof(ctx->output_file_path), "%s",
@@ -165,9 +163,9 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
     }
 
     if (flags.c) {
-        int rc = loadTpmContextFromFile(ctx->sapi_context, &ctx->key_handle,
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle,
                 context_key_file);
-        if (rc) {
+        if (!result) {
             return false;
         }
     }
@@ -184,7 +182,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_rsaencrypt_ctx ctx = {
             .key_handle = 0,
-            .message = { 0 },
+            .message = {{ 0 }},
             .output_file_path = { 0 },
             .sapi_context = sapi_context
     };

@@ -6,22 +6,87 @@
 
 #include <sapi/tpm20.h>
 
-/*
- * These old routines are not aware of endianess and lack the tpm2 tools file header,
- * the should be updated and replaced with something using the new files_write_* api
- * documented below. Mark all of them as deprecated as a constant reminder this needs
- * to be done.
+/**
+ * Reads a series of bytes froma file as a byte array. This is similar to files_read_bytes(),
+ * but opens and closes the FILE for the caller. Size is both an input and output value where
+ * the size value is the max buffer size on call and the returned size is how much was read.
+ *
+ * This interface could be cleaned up in a later revision.
+ * @param path
+ *  The path to the file to open.
+ * @param buf
+ *  The buffer to read the data into
+ * @param size
+ *  The max size of the buffer on call, and the size of the data read on return.
+ * @return
+ *  True on success, false otherwise.
  */
-int loadDataFromFile(const char *fileName, UINT8 *buf, UINT16 *size) __attribute__ ((deprecated));
-int saveDataToFile(const char *fileName, UINT8 *buf, UINT16 size) __attribute__ ((deprecated));
-int saveTpmContextToFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle, const char *fileName) __attribute__ ((deprecated));
-int loadTpmContextFromFile(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE *handle, const char *fileName) __attribute__ ((deprecated));
+bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size);
 
-/*
- * These two need there interfaces updated to something consistent with the coding standard.
+/**
+ * Similar to files_write_bytes(), in that it writes an array of bytes to disk,
+ * but this routine opens and closes the file on the callers behalf.
+ * @param path
+ *  The path to the file to write the data to.
+ * @param buf
+ *  The buffer of data to write
+ * @param size
+ *  The size of the data to write in bytes.
+ * @return
+ *  True on success, false otherwise.
  */
-int checkOutFile(const char *path) __attribute__ ((deprecated));
-int getFileSize(const char *path, long *fileSize) __attribute__ ((deprecated));
+bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
+
+/**
+ * Saves the TPM context for an object handle to disk by calling Tss2_Sys_ContextSave() and serializing the
+ * resulting TPMS_CONTEXT structure to disk.
+ * @param sapi_context
+ *  The system api context
+ * @param handle
+ *  The object handle for the object to save.
+ * @param path
+ *  The output path of the file.
+ *
+ * @return
+ *  True on success, False on error.
+ */
+bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE handle, const char *path);
+
+/**
+ * Loads a TPM object context from disk.
+ * @param sapi_context
+ *  The system API context
+ * @param handle
+ *  The object handle that was saved.
+ * @param path
+ *  The path to the input file.
+ * @return
+ *  True on Success, false on error.
+ */
+bool file_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE *handle, const char *path);
+
+/**
+ * Checks a file for existence.
+ * @param path
+ *  The file to check for existence.
+ * @return
+ * true if a file exists with read permissions, false if it doesn't exist or an error occurs.
+ *
+ */
+bool files_does_file_exist(const char *path);
+
+/**
+ * Retrieves a files size given a file path.
+ * @param path
+ *  The path of the file to retreive the size of.
+ * @param file_size
+ *  A pointer to a long to return the file size. The
+ *  pointed to value is valid only on a true return.
+ *
+ * @return
+ *  True for success or False for error.
+ */
+bool files_get_file_size(const char *path, long *file_size);
 
 /**
  * Writes a TPM2.0 header to a file.
