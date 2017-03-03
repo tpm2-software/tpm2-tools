@@ -68,7 +68,6 @@ AC_ARG_ENABLE([hardening],
   [hardening="$enableval"],
   [hardening="yes"])
 
-#
 # Good information on adding flags, and dealing with compilers can be found here:
 #   https://github.com/zcash/zcash/issues/1832
 #   https://github.com/kmcallister/autoharden/
@@ -132,7 +131,7 @@ AS_IF([test x"$strip" == x"yyy"], [
   EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections"
 ],
-  AC_MSG_NOTICE([Not using compiler options to reduce binary size $strip!])
+  AC_MSG_NOTICE([Not using compiler options to reduce binary size!])
 )
 
 AC_SUBST([EXTRA_CFLAGS])
