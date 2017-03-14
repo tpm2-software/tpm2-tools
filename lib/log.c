@@ -44,12 +44,13 @@ get_level_msg (log_level level)
 void
 _log (log_level level, const char *file, unsigned lineno, const char *fmt, ...)
 {
-    va_list argptr;
-    va_start(argptr, fmt);
 
     /* Skip printing messages outside of the log level */
     if (level > current_log_level)
         return;
+
+    va_list argptr;
+    va_start(argptr, fmt);
 
     /* Verbose output prints file and line on error */
     if (current_log_level >= log_level_verbose)
