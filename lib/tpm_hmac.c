@@ -33,11 +33,13 @@
 
 static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH hashAlg, TPM2B *key, TPM_HANDLE *keyHandle, TPM2B_NAME *keyName )
 {
-    TPM2B keyAuth;
+    TPM2B keyAuth = {
+            .size = 0,
+    };
+
     TPM2B_SENSITIVE inPrivate;
     TPM2B_PUBLIC inPublic;
 
-    keyAuth.size = 0;
 
     inPrivate.t.sensitiveArea.sensitiveType = TPM_ALG_KEYEDHASH;
     inPrivate.t.size = string_bytes_copy_tpm2b( &(inPrivate.t.sensitiveArea.authValue.b), &keyAuth);
@@ -65,17 +67,23 @@ static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH h
 //
 TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result )
 {
-    TPM2B_AUTH nullAuth;
     TPMI_DH_OBJECT sequenceHandle;
-    int i;
     TPM2B emptyBuffer;
     TPMT_TK_HASHCHECK validation;
 
+    TPMS_AUTH_COMMAND sessionData = {
+            .sessionHandle = TPM_RS_PW,
+            .nonce = {
+                    .t = { .size = 0 },
+            },
+            .sessionAttributes = { .val = 0 },
+
+
+    };
+
     TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_COMMAND sessionData;
+
     TSS2_SYS_CMD_AUTHS sessionsData;
-    TPM2B_AUTH hmac;
-    TPM2B_NONCE nonce;
 
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -85,16 +93,24 @@ TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *ke
     TPM_HANDLE keyHandle;
     TPM2B_NAME keyName;
 
-    TPM2B keyAuth;
+    TPM2B_AUTH nullAuth = {
+        .t = {
+                .size = 0
+        },
+    };
+
+    TPM2B keyAuth = {
+            .size = 0,
+            .buffer = {
+                    0
+            }
+    };
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
 
     // Set result size to 0, in case any errors occur
     result->b.size = 0;
-
-    keyAuth.size = 0;
-    nullAuth.t.size = 0;
 
     rval = LoadExternalHMACKey(sapi_context, hashAlg, key, &keyHandle, &keyName );
     if( rval != TPM_RC_SUCCESS )
@@ -103,12 +119,7 @@ TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *ke
     }
 
     // Init input sessions struct
-    sessionData.sessionHandle = TPM_RS_PW;
-    nonce.t.size = 0;
-    sessionData.nonce = nonce;
-    string_bytes_copy_tpm2b( &(hmac.b), &keyAuth );
-    sessionData.hmac = hmac;
-    *( (UINT8 *)((void *)&( sessionData.sessionAttributes ) ) ) = 0;
+    string_bytes_copy_tpm2b( &sessionData.hmac.b, &keyAuth );
     sessionsData.cmdAuthsCount = 1;
     sessionsData.cmdAuths = &sessionDataArray[0];
 
@@ -123,8 +134,7 @@ TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *ke
     if( rval != TPM_RC_SUCCESS )
         return( rval );
 
-    hmac.t.size = 0;
-    sessionData.hmac = hmac;
+    unsigned i;
     for( i = 0; bufferList[i] != 0; i++ )
     {
         rval = Tss2_Sys_SequenceUpdate ( sapi_context, sequenceHandle, &sessionsData, (TPM2B_MAX_BUFFER *)( bufferList[i] ), &sessionsDataOut );
