@@ -249,7 +249,6 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
         return false;
     }
 
-    int flag_cnt = 0;
     int H_flag = 0, c_flag = 0, k_flag = 0, C_flag = 0,
             f_flag = 0, o_flag = 0;
 
@@ -342,8 +341,8 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
         }
     };
 
-    if ((flag_cnt == 4) && (H_flag == 1 || c_flag == 1)
-            && (k_flag == 1 || C_flag == 1) && (f_flag == 1) && (o_flag == 1)) {
+    if ((!H_flag && !c_flag )
+            && (!k_flag || !C_flag) && !f_flag && !o_flag) {
         showArgMismatch(argv[0]);
         return false;
     }
