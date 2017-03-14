@@ -85,6 +85,10 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
     }
 
     FILE *fp = fopen(path, "wb+");
+    if (!fp) {
+        LOG_ERR("Could not open file \"%s\", error: %s", path, strerror(errno));
+        return false;
+    }
 
     bool result = files_write_bytes(fp, buf, size);
     if (!result) {
