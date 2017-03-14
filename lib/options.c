@@ -365,33 +365,13 @@ void
 execute_man (char *prog_name,
              char *envp[])
 {
-    char *prog_basename = basename (prog_name);
-    char *path_string = strdup (getenv ("PATH"));
-    char *path_string_tmp = path_string;
-    char *path_man_bin, *path_sep;
-    char *man_argv[3] = { NULL, };
-    size_t path_length;
+        char *argv[] = {
+                "/man", // ARGv[0] needs to be something.
+                basename(prog_name),
+                NULL
+        };
 
-    man_argv[1] = prog_basename;
-    do {
-        /* get poniter to next ':' in PATH string */
-        path_sep = strchr (path_string_tmp, ':');
-        if (path_sep != NULL)
-            path_sep[0] = '\0';
-        /* in path_man_bin, build string: path_string_tmp + '/' + "man"*/
-        path_length = strlen (path_string_tmp) + 5;
-        path_man_bin = malloc (path_length);
-        strncpy (path_man_bin, path_string_tmp, path_length);
-        strncpy (path_man_bin + strlen (path_man_bin), "/man", 5);
-        /* stick to convention and put path to executable in argv[0] */
-        man_argv[0] = path_man_bin;
-        execve (path_man_bin, man_argv, envp);
-        free (path_man_bin);
-        path_string_tmp = path_sep + 1;
-    } while (path_sep != NULL);
-    /*
-     * Unless we did something very wrong we should never reach here:
-     * execve doesn't return when it succeeds.
-     */
-    free (path_string);
+        printf("%s\n", basename(prog_name));
+
+        execvpe ("man", argv, envp);
 }
