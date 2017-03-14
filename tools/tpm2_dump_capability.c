@@ -568,8 +568,8 @@ get_capability_opts (int                  argc,
  * appropriate print function for the provided 'capability' / 'property'
  * pair) then it will return 1.
  */
-int
-dump_tpm_capability (TPMU_CAPABILITIES    capabilities,
+static int
+dump_tpm_capability (TPMU_CAPABILITIES    *capabilities,
                      TPM_CAP              capability,
                      UINT32               property)
 {
@@ -577,24 +577,25 @@ dump_tpm_capability (TPMU_CAPABILITIES    capabilities,
     case TPM_CAP_TPM_PROPERTIES:
         switch (property) {
         case PT_FIXED:
-            dump_tpm_properties_fixed (capabilities.tpmProperties.tpmProperty,
-                                       capabilities.tpmProperties.count);
+            dump_tpm_properties_fixed (capabilities->tpmProperties.tpmProperty,
+                                       capabilities->tpmProperties.count);
             break;
         case PT_VAR:
-            dump_tpm_properties_var (capabilities.tpmProperties.tpmProperty,
-                                     capabilities.tpmProperties.count);
+            dump_tpm_properties_var (capabilities->tpmProperties.tpmProperty,
+                                     capabilities->tpmProperties.count);
             break;
         default:
             return 1;
         }
         break;
     case TPM_CAP_ALGS:
-        dump_algorithms (capabilities.algorithms.algProperties,
-                         capabilities.algorithms.count);
+        dump_algorithms (capabilities->algorithms.algProperties,
+                         capabilities->algorithms.count);
         break;
     case TPM_CAP_COMMANDS:
-        dump_command_attr_array (capabilities.command.commandAttributes,
-                                 capabilities.command.count);
+        dump_command_attr_array (capabilities->command.commandAttributes,
+                                 capabilities->command.count);
+        /* no break */
     default:
         return 1;
     }
@@ -636,7 +637,7 @@ execute_tool (int               argc,
                                  options.count);
     if (rc != TSS2_RC_SUCCESS)
         return 1;
-    dump_tpm_capability (capability_data.data,
+    dump_tpm_capability (&capability_data.data,
                          options.capability,
                          options.property);
     return 0;

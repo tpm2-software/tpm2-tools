@@ -181,13 +181,13 @@ append_arg_to_vector (int*  argc,
 
     ++(*argc);
     new_argv = realloc (argv, sizeof (char*) * (*argc));
-    if (new_argv != NULL)
+    if (new_argv != NULL) {
         new_argv[*argc - 1] = arg_string;
-    else
-        fprintf (stderr,
-                 "Failed to realloc new_argv to append string %s: %s\n",
-                 arg_string,
-                 strerror (errno));
+    } else {
+        LOG_ERR("Failed to realloc new_argv to append string %s: %s\n",
+                arg_string,
+                strerror (errno));
+    }
 
     return new_argv;
 }
@@ -291,10 +291,14 @@ get_common_opts (int                    *argc_param,
            != -1)
     {
         switch (c) {
-        case 1: /* positional arguments */
-            new_argv = append_arg_to_vector (&new_argc, new_argv, optarg);
-            if (new_argv == NULL)
+        case 1: { /* positional arguments */
+            char **tmp = append_arg_to_vector (&new_argc, new_argv, optarg);
+            if (tmp == NULL) {
+                free(new_argv);
                 return 2;
+            }
+            new_argv = tmp;
+        }
             break;
         case 'T':
             common_opts->tcti_type = tcti_type_from_name (optarg);
@@ -313,6 +317,7 @@ get_common_opts (int                    *argc_param,
             if (!res) {
                 LOG_ERR("Could not convert port to a 16 bit unsigned number, "
                         "got: %s", optarg);
+                free(new_argv);
                 return 2;
             }
         }   break;
@@ -326,10 +331,14 @@ get_common_opts (int                    *argc_param,
         case 'v':
             common_opts->version = true;
             break;
-        case '?':
-            new_argv = append_arg_to_vector (&new_argc, new_argv, argv[optind - 1]);
-            if (new_argv == NULL)
+        case '?': {
+            char **tmp = append_arg_to_vector (&new_argc, new_argv, argv[optind - 1]);
+            if (tmp == NULL) {
+                free(new_argv);
                 return 2;
+            }
+            new_argv = tmp;
+        }
             break;
         }
     }
