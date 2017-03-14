@@ -194,6 +194,14 @@ static bool init(tpm2_verifysig_ctx *ctx) {
 
     /* If no digest is specified, compute it */
     if (!ctx->flags.digest) {
+        if (!ctx->flags.msg) {
+            /*
+             * This is a redundant check since main() checks this case, but we'll add it here to silence any
+             * complainers.
+             */
+            LOG_ERR("No digest set and no message file to compute from, cannot compute message hash!");
+            goto err;
+        }
         int rc = tpm_hash_compute_data(ctx->sapi_context, msg->buffer, msg->size,
                 ctx->halg, &ctx->msgHash);
         if (rc) {
