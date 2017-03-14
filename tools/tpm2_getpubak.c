@@ -254,7 +254,7 @@ static bool create_ak(getpubak_context *ctx) {
         return false;
     }
 
-    SESSION *session;
+    SESSION *session = NULL;
     UINT32 rval = tpm_session_start_auth_with_params(ctx->sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
             &nonce_caller, &encrypted_salt, TPM_SE_POLICY, &symmetric,
             TPM_ALG_SHA256);
