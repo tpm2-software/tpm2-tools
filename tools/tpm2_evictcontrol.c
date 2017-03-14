@@ -107,7 +107,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
 
     char contextFile[PATH_MAX];
 
-    bool is_hex_passwd;
+    bool is_hex_passwd = false;
 
     if (argc == 1) {
         showArgMismatch(argv[0]);
