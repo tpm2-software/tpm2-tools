@@ -183,7 +183,15 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.o = 1;
             break;
         case 'c':
+            if (contextKeyFile) {
+                LOG_ERR("Multiple specifications of -c");
+                goto out;
+            }
             contextKeyFile = strdup(optarg);
+            if (!contextKeyFile) {
+                LOG_ERR("OOM");
+                goto out;
+            }
             flags.c = 1;
             break;
         case 'X':
@@ -228,7 +236,8 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
 
     result = true;
 
-    out: free(contextKeyFile);
+out:
+    free(contextKeyFile);
     return result;
 }
 
