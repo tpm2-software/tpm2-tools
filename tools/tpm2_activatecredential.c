@@ -182,7 +182,7 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         return false;
     }
 
-    SESSION *session;
+    SESSION *session = NULL;
     UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session,
             TPM_RH_NULL, 0, TPM_RH_NULL, 0, &nonceCaller, &encryptedSalt,
             TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256);
