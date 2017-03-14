@@ -179,9 +179,13 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             flags.o = 1;
             break;
         case 'c':
+            if (contextKeyFile) {
+                LOG_ERR("Multiple specifications of -c");
+                goto out;
+            }
             contextKeyFile = strdup(optarg);
             if (!contextKeyFile) {
-                LOG_ERR("oom");
+                LOG_ERR("OOM");
                 goto out;
             }
             flags.c = 1;
