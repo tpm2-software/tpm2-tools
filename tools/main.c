@@ -61,9 +61,11 @@ main (int   argc,
         execute_man (argv[0], envp);
         fprintf (stderr,
                  "failed to load manpage, check your environment / PATH\n");
+        /* no break */
     case 2:
         exit (1);
     }
+
     if (opts.version) {
         showVersion (argv[0]);
         exit (0);
