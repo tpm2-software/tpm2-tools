@@ -214,7 +214,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
      */
     if (!((flags.k || flags.c) && flags.I && flags.o && flags.g)) {
         LOG_ERR("Must specify options g, i, o and k or c");
-        return false;
+        goto out;
     }
 
     if (flags.c) {
@@ -223,7 +223,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",
                     contextKeyFile);
-            return false;
+            goto out;
         }
     }
 
