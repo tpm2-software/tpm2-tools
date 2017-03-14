@@ -308,10 +308,13 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.s = 1;
             break;
         case 'c':
+            if (context_key_file) {
+                LOG_ERR("Multiple specifications of -c");
+                goto out;
+            }
             context_key_file = strdup(optarg);
             if (!context_key_file) {
-                LOG_ERR("oom");
-                result = false;
+                LOG_ERR("OOM");
                 goto out;
             }
             flags.c = 1;
