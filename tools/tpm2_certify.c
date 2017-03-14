@@ -314,16 +314,19 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             }
             context_key_file = strdup(optarg);
             if (!context_key_file) {
-                LOG_ERR("OOM");
+                LOG_ERR("oom");
                 goto out;
             }
             flags.c = 1;
             break;
         case 'C':
+            if (context_file) {
+                LOG_ERR("Multiple specifications of -C");
+                goto out;
+            }
             context_file = strdup(optarg);
             if (!context_file) {
                 LOG_ERR("oom");
-                result = false;
                 goto out;
             }
             flags.C = 1;
