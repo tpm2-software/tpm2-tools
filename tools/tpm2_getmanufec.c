@@ -28,34 +28,31 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <ctype.h>
-#include <getopt.h>
-
 #include <stdint.h>
-#include <openssl/sha.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/buffer.h>
-#include <curl/curl.h>
+#include <string.h>
 
+#include <getopt.h>
+#include <curl/curl.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
 #include <sapi/tpm20.h>
 
+#include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 #include "string-bytes.h"
 #include "tpm_hash.h"
 
-
-int debugLevel = 0;
 char outputFile[PATH_MAX];
 char ownerPasswd[sizeof(TPMU_HA)];
 char endorsePasswd[sizeof(TPMU_HA)];
@@ -275,41 +272,67 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
 unsigned char *HashEKPublicKey(void)
 {
-    printf("Calculating the SHA256 hash of the Endorsement Public Key\n");
-    FILE *fp;
-    unsigned char EKpubKey[259];
-    fp = fopen(outputFile, "rb");
-    if (fp == NULL) {
-        printf("File Open Error\n");
-    }
-    else {
-        fseek(fp, 0x66, 0);
-        size_t read = fread(EKpubKey, 1, 256, fp);
-        if (read != 256) {
-            printf ("Could not read whole file.");
-            return NULL;
-        }
-    }
-    fclose(fp);
+    unsigned char *hash = NULL;
+    FILE *fp = NULL;
 
-    unsigned char *hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
-    if (hash == NULL) {
-        printf ("Memory allocation failed.");
+    unsigned char EKpubKey[259];
+
+    printf("Calculating the SHA256 hash of the Endorsement Public Key\n");
+
+    fp = fopen(outputFile, "rb");
+    if (!fp) {
+        LOG_ERR("Could not open file: \"%s\"", outputFile);
         return NULL;
+    }
+
+    int rc = fseek(fp, 0x66, 0);
+    if (rc < 0) {
+        LOG_ERR("Could not perform fseek: %s\n", strerror(errno));
+        goto out;
+    }
+
+    size_t read = fread(EKpubKey, 1, 256, fp);
+    if (read != 256) {
+        LOG_ERR ("Could not read whole file.");
+        goto out;
+    }
+
+    hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
+    if (hash == NULL) {
+        LOG_ERR ("OOM");
+        goto out;
     }
 
     EKpubKey[256] = 0x01;
     EKpubKey[257] = 0x00;
     EKpubKey[258] = 0x01; //Exponent
     SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, EKpubKey, sizeof(EKpubKey));
-    SHA256_Final(hash, &sha256);
-    int i;
+    int is_success = SHA256_Init(&sha256);
+    if (!is_success) {
+        LOG_ERR ("SHA256_Init failed");
+        goto out;
+    }
+
+    is_success = SHA256_Update(&sha256, EKpubKey, sizeof(EKpubKey));
+    if (!is_success) {
+        LOG_ERR ("SHA256_Update failed");
+        goto out;
+    }
+
+    is_success = SHA256_Final(hash, &sha256);
+    if (!is_success) {
+        LOG_ERR ("SHA256_Final failed");
+        goto out;
+    }
+
+    unsigned i;
     for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
         printf("%02X", hash[i]);
     }
     printf("\n");
+
+out:
+    fclose(fp);
     return hash;
 }
 
@@ -353,45 +376,82 @@ char *Base64Encode(const unsigned char* buffer)
 
 int RetrieveEndorsementCredentials(char *b64h)
 {
-    printf("Retrieving Endorsement Credential Certificate from the TPM Manufacturer EK Provisioning Server\n");
-    char *weblink = (char*)malloc(1 + strlen(b64h) + strlen(EKserverAddr));
-    if (weblink == NULL) {
-        printf ("Memory allocation failed.");
-        return -1;
+    size_t len = 1 + strlen(b64h) + strlen(EKserverAddr);
+
+    int ret = -1;
+    char *weblink = (char *)malloc(len);
+    if (!weblink) {
+        LOG_ERR("Could not open file for writing: \"%s\"", ECcertFile);
+                return ret;
     }
-    memset(weblink, 0, (1 + strlen(b64h) + strlen(EKserverAddr)));
-    strcat(weblink, EKserverAddr);
-    strcat(weblink, b64h);
-    printf("%s\n", weblink);
-    CURL *curl;
-    CURLcode res;
 
-    FILE * respfile;
-    respfile = fopen(ECcertFile, "wb");
+    snprintf(weblink, len, "%s%s", EKserverAddr, b64h);
 
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    curl = curl_easy_init();
-
-    if (curl) {
-        /*
-         * should not be used - Used only on platforms with older CA certificates.
-         */
-        if (SSL_NO_VERIFY) {
-            curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
-        }
-        curl_easy_setopt(curl, CURLOPT_URL, weblink);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, respfile);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, respfile);
-        res = curl_easy_perform(curl);
-        if (res != CURLE_OK) {
-            fprintf(stderr, "\ncurl_easy_perform() failed: %s\n", curl_easy_strerror(res));
-        }
-        curl_easy_cleanup(curl);
+    FILE * respfile = fopen(ECcertFile, "wb");
+    if (!respfile) {
+        LOG_ERR("Could not open file for writing: \"%s\"", ECcertFile);
+                goto out_memory;
     }
+
+    CURLcode rc = curl_global_init(CURL_GLOBAL_DEFAULT);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_global_init failed: %s", curl_easy_strerror(rc));
+        goto out_file_close;
+    }
+
+    CURL *curl = curl_easy_init();
+    if (!curl) {
+        LOG_ERR("curl_easy_init failed");
+        goto out_global_cleanup;
+    }
+
+    /*
+     * should not be used - Used only on platforms with older CA certificates.
+     */
+    if (SSL_NO_VERIFY) {
+        rc = curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+        if (rc != CURLE_OK) {
+            LOG_ERR("curl_easy_setopt for CURLOPT_SSL_VERIFYPEER failed: %s", curl_easy_strerror(rc));
+            goto out_easy_cleanup;
+        }
+    }
+
+    rc = curl_easy_setopt(curl, CURLOPT_URL, weblink);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_easy_setopt for CURLOPT_URL failed: %s", curl_easy_strerror(rc));
+        goto out_easy_cleanup;
+    }
+
+    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, respfile);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_easy_setopt for CURLOPT_VERBOSE failed: %s", curl_easy_strerror(rc));
+        goto out_easy_cleanup;
+    }
+
+    rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, respfile);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s", curl_easy_strerror(rc));
+        goto out_easy_cleanup;
+    }
+
+    rc = curl_easy_perform(curl);
+    if (rc != CURLE_OK) {
+        LOG_ERR("curl_easy_perform() failed: %s\n", curl_easy_strerror(rc));
+        goto out_easy_cleanup;
+    }
+
+    ret = 0;
+
+out_easy_cleanup:
+    curl_easy_cleanup(curl);
+out_global_cleanup:
     curl_global_cleanup();
-    printf("\n");
+out_file_close:
+    fclose(respfile);
+out_memory:
     free(weblink);
-    return 0;
+
+    return ret;
 }
 
 
@@ -512,9 +572,9 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                         printf("TPM Manufacturer Endorsement Credential Server Address cannot be NULL\n");
                         return -99;
                     }
-                    EKserverAddr = (char *)malloc(strlen(optarg));
+                    EKserverAddr = strdup(optarg);
                     if (EKserverAddr == NULL) {
-                        printf ("Memory allocation failed.");
+                        LOG_ERR ("Memory allocation failed.");
                         return -99;
                     }
                     strncpy(EKserverAddr, optarg, strlen(optarg));
