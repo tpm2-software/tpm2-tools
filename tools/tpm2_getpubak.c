@@ -108,9 +108,6 @@ static bool set_ecc_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
         in_public->t.publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg =
                 digest_alg;
         break;
-    case TPM_ALG_NULL :
-        /* nothing to do */
-        break;
     default:
         LOG_ERR("The ECC signing algorithm type input(%4.4x) is not supported!",
                 sign_alg);
@@ -132,9 +129,6 @@ static bool set_keyed_hash_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
     case TPM_ALG_HMAC :
         in_public->t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg =
                 digest_alg;
-        break;
-    case TPM_ALG_NULL :
-        /* nothing to do */
         break;
     default:
         LOG_ERR(
