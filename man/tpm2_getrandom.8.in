@@ -28,20 +28,17 @@
 .\" THE POSSIBILITY OF SUCH DAMAGE.
 .TH tpm2_getrandom 8 "DECEMBER 2016" Intel "tpm2.0-tools"
 .SH NAME
-tpm2_getrandom\ - returns the next bytesRequested octets from the random number generator.
+tpm2_getrandom\ - returns the next SIZE octets from the random number generator.
 .SH SYNOPSIS
-.B tpm2_getrandom[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-size\fR|\fB\-\-of\fR|\fB ]
+.B tpm2_getrandom[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ -\-output\fR|\fB ] SIZE
 .PP
-returns the next bytesRequested octets from the random number generator.
+returns the next SIZE octets from the random number generator.
 .SH DESCRIPTION
 .B tpm2_getrandom
-returns the next bytesRequested octets from the random number generator.
+returns the next SIZE octets from the random number generator.
 .SH OPTIONS
 .TP
-\fB\-s ,\-\-size\fR
-specifies the size of the bytesRequested.
-.TP
-\fB\-o ,\-\-of\fR
+\fB\-o ,\-\-output\fR
 specifies the filename of output.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
@@ -51,6 +48,7 @@ specifies the filename of output.
 .PP
 .nf
 .RS
-tpm2_getrandom -s 20 -o random.out
+tpm2_getrandom -o random.out 20
+tpm2_getrandom 8
 .RE
 .fi
