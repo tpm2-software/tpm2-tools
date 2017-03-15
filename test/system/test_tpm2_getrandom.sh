@@ -35,7 +35,7 @@ size=32
 
 rm -f  random.out
 
-tpm2_getrandom -s 32  -o random.out 
+tpm2_getrandom -o random.out 32
 if [ $? != 0 ];then
 	    echo "getrandom test fail, please check the environment or parameters!"
 		exit 1

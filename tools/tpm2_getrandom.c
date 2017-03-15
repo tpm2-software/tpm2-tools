@@ -47,6 +47,7 @@
 
 typedef struct tpm_random_ctx tpm_random_ctx;
 struct tpm_random_ctx {
+    bool output_file_specified;
     char output_file[PATH_MAX];
     UINT16 num_of_bytes;
     TSS2_SYS_CONTEXT *sapi_context;
@@ -63,11 +64,14 @@ static bool get_random_and_save(tpm_random_ctx *ctx) {
         return false;
     }
 
-    printf("byte size: %d\n", random_bytes.t.size);
-    UINT16 i;
-    for (i = 0; i < random_bytes.t.size; i++)
-        printf(" 0x%2.2X", random_bytes.t.buffer[i]);
-    printf("\n");
+    if (!ctx->output_file_specified) {
+        UINT16 i;
+        for (i = 0; i < random_bytes.t.size; i++) {
+            printf("%s0x%2.2X", i ? " " : "", random_bytes.t.buffer[i]);
+        }
+        printf("\n");
+        return true;
+    }
 
     return files_save_bytes_to_file(ctx->output_file, (UINT8 *) random_bytes.t.buffer,
             random_bytes.t.size);
@@ -77,45 +81,25 @@ static bool get_random_and_save(tpm_random_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
 
-    static const char *short_options = "s:o:p:d:hv";
+    static const char *short_options = "o:";
     static const struct option long_options[] = {
-        { "size", required_argument, NULL, 's' },
-        { "of",   required_argument, NULL, 'o' },
+        { "output",   required_argument, NULL, 'o' },
         { NULL,   no_argument,       NULL,  '\0' },
     };
 
-    struct {
-        UINT8 s      : 1;
-        UINT8 o      : 1;
-        UINT8 unused : 6;
-    } flags = { 0 };
-
-    /*
-     * subtract 1 from argc to disregard argv[0]
-     * ALL options are required.
-     * */
-    if ((argc - 1) != ARG_CNT) {
+    if (argc !=2 && argc != 4) {
         showArgMismatch(argv[0]);
         return false;
     }
 
     int opt;
-    bool result;
+    optind = 0; /* force reset of getopt() since we used gnu extensionsin main, sic */
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {
-        case 's':
-            result = string_bytes_get_uint16(optarg, &ctx->num_of_bytes);
-            if (!result) {
-                LOG_ERR("Error converting size to a number, got: \"%s\".",
-                        optarg);
-                return false;
-            }
-            flags.s = 1;
-            break;
         case 'o':
+            ctx->output_file_specified = true;
             snprintf(ctx->output_file, sizeof(ctx->output_file), "%s", optarg);
-            flags.o = 1;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -129,8 +113,10 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
         }
     }
 
-    if (!(flags.s && flags.o)) {
-        LOG_ERR("Must specify size and output file");
+    bool result = string_bytes_get_uint16(argv[optind], &ctx->num_of_bytes);
+    if (!result) {
+        LOG_ERR("Error converting size to a number, got: \"%s\".",
+                argv[optind]);
         return false;
     }
 
@@ -144,6 +130,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void)envp;
 
     tpm_random_ctx ctx = {
+            .output_file_specified = false,
             .num_of_bytes = 0,
             .output_file = { 0 },
             .sapi_context = sapi_context

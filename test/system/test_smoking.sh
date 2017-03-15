@@ -93,7 +93,7 @@ tpm2_akparse -f ak.pub1.out  -k akparse.out
   fi
 
 ##### getrandom & hash  
-tpm2_getrandom -s 20 -o random.out
+tpm2_getrandom -o random.out 20
   if [ $? != 0 ];then
 	fail getrandom 
   fi
