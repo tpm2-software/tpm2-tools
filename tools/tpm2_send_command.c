@@ -63,7 +63,7 @@ read_command_from_file (FILE              *file_stream,
                  strerror (errno));
         return 0;
     }
-    LOG_INFO ("read %zd command header of size: 0x%lx",
+    LOG_INFO ("read %zd command header of size: %zd",
                  ret, COMMAND_HEADER_SIZE);
     command_size = get_command_size (buf);
     if (command_size > buf_size) {
@@ -104,11 +104,11 @@ write_response_to_file (FILE           *file_stream,
         LOG_ERR ("failed to write to stdout");
         return 0;
     }
-    LOG_INFO ("wrote response header: %ld members of size 0x%lx",
+    LOG_INFO ("wrote response header: %zd members of size %zd",
                  num_write, RESPONSE_HEADER_SIZE);
     response_size = get_command_size (buf);
     if (response_size > buf_size) {
-        LOG_ERR ("buf_size is insufficient: %u > %ld",
+        LOG_ERR ("buf_size is insufficient: %u > %zd",
                  response_size, buf_size);
         return 0;
     }
