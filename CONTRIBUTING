@@ -1,5 +1,12 @@
+Guidelines for submitting bugs:
+All non security bugs can be filed on the Issues tracker:
+  https://github.com/01org/tpm2.0-tools/issues
 
-Guideline for submitting changes:
+Security sensitive bugs should be emailed to a maintainer or to Intel
+via the guidelines here:
+  https://security-center.intel.com/VulnerabilityHandlingGuidelines.aspx
+
+Guidelines for submitting changes:
 
 All changes should be introduced via github pull requests. This allows anyone to
 comment and provide feedback in lieu of having a mailing list. For pull requests
