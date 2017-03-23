@@ -105,7 +105,7 @@ int hex2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
 
     for(i = 0; i < *byteLength; i++)
     {
-        char tmpStr[3] = {0};
+        char tmpStr[4] = {0};
         tmpStr[0] = inStr[i*2];
         tmpStr[1] = inStr[i*2+1];
         byteBuffer[i] = strtol(tmpStr, NULL, 16);

@@ -97,7 +97,7 @@ int pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels) {
 }
 
 int pcr_parse_list(const char *str, int len, TPMS_PCR_SELECTION *pcrSel) {
-    char buf[3];
+    char buf[4];
     const char *strCurrent;
     int lenCurrent;
     UINT32 pcr;
