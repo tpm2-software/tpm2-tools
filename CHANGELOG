@@ -1,3 +1,11 @@
+v2.0 - 2016-04-03
+* Tracked on the milestone: https://github.com/01org/tpm2.0-tools/milestone/2
+* Reworked all the tools to support configurable TCTIs, based on build time
+  configuration, one can specify the tcti via the --tcti (-T) option to all
+  tools.
+* tpm2_getrandom interface made -s a positional argument.
+* Numerous bug fixes.
+
 v1.1 - 2016-11-04
 Added
 * travis ci support.
