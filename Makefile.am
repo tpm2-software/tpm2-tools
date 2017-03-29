@@ -216,5 +216,6 @@ endif
 	    -e '/@TCTI_ENVIRONMENT_INCLUDE@/r man/tcti-environment.troff' \
 	    -e '/@TCTI_ENVIRONMENT_INCLUDE@/d' \
 	    < $< >> $@
+	$(srcdir)/scripts/build/man-check.sh $@
 
 CLEANFILES = $(man8_MANS)
