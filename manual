@@ -23,25 +23,28 @@ The resourcemgr can connect to either physical tpm or remote MS/IBM simulator,
 refer to the help of resourcemgr for details.
 
 2. running tools
-All tool executables are built under ./src/. So once resourcemgr is up:
-$ cd ./src
+All tool executables are built under ./tools/. So once resourcemgr is up:
+$ cd ./tools
 $ ./tpm2_xxx -x...
 
 Or if the tools are installed:
 $ tpm2_xxx -x...
 
 3. tool usages
-Common options:
-  -h/--help                 display this help and exit.
-  -v/--version              display version information and exit.
-  -p/--port <port>          specifies the port number of resourcemgr,
-                            default: 2323, optional.
-  -d/--dbg <dbgLevel>       specifies level of debug messages output by
-                            resourcemgr, optional:
-                            0 (high level test results)
-                            1 (test app send/receive byte streams)
-                            2 (resource manager send/receive byte streams)
-                            3 (resource manager tables)
+common options
+This collection of options are common to many programs and provide information that many users may expect.
+-h, --help     Display a manual describing the tool and its usage.
+-v, --version  Display version information for this tool.
+-V, --verbose  Increase the information that the tool prints to the console during its execution.
+
+tcti options (depends on configure time options for tcti's.)
+This collection of options are used to configure the varous TCTI modules available.
+-T, --tcti           Select the TCTI used for communication with the next component down the TSS stack.
+                     In most configurations this will be the TPM but it could be a simulator or proxy.
+                     Supported TCTIs are or “device” or “socket” .
+-d, --device-file    Specify the TPM device file for use by the device TCTI. The default is /dev/tpm0.
+-R, --socket-address Specify the domain name or IP address used by the socket TCTI. The default is 127.0.0.1.
+-p, --socket-port    Specify the port number used by the socket TCTI. The default is 2321.
 
 Subset 1: NV tools
 ------------------
