@@ -124,7 +124,15 @@ showArgMismatch (const char *name)
 static inline void
 showVersion (const char *name)
 {
+#if defined(ANDROID)
+#define xstr(a) str(a)
+#define str(a) #a
+    printf("%s, version %s\n", name, str(VERSION));
+#undef str
+#undef xstr
+#else
     printf("%s, version %s\n", name, VERSION);
+#endif
 }
 
 #endif /* OPTIONS_H */
