@@ -310,19 +310,19 @@ unsigned char *HashEKPublicKey(void)
     int is_success = SHA256_Init(&sha256);
     if (!is_success) {
         LOG_ERR ("SHA256_Init failed");
-        goto out;
+        goto hash_out;
     }
 
     is_success = SHA256_Update(&sha256, EKpubKey, sizeof(EKpubKey));
     if (!is_success) {
         LOG_ERR ("SHA256_Update failed");
-        goto out;
+        goto hash_out;
     }
 
     is_success = SHA256_Final(hash, &sha256);
     if (!is_success) {
         LOG_ERR ("SHA256_Final failed");
-        goto out;
+        goto hash_out;
     }
 
     unsigned i;
@@ -330,7 +330,11 @@ unsigned char *HashEKPublicKey(void)
         printf("%02X", hash[i]);
     }
     printf("\n");
+    goto out;
 
+hash_out:
+    free(hash);
+    hash = NULL;
 out:
     fclose(fp);
     return hash;
