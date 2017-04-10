@@ -86,6 +86,7 @@ test_wrapper test_tpm2_verifysignature.sh
 test_wrapper test_tpm2_send_command.sh
 test_wrapper test_tpm2_dump_capability.sh
 test_wrapper test_tpm2_startup.sh
+test_wrapper test_tpm2_getmanufec.sh
 test_wrapper test_tpm2_dictionarylockout.sh
 
 echo -e "\033[32m Tests passed: $pass \033[0m"

@@ -310,19 +310,19 @@ unsigned char *HashEKPublicKey(void)
     int is_success = SHA256_Init(&sha256);
     if (!is_success) {
         LOG_ERR ("SHA256_Init failed");
-        goto out;
+        goto hash_out;
     }
 
     is_success = SHA256_Update(&sha256, EKpubKey, sizeof(EKpubKey));
     if (!is_success) {
         LOG_ERR ("SHA256_Update failed");
-        goto out;
+        goto hash_out;
     }
 
     is_success = SHA256_Final(hash, &sha256);
     if (!is_success) {
         LOG_ERR ("SHA256_Final failed");
-        goto out;
+        goto hash_out;
     }
 
     unsigned i;
@@ -330,7 +330,11 @@ unsigned char *HashEKPublicKey(void)
         printf("%02X", hash[i]);
     }
     printf("\n");
+    goto out;
 
+hash_out:
+    free(hash);
+    hash = NULL;
 out:
     fclose(fp);
     return hash;
@@ -338,9 +342,16 @@ out:
 
 char *Base64Encode(const unsigned char* buffer)
 {
-    printf("Calculating the Base64Encode of the hash of the Endorsement Public Key:\n");
     BIO *bio, *b64;
     BUF_MEM *bufferPtr;
+
+    printf("Calculating the Base64Encode of the hash of the Endorsement Public Key:\n");
+
+    if (buffer == NULL) {
+        LOG_ERR("HashEKPublicKey returned null");
+        return NULL;
+    }
+
     b64 = BIO_new(BIO_f_base64());
     bio = BIO_new(BIO_s_mem());
     bio = BIO_push(b64, bio);
@@ -376,9 +387,14 @@ char *Base64Encode(const unsigned char* buffer)
 
 int RetrieveEndorsementCredentials(char *b64h)
 {
-    size_t len = 1 + strlen(b64h) + strlen(EKserverAddr);
-
     int ret = -1;
+
+    if (b64h == NULL) {
+        LOG_ERR("Base64Encode returned null");
+        return ret;
+    }
+
+    size_t len = 1 + strlen(b64h) + strlen(EKserverAddr);
     char *weblink = (char *)malloc(len);
     if (!weblink) {
         LOG_ERR("Could not open file for writing: \"%s\"", ECcertFile);
@@ -461,8 +477,8 @@ int TPMinitialProvisioning(void)
         printf("TPM Manufacturer Endorsement Credential Server Address cannot be NULL\n");
         return -99;
     }
-    RetrieveEndorsementCredentials(Base64Encode(HashEKPublicKey()));
-    return 0;
+
+    return RetrieveEndorsementCredentials(Base64Encode(HashEKPublicKey()));
 }
 
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
