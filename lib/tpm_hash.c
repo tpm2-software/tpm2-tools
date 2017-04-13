@@ -97,3 +97,38 @@ int tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, BYTE *buffer,
     free(bufferList);
     return rval == TPM_RC_SUCCESS ? 0 : -3;
 }
+
+//
+// This function does a hash on an array of data strings and re-uses syscontext
+//
+UINT32 tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
+        size_t num_buffers, TPM2B_DIGEST *buffer_list, TPM2B_DIGEST *result) {
+
+    TPM2B_AUTH null_auth = { .t.size = 0 };
+    TPMI_DH_OBJECT sequence_handle;
+    UINT32 rval = Tss2_Sys_HashSequenceStart(sapi_context, 0, &null_auth,hash_alg,
+                        &sequence_handle, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        return rval;
+    }
+
+    TPMS_AUTH_COMMAND cmd_auth = { 0 };
+    cmd_auth.sessionHandle = TPM_RS_PW;
+    TPMS_AUTH_COMMAND *cmd_session_array[1] = { &cmd_auth };
+    TSS2_SYS_CMD_AUTHS cmd_auth_array = { 1, &cmd_session_array[0] };
+    unsigned i;
+    for (i = 0; i < num_buffers; i++) {
+        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
+                &cmd_auth_array, (TPM2B_MAX_BUFFER *) &buffer_list[i], 0);
+
+        if (rval != TPM_RC_SUCCESS) {
+            return rval;
+        }
+    }
+
+    TPMT_TK_HASHCHECK validation;
+    TPM2B empty_buffer = { .size = 0 };
+    return Tss2_Sys_SequenceComplete(sapi_context, sequence_handle, &cmd_auth_array,
+                (TPM2B_MAX_BUFFER *) &empty_buffer, TPM_RH_PLATFORM, result,
+                &validation, 0);
+}
