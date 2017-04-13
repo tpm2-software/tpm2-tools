@@ -6,6 +6,7 @@
 
 #include "pcr.h"
 #include "string-bytes.h"
+#include "log.h"
 
 static int pcr_get_id(const char *arg, UINT32 *pcrId)
 {
@@ -137,4 +138,25 @@ int pcr_parse_list(const char *str, int len, TPMS_PCR_SELECTION *pcrSel) {
     } while (str);
 
     return 0;
+}
+
+TPM_RC get_max_supported_pcrs(TSS2_SYS_CONTEXT *sapi_context, UINT32 *max_pcrs) {
+    TPMI_YES_NO moreData;
+    TPMS_CAPABILITY_DATA capabilityData;
+    TPM_RC rval = Tss2_Sys_GetCapability( sapi_context, 0, TPM_CAP_TPM_PROPERTIES, TPM_PT_PCR_COUNT, 1, &moreData, &capabilityData, 0 );
+    if (rval != TPM_RC_SUCCESS) {
+        return rval;
+    }
+    *max_pcrs = capabilityData.data.tpmProperties.tpmProperty[0].value;
+    
+    /*
+    *  The following check is temporary.
+    *  It is compensating until TSS reads IMPLEMENTATION_PCR dynamically
+    */
+    if (*max_pcrs > IMPLEMENTATION_PCR) {
+        LOG_ERR("Number of supported PCRs in TPM exceed the number supported in TSS");
+        *max_pcrs = 0;
+    }
+
+    return TPM_RC_SUCCESS;
 }
