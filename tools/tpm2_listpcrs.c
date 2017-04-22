@@ -130,6 +130,7 @@ static bool unset_pcr_sections(TPML_PCR_SELECTION *s) {
     for (i = 0; i < s->count; i++) {
         for (j = 0; j < s->pcrSelections[i].sizeofSelect; j++) {
             if (s->pcrSelections[i].pcrSelect[j]) {
+                LOG_ERR("bit %u in pcrSelection array index %d found!", j, i);
                 return false;
             }
         }
