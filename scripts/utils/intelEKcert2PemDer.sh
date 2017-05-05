@@ -32,6 +32,6 @@
 #!/bin/sh
 
 certBasename=$( echo $(basename $1) | cut -f 1 -d '.')
-sed -i 's/-/+/g;s/_/\//g;s/%3D/=/g;s/^{.*certificate":"//g;s/"}$//g;' $1 
-cat $1 | base64 --decode > $certBasename.cer
-openssl x509 -in $certBasename.cer -inform DER -out $certBasename.pem -outform PEM
+sed 's/-/+/g;s/_/\//g;s/%3D/=/g;s/^{.*certificate":"//g;s/"}$//g;' $1 |
+    base64 --decode |
+    openssl x509 -inform DER -out $certBasename.pem -outform PEM
