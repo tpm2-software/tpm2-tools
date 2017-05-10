@@ -30,6 +30,13 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 #!/bin/bash
+encrypt_decrypt_cc=0x164
+tpm2_dump_capability -c commands | grep $encrypt_decrypt_cc
+if [ $? != 0 ];then
+    echo "Command EncryptDecrypt is not supported by your device"
+    exit 0
+fi
+
 alg_primary_obj=0x0004
 alg_primary_key=0x0001
 alg_create_obj=0x000B
