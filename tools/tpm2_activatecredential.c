@@ -133,13 +133,17 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         tpm_activatecred_ctx *ctx) {
 
     TPM2B_DIGEST certInfoData = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMS_AUTH_COMMAND tmp_auth;
+    TPMS_AUTH_COMMAND tmp_auth = {
+            .nonce = { .t = { .size = 0 } },
+            .hmac =  { .t = { .size = 0 } },
+            .sessionHandle = 0,
+            .sessionAttributes = { .val = 0 },
+    };
 
     ctx->password.sessionHandle = TPM_RS_PW;
     ctx->endorse_password.sessionHandle = TPM_RS_PW;
     *((UINT8 *) ((void *) &ctx->password.sessionAttributes)) = 0;
     *((UINT8 *) ((void *) &ctx->endorse_password.sessionAttributes)) = 0;
-    *((UINT8 *) ((void *) &tmp_auth.sessionAttributes)) = 0;
 
     TPMS_AUTH_COMMAND *cmd_session_array_password[2] = {
         &ctx->password,
