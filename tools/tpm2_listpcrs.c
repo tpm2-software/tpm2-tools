@@ -173,38 +173,35 @@ static bool read_pcr_values(listpcr_context *context) {
     return true;
 }
 
-static void init_pcr_selection_from_algorithm(TPMI_ALG_HASH alg_id,
-        TPML_PCR_SELECTION *pcr_selections) {
+static bool init_pcr_selection(TPMI_ALG_HASH alg_id, listpcr_context *context) {
 
-    pcr_selections->count = 1;
-    pcr_selections->pcrSelections[0].hash = alg_id;
-    set_pcr_select_size(&pcr_selections->pcrSelections[0], 3);
-    clear_pcr_select_bits(&pcr_selections->pcrSelections[0]);
+    TPMI_YES_NO moreData;
+    TPMS_CAPABILITY_DATA cap_data;
+    TPML_PCR_SELECTION *pcr_sel = &context->pcr_selections;
+    UINT32 rval, i, j;
 
-    UINT32 pcr_id;
-    for (pcr_id = 0; pcr_id < 24; pcr_id++) {
-        set_pcr_select_bit(&pcr_selections->pcrSelections[0], pcr_id);
+    rval = Tss2_Sys_GetCapability(context->sapi_context, 0, TPM_CAP_PCRS, 0, 1, &moreData, &cap_data, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("GetCapability: Get PCR allocation status Error. TPM Error:0x%x......\n", rval);
+        return false;
     }
-}
 
-/* XXX Could this internally call init_pcr_selection_from_algorithm to reduce duplicate code? */
-static void init_pcr_selection_all(tpm2_algorithm *algorithm,
-        TPML_PCR_SELECTION *pcr_selections) {
+    pcr_sel->count = 0;
 
-    pcr_selections->count = 0;
-
-    int i;
-    for (i = 0; i < algorithm->count; i++) {
-        pcr_selections->pcrSelections[i].hash = algorithm->alg[i];
-        set_pcr_select_size(&pcr_selections->pcrSelections[i], 3);
-        clear_pcr_select_bits(&pcr_selections->pcrSelections[i]);
-
-        UINT32 pcr_id;
-        for (pcr_id = 0; pcr_id < 24; pcr_id++) {
-            set_pcr_select_bit(&pcr_selections->pcrSelections[i], pcr_id);
-        }
-        pcr_selections->count++;
+    for (i = 0; i < cap_data.data.assignedPCR.count; i++) {
+        if (alg_id && (cap_data.data.assignedPCR.pcrSelections[i].hash != alg_id))
+            continue;
+        pcr_sel->pcrSelections[pcr_sel->count].hash = cap_data.data.assignedPCR.pcrSelections[i].hash;
+        set_pcr_select_size(&pcr_sel->pcrSelections[pcr_sel->count], cap_data.data.assignedPCR.pcrSelections[i].sizeofSelect);
+        for (j = 0; j < pcr_sel->pcrSelections[pcr_sel->count].sizeofSelect; j++)
+            pcr_sel->pcrSelections[pcr_sel->count].pcrSelect[j] = cap_data.data.assignedPCR.pcrSelections[i].pcrSelect[j];
+        pcr_sel->count++;
     }
+
+    if (pcr_sel->count == 0)
+        return false;
+
+    return true;
 }
 
 // show all PCR banks according to g_pcrSelection & g_pcrs->
@@ -220,7 +217,7 @@ static bool show_pcr_values(listpcr_context *context) {
                 context->pcr_selections.pcrSelections[i].hash);
 
         UINT32 pcr_id;
-        for (pcr_id = 0; pcr_id < 24; pcr_id++) {
+        for (pcr_id = 0; pcr_id < context->pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
             if (!is_pcr_select_bit_set(&context->pcr_selections.pcrSelections[i],
                     pcr_id)) {
                 continue;
@@ -271,14 +268,16 @@ static bool show_selected_pcr_values(listpcr_context *context) {
 
 static bool show_all_pcr_values(listpcr_context *context) {
 
-    init_pcr_selection_all(&context->algs, &context->pcr_selections);
+    if (!init_pcr_selection(0, context))
+        return false;
 
     return show_selected_pcr_values(context);
 }
 
 static bool show_alg_pcr_values(listpcr_context *context, TPMI_ALG_HASH alg_id) {
 
-    init_pcr_selection_from_algorithm(alg_id, &context->pcr_selections);
+    if (!init_pcr_selection(alg_id, context))
+        return false;
 
     return show_selected_pcr_values(context);
 }
