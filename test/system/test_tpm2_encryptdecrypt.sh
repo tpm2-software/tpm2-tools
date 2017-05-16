@@ -70,6 +70,9 @@ echo "12345678" > $file_input_data
 fi 
 
 tpm2_takeownership -c
+if [ $? != 0 ];then
+    fail takeownership
+fi
 
 tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 if [ $? != 0 ];then
