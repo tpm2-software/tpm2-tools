@@ -43,9 +43,29 @@ AS_IF(
              AC_MSG_FAILURE([--with-tcti-socket option provided but libtcti-socket not detected.])
          fi])])
 AM_CONDITIONAL([HAVE_TCTI_SOCK],[test "x$with_tcti_socket" = "xyes"])
+# selectively disable libtcti-tabrmd
+AC_ARG_WITH(
+    [tcti-tabrmd],
+    [AS_HELP_STRING([--with-tcti-tabrmd],
+        [Build tools with support for the tabrmd TCTI.])],
+    [],
+    [with_tcti_tabrmd=check])
+AS_IF(
+    [test "x$with_tcti_tabrmd" != "xno"],
+    [PKG_CHECK_MODULES(
+        [TCTI_TABRMD],
+        [tcti-tabrmd],
+        [AC_DEFINE([HAVE_TCTI_TABRMD], [1])
+         with_tcti_tabrmd=yes],
+        [if test "x$with_tcti_tabrmd" = "xyes"; then
+             AC_MSG_FAILURE([--with-tcti-tabrmd option provided but libtcti-tabrmd not detected.])
+         fi])])
+AM_CONDITIONAL([HAVE_TCTI_TABRMD],[test "x$with_tcti_tabrmd" = "xyes"])
 # ensure we have at least one TCTI enabled, can't do much without one
 AS_IF(
-    [test "x$with_tcti_device" != "xyes" -a "x$with_tcti_socket" != "xyes"],
+    [test "x$with_tcti_device" != "xyes" -a \
+          "x$with_tcti_socket" != "xyes" -a \
+          "x$with_tcti_tabrmd" != "xyes"],
     [AC_MSG_ERROR(
         [no TCTIs: at least one TCTI library must be enabled],
         [1])])
