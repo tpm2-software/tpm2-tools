@@ -67,6 +67,12 @@ tcti_map_entry_t tcti_map_table[] = {
         .type = SOCKET_TCTI,
     },
 #endif
+#ifdef HAVE_TCTI_TABRMD
+    {
+        .name = "tabrmd",
+        .type = TABRMD_TCTI,
+    },
+#endif
     {
         .name = "unknown",
         .type = UNKNOWN_TCTI,
@@ -134,6 +140,11 @@ sanity_check_common (common_opts_t  *opts)
             fprintf (stderr, "missing --socket-port, see --help\n");
             return 2;
         }
+        break;
+#endif
+#ifdef HAVE_TCTI_TABRMD
+    case TABRMD_TCTI:
+        /* no options for this one yet */
         break;
 #endif
     default:
@@ -244,6 +255,9 @@ get_common_opts (int                    *argc_param,
             .val     = 'p',
         },
 #endif
+#ifdef HAVE_TCTI_TABRMD
+        /* no options for this TCTI yet */
+#endif
         {
             .name    = "help",
             .has_arg = no_argument,
@@ -322,6 +336,9 @@ get_common_opts (int                    *argc_param,
             }
         }   break;
 #endif
+#ifdef HAVE_TCTI_TABRMD
+        /* No options for this TCTI yet. */
+#endif
         case 'h':
             common_opts->help = true;
             break;
@@ -362,6 +379,9 @@ dump_common_opts (common_opts_t *opts)
 #ifdef HAVE_TCTI_SOCK
     printf ("  address:          %s\n", opts->socket_address);
     printf ("  port:             %d\n", opts->socket_port);
+#endif
+#ifdef HAVE_TCTI_TABRMD
+    /* No options for this TCTI yet. */
 #endif
     printf ("  help:             %s\n", opts->help    ? "true" : "false");
     printf ("  verbose:          %s\n", opts->verbose ? "true" : "false");
