@@ -22,7 +22,9 @@ install:
     - ./tpm_server &
     - popd && popd
     - git clone https://github.com/01org/TPM2.0-TSS.git
-    - pushd TPM2.0-TSS && ./bootstrap && ./configure && make -j$(nproc) && sudo make install && popd
+    - pushd TPM2.0-TSS
+    - git checkout 1.0
+    - ./bootstrap && ./configure && make -j$(nproc) && sudo make install && popd
     - sudo ldconfig /usr/local/lib
     - resourcemgr -sim -tpmhost 127.0.0.1 &
     - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.0.1-2_amd64.deb
