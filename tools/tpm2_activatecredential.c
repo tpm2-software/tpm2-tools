@@ -359,7 +359,12 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
     (void) envp;
 
-    /* static an easy way to get zero memory, these don't need thread safety */
+    /*
+    * A bug in certain gcc versions prevents us from using = { 0 };
+    * https://gcc.gnu.org/bugzilla/show_bug.cgi?id=53119
+    *
+    * Declare it static since we don't need thread safety.
+    */
     static tpm_activatecred_ctx ctx;
 
     int rc = 1;
