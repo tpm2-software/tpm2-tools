@@ -140,6 +140,8 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
     *((UINT8 *) ((void *) &ctx->password.sessionAttributes)) = 0;
     *((UINT8 *) ((void *) &ctx->endorse_password.sessionAttributes)) = 0;
     *((UINT8 *) ((void *) &tmp_auth.sessionAttributes)) = 0;
+    tmp_auth.nonce.t.size = 0;
+    tmp_auth.hmac.t.size = 0;
 
     TPMS_AUTH_COMMAND *cmd_session_array_password[2] = {
         &ctx->password,
