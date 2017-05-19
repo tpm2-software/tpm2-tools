@@ -29,7 +29,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <errno.h>
-#include <inttypes.h>
 #include <string.h>
 #ifdef HAVE_TCTI_DEV
 #include <tcti/tcti_device.h>
@@ -37,12 +36,8 @@
 #ifdef HAVE_TCTI_SOCK
 #include <tcti/tcti_socket.h>
 #endif
-#ifdef HAVE_TCTI_TABRMD
-#include <tcti/tcti-tabrmd.h>
-#endif
 
 #include "context-util.h"
-#include "log.h"
 
 /*
  * Initialize a TSS2_TCTI_CONTEXT for the device TCTI.
@@ -129,34 +124,6 @@ tcti_socket_init (char const *address,
     return tcti_ctx;
 }
 #endif
-#ifdef HAVE_TCTI_TABRMD
-TSS2_TCTI_CONTEXT*
-tcti_tabrmd_init (void)
-{
-    TSS2_TCTI_CONTEXT *tcti_ctx;
-    TSS2_RC rc;
-    size_t size;
-
-    rc = tss2_tcti_tabrmd_init(NULL, &size);
-    if (rc != TSS2_RC_SUCCESS) {
-        LOG_ERR ("Failed to get size for TABRMD TCTI context: 0x%" PRIx32, rc);
-        return NULL;
-    }
-    tcti_ctx = (TSS2_TCTI_CONTEXT*)calloc (1, size);
-    if (tcti_ctx == NULL) {
-        LOG_ERR ("Allocation for TABRMD TCTI context failed: %s",
-                 strerror (errno));
-        return NULL;
-    }
-    rc = tss2_tcti_tabrmd_init (tcti_ctx, &size);
-    if (rc != TSS2_RC_SUCCESS) {
-        LOG_ERR ("Failed to initialize TABRMD TCTI context: 0x%" PRIx32, rc);
-        free (tcti_ctx);
-        return NULL;
-    }
-    return tcti_ctx;
-}
-#endif
 /*
  * Initialize a SAPI context using the TCTI context provided by the caller.
  * This function allocates memory for the SAPI context and returns it to the
@@ -226,10 +193,6 @@ tcti_init_from_options (common_opts_t *options)
     case SOCKET_TCTI:
         return tcti_socket_init (options->socket_address,
                                  options->socket_port);
-#endif
-#ifdef HAVE_TCTI_TABRMD
-    case TABRMD_TCTI:
-        return tcti_tabrmd_init ();
 #endif
     default:
         return NULL;
