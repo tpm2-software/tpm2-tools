@@ -14,8 +14,6 @@ addons:
     - openssl
     - libssl-dev
     - libcurl4-openssl-dev
-    - libdbus-1-dev
-    - libglib2.0-dev
 
 install: 
     - wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm532.tar
@@ -25,15 +23,10 @@ install:
     - popd && popd
     - git clone https://github.com/01org/TPM2.0-TSS.git
     - pushd TPM2.0-TSS
+    - git checkout 1.0
     - ./bootstrap && ./configure && make -j$(nproc) && sudo make install && popd
     - sudo ldconfig /usr/local/lib
-    - git clone https://github.com/01org/tpm2-abrmd.git
-    - pushd tpm2-abrmd
-    - ./bootstrap && ./configure --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
-    - sudo mkdir -p /var/lib/tpm
-    - sudo groupadd tss && sudo useradd -M -d /var/lib/tpm -s /bin/false -g tss tss
-    - sudo pkill -HUP dbus-daemon
-    - sudo -u tss tpm2-abrmd --tcti=socket &
+    - resourcemgr -sim -tpmhost 127.0.0.1 &
     - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.0.1-2_amd64.deb
     - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka0_1.0.1-2_amd64.deb
     - sha256sum libcmocka-dev_1.0.1-2_amd64.deb | grep -q edb0dcfa14893b0a03375c4fe3b852043ce8fca8f2397cde340562554f6d50eb
@@ -48,10 +41,6 @@ script:
   - mkdir ./build
   - pushd ./build
   - ../configure --enable-unit
-  - make -j$(nproc)
-  - make -j$(nproc) check
-  - make -j$(nproc) clean
-  - ../configure --enable-unit --without-tcti-tabrmd
   - make -j$(nproc)
   - make -j$(nproc) check
   - make -j$(nproc) clean
