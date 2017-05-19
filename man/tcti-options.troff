@@ -11,7 +11,6 @@ proxy.
 Supported TCTIs are
 .if (\n[HAVE_TCTI_DEV]) or \fB\*(lqdevice\*(rq\fR
 .if (\n[HAVE_TCTI_SOCK]) or \fB\*(lqsocket\*(rq\fR
-.if (\n[HAVE_TCTI_TABRMD]) or \fB\*(lqtabrmd\*(rq\fR
 \[char46]
 .TP
 .if (\n[HAVE_TCTI_DEV]) \{
