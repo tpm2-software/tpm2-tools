@@ -57,7 +57,7 @@
 
 /* Deafults for Socket TCTI connections, port default is for resourcemgr */
 #define TCTI_SOCKET_DEFAULT_ADDRESS "127.0.0.1"
-#define TCTI_SOCKET_DEFAULT_PORT     2321
+#define TCTI_SOCKET_DEFAULT_PORT     2323
 
 /* Environment variables usable as alternatives to command line options */
 #define TPM2TOOLS_ENV_TCTI_NAME      "TPM2TOOLS_TCTI_NAME"
