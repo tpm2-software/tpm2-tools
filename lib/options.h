@@ -44,7 +44,10 @@
  * We do this to preserve the current default / expected behavior (use of
  * the socket TCTI).
  */
-#ifdef HAVE_TCTI_SOCK
+#ifdef HAVE_TCTI_TABRMD
+  #define TCTI_DEFAULT      TABRMD_TCTI
+  #define TCTI_DEFAULT_STR  "tabrmd"
+#elif HAVE_TCTI_SOCK
   #define TCTI_DEFAULT      SOCKET_TCTI
   #define TCTI_DEFAULT_STR  "socket"
 #elif  HAVE_TCTI_DEV
@@ -81,6 +84,9 @@ typedef enum {
 #endif
 #ifdef HAVE_TCTI_SOCK
     SOCKET_TCTI,
+#endif
+#ifdef HAVE_TCTI_TABRMD
+    TABRMD_TCTI,
 #endif
     UNKNOWN_TCTI,
     N_TCTI,
