@@ -123,8 +123,8 @@ AS_IF([test x"$hardening" != x"no"], [
   add_hardened_c_flag([-Wstack-protector])
   add_hardened_c_flag([-fstack-protector-all])
 
-  add_hardened_define_flag([-D_FORTIFY_SOURCE=2])
   add_hardened_define_flag([-U_FORTIFY_SOURCE])
+  add_hardened_define_flag([-D_FORTIFY_SOURCE=2])
 
   add_hardened_c_flag([-fPIC])
   add_hardened_ld_flag([[-shared]])
