@@ -198,6 +198,62 @@ static bool init_pcr_selection(TPMI_ALG_HASH alg_id, listpcr_context *context) {
     return true;
 }
 
+static void shrink_pcr_selection(TPML_PCR_SELECTION *s) {
+
+    UINT32 i, j;
+
+    //seek for the first empty item
+    for (i = 0; i < s->count; i++)
+        if (!s->pcrSelections[i].hash)
+            break;
+    j = i + 1;
+
+    for (; i < s->count; i++) {
+        if (!s->pcrSelections[i].hash) {
+            for (; j < s->count; j++)
+                if (s->pcrSelections[j].hash)
+                    break;
+            if (j >= s->count)
+                break;
+
+            memcpy(&s->pcrSelections[i], &s->pcrSelections[j], sizeof(s->pcrSelections[i]));
+            s->pcrSelections[j].hash = 0;
+            j++;
+        }
+    }
+
+    s->count = i;
+}
+
+static bool check_pcr_selection(listpcr_context *context) {
+
+    TPMS_CAPABILITY_DATA *cap_data = &context->cap_data;
+    TPML_PCR_SELECTION *pcr_sel = &context->pcr_selections;
+    UINT32 i, j, k;
+
+    for (i = 0; i < pcr_sel->count; i++) {
+        for (j = 0; j < cap_data->data.assignedPCR.count; j++) {
+            if (pcr_sel->pcrSelections[i].hash == cap_data->data.assignedPCR.pcrSelections[j].hash) {
+                for (k = 0; k < pcr_sel->pcrSelections[i].sizeofSelect; k++)
+                    pcr_sel->pcrSelections[i].pcrSelect[k] &= cap_data->data.assignedPCR.pcrSelections[j].pcrSelect[k];
+                break;
+            }
+        }
+
+        if (j >= cap_data->data.assignedPCR.count) {
+            const char *alg_name = get_algorithm_name(pcr_sel->pcrSelections[i].hash);
+            LOG_WARN("Ignore unsupported bank/algorithm: %s(0x%04x)\n", alg_name, pcr_sel->pcrSelections[i].hash);
+            pcr_sel->pcrSelections[i].hash = 0; //mark it as to be removed
+        }
+    }
+
+    shrink_pcr_selection(pcr_sel);
+    if (pcr_sel->count == 0)
+        return false;
+
+    return true;
+}
+
 // show all PCR banks according to g_pcrSelection & g_pcrs->
 static bool show_pcr_values(listpcr_context *context) {
 
@@ -249,7 +305,10 @@ static bool show_pcr_values(listpcr_context *context) {
     return true;
 }
 
-static bool show_selected_pcr_values(listpcr_context *context) {
+static bool show_selected_pcr_values(listpcr_context *context, bool check) {
+
+    if (check && !check_pcr_selection(context))
+        return false;
 
     if (!read_pcr_values(context))
         return false;
@@ -265,7 +324,7 @@ static bool show_all_pcr_values(listpcr_context *context) {
     if (!init_pcr_selection(0, context))
         return false;
 
-    return show_selected_pcr_values(context);
+    return show_selected_pcr_values(context, false);
 }
 
 static bool show_alg_pcr_values(listpcr_context *context, TPMI_ALG_HASH alg_id) {
@@ -273,7 +332,7 @@ static bool show_alg_pcr_values(listpcr_context *context, TPMI_ALG_HASH alg_id) 
     if (!init_pcr_selection(alg_id, context))
         return false;
 
-    return show_selected_pcr_values(context);
+    return show_selected_pcr_values(context, false);
 }
 
 static bool get_banks(listpcr_context *context) {
@@ -398,7 +457,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     } else if (g_flag) {
         success = show_alg_pcr_values(&context, selected_algorithm);
     } else if (L_flag) {
-        success = show_selected_pcr_values(&context);
+        success = show_selected_pcr_values(&context, true);
     } else {
         success = show_all_pcr_values(&context);
     }
