@@ -63,6 +63,7 @@ struct listpcr_context {
     tpm2_algorithm algs;
     tpm2_pcrs pcrs;
     TPML_PCR_SELECTION pcr_selections;
+    TPMS_CAPABILITY_DATA cap_data;
 };
 
 static inline void set_pcr_select_bit(TPMS_PCR_SELECTION *pcr_selection,
@@ -175,26 +176,19 @@ static bool read_pcr_values(listpcr_context *context) {
 
 static bool init_pcr_selection(TPMI_ALG_HASH alg_id, listpcr_context *context) {
 
-    TPMI_YES_NO moreData;
-    TPMS_CAPABILITY_DATA cap_data;
+    TPMS_CAPABILITY_DATA *cap_data = &context->cap_data;
     TPML_PCR_SELECTION *pcr_sel = &context->pcr_selections;
-    UINT32 rval, i, j;
-
-    rval = Tss2_Sys_GetCapability(context->sapi_context, 0, TPM_CAP_PCRS, 0, 1, &moreData, &cap_data, 0);
-    if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("GetCapability: Get PCR allocation status Error. TPM Error:0x%x......\n", rval);
-        return false;
-    }
+    UINT32 i, j;
 
     pcr_sel->count = 0;
 
-    for (i = 0; i < cap_data.data.assignedPCR.count; i++) {
-        if (alg_id && (cap_data.data.assignedPCR.pcrSelections[i].hash != alg_id))
+    for (i = 0; i < cap_data->data.assignedPCR.count; i++) {
+        if (alg_id && (cap_data->data.assignedPCR.pcrSelections[i].hash != alg_id))
             continue;
-        pcr_sel->pcrSelections[pcr_sel->count].hash = cap_data.data.assignedPCR.pcrSelections[i].hash;
-        set_pcr_select_size(&pcr_sel->pcrSelections[pcr_sel->count], cap_data.data.assignedPCR.pcrSelections[i].sizeofSelect);
+        pcr_sel->pcrSelections[pcr_sel->count].hash = cap_data->data.assignedPCR.pcrSelections[i].hash;
+        set_pcr_select_size(&pcr_sel->pcrSelections[pcr_sel->count], cap_data->data.assignedPCR.pcrSelections[i].sizeofSelect);
         for (j = 0; j < pcr_sel->pcrSelections[pcr_sel->count].sizeofSelect; j++)
-            pcr_sel->pcrSelections[pcr_sel->count].pcrSelect[j] = cap_data.data.assignedPCR.pcrSelections[i].pcrSelect[j];
+            pcr_sel->pcrSelections[pcr_sel->count].pcrSelect[j] = cap_data->data.assignedPCR.pcrSelections[i].pcrSelect[j];
         pcr_sel->count++;
     }
 
@@ -285,11 +279,11 @@ static bool show_alg_pcr_values(listpcr_context *context, TPMI_ALG_HASH alg_id) 
 static bool get_banks(listpcr_context *context) {
 
     TPMI_YES_NO more_data;
-    TPMS_CAPABILITY_DATA capability_data;
+    TPMS_CAPABILITY_DATA *capability_data = &context->cap_data;
     UINT32 rval;
 
     rval = Tss2_Sys_GetCapability(context->sapi_context, 0, TPM_CAP_PCRS, 0, 1,
-            &more_data, &capability_data, 0);
+            &more_data, capability_data, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR(
                 "GetCapability: Get PCR allocation status Error. TPM Error:0x%x......\n",
@@ -298,11 +292,11 @@ static bool get_banks(listpcr_context *context) {
     }
 
     unsigned i;
-    for (i = 0; i < capability_data.data.assignedPCR.count; i++) {
+    for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
         context->algs.alg[i] =
-                capability_data.data.assignedPCR.pcrSelections[i].hash;
+                capability_data->data.assignedPCR.pcrSelections[i].hash;
     }
-    context->algs.count = capability_data.data.assignedPCR.count;
+    context->algs.count = capability_data->data.assignedPCR.count;
 
     return true;
 }
