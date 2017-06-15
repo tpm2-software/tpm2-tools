@@ -2,6 +2,9 @@
 .dirstamp
 *.log
 *.o
+*.lo
+*.lai
+.libs
 *.a
 *.trs
 aclocal.m4

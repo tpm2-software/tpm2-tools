@@ -82,6 +82,18 @@ AS_IF([test "x$enable_unit" != xno],
                                     [1])])])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
 
+AC_ARG_ENABLE([shell],
+            [AS_HELP_STRING([--enable-shell],
+                            [build the lua tpm shell (default is no)])],
+            [enable_shell=$enableval],
+            [enable_shell=no])
+AS_IF([test "x$enable_shell" != xno],
+      [PKG_CHECK_MODULES([LUA],
+                         [lua5.2],
+                         [AC_DEFINE([HAVE_LUA],
+                                    [1])])])
+AM_CONDITIONAL([SHELL], [test "x$enable_shell" != xno])
+
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--enable-hardening],
     [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],

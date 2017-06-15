@@ -111,6 +111,8 @@ int         sanity_check_common        (common_opts_t        *opts);
 void        execute_man                (char                 *cmd_name,
                                         char                 *envp[]);
 
+TCTI_TYPE tcti_type_from_name(char const *tcti_str);
+
 /* inline functions to print messages related to option processing*/
 static inline void
 showArgError (const char *arg,

@@ -139,6 +139,17 @@ tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c tools/main.c
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 tools_tpm2_rc_decode_SOURCES = lib/rc-decode.c tools/tpm2_rc_decode.c
 
+if SHELL
+lib_LTLIBRARIES = libtpm_shell.la
+# Cannot link a static lib to a shared lib in a portable way, so include the
+# libcommon sources directly.
+libtpm_shell_la_SOURCES = tpm_shell/tpm_shell.c \
+    tools/tpm2_takeownership.c \
+    $(lib_libcommon_a_SOURCES)
+libtpm_shell_la_CFLAGS = $(LUA_CFLAGS) $(AM_CFLAGS)
+libtpm_shell_la_LIBADD = $(LUA_LIBS) $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS) $(TCTI_TABRMD_LIBS)
+endif
+
 if UNIT
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = \
