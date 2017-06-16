@@ -68,16 +68,6 @@
 #define TPM2TOOLS_ENV_SOCKET_ADDRESS "TPM2TOOLS_SOCKET_ADDRESS"
 #define TPM2TOOLS_ENV_SOCKET_PORT    "TPM2TOOLS_SOCKET_PORT"
 
-#define COMMON_OPTS_INITIALIZER { \
-    .tcti_type      = TCTI_DEFAULT, \
-    .device_file    = TCTI_DEVICE_DEFAULT_PATH, \
-    .socket_address = TCTI_SOCKET_DEFAULT_ADDRESS, \
-    .socket_port    = TCTI_SOCKET_DEFAULT_PORT, \
-    .help           = false, \
-    .verbose        = false, \
-    .version        = false, \
-}
-
 typedef enum {
 #ifdef HAVE_TCTI_DEV
     DEVICE_TCTI,
@@ -111,7 +101,7 @@ int         sanity_check_common        (common_opts_t        *opts);
 void        execute_man                (char                 *cmd_name,
                                         char                 *envp[]);
 
-TCTI_TYPE tcti_type_from_name(char const *tcti_str);
+void argv_free(char **argv, int argc);
 
 /* inline functions to print messages related to option processing*/
 static inline void

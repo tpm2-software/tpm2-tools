@@ -32,7 +32,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-INCLUDE_DIRS = -I$(srcdir)/src -I$(srcdir)/lib
+INCLUDE_DIRS = -I$(srcdir)/tools -I$(srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS    := $(INCLUDE_DIRS) $(TPM20_TSS_CFLAGS) $(EXTRA_CFLAGS) $(TCTI_TABRMD_CFLAGS)

@@ -1,3 +1,28 @@
+
+_____________________  _____      _________.__           .__  .__
+\__    ___/\______   \/     \    /   _____/|  |__   ____ |  | |  |
+  |    |    |     ___/  \ /  \   \_____  \ |  |  \_/ __ \|  | |  |
+  |    |    |    |  /    Y    \  /        \|   Y  \  ___/|  |_|  |
+  |____|    |____|  \____|__  / /_______  /|___|  /\___  >____/____/
+                            \/          \/      \/     \/
+
+Introduction:
+TPM Tools have a limitation in which the context is flushed between commands
+when using a resource manager. The resource manager calls flush when a client
+disconnects. Thus, state becomes difficult to manage.
+
+The TPM shell serves to mitigate this limitation. It provides a lua module
+that keeps the connection open with the resourcemanager between command
+invocations.
+
+Why Lua?
+Lua was chosen to provide language semantics and an interpreter an a portable
+and standardized manor. Lua is buildable for just about any environment, from
+user space to UEFI.
+
+The Lua manual can be found here: https://www.lua.org/manual/5.2/
+
+Using:
 You must set the LUA_CPATH variable so Lua can find the shared library.
 
 From the root of the project, run:

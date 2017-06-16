@@ -90,7 +90,7 @@ AC_ARG_ENABLE([shell],
 AS_IF([test "x$enable_shell" != xno],
       [PKG_CHECK_MODULES([LUA],
                          [lua5.2],
-                         [AC_DEFINE([HAVE_LUA],
+                         [AC_DEFINE([SHELL_TOOLS],
                                     [1])])])
 AM_CONDITIONAL([SHELL], [test "x$enable_shell" != xno])
 

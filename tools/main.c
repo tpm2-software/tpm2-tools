@@ -48,7 +48,7 @@ main (int   argc,
     extern int opterr, optind;
     int ret;
     TSS2_SYS_CONTEXT *sapi_context;
-    common_opts_t opts = COMMON_OPTS_INITIALIZER;
+    common_opts_t opts;
     /*
      * Get common options and reset getopt global variables. This allows the
      * tools to use getopt as they normally would.
@@ -86,6 +86,6 @@ main (int   argc,
      * passed to execute_tool.
      */
     sapi_teardown_full (sapi_context);
-    free (argv);
+    argv_free (argv, argc);
     exit (ret);
 }

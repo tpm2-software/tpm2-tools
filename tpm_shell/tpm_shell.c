@@ -9,114 +9,201 @@
 
 #include "context-util.h"
 #include "log.h"
+#include "main.h"
 #include "options.h"
 
 
-static int isquare(lua_State *L){              /* Internal name of func */
-    float rtrn = lua_tonumber(L, -1);      /* Get the single number arg */
-    printf("Top of square(), nbr=%f\n",rtrn);
-    lua_pushnumber(L,rtrn*rtrn);           /* Push the return */
-    return 1;                              /* One return value */
-}
-
-static int icube(lua_State *L){                /* Internal name of func */
-    float rtrn = lua_tonumber(L, -1);      /* Get the single number arg */
-    printf("Top of cube(), number=%f\n",rtrn);
-    lua_pushnumber(L,rtrn*rtrn*rtrn);      /* Push the return */
-    return 1;                              /* One return value */
-}
-
 typedef struct shell_state shell_state;
-
 struct shell_state {
     TSS2_SYS_CONTEXT *sapi_context;
     common_opts_t options;
+    char **argv;
+    int argc;
 };
 
-static int sapi_init(lua_State *L){
+static void shell_state_free(shell_state *s) {
 
-    // TODO: How to pass options for selecting TCTI? Perhaps match command line and
-    // parse a string here?
-    // sapi_init("--tcti=xxx", "--port=yyy", ...)
+    argv_free(s->argv, s->argc);
+    sapi_teardown_full(s->sapi_context);
+    free(s);
+}
 
-    const char *tcti_name = lua_tostring(L, -1);
+static char **argv_new(lua_State *L, int argc, char *name) {
 
+    /*
+     * argv is null terminated, ie argv[argc] == NULL
+     * https://stackoverflow.com/questions/11020172/are-char-argv-arguments-in-main-null-terminated
+     */
+    char **argv = calloc(argc, sizeof(char *));
+
+    if (!argv) {
+        luaL_error(L, "oom");
+        /* never gets here */
+        return NULL;
+    }
+
+    argv[0] = strdup(name);
+    if (!argv[0]) {
+        free(argv);
+        luaL_error(L, "oom");
+        /* never gets here */
+        return NULL;
+    }
+
+    return argv;
+}
+
+static char **stack_to_argv(lua_State *L, char *name, int *argc) {
+
+    *argc = lua_gettop(L) + 1;
+
+    char **argv = argv_new(L, *argc, name);
+
+    int i;
+    for (i=1; i < *argc; i++) {
+
+        const char *tmp = luaL_checkstring(L, i);
+        if (!tmp) {
+            argv_free(argv, *argc);
+            luaL_argerror (L, i - 1, "Expecting string or number");
+            return NULL;
+        }
+
+        argv[i] = strdup(tmp);
+        if (!argv[i]) {
+            argv_free(argv, *argc);
+            luaL_error (L, "oom");
+            return NULL;
+        }
+    }
+
+    return argv;
+}
+
+static char **stack_to_argv_with_state(lua_State *L, char *name, int *argc, shell_state **state) {
+
+    int args = lua_gettop(L);
+
+    if (args < 1) {
+        luaL_error (L, "Got no arguments! Expecting at least the tpm "
+                "descriptor from tpm_open()");
+        return NULL;
+    }
+
+    luaL_checktype (L, 1, LUA_TLIGHTUSERDATA);
+
+    *state =  (shell_state *)lua_topointer(L, 1);
+
+    /*
+     * the lightuserdata can safely be removed from the
+     * stack as lua will not GC it.
+     *
+     * This sets the stack top to the arguments AFTER
+     * the tpm descriptor.
+     */
+    lua_remove(L, 1);
+
+    return stack_to_argv(L, name, argc);
+}
+
+static int tpm_open(lua_State *L){
+
+    int argc;
+    char **argv = stack_to_argv(L, "tpm_open", &argc);
+
+    /*
+     * Don't clobber the old argv as the original allocation
+     * still needs to be freed.
+     */
+    int new_argc = argc;
+    char **new_argv = argv;
+    common_opts_t opts;
+
+    int rc = get_common_opts(&new_argc, &new_argv, &opts);
+    if (rc) {
+        /* just free the old argv */
+        argv_free(argv, argc);
+        return luaL_error(L, "Could not handle options!");
+    }
+
+    /*
+     * whew.. made it.
+     * Now free the old argv, keeping the new one as options
+     * may coontain references.
+     *
+     * new argv should only have argv[0] aka comm name. Anything
+     * else indicates an unkown option.
+     */
+    if (new_argc > 1) {
+        argv_free(new_argv, new_argc);
+        luaL_error(L, "found %d unknown options! Only pass tcti options.", new_argc - 1);
+    }
+
+    if (opts.verbose) {
+        log_set_level(log_level_verbose);
+    }
+
+    /*
+     * The order of malloc then sapi init helps to avoid
+     * a sapi teardown on allocation failure.
+     */
     shell_state *sstate = malloc(sizeof(shell_state));
     if (!sstate) {
+        argv_free(argv, argc);
         return luaL_error(L, "oom");
     }
 
-    sstate->options.tcti_type = tcti_type_from_name(tcti_name),
+    TSS2_SYS_CONTEXT *sapi_context = sapi_init_from_options (&opts);
+    if (!sapi_context) {
+        argv_free(new_argv, new_argc);
+        free(sstate);
+        return luaL_error(L, "Could not initialize SAPI context!");
+    }
 
-    sstate->sapi_context = sapi_init_from_options(&sstate->options);
-
-    printf("sstate: %p\n", sstate);
+    memcpy(&sstate->options, &opts, sizeof(opts));
+    sstate->sapi_context = sapi_context;
+    sstate->argv = new_argv;
+    sstate->argc = new_argc;
 
     lua_pushlightuserdata(L, sstate);
+
+    /* return 1 item on the stack */
+    return 1;
+}
+
+static int tpm_close(lua_State *L) {
+
+    int args = lua_gettop(L);
+    if (args != 1) {
+        return luaL_error(L, "Expected one argument, got %d", args);
+    }
+
+    luaL_checktype (L, -1, LUA_TLIGHTUSERDATA);
+
+    shell_state *sstate =  (shell_state *)lua_topointer(L, -1);
+
+    shell_state_free(sstate);
+
+    return 0;
+}
+
+static int take_ownership(lua_State *L) {
+
+    int argc;
+    shell_state *sstate = NULL;
+
+    char **argv = stack_to_argv_with_state(L, "tpm2_takeownership", &argc, &sstate);
+
+    int rc = execute_takeownership(argc, argv, environ, &sstate->options, sstate->sapi_context);
+
+    lua_pushnumber(L, rc);
 
     return 1;
 }
 
-extern int execute_takeownership(int argc, const char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context);
-
-static int take_ownership(lua_State *L) {
-
-    int args = lua_gettop(L);
-
-    if (args < 2) {
-        return luaL_error(L, "Not enough arguments");
-    }
-
-    shell_state *sstate =  (shell_state *)lua_topointer(L, -2);
-
-    printf("sstate: %p\n", sstate);
-
-    printf("sapi_context: %p\n", sstate->sapi_context);
-
-    int argc = args;
-
-    printf("args_left: %d\n", args + 1);
-
-    const char **argv= calloc(args, sizeof(char *));
-
-    // Need to convert for unsigned...
-    int i;
-    argv[0] = "tpm_shell";
-    for(i=1; i < argc; i++) {
-        printf("building argv[%d]\n", i);
-        argv[i] = lua_tostring(L, -1);
-        printf("building argv with: %s\n", argv[i]);
-    }
-
-    printf("Calling execute_takeownership!");
-
-    int rc = execute_takeownership(argc, argv, environ, &sstate->options, sstate->sapi_context);
-
-    printf("execute_takeownership returned: %d\n", rc);
-
-    /* return no args for now */
-    return 0;
-}
-
-
-/* Register this file's functions with the
- * luaopen_libraryname() function, where libraryname
- * is the name of the compiled .so output. In other words
- * it's the filename (but not extension) after the -o
- * in the cc command.
- *
- * So for instance, if your cc command has -o power.so then
- * this function would be called luaopen_power().
- *
- * This function should contain lua_register() commands for
- * each function you want available from Lua.
- *
-*/
 int luaopen_tpm_shell(lua_State *L){
-    lua_register(L, "square", isquare);
-    lua_register(L,"cube", icube);
-    lua_register(L,"sapi_init", sapi_init);
+    lua_register(L,"tpm_open", tpm_open);
+    lua_register(L,"tpm_close", tpm_close);
     lua_register(L,"take_ownership", take_ownership);
     return 0;
 }

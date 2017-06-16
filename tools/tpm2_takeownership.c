@@ -199,6 +199,9 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
 
     int opt;
     bool result;
+
+    /* reset getopt_long for re-scanning new argv's */
+    optind = 1;
     while ((opt = getopt_long(argc, argv, "o:e:l:O:E:L:Xc", sOpts, NULL))
             != -1) {
 
@@ -261,10 +264,10 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
     return true;
 }
 
-int execute_takeownership(int argc, const char *argv[], char *envp[], common_opts_t *opts,
+int execute_takeownership(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
-    return execute_tool(argc, (char **)argv, envp, opts, sapi_context);
+    return execute_tool(argc, argv, envp, opts, sapi_context);
 }
 
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,

@@ -41,4 +41,9 @@ execute_tool (int              argc,
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context);
 
+#ifdef SHELL_TOOLS
+extern int execute_takeownership(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context);
+#endif
+
 #endif /* MAIN_H */
