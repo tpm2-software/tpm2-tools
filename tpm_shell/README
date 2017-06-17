@@ -26,6 +26,6 @@ Using:
 You must set the LUA_CPATH variable so Lua can find the shared library.
 
 From the root of the project, run:
-export LUA_CPATH=`pwd`'/lib?.so'
+export LUA_CPATH=`pwd`'/.libs/lib?.so'
 
 From there you can run test.lua
