@@ -106,6 +106,14 @@ static char **stack_to_argv_with_state(lua_State *L, char *name, int *argc, shel
     return stack_to_argv(L, name, argc);
 }
 
+static void lua_print(lua_State *L, const char *str) {
+
+    lua_getglobal(L, "print");
+    lua_pushstring(L, str);
+    lua_pcall(L, 1, 0, 0);
+    lua_pop(L, 1);
+}
+
 static int help(lua_State *L) {
 
     static const char *help_info =
@@ -130,10 +138,7 @@ static int help(lua_State *L) {
             "TPM Tools:\n"
             "  takeownership";
 
-    lua_getglobal(L, "print");
-    lua_pushstring(L, help_info);
-    lua_pcall(L, 1, 0, 0);
-    lua_pop(L, 1);
+    lua_print(L, help_info);
 
     return 0;
 }
@@ -241,6 +246,8 @@ int luaopen_tpm_shell(lua_State *L){
 
     lua_pushstring(L, "tpm>");
     lua_setglobal(L, "_PROMPT");
+
+    lua_print(L, "Welcome to the tpm_shell, for help, run help()");
 
     return 0;
 }
