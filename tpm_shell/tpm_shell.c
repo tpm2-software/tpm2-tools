@@ -106,6 +106,38 @@ static char **stack_to_argv_with_state(lua_State *L, char *name, int *argc, shel
     return stack_to_argv(L, name, argc);
 }
 
+static int help(lua_State *L) {
+
+    static const char *help_info =
+            "-- TPM2 Shell\n"
+            "Welcome to the TPM2 Lua Shell!\n"
+            "This shell calls tools from the TPM2.0-tools project in a way that\n"
+            "preserves context. You can call a tool by invoking its normal\n"
+            "name without the tpm2_ prefix. Note that TCTI options no longer\n"
+            "need to be passed to any tpm2 tools. TCTI options are handled in\n"
+            "tpm_open().\n"
+            "\n"
+            "Example:\n"
+            "  t = tpm_open(\"--tcti\", \"tabrmd\"\n"
+            "  takeowbership(s, \"-c\"\n"
+            "tpm_close(t)\n"
+            "Current supported commands are:\n\n"
+            "TCTI Manipulation:\n"
+            "  tpm_open() -- opens a connection to a tpm. Uses the TCTI options.\n"
+            "  tpm_close() -- closes a connection to a tpm. Pass the return of\n"
+            "    tpm_open() to this.\n"
+            "\n"
+            "TPM Tools:\n"
+            "  takeownership";
+
+    lua_getglobal(L, "print");
+    lua_pushstring(L, help_info);
+    lua_pcall(L, 1, 0, 0);
+    lua_pop(L, 1);
+
+    return 0;
+}
+
 static int tpm_open(lua_State *L){
 
     int argc;
@@ -202,8 +234,13 @@ static int take_ownership(lua_State *L) {
 }
 
 int luaopen_tpm_shell(lua_State *L){
+    lua_register(L,"help", help);
     lua_register(L,"tpm_open", tpm_open);
     lua_register(L,"tpm_close", tpm_close);
-    lua_register(L,"take_ownership", take_ownership);
+    lua_register(L,"takeownership", take_ownership);
+
+    lua_pushstring(L, "tpm>");
+    lua_setglobal(L, "_PROMPT");
+
     return 0;
 }

@@ -9,7 +9,7 @@ s = tpm_open("--tcti", "tabrmd")
 -- Call tpm2_takeownership, arguments
 -- supported will be the same as the
 -- command line tool.
-take_ownership(s, "-c")
+takeownership(s, "-c")
 
 -- Close a connection with a tpm.
 -- Calling anything using S after
