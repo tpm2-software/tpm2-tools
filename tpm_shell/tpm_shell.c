@@ -136,9 +136,41 @@ static int help(lua_State *L) {
             "    tpm_open() to this.\n"
             "\n"
             "TPM Tools:\n"
-            "  takeownership\n"
             "  activatecredential\n"
-            "  akparse";
+            "  akparse\n"
+            "  certify\n"
+            "  create\n"
+            "  createpolicy\n"
+            "  createprimary\n"
+            "  dictionarylockout\n"
+            "  dump_capability\n"
+            "  encryptdecrypt\n"
+            "  evictcontrol\n"
+            "  getpubak\n"
+            "  getpubek\n"
+            "  getrandom\n"
+            "  hash\n"
+            "  hmac\n"
+            "  listpcrs\n"
+            "  listpersistent\n"
+            "  load\n"
+            "  loadexternal\n"
+            "  makecredential\n"
+            "  nvdefine\n"
+            "  nvlist\n"
+            "  nvread\n"
+            "  nvreadlock\n"
+            "  nvrelease\n"
+            "  nvwrite\n"
+            "  quote\n"
+            "  readpublic\n"
+            "  rsadecrypt\n"
+            "  rsaencrypt\n"
+            "  sign\n"
+            "  startup\n"
+            "  takeownership\n"
+            "  unseal\n"
+            "  verifysignature\n";
 
     lua_print(L, help_info);
 
@@ -246,16 +278,83 @@ static int tpm_close(lua_State *L) {
 
 add_tool(activatecredential)
 add_tool(akparse)
+add_tool(certify)
+add_tool(create)
+add_tool(createpolicy)
+add_tool(createprimary)
+add_tool(dictionarylockout)
+add_tool(dump_capability)
+add_tool(encryptdecrypt)
+add_tool(evictcontrol)
+add_tool(getpubak)
+add_tool(getpubek)
+add_tool(getrandom)
+add_tool(hash)
+add_tool(hmac)
+add_tool(listpcrs)
+add_tool(listpersistent)
+add_tool(load)
+add_tool(loadexternal)
+add_tool(makecredential);
+add_tool(nvdefine);
+add_tool(nvlist);
+add_tool(nvread);
+add_tool(nvreadlock);
+add_tool(nvrelease);
+add_tool(nvwrite);
+add_tool(quote);
+add_tool(readpublic);
+add_tool(rsadecrypt);
+add_tool(rsaencrypt);
+add_tool(sign);
+add_tool(startup);
 add_tool(takeownership)
+add_tool(unseal);
+add_tool(verifysignature);
 
+#define LUA_REGISTER(name) \
+		lua_register(L,str(name), builtin_##name)
 
 int luaopen_tpm_shell(lua_State *L){
     lua_register(L,"help", help);
     lua_register(L,"tpm_open", tpm_open);
     lua_register(L,"tpm_close", tpm_close);
-    lua_register(L,"activatecredential", builtin_activatecredential);
-    lua_register(L,"akparse", builtin_akparse);
-    lua_register(L,"takeownership", builtin_takeownership);
+
+    LUA_REGISTER(activatecredential);
+    LUA_REGISTER(akparse);
+    LUA_REGISTER(certify);
+    LUA_REGISTER(create);
+    LUA_REGISTER(createpolicy);
+    LUA_REGISTER(createprimary);
+    LUA_REGISTER(dictionarylockout);
+    LUA_REGISTER(dump_capability);
+    LUA_REGISTER(encryptdecrypt);
+    LUA_REGISTER(evictcontrol);
+    LUA_REGISTER(getpubak);
+    LUA_REGISTER(getpubek);
+    LUA_REGISTER(getrandom);
+    LUA_REGISTER(hash);
+    LUA_REGISTER(hmac);
+    LUA_REGISTER(listpcrs);
+    LUA_REGISTER(listpersistent);
+    LUA_REGISTER(load);
+    LUA_REGISTER(loadexternal);
+    LUA_REGISTER(makecredential);
+    LUA_REGISTER(nvdefine);
+    LUA_REGISTER(nvlist);
+    LUA_REGISTER(nvread);
+    LUA_REGISTER(nvreadlock);
+    LUA_REGISTER(nvrelease);
+    LUA_REGISTER(nvwrite);
+    LUA_REGISTER(quote);
+    LUA_REGISTER(readpublic);
+    LUA_REGISTER(rsadecrypt);
+    LUA_REGISTER(rsaencrypt);
+    LUA_REGISTER(sign);
+    LUA_REGISTER(startup);
+    LUA_REGISTER(takeownership);
+    LUA_REGISTER(unseal);
+    LUA_REGISTER(verifysignature);
 
     lua_pushstring(L, "tpm>");
     lua_setglobal(L, "_PROMPT");

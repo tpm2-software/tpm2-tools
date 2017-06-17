@@ -46,11 +46,11 @@
 #include "options.h"
 #include "string-bytes.h"
 
-TSS2_SYS_CONTEXT *sysContext;
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
+static TSS2_SYS_CONTEXT *sysContext;
+static TPMS_AUTH_COMMAND sessionData;
+static bool hexPasswd = false;
 
-int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag)
+static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag)
 {
     switch(nameAlg)
     {
@@ -222,13 +222,8 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     return 0;
 }
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
+ENTRY_POINT(create) {
+
     (void)envp;
     (void)opts;
 
@@ -282,6 +277,7 @@ execute_tool (int              argc,
         O_flag = 0/*,
         f_flag = 0*/;
 
+    optind = 1;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)

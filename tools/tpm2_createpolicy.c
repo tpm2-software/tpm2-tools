@@ -276,6 +276,8 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
 
     int opt;
     bool result;
+
+    optind = 1;
     while ((opt = getopt_long(argc, argv, "Pf:i:g:F:", sOpts, NULL)) != -1) {
         switch (opt) {
         case 'f':
@@ -318,8 +320,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(createpolicy) {
 
     /* opts and envp are unused */
     (void) opts;

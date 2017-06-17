@@ -75,6 +75,8 @@ get_startup_opts (int                 argc,
         },
         { NULL, },
     };
+
+    optind = 1;
     while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
            != -1)
     {
@@ -112,13 +114,8 @@ sanity_check_startup_opts (startup_opts_t *startup_opts)
  * hostname / IP address and port. Then issue the commands necessary to bring
  * the simulator up to a point where it can be used by the SAPI.
  */
-int
-execute_tool (int               argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
+ENTRY_POINT(startup) {
+
     (void) opts;
     (void) envp;
 

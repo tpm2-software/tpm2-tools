@@ -52,11 +52,11 @@ typedef struct {
     int size;
     UINT32 id[24];
 } PCR_LIST;
-TPMS_AUTH_COMMAND sessionData;
-bool hexPasswd = false;
-char outFilePath[PATH_MAX];
-TPM2B_DATA qualifyingData = {{0,}};
-TPML_PCR_SELECTION  pcrSelections;
+static TPMS_AUTH_COMMAND sessionData;
+static bool hexPasswd = false;
+static char outFilePath[PATH_MAX];
+static TPM2B_DATA qualifyingData = {{0,}};
+static TPML_PCR_SELECTION  pcrSelections;
 
 void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -285,8 +285,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     return 0;
 }
 
-int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
-              TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(quote) {
 
     (void) envp;
     (void) opts;
@@ -326,6 +325,8 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         LOG_ERR("Invalid usage, try --help for help!");
         return 0;
     }
+
+    optind = 1;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)

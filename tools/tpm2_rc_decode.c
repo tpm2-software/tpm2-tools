@@ -67,6 +67,8 @@ process_cmdline (int   argc,
         { "version", 0, NULL, 'v' },
         { 0 }
     };
+
+    optind = 1;
     while ((opt = getopt_long (argc, argv, optstring, long_options, NULL)) != -1)
     {
         switch (opt)

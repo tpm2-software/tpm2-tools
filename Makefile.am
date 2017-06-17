@@ -144,13 +144,50 @@ lib_LTLIBRARIES = libtpm_shell.la
 # Cannot link a static lib to a shared lib in a portable way, so include the
 # libcommon sources directly.
 #
-# This should force a recompilation of the source files since the CFLAGS differ:
- # https://stackoverflow.com/questions/31319062/autotools-complain-about-files-compiled-with-different-contexts
-libtpm_shell_la_SOURCES = tpm_shell/tpm_shell.c \
-    tools/tpm2_activatecredential.c \
-    tools/tpm2_akparse.c \
-    tools/tpm2_takeownership.c \
-    $(lib_libcommon_a_SOURCES)
+# Not included in the shell:
+#    getmanufec - curl dependency.
+#    rc_decode - need to do an interface to it.
+#    send_command - seems kind of raw.
+#
+libtpm_shell_la_SOURCES = \
+  tpm_shell/tpm_shell.c \
+  tools/tpm2_activatecredential.c \
+  tools/tpm2_akparse.c \
+  tools/tpm2_certify.c \
+  tools/tpm2_create.c \
+  tools/tpm2_createpolicy.c \
+  tools/tpm2_createprimary.c \
+  tools/tpm2_dictionarylockout.c \
+  tools/tpm2_dump_capability.c \
+  tools/tpm2_encryptdecrypt.c \
+  tools/tpm2_evictcontrol.c \
+  tools/tpm2_getpubak.c \
+  tools/tpm2_getpubek.c \
+  tools/tpm2_getrandom.c \
+  tools/tpm2_hash.c \
+  tools/tpm2_hmac.c \
+  tools/tpm2_listpcrs.c \
+  tools/tpm2_listpersistent.c \
+  tools/tpm2_load.c \
+  tools/tpm2_loadexternal.c \
+  tools/tpm2_makecredential.c \
+  tools/tpm2_nvdefine.c \
+  tools/tpm2_nvlist.c \
+  tools/tpm2_nvread.c \
+  tools/tpm2_nvreadlock.c \
+  tools/tpm2_nvrelease.c \
+  tools/tpm2_nvwrite.c \
+  tools/tpm2_quote.c \
+  tools/tpm2_readpublic.c \
+  tools/tpm2_rsadecrypt.c \
+  tools/tpm2_rsaencrypt.c \
+  tools/tpm2_sign.c \
+  tools/tpm2_startup.c \
+  tools/tpm2_takeownership.c \
+  tools/tpm2_unseal.c \
+  tools/tpm2_verifysignature.c \
+  $(lib_libcommon_a_SOURCES)
+
 libtpm_shell_la_CFLAGS = $(LUA_CFLAGS) $(AM_CFLAGS) -DSHELL_TOOLS
 libtpm_shell_la_LIBADD = $(LUA_LIBS) $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS) $(TCTI_TABRMD_LIBS)
 endif

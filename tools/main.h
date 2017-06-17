@@ -40,22 +40,50 @@ execute_tool (int              argc,
               char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context);
-
 #ifdef SHELL_TOOLS
 
 #define ENTRY_POINT(name) \
     int shell_##name(int argc, char *argv[], char *envp[], common_opts_t *opts, \
         TSS2_SYS_CONTEXT *sapi_context)
 
-int shell_takeownership(int argc, char *argv[], char *envp[], common_opts_t *opts, \
-        TSS2_SYS_CONTEXT *sapi_context);
+ENTRY_POINT(activatecredential);
+ENTRY_POINT(akparse);
+ENTRY_POINT(certify);
+ENTRY_POINT(create);
+ENTRY_POINT(createpolicy);
+ENTRY_POINT(createprimary);
+ENTRY_POINT(dictionarylockout);
+ENTRY_POINT(dump_capability);
+ENTRY_POINT(encryptdecrypt);
+ENTRY_POINT(evictcontrol);
+ENTRY_POINT(getpubak);
+ENTRY_POINT(getpubek);
+ENTRY_POINT(getrandom);
+ENTRY_POINT(hash);
+ENTRY_POINT(hmac);
+ENTRY_POINT(listpcrs);
+ENTRY_POINT(listpersistent);
+ENTRY_POINT(load);
+ENTRY_POINT(loadexternal);
+ENTRY_POINT(makecredential);
+ENTRY_POINT(nvdefine);
+ENTRY_POINT(nvlist);
+ENTRY_POINT(nvread);
+ENTRY_POINT(nvreadlock);
+ENTRY_POINT(nvrelease);
+ENTRY_POINT(nvwrite);
+ENTRY_POINT(quote);
+ENTRY_POINT(readpublic);
+ENTRY_POINT(rsadecrypt);
+ENTRY_POINT(rsaencrypt);
+ENTRY_POINT(sign);
+ENTRY_POINT(startup);
+ENTRY_POINT(takeownership);
+ENTRY_POINT(unseal);
+ENTRY_POINT(verifysignature);
 
-int shell_activatecredential(int argc, char *argv[], char *envp[], common_opts_t *opts, \
-        TSS2_SYS_CONTEXT *sapi_context);
-
-int shell_akparse(int argc, char *argv[], char *envp[], common_opts_t *opts, \
-        TSS2_SYS_CONTEXT *sapi_context);
 #else
+
 #define ENTRY_POINT(name) \
     int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts, \
         TSS2_SYS_CONTEXT *sapi_context)

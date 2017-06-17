@@ -514,6 +514,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     int opt;
+    optind = 1;
     while ( ( opt = getopt_long( argc, argv, optstring, long_options, NULL ) ) != -1 ) {
               switch ( opt ) {
                 case 'H':

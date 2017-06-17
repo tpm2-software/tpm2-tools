@@ -371,8 +371,8 @@ static void show_banks(tpm2_algorithm *g_banks) {
     printf("\n");
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(listpcrs) {
+
 
     listpcr_context context = {
         .algs = {
@@ -404,6 +404,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
     (void) envp;
 
+    optind = 1;
     while (getopt_long(argc, argv, "g:o:L:s", long_options, NULL) != -1) {
         switch (optopt) {
         case 'g':

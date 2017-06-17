@@ -121,6 +121,8 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
     int opt = -1;
     bool result;
     char context_file[PATH_MAX] = {0};
+
+    optind = 1;
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {
@@ -162,8 +164,7 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(readpublic) {
 
     (void)opts;
     (void)envp;
