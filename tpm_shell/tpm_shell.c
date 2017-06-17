@@ -136,7 +136,9 @@ static int help(lua_State *L) {
             "    tpm_open() to this.\n"
             "\n"
             "TPM Tools:\n"
-            "  takeownership";
+            "  takeownership\n"
+            "  activatecredential\n"
+            "  akparse";
 
     lua_print(L, help_info);
 
@@ -224,25 +226,36 @@ static int tpm_close(lua_State *L) {
     return 0;
 }
 
-static int take_ownership(lua_State *L) {
+#define xstr(s) str(s)
+#define str(s) #s
 
-    int argc;
-    shell_state *sstate = NULL;
+#define add_tool(name) \
+    static int builtin_##name(lua_State *L) { \
+    \
+        int argc; \
+        shell_state *sstate = NULL; \
+    \
+        char **argv = stack_to_argv_with_state(L, "tpm2_"str(name), &argc, &sstate); \
+    \
+        int rc = shell_##name(argc, argv, environ, &sstate->options, sstate->sapi_context); \
+    \
+        lua_pushnumber(L, rc); \
+    \
+        return 1; \
+    }
 
-    char **argv = stack_to_argv_with_state(L, "tpm2_takeownership", &argc, &sstate);
+add_tool(activatecredential)
+add_tool(akparse)
+add_tool(takeownership)
 
-    int rc = execute_takeownership(argc, argv, environ, &sstate->options, sstate->sapi_context);
-
-    lua_pushnumber(L, rc);
-
-    return 1;
-}
 
 int luaopen_tpm_shell(lua_State *L){
     lua_register(L,"help", help);
     lua_register(L,"tpm_open", tpm_open);
     lua_register(L,"tpm_close", tpm_close);
-    lua_register(L,"takeownership", take_ownership);
+    lua_register(L,"activatecredential", builtin_activatecredential);
+    lua_register(L,"akparse", builtin_akparse);
+    lua_register(L,"takeownership", builtin_takeownership);
 
     lua_pushstring(L, "tpm>");
     lua_setglobal(L, "_PROMPT");

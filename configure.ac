@@ -88,10 +88,8 @@ AC_ARG_ENABLE([shell],
             [enable_shell=$enableval],
             [enable_shell=no])
 AS_IF([test "x$enable_shell" != xno],
-      [PKG_CHECK_MODULES([LUA],
-                         [lua5.2],
-                         [AC_DEFINE([SHELL_TOOLS],
-                                    [1])])])
+      [PKG_CHECK_MODULES([LUA], [lua5.2])])
+
 AM_CONDITIONAL([SHELL], [test "x$enable_shell" != xno])
 
 AC_ARG_ENABLE([hardening],

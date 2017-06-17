@@ -264,14 +264,7 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
     return true;
 }
 
-int execute_takeownership(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
-
-    return execute_tool(argc, argv, envp, opts, sapi_context);
-}
-
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(takeownership) {
 
     /* opts is unused */
     (void) opts;

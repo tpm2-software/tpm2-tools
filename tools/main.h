@@ -42,8 +42,23 @@ execute_tool (int              argc,
               TSS2_SYS_CONTEXT *sapi_context);
 
 #ifdef SHELL_TOOLS
-extern int execute_takeownership(int argc, char *argv[], char *envp[], common_opts_t *opts,
+
+#define ENTRY_POINT(name) \
+    int shell_##name(int argc, char *argv[], char *envp[], common_opts_t *opts, \
+        TSS2_SYS_CONTEXT *sapi_context)
+
+int shell_takeownership(int argc, char *argv[], char *envp[], common_opts_t *opts, \
         TSS2_SYS_CONTEXT *sapi_context);
+
+int shell_activatecredential(int argc, char *argv[], char *envp[], common_opts_t *opts, \
+        TSS2_SYS_CONTEXT *sapi_context);
+
+int shell_akparse(int argc, char *argv[], char *envp[], common_opts_t *opts, \
+        TSS2_SYS_CONTEXT *sapi_context);
+#else
+#define ENTRY_POINT(name) \
+    int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts, \
+        TSS2_SYS_CONTEXT *sapi_context)
 #endif
 
 #endif /* MAIN_H */
