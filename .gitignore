@@ -8,6 +8,7 @@
 .libs
 *.a
 *.trs
+*.patch
 aclocal.m4
 autom4te.cache/
 compile
@@ -68,4 +69,3 @@ tools/tpm2_dictionarylockout
 test-driver
 test/tpm2-rc-decode_unit
 test/tpm2-rc-entry_unit
-
