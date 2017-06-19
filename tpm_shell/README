@@ -22,10 +22,19 @@ user space to UEFI.
 
 The Lua manual can be found here: https://www.lua.org/manual/5.2/
 
+Building:
+You must enable the tpm_shell via the configure option --enable-shell.
+$ ./configure --enable-shell
+
+Dependencies:
+liblua5.2-dev
+$ sudo apt-get install liblua5.2-dev
+
 Using:
 You must set the LUA_CPATH variable so Lua can find the shared library.
 
 From the root of the project, run:
-export LUA_CPATH=`pwd`'/.libs/lib?.so'
+$ export LUA_CPATH=`pwd`'/.libs/lib?.so'
 
 From there you can run test.lua
+$ ./tpm_shell/test.lua
