@@ -360,7 +360,6 @@ char *Base64Encode(const unsigned char* buffer)
     BIO_flush(bio);
     BIO_get_mem_ptr(bio, &bufferPtr);
     BIO_set_close(bio, BIO_NOCLOSE);
-    BIO_free_all(bio);
 
     /* these are not NULL terminated */
     char *b64text = bufferPtr->data;
@@ -375,19 +374,23 @@ char *Base64Encode(const unsigned char* buffer)
             b64text[i] = '_';
         }
     }
+
+    char *final_string = NULL;
+
     CURL *curl = curl_easy_init();
     if (curl) {
         char *output = curl_easy_escape(curl, b64text, len);
         if (output) {
-            strncpy(b64text, output, strlen(output));
+            final_string = strdup(output);
             curl_free(output);
         }
     }
     curl_easy_cleanup(curl);
     curl_global_cleanup();
+    BIO_free_all(bio);
 
     /* format to a proper NULL terminated string */
-    return strndup(b64text, len);
+    return final_string;
 }
 
 int RetrieveEndorsementCredentials(char *b64h)
