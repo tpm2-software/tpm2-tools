@@ -86,7 +86,9 @@ test_wrapper test_tpm2_verifysignature.sh
 test_wrapper test_tpm2_send_command.sh
 test_wrapper test_tpm2_dump_capability.sh
 test_wrapper test_tpm2_startup.sh
-test_wrapper test_tpm2_getmanufec.sh
+
+# The URL is no longer valid
+# test_wrapper test_tpm2_getmanufec.sh
 test_wrapper test_tpm2_dictionarylockout.sh
 test_wrapper test_tpm2_createpolicy.sh
 
