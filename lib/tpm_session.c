@@ -198,7 +198,7 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
             }
             else
             {
-                rval = tpm_kdfa(sapi_context, session->authHash, &(key.b), label, &( session->nonceNewer.b ),
+                rval = tpm_kdfa(session->authHash, &(key.b), label, &( session->nonceNewer.b ),
                         &( session->nonceOlder.b ), bytes * 8, (TPM2B_MAX_BUFFER *)&( session->sessionKey ) );
             }
 
