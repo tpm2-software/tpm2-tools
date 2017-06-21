@@ -31,6 +31,26 @@
 #include <stdlib.h>
 #include "changeEndian.h"
 
+#include <openssl/err.h>
+#include <openssl/hmac.h>
+
+static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
+
+    switch(algorithm) {
+    case TPM_ALG_SHA1:
+        return EVP_sha1();
+    case ALG_SHA256_VALUE:
+        return EVP_sha256();
+    case TPM_ALG_SHA384:
+        return EVP_sha384();
+    case TPM_ALG_SHA512:
+        return EVP_sha512();
+    default:
+        return NULL;
+    }
+    /* no return, not possible */
+}
+
 //
 //
 TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
@@ -42,7 +62,7 @@ TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
     UINT8 *tpm2b_i_2Ptr = &tpm2b_i_2.t.buffer[0];
     TPM2B_DIGEST *bufferList[8];
     UINT32 bitsSwizzled, i_Swizzled;
-    TPM_RC rval;
+    TPM_RC rval = TPM_RC_SUCCESS;
     int i, j;
     UINT16 bytes = bits / 8;
     
@@ -87,8 +107,23 @@ TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
 
     i = 1;
 
+    const EVP_MD *md = tpm_algorithm_to_openssl_digest(hashAlg);
+    if (!md) {
+        fprintf(stderr, "Algorithm not supported for hmac: %x\n", hashAlg);
+        return TPM_RC_HASH;
+    }
+
+    HMAC_CTX ctx;
+    HMAC_CTX_init(&ctx);
+    int rc = HMAC_Init_ex(&ctx, key->buffer, key->size, md, NULL);
+    if (!rc) {
+        fprintf(stderr, "HMAC Init failed: %s\n", ERR_error_string(rc, NULL));
+        return TPM_RC_MEMORY;
+    }
+
     while( resultKey->t.size < bytes )
     {
+        TPM2B_DIGEST tmpResult;
         // Inner loop
 
         i_Swizzled = CHANGE_ENDIAN_DWORD( i );
@@ -100,7 +135,7 @@ TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
         bufferList[j++] = (TPM2B_DIGEST *)contextU;
         bufferList[j++] = (TPM2B_DIGEST *)contextV;
         bufferList[j++] = (TPM2B_DIGEST *)&(tpm2bBits.b);
-        bufferList[j++] = (TPM2B_DIGEST *)0;
+        bufferList[j] = (TPM2B_DIGEST *)0;
 #ifdef DEBUG
         OpenOutFile( &outFp );
         for( j = 0; bufferList[j] != 0; j++ )
@@ -110,10 +145,24 @@ TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
         }
         CloseOutFile( &outFp );
 #endif
-        rval = (*HmacFunctionPtr )( hashAlg, key, (TPM2B **)&( bufferList[0] ), &tmpResult );
-        if( rval != TPM_RC_SUCCESS )
-        {
-            return( rval );
+
+        int c;
+        for(c=0; c < j; c++) {
+            TPM2B_DIGEST *digest = bufferList[c];
+            int rc =  HMAC_Update(&ctx, digest->b.buffer, digest->b.size);
+            if (!rc) {
+                fprintf(stderr, "HMAC Update failed: %s\n", ERR_error_string(rc, NULL));
+                rval = TPM_RC_MEMORY;
+                goto err;
+            }
+        }
+
+        unsigned size = sizeof(tmpResult.t.buffer);
+        int rc = HMAC_Final(&ctx, tmpResult.t.buffer, &size);
+        if (!rc) {
+            fprintf(stderr, "HMAC Final failed: %s\n", ERR_error_string(rc, NULL));
+            rval = TPM_RC_MEMORY;
+            goto err;
         }
 
         ConcatSizedByteBuffer( resultKey, &(tmpResult.b) );
@@ -129,5 +178,8 @@ TPM_RC KDFa( TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
     CloseOutFile( &outFp );
 #endif
     
-    return TPM_RC_SUCCESS;
+err:
+    HMAC_CTX_cleanup(&ctx);
+
+    return rval;
 }
