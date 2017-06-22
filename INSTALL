@@ -20,4 +20,4 @@ $ ./configure
 $ make
 $ sudo make install
 
-All executables are generated under ./src/ directory.
+All executables are generated under ./tools/ directory.
