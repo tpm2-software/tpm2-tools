@@ -51,6 +51,34 @@ static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
     /* no return, not possible */
 }
 
+static HMAC_CTX *hmac_alloc()
+{
+    HMAC_CTX *ctx;
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+    ctx = malloc(sizeof(*ctx));
+#else
+    ctx = HMAC_CTX_new();
+#endif
+    if (!ctx)
+        return NULL;
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+    HMAC_CTX_init(ctx);
+#endif
+
+    return ctx;
+}
+
+static void hmac_del(HMAC_CTX *ctx)
+{
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+    HMAC_CTX_cleanup(ctx);
+    free(ctx);
+#else
+    HMAC_CTX_free(ctx);
+#endif
+}
+
 TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,
         TPM2B_MAX_BUFFER  *resultKey )
@@ -90,12 +118,17 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         return TPM_RC_HASH;
     }
 
-    HMAC_CTX ctx;
-    HMAC_CTX_init(&ctx);
-    int rc = HMAC_Init_ex(&ctx, key->buffer, key->size, md, NULL);
+    HMAC_CTX *ctx = hmac_alloc();
+    if (!ctx) {
+        LOG_ERR("HMAC context allocation failed");
+        return TPM_RC_MEMORY;
+    }
+
+    int rc = HMAC_Init_ex(ctx, key->buffer, key->size, md, NULL);
     if (!rc) {
         LOG_ERR("HMAC Init failed: %s", ERR_error_string(rc, NULL));
-        return TPM_RC_MEMORY;
+        rval = TPM_RC_MEMORY;
+        goto err;
     }
 
     // TODO Why is this a loop? It appears to only execute once.
@@ -118,7 +151,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         int c;
         for(c=0; c < j; c++) {
             TPM2B_DIGEST *digest = bufferList[c];
-            int rc =  HMAC_Update(&ctx, digest->b.buffer, digest->b.size);
+            int rc =  HMAC_Update(ctx, digest->b.buffer, digest->b.size);
             if (!rc) {
                 LOG_ERR("HMAC Update failed: %s", ERR_error_string(rc, NULL));
                 rval = TPM_RC_MEMORY;
@@ -127,7 +160,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         }
 
         unsigned size = sizeof(tmpResult.t.buffer);
-        int rc = HMAC_Final(&ctx, tmpResult.t.buffer, &size);
+        int rc = HMAC_Final(ctx, tmpResult.t.buffer, &size);
         if (!rc) {
             LOG_ERR("HMAC Final failed: %s", ERR_error_string(rc, NULL));
             rval = TPM_RC_MEMORY;
@@ -147,7 +180,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
     resultKey->t.size = bytes;
 
 err:
-    HMAC_CTX_cleanup(&ctx);
+    hmac_del(ctx);
 
     return rval;
 }
