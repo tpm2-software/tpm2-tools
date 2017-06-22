@@ -360,10 +360,13 @@ char *Base64Encode(const unsigned char* buffer)
     BIO_flush(bio);
     BIO_get_mem_ptr(bio, &bufferPtr);
     BIO_set_close(bio, BIO_NOCLOSE);
-    BIO_free_all(bio);
-    char *b64text = (*bufferPtr).data;
+
+    /* these are not NULL terminated */
+    char *b64text = bufferPtr->data;
+    size_t len = bufferPtr->length;
+
     size_t i;
-    for (i = 0; i < strlen(b64text); i++) {
+    for (i = 0; i < len; i++) {
         if (b64text[i] == '+') {
             b64text[i] = '-';
         }
@@ -371,28 +374,28 @@ char *Base64Encode(const unsigned char* buffer)
             b64text[i] = '_';
         }
     }
+
+    char *final_string = NULL;
+
     CURL *curl = curl_easy_init();
     if (curl) {
-        char *output = curl_easy_escape(curl, b64text, strlen(b64text));
+        char *output = curl_easy_escape(curl, b64text, len);
         if (output) {
-            strncpy(b64text, output, strlen(output));
+            final_string = strdup(output);
             curl_free(output);
         }
     }
     curl_easy_cleanup(curl);
     curl_global_cleanup();
-    printf("%s\n", b64text);
-    return b64text;
+    BIO_free_all(bio);
+
+    /* format to a proper NULL terminated string */
+    return final_string;
 }
 
 int RetrieveEndorsementCredentials(char *b64h)
 {
     int ret = -1;
-
-    if (b64h == NULL) {
-        LOG_ERR("Base64Encode returned null");
-        return ret;
-    }
 
     size_t len = 1 + strlen(b64h) + strlen(EKserverAddr);
     char *weblink = (char *)malloc(len);
@@ -478,7 +481,17 @@ int TPMinitialProvisioning(void)
         return -99;
     }
 
-    return RetrieveEndorsementCredentials(Base64Encode(HashEKPublicKey()));
+    char *b64 = Base64Encode(HashEKPublicKey());
+    if (!b64) {
+        LOG_ERR("Base64Encode returned null");
+        return -1;
+    }
+
+    printf("%s\n", b64);
+
+    int rc = RetrieveEndorsementCredentials(b64);
+    free(b64);
+    return rc;
 }
 
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
