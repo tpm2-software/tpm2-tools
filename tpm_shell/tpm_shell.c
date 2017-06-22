@@ -12,7 +12,6 @@
 #include "main.h"
 #include "options.h"
 
-
 typedef struct shell_state shell_state;
 struct shell_state {
     TSS2_SYS_CONTEXT *sapi_context;
@@ -261,6 +260,49 @@ static int tpm_close(lua_State *L) {
 #define xstr(s) str(s)
 #define str(s) #s
 
+static int push_iterator(const char *key, const char *value, void *userdata) {
+	lua_State *L = (lua_State *)userdata;
+
+	lua_pushstring(L, key);
+	lua_pushstring(L, value);
+
+	/* the table is now the 3rd element from the top of the stack */
+	lua_settable(L, -3);
+
+	return 0;
+}
+
+static int handle_return(lua_State *L, int rc, tpm_table *t) {
+
+    lua_pushnumber(L, rc);
+
+    size_t size = tpm_table_size(t);
+	lua_createtable(L, 0, size);
+
+	/* TODO handle possible errors */
+	tpm_table_foreach(t, push_iterator, L);
+
+	return 2;
+}
+
+static int builtin_getrandom(lua_State *L) { \
+
+	int argc;
+    shell_state *sstate = NULL;
+
+    char **argv = stack_to_argv_with_state(L, "tpm2_getrandom", &argc, &sstate);
+
+    tpm_table *t = tpm_table_new();
+    if (!t) {
+    	return 42;
+    }
+
+    int rc = shell_getrandom(argc, argv, environ, &sstate->options, sstate->sapi_context, t);
+
+    return handle_return(L, rc, t);
+}
+
+
 #define add_tool(name) \
     static int builtin_##name(lua_State *L) { \
     \
@@ -269,7 +311,7 @@ static int tpm_close(lua_State *L) {
     \
         char **argv = stack_to_argv_with_state(L, "tpm2_"str(name), &argc, &sstate); \
     \
-        int rc = shell_##name(argc, argv, environ, &sstate->options, sstate->sapi_context); \
+        int rc = shell_##name(argc, argv, environ, &sstate->options, sstate->sapi_context, NULL); \
     \
         lua_pushnumber(L, rc); \
     \
@@ -288,7 +330,7 @@ add_tool(encryptdecrypt)
 add_tool(evictcontrol)
 add_tool(getpubak)
 add_tool(getpubek)
-add_tool(getrandom)
+//add_tool(getrandom)
 add_tool(hash)
 add_tool(hmac)
 add_tool(listpcrs)

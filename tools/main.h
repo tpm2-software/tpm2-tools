@@ -33,18 +33,15 @@
 
 #include <sapi/tpm20.h>
 #include "options.h"
+#include "tpm_table.h"
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context);
 #ifdef SHELL_TOOLS
+
+#define TOOL_OUTPUT(table, key, value) tpm_table_push(table, key, value)
 
 #define ENTRY_POINT(name) \
     int shell_##name(int argc, char *argv[], char *envp[], common_opts_t *opts, \
-        TSS2_SYS_CONTEXT *sapi_context)
+        TSS2_SYS_CONTEXT *sapi_context, tpm_table *table __attribute__((unused)))
 
 ENTRY_POINT(activatecredential);
 ENTRY_POINT(akparse);
@@ -84,9 +81,19 @@ ENTRY_POINT(verifysignature);
 
 #else
 
+#define TOOL_OUTPUT(table, key, value) printf("%s:%s\n", key, value)
+
+int
+execute_tool (int              argc,
+              char             *argv[],
+              char             *envp[],
+              common_opts_t    *opts,
+              TSS2_SYS_CONTEXT *sapi_context,
+			  tpm_table *t);
+
 #define ENTRY_POINT(name) \
     int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts, \
-        TSS2_SYS_CONTEXT *sapi_context)
+        TSS2_SYS_CONTEXT *sapi_context, tpm_table *table __attribute__((unused)))
 #endif
 
 #endif /* MAIN_H */

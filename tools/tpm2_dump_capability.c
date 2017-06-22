@@ -551,7 +551,7 @@ get_capability_opts (int                  argc,
         { NULL, },
     };
 
-    optind = 1;
+    optind = 0;
     while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
            != -1)
     {

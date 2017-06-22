@@ -142,12 +142,14 @@ execute_tool (int              argc,
              char             *argv[],
              char             *envp[],
              common_opts_t    *opts,
-             TSS2_SYS_CONTEXT *sapi_context)
+             TSS2_SYS_CONTEXT *sapi_context,
+			 tpm_table *t)
 {
     (void)envp;
     (void)opts;
     (void)argc;
     (void)argv;
+    (void)t;
 
     TSS2_TCTI_CONTEXT *tcti_context = NULL;
     size_t response_size = MAX_BUF;

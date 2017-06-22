@@ -144,7 +144,7 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
     int opt;
     bool result;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "x:a:f:P:X", long_options, NULL))
             != -1) {
         switch (opt) {

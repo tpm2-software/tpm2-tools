@@ -495,10 +495,11 @@ int TPMinitialProvisioning(void)
 }
 
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
-                  TSS2_SYS_CONTEXT *sapi_context)
+                  TSS2_SYS_CONTEXT *sapi_context, tpm_table *t)
 {
     (void) opts;
     (void) envp;
+    (void) t;
 
     int return_val = 1;
 
@@ -527,7 +528,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     int opt;
-    optind = 1;
+    optind = 0;
     while ( ( opt = getopt_long( argc, argv, optstring, long_options, NULL ) ) != -1 ) {
               switch ( opt ) {
                 case 'H':

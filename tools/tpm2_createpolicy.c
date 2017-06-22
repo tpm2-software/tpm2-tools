@@ -277,7 +277,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
     int opt;
     bool result;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "Pf:i:g:F:", sOpts, NULL)) != -1) {
         switch (opt) {
         case 'f':

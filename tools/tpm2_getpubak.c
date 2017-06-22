@@ -430,7 +430,7 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
     int opt;
     bool result;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "o:E:e:k:g:D:s:P:f:n:Xp:", opts, NULL))
             != -1) {
         switch (opt) {

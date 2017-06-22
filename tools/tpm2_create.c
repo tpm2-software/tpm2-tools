@@ -277,7 +277,7 @@ ENTRY_POINT(create) {
         O_flag = 0/*,
         f_flag = 0*/;
 
-    optind = 1;
+    optind = 0;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)

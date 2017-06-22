@@ -136,7 +136,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
 
     int opt = -1;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
         switch (opt) {

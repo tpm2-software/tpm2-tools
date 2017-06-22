@@ -147,7 +147,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
     int flagCnt = 0;
     int opt = -1;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
         switch (opt) {

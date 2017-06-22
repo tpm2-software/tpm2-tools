@@ -281,7 +281,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
 
     int opt;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:Xp:d:hv", options, NULL))
             != -1) {
         bool result;

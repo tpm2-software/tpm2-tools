@@ -201,7 +201,7 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
     bool result;
 
     /* reset getopt_long for re-scanning new argv's */
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "o:e:l:O:E:L:Xc", sOpts, NULL))
             != -1) {
 

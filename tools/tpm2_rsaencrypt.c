@@ -109,7 +109,7 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
     int opt;
     char context_key_file[PATH_MAX];
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
         switch (opt) {

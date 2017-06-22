@@ -44,6 +44,7 @@
 #include "options.h"
 #include "password_util.h"
 #include "string-bytes.h"
+#include "tpm_table.h"
 
 typedef struct tpm_random_ctx tpm_random_ctx;
 struct tpm_random_ctx {
@@ -51,6 +52,7 @@ struct tpm_random_ctx {
     char output_file[PATH_MAX];
     UINT16 num_of_bytes;
     TSS2_SYS_CONTEXT *sapi_context;
+    tpm_table *t;
 };
 
 static bool get_random_and_save(tpm_random_ctx *ctx) {
@@ -65,11 +67,16 @@ static bool get_random_and_save(tpm_random_ctx *ctx) {
     }
 
     if (!ctx->output_file_specified) {
-        UINT16 i;
-        for (i = 0; i < random_bytes.t.size; i++) {
-            printf("%s0x%2.2X", i ? " " : "", random_bytes.t.buffer[i]);
+
+        char *s = string_bytes_to_hex(random_bytes.t.buffer, random_bytes.t.size);
+        if (!s) {
+        	LOG_ERR("oom");
+        	return false;
         }
-        printf("\n");
+
+        TOOL_OUTPUT(ctx->t, "random", s);
+
+        free(s);
         return true;
     }
 
@@ -93,7 +100,7 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
     }
 
     int opt;
-    optind = 1; /* force reset of getopt() since we used gnu extensionsin main, sic */
+    optind = 0; /* force reset of getopt() since we used gnu extensions in main, sic */
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {
@@ -132,7 +139,8 @@ ENTRY_POINT(getrandom) {
             .output_file_specified = false,
             .num_of_bytes = 0,
             .output_file = { 0 },
-            .sapi_context = sapi_context
+            .sapi_context = sapi_context,
+			.t = table
     };
 
     bool result = init(argc, argv, &ctx);

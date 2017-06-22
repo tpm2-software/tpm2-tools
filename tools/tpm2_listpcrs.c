@@ -404,7 +404,7 @@ ENTRY_POINT(listpcrs) {
     (void) opts;
     (void) envp;
 
-    optind = 1;
+    optind = 0;
     while (getopt_long(argc, argv, "g:o:L:s", long_options, NULL) != -1) {
         switch (optopt) {
         case 'g':

@@ -20,6 +20,19 @@ if rc ~= 0 then
   os.exit (1)
 end
 
+-- Showcase an in-progress feature
+-- where tool output can be returned
+-- via a table.
+rc, t = getrandom(s, "4")
+if rc ~= 0 then
+  tpm_close(s)
+  os.exit (1)
+end
+
+print("\n\nRandom output via in memory return")
+print(t["random"])
+print("\n")
+
 -- Close a connection with a tpm.
 -- Calling anything using S after
 -- tpm_close() is a user error

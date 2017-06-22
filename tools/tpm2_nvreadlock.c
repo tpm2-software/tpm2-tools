@@ -118,7 +118,7 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
     int opt;
     bool result;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "x:a:P:Xp:d:hv", long_options, NULL))
             != -1) {
         switch (opt) {

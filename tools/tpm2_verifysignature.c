@@ -238,7 +238,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
 
     int opt;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'k': {

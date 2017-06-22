@@ -94,7 +94,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_hash.c \
     lib/tpm_hmac.c \
     lib/tpm_kdfa.c \
-    lib/tpm_session.c
+    lib/tpm_session.c \
+    lib/tpm_table.c
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c tools/main.c
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c tools/main.c
@@ -189,7 +190,7 @@ libtpm_shell_la_SOURCES = \
   $(lib_libcommon_a_SOURCES)
 
 libtpm_shell_la_CFLAGS = $(LUA_CFLAGS) $(AM_CFLAGS) -DSHELL_TOOLS
-libtpm_shell_la_LIBADD = $(LUA_LIBS) $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS) $(TCTI_TABRMD_LIBS)
+libtpm_shell_la_LIBADD = $(LUA_LIBS) $(LDADD)
 endif
 
 if UNIT

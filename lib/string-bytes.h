@@ -90,4 +90,16 @@ UINT32 string_bytes_endian_convert_32(UINT32 data);
  */
 UINT64 string_bytes_endian_convert_64(UINT64 data);
 
+/**
+ * Converts a BYTE array into a hex string.
+ * @param bytes
+ *  The byte array to convert.
+ * @param length
+ *  The length of the byte array.
+ * @return
+ *  The converted string or NULL on error. The caller must free the
+ *  return with free().
+ */
+char *string_bytes_to_hex(BYTE *bytes, UINT16 length);
+
 #endif /* STRING_BYTES_H */

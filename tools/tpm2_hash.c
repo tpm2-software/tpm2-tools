@@ -140,7 +140,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
     long fileSize;
     unsigned flags = 0;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "H:g:I:o:t:", long_options, NULL))
             != -1) {
         switch (opt) {

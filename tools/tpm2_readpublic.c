@@ -122,7 +122,7 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
     bool result;
     char context_file[PATH_MAX] = {0};
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {

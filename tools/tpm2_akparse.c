@@ -185,7 +185,7 @@ static bool init(int argc, char *argv[], tpm_akparse_ctx *ctx) {
 
     int opt;
 
-    optind = 1;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "f:k:hv", options, NULL)) != -1) {
         switch (opt) {
         case 'f':
