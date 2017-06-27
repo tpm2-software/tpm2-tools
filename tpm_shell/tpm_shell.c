@@ -279,29 +279,31 @@ static int handle_return(lua_State *L, int rc, tpm_table *t) {
     size_t size = tpm_table_size(t);
 	lua_createtable(L, 0, size);
 
-	/* TODO handle possible errors */
 	tpm_table_foreach(t, push_iterator, L);
+
+    tpm_table_free(t);
 
 	return 2;
 }
 
-static int builtin_getrandom(lua_State *L) { \
-
-	int argc;
-    shell_state *sstate = NULL;
-
-    char **argv = stack_to_argv_with_state(L, "tpm2_getrandom", &argc, &sstate);
-
-    tpm_table *t = tpm_table_new();
-    if (!t) {
-    	return 42;
+#define add_tool_with_mem_return(name) \
+	static int builtin_##name(lua_State *L) { \
+    \
+        int argc; \
+        shell_state *sstate = NULL; \
+    \
+        char **argv = stack_to_argv_with_state(L, "tpm2_"str(name), &argc, &sstate); \
+    \
+        tpm_table *t = tpm_table_new(); \
+        if (!t) { \
+            lua_pushnumber(L, TPM_RC_MEMORY); \
+            return 1; \
+        } \
+    \
+        int rc = shell_##name(argc, argv, environ, &sstate->options, sstate->sapi_context, t); \
+    \
+        return handle_return(L, rc, t); \
     }
-
-    int rc = shell_getrandom(argc, argv, environ, &sstate->options, sstate->sapi_context, t);
-
-    return handle_return(L, rc, t);
-}
-
 
 #define add_tool(name) \
     static int builtin_##name(lua_State *L) { \
@@ -330,7 +332,7 @@ add_tool(encryptdecrypt)
 add_tool(evictcontrol)
 add_tool(getpubak)
 add_tool(getpubek)
-//add_tool(getrandom)
+add_tool_with_mem_return(getrandom)
 add_tool(hash)
 add_tool(hmac)
 add_tool(listpcrs)
