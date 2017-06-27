@@ -31,7 +31,7 @@
 .SH NAME
 tpm2_createprimary \- Create a primary key under a primary seed or a temporary primary key under the TPM_RH_NULL hierarchy.
 .SH SYNOPSIS
-.B tpm2_createprimary [\fBCOMMON OPTIONS\fR] [\fBTCTI OPTIONS\fR] [\fB\-A\fR|\fB\-\-auth\fR=][o|p|e|n] [\fB\-P\fR|\fB\-\-pwdp\fB=][string] [\fB\-K\fR|\fB\-\-pwdk\fR=][string] [\fB\-g\fR|\fB\-\-halg\fR=][0x4|0xB|0xC|0xD|0x12] [\fB\-G\fR|\fB\-\-kalg\fR=][0x1|0x8|0x23|0x25] [\fB\-C\fR|\fB\-\-context\fR=][filepath] [\fB\-X\fR|\fB\-\-passwdInHex\fR [\fB\-d\fR|\fB\-\-debugLevel\fR=][0|1|2|3]
+.B tpm2_createprimary [\fBCOMMON OPTIONS\fR] [\fBTCTI OPTIONS\fR] [\fB\-A\fR|\fB\-\-auth\fR=][o|p|e|n] [\fB\-P\fR|\fB\-\-pwdp\fB=][string] [\fB\-K\fR|\fB\-\-pwdk\fR=][string] [\fB\-g\fR|\fB\-\-halg\fR=][0x4|0xB|0xC|0xD|0x12] [\fB\-G\fR|\fB\-\-kalg\fR=][0x1|0x8|0x23|0x25] [\fB\-C\fR|\fB\-\-context\fR=][filepath] [\fB\-X\fR|\fB\-\-passwdInHex\fR]
 .PP
 .SH DESCRIPTION
 This command is used to create a Primary Object under one of the Primary Seeds or a Temporary Object under TPM_RH_NULL. The command uses a TPM2B_PUBLIC as a template for the object to be created. The command will create and load a Primary Object. The sensitive area is not returned.
@@ -78,15 +78,6 @@ An optional file used to store the object context returned.
 .TP
 \fB\-X\fR,\ \fB\-\-passwdInHex\fR
 A flag used to indicate that the supplied passwords are hex strings.
-.TP
-\fB\-d\fR,\ \fB\-\-debugLevel\fR=[0|1|2|3]
-Control the verbosity of debug output from the tool.
-.tr
-Supported values are:
-  '0' is the default
-  '1' displays test app send / receive byte streams
-  '2' displays resource manager send / receive byte streams
-  '3' displays the resource manager tables
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT
