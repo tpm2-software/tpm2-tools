@@ -192,3 +192,22 @@ STRING_BYTES_ENDIAN_CONVERT(64)
 STRING_BYTES_ENDIAN_HTON(16)
 STRING_BYTES_ENDIAN_HTON(32)
 STRING_BYTES_ENDIAN_HTON(64)
+
+/*
+ * Converting from host-to-network (hton) or network-to-host (ntoh) is
+ * the same operation: if endianess differes between host and data, swap
+ * endiness. This we can just call the hton routines, but have some nice
+ * names for folks.
+ */
+
+UINT16 string_bytes_endian_ntoh_16(UINT16 data) {
+    return string_bytes_endian_hton_16(data);
+}
+
+UINT32 string_bytes_endian_ntoh_32(UINT32 data) {
+    return string_bytes_endian_hton_32(data);
+}
+
+UINT64 string_bytes_endian_ntoh_64(UINT64 data) {
+    return string_bytes_endian_hton_64(data);
+}
