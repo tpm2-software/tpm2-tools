@@ -61,7 +61,7 @@ main (int   argc,
         execute_man (argv[0], envp);
         fprintf (stderr,
                  "failed to load manpage, check your environment / PATH\n");
-        /* no break */
+        /* fallthrough */
     case 2:
         exit (1);
     }

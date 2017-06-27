@@ -597,7 +597,7 @@ dump_tpm_capability (TPMU_CAPABILITIES    *capabilities,
     case TPM_CAP_COMMANDS:
         dump_command_attr_array (capabilities->command.commandAttributes,
                                  capabilities->command.count);
-        /* no break */
+        /* fallthrough */
     default:
         return 1;
     }
