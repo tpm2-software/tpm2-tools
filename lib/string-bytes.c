@@ -177,3 +177,18 @@ bool string_bytes_is_host_big_endian(void) {
 STRING_BYTES_ENDIAN_CONVERT(16)
 STRING_BYTES_ENDIAN_CONVERT(32)
 STRING_BYTES_ENDIAN_CONVERT(64)
+
+#define STRING_BYTES_ENDIAN_HTON(size) \
+    UINT##size string_bytes_endian_hton_##size(UINT##size data) { \
+    \
+        bool is_big_endian = string_bytes_is_host_big_endian(); \
+        if (is_big_endian) { \
+           return data; \
+        } \
+    \
+        return string_bytes_endian_convert_##size(data); \
+    }
+
+STRING_BYTES_ENDIAN_HTON(16)
+STRING_BYTES_ENDIAN_HTON(32)
+STRING_BYTES_ENDIAN_HTON(64)
