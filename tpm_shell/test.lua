@@ -33,6 +33,12 @@ print("\n\nRandom output via in memory return")
 print(t["random"])
 print("\n")
 
+
+rc, t = createpolicy(s, '-P', '-i', '0', '-g', '0x4')
+print("\n\nPolicy from createpolicy")
+print(t["policy"])
+print("\n")
+
 -- Close a connection with a tpm.
 -- Calling anything using S after
 -- tpm_close() is a user error
