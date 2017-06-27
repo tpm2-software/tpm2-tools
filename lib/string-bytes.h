@@ -90,4 +90,23 @@ UINT32 string_bytes_endian_convert_32(UINT32 data);
  */
 UINT64 string_bytes_endian_convert_64(UINT64 data);
 
+/**
+ * Converts a 16 bit value from host endianess to network endianess.
+ * @param data
+ *  The data to possibly swap endianess.
+ * @return
+ *  The swapped data.
+ */
+UINT16 string_bytes_endian_hton_16(UINT16 data);
+
+/**
+ * Just like string_bytes_endian_hton_16 but for 32 bit values.
+ */
+UINT32 string_bytes_endian_hton_32(UINT32 data);
+
+/**
+ * Just like string_bytes_endian_hton_16 but for 64 bit values.
+ */
+UINT64 string_bytes_endian_hton_64(UINT64 data);
+
 #endif /* STRING_BYTES_H */
