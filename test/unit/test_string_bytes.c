@@ -72,6 +72,21 @@ TEST_ENDIAN_HTON(16, 0xFF00, 0x00FF)
 TEST_ENDIAN_HTON(32, 0xAABBCCDD, 0xDDCCBBAA)
 TEST_ENDIAN_HTON(64, 0x0011223344556677, 0x7766554433221100)
 
+#define TEST_ENDIAN_NTOH(size, value, le_expected) \
+    static void test_ntoh_##size(void **state) { \
+    \
+        (void)state; \
+        UINT##size test = string_bytes_endian_ntoh_##size(value); \
+        bool is_big_endian = string_bytes_is_host_big_endian(); \
+        UINT##size expected = is_big_endian ? value : le_expected; \
+        assert_int_equal(test, expected); \
+        \
+    }
+
+TEST_ENDIAN_NTOH(16, 0xFF00, 0x00FF)
+TEST_ENDIAN_NTOH(32, 0xAABBCCDD, 0xDDCCBBAA)
+TEST_ENDIAN_NTOH(64, 0x0011223344556677, 0x7766554433221100)
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
@@ -84,6 +99,9 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_hton_16),
         cmocka_unit_test(test_hton_32),
         cmocka_unit_test(test_hton_64),
+        cmocka_unit_test(test_ntoh_16),
+        cmocka_unit_test(test_ntoh_32),
+        cmocka_unit_test(test_ntoh_64),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
