@@ -28,8 +28,9 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <endian.h>
 #include <sapi/tpm20.h>
+
+#include "string-bytes.h"
 
 /*
  * Extract the 'tag' field from the tpm command header. This is a
@@ -38,7 +39,7 @@
 TPMI_ST_COMMAND_TAG
 get_command_tag (uint8_t *command_header)
 {
-    return be16toh (*(TPMI_ST_COMMAND_TAG*)command_header);
+    return string_bytes_endian_ntoh_16 (*(TPMI_ST_COMMAND_TAG*)command_header);
 }
 /*
  * Get the commandSize field from the tpm command buffer supplied in the
@@ -52,7 +53,7 @@ get_command_tag (uint8_t *command_header)
 UINT32
 get_command_size (uint8_t *command_header)
 {
-    return be32toh (*(UINT32*)(command_header + sizeof (TPMI_ST_COMMAND_TAG)));
+    return string_bytes_endian_ntoh_32 (*(UINT32*)(command_header + sizeof (TPMI_ST_COMMAND_TAG)));
 }
 /*
  * Extract the commandCode from a tpm command buffer. It is the 3rd field
@@ -61,7 +62,7 @@ get_command_size (uint8_t *command_header)
 TPM_CC
 get_command_code (uint8_t *command_header)
 {
-    return be32toh (*(TPM_CC*)(command_header + sizeof (TPMI_ST_COMMAND_TAG) + sizeof (UINT32)));
+    return string_bytes_endian_ntoh_32 (*(TPM_CC*)(command_header + sizeof (TPMI_ST_COMMAND_TAG) + sizeof (UINT32)));
 }
 /*
  * Get the 'tag' field from a TPM response buffer. This is the first field
@@ -70,7 +71,7 @@ get_command_code (uint8_t *command_header)
 TPM_ST
 get_response_tag (uint8_t *response_header)
 {
-    return be16toh (*(TPM_ST*)response_header);
+    return string_bytes_endian_ntoh_16 (*(TPM_ST*)response_header);
 }
 /*
  * Get the 'responseSize' field from a TPM response header.
@@ -78,7 +79,7 @@ get_response_tag (uint8_t *response_header)
 UINT32
 get_response_size (uint8_t *response_header)
 {
-    return be32toh (*(UINT32*)(response_header + sizeof (TPM_ST)));
+    return string_bytes_endian_ntoh_32 (*(UINT32*)(response_header + sizeof (TPM_ST)));
 }
 /*
  * Get the responseCode field from the TPM response buffer supplied in the
@@ -88,5 +89,5 @@ get_response_size (uint8_t *response_header)
 TSS2_RC
 get_response_code (uint8_t *response_header)
 {
-    return be32toh (*(TSS2_RC*)(response_header + sizeof (TPM_ST) + sizeof (UINT32)));
+    return string_bytes_endian_ntoh_32 (*(TSS2_RC*)(response_header + sizeof (TPM_ST) + sizeof (UINT32)));
 }
