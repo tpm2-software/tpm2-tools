@@ -79,8 +79,8 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
         return false;
     }
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &outData, sizeof(outData));
+    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) outData.t.buffer,
+            outData.t.size);
 }
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
