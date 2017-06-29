@@ -31,14 +31,123 @@
 #ifndef TPM2_HEADER_H
 #define TPM2_HEADER_H
 
-#include <sys/types.h>
+#include <stdbool.h>
+
 #include <sapi/tpm20.h>
 
-TPMI_ST_COMMAND_TAG    get_command_tag        (uint8_t      *command_header);
-UINT32                 get_command_size       (uint8_t      *command_header);
-TPM_CC                 get_command_code       (uint8_t      *command_header);
-TPM_ST                 get_response_tag       (uint8_t      *response_header);
-UINT32                 get_response_size      (uint8_t      *response_header);
-TSS2_RC                get_response_code      (uint8_t      *response_header);
+#define TPM2_COMMAND_HEADER_SIZE  (sizeof(tpm2_command_header))
+#define TPM2_RESPONSE_HEADER_SIZE (sizeof(tpm2_response_header))
+
+#define TPM2_MAX_SIZE 4096
+
+typedef union tpm2_command_header tpm2_command_header;
+union tpm2_command_header {
+    struct {
+        TPMI_ST_COMMAND_TAG tag; // uint16
+        UINT32 size; //
+        TPM_CC command_code;
+        UINT8 data[];
+    } __attribute__((packed));
+    UINT8 bytes[0];
+};
+
+typedef union tpm2_response_header tpm2_response_header;
+union tpm2_response_header {
+    struct {
+        TPM_ST tag;
+        UINT32 size;
+        TSS2_RC response_code;
+        UINT8 data[];
+    } __attribute__((packed));
+    UINT8 bytes[0];
+};
+
+/**
+ * Converts a byte-array to a tpm2_command_header struct.
+ * @param h
+ *  The byte array to convert to a tpm2_command_header.
+ * @return
+ *  A converted byte array.
+ */
+static inline tpm2_command_header *tpm2_command_header_from_bytes(UINT8 *h) {
+    return (tpm2_command_header *)h;
+}
+
+/**
+ * Converts a byte-array to a tpm2_response_header struct.
+ * @param h
+ *  The byte array to convert to a tpm2_response_header.
+ * @return
+ *  A converted byte array.
+ */
+static inline tpm2_response_header *tpm2_response_header_from_bytes(UINT8 *h) {
+    return (tpm2_response_header *)h;
+}
+
+/**
+ * Retrieves the command tag from a command_header converting to host
+ * endianess.
+ * @param command_header
+ * @return
+ */
+TPMI_ST_COMMAND_TAG get_command_tag(UINT8 *command_header);
+
+/**
+ * Retrieves the command size from a command_header converting to host
+ * endianess.
+ * @param command_header
+ * @param include_header
+ * @return
+ */
+UINT32 get_command_size(UINT8 *command_header, bool include_header);
+
+/**
+ * Retrieves the command code from a command_header converting to host
+ * endianess.
+ * @param command_header
+ * @return
+ */
+TPM_CC get_command_code(UINT8 *command_header);
+
+/**
+ * Retrieves command data, if present.
+ * @param command_header
+ *  The command_header to check for following data.
+ * @return The command data or NULL if not present.
+ */
+UINT8 *get_command_data(uint8_t *command_header);
+
+/**
+ * Retrieves the response tag from a response header converting to host
+ * endianess.
+ * @param response_header
+ * @return
+ */
+TPM_ST get_response_tag(UINT8 *response_header);
+
+/**
+ * Retrieves the response size from a response header converting to host
+ * endianess.
+ * @param response_header
+ * @param include_header
+ * @return
+ */
+UINT32 get_response_size(UINT8 *response_header, bool include_header);
+
+/**
+ * Retrieves the response code from a response header converting to host
+ * endianess.
+ * @param response_header
+ * @return
+ */
+TSS2_RC get_response_code(UINT8 *response_header);
+
+/**
+ * Retrieves response data, if present.
+ * @param response_header
+ *  The response_header to check for following data.
+ * @return The response data or NULL if not present.
+ */
+UINT8 *get_response_data(uint8_t *response_header);
 
 #endif /* TPM2_HEADER_H */

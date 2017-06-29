@@ -7,7 +7,7 @@
 #include <sapi/tpm20.h>
 
 /**
- * Reads a series of bytes froma file as a byte array. This is similar to files_read_bytes(),
+ * Reads a series of bytes from a file as a byte array. This is similar to files_read_bytes(),
  * but opens and closes the FILE for the caller. Size is both an input and output value where
  * the size value is the max buffer size on call and the returned size is how much was read.
  *
