@@ -217,23 +217,34 @@ sapi_init_from_options (common_opts_t *options)
 TSS2_TCTI_CONTEXT*
 tcti_init_from_options (common_opts_t *options)
 {
-    switch (options->tcti_type) {
+    TSS2_TCTI_CONTEXT *tcti_ctx;
+
+    do {
+        switch (options->tcti_type) {
 #ifdef HAVE_TCTI_DEV
-    case DEVICE_TCTI:
-        return tcti_device_init (options->device_file);
+        case DEVICE_TCTI:
+            tcti_ctx = tcti_device_init (options->device_file);
+            break;
 #endif
 #ifdef HAVE_TCTI_SOCK
-    case SOCKET_TCTI:
-        return tcti_socket_init (options->socket_address,
-                                 options->socket_port);
+        case SOCKET_TCTI:
+            tcti_ctx = tcti_socket_init (options->socket_address,
+                                         options->socket_port);
+            break;
 #endif
 #ifdef HAVE_TCTI_TABRMD
-    case TABRMD_TCTI:
-        return tcti_tabrmd_init ();
+        case TABRMD_TCTI:
+            tcti_ctx = tcti_tabrmd_init ();
+            break;
 #endif
-    default:
-        return NULL;
-    }
+        default:
+            return NULL;
+        }
+
+        options->tcti_type++;
+    } while (tcti_ctx == NULL);
+
+    return tcti_ctx;
 }
 /*
  * Teardown the provided TCTI context. This includes finalizing the
