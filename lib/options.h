@@ -39,7 +39,8 @@
  * Default TCTI: this is a bit awkward since we allow users to enable /
  * disable TCTIs using ./configure --with/--without magic.
  * As simply put as possible:
- * if the socket TCTI is enabled, it's the default.
+ * if the tabrmd TCTI is enabled, it's the default.
+ * else if the socket TCTI is enabled it's the default.
  * else if the device TCTI is enabled it's the default.
  * We do this to preserve the current default / expected behavior (use of
  * the socket TCTI).
