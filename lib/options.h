@@ -80,14 +80,14 @@
 }
 
 typedef enum {
-#ifdef HAVE_TCTI_DEV
-    DEVICE_TCTI,
+#ifdef HAVE_TCTI_TABRMD
+    TABRMD_TCTI,
 #endif
 #ifdef HAVE_TCTI_SOCK
     SOCKET_TCTI,
 #endif
-#ifdef HAVE_TCTI_TABRMD
-    TABRMD_TCTI,
+#ifdef HAVE_TCTI_DEV
+    DEVICE_TCTI,
 #endif
     UNKNOWN_TCTI,
     N_TCTI,
