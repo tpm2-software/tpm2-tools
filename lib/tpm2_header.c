@@ -33,7 +33,7 @@
 #include <sapi/tpm20.h>
 
 #include "string-bytes.h"
-#include "tpm2-header.h"
+#include "tpm2_header.h"
 
 TPMI_ST_COMMAND_TAG get_command_tag(UINT8 *command_header) {
 
