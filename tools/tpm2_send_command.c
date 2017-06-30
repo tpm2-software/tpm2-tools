@@ -33,12 +33,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <getopt.h>
+
 #include <tcti/tcti_socket.h>
 
 #include "files.h"
 #include "main.h"
 #include "tpm2-header.h"
 #include "log.h"
+
+typedef struct tpm2_send_command_ctx tpm2_send_command_ctx;
+struct tpm2_send_command_ctx {
+    FILE *input;
+    FILE *output;
+};
 
 static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
@@ -92,6 +101,53 @@ static bool write_response_to_file(FILE *f, UINT8 *rbuf) {
 
     return files_write_bytes(f, r->bytes, size);
 }
+
+static FILE *open_file(const char *path, const char *mode) {
+    FILE *f = fopen(path, mode);
+    if (!f) {
+        LOG_ERR("Could not open \"%s\", error: \"%s\"", path, strerror(errno));
+    }
+    return f;
+}
+
+static void close_file(FILE *f) {
+
+    if (f && (f != stdin || f != stdout)) {
+        fclose(f);
+    }
+}
+
+static bool init(tpm2_send_command_ctx *ctx, int argc, char *argv[]) {
+
+    static const char *optstring = "i:o:";
+    static const struct option long_options[] = { { "--input",
+            required_argument, NULL, 'i' }, { "--output", required_argument,
+            NULL, 'o' }, { NULL, no_argument, NULL, '\0' }, };
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
+        switch (opt) {
+        case 'i':
+            ctx->input = open_file(optarg, "rb");
+            break;
+        case 'o':
+            ctx->output = open_file(optarg, "wb");
+            break;
+        case ':':
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
+        case '?':
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
+        }
+    }
+
+    return ctx->input && ctx->output;
+}
+
 /*
  * This program reads a TPM command buffer from stdin then dumps it out
  * to a tabd TCTI. It then reads the response from the TCTI and writes it
@@ -103,17 +159,25 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
     (void) envp;
     (void) opts;
-    (void) argc;
-    (void) argv;
 
     int ret = 1;
 
+    tpm2_send_command_ctx ctx = {
+            .input = stdin,
+            .output = stdout
+    };
+
+    bool result = init(&ctx, argc, argv);
+    if (!result) {
+        goto out_files;
+    }
+
     UINT32 size;
     tpm2_command_header *command;
-    bool res = read_command_from_file(stdin, &command, &size);
-    if (!res) {
-        LOG_ERR("failed to read TPM2 command buffer from stdin");
-        return ret;
+    result = read_command_from_file(ctx.input, &command, &size);
+    if (!result) {
+        LOG_ERR("failed to read TPM2 command buffer from file");
+        goto out_files;
     }
 
     TSS2_TCTI_CONTEXT *tcti_context;
@@ -141,13 +205,19 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
      * The response buffer, rbuf, all fields are in big-endian, and we save
      * in big-endian.
      */
-    bool result = write_response_to_file(stdout, rbuf);
+    result = write_response_to_file(ctx.output, rbuf);
     if (!result) {
-        LOG_ERR("Failed writing response to stdout.");
+        LOG_ERR("Failed writing response to output file.");
     }
 
     ret = 0;
 
-    out: free(command);
+out:
+    free(command);
+
+out_files:
+    close_file(ctx.input);
+    close_file(ctx.output);
+
     return ret;
 }

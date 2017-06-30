@@ -36,23 +36,36 @@ tpm2_send_command \- Send a command to the TPM using the specified TCTI.
 .SH DESCRIPTION
 .B tpm2_send_command
 is a command line tool used to send a TPM command to the TPM. The command is
-read from stdin as a binary stream and transmitted to the TPM using the TCTI
+read from a file as a binary stream and transmitted to the TPM using the TCTI
 specified by the caller. The response received from the TPM is written to
-stdout. Likely the caller will want to redirect this to a file or into a
+the output file. If the input or output file is not specified, they default
+to stdin and stdout respectively.
+Likely the caller will want to redirect this to a file or into a
 program to decode and display the response in a human readable form.
 .SH OPTIONS
+.TP
+\fB\-i ,\-\-input\fR
+The input file to use. Defaults to stdin if not specified.
+.TP
+\fB\-o ,\-\-output\fR
+The output file to use. Defaults to stdout if not specified.
+.TP
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT
 @TCTI_ENVIRONMENT_INCLUDE@
 .SH EXAMPLES
-Assuming that the caller has a binary TPM command buffer in a file named
-.\"cmd.bin\"
-.B tpm2_send_command
-may be used to send this to the TPM simulator using the following command:
+Send the contents of tpm2-command.bin to a device and collect the response as tpm2-response.bin. All examples
+of below accomplish this task.
 .PP
 .nf
 .RS
 tpm2_send_command --tcti=device < tpm2-command.bin > tpm2-response.bin
+
+tpm2_send_command --tcti=device -i tpm2-command.bin > tpm2-response.bin
+
+tpm2_send_command --tcti=device < tpm2-command.bin -o tpm2-response.bin
+
+tpm2_send_command --tcti=device -i tpm2-command.bin -o tpm2-response.bin
 .RE
 .fi
