@@ -30,9 +30,9 @@
  #include <openssl/err.h>
 #include <openssl/hmac.h>
 
-#include "string-bytes.h"
 #include "tpm_hmac.h"
 #include "log.h"
+#include "tpm2_util.h"
 
 static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
 
@@ -97,7 +97,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
     tpm2b_i_2.t.size = 4;
 
     tpm2bBits.t.size = 4;
-    bitsSwizzled = string_bytes_endian_convert_32( bits );
+    bitsSwizzled = tpm2_util_endian_swap_32( bits );
     *(UINT32 *)tpm2bBitsPtr = bitsSwizzled;
 
     for(i = 0; label[i] != 0 ;i++ );
@@ -137,7 +137,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B_DIGEST tmpResult;
         // Inner loop
 
-        i_Swizzled = string_bytes_endian_convert_32( i );
+        i_Swizzled = tpm2_util_endian_swap_32( i );
         *(UINT32 *)tpm2b_i_2Ptr = i_Swizzled;
 
         j = 0;
@@ -169,7 +169,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
 
         tmpResult.t.size = size;
 
-        bool res = string_bytes_concat_buffer(resultKey, &(tmpResult.b));
+        bool res = tpm2_util_concat_buffer(resultKey, &(tmpResult.b));
         if (!res) {
             rval = TSS2_SYS_RC_BAD_VALUE;
             goto err;

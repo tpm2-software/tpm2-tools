@@ -40,12 +40,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_encrypt_decrypt_ctx tpm_encrypt_decrypt_ctx;
 struct tpm_encrypt_decrypt_ctx {
@@ -136,7 +136,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'k':
-            result = string_bytes_get_uint32(optarg, &ctx->key_handle);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->key_handle);
             if (!result) {
                 LOG_ERR("Could not convert keyhandle to number, got: \"%s\"",
                         optarg);
@@ -145,7 +145,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "key", &ctx->session_data.hmac);
+            result = password_tpm2_util_copy_password(optarg, "key", &ctx->session_data.hmac);
             if (!result) {
                 goto out;
             }
@@ -217,7 +217,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
         }
     }
 
-    result = password_util_to_auth(&ctx->session_data.hmac, is_hex_passwd, "key",
+    result = password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd, "key",
             &ctx->session_data.hmac);
 
 out:

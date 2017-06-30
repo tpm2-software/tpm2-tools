@@ -38,11 +38,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct getpubek_context getpubek_context;
 struct getpubek_context {
@@ -180,13 +180,13 @@ static bool create_ek_handle(getpubek_context *ctx) {
     sessionData.hmac.t.size = 0;
     *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
-    bool result = password_util_to_auth(&ctx->passwords.endorse,
+    bool result = password_tpm2_util_to_auth(&ctx->passwords.endorse,
             ctx->passwords.is_hex, "endorse", &sessionData.hmac);
     if (!result) {
         return false;
     }
 
-    result = password_util_to_auth(&ctx->passwords.ek, ctx->passwords.is_hex,
+    result = password_tpm2_util_to_auth(&ctx->passwords.ek, ctx->passwords.is_hex,
             "ek", &inSensitive.t.sensitive.userAuth);
     if (!result) {
         return false;
@@ -217,7 +217,7 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     // To make EK persistent, use own auth
     sessionData.hmac.t.size = 0;
-    result = password_util_to_auth(&ctx->passwords.owner, ctx->passwords.is_hex,
+    result = password_tpm2_util_to_auth(&ctx->passwords.owner, ctx->passwords.is_hex,
             "owner", &sessionData.hmac);
     if (!result) {
         return false;
@@ -285,7 +285,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
         bool result;
         switch (opt) {
         case 'H':
-            result = string_bytes_get_uint32(optarg, &ctx->persistent_handle);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->persistent_handle);
             if (!result) {
                 LOG_ERR("Could not convert EK persistent from hex format.\n");
                 return false;
@@ -293,27 +293,27 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
             break;
 
         case 'e':
-            result = password_util_copy_password(optarg, "endorsement password",
+            result = password_tpm2_util_copy_password(optarg, "endorsement password",
                     &ctx->passwords.endorse);
             if (!result) {
                 return false;
             }
             break;
         case 'o':
-            result = password_util_copy_password(optarg, "owner password",
+            result = password_tpm2_util_copy_password(optarg, "owner password",
                     &ctx->passwords.owner);
             if (!result) {
                 return false;
             }
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "EK password", &ctx->passwords.ek);
+            result = password_tpm2_util_copy_password(optarg, "EK password", &ctx->passwords.ek);
             if (!result) {
                 return false;
             }
             break;
         case 'g':
-            result = string_bytes_get_uint32(optarg, &ctx->algorithm);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->algorithm);
             if (!result) {
                 LOG_ERR("Could not convert algorithm to value, got: %s",
                         optarg);

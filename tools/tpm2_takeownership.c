@@ -41,11 +41,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "options.h"
 #include "main.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct password password;
 struct password {
@@ -79,7 +79,7 @@ bool clear_hierarchy_auth(takeownership_ctx *ctx) {
     sessionData.hmac.t.size = 0;
     *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
-    bool result = password_util_to_auth(&ctx->passwords.lockout.old, ctx->is_hex_passwords, "old lockout", &sessionData.hmac);
+    bool result = password_tpm2_util_to_auth(&ctx->passwords.lockout.old, ctx->is_hex_passwords, "old lockout", &sessionData.hmac);
     if (!result) {
         return false;
     }
@@ -149,7 +149,7 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
             snprintf(desc, sizeof(desc), "%s %s",
                     j == 0 ? "new" : "old", sources[i].desc);
 
-            bool result = password_util_to_auth(passwd, ctx->is_hex_passwords, desc,
+            bool result = password_tpm2_util_to_auth(passwd, ctx->is_hex_passwords, desc,
                     auth_dest);
             if (!result) {
                 return false;
@@ -208,42 +208,42 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
             break;
 
         case 'o':
-            result = password_util_copy_password(optarg, "new owner password",
+            result = password_tpm2_util_copy_password(optarg, "new owner password",
                     &ctx->passwords.owner.new);
             if (!result) {
                 return false;
             }
             break;
         case 'e':
-            result = password_util_copy_password(optarg, "new endorse password",
+            result = password_tpm2_util_copy_password(optarg, "new endorse password",
                     &ctx->passwords.endorse.new);
             if (!result) {
                 return false;
             }
             break;
         case 'l':
-            result = password_util_copy_password(optarg, "new lockout password",
+            result = password_tpm2_util_copy_password(optarg, "new lockout password",
                     &ctx->passwords.lockout.new);
             if (!result) {
                 return false;
             }
             break;
         case 'O':
-            result = password_util_copy_password(optarg, "current owner password",
+            result = password_tpm2_util_copy_password(optarg, "current owner password",
                     &ctx->passwords.owner.old);
             if (!result) {
                 return false;
             }
             break;
         case 'E':
-            result = password_util_copy_password(optarg, "current endorse password",
+            result = password_tpm2_util_copy_password(optarg, "current endorse password",
                     &ctx->passwords.endorse.old);
             if (!result) {
                 return false;
             }
             break;
         case 'L':
-            result = password_util_copy_password(optarg, "current lockout password",
+            result = password_tpm2_util_copy_password(optarg, "current lockout password",
                     &ctx->passwords.lockout.old);
             if (!result) {
                 return false;

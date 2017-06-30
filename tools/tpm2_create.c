@@ -41,10 +41,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 
 TSS2_SYS_CONTEXT *sysContext;
 TPMS_AUTH_COMMAND sessionData;
@@ -164,7 +164,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     if (sessionData.hmac.t.size > 0 && hexPasswd)
     {
         sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
                               &sessionData.hmac.t.size,
                               sessionData.hmac.t.buffer) != 0)
         {
@@ -176,7 +176,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     if (inSensitive->t.sensitive.userAuth.t.size > 0 && hexPasswd)
     {
         inSensitive->t.sensitive.userAuth.t.size = sizeof(inSensitive->t.sensitive.userAuth) - 2;
-        if (hex2ByteStructure((char *)inSensitive->t.sensitive.userAuth.t.buffer,
+        if (tpm2_util_hex_to_byte_structure((char *)inSensitive->t.sensitive.userAuth.t.buffer,
                               &inSensitive->t.sensitive.userAuth.t.size,
                               inSensitive->t.sensitive.userAuth.t.buffer) != 0)
         {
@@ -287,7 +287,7 @@ execute_tool (int              argc,
         switch(opt)
         {
         case 'H':
-            if(!string_bytes_get_uint32(optarg,&parentHandle))
+            if(!tpm2_util_string_to_uint32(optarg,&parentHandle))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -1;
@@ -298,7 +298,7 @@ execute_tool (int              argc,
 
         case 'P':
             sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            if(tpm2_util_string_to_byte_structure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
             {
                 returnVal = -2;
                 break;
@@ -307,7 +307,7 @@ execute_tool (int              argc,
             break;
         case 'K':
             inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth.t) - 2;
-            if(str2ByteStructure(optarg,&inSensitive.t.sensitive.userAuth.t.size, inSensitive.t.sensitive.userAuth.t.buffer) != 0)
+            if(tpm2_util_string_to_byte_structure(optarg,&inSensitive.t.sensitive.userAuth.t.size, inSensitive.t.sensitive.userAuth.t.buffer) != 0)
             {
                 returnVal = -3;
                 break;
@@ -315,7 +315,7 @@ execute_tool (int              argc,
             K_flag = 1;
             break;
         case 'g':
-            if(!string_bytes_get_uint16(optarg,&nameAlg))
+            if(!tpm2_util_string_to_uint16(optarg,&nameAlg))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -325,7 +325,7 @@ execute_tool (int              argc,
             g_flag = 1;
             break;
         case 'G':
-            if(!string_bytes_get_uint16(optarg,&type))
+            if(!tpm2_util_string_to_uint16(optarg,&type))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
@@ -335,7 +335,7 @@ execute_tool (int              argc,
             G_flag = 1;
             break;
         case 'A':
-            if(!string_bytes_get_uint32(optarg,&objectAttributes))
+            if(!tpm2_util_string_to_uint32(optarg,&objectAttributes))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -6;

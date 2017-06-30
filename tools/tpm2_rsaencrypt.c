@@ -38,11 +38,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 
 typedef struct tpm_rsaencrypt_ctx tpm_rsaencrypt_ctx;
 struct tpm_rsaencrypt_ctx {
@@ -112,7 +112,7 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'k': {
-            bool result = string_bytes_get_uint32(optarg, &ctx->key_handle);
+            bool result = tpm2_util_string_to_uint32(optarg, &ctx->key_handle);
             if (!result) {
                 LOG_ERR("Could not convert key handle to number, got: \"%s\"",
                         optarg);

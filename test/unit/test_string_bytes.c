@@ -31,7 +31,7 @@
 #include <cmocka.h>
 #include <sapi/tpm20.h>
 
-#include "string-bytes.h"
+#include "../../lib/tpm2_util.h"
 
 static void test_is_big_endian(void **state) {
 
@@ -40,7 +40,7 @@ static void test_is_big_endian(void **state) {
     (void)state;
 
     bool test_host_is_big_endian = b[0] == 0xFF;
-    bool host_is_big_endian = string_bytes_is_host_big_endian();
+    bool host_is_big_endian = tpm2_util_is_big_endian();
 
     assert_true(test_host_is_big_endian == host_is_big_endian);
 }
@@ -49,7 +49,7 @@ static void test_is_big_endian(void **state) {
     static void test_convert_##size(void **state) { \
     \
         (void)state; \
-        UINT##size test = string_bytes_endian_convert_##size(value); \
+        UINT##size test = tpm2_util_endian_swap_##size(value); \
         assert_int_equal(test, expected); \
     }
 
@@ -61,8 +61,8 @@ TEST_ENDIAN_CONVERT(64, 0x0011223344556677, 0x7766554433221100)
     static void test_hton_##size(void **state) { \
     \
         (void)state; \
-        UINT##size test = string_bytes_endian_hton_##size(value); \
-        bool is_big_endian = string_bytes_is_host_big_endian(); \
+        UINT##size test = tpm2_util_hton_##size(value); \
+        bool is_big_endian = tpm2_util_is_big_endian(); \
         UINT##size expected = is_big_endian ? value : le_expected; \
         assert_int_equal(test, expected); \
         \
@@ -76,8 +76,8 @@ TEST_ENDIAN_HTON(64, 0x0011223344556677, 0x7766554433221100)
     static void test_ntoh_##size(void **state) { \
     \
         (void)state; \
-        UINT##size test = string_bytes_endian_ntoh_##size(value); \
-        bool is_big_endian = string_bytes_is_host_big_endian(); \
+        UINT##size test = tpm2_util_ntoh_##size(value); \
+        bool is_big_endian = tpm2_util_is_big_endian(); \
         UINT##size expected = is_big_endian ? value : le_expected; \
         assert_int_equal(test, expected); \
         \

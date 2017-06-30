@@ -37,11 +37,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 #include "tpm_session.h"
 #include "tpm_hash.h"
 #include "pcr.h"
@@ -288,7 +288,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
             break;
         case 'i':
             ctx->pcr_flags.pcr_index_flag = true;
-            if (string_bytes_get_uint32(optarg, &ctx->pcr_index) != true) {
+            if (tpm2_util_string_to_uint32(optarg, &ctx->pcr_index) != true) {
                 return false;
             }
             break;
@@ -298,7 +298,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
                     optarg);
             break;
         case 'g':
-            result = string_bytes_get_uint16(optarg, &ctx->hash_alg);
+            result = tpm2_util_string_to_uint16(optarg, &ctx->hash_alg);
             if (!result) {
                 return false;
             }

@@ -38,12 +38,12 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 #include "tpm_hash.h"
 
 typedef struct tpm_sign_ctx tpm_sign_ctx;
@@ -210,7 +210,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'k': {
-            bool result = string_bytes_get_uint32(optarg, &ctx->keyHandle);
+            bool result = tpm2_util_string_to_uint32(optarg, &ctx->keyHandle);
             if (!result) {
                 LOG_ERR("Could not format key handle to number, got: \"%s\"",
                         optarg);
@@ -220,7 +220,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = password_util_copy_password(optarg, "key",
+            bool result = password_tpm2_util_copy_password(optarg, "key",
                     &ctx->sessionData.hmac);
             if (!result) {
                 return false;
@@ -229,7 +229,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         }
             break;
         case 'g': {
-            bool result = string_bytes_get_uint16(optarg, &ctx->halg);
+            bool result = tpm2_util_string_to_uint16(optarg, &ctx->halg);
             if (!result) {
                 LOG_ERR("Could not format algorithm to number, got: \"%s\"",
                         optarg);
@@ -290,7 +290,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         ctx->validation.hierarchy = TPM_RH_NULL;
     }
 
-    bool result = password_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
+    bool result = password_tpm2_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
             "key", &ctx->sessionData.hmac);
     if (!result) {
         return false;

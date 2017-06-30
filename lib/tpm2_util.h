@@ -10,8 +10,8 @@
 
 #define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
 
-int str2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
-int hex2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
+int tpm2_util_string_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
+int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 
 /**
  * Appends a TPM2B buffer to a MAX buffer.
@@ -22,7 +22,7 @@ int hex2ByteStructure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
  * @return
  *  true on success, false otherwise.
  */
-bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append);
+bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append);
 
 /**
  * Converts a numerical string into a uint32 value.
@@ -33,7 +33,7 @@ bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append);
  * @return
  *  true on success, false otherwise.
  */
-bool string_bytes_get_uint32(const char *str, uint32_t *value);
+bool tpm2_util_string_to_uint32(const char *str, uint32_t *value);
 
 /**
  * Converts a numerical string into a uint16 value.
@@ -44,13 +44,13 @@ bool string_bytes_get_uint32(const char *str, uint32_t *value);
  * @return
  *  true on success, false otherwise.
  */
-bool string_bytes_get_uint16(const char *str, uint16_t *value);
+bool tpm2_util_string_to_uint16(const char *str, uint16_t *value);
 
 /**
  * Prints a TPM2B as a hex dump
  * @param buffer the TPM2B to print.
  */
-void string_bytes_print_tpm2b(TPM2B *buffer);
+void tpm2_util_print_tpm2b(TPM2B *buffer);
 
 /**
  * Copies a tpm2b from dest to src and clears dest if src is NULL.
@@ -62,14 +62,14 @@ void string_bytes_print_tpm2b(TPM2B *buffer);
  * @return
  *  The number of bytes copied.
  */
-UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src);
+UINT16 tpm2_util_copy_tpm2b(TPM2B *dest, TPM2B *src);
 
 /**
  * Checks if the host is big endian
  * @return
  *  True of the host is big endian false otherwise.
  */
-bool string_bytes_is_host_big_endian(void);
+bool tpm2_util_is_big_endian(void);
 
 /**
  * Swaps the endianess of 16 bit value.
@@ -78,17 +78,17 @@ bool string_bytes_is_host_big_endian(void);
  * @return
  * The 16 bit value with the endianess swapped.
  */
-UINT16 string_bytes_endian_convert_16(UINT16 data);
+UINT16 tpm2_util_endian_swap_16(UINT16 data);
 
 /**
  * Just like string_bytes_endian_convert_16 but for 32 bit values.
  */
-UINT32 string_bytes_endian_convert_32(UINT32 data);
+UINT32 tpm2_util_endian_swap_32(UINT32 data);
 
 /**
  * Just like string_bytes_endian_convert_16 but for 64 bit values.
  */
-UINT64 string_bytes_endian_convert_64(UINT64 data);
+UINT64 tpm2_util_endian_swap_64(UINT64 data);
 
 /**
  * Converts a 16 bit value from host endianess to network endianess.
@@ -97,17 +97,17 @@ UINT64 string_bytes_endian_convert_64(UINT64 data);
  * @return
  *  The swapped data.
  */
-UINT16 string_bytes_endian_hton_16(UINT16 data);
+UINT16 tpm2_util_hton_16(UINT16 data);
 
 /**
  * Just like string_bytes_endian_hton_16 but for 32 bit values.
  */
-UINT32 string_bytes_endian_hton_32(UINT32 data);
+UINT32 tpm2_util_hton_32(UINT32 data);
 
 /**
  * Just like string_bytes_endian_hton_16 but for 64 bit values.
  */
-UINT64 string_bytes_endian_hton_64(UINT64 data);
+UINT64 tpm2_util_hton_64(UINT64 data);
 
 /**
  * Converts a 16 bit value from network endianess to host endianess.
@@ -116,16 +116,16 @@ UINT64 string_bytes_endian_hton_64(UINT64 data);
  * @return
  *  The swapped data.
  */
-UINT16 string_bytes_endian_ntoh_16(UINT16 data);
+UINT16 tpm2_util_ntoh_16(UINT16 data);
 
 /**
  * Just like string_bytes_endian_ntoh_16 but for 32 bit values.
  */
-UINT32 string_bytes_endian_ntoh_32(UINT32 data);
+UINT32 tpm2_util_ntoh_32(UINT32 data);
 
 /**
  * Just like string_bytes_endian_ntoh_16 but for 64 bit values.
  */
-UINT64 string_bytes_endian_ntoh_64(UINT64 data);
+UINT64 tpm2_util_ntoh_64(UINT64 data);
 
 #endif /* STRING_BYTES_H */
