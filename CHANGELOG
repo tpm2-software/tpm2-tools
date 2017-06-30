@@ -1,4 +1,4 @@
-Unreleased
+v2.1.0 - 2017-06-30
 * Add support for the tabrmd TCTI. This is the new default.
 * Change default socket port from 2323 (the old resourcemgr) to 2321 (default
   simulator port).
