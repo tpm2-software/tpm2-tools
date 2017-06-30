@@ -90,7 +90,7 @@ static inline tpm2_response_header *tpm2_response_header_from_bytes(UINT8 *h) {
  * @param command_header
  * @return
  */
-TPMI_ST_COMMAND_TAG get_command_tag(UINT8 *command_header);
+TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(UINT8 *command_header);
 
 /**
  * Retrieves the command size from a command_header converting to host
@@ -99,7 +99,7 @@ TPMI_ST_COMMAND_TAG get_command_tag(UINT8 *command_header);
  * @param include_header
  * @return
  */
-UINT32 get_command_size(UINT8 *command_header, bool include_header);
+UINT32 tpm2_command_header_get_size(UINT8 *command_header, bool include_header);
 
 /**
  * Retrieves the command code from a command_header converting to host
@@ -107,7 +107,7 @@ UINT32 get_command_size(UINT8 *command_header, bool include_header);
  * @param command_header
  * @return
  */
-TPM_CC get_command_code(UINT8 *command_header);
+TPM_CC tpm2_command_header_get_code(UINT8 *command_header);
 
 /**
  * Retrieves command data, if present.
@@ -115,7 +115,7 @@ TPM_CC get_command_code(UINT8 *command_header);
  *  The command_header to check for following data.
  * @return The command data or NULL if not present.
  */
-UINT8 *get_command_data(uint8_t *command_header);
+UINT8 *tpm2_command_header_get_data(uint8_t *command_header);
 
 /**
  * Retrieves the response tag from a response header converting to host
@@ -123,7 +123,7 @@ UINT8 *get_command_data(uint8_t *command_header);
  * @param response_header
  * @return
  */
-TPM_ST get_response_tag(UINT8 *response_header);
+TPM_ST tpm2_response_header_get_tag(UINT8 *response_header);
 
 /**
  * Retrieves the response size from a response header converting to host
@@ -132,7 +132,7 @@ TPM_ST get_response_tag(UINT8 *response_header);
  * @param include_header
  * @return
  */
-UINT32 get_response_size(UINT8 *response_header, bool include_header);
+UINT32 tpm2_response_header_get_size(UINT8 *response_header, bool include_header);
 
 /**
  * Retrieves the response code from a response header converting to host
@@ -140,7 +140,7 @@ UINT32 get_response_size(UINT8 *response_header, bool include_header);
  * @param response_header
  * @return
  */
-TSS2_RC get_response_code(UINT8 *response_header);
+TSS2_RC tpm2_response_header_get_code(UINT8 *response_header);
 
 /**
  * Retrieves response data, if present.
@@ -148,6 +148,6 @@ TSS2_RC get_response_code(UINT8 *response_header);
  *  The response_header to check for following data.
  * @return The response data or NULL if not present.
  */
-UINT8 *get_response_data(uint8_t *response_header);
+UINT8 *tpm2_response_header_get_data(uint8_t *response_header);
 
 #endif /* TPM2_HEADER_H */

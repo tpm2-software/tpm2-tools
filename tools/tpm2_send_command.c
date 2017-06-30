@@ -60,8 +60,8 @@ static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         return false;
     }
 
-    UINT32 command_size = get_command_size(tmp, true);
-    UINT32 data_size = get_command_size(tmp, false);
+    UINT32 command_size = tpm2_command_header_get_size(tmp, true);
+    UINT32 data_size = tpm2_command_header_get_size(tmp, false);
 
     tpm2_command_header *command = (tpm2_command_header *) malloc(command_size);
     if (!command) {
@@ -72,9 +72,9 @@ static bool read_command_from_file(FILE *f, tpm2_command_header **c,
     /* copy the header into the struct */
     memcpy(command, tmp, sizeof(tmp));
 
-    LOG_INFO("command tag:  0x%04x", get_command_tag(tmp));
+    LOG_INFO("command tag:  0x%04x", tpm2_command_header_get_tag(tmp));
     LOG_INFO("command size: 0x%08x", command_size);
-    LOG_INFO("command code: 0x%08x", get_command_code(tmp));
+    LOG_INFO("command code: 0x%08x", tpm2_command_header_get_code(tmp));
 
     ret = fread(command->data, data_size, 1, f);
     if (ret != 1 && ferror(f)) {
@@ -93,11 +93,11 @@ static bool write_response_to_file(FILE *f, UINT8 *rbuf) {
 
     tpm2_response_header *r = tpm2_response_header_from_bytes(rbuf);
 
-    UINT32 size = get_response_size(r->bytes, true);
+    UINT32 size = tpm2_response_header_get_size(r->bytes, true);
 
-    LOG_INFO("response tag:  0x%04x", get_response_tag(r->bytes));
+    LOG_INFO("response tag:  0x%04x", tpm2_response_header_get_tag(r->bytes));
     LOG_INFO("response size: 0x%08x", size);
-    LOG_INFO("response code: 0x%08x", get_response_code(r->bytes));
+    LOG_INFO("response code: 0x%08x", tpm2_response_header_get_code(r->bytes));
 
     return files_write_bytes(f, r->bytes, size);
 }

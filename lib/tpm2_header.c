@@ -35,13 +35,13 @@
 #include "string-bytes.h"
 #include "tpm2_header.h"
 
-TPMI_ST_COMMAND_TAG get_command_tag(UINT8 *command_header) {
+TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(UINT8 *command_header) {
 
     tpm2_command_header *h = tpm2_command_header_from_bytes(command_header);
     return string_bytes_endian_ntoh_16(h->tag);
 }
 
-UINT32 get_command_size(UINT8 *command_header, bool include_header) {
+UINT32 tpm2_command_header_get_size(UINT8 *command_header, bool include_header) {
 
     tpm2_command_header *h = tpm2_command_header_from_bytes(command_header);
     UINT32 size = string_bytes_endian_ntoh_32(h->size);
@@ -49,29 +49,29 @@ UINT32 get_command_size(UINT8 *command_header, bool include_header) {
     return include_header ? size : size - TPM2_COMMAND_HEADER_SIZE;
 }
 
-TPM_CC get_command_code(UINT8 *command_header) {
+TPM_CC tpm2_command_header_get_code(UINT8 *command_header) {
 
     tpm2_command_header *h = tpm2_command_header_from_bytes(command_header);
     return string_bytes_endian_ntoh_32(h->command_code);
 }
 
-UINT8 *get_command_data(UINT8 *command_header) {
+UINT8 *tpm2_command_header_get_data(UINT8 *command_header) {
 
     tpm2_command_header *h = tpm2_command_header_from_bytes(command_header);
 
-    UINT32 size = get_command_size(command_header, false);
+    UINT32 size = tpm2_command_header_get_size(command_header, false);
 
     return size ? h->data : NULL;
 }
 
 
-TPM_ST get_response_tag(UINT8 *response_header) {
+TPM_ST tpm2_response_header_get_tag(UINT8 *response_header) {
 
     tpm2_response_header *r = tpm2_response_header_from_bytes(response_header);
     return string_bytes_endian_ntoh_16(r->tag);
 }
 
-UINT32 get_response_size(UINT8 *response_header, bool include_header) {
+UINT32 tpm2_response_header_get_size(UINT8 *response_header, bool include_header) {
 
     tpm2_response_header *r = tpm2_response_header_from_bytes(response_header);
     UINT32 size = string_bytes_endian_ntoh_32(r->size);
@@ -79,17 +79,17 @@ UINT32 get_response_size(UINT8 *response_header, bool include_header) {
     return include_header ? size - TPM2_RESPONSE_HEADER_SIZE : size;
 }
 
-TSS2_RC get_response_code(UINT8 *response_header) {
+TSS2_RC tpm2_response_header_get_code(UINT8 *response_header) {
 
     tpm2_response_header *r = tpm2_response_header_from_bytes(response_header);
     return string_bytes_endian_ntoh_32(r->response_code);
 }
 
-UINT8 *get_response_data(UINT8 *response_header) {
+UINT8 *tpm2_response_header_get_data(UINT8 *response_header) {
 
     tpm2_response_header *r = tpm2_response_header_from_bytes(response_header);
 
-    UINT32 size = get_response_size(response_header, false);
+    UINT32 size = tpm2_response_header_get_size(response_header, false);
 
     return size ? r->data : NULL;
 }
