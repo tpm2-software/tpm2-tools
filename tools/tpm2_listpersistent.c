@@ -40,10 +40,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 
 int debugLevel = 0;
 
@@ -95,7 +95,7 @@ execute_tool (int              argc,
     TPMS_CAPABILITY_DATA capabilityData;
     UINT32 rval;
 
-    UINT32 property = string_bytes_endian_convert_32(TPM_HT_PERSISTENT);
+    UINT32 property = tpm2_util_endian_swap_32(TPM_HT_PERSISTENT);
     rval = Tss2_Sys_GetCapability( sapi_context, 0, TPM_CAP_HANDLES,
                                    property, TPM_PT_HR_PERSISTENT, &moreData,
                                    &capabilityData, 0 );

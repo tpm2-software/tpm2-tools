@@ -38,12 +38,12 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {
@@ -125,7 +125,7 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
             != -1) {
         switch (opt) {
         case 'H':
-            result = string_bytes_get_uint32(optarg, &ctx->objectHandle);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->objectHandle);
             if (!result) {
                 return false;
             }

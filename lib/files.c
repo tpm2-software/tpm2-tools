@@ -5,7 +5,7 @@
 
 #include "files.h"
 #include "log.h"
-#include "string-bytes.h"
+#include "tpm2_util.h"
 
 static bool get_file_size(FILE *fp, long *file_size, const char *path) {
 
@@ -395,8 +395,8 @@ static bool readx(FILE *f, UINT8 *data, size_t size) {
 
 #define BE_CONVERT(value, size) \
     do { \
-        if (!string_bytes_is_host_big_endian()) { \
-            value = string_bytes_endian_convert_##size(value); \
+        if (!tpm2_util_is_big_endian()) { \
+            value = tpm2_util_endian_swap_##size(value); \
         } \
     } while (0)
 

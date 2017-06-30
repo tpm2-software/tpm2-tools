@@ -35,7 +35,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "string-bytes.h"
+#include "tpm2_util.h"
 
 #define TPM2_COMMAND_HEADER_SIZE  (sizeof(tpm2_command_header))
 #define TPM2_RESPONSE_HEADER_SIZE (sizeof(tpm2_response_header))
@@ -94,7 +94,7 @@ static inline tpm2_response_header *tpm2_response_header_from_bytes(UINT8 *h) {
  */
 static inline TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(tpm2_command_header *command) {
 
-    return string_bytes_endian_ntoh_16(command->tag);
+    return tpm2_util_ntoh_16(command->tag);
 }
 
 /**
@@ -106,7 +106,7 @@ static inline TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(tpm2_command_heade
  */
 static inline UINT32 tpm2_command_header_get_size(tpm2_command_header *command, bool include_header) {
 
-    UINT32 size = string_bytes_endian_ntoh_32(command->size);
+    UINT32 size = tpm2_util_ntoh_32(command->size);
     return include_header ? size : size - TPM2_COMMAND_HEADER_SIZE;
 }
 
@@ -118,7 +118,7 @@ static inline UINT32 tpm2_command_header_get_size(tpm2_command_header *command, 
  */
 static inline TPM_CC tpm2_command_header_get_code(tpm2_command_header *command) {
 
-    return string_bytes_endian_ntoh_32(command->command_code);
+    return tpm2_util_ntoh_32(command->command_code);
 }
 
 /**
@@ -142,7 +142,7 @@ static inline UINT8 *tpm2_command_header_get_data(tpm2_command_header *command) 
  */
 static inline UINT32 tpm2_response_header_get_size(tpm2_response_header *response, bool include_header) {
 
-    UINT32 size = string_bytes_endian_ntoh_32(response->size);
+    UINT32 size = tpm2_util_ntoh_32(response->size);
     return include_header ? size : size - TPM2_RESPONSE_HEADER_SIZE;
 }
 
@@ -154,7 +154,7 @@ static inline UINT32 tpm2_response_header_get_size(tpm2_response_header *respons
  */
 static inline TPM_ST tpm2_response_header_get_tag(tpm2_response_header *response) {
 
-    return string_bytes_endian_ntoh_16(response->tag);
+    return tpm2_util_ntoh_16(response->tag);
 }
 
 /**
@@ -165,7 +165,7 @@ static inline TPM_ST tpm2_response_header_get_tag(tpm2_response_header *response
  */
 static inline TSS2_RC tpm2_response_header_get_code(tpm2_response_header *response) {
 
-    return string_bytes_endian_ntoh_32(response->response_code);
+    return tpm2_util_ntoh_32(response->response_code);
 }
 
 /**

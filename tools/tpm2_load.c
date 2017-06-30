@@ -41,10 +41,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 
 TPM_HANDLE handle2048rsa;
 TPMS_AUTH_COMMAND sessionData;
@@ -86,7 +86,7 @@ load (TSS2_SYS_CONTEXT *sapi_context,
     if (sessionData.hmac.t.size > 0 && hexPasswd)
     {
         sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
                               &sessionData.hmac.t.size,
                               sessionData.hmac.t.buffer) != 0)
         {
@@ -170,7 +170,7 @@ execute_tool (int              argc,
         switch(opt)
         {
         case 'H':
-            if (!string_bytes_get_uint32(optarg, &parentHandle))
+            if (!tpm2_util_string_to_uint32(optarg, &parentHandle))
             {
                 returnVal = -1;
                 break;
@@ -180,7 +180,7 @@ execute_tool (int              argc,
             break;
         case 'P':
             sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            if(tpm2_util_string_to_byte_structure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
             {
                 returnVal = -2;
                 break;

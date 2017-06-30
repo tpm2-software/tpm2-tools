@@ -38,12 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_random_ctx tpm_random_ctx;
 struct tpm_random_ctx {
@@ -113,7 +113,7 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
         }
     }
 
-    bool result = string_bytes_get_uint16(argv[optind], &ctx->num_of_bytes);
+    bool result = tpm2_util_string_to_uint16(argv[optind], &ctx->num_of_bytes);
     if (!result) {
         LOG_ERR("Error converting size to a number, got: \"%s\".",
                 argv[optind]);

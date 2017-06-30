@@ -38,12 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
 struct tpm_certify_ctx {
@@ -249,7 +249,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'H':
-            result = string_bytes_get_uint32(optarg, &ctx->handle.obj);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.obj);
             if (!result) {
                 LOG_ERR("Could not format object handle to number, got: \"%s\"",
                         optarg);
@@ -258,7 +258,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.H = 1;
             break;
         case 'k':
-            result = string_bytes_get_uint32(optarg, &ctx->handle.key);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.key);
             if (!result) {
                 LOG_ERR("Could not format key handle to number, got: \"%s\"",
                         optarg);
@@ -267,7 +267,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "object handle",
+            result = password_tpm2_util_copy_password(optarg, "object handle",
                     &ctx->cmd_auth[0].hmac);
             if (!result) {
                 goto out;
@@ -275,7 +275,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.P = 1;
             break;
         case 'K':
-            result = password_util_copy_password(optarg, "key handle",
+            result = password_tpm2_util_copy_password(optarg, "key handle",
                     &ctx->cmd_auth[1].hmac);
             if (!result) {
                 goto out;
@@ -283,7 +283,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.K = 1;
             break;
         case 'g':
-            result = string_bytes_get_uint16(optarg, &ctx->halg);
+            result = tpm2_util_string_to_uint16(optarg, &ctx->halg);
             if (!result) {
                 LOG_ERR("Could not format algorithm to number, got: \"%s\"",
                         optarg);
@@ -356,13 +356,13 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
     }
 
     /* convert a hex passwords if needed */
-    result = password_util_to_auth(&ctx->cmd_auth[0].hmac, is_hex_password,
+    result = password_tpm2_util_to_auth(&ctx->cmd_auth[0].hmac, is_hex_password,
             "object handle", &ctx->cmd_auth[0].hmac);
     if (!result) {
         goto out;
     }
 
-    result = password_util_to_auth(&ctx->cmd_auth[1].hmac, is_hex_password,
+    result = password_tpm2_util_to_auth(&ctx->cmd_auth[1].hmac, is_hex_password,
             "key handle", &ctx->cmd_auth[1].hmac);
     if (!result) {
         goto out;

@@ -38,11 +38,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
 struct tpm_nvread_ctx {
@@ -78,7 +78,7 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
 
     session_data.sessionHandle = TPM_RS_PW;
 
-    bool result = password_util_to_auth(&ctx->handle_passwd, ctx->is_hex_password,
+    bool result = password_tpm2_util_to_auth(&ctx->handle_passwd, ctx->is_hex_password,
             "handle password", &session_data.hmac);
     if (!result) {
         return false;
@@ -128,7 +128,7 @@ static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'x':
-            result = string_bytes_get_uint32(optarg, &ctx->nv_index);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->nv_index);
             if (!result) {
                 LOG_ERR("Could not convert NV index to number, got: \"%s\"",
                         optarg);
@@ -142,7 +142,7 @@ static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {
 
             break;
         case 'a':
-            result = string_bytes_get_uint32(optarg, &ctx->auth_handle);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->auth_handle);
             if (!result) {
                 LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
                         optarg);
@@ -155,14 +155,14 @@ static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {
             }
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "handle password",
+            result = password_tpm2_util_copy_password(optarg, "handle password",
                     &ctx->handle_passwd);
             if (!result) {
                 return false;
             }
             break;
         case 's':
-            result = string_bytes_get_uint32(optarg, &ctx->size_to_read);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->size_to_read);
             if (!result) {
                 LOG_ERR("Could not convert size to number, got: \"%s\"",
                         optarg);
@@ -170,7 +170,7 @@ static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {
             }
             break;
         case 'o':
-            result = string_bytes_get_uint32(optarg, &ctx->offset);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->offset);
             if (!result) {
                 LOG_ERR("Could not convert offset to number, got: \"%s\"",
                         optarg);

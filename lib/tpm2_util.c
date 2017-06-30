@@ -1,11 +1,12 @@
+#include "tpm2_util.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "string-bytes.h"
 
-bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
+bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
 
     if (!result || !append) {
         return false;
@@ -25,10 +26,10 @@ bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
     return true;
 }
 
-bool string_bytes_get_uint16(const char *str, uint16_t *value) {
+bool tpm2_util_string_to_uint16(const char *str, uint16_t *value) {
 
     uint32_t tmp;
-    bool result = string_bytes_get_uint32(str, &tmp);
+    bool result = tpm2_util_string_to_uint32(str, &tmp);
     if (!result) {
         return false;
     }
@@ -42,7 +43,7 @@ bool string_bytes_get_uint16(const char *str, uint16_t *value) {
     return true;
 }
 
-bool string_bytes_get_uint32(const char *str, uint32_t *value) {
+bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
 
     char *endptr;
 
@@ -70,7 +71,8 @@ bool string_bytes_get_uint32(const char *str, uint32_t *value) {
     return true;
 }
 
-int str2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
+/* XXX This function looks like memcpy and can go away */
+int tpm2_util_string_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
 {
     if(inStr == NULL || byteLength == NULL || byteBuffer == NULL)
         return -1;
@@ -83,7 +85,7 @@ int str2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
     return 0;
 }
 
-int hex2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
+int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
 {
     int strLength;//if the inStr likes "1a2b...", no prefix "0x"
     int i = 0;
@@ -113,7 +115,7 @@ int hex2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
     return 0;
 }
 
-void string_bytes_print_tpm2b(TPM2B *buffer) {
+void tpm2_util_print_tpm2b(TPM2B *buffer) {
 
     unsigned i;
     for (i = 0; i < buffer->size; i++) {
@@ -127,7 +129,7 @@ void string_bytes_print_tpm2b(TPM2B *buffer) {
 }
 
 /* TODO OPTIMIZE ME */
-UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src) {
+UINT16 tpm2_util_copy_tpm2b(TPM2B *dest, TPM2B *src) {
     int i;
     UINT16 rval = 0;
 
@@ -148,7 +150,7 @@ UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src) {
     return rval;
 }
 
-bool string_bytes_is_host_big_endian(void) {
+bool tpm2_util_is_big_endian(void) {
 
     uint32_t test_word;
     uint8_t *test_byte;
@@ -160,7 +162,7 @@ bool string_bytes_is_host_big_endian(void) {
 }
 
 #define STRING_BYTES_ENDIAN_CONVERT(size) \
-    UINT##size string_bytes_endian_convert_##size(UINT##size data) { \
+    UINT##size tpm2_util_endian_swap_##size(UINT##size data) { \
     \
         UINT##size converted; \
         UINT8 *bytes = (UINT8 *)&data; \
@@ -179,14 +181,14 @@ STRING_BYTES_ENDIAN_CONVERT(32)
 STRING_BYTES_ENDIAN_CONVERT(64)
 
 #define STRING_BYTES_ENDIAN_HTON(size) \
-    UINT##size string_bytes_endian_hton_##size(UINT##size data) { \
+    UINT##size tpm2_util_hton_##size(UINT##size data) { \
     \
-        bool is_big_endian = string_bytes_is_host_big_endian(); \
+        bool is_big_endian = tpm2_util_is_big_endian(); \
         if (is_big_endian) { \
            return data; \
         } \
     \
-        return string_bytes_endian_convert_##size(data); \
+        return tpm2_util_endian_swap_##size(data); \
     }
 
 STRING_BYTES_ENDIAN_HTON(16)
@@ -199,13 +201,13 @@ STRING_BYTES_ENDIAN_HTON(64)
  * endianess. Thus we can just call the hton routines, but have some nice
  * names for folks.
  */
-UINT16 string_bytes_endian_ntoh_16(UINT16 data) {
-    return string_bytes_endian_hton_16(data);
+UINT16 tpm2_util_ntoh_16(UINT16 data) {
+    return tpm2_util_hton_16(data);
 }
 
-UINT32 string_bytes_endian_ntoh_32(UINT32 data) {
-    return string_bytes_endian_hton_32(data);
+UINT32 tpm2_util_ntoh_32(UINT32 data) {
+    return tpm2_util_hton_32(data);
 }
-UINT64 string_bytes_endian_ntoh_64(UINT64 data) {
-    return string_bytes_endian_hton_64(data);
+UINT64 tpm2_util_ntoh_64(UINT64 data) {
+    return tpm2_util_hton_64(data);
 }

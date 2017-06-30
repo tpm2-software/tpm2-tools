@@ -38,12 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
 struct tpm_hmac_ctx {
@@ -139,7 +139,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'k':
-            result = string_bytes_get_uint32(optarg, &ctx->key_handle);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->key_handle);
             if (!result) {
                 LOG_ERR("Could not convert key handle to number, got \"%s\"",
                         optarg);
@@ -148,7 +148,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "key handle",
+            result = password_tpm2_util_copy_password(optarg, "key handle",
                     &ctx->session_data.hmac);
             if (!result) {
                 goto out;
@@ -156,7 +156,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.P = 1;
             break;
         case 'g':
-            result = string_bytes_get_uint16(optarg, &ctx->algorithm);
+            result = tpm2_util_string_to_uint16(optarg, &ctx->algorithm);
             if (!result) {
                 LOG_ERR("Could not convert algorithm to number, got \"%s\"",
                         optarg);
@@ -228,7 +228,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     }
 
     /* convert a hex password if needed */
-    result = password_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
+    result = password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
             "key handle", &ctx->session_data.hmac);
     if (!result) {
         goto out;

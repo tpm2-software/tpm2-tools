@@ -30,9 +30,10 @@
 
 #include <sapi/tpm20.h>
 
-#include "string-bytes.h"
 #include "tpm_kdfa.h"
 #include "tpm_session.h"
+
+#include "tpm2_util.h"
 
 /* for APP_RC_CREATE_SESSION_KEY_FAILED error code */
 
@@ -178,13 +179,13 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
         {
             // Generate the key used as input to the KDF.
             // Generate the key used as input to the KDF.
-            bool result = string_bytes_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->authValueBind.b ) );
+            bool result = tpm2_util_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->authValueBind.b ) );
             if (!result)
             {
                return TSS2_SYS_RC_BAD_VALUE;
             }
 
-            result = string_bytes_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->salt.b ) );
+            result = tpm2_util_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->salt.b ) );
             if (!result)
             {
                 return TSS2_SYS_RC_BAD_VALUE;

@@ -40,7 +40,8 @@
 
 #include "log.h"
 #include "options.h"
-#include "string-bytes.h"
+
+#include "tpm2_util.h"
 
 /*
  * A structure to map a string name to an element in the TCTI_TYPE
@@ -327,7 +328,7 @@ get_common_opts (int                    *argc_param,
             common_opts->socket_address = optarg;
             break;
         case 'p': {
-            bool res = string_bytes_get_uint16(optarg, &common_opts->socket_port);
+            bool res = tpm2_util_string_to_uint16(optarg, &common_opts->socket_port);
             if (!res) {
                 LOG_ERR("Could not convert port to a 16 bit unsigned number, "
                         "got: %s", optarg);
