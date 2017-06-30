@@ -38,9 +38,9 @@
 
 #include <tcti/tcti_socket.h>
 
+#include "../lib/tpm2_header.h"
 #include "files.h"
 #include "main.h"
-#include "tpm2-header.h"
 #include "log.h"
 
 typedef struct tpm2_send_command_ctx tpm2_send_command_ctx;
