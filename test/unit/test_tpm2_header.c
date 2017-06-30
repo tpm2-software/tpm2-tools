@@ -54,10 +54,10 @@ static void test_tpm_command_header(void **state) {
     /* everything from data should be the same */
     assert_memory_equal(c->data, command_bytes + 10, sizeof(command_bytes) - 10);
 
-    TPMI_ST_COMMAND_TAG tag = tpm2_command_header_get_tag(command_bytes);
-    UINT32 size_with_header = tpm2_command_header_get_size(command_bytes, true);
-    UINT32 size_with_out_header = tpm2_command_header_get_size(command_bytes, false);
-    TPM_CC cc = tpm2_command_header_get_code(command_bytes);
+    TPMI_ST_COMMAND_TAG tag = tpm2_command_header_get_tag(c);
+    UINT32 size_with_header = tpm2_command_header_get_size(c, true);
+    UINT32 size_with_out_header = tpm2_command_header_get_size(c, false);
+    TPM_CC cc = tpm2_command_header_get_code(c);
 
     assert_true(tag == 0x8001);
     assert_true(size_with_header == 0x16);
@@ -129,10 +129,10 @@ static void test_tpm_response_header(void **state) {
     /* everything from data should be the same */
     assert_memory_equal(r->data, response_bytes + 10, sizeof(response_bytes) - 10);
 
-    TPMI_ST_COMMAND_TAG tag = tpm2_response_header_get_tag(response_bytes);
-    UINT32 size_with_header = tpm2_response_header_get_size(response_bytes, true);
-    UINT32 size_with_out_header = tpm2_response_header_get_size(response_bytes, false);
-    TSS2_RC rc = tpm2_response_header_get_code(response_bytes);
+    TPMI_ST_COMMAND_TAG tag = tpm2_response_header_get_tag(r);
+    UINT32 size_with_header = tpm2_response_header_get_size(r, true);
+    UINT32 size_with_out_header = tpm2_response_header_get_size(r, false);
+    TSS2_RC rc = tpm2_response_header_get_code(r);
 
     assert_true(tag == 0x8001);
     assert_true(size_with_header == 0x21b);

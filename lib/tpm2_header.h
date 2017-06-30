@@ -35,6 +35,8 @@
 
 #include <sapi/tpm20.h>
 
+#include "string-bytes.h"
+
 #define TPM2_COMMAND_HEADER_SIZE  (sizeof(tpm2_command_header))
 #define TPM2_RESPONSE_HEADER_SIZE (sizeof(tpm2_response_header))
 
@@ -85,45 +87,51 @@ static inline tpm2_response_header *tpm2_response_header_from_bytes(UINT8 *h) {
 }
 
 /**
- * Retrieves the command tag from a command_header converting to host
+ * Retrieves the command tag from a command converting to host
  * endianess.
- * @param command_header
+ * @param command
  * @return
  */
-TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(UINT8 *command_header);
+static inline TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(tpm2_command_header *command) {
+
+    return string_bytes_endian_ntoh_16(command->tag);
+}
 
 /**
- * Retrieves the command size from a command_header converting to host
+ * Retrieves the command size from a command converting to host
  * endianess.
- * @param command_header
+ * @param command
  * @param include_header
  * @return
  */
-UINT32 tpm2_command_header_get_size(UINT8 *command_header, bool include_header);
+static inline UINT32 tpm2_command_header_get_size(tpm2_command_header *command, bool include_header) {
+
+    UINT32 size = string_bytes_endian_ntoh_32(command->size);
+    return include_header ? size : size - TPM2_COMMAND_HEADER_SIZE;
+}
 
 /**
- * Retrieves the command code from a command_header converting to host
+ * Retrieves the command code from a command converting to host
  * endianess.
- * @param command_header
+ * @param command
  * @return
  */
-TPM_CC tpm2_command_header_get_code(UINT8 *command_header);
+static inline TPM_CC tpm2_command_header_get_code(tpm2_command_header *command) {
+
+    return string_bytes_endian_ntoh_32(command->command_code);
+}
 
 /**
  * Retrieves command data, if present.
- * @param command_header
- *  The command_header to check for following data.
+ * @param command
+ *  The command to check for following data.
  * @return The command data or NULL if not present.
  */
-UINT8 *tpm2_command_header_get_data(uint8_t *command_header);
+static inline UINT8 *tpm2_command_header_get_data(tpm2_command_header *command) {
 
-/**
- * Retrieves the response tag from a response header converting to host
- * endianess.
- * @param response_header
- * @return
- */
-TPM_ST tpm2_response_header_get_tag(UINT8 *response_header);
+    UINT32 size = tpm2_command_header_get_size(command, false);
+    return size ? command->data : NULL;
+}
 
 /**
  * Retrieves the response size from a response header converting to host
@@ -132,7 +140,22 @@ TPM_ST tpm2_response_header_get_tag(UINT8 *response_header);
  * @param include_header
  * @return
  */
-UINT32 tpm2_response_header_get_size(UINT8 *response_header, bool include_header);
+static inline UINT32 tpm2_response_header_get_size(tpm2_response_header *response, bool include_header) {
+
+    UINT32 size = string_bytes_endian_ntoh_32(response->size);
+    return include_header ? size : size - TPM2_RESPONSE_HEADER_SIZE;
+}
+
+/**
+ * Retrieves the response tag from a response header converting to host
+ * endianess.
+ * @param response_header
+ * @return
+ */
+static inline TPM_ST tpm2_response_header_get_tag(tpm2_response_header *response) {
+
+    return string_bytes_endian_ntoh_16(response->tag);
+}
 
 /**
  * Retrieves the response code from a response header converting to host
@@ -140,7 +163,10 @@ UINT32 tpm2_response_header_get_size(UINT8 *response_header, bool include_header
  * @param response_header
  * @return
  */
-TSS2_RC tpm2_response_header_get_code(UINT8 *response_header);
+static inline TSS2_RC tpm2_response_header_get_code(tpm2_response_header *response) {
+
+    return string_bytes_endian_ntoh_32(response->response_code);
+}
 
 /**
  * Retrieves response data, if present.
@@ -148,6 +174,11 @@ TSS2_RC tpm2_response_header_get_code(UINT8 *response_header);
  *  The response_header to check for following data.
  * @return The response data or NULL if not present.
  */
-UINT8 *tpm2_response_header_get_data(uint8_t *response_header);
+static inline UINT8 *tpm2_response_header_get_data(tpm2_response_header *response) {
+
+
+    UINT32 size = tpm2_response_header_get_size(response, false);
+    return size ? response->data : NULL;
+}
 
 #endif /* TPM2_HEADER_H */

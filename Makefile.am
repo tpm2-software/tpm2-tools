@@ -90,7 +90,6 @@ lib_libcommon_a_SOURCES = \
     lib/pcr.c \
     lib/rc-decode.c \
     lib/string-bytes.c \
-    lib/tpm2_header.c \
     lib/tpm_hash.c \
     lib/tpm_hmac.c \
     lib/tpm_kdfa.c \

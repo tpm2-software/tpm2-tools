@@ -38,7 +38,7 @@
 
 #include <tcti/tcti_socket.h>
 
-#include "../lib/tpm2_header.h"
+#include "tpm2_header.h"
 #include "files.h"
 #include "main.h"
 #include "log.h"
@@ -52,16 +52,18 @@ struct tpm2_send_command_ctx {
 static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
 
-    UINT8 tmp[TPM2_COMMAND_HEADER_SIZE];
+    UINT8 buffer[TPM2_COMMAND_HEADER_SIZE];
 
-    size_t ret = fread(tmp, TPM2_COMMAND_HEADER_SIZE, 1, f);
+    size_t ret = fread(buffer, TPM2_COMMAND_HEADER_SIZE, 1, f);
     if (ret != 1 && ferror(f)) {
         LOG_ERR("Failed to read command header: %s", strerror (errno));
         return false;
     }
 
-    UINT32 command_size = tpm2_command_header_get_size(tmp, true);
-    UINT32 data_size = tpm2_command_header_get_size(tmp, false);
+    tpm2_command_header *header = tpm2_command_header_from_bytes(buffer);
+
+    UINT32 command_size = tpm2_command_header_get_size(header, true);
+    UINT32 data_size = tpm2_command_header_get_size(header, false);
 
     tpm2_command_header *command = (tpm2_command_header *) malloc(command_size);
     if (!command) {
@@ -70,11 +72,11 @@ static bool read_command_from_file(FILE *f, tpm2_command_header **c,
     }
 
     /* copy the header into the struct */
-    memcpy(command, tmp, sizeof(tmp));
+    memcpy(command, buffer, sizeof(buffer));
 
-    LOG_INFO("command tag:  0x%04x", tpm2_command_header_get_tag(tmp));
+    LOG_INFO("command tag:  0x%04x", tpm2_command_header_get_tag(command));
     LOG_INFO("command size: 0x%08x", command_size);
-    LOG_INFO("command code: 0x%08x", tpm2_command_header_get_code(tmp));
+    LOG_INFO("command code: 0x%08x", tpm2_command_header_get_code(command));
 
     ret = fread(command->data, data_size, 1, f);
     if (ret != 1 && ferror(f)) {
@@ -93,11 +95,11 @@ static bool write_response_to_file(FILE *f, UINT8 *rbuf) {
 
     tpm2_response_header *r = tpm2_response_header_from_bytes(rbuf);
 
-    UINT32 size = tpm2_response_header_get_size(r->bytes, true);
+    UINT32 size = tpm2_response_header_get_size(r, true);
 
-    LOG_INFO("response tag:  0x%04x", tpm2_response_header_get_tag(r->bytes));
+    LOG_INFO("response tag:  0x%04x", tpm2_response_header_get_tag(r));
     LOG_INFO("response size: 0x%08x", size);
-    LOG_INFO("response code: 0x%08x", tpm2_response_header_get_code(r->bytes));
+    LOG_INFO("response code: 0x%08x", tpm2_response_header_get_code(r));
 
     return files_write_bytes(f, r->bytes, size);
 }
