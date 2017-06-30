@@ -76,7 +76,7 @@ UINT32 tpm2_response_header_get_size(UINT8 *response_header, bool include_header
     tpm2_response_header *r = tpm2_response_header_from_bytes(response_header);
     UINT32 size = string_bytes_endian_ntoh_32(r->size);
 
-    return include_header ? size - TPM2_RESPONSE_HEADER_SIZE : size;
+    return include_header ? size : size - TPM2_RESPONSE_HEADER_SIZE;
 }
 
 TSS2_RC tpm2_response_header_get_code(UINT8 *response_header) {
