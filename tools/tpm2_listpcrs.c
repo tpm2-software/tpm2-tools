@@ -404,8 +404,9 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
     (void) envp;
 
-    while (getopt_long(argc, argv, "g:o:L:s", long_options, NULL) != -1) {
-        switch (optopt) {
+    int opt;
+    while ((opt = getopt_long(argc, argv, "g:o:L:s", long_options, NULL)) != -1) {
+        switch (opt) {
         case 'g':
             if (!string_bytes_get_uint16(optarg, &selected_algorithm)) {
                 showArgError(optarg, argv[0]);
