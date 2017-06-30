@@ -145,7 +145,8 @@ check_PROGRAMS = \
     test/unit/tpm2-rc-decode_unit \
     test/unit/tpm2-rc-entry_unit \
     test/unit/test_string_bytes \
-    test/unit/test_files
+    test/unit/test_files \
+    test/unit/test_tpm2_header
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -163,6 +164,10 @@ test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS) $(TPM20_TSS_LIBS) \
 	$(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
 test_unit_test_files_SOURCES  = test/unit/test_files.c
+
+test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_header_SOURCES  = test/unit/test_tpm2_header.c
 
 endif
 
