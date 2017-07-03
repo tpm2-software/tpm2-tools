@@ -33,34 +33,27 @@
 
 #!/bin/sh
 
-expected_policy_digest_for_sha1_pcr_index_hash="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
-expected_policy_digest_for_sha256_pcr_index_hash="33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8"
+declare -A expected_policy_digest=(["sha1"]="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
+                                   ["sha256"]="33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8")
+declare -A hash_name=([0x4]="sha1" [0xb]="sha256")
+pcr_index=0
 
-tpm2_createpolicy -f policy.file -P -i 0 -g 0x4
-if [ $? != 0 ];then
-echo "createpolicy command failed, please check the environment or parameters!"
-exit 1
-fi
+for halg in 0x4 0xb
+do
+    hash=${hash_name[${halg}]}
+    tpm2_createpolicy -f policy.file -P -i ${pcr_index} -g ${halg}
+    if [ $? != 0 ];then
+        echo "createpolicy command failed, please check the environment or parameters!"
+        exit 1
+    fi
 
-if [ $(xxd -p policy.file | tr -d '\n' ) != "$expected_policy_digest_for_sha1_pcr_index_hash" ];then
- echo "Failure: Creating Policy Digest with PCR policy for index 0 and sha1 pcr index hash"
- exit 1
-else 
- echo "Success: Creating Policy Digest with PCR policy for index 0 and sha1 pcr index hash"
-fi
-
-tpm2_createpolicy -f policy.file -P -i 0 -g 0xb
-if [ $? != 0 ];then
-echo "createpolicy command failed, please check the environment or parameters!"
-exit 1
-fi
-
-if [ $(xxd -p policy.file | tr -d '\n' ) != "$expected_policy_digest_for_sha256_pcr_index_hash" ];then
- echo "Failure: Creating Policy Digest with PCR policy for index 0 and sha256 pcr index hash"
- exit 1
-else 
- echo "Success: Creating Policy Digest with PCR policy for index 0 and sha256 pcr index hash"
-fi
+    if [ $(xxd -p policy.file | tr -d '\n' ) != "${expected_policy_digest[${hash}]}" ];then
+        echo "Failure: Creating Policy Digest with PCR policy for index ${pcr_index} and ${hash} pcr index hash"
+        exit 1
+    else
+        echo "Success: Creating Policy Digest with PCR policy for index ${pcr_index} and ${hash} pcr index hash"
+    fi
+done
 
 if [ ! -f policy.file ]; then
  echo "Policy File not found!"
