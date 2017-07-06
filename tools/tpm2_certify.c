@@ -368,12 +368,6 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
         goto out;
     }
 
-    /* Finish initialize the cmd_auth array */
-    ctx->cmd_auth[0].sessionHandle = TPM_RS_PW;
-    ctx->cmd_auth[1].sessionHandle = TPM_RS_PW;
-    *((UINT8 *) ((void *) &ctx->cmd_auth[0].sessionAttributes)) = 0;
-    *((UINT8 *) ((void *) &ctx->cmd_auth[0].sessionAttributes)) = 0;
-
     /* Load input files */
     if (flags.C) {
         result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.obj,
@@ -408,8 +402,18 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_certify_ctx ctx = {
             .cmd_auth = {
-                { .sessionHandle = TPM_RS_PW, .sessionAttributes = { .val = 0 } }, // [0]
-                { .sessionHandle = TPM_RS_PW, .sessionAttributes = { .val = 0 } }  // [1]
+                {
+                    .sessionHandle = TPM_RS_PW,
+                    .nonce = TPM2B_EMPTY_INIT,
+                    .hmac = TPM2B_EMPTY_INIT,
+                    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+            }, // [0]
+                {
+                    .sessionHandle = TPM_RS_PW,
+                    .nonce = TPM2B_EMPTY_INIT,
+                    .hmac = TPM2B_EMPTY_INIT,
+                    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+                }  // [1]
             },
             .file_path = { .attest = { 0 }, .sig = { 0 } },
             .sapi_context = sapi_context
