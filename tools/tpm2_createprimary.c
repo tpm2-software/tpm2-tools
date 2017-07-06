@@ -42,13 +42,18 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
-#include "../lib/tpm2_util.h"
+#include "log.h"
+#include "tpm2_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
+#include "password_util.h"
 
 TPMS_AUTH_COMMAND sessionData = {
-        .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+    .sessionHandle = TPM_RS_PW,
+    .nonce = TPM2B_EMPTY_INIT,
+    .hmac = TPM2B_EMPTY_INIT,
+    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
 };
 bool hexPasswd = false;
 TPM_HANDLE handle2048rsa;
@@ -125,7 +130,8 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic)
     return 0;
 }
 
-int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, int P_flag, int K_flag)
+int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy,
+        TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -150,39 +156,6 @@ int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy, TPM
 
     sessionsData.cmdAuthsCount = 1;
     sessionsDataOut.rspAuthsCount = 1;
-
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
-
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for hierarchy Passwd.\n");
-            return -1;
-        }
-    }
-
-    if(K_flag == 0)
-        inSensitive->t.sensitive.userAuth.t.size = 0;
-    if (inSensitive->t.sensitive.userAuth.t.size > 0 && hexPasswd)
-    {
-        inSensitive->t.sensitive.userAuth.t.size = sizeof(inSensitive->t.sensitive.userAuth) - 2;
-        if (tpm2_util_hex_to_byte_structure((char *)inSensitive->t.sensitive.userAuth.t.buffer,
-                              &inSensitive->t.sensitive.userAuth.t.size,
-                              inSensitive->t.sensitive.userAuth.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for primary Passwd.\n");
-            return -1;
-        }
-    }
 
     inSensitive->t.sensitive.data.t.size = 0;
     inSensitive->t.size = inSensitive->t.sensitive.userAuth.b.size + 2;
@@ -212,13 +185,7 @@ execute_tool (int               argc,
     (void) envp;
     (void) opts;
 
-    TPM2B_SENSITIVE_CREATE  inSensitive = {
-        .t = {
-            .sensitive = {
-                .userAuth = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
-            },
-        },
-    };
+    TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_EMPTY_INIT;
 
     TPM2B_PUBLIC            inPublic;
     TPMI_ALG_PUBLIC type;
@@ -273,7 +240,8 @@ execute_tool (int               argc,
             break;
 
         case 'P':
-            if(!tpm2_util_copy_string(optarg, &sessionData.hmac.b))
+            if(!password_tpm2_util_copy_password(optarg, "parent key",
+                    &sessionData.hmac))
             {
                 returnVal = -2;
                 break;
@@ -282,8 +250,8 @@ execute_tool (int               argc,
             P_flag = 1;
             break;
         case 'K':
-            inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth.t) - 2;
-            if(!tpm2_util_copy_string(optarg, &inSensitive.t.sensitive.userAuth.b))
+            if(!password_tpm2_util_copy_password(optarg, "new key",
+                    &inSensitive.t.sensitive.userAuth))
             {
                 returnVal = -3;
                 break;
@@ -340,9 +308,33 @@ execute_tool (int               argc,
 
     if(returnVal != 0)
         return returnVal;
+
+    if (P_flag && hexPasswd)
+    {
+        int rc = tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
+                                      &sessionData.hmac.t.size,
+                                      sessionData.hmac.t.buffer);
+        if (rc) {
+            LOG_ERR( "Failed to convert Hex format password for hierarchy password.");
+            return -1;
+        }
+    }
+
+    if (K_flag > 0 && hexPasswd) {
+        int rc = tpm2_util_hex_to_byte_structure((char *)inSensitive.t.sensitive.userAuth.t.buffer,
+                &inSensitive.t.sensitive.userAuth.t.size,
+                inSensitive.t.sensitive.userAuth.t.buffer);
+        if (rc) {
+            LOG_ERR("Failed to convert Hex format password for primary password.");
+            return -1;
+        }
+    }
+
+
+
     if(A_flag == 1 && g_flag == 1 && G_flag == 1)
     {
-        returnVal = createPrimary(sapi_context, hierarchy, &inPublic, &inSensitive, type, nameAlg, P_flag, K_flag);
+        returnVal = createPrimary(sapi_context, hierarchy, &inPublic, &inSensitive, type, nameAlg);
 
         if (returnVal == 0 && C_flag)
             returnVal = files_save_tpm_context_to_file(sapi_context, handle2048rsa, contextFile) != true;
