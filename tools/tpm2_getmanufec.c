@@ -133,7 +133,12 @@ int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
 int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 {
     UINT32 rval;
-    TPMS_AUTH_COMMAND sessionData;
+    TPMS_AUTH_COMMAND sessionData = {
+            .sessionHandle = TPM_RS_PW,
+            .nonce = TPM2B_EMPTY_INIT,
+            .hmac = TPM2B_EMPTY_INIT,
+            .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -163,11 +168,6 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
-
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    sessionData.hmac.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
 
     /*
      * use enAuth in Tss2_Sys_CreatePrimary
