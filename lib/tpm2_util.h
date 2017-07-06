@@ -9,6 +9,9 @@
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
 
 #define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
+#define TPM2B_EMPTY_INIT { .t = { .size = 0, }, }
+#define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }
+
 
 /**
  * Copies a string to an INITIALIZED TPM2B structure.
