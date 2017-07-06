@@ -41,13 +41,20 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_util.h"
+#include "password_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 
 static TSS2_SYS_CONTEXT *sysContext;
-static TPMS_AUTH_COMMAND sessionData;
+static TPMS_AUTH_COMMAND sessionData = {
+    .sessionHandle = TPM_RS_PW,
+    .nonce = TPM2B_EMPTY_INIT,
+    .hmac = TPM2B_EMPTY_INIT,
+    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+};
+
 static bool hexPasswd = false;
 
 static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag)
@@ -156,15 +163,12 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
 
     sessionsDataOut.rspAuthsCount = 1;
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-
     sessionsData.cmdAuthsCount = 1;
     sessionsData.cmdAuths[0] = &sessionData;
     if (sessionData.hmac.t.size > 0 && hexPasswd)
     {
         sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
                               &sessionData.hmac.t.size,
                               sessionData.hmac.t.buffer) != 0)
         {
@@ -176,7 +180,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     if (inSensitive->t.sensitive.userAuth.t.size > 0 && hexPasswd)
     {
         inSensitive->t.sensitive.userAuth.t.size = sizeof(inSensitive->t.sensitive.userAuth) - 2;
-        if (hex2ByteStructure((char *)inSensitive->t.sensitive.userAuth.t.buffer,
+        if (tpm2_util_hex_to_byte_structure((char *)inSensitive->t.sensitive.userAuth.t.buffer,
                               &inSensitive->t.sensitive.userAuth.t.size,
                               inSensitive->t.sensitive.userAuth.t.buffer) != 0)
         {
@@ -229,8 +233,8 @@ ENTRY_POINT(create) {
 
     sysContext = sapi_context;
 
-    TPM2B_SENSITIVE_CREATE  inSensitive;
-    inSensitive.t.sensitive.data.t.size = 0;
+    TPM2B_SENSITIVE_CREATE  inSensitive = TPM2B_EMPTY_INIT;
+
     TPM2B_PUBLIC            inPublic;
     TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
@@ -283,7 +287,7 @@ ENTRY_POINT(create) {
         switch(opt)
         {
         case 'H':
-            if(!string_bytes_get_uint32(optarg,&parentHandle))
+            if(!tpm2_util_string_to_uint32(optarg,&parentHandle))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -1;
@@ -293,8 +297,7 @@ ENTRY_POINT(create) {
             break;
 
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            if(!password_tpm2_util_copy_password(optarg, "Parent key password", &sessionData.hmac))
             {
                 returnVal = -2;
                 break;
@@ -302,8 +305,7 @@ ENTRY_POINT(create) {
             P_flag = 1;
             break;
         case 'K':
-            inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth.t) - 2;
-            if(str2ByteStructure(optarg,&inSensitive.t.sensitive.userAuth.t.size, inSensitive.t.sensitive.userAuth.t.buffer) != 0)
+            if(!password_tpm2_util_copy_password(optarg, "Key password", &inSensitive.t.sensitive.userAuth))
             {
                 returnVal = -3;
                 break;
@@ -311,7 +313,7 @@ ENTRY_POINT(create) {
             K_flag = 1;
             break;
         case 'g':
-            if(!string_bytes_get_uint16(optarg,&nameAlg))
+            if(!tpm2_util_string_to_uint16(optarg,&nameAlg))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -321,7 +323,7 @@ ENTRY_POINT(create) {
             g_flag = 1;
             break;
         case 'G':
-            if(!string_bytes_get_uint16(optarg,&type))
+            if(!tpm2_util_string_to_uint16(optarg,&type))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
@@ -331,7 +333,7 @@ ENTRY_POINT(create) {
             G_flag = 1;
             break;
         case 'A':
-            if(!string_bytes_get_uint32(optarg,&objectAttributes))
+            if(!tpm2_util_string_to_uint32(optarg,&objectAttributes))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -6;
@@ -415,8 +417,6 @@ ENTRY_POINT(create) {
         inSensitive.t.sensitive.userAuth.t.size = 0;
     if(L_flag == 0)
         inPublic.t.publicArea.authPolicy.t.size = 0;
-
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
 
     flagCnt = H_flag + g_flag + G_flag + c_flag ;
     if(flagCnt == 1)

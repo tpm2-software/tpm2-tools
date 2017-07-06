@@ -6,3 +6,4 @@
 !get-capability-tpm-prop-fixed.bin
 !*.sh
 !*.c
+!*.h

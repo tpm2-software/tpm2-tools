@@ -39,11 +39,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_nvreadlock_ctx tpm_nvreadlock_ctx;
 struct tpm_nvreadlock_ctx {
@@ -58,7 +58,13 @@ struct tpm_nvreadlock_ctx {
 
 static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
 
-    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_COMMAND session_data = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
+
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -75,12 +81,7 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    session_data.sessionHandle = TPM_RS_PW;
-    session_data.nonce.t.size = 0;
-    session_data.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
-
-    bool result = password_util_to_auth(&ctx->handle_passwd, ctx->is_hex_passwd,
+    bool result = password_tpm2_util_to_auth(&ctx->handle_passwd, ctx->is_hex_passwd,
             "handle password", &session_data.hmac);
     if (!result) {
         return false;
@@ -123,7 +124,7 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'x':
-            result = string_bytes_get_uint32(optarg, &ctx->nv_index);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->nv_index);
             if (!result) {
                 LOG_ERR("Could not convert NV index to number, got: \"%s\"",
                         optarg);
@@ -136,7 +137,7 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
             }
             break;
         case 'a':
-            result = string_bytes_get_uint32(optarg, &ctx->auth_handle);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->auth_handle);
             if (!result) {
                 LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
                         optarg);
@@ -149,7 +150,7 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
             }
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "handle password",
+            result = password_tpm2_util_copy_password(optarg, "handle password",
                     &ctx->handle_passwd);
             if (!result) {
                 return false;

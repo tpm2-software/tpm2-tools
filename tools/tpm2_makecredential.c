@@ -39,11 +39,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
@@ -168,7 +168,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
             break;
         case 'n':
             ctx->object_name.t.size = sizeof(ctx->object_name) - 2;
-            if (hex2ByteStructure(optarg, &ctx->object_name.t.size,
+            if (tpm2_util_hex_to_byte_structure(optarg, &ctx->object_name.t.size,
                     ctx->object_name.t.name) != 0) {
                 return false;
             }

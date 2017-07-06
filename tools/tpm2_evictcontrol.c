@@ -41,12 +41,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
 struct tpm_evictcontrol_ctx {
@@ -133,7 +133,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
             flags.A = 1;
             break;
         case 'H': {
-            bool result = string_bytes_get_uint32(optarg, &ctx->handle.object);
+            bool result = tpm2_util_string_to_uint32(optarg, &ctx->handle.object);
             if (!result) {
                 LOG_ERR(
                         "Could not convert object handle to a number, got: \"%s\"",
@@ -144,7 +144,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         }
             break;
         case 'S': {
-            bool result = string_bytes_get_uint32(optarg, &ctx->handle.persist);
+            bool result = tpm2_util_string_to_uint32(optarg, &ctx->handle.persist);
             if (!result) {
                 LOG_ERR(
                         "Could not convert persistent handle to a number, got: \"%s\"",
@@ -155,7 +155,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = password_util_copy_password(optarg, "authenticating",
+            bool result = password_tpm2_util_copy_password(optarg, "authenticating",
                     &ctx->session_data.hmac);
             if (!result) {
                 return false;
@@ -187,7 +187,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         return false;
     }
 
-    bool result = password_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
+    bool result = password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
             "authenticating", &ctx->session_data.hmac);
     if (!result) {
         return false;

@@ -2,6 +2,8 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_util.h"
+
 UINT32 tpm_hash(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
         UINT16 size, BYTE *data, TPM2B_DIGEST *result) {
     TPM2B_MAX_BUFFER dataSizedBuffer;
@@ -22,7 +24,12 @@ static TPM_RC hash_sequence_ex(TSS2_SYS_CONTEXT *sapi_context,
     TPM2B emptyBuffer;
     TPMT_TK_HASHCHECK validation;
 
-    TPMS_AUTH_COMMAND cmdAuth;
+    TPMS_AUTH_COMMAND cmdAuth = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TPMS_AUTH_COMMAND *cmdSessionArray[1] = { &cmdAuth };
     TSS2_SYS_CMD_AUTHS cmdAuthArray = { 1, &cmdSessionArray[0] };
 
@@ -33,10 +40,6 @@ static TPM_RC hash_sequence_ex(TSS2_SYS_CONTEXT *sapi_context,
     result->b.size = 0;
 
     // Init input sessions struct
-    cmdAuth.sessionHandle = TPM_RS_PW;
-    cmdAuth.nonce.t.size = 0;
-    *((UINT8 *) ((void *) &cmdAuth.sessionAttributes)) = 0;
-    cmdAuth.hmac.t.size = 0;
 
     rval = Tss2_Sys_HashSequenceStart(sapi_context, 0, &nullAuth, hashAlg,
             &sequenceHandle, 0);

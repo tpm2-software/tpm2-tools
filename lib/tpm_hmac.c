@@ -29,7 +29,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "string-bytes.h"
+#include "tpm2_util.h"
 
 static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH hashAlg, TPM2B *key, TPM_HANDLE *keyHandle, TPM2B_NAME *keyName )
 {
@@ -42,9 +42,9 @@ static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH h
 
 
     inPrivate.t.sensitiveArea.sensitiveType = TPM_ALG_KEYEDHASH;
-    inPrivate.t.size = string_bytes_copy_tpm2b( &(inPrivate.t.sensitiveArea.authValue.b), &keyAuth);
+    inPrivate.t.size = tpm2_util_copy_tpm2b( &(inPrivate.t.sensitiveArea.authValue.b), &keyAuth);
     inPrivate.t.sensitiveArea.seedValue.b.size = 0;
-    inPrivate.t.size += string_bytes_copy_tpm2b( &inPrivate.t.sensitiveArea.sensitive.bits.b, key);
+    inPrivate.t.size += tpm2_util_copy_tpm2b( &inPrivate.t.sensitiveArea.sensitive.bits.b, key);
     inPrivate.t.size += 2 * sizeof( UINT16 );
 
     inPublic.t.publicArea.type = TPM_ALG_KEYEDHASH;
@@ -119,7 +119,7 @@ TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *ke
     }
 
     // Init input sessions struct
-    string_bytes_copy_tpm2b( &sessionData.hmac.b, &keyAuth );
+    tpm2_util_copy_tpm2b( &sessionData.hmac.b, &keyAuth );
     sessionsData.cmdAuthsCount = 1;
     sessionsData.cmdAuths = &sessionDataArray[0];
 

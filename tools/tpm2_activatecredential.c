@@ -41,12 +41,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 #include "tpm_session.h"
 
 typedef struct tpm_activatecred_ctx tpm_activatecred_ctx;
@@ -172,13 +172,13 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         .algorithm = TPM_ALG_NULL
     };
 
-    bool result = password_util_to_auth(&ctx->password.hmac, ctx->hexPasswd,
+    bool result = password_tpm2_util_to_auth(&ctx->password.hmac, ctx->hexPasswd,
             "handlePasswd", &ctx->password.hmac);
     if (!result) {
         return false;
     }
 
-    result = password_util_to_auth(&ctx->endorse_password.hmac, ctx->hexPasswd,
+    result = password_tpm2_util_to_auth(&ctx->endorse_password.hmac, ctx->hexPasswd,
             "endorsePasswd", &ctx->endorse_password.hmac);
     if (!result) {
         return false;
@@ -255,7 +255,6 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             f_flag = 0, o_flag = 0;
 
     int opt;
-    int rc;
     bool result;
 
     optind = 0;
@@ -263,7 +262,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'H':
-            result = string_bytes_get_uint32(optarg, &ctx->handle.activate);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.activate);
             if (!result) {
                 LOG_ERR("Could not convert -H argument to a number, "
                         "got \"%s\"!", optarg);
@@ -280,7 +279,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             c_flag = 1;
             break;
         case 'k':
-            result = string_bytes_get_uint32(optarg, &ctx->handle.key);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.key);
             if (!result) {
                 return false;
             }
@@ -296,24 +295,17 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             break;
         case 'P':
             ctx->password.hmac.t.size = sizeof(ctx->password.hmac.t) - 2;
-            rc = str2ByteStructure(optarg, &ctx->password.hmac.t.size,
-                    ctx->password.hmac.t.buffer);
-            if (rc) {
-                LOG_ERR("Could not convert password \"%s\" into byte array",
-                        optarg);
+            result = password_tpm2_util_copy_password(optarg, "handle password",
+                    &ctx->password.hmac);
+            if (!result) {
                 return false;
             }
             //P_flag = 1;
             break;
         case 'e':
-            ctx->endorse_password.hmac.t.size =
-                    sizeof(ctx->endorse_password.hmac.t) - 2;
-            rc = str2ByteStructure(optarg, &ctx->endorse_password.hmac.t.size,
-                    ctx->endorse_password.hmac.t.buffer);
-            if (rc) {
-                LOG_ERR(
-                        "Could not convert endorsePassword \"%s\" into byte array",
-                        optarg);
+            result = password_tpm2_util_copy_password(optarg, "endorse password",
+                    &ctx->endorse_password.hmac);
+            if (!result) {
                 return false;
             }
             break;

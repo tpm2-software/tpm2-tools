@@ -42,17 +42,22 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
+#include "tpm2_util.h"
+#include "password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "pcr.h"
-#include "string-bytes.h"
 
 typedef struct {
     int size;
     UINT32 id[24];
 } PCR_LIST;
-static TPMS_AUTH_COMMAND sessionData;
+
+static TPMS_AUTH_COMMAND sessionData = {
+    .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+};
+
 static bool hexPasswd = false;
 static char outFilePath[PATH_MAX];
 static TPM2B_DATA qualifyingData = {{0,}};
@@ -233,7 +238,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     if (sessionData.hmac.t.size > 0 && hexPasswd)
     {
         sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (hex2ByteStructure((char *)sessionData.hmac.t.buffer,
+        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
                               &sessionData.hmac.t.size,
                               sessionData.hmac.t.buffer) != 0)
         {
@@ -256,7 +261,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     }
 
     printf( "\nquoted:\n " );
-    string_bytes_print_tpm2b( (TPM2B *)&quoted );
+    tpm2_util_print_tpm2b( (TPM2B *)&quoted );
     //PrintTPM2B_ATTEST(&quoted);
     printf( "\nsignature:\n " );
     PrintBuffer( (UINT8 *)&signature, sizeof(signature) );
@@ -325,14 +330,12 @@ ENTRY_POINT(quote) {
         LOG_ERR("Invalid usage, try --help for help!");
         return 0;
     }
-
-    optind = 0;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)
         {
         case 'k':
-            if(!string_bytes_get_uint32(optarg,&akHandle))
+            if(!tpm2_util_string_to_uint32(optarg,&akHandle))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -1;
@@ -353,8 +356,7 @@ ENTRY_POINT(quote) {
             break;
 
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(str2ByteStructure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            if(!password_tpm2_util_copy_password(optarg, "parent key", &sessionData.hmac))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -3;
@@ -372,7 +374,7 @@ ENTRY_POINT(quote) {
             l_flag = 1;
             break;
         case 'g':
-            if(!string_bytes_get_uint16(optarg,&pcrSelections.pcrSelections[0].hash))
+            if(!tpm2_util_string_to_uint16(optarg,&pcrSelections.pcrSelections[0].hash))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
@@ -405,7 +407,7 @@ ENTRY_POINT(quote) {
             break;
         case 'q':
             qualifyingData.t.size = sizeof(qualifyingData) - 2;
-            if(hex2ByteStructure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
+            if(tpm2_util_hex_to_byte_structure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -14;

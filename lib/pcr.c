@@ -5,8 +5,8 @@
 #include <sapi/tpm20.h>
 
 #include "pcr.h"
-#include "string-bytes.h"
 #include "log.h"
+#include "tpm2_util.h"
 
 static int pcr_get_id(const char *arg, UINT32 *pcrId)
 {
@@ -15,7 +15,7 @@ static int pcr_get_id(const char *arg, UINT32 *pcrId)
     if(arg == NULL || pcrId == NULL)
         return -1;
 
-    if(!string_bytes_get_uint32(arg, &n))
+    if(!tpm2_util_string_to_uint32(arg, &n))
         return -2;
 
     if(n > 23)
@@ -45,7 +45,7 @@ static int pcr_parse_selection(const char *str, int len, TPMS_PCR_SELECTION *pcr
 
     snprintf(buf, strLeft - str + 1, "%s", str);
 
-    if (!string_bytes_get_uint16(buf, &pcrSel->hash)) {
+    if (!tpm2_util_string_to_uint16(buf, &pcrSel->hash)) {
         return -1;
     }
 

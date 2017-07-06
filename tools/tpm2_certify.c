@@ -38,12 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
 struct tpm_certify_ctx {
@@ -250,7 +250,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'H':
-            result = string_bytes_get_uint32(optarg, &ctx->handle.obj);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.obj);
             if (!result) {
                 LOG_ERR("Could not format object handle to number, got: \"%s\"",
                         optarg);
@@ -259,7 +259,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.H = 1;
             break;
         case 'k':
-            result = string_bytes_get_uint32(optarg, &ctx->handle.key);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.key);
             if (!result) {
                 LOG_ERR("Could not format key handle to number, got: \"%s\"",
                         optarg);
@@ -268,7 +268,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "object handle",
+            result = password_tpm2_util_copy_password(optarg, "object handle",
                     &ctx->cmd_auth[0].hmac);
             if (!result) {
                 goto out;
@@ -276,7 +276,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.P = 1;
             break;
         case 'K':
-            result = password_util_copy_password(optarg, "key handle",
+            result = password_tpm2_util_copy_password(optarg, "key handle",
                     &ctx->cmd_auth[1].hmac);
             if (!result) {
                 goto out;
@@ -284,7 +284,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.K = 1;
             break;
         case 'g':
-            result = string_bytes_get_uint16(optarg, &ctx->halg);
+            result = tpm2_util_string_to_uint16(optarg, &ctx->halg);
             if (!result) {
                 LOG_ERR("Could not format algorithm to number, got: \"%s\"",
                         optarg);
@@ -357,23 +357,17 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
     }
 
     /* convert a hex passwords if needed */
-    result = password_util_to_auth(&ctx->cmd_auth[0].hmac, is_hex_password,
+    result = password_tpm2_util_to_auth(&ctx->cmd_auth[0].hmac, is_hex_password,
             "object handle", &ctx->cmd_auth[0].hmac);
     if (!result) {
         goto out;
     }
 
-    result = password_util_to_auth(&ctx->cmd_auth[1].hmac, is_hex_password,
+    result = password_tpm2_util_to_auth(&ctx->cmd_auth[1].hmac, is_hex_password,
             "key handle", &ctx->cmd_auth[1].hmac);
     if (!result) {
         goto out;
     }
-
-    /* Finish initialize the cmd_auth array */
-    ctx->cmd_auth[0].sessionHandle = TPM_RS_PW;
-    ctx->cmd_auth[1].sessionHandle = TPM_RS_PW;
-    *((UINT8 *) ((void *) &ctx->cmd_auth[0].sessionAttributes)) = 0;
-    *((UINT8 *) ((void *) &ctx->cmd_auth[0].sessionAttributes)) = 0;
 
     /* Load input files */
     if (flags.C) {
@@ -408,8 +402,18 @@ ENTRY_POINT(certify) {
 
     tpm_certify_ctx ctx = {
             .cmd_auth = {
-                { .sessionHandle = TPM_RS_PW, .sessionAttributes = { .val = 0 } }, // [0]
-                { .sessionHandle = TPM_RS_PW, .sessionAttributes = { .val = 0 } }  // [1]
+                {
+                    .sessionHandle = TPM_RS_PW,
+                    .nonce = TPM2B_EMPTY_INIT,
+                    .hmac = TPM2B_EMPTY_INIT,
+                    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+            }, // [0]
+                {
+                    .sessionHandle = TPM_RS_PW,
+                    .nonce = TPM2B_EMPTY_INIT,
+                    .hmac = TPM2B_EMPTY_INIT,
+                    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+                }  // [1]
             },
             .file_path = { .attest = { 0 }, .sig = { 0 } },
             .sapi_context = sapi_context

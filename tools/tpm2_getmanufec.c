@@ -46,11 +46,11 @@
 #include <openssl/sha.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 #include "tpm_hash.h"
 
 char outputFile[PATH_MAX];
@@ -133,7 +133,12 @@ int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
 int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 {
     UINT32 rval;
-    TPMS_AUTH_COMMAND sessionData;
+    TPMS_AUTH_COMMAND sessionData = {
+            .sessionHandle = TPM_RS_PW,
+            .nonce = TPM2B_EMPTY_INIT,
+            .hmac = TPM2B_EMPTY_INIT,
+            .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -164,11 +169,6 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    sessionData.hmac.t.size = 0;
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-
     /*
      * use enAuth in Tss2_Sys_CreatePrimary
      */
@@ -180,7 +180,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
         if (strlen(endorsePasswd) > 0 && hexPasswd) {
                 sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
 
-                if (hex2ByteStructure(endorsePasswd, &sessionData.hmac.t.size,
+                if (tpm2_util_hex_to_byte_structure(endorsePasswd, &sessionData.hmac.t.size,
                                       sessionData.hmac.t.buffer) != 0) {
                         printf( "Failed to convert Hex format password for endorsePasswd.\n");
                         return -1;
@@ -196,7 +196,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     else {
         if (strlen(ekPasswd) > 0 && hexPasswd) {
              inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
-             if (hex2ByteStructure(ekPasswd, &inSensitive.t.sensitive.userAuth.t.size,
+             if (tpm2_util_hex_to_byte_structure(ekPasswd, &inSensitive.t.sensitive.userAuth.t.size,
                                    inSensitive.t.sensitive.userAuth.t.buffer) != 0) {
                   printf( "Failed to convert Hex format password for ekPasswd.\n");
                   return -1;
@@ -235,7 +235,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
          else {
             if (strlen(ownerPasswd) > 0 && hexPasswd) {
                 sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-                if (hex2ByteStructure(ownerPasswd, &sessionData.hmac.t.size,
+                if (tpm2_util_hex_to_byte_structure(ownerPasswd, &sessionData.hmac.t.size,
                                    sessionData.hmac.t.buffer) != 0) {
                  printf( "Failed to convert Hex format password for ownerPasswd.\n");
                  return -1;
@@ -532,7 +532,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     while ( ( opt = getopt_long( argc, argv, optstring, long_options, NULL ) ) != -1 ) {
               switch ( opt ) {
                 case 'H':
-                    if (!string_bytes_get_uint32(optarg, &persistentHandle)) {
+                    if (!tpm2_util_string_to_uint32(optarg, &persistentHandle)) {
                         printf("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
                         goto out;
                     }
@@ -563,7 +563,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     break;
 
                 case 'g':
-                    if (!string_bytes_get_uint32(optarg, &algorithmType)) {
+                    if (!tpm2_util_string_to_uint32(optarg, &algorithmType)) {
                         printf("\nPlease input the algorithm type in correct format.\n");
                         goto out;
                     }

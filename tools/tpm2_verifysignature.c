@@ -40,11 +40,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 #include "tpm_hash.h"
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
@@ -242,7 +242,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'k': {
-            bool res = string_bytes_get_uint32(optarg, &ctx->keyHandle);
+            bool res = tpm2_util_string_to_uint32(optarg, &ctx->keyHandle);
             if (!res) {
                 LOG_ERR("Unable to convert key handle, got: \"%s\"", optarg);
                 return false;
@@ -251,7 +251,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
         }
             break;
         case 'g': {
-            bool result = string_bytes_get_uint16(optarg, &ctx->halg);
+            bool result = tpm2_util_string_to_uint16(optarg, &ctx->halg);
             if (!result) {
                 LOG_ERR("Unable to convert algorithm, got: \"%s\"", optarg);
                 return false;

@@ -39,11 +39,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 
 typedef struct tpm_akparse_ctx tpm_akparse_ctx;
 struct tpm_akparse_ctx {
@@ -124,7 +124,7 @@ static bool save_alg_and_key_to_file(const char *key_file, UINT16 alg_type,
             goto out;
         }
 
-        string_bytes_print_tpm2b(tmp);
+        tpm2_util_print_tpm2b(tmp);
     }
 out:
     fclose(f);

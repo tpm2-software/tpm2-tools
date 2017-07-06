@@ -33,103 +33,123 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <getopt.h>
+
 #include <tcti/tcti_socket.h>
 
+#include "tpm2_header.h"
+#include "files.h"
 #include "main.h"
-#include "tpm2-header.h"
 #include "log.h"
 
-#define MAX_BUF 4096
-#define COMMAND_HEADER_SIZE (sizeof (TPMI_ST_COMMAND_TAG) + sizeof (UINT32) + sizeof (TPM_CC))
-#define RESPONSE_HEADER_SIZE (sizeof (TPM_ST) + sizeof (UINT32) + sizeof (TPM_RC))
+typedef struct tpm2_send_command_ctx tpm2_send_command_ctx;
+struct tpm2_send_command_ctx {
+    FILE *input;
+    FILE *output;
+};
 
-/*
- * Read a TPM command buffer from a 'file_stream'. Store this buffer in
- * 'buf'. On success we return the size of the command, error returns 0.
- */
-UINT32
-read_command_from_file (FILE              *file_stream,
-                        uint8_t           *buf,
-                        size_t const       buf_size)
-{
-    size_t ret;
-    UINT32 command_size;
+static bool read_command_from_file(FILE *f, tpm2_command_header **c,
+        UINT32 *size) {
 
-    LOG_INFO ("read_command_from_file");
-    ret = fread (buf, COMMAND_HEADER_SIZE, 1, file_stream);
-    /* I'm not sure if fread will actually set errno from the docs */
-    if (ret != 1 && ferror (file_stream)) {
-        LOG_ERR ("Failed to read command header: %s",
-                 strerror (errno));
-        return 0;
+    UINT8 buffer[TPM2_COMMAND_HEADER_SIZE];
+
+    size_t ret = fread(buffer, TPM2_COMMAND_HEADER_SIZE, 1, f);
+    if (ret != 1 && ferror(f)) {
+        LOG_ERR("Failed to read command header: %s", strerror (errno));
+        return false;
     }
-    LOG_INFO ("read %zd command header of size: %zd",
-                 ret, COMMAND_HEADER_SIZE);
-    command_size = get_command_size (buf);
-    if (command_size > buf_size) {
-        LOG_ERR("buf_size is insufficient: %u > %zd",
-                 command_size, buf_size);
-        return 0;
+
+    tpm2_command_header *header = tpm2_command_header_from_bytes(buffer);
+
+    UINT32 command_size = tpm2_command_header_get_size(header, true);
+    UINT32 data_size = tpm2_command_header_get_size(header, false);
+
+    tpm2_command_header *command = (tpm2_command_header *) malloc(command_size);
+    if (!command) {
+        LOG_ERR("oom");
+        return false;
     }
-    LOG_INFO ("command tag:  0x%04x", get_command_tag  (buf));
-    LOG_INFO ("command size: 0x%08x", get_command_size (buf));
-    LOG_INFO ("command code: 0x%08x", get_command_code (buf));
-    ret = fread (buf + COMMAND_HEADER_SIZE,
-                 command_size - COMMAND_HEADER_SIZE,
-                 1,
-                 file_stream);
-    if (ret != 1 && ferror (file_stream)) {
-        LOG_ERR ("Failed to read command body: %s",
-                 strerror (errno));
-        return 0;
+
+    /* copy the header into the struct */
+    memcpy(command, buffer, sizeof(buffer));
+
+    LOG_INFO("command tag:  0x%04x", tpm2_command_header_get_tag(command));
+    LOG_INFO("command size: 0x%08x", command_size);
+    LOG_INFO("command code: 0x%08x", tpm2_command_header_get_code(command));
+
+    ret = fread(command->data, data_size, 1, f);
+    if (ret != 1 && ferror(f)) {
+        LOG_ERR("Failed to read command body: %s", strerror (errno));
+        free(command);
+        return false;
     }
-    LOG_INFO ("read command body successfully");
-    return command_size;
+
+    *c = command;
+    *size = command_size;
+
+    return true;
 }
-/*
- * Write a TPM response buffer to a 'file_stream'. On error this function
- * returns 0, on success it returns the size of the response buffer.
- */
-UINT32
-write_response_to_file (FILE           *file_stream,
-                        uint8_t        *buf,
-                        size_t const    buf_size)
-{
-    size_t num_write;
-    UINT32 response_size;
 
-    LOG_INFO ("write_response_to_file");
-    num_write = fwrite (buf, RESPONSE_HEADER_SIZE, 1, file_stream);
-    if (num_write != 1 && ferror (stdout)) {
-        LOG_ERR ("failed to write to stdout");
-        return 0;
-    }
-    LOG_INFO ("wrote response header: %zd members of size %zd",
-                 num_write, RESPONSE_HEADER_SIZE);
-    response_size = get_command_size (buf);
-    if (response_size > buf_size) {
-        LOG_ERR ("buf_size is insufficient: %u > %zd",
-                 response_size, buf_size);
-        return 0;
-    }
-    LOG_INFO ("response tag:  0x%04x", get_response_tag  (buf));
-    LOG_INFO ("response size: 0x%08x", get_response_size (buf));
-    LOG_INFO ("response code: 0x%08x", get_response_code (buf));
+static bool write_response_to_file(FILE *f, UINT8 *rbuf) {
 
-    num_write = fwrite (buf + RESPONSE_HEADER_SIZE,
-                        response_size - RESPONSE_HEADER_SIZE,
-                        1,
-                        file_stream);
-    if (num_write != 1 && ferror (file_stream)) {
-        LOG_ERR ("Failed to write response to file: %s",
-                 strerror (errno));
-        return 0;
+    tpm2_response_header *r = tpm2_response_header_from_bytes(rbuf);
 
-    }
-    LOG_INFO ("wrote response body: %zd members of size 0x%x",
-                 num_write, response_size);
-    return response_size;
+    UINT32 size = tpm2_response_header_get_size(r, true);
+
+    LOG_INFO("response tag:  0x%04x", tpm2_response_header_get_tag(r));
+    LOG_INFO("response size: 0x%08x", size);
+    LOG_INFO("response code: 0x%08x", tpm2_response_header_get_code(r));
+
+    return files_write_bytes(f, r->bytes, size);
 }
+
+static FILE *open_file(const char *path, const char *mode) {
+    FILE *f = fopen(path, mode);
+    if (!f) {
+        LOG_ERR("Could not open \"%s\", error: \"%s\"", path, strerror(errno));
+    }
+    return f;
+}
+
+static void close_file(FILE *f) {
+
+    if (f && (f != stdin || f != stdout)) {
+        fclose(f);
+    }
+}
+
+static bool init(tpm2_send_command_ctx *ctx, int argc, char *argv[]) {
+
+    static const char *optstring = "i:o:";
+    static const struct option long_options[] = { { "--input",
+            required_argument, NULL, 'i' }, { "--output", required_argument,
+            NULL, 'o' }, { NULL, no_argument, NULL, '\0' }, };
+
+    int opt;
+    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
+        switch (opt) {
+        case 'i':
+            ctx->input = open_file(optarg, "rb");
+            break;
+        case 'o':
+            ctx->output = open_file(optarg, "wb");
+            break;
+        case ':':
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return false;
+        case '?':
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return false;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return false;
+        }
+    }
+
+    return ctx->input && ctx->output;
+}
+
 /*
  * This program reads a TPM command buffer from stdin then dumps it out
  * to a tabd TCTI. It then reads the response from the TCTI and writes it
@@ -137,55 +157,68 @@ write_response_to_file (FILE           *file_stream,
  * in network byte order (big-endian). We output the response in the same
  * form.
  */
-int
-execute_tool (int              argc,
-             char             *argv[],
-             char             *envp[],
-             common_opts_t    *opts,
-             TSS2_SYS_CONTEXT *sapi_context,
-			 tpm_table *t)
-{
-    (void)envp;
-    (void)opts;
-    (void)argc;
-    (void)argv;
-    (void)t;
+ENTRY_POINT(send) {
+    (void) envp;
+    (void) opts;
 
-    TSS2_TCTI_CONTEXT *tcti_context = NULL;
-    size_t response_size = MAX_BUF;
-    uint8_t buf [MAX_BUF];
-    UINT32 written_size, command_size;
-    TSS2_RC rc;
+    int ret = 1;
 
-    command_size = read_command_from_file (stdin, buf, MAX_BUF);
-    if (command_size == 0) {
-        LOG_ERR ("failed to read TPM2 command buffer from stdin");
-        return 1;
+    tpm2_send_command_ctx ctx = {
+            .input = stdin,
+            .output = stdout
+    };
+
+    bool result = init(&ctx, argc, argv);
+    if (!result) {
+        goto out_files;
     }
 
-    rc = Tss2_Sys_GetTctiContext (sapi_context, &tcti_context);
+    UINT32 size;
+    tpm2_command_header *command;
+    result = read_command_from_file(ctx.input, &command, &size);
+    if (!result) {
+        LOG_ERR("failed to read TPM2 command buffer from file");
+        goto out_files;
+    }
+
+    TSS2_TCTI_CONTEXT *tcti_context;
+    TSS2_RC rc = Tss2_Sys_GetTctiContext(sapi_context, &tcti_context);
     if (rc != TSS2_RC_SUCCESS) {
-        LOG_ERR ("Failed to get TCTI context from SAPI context: 0x%x",
-                 rc);
-        return 1;
+        LOG_ERR("Failed to get TCTI context from SAPI context: 0x%x", rc);
+        goto out;
     }
-    rc = tss2_tcti_transmit (tcti_context, command_size, buf);
+
+    rc = tss2_tcti_transmit(tcti_context, size, command->bytes);
     if (rc != TSS2_RC_SUCCESS) {
-        LOG_ERR ("tss2_tcti_transmit failed: 0x%x", rc);
-        return 1;
+        LOG_ERR("tss2_tcti_transmit failed: 0x%x", rc);
+        goto out;
     }
-    rc = tss2_tcti_receive (tcti_context,
-                            &response_size,
-                            buf,
-                            TSS2_TCTI_TIMEOUT_BLOCK);
+
+    size_t rsize = TPM2_MAX_SIZE;
+    UINT8 rbuf[TPM2_MAX_SIZE];
+    rc = tss2_tcti_receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
     if (rc != TSS2_RC_SUCCESS) {
-        LOG_ERR ("tss2_tcti_receive failed: 0x%x", rc);
-        return 1;
+        LOG_ERR("tss2_tcti_receive failed: 0x%x", rc);
+        goto out;
     }
-    written_size = write_response_to_file (stdout, buf, response_size);
-    if (written_size < response_size) {
-        LOG_ERR ("write_command_to_file failed");
-        return 1;
+
+    /*
+     * The response buffer, rbuf, all fields are in big-endian, and we save
+     * in big-endian.
+     */
+    result = write_response_to_file(ctx.output, rbuf);
+    if (!result) {
+        LOG_ERR("Failed writing response to output file.");
     }
-    return 0;
+
+    ret = 0;
+
+out:
+    free(command);
+
+out_files:
+    close_file(ctx.input);
+    close_file(ctx.output);
+
+    return ret;
 }

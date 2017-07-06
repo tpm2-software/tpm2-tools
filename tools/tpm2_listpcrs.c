@@ -38,11 +38,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "pcr.h"
-#include "string-bytes.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {
@@ -404,11 +404,12 @@ ENTRY_POINT(listpcrs) {
     (void) opts;
     (void) envp;
 
+    int opt;
     optind = 0;
-    while (getopt_long(argc, argv, "g:o:L:s", long_options, NULL) != -1) {
-        switch (optopt) {
+    while ((opt = getopt_long(argc, argv, "g:o:L:s", long_options, NULL)) != -1) {
+        switch (opt) {
         case 'g':
-            if (!string_bytes_get_uint16(optarg, &selected_algorithm)) {
+            if (!tpm2_util_string_to_uint16(optarg, &selected_algorithm)) {
                 showArgError(optarg, argv[0]);
                 goto error;
             }

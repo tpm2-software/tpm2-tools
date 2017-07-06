@@ -38,10 +38,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "string-bytes.h"
 #include "password_util.h"
 
 typedef struct dictionarylockout_ctx dictionarylockout_ctx;
@@ -67,7 +67,7 @@ bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
     TSS2_SYS_CMD_AUTHS sessionsData = { .cmdAuths = &sessionDataArray[0],
             .cmdAuthsCount = 1 };
     if (ctx->use_passwd) {
-        bool result = password_util_to_auth(&ctx->lockout_passwd, false,
+        bool result = password_tpm2_util_to_auth(&ctx->lockout_passwd, false,
                 "Lockout Password", &sessionData.hmac);
         if (!result) {
             return false;
@@ -139,7 +139,7 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
             ctx->setup_parameters = true;
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "Lockout Password",
+            result = password_tpm2_util_copy_password(optarg, "Lockout Password",
                     &ctx->lockout_passwd);
             if (!result) {
                 return false;
@@ -147,7 +147,7 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
             ctx->use_passwd = true;
             break;
         case 'n':
-            result = string_bytes_get_uint32(optarg, &ctx->max_tries);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->max_tries);
             if (!result) {
                 LOG_ERR("Could not convert max_tries to number, got: \"%s\"",
                         optarg);
@@ -159,7 +159,7 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
             }
             break;
         case 't':
-            result = string_bytes_get_uint32(optarg, &ctx->recovery_time);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->recovery_time);
             if (!result) {
                 LOG_ERR(
                         "Could not convert recovery_time to number, got: \"%s\"",
@@ -168,7 +168,7 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
             }
             break;
         case 'l':
-            result = string_bytes_get_uint32(optarg,
+            result = tpm2_util_string_to_uint32(optarg,
                     &ctx->lockout_recovery_time);
             if (!result) {
                 LOG_ERR(

@@ -38,13 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
-#include "tpm_table.h"
 
 typedef struct tpm_random_ctx tpm_random_ctx;
 struct tpm_random_ctx {
@@ -68,7 +67,7 @@ static bool get_random_and_save(tpm_random_ctx *ctx) {
 
     if (!ctx->output_file_specified) {
 
-        char *s = string_bytes_to_hex(random_bytes.t.buffer, random_bytes.t.size);
+        char *s = tpm2_util_to_hex(random_bytes.t.buffer, random_bytes.t.size);
         if (!s) {
         	LOG_ERR("oom");
         	return false;
@@ -120,7 +119,7 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
         }
     }
 
-    bool result = string_bytes_get_uint16(argv[optind], &ctx->num_of_bytes);
+    bool result = tpm2_util_string_to_uint16(argv[optind], &ctx->num_of_bytes);
     if (!result) {
         LOG_ERR("Error converting size to a number, got: \"%s\".",
                 argv[optind]);
@@ -140,7 +139,7 @@ ENTRY_POINT(getrandom) {
             .num_of_bytes = 0,
             .output_file = { 0 },
             .sapi_context = sapi_context,
-			.t = table
+	    .t = table
     };
 
     bool result = init(argc, argv, &ctx);

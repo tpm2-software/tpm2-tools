@@ -38,12 +38,12 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
@@ -79,8 +79,8 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
         return false;
     }
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &outData, sizeof(outData));
+    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) outData.t.buffer,
+            outData.t.size);
 }
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
@@ -115,7 +115,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'H': {
-            bool result = string_bytes_get_uint32(optarg, &ctx->itemHandle);
+            bool result = tpm2_util_string_to_uint32(optarg, &ctx->itemHandle);
             if (!result) {
                 LOG_ERR("Could not cobvert item handle to number, got: \"%s\"",
                         optarg);
@@ -125,7 +125,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = password_util_copy_password(optarg, "key",
+            bool result = password_tpm2_util_copy_password(optarg, "key",
                     &ctx->sessionData.hmac);
             if (!result) {
                 return false;
@@ -167,7 +167,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     }
 
     if (flags.P) {
-        bool result = password_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
+        bool result = password_tpm2_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
                 "key", &ctx->sessionData.hmac);
         if (!result) {
             return false;

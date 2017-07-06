@@ -1,11 +1,11 @@
+#include "tpm2_util.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "string-bytes.h"
-
-bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
+bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
 
     if (!result || !append) {
         return false;
@@ -25,10 +25,10 @@ bool string_bytes_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
     return true;
 }
 
-bool string_bytes_get_uint16(const char *str, uint16_t *value) {
+bool tpm2_util_string_to_uint16(const char *str, uint16_t *value) {
 
     uint32_t tmp;
-    bool result = string_bytes_get_uint32(str, &tmp);
+    bool result = tpm2_util_string_to_uint32(str, &tmp);
     if (!result) {
         return false;
     }
@@ -38,11 +38,11 @@ bool string_bytes_get_uint16(const char *str, uint16_t *value) {
         return false;
     }
 
-    *value = (uint16_t)tmp;
+    *value = (uint16_t) tmp;
     return true;
 }
 
-bool string_bytes_get_uint32(const char *str, uint32_t *value) {
+bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
 
     char *endptr;
 
@@ -70,50 +70,35 @@ bool string_bytes_get_uint32(const char *str, uint32_t *value) {
     return true;
 }
 
-int str2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
-{
-    if(inStr == NULL || byteLength == NULL || byteBuffer == NULL)
-        return -1;
-    if(*byteLength <= strlen(inStr))
-        return -2;
-
-    *byteLength = strlen(inStr);
-    memcpy(byteBuffer, inStr, *byteLength);
-    byteBuffer[*byteLength] = '\0';
-    return 0;
-}
-
-int hex2ByteStructure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
-{
-    int strLength;//if the inStr likes "1a2b...", no prefix "0x"
+int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
+        BYTE *byteBuffer) {
+    int strLength; //if the inStr likes "1a2b...", no prefix "0x"
     int i = 0;
-    if(inStr == NULL || byteLength == NULL || byteBuffer == NULL)
+    if (inStr == NULL || byteLength == NULL || byteBuffer == NULL)
         return -1;
     strLength = strlen(inStr);
-    if(strLength%2)
+    if (strLength % 2)
         return -2;
-    for(i = 0; i < strLength; i++)
-    {
-        if(!isxdigit(inStr[i]))
+    for (i = 0; i < strLength; i++) {
+        if (!isxdigit(inStr[i]))
             return -3;
     }
 
-    if(*byteLength < strLength/2)
+    if (*byteLength < strLength / 2)
         return -4;
 
-    *byteLength = strLength/2;
+    *byteLength = strLength / 2;
 
-    for(i = 0; i < *byteLength; i++)
-    {
-        char tmpStr[4] = {0};
-        tmpStr[0] = inStr[i*2];
-        tmpStr[1] = inStr[i*2+1];
+    for (i = 0; i < *byteLength; i++) {
+        char tmpStr[4] = { 0 };
+        tmpStr[0] = inStr[i * 2];
+        tmpStr[1] = inStr[i * 2 + 1];
         byteBuffer[i] = strtol(tmpStr, NULL, 16);
     }
     return 0;
 }
 
-void string_bytes_print_tpm2b(TPM2B *buffer) {
+void tpm2_util_print_tpm2b(TPM2B *buffer) {
 
     unsigned i;
     for (i = 0; i < buffer->size; i++) {
@@ -127,7 +112,7 @@ void string_bytes_print_tpm2b(TPM2B *buffer) {
 }
 
 /* TODO OPTIMIZE ME */
-UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src) {
+UINT16 tpm2_util_copy_tpm2b(TPM2B *dest, TPM2B *src) {
     int i;
     UINT16 rval = 0;
 
@@ -148,7 +133,7 @@ UINT16 string_bytes_copy_tpm2b(TPM2B *dest, TPM2B *src) {
     return rval;
 }
 
-bool string_bytes_is_host_big_endian(void) {
+bool tpm2_util_is_big_endian(void) {
 
     uint32_t test_word;
     uint8_t *test_byte;
@@ -160,7 +145,7 @@ bool string_bytes_is_host_big_endian(void) {
 }
 
 #define STRING_BYTES_ENDIAN_CONVERT(size) \
-    UINT##size string_bytes_endian_convert_##size(UINT##size data) { \
+    UINT##size tpm2_util_endian_swap_##size(UINT##size data) { \
     \
         UINT##size converted; \
         UINT8 *bytes = (UINT8 *)&data; \
@@ -178,35 +163,66 @@ STRING_BYTES_ENDIAN_CONVERT(16)
 STRING_BYTES_ENDIAN_CONVERT(32)
 STRING_BYTES_ENDIAN_CONVERT(64)
 
+#define STRING_BYTES_ENDIAN_HTON(size) \
+    UINT##size tpm2_util_hton_##size(UINT##size data) { \
+    \
+        bool is_big_endian = tpm2_util_is_big_endian(); \
+        if (is_big_endian) { \
+           return data; \
+        } \
+    \
+        return tpm2_util_endian_swap_##size(data); \
+    }
+
+STRING_BYTES_ENDIAN_HTON(16)
+STRING_BYTES_ENDIAN_HTON(32)
+STRING_BYTES_ENDIAN_HTON(64)
+
+/*
+ * Converting from host-to-network (hton) or network-to-host (ntoh) is
+ * the same operation: if endianess differs between host and data, swap
+ * endianess. Thus we can just call the hton routines, but have some nice
+ * names for folks.
+ */
+UINT16 tpm2_util_ntoh_16(UINT16 data) {
+    return tpm2_util_hton_16(data);
+}
+
+UINT32 tpm2_util_ntoh_32(UINT32 data) {
+    return tpm2_util_hton_32(data);
+}
+UINT64 tpm2_util_ntoh_64(UINT64 data) {
+    return tpm2_util_hton_64(data);
+}
+
 static char nibble_to_char(BYTE b) {
 
-	return (b <= 9) ?
-		b + 0x30 : /* starting at 0, start returning ascii '0' */
-		b + 0x37;  /* starting at 10, start returning ascii 'A' */
+    return (b <= 9) ?
+        b + 0x30 : /* starting at 0, start returning ascii '0' */
+        b + 0x37;  /* starting at 10, start returning ascii 'A' */
 }
 
-char *string_bytes_to_hex(BYTE *bytes, UINT16 length) {
+char *tpm2_util_to_hex(BYTE *bytes, UINT16 length) {
 
-	//byte1[nibble|nibble]...\0
-	// 2 chars per byte, +2 for the prefix, + 1 for null byte;
-	char *s = malloc((2 * length) + 3);
-	if (!s) {
-		return s;
-	}
+    //byte1[nibble|nibble]...\0
+    // 2 chars per byte, +2 for the prefix, + 1 for null byte;
+    char *s = malloc((2 * length) + 3);
+    if (!s) {
+        return s;
+    }
 
-	char *curr = s;
-	curr += sprintf(curr, "0x");
+    char *curr = s;
+    curr += sprintf(curr, "0x");
 
-	UINT16 i;
-	for(i=0; i < length; i++) {
-		BYTE low = bytes[i] & 0x0F;
-		BYTE high = (bytes[i] & 0xF0) >> 4;
+    UINT16 i;
+    for(i=0; i < length; i++) {
+        BYTE low = bytes[i] & 0x0F;
+        BYTE high = (bytes[i] & 0xF0) >> 4;
 
-		char lowchar = nibble_to_char(low);
-		char highchar = nibble_to_char(high);
-		curr += sprintf(curr, "%c%c", highchar, lowchar);
-	}
+        char lowchar = nibble_to_char(low);
+        char highchar = nibble_to_char(high);
+        curr += sprintf(curr, "%c%c", highchar, lowchar);
+    }
 
-	return s;
+    return s;
 }
-

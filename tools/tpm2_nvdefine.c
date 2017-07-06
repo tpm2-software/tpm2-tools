@@ -37,11 +37,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 
 typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
 struct tpm_nvdefine_ctx {
@@ -58,7 +58,12 @@ struct tpm_nvdefine_ctx {
 static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
     TPM2B_NV_PUBLIC public_info;
-    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_COMMAND session_data = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -77,12 +82,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    session_data.sessionHandle = TPM_RS_PW;
-    session_data.nonce.t.size = 0;
-    session_data.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
-
-    bool result = password_util_to_auth(&ctx->handlePasswd, ctx->hexPasswd,
+    bool result = password_tpm2_util_to_auth(&ctx->handlePasswd, ctx->hexPasswd,
             "handle password", &session_data.hmac);
     if (!result) {
         return false;
@@ -99,7 +99,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     public_info.t.nvPublic.dataSize = ctx->size;
 
     TPM2B_AUTH nvAuth;
-    result = password_util_to_auth(&ctx->indexPasswd, ctx->hexPasswd,
+    result = password_tpm2_util_to_auth(&ctx->indexPasswd, ctx->hexPasswd,
             "index password", &nvAuth);
     if (!result) {
         return false;
@@ -146,7 +146,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             != -1) {
         switch (opt) {
         case 'x':
-            result = string_bytes_get_uint32(optarg, &ctx->nvIndex);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->nvIndex);
             if (!result) {
                 LOG_ERR("Could not convert NV index to number, got: \"%s\"",
                         optarg);
@@ -159,7 +159,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 'a':
-            result = string_bytes_get_uint32(optarg, &ctx->authHandle);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->authHandle);
             if (!result) {
                 LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
                         optarg);
@@ -172,14 +172,14 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "handle password",
+            result = password_tpm2_util_copy_password(optarg, "handle password",
                     &ctx->handlePasswd);
             if (!result) {
                 return false;
             }
             break;
         case 's':
-            result = string_bytes_get_uint32(optarg, &ctx->size);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->size);
             if (!result) {
                 LOG_ERR("Could not convert size to number, got: \"%s\"",
                         optarg);
@@ -187,7 +187,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 't':
-            result = string_bytes_get_uint32(optarg, &ctx->nvAttribute);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->nvAttribute);
             if (!result) {
                 LOG_ERR("Could not convert NV attribute to number, got: \"%s\"",
                         optarg);
@@ -195,7 +195,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 'I':
-            result = password_util_copy_password(optarg, "index password",
+            result = password_tpm2_util_copy_password(optarg, "index password",
                     &ctx->indexPasswd);
             if (!result) {
                 return false;

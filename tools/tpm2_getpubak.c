@@ -39,12 +39,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
-#include "string-bytes.h"
 #include "tpm_session.h"
 
 typedef struct getpubak_context getpubak_context;
@@ -190,7 +190,12 @@ static bool set_key_algorithm(getpubak_context *ctx, TPM2B_PUBLIC *in_public)
 static bool create_ak(getpubak_context *ctx) {
 
     TPML_PCR_SELECTION creation_pcr;
-    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_COMMAND session_data = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -226,18 +231,13 @@ static bool create_ak(getpubak_context *ctx) {
     sessions_data_out.rspAuths = &session_data_out_array[0];
     sessions_data.cmdAuths = &session_data_array[0];
 
-    session_data.sessionHandle = TPM_RS_PW;
-    session_data.nonce.t.size = 0;
-    session_data.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
-
     sessions_data.cmdAuthsCount = 1;
     sessions_data_out.rspAuthsCount = 1;
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
     creation_pcr.count = 0;
 
-    bool result = password_util_to_auth(&ctx->passwords.ak, ctx->hexPasswd, "AK",
+    bool result = password_tpm2_util_to_auth(&ctx->passwords.ak, ctx->hexPasswd, "AK",
             &inSensitive.t.sensitive.userAuth);
     if (!result) {
         return false;
@@ -248,7 +248,7 @@ static bool create_ak(getpubak_context *ctx) {
         return false;
     }
 
-    result = password_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
+    result = password_tpm2_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
             "endorse", &session_data.hmac);
     if (!result) {
         return false;
@@ -305,7 +305,7 @@ static bool create_ak(getpubak_context *ctx) {
     session_data.sessionAttributes.continueSession = 0;
     session_data.hmac.t.size = 0;
 
-    result = password_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
+    result = password_tpm2_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
             "endorse", &session_data.hmac);
     if (!result) {
         return false;
@@ -342,7 +342,7 @@ static bool create_ak(getpubak_context *ctx) {
 
     /* required output of testing scripts */
     printf("Name of loaded key: ");
-    string_bytes_print_tpm2b(&name.b);
+    tpm2_util_print_tpm2b(&name.b);
     printf("\n");
     printf("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
@@ -372,7 +372,7 @@ static bool create_ak(getpubak_context *ctx) {
     session_data.hmac.t.size = 0;
 
     // use the owner auth here.
-    result = password_util_to_auth(&ctx->passwords.owner, ctx->hexPasswd, "owner",
+    result = password_tpm2_util_to_auth(&ctx->passwords.owner, ctx->hexPasswd, "owner",
             &session_data.hmac);
     if (!result) {
         return false;
@@ -435,56 +435,56 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
             != -1) {
         switch (opt) {
         case 'E':
-            result = string_bytes_get_uint32(optarg, &ctx->persistent_handle.ek);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->persistent_handle.ek);
             if (!result) {
                 LOG_ERR("Could not convert persistent EK handle.");
                 return false;
             }
             break;
         case 'k':
-            result = string_bytes_get_uint32(optarg, &ctx->persistent_handle.ak);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->persistent_handle.ak);
             if (!result) {
                 LOG_ERR("Could not convert persistent AK handle.");
                 return false;
             }
             break;
         case 'g':
-            result = string_bytes_get_uint32(optarg, &ctx->algorithmType);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->algorithmType);
             if (!result) {
                 LOG_ERR("Could not convert algorithm.");
                 return false;
             }
             break;
         case 'D':
-            result = string_bytes_get_uint32(optarg, &ctx->digestAlg);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->digestAlg);
             if (!result) {
                 LOG_ERR("Could not convert digest algorithm.");
                 return false;
             }
             break;
         case 's':
-            result = string_bytes_get_uint32(optarg, &ctx->signAlg);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->signAlg);
             if (!result) {
                 LOG_ERR("Could not convert signing algorithm.");
                 return false;
             }
             break;
         case 'o':
-            result = password_util_copy_password(optarg, "owner",
+            result = password_tpm2_util_copy_password(optarg, "owner",
                     &ctx->passwords.owner);
             if (!result) {
                 return false;
             }
             break;
         case 'e':
-            result = password_util_copy_password(optarg, "endorse",
+            result = password_tpm2_util_copy_password(optarg, "endorse",
                     &ctx->passwords.endorse);
             if (!result) {
                 return false;
             }
             break;
         case 'P':
-            result = password_util_copy_password(optarg, "AK", &ctx->passwords.ak);
+            result = password_tpm2_util_copy_password(optarg, "AK", &ctx->passwords.ak);
             if (!result) {
                 return false;
             }
