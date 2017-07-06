@@ -42,7 +42,8 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
-#include "../lib/tpm2_util.h"
+#include "tpm2_util.h"
+#include "password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
@@ -356,7 +357,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             break;
 
         case 'P':
-            if(!tpm2_util_copy_string(optarg, &sessionData.hmac.b))
+            if(!password_tpm2_util_copy_password(optarg, "parent key", &sessionData.hmac))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -3;
