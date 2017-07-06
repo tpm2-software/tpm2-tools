@@ -66,18 +66,18 @@ struct takeownership_ctx {
 
 bool clear_hierarchy_auth(takeownership_ctx *ctx) {
 
-    TPMS_AUTH_COMMAND sessionData;
+    TPMS_AUTH_COMMAND sessionData = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TSS2_SYS_CMD_AUTHS sessionsData;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
 
     sessionDataArray[0] = &sessionData;
     sessionsData.cmdAuths = &sessionDataArray[0];
     sessionsData.cmdAuthsCount = 1;
-
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    sessionData.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
     bool result = password_tpm2_util_to_auth(&ctx->passwords.lockout.old, ctx->is_hex_passwords, "old lockout", &sessionData.hmac);
     if (!result) {
@@ -98,17 +98,18 @@ bool clear_hierarchy_auth(takeownership_ctx *ctx) {
 static bool change_hierarchy_auth(takeownership_ctx *ctx) {
 
     TPM2B_AUTH newAuth;
-    TPMS_AUTH_COMMAND sessionData;
+    TPMS_AUTH_COMMAND sessionData = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TSS2_SYS_CMD_AUTHS sessionsData;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
 
     sessionDataArray[0] = &sessionData;
     sessionsData.cmdAuths = &sessionDataArray[0];
     sessionsData.cmdAuthsCount = 1;
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-    sessionData.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &sessionData.sessionAttributes)) = 0;
 
     struct {
         TPM2B_AUTH *new_passwd;
