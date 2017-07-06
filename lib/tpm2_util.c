@@ -70,17 +70,6 @@ bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
     return true;
 }
 
-bool tpm2_util_copy_string(const char *in, TPM2B *output) {
-
-    int wrote = snprintf((char *)output->buffer, output->size, "%s", in);
-
-    /*
-     * A return from snprintf of size or more means failure per the manpage.
-     * Thus, if wrote is less than size, all is well.
-     */
-    return wrote < output->size;
-}
-
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
         BYTE *byteBuffer) {
     int strLength; //if the inStr likes "1a2b...", no prefix "0x"

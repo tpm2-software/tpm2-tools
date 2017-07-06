@@ -13,18 +13,6 @@
 #define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }
 
 
-/**
- * Copies a string to an INITIALIZED TPM2B structure.
- * @param in
- *  The string to copy.
- * @param output
- *  The buffer to copy into.
- * @return
- *  true if it can copy the whole string, including the NULL byte,
- *  false otherwise.
- */
-bool tpm2_util_copy_string(const char *in, TPM2B *output);
-
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 
 /**
