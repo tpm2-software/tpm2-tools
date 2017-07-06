@@ -190,7 +190,12 @@ static bool set_key_algorithm(getpubak_context *ctx, TPM2B_PUBLIC *in_public)
 static bool create_ak(getpubak_context *ctx) {
 
     TPML_PCR_SELECTION creation_pcr;
-    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_COMMAND session_data = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -225,11 +230,6 @@ static bool create_ak(getpubak_context *ctx) {
 
     sessions_data_out.rspAuths = &session_data_out_array[0];
     sessions_data.cmdAuths = &session_data_array[0];
-
-    session_data.sessionHandle = TPM_RS_PW;
-    session_data.nonce.t.size = 0;
-    session_data.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
 
     sessions_data.cmdAuthsCount = 1;
     sessions_data_out.rspAuthsCount = 1;
