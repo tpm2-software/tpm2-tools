@@ -58,7 +58,13 @@ struct tpm_nvreadlock_ctx {
 
 static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
 
-    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_COMMAND session_data = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
+
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -74,11 +80,6 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
 
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
-
-    session_data.sessionHandle = TPM_RS_PW;
-    session_data.nonce.t.size = 0;
-    session_data.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
 
     bool result = password_tpm2_util_to_auth(&ctx->handle_passwd, ctx->is_hex_passwd,
             "handle password", &session_data.hmac);
