@@ -41,14 +41,19 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
+#include "log.h"
+#include "tpm2_util.h"
+#include "password_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 
 TPM_HANDLE handle2048rsa;
 TPMS_AUTH_COMMAND sessionData = {
-        .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
 };
 bool hexPasswd = false;
 
@@ -57,8 +62,7 @@ load (TSS2_SYS_CONTEXT *sapi_context,
       TPMI_DH_OBJECT    parentHandle,
       TPM2B_PUBLIC     *inPublic,
       TPM2B_PRIVATE    *inPrivate,
-      const char       *outFileName,
-      int               P_flag)
+      const char       *outFileName)
 {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -77,25 +81,6 @@ load (TSS2_SYS_CONTEXT *sapi_context,
 
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
-
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-
-    if(P_flag == 0)
-        sessionData.hmac.t.size = 0;
-
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for parent Passwd.\n");
-            return -1;
-        }
-    }
 
     rval = Tss2_Sys_Load (sapi_context,
                           parentHandle,
@@ -181,7 +166,7 @@ execute_tool (int              argc,
             H_flag = 1;
             break;
         case 'P':
-            if(!tpm2_util_copy_string(optarg, &sessionData.hmac.b))
+            if(!password_tpm2_util_copy_password(optarg, "parent key", &sessionData.hmac))
             {
                 returnVal = -2;
                 break;
@@ -257,6 +242,15 @@ execute_tool (int              argc,
     if(returnVal != 0)
         return returnVal;
 
+    if (P_flag && hexPasswd) {
+        int rc = tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
+                          &sessionData.hmac.t.size,
+                          sessionData.hmac.t.buffer);
+        if (rc) {
+            LOG_ERR("Could not convert password to hex!");
+        }
+    }
+
     flagCnt = H_flag + u_flag +r_flag + n_flag + c_flag;
     if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
     {
@@ -270,8 +264,7 @@ execute_tool (int              argc,
                               parentHandle,
                               &inPublic,
                               &inPrivate,
-                              outFilePath,
-                              P_flag);
+                              outFilePath);
         }
         if (returnVal == 0 && C_flag) {
             returnVal = files_save_tpm_context_to_file (sapi_context,
