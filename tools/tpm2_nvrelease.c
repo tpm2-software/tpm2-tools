@@ -54,17 +54,19 @@ struct tpm_nvrelease_ctx {
 
 static bool nv_space_release(tpm_nvrelease_ctx *ctx) {
 
-    TPMS_AUTH_COMMAND session_data;
+    TPMS_AUTH_COMMAND session_data = {
+        .sessionHandle = TPM_RS_PW,
+        .nonce = TPM2B_EMPTY_INIT,
+        .hmac = TPM2B_EMPTY_INIT,
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    };
+
     TSS2_SYS_CMD_AUTHS sessions_data;
     TPMS_AUTH_COMMAND *session_data_array[1];
 
     session_data_array[0] = &session_data;
     sessions_data.cmdAuths = &session_data_array[0];
     sessions_data.cmdAuthsCount = 1;
-    session_data.sessionHandle = TPM_RS_PW;
-    session_data.nonce.t.size = 0;
-    session_data.hmac.t.size = 0;
-    *((UINT8 *) ((void *) &session_data.sessionAttributes)) = 0;
 
     bool result = password_tpm2_util_to_auth(&ctx->handle_passwd,
             ctx->is_hex_password, "handle password", &session_data.hmac);
