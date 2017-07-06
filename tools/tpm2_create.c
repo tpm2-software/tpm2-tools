@@ -41,14 +41,18 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
+#include "tpm2_util.h"
+#include "password_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 
 TSS2_SYS_CONTEXT *sysContext;
 TPMS_AUTH_COMMAND sessionData = {
-    .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+    .sessionHandle = TPM_RS_PW,
+    .nonce = TPM2B_EMPTY_INIT,
+    .hmac = TPM2B_EMPTY_INIT,
+    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
 };
 
 bool hexPasswd = false;
@@ -159,9 +163,6 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
 
     sessionsDataOut.rspAuthsCount = 1;
 
-    sessionData.sessionHandle = TPM_RS_PW;
-    sessionData.nonce.t.size = 0;
-
     sessionsData.cmdAuthsCount = 1;
     sessionsData.cmdAuths[0] = &sessionData;
     if (sessionData.hmac.t.size > 0 && hexPasswd)
@@ -237,13 +238,7 @@ execute_tool (int              argc,
 
     sysContext = sapi_context;
 
-    TPM2B_SENSITIVE_CREATE  inSensitive = {
-        .t = {
-            .sensitive = {
-                .userAuth = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
-            },
-        },
-    };
+    TPM2B_SENSITIVE_CREATE  inSensitive = TPM2B_EMPTY_INIT;
 
     TPM2B_PUBLIC            inPublic;
     TPMI_ALG_PUBLIC type;
@@ -306,7 +301,7 @@ execute_tool (int              argc,
             break;
 
         case 'P':
-            if(!tpm2_util_copy_string(optarg, &sessionData.hmac.b))
+            if(!password_tpm2_util_copy_password(optarg, "Parent key password", &sessionData.hmac))
             {
                 returnVal = -2;
                 break;
@@ -314,7 +309,7 @@ execute_tool (int              argc,
             P_flag = 1;
             break;
         case 'K':
-            if(!tpm2_util_copy_string(optarg, &inSensitive.t.sensitive.userAuth.b))
+            if(!password_tpm2_util_copy_password(optarg, "Key password", &inSensitive.t.sensitive.userAuth))
             {
                 returnVal = -3;
                 break;
@@ -426,8 +421,6 @@ execute_tool (int              argc,
         inSensitive.t.sensitive.userAuth.t.size = 0;
     if(L_flag == 0)
         inPublic.t.publicArea.authPolicy.t.size = 0;
-
-    *((UINT8 *)((void *)&sessionData.sessionAttributes)) = 0;
 
     flagCnt = H_flag + g_flag + G_flag + c_flag ;
     if(flagCnt == 1)
