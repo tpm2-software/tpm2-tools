@@ -294,8 +294,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             break;
         case 'P':
             ctx->password.hmac.t.size = sizeof(ctx->password.hmac.t) - 2;
-            rc = tpm2_util_string_to_byte_structure(optarg, &ctx->password.hmac.t.size,
-                    ctx->password.hmac.t.buffer);
+            rc = tpm2_util_copy_string(optarg, &ctx->password.hmac.b);
             if (rc) {
                 LOG_ERR("Could not convert password \"%s\" into byte array",
                         optarg);
@@ -306,8 +305,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
         case 'e':
             ctx->endorse_password.hmac.t.size =
                     sizeof(ctx->endorse_password.hmac.t) - 2;
-            rc = tpm2_util_string_to_byte_structure(optarg, &ctx->endorse_password.hmac.t.size,
-                    ctx->endorse_password.hmac.t.buffer);
+            rc = tpm2_util_copy_string(optarg, &ctx->endorse_password.hmac.b);
             if (rc) {
                 LOG_ERR(
                         "Could not convert endorsePassword \"%s\" into byte array",

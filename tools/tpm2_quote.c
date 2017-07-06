@@ -52,7 +52,11 @@ typedef struct {
     int size;
     UINT32 id[24];
 } PCR_LIST;
-TPMS_AUTH_COMMAND sessionData;
+
+TPMS_AUTH_COMMAND sessionData = {
+    .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+};
+
 bool hexPasswd = false;
 char outFilePath[PATH_MAX];
 TPM2B_DATA qualifyingData = {{0,}};
@@ -352,8 +356,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             break;
 
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(tpm2_util_string_to_byte_structure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            if(!tpm2_util_copy_string(optarg, &sessionData.hmac.b))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -3;
