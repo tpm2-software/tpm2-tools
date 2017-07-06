@@ -47,7 +47,9 @@
 #include "options.h"
 
 TPM_HANDLE handle2048rsa;
-TPMS_AUTH_COMMAND sessionData;
+TPMS_AUTH_COMMAND sessionData = {
+        .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+};
 bool hexPasswd = false;
 
 int
@@ -179,8 +181,7 @@ execute_tool (int              argc,
             H_flag = 1;
             break;
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(tpm2_util_string_to_byte_structure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            if(!tpm2_util_copy_string(optarg, &sessionData.hmac.b))
             {
                 returnVal = -2;
                 break;

@@ -47,7 +47,10 @@
 #include "options.h"
 
 TSS2_SYS_CONTEXT *sysContext;
-TPMS_AUTH_COMMAND sessionData;
+TPMS_AUTH_COMMAND sessionData = {
+    .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+};
+
 bool hexPasswd = false;
 
 int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag)
@@ -234,8 +237,14 @@ execute_tool (int              argc,
 
     sysContext = sapi_context;
 
-    TPM2B_SENSITIVE_CREATE  inSensitive;
-    inSensitive.t.sensitive.data.t.size = 0;
+    TPM2B_SENSITIVE_CREATE  inSensitive = {
+        .t = {
+            .sensitive = {
+                .userAuth = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+            },
+        },
+    };
+
     TPM2B_PUBLIC            inPublic;
     TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
@@ -297,8 +306,7 @@ execute_tool (int              argc,
             break;
 
         case 'P':
-            sessionData.hmac.t.size = sizeof(sessionData.hmac.t) - 2;
-            if(tpm2_util_string_to_byte_structure(optarg,&sessionData.hmac.t.size,sessionData.hmac.t.buffer) != 0)
+            if(!tpm2_util_copy_string(optarg, &sessionData.hmac.b))
             {
                 returnVal = -2;
                 break;
@@ -306,8 +314,7 @@ execute_tool (int              argc,
             P_flag = 1;
             break;
         case 'K':
-            inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth.t) - 2;
-            if(tpm2_util_string_to_byte_structure(optarg,&inSensitive.t.sensitive.userAuth.t.size, inSensitive.t.sensitive.userAuth.t.buffer) != 0)
+            if(!tpm2_util_copy_string(optarg, &inSensitive.t.sensitive.userAuth.b))
             {
                 returnVal = -3;
                 break;

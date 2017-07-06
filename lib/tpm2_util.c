@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-
 bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
 
     if (!result || !append) {
@@ -39,7 +38,7 @@ bool tpm2_util_string_to_uint16(const char *str, uint16_t *value) {
         return false;
     }
 
-    *value = (uint16_t)tmp;
+    *value = (uint16_t) tmp;
     return true;
 }
 
@@ -71,45 +70,40 @@ bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
     return true;
 }
 
-/* XXX This function looks like memcpy and can go away */
-int tpm2_util_string_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
-{
-    if(inStr == NULL || byteLength == NULL || byteBuffer == NULL)
-        return -1;
-    if(*byteLength <= strlen(inStr))
-        return -2;
+bool tpm2_util_copy_string(const char *in, TPM2B *output) {
 
-    *byteLength = strlen(inStr);
-    memcpy(byteBuffer, inStr, *byteLength);
-    byteBuffer[*byteLength] = '\0';
-    return 0;
+    int wrote = snprintf((char *)output->buffer, output->size, "%s", in);
+
+    /*
+     * A return from snprintf of size or more means failure per the manpage.
+     * Thus, if wrote is less than size, all is well.
+     */
+    return wrote < output->size;
 }
 
-int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer)
-{
-    int strLength;//if the inStr likes "1a2b...", no prefix "0x"
+int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
+        BYTE *byteBuffer) {
+    int strLength; //if the inStr likes "1a2b...", no prefix "0x"
     int i = 0;
-    if(inStr == NULL || byteLength == NULL || byteBuffer == NULL)
+    if (inStr == NULL || byteLength == NULL || byteBuffer == NULL)
         return -1;
     strLength = strlen(inStr);
-    if(strLength%2)
+    if (strLength % 2)
         return -2;
-    for(i = 0; i < strLength; i++)
-    {
-        if(!isxdigit(inStr[i]))
+    for (i = 0; i < strLength; i++) {
+        if (!isxdigit(inStr[i]))
             return -3;
     }
 
-    if(*byteLength < strLength/2)
+    if (*byteLength < strLength / 2)
         return -4;
 
-    *byteLength = strLength/2;
+    *byteLength = strLength / 2;
 
-    for(i = 0; i < *byteLength; i++)
-    {
-        char tmpStr[4] = {0};
-        tmpStr[0] = inStr[i*2];
-        tmpStr[1] = inStr[i*2+1];
+    for (i = 0; i < *byteLength; i++) {
+        char tmpStr[4] = { 0 };
+        tmpStr[0] = inStr[i * 2];
+        tmpStr[1] = inStr[i * 2 + 1];
         byteBuffer[i] = strtol(tmpStr, NULL, 16);
     }
     return 0;

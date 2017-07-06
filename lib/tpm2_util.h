@@ -10,7 +10,18 @@
 
 #define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
 
-int tpm2_util_string_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
+/**
+ * Copies a string to an INITIALIZED TPM2B structure.
+ * @param in
+ *  The string to copy.
+ * @param output
+ *  The buffer to copy into.
+ * @return
+ *  true if it can copy the whole string, including the NULL byte,
+ *  false otherwise.
+ */
+bool tpm2_util_copy_string(const char *in, TPM2B *output);
+
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 
 /**
