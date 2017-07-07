@@ -1,13 +1,21 @@
+dist: trusty
+# This is a lie: we don't need sudo but this is required to get an
+# Ubuntu image with a libc that isn't ancient, and with cmocka libs.
+sudo: required
+
 language: c
 compiler:
   - gcc
 
-# This is a lie: we don't need sudo but this is required to get an
-# Ubuntu image with a libc that isn't ancient, and with cmocka libs.
-sudo: required
-dist: trusty
-
 addons:
+  coverity_scan:
+    project:
+      name: "01org/tpm2.0-tools"
+      description: "Build submitted via Travis CI"
+    notification_email: william.c.roberts@intel.com
+    build_command_prepend: "./configure; make clean"
+    build_command:   "make -j4"
+    branch_pattern: coverity_scan
   apt:
     packages:
     - autoconf-archive
@@ -16,6 +24,15 @@ addons:
     - libcurl4-openssl-dev
     - libdbus-1-dev
     - libglib2.0-dev
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "RL61KKDlkyCIE6ZTV9HxnVIcrb5fsNQBKbq7d9vN7QqzAKbd1qedr7kzWZ+DMTi3F1e562DAzNPwNTN6KoLtXx0PxM3ETj1q/O1F5mk22gakLRpZAt0OowCEscSuzcMXdEcVxlNVB4Q3OM2OVJHgwJmh/pB05hx76xIfrrGkl+A8jc4zfjaHtUaTMFKUmeSuKwvTcMylbMVhCfuE9ALtvn6LssZ/roTQhsQ4f78X6grUKHvtQbXzQemTxjZD1mpmjGPlTAU9AnAvb8DmVmWNWyf3uNVElHeeplYLhiDkWPomm84oBH8Npxl+GRmvvmAsuCOkfE0AoC7WL4cFzvsFQ7iZcioF6MFoQH+QVZCvsRPRzxs36tJUXteNJZm4PBnpPpgnrRYx0VqMZ4CQLqZVPwlZUB0VC9amM1xYO/QRETV1XfcS7GqGH+G3hXR3ApyYPX2gLl8fy1M1RawdIGKOZXTo44pBOM1iws+Hrc2rqg5NFamfT4FIO1O9z3kHVEkh5AlTyYa7HJ5iuUb8ilyzZ7MI0Xlw4CJYNgzF/3TGk0cFMghJ/YY0Zd5CoVkBK31ENJ06k21DfuD4xyFVz4HpZJzcoJufkbXSc9HbGNKWgxAEzQrUDDQk9zaPzUe4hTVFYc3mQLKO/FPo+OQ/xxOsZIVAqYZD7xtbX+c6cBVFdks="
+
+before_install:
+    - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 install: 
     - wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm532.tar
