@@ -55,7 +55,7 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_PUBLIC outPublic = { { 0, } };
+    TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
     TPM2B_NAME qualifiedName = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 

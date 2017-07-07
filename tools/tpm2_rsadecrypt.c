@@ -50,7 +50,7 @@ struct tpm_rsadecrypt_ctx {
     TPMI_DH_OBJECT key_handle;
     TPMS_AUTH_COMMAND session_data;
     TPM2B_PUBLIC_KEY_RSA cipher_text;
-    char output_file_path[PATH_MAX];
+    char *output_file_path;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -101,14 +101,17 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
       { NULL,          no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT8 k : 1;
-        UINT8 P : 1;
-        UINT8 I : 1;
-        UINT8 c : 1;
-        UINT8 o : 1;
-        UINT8 unused : 3;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 k : 1;
+            UINT8 P : 1;
+            UINT8 I : 1;
+            UINT8 c : 1;
+            UINT8 o : 1;
+            UINT8 unused : 3;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     if (argc == 1) {
         showArgMismatch(argv[0]);
@@ -155,8 +158,7 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->output_file_path, sizeof(ctx->output_file_path), "%s",
-                    optarg);
+            ctx->output_file_path = optarg;
             flags.o = 1;
         }
             break;
@@ -204,9 +206,9 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_rsadecrypt_ctx ctx = {
             .key_handle = 0,
-            .cipher_text = {{ 0 }},
-            .output_file_path = { 0 },
-            .session_data = { 0 },
+            .cipher_text = TPM2B_EMPTY_INIT,
+            .output_file_path = NULL,
+            .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
             .sapi_context = sapi_context
     };
 

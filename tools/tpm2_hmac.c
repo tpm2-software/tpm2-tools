@@ -115,15 +115,18 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         {NULL,          no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT8 k : 1;
-        UINT8 P : 1;
-        UINT8 g : 1;
-        UINT8 I : 1;
-        UINT8 o : 1;
-        UINT8 c : 1;
-        UINT8 unused : 2;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 k : 1;
+            UINT8 P : 1;
+            UINT8 g : 1;
+            UINT8 I : 1;
+            UINT8 o : 1;
+            UINT8 c : 1;
+            UINT8 unused : 2;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     /*
      * argc should be bound by the maximum and minimum option count.
@@ -248,7 +251,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void)envp;
 
     tpm_hmac_ctx ctx = {
-            .session_data = { 0 },
+            .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
             .key_handle = 0,
             .sapi_context = sapi_context
     };

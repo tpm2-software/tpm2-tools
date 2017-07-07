@@ -100,12 +100,15 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         return false;
     }
 
-    struct {
-        UINT8 H : 1;
-        UINT8 o : 1;
-        UINT8 c : 1;
-        UINT8 P : 1;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 H : 1;
+            UINT8 o : 1;
+            UINT8 c : 1;
+            UINT8 P : 1;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     int opt;
     bool hexPasswd = false;
@@ -191,11 +194,9 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) envp;
 
     tpm_unseal_ctx ctx = {
-            .sessionData = { 0 },
+            .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
             .sapi_context = sapi_context
     };
-
-    ctx.sessionData.sessionHandle = TPM_RS_PW;
 
     bool result = init(argc, argv, &ctx);
     if (!result) {

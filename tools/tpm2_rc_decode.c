@@ -65,7 +65,7 @@ process_cmdline (int   argc,
     static struct option long_options[] = {
         { "help", 0 , NULL, 'h' },
         { "version", 0, NULL, 'v' },
-        { 0 }
+        { .name = NULL }
     };
     while ((opt = getopt_long (argc, argv, optstring, long_options, NULL)) != -1)
     {

@@ -148,15 +148,15 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
     TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
 
-    TPM2B_DATA outsideInfo = { { 0, } };
+    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION creationPCR;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_PUBLIC outPublic = { { 0, } };
-    TPM2B_CREATION_DATA creationData = { { 0, } };
+    TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
+    TPM2B_CREATION_DATA creationData = TPM2B_EMPTY_INIT;
     TPM2B_DIGEST creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMT_TK_CREATION creationTicket = { 0, };
+    TPMT_TK_CREATION creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
     TPM_HANDLE handle2048ek;
 

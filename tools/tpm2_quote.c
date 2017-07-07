@@ -60,7 +60,7 @@ TPMS_AUTH_COMMAND sessionData = {
 
 bool hexPasswd = false;
 char outFilePath[PATH_MAX];
-TPM2B_DATA qualifyingData = {{0,}};
+TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 TPML_PCR_SELECTION  pcrSelections;
 
 void PrintBuffer( UINT8 *buffer, UINT32 size )

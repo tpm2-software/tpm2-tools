@@ -97,13 +97,16 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
       {NULL,          no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT8 A : 1;
-        UINT8 H : 1;
-        UINT8 S : 1;
-        UINT8 c : 1;
-        UINT8 P : 1;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 A : 1;
+            UINT8 H : 1;
+            UINT8 S : 1;
+            UINT8 c : 1;
+            UINT8 P : 1;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     char contextFile[PATH_MAX];
 
@@ -211,8 +214,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_evictcontrol_ctx ctx = {
             .auth = 0,
-            .handle = { 0 },
-            .session_data = { 0 },
+            .handle = { .object = 0, .persist = 0 },
+            .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
             .sapi_context = sapi_context
     };
 

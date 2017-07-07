@@ -146,14 +146,14 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_DATA              outsideInfo = { { 0, } };
+    TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION      creationPCR;
-    TPM2B_PUBLIC            outPublic = { { 0, } };
+    TPM2B_PUBLIC            outPublic = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE           outPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
-    TPM2B_CREATION_DATA     creationData = { { 0, } };
+    TPM2B_CREATION_DATA     creationData = TPM2B_EMPTY_INIT;
     TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMT_TK_CREATION        creationTicket = { 0, };
+    TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;

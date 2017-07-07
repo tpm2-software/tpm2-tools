@@ -202,12 +202,12 @@ static bool create_ak(getpubak_context *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_DATA outsideInfo = { { 0, } };
-    TPM2B_PUBLIC out_public = {{ 0, } };
-    TPM2B_NONCE nonce_caller = { { 0, } };
-    TPMT_TK_CREATION creation_ticket = { 0, };
-    TPM2B_CREATION_DATA creation_data = { { 0, } };
-    TPM2B_ENCRYPTED_SECRET encrypted_salt = { { 0, } };
+    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
+    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
+    TPM2B_NONCE nonce_caller = TPM2B_EMPTY_INIT;
+    TPMT_TK_CREATION creation_ticket = TPMT_TK_CREATION_EMPTY_INIT;
+    TPM2B_CREATION_DATA creation_data = TPM2B_EMPTY_INIT;
+    TPM2B_ENCRYPTED_SECRET encrypted_salt = TPM2B_EMPTY_INIT;
 
     TPMT_SYM_DEF symmetric = {
             .algorithm = TPM_ALG_NULL,

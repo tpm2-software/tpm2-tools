@@ -45,9 +45,7 @@ static bool nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
 
     TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NV_PUBLIC nv_public = {
-            { 0, }
-    };
+    TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
 
     TPM_RC rval = Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, 0, &nv_public,
             &nv_name, 0);

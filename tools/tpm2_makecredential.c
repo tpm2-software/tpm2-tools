@@ -45,11 +45,19 @@
 #include "main.h"
 #include "options.h"
 
+#define tpm_makecred_ctx_empty_init { \
+		.rsa2048_handle = 0, \
+		.object_name = TPM2B_EMPTY_INIT, \
+		.out_file_path = NULL, \
+        .public = TPM2B_EMPTY_INIT, \
+        .credential = TPM2B_EMPTY_INIT, \
+    }
+
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
     TPM_HANDLE rsa2048_handle;
     TPM2B_NAME object_name;
-    char out_file_path[PATH_MAX];
+    char *out_file_path;
     TPM2B_PUBLIC public;
     TPM2B_DIGEST credential;
 };
@@ -173,8 +181,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
             flagCnt++;
             break;
         case 'o':
-            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
-                    optarg);
+            ctx->out_file_path = optarg;
             if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
             }
@@ -207,7 +214,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
     (void) envp;
 
-    tpm_makecred_ctx ctx = { 0 };
+    tpm_makecred_ctx ctx = tpm_makecred_ctx_empty_init;
     bool result = init(argc, argv, &ctx);
     if (!result) {
         LOG_ERR("Initialization failed");

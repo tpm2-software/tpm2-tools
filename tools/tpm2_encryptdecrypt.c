@@ -115,16 +115,19 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
       {NULL,          no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT8 k : 1;
-        UINT8 P : 1;
-        UINT8 D : 1;
-        UINT8 I : 1;
-        UINT8 o : 1;
-        UINT8 c : 1;
-        UINT8 X : 1;
-        UINT8 unused : 1;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 k : 1;
+            UINT8 P : 1;
+            UINT8 D : 1;
+            UINT8 I : 1;
+            UINT8 o : 1;
+            UINT8 c : 1;
+            UINT8 X : 1;
+            UINT8 unused : 1;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     char *contextKeyFile = NULL;
 
@@ -234,9 +237,9 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) envp;
 
     tpm_encrypt_decrypt_ctx ctx = {
-        .session_data = { 0 },
+        .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
         .is_decrypt = NO,
-        .data = {{ 0 }},
+        .data = TPM2B_EMPTY_INIT,
         .sapi_context = sapi_context
     };
 

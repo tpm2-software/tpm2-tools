@@ -277,7 +277,12 @@ get_common_opts (int                    *argc_param,
             .flag    = NULL,
             .val     = 'v',
         },
-        { NULL },
+        {
+            .name = NULL,
+            .has_arg = no_argument,
+            .flag = NULL,
+            .val = '\0'
+        },
     };
     /*
      * Start by populating the provided common_opts_t structure with data
