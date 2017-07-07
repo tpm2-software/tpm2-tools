@@ -120,11 +120,14 @@ static bool init(int argc, char *argv[], tpm_loadexternal_ctx *ctx) {
       { NULL,       no_argument,       NULL, '\0' }
     };
 
-    struct {
-        UINT8 H : 1;
-        UINT8 u : 1;
-        UINT8 unused : 6;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 H : 1;
+            UINT8 u : 1;
+            UINT8 unused : 6;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     if(argc == 1) {
         showArgMismatch(argv[0]);

@@ -57,7 +57,7 @@ struct tpm_nvread_ctx {
 
 static bool nv_read(tpm_nvread_ctx *ctx) {
 
-    TPMS_AUTH_COMMAND session_data = { 0 };
+    TPMS_AUTH_COMMAND session_data = TPMS_AUTH_COMMAND_EMPTY_INIT;
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -205,7 +205,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .auth_handle = TPM_RH_PLATFORM,
             .size_to_read = 0,
             .offset = 0,
-            .handle_passwd = {{ 0 }},
+            .handle_passwd = TPM2B_EMPTY_INIT,
             .is_hex_password = false,
             .sapi_context = sapi_context
     };

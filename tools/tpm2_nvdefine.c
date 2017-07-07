@@ -228,8 +228,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .authHandle = TPM_RH_PLATFORM,
             .size = 0,
             .nvAttribute = 0,
-            .handlePasswd = {{ 0 }},
-            .indexPasswd = {{ 0 }},
+            .handlePasswd = TPM2B_EMPTY_INIT,
+            .indexPasswd = TPM2B_EMPTY_INIT,
             .hexPasswd = false,
             .sapi_context = sapi_context
         };

@@ -75,9 +75,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
             .rspAuths = session_data_out_array
     };
 
-    TPM2B_PUBLIC out_public = {
-            { 0, }
-    };
+    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
@@ -224,18 +222,21 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
       {NULL,           no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT16 H : 1;
-        UINT16 k : 1;
-        UINT16 P : 1;
-        UINT16 K : 1;
-        UINT16 g : 1;
-        UINT16 a : 1;
-        UINT16 s : 1;
-        UINT16 C : 1;
-        UINT16 c : 1;
-        UINT16 unused : 7;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT16 H : 1;
+            UINT16 k : 1;
+            UINT16 P : 1;
+            UINT16 K : 1;
+            UINT16 g : 1;
+            UINT16 a : 1;
+            UINT16 s : 1;
+            UINT16 C : 1;
+            UINT16 c : 1;
+            UINT16 unused : 7;
+        };
+        UINT16 all;
+    } flags = { .all = 0 };
 
 
     if (argc == 1) {

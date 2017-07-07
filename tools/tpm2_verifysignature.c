@@ -49,15 +49,18 @@
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
-    struct {
-        uint8_t key_handle :1;
-        uint8_t digest :1;
-        uint8_t halg :1;
-        uint8_t msg :1;
-        uint8_t raw :1;
-        uint8_t sig :1;
-        uint8_t ticket :1;
-        uint8_t key_context :1;
+    union {
+        struct {
+            uint8_t key_handle :1;
+            uint8_t digest :1;
+            uint8_t halg :1;
+            uint8_t msg :1;
+            uint8_t raw :1;
+            uint8_t sig :1;
+            uint8_t ticket :1;
+            uint8_t key_context :1;
+        };
+        uint8_t all;
     } flags;
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST msgHash;
@@ -344,7 +347,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     int normalized_return_code = 1;
 
     tpm2_verifysig_ctx ctx = {
-            .flags = { 0 },
+            .flags = { .all = 0 },
             .halg = TPM_ALG_SHA256,
             .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
             .sig_file_path = NULL,

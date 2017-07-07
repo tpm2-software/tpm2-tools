@@ -72,9 +72,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
             &session_data_out_array[0]
     };
 
-    TPM2B_PUBLIC out_public = {
-            { 0, }
-    };
+    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
@@ -192,16 +190,19 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         return false;
     }
 
-    struct {
-        UINT8 k : 1;
-        UINT8 P : 1;
-        UINT8 g : 1;
-        UINT8 m : 1;
-        UINT8 t : 1;
-        UINT8 s : 1;
-        UINT8 c : 1;
-        UINT8 unused : 1;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 k : 1;
+            UINT8 P : 1;
+            UINT8 g : 1;
+            UINT8 m : 1;
+            UINT8 t : 1;
+            UINT8 s : 1;
+            UINT8 c : 1;
+            UINT8 unused : 1;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     int opt;
     bool hexPasswd = false;
@@ -352,10 +353,10 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_sign_ctx ctx = {
             .msg = NULL,
-            .sessionData = { 0 },
+            .sessionData = TPMS_AUTH_COMMAND_EMPTY_INIT,
             .halg = 0,
             .keyHandle = 0,
-            .validation = { 0 },
+            .validation = TPMT_TK_HASHCHECK_EMPTY_INIT,
             .sapi_context = sapi_context
     };
 

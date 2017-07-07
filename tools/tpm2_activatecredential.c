@@ -160,13 +160,9 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         1, &cmd_session_array_endorse[0]
     };
 
-    TPM2B_ENCRYPTED_SECRET encryptedSalt = {
-        { 0, }
-    };
+    TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
 
-    TPM2B_NONCE nonceCaller = {
-        { 0, }
-    };
+    TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
 
     TPMT_SYM_DEF symmetric = {
         .algorithm = TPM_ALG_NULL

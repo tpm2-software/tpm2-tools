@@ -162,11 +162,10 @@ TPM_RC build_pcr_policy(createpolicypcr_ctx *ctx) {
 TPM_RC build_policy(createpolicypcr_ctx *ctx,
         TPM_RC (*build_policy_function)(createpolicypcr_ctx *ctx)) {
     // NOTE:  this policy_session will be a trial policy session
-    TPM2B_ENCRYPTED_SECRET encryptedSalt = { { 0 }, };
+    TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
     TPMT_SYM_DEF symmetric = { .algorithm = TPM_ALG_NULL, };
 
-    TPM2B_NONCE nonceCaller = { { 0, } };
-    nonceCaller.t.size = 0;
+    TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
 
     // Start policy session.
     TPM_RC rval = tpm_session_start_auth_with_params(ctx->sapi_context,

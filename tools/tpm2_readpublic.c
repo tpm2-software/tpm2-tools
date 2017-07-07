@@ -60,9 +60,7 @@ static int read_public_and_save(tpm_readpub_ctx *ctx) {
     TSS2_SYS_RSP_AUTHS sessions_out_data;
     TPMS_AUTH_RESPONSE *session_out_data_array[1];
 
-    TPM2B_PUBLIC public = {
-            { 0, }
-    };
+    TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
@@ -106,12 +104,15 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
         {NULL,            no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT8 H      : 1;
-        UINT8 o      : 1;
-        UINT8 c      : 1;
-        UINT8 unused : 5;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 H      : 1;
+            UINT8 o      : 1;
+            UINT8 c      : 1;
+            UINT8 unused : 5;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     if (argc == 1) {
         showArgMismatch(argv[0]);

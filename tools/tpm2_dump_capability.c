@@ -35,6 +35,7 @@
 #include <tcti/tcti_socket.h>
 
 #include "main.h"
+#include "tpm2_util.h"
 
 /* convenience macro to convert flags into "set" / "clear" strings */
 #define prop_str(val) val ? "set" : "clear"
@@ -548,7 +549,7 @@ get_capability_opts (int                  argc,
             .flag    = NULL,
             .val     = 'c',
         },
-        { NULL, },
+        { .name = NULL, },
     };
     while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
            != -1)
@@ -612,7 +613,7 @@ execute_tool (int               argc,
     (void) envp;
 
     TSS2_RC              rc;
-    TPMS_CAPABILITY_DATA capability_data = { 0, };
+    TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
     int ret;
     capability_opts_t options = {
         .capability_string = NULL,
