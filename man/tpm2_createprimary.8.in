@@ -59,7 +59,7 @@ Supported options are:
   '0x4' for TPM_ALG_SHA1
   '0xB' for TPM_ALG_SHA256
   '0xC' for TPM_ALG_SHA384
-  '0xD' for TPM_ALG_SHA256
+  '0xD' for TPM_ALG_SHA512
   '0x12' for TPM_ALG_SM3_256
 .br
 \fBNOTE\fR: Your TPM may not support all algorithms.
