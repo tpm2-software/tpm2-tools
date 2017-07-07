@@ -1,6 +1,7 @@
-language: cpp
+language: c
 compiler:
   - gcc
+  - clang
 
 # This is a lie: we don't need sudo but this is required to get an
 # Ubuntu image with a libc that isn't ancient, and with cmocka libs.
@@ -25,7 +26,9 @@ install:
     - popd && popd
     - git clone https://github.com/01org/TPM2.0-TSS.git
     - pushd TPM2.0-TSS
-    - ./bootstrap && ./configure && make -j$(nproc) && sudo make install && popd
+    - ./bootstrap && ./configure && make -j$(nproc)
+    - sudo ../.ci/travis-tss-install.sh
+    - popd
     - sudo ldconfig /usr/local/lib
     - git clone https://github.com/01org/tpm2-abrmd.git
     - pushd tpm2-abrmd
