@@ -343,8 +343,9 @@ static const UINT32 MAGIC = 0xBADCC0DE;
 static bool writex(FILE *f, UINT8 *data, size_t size) {
 
     size_t wrote = 0;
+    size_t index = 0;
     do {
-        wrote = fwrite(&data[wrote], 1, size, f);
+        wrote = fwrite(&data[index], 1, size, f);
         if (wrote != size) {
             if (errno != EINTR) {
                 return false;
@@ -352,6 +353,7 @@ static bool writex(FILE *f, UINT8 *data, size_t size) {
             /* continue on EINTR */
         }
         size -= wrote;
+        index += wrote;
     } while (size > 0);
 
     return true;
@@ -371,8 +373,9 @@ static bool writex(FILE *f, UINT8 *data, size_t size) {
 static bool readx(FILE *f, UINT8 *data, size_t size) {
 
     size_t bread = 0;
+    size_t index = 0;
     do {
-        bread = fread(&data[bread], 1, size, f);
+        bread = fread(&data[index], 1, size, f);
         if (bread != size) {
             if (feof(f) || (errno != EINTR)) {
                 return false;
@@ -380,6 +383,7 @@ static bool readx(FILE *f, UINT8 *data, size_t size) {
             /* continue on EINTR */
         }
         size -= bread;
+        index += bread;
     } while (size > 0);
 
     return true;
