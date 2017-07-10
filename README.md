@@ -2,6 +2,8 @@
 
 **This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on TPM2.0-TSS**
 
+TEST TEST
+
 ## News
 * Release Canidate 2.1.0-rc0 is posted: https://github.com/01org/tpm2.0-tools/releases/tag/2.1.0-rc0
 * A mailing list now exists for support: https://lists.01.org/mailman/listinfo/tpm2
