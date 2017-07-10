@@ -347,10 +347,16 @@ execute_tool (int              argc,
             break;
         case 'I':
             inSensitive.t.sensitive.data.t.size = sizeof(inSensitive.t.sensitive.data) - 2;
-            if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer, &inSensitive.t.sensitive.data.t.size))
-            {
-                returnVal = -7;
-                break;
+            if (!strcmp(optarg, "-")) {
+                if (!files_load_bytes_from_stdin(inSensitive.t.sensitive.data.t.buffer,
+                                                 &inSensitive.t.sensitive.data.t.size)) {
+                    returnVal = -7;
+                    break;
+                }
+            } else if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer,
+                                               &inSensitive.t.sensitive.data.t.size)) {
+                    returnVal = -7;
+                    break;
             }
             I_flag = 1;
             printf("inSensitive.t.sensitive.data.t.size = %d\n",inSensitive.t.sensitive.data.t.size);

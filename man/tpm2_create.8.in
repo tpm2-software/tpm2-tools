@@ -63,7 +63,7 @@ algorithm associated with this object  0x0001 TPM_ALG_RSA   0x0008 TPM_ALG_KEYED
 object attributes, optional
 .TP
 \fB\-I ,\-\-inFile\fR
-data file to be sealed, optional
+data file to be sealed, optional. If file is -, read from stdin.
 .TP
 \fB\-L ,\-\-pol\fR
 the input policy file, optional
