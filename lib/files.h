@@ -24,6 +24,21 @@
 bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size);
 
 /**
+ * Reads a series of bytes from the standard input as a byte array. This is similar to
+ * files_read_bytes(), but it calculates the size to read for the caller. Size is both
+ * an input and output value where the size value is the max buffer size on call and
+ * the returned size is how much was read.
+ *
+ * @param buf
+ *  The buffer to read the data into
+ * @param size
+ *  The max size of the buffer on call, and the size of the data read on return.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool files_load_bytes_from_stdin(UINT8 *buf, UINT16 *size);
+
+/**
  * Similar to files_write_bytes(), in that it writes an array of bytes to disk,
  * but this routine opens and closes the file on the callers behalf.
  * @param path

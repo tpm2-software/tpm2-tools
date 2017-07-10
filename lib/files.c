@@ -37,8 +37,35 @@ static bool get_file_size(FILE *fp, long *file_size, const char *path) {
     return true;
 }
 
-bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size) {
+static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
+                                 const char *path) {
+    long file_size;
+    bool result = get_file_size(f, &file_size, path);
+    if (!result) {
+        /* get_file_size() logs errors */
+        return false;
+    }
 
+    /* max is bounded on UINT16 */
+    if (file_size > *size) {
+        LOG_ERR(
+                "File \"%s\" size is larger than buffer, got %ld expected less than %u",
+                path, file_size, *size);
+        return false;
+    }
+
+    result = files_read_bytes(f, buf, file_size);
+    if (!result) {
+        LOG_ERR("Could not read data from file \"%s\"", path);
+        return false;
+    }
+
+    *size = file_size;
+
+    return true;
+}
+
+bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size) {
     if (!buf || !size || !path) {
         return false;
     }
@@ -49,33 +76,18 @@ bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size) {
         return false;
     }
 
-    long file_size;
-    bool result = get_file_size(f, &file_size, path);
-    if (!result) {
-        /* get_file_size() logs errors */
-        goto err;
-    }
+    bool result = read_bytes_from_file(f, buf, size, path);
 
-    /* max is bounded on UINT16 */
-    if (file_size > *size) {
-        LOG_ERR(
-                "File \"%s\" size is larger than buffer, got %ld expected less than %u",
-                path, file_size, *size);
-        goto err;
-    }
-
-    result = files_read_bytes(f, buf, file_size);
-    if (!result) {
-        LOG_ERR("Could not read data from file \"%s\"", path);
-        goto err;
-    }
-
-    *size = file_size;
-    /* result set on files_read_bytes */
-
-err:
     fclose(f);
     return result;
+}
+
+bool files_load_bytes_from_stdin(UINT8 *buf, UINT16 *size) {
+    if (!buf || !size) {
+        return false;
+    }
+
+    return read_bytes_from_file(stdin, buf, size, "stdin");
 }
 
 bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
