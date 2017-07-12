@@ -61,3 +61,26 @@ for pCtx in `ls ctx.cpri*`
     done
 done
 
+echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
+| xxd -r -p > policy.bin
+
+tpm2_createprimary -A o -g 0xb -C prim.ctx -G 0x1
+if [ $? != 0 ];then
+ echo "create primary failed"
+ exit 1
+fi
+
+tpm2_create -c prim.ctx -g 0xb -G 0x1 -L policy.bin -o key.pub -O key.priv -E
+if [ $? != 0 ];then
+ echo "create object failed"
+ exit 1
+fi
+
+cmp -i 4:0 -n 32 key.pub policy.bin -s
+if [ $? != 0 ];then
+ echo "tpm2_create_error: Policy digest did not match in auth structure" >> create.error.log
+ exit 1
+fi 
+
+rm -f prim.ctx policy.bin key.priv key.pub
+exit 0
