@@ -57,7 +57,7 @@ TPMS_AUTH_COMMAND sessionData = {
 
 bool hexPasswd = false;
 
-int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag)
+int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag, bool is_policy_enforced)
 {
     switch(nameAlg)
     {
@@ -77,7 +77,8 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, in
     // First clear attributes bit field.
     *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
     inPublic->t.publicArea.objectAttributes.restricted = 0;
-    inPublic->t.publicArea.objectAttributes.userWithAuth = 1;
+    //check if auth policy needs to be enforced
+    inPublic->t.publicArea.objectAttributes.userWithAuth = !is_policy_enforced;        
     inPublic->t.publicArea.objectAttributes.decrypt = 1;
     inPublic->t.publicArea.objectAttributes.sign = 1;
     inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
@@ -137,7 +138,7 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, in
     return 0;
 }
 
-int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, const char *opuFilePath, const char *oprFilePath, int o_flag, int O_flag, int I_flag, int A_flag, UINT32 objectAttributes)
+int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, const char *opuFilePath, const char *oprFilePath, int o_flag, int O_flag, int I_flag, int A_flag, UINT32 objectAttributes, bool is_policy_enforced)
 {
     TPM_RC rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -190,7 +191,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     }
     inSensitive->t.size = inSensitive->t.sensitive.userAuth.b.size + 2;
 
-    if(setAlg(type, nameAlg, inPublic, I_flag))
+    if(setAlg(type, nameAlg, inPublic, I_flag, is_policy_enforced))
         return -1;
 
     if(A_flag == 1)
@@ -253,7 +254,7 @@ execute_tool (int              argc,
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:X";
+    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:XE";
     static struct option long_options[] = {
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
@@ -262,7 +263,8 @@ execute_tool (int              argc,
       {"kalg",1,NULL,'G'},
       {"objectAttributes",1,NULL,'A'},
       {"inFile",1,NULL,'I'},
-      {"policyFile",1,NULL,'L'},
+      {"policy-file",1,NULL,'L'},
+      {"enforce-policy",1,NULL,'E'},
       {"opu",1,NULL,'o'},
       {"opr",1,NULL,'O'},
       {"contextParent",1,NULL,'c'},
@@ -283,8 +285,8 @@ execute_tool (int              argc,
         L_flag = 0,
         o_flag = 0,
         c_flag = 0,
-        O_flag = 0/*,
-        f_flag = 0*/;
+        O_flag = 0;
+	bool is_policy_enforced = false;
 
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
@@ -364,6 +366,9 @@ execute_tool (int              argc,
             }
             L_flag = 1;
             break;
+        case 'E':
+            is_policy_enforced = true;
+            break;
         case 'o':
             snprintf(opuFilePath, sizeof(opuFilePath), "%s", optarg);
             if(files_does_file_exist(opuFilePath) != 0)
@@ -433,7 +438,7 @@ execute_tool (int              argc,
         if(c_flag)
             returnVal = file_load_tpm_context_from_file(sysContext, &parentHandle, contextParentFilePath) != true;
         if(returnVal == 0)
-            returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes);
+            returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes, is_policy_enforced);
 
         if(returnVal)
             return -17;

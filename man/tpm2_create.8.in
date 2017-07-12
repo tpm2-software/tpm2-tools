@@ -31,7 +31,7 @@
 tpm2_create\ - create an object that can be loaded into a TPM using tpm2_load. The object
 will need to be loaded before it may be used.
 .SH SYNOPSIS
-.B tpm2_create[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-kalg\fR|\fB\-\-objectAttribute\fR|\fB\-\-inFile\fR|\fB\-\-pol\fR|\fB\-\-opu\fR|\fB\-\-opr\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_create[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-kalg\fR|\fB\-\-objectAttribute\fR|\fB\-\-inFile\fR|\fB\-\-policy\-file\fR|\fB\-\-enforce-policy\fR|\fB\-\-opu\fR|\fB\-\-opr\fR|\fB\-\-passwdInHex\fR|\fB ]
 .PP
 create an object that can be loaded into a TPM using tpm2_load. The object
 will need to be loaded before it may be used.
@@ -65,8 +65,11 @@ object attributes, optional
 \fB\-I ,\-\-inFile\fR
 data file to be sealed, optional
 .TP
-\fB\-L ,\-\-pol\fR
+\fB\-L ,\-\-policy\-file\fR
 the input policy file, optional
+.TP
+\fB\-E ,\-\-enforce-policy\fR
+Enforce policy based authorization on the object.
 .TP
 \fB\-o ,\-\-opu\fR
 the output file which contains the public key,  optional 
