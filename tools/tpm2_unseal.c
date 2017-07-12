@@ -79,8 +79,13 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
         return false;
     }
 
-    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) outData.t.buffer,
-            outData.t.size);
+    if (ctx->outFilePath) {
+        return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *)
+                                        outData.t.buffer, outData.t.size);
+    } else {
+        return files_write_bytes(stdout, (UINT8 *) outData.t.buffer,
+                                 outData.t.size);
+    }
 }
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
@@ -103,7 +108,6 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     union {
         struct {
             UINT8 H : 1;
-            UINT8 o : 1;
             UINT8 c : 1;
             UINT8 P : 1;
         };
@@ -140,7 +144,6 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
                 return false;
             }
             ctx->outFilePath = optarg;
-            flags.o = 1;
         }
             break;
         case 'c':
@@ -162,8 +165,8 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
     }
 
-    if (!((flags.H || flags.c) && flags.o)) {
-        LOG_ERR("Expected options (H or c) and o");
+    if (!(flags.H || flags.c)) {
+        LOG_ERR("Expected options H or c");
         return false;
     }
 
