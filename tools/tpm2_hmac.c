@@ -208,7 +208,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     }
 
     /*
-     * Options g, i, o must be specified and k or c must be specified.
+     * Options g, I, o must be specified and k or c must be specified.
      */
     if (!((flags.k || flags.c) && flags.I && flags.o && flags.g)) {
         LOG_ERR("Must specify options g, i, o and k or c");
