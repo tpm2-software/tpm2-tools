@@ -30,51 +30,52 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 #!/bin/bash
+
  nv_test_index=0x1500018
  nv_auth_handle=0x40000001
 
 tpm2_takeownership -c 
  if [ $? != 0 ];then 
-	echo "clean ownership Fail!"
-	exit 1
+ echo "clean ownership Fail!"
+ exit 1
  fi
 tpm2_nvlist|grep -i $nv_test_index
 if [ $? = 0 ];then
 tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle 
  if [ $? != 0 ];then 
-	echo "please release the nv index $nv_test_index first!"
-	exit 1
+ echo "please release the nv index $nv_test_index first!"
+ exit 1
  fi
 fi
 
 tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s 32 -t 0x2000A  
 if [ $? != 0 ];then 
-echo "nvdefine fail,Please check your environment!"
-exit 1
+ echo "nvdefine fail,Please check your environment!"
+ exit 1
 fi
 
 
 if [ ! -f nv.test_w ];then
-echo "please123abc" >nv.test_w
+ echo "please123abc" >nv.test_w
 fi
 
 tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle  -f nv.test_w 
 if [ $? != 0 ];then 
-echo "nvwrite fail!"
-exit 1
+ echo "nvwrite fail!"
+ exit 1
 fi
 
 tpm2_nvread -x $nv_test_index -a $nv_auth_handle  -s 32 -o 0
 
 if [ $? != 0 ];then 
-echo "nvread fail!"
-exit 1
+ echo "nvread fail!"
+ exit 1
 fi
 
 tpm2_nvlist|grep -i $nv_test_index
 if [ $? != 0 ];then 
-echo "nvlist  fail or double check the define index!"
-exit 1
+ echo "nvlist  fail or double check the define index!"
+ exit 1
 fi
 
 tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle  
@@ -85,3 +86,35 @@ if [ $? != 0 ];then
 else
  echo "release the nv index OK!"
 fi
+
+
+echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
+| xxd -r -p > policy.bin
+
+tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -L policy.bin -r -w
+if [ $? != 0 ];then
+ echo "Failed tpm2_nvdefine"
+ exit 1
+fi
+
+tpm2_nvlist | grep 0x1500016 -A5 | grep Auth | grep -o ": [a-zA-Z0-9]\{1,\}" | \
+grep -o "[a-zA-Z0-9]\{1\}" | xxd -r -p >test.bin
+if [ $? != 0 ];then
+ echo "Failed tpm2_nvlist"
+ exit 1
+fi
+
+cmp test.bin policy.bin -s
+if [ $? != 0 ];then
+ echo "nvdefine with policy in authorization structure failed"
+ exit 1
+fi
+
+tpm2_nvrelease -x 0x1500016 -a 0x40000001
+if [ $? != 0 ];then
+ echo "nvrelease failed"
+ exit 1
+fi
+
+rm -f policy.bin test.bin nv.test_w
+exit 0
