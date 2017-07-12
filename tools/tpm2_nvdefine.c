@@ -34,10 +34,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <getopt.h>
+#include <limits.h>
 
 #include <sapi/tpm20.h>
 
 #include "../lib/tpm2_util.h"
+#include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
@@ -53,11 +55,16 @@ struct tpm_nvdefine_ctx {
     TPM2B_AUTH indexPasswd;
     bool hexPasswd;
     TSS2_SYS_CONTEXT *sapi_context;
+    bool enforce_read_policy;
+    bool enforce_write_policy;
+    bool enforce_delete_policy;
+    bool policy_file_flag;
+    char *policy_file;
 };
 
 static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
-    TPM2B_NV_PUBLIC public_info;
+    TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
     TPMS_AUTH_COMMAND session_data = {
         .sessionHandle = TPM_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
@@ -95,7 +102,17 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
     // Now set the attributes.
     public_info.t.nvPublic.attributes.val = ctx->nvAttribute;
-    public_info.t.nvPublic.authPolicy.t.size = 0;
+    public_info.t.nvPublic.attributes.TPMA_NV_POLICYREAD = ctx->enforce_read_policy;
+    public_info.t.nvPublic.attributes.TPMA_NV_POLICYWRITE = ctx->enforce_write_policy;
+    public_info.t.nvPublic.attributes.TPMA_NV_POLICY_DELETE = ctx->enforce_delete_policy;
+
+    if (ctx->policy_file_flag) {
+        public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
+        if(!files_load_bytes_from_file(ctx->policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
+            return false;
+        }
+    } 
+
     public_info.t.nvPublic.dataSize = ctx->size;
 
     TPM2B_AUTH nvAuth;
@@ -123,14 +140,18 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
 
     struct option long_options[] = {
-        { "index"       , required_argument, NULL, 'x' },
-        { "authHandle"  , required_argument, NULL, 'a' },
-        { "size"        , required_argument, NULL, 's' },
-        { "attribute"   , required_argument, NULL, 't' },
-        { "handlePasswd", required_argument, NULL, 'P' },
-        { "indexPasswd" , required_argument, NULL, 'I' },
-        { "passwdInHex" , no_argument,       NULL, 'X' },
-        { NULL          , no_argument,       NULL,  0  },
+        { "index",                  required_argument,  NULL,   'x' },
+        { "authHandle",             required_argument,  NULL,   'a' },
+        { "size",                   required_argument,  NULL,   's' },
+        { "attribute",              required_argument,  NULL,   't' },
+        { "handlePasswd",           required_argument,  NULL,   'P' },
+        { "indexPasswd",            required_argument,  NULL,   'I' },
+        { "passwdInHex",            no_argument,        NULL,   'X' },
+        { "policy-file",            required_argument,  NULL,   'L' },
+        { "enforce-read-policy",    no_argument,        NULL,   'r' },
+        { "enforce-write-policy",   no_argument,        NULL,   'w' },
+        { "enforce-delete-policy",  no_argument,        NULL,   'd' },
+        { NULL,                     no_argument,        NULL,    0  },
     };
 
     if (argc <= 1 || argc > MAX_ARG_CNT) {
@@ -140,7 +161,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
 
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:s:t:P:I:X", long_options, NULL))
+    while ((opt = getopt_long(argc, argv, "x:a:s:t:P:I:rwdL:X", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'x':
@@ -202,6 +223,19 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
         case 'X':
             ctx->hexPasswd = true;
             break;
+        case 'L':
+            ctx->policy_file = optarg;
+            ctx->policy_file_flag = true;
+            break;
+        case 'r':
+            ctx->enforce_read_policy = true;
+            break;
+        case 'w':
+            ctx->enforce_write_policy = true;
+            break;
+        case 'd':
+            ctx->enforce_delete_policy = true;
+            break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
@@ -231,7 +265,11 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .handlePasswd = TPM2B_EMPTY_INIT,
             .indexPasswd = TPM2B_EMPTY_INIT,
             .hexPasswd = false,
-            .sapi_context = sapi_context
+            .sapi_context = sapi_context,
+            .enforce_read_policy = false,
+            .enforce_write_policy = false,
+            .enforce_delete_policy = false,
+            .policy_file_flag = false
         };
 
         bool result = init(argc, argv, &ctx);

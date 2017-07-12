@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_nvdefine\ - Define NV index with given auth value, if passwd not given, assume NULL
 .SH SYNOPSIS
-.B tpm2_nvdefine[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-size\fR|\fB\-\-attribute\fR|\fB\-\-handlePasswd\fR|\fB\-\-indexPasswd\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_nvdefine[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-size\fR|\fB\-\-attribute\fR|\fB\-\-handlePasswd\fR|\fB\-\-indexPasswd\fR|\fB\-\-passwdInHex\fR|\fB\fB\-\-policy-file\fR|\fB\-\-enforce\-read\-policy\fR|\fB\-\-enforce\-write\-policy\fR|\fB\-\-enforce\-delete\-policy\fR| ]
 .PP
 Define NV index with given auth value, if passwd not given, assume NULL
 .SH DESCRIPTION
@@ -58,6 +58,19 @@ specifies the password of NV Index when  created.
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format
+.TP
+\fB\-L ,\-\-policy\-file\fR
+Specifies the policy digest file for policy based authorizations.
+.TP
+\fB\-r ,\-\-enforce\-read\-policy\fR
+Enforce policy based authorization for reading the NV index
+.TP
+\fB\-w ,\-\-enforce\-write\-policy\fR
+Enforce policy based authorization for writing the NV index
+.TP
+\fB\-d ,\-\-enforce\-delete\-policy\fR
+Enforce policy based authorization for deleting the NV index. 
+Caution with using this option - If policy is not satisfied the index cannot be deleted.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@

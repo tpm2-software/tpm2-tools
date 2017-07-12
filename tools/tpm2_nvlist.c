@@ -60,7 +60,12 @@ static bool nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
             nv_public.t.nvPublic.attributes.val);
     printf("\tThe size of the data area(dataSize):%d\n ",
             nv_public.t.nvPublic.dataSize);
-    printf("  }\n");
+    printf("\tAuthorization Policy for R/W/D: ");
+    int i;
+    for(i=0; i<nv_public.t.nvPublic.authPolicy.t.size; i++) {
+        printf("%02X", nv_public.t.nvPublic.authPolicy.t.buffer[i] );
+    }
+    printf("\n  }\n");
 
     return true;
 }
