@@ -49,7 +49,7 @@ typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
     TPMS_AUTH_COMMAND sessionData;
     TPMI_DH_OBJECT itemHandle;
-    char outFilePath[PATH_MAX];
+    char *outFilePath;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -139,7 +139,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            ctx->outFilePath = optarg;
             flags.o = 1;
         }
             break;
