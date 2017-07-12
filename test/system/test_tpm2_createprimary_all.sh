@@ -36,7 +36,6 @@ gAlg=
 GAlg=
 
 rm createprimary.error.log rf
-
 for gAlg in 0x04 0x0B 0x0C 0x0D 0x12
     do 
         for GAlg in 0x01 0x08 0x23 0x25
@@ -52,3 +51,25 @@ for gAlg in 0x04 0x0B 0x0C 0x0D 0x12
         done
 done
 
+#test for createprimary objects with policy authorization structures
+echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
+| xxd -r -p > policy.bin
+
+tpm2_createprimary  -A o -G 0x1 -g 0xb -E -C prim.ctx -L policy.bin
+if [ $? != 0 ];then
+ exit 1
+fi
+
+tpm2_readpublic -c prim.ctx -o testprim.pub
+if [ $? != 0 ];then
+ exit 1
+fi
+
+cmp -i 14:0 -n 32 testprim.pub policy.bin -s
+if [ $? != 0 ];then
+ echo "Failed: createprimary with policy authorization structure" >> createprimary.error.log
+ exit 1
+fi
+
+rm -f prim.ctx policy.bin testprim.pub
+exit 0
