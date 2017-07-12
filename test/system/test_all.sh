@@ -49,7 +49,7 @@ test_wrapper()
   else
     echo -e "\033[31m $1 Fail \033[0m"
     let "fail++"
-    fail_summary="$fail_summary\n$1"
+    fail_summary="$fail_summary"$'\n'"$1"
   fi
 
   # Scripts are sloppy, perform cleanup
@@ -94,6 +94,7 @@ echo -e "\033[32m Tests passed: $pass \033[0m"
 echo -e "\033[31m Tests Failed: $fail  \033[0m"
 
 if [ $fail -gt 0 ]; then
+  echo "Fail summary:"
   echo -e "$fail_summary"
 fi
 
