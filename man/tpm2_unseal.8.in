@@ -48,7 +48,7 @@ filename for item context
 item handle password, optional
 .TP
 \fB\-o ,\-\-outfile\fR
-Output file name, containing the unsealed data
+Output file name, containing the unsealed data. Defaults to stdout if not specified.
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format.
