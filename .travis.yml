@@ -13,7 +13,7 @@ addons:
       name: "01org/tpm2.0-tools"
       description: "Build submitted via Travis CI"
     notification_email: william.c.roberts@intel.com
-    build_command_prepend: "./configure; make clean"
+    build_command_prepend: "./bootstrap && ./configure && make clean"
     build_command:   "make -j4"
     branch_pattern: coverity_scan
   apt:
@@ -60,28 +60,5 @@ install:
     - sudo dpkg -i libcmocka0_1.0.1-2_amd64.deb
     - sudo dpkg -i libcmocka-dev_1.0.1-2_amd64.deb
 
-before_script:
-  - ./bootstrap
-
 script:
-  - mkdir ./build
-  - pushd ./build
-  - ../configure --enable-unit
-  - make -j$(nproc)
-  - make -j$(nproc) check
-  - make -j$(nproc) clean
-  - ../configure --enable-unit --without-tcti-tabrmd
-  - make -j$(nproc)
-  - make -j$(nproc) check
-  - make -j$(nproc) clean
-  - ../configure --enable-unit --without-tcti-socket
-  - make -j$(nproc)
-  - make -j$(nproc) check
-  - make -j$(nproc) clean
-  - ../configure --enable-unit --without-tcti-device
-  - make -j$(nproc)
-  - make -j$(nproc) check
-  - popd
-  - pushd ./test/system
-  - PATH=$(pwd)/../../build/tools:${PATH} ./test_all.sh
-  - popd
+    - ./.ci/travis-build-and-run-tests.sh
