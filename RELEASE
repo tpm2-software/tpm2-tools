@@ -1,6 +1,21 @@
 
 Release Instructions
 
+The general release process will be to fork a branch at each major release followed by a ".X".
+For example, the major version 2 branches will be 2.X. Release canidates, will be tagged, signed
+and pushed to github, and marked under releases as "pre-release", starting with rc0. The release
+notes on github will contain the CHANGELOG contents for the running rc series.
+
+An example can be found here:
+ * https://github.com/01org/tpm2.0-tools/releases/tag/2.1.0-rc0
+
+Release candidates will also be announced on the mailing list. When a rc has gone 1
+week without new changes, a release will be conducted.
+
+When a release is cut, the process is the same as an rc, with the exception that it is
+not marked as "pre-release" on github. The release notes should include everything from
+the last release to the latest release.
+
 Version Information
 
 Releases shall be tagged following semantic version guidelines found at:
