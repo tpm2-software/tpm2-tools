@@ -75,7 +75,8 @@ echo "unseal fail, please check the environment or parameters!"
 exit 1
 fi
 
-if [ ! cmp -s $file_unseal_output_data $file_input_data ]; then
+cmp -s $file_unseal_output_data $file_input_data
+if [ $? != 0 ]; then
     echo "unseal fail, output differs from sealed data!"
     exit 1
 fi
