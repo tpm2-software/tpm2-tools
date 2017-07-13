@@ -52,7 +52,7 @@ struct tpm_sign_ctx {
     TPMS_AUTH_COMMAND sessionData;
     TPMI_DH_OBJECT keyHandle;
     TPMI_ALG_HASH halg;
-    char outFilePath[PATH_MAX];
+    char *outFilePath;
     BYTE *msg;
     UINT16 length;
     TSS2_SYS_CONTEXT *sapi_context;
@@ -206,8 +206,8 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
 
     int opt;
     bool hexPasswd = false;
-    char contextKeyFile[PATH_MAX];
-    char inMsgFileName[PATH_MAX];
+    char *contextKeyFile = NULL;
+    char *inMsgFileName = NULL;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'k': {
@@ -240,7 +240,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         }
             break;
         case 'm':
-            snprintf(inMsgFileName, sizeof(inMsgFileName), "%s", optarg);
+            inMsgFileName = optarg;
             flags.m = 1;
             break;
         case 't': {
@@ -258,12 +258,12 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            ctx->outFilePath = optarg;
             flags.s = 1;
         }
             break;
         case 'c':
-            snprintf(contextKeyFile, sizeof(contextKeyFile), "%s", optarg);
+            contextKeyFile = optarg;
             flags.c = 1;
             break;
         case 'X':
