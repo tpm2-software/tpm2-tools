@@ -49,8 +49,8 @@ struct tpm_hash_ctx {
     TPMI_RH_HIERARCHY hierarchyValue;
     TPM2B_MAX_BUFFER data;
     TPMI_ALG_HASH  halg;
-    char outHashFilePath[PATH_MAX];
-    char outTicketFilePath[PATH_MAX];
+    char *outHashFilePath;
+    char *outTicketFilePath;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -177,8 +177,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             break;
         case 'o':
             flags++;
-            snprintf(ctx->outHashFilePath, sizeof(ctx->outHashFilePath), "%s",
-                    optarg);
+            ctx->outHashFilePath = optarg;
             res = files_does_file_exist(ctx->outHashFilePath);
             if (res) {
                 return false;
@@ -186,8 +185,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             break;
         case 't':
             flags++;
-            snprintf(ctx->outTicketFilePath, sizeof(ctx->outTicketFilePath),
-                    "%s", optarg);
+            ctx->outTicketFilePath = optarg;
             res = files_does_file_exist(ctx->outTicketFilePath);
             if (res) {
                 return false;
