@@ -53,15 +53,15 @@
 #include "options.h"
 #include "tpm_hash.h"
 
-char outputFile[PATH_MAX];
-char ownerPasswd[sizeof(TPMU_HA)];
-char endorsePasswd[sizeof(TPMU_HA)];
-char ekPasswd[sizeof(TPMU_HA)];
+char *outputFile;
+char *ownerPasswd;
+char *endorsePasswd;
+char *ekPasswd;
 bool hexPasswd = false;
 TPM_HANDLE persistentHandle;
 UINT32 algorithmType = TPM_ALG_RSA;
 
-char ECcertFile[PATH_MAX];
+char *ECcertFile;
 char *EKserverAddr = NULL;
 unsigned int nonPersistentRead = 0;
 unsigned int SSL_NO_VERIFY = 0;
@@ -532,47 +532,47 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'H':
                     if (!tpm2_util_string_to_uint32(optarg, &persistentHandle)) {
                         printf("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
-                        goto out;
+                        return return_val;
                     }
                     break;
 
                 case 'e':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
-                        goto out;
+                        return return_val;
                     }
-                    snprintf(endorsePasswd, sizeof(endorsePasswd), "%s", optarg);
+                    endorsePasswd = optarg;
                     break;
 
                 case 'o':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         printf("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
-                        goto out;
+                        return return_val;
                     }
-                    snprintf(ownerPasswd, sizeof(ownerPasswd), "%s", optarg);
+                    ownerPasswd = optarg;
                     break;
 
                 case 'P':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         printf("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
-                        goto out;
+                        return return_val;
                     }
-                    snprintf(ekPasswd, sizeof(ekPasswd), "%s", optarg);
+                    ekPasswd = optarg;
                     break;
 
                 case 'g':
                     if (!tpm2_util_string_to_uint32(optarg, &algorithmType)) {
                         printf("\nPlease input the algorithm type in correct format.\n");
-                        goto out;
+                        return return_val;
                     }
                     break;
 
                 case 'f':
                     if (optarg == NULL ) {
                         printf("\nPlease input the file used to save the pub ek.\n");
-                        goto out;
+                        return return_val;
                     }
-                    snprintf(outputFile, sizeof(outputFile), "%s", optarg);
+                    outputFile = optarg;
                     break;
 
                 case 'X':
@@ -582,9 +582,9 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'E':
                     if (optarg == NULL ) {
                         printf("\nPlease input the file used to save the EC Certificate retrieved from server\n");
-                        goto out;
+                        return return_val;
                     }
-                    snprintf(ECcertFile, sizeof(ECcertFile), "%s", optarg);
+                    ECcertFile = optarg;
                     break;
                 case 'N':
                     nonPersistentRead = 1;
@@ -601,13 +601,9 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'S':
                     if (EKserverAddr) {
                         printf("Multiple specifications of -S\n");
-                        goto out;
+                        return return_val;
                     }
-                    EKserverAddr = strdup(optarg);
-                    if (EKserverAddr == NULL) {
-                        LOG_ERR ("Memory allocation failed.");
-                        goto out;
-                    }
+                    EKserverAddr = optarg;
                     printf("TPM Manufacturer EK provisioning address -- %s\n", EKserverAddr);
                     break;
             }
@@ -626,13 +622,8 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     if (return_val && provisioning_return_val) {
-        goto out;
+        return return_val;
     }
 
-    return_val = 0;
-
-out:
-    free(EKserverAddr);
-
-    return return_val;
+    return 0;
 }
