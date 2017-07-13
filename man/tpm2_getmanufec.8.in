@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_getmanufec\ - Retrieve the Endorsement Credential Certificate for the TPM endorsement key from the TPM manufacturer's endorsement certificate hosting server
 .SH SYNOPSIS
-.B tpm2_getmanufec[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-endorsePasswd\fR|\fB\-\-ownerPasswd\fR|\fB\-\-ekPasswd\fR|\fB\-\-handle\fR|\fB\-\-alg\fR|\fB\-\-file\fR|\fB\-\-NonPersistent\fR|\fB\-\-OfflineProv\fR|\fB\-\-ECcertFile\fR|\fB\-\-EKserverAddr\fR|\fB\-\-SSL_NO_VERIFY\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_getmanufec[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-endorsePasswd\fR|\fB\-\-ownerPasswd\fR|\fB\-\-ekPasswd\fR|\fB\-\-handle\fR|\fB\-\-alg\fR|\fB\-\-file\fR|\fB\-\-NonPersistent\fR|\fB\-\-OfflineProv\fR|\fB\-\-ECcertFile\fR|\fB\-\-EKserverAddr\fR|\fB\-\-SSL_NO_VERIFY\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB ]
 .PP
 Retrieve the Endorsement Credential Certificate for the TPM endorsement key from the TPM manufacturer's endorsement certificate hosting server
 .SH DESCRIPTION
@@ -72,7 +72,10 @@ specifies to attempt retrieving the  Endorsement Credentials from the specified 
 specifies to attempt connecting with the  TPM manufacturer provisioning server with   SSL_NO_VERIFY option 
 .TP
 \fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex  format 
+passwords given by any options are hex  format
+.TP
+\fB\-i ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
