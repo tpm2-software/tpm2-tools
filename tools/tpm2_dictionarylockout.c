@@ -54,6 +54,8 @@ struct dictionarylockout_ctx {
     bool setup_parameters;
     bool use_passwd;
     TSS2_SYS_CONTEXT *sapi_context;
+    TPMI_SH_AUTH_SESSION auth_session_handle;
+    bool is_session_based_auth;
 };
 
 bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
@@ -61,6 +63,9 @@ bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
     //Command Auths
     TPMS_AUTH_COMMAND sessionData = { .sessionHandle = TPM_RS_PW,
             .nonce.t.size = 0, .hmac.t.size = 0, .sessionAttributes.val = 0 };
+    if (ctx->is_session_based_auth) {
+        sessionData.sessionHandle = ctx->auth_session_handle;
+    }
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     sessionDataArray[0] = &sessionData;
 
@@ -121,13 +126,14 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
         { "lockout-recovery-time", required_argument, NULL, 'l' }, 
         { "lockout-passwd", required_argument, NULL, 'P' }, 
         { "clear-lockout", no_argument, NULL, 'c' }, 
-        { "setup-parameters", no_argument, NULL, 's' }, 
+        { "setup-parameters", no_argument, NULL, 's' },
+        { "input-session-handle",required_argument,NULL,'S'}, 
         { NULL, no_argument, NULL, 0 }, 
     };
 
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "n:t:l:P:cs", long_options, NULL))
+    while ((opt = getopt_long(argc, argv, "n:t:l:P:S:cs", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'c':
@@ -175,6 +181,14 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
                 return false;
             }
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 return false;
+             }
+             ctx->is_session_based_auth = true;
+             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
