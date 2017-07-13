@@ -48,7 +48,7 @@
 typedef struct tpm_random_ctx tpm_random_ctx;
 struct tpm_random_ctx {
     bool output_file_specified;
-    char output_file[PATH_MAX];
+    char *output_file;
     UINT16 num_of_bytes;
     TSS2_SYS_CONTEXT *sapi_context;
 };
@@ -99,7 +99,7 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
         switch (opt) {
         case 'o':
             ctx->output_file_specified = true;
-            snprintf(ctx->output_file, sizeof(ctx->output_file), "%s", optarg);
+            ctx->output_file = optarg;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -132,7 +132,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     tpm_random_ctx ctx = {
             .output_file_specified = false,
             .num_of_bytes = 0,
-            .output_file = { 0 },
+            .output_file = NULL,
             .sapi_context = sapi_context
     };
 
