@@ -46,7 +46,7 @@
 
 typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {
-    char context_file_path[PATH_MAX];
+    char *context_file_path;
     TPMI_RH_HIERARCHY hierarchy_value;
     TPM_HANDLE rsa2048_handle;
     TPM2B_PUBLIC public_key;
@@ -164,7 +164,7 @@ static bool init(int argc, char *argv[], tpm_loadexternal_ctx *ctx) {
             ctx->has_private_key = true;
         } break;
         case 'C':
-            snprintf(ctx->context_file_path, sizeof(ctx->context_file_path), "%s", optarg);
+            ctx->context_file_path = optarg;
             ctx->save_to_context_file = true;
             break;
         case ':':
