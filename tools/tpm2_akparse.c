@@ -47,8 +47,8 @@
 
 typedef struct tpm_akparse_ctx tpm_akparse_ctx;
 struct tpm_akparse_ctx {
-    char ak_data_file_path[PATH_MAX];
-    char ak_key_file_path[PATH_MAX];
+    char *ak_data_file_path;
+    char *ak_key_file_path;
 };
 
 static bool is_big_endian() {
@@ -191,14 +191,14 @@ static bool init(int argc, char *argv[], tpm_akparse_ctx *ctx) {
                 LOG_ERR("Please input the file that used to be parsed.");
                 return false;
             }
-            snprintf(ctx->ak_data_file_path, sizeof(ctx->ak_data_file_path), "%s", optarg);
+            ctx->ak_data_file_path = optarg;
             break;
         case 'k':
             if (!optarg) {
                 LOG_ERR("Please input the file that used to save ak key.");
                 return false;
             }
-            snprintf(ctx->ak_key_file_path, sizeof(ctx->ak_key_file_path), "%s", optarg);
+            ctx->ak_key_file_path = optarg;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
