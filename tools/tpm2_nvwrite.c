@@ -54,7 +54,7 @@ struct tpm_nvwrite_ctx {
     UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
     TPM2B_AUTH handle_passwd;
     bool hex_passwd;
-    char input_file[PATH_MAX];
+    char *input_file;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -173,7 +173,7 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
             }
             break;
         case 'f':
-            snprintf(ctx->input_file, sizeof(ctx->input_file), "%s", optarg);
+            ctx->input_file = optarg;
             break;
         case 'P':
             result = password_tpm2_util_copy_password(optarg, "handle password",
