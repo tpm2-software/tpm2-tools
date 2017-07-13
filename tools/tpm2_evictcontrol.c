@@ -86,7 +86,7 @@ static int evict_control(tpm_evictcontrol_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
 
-    const char *optstring = "A:H:S:P:c:X";
+    const char *optstring = "A:H:S:P:c:i:X";
     static struct option long_options[] = {
       {"auth",        required_argument, NULL, 'A'},
       {"handle",      required_argument, NULL, 'H'},
@@ -94,6 +94,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
       {"pwda",        required_argument, NULL, 'P'},
       {"context",     required_argument, NULL, 'c'},
       {"passwdInHex", no_argument,       NULL, 'X'},
+      {"input-session-handle",1,         NULL, 'i'},
       {NULL,          no_argument,       NULL, '\0'}
     };
 
@@ -171,6 +172,13 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         case 'X':
             is_hex_passwd = true;
             break;
+        case 'i':
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 return false;
+             }
+             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
