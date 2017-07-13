@@ -31,7 +31,7 @@
 .SH NAME
 tpm2_createprimary \- Create a primary key under a primary seed or a temporary primary key under the TPM_RH_NULL hierarchy.
 .SH SYNOPSIS
-.B tpm2_createprimary [\fBCOMMON OPTIONS\fR] [\fBTCTI OPTIONS\fR] [\fB\-A\fR|\fB\-\-auth\fR=][o|p|e|n] [\fB\-P\fR|\fB\-\-pwdp\fB=][string] [\fB\-K\fR|\fB\-\-pwdk\fR=][string] [\fB\-g\fR|\fB\-\-halg\fR=][0x4|0xB|0xC|0xD|0x12] [\fB\-G\fR|\fB\-\-kalg\fR=][0x1|0x8|0x23|0x25] [\fB\-C\fR|\fB\-\-context\fR=][filepath] [\fB\-X\fR|\fB\-\-passwdInHex\fR] [\fB\-L\fR|\fB\-\-policy-file\fR=][filepath] [\fB\-E\fR|\fB\-\-enforce\-policy\fR]
+.B tpm2_createprimary [\fBCOMMON OPTIONS\fR] [\fBTCTI OPTIONS\fR] [\fB\-A\fR|\fB\-\-auth\fR=][o|p|e|n] [\fB\-P\fR|\fB\-\-pwdp\fB=][string] [\fB\-K\fR|\fB\-\-pwdk\fR=][string] [\fB\-g\fR|\fB\-\-halg\fR=][0x4|0xB|0xC|0xD|0x12] [\fB\-G\fR|\fB\-\-kalg\fR=][0x1|0x8|0x23|0x25] [\fB\-C\fR|\fB\-\-context\fR=][filepath] [\fB\-X\fR|\fB\-\-passwdInHex\fR] [\fB\-L\fR|\fB\-\-policy-file\fR=][filepath] [\fB\-E\fR|\fB\-\-enforce\-policy\fR] [\fB\-S\fR|\fB\-\-input\-session\-handle\fR]
 .PP
 .SH DESCRIPTION
 This command is used to create a Primary Object under one of the Primary Seeds or a Temporary Object under TPM_RH_NULL. The command uses a TPM2B_PUBLIC as a template for the object to be created. The command will create and load a Primary Object. The sensitive area is not returned.
@@ -84,6 +84,9 @@ An optional file input that contains the policy digest for policy based authoriz
 .TP
 \fB\-E\fR,\ \fB\-\-enforce\-policy\fR
 Option to enforce policy based authorization on the created primary object.
+.TP
+\fB\-S\fR,\ \fB\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT
