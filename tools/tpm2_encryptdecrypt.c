@@ -53,7 +53,7 @@ struct tpm_encrypt_decrypt_ctx {
     TPMI_YES_NO is_decrypt;
     TPMI_DH_OBJECT key_handle;
     TPM2B_MAX_BUFFER data;
-    char out_file_path[PATH_MAX];
+    char *out_file_path;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -143,14 +143,14 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             if (!result) {
                 LOG_ERR("Could not convert keyhandle to number, got: \"%s\"",
                         optarg);
-                goto out;
+                return result;
             }
             flags.k = 1;
             break;
         case 'P':
             result = password_tpm2_util_copy_password(optarg, "key", &ctx->session_data.hmac);
             if (!result) {
-                goto out;
+                return result;
             }
             flags.P = 1;
             break;
@@ -161,36 +161,31 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
                 ctx->is_decrypt = NO;
             } else {
                 showArgError(optarg, argv[0]);
-                goto out;
+                return result;
             }
             break;
         case 'I':
             ctx->data.t.size = sizeof(ctx->data) - 2;
             result = files_load_bytes_from_file(optarg, ctx->data.t.buffer, &ctx->data.t.size);
             if (!result) {
-                goto out;
+                return result;
             }
             flags.I = 1;
             break;
         case 'o':
             result = files_does_file_exist(optarg);
             if (result) {
-                goto out;
+                return result;
             }
-            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
-                    optarg);
+            ctx->out_file_path = optarg;
             flags.o = 1;
             break;
         case 'c':
             if (contextKeyFile) {
                 LOG_ERR("Multiple specifications of -c");
-                goto out;
+                return result;
             }
-            contextKeyFile = strdup(optarg);
-            if (!contextKeyFile) {
-                LOG_ERR("OOM");
-                goto out;
-            }
+            contextKeyFile = optarg;
             flags.c = 1;
             break;
         case 'X':
@@ -198,35 +193,30 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
-            goto out;
+            return result;
         case '?':
             LOG_ERR("Unknown Argument: %c\n", optopt);
-            goto out;
+            return result;
         default:
             LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
-            goto out;
+            return result;
         }
     }
 
     if (!((flags.k || flags.c) && flags.I && flags.o)) {
         LOG_ERR("Invalid arguments");
-        goto out;
+        return result;
     }
 
     if (flags.c) {
         result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle, contextKeyFile);
         if (!result) {
-            goto out;
+            return result;
         }
     }
 
-    result = password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd, "key",
+    return password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd, "key",
             &ctx->session_data.hmac);
-
-out:
-    free(contextKeyFile);
-
-    return result;
 }
 
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
