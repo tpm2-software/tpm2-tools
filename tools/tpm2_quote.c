@@ -59,7 +59,7 @@ TPMS_AUTH_COMMAND sessionData = {
 };
 
 bool hexPasswd = false;
-char outFilePath[PATH_MAX];
+char *outFilePath;
 TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 TPML_PCR_SELECTION  pcrSelections;
 
@@ -394,7 +394,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             L_flag = 1;
             break;
         case 'o':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
+            outFilePath = optarg;
             if(files_does_file_exist(outFilePath))
             {
                 showArgError(optarg, argv[0]);
