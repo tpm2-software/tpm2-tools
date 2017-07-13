@@ -246,8 +246,8 @@ execute_tool (int              argc,
     TPMI_ALG_HASH nameAlg;
     TPMI_DH_OBJECT parentHandle;
     UINT32 objectAttributes = 0;
-    char opuFilePath[PATH_MAX] = {0};
-    char oprFilePath[PATH_MAX] = {0};
+    char *opuFilePath = NULL;
+    char *oprFilePath = NULL;
     char *contextParentFilePath = NULL;
 
     setbuf(stdout, NULL);
@@ -376,7 +376,7 @@ execute_tool (int              argc,
             is_policy_enforced = true;
             break;
         case 'o':
-            snprintf(opuFilePath, sizeof(opuFilePath), "%s", optarg);
+            opuFilePath = optarg;
             if(files_does_file_exist(opuFilePath) != 0)
             {
                 returnVal = -9;
@@ -385,7 +385,7 @@ execute_tool (int              argc,
             o_flag = 1;
             break;
         case 'O':
-            snprintf(oprFilePath, sizeof(oprFilePath), "%s", optarg);
+            oprFilePath = optarg;
             if(files_does_file_exist(oprFilePath) != 0)
             {
                 returnVal = -10;
