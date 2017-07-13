@@ -41,7 +41,7 @@ pcr_index=0
 for halg in 0x4 0xb
 do
     hash=${hash_name[${halg}]}
-    tpm2_createpolicy -f policy.file -P -i ${pcr_index} -g ${halg}
+    tpm2_createpolicy -f policy.file -P -L ${halg}:${pcr_index} 
     if [ $? != 0 ];then
         echo "createpolicy command failed, please check the environment or parameters!"
         exit 1

@@ -28,35 +28,42 @@
 .\" THE POSSIBILITY OF SUCH DAMAGE.
 .TH tpm2_createpolicy 8 "February 2017" Intel "tpm2.0-tools"
 .SH NAME
-tpm2_createpolicy\ - Creates simple assertion authorization policies based on pcr values at index or values supplied for single pcr index.
+tpm2_createpolicy\ - Creates simple assertion authorization policies based on multiple pcr indices values across multiple enabled banks.
 .SH SYNOPSIS
-.B tpm2_createpolicy[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-policy-file\fR|\fB\-\-policy-pcr\fR|\fB\-\-pcr-index\fR|\fB\-\-pcr-alg\fR|\fB\-\-pcr-input-file\fR|\fB]
-.PP
-Creates simple assertion authorization policies based on pcr values at index or values supplied for single pcr index.
+.B tpm2_createpolicy [\fBCOMMON OPTIONS\fR] [\fBTCTI OPTIONS\fR] [\fB\-f\fR|\fB-\-policy-file\fR=][filepath] [\fB\-P\fR|\fB-\-policy-pcr\fR] [\fB\-g\fR|\fB-\-policy-digest-alg\fR=][0x4|0xB|0xC|0xD|0x12] [\fB\-L\fR|\fB-\-set-list\fR=][string] [\fB\-F\fR|\fB\-pcr-input-file\fR=][filepath] [\fB\-e\fR|\fB\-\-extend-policy-session\fR|\fB] [\fB\-a\fR|\fB\-\-auth-policy-session\fR|\fB]
 .SH DESCRIPTION
-.B tpm2_createpolicy
-Creates simple assertion authorization policies based on pcr values at index or values supplied for single pcr index. It can then be used with object creation and or tools using the object.
+Creates simple assertion authorization policies based on multiple pcr indices values across multiple enabled banks. It can then be used with object creation and or tools using the object.
 .SH OPTIONS
 .TP
-\fB\-f ,\-\-policy-file\fR
-File to save the created policy digest. 
+\fB\-f\fR,\ \fB\-\-policy-file\fR=[filepath]
+File to save the policy digest. 
 .TP
-\fB\-P ,\-\-policy-pcr\fR
+\fB\-P\fR,\ \fB\-\-policy-pcr\fR
 Identifies the PCR policy type for policy creation.
 .TP
-\fB\-i ,\-\-pcr-index\fR
-Index of the PCR that is refered for policy creation.
+\fB\-g\fR,\ \fB\-\-policy-digest-alg\fR=[0x4|0xB|0xC|0xD|0x12]
+Hash algorithm used in computation of the policy digest.
+.br
+Supported options are:
+  '0x4' for TPM_ALG_SHA1
+  '0xB' for TPM_ALG_SHA256
+  '0xC' for TPM_ALG_SHA384
+  '0xD' for TPM_ALG_SHA512
+  '0x12' for TPM_ALG_SM3_256
+.br
+\fBNOTE\fR: Your TPM may not support all algorithms.
 .TP
-\fB\-g ,\-\-pcr-alg\fR
-Algorithm of the PCR that is refered for policy creation.
-0x4::SHA1
-0xB::SHA256
-0xC::SHA384
-0xD::SHA512
-0x12::SM3256
+\fB\-L\fR,\ \fB\-\-set-list\fR=[string]
+The list of pcr banks and selected PCRs' ids   (0~23) for each bank 
 .TP
-\fB\-F ,\-\-pcr-input-file\fR
-Path or Name of the file containing expected pcr values for the specified index.
+\fB\-F\fR,\ \fB\-\-pcr-input-file\fR=[filepath]
+Optional Path or Name of the file containing expected pcr values for the specified index. Default is to read the current PCRs per the set list.
+.TP
+\fB\-e\fR,\ \fB\-\-extend-policy-session\fR
+Retains the policy session at the end of operation.
+.TP
+\fB\-a\fR,\ \fB\-\-auth-policy-session\fR
+Start a policy session of type TPM_SE_POLICY. Default without this option is TPM_SE_TRIAL
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
@@ -66,7 +73,6 @@ Path or Name of the file containing expected pcr values for the specified index.
 .nf
 .RS
 Create a authorization policy tied to a specific PCR index: 
-tpm2_createpolicy --policy-pcr --pcr-index < # between 0 and 24 > --policy-file < "file.name" >
-tpm2_createpolicy -P -i 0 -f policy.file
+tpm2_createpolicy -P  -L 0x4:0 -f policy.file -F pcr0.bin
 .RE
 .fi
