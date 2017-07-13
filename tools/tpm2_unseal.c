@@ -116,7 +116,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
 
     int opt;
     bool hexPasswd = false;
-    char contextItemFile[PATH_MAX];
+    char *contextItemFile = NULL;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'H': {
@@ -147,7 +147,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
             break;
         case 'c':
-            snprintf(contextItemFile, sizeof(contextItemFile), "%s", optarg);
+            contextItemFile = optarg;
             flags.c = 1;
             break;
         case 'X':
