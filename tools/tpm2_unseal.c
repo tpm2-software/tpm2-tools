@@ -90,12 +90,13 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
 
-    static const char *optstring = "H:P:o:c:X";
+    static const char *optstring = "H:P:o:c:S:X";
     static const struct option long_options[] = {
       {"item",1,NULL,'H'},
       {"pwdi",1,NULL,'P'},
       {"outfile",1,NULL,'o'},
       {"itemContext",1,NULL,'c'},
+      {"input-session-handle",1,NULL,'S'},
       {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
@@ -122,7 +123,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         case 'H': {
             bool result = tpm2_util_string_to_uint32(optarg, &ctx->itemHandle);
             if (!result) {
-                LOG_ERR("Could not cobvert item handle to number, got: \"%s\"",
+                LOG_ERR("Could not convert item handle to number, got: \"%s\"",
                         optarg);
                 return false;
             }
@@ -149,6 +150,16 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         case 'c':
             contextItemFile = optarg;
             flags.c = 1;
+            break;
+        case 'S': {
+            bool result = tpm2_util_string_to_uint32(optarg,
+                &ctx->sessionData.sessionHandle);
+            if (!result) {
+                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                        optarg);
+                return false;
+            }
+        }
             break;
         case 'X':
             hexPasswd = true;
