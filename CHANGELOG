@@ -1,4 +1,5 @@
 next
+* tpm2_unseal: supports output to stdoud.
 * tpm2_create: enforce policy based authorization.
 * tpm2_createprimary: add ability to create objects with policy based authorization.
 * tpm2_nvdefine: add ability to create nv indexes with policy based authorization.
