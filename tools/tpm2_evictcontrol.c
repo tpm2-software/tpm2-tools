@@ -108,7 +108,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         UINT8 all;
     } flags = { .all = 0 };
 
-    char contextFile[PATH_MAX];
+    char *contextFile = NULL;
 
     bool is_hex_passwd = false;
 
@@ -165,7 +165,7 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         }
             break;
         case 'c':
-            snprintf(contextFile, sizeof(contextFile), "%s", optarg);
+            contextFile = optarg;
             flags.c = 1;
             break;
         case 'X':
