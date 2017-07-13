@@ -55,8 +55,8 @@ struct tpm_certify_ctx {
     } handle;
 
     struct {
-        char attest[PATH_MAX];
-        char sig[PATH_MAX];
+        char *attest;
+        char *sig;
     } file_path;
     TSS2_SYS_CONTEXT *sapi_context;
 };
@@ -189,16 +189,6 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
             sizeof(signature));
 }
 
-static bool check_and_set_file(const char *path, char *dest, size_t dest_size) {
-
-    bool result = files_does_file_exist(path);
-    if (result) {
-        return false;
-    }
-    snprintf(dest, dest_size, "%s", path);
-    return true;
-}
-
 static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
 
     bool result;
@@ -293,19 +283,17 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.g = 1;
             break;
         case 'a':
-            result = check_and_set_file(optarg, ctx->file_path.attest,
-                    sizeof(ctx->file_path.attest));
-            if (!result) {
+            if (files_does_file_exist(optarg)) {
                 return false;
             }
+            ctx->file_path.attest = optarg;
             flags.a = 1;
             break;
         case 's':
-            result = check_and_set_file(optarg, ctx->file_path.sig,
-                    sizeof(ctx->file_path.sig));
-            if (!result) {
+            if (files_does_file_exist(optarg)) {
                 return false;
             }
+            ctx->file_path.sig = optarg;
             flags.s = 1;
             break;
         case 'c':
@@ -401,7 +389,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
                     .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
                 }  // [1]
             },
-            .file_path = { .attest = { 0 }, .sig = { 0 } },
+            .file_path = { .attest = NULL, .sig = NULL },
             .sapi_context = sapi_context
     };
 
