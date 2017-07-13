@@ -52,13 +52,12 @@ struct createpolicypcr_ctx {
     TSS2_SYS_CONTEXT *sapi_context;
     SESSION *policy_session;
     TPM2B_DIGEST policy_digest;
-    char policyfile[PATH_MAX];
-    bool policy_file_flag;
+    char *policyfile;
     //build_pcr_policy options
     unsigned int pcr_index;
     UINT32 max_supported_pcrs;
     TPMI_ALG_HASH hash_alg;
-    char raw_pcr_file[PATH_MAX];
+    char *raw_pcr_file;
     struct {
         bool policy_type_pcr_flag;
         bool raw_pcr_flag;
@@ -218,7 +217,7 @@ TPM_RC build_policy(createpolicypcr_ctx *ctx,
 bool parse_policy_type(createpolicypcr_ctx *ctx, char *argv[]) {
 
     if (ctx->pcr_flags.policy_type_pcr_flag) {
-        if (!ctx->policy_file_flag || !ctx->pcr_flags.pcr_index_flag) {
+        if (!ctx->policyfile || !ctx->pcr_flags.pcr_index_flag) {
             showArgMismatch(argv[0]);
             return false;
         } else {
@@ -278,8 +277,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
     while ((opt = getopt_long(argc, argv, "Pf:i:g:F:", sOpts, NULL)) != -1) {
         switch (opt) {
         case 'f':
-            ctx->policy_file_flag = true;
-            snprintf(ctx->policyfile, sizeof(ctx->policyfile), "%s", optarg);
+            ctx->policyfile = optarg;
             break;
         case 'P':
             ctx->pcr_flags.policy_type_pcr_flag = true;
@@ -292,9 +290,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
             }
             break;
         case 'F':
-            ctx->pcr_flags.raw_pcr_flag = true;
-            snprintf(ctx->raw_pcr_file, sizeof(ctx->raw_pcr_file), "%s",
-                    optarg);
+            ctx->raw_pcr_file = optarg;
             break;
         case 'g':
             result = tpm2_util_string_to_uint16(optarg, &ctx->hash_alg);
@@ -331,7 +327,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         .pcr_index = 0,
         .max_supported_pcrs = 0,
         .hash_alg = TPM_ALG_SHA1,
-        .policy_file_flag = false,
+        .policyfile = NULL,
+        .raw_pcr_file = NULL,
         .pcr_flags.policy_type_pcr_flag = false,
         .pcr_flags.pcr_index_flag = false,
         .pcr_flags.raw_pcr_flag = false
