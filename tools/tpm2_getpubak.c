@@ -59,8 +59,8 @@ struct getpubak_context {
         TPM2B_AUTH owner;
     } passwords;
     bool hexPasswd;
-    char outputFile[PATH_MAX];
-    char aknameFile[PATH_MAX];
+    char *outputFile;
+    char *aknameFile;
     UINT32 algorithmType;
     UINT32 digestAlg;
     UINT32 signAlg;
@@ -493,7 +493,7 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
                         "Please specify the output file used to save the pub ek.");
                 return false;
             }
-            snprintf(ctx->outputFile, sizeof(ctx->outputFile), "%s", optarg);
+            ctx->outputFile = optarg;
             break;
         case 'n':
             if (!optarg) {
@@ -501,7 +501,7 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
                         "Please specify the output file used to save the ak name.");
                 return false;
             }
-            snprintf(ctx->aknameFile, sizeof(ctx->aknameFile), "%s", optarg);
+            ctx->aknameFile = optarg;
             break;
         case 'X':
             ctx->hexPasswd = true;
