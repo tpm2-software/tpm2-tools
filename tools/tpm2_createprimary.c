@@ -195,7 +195,7 @@ execute_tool (int               argc,
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "A:P:K:g:G:C:L:EX";
+    const char *optstring = "A:P:K:g:G:C:L:S:EX";
     static struct option long_options[] = {
       {"auth",1,NULL,'A'},
       {"pwdp",1,NULL,'P'},
@@ -206,6 +206,7 @@ execute_tool (int               argc,
       {"passwdInHex",0,NULL,'X'},
       {"policy-file",1,NULL,'L'},
       {"enforce-policy",1,NULL,'E'},
+      {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
 
@@ -303,6 +304,13 @@ execute_tool (int               argc,
             break;
         case 'E':
             is_policy_enforced = true;
+            break;
+        case 'S':
+            if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
+                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                        optarg);
+                returnVal = 1;
+            }
             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
