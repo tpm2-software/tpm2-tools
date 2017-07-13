@@ -66,6 +66,9 @@ char *EKserverAddr = NULL;
 unsigned int nonPersistentRead = 0;
 unsigned int SSL_NO_VERIFY = 0;
 unsigned int OfflineProv = 0;
+bool is_session_based_auth = false;
+TPMI_SH_AUTH_SESSION auth_session_handle = 0;
+
 
 BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8,
                      0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24,
@@ -139,6 +142,9 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
             .hmac = TPM2B_EMPTY_INIT,
             .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     };
+    if (is_session_based_auth) {
+        sessionData.sessionHandle = auth_session_handle;
+    }
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -502,7 +508,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     int return_val = 1;
 
-    static const char *optstring = "e:o:H:P:g:f:X:N:O:E:S:U";
+    static const char *optstring = "e:o:H:P:g:f:X:N:O:E:S:i:U";
 
     static struct option long_options[] =
     {
@@ -518,6 +524,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         { "ECcertFile"   , 1, NULL, 'E' },
         { "EKserverAddr" , 1, NULL, 'S' },
         { "SSL_NO_VERIFY", 0, NULL, 'U' },
+        {"input-session-handle",1,NULL,'i'},
         { NULL           , 0, NULL,  0  },
     };
 
@@ -606,6 +613,18 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     EKserverAddr = optarg;
                     printf("TPM Manufacturer EK provisioning address -- %s\n", EKserverAddr);
                     break;
+                case 'i':
+                    return_val = tpm2_util_string_to_uint32(optarg, &auth_session_handle);
+                    if (!return_val) {
+                        LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                                optarg);
+                        return return_val;
+                    }
+                    is_session_based_auth = true;
+                    break;
+                default:
+                    LOG_ERR("Unknown option\n");
+                    return 1;
             }
     }
 
