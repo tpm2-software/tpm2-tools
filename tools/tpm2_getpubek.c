@@ -52,7 +52,7 @@ struct getpubek_context {
         TPM2B_AUTH endorse;
         TPM2B_AUTH ek;
     } passwords;
-    char out_file_path[PATH_MAX];
+    char *out_file_path;
     TPM_HANDLE persistent_handle;
     UINT32 algorithm;
     TSS2_SYS_CONTEXT *sapi_context;
@@ -319,8 +319,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
                 LOG_ERR("Please specify an output file to save the pub ek to.");
                 return false;
             }
-            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
-                    optarg);
+            ctx->out_file_path = optarg;
             break;
         case 'X':
             ctx->passwords.is_hex = true;
