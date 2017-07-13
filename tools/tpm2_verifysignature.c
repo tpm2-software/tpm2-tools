@@ -157,16 +157,6 @@ static bool generate_signature(tpm2_verifysig_ctx *ctx) {
     return result;
 }
 
-static bool string_dup(char **new, char *old) {
-
-    *new = strdup(old);
-    if (!*new) {
-        LOG_ERR("OOM while duplicating \"%s\"", old);
-        return false;
-    }
-    return true;
-}
-
 static bool init(tpm2_verifysig_ctx *ctx) {
 
     TPM2B *msg = NULL;
@@ -261,10 +251,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
         }
             break;
         case 'm': {
-            bool res = string_dup(&ctx->msg_file_path, optarg);
-            if (!res) {
-                return false;
-            }
+            ctx->msg_file_path = optarg;
             ctx->flags.msg = 1;
         }
             break;
@@ -281,15 +268,11 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             ctx->flags.raw = 1;
             break;
         case 's':
-            if (!string_dup(&ctx->sig_file_path, optarg)) {
-                return false;
-            }
+            ctx->sig_file_path = optarg;
             ctx->flags.sig = 1;
             break;
         case 't':
-            if (!string_dup(&ctx->out_file_path, optarg)) {
-                return false;
-            }
+            ctx->out_file_path = optarg;
 
             if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
@@ -297,9 +280,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             ctx->flags.ticket = 1;
             break;
         case 'c':
-            if (!string_dup(&ctx->context_key_file_path, optarg)) {
-                return false;
-            }
+            ctx->context_key_file_path = optarg;
             ctx->flags.key_context = 1;
             break;
         case ':':
@@ -330,14 +311,6 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
     return init(ctx);
 }
 
-static void tpm_verifysig_ctx_dealloc(tpm2_verifysig_ctx *ctx) {
-
-    free(ctx->sig_file_path);
-    free(ctx->out_file_path);
-    free(ctx->msg_file_path);
-    free(ctx->context_key_file_path);
-}
-
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
@@ -359,19 +332,14 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     bool res = handle_options_and_init(argc, argv, &ctx);
     if (!res) {
-        goto err;
+        return normalized_return_code;
     }
 
     res = verify_signature(&ctx);
     if (!res) {
         LOG_ERR("Verify signature failed!");
-        goto err;
+        return normalized_return_code;
     }
 
-    normalized_return_code = 0;
-
-err:
-    tpm_verifysig_ctx_dealloc(&ctx);
-
-    return normalized_return_code;
+    return 0;
 }
