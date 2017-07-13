@@ -48,7 +48,7 @@
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {
     TPMI_DH_OBJECT objectHandle;
-    char outFilePath[PATH_MAX];
+    char *outFilePath;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -121,7 +121,7 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
 
     int opt = -1;
     bool result;
-    char context_file[PATH_MAX] = {0};
+    char *context_file = NULL;
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {
@@ -137,11 +137,11 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            ctx->outFilePath = optarg;
             flags.o = 1;
             break;
         case 'c':
-            snprintf(context_file, sizeof(context_file), "%s", optarg);
+            context_file = optarg;
             flags.c = 1;
             break;
         }
@@ -171,7 +171,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_readpub_ctx ctx = {
             .objectHandle = 0,
-            .outFilePath = { 0 },
+            .outFilePath = NULL,
             .sapi_context = sapi_context
     };
 
