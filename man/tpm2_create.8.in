@@ -31,7 +31,7 @@
 tpm2_create\ - create an object that can be loaded into a TPM using tpm2_load. The object
 will need to be loaded before it may be used.
 .SH SYNOPSIS
-.B tpm2_create[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-kalg\fR|\fB\-\-objectAttribute\fR|\fB\-\-inFile\fR|\fB\-\-policy\-file\fR|\fB\-\-enforce-policy\fR|\fB\-\-opu\fR|\fB\-\-opr\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_create[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-kalg\fR|\fB\-\-objectAttribute\fR|\fB\-\-inFile\fR|\fB\-\-policy\-file\fR|\fB\-\-enforce-policy\fR|\fB\-\-opu\fR|\fB\-\-opr\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB ]
 .PP
 create an object that can be loaded into a TPM using tpm2_load. The object
 will need to be loaded before it may be used.
@@ -79,6 +79,9 @@ the output file which contains the private key,  optional
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format.
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization. [Only for device-tcti]
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
