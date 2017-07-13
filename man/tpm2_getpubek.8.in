@@ -34,7 +34,7 @@ passwd option is missing, assume NULL, default type/alg is 0x1(RSA)
 Refer to:
 http://www.trustedcomputinggroup.org/files/static_page_files/7CAA5687-1A4B-B294-D04080D058E86C5F/Credential_Profile_EK_V2.0_R14_published.pdf
 .SH SYNOPSIS
-.B tpm2_getpubek[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-endorsePasswd\fR|\fB\-\-ownerPasswd\fR|\fB\-\-ekPasswd\fR|\fB\-\-handle\fR|\fB\-\-alg\fR|\fB\-\-file\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_getpubek[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-endorsePasswd\fR|\fB\-\-ownerPasswd\fR|\fB\-\-ekPasswd\fR|\fB\-\-handle\fR|\fB\-\-alg\fR|\fB\-\-file\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB  ]
 .PP
 Generate TCG profile compliant endorsement key(endorsement hierarchy primary
 object), make it persistent with give ek handle, and return public EK, if any
@@ -70,6 +70,9 @@ specifies the file used to save the public  portion of EK.
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@

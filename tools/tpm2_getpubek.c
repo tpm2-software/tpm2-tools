@@ -56,6 +56,8 @@ struct getpubek_context {
     TPM_HANDLE persistent_handle;
     UINT32 algorithm;
     TSS2_SYS_CONTEXT *sapi_context;
+    bool is_session_based_auth;
+    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static bool set_key_algorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
@@ -141,6 +143,11 @@ static bool create_ek_handle(getpubek_context *ctx) {
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     };
+
+    if (ctx->is_session_based_auth) {
+        sessionData.sessionHandle = ctx->auth_session_handle;
+    }
+
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -258,6 +265,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
         { "alg"          , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
         { "passwdInHex"  , no_argument,       NULL, 'X' },
+        {"input-session-handle",1,            NULL, 'S' },
         { "dbg"          , required_argument, NULL, 'd' },
         { "help"         , no_argument,       NULL, 'h' },
         { NULL           , no_argument,       NULL,  '\0' },
@@ -274,7 +282,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
     }
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:Xp:d:hv", options, NULL))
+    while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:Xp:S:d:hv", options, NULL))
             != -1) {
         bool result;
         switch (opt) {
@@ -324,6 +332,14 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
         case 'X':
             ctx->passwords.is_hex = true;
             break;
+        case 'S':
+            if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                        optarg);
+                return false;
+            }
+            ctx->is_session_based_auth = true;
+            break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
@@ -352,7 +368,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
                     .ek = TPM2B_EMPTY_INIT,
             },
             .algorithm = TPM_ALG_RSA,
-            .sapi_context = sapi_context
+            .sapi_context = sapi_context,
+            .is_session_based_auth = false
     };
 
     bool result = init(argc, argv, envp, &ctx);
