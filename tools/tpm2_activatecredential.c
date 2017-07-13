@@ -65,7 +65,7 @@ struct tpm_activatecred_ctx {
     TPMS_AUTH_COMMAND endorse_password;
 
     struct {
-        char output[PATH_MAX];
+        char *output;
         char *context;
         char *key_context;
     } file ;
@@ -265,11 +265,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             H_flag = 1;
             break;
         case 'c':
-            ctx->file.context = strdup(optarg);
-            if (!ctx->file.context) {
-                LOG_ERR("oom");
-                return false;
-            }
+            ctx->file.context = optarg;
             c_flag = 1;
             break;
         case 'k':
@@ -280,11 +276,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             k_flag = 1;
             break;
         case 'C':
-            ctx->file.key_context = strdup(optarg);
-            if (!ctx->file.key_context) {
-                LOG_ERR("oom");
-                return false;
-            }
+            ctx->file.key_context = optarg;
             C_flag = 1;
             break;
         case 'P':
@@ -313,7 +305,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             f_flag = 1;
             break;
         case 'o':
-            snprintf(ctx->file.output, sizeof(ctx->file.output), "%s", optarg);
+            ctx->file.output = optarg;
             o_flag = 1;
             break;
         case 'X':
@@ -355,18 +347,17 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     */
     static tpm_activatecred_ctx ctx;
 
-    int rc = 1;
     bool result = init(argc, argv, &ctx);
     if (!result) {
         LOG_ERR("Initialization failed\n");
-        goto out;
+        return 1;
     }
 
     if (ctx.file.context) {
         bool res = file_load_tpm_context_from_file(sapi_context, &ctx.handle.activate,
                 ctx.file.context);
         if (!res) {
-            goto out;
+            return 1;
         }
     }
 
@@ -374,19 +365,14 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         bool res = file_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
                 ctx.file.key_context) != true;
         if (!res) {
-            goto out;
+            return 1;
         }
     }
 
     result = activate_credential_and_output(sapi_context, &ctx);
     if (!result) {
-        goto out;
+        return 1;
     }
 
-    rc = 0;
-
-out:
-    free(ctx.file.key_context);
-    free(ctx.file.context);
-    return rc;
+    return 0;
 }
