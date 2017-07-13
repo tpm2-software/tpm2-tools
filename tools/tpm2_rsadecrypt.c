@@ -120,7 +120,7 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
 
     int opt;
     bool is_hex_passwd = false;
-    char context_key_file[PATH_MAX];
+    char *context_key_file = NULL;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
         switch (opt) {
@@ -163,7 +163,7 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
         }
             break;
         case 'c':
-            snprintf(context_key_file, sizeof(context_key_file), "%s", optarg);
+            context_key_file = optarg;
             flags.c = 1;
             break;
         case 'X':
