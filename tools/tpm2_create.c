@@ -46,6 +46,7 @@
 #include "files.h"
 #include "main.h"
 #include "options.h"
+#include "log.h"
 
 TSS2_SYS_CONTEXT *sysContext;
 TPMS_AUTH_COMMAND sessionData = {
@@ -254,7 +255,7 @@ execute_tool (int              argc,
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:XE";
+    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:S:XE";
     static struct option long_options[] = {
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
@@ -269,6 +270,7 @@ execute_tool (int              argc,
       {"opr",1,NULL,'O'},
       {"contextParent",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
+      {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
 
@@ -372,6 +374,13 @@ execute_tool (int              argc,
             }
             L_flag = 1;
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 returnVal = 1;
+             }
+             break;
         case 'E':
             is_policy_enforced = true;
             break;
