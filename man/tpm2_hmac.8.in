@@ -31,7 +31,7 @@
 tpm2_hmac\ - performs an HMAC on the supplied data using the indicated hash algorithm. The
 caller shall provide proper authorization for use of handle.
 .SH SYNOPSIS
-.B tpm2_hmac[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-keyHandle\fR|\fB\-\-keyContext\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-infile\fR|\fB\-\-outfile\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_hmac[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-keyHandle\fR|\fB\-\-keyContext\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-infile\fR|\fB\-\-outfile\fR|\fB\-\-passwdInHex\fR|\fB-\-input-session-handle\fR|\fB ]
 .PP
 performs an HMAC on the supplied data using the indicated hash algorithm. The
 caller shall provide proper authorization for use of handle.
@@ -61,6 +61,9 @@ file record the HMAC result
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format.
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
