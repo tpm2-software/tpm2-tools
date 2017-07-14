@@ -90,7 +90,7 @@ static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
 
-    const char *optstring = "k:P:I:o:c:X";
+    const char *optstring = "k:P:I:o:c:S:X";
     static struct option long_options[] = {
       { "keyHandle",   required_argument, NULL, 'k'},
       { "pwdk",        required_argument, NULL, 'P'},
@@ -98,6 +98,7 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
       { "outFile",     required_argument, NULL, 'o'},
       { "keyContext",  required_argument, NULL, 'c'},
       { "passwdInHex", no_argument,       NULL, 'X'},
+      { "input-session-handle",1,         NULL, 'S' },
       { NULL,          no_argument,       NULL, '\0'}
     };
 
@@ -169,6 +170,13 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
         case 'X':
             is_hex_passwd = true;
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 return false;
+             }
+             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
