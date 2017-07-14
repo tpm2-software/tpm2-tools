@@ -54,6 +54,8 @@ struct tpm_nvreadlock_ctx {
     TPM2B_AUTH handle_passwd;
     bool is_hex_passwd;
     TSS2_SYS_CONTEXT *sapi_context;
+    bool is_auth_session;
+    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
@@ -64,6 +66,10 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     };
+
+    if (ctx->is_auth_session) {
+        session_data.sessionHandle = ctx->auth_session_handle;
+    }
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -107,6 +113,7 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
         { "authHandle"  , required_argument, NULL, 'a' },
         { "handlePasswd", required_argument, NULL, 'P' },
         { "passwdInHex" , no_argument,       NULL, 'X' },
+        { "input-session-handle",1,          NULL, 'S' },
         { NULL          , no_argument,       NULL, 0   },
     };
 
@@ -118,7 +125,7 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
 
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:P:Xp:d:hv", long_options, NULL))
+    while ((opt = getopt_long(argc, argv, "x:a:P:Xp:d:S:hv", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'x':
@@ -157,6 +164,14 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
         case 'X':
             ctx->is_hex_passwd = true;
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 return false;
+             }
+             ctx->is_auth_session = true;
+             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;

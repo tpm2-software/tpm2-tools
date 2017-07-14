@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_nvreadlock\ - lock the NV index for further reads until the machine is restarted
 .SH SYNOPSIS
-.B tpm2_nvreadlock[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-handlePasswd\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_nvreadlock[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-handlePasswd\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB ]
 .PP
 lock the NV index for further reads until the machine is restarted
 .SH DESCRIPTION
@@ -49,6 +49,9 @@ specifies the password of authHandle.
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
