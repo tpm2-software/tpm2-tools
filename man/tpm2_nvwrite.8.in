@@ -31,7 +31,7 @@
 tpm2_nvwrite\ - write content from a file to a specified index, if any passwd option is
 missing, assume NULL.
 .SH SYNOPSIS
-.B tpm2_nvwrite[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-handlePasswd\fR|\fB\-\-file\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_nvwrite[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-handlePasswd\fR|\fB\-\-file\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB ]
 .PP
 write content from a file to a specified index, if any passwd option is
 missing, assume NULL.
@@ -55,6 +55,9 @@ specifies the nv data file.
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@

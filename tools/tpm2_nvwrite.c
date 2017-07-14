@@ -56,6 +56,8 @@ struct tpm_nvwrite_ctx {
     bool hex_passwd;
     char *input_file;
     TSS2_SYS_CONTEXT *sapi_context;
+    bool is_auth_session;
+    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static int nv_write(tpm_nvwrite_ctx *ctx) {
@@ -66,6 +68,11 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     };
+
+    if (ctx->is_auth_session) {
+        session_data.sessionHandle = ctx->auth_session_handle;
+    }
+
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -122,8 +129,6 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
     return true;
 }
 
-#define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
-
 static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
 
     struct option long_options[] = {
@@ -132,18 +137,13 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
         { "file"        , required_argument, NULL, 'f' },
         { "handlePasswd", required_argument, NULL, 'P' },
         { "passwdInHex" , no_argument,       NULL, 'X' },
+        { "input-session-handle",1,          NULL, 'S' },
         { NULL          , no_argument,       NULL,  0  },
     };
 
-    /* subtract 1 from argc to disregard argv[0] */
-    if ((argc - 1) < ARG_CNT(2) || (argc - 1) > ARG_CNT(0)) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:f:P:X", long_options, NULL))
+    while ((opt = getopt_long(argc, argv, "x:a:f:P:S:X", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'x':
@@ -185,6 +185,14 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
         case 'X':
             ctx->hex_passwd = true;
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 return false;
+             }
+             ctx->is_auth_session = true;
+             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
