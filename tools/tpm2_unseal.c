@@ -43,7 +43,10 @@
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "pcr.h"
 #include "tpm2_util.h"
+#include "tpm_hash.h"
+#include "tpm_session.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
@@ -51,6 +54,7 @@ struct tpm_unseal_ctx {
     TPMI_DH_OBJECT itemHandle;
     char *outFilePath;
     TSS2_SYS_CONTEXT *sapi_context;
+    SESSION *policy_session;
 };
 
 bool unseal_and_save(tpm_unseal_ctx *ctx) {
@@ -90,13 +94,15 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
 
-    static const char *optstring = "H:P:o:c:S:X";
+    static const char *optstring = "H:P:o:c:S:L:F:X";
     static const struct option long_options[] = {
       {"item",1,NULL,'H'},
       {"pwdi",1,NULL,'P'},
       {"outfile",1,NULL,'o'},
       {"itemContext",1,NULL,'c'},
       {"input-session-handle",1,NULL,'S'},
+      {"set-list", 1, NULL, 'L' },
+      {"pcr-input-file", 1, NULL, 'F' },
       {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
@@ -111,6 +117,8 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
             UINT8 H : 1;
             UINT8 c : 1;
             UINT8 P : 1;
+            UINT8 L : 1;
+            UINT8 F : 1;
         };
         UINT8 all;
     } flags = { .all = 0 };
@@ -118,6 +126,8 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     int opt;
     bool hexPasswd = false;
     char *contextItemFile = NULL;
+    TPML_PCR_SELECTION pcr_selections;
+    TPM2B_DIGEST pcr_hashes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'H': {
@@ -161,6 +171,19 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
             }
         }
             break;
+        case 'L':
+            if (!pcr_parse_selections(optarg, &pcr_selections)) {
+                showArgError(optarg, argv[0]);
+                return false;
+            }
+            flags.L = 1;
+            break;
+        case 'F':
+            if(!files_load_bytes_from_file(optarg, pcr_hashes.t.buffer, &pcr_hashes.t.size)) {
+                return false;
+            }
+            flags.F = 1;
+            break;
         case 'X':
             hexPasswd = true;
             break;
@@ -197,6 +220,43 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
     }
 
+    if (flags.L && flags.F) {
+        TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
+        TPMT_SYM_DEF symmetric = { .algorithm = TPM_ALG_NULL, };
+        TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
+
+        TPM_RC rval = tpm_session_start_auth_with_params(ctx->sapi_context,
+                                                         &ctx->policy_session,
+                                                         TPM_RH_NULL, 0,
+                                                         TPM_RH_NULL, 0,
+                                                         &nonceCaller,
+                                                         &encryptedSalt,
+                                                         TPM_SE_POLICY,
+                                                         &symmetric,
+                                                         TPM_ALG_SHA256);
+
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Failed tpm session start auth with params\n");
+            return rval;
+        }
+
+        ctx->sessionData.sessionHandle = ctx->policy_session->sessionHandle;
+        ctx->sessionData.sessionAttributes.continueSession = 1;
+
+        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+
+        rval = tpm_hash_sequence(ctx->sapi_context,
+                                 ctx->policy_session->authHash,
+                                 pcr_selections.count,
+                                 &pcr_hashes, &pcr_digest);
+        if (rval != TPM_RC_SUCCESS) {
+            return rval;
+        }
+
+        rval = Tss2_Sys_PolicyPCR(ctx->sapi_context, ctx->sessionData.sessionHandle,
+                                  0, &pcr_digest, &pcr_selections, 0);
+    }
+
     return true;
 }
 
@@ -209,7 +269,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm_unseal_ctx ctx = {
             .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-            .sapi_context = sapi_context
+            .sapi_context = sapi_context,
+            .policy_session = NULL
     };
 
     bool result = init(argc, argv, &ctx);
@@ -217,5 +278,25 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         return 1;
     }
 
-    return unseal_and_save(&ctx) != true;
+    if (!unseal_and_save(&ctx)) {
+        LOG_ERR("Unseal failed!\n");
+        return 1;
+    }
+
+    if (ctx.policy_session) {
+        TPM_RC rval = Tss2_Sys_FlushContext(ctx.sapi_context,
+                                            ctx.policy_session->sessionHandle);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Failed Flush Context: 0x%x\n", rval);
+            return 1;
+        }
+
+        rval = tpm_session_auth_end(ctx.policy_session);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Failed deleting session from session table: 0x%x\n", rval);
+            return 1;
+        }
+    }
+
+    return 0;
 }
