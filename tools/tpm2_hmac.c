@@ -53,6 +53,8 @@ struct tpm_hmac_ctx {
     char *hmac_output_file_path;
     TPM2B_MAX_BUFFER data;
     TSS2_SYS_CONTEXT *sapi_context;
+    bool is_auth_session;
+    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
@@ -75,6 +77,10 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
     sessions_data.cmdAuthsCount = 1;
 
     ctx->session_data.sessionHandle = TPM_RS_PW;
+
+    if(ctx->is_auth_session) {
+        ctx->session_data.sessionHandle = ctx->auth_session_handle;
+    }
 
     TPM_RC rval = Tss2_Sys_HMAC(ctx->sapi_context, ctx->key_handle,
             &sessions_data, &ctx->data, ctx->algorithm, &hmac_out,
@@ -103,14 +109,15 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     bool is_hex_passwd = false;
     char *contextKeyFile = NULL;
 
-    const char *optstring = "k:P:g:I:o:c:X";
+    const char *optstring = "k:P:g:I:o:S:c:X";
     static struct option long_options[] = {
         {"keyHandle",   required_argument, NULL, 'k'},
         {"keyContext",  required_argument, NULL, 'c'},
         {"pwdk",        required_argument, NULL, 'P'},
-        {"algorithm",        required_argument, NULL, 'g'},
+        {"algorithm",   required_argument, NULL, 'g'},
         {"infile",      required_argument, NULL, 'I'},
         {"outfile",     required_argument, NULL, 'o'},
+        {"input-session-handle",1,         NULL, 'S'},
         {"passwdInHex", no_argument,       NULL, 'X'},
         {NULL,          no_argument,       NULL, '\0'}
     };
@@ -195,6 +202,14 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         case 'X':
             is_hex_passwd = true;
             break;
+        case 'S':
+            if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                        optarg);
+                return false;
+            }
+            ctx->is_auth_session = true;
+            break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
@@ -239,7 +254,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     tpm_hmac_ctx ctx = {
             .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
             .key_handle = 0,
-            .sapi_context = sapi_context
+            .sapi_context = sapi_context,
+            .is_auth_session = false
     };
 
     bool result = init(argc, argv, &ctx);
