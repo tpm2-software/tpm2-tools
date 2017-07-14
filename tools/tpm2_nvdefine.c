@@ -60,6 +60,8 @@ struct tpm_nvdefine_ctx {
     bool enforce_delete_policy;
     bool policy_file_flag;
     char *policy_file;
+    bool is_auth_session;
+    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static int nv_space_define(tpm_nvdefine_ctx *ctx) {
@@ -71,6 +73,11 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     };
+
+    if (ctx->is_auth_session) {
+        session_data.sessionHandle = ctx->auth_session_handle;
+    }
+
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -151,6 +158,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
         { "enforce-read-policy",    no_argument,        NULL,   'r' },
         { "enforce-write-policy",   no_argument,        NULL,   'w' },
         { "enforce-delete-policy",  no_argument,        NULL,   'd' },
+        { "input-session-handle",   required_argument,  NULL,   'S' },
         { NULL,                     no_argument,        NULL,    0  },
     };
 
@@ -161,7 +169,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
 
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:s:t:P:I:rwdL:X", long_options, NULL))
+    while ((opt = getopt_long(argc, argv, "x:a:s:t:P:I:rwdL:S:X", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'x':
@@ -236,6 +244,14 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
         case 'd':
             ctx->enforce_delete_policy = true;
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 return false;
+             }
+             ctx->is_auth_session = true;
+             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
@@ -269,7 +285,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .enforce_read_policy = false,
             .enforce_write_policy = false,
             .enforce_delete_policy = false,
-            .policy_file_flag = false
+            .policy_file_flag = false,
+            .is_auth_session = false
         };
 
         bool result = init(argc, argv, &ctx);
