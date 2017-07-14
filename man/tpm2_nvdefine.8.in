@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_nvdefine\ - Define NV index with given auth value, if passwd not given, assume NULL
 .SH SYNOPSIS
-.B tpm2_nvdefine[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-size\fR|\fB\-\-attribute\fR|\fB\-\-handlePasswd\fR|\fB\-\-indexPasswd\fR|\fB\-\-passwdInHex\fR|\fB\fB\-\-policy-file\fR|\fB\-\-enforce\-read\-policy\fR|\fB\-\-enforce\-write\-policy\fR|\fB\-\-enforce\-delete\-policy\fR| ]
+.B tpm2_nvdefine[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-size\fR|\fB\-\-attribute\fR|\fB\-\-handlePasswd\fR|\fB\-\-indexPasswd\fR|\fB\-\-passwdInHex\fR|\fB\fB\-\-policy-file\fR|\fB\-\-enforce\-read\-policy\fR|\fB\-\-enforce\-write\-policy\fR|\fB\-\-enforce\-delete\-policy\fR|\fB\-\-input-session-handle\fR|\fB ]
 .PP
 Define NV index with given auth value, if passwd not given, assume NULL
 .SH DESCRIPTION
@@ -71,6 +71,9 @@ Enforce policy based authorization for writing the NV index
 \fB\-d ,\-\-enforce\-delete\-policy\fR
 Enforce policy based authorization for deleting the NV index. 
 Caution with using this option - If policy is not satisfied the index cannot be deleted.
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
