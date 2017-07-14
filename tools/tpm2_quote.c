@@ -366,7 +366,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             P_flag = 1;
             break;
         case 'l':
-            if(pcr_parse_list(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]) != 0)
+            if(!pcr_parse_list(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -385,7 +385,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             g_flag = 1;
             break;
         case 'L':
-            if(pcr_parse_selections(optarg, &pcrSelections) != 0)
+            if(!pcr_parse_selections(optarg, &pcrSelections))
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -15;
