@@ -129,7 +129,7 @@ execute_tool (int              argc,
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "H:P:u:r:n:C:c:X";
+    const char *optstring = "H:P:u:r:n:C:c:S:X";
     static struct option long_options[] = {
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
@@ -139,6 +139,7 @@ execute_tool (int              argc,
       {"context",1,NULL,'C'},
       {"contextParent",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
+      {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
 
@@ -224,6 +225,13 @@ execute_tool (int              argc,
         case 'X':
             hexPasswd = true;
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 returnVal = 1;
+             }
+             break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
             returnVal = -10;
