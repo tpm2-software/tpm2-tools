@@ -121,6 +121,8 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
     int opt;
     bool is_hex_passwd = false;
     char *context_key_file = NULL;
+
+    optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
         switch (opt) {
@@ -197,8 +199,7 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
             "key", &ctx->session_data.hmac);
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(rsadecrypt) {
 
     /* opts and envp are unused, avoid compiler warning */
     (void)opts;

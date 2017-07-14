@@ -274,6 +274,8 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
     }
 
     int opt;
+
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:Xp:d:hv", options, NULL))
             != -1) {
         bool result;
@@ -338,8 +340,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(getpubek) {
 
     /* common options are not used, avoid compiler warning */
     (void) opts;

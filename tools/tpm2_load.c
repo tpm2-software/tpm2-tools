@@ -48,14 +48,14 @@
 #include "main.h"
 #include "options.h"
 
-TPM_HANDLE handle2048rsa;
-TPMS_AUTH_COMMAND sessionData = {
+static TPM_HANDLE handle2048rsa;
+static TPMS_AUTH_COMMAND sessionData = {
         .sessionHandle = TPM_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
 };
-bool hexPasswd = false;
+static bool hexPasswd = false;
 
 int
 load (TSS2_SYS_CONTEXT *sapi_context,
@@ -104,13 +104,8 @@ load (TSS2_SYS_CONTEXT *sapi_context,
     return 0;
 }
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
+ENTRY_POINT(load) {
+
     (void) envp;
     (void) opts;
 
@@ -152,6 +147,7 @@ execute_tool (int              argc,
         C_flag = 0,
         n_flag = 0;
 
+    optind = 0;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)

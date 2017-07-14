@@ -194,3 +194,35 @@ UINT32 tpm2_util_ntoh_32(UINT32 data) {
 UINT64 tpm2_util_ntoh_64(UINT64 data) {
     return tpm2_util_hton_64(data);
 }
+
+static char nibble_to_char(BYTE b) {
+
+    return (b <= 9) ?
+        b + 0x30 : /* starting at 0, start returning ascii '0' */
+        b + 0x37;  /* starting at 10, start returning ascii 'A' */
+}
+
+char *tpm2_util_to_hex(BYTE *bytes, UINT16 length) {
+
+    //byte1[nibble|nibble]...\0
+    // 2 chars per byte, +2 for the prefix, + 1 for null byte;
+    char *s = malloc((2 * length) + 3);
+    if (!s) {
+        return s;
+    }
+
+    char *curr = s;
+    curr += sprintf(curr, "0x");
+
+    UINT16 i;
+    for(i=0; i < length; i++) {
+        BYTE low = bytes[i] & 0x0F;
+        BYTE high = (bytes[i] & 0xF0) >> 4;
+
+        char lowchar = nibble_to_char(low);
+        char highchar = nibble_to_char(high);
+        curr += sprintf(curr, "%c%c", highchar, lowchar);
+    }
+
+    return s;
+}

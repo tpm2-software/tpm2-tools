@@ -99,8 +99,7 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(nvlist) {
 
     (void) argc;
     (void) argv;

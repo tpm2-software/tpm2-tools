@@ -54,7 +54,7 @@ typedef struct {
     UINT32 id[24];
 } PCR_LIST;
 
-TPMS_AUTH_COMMAND sessionData = {
+static TPMS_AUTH_COMMAND sessionData = {
     .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
 };
 
@@ -290,8 +290,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     return 0;
 }
 
-int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
-              TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(quote) {
 
     (void) envp;
     (void) opts;

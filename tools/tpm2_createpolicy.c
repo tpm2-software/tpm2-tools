@@ -63,6 +63,7 @@ struct createpolicypcr_ctx {
         bool raw_pcr_flag;
         bool pcr_index_flag;
     } pcr_flags;
+    tpm_table *t;
 };
 
 TPM_RC build_pcr_policy(createpolicypcr_ctx *ctx) {
@@ -193,13 +194,26 @@ TPM_RC build_policy(createpolicypcr_ctx *ctx,
 
     LOG_INFO("Created Policy Digest:\n");
 
-    //save the policy buffer in a file for use later
-    bool result = files_save_bytes_to_file(ctx->policyfile, (UINT8 *) &ctx->policy_digest.t.buffer,
-            ctx->policy_digest.t.size);
-    if (!result) {
-        LOG_ERR("Failed to save policy digest into file \"%s\"",
-                ctx->policyfile);
-        return -1;
+    //save the policy buffer in a file for use later or print hex to stdout.
+    if (ctx->policyfile) {
+        bool result = files_save_bytes_to_file(ctx->policyfile, (UINT8 *) &ctx->policy_digest.t.buffer,
+                ctx->policy_digest.t.size);
+        if (!result) {
+            LOG_ERR("Failed to save policy digest into file \"%s\"",
+                    ctx->policyfile);
+            return -1;
+        }
+    } else {
+
+        char *s = tpm2_util_to_hex(ctx->policy_digest.t.buffer, ctx->policy_digest.t.size);
+        if (!s) {
+            LOG_ERR("oom");
+            return TPM_RC_MEMORY;
+        }
+
+        TOOL_OUTPUT(ctx->t, "policy", s);
+
+        free(s);
     }
 
     // Need to flush the session here.
@@ -313,8 +327,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(createpolicy) {
 
     /* opts and envp are unused */
     (void) opts;
@@ -331,7 +344,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         .raw_pcr_file = NULL,
         .pcr_flags.policy_type_pcr_flag = false,
         .pcr_flags.pcr_index_flag = false,
-        .pcr_flags.raw_pcr_flag = false
+        .pcr_flags.raw_pcr_flag = false,
+        .t = table
     };
 
     bool result = init(argc, argv, &ctx);

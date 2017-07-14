@@ -33,12 +33,67 @@
 
 #include <sapi/tpm20.h>
 #include "options.h"
+#include "tpm_table.h"
+
+#ifdef SHELL_TOOLS
+
+#define TOOL_OUTPUT(table, key, value) tpm_table_push(table, key, value)
+
+#define ENTRY_POINT(name) \
+    int shell_##name(int argc, char *argv[], char *envp[], common_opts_t *opts, \
+        TSS2_SYS_CONTEXT *sapi_context, tpm_table *table __attribute__((unused)))
+
+ENTRY_POINT(activatecredential);
+ENTRY_POINT(akparse);
+ENTRY_POINT(certify);
+ENTRY_POINT(create);
+ENTRY_POINT(createpolicy);
+ENTRY_POINT(createprimary);
+ENTRY_POINT(dictionarylockout);
+ENTRY_POINT(dump_capability);
+ENTRY_POINT(encryptdecrypt);
+ENTRY_POINT(evictcontrol);
+ENTRY_POINT(getpubak);
+ENTRY_POINT(getpubek);
+ENTRY_POINT(getrandom);
+ENTRY_POINT(hash);
+ENTRY_POINT(hmac);
+ENTRY_POINT(listpcrs);
+ENTRY_POINT(listpersistent);
+ENTRY_POINT(load);
+ENTRY_POINT(loadexternal);
+ENTRY_POINT(makecredential);
+ENTRY_POINT(nvdefine);
+ENTRY_POINT(nvlist);
+ENTRY_POINT(nvread);
+ENTRY_POINT(nvreadlock);
+ENTRY_POINT(nvrelease);
+ENTRY_POINT(nvwrite);
+ENTRY_POINT(quote);
+ENTRY_POINT(readpublic);
+ENTRY_POINT(rsadecrypt);
+ENTRY_POINT(rsaencrypt);
+ENTRY_POINT(sign);
+ENTRY_POINT(startup);
+ENTRY_POINT(takeownership);
+ENTRY_POINT(unseal);
+ENTRY_POINT(verifysignature);
+
+#else
+
+#define TOOL_OUTPUT(table, key, value) printf("%s:%s\n", key, value)
 
 int
 execute_tool (int              argc,
               char             *argv[],
               char             *envp[],
               common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context);
+              TSS2_SYS_CONTEXT *sapi_context,
+			  tpm_table *t);
+
+#define ENTRY_POINT(name) \
+    int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts, \
+        TSS2_SYS_CONTEXT *sapi_context, tpm_table *table __attribute__((unused)))
+#endif
 
 #endif /* MAIN_H */

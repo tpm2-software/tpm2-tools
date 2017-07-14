@@ -551,6 +551,8 @@ get_capability_opts (int                  argc,
         },
         { .name = NULL, },
     };
+
+    optind = 0;
     while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
            != -1)
     {
@@ -602,13 +604,9 @@ dump_tpm_capability (TPMU_CAPABILITIES    *capabilities,
     }
     return 0;
 }
-int
-execute_tool (int               argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
+
+ENTRY_POINT(dump_capability) {
+
     (void) opts;
     (void) envp;
 

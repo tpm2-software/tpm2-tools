@@ -38,7 +38,7 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
+#include "tpm2_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
@@ -357,8 +357,8 @@ static void show_banks(tpm2_algorithm *g_banks) {
     printf("\n");
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(listpcrs) {
+
 
     listpcr_context context = {
         .algs = {
@@ -391,6 +391,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) envp;
 
     int opt;
+    optind = 0;
     while ((opt = getopt_long(argc, argv, "g:o:L:s", long_options, NULL)) != -1) {
         switch (opt) {
         case 'g':

@@ -48,14 +48,14 @@ main (int   argc,
     extern int opterr, optind;
     int ret;
     TSS2_SYS_CONTEXT *sapi_context;
-    common_opts_t opts = COMMON_OPTS_INITIALIZER;
+    common_opts_t opts;
     /*
      * Get common options and reset getopt global variables. This allows the
      * tools to use getopt as they normally would.
      */
     get_common_opts (&argc, &argv, &opts);
     opterr = 0;
-    optind = 1;
+    optind = 0;
     switch (sanity_check_common (&opts)) {
     case 1:
         execute_man (argv[0], envp);
@@ -76,16 +76,18 @@ main (int   argc,
     sapi_context = sapi_init_from_options (&opts);
     if (sapi_context == NULL)
         exit (1);
+
     /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = execute_tool (argc, argv, envp, &opts, sapi_context) ? 1 : 0;
+    ret = execute_tool (argc, argv, envp, &opts, sapi_context, NULL) ? 1 : 0;
+
     /*
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
      */
     sapi_teardown_full (sapi_context);
-    free (argv);
+    argv_free (argv, argc);
     exit (ret);
 }

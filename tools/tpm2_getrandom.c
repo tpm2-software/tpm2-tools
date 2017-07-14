@@ -38,7 +38,7 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
+#include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
@@ -51,6 +51,7 @@ struct tpm_random_ctx {
     char *output_file;
     UINT16 num_of_bytes;
     TSS2_SYS_CONTEXT *sapi_context;
+    tpm_table *t;
 };
 
 static bool get_random_and_save(tpm_random_ctx *ctx) {
@@ -65,11 +66,16 @@ static bool get_random_and_save(tpm_random_ctx *ctx) {
     }
 
     if (!ctx->output_file_specified) {
-        UINT16 i;
-        for (i = 0; i < random_bytes.t.size; i++) {
-            printf("%s0x%2.2X", i ? " " : "", random_bytes.t.buffer[i]);
+
+        char *s = tpm2_util_to_hex(random_bytes.t.buffer, random_bytes.t.size);
+        if (!s) {
+        	LOG_ERR("oom");
+        	return false;
         }
-        printf("\n");
+
+        TOOL_OUTPUT(ctx->t, "random", s);
+
+        free(s);
         return true;
     }
 
@@ -123,8 +129,7 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-            TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(getrandom) {
 
     (void)opts;
     (void)envp;

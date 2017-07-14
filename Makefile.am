@@ -32,7 +32,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-INCLUDE_DIRS = -I$(srcdir)/src -I$(srcdir)/lib
+INCLUDE_DIRS = -I$(srcdir)/tools -I$(srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS    := $(INCLUDE_DIRS) $(TPM20_TSS_CFLAGS) $(EXTRA_CFLAGS) $(TCTI_TABRMD_CFLAGS) $(CRYPTO_CFLAGS)
@@ -93,6 +93,7 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_hmac.c \
     lib/tpm_kdfa.c \
     lib/tpm_session.c \
+    lib/tpm_table.c \
     lib/tpm2_util.c
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c tools/main.c
@@ -137,6 +138,59 @@ tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c tools/main.c
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 tools_tpm2_rc_decode_SOURCES = lib/rc-decode.c tools/tpm2_rc_decode.c
+
+if SHELL
+lib_LTLIBRARIES = libtpm_shell.la
+# Cannot link a static lib to a shared lib in a portable way, so include the
+# libcommon sources directly.
+#
+# Not included in the shell:
+#    getmanufec - curl dependency.
+#    rc_decode - need to do an interface to it.
+#    send_command - seems kind of raw.
+#
+libtpm_shell_la_SOURCES = \
+  tpm_shell/tpm_shell.c \
+  tools/tpm2_activatecredential.c \
+  tools/tpm2_akparse.c \
+  tools/tpm2_certify.c \
+  tools/tpm2_create.c \
+  tools/tpm2_createpolicy.c \
+  tools/tpm2_createprimary.c \
+  tools/tpm2_dictionarylockout.c \
+  tools/tpm2_dump_capability.c \
+  tools/tpm2_encryptdecrypt.c \
+  tools/tpm2_evictcontrol.c \
+  tools/tpm2_getpubak.c \
+  tools/tpm2_getpubek.c \
+  tools/tpm2_getrandom.c \
+  tools/tpm2_hash.c \
+  tools/tpm2_hmac.c \
+  tools/tpm2_listpcrs.c \
+  tools/tpm2_listpersistent.c \
+  tools/tpm2_load.c \
+  tools/tpm2_loadexternal.c \
+  tools/tpm2_makecredential.c \
+  tools/tpm2_nvdefine.c \
+  tools/tpm2_nvlist.c \
+  tools/tpm2_nvread.c \
+  tools/tpm2_nvreadlock.c \
+  tools/tpm2_nvrelease.c \
+  tools/tpm2_nvwrite.c \
+  tools/tpm2_quote.c \
+  tools/tpm2_readpublic.c \
+  tools/tpm2_rsadecrypt.c \
+  tools/tpm2_rsaencrypt.c \
+  tools/tpm2_sign.c \
+  tools/tpm2_startup.c \
+  tools/tpm2_takeownership.c \
+  tools/tpm2_unseal.c \
+  tools/tpm2_verifysignature.c \
+  $(lib_libcommon_a_SOURCES)
+
+libtpm_shell_la_CFLAGS = $(LUA_CFLAGS) $(AM_CFLAGS) -DSHELL_TOOLS
+libtpm_shell_la_LIBADD = $(LUA_LIBS) $(LDADD)
+endif
 
 if UNIT
 TESTS = $(check_PROGRAMS)

@@ -163,8 +163,7 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(readpublic) {
 
     (void)opts;
     (void)envp;

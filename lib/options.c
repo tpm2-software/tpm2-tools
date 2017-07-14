@@ -194,7 +194,12 @@ append_arg_to_vector (int*  argc,
     ++(*argc);
     new_argv = realloc (argv, sizeof (char*) * (*argc));
     if (new_argv != NULL) {
-        new_argv[*argc - 1] = arg_string;
+        new_argv[*argc - 1] = strdup(arg_string);
+        if (!new_argv[*argc - 1]) {
+            LOG_ERR("Failed to copy arg_string \"%s\": %s\n",
+                    arg_string,
+                    strerror (errno));
+        }
     } else {
         LOG_ERR("Failed to realloc new_argv to append string %s: %s\n",
                 arg_string,
@@ -202,6 +207,17 @@ append_arg_to_vector (int*  argc,
     }
 
     return new_argv;
+}
+
+void argv_free(char **argv, int argc) {
+
+    int i;
+    for (i=0; i < argc; i++) {
+        if (argv[i]) {
+            free(argv[i]);
+        }
+    }
+    free(argv);
 }
 
 /*
@@ -217,11 +233,30 @@ append_arg_to_vector (int*  argc,
  * returned to the caller through the argc_param and argv_param. The vector
  * must be freed by the caller.
  */
+
+#define COMMON_OPTS_INITIALIZER { \
+    .tcti_type      = TCTI_DEFAULT, \
+    .device_file    = TCTI_DEVICE_DEFAULT_PATH, \
+    .socket_address = TCTI_SOCKET_DEFAULT_ADDRESS, \
+    .socket_port    = TCTI_SOCKET_DEFAULT_PORT, \
+    .help           = false, \
+    .verbose        = false, \
+    .version        = false, \
+}
+
 int
 get_common_opts (int                    *argc_param,
                  char                   **argv_param[],
                  common_opts_t          *common_opts)
 {
+
+    /* set up default options */
+    common_opts->tcti_type = TCTI_DEFAULT;
+    common_opts->device_file = TCTI_DEVICE_DEFAULT_PATH;
+    common_opts->socket_address = TCTI_SOCKET_DEFAULT_ADDRESS;
+    common_opts->socket_port = TCTI_SOCKET_DEFAULT_PORT;
+    common_opts->help = common_opts->verbose = common_opts->version = false;
+
     int argc = *argc_param;
     char **argv = *argv_param;
 
@@ -306,7 +341,14 @@ get_common_opts (int                    *argc_param,
                  "vector: %s\n", strerror (errno));
         return 2;
     }
-    new_argv[0] = argv[0];
+    new_argv[0] = strdup(argv[0]);
+    if (!new_argv[0]) {
+        free(new_argv);
+        fprintf (stderr, "Failed to allocate memory for tool argument "
+                 "vector[0]: %s\n", strerror (errno));
+        return 2;
+    }
+
     while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
            != -1)
     {

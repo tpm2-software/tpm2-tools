@@ -157,8 +157,7 @@ static bool init(tpm2_send_command_ctx *ctx, int argc, char *argv[]) {
  * in network byte order (big-endian). We output the response in the same
  * form.
  */
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(send) {
     (void) envp;
     (void) opts;
 

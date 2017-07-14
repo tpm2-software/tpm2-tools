@@ -236,6 +236,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
 
     int opt = -1;
 
+    optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
         switch (opt) {
@@ -368,8 +369,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+ENTRY_POINT(certify) {
 
     (void)opts;
     (void)envp;

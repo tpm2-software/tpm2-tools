@@ -79,13 +79,8 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
     return 0;
 }
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
+ENTRY_POINT(listpersistent) {
+
     (void) opts;
     (void) envp;
     (void) argc;

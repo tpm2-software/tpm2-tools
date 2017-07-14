@@ -49,14 +49,14 @@
 #include "options.h"
 #include "password_util.h"
 
-TPMS_AUTH_COMMAND sessionData = {
+static TPMS_AUTH_COMMAND sessionData = {
     .sessionHandle = TPM_RS_PW,
     .nonce = TPM2B_EMPTY_INIT,
     .hmac = TPM2B_EMPTY_INIT,
     .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
 };
-bool hexPasswd = false;
-TPM_HANDLE handle2048rsa;
+static bool hexPasswd = false;
+static TPM_HANDLE handle2048rsa;
 
 int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, bool is_policy_enforced)
 {
@@ -174,13 +174,8 @@ int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy,
     return 0;
 }
 
-int
-execute_tool (int               argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
+ENTRY_POINT(createprimary) {
+
     (void) envp;
     (void) opts;
 
@@ -220,6 +215,7 @@ execute_tool (int               argc,
     bool is_policy_enforced = false;
     char *contextFile = NULL;
 
+    optind = 0;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
     {
         switch(opt)
