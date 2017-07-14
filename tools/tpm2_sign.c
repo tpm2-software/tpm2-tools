@@ -172,7 +172,7 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
 
-    static const char *optstring = "k:P:g:m:t:s:c:X";
+    static const char *optstring = "k:P:g:m:t:s:c:S:X";
     static const struct option long_options[] = {
       {"keyHandle",1,NULL,'k'},
       {"pwdk",1,NULL,'P'},
@@ -182,6 +182,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
       {"ticket",1,NULL,'t'},
       {"keyContext",1,NULL,'c'},
       {"passwdInHex",0,NULL,'X'},
+      {"input-session-handle",1,NULL, 'S' },
       {0,0,0,0}
     };
 
@@ -268,6 +269,13 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             break;
         case 'X':
             hexPasswd = true;
+            break;
+        case 'S':
+            if (!tpm2_util_string_to_uint32(optarg, &ctx->sessionData.sessionHandle)) {
+                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                        optarg);
+                return false;
+            }
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);

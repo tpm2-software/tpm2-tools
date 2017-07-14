@@ -34,7 +34,7 @@ shall be provided, indicating that the TPM performed the hash of the data and
 validation shall indicate that hashed data did not start with
 TPM_GENERATED_VALUE. The scheme of keyHandle should not be TPM_ALG_NULL.
 .SH SYNOPSIS
-.B tpm2_sign[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-keyHandle\fR|\fB\-\-keyContext\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-msg\fR|\fB\-\-ticket\fR|\fB\-\-sig\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_sign[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-keyHandle\fR|\fB\-\-keyContext\fR|\fB\-\-pwdk\fR|\fB\-\-halg\fR|\fB\-\-msg\fR|\fB\-\-ticket\fR|\fB\-\-sig\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB ]
 .PP
 sign an externally provided hash with the specified symmetric or asymmetric
 signing key. If keyHandle references a restricted signing key, then validation
@@ -73,6 +73,9 @@ the signature file, record the signature structure
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format.
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
