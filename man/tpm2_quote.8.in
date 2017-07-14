@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_quote\ - Provide quote and signature for given list of PCRs in given algorithm/banks.
 .SH SYNOPSIS
-.B tpm2_quote[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-akHandle\fR|\fB\-\-akContext\fR|\fB\-\-akPassword\fR|\fB\-\-idList\fR|\fB\-\-algorithm\fR|\fB\-\-selList\fR|\fB\-\-outFile\fR|\fB\-\-passwdInHex\fR|\fB\-\-qualifyData\fR|\fB ]
+.B tpm2_quote[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-akHandle\fR|\fB\-\-akContext\fR|\fB\-\-akPassword\fR|\fB\-\-idList\fR|\fB\-\-algorithm\fR|\fB\-\-selList\fR|\fB\-\-outFile\fR|\fB\-\-passwdInHex\fR|\fB\-\-qualifyData\fR|\fB\-\-input-session-handle\fR|\fB ]
 .PP
 Provide quote and signature for given list of PCRs in given algorithm/banks.
 .SH DESCRIPTION
@@ -63,7 +63,10 @@ output file path, recording the two structures  output by tpm2_quote function
 passwords given by any options are hex format.
 .TP
 \fB\-q ,\-\-qualifyData\fR
-Data given as a Hex string to qualify the  quote, optional. 
+Data given as a Hex string to qualify the  quote, optional.
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@

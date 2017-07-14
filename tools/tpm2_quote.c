@@ -62,6 +62,8 @@ bool hexPasswd = false;
 char *outFilePath;
 TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 TPML_PCR_SELECTION  pcrSelections;
+bool is_auth_session;
+TPMI_SH_AUTH_SESSION auth_session_handle;
 
 void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -233,6 +235,10 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     sessionsData.cmdAuthsCount = 1;
 
     sessionData.sessionHandle = TPM_RS_PW;
+    if (is_auth_session) {
+        sessionData.sessionHandle = auth_session_handle;
+    }
+
     sessionData.nonce.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
     if (sessionData.hmac.t.size > 0 && hexPasswd)
@@ -297,7 +303,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
 
     int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:L:o:Xq:";
+    const char *optstring = "hvk:c:P:l:g:L:o:S:Xq:";
     static struct option long_options[] = {
         {"help",0,NULL,'h'},
         {"version",0,NULL,'v'},
@@ -310,6 +316,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         {"outFile",1,NULL,'o'},
         {"passwdInHex",0,NULL,'X'},
         {"qualifyData",1,NULL,'q'},
+        {"input-session-handle",1,NULL,'S'},
         {0,0,0,0}
     };
 
@@ -415,6 +422,14 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 break;
             }
             break;
+        case 'S':
+             if (!tpm2_util_string_to_uint32(optarg, &auth_session_handle)) {
+                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                         optarg);
+                 return 1;
+             }
+             is_auth_session = true;
+             break;
        case ':':
             //              printf("Argument %c needs a value!\n",optopt);
             returnVal = -9;
