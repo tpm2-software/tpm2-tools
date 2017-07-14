@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_load\ - load objects into the TPM, both pub/priv portion are needed.
 .SH SYNOPSIS
-.B tpm2_load[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pubfile\fR|\fB\-\-privfile\fR|\fB\-\-name\fR|\fB\-\-context\fR|\fB\-\-passwdInHex\fR|\fB ]
+.B tpm2_load[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-parent\fR|\fB\-\-contextParent\fR|\fB\-\-pwdp\fR|\fB\-\-pubfile\fR|\fB\-\-privfile\fR|\fB\-\-name\fR|\fB\-\-context\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB  ]
 .PP
 load objects into the TPM, both pub/priv portion are needed.
 .SH DESCRIPTION
@@ -61,6 +61,9 @@ The file to save the object context,  optional
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex  format. 
+.TP
+\fB\-S ,\-\-input-session-handle\fR
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
