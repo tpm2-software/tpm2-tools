@@ -410,7 +410,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             /* XXX Should o option only print to output file and nothing to stdout? */
             break;
         case 'L':
-            if (pcr_parse_selections(optarg, &context.pcr_selections) != 0) {
+            if (!pcr_parse_selections(optarg, &context.pcr_selections)) {
                 showArgError(optarg, argv[0]);
                 goto error;
             }
