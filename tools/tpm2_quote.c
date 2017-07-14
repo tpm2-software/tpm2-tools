@@ -58,10 +58,10 @@ static TPMS_AUTH_COMMAND sessionData = {
     .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
 };
 
-static bool hexPasswd = false;
-static char outFilePath[PATH_MAX];
-static TPM2B_DATA qualifyingData = {{0,}};
-static TPML_PCR_SELECTION  pcrSelections;
+bool hexPasswd = false;
+char *outFilePath;
+TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
+TPML_PCR_SELECTION  pcrSelections;
 
 void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -393,7 +393,7 @@ ENTRY_POINT(quote) {
             L_flag = 1;
             break;
         case 'o':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
+            outFilePath = optarg;
             if(files_does_file_exist(outFilePath))
             {
                 showArgError(optarg, argv[0]);

@@ -58,7 +58,7 @@ static TPMS_AUTH_COMMAND sessionData = {
 static bool hexPasswd = false;
 static TPM_HANDLE handle2048rsa;
 
-static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic)
+int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, bool is_policy_enforced)
 {
     switch(nameAlg)
     {
@@ -78,13 +78,12 @@ static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPub
     // First clear attributes bit field.
     *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
     inPublic->t.publicArea.objectAttributes.restricted = 1;
-    inPublic->t.publicArea.objectAttributes.userWithAuth = 1;
+    //check if auth policy needs to be enforced
+    inPublic->t.publicArea.objectAttributes.userWithAuth = !is_policy_enforced;        
     inPublic->t.publicArea.objectAttributes.decrypt = 1;
     inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
     inPublic->t.publicArea.objectAttributes.fixedParent = 1;
     inPublic->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    inPublic->t.publicArea.authPolicy.t.size = 0;
-
     inPublic->t.publicArea.type = type;
     switch(type)
     {
@@ -130,8 +129,9 @@ static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPub
     return 0;
 }
 
-static int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg)
-{
+int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy,
+        TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, 
+        TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, bool is_policy_enforced) {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
@@ -139,13 +139,13 @@ static int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarc
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_DATA              outsideInfo = { { 0, } };
+    TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION      creationPCR;
     TPM2B_NAME              name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-    TPM2B_PUBLIC            outPublic = { { 0, } };
-    TPM2B_CREATION_DATA     creationData = { { 0, } };
+    TPM2B_PUBLIC            outPublic = TPM2B_EMPTY_INIT;
+    TPM2B_CREATION_DATA     creationData = TPM2B_EMPTY_INIT;
     TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMT_TK_CREATION        creationTicket = { 0, };
+    TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -159,7 +159,7 @@ static int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarc
     inSensitive->t.sensitive.data.t.size = 0;
     inSensitive->t.size = inSensitive->t.sensitive.userAuth.b.size + 2;
 
-    if(setAlg(type, nameAlg, inPublic))
+    if(setAlg(type, nameAlg, inPublic, is_policy_enforced))
         return -1;
 
     creationPCR.count = 0;
@@ -190,7 +190,7 @@ ENTRY_POINT(createprimary) {
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "A:P:K:g:G:C:X";
+    const char *optstring = "A:P:K:g:G:C:L:EX";
     static struct option long_options[] = {
       {"auth",1,NULL,'A'},
       {"pwdp",1,NULL,'P'},
@@ -199,6 +199,8 @@ ENTRY_POINT(createprimary) {
       {"kalg",1,NULL,'G'},
       {"context",1,NULL,'C'},
       {"passwdInHex",0,NULL,'X'},
+      {"policy-file",1,NULL,'L'},
+      {"enforce-policy",1,NULL,'E'},
       {0,0,0,0}
     };
 
@@ -210,6 +212,7 @@ ENTRY_POINT(createprimary) {
         g_flag = 0,
         G_flag = 0,
         C_flag = 0;
+    bool is_policy_enforced = false;
     char *contextFile = NULL;
 
     optind = 0;
@@ -286,6 +289,17 @@ ENTRY_POINT(createprimary) {
         case 'X':
             hexPasswd = true;
             break;
+        case 'L':
+            inPublic.t.publicArea.authPolicy.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer); 
+            if(!files_load_bytes_from_file(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
+            {
+                returnVal = -8;
+                break;
+            }
+            break;
+        case 'E':
+            is_policy_enforced = true;
+            break;
         case ':':
 //              printf("Argument %c needs a value!\n",optopt);
             returnVal = -9;
@@ -325,11 +339,9 @@ ENTRY_POINT(createprimary) {
         }
     }
 
-
-
     if(A_flag == 1 && g_flag == 1 && G_flag == 1)
     {
-        returnVal = createPrimary(sapi_context, hierarchy, &inPublic, &inSensitive, type, nameAlg);
+        returnVal = createPrimary(sapi_context, hierarchy, &inPublic, &inSensitive, type, nameAlg, is_policy_enforced);
 
         if (returnVal == 0 && C_flag)
             returnVal = files_save_tpm_context_to_file(sapi_context, handle2048rsa, contextFile) != true;

@@ -45,9 +45,7 @@ static bool nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
 
     TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NV_PUBLIC nv_public = {
-            { 0, }
-    };
+    TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
 
     TPM_RC rval = Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, 0, &nv_public,
             &nv_name, 0);
@@ -62,7 +60,12 @@ static bool nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
             nv_public.t.nvPublic.attributes.val);
     printf("\tThe size of the data area(dataSize):%d\n ",
             nv_public.t.nvPublic.dataSize);
-    printf("  }\n");
+    printf("\tAuthorization Policy for R/W/D: ");
+    int i;
+    for(i=0; i<nv_public.t.nvPublic.authPolicy.t.size; i++) {
+        printf("%02X", nv_public.t.nvPublic.authPolicy.t.buffer[i] );
+    }
+    printf("\n  }\n");
 
     return true;
 }

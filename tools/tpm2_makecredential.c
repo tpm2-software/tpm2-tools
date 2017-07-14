@@ -45,11 +45,19 @@
 #include "main.h"
 #include "options.h"
 
+#define tpm_makecred_ctx_empty_init { \
+		.rsa2048_handle = 0, \
+		.object_name = TPM2B_EMPTY_INIT, \
+		.out_file_path = NULL, \
+        .public = TPM2B_EMPTY_INIT, \
+        .credential = TPM2B_EMPTY_INIT, \
+    }
+
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
     TPM_HANDLE rsa2048_handle;
     TPM2B_NAME object_name;
-    char out_file_path[PATH_MAX];
+    char *out_file_path;
     TPM2B_PUBLIC public;
     TPM2B_DIGEST credential;
 };
@@ -143,44 +151,55 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         return false;
     }
 
-    UINT16 size;
-    int flagCnt = 0;
+    union {
+        struct {
+            UINT8 e : 1;
+            UINT8 s : 1;
+            UINT8 n : 1;
+            UINT8 o : 1;
+            UINT8 unused : 4;
+        };
+        UINT8 all;
+    } flags = {
+      .all = 0,
+    };
+
     int opt = -1;
 
     optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
         switch (opt) {
-        case 'e':
-            size = sizeof(ctx->public);
+        case 'e': {
+            UINT16 size = sizeof(ctx->public);
             if (!files_load_bytes_from_file(optarg, (UINT8 *) &ctx->public, &size)) {
                 return false;
             }
-            flagCnt++;
+            flags.e = 1;
             break;
+        }
         case 's':
-            ctx->credential.t.size = sizeof(ctx->credential) - 2;
+            ctx->credential.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
             if (!files_load_bytes_from_file(optarg, ctx->credential.t.buffer,
                     &ctx->credential.t.size)) {
                 return false;
             }
-            flagCnt++;
+            flags.s = 1;
             break;
         case 'n':
-            ctx->object_name.t.size = sizeof(ctx->object_name) - 2;
+            ctx->object_name.t.size = BUFFER_SIZE(TPM2B_NAME, name);
             if (tpm2_util_hex_to_byte_structure(optarg, &ctx->object_name.t.size,
                     ctx->object_name.t.name) != 0) {
                 return false;
             }
-            flagCnt++;
+            flags.n = 1;
             break;
         case 'o':
-            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
-                    optarg);
+            ctx->out_file_path = optarg;
             if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
             }
-            flagCnt++;
+            flags.o = 1;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -194,7 +213,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         }
     }
 
-    if (flagCnt != 4) {
+    if (!flags.e || !flags.n || !flags.o || !flags.s) {
         showArgMismatch(argv[0]);
         return false;
     }
@@ -208,7 +227,7 @@ ENTRY_POINT(makecredential) {
     (void) opts;
     (void) envp;
 
-    tpm_makecred_ctx ctx = { 0 };
+    tpm_makecred_ctx ctx = tpm_makecred_ctx_empty_init;
     bool result = init(argc, argv, &ctx);
     if (!result) {
         LOG_ERR("Initialization failed");

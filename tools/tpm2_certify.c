@@ -38,7 +38,7 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
+#include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
@@ -55,8 +55,8 @@ struct tpm_certify_ctx {
     } handle;
 
     struct {
-        char attest[PATH_MAX];
-        char sig[PATH_MAX];
+        char *attest;
+        char *sig;
     } file_path;
     TSS2_SYS_CONTEXT *sapi_context;
 };
@@ -75,9 +75,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
             .rspAuths = session_data_out_array
     };
 
-    TPM2B_PUBLIC out_public = {
-            { 0, }
-    };
+    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
@@ -191,19 +189,9 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
             sizeof(signature));
 }
 
-static bool check_and_set_file(const char *path, char *dest, size_t dest_size) {
-
-    bool result = files_does_file_exist(path);
-    if (result) {
-        return false;
-    }
-    snprintf(dest, dest_size, "%s", path);
-    return true;
-}
-
 static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
 
-    bool result = false;
+    bool result;
     bool is_hex_password = false;
 
     char *context_file = NULL;
@@ -224,18 +212,21 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
       {NULL,           no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT16 H : 1;
-        UINT16 k : 1;
-        UINT16 P : 1;
-        UINT16 K : 1;
-        UINT16 g : 1;
-        UINT16 a : 1;
-        UINT16 s : 1;
-        UINT16 C : 1;
-        UINT16 c : 1;
-        UINT16 unused : 7;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT16 H : 1;
+            UINT16 k : 1;
+            UINT16 P : 1;
+            UINT16 K : 1;
+            UINT16 g : 1;
+            UINT16 a : 1;
+            UINT16 s : 1;
+            UINT16 C : 1;
+            UINT16 c : 1;
+            UINT16 unused : 7;
+        };
+        UINT16 all;
+    } flags = { .all = 0 };
 
 
     if (argc == 1) {
@@ -254,7 +245,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             if (!result) {
                 LOG_ERR("Could not format object handle to number, got: \"%s\"",
                         optarg);
-                goto out;
+                return false;
             }
             flags.H = 1;
             break;
@@ -263,7 +254,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             if (!result) {
                 LOG_ERR("Could not format key handle to number, got: \"%s\"",
                         optarg);
-                goto out;
+                return false;
             }
             flags.k = 1;
             break;
@@ -271,7 +262,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             result = password_tpm2_util_copy_password(optarg, "object handle",
                     &ctx->cmd_auth[0].hmac);
             if (!result) {
-                goto out;
+                return false;
             }
             flags.P = 1;
             break;
@@ -279,7 +270,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             result = password_tpm2_util_copy_password(optarg, "key handle",
                     &ctx->cmd_auth[1].hmac);
             if (!result) {
-                goto out;
+                return false;
             }
             flags.K = 1;
             break;
@@ -288,48 +279,38 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             if (!result) {
                 LOG_ERR("Could not format algorithm to number, got: \"%s\"",
                         optarg);
-                goto out;
+                return false;
             }
             flags.g = 1;
             break;
         case 'a':
-            result = check_and_set_file(optarg, ctx->file_path.attest,
-                    sizeof(ctx->file_path.attest));
-            if (!result) {
-                goto out;
+            if (files_does_file_exist(optarg)) {
+                return false;
             }
+            ctx->file_path.attest = optarg;
             flags.a = 1;
             break;
         case 's':
-            result = check_and_set_file(optarg, ctx->file_path.sig,
-                    sizeof(ctx->file_path.sig));
-            if (!result) {
-                goto out;
+            if (files_does_file_exist(optarg)) {
+                return false;
             }
+            ctx->file_path.sig = optarg;
             flags.s = 1;
             break;
         case 'c':
             if (context_key_file) {
                 LOG_ERR("Multiple specifications of -c");
-                goto out;
+                return false;
             }
-            context_key_file = strdup(optarg);
-            if (!context_key_file) {
-                LOG_ERR("oom");
-                goto out;
-            }
+            context_key_file = optarg;
             flags.c = 1;
             break;
         case 'C':
             if (context_file) {
                 LOG_ERR("Multiple specifications of -C");
-                goto out;
+                return false;
             }
-            context_file = strdup(optarg);
-            if (!context_file) {
-                LOG_ERR("oom");
-                goto out;
-            }
+            context_file = optarg;
             flags.C = 1;
             break;
         case 'X':
@@ -338,35 +319,34 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             result = false;
-            goto out;
+            return false;
         case '?':
             LOG_ERR("Unknown Argument: %c\n", optopt);
             result = false;
-            goto out;
+            return false;
         default:
             LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
             result = false;
-            goto out;
+            return false;
         }
     };
 
     if (!(flags.H || flags.C) && (flags.k || flags.c) && (flags.g) && (flags.a)
             && (flags.s)) {
-        result = false;
-        goto out;
+        return false;
     }
 
     /* convert a hex passwords if needed */
     result = password_tpm2_util_to_auth(&ctx->cmd_auth[0].hmac, is_hex_password,
             "object handle", &ctx->cmd_auth[0].hmac);
     if (!result) {
-        goto out;
+        return false;
     }
 
     result = password_tpm2_util_to_auth(&ctx->cmd_auth[1].hmac, is_hex_password,
             "key handle", &ctx->cmd_auth[1].hmac);
     if (!result) {
-        goto out;
+        return false;
     }
 
     /* Load input files */
@@ -374,7 +354,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
         result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.obj,
                 context_file);
         if (!result) {
-            goto out;
+            return false;
         }
     }
 
@@ -382,17 +362,11 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
         result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.key,
                 context_key_file);
         if (!result) {
-            goto out;
+            return false;
         }
     }
 
-    result = true;
-
-out:
-    free(context_file);
-    free(context_key_file);
-
-    return result;
+    return true;
 }
 
 ENTRY_POINT(certify) {
@@ -415,7 +389,7 @@ ENTRY_POINT(certify) {
                     .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
                 }  // [1]
             },
-            .file_path = { .attest = { 0 }, .sig = { 0 } },
+            .file_path = { .attest = NULL, .sig = NULL },
             .sapi_context = sapi_context
     };
 

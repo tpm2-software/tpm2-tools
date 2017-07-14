@@ -66,20 +66,6 @@ struct listpcr_context {
     TPMS_CAPABILITY_DATA cap_data;
 };
 
-static inline void set_pcr_select_bit(TPMS_PCR_SELECTION *pcr_selection,
-        UINT32 pcr) {
-
-    pcr_selection->pcrSelect[((pcr) / 8)] |= (1 << ((pcr) % 8));
-}
-
-static inline void clear_pcr_select_bits(TPMS_PCR_SELECTION *pcr_selection) {
-
-    /* XXX Why only the first 3? */
-    pcr_selection->pcrSelect[0] = 0;
-    pcr_selection->pcrSelect[1] = 0;
-    pcr_selection->pcrSelect[2] = 0;
-}
-
 static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
         UINT8 size) {
 
@@ -383,8 +369,8 @@ ENTRY_POINT(listpcrs) {
                 TPM_ALG_SHA384 }
         },
         .output_file = NULL,
-        .pcr_selections = { 0 },
-        .pcrs = { 0 },
+        .pcr_selections = TPML_PCR_SELECTION_EMPTY_INIT,
+        .pcrs = { .count = 0 },
         .sapi_context = sapi_context
     };
 

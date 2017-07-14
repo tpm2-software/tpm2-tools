@@ -37,7 +37,7 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
+#include "tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
@@ -52,13 +52,12 @@ struct createpolicypcr_ctx {
     TSS2_SYS_CONTEXT *sapi_context;
     SESSION *policy_session;
     TPM2B_DIGEST policy_digest;
-    char policyfile[PATH_MAX];
-    bool policy_file_flag;
+    char *policyfile;
     //build_pcr_policy options
     unsigned int pcr_index;
     UINT32 max_supported_pcrs;
     TPMI_ALG_HASH hash_alg;
-    char raw_pcr_file[PATH_MAX];
+    char *raw_pcr_file;
     struct {
         bool policy_type_pcr_flag;
         bool raw_pcr_flag;
@@ -163,11 +162,10 @@ TPM_RC build_pcr_policy(createpolicypcr_ctx *ctx) {
 TPM_RC build_policy(createpolicypcr_ctx *ctx,
         TPM_RC (*build_policy_function)(createpolicypcr_ctx *ctx)) {
     // NOTE:  this policy_session will be a trial policy session
-    TPM2B_ENCRYPTED_SECRET encryptedSalt = { { 0 }, };
+    TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
     TPMT_SYM_DEF symmetric = { .algorithm = TPM_ALG_NULL, };
 
-    TPM2B_NONCE nonceCaller = { { 0, } };
-    nonceCaller.t.size = 0;
+    TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
 
     // Start policy session.
     TPM_RC rval = tpm_session_start_auth_with_params(ctx->sapi_context,
@@ -197,7 +195,7 @@ TPM_RC build_policy(createpolicypcr_ctx *ctx,
     LOG_INFO("Created Policy Digest:\n");
 
     //save the policy buffer in a file for use later or print hex to stdout.
-    if (ctx->policy_file_flag) {
+    if (ctx->policyfile) {
         bool result = files_save_bytes_to_file(ctx->policyfile, (UINT8 *) &ctx->policy_digest.t.buffer,
                 ctx->policy_digest.t.size);
         if (!result) {
@@ -232,41 +230,38 @@ TPM_RC build_policy(createpolicypcr_ctx *ctx,
 
 bool parse_policy_type(createpolicypcr_ctx *ctx, char *argv[]) {
 
-    if (!ctx->pcr_flags.policy_type_pcr_flag) {
-        return true;
-    }
+    if (ctx->pcr_flags.policy_type_pcr_flag) {
+        if (!ctx->policyfile || !ctx->pcr_flags.pcr_index_flag) {
+            showArgMismatch(argv[0]);
+            return false;
+        } else {
+            // pcr_index is unsigned... never can be less than 0
+            TPM_RC rval = get_max_supported_pcrs(ctx->sapi_context,
+                &ctx->max_supported_pcrs);
+            if(rval != TPM_RC_SUCCESS) {
+                LOG_ERR("Failure to read the capability data from TPM.\n");
+                return false;
+            }
+            if (!ctx->max_supported_pcrs) {
+                LOG_ERR("Failed to retrieve number of supported PCRs on the TPM\n");
+                return false;
+            }
 
-    if (!ctx->pcr_flags.pcr_index_flag) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
+            if (ctx->pcr_index > (ctx->max_supported_pcrs - 1)) {
+                LOG_ERR("Invalid pcr_index %u. Choose between 0..%d\n",
+                        ctx->pcr_index, ctx->max_supported_pcrs);
+                return false;
+            }
 
-    // pcr_index is unsigned... never can be less than 0
-    TPM_RC rval = get_max_supported_pcrs(ctx->sapi_context,
-        &ctx->max_supported_pcrs);
-    if(rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Failure to read the capability data from TPM.\n");
-        return false;
+            LOG_INFO("Policy File = %s\n", ctx->policyfile);
+            LOG_INFO("PCR Index= %d\n", ctx->pcr_index);
+            rval = build_policy(ctx, build_pcr_policy);
+            if (rval != TPM_RC_SUCCESS) {
+                LOG_ERR("Failed build_policy\n");
+                return false;
+            }
+        }
     }
-    if (!ctx->max_supported_pcrs) {
-        LOG_ERR("Failed to retrieve number of supported PCRs on the TPM\n");
-        return false;
-    }
-
-    if (ctx->pcr_index > (ctx->max_supported_pcrs - 1)) {
-        LOG_ERR("Invalid pcr_index %u. Choose between 0..%d\n",
-                ctx->pcr_index, ctx->max_supported_pcrs);
-        return false;
-    }
-
-    LOG_INFO("Policy File = %s\n", ctx->policyfile);
-    LOG_INFO("PCR Index= %d\n", ctx->pcr_index);
-    rval = build_policy(ctx, build_pcr_policy);
-    if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Failed build_policy\n");
-        return false;
-    }
-
     return true;
 }
 
@@ -293,13 +288,10 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
 
     int opt;
     bool result;
-
-    optind = 0;
     while ((opt = getopt_long(argc, argv, "Pf:i:g:F:", sOpts, NULL)) != -1) {
         switch (opt) {
         case 'f':
-            ctx->policy_file_flag = true;
-            snprintf(ctx->policyfile, sizeof(ctx->policyfile), "%s", optarg);
+            ctx->policyfile = optarg;
             break;
         case 'P':
             ctx->pcr_flags.policy_type_pcr_flag = true;
@@ -312,9 +304,7 @@ static bool init(int argc, char *argv[], createpolicypcr_ctx *ctx) {
             }
             break;
         case 'F':
-            ctx->pcr_flags.raw_pcr_flag = true;
-            snprintf(ctx->raw_pcr_file, sizeof(ctx->raw_pcr_file), "%s",
-                    optarg);
+            ctx->raw_pcr_file = optarg;
             break;
         case 'g':
             result = tpm2_util_string_to_uint16(optarg, &ctx->hash_alg);
@@ -350,7 +340,8 @@ ENTRY_POINT(createpolicy) {
         .pcr_index = 0,
         .max_supported_pcrs = 0,
         .hash_alg = TPM_ALG_SHA1,
-        .policy_file_flag = false,
+        .policyfile = NULL,
+        .raw_pcr_file = NULL,
         .pcr_flags.policy_type_pcr_flag = false,
         .pcr_flags.pcr_index_flag = false,
         .pcr_flags.raw_pcr_flag = false,

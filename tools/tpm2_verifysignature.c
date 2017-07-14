@@ -49,15 +49,18 @@
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
-    struct {
-        uint8_t key_handle :1;
-        uint8_t digest :1;
-        uint8_t halg :1;
-        uint8_t msg :1;
-        uint8_t raw :1;
-        uint8_t sig :1;
-        uint8_t ticket :1;
-        uint8_t key_context :1;
+    union {
+        struct {
+            uint8_t key_handle :1;
+            uint8_t digest :1;
+            uint8_t halg :1;
+            uint8_t msg :1;
+            uint8_t raw :1;
+            uint8_t sig :1;
+            uint8_t ticket :1;
+            uint8_t key_context :1;
+        };
+        uint8_t all;
     } flags;
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST msgHash;
@@ -152,16 +155,6 @@ static bool generate_signature(tpm2_verifysig_ctx *ctx) {
                 ctx->flags.raw ? "raw" : "\0", ctx->sig_file_path);
     }
     return result;
-}
-
-static bool string_dup(char **new, char *old) {
-
-    *new = strdup(old);
-    if (!*new) {
-        LOG_ERR("OOM while duplicating \"%s\"", old);
-        return false;
-    }
-    return true;
 }
 
 static bool init(tpm2_verifysig_ctx *ctx) {
@@ -260,10 +253,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
         }
             break;
         case 'm': {
-            bool res = string_dup(&ctx->msg_file_path, optarg);
-            if (!res) {
-                return false;
-            }
+            ctx->msg_file_path = optarg;
             ctx->flags.msg = 1;
         }
             break;
@@ -280,15 +270,11 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             ctx->flags.raw = 1;
             break;
         case 's':
-            if (!string_dup(&ctx->sig_file_path, optarg)) {
-                return false;
-            }
+            ctx->sig_file_path = optarg;
             ctx->flags.sig = 1;
             break;
         case 't':
-            if (!string_dup(&ctx->out_file_path, optarg)) {
-                return false;
-            }
+            ctx->out_file_path = optarg;
 
             if (files_does_file_exist(ctx->out_file_path)) {
                 return false;
@@ -296,9 +282,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             ctx->flags.ticket = 1;
             break;
         case 'c':
-            if (!string_dup(&ctx->context_key_file_path, optarg)) {
-                return false;
-            }
+            ctx->context_key_file_path = optarg;
             ctx->flags.key_context = 1;
             break;
         case ':':
@@ -329,14 +313,6 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
     return init(ctx);
 }
 
-static void tpm_verifysig_ctx_dealloc(tpm2_verifysig_ctx *ctx) {
-
-    free(ctx->sig_file_path);
-    free(ctx->out_file_path);
-    free(ctx->msg_file_path);
-    free(ctx->context_key_file_path);
-}
-
 ENTRY_POINT(verifysignature) {
 
     (void) opts;
@@ -345,7 +321,7 @@ ENTRY_POINT(verifysignature) {
     int normalized_return_code = 1;
 
     tpm2_verifysig_ctx ctx = {
-            .flags = { 0 },
+            .flags = { .all = 0 },
             .halg = TPM_ALG_SHA256,
             .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
             .sig_file_path = NULL,
@@ -357,19 +333,14 @@ ENTRY_POINT(verifysignature) {
 
     bool res = handle_options_and_init(argc, argv, &ctx);
     if (!res) {
-        goto err;
+        return normalized_return_code;
     }
 
     res = verify_signature(&ctx);
     if (!res) {
         LOG_ERR("Verify signature failed!");
-        goto err;
+        return normalized_return_code;
     }
 
-    normalized_return_code = 0;
-
-err:
-    tpm_verifysig_ctx_dealloc(&ctx);
-
-    return normalized_return_code;
+    return 0;
 }

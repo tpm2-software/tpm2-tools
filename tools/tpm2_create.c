@@ -57,7 +57,7 @@ static TPMS_AUTH_COMMAND sessionData = {
 
 static bool hexPasswd = false;
 
-static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag)
+int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag, bool is_policy_enforced)
 {
     switch(nameAlg)
     {
@@ -77,7 +77,8 @@ static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPub
     // First clear attributes bit field.
     *(UINT32 *)&(inPublic->t.publicArea.objectAttributes) = 0;
     inPublic->t.publicArea.objectAttributes.restricted = 0;
-    inPublic->t.publicArea.objectAttributes.userWithAuth = 1;
+    //check if auth policy needs to be enforced
+    inPublic->t.publicArea.objectAttributes.userWithAuth = !is_policy_enforced;        
     inPublic->t.publicArea.objectAttributes.decrypt = 1;
     inPublic->t.publicArea.objectAttributes.sign = 1;
     inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
@@ -137,7 +138,7 @@ static int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPub
     return 0;
 }
 
-int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, const char *opuFilePath, const char *oprFilePath, int o_flag, int O_flag, int I_flag, int A_flag, UINT32 objectAttributes)
+int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_CREATE *inSensitive, TPMI_ALG_PUBLIC type, TPMI_ALG_HASH nameAlg, const char *opuFilePath, const char *oprFilePath, int o_flag, int O_flag, int I_flag, int A_flag, UINT32 objectAttributes, bool is_policy_enforced)
 {
     TPM_RC rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -146,14 +147,14 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     TPMS_AUTH_COMMAND *sessionDataArray[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    TPM2B_DATA              outsideInfo = { { 0, } };
+    TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION      creationPCR;
-    TPM2B_PUBLIC            outPublic = { { 0, } };
+    TPM2B_PUBLIC            outPublic = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE           outPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
-    TPM2B_CREATION_DATA     creationData = { { 0, } };
+    TPM2B_CREATION_DATA     creationData = TPM2B_EMPTY_INIT;
     TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMT_TK_CREATION        creationTicket = { 0, };
+    TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -190,7 +191,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     }
     inSensitive->t.size = inSensitive->t.sensitive.userAuth.b.size + 2;
 
-    if(setAlg(type, nameAlg, inPublic, I_flag))
+    if(setAlg(type, nameAlg, inPublic, I_flag, is_policy_enforced))
         return -1;
 
     if(A_flag == 1)
@@ -240,15 +241,15 @@ ENTRY_POINT(create) {
     TPMI_ALG_HASH nameAlg;
     TPMI_DH_OBJECT parentHandle;
     UINT32 objectAttributes = 0;
-    char opuFilePath[PATH_MAX] = {0};
-    char oprFilePath[PATH_MAX] = {0};
+    char *opuFilePath = NULL;
+    char *oprFilePath = NULL;
     char *contextParentFilePath = NULL;
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:X";
+    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:XE";
     static struct option long_options[] = {
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
@@ -257,7 +258,8 @@ ENTRY_POINT(create) {
       {"kalg",1,NULL,'G'},
       {"objectAttributes",1,NULL,'A'},
       {"inFile",1,NULL,'I'},
-      {"policyFile",1,NULL,'L'},
+      {"policy-file",1,NULL,'L'},
+      {"enforce-policy",1,NULL,'E'},
       {"opu",1,NULL,'o'},
       {"opr",1,NULL,'O'},
       {"contextParent",1,NULL,'c'},
@@ -278,8 +280,8 @@ ENTRY_POINT(create) {
         L_flag = 0,
         o_flag = 0,
         c_flag = 0,
-        O_flag = 0/*,
-        f_flag = 0*/;
+        O_flag = 0;
+	bool is_policy_enforced = false;
 
     optind = 0;
     while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
@@ -343,10 +345,16 @@ ENTRY_POINT(create) {
             break;
         case 'I':
             inSensitive.t.sensitive.data.t.size = sizeof(inSensitive.t.sensitive.data) - 2;
-            if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer, &inSensitive.t.sensitive.data.t.size))
-            {
-                returnVal = -7;
-                break;
+            if (!strcmp(optarg, "-")) {
+                if (!files_load_bytes_from_stdin(inSensitive.t.sensitive.data.t.buffer,
+                                                 &inSensitive.t.sensitive.data.t.size)) {
+                    returnVal = -7;
+                    break;
+                }
+            } else if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer,
+                                               &inSensitive.t.sensitive.data.t.size)) {
+                    returnVal = -7;
+                    break;
             }
             I_flag = 1;
             printf("inSensitive.t.sensitive.data.t.size = %d\n",inSensitive.t.sensitive.data.t.size);
@@ -360,8 +368,11 @@ ENTRY_POINT(create) {
             }
             L_flag = 1;
             break;
+        case 'E':
+            is_policy_enforced = true;
+            break;
         case 'o':
-            snprintf(opuFilePath, sizeof(opuFilePath), "%s", optarg);
+            opuFilePath = optarg;
             if(files_does_file_exist(opuFilePath) != 0)
             {
                 returnVal = -9;
@@ -370,7 +381,7 @@ ENTRY_POINT(create) {
             o_flag = 1;
             break;
         case 'O':
-            snprintf(oprFilePath, sizeof(oprFilePath), "%s", optarg);
+            oprFilePath = optarg;
             if(files_does_file_exist(oprFilePath) != 0)
             {
                 returnVal = -10;
@@ -429,7 +440,7 @@ ENTRY_POINT(create) {
         if(c_flag)
             returnVal = file_load_tpm_context_from_file(sysContext, &parentHandle, contextParentFilePath) != true;
         if(returnVal == 0)
-            returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes);
+            returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes, is_policy_enforced);
 
         if(returnVal)
             return -17;

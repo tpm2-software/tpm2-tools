@@ -49,7 +49,7 @@ typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
     TPMS_AUTH_COMMAND sessionData;
     TPMI_DH_OBJECT itemHandle;
-    char outFilePath[PATH_MAX];
+    char *outFilePath;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -79,8 +79,13 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
         return false;
     }
 
-    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) outData.t.buffer,
-            outData.t.size);
+    if (ctx->outFilePath) {
+        return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *)
+                                        outData.t.buffer, outData.t.size);
+    } else {
+        return files_write_bytes(stdout, (UINT8 *) outData.t.buffer,
+                                 outData.t.size);
+    }
 }
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
@@ -100,16 +105,18 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         return false;
     }
 
-    struct {
-        UINT8 H : 1;
-        UINT8 o : 1;
-        UINT8 c : 1;
-        UINT8 P : 1;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 H : 1;
+            UINT8 c : 1;
+            UINT8 P : 1;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     int opt;
     bool hexPasswd = false;
-    char contextItemFile[PATH_MAX];
+    char *contextItemFile = NULL;
 
     optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
@@ -138,12 +145,11 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
-            flags.o = 1;
+            ctx->outFilePath = optarg;
         }
             break;
         case 'c':
-            snprintf(contextItemFile, sizeof(contextItemFile), "%s", optarg);
+            contextItemFile = optarg;
             flags.c = 1;
             break;
         case 'X':
@@ -161,8 +167,8 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
     }
 
-    if (!((flags.H || flags.c) && flags.o)) {
-        LOG_ERR("Expected options (H or c) and o");
+    if (!(flags.H || flags.c)) {
+        LOG_ERR("Expected options H or c");
         return false;
     }
 
@@ -186,17 +192,14 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
 }
 
 ENTRY_POINT(unseal) {
-
     /* opts and envp are unused, avoid compiler warning */
     (void)opts;
     (void) envp;
 
     tpm_unseal_ctx ctx = {
-            .sessionData = { 0 },
+            .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
             .sapi_context = sapi_context
     };
-
-    ctx.sessionData.sessionHandle = TPM_RS_PW;
 
     bool result = init(argc, argv, &ctx);
     if (!result) {

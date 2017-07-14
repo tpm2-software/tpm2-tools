@@ -113,7 +113,7 @@ ENTRY_POINT(load) {
     TPM2B_PUBLIC  inPublic;
     TPM2B_PRIVATE inPrivate;
     UINT16 size;
-    char outFilePath[PATH_MAX] = {0};
+    char *outFilePath = NULL;
     char *contextFile = NULL;
     char *contextParentFilePath = NULL;
 
@@ -189,7 +189,7 @@ ENTRY_POINT(load) {
             r_flag = 1;
             break;
         case 'n':
-            snprintf(outFilePath, sizeof(outFilePath), "%s", optarg);
+            outFilePath = optarg;
             if(files_does_file_exist(outFilePath))
             {
                 returnVal = -5;

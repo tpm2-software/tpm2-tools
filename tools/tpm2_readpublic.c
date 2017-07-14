@@ -48,7 +48,7 @@
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {
     TPMI_DH_OBJECT objectHandle;
-    char outFilePath[PATH_MAX];
+    char *outFilePath;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -60,9 +60,7 @@ static int read_public_and_save(tpm_readpub_ctx *ctx) {
     TSS2_SYS_RSP_AUTHS sessions_out_data;
     TPMS_AUTH_RESPONSE *session_out_data_array[1];
 
-    TPM2B_PUBLIC public = {
-            { 0, }
-    };
+    TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
@@ -106,12 +104,15 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
         {NULL,            no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT8 H      : 1;
-        UINT8 o      : 1;
-        UINT8 c      : 1;
-        UINT8 unused : 5;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 H      : 1;
+            UINT8 o      : 1;
+            UINT8 c      : 1;
+            UINT8 unused : 5;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     if (argc == 1) {
         showArgMismatch(argv[0]);
@@ -120,9 +121,7 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
 
     int opt = -1;
     bool result;
-    char context_file[PATH_MAX] = {0};
-
-    optind = 0;
+    char *context_file = NULL;
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {
@@ -138,11 +137,11 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            ctx->outFilePath = optarg;
             flags.o = 1;
             break;
         case 'c':
-            snprintf(context_file, sizeof(context_file), "%s", optarg);
+            context_file = optarg;
             flags.c = 1;
             break;
         }
@@ -171,7 +170,7 @@ ENTRY_POINT(readpublic) {
 
     tpm_readpub_ctx ctx = {
             .objectHandle = 0,
-            .outFilePath = { 0 },
+            .outFilePath = NULL,
             .sapi_context = sapi_context
     };
 

@@ -52,7 +52,7 @@ struct tpm_sign_ctx {
     TPMS_AUTH_COMMAND sessionData;
     TPMI_DH_OBJECT keyHandle;
     TPMI_ALG_HASH halg;
-    char outFilePath[PATH_MAX];
+    char *outFilePath;
     BYTE *msg;
     UINT16 length;
     TSS2_SYS_CONTEXT *sapi_context;
@@ -72,9 +72,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
             &session_data_out_array[0]
     };
 
-    TPM2B_PUBLIC out_public = {
-            { 0, }
-    };
+    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
@@ -192,21 +190,24 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         return false;
     }
 
-    struct {
-        UINT8 k : 1;
-        UINT8 P : 1;
-        UINT8 g : 1;
-        UINT8 m : 1;
-        UINT8 t : 1;
-        UINT8 s : 1;
-        UINT8 c : 1;
-        UINT8 unused : 1;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 k : 1;
+            UINT8 P : 1;
+            UINT8 g : 1;
+            UINT8 m : 1;
+            UINT8 t : 1;
+            UINT8 s : 1;
+            UINT8 c : 1;
+            UINT8 unused : 1;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     int opt;
     bool hexPasswd = false;
-    char contextKeyFile[PATH_MAX];
-    char inMsgFileName[PATH_MAX];
+    char *contextKeyFile = NULL;
+    char *inMsgFileName = NULL;
 
     optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
@@ -241,7 +242,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         }
             break;
         case 'm':
-            snprintf(inMsgFileName, sizeof(inMsgFileName), "%s", optarg);
+            inMsgFileName = optarg;
             flags.m = 1;
             break;
         case 't': {
@@ -259,12 +260,12 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->outFilePath, sizeof(ctx->outFilePath), "%s", optarg);
+            ctx->outFilePath = optarg;
             flags.s = 1;
         }
             break;
         case 'c':
-            snprintf(contextKeyFile, sizeof(contextKeyFile), "%s", optarg);
+            contextKeyFile = optarg;
             flags.c = 1;
             break;
         case 'X':
@@ -353,10 +354,10 @@ ENTRY_POINT(sign) {
 
     tpm_sign_ctx ctx = {
             .msg = NULL,
-            .sessionData = { 0 },
+            .sessionData = TPMS_AUTH_COMMAND_EMPTY_INIT,
             .halg = 0,
             .keyHandle = 0,
-            .validation = { 0 },
+            .validation = TPMT_TK_HASHCHECK_EMPTY_INIT,
             .sapi_context = sapi_context
     };
 

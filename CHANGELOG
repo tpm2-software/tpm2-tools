@@ -1,3 +1,13 @@
+next
+* tpm2_unseal: supports output to stdoud.
+* tpm2_create: enforce policy based authorization.
+* tpm2_createprimary: add ability to create objects with policy based authorization.
+* tpm2_nvdefine: add ability to create nv indexes with policy based authorization.
+* Support Clang Build.
+* tpm2_unseal test uses endorsment hiearchy as platform hiearchy is unavailable on a
+  real tpm.
+* Numerous cleanups and minor bug fixes.
+
 v2.0 - 2017-03-29
 * Tracked on the milestone: https://github.com/01org/tpm2.0-tools/milestone/2
 * Reworked all the tools to support configurable TCTIs, based on build time

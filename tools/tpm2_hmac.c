@@ -38,7 +38,7 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
+#include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
@@ -50,7 +50,7 @@ struct tpm_hmac_ctx {
     TPMS_AUTH_COMMAND session_data;
     TPMI_DH_OBJECT key_handle;
     TPMI_ALG_HASH algorithm;
-    char hmac_output_file_path[PATH_MAX];
+    char *hmac_output_file_path;
     TPM2B_MAX_BUFFER data;
     TSS2_SYS_CONTEXT *sapi_context;
 };
@@ -115,15 +115,18 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         {NULL,          no_argument,       NULL, '\0'}
     };
 
-    struct {
-        UINT8 k : 1;
-        UINT8 P : 1;
-        UINT8 g : 1;
-        UINT8 I : 1;
-        UINT8 o : 1;
-        UINT8 c : 1;
-        UINT8 unused : 2;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 k : 1;
+            UINT8 P : 1;
+            UINT8 g : 1;
+            UINT8 I : 1;
+            UINT8 o : 1;
+            UINT8 c : 1;
+            UINT8 unused : 2;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     /*
      * argc should be bound by the maximum and minimum option count.
@@ -145,7 +148,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             if (!result) {
                 LOG_ERR("Could not convert key handle to number, got \"%s\"",
                         optarg);
-                goto out;
+                return false;
             }
             flags.k = 1;
             break;
@@ -153,7 +156,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             result = password_tpm2_util_copy_password(optarg, "key handle",
                     &ctx->session_data.hmac);
             if (!result) {
-                goto out;
+                return false;
             }
             flags.P = 1;
             break;
@@ -162,38 +165,33 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             if (!result) {
                 LOG_ERR("Could not convert algorithm to number, got \"%s\"",
                         optarg);
-                goto out;
+                return false;
             }
             flags.g = 1;
             break;
         case 'I':
-            ctx->data.t.size = sizeof(ctx->data) - 2;
+            ctx->data.t.size = BUFFER_SIZE(TPM2B_MAX_BUFFER, buffer);
             result = files_load_bytes_from_file(optarg, ctx->data.t.buffer,
                     &ctx->data.t.size);
             if (!result) {
-                goto out;
+                return false;
             }
             flags.I = 1;
             break;
         case 'o':
             result = files_does_file_exist(optarg);
             if (result) {
-                goto out;
+                return false;
             }
-            snprintf(ctx->hmac_output_file_path,
-                    sizeof(ctx->hmac_output_file_path), "%s", optarg);
+            ctx->hmac_output_file_path = optarg;
             flags.o = 1;
             break;
         case 'c':
             if (contextKeyFile) {
                 LOG_ERR("Multiple specifications of -c");
-                goto out;
+                return false;
             }
-            contextKeyFile = strdup(optarg);
-            if (!contextKeyFile) {
-                LOG_ERR("OOM");
-                goto out;
-            }
+            contextKeyFile = optarg;
             flags.c = 1;
             break;
         case 'X':
@@ -201,22 +199,22 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
-            goto out;
+            return false;
         case '?':
             LOG_ERR("Unknown Argument: %c\n", optopt);
-            goto out;
+            return false;
         default:
             LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
-            goto out;
+            return false;
         }
     }
 
     /*
-     * Options g, i, o must be specified and k or c must be specified.
+     * Options g, I, o must be specified and k or c must be specified.
      */
     if (!((flags.k || flags.c) && flags.I && flags.o && flags.g)) {
         LOG_ERR("Must specify options g, i, o and k or c");
-        goto out;
+        return false;
     }
 
     if (flags.c) {
@@ -225,22 +223,13 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",
                     contextKeyFile);
-            goto out;
+            return false;
         }
     }
 
     /* convert a hex password if needed */
-    result = password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
+    return password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
             "key handle", &ctx->session_data.hmac);
-    if (!result) {
-        goto out;
-    }
-
-    result = true;
-
-out:
-    free(contextKeyFile);
-    return result;
 }
 
 ENTRY_POINT(hmac) {
@@ -249,7 +238,7 @@ ENTRY_POINT(hmac) {
     (void)envp;
 
     tpm_hmac_ctx ctx = {
-            .session_data = { 0 },
+            .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
             .key_handle = 0,
             .sapi_context = sapi_context
     };

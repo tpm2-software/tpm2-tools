@@ -65,7 +65,7 @@ process_cmdline (int   argc,
     static struct option long_options[] = {
         { "help", 0 , NULL, 'h' },
         { "version", 0, NULL, 'v' },
-        { 0 }
+        { .name = NULL }
     };
 
     optind = 0;

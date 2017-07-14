@@ -115,8 +115,7 @@ UINT32 tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
         return rval;
     }
 
-    TPMS_AUTH_COMMAND cmd_auth = { 0 };
-    cmd_auth.sessionHandle = TPM_RS_PW;
+    TPMS_AUTH_COMMAND cmd_auth = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW);
     TPMS_AUTH_COMMAND *cmd_session_array[1] = { &cmd_auth };
     TSS2_SYS_CMD_AUTHS cmd_auth_array = { 1, &cmd_session_array[0] };
     unsigned i;

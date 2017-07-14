@@ -59,8 +59,8 @@ struct getpubak_context {
         TPM2B_AUTH owner;
     } passwords;
     bool hexPasswd;
-    char outputFile[PATH_MAX];
-    char aknameFile[PATH_MAX];
+    char *outputFile;
+    char *aknameFile;
     UINT32 algorithmType;
     UINT32 digestAlg;
     UINT32 signAlg;
@@ -202,12 +202,12 @@ static bool create_ak(getpubak_context *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    TPM2B_DATA outsideInfo = { { 0, } };
-    TPM2B_PUBLIC out_public = {{ 0, } };
-    TPM2B_NONCE nonce_caller = { { 0, } };
-    TPMT_TK_CREATION creation_ticket = { 0, };
-    TPM2B_CREATION_DATA creation_data = { { 0, } };
-    TPM2B_ENCRYPTED_SECRET encrypted_salt = { { 0, } };
+    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
+    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
+    TPM2B_NONCE nonce_caller = TPM2B_EMPTY_INIT;
+    TPMT_TK_CREATION creation_ticket = TPMT_TK_CREATION_EMPTY_INIT;
+    TPM2B_CREATION_DATA creation_data = TPM2B_EMPTY_INIT;
+    TPM2B_ENCRYPTED_SECRET encrypted_salt = TPM2B_EMPTY_INIT;
 
     TPMT_SYM_DEF symmetric = {
             .algorithm = TPM_ALG_NULL,
@@ -495,7 +495,7 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
                         "Please specify the output file used to save the pub ek.");
                 return false;
             }
-            snprintf(ctx->outputFile, sizeof(ctx->outputFile), "%s", optarg);
+            ctx->outputFile = optarg;
             break;
         case 'n':
             if (!optarg) {
@@ -503,7 +503,7 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
                         "Please specify the output file used to save the ak name.");
                 return false;
             }
-            snprintf(ctx->aknameFile, sizeof(ctx->aknameFile), "%s", optarg);
+            ctx->aknameFile = optarg;
             break;
         case 'X':
             ctx->hexPasswd = true;

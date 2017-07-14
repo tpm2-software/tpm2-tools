@@ -48,7 +48,7 @@ typedef struct tpm_rsaencrypt_ctx tpm_rsaencrypt_ctx;
 struct tpm_rsaencrypt_ctx {
     TPMI_DH_OBJECT key_handle;
     TPM2B_PUBLIC_KEY_RSA message;
-    char output_file_path[PATH_MAX];
+    char *output_file_path;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -98,16 +98,19 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
         return false;
     }
 
-    struct {
-        UINT8 k : 1;
-        UINT8 I : 1;
-        UINT8 o : 1;
-        UINT8 c : 1;
-        UINT8 unused : 4;
-    } flags = { 0 };
+    union {
+        struct {
+            UINT8 k : 1;
+            UINT8 I : 1;
+            UINT8 o : 1;
+            UINT8 c : 1;
+            UINT8 unused : 4;
+        };
+        UINT8 all;
+    } flags = { .all = 0 };
 
     int opt;
-    char context_key_file[PATH_MAX];
+    char *context_key_file = NULL;
 
     optind = 0;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
@@ -138,13 +141,12 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
             if (result) {
                 return false;
             }
-            snprintf(ctx->output_file_path, sizeof(ctx->output_file_path), "%s",
-                    optarg);
+            ctx->output_file_path = optarg;
             flags.o = 1;
         }
             break;
         case 'c':
-            snprintf(context_key_file, sizeof(context_key_file), "%s", optarg);
+            context_key_file = optarg;
             flags.c = 1;
             break;
         case ':':
@@ -183,8 +185,8 @@ ENTRY_POINT(rsaencrypt) {
 
     tpm_rsaencrypt_ctx ctx = {
             .key_handle = 0,
-            .message = {{ 0 }},
-            .output_file_path = { 0 },
+            .message = TPM2B_EMPTY_INIT,
+            .output_file_path = NULL,
             .sapi_context = sapi_context
     };
 

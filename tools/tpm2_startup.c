@@ -73,7 +73,7 @@ get_startup_opts (int                 argc,
             .flag    = NULL,
             .val     = 's',
         },
-        { NULL, },
+        { .name = NULL, },
     };
 
     optind = 0;

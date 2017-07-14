@@ -48,7 +48,7 @@
 typedef struct tpm_random_ctx tpm_random_ctx;
 struct tpm_random_ctx {
     bool output_file_specified;
-    char output_file[PATH_MAX];
+    char *output_file;
     UINT16 num_of_bytes;
     TSS2_SYS_CONTEXT *sapi_context;
     tpm_table *t;
@@ -99,13 +99,13 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
     }
 
     int opt;
-    optind = 0; /* force reset of getopt() since we used gnu extensions in main, sic */
+    optind = 0; /* force reset of getopt() since we used gnu extensionsin main, sic */
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {
         case 'o':
             ctx->output_file_specified = true;
-            snprintf(ctx->output_file, sizeof(ctx->output_file), "%s", optarg);
+            ctx->output_file = optarg;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -137,9 +137,8 @@ ENTRY_POINT(getrandom) {
     tpm_random_ctx ctx = {
             .output_file_specified = false,
             .num_of_bytes = 0,
-            .output_file = { 0 },
-            .sapi_context = sapi_context,
-	    .t = table
+            .output_file = NULL,
+            .sapi_context = sapi_context
     };
 
     bool result = init(argc, argv, &ctx);

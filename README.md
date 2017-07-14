@@ -1,4 +1,8 @@
 [![Build Status](https://travis-ci.org/01org/tpm2.0-tools.svg?branch=master)](https://travis-ci.org/01org/tpm2.0-tools)
+<a href="https://scan.coverity.com/projects/01org-tpm2-0-tools">
+  <img alt="Coverity Scan Build Status"
+       src="https://scan.coverity.com/projects/13105/badge.svg"/>
+</a>
 
 **This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on TPM2.0-TSS**
 

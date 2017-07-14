@@ -12,6 +12,35 @@
 #define TPM2B_EMPTY_INIT { .t = { .size = 0, }, }
 #define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }
 
+#define TPMS_AUTH_COMMAND_INIT(session_handle) { \
+        .sessionHandle = session_handle,\
+	    .nonce = TPM2B_EMPTY_INIT, \
+	    .sessionAttributes = { .val = 0 }, \
+	    .hmac = TPM2B_EMPTY_INIT \
+    }
+
+#define TPMS_AUTH_COMMAND_EMPTY_INIT TPMS_AUTH_COMMAND_INIT(0)
+
+
+#define TPMT_TK_CREATION_EMPTY_INIT { \
+        .tag = 0, \
+		.hierarchy = 0, \
+		.digest = TPM2B_EMPTY_INIT \
+    }
+
+#define TPML_PCR_SELECTION_EMPTY_INIT { \
+        .count = 0, \
+    } //ignore pcrSelections since count is 0.
+
+#define TPMS_CAPABILITY_DATA_EMPTY_INIT { \
+        .capability = 0, \
+    } // ignore data since capability is 0.
+
+#define TPMT_TK_HASHCHECK_EMPTY_INIT { \
+		.tag = 0, \
+		.hierarchy = 0, \
+		.digest = TPM2B_EMPTY_INIT \
+    }
 
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 

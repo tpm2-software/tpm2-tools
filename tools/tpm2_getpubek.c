@@ -52,7 +52,7 @@ struct getpubek_context {
         TPM2B_AUTH endorse;
         TPM2B_AUTH ek;
     } passwords;
-    char out_file_path[PATH_MAX];
+    char *out_file_path;
     TPM_HANDLE persistent_handle;
     UINT32 algorithm;
     TSS2_SYS_CONTEXT *sapi_context;
@@ -153,23 +153,17 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
 
-    TPM2B_DATA outsideInfo = {
-            { 0, }
-    };
+    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_PUBLIC outPublic = {
-            { 0, }
-    };
+    TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
 
-    TPM2B_CREATION_DATA creationData = {
-            { 0, }
-    };
+    TPM2B_CREATION_DATA creationData = TPM2B_EMPTY_INIT;
 
     TPM2B_DIGEST creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    TPMT_TK_CREATION creationTicket = { 0, };
+    TPMT_TK_CREATION creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
     sessionDataArray[0] = &sessionData;
     sessionDataOutArray[0] = &sessionDataOut;
@@ -327,8 +321,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
                 LOG_ERR("Please specify an output file to save the pub ek to.");
                 return false;
             }
-            snprintf(ctx->out_file_path, sizeof(ctx->out_file_path), "%s",
-                    optarg);
+            ctx->out_file_path = optarg;
             break;
         case 'X':
             ctx->passwords.is_hex = true;
@@ -353,7 +346,12 @@ ENTRY_POINT(getpubek) {
     (void) opts;
 
     getpubek_context ctx = {
-            .passwords = { 0 },
+            .passwords = {
+                    .is_hex = false,
+                    .owner = TPM2B_EMPTY_INIT,
+                    .endorse = TPM2B_EMPTY_INIT,
+                    .ek = TPM2B_EMPTY_INIT,
+            },
             .algorithm = TPM_ALG_RSA,
             .sapi_context = sapi_context
     };
