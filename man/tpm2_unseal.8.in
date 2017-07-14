@@ -30,12 +30,14 @@
 .SH NAME
 tpm2_unseal\ - returns the data in a loaded Sealed Data Object.
 .SH SYNOPSIS
-.B tpm2_unseal[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-item\fR|\fB\-\-itemContext\fR|\fB\-\-pwdi\fR|\fB\-\-outfile\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB ]
+.B tpm2_unseal[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-item\fR|\fB\-\-itemContext\fR|\fB\-\-pwdi\fR|\fB\-\-outfile\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB\-\-set-list\fR|\fB\-\-pcr-input-file\fR|\fB ]
 .PP
 returns the data in a loaded Sealed Data Object.
 .SH DESCRIPTION
 .B tpm2_unseal
 returns the data in a loaded Sealed Data Object.
+
+The \-\-set-list and \-\-pcr-input-file options should only be used for simple PCR authentication policies. For more complex policies the tools should be ran in an execution environment that keeps the session context alive and pass that session using the \-\-input-session-handle option.
 .SH OPTIONS
 .TP
 \fB\-H ,\-\-item\fR
@@ -55,6 +57,12 @@ passwords given by any options are hex format.
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
+.TP
+\fB\-L\fR,\ \fB\-\-set-list\fR
+The list of pcr banks and selected PCRs' ids (0~23) for each bank.
+.TP
+\fB\-F\fR,\ \fB\-\-pcr-input-file\fR
+Optional Path or Name of the file containing expected pcr values for the specified index. Default is to read the current PCRs per the set list.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
@@ -66,5 +74,6 @@ Optional Input session handle from a policy session for authorization.
 tpm2_unseal -H 0x81010001 -P abc123 -o <outPutFileName>
 tpm2_unseal -c item.context -P abc123 -o <outPutFileName>
 tpm2_unseal -H 0x81010001 -P 123abc -X -o <outPutFileName>
+tpm2_unseal -c item.context -L 0x4:0,1,2 -F <pcrFileName>
 .RE
 .fi
