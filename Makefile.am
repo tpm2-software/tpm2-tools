@@ -93,8 +93,7 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_hmac.c \
     lib/tpm_kdfa.c \
     lib/tpm_session.c \
-    lib/tpm2_util.c \
-    lib/tpm_policy.c
+    lib/tpm2_util.c 
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c tools/main.c
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c tools/main.c
