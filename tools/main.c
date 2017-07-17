@@ -76,6 +76,23 @@ main (int   argc,
     sapi_context = sapi_init_from_options (&opts);
     if (sapi_context == NULL)
         exit (1);
+
+    /*
+     * Call Tpm2_startup() as not all TCTIs/Environments handle this for you.
+     * For instance, going at the device tcti with no resource manager, a
+     * common issue is to forget the startup command.
+     * Valid Errors:
+     * TPM_RC_SUCCESS (0x00)
+     * TPM_RC_INITIALIZE(0x100)
+     * TPM_RC_2 (0x2XX) - Session errors
+     */
+    TPM_RC rc = Tss2_Sys_Startup (sapi_context, TPM_SU_CLEAR);
+    if (!(rc == TPM_RC_SUCCESS || rc == TPM_RC_INITIALIZE
+            || (rc >= 0x200 && rc <= 0x299))) {
+        LOG_WARN("The TPM Startup command returned an unexpected error: %u",
+                rc);
+    }
+
     /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
