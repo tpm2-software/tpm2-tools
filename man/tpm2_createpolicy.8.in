@@ -36,7 +36,7 @@ Creates simple assertion authorization policies based on multiple pcr indices va
 .SH OPTIONS
 .TP
 \fB\-f\fR,\ \fB\-\-policy-file\fR=[filepath]
-File to save the policy digest. 
+File to save the policy digest.
 .TP
 \fB\-P\fR,\ \fB\-\-policy-pcr\fR
 Identifies the PCR policy type for policy creation.
@@ -54,7 +54,7 @@ Supported options are:
 \fBNOTE\fR: Your TPM may not support all algorithms.
 .TP
 \fB\-L\fR,\ \fB\-\-set-list\fR=[string]
-The list of pcr banks and selected PCRs' ids   (0~23) for each bank 
+The list of pcr banks and selected PCRs' ids   (0~23) for each bank.
 .TP
 \fB\-F\fR,\ \fB\-\-pcr-input-file\fR=[filepath]
 Optional Path or Name of the file containing expected pcr values for the specified index. Default is to read the current PCRs per the set list.
