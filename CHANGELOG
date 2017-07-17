@@ -1,4 +1,7 @@
 next
+* Support PCR policy creation in tpm2_createpolicy
+* Support using a policy session as input to tools that may need to satisfy complex policies
+  other than password.
 * tpm2_unseal: supports output to stdoud.
 * tpm2_create: enforce policy based authorization.
 * tpm2_createprimary: add ability to create objects with policy based authorization.
