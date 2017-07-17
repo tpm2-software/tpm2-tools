@@ -60,7 +60,7 @@ authrization password, optional
 passwords given by any options are hex  format.
 .TP
 \fB\-i ,\-\-input-session-handle\fR
-Optional Input session handle from a policy session for authorization. 
+Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@

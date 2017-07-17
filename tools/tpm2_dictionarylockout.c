@@ -127,7 +127,7 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
         { "lockout-passwd", required_argument, NULL, 'P' }, 
         { "clear-lockout", no_argument, NULL, 'c' }, 
         { "setup-parameters", no_argument, NULL, 's' },
-        { "input-session-handle",required_argument,NULL,'S'}, 
+        { "input-session-handle",required_argument,NULL,'S'},
         { NULL, no_argument, NULL, 0 }, 
     };
 
