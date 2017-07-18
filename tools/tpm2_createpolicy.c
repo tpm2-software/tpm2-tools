@@ -115,14 +115,15 @@ static bool evaluate_populate_pcr_digests(create_policy_ctx *pctx, TPML_DIGEST *
     unsigned expected_pcr_input_file_size=0;
     //loop counters
     unsigned i, j, k, dgst_cnt=0;
+    const uint8_t bits_per_nibble[] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
     //Iterating the number of pcr banks selected
     for (i=0; i < pctx->pcr_policy_options.pcr_selections.count; i++) {
         //Looping to check total pcr select bits in the pcr-select-octets for a bank
         for (j=0; j < pctx->pcr_policy_options.pcr_selections.pcrSelections[i].sizeofSelect; j++) {
             group_val = pctx->pcr_policy_options.pcr_selections.pcrSelections[i].pcrSelect[j];
-            total_indices_for_this_alg += ( ((group_val>>3) & 1) + ((group_val>>2) & 1) +
-                ((group_val>>1) &1 ) + (group_val & 1) );
+            total_indices_for_this_alg += bits_per_nibble[group_val & 0x0f];
+            total_indices_for_this_alg += bits_per_nibble[group_val >> 4];
         }
 
         //digest size returned per the hashAlg type
