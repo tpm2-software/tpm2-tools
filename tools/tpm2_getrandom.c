@@ -93,7 +93,6 @@ static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
     }
 
     int opt;
-    optind = 0; /* force reset of getopt() since we used gnu extensionsin main, sic */
     while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
             != -1) {
         switch (opt) {
