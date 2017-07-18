@@ -1,4 +1,5 @@
 next
+* Support using PCR Policy directly with tpm2_unseal tool.
 * Support PCR policy creation in tpm2_createpolicy
 * Support using a policy session as input to tools that may need to satisfy complex policies
   other than password.
