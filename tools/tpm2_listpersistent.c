@@ -40,10 +40,10 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
+#include "tpm2_util.h"
 
 int debugLevel = 0;
 

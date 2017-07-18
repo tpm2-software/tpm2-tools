@@ -38,11 +38,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {

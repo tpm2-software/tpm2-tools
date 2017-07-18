@@ -31,7 +31,7 @@
 #include <cmocka.h>
 #include <sapi/tpm20.h>
 
-#include "../../lib/tpm2_util.h"
+#include "tpm2_util.h"
 
 static void test_is_big_endian(void **state) {
 

@@ -40,11 +40,11 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
+#include "tpm2_util.h"
 #include "tpm_hash.h"
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;

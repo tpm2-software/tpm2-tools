@@ -41,11 +41,11 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "options.h"
 #include "main.h"
 #include "password_util.h"
+#include "tpm2_util.h"
 
 typedef struct password password;
 struct password {

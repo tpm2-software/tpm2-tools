@@ -41,12 +41,12 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "tpm2_util.h"
 #include "tpm_session.h"
 
 typedef struct tpm_activatecred_ctx tpm_activatecred_ctx;
