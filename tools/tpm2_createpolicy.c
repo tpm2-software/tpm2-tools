@@ -354,7 +354,6 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
     }
 
     int opt;
-    optind = 0;
     while ((opt = getopt_long(argc, argv, "f:g:L:F:Pae", sOpts, NULL)) != -1) {
         switch (opt) {
         case 'f':
