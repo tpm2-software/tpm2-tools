@@ -38,11 +38,11 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_hash_ctx tpm_hash_ctx;
 struct tpm_hash_ctx {

@@ -38,11 +38,11 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "password_util.h"
+#include "tpm2_util.h"
 
 typedef struct getpubek_context getpubek_context;
 struct getpubek_context {

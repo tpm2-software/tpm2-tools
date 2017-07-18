@@ -39,11 +39,11 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
+#include "tpm2_util.h"
 
 #define tpm_makecred_ctx_empty_init { \
 		.rsa2048_handle = 0, \

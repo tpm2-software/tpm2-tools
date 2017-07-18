@@ -39,12 +39,12 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
 struct tpm_nvwrite_ctx {
