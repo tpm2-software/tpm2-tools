@@ -76,6 +76,14 @@ main (int   argc,
     sapi_context = sapi_init_from_options (&opts);
     if (sapi_context == NULL)
         exit (1);
+
+    /*
+     * Per the notes in the manpage, since we use gnu extensions in optstring,
+     * we must set optind = 0 to re-initialize a subsequent getopt_long() call.
+     * We do this here, so the tools can be ignorant of this fact,
+     */
+    optind = 0;
+
     /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
