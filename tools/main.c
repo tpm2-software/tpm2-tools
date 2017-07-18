@@ -59,8 +59,7 @@ main (int   argc,
     switch (sanity_check_common (&opts)) {
     case 1:
         execute_man (argv[0], envp);
-        fprintf (stderr,
-                 "failed to load manpage, check your environment / PATH\n");
+        LOG_ERR ("failed to load manpage, check your environment / PATH\n");
         /* fallthrough */
     case 2:
         exit (1);
