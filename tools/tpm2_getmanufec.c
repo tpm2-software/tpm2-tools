@@ -447,7 +447,7 @@ int RetrieveEndorsementCredentials(char *b64h)
         goto out_easy_cleanup;
     }
 
-    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, respfile);
+    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_easy_setopt for CURLOPT_VERBOSE failed: %s", curl_easy_strerror(rc));
         goto out_easy_cleanup;

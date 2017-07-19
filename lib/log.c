@@ -15,7 +15,7 @@ bool
 log_set_level (log_level value)
 {
     bool result = false;
-    if (value >= log_level_error || value <= log_level_verbose) {
+    if ((int)value >= log_level_error || value <= log_level_verbose) {
         current_log_level = value;
         result = true;
     }
