@@ -374,7 +374,7 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
             break;
         case 'L':
             if (!pcr_parse_selections(optarg,
-                &pctx->pcr_policy_options.pcr_selections) != 0) {
+                &pctx->pcr_policy_options.pcr_selections)) {
                 showArgError(optarg, argv[0]);
                 return false;
             }
