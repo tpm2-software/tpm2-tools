@@ -165,6 +165,11 @@ static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {
                         optarg);
                 return false;
             }
+            if (ctx->size_to_read > 1024) {
+                LOG_ERR("Maximum read size allowed is 1024."
+                    " Use offset option to continue reading data.\n");
+                return false;
+            }
             break;
         case 'o':
             result = tpm2_util_string_to_uint32(optarg, &ctx->offset);
