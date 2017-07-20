@@ -93,8 +93,6 @@ bool clear_hierarchy_auth(takeownership_ctx *ctx) {
     return true;
 }
 
-#define ARRAY_LEN(x) (sizeof(x)/sizeof(*x))
-
 static bool change_hierarchy_auth(takeownership_ctx *ctx) {
 
     TPM2B_AUTH newAuth;

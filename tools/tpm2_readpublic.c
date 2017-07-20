@@ -52,8 +52,6 @@ struct tpm_readpub_ctx {
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
-#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
-
 static int read_public_and_save(tpm_readpub_ctx *ctx) {
 
     TPMS_AUTH_RESPONSE session_out_data;
