@@ -93,6 +93,7 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
         return false;
     }
 
+    UINT16 offset = 0;
     while (ctx->data_size > 0) {
 
         nv_write_data.t.size =
@@ -102,7 +103,6 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
         LOG_INFO("The data(size=%d) to be written:\n", nv_write_data.t.size);
 
         UINT16 i;
-        UINT16 offset = 0;
         for (i = 0; i < nv_write_data.t.size; i++) {
             nv_write_data.t.buffer[i] = ctx->nv_buffer[offset + i];
             printf("%02x ", ctx->nv_buffer[offset + i]);
