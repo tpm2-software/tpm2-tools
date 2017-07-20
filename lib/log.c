@@ -11,16 +11,10 @@
 
 static log_level current_log_level = log_level_warning;
 
-bool
+void
 log_set_level (log_level value)
 {
-    bool result = false;
-    if (value >= log_level_error || value <= log_level_verbose) {
-        current_log_level = value;
-        result = true;
-    }
-
-    return result;
+    current_log_level = value;
 }
 
 static const char *

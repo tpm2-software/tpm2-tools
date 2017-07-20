@@ -38,10 +38,8 @@ enum log_level
  * Sets the log level so only messages <= to it print.
  * @param level
  *  The logging level to set.
- * @return
- *  True if i succeeds, false if level is out of bounds.
  */
-bool
+void
 log_set_level (log_level level);
 
 void
