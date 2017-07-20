@@ -117,4 +117,47 @@ if [ $? != 0 ];then
 fi
 
 rm -f policy.bin test.bin nv.test_w
+
+#
+# Test large writes
+#
+# The simulator caps us at 2048, is there a way to query this max size?
+large_file_size=2047
+nv_test_index=0x1000000
+
+# Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
+tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s $large_file_size -t 0x2000A
+if [ $? != 0 ];then
+ echo "nvdefine failed for a size of $large_file_size"
+ exit 1
+fi
+
+large_file_name="nv.test_large_w"
+
+if [ ! -f $large_file_name ]; then
+  base64 /dev/urandom | head -c $large_file_size > $large_file_name
+fi
+
+tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle  -f $large_file_name
+if [ $? != 0 ];then
+  rm -f $large_file_name
+  echo "nvwrite failed for testing large writes!"
+  exit 1
+fi
+
+#
+# TODO: Reading large files is currently broken, add a test and ensure the written matches
+# the read.
+#
+
+rm -f $large_file_name
+
+tpm2_nvlist|grep -i $nv_test_index
+if [ $? != 0 ];then
+  echo "nvlist  fail or double check the define index!"
+  exit 1
+fi
+
+tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle
+
 exit 0
