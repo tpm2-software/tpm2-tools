@@ -29,6 +29,7 @@
 .TH tpm2_nvread 8 "DECEMBER 2016" Intel "tpm2.0-tools"
 .SH NAME
 tpm2_nvread\ - read content from NV index, if any passwd option is missing, assume NULL.
+A maximum of 1024 bytes can be read at a time. Use offset option to read more data.
 .SH SYNOPSIS
 .B tpm2_nvread[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-handlePasswd\fR|\fB\-\-size\fR|\fB\-\-offset\fR|\fB\-\-passwdInHex\fR|\fB\-\-input-session-handle\fR|\fB  ]
 .PP
