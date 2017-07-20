@@ -61,8 +61,6 @@ struct tpm_certify_ctx {
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
-#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
-
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_handle, TPMI_ALG_PUBLIC *type) {
 
     TPMS_AUTH_RESPONSE session_data_out;

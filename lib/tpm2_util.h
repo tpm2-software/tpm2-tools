@@ -6,6 +6,8 @@
 
 #include <sapi/tpm20.h>
 
+#define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
+
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
 
 #define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
