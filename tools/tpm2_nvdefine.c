@@ -43,6 +43,7 @@
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
@@ -50,14 +51,11 @@ struct tpm_nvdefine_ctx {
     UINT32 nvIndex;
     UINT32 authHandle;
     UINT32 size;
-    UINT32 nvAttribute;
+    TPMA_NV nvAttribute;
     TPM2B_AUTH handlePasswd;
     TPM2B_AUTH indexPasswd;
     bool hexPasswd;
     TSS2_SYS_CONTEXT *sapi_context;
-    bool enforce_read_policy;
-    bool enforce_write_policy;
-    bool enforce_delete_policy;
     bool policy_file_flag;
     char *policy_file;
     bool is_auth_session;
@@ -108,10 +106,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     public_info.t.nvPublic.nameAlg = TPM_ALG_SHA256;
 
     // Now set the attributes.
-    public_info.t.nvPublic.attributes.val = ctx->nvAttribute;
-    public_info.t.nvPublic.attributes.TPMA_NV_POLICYREAD = ctx->enforce_read_policy;
-    public_info.t.nvPublic.attributes.TPMA_NV_POLICYWRITE = ctx->enforce_write_policy;
-    public_info.t.nvPublic.attributes.TPMA_NV_POLICY_DELETE = ctx->enforce_delete_policy;
+    public_info.t.nvPublic.attributes.val = ctx->nvAttribute.val;
 
     if (ctx->policy_file_flag) {
         public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
@@ -155,9 +150,6 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
         { "indexPasswd",            required_argument,  NULL,   'I' },
         { "passwdInHex",            no_argument,        NULL,   'X' },
         { "policy-file",            required_argument,  NULL,   'L' },
-        { "enforce-read-policy",    no_argument,        NULL,   'r' },
-        { "enforce-write-policy",   no_argument,        NULL,   'w' },
-        { "enforce-delete-policy",  no_argument,        NULL,   'd' },
         { "input-session-handle",   required_argument,  NULL,   'S' },
         { NULL,                     no_argument,        NULL,    0  },
     };
@@ -214,11 +206,14 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 't':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->nvAttribute);
+            result = tpm2_util_string_to_uint32(optarg, &ctx->nvAttribute.val);
             if (!result) {
-                LOG_ERR("Could not convert NV attribute to number, got: \"%s\"",
+                result = tpm2_nv_util_attrs_to_val(optarg, &ctx->nvAttribute);
+                if (!result) {
+                    LOG_ERR("Could not convert NV attribute to number or keyword, got: \"%s\"",
                         optarg);
-                return false;
+                    return false;
+                }
             }
             break;
         case 'I':
@@ -234,15 +229,6 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
         case 'L':
             ctx->policy_file = optarg;
             ctx->policy_file_flag = true;
-            break;
-        case 'r':
-            ctx->enforce_read_policy = true;
-            break;
-        case 'w':
-            ctx->enforce_write_policy = true;
-            break;
-        case 'd':
-            ctx->enforce_delete_policy = true;
             break;
         case 'S':
              if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
@@ -277,14 +263,11 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .nvIndex = 0,
             .authHandle = TPM_RH_PLATFORM,
             .size = 0,
-            .nvAttribute = 0,
+            .nvAttribute = { .val = 0 },
             .handlePasswd = TPM2B_EMPTY_INIT,
             .indexPasswd = TPM2B_EMPTY_INIT,
             .hexPasswd = false,
             .sapi_context = sapi_context,
-            .enforce_read_policy = false,
-            .enforce_write_policy = false,
-            .enforce_delete_policy = false,
             .policy_file_flag = false,
             .is_auth_session = false
         };

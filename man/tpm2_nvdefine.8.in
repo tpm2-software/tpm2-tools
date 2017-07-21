@@ -30,7 +30,7 @@
 .SH NAME
 tpm2_nvdefine\ - Define NV index with given auth value, if passwd not given, assume NULL
 .SH SYNOPSIS
-.B tpm2_nvdefine[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-size\fR|\fB\-\-attribute\fR|\fB\-\-handlePasswd\fR|\fB\-\-indexPasswd\fR|\fB\-\-passwdInHex\fR|\fB\fB\-\-policy-file\fR|\fB\-\-enforce\-read\-policy\fR|\fB\-\-enforce\-write\-policy\fR|\fB\-\-enforce\-delete\-policy\fR|\fB\-\-input-session-handle\fR|\fB ]
+.B tpm2_nvdefine[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-index\fR|\fB\-\-authHandle\fR|\fB\-\-size\fR|\fB\-\-attribute\fR|\fB\-\-handlePasswd\fR|\fB\-\-indexPasswd\fR|\fB\-\-passwdInHex\fR|\fB\fB\-\-policy-file\fR|\fB-\-input-session-handle\fR\fB ]
 .PP
 Define NV index with given auth value, if passwd not given, assume NULL
 .SH DESCRIPTION
@@ -48,7 +48,19 @@ specifies the handle used to authorize:  0x40000001 (TPM_RH_OWNER)   0x4000000C 
 specifies the size of data area.
 .TP
 \fB\-t ,\-\-attribute\fR
-specifies the value of attribute in  publicInfo struct (need calculate outside). 
+Specifies the attribute values for the nv region used when creating the entitiy. Either the raw
+bitfield mask or "nice-names" may be used. The values can be found in Table 204 Part 2 of the TPM2.0
+specification, which can be found here:
+.UR
+https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
+.UE.
+
+Nice names are calculated by taking the name field of table 204 and removing the prefix TPMA_NV_
+and lowercasing the result. Thus, TPMA_NV_PPWRITE becomes ppwrite. Nice names can be joined
+using the bitwise or "|" symbol. Note that the TPM_NT is 4 bits wide, and thus can be set via
+nt=<num> format. For instance, to set The fields TPMA_NV_OWNERREAD, TPMA_NV_OWNERWRITE,
+TPMA_NV_POLICYWRITE, and TPMA_NT = 0x3, the argument would be:
+ownerread|ownerwrite|policywrite|nt=0x3
 .TP
 \fB\-P ,\-\-handlePasswd\fR
 specifies the password of authHandle.
@@ -62,16 +74,6 @@ passwords given by any options are hex format
 \fB\-L ,\-\-policy\-file\fR
 Specifies the policy digest file for policy based authorizations.
 .TP
-\fB\-r ,\-\-enforce\-read\-policy\fR
-Enforce policy based authorization for reading the NV index
-.TP
-\fB\-w ,\-\-enforce\-write\-policy\fR
-Enforce policy based authorization for writing the NV index
-.TP
-\fB\-d ,\-\-enforce\-delete\-policy\fR
-Enforce policy based authorization for deleting the NV index. 
-Caution with using this option - If policy is not satisfied the index cannot be deleted.
-.TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
@@ -83,6 +85,6 @@ Optional Input session handle from a policy session for authorization.
 .nf
 .RS
 tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -I 1a1b1c -X
+tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t ownerread|ownerwrite|policywrite -I 1a1b1c -X
 .RE
 .fi
