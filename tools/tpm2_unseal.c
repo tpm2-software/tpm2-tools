@@ -44,6 +44,7 @@
 #include "options.h"
 #include "password_util.h"
 #include "pcr.h"
+#include "tpm2_policy.h"
 #include "tpm2_util.h"
 #include "tpm_hash.h"
 #include "tpm_session.h"
@@ -126,8 +127,8 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     int opt;
     bool hexPasswd = false;
     char *contextItemFile = NULL;
+    char *raw_pcrs_file = NULL;
     TPML_PCR_SELECTION pcr_selections;
-    TPM2B_DIGEST pcr_hashes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
         switch (opt) {
         case 'H': {
@@ -179,9 +180,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
             flags.L = 1;
             break;
         case 'F':
-            if(!files_load_bytes_from_file(optarg, pcr_hashes.t.buffer, &pcr_hashes.t.size)) {
-                return false;
-            }
+            raw_pcrs_file = optarg;
             flags.F = 1;
             break;
         case 'X':
@@ -221,40 +220,19 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     }
 
     if (flags.L && flags.F) {
-        TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
-        TPMT_SYM_DEF symmetric = { .algorithm = TPM_ALG_NULL, };
-        TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
+        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-        TPM_RC rval = tpm_session_start_auth_with_params(ctx->sapi_context,
-                                                         &ctx->policy_session,
-                                                         TPM_RH_NULL, 0,
-                                                         TPM_RH_NULL, 0,
-                                                         &nonceCaller,
-                                                         &encryptedSalt,
-                                                         TPM_SE_POLICY,
-                                                         &symmetric,
-                                                         TPM_ALG_SHA256);
-
+        TPM_RC rval = tpm2_policy_build(ctx->sapi_context, &ctx->policy_session,
+                                        TPM_SE_POLICY, TPM_ALG_SHA256, pcr_selections,
+                                        raw_pcrs_file, &pcr_digest, true,
+                                        tpm2_policy_pcr_build);
         if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("Failed tpm session start auth with params\n");
-            return rval;
+            LOG_ERR("Building PCR policy failed: 0x%x\n", rval);
+            return false;
         }
 
         ctx->sessionData.sessionHandle = ctx->policy_session->sessionHandle;
         ctx->sessionData.sessionAttributes.continueSession = 1;
-
-        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-
-        rval = tpm_hash_sequence(ctx->sapi_context,
-                                 ctx->policy_session->authHash,
-                                 pcr_selections.count,
-                                 &pcr_hashes, &pcr_digest);
-        if (rval != TPM_RC_SUCCESS) {
-            return rval;
-        }
-
-        rval = Tss2_Sys_PolicyPCR(ctx->sapi_context, ctx->sessionData.sessionHandle,
-                                  0, &pcr_digest, &pcr_selections, 0);
     }
 
     return true;
