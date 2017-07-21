@@ -298,12 +298,13 @@ static TPM_RC build_policy(create_policy_ctx *pctx,
             LOG_ERR("Failed Flush Context\n");
             return rval;
         }
-    }
-    // And remove the session from sessions table.
-    rval = tpm_session_auth_end(pctx->common_policy_options.policy_session);
-    if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Failed deleting session from session table\n");
-        return rval;
+
+        // And remove the session from sessions table.
+        rval = tpm_session_auth_end(pctx->common_policy_options.policy_session);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Failed deleting session from session table\n");
+            return rval;
+        }
     }
 
     return rval;
