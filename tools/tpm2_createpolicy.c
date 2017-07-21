@@ -257,16 +257,22 @@ static TPM_RC start_policy_session (TSS2_SYS_CONTEXT *sapi_context,
     return rval;
 }
 
-static TPM_RC build_policy(create_policy_ctx *pctx,
+static TPM_RC build_policy(TSS2_SYS_CONTEXT *sapi_context,
+                           SESSION **policy_session,
+                           TPM_SE policy_session_type,
+                           TPMI_ALG_HASH policy_digest_hash_alg,
+                           TPML_PCR_SELECTION pcr_selections,
+                           char *raw_pcrs_file,
+                           TPM2B_DIGEST *policy_digest,
+                           bool extend_policy_session,
         TPM_RC (*build_policy_function)(TSS2_SYS_CONTEXT *sapi_context,
                                         SESSION *policy_session,
                                         TPML_PCR_SELECTION pcr_selections,
                                         char *raw_pcrs_file)) {
     //Start policy session
-    TPM_RC rval = start_policy_session(pctx->sapi_context,
-                                       &pctx->common_policy_options.policy_session,
-                                       pctx->common_policy_options.policy_session_type,
-                                       pctx->common_policy_options.policy_digest_hash_alg);
+    TPM_RC rval = start_policy_session(sapi_context, policy_session,
+                                       policy_session_type,
+                                       policy_digest_hash_alg);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Error starting the policy session.\n");
         return rval;
@@ -281,25 +287,25 @@ static TPM_RC build_policy(create_policy_ctx *pctx,
         return rval;
     }
     // Get Policy Hash
-    rval = Tss2_Sys_PolicyGetDigest(pctx->sapi_context,
-            pctx->common_policy_options.policy_session->sessionHandle, 0,
-            &pctx->common_policy_options.policy_digest, 0);
+    rval = Tss2_Sys_PolicyGetDigest(sapi_context,
+                                    (*policy_session)->sessionHandle,
+                                    0, policy_digest, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed Policy Get Digest\n");
         return rval;
     }
 
     // Need to flush the session here.
-    if (!pctx->common_policy_options.extend_policy_session) {
-        rval = Tss2_Sys_FlushContext(pctx->sapi_context,
-                pctx->common_policy_options.policy_session->sessionHandle);
+    if (!extend_policy_session) {
+        rval = Tss2_Sys_FlushContext(sapi_context,
+                                     (*policy_session)->sessionHandle);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context\n");
             return rval;
         }
 
         // And remove the session from sessions table.
-        rval = tpm_session_auth_end(pctx->common_policy_options.policy_session);
+        rval = tpm_session_auth_end(*policy_session);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Failed deleting session from session table\n");
             return rval;
@@ -322,8 +328,15 @@ static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
             LOG_ERR("Need the pcr list to account for in the policy.");
             return TPM_RC_NO_RESULT;
         }
-        
-        rval = build_policy(pctx, build_pcr_policy);
+        rval = build_policy(pctx->sapi_context,
+                            &pctx->common_policy_options.policy_session,
+                            pctx->common_policy_options.policy_session_type,
+                            pctx->common_policy_options.policy_digest_hash_alg,
+                            pctx->pcr_policy_options.pcr_selections,
+                            pctx->pcr_policy_options.raw_pcrs_file,
+                            &pctx->common_policy_options.policy_digest,
+                            pctx->common_policy_options.extend_policy_session,
+                            build_pcr_policy);
         if (rval != TPM_RC_SUCCESS) {
             goto parse_policy_type_specific_command_error;
         }
