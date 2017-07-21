@@ -267,28 +267,7 @@ static TPM_RC build_policy(create_policy_ctx *pctx,
         LOG_ERR("Failed Policy Get Digest\n");
         return rval;
     }
-    // Display the policy digest during real policy session.
-    if (pctx->common_policy_options.policy_session_type == TPM_SE_POLICY) {
-        printf("TPM_SE_POLICY: 0x");
-        int i;
-        for(i=0; i<pctx->common_policy_options.policy_digest.t.size; i++) {
-            printf("%02X", pctx->common_policy_options.policy_digest.t.buffer[i]);
-        }
-        printf("\n");
-    }
-    // Additional operations when session if a trial policy session
-    if (pctx->common_policy_options.policy_session_type == TPM_SE_TRIAL) {
-        //save the policy buffer in a file for use later
-        bool result = files_save_bytes_to_file(pctx->common_policy_options.policy_file,
-            (UINT8 *) &pctx->common_policy_options.policy_digest.t.buffer,
-            pctx->common_policy_options.policy_digest.t.size);
-        if (!result) {
-            LOG_ERR("Failed to save policy digest into file \"%s\"",
-                    pctx->common_policy_options.policy_file);
-            rval = TPM_RC_NO_RESULT;
-            return rval;
-        }
-    }
+
     // Need to flush the session here.
     if (!pctx->common_policy_options.extend_policy_session) {
         rval = Tss2_Sys_FlushContext(pctx->sapi_context,
@@ -326,6 +305,30 @@ static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
         rval = build_policy(pctx, build_pcr_policy);
         if (rval != TPM_RC_SUCCESS) {
             goto parse_policy_type_specific_command_error;
+        }
+
+        // Display the policy digest during real policy session.
+        if (pctx->common_policy_options.policy_session_type == TPM_SE_POLICY) {
+            printf("TPM_SE_POLICY: 0x");
+            int i;
+            for(i = 0; i < pctx->common_policy_options.policy_digest.t.size; i++) {
+                printf("%02X", pctx->common_policy_options.policy_digest.t.buffer[i]);
+            }
+            printf("\n");
+        }
+
+        // Additional operations when session if a trial policy session
+        if (pctx->common_policy_options.policy_session_type == TPM_SE_TRIAL) {
+            //save the policy buffer in a file for use later
+            bool result = files_save_bytes_to_file(pctx->common_policy_options.policy_file,
+                              (UINT8 *) &pctx->common_policy_options.policy_digest.t.buffer,
+                                          pctx->common_policy_options.policy_digest.t.size);
+            if (!result) {
+                LOG_ERR("Failed to save policy digest into file \"%s\"",
+                        pctx->common_policy_options.policy_file);
+                rval = TPM_RC_NO_RESULT;
+                return rval;
+            }
         }
     }
 
