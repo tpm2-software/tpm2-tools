@@ -21,4 +21,18 @@
  */
 bool tpm2_nv_util_attrs_to_val(char *attribute_list, TPMA_NV *nvattrs);
 
+/**
+ * Reads the public portion of a Non-Volatile (nv) index.
+ * @param sapi_context
+ *  The system API context.
+ * @param nv_index
+ *  The index to read.
+ * @param nv_public
+ *  The public data structure to store the results in.
+ * @return
+ *  The error code from the TPM. TPM_RC_SUCCESS on success.
+ */
+TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public);
+
 #endif /* LIB_TPM2_NV_UTIL_H_ */

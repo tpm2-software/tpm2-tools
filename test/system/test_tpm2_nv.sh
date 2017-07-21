@@ -145,10 +145,12 @@ if [ $? != 0 ];then
   exit 1
 fi
 
-#
-# TODO: Reading large files is currently broken, add a test and ensure the written matches
-# the read.
-#
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s $large_file_size
+if [ $? != 0 ];then
+  rm -f $large_file_name
+  echo "nvread failed for testing large reads!"
+  exit 1
+fi
 
 rm -f $large_file_name
 

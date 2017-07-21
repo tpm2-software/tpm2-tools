@@ -42,6 +42,7 @@
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
@@ -89,19 +90,57 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
         return false;
     }
 
-    TPM_RC rval = Tss2_Sys_NV_Read(ctx->sapi_context, ctx->auth_handle, ctx->nv_index,
-            &sessions_data, ctx->size_to_read, ctx->offset, &nv_data, &sessions_data_out);
+    TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
+    TPM_RC rval = tpm2_util_nv_read_public(ctx->sapi_context, ctx->nv_index, &nv_public);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Failed to read NVRAM area at index 0x%x (%d). Error:0x%x",
+        LOG_ERR("Failed to read NVRAM public area at index 0x%x (%d). Error:0x%x",
                 ctx->nv_index, ctx->nv_index, rval);
         return false;
     }
 
-    printf("\nThe size of data:%d\n", nv_data.t.size);
-    int i;
-    for (i = 0; i < nv_data.t.size; i++)
-        printf(" %2.2x ", nv_data.t.buffer[i]);
-    printf("\n");
+    UINT16 data_size = nv_public.t.nvPublic.dataSize;
+
+    if (ctx->offset > data_size) {
+        LOG_ERR(
+            "Requested offset to read from is greater than size. offset=%u"
+            ", size=%u", ctx->offset, data_size);
+        return false;
+    }
+
+    if (ctx->offset + ctx->size_to_read > data_size) {
+        LOG_WARN(
+            "Requested to read more bytes than available from offset,"
+            " truncating read! offset=%u, request-read-size=%u"
+            " actual-data-size=%u", ctx->offset, ctx->size_to_read, data_size);
+        ctx->size_to_read = data_size - ctx->offset;
+        return false;
+    }
+
+    printf("\nThe size of data:%d\n", data_size);
+
+    while (ctx->size_to_read) {
+
+        UINT16 bytes_to_read = ctx->size_to_read > MAX_NV_BUFFER_SIZE ?
+                        MAX_NV_BUFFER_SIZE : ctx->size_to_read;
+
+        rval = Tss2_Sys_NV_Read(ctx->sapi_context, ctx->auth_handle, ctx->nv_index,
+                &sessions_data, bytes_to_read, ctx->offset, &nv_data, &sessions_data_out);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Failed to read NVRAM area at index 0x%x (%d). Error:0x%x",
+                    ctx->nv_index, ctx->nv_index, rval);
+            return false;
+        }
+
+        ctx->size_to_read -= nv_data.t.size;
+        ctx->offset += nv_data.t.size;
+
+        /* TODO allow an output file and remove any formatting on the data */
+        UINT16 i;
+        for (i = 0; i < nv_data.t.size; i++) {
+            printf(" %2.2x ", nv_data.t.buffer[i]);
+        }
+        printf("\n");
+    }
 
     return true;
 }
