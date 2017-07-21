@@ -28,12 +28,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-
+#include <ctype.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <getopt.h>
 
 #include <sapi/tpm20.h>
@@ -57,6 +57,30 @@ struct tpm_nvread_ctx {
     bool is_auth_session;
     TPMI_SH_AUTH_SESSION auth_session_handle;
 };
+
+static void hexdump(void *ptr, unsigned buflen) {
+
+    unsigned char *buf = (unsigned char*) ptr;
+    unsigned i, j;
+
+    for (i = 0; i < buflen; i += 16) {
+        printf("%06x: ", i);
+        for (j = 0; j < 16; j++) {
+            if (i + j < buflen) {
+                printf("%02x ", buf[i + j]);
+            } else {
+                printf("   ");
+            }
+        }
+        printf(" ");
+        for (j = 0; j < 16; j++) {
+            if (i + j < buflen) {
+                printf("%c", isprint(buf[i + j]) ? buf[i + j] : '.');
+            }
+        }
+        printf("\n");
+    }
+}
 
 static bool nv_read(tpm_nvread_ctx *ctx) {
 
@@ -121,8 +145,15 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
         return false;
     }
 
-    printf("\nThe size of data:%d\n", data_size);
 
+    UINT8 *data_buffer = malloc(data_size);
+    if (!data_buffer) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    result = false;
+    UINT16 data_offest = 0;
     while (ctx->size_to_read) {
 
         UINT16 bytes_to_read = ctx->size_to_read > MAX_NV_BUFFER_SIZE ?
@@ -133,21 +164,22 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Failed to read NVRAM area at index 0x%x (%d). Error:0x%x",
                     ctx->nv_index, ctx->nv_index, rval);
-            return false;
+            goto out;
         }
 
         ctx->size_to_read -= nv_data.t.size;
         ctx->offset += nv_data.t.size;
 
-        /* TODO allow an output file and remove any formatting on the data */
-        UINT16 i;
-        for (i = 0; i < nv_data.t.size; i++) {
-            printf(" %2.2x ", nv_data.t.buffer[i]);
-        }
-        printf("\n");
+        memcpy(data_buffer, nv_data.t.buffer, data_offest);
+        data_offest += nv_data.t.size;
     }
 
-    return true;
+    hexdump(data_buffer, data_size);
+    result = true;
+
+out:
+    free(data_buffer);
+    return result;
 }
 
 static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {

@@ -145,14 +145,23 @@ if [ $? != 0 ];then
   exit 1
 fi
 
-tpm2_nvread -x $nv_test_index -a $nv_auth_handle
+large_file_read_name="nv.test_large_w"
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle | xxd -r > $large_file_read_name
 if [ $? != 0 ];then
   rm -f $large_file_name
+  rm -f $large_file_read_name
   echo "nvread failed for testing large reads!"
   exit 1
 fi
 
+cmp -s $large_file_read_name $large_file_name
+rm -f $large_file_read_name
 rm -f $large_file_name
+
+rc=$?
+if [ $rc != 0 ]; then
+  echo "Comparing the written and read large files failed with: $rc"
+fi
 
 tpm2_nvlist|grep -i $nv_test_index
 if [ $? != 0 ];then
