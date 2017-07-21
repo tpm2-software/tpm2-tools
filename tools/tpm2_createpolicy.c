@@ -166,25 +166,27 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
     return true;
 }
 
-static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
+static TPM_RC build_pcr_policy(TSS2_SYS_CONTEXT *sapi_context,
+                               SESSION *policy_session,
+                               TPML_PCR_SELECTION pcr_selections,
+                               char *raw_pcrs_file) {
     // Calculate digest( with authhash alg) of pcrvalues in variable pcr_digest
     TPM_RC rval=0;
     TPML_DIGEST pcr_values = {
         .count = 0
     };
 
-    bool result = evaluate_populate_pcr_digests(pctx->pcr_policy_options.pcr_selections,
-                                                pctx->pcr_policy_options.raw_pcrs_file,
+    bool result = evaluate_populate_pcr_digests(pcr_selections, raw_pcrs_file,
                                                 &pcr_values);
     if (!result) {
         return TPM_RC_NO_RESULT;
     }
 
     //If PCR input for policy is from raw pcrs file
-    if (pctx->pcr_policy_options.raw_pcrs_file) {
-        FILE *fp = fopen (pctx->pcr_policy_options.raw_pcrs_file, "rb");
+    if (raw_pcrs_file) {
+        FILE *fp = fopen (raw_pcrs_file, "rb");
         if (fp == NULL) {
-            LOG_ERR("Cannot open pcr-input-file %s", pctx->pcr_policy_options.raw_pcrs_file);
+            LOG_ERR("Cannot open pcr-input-file %s", raw_pcrs_file);
             return TPM_RC_NO_RESULT;
         }
        // Bank hashAlg values dictates the order of the list of digests
@@ -195,7 +197,7 @@ static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
                 const char *msg = ferror(fp) ? strerror(errno) :
                         "end of file reached";
                 LOG_ERR("Reading from file \"%s\" failed: %s",
-                        pctx->pcr_policy_options.raw_pcrs_file, msg);
+                        raw_pcrs_file, msg);
                 fclose(fp);
                 return TPM_RC_NO_RESULT;
             }
@@ -204,12 +206,12 @@ static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
     }
 
     //If PCR input for policy is to be read from the TPM
-    if (!pctx->pcr_policy_options.raw_pcrs_file) {
+    if (!raw_pcrs_file) {
         UINT32 pcr_update_counter;
         TPML_PCR_SELECTION pcr_selection_out;
         // Read PCRs
-        rval = Tss2_Sys_PCR_Read(pctx->sapi_context, 0,
-            &pctx->pcr_policy_options.pcr_selections,
+        rval = Tss2_Sys_PCR_Read(sapi_context, 0,
+            &pcr_selections,
             &pcr_update_counter, &pcr_selection_out, &pcr_values, 0);
         if (rval != TPM_RC_SUCCESS) {
             return rval;
@@ -218,17 +220,16 @@ static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
 
     // Calculate hashes
     TPM2B_DIGEST pcr_digest =  TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    rval = tpm_hash_sequence(pctx->sapi_context,
-        pctx->common_policy_options.policy_session->authHash, pcr_values.count,
+    rval = tpm_hash_sequence(sapi_context,
+        policy_session->authHash, pcr_values.count,
         &pcr_values.digests[0], &pcr_digest);
     if (rval != TPM_RC_SUCCESS) {
         return rval;
     }
 
     // Call the PolicyPCR command
-    return Tss2_Sys_PolicyPCR(pctx->sapi_context,
-            pctx->common_policy_options.policy_session->sessionHandle, 0,
-            &pcr_digest, &pctx->pcr_policy_options.pcr_selections, 0);
+    return Tss2_Sys_PolicyPCR(sapi_context, policy_session->sessionHandle,
+                              0, &pcr_digest, &pcr_selections, 0);
 }
 
 static TPM_RC start_policy_session (create_policy_ctx *pctx) {
@@ -250,7 +251,10 @@ static TPM_RC start_policy_session (create_policy_ctx *pctx) {
 }
 
 static TPM_RC build_policy(create_policy_ctx *pctx,
-        TPM_RC (*build_policy_function)(create_policy_ctx *pctx)) {
+        TPM_RC (*build_policy_function)(TSS2_SYS_CONTEXT *sapi_context,
+                                        SESSION *policy_session,
+                                        TPML_PCR_SELECTION pcr_selections,
+                                        char *raw_pcrs_file)) {
     //Start policy session
     TPM_RC rval = start_policy_session(pctx);
     if (rval != TPM_RC_SUCCESS) {
@@ -258,7 +262,10 @@ static TPM_RC build_policy(create_policy_ctx *pctx,
         return rval;
     }
     // Issue policy command.
-    rval = (*build_policy_function)(pctx);
+    rval = (*build_policy_function)(pctx->sapi_context,
+                                    pctx->common_policy_options.policy_session,
+                                    pctx->pcr_policy_options.pcr_selections,
+                                    pctx->pcr_policy_options.raw_pcrs_file);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed parse_policy_type_and_send_command\n");
         return rval;
