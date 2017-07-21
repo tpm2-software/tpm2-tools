@@ -310,3 +310,12 @@ bool tpm2_nv_util_attrs_to_val(char *attribute_list, TPMA_NV *nvattrs) {
 
     return true;
 }
+
+TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
+
+    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+
+    return Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, 0, nv_public,
+            &nv_name, 0);
+}

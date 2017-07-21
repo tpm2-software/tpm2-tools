@@ -35,39 +35,25 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
 
-static bool nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_RH_NV_INDEX nv_index) {
-
-    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-
-    TPM_RC rval = Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, 0, &nv_public,
-            &nv_name, 0);
-    if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("NVReadPublic Failed ! ErrorCode: 0x%0x\n", rval);
-        return false;
-    }
-
+static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     printf("  {\n");
-    printf("\tHash algorithm(nameAlg):%d\n ", nv_public.t.nvPublic.nameAlg);
+    printf("\tHash algorithm(nameAlg):%d\n ", nv_public->t.nvPublic.nameAlg);
     printf("\tThe Index attributes(attributes):0x%x\n ",
-            nv_public.t.nvPublic.attributes.val);
+            nv_public->t.nvPublic.attributes.val);
     printf("\tThe size of the data area(dataSize):%d\n ",
-            nv_public.t.nvPublic.dataSize);
+            nv_public->t.nvPublic.dataSize);
     printf("\tAuthorization Policy for R/W/D: ");
     int i;
-    for(i=0; i<nv_public.t.nvPublic.authPolicy.t.size; i++) {
-        printf("%02X", nv_public.t.nvPublic.authPolicy.t.buffer[i] );
+    for(i=0; i<nv_public->t.nvPublic.authPolicy.t.size; i++) {
+        printf("%02X", nv_public->t.nvPublic.authPolicy.t.buffer[i] );
     }
     printf("\n  }\n");
-
-    return true;
 }
 
 static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
@@ -86,13 +72,17 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
 
     UINT32 i;
     for (i = 0; i < capabilityData.data.handles.count; i++) {
-        printf("\n  %d. NV Index: 0x%x\n", i,
-                capabilityData.data.handles.handle[i]);
-        bool result = nv_read_public(sapi_context,
-                capabilityData.data.handles.handle[i]);
-        if (!result) {
+        TPMI_RH_NV_INDEX index = capabilityData.data.handles.handle[i];
+
+        printf("\n  %d. NV Index: 0x%x\n", i, index);
+
+        TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
+        rval = tpm2_util_nv_read_public(sapi_context, index, &nv_public);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Reading the public part of the nv index failed with: 0x%x", rval);
             return false;
         }
+        print_nv_public(&nv_public);
     }
     printf("\n");
 
