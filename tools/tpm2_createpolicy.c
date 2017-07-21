@@ -105,7 +105,9 @@ static unsigned get_size_from_alg(TPMI_ALG_HASH hashAlg) {
     }
 }
 
-static bool evaluate_populate_pcr_digests(create_policy_ctx *pctx, TPML_DIGEST *pcr_values) {
+static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
+                                          char *raw_pcrs_file,
+                                          TPML_DIGEST *pcr_values) {
     //octet value of a pcr selection group
     uint8_t group_val=0;
     //total pcr indices per algorithm/ bank. Typically this is 24
@@ -117,16 +119,16 @@ static bool evaluate_populate_pcr_digests(create_policy_ctx *pctx, TPML_DIGEST *
     const uint8_t bits_per_nibble[] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
     //Iterating the number of pcr banks selected
-    for (i=0; i < pctx->pcr_policy_options.pcr_selections.count; i++) {
+    for (i=0; i < pcr_selections.count; i++) {
         //Looping to check total pcr select bits in the pcr-select-octets for a bank
-        for (j=0; j < pctx->pcr_policy_options.pcr_selections.pcrSelections[i].sizeofSelect; j++) {
-            group_val = pctx->pcr_policy_options.pcr_selections.pcrSelections[i].pcrSelect[j];
+        for (j=0; j < pcr_selections.pcrSelections[i].sizeofSelect; j++) {
+            group_val = pcr_selections.pcrSelections[i].pcrSelect[j];
             total_indices_for_this_alg += bits_per_nibble[group_val & 0x0f];
             total_indices_for_this_alg += bits_per_nibble[group_val >> 4];
         }
 
         //digest size returned per the hashAlg type
-        unsigned dgst_size = get_size_from_alg(pctx->pcr_policy_options.pcr_selections.pcrSelections[i].hash);
+        unsigned dgst_size = get_size_from_alg(pcr_selections.pcrSelections[i].hash);
         if (!dgst_size) {
             return false;
         }
@@ -148,9 +150,9 @@ static bool evaluate_populate_pcr_digests(create_policy_ctx *pctx, TPML_DIGEST *
     }
 
     //Check if the input pcrs file size is the same size as the pcr selection setlist
-    if (pctx->pcr_policy_options.raw_pcrs_file) {
+    if (raw_pcrs_file) {
         unsigned long filesize = 0;
-        bool result = files_get_file_size(pctx->pcr_policy_options.raw_pcrs_file, &filesize);
+        bool result = files_get_file_size(raw_pcrs_file, &filesize);
         if (!result) {
             LOG_ERR("Could not retrieve raw_pcrs_file size\n");
             return false;
@@ -171,7 +173,9 @@ static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
         .count = 0
     };
 
-    bool result = evaluate_populate_pcr_digests(pctx, &pcr_values);
+    bool result = evaluate_populate_pcr_digests(pctx->pcr_policy_options.pcr_selections,
+                                                pctx->pcr_policy_options.raw_pcrs_file,
+                                                &pcr_values);
     if (!result) {
         return TPM_RC_NO_RESULT;
     }
