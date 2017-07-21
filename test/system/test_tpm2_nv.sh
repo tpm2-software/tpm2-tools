@@ -48,7 +48,7 @@ tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle
  fi
 fi
 
-tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s 32 -t 0x2000A  
+tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite"
 if [ $? != 0 ];then 
  echo "nvdefine fail,Please check your environment!"
  exit 1
@@ -91,7 +91,7 @@ fi
 echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
 | xxd -r -p > policy.bin
 
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -L policy.bin -r -w
+tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -L policy.bin -t "ownerread|ownerwrite|policywrite|policyread"
 if [ $? != 0 ];then
  echo "Failed tpm2_nvdefine"
  exit 1
