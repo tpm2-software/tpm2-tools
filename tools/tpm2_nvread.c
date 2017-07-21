@@ -100,6 +100,11 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
 
     UINT16 data_size = nv_public.t.nvPublic.dataSize;
 
+    /* if no size was specified, assume the whole object */
+    if (ctx->size_to_read == 0) {
+        ctx->size_to_read = data_size;
+    }
+
     if (ctx->offset > data_size) {
         LOG_ERR(
             "Requested offset to read from is greater than size. offset=%u"
