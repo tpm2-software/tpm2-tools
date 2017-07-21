@@ -232,18 +232,25 @@ static TPM_RC build_pcr_policy(TSS2_SYS_CONTEXT *sapi_context,
                               0, &pcr_digest, &pcr_selections, 0);
 }
 
-static TPM_RC start_policy_session (create_policy_ctx *pctx) {
+static TPM_RC start_policy_session (TSS2_SYS_CONTEXT *sapi_context,
+                                    SESSION **policy_session,
+                                    TPM_SE policy_session_type,
+                                    TPMI_ALG_HASH policy_digest_hash_alg) {
     TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
     TPMT_SYM_DEF symmetric = {
         .algorithm = TPM_ALG_NULL,
     };
     TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
     // Start policy session.
-    TPM_RC rval = tpm_session_start_auth_with_params(pctx->sapi_context,
-            &pctx->common_policy_options.policy_session, TPM_RH_NULL, 0,
-            TPM_RH_NULL, 0, &nonceCaller, &encryptedSalt,
-            pctx->common_policy_options.policy_session_type, &symmetric,
-            pctx->common_policy_options.policy_digest_hash_alg);
+    TPM_RC rval = tpm_session_start_auth_with_params(sapi_context,
+                                                     policy_session,
+                                                     TPM_RH_NULL, 0,
+                                                     TPM_RH_NULL, 0,
+                                                     &nonceCaller,
+                                                     &encryptedSalt,
+                                                     policy_session_type,
+                                                     &symmetric,
+                                                     policy_digest_hash_alg);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed tpm session start auth with params\n");
     }
@@ -256,7 +263,10 @@ static TPM_RC build_policy(create_policy_ctx *pctx,
                                         TPML_PCR_SELECTION pcr_selections,
                                         char *raw_pcrs_file)) {
     //Start policy session
-    TPM_RC rval = start_policy_session(pctx);
+    TPM_RC rval = start_policy_session(pctx->sapi_context,
+                                       &pctx->common_policy_options.policy_session,
+                                       pctx->common_policy_options.policy_session_type,
+                                       pctx->common_policy_options.policy_digest_hash_alg);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Error starting the policy session.\n");
         return rval;
