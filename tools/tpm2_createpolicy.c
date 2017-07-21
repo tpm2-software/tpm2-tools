@@ -71,7 +71,6 @@ struct tpm2_pcr_policy_options{
     char *raw_pcrs_file; // filepath of input raw pcrs file
     TPML_PCR_SELECTION pcr_selections; // records user pcr selection per setlist
     bool is_set_list; // if user has provided the setlist choice
-    bool is_raw_pcrs_file; // if user has provided a raw pcrs file for policy calc
 };
 
 typedef struct create_policy_ctx create_policy_ctx;
@@ -149,7 +148,7 @@ static bool evaluate_populate_pcr_digests(create_policy_ctx *pctx, TPML_DIGEST *
     }
 
     //Check if the input pcrs file size is the same size as the pcr selection setlist
-    if (pctx->pcr_policy_options.is_raw_pcrs_file) {
+    if (pctx->pcr_policy_options.raw_pcrs_file) {
         unsigned long filesize = 0;
         bool result = files_get_file_size(pctx->pcr_policy_options.raw_pcrs_file, &filesize);
         if (!result) {
@@ -178,7 +177,7 @@ static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
     }
 
     //If PCR input for policy is from raw pcrs file
-    if (pctx->pcr_policy_options.is_raw_pcrs_file) {
+    if (pctx->pcr_policy_options.raw_pcrs_file) {
         FILE *fp = fopen (pctx->pcr_policy_options.raw_pcrs_file, "rb");
         if (fp == NULL) {
             LOG_ERR("Cannot open pcr-input-file %s", pctx->pcr_policy_options.raw_pcrs_file);
@@ -201,7 +200,7 @@ static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
     }
 
     //If PCR input for policy is to be read from the TPM
-    if (!pctx->pcr_policy_options.is_raw_pcrs_file) {
+    if (!pctx->pcr_policy_options.raw_pcrs_file) {
         UINT32 pcr_update_counter;
         TPML_PCR_SELECTION pcr_selection_out;
         // Read PCRs
@@ -363,7 +362,6 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
             pctx->common_policy_options.policy_file = optarg;
             break;
         case 'F':
-            pctx->pcr_policy_options.is_raw_pcrs_file = true;
             pctx->pcr_policy_options.raw_pcrs_file = optarg;
             break;
         case 'g':
