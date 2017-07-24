@@ -36,7 +36,7 @@ alg_create_obj=0x000B
 alg_create_key=0x0008
 alg_pcr_policy=0x0004
 
-pcr_index=0
+pcr_ids="0,1,2,3"
 
 obj_attr=0x492 # fixedTPM, fixedParent, adminWithPolicy, noDA
 
@@ -94,13 +94,13 @@ fi
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
 
-tpm2_listpcrs -L ${alg_pcr_policy}:${pcr_index} -o $file_pcr_value
+tpm2_listpcrs -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 if [ $? != 0 ];then
     echo "create raw pcr output fail, please check the environment or parameters!"
     exit 1
 fi
 
-tpm2_createpolicy -P -L ${alg_pcr_policy}:${pcr_index} -F $file_pcr_value -f $file_policy
+tpm2_createpolicy -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 if [ $? != 0 ];then
     echo "create policy fail, please check the environment or parameters!"
     exit 1
@@ -118,7 +118,7 @@ if [ $? != 0 ];then
     exit 1
 fi
 
-unsealed=`tpm2_unseal -c $file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_index} -F $file_pcr_value`
+unsealed=`tpm2_unseal -c $file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value`
 if [ $? != 0 ];then
     echo "unseal fail, please check the environment or parameters!"
     exit 1
