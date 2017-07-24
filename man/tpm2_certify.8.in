@@ -73,9 +73,7 @@ the object handle's password, optional
 .TP
 \fB\-K ,\-\-pwdk\fR
 the keyHandle's password, optional
-.TP
-\fB\-g ,\-\-halg\fR
-the hash algorithm used to digest the message  0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+@HALG_COMMON_INCLUDE@
 .TP
 \fB\-a ,\-\-attestFile\fR
 output file name, record the attestation structure
