@@ -43,6 +43,7 @@
 #include "main.h"
 #include "password_util.h"
 #include "tpm2_util.h"
+#include "tpm2_alg_util.h"
 
 typedef struct getpubek_context getpubek_context;
 struct getpubek_context {
@@ -54,7 +55,7 @@ struct getpubek_context {
     } passwords;
     char *out_file_path;
     TPM_HANDLE persistent_handle;
-    UINT32 algorithm;
+    TPM_ALG_ID algorithm;
     TSS2_SYS_CONTEXT *sapi_context;
     bool is_session_based_auth;
     TPMI_SH_AUTH_SESSION auth_session_handle;
@@ -315,8 +316,8 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
             }
             break;
         case 'g':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->algorithm);
-            if (!result) {
+            ctx->algorithm = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->algorithm == TPM_ALG_ERROR) {
                 LOG_ERR("Could not convert algorithm to value, got: %s",
                         optarg);
                 return false;

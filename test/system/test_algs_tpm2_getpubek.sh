@@ -54,7 +54,7 @@ Pass()
 rm test_getpub*.log
 rm ek.pub*
 
-for  kalg_p in 0x0001 0x0008 0x0023 0x0025   
+for  kalg_p in sha1 0x0008 0x0023 symcipher
  do
 ##echo $ek_e	
  tpm2_getpubek  -H 0x8101000"$ek_e" -g $kalg_p -f ek.pub_"$kalg_p" 
