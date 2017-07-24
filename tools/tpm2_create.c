@@ -242,7 +242,7 @@ execute_tool (int              argc,
 
     TPM2B_SENSITIVE_CREATE  inSensitive = TPM2B_EMPTY_INIT;
 
-    TPM2B_PUBLIC            inPublic;
+    TPM2B_PUBLIC            inPublic = TPM2B_EMPTY_INIT;
     TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
     TPMI_DH_OBJECT parentHandle;
