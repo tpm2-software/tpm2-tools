@@ -51,6 +51,7 @@
 #include "main.h"
 #include "options.h"
 #include "tpm_hash.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_util.h"
 
 char *outputFile;
@@ -568,7 +569,8 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     break;
 
                 case 'g':
-                    if (!tpm2_util_string_to_uint32(optarg, &algorithmType)) {
+                    algorithmType = tpm2_alg_util_from_optarg(optarg);
+                    if (algorithmType == TPM_ALG_ERROR) {
                         printf("\nPlease input the algorithm type in correct format.\n");
                         return return_val;
                     }
