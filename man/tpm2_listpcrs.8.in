@@ -51,7 +51,9 @@ the caller know the pcr value length corresponding to the given bank/algorithm.
 .SH OPTIONS
 .TP
 \fB\-g ,\-\-algorithim\fR
-The algorithm id, optional  0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+The algorithm id.
+@ALG_COMMON_INCLUDE@
+@HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-o ,\-\-output\fR
 The file to hold the PCR values in binary  format, optional 
