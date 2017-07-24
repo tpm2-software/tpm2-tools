@@ -52,12 +52,14 @@ password for parent key, optional
 .TP
 \fB\-K ,\-\-pwdk\fR
 password for key, optional
-.TP
 \fB\-g ,\-\-halg\fR
-algorithm used for computing the Name of the  object   0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+The hash algorithm to use.
+@ALG_COMMON_INCLUDE@
+@HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-G ,\-\-kalg\fR
-algorithm associated with this object  0x0001 TPM_ALG_RSA   0x0008 TPM_ALG_KEYEDHASH   0x0023 TPM_ALG_ECC   0x0025 TPM_ALG_SYMCIPHER 
+algorithm associated with this object. It accepts friendly names just like -g option.
+@OBJECT_ALG_COMMON_INCLUDE@
 .TP
 \fB\-A ,\-\-objectAttribute\fR
 object attributes, optional

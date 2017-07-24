@@ -47,6 +47,7 @@
 #include "main.h"
 #include "options.h"
 #include "log.h"
+#include "tpm2_alg_util.h"
 
 TSS2_SYS_CONTEXT *sysContext;
 TPMS_AUTH_COMMAND sessionData = {
@@ -243,8 +244,8 @@ execute_tool (int              argc,
     TPM2B_SENSITIVE_CREATE  inSensitive = TPM2B_EMPTY_INIT;
 
     TPM2B_PUBLIC            inPublic = TPM2B_EMPTY_INIT;
-    TPMI_ALG_PUBLIC type;
-    TPMI_ALG_HASH nameAlg;
+    TPMI_ALG_PUBLIC type = TPM_ALG_SHA1;
+    TPMI_ALG_HASH nameAlg = TPM_ALG_RSA;
     TPMI_DH_OBJECT parentHandle;
     UINT32 objectAttributes = 0;
     char *opuFilePath = NULL;
@@ -321,7 +322,8 @@ execute_tool (int              argc,
             K_flag = 1;
             break;
         case 'g':
-            if(!tpm2_util_string_to_uint16(optarg,&nameAlg))
+            nameAlg = tpm2_alg_util_from_optarg(optarg);
+            if(nameAlg == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -331,7 +333,8 @@ execute_tool (int              argc,
             g_flag = 1;
             break;
         case 'G':
-            if(!tpm2_util_string_to_uint16(optarg,&type))
+            type = tpm2_alg_util_from_optarg(optarg);
+            if(type == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
