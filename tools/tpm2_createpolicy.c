@@ -166,12 +166,6 @@ static bool evaluate_populate_pcr_digests(create_policy_ctx *pctx, TPML_DIGEST *
 }
 
 static TPM_RC build_pcr_policy(create_policy_ctx *pctx) {
-    //PCR inputs validation
-    if (pctx->pcr_policy_options.is_set_list == false) {
-        LOG_ERR("Need the pcr list to account for in the policy.");
-        return TPM_RC_NO_RESULT;
-    }
-
     // Calculate digest( with authhash alg) of pcrvalues in variable pcr_digest
     TPM_RC rval=0;
     TPML_DIGEST pcr_values = {
@@ -323,6 +317,12 @@ static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
     }
 
     if (pctx->common_policy_options.policy_type.PolicyPCR) {
+        //PCR inputs validation
+        if (pctx->pcr_policy_options.is_set_list == false) {
+            LOG_ERR("Need the pcr list to account for in the policy.");
+            return TPM_RC_NO_RESULT;
+        }
+        
         rval = build_policy(pctx, build_pcr_policy);
         if (rval != TPM_RC_SUCCESS) {
             goto parse_policy_type_specific_command_error;
