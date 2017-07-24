@@ -435,8 +435,14 @@ execute_tool (int              argc,
 
     if(P_flag == 0)
         sessionData.hmac.t.size = 0;
-    if(I_flag == 0)
+
+    if(I_flag == 0) {
         inSensitive.t.sensitive.data.t.size = 0;
+    } else if (type != TPM_ALG_KEYEDHASH) {
+        LOG_ERR("Only TPM_ALG_KEYEDHASH algorithm is allowed when sealing data\n");
+        return -19;
+    }
+
     if(K_flag == 0)
         inSensitive.t.sensitive.userAuth.t.size = 0;
     if(L_flag == 0)
