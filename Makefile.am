@@ -95,7 +95,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_session.c \
     lib/tpm2_policy.c \
     lib/tpm2_util.c \
-    lib/tpm2_nv_util.c
+    lib/tpm2_nv_util.c \
+    lib/tpm2_alg_util.c
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c tools/main.c
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c tools/main.c
@@ -148,7 +149,8 @@ check_PROGRAMS = \
     test/unit/test_string_bytes \
     test/unit/test_files \
     test/unit/test_tpm2_header \
-    test/unit/test_tpm2_nv_util
+    test/unit/test_tpm2_nv_util \
+    test/unit/test_tpm2_alg_util
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -174,6 +176,10 @@ test_unit_test_tpm2_header_SOURCES  = test/unit/test_tpm2_header.c
 test_unit_test_tpm2_nv_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_nv_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_tpm2_nv_util_SOURCES  = test/unit/test_tpm2_nv_util.c
+
+test_unit_test_tpm2_alg_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_alg_util_SOURCES  = test/unit/test_tpm2_alg_util.c
 
 endif
 
