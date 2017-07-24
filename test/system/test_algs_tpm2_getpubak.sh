@@ -61,11 +61,11 @@ if [ $? != 0 ];then
 fi
 ##   ./tpm2_getpubak  -e "$handle_ek" -k $handle_ak  -g $ak_alg -D $digestAlg -s $signAlg -f ak.pub_"$kalg_p"_"$halg"_"$digestAlg"_"$signAlg" -n ak.name_"$kalg_p"_"$halg"_"$digestAlg"_"$signAlg"
 
-for  ak_alg in 0x0001 0x0008 0x0023  
- do
-   for  digestAlg in 0x0004 0x000B 0x000C 0x000D 0x0012
+for  ak_alg in rsa 0x0008 0x0023
+do
+   for  digestAlg in 0x0004 sha256 0x000C 0x000D 0x0012
    do 
-    for  signAlg in 0x0005 0x0014 0x0016 0x0018 0x001A 0x001B 0x001C
+    for  signAlg in hmac 0x0014 0x0016 0x0018 0x001A sm2 0x001C
     do
 
   tpm2_getpubak  -E "$handle_ek" -k $handle_ak  -g $ak_alg -D $digestAlg -s $signAlg -f ak.pub_"$ak_alg"_"$digestAlg"_"$signAlg" -n ak.name_"$ak_alg"_"$digestAlg"_"$signAlg"
