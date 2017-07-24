@@ -51,7 +51,9 @@ AK handle's Password
 The list of selected PCRs' ids, 0~23
 .TP
 \fB\-g ,\-\-algorithm\fR
-The algorithm id
+The algorithm id.
+@@ALG_COMMON_INCLUDE@
+@OBJECT_ALG_COMMON_INCLUDE@
 .TP
 \fB\-L ,\-\-selList\fR
 The list of pcr banks and selected PCRs' ids   (0~23) for each bank 
