@@ -38,8 +38,9 @@ file_certify_key_name=name.load.B1_B8
 file_output_attest=attest.out
 file_output_signature=certify_signature.out 
   
-
+# do not update alg_hash without updating alg_hash_name
 alg_hash=0x000B
+alg_hash_name=sha256
 alg_primary_key=0x0001
 alg_certify_key=0x0001
 
@@ -62,7 +63,7 @@ if [ $? != 0 ];then
 echo "load fail, please check the environment or parameters!"
 exit 1
 fi
-tpm2_certify -C $file_primary_key_ctx  -c $file_certify_key_ctx -g $alg_hash -a $file_output_attest -s $file_output_signature
+tpm2_certify -C $file_primary_key_ctx  -c $file_certify_key_ctx -g $alg_hash_name -a $file_output_attest -s $file_output_signature
 if [ $? != 0 ];then
  echo "certify fail, please check the environment or parameters!"
  exit 1

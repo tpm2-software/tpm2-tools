@@ -44,6 +44,7 @@
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "tpm2_alg_util.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
 struct tpm_certify_ctx {
@@ -272,8 +273,8 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.K = 1;
             break;
         case 'g':
-            result = tpm2_util_string_to_uint16(optarg, &ctx->halg);
-            if (!result) {
+            ctx->halg = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->halg == TPM_ALG_ERROR) {
                 LOG_ERR("Could not format algorithm to number, got: \"%s\"",
                         optarg);
                 return false;
