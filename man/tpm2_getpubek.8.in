@@ -63,7 +63,9 @@ specifies the EK password when created  (string, optional, default:NULL).
 specifies the handle used to make EK  persistent (hex). 
 .TP
 \fB\-g ,\-\-alg\fR
-specifies the algorithm type of EK  (default:0x01/TPM_ALG_RSA).   TPM_ALG_RSA 0x0001   TPM_ALG_KEYEDHASH 0x0008   TPM_ALG_ECC 0x0023   TPM_ALG_SYMCIPHER 0x0025 
+specifies the algorithm type of EK.
+@ALG_COMMON_INCLUDE@
+@OBJECT_ALG_COMMON_INCLUDE@
 .TP
 \fB\-f ,\-\-file\fR
 specifies the file used to save the public  portion of EK. 
