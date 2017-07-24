@@ -48,7 +48,7 @@ fi
 
 rm -rf pcrs
 
-tpm2_listpcrs -L 0x04:17,18,19+0x0b:0,17,18,19 -o pcrs
+tpm2_listpcrs -L 0x04:17,18,19+sha256:0,17,18,19 -o pcrs
 
 if [ $? != 0 ];then 
  echo "listpcrs  fail!"

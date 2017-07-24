@@ -43,6 +43,7 @@
 #include "options.h"
 #include "pcr.h"
 #include "tpm2_util.h"
+#include "tpm2_alg_util.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {
@@ -75,25 +76,6 @@ static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
 static bool is_pcr_select_bit_set(TPMS_PCR_SELECTION *pcr_selection, UINT32 pcr) {
 
     return (pcr_selection->pcrSelect[((pcr) / 8)] & (1 << ((pcr) % 8)));
-}
-
-static const char *get_algorithm_name(TPMI_ALG_HASH alg_id) {
-
-    static const struct {
-        TPMI_ALG_HASH alg;
-        const char *desc;
-    } g_algs[] = { { TPM_ALG_SHA1, "TPM_ALG_SHA1" }, { TPM_ALG_SHA256,
-            "TPM_ALG_SHA256" }, { TPM_ALG_SHA384, "TPM_ALG_SHA384" }, {
-            TPM_ALG_SHA512, "TPM_ALG_SHA512" }, { TPM_ALG_SM3_256,
-            "TPM_ALG_SM3_256" }, { TPM_ALG_NULL, "TPM_ALG_UNKOWN" } };
-
-    unsigned i;
-    for (i = 0; g_algs[i].alg != TPM_ALG_NULL ; i++) {
-        if (g_algs[i].alg == alg_id) {
-            break;
-        }
-    }
-    return g_algs[i].desc;
 }
 
 static void update_pcr_selections(TPML_PCR_SELECTION *s1, TPML_PCR_SELECTION *s2) {
@@ -227,7 +209,7 @@ static bool check_pcr_selection(listpcr_context *context) {
         }
 
         if (j >= cap_data->data.assignedPCR.count) {
-            const char *alg_name = get_algorithm_name(pcr_sel->pcrSelections[i].hash);
+            const char *alg_name = tpm2_alg_util_algtostr(pcr_sel->pcrSelections[i].hash);
             LOG_WARN("Ignore unsupported bank/algorithm: %s(0x%04x)\n", alg_name, pcr_sel->pcrSelections[i].hash);
             pcr_sel->pcrSelections[i].hash = 0; //mark it as to be removed
         }
@@ -246,7 +228,7 @@ static bool show_pcr_values(listpcr_context *context) {
     UINT32 vi = 0, di = 0, i;
 
     for (i = 0; i < context->pcr_selections.count; i++) {
-        const char *alg_name = get_algorithm_name(
+        const char *alg_name = tpm2_alg_util_algtostr(
                 context->pcr_selections.pcrSelections[i].hash);
 
         printf("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
@@ -351,7 +333,7 @@ static void show_banks(tpm2_algorithm *g_banks) {
     printf("Supported Bank/Algorithm:");
     int i;
     for (i = 0; i < g_banks->count; i++) {
-        const char *alg_name = get_algorithm_name(g_banks->alg[i]);
+        const char *alg_name = tpm2_alg_util_algtostr(g_banks->alg[i]);
         printf(" %s(0x%04x)", alg_name, g_banks->alg[i]);
     }
     printf("\n");
@@ -375,7 +357,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     };
 
     bool success = false;
-    TPMI_ALG_HASH selected_algorithm;
+    TPMI_ALG_HASH selected_algorithm = TPM_ALG_RSA;
     unsigned L_flag = 0, s_flag = 0, g_flag = 0;
 
     static struct option long_options[] = {
@@ -394,7 +376,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     while ((opt = getopt_long(argc, argv, "g:o:L:s", long_options, NULL)) != -1) {
         switch (opt) {
         case 'g':
-            if (!tpm2_util_string_to_uint16(optarg, &selected_algorithm)) {
+            selected_algorithm = tpm2_alg_util_from_optarg(optarg);
+            if (selected_algorithm == TPM_ALG_ERROR) {
                 showArgError(optarg, argv[0]);
                 goto error;
             }
