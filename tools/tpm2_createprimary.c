@@ -48,6 +48,7 @@
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "tpm2_alg_util.h"
 
 TPMS_AUTH_COMMAND sessionData = {
     .sessionHandle = TPM_RS_PW,
@@ -187,8 +188,8 @@ execute_tool (int               argc,
     TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_EMPTY_INIT;
 
     TPM2B_PUBLIC            inPublic = TPM2B_EMPTY_INIT;
-    TPMI_ALG_PUBLIC type;
-    TPMI_ALG_HASH nameAlg;
+    TPMI_ALG_PUBLIC type = TPM_ALG_RSA;
+    TPMI_ALG_HASH nameAlg = TPM_ALG_SHA1;
     TPMI_RH_HIERARCHY hierarchy = TPM_RH_NULL;
 
     setbuf(stdout, NULL);
@@ -262,7 +263,8 @@ execute_tool (int               argc,
             K_flag = 1;
             break;
         case 'g':
-            if(!tpm2_util_string_to_uint16(optarg,&nameAlg))
+            nameAlg = tpm2_alg_util_from_optarg(optarg);
+            if(nameAlg == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -4;
@@ -272,7 +274,8 @@ execute_tool (int               argc,
             g_flag = 1;
             break;
         case 'G':
-            if(!tpm2_util_string_to_uint16(optarg,&type))
+            type = tpm2_alg_util_from_optarg(optarg);
+            if(type == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;

@@ -52,27 +52,15 @@ Optional authorization string if authorization is required to create object unde
 \fB\-K\fR,\ \fB\-\-pwdk\fR=[string]
 Optional authorization string for the newly created object.
 .TP
-\fB\-g\fR,\ \fB\-\-halg\fR=[0x4|0xB|0xC|0xD|0x12]
+\fB\-g\fR,\ \fB\-\-halg\fR
 Hash algorithm used in the computation of the object name.
-.br
-Supported options are:
-  '0x4' for TPM_ALG_SHA1
-  '0xB' for TPM_ALG_SHA256
-  '0xC' for TPM_ALG_SHA384
-  '0xD' for TPM_ALG_SHA512
-  '0x12' for TPM_ALG_SM3_256
-.br
-\fBNOTE\fR: Your TPM may not support all algorithms.
+@ALG_COMMON_INCLUDE@
+@HASH_ALG_COMMON_INCLUDE@
 .TP
-\fB\-G\fR,\ \fB\-\-kalg\fR=[0x1|0x8|0x23|0x25] 
-Algorithm type for generated key.
-.br
-Supported options are:
-  '0x1' for TPM_ALG_RSA
-  '0x8' for TPM_ALG_KEYEDHASH
-  '0x23' for TPM_ALG_ECC
-  '0x25' for TPM_ALG_SYMCIPHER
-.TP
+\fB\-G\fR,\ \fB\-\-kalg\fR=[algorithm]
+Algorithm type for generated key. It supports friendly names like the -g option.
+@ALG_COMMON_INCLUDE@
+@OBJECT_ALG_COMMON_INCLUDE@
 \fB\-C\fR,\ \fB\-\-context\fR=[filepath]
 An optional file used to store the object context returned.
 .TP
