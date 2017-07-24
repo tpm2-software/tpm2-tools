@@ -49,9 +49,10 @@ filename of the key context used for the  operation
 .TP
 \fB\-P ,\-\-pwdk\fR
 the keyHandle's password, optional
-.TP
 \fB\-g ,\-\-halg\fR
-algorithm for the hash being computed  0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+The hash algorithm to use.
+@ALG_COMMON_INCLUDE@
+@HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-I ,\-\-infile\fR
 file containning the data to be HMACed

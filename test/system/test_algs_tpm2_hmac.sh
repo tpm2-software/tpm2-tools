@@ -52,7 +52,7 @@ fi
 #for  halg_p in 0x0004 0x000B 0x000C 0x000D 0x0012  
 for  context_p in `ls context_load*`   
   do
-   for halg in 0x0004 0x000B 0x000C
+   for halg in sha1 sha256 sha384
      do
 	
 ##  echo "halg_p: "$halg_p" kalg_p: "$kalg_p"" >>test.log 

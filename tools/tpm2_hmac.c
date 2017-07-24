@@ -44,6 +44,7 @@
 #include "main.h"
 #include "options.h"
 #include "password_util.h"
+#include "tpm2_alg_util.h"
 
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
 struct tpm_hmac_ctx {
@@ -166,8 +167,8 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.P = 1;
             break;
         case 'g':
-            result = tpm2_util_string_to_uint16(optarg, &ctx->algorithm);
-            if (!result) {
+            ctx->algorithm = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->algorithm == TPM_ALG_ERROR) {
                 LOG_ERR("Could not convert algorithm to number, got \"%s\"",
                         optarg);
                 return false;
