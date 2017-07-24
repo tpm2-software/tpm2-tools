@@ -1,4 +1,9 @@
 next
+* tpm2_nvread - The option, -s, or size option is no longer required.
+* tpm2_nvread - ouutput is now in xxd -r compatible format.
+* tpm2_nvwrite - fixed to write files larger than 1024 in size.
+* tpm2_nvread - fixed to read files larger than 1024 in size.
+* tpm2_nvdefine supports "nice-names" for nv space attributes.
 * Support using PCR Policy directly with tpm2_unseal tool.
 * Support PCR policy creation in tpm2_createpolicy
 * Support using a policy session as input to tools that may need to satisfy complex policies
