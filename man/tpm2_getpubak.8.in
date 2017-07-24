@@ -65,14 +65,18 @@ specifies the handle of EK (hex).
 \fB\-k ,\-\-akHandle\fR
 specifies the handle used to make AK  persistent (hex). 
 .TP
-\fB\-g ,\-\-alg\fR
-specifies the algorithm type of AK  (default:0x01/TPM_ALG_RSA):   TPM_ALG_RSA 0x0001   TPM_ALG_KEYEDHASH 0x0008   TPM_ALG_ECC 0x0023 
+-\fB\-g ,\-\-alg\fR
+-specifies the algorithm type of AK.
+@ALG_COMMON_INCLUDE@
+@OBJECT_ALG_COMMON_INCLUDE@
 .TP
 \fB\-D ,\-\-digestAlg\fR
-specifies the algorithm of digest.  0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+Like -g, but specifies the algorithm of digest.
+@HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-s ,\-\-signAlg\fR
-specifies the algorithm of sign.  0x0005 TPM_ALG_HMAC   0x0014 TPM_ALG_RSASSA   0x0016 TPM_ALG_RSAPSS   0x0018 TPM_ALG_ECDSA   0x001A TPM_ALG_ECDAA   0x001B TPM_ALG_SM2   0x001C TPM_ALG_ECSCHNORR 
+Like -g, but specifies the algorithm of sign.
+@SIGN_ALG_COMMON_INCLUDE@
 .TP
 \fB\-f ,\-\-file\fR
 specifies the file used to save the public  portion of AK. 

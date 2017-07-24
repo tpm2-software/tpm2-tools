@@ -228,7 +228,7 @@ man8_MANS = \
     man/man8/tpm2_dictionarylockout.8 \
     man/man8/tpm2_createpolicy.8
 
-man/man8/%.8 : man/%.8.in man/common-options.troff man/tcti-options.troff man/tcti-environment.troff man/alg-common.troff man/hash-alg-common.troff man/object-alg-common.troff
+man/man8/%.8 : man/%.8.in man/common-options.troff man/tcti-options.troff man/tcti-environment.troff man/alg-common.troff man/hash-alg-common.troff man/object-alg-common.troff man/sign-alg-common.troff
 	rm -f $@
 	mkdir -p man/man8
 if HAVE_TCTI_DEV
@@ -249,6 +249,8 @@ endif
 	    -e '/@HASH_ALG_COMMON_INCLUDE@/d' \
 	    -e '/@OBJECT_ALG_COMMON_INCLUDE@/r man/object-alg-common.troff' \
 	    -e '/@OBJECT_ALG_COMMON_INCLUDE@/d' \
+	    -e '/@SIGN_ALG_COMMON_INCLUDE@/r man/sign-alg-common.troff' \
+	    -e '/@SIGN_ALG_COMMON_INCLUDE@/d' \
 	    < $< >> $@
 
 CLEANFILES = $(man8_MANS)

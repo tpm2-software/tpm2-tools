@@ -46,6 +46,7 @@
 #include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm_session.h"
+#include "tpm2_alg_util.h"
 
 typedef struct getpubak_context getpubak_context;
 struct getpubak_context {
@@ -61,9 +62,9 @@ struct getpubak_context {
     bool hexPasswd;
     char *outputFile;
     char *aknameFile;
-    UINT32 algorithmType;
-    UINT32 digestAlg;
-    UINT32 signAlg;
+    TPM_ALG_ID algorithmType;
+    TPM_ALG_ID digestAlg;
+    TPM_ALG_ID signAlg;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -447,22 +448,22 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
             }
             break;
         case 'g':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->algorithmType);
-            if (!result) {
-                LOG_ERR("Could not convert algorithm.");
+            ctx->algorithmType = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->algorithmType == TPM_ALG_ERROR) {
+                LOG_ERR("Could not convert algorithm. got: \"%s\".", optarg);
                 return false;
             }
             break;
         case 'D':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->digestAlg);
-            if (!result) {
+            ctx->digestAlg = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->digestAlg == TPM_ALG_ERROR) {
                 LOG_ERR("Could not convert digest algorithm.");
                 return false;
             }
             break;
         case 's':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->signAlg);
-            if (!result) {
+            ctx->signAlg = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->signAlg == TPM_ALG_ERROR) {
                 LOG_ERR("Could not convert signing algorithm.");
                 return false;
             }
