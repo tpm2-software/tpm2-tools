@@ -36,9 +36,9 @@ gAlg=
 GAlg=
 
 rm createprimary.error.log rf
-for gAlg in 0x04 0x0B 0x0C 0x0D 0x12
+for gAlg in 0x04 sha256 0x0C 0x0D sm3_256
     do 
-        for GAlg in 0x01 0x08 0x23 0x25
+        for GAlg in 0x01 keyedhash ecc 0x25
             do 
                 for Atype in o e p n 
                     do 
