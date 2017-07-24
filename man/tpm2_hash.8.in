@@ -48,10 +48,12 @@ hash is safe to sign.
 .SH OPTIONS
 .TP
 \fB\-H ,\-\-hierarchy\fR
-hierarchy to use for the ticket  e TPM_RH_ENDORSEMENT   o TPM_RH_OWNER   p TPM_RH_PLATFORM   n TPM_RH_NULL 
+hierarchy to use for the ticket  e TPM_RH_ENDORSEMENT   o TPM_RH_OWNER   p TPM_RH_PLATFORM   n TPM_RH_NULL
 .TP
 \fB\-g ,\-\-halg\fR
-algorithm for the hash being computed  0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+The hash algorithm to use.
+@ALG_COMMON_INCLUDE@
+@HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-I ,\-\-infile\fR
 file containning the data to be hashed

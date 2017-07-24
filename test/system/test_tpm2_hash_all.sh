@@ -43,7 +43,7 @@ fi
 
 for Hierarchy in e o p n  
 do
-	for halg in 0x0004 0x000B 0x000C 0x000D 0x0012
+	for halg in sha1 sha256 sha384 sha512 sm3_256
 	do
 	
 	tpm2_hash -H $Hierarchy -g $halg -I hash.in -o hash_out_"$Hierarchy"_"$halg" -t hash_tk_"$Hierarchy"_"$halg"
