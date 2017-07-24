@@ -93,6 +93,7 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_hmac.c \
     lib/tpm_kdfa.c \
     lib/tpm_session.c \
+    lib/tpm2_policy.c \
     lib/tpm2_util.c \
     lib/tpm2_nv_util.c
 
