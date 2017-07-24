@@ -44,7 +44,7 @@ file_input_data_hash_tk=secret_hash_tk.data
 
 handle_signing_key=0x81010005
 
-alg_hash=0x000B
+alg_hash=sha256
 alg_primary_key=0x0001
 alg_signing_key=0x0001
 
@@ -87,7 +87,6 @@ if [ ! -e "$file_output_data" ];then
 fi
 
 
-#tpm2_verifysignature -c context_load_out_6  -g 0x000B -m secret.data  -s sign.f1 -t tickt_verify_sign.out              
 tpm2_verifysignature -c $file_signing_key_ctx  -g $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
 if [ $? != 0 ];then
 	fail verifysignature   

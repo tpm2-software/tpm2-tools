@@ -46,6 +46,7 @@
 #include "options.h"
 #include "tpm2_util.h"
 #include "tpm_hash.h"
+#include "tpm2_alg_util.h"
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
@@ -242,8 +243,8 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
         }
             break;
         case 'g': {
-            bool result = tpm2_util_string_to_uint16(optarg, &ctx->halg);
-            if (!result) {
+            ctx->halg = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->halg == TPM_ALG_ERROR) {
                 LOG_ERR("Unable to convert algorithm, got: \"%s\"", optarg);
                 return false;
             }
@@ -321,7 +322,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     tpm2_verifysig_ctx ctx = {
             .flags = { .all = 0 },
-            .halg = TPM_ALG_SHA256,
+            .halg = TPM_ALG_SHA1,
             .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
             .sig_file_path = NULL,
             .msg_file_path = NULL,

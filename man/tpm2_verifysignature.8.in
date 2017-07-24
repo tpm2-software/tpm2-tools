@@ -60,7 +60,9 @@ handle of public key that will be used in the  validation
 filename of the key context used for the operation
 .TP
 \fB\-g ,\-\-halg\fR
-the hash algorithm used to digest the message  0x0004 TPM_ALG_SHA1   0x000B TPM_ALG_SHA256   0x000C TPM_ALG_SHA384   0x000D TPM_ALG_SHA512   0x0012 TPM_ALG_SM3_256 
+the hash algorithm used to digest the message.
+@@ALG_COMMON_INCLUDE@
+@HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-m ,\-\-msg\fR
 the input message file, containning the content  to be digested 
