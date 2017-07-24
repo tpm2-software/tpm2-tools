@@ -45,6 +45,7 @@
 #include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm_hash.h"
+#include "tpm2_alg_util.h"
 
 typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
@@ -231,9 +232,9 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         }
             break;
         case 'g': {
-            bool result = tpm2_util_string_to_uint16(optarg, &ctx->halg);
-            if (!result) {
-                LOG_ERR("Could not format algorithm to number, got: \"%s\"",
+            ctx->halg = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->halg == TPM_ALG_ERROR) {
+                LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
                         optarg);
                 return false;
             }
@@ -289,8 +290,8 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         }
     }
 
-    if (!((flags.k || flags.c) && flags.g && flags.m && flags.s)) {
-        LOG_ERR("Expected options (k or c) and g and m and s");
+    if (!((flags.k || flags.c) && flags.m && flags.s)) {
+        LOG_ERR("Expected options (k or c) and m and s");
         return false;
     }
 
@@ -362,7 +363,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     tpm_sign_ctx ctx = {
             .msg = NULL,
             .sessionData = TPMS_AUTH_COMMAND_EMPTY_INIT,
-            .halg = 0,
+            .halg = TPM_ALG_SHA1,
             .keyHandle = 0,
             .validation = TPMT_TK_HASHCHECK_EMPTY_INIT,
             .sapi_context = sapi_context

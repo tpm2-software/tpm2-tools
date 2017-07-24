@@ -42,7 +42,7 @@ file_output_data=sig.4
   
 handle_signing_key=0x81010005
 
-alg_hash=0x000B
+alg_hash=sha256
 alg_primary_key=0x0001
 alg_signing_key=0x0008
 
