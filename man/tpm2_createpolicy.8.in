@@ -41,17 +41,10 @@ File to save the policy digest.
 \fB\-P\fR,\ \fB\-\-policy-pcr\fR
 Identifies the PCR policy type for policy creation.
 .TP
-\fB\-g\fR,\ \fB\-\-policy-digest-alg\fR=[0x4|0xB|0xC|0xD|0x12]
+\fB\-g\fR,\ \fB\-\-policy-digest-alg\fR
 Hash algorithm used in computation of the policy digest.
-.br
-Supported options are:
-  '0x4' for TPM_ALG_SHA1
-  '0xB' for TPM_ALG_SHA256
-  '0xC' for TPM_ALG_SHA384
-  '0xD' for TPM_ALG_SHA512
-  '0x12' for TPM_ALG_SM3_256
-.br
-\fBNOTE\fR: Your TPM may not support all algorithms.
+@ALG_COMMON_INCLUDE@
+@HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-L\fR,\ \fB\-\-set-list\fR=[string]
 The list of pcr banks and selected PCRs' ids   (0~23) for each bank.

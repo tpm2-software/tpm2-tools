@@ -42,6 +42,7 @@
 #include "options.h"
 #include "pcr.h"
 #include "tpm2_policy.h"
+#include "tpm2_alg_util.h"
 
 //Records the type of policy and if one is selected
 typedef struct {
@@ -171,8 +172,10 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
             pctx->pcr_policy_options.raw_pcrs_file = optarg;
             break;
         case 'g':
-            if (!tpm2_util_string_to_uint16(optarg,
-                    &pctx->common_policy_options.policy_digest_hash_alg)) {
+            pctx->common_policy_options.policy_digest_hash_alg
+                = tpm2_alg_util_from_optarg(optarg);
+            if(pctx->common_policy_options.policy_digest_hash_alg
+                    == TPM_ALG_ERROR) {
                 showArgError(optarg, argv[0]);
                 LOG_ERR("Invalid choice for policy digest hash algorithm\n");
                 return false;
