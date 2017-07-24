@@ -64,6 +64,7 @@ object attributes, optional
 .TP
 \fB\-I ,\-\-inFile\fR
 data file to be sealed, optional. If file is -, read from stdin.
+When sealing data only the TPM_ALG_KEYEDHASH algorithm is allowed.
 .TP
 \fB\-L ,\-\-policy\-file\fR
 the input policy file, optional
