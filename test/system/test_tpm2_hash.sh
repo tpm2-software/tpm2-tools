@@ -32,7 +32,7 @@
 #!/bin/sh
 
 #this script is for hash case testing 
-halg=0x000B
+halg=sha256
 Hierarchy=e
 
 rm -f  hash_out_"$Hierarchy"_"$halg" hash_tk_"$Hierarchy"_"$halg" 

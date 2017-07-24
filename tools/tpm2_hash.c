@@ -42,6 +42,7 @@
 #include "log.h"
 #include "main.h"
 #include "options.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_hash_ctx tpm_hash_ctx;
@@ -151,8 +152,8 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             break;
         case 'g':
             flags++;
-            res = tpm2_util_string_to_uint16(optarg, &ctx->halg);
-            if (!res) {
+            ctx->halg = tpm2_alg_util_from_optarg(optarg);
+            if (ctx->halg == TPM_ALG_ERROR) {
                 showArgError(optarg, argv[0]);
                 return false;
             }
