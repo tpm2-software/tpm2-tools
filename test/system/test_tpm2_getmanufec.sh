@@ -44,7 +44,7 @@ d76e06520b64f2a1da1b331469aa000000000000000000000000000000000000\
 e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859525118bd4470b18180ee\
 f78ae4267bcd0000" | xxd -r -p > test_ek.pub
 
-tpm2_getmanufec -g 0x01 -O -N -U -E ECcert.bin -f test_ek.pub -S https://ekop.intel.com/ekcertservice/
+tpm2_getmanufec -g rsa -O -N -U -E ECcert.bin -f test_ek.pub -S https://ekop.intel.com/ekcertservice/
 if [ $? != 0 ];then
  echo "tpm2_getmanufec command failed, please check the environment or parameters!"
  exit 1
