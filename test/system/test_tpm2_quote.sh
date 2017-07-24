@@ -30,8 +30,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 #!/bin/bash
-alg_primary_obj=0x000B
-alg_primary_key=0x0001
+alg_primary_obj=sha256
+alg_primary_key=rsa
 alg_create_obj=0x000B
 alg_create_key=0x0008
 

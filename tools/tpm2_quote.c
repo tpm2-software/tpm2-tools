@@ -48,6 +48,7 @@
 #include "log.h"
 #include "main.h"
 #include "pcr.h"
+#include "tpm2_alg_util.h"
 
 typedef struct {
     int size;
@@ -382,7 +383,8 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             l_flag = 1;
             break;
         case 'g':
-            if(!tpm2_util_string_to_uint16(optarg,&pcrSelections.pcrSelections[0].hash))
+            pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(optarg);
+            if (pcrSelections.pcrSelections[0].hash == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
                 returnVal = -5;
