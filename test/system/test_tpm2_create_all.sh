@@ -48,9 +48,9 @@ fi
 
 for pCtx in `ls ctx.cpri*`
     do
-    for gAlg in 0x04 0x0B 0x0C 0x0D 0x12
+    for gAlg in sha1 0x0B sha384 0x0D 0x12
         do 
-        for GAlg in 0x01 0x08 0x23 0x25
+        for GAlg in rsa 0x08 ecc 0x25
             do 
             tpm2_create -c $pCtx -g $gAlg -G $GAlg -o opu."$pCtx".g"$gAlg".G"$GAlg" -O opr."$pCtx".g"$gAlg".G"$GAlg"
             if [ $? != 0 ];then 
@@ -70,7 +70,7 @@ if [ $? != 0 ];then
  exit 1
 fi
 
-tpm2_create -c prim.ctx -g 0xb -G 0x1 -L policy.bin -o key.pub -O key.priv -E
+tpm2_create -c prim.ctx -g sha256 -G 0x1 -L policy.bin -o key.pub -O key.priv -E
 if [ $? != 0 ];then
  echo "create object failed"
  exit 1
