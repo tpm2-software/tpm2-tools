@@ -137,7 +137,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
 
     int opt;
     bool res;
-    long fileSize;
+    unsigned long fileSize;
     unsigned flags = 0;
     while ((opt = getopt_long(argc, argv, "H:g:I:o:t:", long_options, NULL))
             != -1) {
@@ -165,7 +165,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             }
             if (fileSize > MAX_DIGEST_BUFFER) {
                 LOG_ERR(
-                        "Input data too long: %ld, should be less than %d bytes\n",
+                        "Input data too long: %lu, should be less than %d bytes\n",
                         fileSize, MAX_DIGEST_BUFFER);
                 return false;
             }
