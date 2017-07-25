@@ -150,7 +150,7 @@ static bool evaluate_populate_pcr_digests(create_policy_ctx *pctx, TPML_DIGEST *
 
     //Check if the input pcrs file size is the same size as the pcr selection setlist
     if (pctx->pcr_policy_options.is_raw_pcrs_file) {
-        long filesize = 0;
+        unsigned long filesize = 0;
         bool result = files_get_file_size(pctx->pcr_policy_options.raw_pcrs_file, &filesize);
         if (!result) {
             LOG_ERR("Could not retrieve raw_pcrs_file size\n");

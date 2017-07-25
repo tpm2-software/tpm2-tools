@@ -220,7 +220,7 @@ static void test_file_size(void **state) {
     int rc = fflush(tf->file);
     assert_return_code(rc, errno);
 
-    long file_size;
+    unsigned long file_size;
     res = files_get_file_size(tf->path, &file_size);
     assert_true(res);
 
@@ -229,7 +229,7 @@ static void test_file_size(void **state) {
 
 static void test_file_size_bad_args(void **state) {
 
-    long file_size;
+    unsigned long file_size;
     bool res = files_get_file_size("this_should_be_a_bad_path", &file_size);
     assert_false(res);
 

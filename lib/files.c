@@ -7,7 +7,7 @@
 #include "log.h"
 #include "tpm2_util.h"
 
-static bool get_file_size(FILE *fp, long *file_size, const char *path) {
+static bool get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
 
     long current = ftell(fp);
     if (current < 0) {
@@ -33,13 +33,14 @@ static bool get_file_size(FILE *fp, long *file_size, const char *path) {
         return false;
     }
 
-    *file_size = size;
+    /* size cannot be negative at this point */
+    *file_size = (unsigned long)size;
     return true;
 }
 
 static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
                                  const char *path) {
-    long file_size;
+    unsigned long file_size;
     bool result = get_file_size(f, &file_size, path);
     if (!result) {
         /* get_file_size() logs errors */
@@ -49,7 +50,7 @@ static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
     /* max is bounded on UINT16 */
     if (file_size > *size) {
         LOG_ERR(
-                "File \"%s\" size is larger than buffer, got %ld expected less than %u",
+                "File \"%s\" size is larger than buffer, got %lu expected less than %u",
                 path, file_size, *size);
         return false;
     }
@@ -307,7 +308,7 @@ bool files_does_file_exist(const char *path) {
     return false;
 }
 
-bool files_get_file_size(const char *path, long *file_size) {
+bool files_get_file_size(const char *path, unsigned long *file_size) {
 
     bool result = false;
 

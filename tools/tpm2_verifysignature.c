@@ -105,7 +105,7 @@ static bool verify_signature(tpm2_verifysig_ctx *ctx) {
 
 static TPM2B *message_from_file(const char *msg_file_path) {
 
-    long size;
+    unsigned long size;
 
     bool result = files_get_file_size(msg_file_path, &size);
     if (!result) {

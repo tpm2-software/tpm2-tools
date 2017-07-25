@@ -319,7 +319,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     /*
      * Process the msg file
      */
-    long file_size;
+    unsigned long file_size;
     result = files_get_file_size(inMsgFileName, &file_size);
     if (!result) {
         return false;
@@ -331,7 +331,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
 
     if (file_size > 0xffff) {
         LOG_ERR(
-                "The message file was longer than a 16 bit length, got: %ld, expected less than: %d!",
+                "The message file was longer than a 16 bit length, got: %lu, expected less than: %d!",
                 file_size, 0x10000);
         return false;
     }

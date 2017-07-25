@@ -95,13 +95,13 @@ bool files_does_file_exist(const char *path);
  * @param path
  *  The path of the file to retreive the size of.
  * @param file_size
- *  A pointer to a long to return the file size. The
+ *  A pointer to an unsigned long to return the file size. The
  *  pointed to value is valid only on a true return.
  *
  * @return
  *  True for success or False for error.
  */
-bool files_get_file_size(const char *path, long *file_size);
+bool files_get_file_size(const char *path, unsigned long *file_size);
 
 /**
  * Writes a TPM2.0 header to a file.
