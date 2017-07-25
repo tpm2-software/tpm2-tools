@@ -35,6 +35,7 @@
 #include <tcti/tcti_socket.h>
 
 #include "main.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_util.h"
 
 /* convenience macro to convert flags into "set" / "clear" strings */
@@ -447,7 +448,10 @@ void
 dump_algorithm_properties (TPM_ALG_ID       id,
                            TPMA_ALGORITHM   alg_attrs)
 {
-    printf ("TPMA_ALGORITHM for ALG_ID: 0x%x\n", id);
+    const char *id_name = tpm2_alg_util_algtostr(id);
+    id_name = id_name ? id_name : "unknown";
+
+    printf ("TPMA_ALGORITHM for ALG_ID: 0x%x - %s\n", id, id_name);
     printf ("  asymmetric: %s\n", prop_str (alg_attrs.asymmetric));
     printf ("  symmetric:  %s\n", prop_str (alg_attrs.symmetric));
     printf ("  hash:       %s\n", prop_str (alg_attrs.hash));
