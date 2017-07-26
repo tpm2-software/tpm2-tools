@@ -121,8 +121,7 @@ rm -f policy.bin test.bin nv.test_w
 #
 # Test large writes
 #
-# The simulator caps us at 2048, is there a way to query this max size?
-large_file_size=2047
+large_file_size=$(tpm2_dump_capability -c properties-fixed | grep TPM_PT_NV_INDEX_MAX | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
