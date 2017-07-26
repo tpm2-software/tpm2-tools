@@ -7,3 +7,6 @@
 !*.sh
 !*.c
 !*.h
+
+# ...even if they are in subdirectories
+!*/
