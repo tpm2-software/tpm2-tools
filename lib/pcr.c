@@ -8,6 +8,7 @@
 #include "pcr.h"
 #include "log.h"
 #include "tpm2_util.h"
+#include "tpm2_alg_util.h"
 
 static int pcr_get_id(const char *arg, UINT32 *pcrId)
 {
@@ -46,7 +47,9 @@ static bool pcr_parse_selection(const char *str, size_t len, TPMS_PCR_SELECTION 
 
     snprintf(buf, strLeft - str + 1, "%s", str);
 
-    if (!tpm2_util_string_to_uint16(buf, &pcrSel->hash)) {
+    pcrSel->hash = tpm2_alg_util_from_optarg(buf);
+
+    if (pcrSel->hash == TPM_ALG_ERROR) {
         return false;
     }
 

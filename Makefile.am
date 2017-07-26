@@ -150,7 +150,8 @@ check_PROGRAMS = \
     test/unit/test_files \
     test/unit/test_tpm2_header \
     test/unit/test_tpm2_nv_util \
-    test/unit/test_tpm2_alg_util
+    test/unit/test_tpm2_alg_util \
+    test/unit/test_pcr
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -180,6 +181,10 @@ test_unit_test_tpm2_nv_util_SOURCES  = test/unit/test_tpm2_nv_util.c
 test_unit_test_tpm2_alg_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_tpm2_alg_util_SOURCES  = test/unit/test_tpm2_alg_util.c
+
+test_unit_test_pcr_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
 
 endif
 
