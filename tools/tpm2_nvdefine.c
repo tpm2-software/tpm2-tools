@@ -56,7 +56,6 @@ struct tpm_nvdefine_ctx {
     TPM2B_AUTH indexPasswd;
     bool hexPasswd;
     TSS2_SYS_CONTEXT *sapi_context;
-    bool policy_file_flag;
     char *policy_file;
     bool is_auth_session;
     TPMI_SH_AUTH_SESSION auth_session_handle;
@@ -108,7 +107,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     // Now set the attributes.
     public_info.t.nvPublic.attributes.val = ctx->nvAttribute.val;
 
-    if (ctx->policy_file_flag) {
+    if (ctx->policy_file) {
         public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
         if(!files_load_bytes_from_file(ctx->policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
             return false;
@@ -228,7 +227,6 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             break;
         case 'L':
             ctx->policy_file = optarg;
-            ctx->policy_file_flag = true;
             break;
         case 'S':
              if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
@@ -268,7 +266,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .indexPasswd = TPM2B_EMPTY_INIT,
             .hexPasswd = false,
             .sapi_context = sapi_context,
-            .policy_file_flag = false,
+            .policy_file = NULL,
             .is_auth_session = false
         };
 
