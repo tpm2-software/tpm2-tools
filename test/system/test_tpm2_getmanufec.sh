@@ -50,6 +50,20 @@ if [ $? != 0 ];then
  exit 1
 fi
 
+# Test that stdoutput is the same
+tpm2_getmanufec -g rsa -O -N -U -f test_ek.pub -S https://ekop.intel.com/ekcertservice/ > ECcert2.bin
+if [ $? != 0 ]; then
+ echo "tpm2_getmanufec to stdout command failed, please check the environment or parameters!"
+ exit 1
+fi
+
+# stdout file should match -E file.
+cmp ECcert.bin ECcert2.bin
+if [ $? != 0 ]; then
+ echo "Files produced by tpm2_getmanufec -E and stdout differ, expected to be the same!"
+ exit 1
+fi
+
 if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91ff5" ]; then
  echo "Failed: retrieving endorsement certificate"
  exit 1
