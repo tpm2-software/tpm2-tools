@@ -17,6 +17,10 @@ Instructions for building and installing the tpm2.0-tools are provided in the [I
 
 **For more details on this code and how to use it, the [manual](https://github.com/01org/tpm2.0-tools/blob/master/manual) file is a good place to start.**
 
+## Support
+Please use the mailing list at https://lists.01.org/mailman/listinfo/tpm2 for general questions. The Issue Tracker on
+github should be reserved for actual feature requests or bugs.
+
 ## Resources
 TPM 2.0 specifications can be found at [Trusted Computing Group](http://www.trustedcomputinggroup.org/).
 
