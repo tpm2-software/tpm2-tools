@@ -65,7 +65,8 @@ specifies to readout the EK public without  making it persistent
 specifies that the file specifier from '-f'  is an EK retrieved from offline platform   that needs to be provisioned 
 .TP
 \fB\-E ,\-\-ECcertFile\fR
-specifies the file used to save the  Endorsement Credentials retrieved from   the TPM manufacturer provisioning server 
+Specifies the file used to save the Endorsement Credentials retrieved from the
+TPM manufacturer provisioning server. Defaults to stdout if not specified.
 .TP
 \fB\-S ,\-\-EKserverAddr\fR
 specifies to attempt retrieving the  Endorsement Credentials from the specified   TPM manufacturer provisioning server 
@@ -81,6 +82,10 @@ Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
+.SH NOTES
+When the verbose option is specified, additional curl debugging information is
+provided by setting the curl mode verbose, see
+https://curl.haxx.se/libcurl/c/CURLOPT_VERBOSE.html for more information.
 .SH EXAMPLES
 .B tpm2_getmanufec
 .PP

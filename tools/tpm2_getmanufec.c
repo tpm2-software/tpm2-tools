@@ -62,14 +62,14 @@ bool hexPasswd = false;
 TPM_HANDLE persistentHandle;
 UINT32 algorithmType = TPM_ALG_RSA;
 
-char *ECcertFile;
+static FILE *ECcertFile = NULL;
 char *EKserverAddr = NULL;
 unsigned int nonPersistentRead = 0;
 unsigned int SSL_NO_VERIFY = 0;
 unsigned int OfflineProv = 0;
 bool is_session_based_auth = false;
 TPMI_SH_AUTH_SESSION auth_session_handle = 0;
-
+static bool verbose = false;
 
 BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8,
                      0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24,
@@ -127,7 +127,7 @@ int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
         inPublic->t.publicArea.unique.sym.t.size = 0;
         break;
     default:
-        printf("\nThe algorithm type input(%4.4x) is not supported!\n", algorithm);
+        LOG_ERR("\nThe algorithm type input(%4.4x) is not supported!\n", algorithm);
         return -1;
     }
 
@@ -189,7 +189,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
                 if (tpm2_util_hex_to_byte_structure(endorsePasswd, &sessionData.hmac.t.size,
                                       sessionData.hmac.t.buffer) != 0) {
-                        printf( "Failed to convert Hex format password for endorsePasswd.\n");
+                        LOG_ERR("Failed to convert Hex format password for endorsePasswd.\n");
                         return -1;
                 }
         }
@@ -205,7 +205,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
              inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
              if (tpm2_util_hex_to_byte_structure(ekPasswd, &inSensitive.t.sensitive.userAuth.t.size,
                                    inSensitive.t.sensitive.userAuth.t.buffer) != 0) {
-                  printf( "Failed to convert Hex format password for ekPasswd.\n");
+                  LOG_ERR("Failed to convert Hex format password for ekPasswd.\n");
                   return -1;
             }
         }
@@ -225,10 +225,10 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                                   &creationData, &creationHash, &creationTicket,
                                   &name, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS ) {
-          printf("\nTPM2_CreatePrimary Error. TPM Error:0x%x\n", rval);
+          LOG_ERR("\nTPM2_CreatePrimary Error. TPM Error:0x%x\n", rval);
           return -2;
     }
-    printf("\nEK create succ.. Handle: 0x%8.8x\n", handle2048ek);
+    LOG_INFO("\nEK create succ.. Handle: 0x%8.8x\n", handle2048ek);
 
     if (!nonPersistentRead) {
          /*
@@ -244,7 +244,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                 sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
                 if (tpm2_util_hex_to_byte_structure(ownerPasswd, &sessionData.hmac.t.size,
                                    sessionData.hmac.t.buffer) != 0) {
-                 printf( "Failed to convert Hex format password for ownerPasswd.\n");
+                 LOG_ERR("Failed to convert Hex format password for ownerPasswd.\n");
                  return -1;
                 }
             }
@@ -253,24 +253,24 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
         rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
                                      &sessionsData, persistentHandle, &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS ) {
-            printf("\nEvictControl:Make EK persistent Error. TPM Error:0x%x\n", rval);
+            LOG_ERR("\nEvictControl:Make EK persistent Error. TPM Error:0x%x\n", rval);
             return -3;
         }
-        printf("EvictControl EK persistent succ.\n");
+        LOG_INFO("EvictControl EK persistent succ.\n");
     }
 
     rval = Tss2_Sys_FlushContext(sapi_context,
                                  handle2048ek);
     if (rval != TPM_RC_SUCCESS ) {
-        printf("\nFlush transient EK failed. TPM Error:0x%x\n", rval);
+        LOG_ERR("\nFlush transient EK failed. TPM Error:0x%x\n", rval);
         return -4;
     }
 
-    printf("Flush transient EK succ.\n");
+    LOG_INFO("Flush transient EK succ.\n");
 
     /* TODO this serialization is not correct */
     if (!files_save_bytes_to_file(outputFile, (UINT8 *)&outPublic, sizeof(outPublic))) {
-        printf("\nFailed to save EK pub key into file(%s)\n", outputFile);
+        LOG_ERR("\nFailed to save EK pub key into file(%s)\n", outputFile);
         return -5;
     }
 
@@ -284,7 +284,7 @@ unsigned char *HashEKPublicKey(void)
 
     unsigned char EKpubKey[259];
 
-    printf("Calculating the SHA256 hash of the Endorsement Public Key\n");
+    LOG_INFO("Calculating the SHA256 hash of the Endorsement Public Key\n");
 
     fp = fopen(outputFile, "rb");
     if (!fp) {
@@ -332,11 +332,13 @@ unsigned char *HashEKPublicKey(void)
         goto hash_out;
     }
 
-    unsigned i;
-    for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        printf("%02X", hash[i]);
+    if (verbose) {
+        unsigned i;
+        for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+            printf("%02X", hash[i]);
+        }
+        printf("\n");
     }
-    printf("\n");
     goto out;
 
 hash_out:
@@ -352,7 +354,7 @@ char *Base64Encode(const unsigned char* buffer)
     BIO *bio, *b64;
     BUF_MEM *bufferPtr;
 
-    printf("Calculating the Base64Encode of the hash of the Endorsement Public Key:\n");
+    LOG_INFO("Calculating the Base64Encode of the hash of the Endorsement Public Key:\n");
 
     if (buffer == NULL) {
         LOG_ERR("HashEKPublicKey returned null");
@@ -407,22 +409,16 @@ int RetrieveEndorsementCredentials(char *b64h)
     size_t len = 1 + strlen(b64h) + strlen(EKserverAddr);
     char *weblink = (char *)malloc(len);
     if (!weblink) {
-        LOG_ERR("Could not open file for writing: \"%s\"", ECcertFile);
-                return ret;
+        LOG_ERR("oom");
+        return ret;
     }
 
     snprintf(weblink, len, "%s%s", EKserverAddr, b64h);
 
-    FILE * respfile = fopen(ECcertFile, "wb");
-    if (!respfile) {
-        LOG_ERR("Could not open file for writing: \"%s\"", ECcertFile);
-                goto out_memory;
-    }
-
     CURLcode rc = curl_global_init(CURL_GLOBAL_DEFAULT);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_global_init failed: %s", curl_easy_strerror(rc));
-        goto out_file_close;
+        goto out_memory;
     }
 
     CURL *curl = curl_easy_init();
@@ -448,16 +444,26 @@ int RetrieveEndorsementCredentials(char *b64h)
         goto out_easy_cleanup;
     }
 
-    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, respfile != NULL);
+    /*
+     * If verbose is set, add in diagnostic information for debugging connections.
+     * https://curl.haxx.se/libcurl/c/CURLOPT_VERBOSE.html
+     */
+    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, verbose);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_easy_setopt for CURLOPT_VERBOSE failed: %s", curl_easy_strerror(rc));
         goto out_easy_cleanup;
     }
 
-    rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, respfile);
-    if (rc != CURLE_OK) {
-        LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s", curl_easy_strerror(rc));
-        goto out_easy_cleanup;
+    /*
+     * If an output file is specified, write to the file, else curl will use stdout:
+     * https://curl.haxx.se/libcurl/c/CURLOPT_WRITEDATA.html
+     */
+    if (ECcertFile) {
+        rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, ECcertFile);
+        if (rc != CURLE_OK) {
+            LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s", curl_easy_strerror(rc));
+            goto out_easy_cleanup;
+        }
     }
 
     rc = curl_easy_perform(curl);
@@ -472,8 +478,6 @@ out_easy_cleanup:
     curl_easy_cleanup(curl);
 out_global_cleanup:
     curl_global_cleanup();
-out_file_close:
-    fclose(respfile);
 out_memory:
     free(weblink);
 
@@ -484,7 +488,7 @@ out_memory:
 int TPMinitialProvisioning(void)
 {
     if (EKserverAddr == NULL) {
-        printf("TPM Manufacturer Endorsement Credential Server Address cannot be NULL\n");
+        LOG_ERR("TPM Manufacturer Endorsement Credential Server Address cannot be NULL\n");
         return -99;
     }
 
@@ -494,7 +498,7 @@ int TPMinitialProvisioning(void)
         return -1;
     }
 
-    printf("%s\n", b64);
+    LOG_INFO("%s\n", b64);
 
     int rc = RetrieveEndorsementCredentials(b64);
     free(b64);
@@ -508,6 +512,8 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) envp;
 
     int return_val = 1;
+
+    verbose = opts->verbose;
 
     static const char *optstring = "e:o:H:P:g:f:X:N:O:E:S:i:U";
 
@@ -534,19 +540,21 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         return -1;
     }
 
+    char *ECcertFilePath = NULL;
+
     int opt;
     while ( ( opt = getopt_long( argc, argv, optstring, long_options, NULL ) ) != -1 ) {
               switch ( opt ) {
                 case 'H':
                     if (!tpm2_util_string_to_uint32(optarg, &persistentHandle)) {
-                        printf("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
+                        LOG_ERR("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
                         return return_val;
                     }
                     break;
 
                 case 'e':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
-                        printf("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
+                        LOG_ERR("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
                         return return_val;
                     }
                     endorsePasswd = optarg;
@@ -554,7 +562,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
 
                 case 'o':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
-                        printf("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
+                        LOG_ERR("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
                         return return_val;
                     }
                     ownerPasswd = optarg;
@@ -562,7 +570,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
 
                 case 'P':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
-                        printf("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
+                        LOG_ERR("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
                         return return_val;
                     }
                     ekPasswd = optarg;
@@ -571,14 +579,14 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'g':
                     algorithmType = tpm2_alg_util_from_optarg(optarg);
                     if (algorithmType == TPM_ALG_ERROR) {
-                        printf("\nPlease input the algorithm type in correct format.\n");
+                        LOG_ERR("\nPlease input the algorithm type in correct format.\n");
                         return return_val;
                     }
                     break;
 
                 case 'f':
                     if (optarg == NULL ) {
-                        printf("\nPlease input the file used to save the pub ek.\n");
+                        LOG_ERR("\nPlease input the file used to save the pub ek.\n");
                         return return_val;
                     }
                     outputFile = optarg;
@@ -589,31 +597,27 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     break;
 
                 case 'E':
-                    if (optarg == NULL ) {
-                        printf("\nPlease input the file used to save the EC Certificate retrieved from server\n");
-                        return return_val;
-                    }
-                    ECcertFile = optarg;
+                    ECcertFilePath = optarg;
                     break;
                 case 'N':
                     nonPersistentRead = 1;
-                    printf("Tss2_Sys_CreatePrimary called with Endorsement Handle without making it persistent\n");
+                    LOG_INFO("Tss2_Sys_CreatePrimary called with Endorsement Handle without making it persistent\n");
                     break;
                 case 'O':
                     OfflineProv = 1;
-                    printf("Setting up for offline provisioning - reading the retrieved EK specified by the file \n");
+                    LOG_INFO("Setting up for offline provisioning - reading the retrieved EK specified by the file \n");
                     break;
                 case 'U':
                     SSL_NO_VERIFY = 1;
-                    printf("CAUTION: TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!\n");
+                    LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!\n");
                     break;
                 case 'S':
                     if (EKserverAddr) {
-                        printf("Multiple specifications of -S\n");
+                        LOG_ERR("Multiple specifications of -S\n");
                         return return_val;
                     }
                     EKserverAddr = optarg;
-                    printf("TPM Manufacturer EK provisioning address -- %s\n", EKserverAddr);
+                    LOG_INFO("TPM Manufacturer EK provisioning address -- %s\n", EKserverAddr);
                     break;
                 case 'i':
                     return_val = tpm2_util_string_to_uint32(optarg, &auth_session_handle);
@@ -630,10 +634,19 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             }
     }
 
+    if (ECcertFilePath) {
+        ECcertFile = fopen(ECcertFilePath, "wb");
+        if (!ECcertFile) {
+            LOG_ERR("Could not open file for writing: \"%s\"", ECcertFilePath);
+            return -1;
+        }
+    }
+
     int provisioning_return_val = 0;
     if (argc < 2) {
         showArgMismatch(argv[0]);
-        return -1;
+        return_val = 1;
+        goto err;
     }
     else {
         if (!OfflineProv) {
@@ -643,8 +656,15 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     if (return_val && provisioning_return_val) {
-        return return_val;
+        goto err;
     }
 
-    return 0;
+    return_val = 0;
+
+err:
+    if (ECcertFile) {
+        fclose(ECcertFile);
+    }
+
+    return return_val;
 }
