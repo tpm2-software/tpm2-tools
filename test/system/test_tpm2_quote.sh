@@ -48,7 +48,9 @@ file_quote_output=quote_"$file_quote_key_ctx"
 Handle_ak_quote=0x81010016
 Handle_ek_quote=0x81010017
 
+maxdigest=$(tpm2_dump_capability -c properties-fixed | grep TPM_PT_MAX_DIGEST | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
 nonce=12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde12345abcde
+nonce=${nonce:0:2*$maxdigest}
 
 fail()
 {
