@@ -45,6 +45,20 @@ static void test_is_big_endian(void **state) {
     assert_true(test_host_is_big_endian == host_is_big_endian);
 }
 
+static void test_popcount(void **state) {
+
+    (void) state;
+
+    UINT32 count = tpm2_util_pop_count(0x4453E424);
+    assert_int_equal(12, count);
+
+    count = tpm2_util_pop_count(0);
+    assert_int_equal(0, count);
+
+    count = tpm2_util_pop_count(~0);
+    assert_int_equal(32, count);
+}
+
 #define TEST_ENDIAN_CONVERT(size, value, expected) \
     static void test_convert_##size(void **state) { \
     \
@@ -102,6 +116,7 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_ntoh_16),
         cmocka_unit_test(test_ntoh_32),
         cmocka_unit_test(test_ntoh_64),
+        cmocka_unit_test(test_popcount)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

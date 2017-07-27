@@ -37,15 +37,13 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
     unsigned expected_pcr_input_file_size=0;
     //loop counters
     unsigned i, j, k, dgst_cnt=0;
-    const uint8_t bits_per_nibble[] = {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
     //Iterating the number of pcr banks selected
     for (i=0; i < pcr_selections.count; i++) {
         //Looping to check total pcr select bits in the pcr-select-octets for a bank
         for (j=0; j < pcr_selections.pcrSelections[i].sizeofSelect; j++) {
             group_val = pcr_selections.pcrSelections[i].pcrSelect[j];
-            total_indices_for_this_alg += bits_per_nibble[group_val & 0x0f];
-            total_indices_for_this_alg += bits_per_nibble[group_val >> 4];
+            total_indices_for_this_alg += tpm2_util_pop_count(group_val);
         }
 
         //digest size returned per the hashAlg type
