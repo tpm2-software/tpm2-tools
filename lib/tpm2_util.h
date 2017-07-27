@@ -161,4 +161,13 @@ UINT32 tpm2_util_ntoh_32(UINT32 data);
  */
 UINT64 tpm2_util_ntoh_64(UINT64 data);
 
+/**
+ * Counts the number of set bits aka a population count.
+ * @param data
+ *  The data to count set bits in.
+ * @return
+ *  The number of set bits or population count.
+ */
+UINT32 tpm2_util_pop_count(UINT32 data);
+
 #endif /* STRING_BYTES_H */

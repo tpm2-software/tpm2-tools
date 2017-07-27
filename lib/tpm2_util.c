@@ -194,3 +194,20 @@ UINT32 tpm2_util_ntoh_32(UINT32 data) {
 UINT64 tpm2_util_ntoh_64(UINT64 data) {
     return tpm2_util_hton_64(data);
 }
+
+UINT32 tpm2_util_pop_count(UINT32 data) {
+
+    static const UINT8 bits_per_nibble[] =
+        {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
+
+    UINT8 count = 0;
+    UINT8 *d = (UINT8 *)&data;
+
+    size_t i;
+    for (i=0; i < sizeof(data); i++) {
+        count += bits_per_nibble[d[i] & 0x0f];
+        count += bits_per_nibble[d[i] >> 4];
+    }
+
+    return count;
+}
