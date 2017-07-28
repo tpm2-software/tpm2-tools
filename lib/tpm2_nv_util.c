@@ -12,10 +12,13 @@
 #define str(s) #s
 
 #define dispatch_no_arg_add(x) \
-    { .name = str(x), .has_argument = false, .callback=x }
+    { .name = str(x), .callback=x, .width = 1 }
 
-#define dispatch_arg_add(x) \
-    { .name = str(x), .has_argument = true, .callback=x }
+#define dispatch_arg_add(x, w) \
+    { .name = str(x), .callback=x, .width = w }
+
+#define dispatch_reserved(pos) \
+    { .name = "<reserved("xstr(pos)")>", .callback=NULL, .width = 1 }
 
 typedef enum dispatch_error dispatch_error;
 enum dispatch_error {
@@ -29,8 +32,8 @@ typedef bool (*action)(TPMA_NV *nv, char *arg);
 typedef struct dispatch_table dispatch_table;
 struct dispatch_table {
     char *name;
-    bool has_argument;
     action callback;
+    unsigned width; /* the width of the field, CANNOT be 0 */
 };
 
 static bool authread(TPMA_NV *nv, char *arg) {
@@ -200,63 +203,102 @@ static bool nt(TPMA_NV *nv, char *arg) {
     return true;
 }
 
-static dispatch_table dtable[] = {
-    dispatch_no_arg_add(authread),
-    dispatch_no_arg_add(authwrite),
-    dispatch_no_arg_add(clear_stclear),
-    dispatch_no_arg_add(globallock),
-    dispatch_no_arg_add(no_da),
-    dispatch_no_arg_add(orderly),
-    dispatch_no_arg_add(ownerread),
-    dispatch_no_arg_add(ownerwrite),
-    dispatch_no_arg_add(platformcreate),
-    dispatch_no_arg_add(policyread),
-    dispatch_no_arg_add(policywrite),
-    dispatch_no_arg_add(policydelete),
-    dispatch_no_arg_add(ppread),
-    dispatch_no_arg_add(ppwrite),
-    dispatch_no_arg_add(readlocked),
-    dispatch_no_arg_add(read_stclear),
-    dispatch_no_arg_add(writeall),
-    dispatch_no_arg_add(writedefine),
-    dispatch_no_arg_add(writelocked),
-    dispatch_no_arg_add(write_stclear),
-    dispatch_no_arg_add(written),
-    dispatch_arg_add(nt)
+/*
+ * The order of this table must be in order with the bit defines in table 204:
+ * https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
+ *
+ * This table is in bitfield order, thus the index of a bit set in a TPMA_NV
+ * can be used to lookup the name.
+ *
+ * if not the logic in tpm2_nv_util_attrs_to_val would need to change!
+ */
+static dispatch_table dtable[] = {       // Bit Index
+    dispatch_no_arg_add(ppwrite),        //  0
+    dispatch_no_arg_add(ownerwrite),     //  1
+    dispatch_no_arg_add(authwrite),      //  2
+    dispatch_no_arg_add(policywrite),    //  3
+    dispatch_arg_add(nt, 4),             //  4
+    dispatch_arg_add(nt, 3),             //  5
+    dispatch_arg_add(nt, 2),             //  6
+    dispatch_arg_add(nt, 1),             //  7
+    dispatch_reserved(8),                //  8
+    dispatch_reserved(9),                //  9
+    dispatch_no_arg_add(policydelete),   // 10
+    dispatch_no_arg_add(writelocked),    // 11
+    dispatch_no_arg_add(writeall),       // 12
+    dispatch_no_arg_add(writedefine),    // 13
+    dispatch_no_arg_add(write_stclear),  // 14
+    dispatch_no_arg_add(globallock),     // 15
+    dispatch_no_arg_add(ppread),         // 16
+    dispatch_no_arg_add(ownerread),      // 17
+    dispatch_no_arg_add(authread),       // 18
+    dispatch_no_arg_add(policyread),     // 19
+    dispatch_reserved(20),               // 20
+    dispatch_reserved(21),               // 21
+    dispatch_reserved(22),               // 22
+    dispatch_reserved(23),               // 23
+    dispatch_reserved(24),               // 24
+    dispatch_no_arg_add(no_da),          // 25
+    dispatch_no_arg_add(orderly),        // 26
+    dispatch_no_arg_add(clear_stclear),  // 27
+    dispatch_no_arg_add(readlocked),     // 28
+    dispatch_no_arg_add(written),        // 29
+    dispatch_no_arg_add(platformcreate), // 30
+    dispatch_no_arg_add(read_stclear),   // 31
 };
+
+static bool token_match(const char *name, const char *token, bool has_arg, char **sep) {
+
+    /* if it has an argument, we expect a separator */
+    size_t match_len = strlen(token);
+    if (has_arg) {
+        *sep = strchr(token, '=');
+        if (*sep) {
+            match_len = *sep - token;
+        }
+    }
+
+    return !strncmp(name, token, match_len);
+}
 
 static dispatch_error handle_dispatch(dispatch_table *d, char *token,
         TPMA_NV *nvattrs) {
 
     char *name = d->name;
     action cb = d->callback;
-    bool has_arg = d->has_argument;
+    bool has_arg = d->width > 1;
+
+    /* if no callback, then its a reserved block, just skip it */
+    if (!cb) {
+        return dispatch_no_match;
+    }
+
+    char *sep = NULL;
+    bool match = token_match(name, token, has_arg, &sep);
+    if (!match) {
+        return dispatch_no_match;
+    }
 
     /*
-     * If it has an argument, split it on the equals sign if found.
+     * If it has an argument, match should have found the seperator.
      */
     char *arg = NULL;
     if (has_arg) {
-        char *tmp = strchr(token, '=');
-        if (!tmp) {
+        if (!sep) {
             LOG_ERR("Expected argument for \"%s\", got none.", token);
             return dispatch_err;
         }
 
         /* split token on = */
-        *tmp = '\0';
-        tmp++;
-        if (!tmp) {
+        *sep = '\0';
+        sep++;
+        if (!*sep) {
             LOG_ERR("Expected argument for \"%s\", got none.", token);
             return dispatch_err;
         }
 
         /* valid argument string, assign */
-        arg = tmp;
-    }
-
-    if (strcmp(name, token)) {
-        return dispatch_no_match;
+        arg = sep;
     }
 
     bool result = cb(nvattrs, arg);
@@ -278,13 +320,15 @@ bool tpm2_nv_util_attrs_to_val(char *attribute_list, TPMA_NV *nvattrs) {
         return false;
     }
 
+    size_t dlen = ARRAY_LEN(dtable);
+
     while ((token = strtok_r(attribute_list, "|", &save))) {
         attribute_list = NULL;
 
         bool did_dispatch = false;
 
         size_t i;
-        for (i = 0; i < ARRAY_LEN(dtable); i++) {
+        for (i = 0; i < dlen; i++) {
             dispatch_table *d = &dtable[i];
 
             dispatch_error err = handle_dispatch(d, token, nvattrs);
@@ -309,6 +353,129 @@ bool tpm2_nv_util_attrs_to_val(char *attribute_list, TPMA_NV *nvattrs) {
     }
 
     return true;
+}
+
+static UINT8 find_first_set(UINT32 bits) {
+
+    UINT8 n = 0;
+
+    if (!bits) {
+        return n;
+    }
+
+    if (!(bits & 0x0000FFFF)) { n += 16; bits >>= 16; }
+    if (!(bits & 0x000000FF)) { n +=  8; bits >>=  8; }
+    if (!(bits & 0x0000000F)) { n +=  4; bits >>=  4; }
+    if (!(bits & 0x00000003)) { n +=  2; bits >>=  2; }
+    if (!(bits & 0x00000001))   n +=  1;
+
+    return n;
+}
+
+char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs) {
+
+    if (nvattrs.val == 0) {
+        return strdup("<none>");
+    }
+
+    /*
+     * Get how many bits are set in the attributes and then find the longest
+     * "name".
+     *
+     * pop_cnt * max_name_len + pop_cnt - 1 (for the | separators) + 4
+     * (for nv field equals in hex) + 1 for null byte.
+     *
+     * This will provide us an ample buffer size for generating the string
+     * in without having to constantly realloc.
+     */
+    UINT32 pop_cnt = tpm2_util_pop_count(nvattrs.val);
+
+    size_t i;
+    size_t max_name_len = 0;
+    for (i=0; i < ARRAY_LEN(dtable); i++) {
+        dispatch_table *d = &dtable[i];
+        size_t name_len = strlen(d->name);
+        max_name_len = name_len > max_name_len ? name_len : max_name_len;
+    }
+
+    size_t size = pop_cnt * max_name_len + pop_cnt - 1 + 3;
+
+    char *str = calloc(size, 1);
+    if (!str) {
+        return NULL;
+    }
+
+
+    size_t string_index = 0;
+    UINT32 attrs = nvattrs.val;
+
+    /*
+     * Start at the lowest, first bit set, index into the array,
+     * grab the data needed, and move on.
+     */
+    while (attrs) {
+        UINT8 bit_index = find_first_set(attrs);
+
+        dispatch_table *d = &dtable[bit_index];
+
+        const char *name = d->name;
+        unsigned w = d->width;
+
+        /* current position and size left of the string */
+        char *s = &str[string_index];
+        size_t left = size - string_index;
+
+        /* this is a mask that is field width wide */
+        UINT8 mask = ((UINT32)1 << w) - 1;
+
+        /* get the value in the field before clearing attrs out */
+        UINT8 field_values = (attrs & mask << bit_index) >> bit_index;
+
+        /*
+         * turn off the parsed bit(s) index, using width to turn off everything in a
+         * field
+         */
+        attrs &= ~(mask << bit_index);
+
+        /*
+         * if the callback is NULL, we are either in a field middle or reserved
+         * section which is weird, just add the name in. In the case of being
+         * in the middle of the field, we will add a bunch of errors to the string,
+         * but it would be better to attempt to show all the data in string form,
+         * rather than bail.
+         *
+         * Fields are either 1 or > 1.
+         */
+        if (w == 1) {
+            /*
+             * set the format to a middle output, unless we're parsing
+             * the first or last. Let the format be static with the routine
+             * so the compiler can do printf style format specifier checking.
+             */
+            if (!string_index) {
+                /* on the first write, if we are already done, no pipes */
+                string_index += !attrs ? snprintf(s, left, "%s", name) :
+                        snprintf(s, left, "%s|", name);
+            } else if (!attrs) {
+                string_index += snprintf(s, left, "%s", name);
+            } else {
+                string_index += snprintf(s, left, "%s|", name);
+            }
+        } else {
+            /* deal with the field */
+            if (!string_index) {
+                /* on the first write, if we are already done, no pipes */
+                string_index += !attrs ? snprintf(s, left, "%s=0x%X", name, field_values) :
+                        snprintf(s, left, "%s=0x%X|", name, field_values);
+            } else if (!attrs) {
+                string_index += snprintf(s, left, "%s=0x%X", name, field_values);
+            } else {
+                string_index += snprintf(s, left, "%s=0x%X|", name, field_values);
+            }
+        }
+    }
+
+    return str;
 }
 
 TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
