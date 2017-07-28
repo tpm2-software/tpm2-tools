@@ -42,9 +42,15 @@
 #include "options.h"
 
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
+
+    char *attrs = tpm2_nv_util_attrtostr(nv_public->t.nvPublic.attributes);
+    if (!attrs) {
+        LOG_ERR("Could not convert attributes to string form");
+    }
+
     printf("  {\n");
     printf("\tHash algorithm(nameAlg):%d\n ", nv_public->t.nvPublic.nameAlg);
-    printf("\tThe Index attributes(attributes):0x%x\n ",
+    printf("\tattributes: %s(0x%x)\n ", attrs,
             nv_public->t.nvPublic.attributes.val);
     printf("\tThe size of the data area(dataSize):%d\n ",
             nv_public->t.nvPublic.dataSize);
@@ -54,6 +60,8 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
         printf("%02X", nv_public->t.nvPublic.authPolicy.t.buffer[i] );
     }
     printf("\n  }\n");
+
+    free(attrs);
 }
 
 static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
