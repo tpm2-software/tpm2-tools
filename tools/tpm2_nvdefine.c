@@ -207,7 +207,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
         case 't':
             result = tpm2_util_string_to_uint32(optarg, &ctx->nvAttribute.val);
             if (!result) {
-                result = tpm2_nv_util_attrs_to_val(optarg, &ctx->nvAttribute);
+                result = tpm2_nv_util_strtoattr(optarg, &ctx->nvAttribute);
                 if (!result) {
                     LOG_ERR("Could not convert NV attribute to number or keyword, got: \"%s\"",
                         optarg);

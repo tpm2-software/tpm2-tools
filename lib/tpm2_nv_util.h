@@ -19,7 +19,7 @@
  * @return
  *  true on success, false on error.
  */
-bool tpm2_nv_util_attrs_to_val(char *attribute_list, TPMA_NV *nvattrs);
+bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs);
 
 /**
  * Converts a TPMA_NV structure to a friendly name style string.

@@ -210,7 +210,7 @@ static bool nt(TPMA_NV *nv, char *arg) {
  * This table is in bitfield order, thus the index of a bit set in a TPMA_NV
  * can be used to lookup the name.
  *
- * if not the logic in tpm2_nv_util_attrs_to_val would need to change!
+ * if not the logic in tpm2_nv_util_strtoattr would need to change!
  */
 static dispatch_table dtable[] = {       // Bit Index
     dispatch_no_arg_add(ppwrite),        //  0
@@ -305,7 +305,7 @@ static dispatch_error handle_dispatch(dispatch_table *d, char *token,
     return result ? dispatch_ok : dispatch_err;
 }
 
-bool tpm2_nv_util_attrs_to_val(char *attribute_list, TPMA_NV *nvattrs) {
+bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
 
     char *token;
     char *save;
