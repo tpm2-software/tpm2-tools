@@ -50,7 +50,7 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
     printf("  {\n");
     printf("\tHash algorithm(nameAlg):%d\n ", nv_public->t.nvPublic.nameAlg);
-    printf("\tattributes: %s(0x%x)\n ", attrs,
+    printf("\tattributes: %s(0x%X)\n ", attrs,
             tpm2_util_ntoh_32(nv_public->t.nvPublic.attributes.val));
     printf("\tThe size of the data area(dataSize):%d\n ",
             nv_public->t.nvPublic.dataSize);
