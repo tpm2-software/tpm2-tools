@@ -22,6 +22,15 @@
 bool tpm2_nv_util_attrs_to_val(char *attribute_list, TPMA_NV *nvattrs);
 
 /**
+ * Converts a TPMA_NV structure to a friendly name style string.
+ * @param nvattrs
+ *  The nvattrs to convert to nice name.
+ * @return A string allocated with calloc(), callers shall use
+ * free() to free it. The string is a null terminated text representation
+ * of the TPMA_NV attributes.
+ */
+char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs);
+/**
  * Reads the public portion of a Non-Volatile (nv) index.
  * @param sapi_context
  *  The system API context.
