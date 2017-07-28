@@ -60,7 +60,7 @@ main (int   argc,
     case 1:
         execute_man (argv[0], envp);
         LOG_ERR ("failed to load manpage, check your environment / PATH\n");
-        /* fallthrough */
+        exit (1);
     case 2:
         exit (1);
     }
