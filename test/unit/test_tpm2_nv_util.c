@@ -35,10 +35,10 @@
 #include "tpm2_nv_util.h"
 
 #define single_test_get(set) \
-    cmocka_unit_test(test_tpm2_nv_util_attrs_to_val_##set)
+    cmocka_unit_test(test_tpm2_nv_util_strtoattr_##set)
 
 #define single_item_test(argstr, set) \
-    static void test_tpm2_nv_util_attrs_to_val_##set(void **state) { \
+    static void test_tpm2_nv_util_strtoattr_##set(void **state) { \
         \
         (void)state; \
     \
@@ -47,7 +47,7 @@
         }; \
         /* make mutable strings for strtok_r */ \
         char arg[] = argstr; \
-        bool res = tpm2_nv_util_attrs_to_val(arg, &nvattrs); \
+        bool res = tpm2_nv_util_strtoattr(arg, &nvattrs); \
         assert_true(res); \
         assert_true(nvattrs.set); \
         assert_true(nvattrs.val == TPMA_NV_##set); \
@@ -75,88 +75,88 @@ single_item_test("writelocked", TPMA_NV_WRITELOCKED);
 single_item_test("write_stclear", TPMA_NV_WRITE_STCLEAR);
 single_item_test("written", TPMA_NV_WRITTEN);
 
-static void test_tpm2_nv_util_attrs_to_val_nt_good(void **state) {
+static void test_tpm2_nv_util_strtoattr_nt_good(void **state) {
     (void) state;
 
     TPMA_NV nvattrs = { .val = 0, };
 
     char arg[] = "nt=0x1";
-    bool res = tpm2_nv_util_attrs_to_val(arg, &nvattrs);
+    bool res = tpm2_nv_util_strtoattr(arg, &nvattrs);
     assert_true(res);
     assert_true(nvattrs.TPM_NT == 0x1);
 }
 
-static void test_tpm2_nv_util_attrs_to_val_nt_bad(void **state) {
+static void test_tpm2_nv_util_strtoattr_nt_bad(void **state) {
     (void) state;
 
     TPMA_NV nvattrs = { .val = 0, };
 
     char arg[] = "nt=16";
-    bool res = tpm2_nv_util_attrs_to_val(arg, &nvattrs);
+    bool res = tpm2_nv_util_strtoattr(arg, &nvattrs);
     assert_false(res);
 }
 
-static void test_tpm2_nv_util_attrs_to_val_nt_malformed(void **state) {
+static void test_tpm2_nv_util_strtoattr_nt_malformed(void **state) {
     (void) state;
 
     TPMA_NV nvattrs = { .val = 0, };
 
     char arg[] = "nt=";
-    bool res = tpm2_nv_util_attrs_to_val(arg, &nvattrs);
+    bool res = tpm2_nv_util_strtoattr(arg, &nvattrs);
     assert_false(res);
 
     char arg1[] = "nt";
-    res = tpm2_nv_util_attrs_to_val(arg1, &nvattrs);
+    res = tpm2_nv_util_strtoattr(arg1, &nvattrs);
     assert_false(res);
 }
 
-static void test_tpm2_nv_util_attrs_to_val_option_no_option(void **state) {
+static void test_tpm2_nv_util_strtoattr_option_no_option(void **state) {
     (void) state;
 
     TPMA_NV nvattrs = { .val = 0, };
 
     char arg[] = "authread=";
-    bool res = tpm2_nv_util_attrs_to_val(arg, &nvattrs);
+    bool res = tpm2_nv_util_strtoattr(arg, &nvattrs);
     assert_false(res);
 
     char arg1[] = "authread=0x1";
-    res = tpm2_nv_util_attrs_to_val(arg1, &nvattrs);
+    res = tpm2_nv_util_strtoattr(arg1, &nvattrs);
     assert_false(res);
 }
 
-static void test_tpm2_nv_util_attrs_to_val_multiple_good(void **state) {
+static void test_tpm2_nv_util_strtoattr_multiple_good(void **state) {
     (void) state;
 
     TPMA_NV nvattrs = { .val = 0, };
 
     char arg[] = "authread|authwrite|nt=0x4";
-    bool res = tpm2_nv_util_attrs_to_val(arg, &nvattrs);
+    bool res = tpm2_nv_util_strtoattr(arg, &nvattrs);
     assert_true(res);
     assert_true(nvattrs.TPM_NT == 0x4);
     assert_true(nvattrs.TPMA_NV_AUTHREAD);
     assert_true(nvattrs.TPMA_NV_AUTHWRITE);
 }
 
-static void test_tpm2_nv_util_attrs_to_val_token_unknown(void **state) {
+static void test_tpm2_nv_util_strtoattr_token_unknown(void **state) {
     (void) state;
 
     TPMA_NV nvattrs = { .val = 0, };
 
     char arg[] = "authread|authfoo|nt=0x4";
-    bool res = tpm2_nv_util_attrs_to_val(arg, &nvattrs);
+    bool res = tpm2_nv_util_strtoattr(arg, &nvattrs);
     assert_false(res);
 
     char arg1[] = "foo";
-    res = tpm2_nv_util_attrs_to_val(arg1, &nvattrs);
+    res = tpm2_nv_util_strtoattr(arg1, &nvattrs);
     assert_false(res);
 
     char arg2[] = "foo=";
-    res = tpm2_nv_util_attrs_to_val(arg2, &nvattrs);
+    res = tpm2_nv_util_strtoattr(arg2, &nvattrs);
     assert_false(res);
 
     /* should be interprested as the whole thing, no = */
     char arg3[] = "nt:0x4";
-    res = tpm2_nv_util_attrs_to_val(arg3, &nvattrs);
+    res = tpm2_nv_util_strtoattr(arg3, &nvattrs);
     assert_false(res);
 }
 
@@ -268,12 +268,12 @@ int main(int argc, char* argv[]) {
             single_test_get(TPMA_NV_WRITELOCKED),
             single_test_get(TPMA_NV_WRITE_STCLEAR),
             single_test_get(TPMA_NV_WRITTEN),
-            cmocka_unit_test(test_tpm2_nv_util_attrs_to_val_nt_good),
-            cmocka_unit_test(test_tpm2_nv_util_attrs_to_val_nt_bad),
-            cmocka_unit_test(test_tpm2_nv_util_attrs_to_val_nt_malformed),
-            cmocka_unit_test(test_tpm2_nv_util_attrs_to_val_multiple_good),
-            cmocka_unit_test(test_tpm2_nv_util_attrs_to_val_option_no_option),
-            cmocka_unit_test(test_tpm2_nv_util_attrs_to_val_token_unknown),
+            cmocka_unit_test(test_tpm2_nv_util_strtoattr_nt_good),
+            cmocka_unit_test(test_tpm2_nv_util_strtoattr_nt_bad),
+            cmocka_unit_test(test_tpm2_nv_util_strtoattr_nt_malformed),
+            cmocka_unit_test(test_tpm2_nv_util_strtoattr_multiple_good),
+            cmocka_unit_test(test_tpm2_nv_util_strtoattr_option_no_option),
+            cmocka_unit_test(test_tpm2_nv_util_strtoattr_token_unknown),
             test_attrtostr_get(TPMA_NV_TPMA_NV_PPWRITE),
             test_attrtostr_get(TPMA_NV_TPMA_NV_OWNERWRITE),
             test_attrtostr_get(TPMA_NV_TPMA_NV_AUTHWRITE),
