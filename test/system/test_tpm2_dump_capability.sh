@@ -31,26 +31,18 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-tpm2_dump_capability --capability="properties-fixed"
-if [ $? -ne 0 ]; then
-    echo "tpm2_dump_capability failed to get fixed properties"
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
-fi
-tpm2_dump_capability --capability="properties-variable"
-if [ $? -ne 0 ]; then
-    echo "tpm2_dump_capability failed to get variable properties"
-    exit 1
-fi
-tpm2_dump_capability --capability="algorithms"
-if [ $? -ne 0 ]; then
-    echo "tpm2_dump_capability failed to get algorithms"
-    exit 1
-fi
-tpm2_dump_capability --capability="commands"
-if [ $? -ne 0 ]; then
-    echo "tpm2_dump_capability failed to get commands"
-    exit 1
-fi
+}
+trap onerror ERR
 
-echo "tpm2_dump_capability success."
+tpm2_dump_capability -Q --capability="properties-fixed"
+
+tpm2_dump_capability -Q --capability="properties-variable"
+
+tpm2_dump_capability -Q --capability="algorithms"
+
+tpm2_dump_capability -Q --capability="commands"
+
 exit 0
