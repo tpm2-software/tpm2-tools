@@ -64,3 +64,6 @@ install:
 
 script:
     - ./.ci/travis-build-and-run-tests.sh
+
+after_failure:
+   - cat build/test-suite.log
