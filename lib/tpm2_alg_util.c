@@ -189,7 +189,7 @@ bool pcr_parse_digest_list(char **argv, int len,
         UINT32 count = 0;
 
         /*
-         * Split <pcr index>:<hash alg>=<hash value|filename>,... on : and separate with null byte, ie:
+         * Split <pcr index>:<hash alg>=<hash value>,... on : and separate with null byte, ie:
          * <pce index> '\0' <hash alg>'\0'<data>
          *
          * Start by splitting out the pcr index, and validating it.

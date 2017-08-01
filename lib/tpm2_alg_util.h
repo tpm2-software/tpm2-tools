@@ -116,6 +116,9 @@ struct tpm2_pcr_digest_spec {
  *   values cause the PCR to be extended multiple times. Extension
  *   is done in order from left to right as specified.
  *
+ *   At most 5 hash extensions per PCR entry are supported. This
+ *   is to keep the parser simple.
+ *
  * @param sapi_context
  *  The system API context for hashing files with the tpm. This can
  *  be NULL if the argument vector doesn't have a file spec for the hash.
