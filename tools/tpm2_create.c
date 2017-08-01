@@ -299,8 +299,7 @@ execute_tool (int              argc,
             if(!tpm2_util_string_to_uint32(optarg,&parentHandle))
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -1;
-                break;
+                return 1;
             }
             H_flag = 1;
             break;
@@ -308,16 +307,14 @@ execute_tool (int              argc,
         case 'P':
             if(!password_tpm2_util_copy_password(optarg, "Parent key password", &sessionData.hmac))
             {
-                returnVal = -2;
-                break;
+                return 1;
             }
             P_flag = 1;
             break;
         case 'K':
             if(!password_tpm2_util_copy_password(optarg, "Key password", &inSensitive.t.sensitive.userAuth))
             {
-                returnVal = -3;
-                break;
+                return 1;
             }
             K_flag = 1;
             break;
@@ -326,8 +323,7 @@ execute_tool (int              argc,
             if(nameAlg == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -4;
-                break;
+                return 1;
             }
             printf("nameAlg = 0x%4.4x\n", nameAlg);
             g_flag = 1;
@@ -337,8 +333,7 @@ execute_tool (int              argc,
             if(type == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -5;
-                break;
+                return 1;
             }
             printf("type = 0x%4.4x\n", type);
             G_flag = 1;
@@ -347,8 +342,7 @@ execute_tool (int              argc,
             if(!tpm2_util_string_to_uint32(optarg,&objectAttributes))
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -6;
-                break;
+                return 1;
             }
             A_flag = 1;//H_flag = 1;
             break;
@@ -357,13 +351,11 @@ execute_tool (int              argc,
             if (!strcmp(optarg, "-")) {
                 if (!files_load_bytes_from_stdin(inSensitive.t.sensitive.data.t.buffer,
                                                  &inSensitive.t.sensitive.data.t.size)) {
-                    returnVal = -7;
-                    break;
+                    return 1;
                 }
             } else if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer,
                                                &inSensitive.t.sensitive.data.t.size)) {
-                    returnVal = -7;
-                    break;
+                return 1;
             }
             I_flag = 1;
             printf("inSensitive.t.sensitive.data.t.size = %d\n",inSensitive.t.sensitive.data.t.size);
@@ -372,8 +364,7 @@ execute_tool (int              argc,
             inPublic.t.publicArea.authPolicy.t.size = sizeof(inPublic.t.publicArea.authPolicy) - 2;
             if(!files_load_bytes_from_file(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
             {
-                returnVal = -8;
-                break;
+                return 1;
             }
             L_flag = 1;
             break;
@@ -381,7 +372,7 @@ execute_tool (int              argc,
              if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
                  LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                          optarg);
-                 returnVal = 1;
+                 return 1;
              }
              break;
         case 'E':
@@ -391,8 +382,7 @@ execute_tool (int              argc,
             opuFilePath = optarg;
             if(files_does_file_exist(opuFilePath) != 0)
             {
-                returnVal = -9;
-                break;
+                return 1;
             }
             o_flag = 1;
             break;
@@ -400,8 +390,7 @@ execute_tool (int              argc,
             oprFilePath = optarg;
             if(files_does_file_exist(oprFilePath) != 0)
             {
-                returnVal = -10;
-                break;
+                return 1;
             }
             O_flag = 1;
             break;
@@ -409,8 +398,7 @@ execute_tool (int              argc,
             contextParentFilePath = optarg;
             if(contextParentFilePath == NULL || contextParentFilePath[0] == '\0')
             {
-                returnVal = -11;
-                break;
+                return 1;
             }
             printf("contextParentFile = %s\n", contextParentFilePath);
             c_flag = 1;
@@ -419,22 +407,16 @@ execute_tool (int              argc,
             hexPasswd = true;
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -14;
-            break;
-        case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -15;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return 1;
+	case '?':
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return 1;
+	default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return 1;
         }
-        if(returnVal)
-            break;
     };
-
-    if(returnVal != 0)
-        return returnVal;
 
     if(P_flag == 0)
         sessionData.hmac.t.size = 0;
@@ -443,7 +425,7 @@ execute_tool (int              argc,
         inSensitive.t.sensitive.data.t.size = 0;
     } else if (type != TPM_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM_ALG_KEYEDHASH algorithm is allowed when sealing data\n");
-        return -19;
+        return 1;
     }
 
     if(K_flag == 0)
@@ -455,7 +437,7 @@ execute_tool (int              argc,
     if(flagCnt == 1)
     {
         showArgMismatch(argv[0]);
-        return -16;
+        return 1;
     }
     else if(flagCnt == 3 && (H_flag == 1 || c_flag == 1) && g_flag == 1 && G_flag == 1)
     {
@@ -465,12 +447,12 @@ execute_tool (int              argc,
             returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes, is_policy_enforced);
 
         if(returnVal)
-            return -17;
+            return 1;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -18;
+        return 1;
     }
     return 0;
 }
