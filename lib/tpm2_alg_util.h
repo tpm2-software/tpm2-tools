@@ -72,4 +72,65 @@ const char *tpm2_alg_util_algtostr(TPM_ALG_ID id);
  */
 TPM_ALG_ID tpm2_alg_util_from_optarg(char *optarg);
 
+/**
+ * Detects if an algorithm is considered a hashing algorithm.
+ * @param id
+ *  The algorithm id to check.
+ * @return
+ *  True if it is a hash algorithm, False otherwise.
+ */
+bool tpm2_alg_util_is_hash_alg(TPM_ALG_ID id);
+
+/**
+ * Contains the information from parsing an argv style vector of strings for
+ * pcr digest language specifications.
+ */
+typedef struct tpm2_pcr_digest_spec tpm2_pcr_digest_spec;
+struct tpm2_pcr_digest_spec {
+    TPML_DIGEST_VALUES digests;
+    TPMI_DH_PCR pcr_index;
+};
+
+/**
+ * Parses an argv array that contains a digest specification at each location
+ * within argv.
+ *
+ * The digest specification is as follows:
+ *   - A pcr identifier as understood by strtoul with 0 as the base.
+ *   - A colon followed by the algorithm hash specification.
+ *   - The algorithm hash specification is as follows:
+ *       - The algorithm friendly name or raw numerical as understood by
+ *         strtoul with a base of 0.
+ *       - An equals sign
+ *       - The hex hash value,
+ *
+ *   This all distills to a string that looks like this:
+ *   <pcr index>:<hash alg id>=<hash value>
+ *
+ *   Example:
+ *   "4:sha=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
+ *
+ *   Note:
+ *   Multiple specifications of PCR and hash are OK. Multiple hashes
+ *   cause the pcr to be extended with both hashes. Multiple same PCR
+ *   values cause the PCR to be extended multiple times. Extension
+ *   is done in order from left to right as specified.
+ *
+ * @param sapi_context
+ *  The system API context for hashing files with the tpm. This can
+ *  be NULL if the argument vector doesn't have a file spec for the hash.
+ * @param argv
+ *  The argv of digest specifications to parse.
+ * @param len
+ *  The number of digest specifications to parse.
+ * @param digests
+ *  An array of tpm2_pcr_digest_spec big enough to hold len items.
+ * @return
+ *  True if parsing was successful, False otherwise.
+ *  @note
+ *  This function logs errors via LOG_ERR.
+ */
+bool pcr_parse_digest_list(char **argv, int len,
+        tpm2_pcr_digest_spec *digest_spec);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
