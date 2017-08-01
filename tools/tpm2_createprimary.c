@@ -237,8 +237,7 @@ execute_tool (int               argc,
                 hierarchy = TPM_RH_NULL;
             else
             {
-                returnVal = -1;
-                break;
+                return 1;
             }
             A_flag = 1;
             break;
@@ -247,8 +246,7 @@ execute_tool (int               argc,
             if(!password_tpm2_util_copy_password(optarg, "parent key",
                     &sessionData.hmac))
             {
-                returnVal = -2;
-                break;
+                return 1;
             }
 
             P_flag = 1;
@@ -257,8 +255,7 @@ execute_tool (int               argc,
             if(!password_tpm2_util_copy_password(optarg, "new key",
                     &inSensitive.t.sensitive.userAuth))
             {
-                returnVal = -3;
-                break;
+                return 1;
             }
             K_flag = 1;
             break;
@@ -267,8 +264,7 @@ execute_tool (int               argc,
             if(nameAlg == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -4;
-                break;
+                return 1;
             }
             printf("nameAlg = 0x%4.4x\n", nameAlg);
             g_flag = 1;
@@ -278,8 +274,7 @@ execute_tool (int               argc,
             if(type == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -5;
-                break;
+                return 1;
             }
             printf("type = 0x%4.4x\n", type);
             G_flag = 1;
@@ -288,8 +283,7 @@ execute_tool (int               argc,
             contextFile = optarg;
             if(contextFile == NULL || contextFile[0] == '\0')
             {
-                returnVal = -8;
-                break;
+                return 1;
             }
             printf("contextFile = %s\n", contextFile);
             C_flag = 1;
@@ -301,8 +295,7 @@ execute_tool (int               argc,
             inPublic.t.publicArea.authPolicy.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer); 
             if(!files_load_bytes_from_file(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
             {
-                returnVal = -8;
-                break;
+                return 1;
             }
             break;
         case 'E':
@@ -312,26 +305,20 @@ execute_tool (int               argc,
             if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                         optarg);
-                returnVal = 1;
+                return 1;
             }
             break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -9;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return 1;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -10;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return 1;
+        default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return 1;
         }
-        if(returnVal)
-            break;
     };
-
-    if(returnVal != 0)
-        return returnVal;
 
     if (P_flag && hexPasswd)
     {
@@ -361,12 +348,12 @@ execute_tool (int               argc,
         if (returnVal == 0 && C_flag)
             returnVal = files_save_tpm_context_to_file(sapi_context, handle2048rsa, contextFile) != true;
         if(returnVal)
-            return -12;
+            return 1;
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -13;
+        return 1;
     }
 
     return 0;
