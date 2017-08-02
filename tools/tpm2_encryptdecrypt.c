@@ -246,7 +246,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     bool result = init(argc, argv, &ctx);
     if (!result) {
-        return false;
+        return 1;
     }
 
     return encryptDecrypt(&ctx) != true;
