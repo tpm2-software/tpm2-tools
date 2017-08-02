@@ -30,110 +30,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "log.h"
 #include "tpm_kdfa.h"
 #include "tpm_session.h"
-
+#include "tpm2_alg_util.h"
 #include "tpm2_util.h"
-
-/* for APP_RC_CREATE_SESSION_KEY_FAILED error code */
-
-#define SESSIONS_ARRAY_COUNT MAX_NUM_SESSIONS+1
-
-typedef struct {
-    SESSION session;
-    void *nextEntry;
-} SESSION_LIST_ENTRY;
-
-static SESSION_LIST_ENTRY *local_sessions_list = 0;
-static INT16 local_session_entries_used = 0;
-
-/*
- * GetDigestSize() was taken from the TSS code base
- * and moved here since it was not part of the public
- * exxported API at the time.
- */
-typedef struct {
-    TPM_ALG_ID  algId;
-    UINT16      size;  // Size of digest
-} HASH_SIZE_INFO;
-
-HASH_SIZE_INFO   hashSizes[] = {
-    {TPM_ALG_SHA1,          SHA1_DIGEST_SIZE},
-    {TPM_ALG_SHA256,        SHA256_DIGEST_SIZE},
-#ifdef TPM_ALG_SHA384
-    {TPM_ALG_SHA384,        SHA384_DIGEST_SIZE},
-#endif
-#ifdef TPM_ALG_SHA512
-    {TPM_ALG_SHA512,        SHA512_DIGEST_SIZE},
-#endif
-    {TPM_ALG_SM3_256,       SM3_256_DIGEST_SIZE},
-    {TPM_ALG_NULL,0}
-};
-
-static UINT16 GetDigestSize( TPM_ALG_ID authHash )
-{
-    UINT32 i;
-    for(i = 0; i < (sizeof(hashSizes)/sizeof(HASH_SIZE_INFO)); i++ )
-    {
-        if( hashSizes[i].algId == authHash )
-            return hashSizes[i].size;
-    }
-
-    // If not found, return 0 size, and let TPM handle the error.
-    return( 0 );
-}
-
-static TPM_RC AddSession( SESSION_LIST_ENTRY **sessionEntry )
-{
-    SESSION_LIST_ENTRY **newEntry;
-
-    // find end of list.
-    for( newEntry = &local_sessions_list; *newEntry != 0; *newEntry = ( (SESSION_LIST_ENTRY *)*newEntry)->nextEntry )
-        ;
-
-    // allocate space for session structure.
-    *newEntry = malloc( sizeof( SESSION_LIST_ENTRY ) );
-    if( *newEntry != 0 )
-    {
-        *sessionEntry = *newEntry;
-        (*sessionEntry)->nextEntry = 0;
-        local_session_entries_used++;
-        return TPM_RC_SUCCESS;
-    }
-    else
-    {
-        return TSS2_APP_RC_SESSION_SLOT_NOT_FOUND;
-    }
-}
-
-
-static void DeleteSession( SESSION *session )
-{
-    SESSION_LIST_ENTRY *predSession;
-    void *newNextEntry;
-
-    if( session == &local_sessions_list->session )
-        local_sessions_list = 0;
-    else
-    {
-        // Find predecessor.
-        for( predSession = local_sessions_list;
-                predSession != 0 && &( ( ( SESSION_LIST_ENTRY *)predSession->nextEntry )->session ) != session;
-                predSession = predSession->nextEntry )
-            ;
-
-        if( predSession != 0 )
-        {
-            local_session_entries_used--;
-
-            newNextEntry = &( (SESSION_LIST_ENTRY *)predSession->nextEntry)->nextEntry;
-
-            free( predSession->nextEntry );
-
-            predSession->nextEntry = newNextEntry;
-        }
-    }
-}
 
 //
 // This is a wrapper function around the TPM2_StartAuthSession command.
@@ -152,8 +53,7 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
 
     if( session->nonceOlder.t.size == 0 )
     {
-        /* this is an internal routine to TSS and should be removed */
-        session->nonceOlder.t.size = GetDigestSize( TPM_ALG_SHA1 );
+        session->nonceOlder.t.size = tpm2_alg_util_get_hash_size( TPM_ALG_SHA1 );
         for( i = 0; i < session->nonceOlder.t.size; i++ )
             session->nonceOlder.t.buffer[i] = 0;
     }
@@ -191,7 +91,7 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
                 return TSS2_SYS_RC_BAD_VALUE;
             }
 
-            bytes = GetDigestSize( session->authHash );
+            bytes = tpm2_alg_util_get_hash_size( session->authHash );
 
             if( key.t.size == 0 )
             {
@@ -217,13 +117,9 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
     return rval;
 }
 
-TPM_RC tpm_session_auth_end( SESSION *session )
-{
-    TPM_RC rval = TPM_RC_SUCCESS;
+void tpm_session_auth_end(SESSION *session ) {
 
-    DeleteSession( session );
-
-    return rval;
+    free(session);
 }
 
 //
@@ -242,63 +138,58 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
     TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId )
 {
     TPM_RC rval;
-    SESSION_LIST_ENTRY *sessionEntry;
 
-    rval = AddSession( &sessionEntry );
-    if( rval == TSS2_RC_SUCCESS )
+    *session = calloc(1, sizeof(**session));
+    if (!*session) {
+        LOG_ERR("oom");
+        return TPM_RC_MEMORY;
+    }
+
+    // Copy handles to session struct.
+    (*session)->bind = bind;
+    (*session)->tpmKey = tpmKey;
+
+    // Copy nonceCaller to nonceOlder in session struct.
+    // This will be used as nonceCaller when StartAuthSession
+    // is called.
+    memcpy( &(*session)->nonceOlder.b, &nonceCaller->b, sizeof(nonceCaller->b));
+
+    // Copy encryptedSalt
+    memcpy( &(*session)->encryptedSalt.b, &encryptedSalt->b, sizeof(encryptedSalt->b));
+
+    // Copy sessionType.
+    (*session)->sessionType = sessionType;
+
+    // Init symmetric.
+    (*session)->symmetric.algorithm = symmetric->algorithm;
+    (*session)->symmetric.keyBits.sym = symmetric->keyBits.sym;
+    (*session)->symmetric.mode.sym = symmetric->mode.sym;
+    (*session)->authHash = algId;
+
+    // Copy bind' authValue.
+    if( bindAuth == 0 )
     {
-        *session = &sessionEntry->session;
-
-        // Copy handles to session struct.
-        (*session)->bind = bind;
-        (*session)->tpmKey = tpmKey;
-
-        // Copy nonceCaller to nonceOlder in session struct.
-        // This will be used as nonceCaller when StartAuthSession
-        // is called.
-        memcpy( &(*session)->nonceOlder.b, &nonceCaller->b, sizeof(nonceCaller->b));
-
-        // Copy encryptedSalt
-        memcpy( &(*session)->encryptedSalt.b, &encryptedSalt->b, sizeof(encryptedSalt->b));
-
-        // Copy sessionType.
-        (*session)->sessionType = sessionType;
-
-        // Init symmetric.
-        (*session)->symmetric.algorithm = symmetric->algorithm;
-        (*session)->symmetric.keyBits.sym = symmetric->keyBits.sym;
-        (*session)->symmetric.mode.sym = symmetric->mode.sym;
-        (*session)->authHash = algId;
-
-        // Copy bind' authValue.
-        if( bindAuth == 0 )
-        {
-            (*session)->authValueBind.b.size = 0;
-        }
-        else
-        {
-            memcpy( &( (*session)->authValueBind.b ), &( bindAuth->b ), sizeof(bindAuth->b));
-        }
-
-        // Calculate sessionKey
-        if( (*session)->tpmKey == TPM_RH_NULL )
-        {
-            (*session)->salt.t.size = 0;
-        }
-        else
-        {
-            memcpy( &(*session)->salt.b, &salt->b, sizeof(salt->b));
-        }
-
-        if( (*session)->bind == TPM_RH_NULL )
-            (*session)->authValueBind.t.size = 0;
-
-
-        rval = StartAuthSession(sapi_context, *session );
+        (*session)->authValueBind.b.size = 0;
     }
     else
     {
-        DeleteSession( *session );
+        memcpy( &( (*session)->authValueBind.b ), &( bindAuth->b ), sizeof(bindAuth->b));
     }
-    return( rval );
+
+    // Calculate sessionKey
+    if( (*session)->tpmKey == TPM_RH_NULL )
+    {
+        (*session)->salt.t.size = 0;
+    }
+    else
+    {
+        memcpy( &(*session)->salt.b, &salt->b, sizeof(salt->b));
+    }
+
+    if( (*session)->bind == TPM_RH_NULL )
+        (*session)->authValueBind.t.size = 0;
+
+    rval = StartAuthSession(sapi_context, *session );
+
+    return rval;
 }

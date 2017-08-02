@@ -7,24 +7,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_policy.h"
-
-static unsigned get_size_from_alg(TPMI_ALG_HASH hashAlg) {
-    switch (hashAlg) {
-        case TPM_ALG_SHA1:
-            return SHA1_DIGEST_SIZE;
-        case TPM_ALG_SHA256:
-            return SHA256_DIGEST_SIZE;
-        case TPM_ALG_SHA384:
-            return SHA384_DIGEST_SIZE;
-        case TPM_ALG_SHA512:
-            return SHA512_DIGEST_SIZE;
-        case TPM_ALG_SM3_256:
-            return SM3_256_DIGEST_SIZE;
-        default:
-            LOG_ERR("Unknown hashAlg, cannot determine digest size.\n");
-            return 0;
-    }
-}
+#include "tpm2_alg_util.h"
 
 static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
                                           char *raw_pcrs_file,
@@ -47,7 +30,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
         }
 
         //digest size returned per the hashAlg type
-        unsigned dgst_size = get_size_from_alg(pcr_selections.pcrSelections[i].hash);
+        unsigned dgst_size = tpm2_alg_util_get_hash_size(pcr_selections.pcrSelections[i].hash);
         if (!dgst_size) {
             return false;
         }
@@ -221,12 +204,7 @@ TPM_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
             return rval;
         }
 
-        // And remove the session from sessions table.
-        rval = tpm_session_auth_end(*policy_session);
-        if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("Failed deleting session from session table\n");
-            return rval;
-        }
+        tpm_session_auth_end(*policy_session);
     }
 
     return rval;
