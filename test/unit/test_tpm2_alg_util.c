@@ -430,6 +430,28 @@ static void test_pcr_parse_digest_list_bad_alg(void **state) {
     assert_false(res);
 }
 
+static void test_tpm2_alg_util_get_hash_size(void **state) {
+    (void) state;
+
+    UINT16 hsize = tpm2_alg_util_get_hash_size(TPM_ALG_SHA1);
+    assert_int_equal(hsize, SHA1_DIGEST_SIZE);
+
+    hsize = tpm2_alg_util_get_hash_size(TPM_ALG_SHA256);
+    assert_int_equal(hsize, SHA256_DIGEST_SIZE);
+
+    hsize = tpm2_alg_util_get_hash_size(TPM_ALG_SHA384);
+    assert_int_equal(hsize, SHA384_DIGEST_SIZE);
+
+    hsize = tpm2_alg_util_get_hash_size(TPM_ALG_SHA512);
+    assert_int_equal(hsize, SHA512_DIGEST_SIZE);
+
+    hsize = tpm2_alg_util_get_hash_size(TPM_ALG_SM3_256);
+    assert_int_equal(hsize, SM3_256_DIGEST_SIZE);
+
+    hsize = tpm2_alg_util_get_hash_size(TPM_ALG_RSA);
+    assert_int_equal(hsize, 0);
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -480,7 +502,8 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_pcr_parse_digest_list_many_items),
         cmocka_unit_test(test_pcr_parse_digest_list_compound),
         cmocka_unit_test(test_pcr_parse_digest_list_bad),
-        cmocka_unit_test(test_pcr_parse_digest_list_bad_alg)
+        cmocka_unit_test(test_pcr_parse_digest_list_bad_alg),
+        cmocka_unit_test(test_tpm2_alg_util_get_hash_size)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
