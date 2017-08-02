@@ -347,8 +347,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if(!tpm2_util_string_to_uint32(optarg,&akHandle))
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -1;
-                break;
+                return 1;
             }
             k_flag = 1;
             break;
@@ -357,8 +356,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if(contextFilePath == NULL || contextFilePath[0] == '\0')
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -2;
-                break;
+                return 1;
             }
             printf("contextFile = %s\n", contextFilePath);
             c_flag = 1;
@@ -368,8 +366,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if(!password_tpm2_util_copy_password(optarg, "parent key", &sessionData.hmac))
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -3;
-                break;
+                return 1;
             }
             P_flag = 1;
             break;
@@ -377,8 +374,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if(!pcr_parse_list(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]))
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -4;
-                break;
+                return 1;
             }
             l_flag = 1;
             break;
@@ -387,8 +383,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if (pcrSelections.pcrSelections[0].hash == TPM_ALG_ERROR)
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -5;
-                break;
+                return 1;
             }
             pcrSelections.count = 1;
             g_flag = 1;
@@ -397,8 +392,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if(!pcr_parse_selections(optarg, &pcrSelections))
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -15;
-                break;
+                return 1;
             }
             L_flag = 1;
             break;
@@ -407,8 +401,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if(files_does_file_exist(outFilePath))
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -6;
-                break;
+                return 1;
             }
             o_flag = 1;
             break;
@@ -420,8 +413,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             if(tpm2_util_hex_to_byte_structure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
             {
                 showArgError(optarg, argv[0]);
-                returnVal = -14;
-                break;
+                return 1;
             }
             break;
         case 'S':
@@ -433,22 +425,16 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
              is_auth_session = true;
              break;
        case ':':
-            //              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -9;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return 1;
         case '?':
-            //              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -10;
-            break;
-            //default:
-            //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return 1;
+	default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return 1;
         }
-        if(returnVal)
-            break;
     };
-
-    if(returnVal != 0)
-        return returnVal;
 
     flagCnt = k_flag + c_flag + l_flag + g_flag + L_flag + o_flag;
     if(((flagCnt == 3 && L_flag) || (flagCnt == 4 && (g_flag && l_flag)))
@@ -457,17 +443,22 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         if(P_flag == 0)
             sessionData.hmac.t.size = 0;
 
-        if(c_flag)
-            returnVal = file_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath) != true;
-        if(returnVal == TPM_RC_SUCCESS)
-            returnVal = quote(sapi_context, akHandle, &pcrSelections);
-        if(returnVal)
-            return -12;
+        if(c_flag) {
+            returnVal = file_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath);
+            if (!returnVal) {
+                return 1;
+            }
+        }
+
+        returnVal = quote(sapi_context, akHandle, &pcrSelections);
+        if(returnVal) {
+            return 1;
+        }
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -13;
+        return 1;
     }
 
     return 0;
