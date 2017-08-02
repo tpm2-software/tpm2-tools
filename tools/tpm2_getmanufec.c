@@ -537,7 +537,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     if (argc > (int)(2 * sizeof(long_options) / sizeof(struct option)) ) {
         showArgMismatch(argv[0]);
-        return -1;
+        return 1 ;
     }
 
     char *ECcertFilePath = NULL;
@@ -548,14 +548,14 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'H':
                     if (!tpm2_util_string_to_uint32(optarg, &persistentHandle)) {
                         LOG_ERR("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
-                        return return_val;
+                        return 1;
                     }
                     break;
 
                 case 'e':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         LOG_ERR("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
-                        return return_val;
+                        return 1;
                     }
                     endorsePasswd = optarg;
                     break;
@@ -563,7 +563,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'o':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         LOG_ERR("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
-                        return return_val;
+                        return 1;
                     }
                     ownerPasswd = optarg;
                     break;
@@ -571,7 +571,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'P':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
                         LOG_ERR("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
-                        return return_val;
+                        return 1;
                     }
                     ekPasswd = optarg;
                     break;
@@ -580,14 +580,14 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     algorithmType = tpm2_alg_util_from_optarg(optarg);
                     if (algorithmType == TPM_ALG_ERROR) {
                         LOG_ERR("\nPlease input the algorithm type in correct format.\n");
-                        return return_val;
+                        return 1;
                     }
                     break;
 
                 case 'f':
                     if (optarg == NULL ) {
                         LOG_ERR("\nPlease input the file used to save the pub ek.\n");
-                        return return_val;
+                        return 1;
                     }
                     outputFile = optarg;
                     break;
@@ -614,7 +614,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'S':
                     if (EKserverAddr) {
                         LOG_ERR("Multiple specifications of -S\n");
-                        return return_val;
+                        return 1;
                     }
                     EKserverAddr = optarg;
                     LOG_INFO("TPM Manufacturer EK provisioning address -- %s\n", EKserverAddr);
@@ -624,7 +624,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     if (!return_val) {
                         LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                                 optarg);
-                        return return_val;
+                        return 1;
                     }
                     is_session_based_auth = true;
                     break;
@@ -638,7 +638,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         ECcertFile = fopen(ECcertFilePath, "wb");
         if (!ECcertFile) {
             LOG_ERR("Could not open file for writing: \"%s\"", ECcertFilePath);
-            return -1;
+            return 1;
         }
     }
 
@@ -648,12 +648,12 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         return_val = 1;
         goto err;
     }
-    else {
-        if (!OfflineProv) {
-            return_val  = createEKHandle(sapi_context);
-        }
-        provisioning_return_val = TPMinitialProvisioning();
+
+    if (!OfflineProv) {
+        return_val = createEKHandle(sapi_context);
     }
+
+    provisioning_return_val = TPMinitialProvisioning();
 
     if (return_val && provisioning_return_val) {
         goto err;
