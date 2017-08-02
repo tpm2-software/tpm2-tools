@@ -216,12 +216,7 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         return false;
     }
 
-    // And remove the session from sessions table.
-    rval = tpm_session_auth_end(session);
-    if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("EndAuthSession Error. TPM Error:0x%x", rval);
-        return false;
-    }
+    tpm_session_auth_end(session);
 
     return output_and_save(&certInfoData, ctx->file.output);
 }

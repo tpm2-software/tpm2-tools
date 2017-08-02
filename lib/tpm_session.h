@@ -131,6 +131,6 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
  * @param session
  * @return
  */
-TPM_RC tpm_session_auth_end( SESSION *session);
+void tpm_session_auth_end( SESSION *session);
 
 #endif /* SRC_TPM_SESSION_H_ */
