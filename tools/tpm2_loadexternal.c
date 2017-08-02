@@ -207,7 +207,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     result = load_external(&ctx);
     if (!result) {
-        return false;
+        return 1;
     }
 
     if(ctx.save_to_context_file) {
