@@ -105,5 +105,5 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) envp;
     (void) opts;
 
-    return nv_list(sapi_context) != 0;
+    return !nv_list(sapi_context);
 }
