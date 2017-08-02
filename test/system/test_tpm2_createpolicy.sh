@@ -39,9 +39,10 @@ pcr_index=0
 
 for halg in sha1 sha256
 do
-    tpm2_createpolicy -P -L ${halg}:${pcr_index} -f policy.file
+    cmd="tpm2_createpolicy -P -L ${halg}:${pcr_index} -f policy.file"
+    `$cmd`
     if [ $? != 0 ];then
-        echo "createpolicy command failed, please check the environment or parameters!"
+        echo "command: $cmd failed: $?"
         exit 1
     fi
 
