@@ -160,8 +160,7 @@ execute_tool (int              argc,
         case 'H':
             if (!tpm2_util_string_to_uint32(optarg, &parentHandle))
             {
-                returnVal = -1;
-                break;
+                return 1;
             }
             printf("\nparentHandle: 0x%x\n\n",parentHandle);
             H_flag = 1;
@@ -169,8 +168,7 @@ execute_tool (int              argc,
         case 'P':
             if(!password_tpm2_util_copy_password(optarg, "parent key", &sessionData.hmac))
             {
-                returnVal = -2;
-                break;
+                return 1;
             }
             P_flag = 1;
             break;
@@ -179,8 +177,7 @@ execute_tool (int              argc,
             size = sizeof(inPublic);
             if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPublic, &size))
             {
-                returnVal = -3;
-                break;
+                return 1;
             }
             u_flag = 1;
             break;
@@ -188,8 +185,7 @@ execute_tool (int              argc,
             size = sizeof(inPrivate);
             if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPrivate, &size))
             {
-                returnVal = -4;
-                break;
+                return 1;
             }
             r_flag = 1;
             break;
@@ -197,8 +193,7 @@ execute_tool (int              argc,
             outFilePath = optarg;
             if(files_does_file_exist(outFilePath))
             {
-                returnVal = -5;
-                break;
+                return 1;
             }
             n_flag = 1;
             break;
@@ -206,8 +201,7 @@ execute_tool (int              argc,
             contextParentFilePath = optarg;
             if(contextParentFilePath == NULL || contextParentFilePath[0] == '\0')
             {
-                returnVal = -8;
-                break;
+                return 1;
             }
             printf("contextParentFile = %s\n", contextParentFilePath);
             c_flag = 1;
@@ -216,8 +210,7 @@ execute_tool (int              argc,
             contextFile = optarg;
             if(contextFile == NULL || contextFile[0] == '\0')
             {
-                returnVal = -9;
-                break;
+                return 1;
             }
             printf("contextFile = %s\n", contextFile);
             C_flag = 1;
@@ -229,26 +222,20 @@ execute_tool (int              argc,
              if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
                  LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                          optarg);
-                 returnVal = 1;
+                 return 1;
              }
              break;
         case ':':
-//              printf("Argument %c needs a value!\n",optopt);
-            returnVal = -10;
-            break;
+            LOG_ERR("Argument %c needs a value!\n", optopt);
+            return 1;
         case '?':
-//              printf("Unknown Argument: %c\n",optopt);
-            returnVal = -11;
-            break;
-        //default:
-        //  break;
+            LOG_ERR("Unknown Argument: %c\n", optopt);
+            return 1;
+	default:
+            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            return 1;
         }
-        if(returnVal)
-            break;
     };
-
-    if(returnVal != 0)
-        return returnVal;
 
     if (P_flag && hexPasswd) {
         int rc = tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
@@ -256,6 +243,7 @@ execute_tool (int              argc,
                           sessionData.hmac.t.buffer);
         if (rc) {
             LOG_ERR("Could not convert password to hex!");
+            return 1;
         }
     }
 
@@ -266,26 +254,30 @@ execute_tool (int              argc,
             returnVal = file_load_tpm_context_from_file (sapi_context,
                                                 &parentHandle,
                                                 contextParentFilePath) != true;
+            if (returnVal) {
+                return 1;
+            }
         }
-        if (returnVal == 0) {
-            returnVal = load (sapi_context,
-                              parentHandle,
-                              &inPublic,
-                              &inPrivate,
-                              outFilePath);
+
+        returnVal = load (sapi_context, parentHandle, &inPublic, &inPrivate,
+                          outFilePath);
+        if (returnVal) {
+            return 1;
         }
-        if (returnVal == 0 && C_flag) {
+        if (C_flag) {
             returnVal = files_save_tpm_context_to_file (sapi_context,
                                               handle2048rsa,
                                               contextFile) != true;
+            if (returnVal) {
+                return 1;
+            }
         }
-        if(returnVal)
-            return -13;
+
     }
     else
     {
         showArgMismatch(argv[0]);
-        return -14;
+        return 1;
     }
 
     return 0;
