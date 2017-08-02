@@ -32,34 +32,34 @@
 #!/bin/bash
 
 
-tpm2_listpcrs 
+tpm2_pcrlist 
 
 if [ $? != 0 ];then 
- echo "listpcrs  fail!"
+ echo "pcrlist  fail!"
  exit 1
 fi
 
-tpm2_listpcrs -g 0x04
+tpm2_pcrlist -g 0x04
 
 if [ $? != 0 ];then 
- echo "listpcrs  fail!"
+ echo "pcrlist  fail!"
  exit 1
 fi
 
 rm -rf pcrs
 
-tpm2_listpcrs -L 0x04:17,18,19+sha256:0,17,18,19 -o pcrs
+tpm2_pcrlist -L 0x04:17,18,19+sha256:0,17,18,19 -o pcrs
 
 if [ $? != 0 ];then 
- echo "listpcrs  fail!"
+ echo "pcrlist  fail!"
  exit 1
 fi
 
-tpm2_listpcrs -s
+tpm2_pcrlist -s
 
 if [ $? != 0 ];then 
- echo "listpcrs  fail!"
+ echo "pcrlist  fail!"
  exit 1
 fi
 
-echo "listpcrs  OK!"
+echo "pcrlist  OK!"

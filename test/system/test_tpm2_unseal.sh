@@ -94,7 +94,7 @@ fi
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
 
-tpm2_listpcrs -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
+tpm2_pcrlist -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 if [ $? != 0 ];then
     echo "create raw pcr output fail, please check the environment or parameters!"
     exit 1

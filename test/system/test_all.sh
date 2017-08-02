@@ -59,7 +59,7 @@ test_wrapper()
 
 test_wrapper test_tpm2_takeownership_all.sh
 test_wrapper test_tpm2_nv.sh
-test_wrapper test_tpm2_listpcrs.sh
+test_wrapper test_tpm2_pcrlist.sh
 test_wrapper test_tpm2_getrandom.sh
 #test_wrapper test_tpm2_createprimary_all.sh
 #test_wrapper test_tpm2_create_all.sh

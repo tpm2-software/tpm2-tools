@@ -291,7 +291,7 @@ tpm2_certify -C context.p9.out -c context_load_out9.out -g 0x000B -a attest.out 
 	fail certify 
   fi
 
-tpm2_listpcrs 
+tpm2_pcrlist
   if [ $? != 0 ];then
 	fail listpcrs
   fi

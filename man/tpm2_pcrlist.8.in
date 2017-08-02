@@ -26,15 +26,15 @@
 .\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\" THE POSSIBILITY OF SUCH DAMAGE.
-.TH tpm2_listpcrs 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.TH tpm2_pcrlist 8 "DECEMBER 2016" Intel "tpm2.0-tools"
 .SH NAME
-tpm2_listpcrs\ - display all PCR values in given algorithm with -g, display given PCR values
+tpm2_pcrlist\ - display all PCR values in given algorithm with -g, display given PCR values
 in given algorithms with -L, or if no algorithm is given, output all algs.
 Output file just contains all returned PCR values in binary format and in
 0~23 order and in the requested order if multiple algs were requested. Assume
 the caller know the pcr value length corresponding to the given bank/algorithm.
 .SH SYNOPSIS
-.B tpm2_listpcrs[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-algorithim\fR|\fB\-\-output\fR|\fB\-\-selList\fR|\fB\-\-algs\fR|\fB ]
+.B tpm2_pcrlist[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-algorithim\fR|\fB\-\-output\fR|\fB\-\-selList\fR|\fB\-\-algs\fR|\fB ]
 .PP
 display all PCR values in given algorithm with -g, display given PCR values
 in given algorithms with -L, or if no algorithm is given, output all algs.
@@ -42,7 +42,7 @@ Output file just contains all returned PCR values in binary format and in
 0~23 order and in the requested order if multiple algs were requested. Assume
 the caller know the pcr value length corresponding to the given bank/algorithm.
 .SH DESCRIPTION
-.B tpm2_listpcrs
+.B tpm2_pcrlist
 display all PCR values in given algorithm with -g, display given PCR values
 in given algorithms with -L, or if no algorithm is given, output all algs.
 Output file just contains all returned PCR values in binary format and in
@@ -67,17 +67,17 @@ Show the supported algs in the PCR banks
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
 .SH EXAMPLES
-.B tpm2_listpcrs
+.B tpm2_pcrlist
 .PP
 .nf
 .RS
 display all PCR values:  
-tpm2_listpcrs
+tpm2_pcrlist
 display the PCR values with specified bank:
-tpm2_listpcrs -g 0x04
+tpm2_pcrlist -g 0x04
 display the PCR values with specified banks and store in a file:
-tpm2_listpcrs -L 0x04:16,17,18+0x0b:16,17,18 -o pcrs
+tpm2_pcrlist -L 0x04:16,17,18+0x0b:16,17,18 -o pcrs
 display the supported algs in the PCR banks:
-tpm2_listpcrs -s
+tpm2_pcrlist -s
 .RE
 .fi
