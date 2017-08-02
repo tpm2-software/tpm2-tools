@@ -40,7 +40,7 @@ declare -A alg_hashes=(
 )
 
 # test a single algorithm based on what is supported
-for alg in `tpm2_listpcrs -s | cut -d\  -f 3-`; do
+for alg in `tpm2_pcrlist -s | cut -d\  -f 3-`; do
   alg=`echo $alg | cut -d\( -f 1-1`;
 
   if [[ -v supported_algs["$alg"] ]]; then

@@ -46,7 +46,7 @@ sbin_PROGRAMS = \
     tools/tpm2_load \
     tools/tpm2_send_command \
     tools/tpm2_dump_capability \
-    tools/tpm2_listpcrs \
+    tools/tpm2_pcrlist \
     tools/tpm2_listpersistent \
     tools/tpm2_startup \
     tools/tpm2_rc_decode \
@@ -102,7 +102,7 @@ lib_libcommon_a_SOURCES = \
 tools_tpm2_create_SOURCES = tools/tpm2_create.c tools/main.c
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c tools/main.c
 tools_tpm2_dump_capability_SOURCES = tools/tpm2_dump_capability.c tools/main.c
-tools_tpm2_listpcrs_SOURCES = tools/tpm2_listpcrs.c tools/main.c
+tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c tools/main.c
 tools_tpm2_listpersistent_SOURCES = tools/tpm2_listpersistent.c tools/main.c
 tools_tpm2_load_SOURCES = tools/tpm2_load.c tools/main.c
 tools_tpm2_send_command_SOURCES = tools/tpm2_send_command.c tools/main.c
@@ -195,7 +195,7 @@ man8_MANS = \
     man/man8/tpm2_dump_capability.8 \
     man/man8/tpm2_send_command.8 \
     man/man8/tpm2_startup.8 \
-    man/man8/tpm2_listpcrs.8 \
+    man/man8/tpm2_pcrlist.8 \
     man/man8/tpm2_quote.8 \
     man/man8/tpm2_takeownership.8 \
     man/man8/tpm2_getpubek.8 \
