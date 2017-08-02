@@ -143,7 +143,7 @@ bool tpm2_alg_util_is_hash_alg(TPM_ALG_ID id) {
     return false;
 }
 
-static UINT16 hash_alg_size(TPMI_ALG_HASH id) {
+UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id) {
 
     switch (id) {
     case TPM_ALG_SHA1 :
@@ -262,7 +262,7 @@ bool pcr_parse_digest_list(char **argv, int len,
             /* fill up the TPMT_HA structure with algorithm and digest */
             BYTE *digest_data = (BYTE *) &d->digest;
 
-            UINT16 expected_hash_size = hash_alg_size(alg);
+            UINT16 expected_hash_size = tpm2_alg_util_get_hash_size(alg);
             /* strip any preceding hex on the data as tpm2_util_hex_to_byte_structure doesn't support it */
             bool is_hex = !strncmp("0x", data, 2);
             if (is_hex) {

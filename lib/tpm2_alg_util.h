@@ -120,4 +120,14 @@ struct tpm2_pcr_digest_spec {
 bool pcr_parse_digest_list(char **argv, int len,
         tpm2_pcr_digest_spec *digest_spec);
 
+/**
+ * Retrieves the size of a hash in bytes for a given hash
+ * algorithm or 0 if unknown/not found.
+ * @param id
+ *  The HASH algorithm identifier.
+ * @return
+ *  0 on failure or the size of the hash bytes.
+ */
+UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
