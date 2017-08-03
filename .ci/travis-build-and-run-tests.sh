@@ -40,7 +40,7 @@ make -j$(nproc)
 make -j$(nproc) check
 # no clean here, keep artifacts for system testing
 
-# Move out of build back to the tpm2.0-tools directory
+# Move out of build back to the tpm2-tools directory
 popd
 
 # Switch over to the test directory
@@ -49,7 +49,7 @@ pushd ./test/system
 # Run the tests on ALL device TCTIs configuration
 PATH=$(pwd)/../../build/tools:${PATH} ./test_all.sh
 
-# done go back to tpm2.0-tools directory
+# done go back to tpm2-tools directory
 popd
 
 exit 0

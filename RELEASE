@@ -8,7 +8,7 @@ using a -rc suffix (starting with rc0), signed, pushed to github, and marked und
 rc series.
 
 An example can be found here:
- * https://github.com/01org/tpm2.0-tools/releases/tag/2.1.0-rc0
+ * https://github.com/01org/tpm2-tools/releases/tag/2.1.0-rc0
 
 Release candidates will also be announced on the mailing list. When a rc has gone 1
 week without new changes, a release will be conducted.
@@ -60,14 +60,14 @@ $ git tag -a [your-name-here]-pub [object SHA]
 
 Make sure you push that tag:
 $ git push origin [your-name-here]-pub
-NOTE: this assumes origin is the tpm2.0-tools official repo.
+NOTE: this assumes origin is the tpm2-tools official repo.
 
 After that, you can sign tags:
 $ git tag --sign [signed-tag-name]
 
 Push the tag to the repo:
 $ git push origin [signed-tag-name]
-NOTE: this assumes origin is the tpm2.0-tools official repo.
+NOTE: this assumes origin is the tpm2-tools official repo.
 
 A lot of this git/gpg information was edited from:
 https://blog.thesoftwarecraft.com/2013/03/signing-git-tags.html

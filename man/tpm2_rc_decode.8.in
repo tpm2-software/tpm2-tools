@@ -26,7 +26,7 @@
 .\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\" THE POSSIBILITY OF SUCH DAMAGE.
-.TH tpm2_rc_decode 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.TH tpm2_rc_decode 8 "DECEMBER 2016" Intel "tpm2-tools"
 .SH NAME
 tpm2_rc_decode\ - convert error codes from the SAPI and TCTI into human readable errors. Analogous to strerror(3), but for the tpm2 stack.
 .SH SYNOPSIS
