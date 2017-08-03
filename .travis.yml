@@ -12,7 +12,7 @@ compiler:
 addons:
   coverity_scan:
     project:
-      name: "01org/tpm2.0-tools"
+      name: "01org/tpm2-tools"
       description: "Build submitted via Travis CI"
     notification_email: william.c.roberts@intel.com
     build_command_prepend: "./bootstrap && ./configure && make clean"

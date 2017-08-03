@@ -1,10 +1,10 @@
-tpm2.0-tools Manual
+tpm2-tools Manual
 ===================
-1. Common steps before running any tools from tpm2.0-tools
+1. Common steps before running any tools from tpm2-tools
 
 First of all, clone TPM2.0-TSS and follow the build process to install it.
 
-Then follow below steps for tpm2.0-tools.
+Then follow below steps for tpm2-tools.
 
 Build:
 $ ./bootstrap

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <profiles version="1">
-<profile kind="CodeFormatterProfile" name="tpm2.0-tools" version="1">
+<profile kind="CodeFormatterProfile" name="tpm2-tools" version="1">
 <setting id="org.eclipse.cdt.core.formatter.insert_space_after_opening_paren_in_exception_specification" value="do not insert"/>
 <setting id="org.eclipse.cdt.core.formatter.insert_space_after_opening_paren_in_parenthesized_expression" value="do not insert"/>
 <setting id="org.eclipse.cdt.core.formatter.insert_space_before_closing_paren_in_for" value="do not insert"/>

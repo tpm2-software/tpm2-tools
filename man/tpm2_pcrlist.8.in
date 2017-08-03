@@ -26,7 +26,7 @@
 .\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\" THE POSSIBILITY OF SUCH DAMAGE.
-.TH tpm2_pcrlist 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.TH tpm2_pcrlist 8 "DECEMBER 2016" Intel "tpm2-tools"
 .SH NAME
 tpm2_pcrlist\ - display all PCR values in given algorithm with -g, display given PCR values
 in given algorithms with -L, or if no algorithm is given, output all algs.

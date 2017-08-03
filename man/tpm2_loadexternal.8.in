@@ -26,7 +26,7 @@
 .\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\" THE POSSIBILITY OF SUCH DAMAGE.
-.TH tpm2_loadexternal 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.TH tpm2_loadexternal 8 "DECEMBER 2016" Intel "tpm2-tools"
 .SH NAME
 tpm2_loadexternal\ - load an object that is not a Protected Object into the TPM. The command allows
 loading of a public area or both a public and a sensitive area.

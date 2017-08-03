@@ -27,7 +27,7 @@
 .\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 .\" THE POSSIBILITY OF SUCH DAMAGE.
 
-.TH tpm2_createprimary 8 "DECEMBER 2016" Intel "tpm2.0-tools"
+.TH tpm2_createprimary 8 "DECEMBER 2016" Intel "tpm2-tools"
 .SH NAME
 tpm2_createprimary \- Create a primary key under a primary seed or a temporary primary key under the TPM_RH_NULL hierarchy.
 .SH SYNOPSIS
