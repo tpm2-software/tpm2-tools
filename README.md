@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/01org/tpm2.0-tools.svg?branch=master)](https://travis-ci.org/01org/tpm2.0-tools)
+[![Build Status](https://travis-ci.org/01org/tpm2-tools.svg?branch=master)](https://travis-ci.org/01org/tpm2-tools)
 <a href="https://scan.coverity.com/projects/01org-tpm2-0-tools">
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/13105/badge.svg"/>
