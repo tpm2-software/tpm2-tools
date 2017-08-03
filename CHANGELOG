@@ -1,4 +1,6 @@
 next
+* tpm2_pcrlist: renamed from tpm2_listpcrs.
+* tpm2_pcrextend: new tool for extending PCRs.
 * tpm2_getmanufec: -E option no longer reqiored, defaults to stdout.
 * tpm2_nvlist: Support for friendly nv attributes in output.
 * Support for friendly algorithm names for algorithm identifiers.
