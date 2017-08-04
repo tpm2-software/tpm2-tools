@@ -3,6 +3,10 @@
 # all command failures are fatal
 set -e
 
+if [ -d build ]; then
+  rm -rf build
+fi
+
 # Do not run tests when building on coverity_scan branch
 if [ "${COVERITY_SCAN_BRANCH}" == 1 ]; then
   echo "Coverity scan branch detected, not running build nor tests...exiting!"
@@ -10,7 +14,7 @@ if [ "${COVERITY_SCAN_BRANCH}" == 1 ]; then
 fi
 
 # If it's clang, enable asan
-if [ "$CC" == "clang" ]; then
+if [[ "$CC" == clang* ]]; then
   echo "Detecting clang, enable asan"
   export CFLAGS="-O1 -g -fsanitize=address -fno-omit-frame-pointer"
   echo "Exported CFLAGS=$CFLAGS"
@@ -20,6 +24,11 @@ if [ "$CC" == "clang" ]; then
   echo "Exported ASAN_ENABLED=$ASAN_ENABLED"
   # To get line numbers set up the asan symbolizer
   clang_version=`$CC --version | head -n 1 | cut -d\  -f 3-3 | cut -d\. -f 1-2`
+  # Sometimes the version string has an Ubuntu on the front of it and the field
+  # location changes
+  if [ $clang_version == "version" ]; then
+    clang_version=`$CC --version | head -n 1 | cut -d\  -f 4-4 | cut -d\. -f 1-2`
+  fi
   echo "Detected clang version: $clang_version"
   ASAN_SYMBOLIZER_PATH="/usr/lib/llvm-$clang_version/bin/llvm-symbolizer"
   if [ -e "$ASAN_SYMBOLIZER_PATH" ]; then
