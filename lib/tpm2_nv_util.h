@@ -5,6 +5,8 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_util.h"
+
 /**
  * Converts a list of | (pipe) separated attributes as defined in tavle 204
  * of https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
@@ -40,8 +42,16 @@ char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs);
  *  The public data structure to store the results in.
  * @return
  *  The error code from the TPM. TPM_RC_SUCCESS on success.
+ * @note
+ *  This is inlined to avoid a lib-dependency on TSS, and thus trying
+ *  link the tools static utility library to the dynamic TSS library.
  */
-TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public);
+static inline TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
+
+    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    return Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, 0, nv_public,
+            &nv_name, 0);
+}
 
 #endif /* LIB_TPM2_NV_UTIL_H_ */
