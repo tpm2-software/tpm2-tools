@@ -34,7 +34,7 @@ Output file just contains all returned PCR values in binary format and in
 0~23 order and in the requested order if multiple algs were requested. Assume
 the caller know the pcr value length corresponding to the given bank/algorithm.
 .SH SYNOPSIS
-.B tpm2_pcrlist[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-algorithim\fR|\fB\-\-output\fR|\fB\-\-selList\fR|\fB\-\-algs\fR|\fB ]
+.B tpm2_pcrlist[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-algorithm\fR|\fB\-\-output\fR|\fB\-\-selList\fR|\fB\-\-algs\fR|\fB ]
 .PP
 display all PCR values in given algorithm with -g, display given PCR values
 in given algorithms with -L, or if no algorithm is given, output all algs.
@@ -50,7 +50,7 @@ Output file just contains all returned PCR values in binary format and in
 the caller know the pcr value length corresponding to the given bank/algorithm.
 .SH OPTIONS
 .TP
-\fB\-g ,\-\-algorithim\fR
+\fB\-g ,\-\-algorithm\fR
 The algorithm id.
 @ALG_COMMON_INCLUDE@
 @HASH_ALG_COMMON_INCLUDE@

@@ -410,7 +410,7 @@ Output file just contains all returned PCR values in binary format and in
 the caller know the pcr value length corresponding to the given bank/algorithm.
 
 Usage:
-  -g, --algorithim <hexAlg>     The algorithm id, optional
+  -g, --algorithm <hexAlg>     The algorithm id, optional
                                   0x0004  TPM_ALG_SHA1
                                   0x000B  TPM_ALG_SHA256
                                   0x000C  TPM_ALG_SHA384
