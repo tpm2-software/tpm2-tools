@@ -39,7 +39,7 @@ static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
     switch(algorithm) {
     case TPM_ALG_SHA1:
         return EVP_sha1();
-    case ALG_SHA256_VALUE:
+    case TPM_ALG_SHA256:
         return EVP_sha256();
     case TPM_ALG_SHA384:
         return EVP_sha384();

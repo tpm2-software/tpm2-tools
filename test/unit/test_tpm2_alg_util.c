@@ -24,10 +24,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
+#include <setjmp.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <setjmp.h>
+#include <stdio.h>
 
 #include <cmocka.h>
 #include <sapi/tpm20.h>
@@ -48,7 +49,9 @@
     \
         TPM_ALG_ID found_id = tpm2_alg_util_strtoalg(str(friendly)); \
         const char *found_str = tpm2_alg_util_algtostr(value); \
-        TPM_ALG_ID from_hex_str = tpm2_alg_util_from_optarg(xstr(value));    \
+        char buf[256]; \
+        snprintf(buf, sizeof(buf), "0x%X", value); \
+        TPM_ALG_ID from_hex_str = tpm2_alg_util_from_optarg(buf);    \
         TPM_ALG_ID from_nice_str = tpm2_alg_util_from_optarg(str(friendly));    \
         \
         assert_ptr_not_equal(found_id, NULL); \
@@ -58,47 +61,47 @@
         assert_int_equal(value, from_nice_str); \
     }
 
-single_item_test(rsa, ALG_RSA_VALUE)
+single_item_test(rsa, TPM_ALG_RSA)
 /*
  * sha sha1 is it's own test, as alg to string
  * can return either, based on the map ordering.
  *
  */
-single_item_test(hmac, ALG_HMAC_VALUE)
-single_item_test(aes, ALG_AES_VALUE)
-single_item_test(mgf1, ALG_MGF1_VALUE)
-single_item_test(keyedhash, ALG_KEYEDHASH_VALUE)
-single_item_test(xor, ALG_XOR_VALUE)
-single_item_test(sha256, ALG_SHA256_VALUE)
-single_item_test(sha384, ALG_SHA384_VALUE)
-single_item_test(sha512, ALG_SHA512_VALUE)
-single_item_test(null, ALG_NULL_VALUE)
-single_item_test(sm3_256, ALG_SM3_256_VALUE)
-single_item_test(sm4, ALG_SM4_VALUE)
-single_item_test(rsassa, ALG_RSASSA_VALUE)
-single_item_test(rsaes, ALG_RSAES_VALUE)
-single_item_test(rsapss, ALG_RSAPSS_VALUE)
-single_item_test(oaep, ALG_OAEP_VALUE)
-single_item_test(ecdsa, ALG_ECDSA_VALUE)
-single_item_test(ecdh, ALG_ECDH_VALUE)
-single_item_test(ecdaa, ALG_ECDAA_VALUE)
-single_item_test(sm2, ALG_SM2_VALUE)
-single_item_test(ecschnorr, ALG_ECSCHNORR_VALUE)
-single_item_test(ecmqv, ALG_ECMQV_VALUE)
-single_item_test(kdf1_sp800_56a, ALG_KDF1_SP800_56A_VALUE)
-single_item_test(kdf2, ALG_KDF2_VALUE)
-single_item_test(kdf1_sp800_108, ALG_KDF1_SP800_108_VALUE)
-single_item_test(ecc, ALG_ECC_VALUE)
-single_item_test(symcipher, ALG_SYMCIPHER_VALUE)
-single_item_test(camellia, ALG_CAMELLIA_VALUE)
-single_item_test(sha3_256, ALG_SHA3_256_VALUE)
-single_item_test(sha3_384, ALG_SHA3_384_VALUE)
-single_item_test(sha3_512, ALG_SHA3_512_VALUE)
-single_item_test(ctr, ALG_CTR_VALUE)
-single_item_test(ofb, ALG_OFB_VALUE)
-single_item_test(cbc, ALG_CBC_VALUE)
-single_item_test(cfb, ALG_CFB_VALUE)
-single_item_test(ecb, ALG_ECB_VALUE)
+single_item_test(hmac, TPM_ALG_HMAC)
+single_item_test(aes, TPM_ALG_AES)
+single_item_test(mgf1, TPM_ALG_MGF1)
+single_item_test(keyedhash, TPM_ALG_KEYEDHASH)
+single_item_test(xor, TPM_ALG_XOR)
+single_item_test(sha256, TPM_ALG_SHA256)
+single_item_test(sha384, TPM_ALG_SHA384)
+single_item_test(sha512, TPM_ALG_SHA512)
+single_item_test(null, TPM_ALG_NULL)
+single_item_test(sm3_256, TPM_ALG_SM3_256)
+single_item_test(sm4, TPM_ALG_SM4)
+single_item_test(rsassa, TPM_ALG_RSASSA)
+single_item_test(rsaes, TPM_ALG_RSAES)
+single_item_test(rsapss, TPM_ALG_RSAPSS)
+single_item_test(oaep, TPM_ALG_OAEP)
+single_item_test(ecdsa, TPM_ALG_ECDSA)
+single_item_test(ecdh, TPM_ALG_ECDH)
+single_item_test(ecdaa, TPM_ALG_ECDAA)
+single_item_test(sm2, TPM_ALG_SM2)
+single_item_test(ecschnorr, TPM_ALG_ECSCHNORR)
+single_item_test(ecmqv, TPM_ALG_ECMQV)
+single_item_test(kdf1_sp800_56a, TPM_ALG_KDF1_SP800_56A)
+single_item_test(kdf2, TPM_ALG_KDF2)
+single_item_test(kdf1_sp800_108, TPM_ALG_KDF1_SP800_108)
+single_item_test(ecc, TPM_ALG_ECC)
+single_item_test(symcipher, TPM_ALG_SYMCIPHER)
+single_item_test(camellia, TPM_ALG_CAMELLIA)
+single_item_test(sha3_256, TPM_ALG_SHA3_256)
+single_item_test(sha3_384, TPM_ALG_SHA3_384)
+single_item_test(sha3_512, TPM_ALG_SHA3_512)
+single_item_test(ctr, TPM_ALG_CTR)
+single_item_test(ofb, TPM_ALG_OFB)
+single_item_test(cbc, TPM_ALG_CBC)
+single_item_test(cfb, TPM_ALG_CFB)
+single_item_test(ecb, TPM_ALG_ECB)
 
 typedef struct find_unk_data find_unk_data;
 struct find_unk_data {
@@ -127,24 +130,30 @@ static void test_tpm2_alg_util_sha_test(void **state) {
     (void) state;
 
     TPM_ALG_ID sha_found_id = tpm2_alg_util_strtoalg("sha");
-    const char *sha_found_str = tpm2_alg_util_algtostr(ALG_SHA_VALUE);
+
+    const char *sha_found_str = tpm2_alg_util_algtostr(TPM_ALG_SHA);
 
     TPM_ALG_ID sha1_found_id = tpm2_alg_util_strtoalg("sha1");
-    const char *sha1_found_str = tpm2_alg_util_algtostr(ALG_SHA1_VALUE);
+    const char *sha1_found_str = tpm2_alg_util_algtostr(TPM_ALG_SHA1);
 
     TPM_ALG_ID sha_from_hex_str = tpm2_alg_util_from_optarg("sha");
-    TPM_ALG_ID sha_from_nice_str = tpm2_alg_util_from_optarg(xstr(ALG_SHA_VALUE));
+
+    char buf[256];
+    snprintf(buf, sizeof(buf), "0x%X", TPM_ALG_SHA);
+    TPM_ALG_ID sha_from_nice_str = tpm2_alg_util_from_optarg(buf);
 
     TPM_ALG_ID sha1_from_hex_str = tpm2_alg_util_from_optarg("sha1");
-    TPM_ALG_ID sha1_from_nice_str = tpm2_alg_util_from_optarg(xstr(ALG_SHA1_VALUE));
 
-    assert_int_equal(ALG_SHA_VALUE, sha_found_id);
-    assert_int_equal(ALG_SHA_VALUE, sha_from_hex_str);
-    assert_int_equal(ALG_SHA_VALUE, sha_from_nice_str);
+    snprintf(buf, sizeof(buf), "0x%X", TPM_ALG_SHA1);
+    TPM_ALG_ID sha1_from_nice_str = tpm2_alg_util_from_optarg(buf);
 
-    assert_int_equal(ALG_SHA1_VALUE, sha1_found_id);
-    assert_int_equal(ALG_SHA_VALUE, sha1_from_hex_str);
-    assert_int_equal(ALG_SHA_VALUE, sha1_from_nice_str);
+    assert_int_equal(TPM_ALG_SHA, sha_found_id);
+    assert_int_equal(TPM_ALG_SHA, sha_from_hex_str);
+    assert_int_equal(TPM_ALG_SHA, sha_from_nice_str);
+
+    assert_int_equal(TPM_ALG_SHA1, sha1_found_id);
+    assert_int_equal(TPM_ALG_SHA, sha1_from_hex_str);
+    assert_int_equal(TPM_ALG_SHA, sha1_from_nice_str);
 
     bool sha_pass = false;
     sha_pass = !strcmp(sha_found_str, "sha");
@@ -165,44 +174,44 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
     (void) state;
 
     TPM_ALG_ID known_algs[] = {
-    ALG_RSA_VALUE,
-    ALG_SHA_VALUE,
-    ALG_SHA1_VALUE,
-    ALG_HMAC_VALUE,
-    ALG_AES_VALUE,
-    ALG_MGF1_VALUE,
-    ALG_KEYEDHASH_VALUE,
-    ALG_XOR_VALUE,
-    ALG_SHA256_VALUE,
-    ALG_SHA384_VALUE,
-    ALG_SHA512_VALUE,
-    ALG_NULL_VALUE,
-    ALG_SM3_256_VALUE,
-    ALG_SM4_VALUE,
-    ALG_RSASSA_VALUE,
-    ALG_RSAES_VALUE,
-    ALG_RSAPSS_VALUE,
-    ALG_OAEP_VALUE,
-    ALG_ECDSA_VALUE,
-    ALG_ECDH_VALUE,
-    ALG_ECDAA_VALUE,
-    ALG_SM2_VALUE,
-    ALG_ECSCHNORR_VALUE,
-    ALG_ECMQV_VALUE,
-    ALG_KDF1_SP800_56A_VALUE,
-    ALG_KDF2_VALUE,
-    ALG_KDF1_SP800_108_VALUE,
-    ALG_ECC_VALUE,
-    ALG_SYMCIPHER_VALUE,
-    ALG_CAMELLIA_VALUE,
-    ALG_SHA3_256_VALUE,
-    ALG_SHA3_384_VALUE,
-    ALG_SHA3_512_VALUE,
-    ALG_CTR_VALUE,
-    ALG_OFB_VALUE,
-    ALG_CBC_VALUE,
-    ALG_CFB_VALUE,
-    ALG_ECB_VALUE };
+    TPM_ALG_RSA,
+    TPM_ALG_SHA,
+    TPM_ALG_SHA1,
+    TPM_ALG_HMAC,
+    TPM_ALG_AES,
+    TPM_ALG_MGF1,
+    TPM_ALG_KEYEDHASH,
+    TPM_ALG_XOR,
+    TPM_ALG_SHA256,
+    TPM_ALG_SHA384,
+    TPM_ALG_SHA512,
+    TPM_ALG_NULL,
+    TPM_ALG_SM3_256,
+    TPM_ALG_SM4,
+    TPM_ALG_RSASSA,
+    TPM_ALG_RSAES,
+    TPM_ALG_RSAPSS,
+    TPM_ALG_OAEP,
+    TPM_ALG_ECDSA,
+    TPM_ALG_ECDH,
+    TPM_ALG_ECDAA,
+    TPM_ALG_SM2,
+    TPM_ALG_ECSCHNORR,
+    TPM_ALG_ECMQV,
+    TPM_ALG_KDF1_SP800_56A,
+    TPM_ALG_KDF2,
+    TPM_ALG_KDF1_SP800_108,
+    TPM_ALG_ECC,
+    TPM_ALG_SYMCIPHER,
+    TPM_ALG_CAMELLIA,
+    TPM_ALG_SHA3_256,
+    TPM_ALG_SHA3_384,
+    TPM_ALG_SHA3_512,
+    TPM_ALG_CTR,
+    TPM_ALG_OFB,
+    TPM_ALG_CBC,
+    TPM_ALG_CFB,
+    TPM_ALG_ECB };
 
     find_unk_data userdata = {
         .ids = known_algs,
@@ -247,10 +256,10 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
                 expected_hash_len); \
     } while (0)
 
-#define test_digest_sha1(digest)    test_digest(digest, HASH_SHA, ALG_SHA1_VALUE, SHA1_DIGEST_SIZE)
-#define test_digest_sha256(digest)  test_digest(digest, HASH_SHA256, ALG_SHA256_VALUE, SHA256_DIGEST_SIZE)
-#define test_digest_sha384(digest)  test_digest(digest, HASH_SHA384, ALG_SHA384_VALUE, SHA384_DIGEST_SIZE)
-#define test_digest_sha512(digest)  test_digest(digest, HASH_SHA512, ALG_SHA512_VALUE, SHA512_DIGEST_SIZE)
+#define test_digest_sha1(digest)    test_digest(digest, HASH_SHA, TPM_ALG_SHA1, SHA1_DIGEST_SIZE)
+#define test_digest_sha256(digest)  test_digest(digest, HASH_SHA256, TPM_ALG_SHA256, SHA256_DIGEST_SIZE)
+#define test_digest_sha384(digest)  test_digest(digest, HASH_SHA384, TPM_ALG_SHA384, SHA384_DIGEST_SIZE)
+#define test_digest_sha512(digest)  test_digest(digest, HASH_SHA512, TPM_ALG_SHA512, SHA512_DIGEST_SIZE)
 
 #define get_single_digest_pcr_parse_test(friendly_hash) \
 		cmocka_unit_test(test_pcr_parse_digest_list_##friendly_hash)
@@ -273,16 +282,16 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
     }
 
 add_single_digest_pcr_parse_test(4, sha, HASH_SHA,
-        ALG_SHA1_VALUE, SHA1_DIGEST_SIZE)
+        TPM_ALG_SHA1, SHA1_DIGEST_SIZE)
 
 add_single_digest_pcr_parse_test(9, sha256, HASH_SHA256,
-        ALG_SHA256_VALUE, SHA256_DIGEST_SIZE)
+        TPM_ALG_SHA256, SHA256_DIGEST_SIZE)
 
 add_single_digest_pcr_parse_test(67, sha384, HASH_SHA384,
-        ALG_SHA384_VALUE, SHA384_DIGEST_SIZE)
+        TPM_ALG_SHA384, SHA384_DIGEST_SIZE)
 
 add_single_digest_pcr_parse_test(21, sha512, HASH_SHA512,
-        ALG_SHA512_VALUE, SHA512_DIGEST_SIZE)
+        TPM_ALG_SHA512, SHA512_DIGEST_SIZE)
 
 static void test_pcr_parse_digest_list_many_items(void **state) {
     (void) state;
