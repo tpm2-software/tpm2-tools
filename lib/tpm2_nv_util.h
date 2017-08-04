@@ -30,6 +30,7 @@ bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs);
  * of the TPMA_NV attributes.
  */
 char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs);
+
 /**
  * Reads the public portion of a Non-Volatile (nv) index.
  * @param sapi_context
