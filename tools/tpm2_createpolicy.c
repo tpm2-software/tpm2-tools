@@ -89,7 +89,7 @@ static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
     TPM_RC rval = TPM_RC_SUCCESS;
     if (!pctx->common_policy_options.policy_type.is_policy_type_selected){
         LOG_ERR("No Policy type chosen.\n");
-        goto parse_policy_type_specific_command_error;
+        return rval;
     }
 
     if (pctx->common_policy_options.policy_type.PolicyPCR) {
@@ -108,7 +108,7 @@ static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
                                  pctx->common_policy_options.extend_policy_session,
                                  tpm2_policy_pcr_build);
         if (rval != TPM_RC_SUCCESS) {
-            goto parse_policy_type_specific_command_error;
+            return rval;
         }
 
         // Display the policy digest during real policy session.
@@ -130,8 +130,7 @@ static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
             if (!result) {
                 LOG_ERR("Failed to save policy digest into file \"%s\"",
                         pctx->common_policy_options.policy_file);
-                rval = TPM_RC_NO_RESULT;
-                return rval;
+                return TPM_RC_NO_RESULT;
             }
         }
     }
@@ -141,7 +140,6 @@ static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
             pctx->common_policy_options.policy_session->sessionHandle );
     }
 
-parse_policy_type_specific_command_error:
     return rval;
 }
 

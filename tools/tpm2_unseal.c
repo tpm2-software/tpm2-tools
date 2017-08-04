@@ -269,11 +269,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             return 1;
         }
 
-        rval = tpm_session_auth_end(ctx.policy_session);
-        if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("Failed deleting session from session table: 0x%x\n", rval);
-            return 1;
-        }
+        tpm_session_auth_end(ctx.policy_session);
     }
 
     return 0;

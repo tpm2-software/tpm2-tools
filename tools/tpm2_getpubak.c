@@ -296,11 +296,7 @@ static bool create_ak(getpubak_context *ctx) {
         return false;
     }
     // And remove the session from sessions table.
-    rval = tpm_session_auth_end(session);
-    if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("tpm_session_auth_end Error. TPM Error:0x%x", rval);
-        return false;
-    }
+    tpm_session_auth_end(session);
 
     session_data.sessionHandle = TPM_RS_PW;
     session_data.sessionAttributes.continueSession = 0;
@@ -362,11 +358,7 @@ static bool create_ak(getpubak_context *ctx) {
     }
 
     // And remove the session from sessions table.
-    rval = tpm_session_auth_end(session);
-    if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("tpm_session_auth_end Error. TPM Error:0x%x", rval);
-        return false;
-    }
+    tpm_session_auth_end(session);
 
     session_data.sessionHandle = TPM_RS_PW;
     session_data.sessionAttributes.continueSession = 0;

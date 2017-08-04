@@ -5,22 +5,6 @@
 
 #include <sapi/tpm20.h>
 
-/*
- * The TSS has a bug where it was missing algs 0x27 trough 0x29.
- * see: https://github.com/01org/TPM2.0-TSS/issues/476
- * per https://trustedcomputinggroup.org/wp-content/uploads/TCG_Algorithm_Registry_Rev_1.24.pdf
- * FIXME: https://github.com/01org/tpm2-tools/issues/375
- */
-#ifndef ALG_SHA3_256_VALUE
-#define ALG_SHA3_256_VALUE 0x27
-#endif
-#ifndef ALG_SHA3_384_VALUE
-#define ALG_SHA3_384_VALUE 0x28
-#endif
-#ifndef ALG_SHA3_512_VALUE
-#define ALG_SHA3_512_VALUE 0x29
-#endif
-
 /**
  * Iterator callback routine for iterating over known algorithm name and value
  * pairs.
@@ -135,5 +119,15 @@ struct tpm2_pcr_digest_spec {
  */
 bool pcr_parse_digest_list(char **argv, int len,
         tpm2_pcr_digest_spec *digest_spec);
+
+/**
+ * Retrieves the size of a hash in bytes for a given hash
+ * algorithm or 0 if unknown/not found.
+ * @param id
+ *  The HASH algorithm identifier.
+ * @return
+ *  0 on failure or the size of the hash bytes.
+ */
+UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
 
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
