@@ -68,11 +68,11 @@ tpm2_evictcontrol -A o -c $file_evict_key_ctx  -S $persistentHandle
 if [ $? != 0 ];then
  echo "evictontronl persistentHandle fail, please check the environment or parameters!"
  exit 1
-else
- tpm2_evictcontrol -A o -H $persistentHandle   -S $persistentHandle
- if [ $? != 0 ];then
-  echo "evictcontrol release Handle fail, please check the environment or parameters!"
-  exit 1
- fi
+fi
+
+tpm2_evictcontrol -A o -H $persistentHandle   -S $persistentHandle
+if [ $? != 0 ];then
+ echo "evictcontrol release Handle fail, please check the environment or parameters!"
+ exit 1
 fi
 
