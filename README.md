@@ -4,7 +4,7 @@
        src="https://scan.coverity.com/projects/13105/badge.svg"/>
 </a>
 
-**This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on TPM2.0-TSS**
+**This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on tpm2-tss**
 
 ## News
 * Release 2.1.0 is now available: https://github.com/01org/tpm2-tools/releases/tag/2.1.0
