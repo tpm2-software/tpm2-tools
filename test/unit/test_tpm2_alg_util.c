@@ -49,9 +49,7 @@
     \
         TPM_ALG_ID found_id = tpm2_alg_util_strtoalg(str(friendly)); \
         const char *found_str = tpm2_alg_util_algtostr(value); \
-        char buf[256]; \
-        snprintf(buf, sizeof(buf), "0x%X", value); \
-        TPM_ALG_ID from_hex_str = tpm2_alg_util_from_optarg(buf);    \
+        TPM_ALG_ID from_hex_str = tpm2_alg_util_from_optarg(str(value));    \
         TPM_ALG_ID from_nice_str = tpm2_alg_util_from_optarg(str(friendly));    \
         \
         assert_ptr_not_equal(found_id, NULL); \
