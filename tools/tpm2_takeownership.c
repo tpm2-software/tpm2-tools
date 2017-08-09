@@ -105,8 +105,8 @@ static bool gen_tpm2b_auth(TPM2B_AUTH *passwd, bool is_hex_password,
     return password_tpm2_util_to_auth(passwd, is_hex_password, desc, auth);
 }
 
-static bool change_hierarchy_auth(takeownership_ctx *ctx) {
-
+static bool change_auth(struct password *pwd, bool is_hex_passwords,
+        const char *desc, TPMI_RH_HIERARCHY_AUTH auth_handle) {
     TPM2B_AUTH newAuth;
     TPMS_AUTH_COMMAND sessionData = {
         .sessionHandle = TPM_RS_PW,
@@ -121,56 +121,50 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
     sessionsData.cmdAuths = &sessionDataArray[0];
     sessionsData.cmdAuthsCount = 1;
 
-    struct {
-        TPM2B_AUTH *new_passwd;
-        TPM2B_AUTH *old_passwd;
-        TPMI_RH_HIERARCHY_AUTH auth_handle;
-        char *desc;
-    } sources[] = {
-            {
-                    .new_passwd = &ctx->passwords.owner.new,
-                    .old_passwd = &ctx->passwords.owner.old,
-                    .auth_handle = TPM_RH_OWNER,
-                    .desc = "Owner"
-            },
-            {
-                    .new_passwd = &ctx->passwords.endorse.new,
-                    .old_passwd = &ctx->passwords.endorse.old,
-                    .auth_handle = TPM_RH_ENDORSEMENT,
-                    .desc = "Endorsement"
-            },
-            {
-                    .new_passwd = &ctx->passwords.lockout.new,
-                    .old_passwd = &ctx->passwords.lockout.old,
-                    .auth_handle = TPM_RH_LOCKOUT,
-                    .desc = "Lockout"
-            }
-    };
+    // generate newAuth from the new password
+    if (!gen_tpm2b_auth(pwd.new, is_hex_passwords, desc, &newAuth)) {
+        return false;
+    }
 
-    unsigned i;
-    for (i = 0; i < ARRAY_LEN(sources); i++) {
+    // generate our session data HMAC from the old password
+    if (!gen_tpm2b_auth(pwd.old, is_hex_passwords, desc, &sessionData.hmac)) {
+        return false;
+    }
 
-        // generate newAuth from the new password
-        if (!gen_tpm2b_auth(sources[i].new_passwd, ctx->is_hex_passwords,
-                    sources[i].desc, &newAuth)) {
-            return false;
-        }
+    UINT32 rval = Tss2_Sys_HierarchyChangeAuth(ctx->sapi_context,
+            auth_handle, &sessionsData, &newAuth, 0);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Could not change hierarchy for %s. TPM Error:0x%x",
+                sources[i].desc, rval);
+        return false;
+    }
 
-        // generate our session data HMAC from the old password
-        if (!gen_tpm2b_auth(sources[i].old_passwd, ctx->is_hex_passwords,
-                    sources[i].desc, &sessionData.hmac)) {
-            return false;
-        }
+    LOG_INFO("Successfully changed hierarchy for %s", desc);
 
-        UINT32 rval = Tss2_Sys_HierarchyChangeAuth(ctx->sapi_context,
-                sources[i].auth_handle, &sessionsData, &newAuth, 0);
-        if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("Could not change hierarchy for %s. TPM Error:0x%x",
-                    sources[i].desc, rval);
-            return false;
-        }
+    return true;
+}
 
-        LOG_INFO("Successfully changed hierarchy for %s", sources[i].desc);
+static bool change_hierarchy_auth(takeownership_ctx *ctx) {
+
+    // change owner auth
+    if (!change_auth(&ctx->passwords.owner, ctx->is_hex_passwords,
+                "Owner", TPM_RH_OWNER))
+    {
+        return false;
+    }
+
+    // change endorsement auth
+    if (!change_auth(&ctx->passwords.endorse, ctx->is_hex_passwords,
+                "Endorsement", TPM_RH_ENDORSEMENT))
+    {
+        return false;
+    }
+
+    // change lockout auth
+    if (!change_auth(&ctx->passwords.lockout, ctx->is_hex_passwords,
+                "Locktout", TPM_RH_LOCKOUT))
+    {
+        return false;
     }
 
     return true;
