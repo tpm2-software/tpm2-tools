@@ -93,6 +93,18 @@ bool clear_hierarchy_auth(takeownership_ctx *ctx) {
     return true;
 }
 
+// helper function to populate the TPM2B_AUTH that we need appropriately
+static bool gen_tpm2b_auth(TPM2B_AUTH *passwd, bool is_hex_password,
+        const char *old_new, const char *description, TPM2B_AUTH *auth)
+{
+    char desc[256];
+
+    // unique identifier for error reporting
+    snprintf(desc, sizeof(desc), "%s %s", old_new, description);
+
+    return password_tpm2_util_to_auth(passwd, is_hex_password, desc, auth);
+}
+
 static bool change_hierarchy_auth(takeownership_ctx *ctx) {
 
     TPM2B_AUTH newAuth;
@@ -138,21 +150,16 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
     unsigned i;
     for (i = 0; i < ARRAY_LEN(sources); i++) {
 
-        unsigned j;
-        for (j = 0; j < 2; j++) {
-            TPM2B_AUTH *passwd =
-                    j == 0 ? sources[i].new_passwd : sources[i].old_passwd;
-            TPM2B_AUTH *auth_dest = j == 0 ? &newAuth : &sessionData.hmac;
+        // generate newAuth from the new password
+        if (!gen_tpm2b_auth(sources[i].new_passwd, ctx->is_hex_passwords,
+                    sources[i].desc, &newAuth)) {
+            return false;
+        }
 
-            char desc[256];
-            snprintf(desc, sizeof(desc), "%s %s",
-                    j == 0 ? "new" : "old", sources[i].desc);
-
-            bool result = password_tpm2_util_to_auth(passwd, ctx->is_hex_passwords, desc,
-                    auth_dest);
-            if (!result) {
-                return false;
-            }
+        // generate our session data HMAC from the old password
+        if (!gen_tpm2b_auth(sources[i].old_passwd, ctx->is_hex_passwords,
+                    sources[i].desc, &sessionData.hmac)) {
+            return false;
         }
 
         UINT32 rval = Tss2_Sys_HierarchyChangeAuth(ctx->sapi_context,
