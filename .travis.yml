@@ -45,6 +45,7 @@ install:
     - popd && popd
     - git clone https://github.com/01org/TPM2.0-TSS.git
     - pushd TPM2.0-TSS
+    - git apply ../.ci/0001-TSS2_Sys_LoadExternal-Fix-marshaling-error.patch
     - ./bootstrap && ./configure && make -j$(nproc)
     - sudo ../.ci/travis-tss-install.sh
     - popd
