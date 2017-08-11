@@ -36,6 +36,7 @@ env:
 
 before_install:
     - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
+    - pip install --user cpp-coveralls
 
 install: 
     - wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm532.tar
@@ -68,3 +69,6 @@ script:
 
 after_failure:
    - cat build/test-suite.log
+
+after_success:
+  - ./.ci/coveralls-upload.sh

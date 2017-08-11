@@ -38,6 +38,9 @@ if [[ "$CC" == clang* ]]; then
     echo "No llvm symbolizer found at: $ASAN_SYMBOLIZER_PATH"
     unset ASAN_SYMBOLIZER_PATH
   fi
+else #GCC
+  export ENABLE_COVERAGE=true
+  echo "Exported ENABLE_COVERAGE=true"
 fi
 
 # Bootstrap in the tpm2.0-tss tools directory
@@ -69,6 +72,16 @@ make -j$(nproc) clean
 ../configure --enable-unit $config_flags
 make -j$(nproc)
 make -j$(nproc) check
+
+if [ "$ENABLE_COVERAGE" == "true" ]; then
+  # clean before build with coverage
+  make clean
+
+  # Build all device TCTIs with gcov
+  ../configure --disable-hardening CFLAGS="-g -O0 --coverage"
+  make -j$(nproc)
+  make -j$(nproc) check
+fi
 # no clean here, keep artifacts for system testing
 
 # Move out of build back to the tpm2-tools directory
