@@ -3,6 +3,7 @@
   <img alt="Coverity Scan Build Status"
        src="https://scan.coverity.com/projects/13105/badge.svg"/>
 </a>
+[![Coverage Status](https://coveralls.io/repos/github/01org/tpm2-tools/badge.svg?branch=coveralls)](https://coveralls.io/github/01org/tpm2-tools?branch=coveralls)
 
 **This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on tpm2-tss**
 
