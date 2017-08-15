@@ -35,10 +35,15 @@ ACLOCAL_AMFLAGS = -I m4
 INCLUDE_DIRS = -I$(srcdir)/src -I$(srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
-AM_CFLAGS    := $(INCLUDE_DIRS) $(TPM20_TSS_CFLAGS) $(EXTRA_CFLAGS) $(SAPI_CFLAGS) $(TCTI_TABRMD_CFLAGS) $(CRYPTO_CFLAGS)
+AM_CFLAGS := \
+    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(SAPI_CFLAGS) $(TCTI_SOCK_CFLAGS) \
+    $(TCTI_TABRMD_CFLAGS) $(TCTI_DEV_CFLAGS) $(CRYPTO_CFLAGS)
+
 AM_LDFLAGS   := $(EXTRA_LDFLAGS)
 
-LDADD = $(LIB_COMMON) $(TPM20_TSS_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS) $(TCTI_TABRMD_LIBS) $(CRYPTO_LIBS)
+LDADD = \
+    $(LIB_COMMON) $(SAPI_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_TABRMD_LIBS) \
+    $(TCTI_DEV_LIBS) $(CRYPTO_LIBS)
 
 sbin_PROGRAMS = \
     tools/tpm2_create \
@@ -168,8 +173,8 @@ test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
 
 test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS) $(TPM20_TSS_LIBS) \
-	$(TCTI_SOCK_LIBS) $(TCTI_DEV_LIBS)
+test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS) $(TCTI_SOCK_LIBS) \
+                                $(TCTI_DEV_LIBS)
 test_unit_test_files_SOURCES  = test/unit/test_files.c
 
 test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
