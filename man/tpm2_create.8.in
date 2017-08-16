@@ -52,6 +52,7 @@ password for parent key, optional
 .TP
 \fB\-K ,\-\-pwdk\fR
 password for key, optional
+.TP
 \fB\-g ,\-\-halg\fR
 The hash algorithm to use.
 @ALG_COMMON_INCLUDE@

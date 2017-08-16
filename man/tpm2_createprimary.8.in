@@ -61,6 +61,7 @@ Hash algorithm used in the computation of the object name.
 Algorithm type for generated key. It supports friendly names like the -g option.
 @ALG_COMMON_INCLUDE@
 @OBJECT_ALG_COMMON_INCLUDE@
+.TP
 \fB\-C\fR,\ \fB\-\-context\fR=[filepath]
 An optional file used to store the object context returned.
 .TP
