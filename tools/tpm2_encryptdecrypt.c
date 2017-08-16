@@ -40,11 +40,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_encrypt_decrypt_ctx tpm_encrypt_decrypt_ctx;
@@ -149,7 +149,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "key", &ctx->session_data.hmac);
+            result = tpm2_password_util_copy_password(optarg, "key", &ctx->session_data.hmac);
             if (!result) {
                 return result;
             }
@@ -224,7 +224,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
         }
     }
 
-    return password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd, "key",
+    return tpm2_password_util_fromhex(&ctx->session_data.hmac, is_hex_passwd, "key",
             &ctx->session_data.hmac);
 }
 

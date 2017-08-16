@@ -39,11 +39,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
@@ -87,7 +87,7 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    bool result = password_tpm2_util_to_auth(&ctx->handle_passwd, ctx->hex_passwd,
+    bool result = tpm2_password_util_fromhex(&ctx->handle_passwd, ctx->hex_passwd,
             "handle password", &session_data.hmac);
     if (!result) {
         return false;
@@ -176,7 +176,7 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
             ctx->input_file = optarg;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "handle password",
+            result = tpm2_password_util_copy_password(optarg, "handle password",
                     &ctx->handle_passwd);
             if (!result) {
                 return false;

@@ -38,11 +38,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 
@@ -93,7 +93,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    bool result = password_tpm2_util_to_auth(&ctx->handlePasswd, ctx->hexPasswd,
+    bool result = tpm2_password_util_fromhex(&ctx->handlePasswd, ctx->hexPasswd,
             "handle password", &session_data.hmac);
     if (!result) {
         return false;
@@ -117,7 +117,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     public_info.t.nvPublic.dataSize = ctx->size;
 
     TPM2B_AUTH nvAuth;
-    result = password_tpm2_util_to_auth(&ctx->indexPasswd, ctx->hexPasswd,
+    result = tpm2_password_util_fromhex(&ctx->indexPasswd, ctx->hexPasswd,
             "index password", &nvAuth);
     if (!result) {
         return false;
@@ -190,7 +190,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "handle password",
+            result = tpm2_password_util_copy_password(optarg, "handle password",
                     &ctx->handlePasswd);
             if (!result) {
                 return false;
@@ -216,7 +216,7 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 'I':
-            result = password_tpm2_util_copy_password(optarg, "index password",
+            result = tpm2_password_util_copy_password(optarg, "index password",
                     &ctx->indexPasswd);
             if (!result) {
                 return false;

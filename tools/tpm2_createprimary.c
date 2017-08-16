@@ -42,12 +42,12 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "log.h"
 #include "tpm2_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_alg_util.h"
 
 TPMS_AUTH_COMMAND sessionData = {
@@ -243,7 +243,7 @@ execute_tool (int               argc,
             break;
 
         case 'P':
-            if(!password_tpm2_util_copy_password(optarg, "parent key",
+            if(!tpm2_password_util_copy_password(optarg, "parent key",
                     &sessionData.hmac))
             {
                 return 1;
@@ -252,7 +252,7 @@ execute_tool (int               argc,
             P_flag = 1;
             break;
         case 'K':
-            if(!password_tpm2_util_copy_password(optarg, "new key",
+            if(!tpm2_password_util_copy_password(optarg, "new key",
                     &inSensitive.t.sensitive.userAuth))
             {
                 return 1;

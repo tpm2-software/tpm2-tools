@@ -3,17 +3,16 @@
 #include <sapi/tpm20.h>
 
 #include "log.h"
-#include "password_util.h"
-
+#include "tpm2_password_util.h"
 #include "tpm2_util.h"
 
-#define PASSWORD_MAX (sizeof(((TPM2B_DIGEST *)NULL)->t.buffer))
+#define PASSWORD_MAX BUFFER_SIZE(TPM2B_AUTH, buffer)
 
-bool password_tpm2_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *description,
+bool tpm2_password_util_fromhex(TPM2B_AUTH *password, bool is_hex, const char *description,
         TPM2B_AUTH *auth) {
 
     if (is_hex) {
-        auth->t.size = sizeof(auth) - 2;
+        auth->t.size = BUFFER_SIZE(TPM2B_AUTH, buffer);
         /* this routine is safe on overlapping memory areas */
         if (tpm2_util_hex_to_byte_structure((char *)password->t.buffer, &auth->t.size, auth->t.buffer)
                 != 0) {
@@ -31,7 +30,7 @@ bool password_tpm2_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *d
     return true;
 }
 
-bool password_tpm2_util_copy_password(const char *password, const char *description, TPM2B_AUTH *dest) {
+bool tpm2_password_util_copy_password(const char *password, const char *description, TPM2B_AUTH *dest) {
 
     if (!password) {
         LOG_ERR("Please input the %s password!", description);

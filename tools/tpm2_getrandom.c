@@ -38,11 +38,11 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_random_ctx tpm_random_ctx;
