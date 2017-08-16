@@ -42,7 +42,7 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "files.h"
 #include "log.h"
@@ -56,10 +56,9 @@ typedef struct {
 } PCR_LIST;
 
 TPMS_AUTH_COMMAND sessionData = {
-    .hmac = TPM2B_TYPE_INIT(TPM2B_AUTH, buffer),
+    .hmac = TPM2B_EMPTY_INIT,
 };
 
-bool hexPasswd = false;
 char *outFilePath;
 TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 TPML_PCR_SELECTION  pcrSelections;
@@ -242,17 +241,6 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
 
     sessionData.nonce.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for AK Passwd.\n");
-            return -1;
-        }
-    }
 
     inScheme.scheme = TPM_ALG_NULL;
 
@@ -304,7 +292,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
 
     int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:L:o:S:Xq:";
+    const char *optstring = "hvk:c:P:l:g:L:o:S:q:";
     static struct option long_options[] = {
         {"help",0,NULL,'h'},
         {"version",0,NULL,'v'},
@@ -315,7 +303,6 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         {"algorithm",1,NULL,'g'},
         {"selList",1,NULL,'L'},
         {"outFile",1,NULL,'o'},
-        {"passwdInHex",0,NULL,'X'},
         {"qualifyData",1,NULL,'q'},
         {"input-session-handle",1,NULL,'S'},
         {0,0,0,0}
@@ -328,7 +315,6 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     int flagCnt = 0;
     int k_flag = 0,
         c_flag = 0,
-        P_flag = 0,
         l_flag = 0,
         g_flag = 0,
         L_flag = 0,
@@ -362,14 +348,13 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             c_flag = 1;
             break;
 
-        case 'P':
-            if(!tpm2_password_util_copy_password(optarg, "parent key", &sessionData.hmac))
-            {
-                showArgError(optarg, argv[0]);
+        case 'P': {
+            bool res = tpm2_password_util_from_optarg(optarg, &sessionData.hmac);
+            if (!res) {
+                LOG_ERR("Invalid AK password, got\"%s\"", optarg);
                 return 1;
             }
-            P_flag = 1;
-            break;
+        } break;
         case 'l':
             if(!pcr_parse_list(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]))
             {
@@ -405,9 +390,6 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             }
             o_flag = 1;
             break;
-        case 'X':
-            hexPasswd = true;
-            break;
         case 'q':
             qualifyingData.t.size = sizeof(qualifyingData) - 2;
             if(tpm2_util_hex_to_byte_structure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
@@ -440,8 +422,6 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     if(((flagCnt == 3 && L_flag) || (flagCnt == 4 && (g_flag && l_flag)))
              && (k_flag || c_flag) && o_flag)
     {
-        if(P_flag == 0)
-            sessionData.hmac.t.size = 0;
 
         if(c_flag) {
             returnVal = file_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath);

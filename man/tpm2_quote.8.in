@@ -45,7 +45,8 @@ Handle of existing AK
 filename for the existing AK's context
 .TP
 \fB\-P ,\-\-akPassword\fR
-AK handle's Password
+AK handle's Password.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-l ,\-\-idList\fR
 The list of selected PCRs' ids, 0~23
