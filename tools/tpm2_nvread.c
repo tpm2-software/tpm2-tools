@@ -38,10 +38,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 
@@ -108,7 +108,7 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
         session_data.sessionHandle = ctx->auth_session_handle;
     }
 
-    bool result = password_tpm2_util_to_auth(&ctx->handle_passwd, ctx->is_hex_password,
+    bool result = tpm2_password_util_fromhex(&ctx->handle_passwd, ctx->is_hex_password,
             "handle password", &session_data.hmac);
     if (!result) {
         return false;
@@ -228,7 +228,7 @@ static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {
             }
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "handle password",
+            result = tpm2_password_util_copy_password(optarg, "handle password",
                     &ctx->handle_passwd);
             if (!result) {
                 return false;

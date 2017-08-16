@@ -38,10 +38,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct dictionarylockout_ctx dictionarylockout_ctx;
@@ -72,7 +72,7 @@ bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
     TSS2_SYS_CMD_AUTHS sessionsData = { .cmdAuths = &sessionDataArray[0],
             .cmdAuthsCount = 1 };
     if (ctx->use_passwd) {
-        bool result = password_tpm2_util_to_auth(&ctx->lockout_passwd, false,
+        bool result = tpm2_password_util_fromhex(&ctx->lockout_passwd, false,
                 "Lockout Password", &sessionData.hmac);
         if (!result) {
             return false;
@@ -143,7 +143,7 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
             ctx->setup_parameters = true;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "Lockout Password",
+            result = tpm2_password_util_copy_password(optarg, "Lockout Password",
                     &ctx->lockout_passwd);
             if (!result) {
                 return false;

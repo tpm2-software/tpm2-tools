@@ -38,11 +38,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "pcr.h"
 #include "tpm2_policy.h"
 #include "tpm2_util.h"
@@ -142,7 +142,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = password_tpm2_util_copy_password(optarg, "key",
+            bool result = tpm2_password_util_copy_password(optarg, "key",
                     &ctx->sessionData.hmac);
             if (!result) {
                 return false;
@@ -204,7 +204,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     }
 
     if (flags.P) {
-        bool result = password_tpm2_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
+        bool result = tpm2_password_util_fromhex(&ctx->sessionData.hmac, hexPasswd,
                 "key", &ctx->sessionData.hmac);
         if (!result) {
             return false;
