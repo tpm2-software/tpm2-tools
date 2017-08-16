@@ -45,7 +45,8 @@ parent handle
 filename for parent context
 .TP
 \fB\-P ,\-\-pwdp\fR
-parent key password, optional
+parent key password, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-u ,\-\-pubfile\fR
 The public portion of the object
@@ -58,9 +59,6 @@ Output file name, containing the name  structure
 .TP
 \fB\-C ,\-\-context\fR
 The file to save the object context,  optional 
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex  format. 
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
