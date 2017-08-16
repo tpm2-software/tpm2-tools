@@ -45,7 +45,7 @@ LDADD = \
     $(LIB_COMMON) $(SAPI_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_TABRMD_LIBS) \
     $(TCTI_DEV_LIBS) $(CRYPTO_LIBS)
 
-sbin_PROGRAMS = \
+bin_PROGRAMS = \
     tools/tpm2_create \
     tools/tpm2_createprimary \
     tools/tpm2_load \
