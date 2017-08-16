@@ -1,4 +1,6 @@
 next
+* make dist and distcheck are now working.
+* installation into customized locations are now working, see issue #402 for details.
 * tpm2_pcrlist: renamed from tpm2_listpcrs.
 * tpm2_pcrextend: new tool for extending PCRs.
 * tpm2_getmanufec: -E option no longer reqiored, defaults to stdout.
