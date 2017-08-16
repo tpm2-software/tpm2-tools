@@ -96,8 +96,6 @@ lib_libcommon_a_SOURCES = \
     lib/log.h \
     lib/options.c \
     lib/options.h \
-    lib/password_util.c \
-    lib/password_util.h \
     lib/pcr.c \
     lib/pcr.h \
     lib/rc-decode.c \
@@ -107,6 +105,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_header.h \
     lib/tpm2_nv_util.c \
     lib/tpm2_nv_util.h \
+    lib/tpm2_password_util.c \
+    lib/tpm2_password_util.h \
     lib/tpm2_policy.c \
     lib/tpm2_policy.h \
     lib/tpm2_util.c \

@@ -17,7 +17,7 @@
  * @return
  *  True on success and False on failure.
  */
-bool password_tpm2_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *description,
+bool tpm2_password_util_fromhex(TPM2B_AUTH *password, bool is_hex, const char *description,
         TPM2B_AUTH *auth);
 
 /**
@@ -35,6 +35,6 @@ bool password_tpm2_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *d
  * @return
  *  True on success, False on error.
  */
-bool password_tpm2_util_copy_password(const char *password, const char *description, TPM2B_AUTH *dest);
+bool tpm2_password_util_copy_password(const char *password, const char *description, TPM2B_AUTH *dest);
 
 #endif /* SRC_PASSWORD_UTIL_H_ */

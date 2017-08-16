@@ -41,8 +41,8 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "tpm2_util.h"
-#include "password_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
@@ -305,14 +305,14 @@ execute_tool (int              argc,
             break;
 
         case 'P':
-            if(!password_tpm2_util_copy_password(optarg, "Parent key password", &sessionData.hmac))
+            if(!tpm2_password_util_copy_password(optarg, "Parent key password", &sessionData.hmac))
             {
                 return 1;
             }
             P_flag = 1;
             break;
         case 'K':
-            if(!password_tpm2_util_copy_password(optarg, "Key password", &inSensitive.t.sensitive.userAuth))
+            if(!tpm2_password_util_copy_password(optarg, "Key password", &inSensitive.t.sensitive.userAuth))
             {
                 return 1;
             }
