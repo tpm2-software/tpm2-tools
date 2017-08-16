@@ -42,7 +42,7 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "log.h"
 #include "tpm2_util.h"
 #include "files.h"
@@ -56,7 +56,7 @@ TPMS_AUTH_COMMAND sessionData = {
     .hmac = TPM2B_EMPTY_INIT,
     .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
 };
-bool hexPasswd = false;
+
 TPM_HANDLE handle2048rsa;
 
 int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, bool is_policy_enforced)
@@ -196,7 +196,7 @@ execute_tool (int               argc,
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "A:P:K:g:G:C:L:S:EX";
+    const char *optstring = "A:P:K:g:G:C:L:S:E";
     static struct option long_options[] = {
       {"auth",1,NULL,'A'},
       {"pwdp",1,NULL,'P'},
@@ -204,7 +204,6 @@ execute_tool (int               argc,
       {"halg",1,NULL,'g'},
       {"kalg",1,NULL,'G'},
       {"context",1,NULL,'C'},
-      {"passwdInHex",0,NULL,'X'},
       {"policy-file",1,NULL,'L'},
       {"enforce-policy",1,NULL,'E'},
       {"input-session-handle",1,NULL,'S'},
@@ -214,8 +213,6 @@ execute_tool (int               argc,
 
     int returnVal = 0;
     int A_flag = 0,
-        P_flag = 0,
-        K_flag = 0,
         g_flag = 0,
         G_flag = 0,
         C_flag = 0;
@@ -242,23 +239,20 @@ execute_tool (int               argc,
             A_flag = 1;
             break;
 
-        case 'P':
-            if(!tpm2_password_util_copy_password(optarg, "parent key",
-                    &sessionData.hmac))
-            {
+        case 'P': {
+            bool res = tpm2_password_util_from_optarg(optarg, &sessionData.hmac);
+            if (!res) {
+                LOG_ERR("Invalid parent key password, got\"%s\"", optarg);
                 return 1;
             }
-
-            P_flag = 1;
-            break;
-        case 'K':
-            if(!tpm2_password_util_copy_password(optarg, "new key",
-                    &inSensitive.t.sensitive.userAuth))
-            {
+        } break;
+        case 'K': {
+            bool res = tpm2_password_util_from_optarg(optarg, &sessionData.hmac);
+            if (!res) {
+                LOG_ERR("Invalid new key password, got\"%s\"", optarg);
                 return 1;
             }
-            K_flag = 1;
-            break;
+        } break;
         case 'g':
             nameAlg = tpm2_alg_util_from_optarg(optarg);
             if(nameAlg == TPM_ALG_ERROR)
@@ -288,9 +282,6 @@ execute_tool (int               argc,
             printf("contextFile = %s\n", contextFile);
             C_flag = 1;
             break;
-        case 'X':
-            hexPasswd = true;
-            break;
         case 'L':
             inPublic.t.publicArea.authPolicy.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer); 
             if(!files_load_bytes_from_file(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
@@ -319,27 +310,6 @@ execute_tool (int               argc,
             return 1;
         }
     };
-
-    if (P_flag && hexPasswd)
-    {
-        int rc = tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
-                                      &sessionData.hmac.t.size,
-                                      sessionData.hmac.t.buffer);
-        if (rc) {
-            LOG_ERR( "Failed to convert Hex format password for hierarchy password.");
-            return -1;
-        }
-    }
-
-    if (K_flag > 0 && hexPasswd) {
-        int rc = tpm2_util_hex_to_byte_structure((char *)inSensitive.t.sensitive.userAuth.t.buffer,
-                &inSensitive.t.sensitive.userAuth.t.size,
-                inSensitive.t.sensitive.userAuth.t.buffer);
-        if (rc) {
-            LOG_ERR("Failed to convert Hex format password for primary password.");
-            return -1;
-        }
-    }
 
     if(A_flag == 1 && g_flag == 1 && G_flag == 1)
     {
