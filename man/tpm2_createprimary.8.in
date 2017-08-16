@@ -48,9 +48,11 @@ Supported options are:
 .TP
 \fB\-P\fR,\ \fB\-\-pwdp\fR=[string]
 Optional authorization string if authorization is required to create object under the specified hierarchy.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-K\fR,\ \fB\-\-pwdk\fR=[string]
-Optional authorization string for the newly created object.
+Optional authorization string for the newly created object. Follows the same password formating guidelines
+as the parent authorization string under the -P option.
 .TP
 \fB\-g\fR,\ \fB\-\-halg\fR
 Hash algorithm used in the computation of the object name.
