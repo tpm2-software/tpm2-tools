@@ -7,13 +7,13 @@
 
 #include "tpm2_util.h"
 
-#define PASSWORD_MAX (sizeof(((TPM2B_DIGEST *)NULL)->t.buffer))
+#define PASSWORD_MAX BUFFER_SIZE(TPM2B_AUTH, buffer)
 
 bool password_tpm2_util_to_auth(TPM2B_AUTH *password, bool is_hex, const char *description,
         TPM2B_AUTH *auth) {
 
     if (is_hex) {
-        auth->t.size = sizeof(auth) - 2;
+        auth->t.size = BUFFER_SIZE(TPM2B_AUTH, buffer);
         /* this routine is safe on overlapping memory areas */
         if (tpm2_util_hex_to_byte_structure((char *)password->t.buffer, &auth->t.size, auth->t.buffer)
                 != 0) {
