@@ -41,11 +41,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm_session.h"
 
@@ -168,13 +168,13 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         .algorithm = TPM_ALG_NULL
     };
 
-    bool result = password_tpm2_util_to_auth(&ctx->password.hmac, ctx->hexPasswd,
+    bool result = tpm2_password_util_fromhex(&ctx->password.hmac, ctx->hexPasswd,
             "handlePasswd", &ctx->password.hmac);
     if (!result) {
         return false;
     }
 
-    result = password_tpm2_util_to_auth(&ctx->endorse_password.hmac, ctx->hexPasswd,
+    result = tpm2_password_util_fromhex(&ctx->endorse_password.hmac, ctx->hexPasswd,
             "endorsePasswd", &ctx->endorse_password.hmac);
     if (!result) {
         return false;
@@ -276,7 +276,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             break;
         case 'P':
             ctx->password.hmac.t.size = sizeof(ctx->password.hmac.t) - 2;
-            result = password_tpm2_util_copy_password(optarg, "handle password",
+            result = tpm2_password_util_copy_password(optarg, "handle password",
                     &ctx->password.hmac);
             if (!result) {
                 return false;
@@ -284,7 +284,7 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             //P_flag = 1;
             break;
         case 'e':
-            result = password_tpm2_util_copy_password(optarg, "endorse password",
+            result = tpm2_password_util_copy_password(optarg, "endorse password",
                     &ctx->endorse_password.hmac);
             if (!result) {
                 return false;

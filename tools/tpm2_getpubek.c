@@ -38,10 +38,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"
 
@@ -182,13 +182,13 @@ static bool create_ek_handle(getpubek_context *ctx) {
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    bool result = password_tpm2_util_to_auth(&ctx->passwords.endorse,
+    bool result = tpm2_password_util_fromhex(&ctx->passwords.endorse,
             ctx->passwords.is_hex, "endorse", &sessionData.hmac);
     if (!result) {
         return false;
     }
 
-    result = password_tpm2_util_to_auth(&ctx->passwords.ek, ctx->passwords.is_hex,
+    result = tpm2_password_util_fromhex(&ctx->passwords.ek, ctx->passwords.is_hex,
             "ek", &inSensitive.t.sensitive.userAuth);
     if (!result) {
         return false;
@@ -219,7 +219,7 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     // To make EK persistent, use own auth
     sessionData.hmac.t.size = 0;
-    result = password_tpm2_util_to_auth(&ctx->passwords.owner, ctx->passwords.is_hex,
+    result = tpm2_password_util_fromhex(&ctx->passwords.owner, ctx->passwords.is_hex,
             "owner", &sessionData.hmac);
     if (!result) {
         return false;
@@ -296,21 +296,21 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
             break;
 
         case 'e':
-            result = password_tpm2_util_copy_password(optarg, "endorsement password",
+            result = tpm2_password_util_copy_password(optarg, "endorsement password",
                     &ctx->passwords.endorse);
             if (!result) {
                 return false;
             }
             break;
         case 'o':
-            result = password_tpm2_util_copy_password(optarg, "owner password",
+            result = tpm2_password_util_copy_password(optarg, "owner password",
                     &ctx->passwords.owner);
             if (!result) {
                 return false;
             }
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "EK password", &ctx->passwords.ek);
+            result = tpm2_password_util_copy_password(optarg, "EK password", &ctx->passwords.ek);
             if (!result) {
                 return false;
             }

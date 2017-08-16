@@ -39,11 +39,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm_session.h"
 #include "tpm2_alg_util.h"
@@ -238,7 +238,7 @@ static bool create_ak(getpubak_context *ctx) {
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
     creation_pcr.count = 0;
 
-    bool result = password_tpm2_util_to_auth(&ctx->passwords.ak, ctx->hexPasswd, "AK",
+    bool result = tpm2_password_util_fromhex(&ctx->passwords.ak, ctx->hexPasswd, "AK",
             &inSensitive.t.sensitive.userAuth);
     if (!result) {
         return false;
@@ -249,7 +249,7 @@ static bool create_ak(getpubak_context *ctx) {
         return false;
     }
 
-    result = password_tpm2_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
+    result = tpm2_password_util_fromhex(&ctx->passwords.endorse, ctx->hexPasswd,
             "endorse", &session_data.hmac);
     if (!result) {
         return false;
@@ -302,7 +302,7 @@ static bool create_ak(getpubak_context *ctx) {
     session_data.sessionAttributes.continueSession = 0;
     session_data.hmac.t.size = 0;
 
-    result = password_tpm2_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
+    result = tpm2_password_util_fromhex(&ctx->passwords.endorse, ctx->hexPasswd,
             "endorse", &session_data.hmac);
     if (!result) {
         return false;
@@ -365,7 +365,7 @@ static bool create_ak(getpubak_context *ctx) {
     session_data.hmac.t.size = 0;
 
     // use the owner auth here.
-    result = password_tpm2_util_to_auth(&ctx->passwords.owner, ctx->hexPasswd, "owner",
+    result = tpm2_password_util_fromhex(&ctx->passwords.owner, ctx->hexPasswd, "owner",
             &session_data.hmac);
     if (!result) {
         return false;
@@ -461,21 +461,21 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
             }
             break;
         case 'o':
-            result = password_tpm2_util_copy_password(optarg, "owner",
+            result = tpm2_password_util_copy_password(optarg, "owner",
                     &ctx->passwords.owner);
             if (!result) {
                 return false;
             }
             break;
         case 'e':
-            result = password_tpm2_util_copy_password(optarg, "endorse",
+            result = tpm2_password_util_copy_password(optarg, "endorse",
                     &ctx->passwords.endorse);
             if (!result) {
                 return false;
             }
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "AK", &ctx->passwords.ak);
+            result = tpm2_password_util_copy_password(optarg, "AK", &ctx->passwords.ak);
             if (!result) {
                 return false;
             }

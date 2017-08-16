@@ -38,12 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_alg_util.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
@@ -257,7 +257,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "object handle",
+            result = tpm2_password_util_copy_password(optarg, "object handle",
                     &ctx->cmd_auth[0].hmac);
             if (!result) {
                 return false;
@@ -265,7 +265,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.P = 1;
             break;
         case 'K':
-            result = password_tpm2_util_copy_password(optarg, "key handle",
+            result = tpm2_password_util_copy_password(optarg, "key handle",
                     &ctx->cmd_auth[1].hmac);
             if (!result) {
                 return false;
@@ -335,13 +335,13 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
     }
 
     /* convert a hex passwords if needed */
-    result = password_tpm2_util_to_auth(&ctx->cmd_auth[0].hmac, is_hex_password,
+    result = tpm2_password_util_fromhex(&ctx->cmd_auth[0].hmac, is_hex_password,
             "object handle", &ctx->cmd_auth[0].hmac);
     if (!result) {
         return false;
     }
 
-    result = password_tpm2_util_to_auth(&ctx->cmd_auth[1].hmac, is_hex_password,
+    result = tpm2_password_util_fromhex(&ctx->cmd_auth[1].hmac, is_hex_password,
             "key handle", &ctx->cmd_auth[1].hmac);
     if (!result) {
         return false;

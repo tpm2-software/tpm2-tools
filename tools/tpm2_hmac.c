@@ -38,12 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_alg_util.h"
 
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
@@ -159,7 +159,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "key handle",
+            result = tpm2_password_util_copy_password(optarg, "key handle",
                     &ctx->session_data.hmac);
             if (!result) {
                 return false;
@@ -242,7 +242,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     }
 
     /* convert a hex password if needed */
-    return password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
+    return tpm2_password_util_fromhex(&ctx->session_data.hmac, is_hex_passwd,
             "key handle", &ctx->session_data.hmac);
 }
 

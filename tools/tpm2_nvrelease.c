@@ -37,10 +37,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_password_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvrelease_ctx tpm_nvrelease_ctx;
@@ -74,7 +74,7 @@ static bool nv_space_release(tpm_nvrelease_ctx *ctx) {
     sessions_data.cmdAuths = &session_data_array[0];
     sessions_data.cmdAuthsCount = 1;
 
-    bool result = password_tpm2_util_to_auth(&ctx->handle_passwd,
+    bool result = tpm2_password_util_fromhex(&ctx->handle_passwd,
             ctx->is_hex_password, "handle password", &session_data.hmac);
     if (!result) {
         return false;
@@ -146,7 +146,7 @@ static bool init(int argc, char* argv[], tpm_nvrelease_ctx *ctx) {
              ctx->is_auth_session = true;
              break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "handle password",
+            result = tpm2_password_util_copy_password(optarg, "handle password",
                     &ctx->handle_passwd);
             if (!result) {
                 return false;
