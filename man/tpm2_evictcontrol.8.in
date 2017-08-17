@@ -54,10 +54,8 @@ filename for object context
 the persistent handle for objectHandle
 .TP
 \fB\-P ,\-\-pwda\fR
-authrization password, optional
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex  format.
+authorization password, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-i ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
