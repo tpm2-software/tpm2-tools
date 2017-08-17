@@ -69,10 +69,12 @@ handle of the key used to sign the attestation  structure
 filename of the key context used to sign the  attestation structure 
 .TP
 \fB\-P ,\-\-pwdo\fR
-the object handle's password, optional
+the object handle's password, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-K ,\-\-pwdk\fR
-the keyHandle's password, optional
+the keyHandle's password, optional. Follows the same formatting guidelines
+as the object handle password or -P option.
 @HALG_COMMON_INCLUDE@
 .TP
 \fB\-a ,\-\-attestFile\fR
@@ -80,9 +82,6 @@ output file name, record the attestation structure
 .TP
 \fB\-s ,\-\-sigFile\fR
 output file name, record the signature structure
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
