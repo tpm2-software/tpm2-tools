@@ -39,7 +39,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
@@ -51,25 +51,11 @@ struct tpm_nvreadlock_ctx {
     UINT32 auth_handle;
     UINT32 size_to_read;
     UINT32 offset;
-    TPM2B_AUTH handle_passwd;
-    bool is_hex_passwd;
+    TPMS_AUTH_COMMAND session_data;
     TSS2_SYS_CONTEXT *sapi_context;
-    bool is_auth_session;
-    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
-
-    TPMS_AUTH_COMMAND session_data = {
-        .sessionHandle = TPM_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
-    };
-
-    if (ctx->is_auth_session) {
-        session_data.sessionHandle = ctx->auth_session_handle;
-    }
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -78,7 +64,7 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    session_data_array[0] = &session_data;
+    session_data_array[0] = &ctx->session_data;
     sessionDataOutArray[0] = &session_data_out;
 
     sessions_data_out.rspAuths = &sessionDataOutArray[0];
@@ -86,12 +72,6 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
 
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
-
-    bool result = tpm2_password_util_fromhex(&ctx->handle_passwd, ctx->is_hex_passwd,
-            "handle password", &session_data.hmac);
-    if (!result) {
-        return false;
-    }
 
     TPM_RC rval = Tss2_Sys_NV_ReadLock(ctx->sapi_context, ctx->auth_handle, ctx->nv_index,
             &sessions_data, &sessions_data_out);
@@ -155,22 +135,18 @@ static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
             }
             break;
         case 'P':
-            result = tpm2_password_util_copy_password(optarg, "handle password",
-                    &ctx->handle_passwd);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
+                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
                 return false;
             }
             break;
-        case 'X':
-            ctx->is_hex_passwd = true;
-            break;
         case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
                  LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                          optarg);
                  return false;
              }
-             ctx->is_auth_session = true;
              break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -198,8 +174,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .auth_handle = TPM_RH_PLATFORM,
             .size_to_read = 0,
             .offset = 0,
-            .handle_passwd = TPM2B_EMPTY_INIT,
-            .is_hex_passwd = false,
+            .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
             .sapi_context = sapi_context
     };
 
