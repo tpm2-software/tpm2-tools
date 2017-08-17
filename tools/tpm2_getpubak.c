@@ -39,11 +39,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm_session.h"
 #include "tpm2_alg_util.h"
@@ -59,7 +59,6 @@ struct getpubak_context {
         TPM2B_AUTH ak;
         TPM2B_AUTH owner;
     } passwords;
-    bool hexPasswd;
     char *outputFile;
     char *aknameFile;
     TPM_ALG_ID algorithmType;
@@ -238,22 +237,14 @@ static bool create_ak(getpubak_context *ctx) {
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
     creation_pcr.count = 0;
 
-    bool result = password_tpm2_util_to_auth(&ctx->passwords.ak, ctx->hexPasswd, "AK",
-            &inSensitive.t.sensitive.userAuth);
+    memcpy(&inSensitive.t.sensitive.userAuth, &ctx->passwords.ak, sizeof(ctx->passwords.ak));
+
+    bool result = set_key_algorithm(ctx, &inPublic);
     if (!result) {
         return false;
     }
 
-    result = set_key_algorithm(ctx, &inPublic);
-    if (!result) {
-        return false;
-    }
-
-    result = password_tpm2_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
-            "endorse", &session_data.hmac);
-    if (!result) {
-        return false;
-    }
+    memcpy(&session_data.hmac, &ctx->passwords.endorse, sizeof(ctx->passwords.endorse));
 
     SESSION *session = NULL;
     UINT32 rval = tpm_session_start_auth_with_params(ctx->sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
@@ -302,11 +293,7 @@ static bool create_ak(getpubak_context *ctx) {
     session_data.sessionAttributes.continueSession = 0;
     session_data.hmac.t.size = 0;
 
-    result = password_tpm2_util_to_auth(&ctx->passwords.endorse, ctx->hexPasswd,
-            "endorse", &session_data.hmac);
-    if (!result) {
-        return false;
-    }
+    memcpy(&session_data.hmac, &ctx->passwords.endorse, sizeof(ctx->passwords.endorse));
 
     rval = tpm_session_start_auth_with_params(ctx->sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
             &nonce_caller, &encrypted_salt, TPM_SE_POLICY, &symmetric,
@@ -365,11 +352,7 @@ static bool create_ak(getpubak_context *ctx) {
     session_data.hmac.t.size = 0;
 
     // use the owner auth here.
-    result = password_tpm2_util_to_auth(&ctx->passwords.owner, ctx->hexPasswd, "owner",
-            &session_data.hmac);
-    if (!result) {
-        return false;
-    }
+    memcpy(&session_data.hmac, &ctx->passwords.owner, sizeof(ctx->passwords.owner));
 
     rval = Tss2_Sys_EvictControl(ctx->sapi_context, TPM_RH_OWNER, loaded_sha1_key_handle,
             &sessions_data, ctx->persistent_handle.ak, &sessions_data_out);
@@ -411,7 +394,6 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
         { "akPasswd"   , required_argument, NULL, 'P' },
         { "file"       , required_argument, NULL, 'f' },
         { "akName"     , required_argument, NULL, 'n' },
-        { "passwdInHex", no_argument,       NULL, 'X' },
         { NULL         , no_argument,       NULL,  0  },
     };
 
@@ -422,7 +404,7 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
 
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "o:E:e:k:g:D:s:P:f:n:Xp:", opts, NULL))
+    while ((opt = getopt_long(argc, argv, "o:E:e:k:g:D:s:P:f:n:p:", opts, NULL))
             != -1) {
         switch (opt) {
         case 'E':
@@ -461,22 +443,23 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
             }
             break;
         case 'o':
-            result = password_tpm2_util_copy_password(optarg, "owner",
-                    &ctx->passwords.owner);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.owner);
             if (!result) {
+                LOG_ERR("Invalid owner password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'e':
-            result = password_tpm2_util_copy_password(optarg, "endorse",
-                    &ctx->passwords.endorse);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.endorse);
             if (!result) {
+                LOG_ERR("Invalid endorse password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "AK", &ctx->passwords.ak);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.ak);
             if (!result) {
+                LOG_ERR("Invalid AK password, got\"%s\"", optarg);
                 return false;
             }
             break;
@@ -495,9 +478,6 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
                 return false;
             }
             ctx->aknameFile = optarg;
-            break;
-        case 'X':
-            ctx->hexPasswd = true;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -521,10 +501,14 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void)envp;
 
     getpubak_context ctx = {
-            .hexPasswd = false,
             .algorithmType = TPM_ALG_RSA,
             .digestAlg = TPM_ALG_SHA256,
             .signAlg = TPM_ALG_NULL,
+            .passwords = {
+                .endorse = TPM2B_EMPTY_INIT,
+                .ak      = TPM2B_EMPTY_INIT,
+                .owner   = TPM2B_EMPTY_INIT,
+            },
             .sapi_context = sapi_context
     };
 

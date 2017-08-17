@@ -38,11 +38,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;
@@ -90,14 +90,13 @@ static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
 
-    const char *optstring = "k:P:I:o:c:S:X";
+    const char *optstring = "k:P:I:o:c:S:";
     static struct option long_options[] = {
       { "keyHandle",   required_argument, NULL, 'k'},
       { "pwdk",        required_argument, NULL, 'P'},
       { "inFile",      required_argument, NULL, 'I'},
       { "outFile",     required_argument, NULL, 'o'},
       { "keyContext",  required_argument, NULL, 'c'},
-      { "passwdInHex", no_argument,       NULL, 'X'},
       { "input-session-handle",1,         NULL, 'S' },
       { NULL,          no_argument,       NULL, '\0'}
     };
@@ -120,7 +119,6 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
     }
 
     int opt;
-    bool is_hex_passwd = false;
     char *context_key_file = NULL;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
             != -1) {
@@ -136,9 +134,9 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = password_tpm2_util_copy_password(optarg, "key",
-                    &ctx->session_data.hmac);
+            bool result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
+                LOG_ERR("Invalid key password, got\"%s\"", optarg);
                 return false;
             }
             flags.P = 1;
@@ -166,9 +164,6 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
         case 'c':
             context_key_file = optarg;
             flags.c = 1;
-            break;
-        case 'X':
-            is_hex_passwd = true;
             break;
         case 'S':
              if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
@@ -201,8 +196,7 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
         }
     }
 
-   return password_tpm2_util_to_auth(&ctx->session_data.hmac, is_hex_passwd,
-            "key", &ctx->session_data.hmac);
+   return true;
 }
 
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,

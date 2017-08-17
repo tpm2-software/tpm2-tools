@@ -96,8 +96,6 @@ lib_libcommon_a_SOURCES = \
     lib/log.h \
     lib/options.c \
     lib/options.h \
-    lib/password_util.c \
-    lib/password_util.h \
     lib/pcr.c \
     lib/pcr.h \
     lib/rc-decode.c \
@@ -107,6 +105,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_header.h \
     lib/tpm2_nv_util.c \
     lib/tpm2_nv_util.h \
+    lib/tpm2_password_util.c \
+    lib/tpm2_password_util.h \
     lib/tpm2_policy.c \
     lib/tpm2_policy.h \
     lib/tpm2_util.c \
@@ -176,7 +176,8 @@ check_PROGRAMS = \
     test/unit/test_tpm2_header \
     test/unit/test_tpm2_nv_util \
     test/unit/test_tpm2_alg_util \
-    test/unit/test_pcr
+    test/unit/test_pcr \
+    test/unit/test_tpm2_password_util
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -210,6 +211,10 @@ test_unit_test_tpm2_alg_util_SOURCES  = test/unit/test_tpm2_alg_util.c
 test_unit_test_pcr_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
+
+test_unit_test_tpm2_password_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_password_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_password_util_SOURCES  = test/unit/test_tpm2_password_util.c
 
 endif
 
@@ -256,7 +261,12 @@ man8_MANS = \
     man/man8/tpm2_createpolicy.8 \
     man/man8/tpm2_pcrextend.8
 
-man/man8/%.8 : man/%.8.in man/common-options.troff man/tcti-options.troff man/tcti-environment.troff man/alg-common.troff man/hash-alg-common.troff man/object-alg-common.troff man/sign-alg-common.troff
+MAN_DEPS := man/common-options.troff man/tcti-options.troff \
+           man/tcti-environment.troff man/alg-common.troff \
+           man/hash-alg-common.troff man/object-alg-common.troff \
+           man/sign-alg-common.troff man/password-fmt-common.troff
+
+man/man8/%.8 : man/%.8.in $(MAN_DEPS)
 	rm -f $@
 	mkdir -p man/man8
 if HAVE_TCTI_DEV
@@ -279,6 +289,8 @@ endif
 	    -e '/@OBJECT_ALG_COMMON_INCLUDE@/d' \
 	    -e '/@SIGN_ALG_COMMON_INCLUDE@/r man/sign-alg-common.troff' \
 	    -e '/@SIGN_ALG_COMMON_INCLUDE@/d' \
+	    -e '/@PASSWORD_FORMAT_COMMON_INCLUDE@/r man/password-fmt-common.troff' \
+	    -e '/@PASSWORD_FORMAT_COMMON_INCLUDE@/d' \
 	    < $< >> $@
 
 CLEANFILES = $(man8_MANS)

@@ -41,8 +41,8 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "tpm2_util.h"
-#include "password_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
@@ -56,8 +56,6 @@ TPMS_AUTH_COMMAND sessionData = {
     .hmac = TPM2B_EMPTY_INIT,
     .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
 };
-
-bool hexPasswd = false;
 
 int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, int I_flag, bool is_policy_enforced)
 {
@@ -168,29 +166,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
 
     sessionsData.cmdAuthsCount = 1;
     sessionsData.cmdAuths[0] = &sessionData;
-    if (sessionData.hmac.t.size > 0 && hexPasswd)
-    {
-        sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-        if (tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
-                              &sessionData.hmac.t.size,
-                              sessionData.hmac.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for parent Passwd.\n");
-            return -1;
-        }
-    }
 
-    if (inSensitive->t.sensitive.userAuth.t.size > 0 && hexPasswd)
-    {
-        inSensitive->t.sensitive.userAuth.t.size = sizeof(inSensitive->t.sensitive.userAuth) - 2;
-        if (tpm2_util_hex_to_byte_structure((char *)inSensitive->t.sensitive.userAuth.t.buffer,
-                              &inSensitive->t.sensitive.userAuth.t.size,
-                              inSensitive->t.sensitive.userAuth.t.buffer) != 0)
-        {
-            printf( "Failed to convert Hex format password for object Passwd.\n");
-            return -1;
-        }
-    }
     inSensitive->t.size = inSensitive->t.sensitive.userAuth.b.size + 2;
 
     if(setAlg(type, nameAlg, inPublic, I_flag, is_policy_enforced))
@@ -256,7 +232,7 @@ execute_tool (int              argc,
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:S:XE";
+    const char *optstring = "H:P:K:g:G:A:I:L:o:O:c:S:E";
     static struct option long_options[] = {
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
@@ -270,7 +246,6 @@ execute_tool (int              argc,
       {"opu",1,NULL,'o'},
       {"opr",1,NULL,'O'},
       {"contextParent",1,NULL,'c'},
-      {"passwdInHex",0,NULL,'X'},
       {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
@@ -304,20 +279,22 @@ execute_tool (int              argc,
             H_flag = 1;
             break;
 
-        case 'P':
-            if(!password_tpm2_util_copy_password(optarg, "Parent key password", &sessionData.hmac))
-            {
+        case 'P': {
+            bool res = tpm2_password_util_from_optarg(optarg, &sessionData.hmac);
+            if (!res) {
+                LOG_ERR("Invalid parent key password, got\"%s\"", optarg);
                 return 1;
             }
             P_flag = 1;
-            break;
-        case 'K':
-            if(!password_tpm2_util_copy_password(optarg, "Key password", &inSensitive.t.sensitive.userAuth))
-            {
+        } break;
+        case 'K': {
+            bool res = tpm2_password_util_from_optarg(optarg, &inSensitive.t.sensitive.userAuth);
+            if (!res) {
+                LOG_ERR("Invalid key password, got\"%s\"", optarg);
                 return 1;
             }
             K_flag = 1;
-            break;
+        } break;
         case 'g':
             nameAlg = tpm2_alg_util_from_optarg(optarg);
             if(nameAlg == TPM_ALG_ERROR)
@@ -402,9 +379,6 @@ execute_tool (int              argc,
             }
             printf("contextParentFile = %s\n", contextParentFilePath);
             c_flag = 1;
-            break;
-        case 'X':
-            hexPasswd = true;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);

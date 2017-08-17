@@ -44,7 +44,7 @@
 #include "log.h"
 #include "options.h"
 #include "main.h"
-#include "password_util.h"
+#include "tpm2_password_util.h"
 #include "tpm2_util.h"
 
 typedef struct password password;
@@ -60,7 +60,6 @@ struct takeownership_ctx {
         password endorse;
         password lockout;
     } passwords;
-    bool is_hex_passwords;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
@@ -79,10 +78,7 @@ bool clear_hierarchy_auth(takeownership_ctx *ctx) {
     sessionsData.cmdAuths = &sessionDataArray[0];
     sessionsData.cmdAuthsCount = 1;
 
-    bool result = password_tpm2_util_to_auth(&ctx->passwords.lockout.old, ctx->is_hex_passwords, "old lockout", &sessionData.hmac);
-    if (!result) {
-        return false;
-    }
+    memcpy(&sessionData.hmac, &ctx->passwords.lockout.old, sizeof(ctx->passwords.lockout.old));
 
     UINT32 rval = Tss2_Sys_Clear(ctx->sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0);
     if (rval != TPM_RC_SUCCESS) {
@@ -144,15 +140,7 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
                     j == 0 ? sources[i].new_passwd : sources[i].old_passwd;
             TPM2B_AUTH *auth_dest = j == 0 ? &newAuth : &sessionData.hmac;
 
-            char desc[256];
-            snprintf(desc, sizeof(desc), "%s %s",
-                    j == 0 ? "new" : "old", sources[i].desc);
-
-            bool result = password_tpm2_util_to_auth(passwd, ctx->is_hex_passwords, desc,
-                    auth_dest);
-            if (!result) {
-                return false;
-            }
+            memcpy(auth_dest, passwd, sizeof(*passwd));
         }
 
         UINT32 rval = Tss2_Sys_HierarchyChangeAuth(ctx->sapi_context,
@@ -179,7 +167,6 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
             { "oldOwnerPasswd",   required_argument, NULL, 'O' },
             { "oldEndorsePasswd", required_argument, NULL, 'E' },
             { "oldLockPasswd",    required_argument, NULL, 'L' },
-            { "passwdInHex",      no_argument,       NULL, 'X' },
             { "clear",            no_argument,       NULL, 'c' },
             { NULL,               no_argument,       NULL, '\0' },
     };
@@ -198,7 +185,7 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
 
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "o:e:l:O:E:L:Xc", sOpts, NULL))
+    while ((opt = getopt_long(argc, argv, "o:e:l:O:E:L:c", sOpts, NULL))
             != -1) {
 
         switch (opt) {
@@ -207,49 +194,46 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
             break;
 
         case 'o':
-            result = password_tpm2_util_copy_password(optarg, "new owner password",
-                    &ctx->passwords.owner.new);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.owner.new);
             if (!result) {
+                LOG_ERR("Invalid new owner password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'e':
-            result = password_tpm2_util_copy_password(optarg, "new endorse password",
-                    &ctx->passwords.endorse.new);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.endorse.new);
             if (!result) {
+                LOG_ERR("Invalid new endorse password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'l':
-            result = password_tpm2_util_copy_password(optarg, "new lockout password",
-                    &ctx->passwords.lockout.new);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.lockout.new);
             if (!result) {
+                LOG_ERR("Invalid new lockout password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'O':
-            result = password_tpm2_util_copy_password(optarg, "current owner password",
-                    &ctx->passwords.owner.old);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.owner.old);
             if (!result) {
+                LOG_ERR("Invalid current owner password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'E':
-            result = password_tpm2_util_copy_password(optarg, "current endorse password",
-                    &ctx->passwords.endorse.old);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.endorse.old);
             if (!result) {
+                LOG_ERR("Invalid current endorse password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'L':
-            result = password_tpm2_util_copy_password(optarg, "current lockout password",
-                    &ctx->passwords.lockout.old);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.lockout.old);
             if (!result) {
+                LOG_ERR("Invalid current lockout password, got\"%s\"", optarg);
                 return false;
             }
-            break;
-        case 'X':
-            ctx->is_hex_passwords = true;
             break;
         case '?':
         default:
@@ -268,7 +252,6 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     takeownership_ctx ctx = {
             .sapi_context = sapi_context,
-            .is_hex_passwords = false
     };
 
     bool clear_auth = false;

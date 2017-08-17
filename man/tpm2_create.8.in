@@ -48,10 +48,11 @@ parent handle
 filename for parent context
 .TP
 \fB\-P ,\-\-pwdp\fR
-password for parent key, optional
+password for parent key, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-K ,\-\-pwdk\fR
-password for key, optional
+password for key, optional. Follows the password formatting of the "password for parent key" option: -P.
 .TP
 \fB\-g ,\-\-halg\fR
 The hash algorithm to use.
@@ -80,9 +81,6 @@ the output file which contains the public key,  optional
 .TP
 \fB\-O ,\-\-opr\fR
 the output file which contains the private key,  optional 
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format.
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.

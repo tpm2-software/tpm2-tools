@@ -48,7 +48,8 @@ handle for the symmetric signing key providing  the HMAC key
 filename of the key context used for the  operation 
 .TP
 \fB\-P ,\-\-pwdk\fR
-the keyHandle's password, optional
+the keyHandle's password, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 \fB\-g ,\-\-halg\fR
 The hash algorithm to use.
 @ALG_COMMON_INCLUDE@
@@ -59,9 +60,6 @@ file containning the data to be HMACed
 .TP
 \fB\-o ,\-\-outfile\fR
 file record the HMAC result
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format.
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.

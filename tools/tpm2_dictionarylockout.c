@@ -38,10 +38,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct dictionarylockout_ctx dictionarylockout_ctx;
@@ -49,35 +49,20 @@ struct dictionarylockout_ctx {
     UINT32 max_tries;
     UINT32 recovery_time;
     UINT32 lockout_recovery_time;
-    TPM2B_AUTH lockout_passwd;
     bool clear_lockout;
     bool setup_parameters;
     bool use_passwd;
     TSS2_SYS_CONTEXT *sapi_context;
-    TPMI_SH_AUTH_SESSION auth_session_handle;
-    bool is_session_based_auth;
+    TPMS_AUTH_COMMAND session_data;
 };
 
 bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
 
-    //Command Auths
-    TPMS_AUTH_COMMAND sessionData = { .sessionHandle = TPM_RS_PW,
-            .nonce.t.size = 0, .hmac.t.size = 0, .sessionAttributes.val = 0 };
-    if (ctx->is_session_based_auth) {
-        sessionData.sessionHandle = ctx->auth_session_handle;
-    }
     TPMS_AUTH_COMMAND *sessionDataArray[1];
-    sessionDataArray[0] = &sessionData;
+    sessionDataArray[0] = &ctx->session_data;
 
     TSS2_SYS_CMD_AUTHS sessionsData = { .cmdAuths = &sessionDataArray[0],
             .cmdAuthsCount = 1 };
-    if (ctx->use_passwd) {
-        bool result = password_tpm2_util_to_auth(&ctx->lockout_passwd, false,
-                "Lockout Password", &sessionData.hmac);
-        if (!result) {
-            return false;
-        }
-    }
 
     //Response Auths
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1], sessionDataOut;
@@ -143,9 +128,9 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
             ctx->setup_parameters = true;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "Lockout Password",
-                    &ctx->lockout_passwd);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
+                LOG_ERR("Invalid lockout password, got\"%s\"", optarg);
                 return false;
             }
             ctx->use_passwd = true;
@@ -182,12 +167,11 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
             }
             break;
         case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
                  LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                          optarg);
                  return false;
              }
-             ctx->is_session_based_auth = true;
              break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -226,7 +210,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         .lockout_recovery_time = 0, 
         .clear_lockout = false,
         .setup_parameters = false, 
-        .use_passwd = true, 
+        .use_passwd = true,
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
         .sapi_context = sapi_context
     };
 

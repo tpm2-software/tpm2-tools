@@ -39,11 +39,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
@@ -52,33 +52,19 @@ struct tpm_nvwrite_ctx {
     UINT32 auth_handle;
     UINT16 data_size;
     UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
-    TPM2B_AUTH handle_passwd;
-    bool hex_passwd;
+    TPMS_AUTH_COMMAND session_data;
     char *input_file;
     TSS2_SYS_CONTEXT *sapi_context;
-    bool is_auth_session;
-    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static int nv_write(tpm_nvwrite_ctx *ctx) {
-
-    TPMS_AUTH_COMMAND session_data = {
-        .sessionHandle = TPM_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
-    };
-
-    if (ctx->is_auth_session) {
-        session_data.sessionHandle = ctx->auth_session_handle;
-    }
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
     TPM2B_MAX_NV_BUFFER nv_write_data;
 
-    TPMS_AUTH_COMMAND *session_data_array[1] = { &session_data };
+    TPMS_AUTH_COMMAND *session_data_array[1] = { &ctx->session_data };
     TPMS_AUTH_RESPONSE *session_data_out_array[1] = { &session_data_out };
 
     sessions_data_out.rspAuths = &session_data_out_array[0];
@@ -86,12 +72,6 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
 
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
-
-    bool result = password_tpm2_util_to_auth(&ctx->handle_passwd, ctx->hex_passwd,
-            "handle password", &session_data.hmac);
-    if (!result) {
-        return false;
-    }
 
     UINT16 offset = 0;
     while (ctx->data_size > 0) {
@@ -136,14 +116,13 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
         { "authHandle"  , required_argument, NULL, 'a' },
         { "file"        , required_argument, NULL, 'f' },
         { "handlePasswd", required_argument, NULL, 'P' },
-        { "passwdInHex" , no_argument,       NULL, 'X' },
         { "input-session-handle",1,          NULL, 'S' },
         { NULL          , no_argument,       NULL,  0  },
     };
 
     int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:f:P:S:X", long_options, NULL))
+    while ((opt = getopt_long(argc, argv, "x:a:f:P:S:", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'x':
@@ -176,22 +155,18 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
             ctx->input_file = optarg;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "handle password",
-                    &ctx->handle_passwd);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
+                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
                 return false;
             }
             break;
-        case 'X':
-            ctx->hex_passwd = true;
-            break;
         case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
                  LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                          optarg);
                  return false;
              }
-             ctx->is_auth_session = true;
              break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -225,8 +200,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         .nv_index = 0,
         .auth_handle = TPM_RH_PLATFORM,
         .data_size = 0,
-        .handle_passwd = TPM2B_EMPTY_INIT,
-        .hex_passwd = false,
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
         .sapi_context = sapi_context
     };
 

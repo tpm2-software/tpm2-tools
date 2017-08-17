@@ -38,11 +38,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm_hash.h"
 #include "tpm2_alg_util.h"
@@ -173,7 +173,7 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
 
-    static const char *optstring = "k:P:g:m:t:s:c:S:X";
+    static const char *optstring = "k:P:g:m:t:s:c:S:";
     static const struct option long_options[] = {
       {"keyHandle",1,NULL,'k'},
       {"pwdk",1,NULL,'P'},
@@ -182,7 +182,6 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
       {"sig",1,NULL,'s'},
       {"ticket",1,NULL,'t'},
       {"keyContext",1,NULL,'c'},
-      {"passwdInHex",0,NULL,'X'},
       {"input-session-handle",1,NULL, 'S' },
       {0,0,0,0}
     };
@@ -207,7 +206,6 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     } flags = { .all = 0 };
 
     int opt;
-    bool hexPasswd = false;
     char *contextKeyFile = NULL;
     char *inMsgFileName = NULL;
     while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
@@ -223,9 +221,9 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = password_tpm2_util_copy_password(optarg, "key",
-                    &ctx->sessionData.hmac);
+            bool result = tpm2_password_util_from_optarg(optarg, &ctx->sessionData.hmac);
             if (!result) {
+                LOG_ERR("Invalid key password, got\"%s\"", optarg);
                 return false;
             }
             flags.P = 1;
@@ -268,9 +266,6 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             contextKeyFile = optarg;
             flags.c = 1;
             break;
-        case 'X':
-            hexPasswd = true;
-            break;
         case 'S':
             if (!tpm2_util_string_to_uint32(optarg, &ctx->sessionData.sessionHandle)) {
                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
@@ -300,17 +295,11 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         ctx->validation.hierarchy = TPM_RH_NULL;
     }
 
-    bool result = password_tpm2_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
-            "key", &ctx->sessionData.hmac);
-    if (!result) {
-        return false;
-    }
-
     /*
      * load tpm context from a file if -c is provided
      */
     if (flags.c) {
-        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->keyHandle,
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->keyHandle,
                 contextKeyFile);
         if (!result) {
             return false;
@@ -321,7 +310,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
      * Process the msg file
      */
     unsigned long file_size;
-    result = files_get_file_size(inMsgFileName, &file_size);
+    bool result = files_get_file_size(inMsgFileName, &file_size);
     if (!result) {
         return false;
     }

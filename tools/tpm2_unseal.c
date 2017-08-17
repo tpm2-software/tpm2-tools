@@ -38,11 +38,11 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "pcr.h"
 #include "tpm2_policy.h"
 #include "tpm2_util.h"
@@ -95,7 +95,7 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
 
-    static const char *optstring = "H:P:o:c:S:L:F:X";
+    static const char *optstring = "H:P:o:c:S:L:F:";
     static const struct option long_options[] = {
       {"item",1,NULL,'H'},
       {"pwdi",1,NULL,'P'},
@@ -104,7 +104,6 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
       {"input-session-handle",1,NULL,'S'},
       {"set-list", 1, NULL, 'L' },
       {"pcr-input-file", 1, NULL, 'F' },
-      {"passwdInHex",0,NULL,'X'},
       {0,0,0,0}
     };
 
@@ -125,7 +124,6 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     } flags = { .all = 0 };
 
     int opt;
-    bool hexPasswd = false;
     char *contextItemFile = NULL;
     char *raw_pcrs_file = NULL;
     TPML_PCR_SELECTION pcr_selections;
@@ -142,9 +140,9 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = password_tpm2_util_copy_password(optarg, "key",
-                    &ctx->sessionData.hmac);
+            bool result = tpm2_password_util_from_optarg(optarg, &ctx->sessionData.hmac);
             if (!result) {
+                LOG_ERR("Invalid item handle password, got\"%s\"", optarg);
                 return false;
             }
             flags.P = 1;
@@ -183,9 +181,6 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
             raw_pcrs_file = optarg;
             flags.F = 1;
             break;
-        case 'X':
-            hexPasswd = true;
-            break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             return false;
@@ -201,14 +196,6 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
     if (!(flags.H || flags.c)) {
         LOG_ERR("Expected options H or c");
         return false;
-    }
-
-    if (flags.P) {
-        bool result = password_tpm2_util_to_auth(&ctx->sessionData.hmac, hexPasswd,
-                "key", &ctx->sessionData.hmac);
-        if (!result) {
-            return false;
-        }
     }
 
     if (flags.c) {

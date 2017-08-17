@@ -42,7 +42,6 @@
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;

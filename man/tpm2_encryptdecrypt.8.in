@@ -48,7 +48,8 @@ the symmetric key used for the operation  (encryption/decryption)
 filename of the key context used for the  operation 
 .TP
 \fB\-P ,\-\-pwdk\fR
-the password of key, optional
+the key password, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-D ,\-\-decrypt\fR
 the operation type, default NO, optional  YES the operation is decryption   NO the operation is encryption 
@@ -58,9 +59,6 @@ Input file path, containing the data to be  operated
 .TP
 \fB\-o ,\-\-outFile\fR
 Output file path, record the operated data
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format.
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.

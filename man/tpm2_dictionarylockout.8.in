@@ -44,8 +44,9 @@ specifies the tool should operate to setup dictionary-attack-lockout parameters.
 \fB\-c ,\-\-clear-lockout\fR
 specifies the tool should operate to clear dictionary-attack-lockout state.
 .TP
-\fB\-p ,\-\-lockout-passwd\fR
+\fB\-P ,\-\-lockout-passwd\fR
 specifies the password of TPM_RH_LOCKOUT required for both setting up parameters / clearing dictionary-attack-lockout state.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-l ,\-\-lockout-recovery-time\fR
 specifies the wait time in seconds before another TPM_RH_LOCKOUT authentication attempt can be made after a failed authentication. 

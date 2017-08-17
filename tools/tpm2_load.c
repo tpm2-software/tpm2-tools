@@ -41,9 +41,9 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "log.h"
 #include "tpm2_util.h"
-#include "password_util.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
@@ -55,7 +55,6 @@ TPMS_AUTH_COMMAND sessionData = {
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
 };
-bool hexPasswd = false;
 
 int
 load (TSS2_SYS_CONTEXT *sapi_context,
@@ -129,7 +128,7 @@ execute_tool (int              argc,
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int opt = -1;
-    const char *optstring = "H:P:u:r:n:C:c:S:X";
+    const char *optstring = "H:P:u:r:n:C:c:S:";
     static struct option long_options[] = {
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
@@ -138,7 +137,6 @@ execute_tool (int              argc,
       {"name",1,NULL,'n'},
       {"context",1,NULL,'C'},
       {"contextParent",1,NULL,'c'},
-      {"passwdInHex",0,NULL,'X'},
       {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
@@ -146,7 +144,6 @@ execute_tool (int              argc,
     int returnVal = 0;
     int flagCnt = 0;
     int H_flag = 0,
-        P_flag = 0,
         u_flag = 0,
         r_flag = 0,
         c_flag = 0,
@@ -165,13 +162,13 @@ execute_tool (int              argc,
             printf("\nparentHandle: 0x%x\n\n",parentHandle);
             H_flag = 1;
             break;
-        case 'P':
-            if(!password_tpm2_util_copy_password(optarg, "parent key", &sessionData.hmac))
-            {
+        case 'P': {
+            bool res = tpm2_password_util_from_optarg(optarg, &sessionData.hmac);
+            if (!res) {
+                LOG_ERR("Invalid parent key password, got\"%s\"", optarg);
                 return 1;
             }
-            P_flag = 1;
-            break;
+        } break;
 
         case 'u':
             size = sizeof(inPublic);
@@ -215,9 +212,6 @@ execute_tool (int              argc,
             printf("contextFile = %s\n", contextFile);
             C_flag = 1;
             break;
-        case 'X':
-            hexPasswd = true;
-            break;
         case 'S':
              if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
                  LOG_ERR("Could not convert session handle to number, got: \"%s\"",
@@ -236,16 +230,6 @@ execute_tool (int              argc,
             return 1;
         }
     };
-
-    if (P_flag && hexPasswd) {
-        int rc = tpm2_util_hex_to_byte_structure((char *)sessionData.hmac.t.buffer,
-                          &sessionData.hmac.t.size,
-                          sessionData.hmac.t.buffer);
-        if (rc) {
-            LOG_ERR("Could not convert password to hex!");
-            return 1;
-        }
-    }
 
     flagCnt = H_flag + u_flag +r_flag + n_flag + c_flag;
     if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)

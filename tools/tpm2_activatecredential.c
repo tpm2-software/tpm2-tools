@@ -41,11 +41,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_util.h"
 #include "tpm_session.h"
 
@@ -59,7 +59,6 @@ struct tpm_activatecred_ctx {
 
     TPM2B_ID_OBJECT credentialBlob;
     TPM2B_ENCRYPTED_SECRET secret;
-    bool hexPasswd;
 
     TPMS_AUTH_COMMAND password;
     TPMS_AUTH_COMMAND endorse_password;
@@ -168,18 +167,6 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context,
         .algorithm = TPM_ALG_NULL
     };
 
-    bool result = password_tpm2_util_to_auth(&ctx->password.hmac, ctx->hexPasswd,
-            "handlePasswd", &ctx->password.hmac);
-    if (!result) {
-        return false;
-    }
-
-    result = password_tpm2_util_to_auth(&ctx->endorse_password.hmac, ctx->hexPasswd,
-            "endorsePasswd", &ctx->endorse_password.hmac);
-    if (!result) {
-        return false;
-    }
-
     SESSION *session = NULL;
     UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session,
             TPM_RH_NULL, 0, TPM_RH_NULL, 0, &nonceCaller, &encryptedSalt,
@@ -275,18 +262,17 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             C_flag = 1;
             break;
         case 'P':
-            ctx->password.hmac.t.size = sizeof(ctx->password.hmac.t) - 2;
-            result = password_tpm2_util_copy_password(optarg, "handle password",
-                    &ctx->password.hmac);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->password.hmac);
             if (!result) {
+                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
                 return false;
             }
             //P_flag = 1;
             break;
         case 'e':
-            result = password_tpm2_util_copy_password(optarg, "endorse password",
-                    &ctx->endorse_password.hmac);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->endorse_password.hmac);
             if (!result) {
+                LOG_ERR("Invalid endorse password, got\"%s\"", optarg);
                 return false;
             }
             break;
@@ -302,9 +288,6 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
         case 'o':
             ctx->file.output = optarg;
             o_flag = 1;
-            break;
-        case 'X':
-            ctx->hexPasswd = true;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);

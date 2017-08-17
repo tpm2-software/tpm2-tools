@@ -46,6 +46,7 @@ specifies the handle used to authorize:  0x40000001 (TPM_RH_OWNER)   0x4000000C 
 .TP
 \fB\-P ,\-\-handlePasswd\fR
 specifies the password of authHandle.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format

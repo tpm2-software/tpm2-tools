@@ -38,12 +38,12 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
 #include "options.h"
-#include "password_util.h"
 #include "tpm2_alg_util.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
@@ -191,12 +191,11 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
 static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
 
     bool result;
-    bool is_hex_password = false;
 
     char *context_file = NULL;
     char *context_key_file = NULL;
 
-    const char *optstring = "H:k:P:K:g:a:s:C:c:X";
+    const char *optstring = "H:k:P:K:g:a:s:C:c:";
     static struct option long_options[] = {
       {"objectHandle", required_argument, NULL, 'H'},
       {"keyHandle",    required_argument, NULL, 'k'},
@@ -207,7 +206,6 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
       {"sigFile",      required_argument, NULL, 's'},
       {"objContext",   required_argument, NULL, 'C'},
       {"keyContext",   required_argument, NULL, 'c'},
-      {"passwdInHex",  no_argument,       NULL, 'X'},
       {NULL,           no_argument,       NULL, '\0'}
     };
 
@@ -257,17 +255,17 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = password_tpm2_util_copy_password(optarg, "object handle",
-                    &ctx->cmd_auth[0].hmac);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->cmd_auth[0].hmac);
             if (!result) {
+                LOG_ERR("Invalid object key password, got\"%s\"", optarg);
                 return false;
             }
             flags.P = 1;
             break;
         case 'K':
-            result = password_tpm2_util_copy_password(optarg, "key handle",
-                    &ctx->cmd_auth[1].hmac);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->cmd_auth[1].hmac);
             if (!result) {
+                LOG_ERR("Invalid key handle password, got\"%s\"", optarg);
                 return false;
             }
             flags.K = 1;
@@ -311,9 +309,6 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             context_file = optarg;
             flags.C = 1;
             break;
-        case 'X':
-            is_hex_password = true;
-            break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
             result = false;
@@ -331,19 +326,6 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
 
     if (!(flags.H || flags.C) && (flags.k || flags.c) && (flags.g) && (flags.a)
             && (flags.s)) {
-        return false;
-    }
-
-    /* convert a hex passwords if needed */
-    result = password_tpm2_util_to_auth(&ctx->cmd_auth[0].hmac, is_hex_password,
-            "object handle", &ctx->cmd_auth[0].hmac);
-    if (!result) {
-        return false;
-    }
-
-    result = password_tpm2_util_to_auth(&ctx->cmd_auth[1].hmac, is_hex_password,
-            "key handle", &ctx->cmd_auth[1].hmac);
-    if (!result) {
         return false;
     }
 
@@ -374,22 +356,12 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void)envp;
 
     tpm_certify_ctx ctx = {
-            .cmd_auth = {
-                {
-                    .sessionHandle = TPM_RS_PW,
-                    .nonce = TPM2B_EMPTY_INIT,
-                    .hmac = TPM2B_EMPTY_INIT,
-                    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
-            }, // [0]
-                {
-                    .sessionHandle = TPM_RS_PW,
-                    .nonce = TPM2B_EMPTY_INIT,
-                    .hmac = TPM2B_EMPTY_INIT,
-                    .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
-                }  // [1]
-            },
-            .file_path = { .attest = NULL, .sig = NULL },
-            .sapi_context = sapi_context
+        .cmd_auth = {
+            TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+            TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        },
+        .file_path = { .attest = NULL, .sig = NULL },
+        .sapi_context = sapi_context
     };
 
     bool result = init(argc, argv, &ctx);

@@ -54,7 +54,8 @@ the public portion of RSA key to use for  decryption
 filename of the key context used for the operation
 .TP
 \fB\-P ,\-\-pwdk\fR
-the password of key, optional
+the password of key, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-I ,\-\-inFile\fR
 Input file path, containing the data to be  decrypted 
