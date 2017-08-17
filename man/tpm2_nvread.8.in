@@ -46,15 +46,13 @@ specifies the handle used to authorize:  0x40000001 (TPM_RH_OWNER)   0x4000000C 
 .TP
 \fB\-P ,\-\-handlePasswd\fR
 specifies the password of authHandle.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-s ,\-\-size\fR
 specifies the number of octets to read.
 .TP
 \fB\-o ,\-\-offset\fR
 specifies octet offset into the area  This value shall be less than or equal to the   size of the nvIndex data. 
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
