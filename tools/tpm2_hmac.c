@@ -38,7 +38,7 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
@@ -54,8 +54,6 @@ struct tpm_hmac_ctx {
     char *hmac_output_file_path;
     TPM2B_MAX_BUFFER data;
     TSS2_SYS_CONTEXT *sapi_context;
-    bool is_auth_session;
-    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
@@ -76,12 +74,6 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
 
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
-
-    ctx->session_data.sessionHandle = TPM_RS_PW;
-
-    if(ctx->is_auth_session) {
-        ctx->session_data.sessionHandle = ctx->auth_session_handle;
-    }
 
     TPM_RC rval = Tss2_Sys_HMAC(ctx->sapi_context, ctx->key_handle,
             &sessions_data, &ctx->data, ctx->algorithm, &hmac_out,
@@ -107,10 +99,9 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
 static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
 
     bool result = false;
-    bool is_hex_passwd = false;
     char *contextKeyFile = NULL;
 
-    const char *optstring = "k:P:g:I:o:S:c:X";
+    const char *optstring = "k:P:g:I:o:S:c:";
     static struct option long_options[] = {
         {"keyHandle",   required_argument, NULL, 'k'},
         {"keyContext",  required_argument, NULL, 'c'},
@@ -119,7 +110,6 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         {"infile",      required_argument, NULL, 'I'},
         {"outfile",     required_argument, NULL, 'o'},
         {"input-session-handle",1,         NULL, 'S'},
-        {"passwdInHex", no_argument,       NULL, 'X'},
         {NULL,          no_argument,       NULL, '\0'}
     };
 
@@ -159,9 +149,9 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = tpm2_password_util_copy_password(optarg, "key handle",
-                    &ctx->session_data.hmac);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
+                LOG_ERR("Invalid key handle password, got\"%s\"", optarg);
                 return false;
             }
             flags.P = 1;
@@ -200,16 +190,12 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             contextKeyFile = optarg;
             flags.c = 1;
             break;
-        case 'X':
-            is_hex_passwd = true;
-            break;
         case 'S':
-            if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+            if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                         optarg);
                 return false;
             }
-            ctx->is_auth_session = true;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -241,9 +227,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         }
     }
 
-    /* convert a hex password if needed */
-    return tpm2_password_util_fromhex(&ctx->session_data.hmac, is_hex_passwd,
-            "key handle", &ctx->session_data.hmac);
+    return true;
 }
 
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
@@ -253,10 +237,9 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void)envp;
 
     tpm_hmac_ctx ctx = {
-            .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
+            .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
             .key_handle = 0,
             .sapi_context = sapi_context,
-            .is_auth_session = false
     };
 
     bool result = init(argc, argv, &ctx);
