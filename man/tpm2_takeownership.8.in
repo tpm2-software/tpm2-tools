@@ -42,25 +42,28 @@ lockoutAuth, if any passwd option is missing, assume NULL.
 .SH OPTIONS
 .TP
 \fB\-o ,\-\-ownerPasswd\fR
-new Owner authorization value (string,  optional, default:NULL). 
+new Owner authorization value (string,  optional, default:NULL).
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-e ,\-\-endorsePasswd\fR
-new Endorsement authorization value (string,  optional, default:NULL). 
+new Endorsement authorization value (string,  optional, default:NULL).
+Same formatting as the new Owner authorization value or -o option.
 .TP
 \fB\-l ,\-\-lockPasswd\fR
-new Lockout authorization value (string,  optional, default:NULL). 
+new Lockout authorization value (string,  optional, default:NULL).
+Same formatting as the new Owner authorization value or -o option.
 .TP
 \fB\-O ,\-\-oldOwnerPasswd\fR
-old Owner authorization (string, optional,   default:NULL). 
+old Owner authorization (string, optional,   default:NULL).
+Same formatting as the new Owner authorization value or -o option.
 .TP
 \fB\-E ,\-\-oldEndorsePasswd\fR
-old Endorsement authorization (string,  optional, default:NULL). 
+old Endorsement authorization (string,  optional, default:NULL).
+Same formatting as the new Owner authorization value or -o option.
 .TP
 \fB\-L ,\-\-oldLockPasswd\fR
-old Lockout authorization (string, optional,  default:NULL). 
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format
+old Lockout authorization (string, optional,  default:NULL).
+Same formatting as the new Owner authorization value or -o option.
 .TP
 \fB\-c ,\-\-clear\fR
 [-L  [-X]]  clears the 3 authorizations values with  lockout auth. 
