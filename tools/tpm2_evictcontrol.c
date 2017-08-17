@@ -41,7 +41,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
@@ -86,14 +86,13 @@ static int evict_control(tpm_evictcontrol_ctx *ctx) {
 
 static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
 
-    const char *optstring = "A:H:S:P:c:i:X";
+    const char *optstring = "A:H:S:P:c:i:";
     static struct option long_options[] = {
       {"auth",        required_argument, NULL, 'A'},
       {"handle",      required_argument, NULL, 'H'},
       {"persistent",  required_argument, NULL, 'S'},
       {"pwda",        required_argument, NULL, 'P'},
       {"context",     required_argument, NULL, 'c'},
-      {"passwdInHex", no_argument,       NULL, 'X'},
       {"input-session-handle",1,         NULL, 'i'},
       {NULL,          no_argument,       NULL, '\0'}
     };
@@ -110,8 +109,6 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
     } flags = { .all = 0 };
 
     char *contextFile = NULL;
-
-    bool is_hex_passwd = false;
 
     if (argc == 1) {
         showArgMismatch(argv[0]);
@@ -157,9 +154,9 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         }
             break;
         case 'P': {
-            bool result = tpm2_password_util_copy_password(optarg, "authenticating",
-                    &ctx->session_data.hmac);
+            bool result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
+                LOG_ERR("Invalid authorization password, got\"%s\"", optarg);
                 return false;
             }
             flags.P = 1;
@@ -168,9 +165,6 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         case 'c':
             contextFile = optarg;
             flags.c = 1;
-            break;
-        case 'X':
-            is_hex_passwd = true;
             break;
         case 'i':
              if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
@@ -196,14 +190,8 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
         return false;
     }
 
-    bool result = tpm2_password_util_fromhex(&ctx->session_data.hmac, is_hex_passwd,
-            "authenticating", &ctx->session_data.hmac);
-    if (!result) {
-        return false;
-    }
-
     if (flags.c) {
-        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.object,
+        bool result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.object,
                 contextFile);
         if (!result) {
             return false;
