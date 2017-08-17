@@ -38,7 +38,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
@@ -52,35 +52,22 @@ struct tpm_nvdefine_ctx {
     UINT32 authHandle;
     UINT32 size;
     TPMA_NV nvAttribute;
-    TPM2B_AUTH handlePasswd;
-    TPM2B_AUTH indexPasswd;
-    bool hexPasswd;
+    TPM2B_AUTH nvAuth;
+    TPMS_AUTH_COMMAND session_data;
     TSS2_SYS_CONTEXT *sapi_context;
     char *policy_file;
-    bool is_auth_session;
-    TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
 static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
-    TPMS_AUTH_COMMAND session_data = {
-        .sessionHandle = TPM_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
-    };
-
-    if (ctx->is_auth_session) {
-        session_data.sessionHandle = ctx->auth_session_handle;
-    }
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
 
     TPMS_AUTH_COMMAND *session_data_array[1] = {
-        &session_data
+        &ctx->session_data
     };
 
     TPMS_AUTH_RESPONSE *session_data_out_array[1] = {
@@ -92,12 +79,6 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
-
-    bool result = tpm2_password_util_fromhex(&ctx->handlePasswd, ctx->hexPasswd,
-            "handle password", &session_data.hmac);
-    if (!result) {
-        return false;
-    }
 
     public_info.t.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
@@ -116,15 +97,8 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
     public_info.t.nvPublic.dataSize = ctx->size;
 
-    TPM2B_AUTH nvAuth;
-    result = tpm2_password_util_fromhex(&ctx->indexPasswd, ctx->hexPasswd,
-            "index password", &nvAuth);
-    if (!result) {
-        return false;
-    }
-
     TPM_RC rval = Tss2_Sys_NV_DefineSpace(ctx->sapi_context, ctx->authHandle,
-            &sessions_data, &nvAuth, &public_info, &sessions_data_out);
+            &sessions_data, &ctx->nvAuth, &public_info, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed to define NV area at index 0x%x (%d).Error:0x%x",
                 ctx->nvIndex, ctx->nvIndex, rval);
@@ -190,9 +164,9 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 'P':
-            result = tpm2_password_util_copy_password(optarg, "handle password",
-                    &ctx->handlePasswd);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
+                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
                 return false;
             }
             break;
@@ -216,25 +190,21 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
             }
             break;
         case 'I':
-            result = tpm2_password_util_copy_password(optarg, "index password",
-                    &ctx->indexPasswd);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->nvAuth);
             if (!result) {
+                LOG_ERR("Invalid index password, got\"%s\"", optarg);
                 return false;
             }
-            break;
-        case 'X':
-            ctx->hexPasswd = true;
             break;
         case 'L':
             ctx->policy_file = optarg;
             break;
         case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
+             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
                  LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                          optarg);
                  return false;
              }
-             ctx->is_auth_session = true;
              break;
         case ':':
             LOG_ERR("Argument %c needs a value!\n", optopt);
@@ -261,13 +231,11 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .nvIndex = 0,
             .authHandle = TPM_RH_PLATFORM,
             .size = 0,
-            .nvAttribute = { .val = 0 },
-            .handlePasswd = TPM2B_EMPTY_INIT,
-            .indexPasswd = TPM2B_EMPTY_INIT,
-            .hexPasswd = false,
+            .nvAttribute = SESSION_ATTRIBUTES_INIT(0),
+            .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+            .nvAuth = TPM2B_EMPTY_INIT,
             .sapi_context = sapi_context,
             .policy_file = NULL,
-            .is_auth_session = false
         };
 
         bool result = init(argc, argv, &ctx);
