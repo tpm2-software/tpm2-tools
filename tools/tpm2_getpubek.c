@@ -38,7 +38,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
@@ -48,7 +48,6 @@
 typedef struct getpubek_context getpubek_context;
 struct getpubek_context {
     struct {
-        bool is_hex;
         TPM2B_AUTH owner;
         TPM2B_AUTH endorse;
         TPM2B_AUTH ek;
@@ -182,22 +181,14 @@ static bool create_ek_handle(getpubek_context *ctx) {
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    bool result = tpm2_password_util_fromhex(&ctx->passwords.endorse,
-            ctx->passwords.is_hex, "endorse", &sessionData.hmac);
-    if (!result) {
-        return false;
-    }
+    memcpy(&sessionData.hmac, &ctx->passwords.endorse, sizeof(ctx->passwords.endorse));
 
-    result = tpm2_password_util_fromhex(&ctx->passwords.ek, ctx->passwords.is_hex,
-            "ek", &inSensitive.t.sensitive.userAuth);
-    if (!result) {
-        return false;
-    }
+    memcpy(&ctx->passwords.ek, &inSensitive.t.sensitive.userAuth, sizeof(inSensitive.t.sensitive.userAuth));
 
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
-    result = set_key_algorithm(ctx->algorithm, &inPublic);
+    bool result = set_key_algorithm(ctx->algorithm, &inPublic);
     if (!result) {
         return false;
     }
@@ -217,13 +208,7 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     LOG_INFO("EK create success. Got handle: 0x%8.8x", handle2048ek);
 
-    // To make EK persistent, use own auth
-    sessionData.hmac.t.size = 0;
-    result = tpm2_password_util_fromhex(&ctx->passwords.owner, ctx->passwords.is_hex,
-            "owner", &sessionData.hmac);
-    if (!result) {
-        return false;
-    }
+    memcpy(&sessionData.hmac, &ctx->passwords.owner, sizeof(ctx->passwords.owner));
 
     rval = Tss2_Sys_EvictControl(ctx->sapi_context, TPM_RH_OWNER, handle2048ek,
             &sessionsData, ctx->persistent_handle, &sessionsDataOut);
@@ -265,7 +250,6 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
         { "ekPasswd"     , required_argument, NULL, 'P' },
         { "alg"          , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
-        { "passwdInHex"  , no_argument,       NULL, 'X' },
         {"input-session-handle",1,            NULL, 'S' },
         { "dbg"          , required_argument, NULL, 'd' },
         { "help"         , no_argument,       NULL, 'h' },
@@ -283,7 +267,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
     }
 
     int opt;
-    while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:Xp:S:d:hv", options, NULL))
+    while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:p:S:d:hv", options, NULL))
             != -1) {
         bool result;
         switch (opt) {
@@ -296,22 +280,23 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
             break;
 
         case 'e':
-            result = tpm2_password_util_copy_password(optarg, "endorsement password",
-                    &ctx->passwords.endorse);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.endorse);
             if (!result) {
+                LOG_ERR("Invalid endorse password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'o':
-            result = tpm2_password_util_copy_password(optarg, "owner password",
-                    &ctx->passwords.owner);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.owner);
             if (!result) {
+                LOG_ERR("Invalid owner password, got\"%s\"", optarg);
                 return false;
             }
             break;
         case 'P':
-            result = tpm2_password_util_copy_password(optarg, "EK password", &ctx->passwords.ek);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.ek);
             if (!result) {
+                LOG_ERR("Invalid EK password, got\"%s\"", optarg);
                 return false;
             }
             break;
@@ -329,9 +314,6 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
                 return false;
             }
             ctx->out_file_path = optarg;
-            break;
-        case 'X':
-            ctx->passwords.is_hex = true;
             break;
         case 'S':
             if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
@@ -363,7 +345,6 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     getpubek_context ctx = {
             .passwords = {
-                    .is_hex = false,
                     .owner = TPM2B_EMPTY_INIT,
                     .endorse = TPM2B_EMPTY_INIT,
                     .ek = TPM2B_EMPTY_INIT,
