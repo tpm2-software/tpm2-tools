@@ -47,13 +47,11 @@ item handle, handle of a loaded data object
 filename for item context
 .TP
 \fB\-P ,\-\-pwdi\fR
-item handle password, optional
+item handle password, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-o ,\-\-outfile\fR
 Output file name, containing the unsealed data. Defaults to stdout if not specified.
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format.
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
