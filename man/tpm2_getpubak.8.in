@@ -51,13 +51,16 @@ default digestAlg is 0xb(SHA256), default signAlg is 0x14(RSASSA) for RSA,
 .SH OPTIONS
 .TP
 \fB\-e ,\-\-endorsePasswd\fR
-specifies current endorsement password  (string,optional,default:NULL). 
+specifies current endorsement password  (string,optional,default:NULL).
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-P ,\-\-akPasswd\fR
-specifies the AK password when created  (string,optional,default:NULL). 
+specifies the AK password when created  (string,optional,default:NULL).
+Same formatting as the endorse password value or -e option.
 .TP
 \fB\-o ,\-\-ownerPasswd\fR
-specifies current owner password  (string,optional,default:NULL). 
+specifies current owner password  (string,optional,default:NULL).
+Same formatting as the endorse password value or -e option.
 .TP
 \fB\-E ,\-\-ekHandle\fR
 specifies the handle of EK (hex).
@@ -83,9 +86,6 @@ specifies the file used to save the public  portion of AK.
 .TP
 \fB\-n ,\-\-akName\fR
 specifies the file used to save the ak name.
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
