@@ -57,7 +57,8 @@ Handle of key that will perform signing
 filename of the key context used for the operation
 .TP
 \fB\-P ,\-\-pwdk\fR
-the password of key, optional
+the password of key, optional.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-g ,\-\-halg\fR
 the hash algorithm used to digest the message.
@@ -72,9 +73,6 @@ the ticket file, containning the validation  structure, optional
 .TP
 \fB\-s ,\-\-sig\fR
 the signature file, record the signature structure
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format.
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
