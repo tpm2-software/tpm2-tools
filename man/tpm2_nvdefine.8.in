@@ -64,12 +64,10 @@ ownerread|ownerwrite|policywrite|nt=0x3
 .TP
 \fB\-P ,\-\-handlePasswd\fR
 specifies the password of authHandle.
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-I ,\-\-indexPasswd\fR
-specifies the password of NV Index when  created. 
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format
+specifies the password of NV Index when created. Follows the same formatting guidelines as the handle password or -P option.
 .TP
 \fB\-L ,\-\-policy\-file\fR
 Specifies the policy digest file for policy based authorizations.
