@@ -51,13 +51,16 @@ http://www.trustedcomputinggroup.org/files/static_page_files/7CAA5687-1A4B-B294-
 .SH OPTIONS
 .TP
 \fB\-e ,\-\-endorsePasswd\fR
-specifies current endorse password (string,  optional, default:NULL). 
+specifies current endorse password (string,  optional, default:NULL).
+@PASSWORD_FORMAT_COMMON_INCLUDE@
 .TP
 \fB\-o ,\-\-ownerPasswd\fR
-specifies current owner password (string,  optional, default:NULL). 
+specifies current owner password (string,  optional, default:NULL).
+Same formatting as the endorse password value or -e option.
 .TP
 \fB\-P ,\-\-ekPasswd\fR
-specifies the EK password when created  (string, optional, default:NULL). 
+specifies the EK password when created  (string, optional, default:NULL).
+Same formatting as the endorse password value or -e option.
 .TP
 \fB\-H ,\-\-handle\fR
 specifies the handle used to make EK  persistent (hex). 
@@ -69,9 +72,6 @@ specifies the algorithm type of EK.
 .TP
 \fB\-f ,\-\-file\fR
 specifies the file used to save the public  portion of EK. 
-.TP
-\fB\-X ,\-\-passwdInHex\fR
-passwords given by any options are hex format
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
