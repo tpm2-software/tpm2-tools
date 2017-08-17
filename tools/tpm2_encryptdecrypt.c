@@ -40,7 +40,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_password_util.h"
+#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "main.h"
@@ -100,10 +100,9 @@ static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
 static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
 
     bool result = false;
-    bool is_hex_passwd = false;
 
     int opt = -1;
-    const char *optstring = "k:P:D:I:o:c:S:X";
+    const char *optstring = "k:P:D:I:o:c:S:";
     static struct option long_options[] = {
       {"keyHandle",   required_argument, NULL, 'k'},
       {"pwdk",        required_argument, NULL, 'P'},
@@ -111,7 +110,6 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
       {"inFile",      required_argument, NULL, 'I'},
       {"outFile",     required_argument, NULL, 'o'},
       {"keyContext",  required_argument, NULL, 'c'},
-      {"passwdInHex", no_argument,       NULL, 'X'},
       {"input-session-handle",1,         NULL, 'S'},
       {NULL,          no_argument,       NULL, '\0'}
     };
@@ -149,9 +147,10 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             flags.k = 1;
             break;
         case 'P':
-            result = tpm2_password_util_copy_password(optarg, "key", &ctx->session_data.hmac);
+            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
             if (!result) {
-                return result;
+                LOG_ERR("Invalid object key password, got\"%s\"", optarg);
+                return false;
             }
             flags.P = 1;
             break;
@@ -189,9 +188,6 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             contextKeyFile = optarg;
             flags.c = 1;
             break;
-        case 'X':
-            is_hex_passwd = true;
-            break;
         case 'S':
             result = tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle);
             if (!result) {
@@ -224,8 +220,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
         }
     }
 
-    return tpm2_password_util_fromhex(&ctx->session_data.hmac, is_hex_passwd, "key",
-            &ctx->session_data.hmac);
+    return true;
 }
 
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
