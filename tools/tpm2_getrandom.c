@@ -38,7 +38,6 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
-#include "../lib/tpm2_password_util.h"
 #include "log.h"
 #include "files.h"
 #include "main.h"
