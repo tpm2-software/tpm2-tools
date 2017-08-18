@@ -214,7 +214,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
     }
 
     if (flags.c) {
-        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle, contextKeyFile);
+        result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle, contextKeyFile);
         if (!result) {
             return result;
         }

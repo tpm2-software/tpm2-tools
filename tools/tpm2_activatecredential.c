@@ -332,7 +332,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     if (ctx.file.context) {
-        bool res = file_load_tpm_context_from_file(sapi_context, &ctx.handle.activate,
+        bool res = files_load_tpm_context_from_file(sapi_context, &ctx.handle.activate,
                 ctx.file.context);
         if (!res) {
             return 1;
@@ -340,7 +340,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     if (ctx.file.key_context) {
-        bool res = file_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
+        bool res = files_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
                 ctx.file.key_context) != true;
         if (!res) {
             return 1;

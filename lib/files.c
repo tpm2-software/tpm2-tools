@@ -191,7 +191,7 @@ out:
     return result;
 }
 
-bool file_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
+bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
         TPM_HANDLE *handle, const char *path) {
 
     TPM_RC rval;

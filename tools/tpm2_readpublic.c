@@ -150,7 +150,7 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
     }
 
     if (flags.c) {
-        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->objectHandle,
+        result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->objectHandle,
                 context_file);
         if (!result) {
             return false;
