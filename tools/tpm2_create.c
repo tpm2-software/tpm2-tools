@@ -416,7 +416,7 @@ execute_tool (int              argc,
     else if(flagCnt == 3 && (H_flag == 1 || c_flag == 1) && g_flag == 1 && G_flag == 1)
     {
         if(c_flag)
-            returnVal = file_load_tpm_context_from_file(sysContext, &parentHandle, contextParentFilePath) != true;
+            returnVal = files_load_tpm_context_from_file(sysContext, &parentHandle, contextParentFilePath) != true;
         if(returnVal == 0)
             returnVal = create(parentHandle, &inPublic, &inSensitive, type, nameAlg, opuFilePath, oprFilePath, o_flag, O_flag, I_flag, A_flag, objectAttributes, is_policy_enforced);
 

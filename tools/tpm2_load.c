@@ -235,7 +235,7 @@ execute_tool (int              argc,
     if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
     {
         if(c_flag) {
-            returnVal = file_load_tpm_context_from_file (sapi_context,
+            returnVal = files_load_tpm_context_from_file (sapi_context,
                                                 &parentHandle,
                                                 contextParentFilePath) != true;
             if (returnVal) {

@@ -331,7 +331,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
 
     /* Load input files */
     if (flags.C) {
-        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.obj,
+        result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.obj,
                 context_file);
         if (!result) {
             return false;
@@ -339,7 +339,7 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
     }
 
     if (flags.c) {
-        result = file_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.key,
+        result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.key,
                 context_key_file);
         if (!result) {
             return false;

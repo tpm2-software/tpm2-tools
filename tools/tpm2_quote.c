@@ -424,7 +424,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     {
 
         if(c_flag) {
-            returnVal = file_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath);
+            returnVal = files_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath);
             if (!returnVal) {
                 return 1;
             }

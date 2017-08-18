@@ -78,7 +78,7 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE h
  * @return
  *  True on Success, false on error.
  */
-bool file_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE *handle, const char *path);
+bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE *handle, const char *path);
 
 /**
  * Checks a file for existence.
