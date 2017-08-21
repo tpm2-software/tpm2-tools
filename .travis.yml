@@ -70,6 +70,3 @@ script:
 
 after_failure:
    - cat build/test-suite.log
-
-after_success:
-  - ./.ci/coveralls-upload.sh

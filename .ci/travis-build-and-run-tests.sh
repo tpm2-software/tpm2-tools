@@ -96,4 +96,7 @@ PATH=$(pwd)/../../build/tools:${PATH} ./test_all.sh
 # done go back to tpm2-tools directory
 popd
 
+# upload coveralls results
+./.ci/coveralls-upload.sh
+
 exit 0
