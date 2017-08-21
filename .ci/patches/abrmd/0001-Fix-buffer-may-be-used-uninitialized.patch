@@ -1,0 +1,32 @@
+From 5963e66774f0bb30b30f18d20a221f1f265a86e2 Mon Sep 17 00:00:00 2001
+From: William Roberts <william.c.roberts@intel.com>
+Date: Mon, 21 Aug 2017 08:05:28 -0700
+Subject: [PATCH 1/4] Fix buffer may be used uninitialized
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+src/access-broker.c:446:13: error: ‘buffer’ may be used uninitialized in this function [-Werror=maybe-uninitialized]
+             free (buffer);
+
+Signed-off-by: William Roberts <william.c.roberts@intel.com>
+---
+ src/access-broker.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/access-broker.c b/src/access-broker.c
+index 0cd9262..e6736d5 100644
+--- a/src/access-broker.c
++++ b/src/access-broker.c
+@@ -430,7 +430,7 @@ access_broker_send_command (AccessBroker  *broker,
+ {
+     Tpm2Response   *response = NULL;
+     Connection     *connection = NULL;
+-    guint8         *buffer;
++    guint8         *buffer = NULL;
+     size_t          buffer_size = 0;
+ 
+     g_debug ("access_broker_send_command: AccessBroker: 0x%" PRIxPTR
+-- 
+2.7.4
+
