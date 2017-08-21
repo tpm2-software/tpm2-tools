@@ -208,7 +208,7 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             printf ("TPM_PT_LEVEL:               %d\n", value);
             break;
         case TPM_PT_REVISION:
-            printf ("TPM_PT_REVISION:            %.2f\n", (float)(value / 100));
+            printf ("TPM_PT_REVISION:            %.2f\n", (float)value / 100);
             break;
         case TPM_PT_DAY_OF_YEAR:
             printf ("TPM_PT_DAY_OF_YEAR:         0x%08x\n", value);
