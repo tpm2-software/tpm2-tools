@@ -1,0 +1,37 @@
+From 4ae235eab86bbcc25e9a8b25bded9df2392405c3 Mon Sep 17 00:00:00 2001
+From: William Roberts <william.c.roberts@intel.com>
+Date: Mon, 21 Aug 2017 09:53:24 -0700
+Subject: [PATCH 2/4] tpm2-command: fix cast error
+
+Fixes errors like these:
+src/tpm2-command.c:634:16: error: cast to union type from type not present in union
+         return (TPMA_SESSION)(UINT32)0;
+
+Signed-off-by: William Roberts <william.c.roberts@intel.com>
+---
+ src/tpm2-command.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/tpm2-command.c b/src/tpm2-command.c
+index c2a255a..05e21a9 100644
+--- a/src/tpm2-command.c
++++ b/src/tpm2-command.c
+@@ -631,13 +631,13 @@ tpm2_command_get_auth_attrs (Tpm2Command *command,
+     size_t attrs_end;
+ 
+     if (command == NULL) {
+-        return (TPMA_SESSION)(UINT32)0;
++        return (TPMA_SESSION)(UINT8)0;
+     }
+     attrs_end = AUTH_SESSION_ATTRS_END_OFFSET (command, auth_offset);
+     if (attrs_end > command->buffer_size) {
+         g_warning ("%s attempt to access session attributes overruns command "
+                    "buffer", __func__);
+-        return (TPMA_SESSION)(UINT32)0;
++        return (TPMA_SESSION)(UINT8)0;
+     }
+     return AUTH_GET_SESSION_ATTRS (command, auth_offset);
+ }
+-- 
+2.7.4
+

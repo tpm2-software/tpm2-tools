@@ -52,6 +52,7 @@ install:
     - sudo ldconfig /usr/local/lib
     - git clone https://github.com/01org/tpm2-abrmd.git
     - pushd tpm2-abrmd
+    - git am ../.ci/patches/abrmd/* || true
     - ./bootstrap && ./configure --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
     - sudo mkdir -p /var/lib/tpm
     - sudo groupadd tss && sudo useradd -M -d /var/lib/tpm -s /bin/false -g tss tss
