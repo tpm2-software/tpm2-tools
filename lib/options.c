@@ -226,7 +226,7 @@ get_common_opts (int                    *argc_param,
     char **argv = *argv_param;
 
     int c = 0, option_index = 0;
-    char *arg_str = "-T:d:R:p:hvV";
+    char *arg_str = "-T:d:R:p:hvVQ";
     struct option long_options [] = {
         {
             .name    = "tcti",
@@ -270,6 +270,12 @@ get_common_opts (int                    *argc_param,
             .has_arg = no_argument,
             .flag    = NULL,
             .val     = 'V',
+        },
+        {
+            .name    = "quiet",
+            .has_arg = no_argument,
+            .flag    = NULL,
+            .val     = 'Q',
         },
         {
             .name    = "version",
@@ -350,6 +356,9 @@ get_common_opts (int                    *argc_param,
             break;
         case 'V':
             common_opts->verbose = true;
+            break;
+        case 'Q':
+            common_opts->quiet = true;
             break;
         case 'v':
             common_opts->version = true;

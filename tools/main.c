@@ -35,6 +35,8 @@
 #include "main.h"
 #include "options.h"
 
+bool output_enabled = true;
+
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
  * nothing more than parsing command line options that allow the caller to
@@ -71,6 +73,10 @@ main (int   argc,
     }
     if (opts.verbose)
         log_set_level(log_level_verbose);
+
+    if (opts.quiet) {
+        disable_output();
+    }
 
     sapi_context = sapi_init_from_options (&opts);
     if (sapi_context == NULL)

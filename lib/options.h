@@ -76,6 +76,7 @@
     .socket_port    = TCTI_SOCKET_DEFAULT_PORT, \
     .help           = false, \
     .verbose        = false, \
+    .quiet          = false, \
     .version        = false, \
 }
 
@@ -100,6 +101,7 @@ typedef struct {
     uint16_t  socket_port;
     int       help;
     int       verbose;
+    int       quiet;
     int       version;
 } common_opts_t;
 
