@@ -102,6 +102,7 @@ fi
 test_wrapper test_tpm2_dictionarylockout.sh
 test_wrapper test_tpm2_createpolicy.sh
 test_wrapper test_tpm2_pcrextend.sh
+test_wrapper test_tpm2_rc_decode.sh
 
 echo -e "\033[32m Tests passed: $pass \033[0m"
 echo -e "\033[31m Tests Failed: $fail  \033[0m"
