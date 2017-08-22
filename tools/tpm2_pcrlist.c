@@ -210,7 +210,7 @@ static bool check_pcr_selection(listpcr_context *context) {
 
         if (j >= cap_data->data.assignedPCR.count) {
             const char *alg_name = tpm2_alg_util_algtostr(pcr_sel->pcrSelections[i].hash);
-            LOG_WARN("Ignore unsupported bank/algorithm: %s(0x%04x)\n", alg_name, pcr_sel->pcrSelections[i].hash);
+            LOG_WARN("Ignore unsupported bank/algorithm: %s(0x%04x)", alg_name, pcr_sel->pcrSelections[i].hash);
             pcr_sel->pcrSelections[i].hash = 0; //mark it as to be removed
         }
     }
@@ -241,7 +241,7 @@ static bool show_pcr_values(listpcr_context *context) {
                 continue;
             }
             if (vi >= context->pcrs.count || di >= context->pcrs.pcr_values[vi].count) {
-                LOG_ERR("Something wrong, trying to print but nothing more\n");
+                LOG_ERR("Something wrong, trying to print but nothing more");
                 return false;
             }
 
@@ -313,7 +313,7 @@ static bool get_banks(listpcr_context *context) {
             &more_data, capability_data, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR(
-                "GetCapability: Get PCR allocation status Error. TPM Error:0x%x......\n",
+                "GetCapability: Get PCR allocation status Error. TPM Error:0x%x......",
                 rval);
         return false;
     }
@@ -403,10 +403,10 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             s_flag = 1;
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             goto error;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             goto error;
         }
     }

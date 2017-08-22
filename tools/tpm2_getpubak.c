@@ -357,7 +357,7 @@ static bool create_ak(getpubak_context *ctx) {
     rval = Tss2_Sys_EvictControl(ctx->sapi_context, TPM_RH_OWNER, loaded_sha1_key_handle,
             &sessions_data, ctx->persistent_handle.ak, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("\n......TPM2_EvictControl Error. TPM Error:0x%x......\n",
+        LOG_ERR("\n......TPM2_EvictControl Error. TPM Error:0x%x......",
                 rval);
         return false;
     }
@@ -480,13 +480,13 @@ static bool init(int argc, char *argv[], getpubak_context *ctx) {
             ctx->aknameFile = optarg;
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }

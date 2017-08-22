@@ -290,13 +290,13 @@ static bool init(int argc, char *argv[], tpm_activatecred_ctx *ctx) {
             o_flag = 1;
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     };
@@ -327,7 +327,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     bool result = init(argc, argv, &ctx);
     if (!result) {
-        LOG_ERR("Initialization failed\n");
+        LOG_ERR("Initialization failed");
         return 1;
     }
 

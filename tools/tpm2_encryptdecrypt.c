@@ -89,7 +89,7 @@ static bool encryptDecrypt(tpm_encrypt_decrypt_ctx *ctx) {
             &sessions_data, ctx->is_decrypt, TPM_ALG_NULL, &iv_in, &ctx->data, &out_data,
             &iv_out, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("EncryptDecrypt failed, error code: 0x%x\n", rval);
+        LOG_ERR("EncryptDecrypt failed, error code: 0x%x", rval);
         return false;
     }
 
@@ -197,13 +197,13 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
              }
              break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return result;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return result;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return result;
         }
     }

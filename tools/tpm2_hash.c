@@ -60,7 +60,7 @@ static bool get_hierarchy_value(const char *hiearchy_code,
 
     size_t len = strlen(hiearchy_code);
     if (len != 1) {
-        LOG_ERR("Hierarchy Values are single characters, got: %s\n",
+        LOG_ERR("Hierarchy Values are single characters, got: %s",
                 hiearchy_code);
         return false;
     }
@@ -79,7 +79,7 @@ static bool get_hierarchy_value(const char *hiearchy_code,
         *hierarchy_value = TPM_RH_NULL;
         break;
     default:
-        LOG_ERR("Unknown hierarchy value: %s\n", hiearchy_code);
+        LOG_ERR("Unknown hierarchy value: %s", hiearchy_code);
         return false;
     }
     return true;
@@ -193,13 +193,13 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             }
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }

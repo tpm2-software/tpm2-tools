@@ -68,7 +68,7 @@ static bool nv_space_release(tpm_nvrelease_ctx *ctx) {
         return false;
     }
 
-    LOG_INFO("Success to release NV area at index 0x%x (%d).\n", ctx->nv_index,
+    LOG_INFO("Success to release NV area at index 0x%x (%d).", ctx->nv_index,
             ctx->nv_index);
 
     return true;
@@ -131,13 +131,13 @@ static bool init(int argc, char* argv[], tpm_nvrelease_ctx *ctx) {
             }
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }

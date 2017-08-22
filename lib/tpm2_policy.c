@@ -56,7 +56,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
         unsigned long filesize = 0;
         bool result = files_get_file_size(raw_pcrs_file, &filesize);
         if (!result) {
-            LOG_ERR("Could not retrieve raw_pcrs_file size\n");
+            LOG_ERR("Could not retrieve raw_pcrs_file size");
             return false;
         }
         if (filesize != expected_pcr_input_file_size) {
@@ -154,7 +154,7 @@ static TPM_RC start_policy_session (TSS2_SYS_CONTEXT *sapi_context,
                                                      &symmetric,
                                                      policy_digest_hash_alg);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Failed tpm session start auth with params\n");
+        LOG_ERR("Failed tpm session start auth with params");
     }
     return rval;
 }
@@ -176,14 +176,14 @@ TPM_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
                                        policy_session_type,
                                        policy_digest_hash_alg);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Error starting the policy session.\n");
+        LOG_ERR("Error starting the policy session.");
         return rval;
     }
     // Issue policy command.
     rval = (*build_policy_function)(sapi_context, *policy_session,
                                     pcr_selections, raw_pcrs_file);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Failed parse_policy_type_and_send_command\n");
+        LOG_ERR("Failed parse_policy_type_and_send_command");
         return rval;
     }
     // Get Policy Hash
@@ -191,7 +191,7 @@ TPM_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
                                     (*policy_session)->sessionHandle,
                                     0, policy_digest, 0);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Failed Policy Get Digest\n");
+        LOG_ERR("Failed Policy Get Digest");
         return rval;
     }
 
@@ -200,7 +200,7 @@ TPM_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
         rval = Tss2_Sys_FlushContext(sapi_context,
                                      (*policy_session)->sessionHandle);
         if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("Failed Flush Context\n");
+            LOG_ERR("Failed Flush Context");
             return rval;
         }
 

@@ -77,24 +77,24 @@ bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
      */
     if (ctx->clear_lockout) {
 
-        LOG_INFO("Resetting dictionary lockout state.\n");
+        LOG_INFO("Resetting dictionary lockout state.");
         UINT32 rval = Tss2_Sys_DictionaryAttackLockReset(ctx->sapi_context,
                 TPM_RH_LOCKOUT, &sessionsData, &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("0x%X Error clearing dictionary lockout.\n", rval);
+            LOG_ERR("0x%X Error clearing dictionary lockout.", rval);
             return false;
         }
     }
 
     if (ctx->setup_parameters) {
-        LOG_INFO("Setting up Dictionary Lockout parameters.\n");
+        LOG_INFO("Setting up Dictionary Lockout parameters.");
         UINT32 rval = Tss2_Sys_DictionaryAttackParameters(ctx->sapi_context,
                 TPM_RH_LOCKOUT, &sessionsData, ctx->max_tries,
                 ctx->recovery_time, ctx->lockout_recovery_time,
                 &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR(
-                    "0x%X Failed setting up dictionary_attack_lockout_reset params\n",
+                    "0x%X Failed setting up dictionary_attack_lockout_reset params",
                     rval);
             return false;
         }
@@ -174,19 +174,19 @@ static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
              }
              break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }
 
     if (!ctx->clear_lockout && !ctx->setup_parameters) {
-        LOG_ERR( "Invalid operational input: Neither Setup nor Clear lockout requested.\n");
+        LOG_ERR( "Invalid operational input: Neither Setup nor Clear lockout requested.");
         return false;
     }
 

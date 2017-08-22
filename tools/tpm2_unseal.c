@@ -182,13 +182,13 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
             flags.F = 1;
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }
@@ -214,7 +214,7 @@ static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
                                         raw_pcrs_file, &pcr_digest, true,
                                         tpm2_policy_pcr_build);
         if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("Building PCR policy failed: 0x%x\n", rval);
+            LOG_ERR("Building PCR policy failed: 0x%x", rval);
             return false;
         }
 
@@ -244,7 +244,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     }
 
     if (!unseal_and_save(&ctx)) {
-        LOG_ERR("Unseal failed!\n");
+        LOG_ERR("Unseal failed!");
         return 1;
     }
 
@@ -252,7 +252,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TPM_RC rval = Tss2_Sys_FlushContext(ctx.sapi_context,
                                             ctx.policy_session->sessionHandle);
         if (rval != TPM_RC_SUCCESS) {
-            LOG_ERR("Failed Flush Context: 0x%x\n", rval);
+            LOG_ERR("Failed Flush Context: 0x%x", rval);
             return 1;
         }
 

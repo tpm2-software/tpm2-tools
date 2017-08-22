@@ -127,7 +127,7 @@ int setKeyAlgorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
         inPublic->t.publicArea.unique.sym.t.size = 0;
         break;
     default:
-        LOG_ERR("\nThe algorithm type input(%4.4x) is not supported!\n", algorithm);
+        LOG_ERR("\nThe algorithm type input(%4.4x) is not supported!", algorithm);
         return -1;
     }
 
@@ -189,7 +189,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
                 if (tpm2_util_hex_to_byte_structure(endorsePasswd, &sessionData.hmac.t.size,
                                       sessionData.hmac.t.buffer) != 0) {
-                        LOG_ERR("Failed to convert Hex format password for endorsePasswd.\n");
+                        LOG_ERR("Failed to convert Hex format password for endorsePasswd.");
                         return -1;
                 }
         }
@@ -205,7 +205,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
              inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
              if (tpm2_util_hex_to_byte_structure(ekPasswd, &inSensitive.t.sensitive.userAuth.t.size,
                                    inSensitive.t.sensitive.userAuth.t.buffer) != 0) {
-                  LOG_ERR("Failed to convert Hex format password for ekPasswd.\n");
+                  LOG_ERR("Failed to convert Hex format password for ekPasswd.");
                   return -1;
             }
         }
@@ -225,10 +225,10 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                                   &creationData, &creationHash, &creationTicket,
                                   &name, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS ) {
-          LOG_ERR("\nTPM2_CreatePrimary Error. TPM Error:0x%x\n", rval);
+          LOG_ERR("\nTPM2_CreatePrimary Error. TPM Error:0x%x", rval);
           return -2;
     }
-    LOG_INFO("\nEK create succ.. Handle: 0x%8.8x\n", handle2048ek);
+    LOG_INFO("\nEK create succ.. Handle: 0x%8.8x", handle2048ek);
 
     if (!nonPersistentRead) {
          /*
@@ -244,7 +244,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                 sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
                 if (tpm2_util_hex_to_byte_structure(ownerPasswd, &sessionData.hmac.t.size,
                                    sessionData.hmac.t.buffer) != 0) {
-                 LOG_ERR("Failed to convert Hex format password for ownerPasswd.\n");
+                 LOG_ERR("Failed to convert Hex format password for ownerPasswd.");
                  return -1;
                 }
             }
@@ -253,24 +253,24 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
         rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
                                      &sessionsData, persistentHandle, &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS ) {
-            LOG_ERR("\nEvictControl:Make EK persistent Error. TPM Error:0x%x\n", rval);
+            LOG_ERR("\nEvictControl:Make EK persistent Error. TPM Error:0x%x", rval);
             return -3;
         }
-        LOG_INFO("EvictControl EK persistent succ.\n");
+        LOG_INFO("EvictControl EK persistent succ.");
     }
 
     rval = Tss2_Sys_FlushContext(sapi_context,
                                  handle2048ek);
     if (rval != TPM_RC_SUCCESS ) {
-        LOG_ERR("\nFlush transient EK failed. TPM Error:0x%x\n", rval);
+        LOG_ERR("\nFlush transient EK failed. TPM Error:0x%x", rval);
         return -4;
     }
 
-    LOG_INFO("Flush transient EK succ.\n");
+    LOG_INFO("Flush transient EK succ.");
 
     /* TODO this serialization is not correct */
     if (!files_save_bytes_to_file(outputFile, (UINT8 *)&outPublic, sizeof(outPublic))) {
-        LOG_ERR("\nFailed to save EK pub key into file(%s)\n", outputFile);
+        LOG_ERR("\nFailed to save EK pub key into file(%s)", outputFile);
         return -5;
     }
 
@@ -284,7 +284,7 @@ unsigned char *HashEKPublicKey(void)
 
     unsigned char EKpubKey[259];
 
-    LOG_INFO("Calculating the SHA256 hash of the Endorsement Public Key\n");
+    LOG_INFO("Calculating the SHA256 hash of the Endorsement Public Key");
 
     fp = fopen(outputFile, "rb");
     if (!fp) {
@@ -294,7 +294,7 @@ unsigned char *HashEKPublicKey(void)
 
     int rc = fseek(fp, 0x66, 0);
     if (rc < 0) {
-        LOG_ERR("Could not perform fseek: %s\n", strerror(errno));
+        LOG_ERR("Could not perform fseek: %s", strerror(errno));
         goto out;
     }
 
@@ -354,7 +354,7 @@ char *Base64Encode(const unsigned char* buffer)
     BIO *bio, *b64;
     BUF_MEM *bufferPtr;
 
-    LOG_INFO("Calculating the Base64Encode of the hash of the Endorsement Public Key:\n");
+    LOG_INFO("Calculating the Base64Encode of the hash of the Endorsement Public Key:");
 
     if (buffer == NULL) {
         LOG_ERR("HashEKPublicKey returned null");
@@ -468,7 +468,7 @@ int RetrieveEndorsementCredentials(char *b64h)
 
     rc = curl_easy_perform(curl);
     if (rc != CURLE_OK) {
-        LOG_ERR("curl_easy_perform() failed: %s\n", curl_easy_strerror(rc));
+        LOG_ERR("curl_easy_perform() failed: %s", curl_easy_strerror(rc));
         goto out_easy_cleanup;
     }
 
@@ -488,7 +488,7 @@ out_memory:
 int TPMinitialProvisioning(void)
 {
     if (EKserverAddr == NULL) {
-        LOG_ERR("TPM Manufacturer Endorsement Credential Server Address cannot be NULL\n");
+        LOG_ERR("TPM Manufacturer Endorsement Credential Server Address cannot be NULL");
         return -99;
     }
 
@@ -498,7 +498,7 @@ int TPMinitialProvisioning(void)
         return -1;
     }
 
-    LOG_INFO("%s\n", b64);
+    LOG_INFO("%s", b64);
 
     int rc = RetrieveEndorsementCredentials(b64);
     free(b64);
@@ -547,14 +547,14 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
               switch ( opt ) {
                 case 'H':
                     if (!tpm2_util_string_to_uint32(optarg, &persistentHandle)) {
-                        LOG_ERR("\nPlease input the handle used to make EK persistent(hex) in correct format.\n");
+                        LOG_ERR("\nPlease input the handle used to make EK persistent(hex) in correct format.");
                         return 1;
                     }
                     break;
 
                 case 'e':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
-                        LOG_ERR("\nPlease input the endorsement password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
+                        LOG_ERR("\nPlease input the endorsement password(optional,no more than %d characters).", (int)sizeof(TPMU_HA) - 1);
                         return 1;
                     }
                     endorsePasswd = optarg;
@@ -562,7 +562,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
 
                 case 'o':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
-                        LOG_ERR("\nPlease input the owner password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
+                        LOG_ERR("\nPlease input the owner password(optional,no more than %d characters).", (int)sizeof(TPMU_HA) - 1);
                         return 1;
                     }
                     ownerPasswd = optarg;
@@ -570,7 +570,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
 
                 case 'P':
                     if (optarg == NULL || (strlen(optarg) >= sizeof(TPMU_HA)) ) {
-                        LOG_ERR("\nPlease input the EK password(optional,no more than %d characters).\n", (int)sizeof(TPMU_HA) - 1);
+                        LOG_ERR("\nPlease input the EK password(optional,no more than %d characters).", (int)sizeof(TPMU_HA) - 1);
                         return 1;
                     }
                     ekPasswd = optarg;
@@ -579,14 +579,14 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                 case 'g':
                     algorithmType = tpm2_alg_util_from_optarg(optarg);
                     if (algorithmType == TPM_ALG_ERROR) {
-                        LOG_ERR("\nPlease input the algorithm type in correct format.\n");
+                        LOG_ERR("\nPlease input the algorithm type in correct format.");
                         return 1;
                     }
                     break;
 
                 case 'f':
                     if (optarg == NULL ) {
-                        LOG_ERR("\nPlease input the file used to save the pub ek.\n");
+                        LOG_ERR("\nPlease input the file used to save the pub ek.");
                         return 1;
                     }
                     outputFile = optarg;
@@ -601,23 +601,23 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     break;
                 case 'N':
                     nonPersistentRead = 1;
-                    LOG_INFO("Tss2_Sys_CreatePrimary called with Endorsement Handle without making it persistent\n");
+                    LOG_INFO("Tss2_Sys_CreatePrimary called with Endorsement Handle without making it persistent");
                     break;
                 case 'O':
                     OfflineProv = 1;
-                    LOG_INFO("Setting up for offline provisioning - reading the retrieved EK specified by the file \n");
+                    LOG_INFO("Setting up for offline provisioning - reading the retrieved EK specified by the file ");
                     break;
                 case 'U':
                     SSL_NO_VERIFY = 1;
-                    LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!\n");
+                    LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
                     break;
                 case 'S':
                     if (EKserverAddr) {
-                        LOG_ERR("Multiple specifications of -S\n");
+                        LOG_ERR("Multiple specifications of -S");
                         return 1;
                     }
                     EKserverAddr = optarg;
-                    LOG_INFO("TPM Manufacturer EK provisioning address -- %s\n", EKserverAddr);
+                    LOG_INFO("TPM Manufacturer EK provisioning address -- %s", EKserverAddr);
                     break;
                 case 'i':
                     return_val = tpm2_util_string_to_uint32(optarg, &auth_session_handle);
@@ -629,7 +629,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
                     is_session_based_auth = true;
                     break;
                 default:
-                    LOG_ERR("Unknown option\n");
+                    LOG_ERR("Unknown option");
                     return 1;
             }
     }

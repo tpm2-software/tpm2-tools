@@ -78,7 +78,7 @@ static int evict_control(tpm_evictcontrol_ctx *ctx) {
 
     TPM_RC rval = Tss2_Sys_EvictControl(ctx->sapi_context, ctx->auth, ctx->handle.object, &sessions_data, ctx->handle.persist,&sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("EvictControl failed, error code: 0x%x\n", rval);
+        LOG_ERR("EvictControl failed, error code: 0x%x", rval);
         return false;
     }
     return true;
@@ -174,13 +174,13 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
              }
              break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }

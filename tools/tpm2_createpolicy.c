@@ -88,7 +88,7 @@ struct create_policy_ctx {
 static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
     TPM_RC rval = TPM_RC_SUCCESS;
     if (!pctx->common_policy_options.policy_type.is_policy_type_selected){
-        LOG_ERR("No Policy type chosen.\n");
+        LOG_ERR("No Policy type chosen.");
         return rval;
     }
 
@@ -175,7 +175,7 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
             if(pctx->common_policy_options.policy_digest_hash_alg
                     == TPM_ALG_ERROR) {
                 showArgError(optarg, argv[0]);
-                LOG_ERR("Invalid choice for policy digest hash algorithm\n");
+                LOG_ERR("Invalid choice for policy digest hash algorithm");
                 return false;
             }
             break;
@@ -190,25 +190,25 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
         case 'P':
             pctx->common_policy_options.policy_type.PolicyPCR = true;
             pctx->common_policy_options.policy_type.is_policy_type_selected= true;
-            LOG_INFO("Policy type chosen is policyPCR.\n");
+            LOG_INFO("Policy type chosen is policyPCR.");
             break;
         case 'a':
             pctx->common_policy_options.policy_session_type = TPM_SE_POLICY;
             pctx->common_policy_options.extend_policy_session = true;
-            LOG_INFO("Policy session setup for auth.\n");
+            LOG_INFO("Policy session setup for auth.");
             break;
         case 'e':
             pctx->common_policy_options.extend_policy_session = true;
-            LOG_INFO("Policy session setup to extend after operation.\n");
+            LOG_INFO("Policy session setup to extend after operation.");
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }
