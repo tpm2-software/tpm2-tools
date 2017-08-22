@@ -407,13 +407,13 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
              is_auth_session = true;
              break;
        case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return 1;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return 1;
 	default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return 1;
         }
     };

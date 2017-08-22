@@ -156,7 +156,7 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
     TPMT_SIG_SCHEME scheme;
     bool result = set_scheme(ctx->sapi_context, ctx->handle.key, ctx->halg, &scheme);
     if (!result) {
-        LOG_ERR("No suitable signing scheme!\n");
+        LOG_ERR("No suitable signing scheme!");
         return false;
     }
 
@@ -310,15 +310,15 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
             flags.C = 1;
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             result = false;
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             result = false;
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             result = false;
             return false;
         }

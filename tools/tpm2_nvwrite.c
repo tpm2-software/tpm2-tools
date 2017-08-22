@@ -80,7 +80,7 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
                 ctx->data_size > MAX_NV_BUFFER_SIZE ?
                 MAX_NV_BUFFER_SIZE : ctx->data_size;
 
-        LOG_INFO("The data(size=%d) to be written:\n", nv_write_data.t.size);
+        LOG_INFO("The data(size=%d) to be written:", nv_write_data.t.size);
 
         UINT16 i;
         for (i = 0; i < nv_write_data.t.size; i++) {
@@ -169,13 +169,13 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
              }
              break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
     }
@@ -183,7 +183,7 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
     ctx->data_size = MAX_NV_INDEX_SIZE;
     result = files_load_bytes_from_file(ctx->input_file, ctx->nv_buffer, &ctx->data_size);
     if (!result) {
-        LOG_ERR("Failed to read data from %s\n", ctx->input_file);
+        LOG_ERR("Failed to read data from %s", ctx->input_file);
         return -false;
     }
 

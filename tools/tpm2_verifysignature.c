@@ -95,7 +95,7 @@ static bool verify_signature(tpm2_verifysig_ctx *ctx) {
     rval = Tss2_Sys_VerifySignature(ctx->sapi_context, ctx->keyHandle, NULL,
             &ctx->msgHash, &ctx->signature, &validation, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_VerifySignature failed, error code: 0x%x\n", rval);
+        LOG_ERR("Tss2_Sys_VerifySignature failed, error code: 0x%x", rval);
         return false;
     }
 
@@ -199,7 +199,7 @@ static bool init(tpm2_verifysig_ctx *ctx) {
         int rc = tpm_hash_compute_data(ctx->sapi_context, msg->buffer, msg->size,
                 ctx->halg, &ctx->msgHash);
         if (rc) {
-            LOG_ERR("Compute message hash failed!\n");
+            LOG_ERR("Compute message hash failed!");
             goto err;
         }
     }
@@ -285,10 +285,10 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             ctx->flags.key_context = 1;
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             break;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             break;
             /* no default */
         }

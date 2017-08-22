@@ -196,7 +196,7 @@ append_arg_to_vector (int*  argc,
     if (new_argv != NULL) {
         new_argv[*argc - 1] = arg_string;
     } else {
-        LOG_ERR("Failed to realloc new_argv to append string %s: %s\n",
+        LOG_ERR("Failed to realloc new_argv to append string %s: %s",
                 arg_string,
                 strerror (errno));
     }

@@ -274,7 +274,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
         case 'H':
             result = tpm2_util_string_to_uint32(optarg, &ctx->persistent_handle);
             if (!result) {
-                LOG_ERR("Could not convert EK persistent from hex format.\n");
+                LOG_ERR("Could not convert EK persistent from hex format.");
                 return false;
             }
             break;
@@ -324,13 +324,13 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
             ctx->is_session_based_auth = true;
             break;
         case ':':
-            LOG_ERR("Argument %c needs a value!\n", optopt);
+            LOG_ERR("Argument %c needs a value!", optopt);
             return false;
         case '?':
-            LOG_ERR("Unknown Argument: %c\n", optopt);
+            LOG_ERR("Unknown Argument: %c", optopt);
             return false;
         default:
-            LOG_ERR("?? getopt returned character code 0%o ??\n", opt);
+            LOG_ERR("?? getopt returned character code 0%o ??", opt);
         }
 
     }
