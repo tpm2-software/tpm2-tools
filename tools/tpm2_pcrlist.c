@@ -231,7 +231,7 @@ static bool show_pcr_values(listpcr_context *context) {
         const char *alg_name = tpm2_alg_util_algtostr(
                 context->pcr_selections.pcrSelections[i].hash);
 
-        printf("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
+        TOOL_OUTPUT("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
                 context->pcr_selections.pcrSelections[i].hash);
 
         UINT32 pcr_id;
@@ -245,11 +245,11 @@ static bool show_pcr_values(listpcr_context *context) {
                 return false;
             }
 
-            printf("PCR_%02d:", pcr_id);
+            TOOL_OUTPUT("PCR_%02d:", pcr_id);
             int k;
             for (k = 0; k < context->pcrs.pcr_values[vi].digests[di].t.size; k++)
-                printf(" %02x", context->pcrs.pcr_values[vi].digests[di].t.buffer[k]);
-            printf("\n");
+                TOOL_OUTPUT(" %02x", context->pcrs.pcr_values[vi].digests[di].t.buffer[k]);
+            TOOL_OUTPUT("\n");
 
             if (context->output_file != NULL
                     && fwrite(context->pcrs.pcr_values[vi].digests[di].t.buffer,
@@ -330,13 +330,13 @@ static bool get_banks(listpcr_context *context) {
 
 static void show_banks(tpm2_algorithm *g_banks) {
 
-    printf("Supported Bank/Algorithm:");
+    TOOL_OUTPUT("Supported Bank/Algorithm:");
     int i;
     for (i = 0; i < g_banks->count; i++) {
         const char *alg_name = tpm2_alg_util_algtostr(g_banks->alg[i]);
-        printf(" %s(0x%04x)", alg_name, g_banks->alg[i]);
+        TOOL_OUTPUT(" %s(0x%04x)", alg_name, g_banks->alg[i]);
     }
-    printf("\n");
+    TOOL_OUTPUT("\n");
 }
 
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
@@ -390,7 +390,6 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
                         optarg, strerror(errno));
                 goto error;
             }
-            /* XXX Should o option only print to output file and nothing to stdout? */
             break;
         case 'L':
             if (!pcr_parse_selections(optarg, &context.pcr_selections)) {
