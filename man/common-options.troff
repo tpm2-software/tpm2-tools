@@ -11,4 +11,9 @@ Display version information for this tool.
 .TP
 \fB\-V,\ \-\-verbose\fR
 Increase the information that the tool prints to the console during its
-execution.
+execution. When using this option the file and line number are printed.
+.TP
+.TP
+\fB\-Q,\ \-\-quiet\fR
+Decrease the information that the tool prints to the console during its
+execution. With this option the tools output messages are not printed.
