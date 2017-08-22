@@ -72,7 +72,7 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, bo
         inPublic->t.publicArea.nameAlg = nameAlg;
         break;
     default:
-        printf("nameAlg algrithm: 0x%0x not support !\n", nameAlg);
+        LOG_ERR("nameAlg algrithm: 0x%0x not support !", nameAlg);
         return -1;
     }
 
@@ -124,7 +124,7 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, bo
         break;
 
     default:
-        printf("type algrithm: 0x%0x not support !\n",type);
+        LOG_ERR("type algrithm: 0x%0x not support !", type);
         return -2;
     }
     return 0;
@@ -168,10 +168,10 @@ int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy,
     rval = Tss2_Sys_CreatePrimary(sysContext, hierarchy, &sessionsData, inSensitive, inPublic,  &outsideInfo, &creationPCR, &handle2048rsa, &outPublic, &creationData, &creationHash, &creationTicket, &name, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\nCreatePrimary Failed ! ErrorCode: 0x%0x\n\n",rval);
+        LOG_ERR("\nCreatePrimary Failed ! ErrorCode: 0x%0x\n", rval);
         return -2;
     }
-    printf("\nCreatePrimary Succeed ! Handle: 0x%8.8x\n\n",handle2048rsa);
+    TOOL_OUTPUT("\nCreatePrimary Succeed ! Handle: 0x%8.8x\n\n", handle2048rsa);
     return 0;
 }
 
@@ -260,7 +260,7 @@ execute_tool (int               argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            printf("nameAlg = 0x%4.4x\n", nameAlg);
+            TOOL_OUTPUT("nameAlg = 0x%4.4x\n", nameAlg);
             g_flag = 1;
             break;
         case 'G':
@@ -270,7 +270,7 @@ execute_tool (int               argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            printf("type = 0x%4.4x\n", type);
+            TOOL_OUTPUT("type = 0x%4.4x\n", type);
             G_flag = 1;
             break;
         case 'C':
@@ -279,7 +279,7 @@ execute_tool (int               argc,
             {
                 return 1;
             }
-            printf("contextFile = %s\n", contextFile);
+            TOOL_OUTPUT("contextFile = %s\n", contextFile);
             C_flag = 1;
             break;
         case 'L':
