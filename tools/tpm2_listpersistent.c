@@ -45,8 +45,6 @@
 #include "options.h"
 #include "tpm2_util.h"
 
-int debugLevel = 0;
-
 int readPublic(TSS2_SYS_CONTEXT *sapi_context,
                TPMI_DH_OBJECT    objectHandle)
 {
