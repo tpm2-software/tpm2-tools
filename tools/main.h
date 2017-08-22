@@ -32,7 +32,10 @@
 #define MAIN_H
 
 #include <sapi/tpm20.h>
+#include <stdbool.h>
 #include "options.h"
+
+extern bool output_enabled;
 
 int
 execute_tool (int              argc,
@@ -40,5 +43,26 @@ execute_tool (int              argc,
               char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context);
+
+/*
+ * Prints output messages if not disabled. Output messages are what tools prints
+ * to the standard output during normal execution.
+ */
+#define TOOL_OUTPUT(fmt, ...)                   \
+    do {                                        \
+        if (output_enabled) {                   \
+            printf(fmt, ##__VA_ARGS__);         \
+        }                                       \
+    } while (0)
+
+static inline void enable_output(void)
+{
+    output_enabled = true;
+}
+
+static inline void disable_output(void)
+{
+    output_enabled = false;
+}
 
 #endif /* MAIN_H */
