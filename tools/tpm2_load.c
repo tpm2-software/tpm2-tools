@@ -91,10 +91,10 @@ load (TSS2_SYS_CONTEXT *sapi_context,
                           &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\nLoad Object Failed ! ErrorCode: 0x%0x\n\n",rval);
+        LOG_ERR("\nLoad Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -1;
     }
-    printf("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
+    TOOL_OUTPUT("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
     /* TODO fix serialization */
     if(!files_save_bytes_to_file(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
@@ -159,7 +159,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            printf("\nparentHandle: 0x%x\n\n",parentHandle);
+            TOOL_OUTPUT("\nparentHandle: 0x%x\n\n",parentHandle);
             H_flag = 1;
             break;
         case 'P': {
@@ -200,7 +200,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            printf("contextParentFile = %s\n", contextParentFilePath);
+            TOOL_OUTPUT("contextParentFile = %s\n", contextParentFilePath);
             c_flag = 1;
             break;
         case 'C':
@@ -209,7 +209,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            printf("contextFile = %s\n", contextFile);
+            TOOL_OUTPUT("contextFile = %s\n", contextFile);
             C_flag = 1;
             break;
         case 'S':
