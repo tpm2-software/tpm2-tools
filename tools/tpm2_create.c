@@ -70,7 +70,7 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, in
         inPublic->t.publicArea.nameAlg = nameAlg;
         break;
     default:
-        printf("nameAlg algrithm: 0x%0x not support !\n", nameAlg);
+        LOG_ERR("nameAlg algrithm: 0x%0x not support !", nameAlg);
         return -1;
     }
 
@@ -132,7 +132,7 @@ int setAlg(TPMI_ALG_PUBLIC type,TPMI_ALG_HASH nameAlg,TPM2B_PUBLIC *inPublic, in
         break;
 
     default:
-        printf("type algrithm: 0x%0x not support !\n",type);
+        LOG_ERR("type algrithm: 0x%0x not support !",type);
         return -2;
     }
     return 0;
@@ -174,7 +174,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
 
     if(A_flag == 1)
         inPublic->t.publicArea.objectAttributes.val = objectAttributes;
-    printf("ObjectAttribute: 0x%08X\n",inPublic->t.publicArea.objectAttributes.val);
+    TOOL_OUTPUT("ObjectAttribute: 0x%08X\n",inPublic->t.publicArea.objectAttributes.val);
 
     creationPCR.count = 0;
 
@@ -183,10 +183,10 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
             &creationTicket, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\nCreate Object Failed ! ErrorCode: 0x%0x\n\n",rval);
+        LOG_ERR("\nCreate Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -2;
     }
-    printf("\nCreate Object Succeed !\n");
+    TOOL_OUTPUT("\nCreate Object Succeed !\n");
 
     /*
      * TODO These public and private serializations are not safe since its outputting size as well.
@@ -302,7 +302,7 @@ execute_tool (int              argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            printf("nameAlg = 0x%4.4x\n", nameAlg);
+            TOOL_OUTPUT("nameAlg = 0x%4.4x\n", nameAlg);
             g_flag = 1;
             break;
         case 'G':
@@ -312,7 +312,7 @@ execute_tool (int              argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            printf("type = 0x%4.4x\n", type);
+            TOOL_OUTPUT("type = 0x%4.4x\n", type);
             G_flag = 1;
             break;
         case 'A':
@@ -335,7 +335,7 @@ execute_tool (int              argc,
                 return 1;
             }
             I_flag = 1;
-            printf("inSensitive.t.sensitive.data.t.size = %d\n",inSensitive.t.sensitive.data.t.size);
+            TOOL_OUTPUT("inSensitive.t.sensitive.data.t.size = %d\n",inSensitive.t.sensitive.data.t.size);
             break;
         case 'L':
             inPublic.t.publicArea.authPolicy.t.size = sizeof(inPublic.t.publicArea.authPolicy) - 2;
@@ -377,7 +377,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            printf("contextParentFile = %s\n", contextParentFilePath);
+            TOOL_OUTPUT("contextParentFile = %s\n", contextParentFilePath);
             c_flag = 1;
             break;
         case ':':
