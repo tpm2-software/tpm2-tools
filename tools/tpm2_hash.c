@@ -133,7 +133,6 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
     static struct option long_options[] = {
         {"Hierachy", required_argument, NULL, 'H'},
         {"halg",     required_argument, NULL, 'g'},
-        {"infile",   required_argument, NULL, 'I'},
         {"outfile",  required_argument, NULL, 'o'},
         {"ticket",   required_argument, NULL, 't'},
         {NULL,       no_argument,       NULL, '\0'}
@@ -147,7 +146,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
     int opt;
     bool res;
     unsigned flags = 0;
-    while ((opt = getopt_long(argc, argv, "H:g:I:o:t:", long_options, NULL))
+    while ((opt = getopt_long(argc, argv, "H:g:o:t:", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'H':
@@ -162,15 +161,6 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             ctx->halg = tpm2_alg_util_from_optarg(optarg);
             if (ctx->halg == TPM_ALG_ERROR) {
                 showArgError(optarg, argv[0]);
-                return false;
-            }
-            break;
-        case 'I':
-            flags++;
-            ctx->input_file = fopen(optarg, "rb");
-            if (!ctx->input_file) {
-                LOG_ERR("Could not open input file \"%s\", error: %s",
-                        optarg, strerror(errno));
                 return false;
             }
             break;
@@ -203,8 +193,25 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
     }
 
     /* all flags must be specified */
-    if (flags != 5) {
+    if (flags != 4) {
         showArgMismatch(argv[0]);
+        return false;
+    }
+
+    int cnt = argc - optind;
+    if (cnt == 0) {
+        return true;
+    }
+
+    if (cnt > 1) {
+        LOG_ERR("Only supports one hash input file, got: %d", cnt);
+        return false;
+    }
+
+    ctx->input_file = fopen(argv[optind], "rb");
+    if (!ctx->input_file) {
+        LOG_ERR("Could not open input file \"%s\", error: %s",
+                argv[optind], strerror(errno));
         return false;
     }
 
@@ -220,7 +227,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     int rc = 1;
     tpm_hash_ctx ctx = {
-            .input_file = NULL,
+            .input_file = stdin,
             .sapi_context = sapi_context,
     };
 

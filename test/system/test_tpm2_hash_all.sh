@@ -46,7 +46,7 @@ do
 	for halg in sha1 sha256 sha384 sha512 sm3_256
 	do
 	
-	tpm2_hash -H $Hierarchy -g $halg -I hash.in -o hash_out_"$Hierarchy"_"$halg" -t hash_tk_"$Hierarchy"_"$halg"
+	tpm2_hash -H $Hierarchy -g $halg -o hash_out_"$Hierarchy"_"$halg" -t hash_tk_"$Hierarchy"_"$halg" hash.in
 	if [ $? != 0 ];then
 	    echo "hash for hash_out_"$Hierarchy"_"$halg" fail, please check the environment or parameters!"
 	 else

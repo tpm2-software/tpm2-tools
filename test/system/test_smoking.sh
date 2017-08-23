@@ -98,7 +98,7 @@ tpm2_getrandom -o random.out 20
 	fail getrandom 
   fi
 
-tpm2_hash -H n -g 0x004 -I random.out -o hash.out -t hash_tk.out
+tpm2_hash -H n -g 0x004 -o hash.out -t hash_tk.out random.out
   if [ $? != 0 ];then
 	fail hash
   fi
