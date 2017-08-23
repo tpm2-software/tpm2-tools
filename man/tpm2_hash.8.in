@@ -33,12 +33,12 @@ results of the hash will be used in a signing operation that uses a restricted
 signing key, then the ticket returned by this command can indicate that the
 hash is safe to sign.
 .SH SYNOPSIS
-.B tpm2_hash[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-hierarchy\fR|\fB\-\-halg\fR|\fB\-\-infile\fR|\fB\-\-outfile\fR|\fB\-\-ticket\fR|\fB ]
+.B tpm2_hash[ COMMON OPTIONS ] [ TCTI OPTIONS ] [ \fB\-\-hierarchy\fR|\fB\-\-halg\fR|\fB\-\-outfile\fR|\fB\-\-ticket\fR|\fB ] FILE
 .PP
-performs a hash operation on a data buffer and returns the results. If the
+performs a hash operation on a FILE and returns the results. If the
 results of the hash will be used in a signing operation that uses a restricted
 signing key, then the ticket returned by this command can indicate that the
-hash is safe to sign.
+hash is safe to sign. It defaults to stdin if no FILE is specified.
 .SH DESCRIPTION
 .B tpm2_hash
 performs a hash operation on a data buffer and returns the results. If the
@@ -54,9 +54,6 @@ hierarchy to use for the ticket  e TPM_RH_ENDORSEMENT   o TPM_RH_OWNER   p TPM_R
 The hash algorithm to use.
 @ALG_COMMON_INCLUDE@
 @HASH_ALG_COMMON_INCLUDE@
-.TP
-\fB\-I ,\-\-infile\fR
-file containning the data to be hashed
 .TP
 \fB\-o ,\-\-outfile\fR
 file record the hash result

@@ -93,7 +93,7 @@ if [ $? != 0 ];then
 fi
 
 #./tpm2_hash -H n -g 0x00B -I secret.data -o hash.f.01 -t hash.tk.f.01
-tpm2_hash -H n -g $alg_hash -I $file_input_data -o $file_input_data_hash -t $file_input_data_hash_tk
+tpm2_hash -H n -g $alg_hash -o $file_input_data_hash -t $file_input_data_hash_tk $file_input_data
 
 if [ ! -e "$file_input_data_hash" ];then    
  echo "hash $file_input_data Fail!"

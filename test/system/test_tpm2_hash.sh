@@ -32,24 +32,71 @@
 #!/bin/sh
 
 #this script is for hash case testing 
-halg=sha256
-Hierarchy=e
 
-rm -f  hash_out_"$Hierarchy"_"$halg" hash_tk_"$Hierarchy"_"$halg" 
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+trap onerror ERR
 
-if [ ! -f hash.in ];then
-echo "T0naX0u123abc" >hash.in
+ticket_file=ticket.out
+hash_out_file=hash.out
+hash_in_file=hash.in
+
+cleanup() {
+  rm -f $ticket_file $hash_out_file $hash_in_file
+}
+trap cleanup EXIT
+
+cleanup
+
+echo "T0naX0u123abc" > $hash_in_file
+
+# Test with ticket and hash output files and verify that the output hash
+# is correct. Ticket is not stable and changes run to run, don't verify it.
+tpm2_hash -H e -g sha1 -o $hash_out_file -t $ticket_file $hash_in_file 1>/dev/null
+
+sha256sum --quiet --check << HASH_CHECK_INPUT_FILE
+5bf1fc83edf7b8e00ec7d4f9e9be079eaab03b20ba6be8f5e6ee3555c8cb3a5c  hash.out
+HASH_CHECK_INPUT_FILE
+
+cleanup
+
+# Test platform hierarchy with multiple files and verify output against sha256sum
+# Test a file redirection as well.
+echo "T0naX0u123abc" > $hash_in_file
+tpm2_hash -H p -g sha256 -Q -o $hash_out_file -t $ticket_file < $hash_in_file
+
+sha256sum --quiet --check << HASH_CHECK_INPUT_FILE
+7e935893ff3ba95373127db1588f37950c70752fd8b07ee643c7f4c2acf896ea  hash.out
+HASH_CHECK_INPUT_FILE
+
+cleanup
+
+# Test stdout output.
+# Validate that hash outputs are as expected.
+tpm_hash_val=`echo 1234 | tpm2_hash -H p -g sha1 -o $hash_out_file -t $ticket_file | grep hash | cut -d\: -f 2-2 | tr -d '[:space:]'`
+sha1sum_val=`echo 1234 | sha1sum  | cut -d\  -f 1-2 | tr -d '[:space:]'`
+if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
+  echo "Expected tpm and sha1sum to produce same hashes."
+  echo "Got:"
+  echo "  tpm2_hash: $tpm_hash_val"
+  echo "  sha1sum:   $sha1sum_val"
+  exit 1
 fi
 
-	
-tpm2_hash -H $Hierarchy -g $halg -I hash.in -o hash_out_"$Hierarchy"_"$halg" -t hash_tk_"$Hierarchy"_"$halg"
-if [ $? != 0 ];then
-	    echo "hash forHierarchy:"$Hierarchy"halg:"$halg" fail, please check the environment or parameters!"
-		exit 1
-else
-	    echo "hash for Hierarchy:"$Hierarchy"halg:"$halg" succed"
+cleanup
+
+# Test a file that cannot be done in 1 update call. The tpm works on a 1024 block size.
+dd if=/dev/urandom of=$hash_in_file bs=2093 count=1 2>/dev/null
+tpm_hash_val=`tpm2_hash -H p -g sha1 -o $hash_out_file -t $ticket_file $hash_in_file | grep hash | cut -d\: -f 2-2 | tr -d '[:space:]'`
+sha1sum_val=`sha1sum $hash_in_file | cut -d\  -f 1-2 | tr -d '[:space:]'`
+if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
+  echo "Expected tpm and sha1sum to produce same hashes"
+  echo "Got:"
+  echo "  tpm2_hash: $tpm_hash_val"
+  echo "  sha1sum:   $sha1sum_val"
+  exit 1
 fi
-	
 
-
-
+exit 0
