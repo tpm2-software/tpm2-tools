@@ -32,7 +32,7 @@ bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
  * @param size
  *  The size of the buffer to read into.
  * @param path
- *  A path used for error reporting.
+ *  An optional path for error reporting. A NULL path disables error logging.
  * @return
  *  True on success, False otherwise.
  */
@@ -127,7 +127,7 @@ bool files_get_file_size_path(const char *path, unsigned long *file_size);
  * @param file_size
  *  Output of the file size.
  * @param path
- *  A path used for error reporting.
+ *  An optional path used for error reporting, a NULL path disables error logging.
  * @return
  *  True on success, False otherwise.
  */
