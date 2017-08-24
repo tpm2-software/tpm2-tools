@@ -85,6 +85,15 @@ if [ $? != 0 ];then
 	fail hmac 
 fi
 
+rm -f $file_hmac_output
+
+# Test large file, ie sequence hmac'ing.
+dd if=/dev/urandom of=$file_input_data bs=2093 count=1 2>/dev/null
+tpm2_hmac  -c $file_hmac_key_ctx  -g $halg -I $file_input_data -o $file_hmac_output
+if [ $? != 0 ];then
+	fail hmac
+fi
+
 ####handle test
 rm -f $file_hmac_output  
 tpm2_evictcontrol -A o -c $file_hmac_key_ctx -S $handle_hmac_key |tee evict.log

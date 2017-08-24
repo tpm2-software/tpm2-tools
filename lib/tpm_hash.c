@@ -8,7 +8,7 @@
 #include "tpm_hash.h"
 #include "tpm2_util.h"
 
-#define TSS2_APP_HASH_RC_FAILED (0x1 + 0x100 + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_HMAC_RC_FAILED (0x1 + 0x100 + TSS2_APP_ERROR_LEVEL)
 
 TPM_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
@@ -18,7 +18,7 @@ TPM_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
     if (!mem) {
         LOG_ERR("Error converting buffer to memory stream: %s",
                 strerror(errno));
-        return TSS2_APP_HASH_RC_FAILED;
+        return TSS2_APP_HMAC_RC_FAILED;
     }
 
     return tpm_hash_file(sapi_context, halg, hierarchy, mem, result, validation);
@@ -82,7 +82,7 @@ TPM_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         res = files_read_bytes(input, buffer.t.buffer, buffer.t.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
-            return TSS2_APP_HASH_RC_FAILED;
+            return TSS2_APP_HMAC_RC_FAILED;
         }
 
         return Tss2_Sys_Hash(sapi_context, NULL, &buffer, halg,
@@ -116,7 +116,7 @@ TPM_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
-            return TSS2_APP_HASH_RC_FAILED;
+            return TSS2_APP_HMAC_RC_FAILED;
         }
 
         data.t.size = bytes_read;
@@ -144,7 +144,7 @@ TPM_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         bool res = files_read_bytes(input, data.t.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
-            return TSS2_APP_HASH_RC_FAILED;
+            return TSS2_APP_HMAC_RC_FAILED;
         }
     } else {
         data.t.size = 0;

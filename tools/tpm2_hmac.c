@@ -29,6 +29,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -52,19 +53,19 @@ struct tpm_hmac_ctx {
     TPMI_DH_OBJECT key_handle;
     TPMI_ALG_HASH algorithm;
     char *hmac_output_file_path;
-    TPM2B_MAX_BUFFER data;
+    FILE *input;
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
-static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
+#define TSS2_APP_HMAC_RC_FAILED (0x42 + 0x100 + TSS2_APP_ERROR_LEVEL)
+
+TPM_RC tpm_hmac_file(tpm_hmac_ctx *ctx, TPM2B_DIGEST *result) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
-
-    TPM2B_DIGEST hmac_out = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     session_data_array[0] = &ctx->session_data;
     session_data_out_array[0] = &session_data_out;
@@ -75,12 +76,106 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_HMAC(ctx->sapi_context, ctx->key_handle,
-            &sessions_data, &ctx->data, ctx->algorithm, &hmac_out,
-            &sessions_data_out);
+    unsigned long file_size = 0;
+
+    FILE *input = ctx->input;
+
+    /* Suppress error reporting with NULL path */
+    bool res = files_get_file_size(input, &file_size, NULL);
+
+    /* If we can get the file size and its less than 1024, just do it in one hash invocation */
+    if (res && file_size <= MAX_DIGEST_BUFFER) {
+
+        TPM2B_MAX_BUFFER buffer = { .t = { .size = file_size }, };
+
+        res = files_read_bytes(ctx->input, buffer.t.buffer, buffer.t.size);
+        if (!res) {
+            LOG_ERR("Error reading input file!");
+            return TSS2_APP_HMAC_RC_FAILED;
+        }
+
+        return Tss2_Sys_HMAC(ctx->sapi_context, ctx->key_handle,
+                &sessions_data, &buffer, ctx->algorithm, result,
+                &sessions_data_out);
+    }
+
+    TPM2B_AUTH null_auth = { .t.size = 0 };
+    TPMI_DH_OBJECT sequence_handle;
+
+    /*
+     * Size is either unknown because the FILE * is a fifo, or it's too big
+     * to do in a single hash call. Based on the size figure out the chunks
+     * to loop over, if possible. This way we can call Complete with data.
+     */
+    TPM_RC rval = Tss2_Sys_HMAC_Start(ctx->sapi_context, ctx->key_handle, &sessions_data,
+            &null_auth, ctx->algorithm, &sequence_handle, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("TPM2_HMAC Error. TPM Error:0x%x", rval);
-        return -1;
+        LOG_ERR("Tss2_Sys_HMAC_Start failed: 0x%X", rval);
+        return rval;
+    }
+
+    /* If we know the file size, we decrement the amount read and terminate the loop
+     * when 1 block is left, else we go till feof.
+     */
+    size_t left = file_size;
+    bool use_left = !!res;
+
+    TPM2B_MAX_BUFFER data;
+
+    bool done = false;
+    while (!done) {
+
+        size_t bytes_read = fread(data.t.buffer, 1,
+                BUFFER_SIZE(typeof(data), buffer), input);
+        if (ferror(input)) {
+            LOG_ERR("Error reading from input file");
+            return TSS2_APP_HMAC_RC_FAILED;
+        }
+
+        data.t.size = bytes_read;
+
+        /* if data was read, update the sequence */
+        rval = Tss2_Sys_SequenceUpdate(ctx->sapi_context, sequence_handle,
+                &sessions_data, &data, &sessions_data_out);
+        if (rval != TPM_RC_SUCCESS) {
+            return rval;
+        }
+
+        if (use_left) {
+            left -= bytes_read;
+            if (left <= MAX_DIGEST_BUFFER) {
+                done = true;
+                continue;
+            }
+        } else if (feof(input)) {
+            done = true;
+        }
+    } /* end file read/hash update loop */
+
+    if (use_left) {
+        data.t.size = left;
+        bool res = files_read_bytes(input, data.t.buffer, left);
+        if (!res) {
+            LOG_ERR("Error reading from input file.");
+            return TSS2_APP_HMAC_RC_FAILED;
+        }
+    } else {
+        data.t.size = 0;
+    }
+
+    return Tss2_Sys_SequenceComplete(ctx->sapi_context, sequence_handle,
+            &sessions_data, &data, TPM_RH_NULL, result, NULL,
+            &sessions_data_out);
+}
+
+
+static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
+
+    TPM2B_DIGEST hmac_out = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+    TPM_RC rval = tpm_hmac_file(ctx, &hmac_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("tpm_hmac_file() failed: 0x%X", rval);
+        return false;
     }
 
     printf("\nhmac value(hex type): ");
@@ -166,10 +261,10 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             flags.g = 1;
             break;
         case 'I':
-            ctx->data.t.size = BUFFER_SIZE(TPM2B_MAX_BUFFER, buffer);
-            result = files_load_bytes_from_path(optarg, ctx->data.t.buffer,
-                    &ctx->data.t.size);
-            if (!result) {
+            ctx->input = fopen(optarg, "rb");
+            if (!ctx->input) {
+                LOG_ERR("Error opening file \"%s\", error: %s", optarg,
+                        strerror(errno));
                 return false;
             }
             flags.I = 1;
@@ -236,16 +331,29 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void)opts;
     (void)envp;
 
+    int rc = 1;
+
     tpm_hmac_ctx ctx = {
             .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
             .key_handle = 0,
+            .input = NULL,
             .sapi_context = sapi_context,
     };
 
     bool result = init(argc, argv, &ctx);
     if (!result) {
-        return 1;
+        goto out;
     }
 
-    return do_hmac_and_output(&ctx) != true;
+    result = do_hmac_and_output(&ctx);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+ out:
+     if (ctx.input) {
+         fclose(ctx.input);
+     }
+     return rc;
 }
