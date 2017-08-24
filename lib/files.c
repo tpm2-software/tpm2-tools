@@ -11,25 +11,33 @@ bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
 
     long current = ftell(fp);
     if (current < 0) {
-        LOG_ERR("Error getting current file offset for file \"%s\" error: %s", path, strerror(errno));
+        if (path) {
+            LOG_ERR("Error getting current file offset for file \"%s\" error: %s", path, strerror(errno));
+        }
         return false;
     }
 
     int rc = fseek(fp, 0, SEEK_END);
     if (rc < 0) {
-        LOG_ERR("Error seeking to end of file \"%s\" error: %s", path, strerror(errno));
+        if (path) {
+            LOG_ERR("Error seeking to end of file \"%s\" error: %s", path, strerror(errno));
+        }
         return false;
     }
 
     long size = ftell(fp);
     if (size < 0) {
-        LOG_ERR("ftell on file \"%s\" failed: %s", path, strerror(errno));
+        if (path) {
+            LOG_ERR("ftell on file \"%s\" failed: %s", path, strerror(errno));
+        }
         return false;
     }
 
     rc = fseek(fp, current, SEEK_SET);
     if (rc < 0) {
-        LOG_ERR("Could not restore initial stream position for file \"%s\" failed: %s", path, strerror(errno));
+        if (path) {
+            LOG_ERR("Could not restore initial stream position for file \"%s\" failed: %s", path, strerror(errno));
+        }
         return false;
     }
 
@@ -49,15 +57,19 @@ static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
 
     /* max is bounded on UINT16 */
     if (file_size > *size) {
-        LOG_ERR(
-                "File \"%s\" size is larger than buffer, got %lu expected less than %u",
-                path, file_size, *size);
+        if (path) {
+            LOG_ERR(
+                    "File \"%s\" size is larger than buffer, got %lu expected less than %u",
+                    path, file_size, *size);
+        }
         return false;
     }
 
     result = files_read_bytes(f, buf, file_size);
     if (!result) {
-        LOG_ERR("Could not read data from file \"%s\"", path);
+        if (path) {
+            LOG_ERR("Could not read data from file \"%s\"", path);
+        }
         return false;
     }
 
