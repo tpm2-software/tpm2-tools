@@ -74,6 +74,12 @@ the ticket file, containning the validation  structure, optional
 \fB\-s ,\-\-sig\fR
 the signature file, record the signature structure
 .TP
+\fB\-r ,\-\-plain-sig\fR
+like -s but here only the plain signature data will be stored. This can be
+used by other tools like
+.RB openssl (1)
+for verification.
+.TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@

@@ -54,6 +54,7 @@ struct tpm_sign_ctx {
     TPMI_DH_OBJECT keyHandle;
     TPMI_ALG_HASH halg;
     char *outFilePath;
+    char *outPlainFilePath;
     BYTE *msg;
     UINT16 length;
     TSS2_SYS_CONTEXT *sapi_context;
@@ -166,20 +167,33 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
         return false;
     }
 
+    if (ctx->outPlainFilePath) {
+        UINT8 *buffer;
+        UINT16 size;
+        result = tpm2_extract_plain_signature(&buffer, &size, &signature);
+        if (result) {
+            result = files_save_bytes_to_file(ctx->outPlainFilePath, buffer, size);
+            free(buffer);
+        }
+    }
+
     /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &signature,
-            sizeof(signature));
+    result = files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &signature,
+            sizeof(signature)) && result;
+
+    return result;
 }
 
 static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
 
-    static const char *optstring = "k:P:g:m:t:s:c:S:";
+    static const char *optstring = "k:P:g:m:t:s:c:S:r:";
     static const struct option long_options[] = {
       {"keyHandle",1,NULL,'k'},
       {"pwdk",1,NULL,'P'},
       {"halg",1,NULL,'g'},
       {"msg",1,NULL,'m'},
       {"sig",1,NULL,'s'},
+      {"plainSig",1,NULL,'r'},
       {"ticket",1,NULL,'t'},
       {"keyContext",1,NULL,'c'},
       {"input-session-handle",1,NULL, 'S' },
@@ -200,7 +214,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             UINT8 t : 1;
             UINT8 s : 1;
             UINT8 c : 1;
-            UINT8 unused : 1;
+            UINT8 r : 1;
         };
         UINT8 all;
     } flags = { .all = 0 };
@@ -260,6 +274,15 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             }
             ctx->outFilePath = optarg;
             flags.s = 1;
+        }
+            break;
+        case 'r': {
+            bool result = files_does_file_exist(optarg);
+            if (result) {
+                return false;
+            }
+            ctx->outPlainFilePath = optarg;
+            flags.r = 1;
         }
             break;
         case 'c':
@@ -355,7 +378,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .halg = TPM_ALG_SHA1,
             .keyHandle = 0,
             .validation = TPMT_TK_HASHCHECK_EMPTY_INIT,
-            .sapi_context = sapi_context
+            .sapi_context = sapi_context,
+            .outPlainFilePath = NULL
     };
 
     ctx.sessionData.sessionHandle = TPM_RS_PW;
