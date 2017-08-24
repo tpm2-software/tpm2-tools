@@ -69,7 +69,7 @@ specifies the handle of EK (hex).
 specifies the handle used to make AK  persistent (hex). 
 .TP
 -\fB\-g ,\-\-alg\fR
--specifies the algorithm type of AK.
+specifies the algorithm type of AK.
 @ALG_COMMON_INCLUDE@
 @OBJECT_ALG_COMMON_INCLUDE@
 .TP
@@ -82,13 +82,17 @@ Like -g, but specifies the algorithm of sign.
 @SIGN_ALG_COMMON_INCLUDE@
 .TP
 \fB\-f ,\-\-file\fR
-specifies the file used to save the public  portion of AK. 
+specifies the file used to save the public  portion of AK. This will be a
+binary data structure corresponding to the TPM2B_PUBLIC struct in the
+specification.
 .TP
 \fB\-n ,\-\-akName\fR
 specifies the file used to save the ak name.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
+.SH NOTES
+@ALG_NOTES_COMMON_INCLUDE@
 .SH EXAMPLES
 .B tpm2_getpubak
 .PP
