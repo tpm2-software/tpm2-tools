@@ -123,8 +123,8 @@ TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     // Calculate hashes
     TPM2B_DIGEST pcr_digest =  TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     rval = tpm_hash_sequence(sapi_context,
-        policy_session->authHash, pcr_values.count,
-        &pcr_values.digests[0], &pcr_digest);
+        policy_session->authHash, TPM_RH_NULL, pcr_values.count,
+        pcr_values.digests, &pcr_digest, NULL);
     if (rval != TPM_RC_SUCCESS) {
         return rval;
     }
