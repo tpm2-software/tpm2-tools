@@ -73,9 +73,9 @@ HASH_CHECK_INPUT_FILE
 
 cleanup
 
-# Test stdout output.
+# Test stdout output as well as no options.
 # Validate that hash outputs are as expected.
-tpm_hash_val=`echo 1234 | tpm2_hash -H p -g sha1 -o $hash_out_file -t $ticket_file | grep hash | cut -d\: -f 2-2 | tr -d '[:space:]'`
+tpm_hash_val=`echo 1234 | tpm2_hash | grep hash | cut -d\: -f 2-2 | tr -d '[:space:]'`
 sha1sum_val=`echo 1234 | sha1sum  | cut -d\  -f 1-2 | tr -d '[:space:]'`
 if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
   echo "Expected tpm and sha1sum to produce same hashes."
@@ -85,11 +85,9 @@ if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
   exit 1
 fi
 
-cleanup
-
 # Test a file that cannot be done in 1 update call. The tpm works on a 1024 block size.
 dd if=/dev/urandom of=$hash_in_file bs=2093 count=1 2>/dev/null
-tpm_hash_val=`tpm2_hash -H p -g sha1 -o $hash_out_file -t $ticket_file $hash_in_file | grep hash | cut -d\: -f 2-2 | tr -d '[:space:]'`
+tpm_hash_val=`tpm2_hash $hash_in_file | grep hash | cut -d\: -f 2-2 | tr -d '[:space:]'`
 sha1sum_val=`sha1sum $hash_in_file | cut -d\  -f 1-2 | tr -d '[:space:]'`
 if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
   echo "Expected tpm and sha1sum to produce same hashes"

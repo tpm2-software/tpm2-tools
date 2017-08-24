@@ -116,48 +116,44 @@ static bool hash_and_save(tpm_hash_ctx *ctx) {
         TOOL_OUTPUT("\n");
     }
 
-    /* TODO fix serialization */
-    bool result = files_save_bytes_to_file(ctx->outHashFilePath, (UINT8 *) &outHash,
-            sizeof(outHash));
-    if (!result) {
-        return false;
+    if (ctx->outHashFilePath) {
+        bool result = files_save_bytes_to_file(ctx->outHashFilePath, (UINT8 *) &outHash,
+                sizeof(outHash));
+        if (!result) {
+            return false;
+        }
     }
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx->outTicketFilePath, (UINT8 *) &validation,
-            sizeof(validation));
+    if (ctx->outTicketFilePath) {
+        return files_save_bytes_to_file(ctx->outTicketFilePath, (UINT8 *) &validation,
+                sizeof(validation));
+    }
+
+    return true;
 }
 
 static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
 
     static struct option long_options[] = {
-        {"Hierachy", required_argument, NULL, 'H'},
+        {"hierachy", required_argument, NULL, 'H'},
         {"halg",     required_argument, NULL, 'g'},
         {"outfile",  required_argument, NULL, 'o'},
         {"ticket",   required_argument, NULL, 't'},
         {NULL,       no_argument,       NULL, '\0'}
     };
 
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
     int opt;
     bool res;
-    unsigned flags = 0;
     while ((opt = getopt_long(argc, argv, "H:g:o:t:", long_options, NULL))
             != -1) {
         switch (opt) {
         case 'H':
-            flags++;
             res = get_hierarchy_value(optarg, &ctx->hierarchyValue);
             if (!res) {
                 return false;
             }
             break;
         case 'g':
-            flags++;
             ctx->halg = tpm2_alg_util_from_optarg(optarg);
             if (ctx->halg == TPM_ALG_ERROR) {
                 showArgError(optarg, argv[0]);
@@ -165,20 +161,10 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             }
             break;
         case 'o':
-            flags++;
             ctx->outHashFilePath = optarg;
-            res = files_does_file_exist(ctx->outHashFilePath);
-            if (res) {
-                return false;
-            }
             break;
         case 't':
-            flags++;
             ctx->outTicketFilePath = optarg;
-            res = files_does_file_exist(ctx->outTicketFilePath);
-            if (res) {
-                return false;
-            }
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!", optopt);
@@ -190,12 +176,6 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return false;
         }
-    }
-
-    /* all flags must be specified */
-    if (flags != 4) {
-        showArgMismatch(argv[0]);
-        return false;
     }
 
     int cnt = argc - optind;
@@ -227,7 +207,11 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     int rc = 1;
     tpm_hash_ctx ctx = {
+            .outHashFilePath = NULL,
+            .outTicketFilePath = NULL,
             .input_file = stdin,
+            .hierarchyValue = TPM_RH_NULL,
+            .halg = TPM_ALG_SHA1,
             .sapi_context = sapi_context,
     };
 
