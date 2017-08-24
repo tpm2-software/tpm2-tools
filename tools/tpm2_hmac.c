@@ -196,13 +196,12 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     bool result = false;
     char *contextKeyFile = NULL;
 
-    const char *optstring = "k:P:g:I:o:S:c:";
+    const char *optstring = "k:P:g:o:S:c:";
     static struct option long_options[] = {
         {"keyHandle",   required_argument, NULL, 'k'},
         {"keyContext",  required_argument, NULL, 'c'},
         {"pwdk",        required_argument, NULL, 'P'},
         {"algorithm",   required_argument, NULL, 'g'},
-        {"infile",      required_argument, NULL, 'I'},
         {"outfile",     required_argument, NULL, 'o'},
         {"input-session-handle",1,         NULL, 'S'},
         {NULL,          no_argument,       NULL, '\0'}
@@ -213,10 +212,9 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             UINT8 k : 1;
             UINT8 P : 1;
             UINT8 g : 1;
-            UINT8 I : 1;
             UINT8 o : 1;
             UINT8 c : 1;
-            UINT8 unused : 2;
+            UINT8 unused : 3;
         };
         UINT8 all;
     } flags = { .all = 0 };
@@ -260,15 +258,6 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             }
             flags.g = 1;
             break;
-        case 'I':
-            ctx->input = fopen(optarg, "rb");
-            if (!ctx->input) {
-                LOG_ERR("Error opening file \"%s\", error: %s", optarg,
-                        strerror(errno));
-                return false;
-            }
-            flags.I = 1;
-            break;
         case 'o':
             result = files_does_file_exist(optarg);
             if (result) {
@@ -307,8 +296,8 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     /*
      * Options g, I, o must be specified and k or c must be specified.
      */
-    if (!((flags.k || flags.c) && flags.I && flags.o && flags.g)) {
-        LOG_ERR("Must specify options g, i, o and k or c");
+    if (!((flags.k || flags.c) && flags.o && flags.g)) {
+        LOG_ERR("Must specify options g, o and k or c");
         return false;
     }
 
@@ -318,6 +307,21 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",
                     contextKeyFile);
+            return false;
+        }
+    }
+
+    int cnt = argc - optind;
+    if (cnt > 1) {
+        LOG_ERR("Expected 1 hmac input file, got: %d", cnt);
+        return false;
+    }
+
+    if (cnt) {
+        ctx->input = fopen(argv[optind], "rb");
+        if (!ctx->input) {
+            LOG_ERR("Error opening file \"%s\", error: %s", argv[optind],
+                    strerror(errno));
             return false;
         }
     }
@@ -336,7 +340,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     tpm_hmac_ctx ctx = {
             .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
             .key_handle = 0,
-            .input = NULL,
+            .input = stdin,
             .sapi_context = sapi_context,
     };
 
@@ -352,7 +356,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     rc = 0;
  out:
-     if (ctx.input) {
+     if (ctx.input && ctx.input != stdin) {
          fclose(ctx.input);
      }
      return rc;
