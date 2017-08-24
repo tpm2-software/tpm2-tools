@@ -98,16 +98,23 @@ static bool hash_and_save(tpm_hash_ctx *ctx) {
         return false;
     }
 
-    printf("\nhash value(hex type): ");
-    UINT16 i;
-    for (i = 0; i < outHash.t.size; i++)
-        printf("%02x ", outHash.t.buffer[i]);
-    printf("\n");
+    if (outHash.t.size) {
+        UINT16 i;
+        TOOL_OUTPUT("hash(%s):", tpm2_alg_util_algtostr(ctx->halg));
+        for (i = 0; i < outHash.t.size; i++) {
+            TOOL_OUTPUT("%02x", outHash.t.buffer[i]);
+        }
+        TOOL_OUTPUT("\n");
+    }
 
-    printf("\nvalidation value(hex type): ");
-    for (i = 0; i < validation.digest.t.size; i++)
-        printf("%02x ", validation.digest.t.buffer[i]);
-    printf("\n");
+    if (validation.digest.t.size) {
+        UINT16 i;
+        TOOL_OUTPUT("ticket:");
+        for (i = 0; i < validation.digest.t.size; i++) {
+            TOOL_OUTPUT("%02x", validation.digest.t.buffer[i]);
+        }
+        TOOL_OUTPUT("\n");
+    }
 
     /* TODO fix serialization */
     bool result = files_save_bytes_to_file(ctx->outHashFilePath, (UINT8 *) &outHash,
