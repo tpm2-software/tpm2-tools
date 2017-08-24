@@ -48,18 +48,20 @@ hash is safe to sign.
 .SH OPTIONS
 .TP
 \fB\-H ,\-\-hierarchy\fR
-hierarchy to use for the ticket  e TPM_RH_ENDORSEMENT   o TPM_RH_OWNER   p TPM_RH_PLATFORM   n TPM_RH_NULL
+hierarchy to use for the ticket. Optional, defaults to TPM_RH_NULL if not specified.
+.br
+e TPM_RH_ENDORSEMENT   o TPM_RH_OWNER   p TPM_RH_PLATFORM   n TPM_RH_NULL
 .TP
 \fB\-g ,\-\-halg\fR
-The hash algorithm to use.
+The hash algorithm to use. Optional, gefaults to sha1 if not specified.
 @ALG_COMMON_INCLUDE@
 @HASH_ALG_COMMON_INCLUDE@
 .TP
 \fB\-o ,\-\-outfile\fR
-file record the hash result
+file record the hash result, optional.
 .TP
 \fB\-t ,\-\-ticket\fR
-file record the ticket
+file record the ticket, optional.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
