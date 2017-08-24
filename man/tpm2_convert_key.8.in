@@ -1,0 +1,62 @@
+.\" Copyright (c) 2016, Intel Corporation
+.\" All rights reserved.
+.\"
+.\" Redistribution and use in source and binary forms, with or without
+.\" modification, are permitted provided that the following conditions are met:
+.\"
+.\" 1. Redistributions of source code must retain the above copyright notice,
+.\" this list of conditions and the following disclaimer.
+.\"
+.\" 2. Redistributions in binary form must reproduce the above copyright notice,
+.\" this list of conditions and the following disclaimer in the documentation
+.\" and/or other materials provided with the distribution.
+.\"
+.\" 3. Neither the name of Intel Corporation nor the names of its contributors
+.\" may be used to endorse or promote products derived from this software without
+.\" specific prior written permission.
+.\"
+.\" THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+.\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+.\" IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+.\" ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+.\" LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+.\" CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+.\" SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+.\" INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+.\" CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+.\" ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+.\" THE POSSIBILITY OF SUCH DAMAGE.
+.TH tpm2_convert_key 8 "August 2017" Intel "tpm2-tools"
+.SH NAME
+tpm2_convert_key\ - convert the public key data returned by
+.RB tpm2_akparse (8)
+into OpenSSL PEM or DER format.
+.SH SYNOPSIS
+.B tpm2_convert_key [ COMMON OPTIONS ] [ \fB\-f\fR|\fB\-k\fR|\fB\-t\fR ]
+.SH DESCRIPTION
+Reads the public key input file (-f) which is expected to be in the format
+created by
+.RB tpm2_akparse (8).
+Convert the public key into the requested format and write it to the public key
+output file (-k).
+.SH OPTIONS
+.TP
+\fB\-f\fR
+Specifies the input file containing the public key to be converted
+.TP
+\fB\-k\fR
+Specifies the file used to save the converted public key
+.TP
+\fB\-t\fR
+Specifies the target public key format; currently PEM for OpenSSL PEM format
+or DER for OpenSSL DER format
+@COMMON_OPTIONS_INCLUDE@
+.SH EXAMPLES
+.B tpm2_convert_key
+.PP
+.nf
+.RS
+tpm2_convert_key -t PEM -f ak.key -k ak.pem
+tpm2_convert_key -t DER -f ak.key -k ak.der
+.RE
+.fi

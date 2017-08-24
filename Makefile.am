@@ -261,7 +261,8 @@ man8_MANS = \
     man/man8/tpm2_rc_decode.8 \
     man/man8/tpm2_dictionarylockout.8 \
     man/man8/tpm2_createpolicy.8 \
-    man/man8/tpm2_pcrextend.8
+    man/man8/tpm2_pcrextend.8 \
+    man/man8/tpm2_convert_key.8
 
 MAN_DEPS := man/common-options.troff man/tcti-options.troff \
            man/tcti-environment.troff man/alg-common.troff \
