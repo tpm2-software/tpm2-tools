@@ -71,13 +71,17 @@ specifies the algorithm type of EK.
 @OBJECT_ALG_COMMON_INCLUDE@
 .TP
 \fB\-f ,\-\-file\fR
-specifies the file used to save the public  portion of EK. 
+specifies the file used to save the public  portion of EK. This will be a
+binary data structure corresponding to the TPM2B_PUBLIC struct in the
+specification.
 .TP
 \fB\-S ,\-\-input-session-handle\fR
 Optional Input session handle from a policy session for authorization.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT\@TCTI_ENVIRONMENT_INCLUDE@
+.SH NOTES
+@ALG_NOTES_COMMON_INCLUDE@
 .SH EXAMPLES
 .B tpm2_getpubek
 .PP

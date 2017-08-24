@@ -264,7 +264,8 @@ man8_MANS = \
 MAN_DEPS := man/common-options.troff man/tcti-options.troff \
            man/tcti-environment.troff man/alg-common.troff \
            man/hash-alg-common.troff man/object-alg-common.troff \
-           man/sign-alg-common.troff man/password-fmt-common.troff
+           man/sign-alg-common.troff man/password-fmt-common.troff \
+           man/alg-notes-common.troff
 
 man/man8/%.8 : man/%.8.in $(MAN_DEPS)
 	rm -f $@
@@ -291,6 +292,8 @@ endif
 	    -e '/@SIGN_ALG_COMMON_INCLUDE@/d' \
 	    -e '/@PASSWORD_FORMAT_COMMON_INCLUDE@/r man/password-fmt-common.troff' \
 	    -e '/@PASSWORD_FORMAT_COMMON_INCLUDE@/d' \
+	    -e '/@ALG_NOTES_COMMON_INCLUDE@/r man/alg-notes-common.troff' \
+	    -e '/@ALG_NOTES_COMMON_INCLUDE@/d' \
 	    < $< >> $@
 
 CLEANFILES = $(man8_MANS)

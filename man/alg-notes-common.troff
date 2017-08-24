@@ -1,0 +1,9 @@
+The properties of the generated keys are currently fixed to the following values:
+.PP
+For TPM_ALG_RSA the key length is 2048 bit. The public key exponent is 2^16 +1.
+.PP
+For TPM_ALG_SYMCIPHER the symmetric key is AES 128 bit.
+.PP
+For TPM_ALG_ECC the curve parameters are TPM_ECC_NIST_P256.
+.PP
+For TPM_ALG_KEYEDHASH the algorithm is SHA256.
