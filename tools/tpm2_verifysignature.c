@@ -196,8 +196,8 @@ static bool init(tpm2_verifysig_ctx *ctx) {
             LOG_ERR("No digest set and no message file to compute from, cannot compute message hash!");
             goto err;
         }
-        int rc = tpm_hash_compute_data(ctx->sapi_context, msg->buffer, msg->size,
-                ctx->halg, &ctx->msgHash);
+        int rc = tpm_hash_compute_data(ctx->sapi_context, ctx->halg,
+                TPM_RH_NULL, msg->buffer, msg->size, &ctx->msgHash, NULL);
         if (rc) {
             LOG_ERR("Compute message hash failed!");
             goto err;

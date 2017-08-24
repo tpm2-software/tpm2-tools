@@ -140,8 +140,8 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    int rc = tpm_hash_compute_data(ctx->sapi_context, ctx->msg, ctx->length,
-            ctx->halg, &digest);
+    int rc = tpm_hash_compute_data(ctx->sapi_context, ctx->halg, TPM_RH_NULL,
+            ctx->msg, ctx->length, &digest, NULL);
     if (rc) {
         LOG_ERR("Compute message hash failed!");
         return false;
