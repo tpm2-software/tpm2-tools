@@ -144,7 +144,7 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
             break;
         case 'I': {
             ctx->cipher_text.t.size = sizeof(ctx->cipher_text) - 2;
-            bool result = files_load_bytes_from_file(optarg, ctx->cipher_text.t.buffer,
+            bool result = files_load_bytes_from_path(optarg, ctx->cipher_text.t.buffer,
                     &ctx->cipher_text.t.size);
             if (!result) {
                 return false;

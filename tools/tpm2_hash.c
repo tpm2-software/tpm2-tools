@@ -160,7 +160,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             break;
         case 'I':
             flags++;
-            res = files_get_file_size(optarg, &fileSize);
+            res = files_get_file_size_path(optarg, &fileSize);
             if (!res) {
                 return false;
             }
@@ -171,7 +171,7 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
                 return false;
             }
             ctx->data.t.size = fileSize;
-            res = files_load_bytes_from_file(optarg, ctx->data.t.buffer, &ctx->data.t.size);
+            res = files_load_bytes_from_path(optarg, ctx->data.t.buffer, &ctx->data.t.size);
             if (!res) {
                 return false;
             }

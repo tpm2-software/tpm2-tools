@@ -172,7 +172,7 @@ execute_tool (int              argc,
 
         case 'u':
             size = sizeof(inPublic);
-            if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPublic, &size))
+            if(!files_load_bytes_from_path(optarg, (UINT8 *)&inPublic, &size))
             {
                 return 1;
             }
@@ -180,7 +180,7 @@ execute_tool (int              argc,
             break;
         case 'r':
             size = sizeof(inPrivate);
-            if(!files_load_bytes_from_file(optarg, (UINT8 *)&inPrivate, &size))
+            if(!files_load_bytes_from_path(optarg, (UINT8 *)&inPrivate, &size))
             {
                 return 1;
             }

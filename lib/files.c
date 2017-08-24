@@ -7,7 +7,7 @@
 #include "log.h"
 #include "tpm2_util.h"
 
-static bool get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
+bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
 
     long current = ftell(fp);
     if (current < 0) {
@@ -41,7 +41,7 @@ static bool get_file_size(FILE *fp, unsigned long *file_size, const char *path) 
 static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
                                  const char *path) {
     unsigned long file_size;
-    bool result = get_file_size(f, &file_size, path);
+    bool result = files_get_file_size(f, &file_size, path);
     if (!result) {
         /* get_file_size() logs errors */
         return false;
@@ -66,7 +66,7 @@ static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
     return true;
 }
 
-bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size) {
+bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size) {
     if (!buf || !size || !path) {
         return false;
     }
@@ -83,12 +83,12 @@ bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size) {
     return result;
 }
 
-bool files_load_bytes_from_stdin(UINT8 *buf, UINT16 *size) {
+bool files_load_bytes_from_file(FILE *file, UINT8 *buf, UINT16 *size, const char *path) {
     if (!buf || !size) {
         return false;
     }
 
-    return read_bytes_from_file(stdin, buf, size, "stdin");
+    return read_bytes_from_file(file, buf, size, path);
 }
 
 bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
@@ -308,7 +308,7 @@ bool files_does_file_exist(const char *path) {
     return false;
 }
 
-bool files_get_file_size(const char *path, unsigned long *file_size) {
+bool files_get_file_size_path(const char *path, unsigned long *file_size) {
 
     bool result = false;
 
@@ -328,7 +328,7 @@ bool files_get_file_size(const char *path, unsigned long *file_size) {
         return false;
     }
 
-    result = get_file_size(fp, file_size, path);
+    result = files_get_file_size(fp, file_size, path);
 
     fclose(fp);
     return result;

@@ -167,7 +167,7 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
             break;
         case 'I':
             ctx->data.t.size = BUFFER_SIZE(TPM2B_MAX_BUFFER, buffer);
-            result = files_load_bytes_from_file(optarg, ctx->data.t.buffer,
+            result = files_load_bytes_from_path(optarg, ctx->data.t.buffer,
                     &ctx->data.t.size);
             if (!result) {
                 return false;

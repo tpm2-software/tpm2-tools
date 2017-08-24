@@ -21,7 +21,22 @@
  * @return
  *  True on success, false otherwise.
  */
-bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size);
+bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
+
+/**
+ * Reads a series of bytes from a stdio FILE object.
+ * @param file
+ *  The file to read from.
+ * @param buf
+ *  The buffer to read into.
+ * @param size
+ *  The size of the buffer to read into.
+ * @param path
+ *  A path used for error reporting.
+ * @return
+ *  True on success, False otherwise.
+ */
+bool files_load_bytes_from_file(FILE *file, UINT8 *buf, UINT16 *size, const char *path);
 
 /**
  * Reads a series of bytes from the standard input as a byte array. This is similar to
@@ -36,7 +51,9 @@ bool files_load_bytes_from_file(const char *path, UINT8 *buf, UINT16 *size);
  * @return
  *  True on success, false otherwise.
  */
-bool files_load_bytes_from_stdin(UINT8 *buf, UINT16 *size);
+static inline bool files_load_bytes_from_stdin(UINT8 *buf, UINT16 *size) {
+    return files_load_bytes_from_file(stdin, buf, size, "<stdin>");
+}
 
 /**
  * Similar to files_write_bytes(), in that it writes an array of bytes to disk,
@@ -101,7 +118,20 @@ bool files_does_file_exist(const char *path);
  * @return
  *  True for success or False for error.
  */
-bool files_get_file_size(const char *path, unsigned long *file_size);
+bool files_get_file_size_path(const char *path, unsigned long *file_size);
+
+/**
+ * Similar to files_get_file_size_path(), but uses an already opened FILE object.
+ * @param fp
+ *  The file pointer to query the size of.
+ * @param file_size
+ *  Output of the file size.
+ * @param path
+ *  A path used for error reporting.
+ * @return
+ *  True on success, False otherwise.
+ */
+bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path);
 
 /**
  * Writes a TPM2.0 header to a file.

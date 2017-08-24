@@ -330,7 +330,7 @@ execute_tool (int              argc,
                                                  &inSensitive.t.sensitive.data.t.size)) {
                     return 1;
                 }
-            } else if(!files_load_bytes_from_file(optarg, inSensitive.t.sensitive.data.t.buffer,
+            } else if(!files_load_bytes_from_path(optarg, inSensitive.t.sensitive.data.t.buffer,
                                                &inSensitive.t.sensitive.data.t.size)) {
                 return 1;
             }
@@ -339,7 +339,7 @@ execute_tool (int              argc,
             break;
         case 'L':
             inPublic.t.publicArea.authPolicy.t.size = sizeof(inPublic.t.publicArea.authPolicy) - 2;
-            if(!files_load_bytes_from_file(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
+            if(!files_load_bytes_from_path(optarg, inPublic.t.publicArea.authPolicy.t.buffer, &inPublic.t.publicArea.authPolicy.t.size))
             {
                 return 1;
             }
