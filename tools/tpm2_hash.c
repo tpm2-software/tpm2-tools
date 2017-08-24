@@ -29,6 +29,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -42,13 +43,14 @@
 #include "log.h"
 #include "main.h"
 #include "options.h"
+#include "tpm_hash.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_hash_ctx tpm_hash_ctx;
 struct tpm_hash_ctx {
     TPMI_RH_HIERARCHY hierarchyValue;
-    TPM2B_MAX_BUFFER data;
+    FILE *input_file;
     TPMI_ALG_HASH  halg;
     char *outHashFilePath;
     char *outTicketFilePath;
@@ -90,10 +92,9 @@ static bool hash_and_save(tpm_hash_ctx *ctx) {
     TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
-    UINT32 rval = Tss2_Sys_Hash(ctx->sapi_context, 0, &ctx->data, ctx->halg,
-            ctx->hierarchyValue, &outHash, &validation, 0);
+    TPM_RC rval = tpm_hash_file(ctx->sapi_context, ctx->halg, ctx->hierarchyValue, ctx->input_file, &outHash, &validation);
     if (rval != TPM_RC_SUCCESS) {
-        LOG_ERR("TPM2_Sys_Hash Error. TPM Error:0x%x", rval);
+        LOG_ERR("tpm_hash_files() failed with error: 0x%X", rval);
         return false;
     }
 
@@ -138,7 +139,6 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
 
     int opt;
     bool res;
-    unsigned long fileSize;
     unsigned flags = 0;
     while ((opt = getopt_long(argc, argv, "H:g:I:o:t:", long_options, NULL))
             != -1) {
@@ -160,19 +160,10 @@ static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
             break;
         case 'I':
             flags++;
-            res = files_get_file_size_path(optarg, &fileSize);
-            if (!res) {
-                return false;
-            }
-            if (fileSize > MAX_DIGEST_BUFFER) {
-                LOG_ERR(
-                        "Input data too long: %lu, should be less than %d bytes\n",
-                        fileSize, MAX_DIGEST_BUFFER);
-                return false;
-            }
-            ctx->data.t.size = fileSize;
-            res = files_load_bytes_from_path(optarg, ctx->data.t.buffer, &ctx->data.t.size);
-            if (!res) {
+            ctx->input_file = fopen(optarg, "rb");
+            if (!ctx->input_file) {
+                LOG_ERR("Could not open input file \"%s\", error: %s",
+                        optarg, strerror(errno));
                 return false;
             }
             break;
@@ -220,14 +211,28 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void)opts;
     (void)envp;
 
+    int rc = 1;
     tpm_hash_ctx ctx = {
+            .input_file = NULL,
             .sapi_context = sapi_context,
     };
 
     bool res = init(argc, argv, &ctx);
     if (!res) {
-        return 1;
+        goto out;
     }
 
-    return hash_and_save(&ctx) != true;
+    res = hash_and_save(&ctx);
+    if (!res) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+    if (ctx.input_file) {
+        fclose(ctx.input_file);
+    }
+
+    return rc;
 }
