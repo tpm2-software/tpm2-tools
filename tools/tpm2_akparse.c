@@ -137,7 +137,7 @@ static bool parse_and_save_ak_public(tpm_akparse_ctx *ctx) {
     TPM2B_PUBLIC outPublic;
     UINT16 size = sizeof(outPublic);
 
-    bool result = files_load_bytes_from_file(ctx->ak_data_file_path, (UINT8 *)&outPublic, &size);
+    bool result = files_load_bytes_from_path(ctx->ak_data_file_path, (UINT8 *)&outPublic, &size);
     if (!result) {
         /* loadDataFromFile prints error */
         return false;

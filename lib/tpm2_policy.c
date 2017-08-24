@@ -54,7 +54,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
     //Check if the input pcrs file size is the same size as the pcr selection setlist
     if (raw_pcrs_file) {
         unsigned long filesize = 0;
-        bool result = files_get_file_size(raw_pcrs_file, &filesize);
+        bool result = files_get_file_size_path(raw_pcrs_file, &filesize);
         if (!result) {
             LOG_ERR("Could not retrieve raw_pcrs_file size");
             return false;

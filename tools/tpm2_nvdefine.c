@@ -90,7 +90,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
     if (ctx->policy_file) {
         public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-        if(!files_load_bytes_from_file(ctx->policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
+        if(!files_load_bytes_from_path(ctx->policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
             return false;
         }
     } 

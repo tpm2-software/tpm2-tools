@@ -149,7 +149,7 @@ static bool init(int argc, char *argv[], tpm_loadexternal_ctx *ctx) {
         break;
         case 'u': {
             UINT16 size = sizeof(ctx->public_key);
-            bool result = files_load_bytes_from_file(optarg, (UINT8 *)&ctx->public_key, &size);
+            bool result = files_load_bytes_from_path(optarg, (UINT8 *)&ctx->public_key, &size);
             if (!result) {
                 return false;
             }
@@ -157,7 +157,7 @@ static bool init(int argc, char *argv[], tpm_loadexternal_ctx *ctx) {
         } break;
         case 'r': {
             UINT16 size = sizeof(ctx->private_key);
-            bool result = files_load_bytes_from_file(optarg, (UINT8 *)&ctx->private_key, &size);
+            bool result = files_load_bytes_from_path(optarg, (UINT8 *)&ctx->private_key, &size);
             if (!result) {
                 return false;
             }

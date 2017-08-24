@@ -245,7 +245,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
             break;
         case 't': {
             UINT16 size = sizeof(ctx->validation);
-            bool result = files_load_bytes_from_file(optarg, (UINT8 *) &ctx->validation,
+            bool result = files_load_bytes_from_path(optarg, (UINT8 *) &ctx->validation,
                     &size);
             if (!result) {
                 return false;
@@ -310,7 +310,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
      * Process the msg file
      */
     unsigned long file_size;
-    bool result = files_get_file_size(inMsgFileName, &file_size);
+    bool result = files_get_file_size_path(inMsgFileName, &file_size);
     if (!result) {
         return false;
     }
@@ -333,7 +333,7 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     }
 
     ctx->length = file_size;
-    result = files_load_bytes_from_file(inMsgFileName, ctx->msg, &ctx->length);
+    result = files_load_bytes_from_path(inMsgFileName, ctx->msg, &ctx->length);
     if (!result) {
         free(ctx->msg);
         return false;

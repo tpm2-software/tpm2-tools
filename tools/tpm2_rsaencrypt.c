@@ -126,7 +126,7 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
             break;
         case 'I': {
             ctx->message.t.size = sizeof(ctx->message) - 2;
-            bool result = files_load_bytes_from_file(optarg, ctx->message.t.buffer,
+            bool result = files_load_bytes_from_path(optarg, ctx->message.t.buffer,
                     &ctx->message.t.size);
             if (!result) {
                 return false;

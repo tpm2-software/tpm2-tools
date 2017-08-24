@@ -108,7 +108,7 @@ static TPM2B *message_from_file(const char *msg_file_path) {
 
     unsigned long size;
 
-    bool result = files_get_file_size(msg_file_path, &size);
+    bool result = files_get_file_size_path(msg_file_path, &size);
     if (!result) {
         return NULL;
     }
@@ -125,7 +125,7 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     }
 
     UINT16 tmp = msg->size = size;
-    if (!files_load_bytes_from_file(msg_file_path, msg->buffer, &tmp)) {
+    if (!files_load_bytes_from_path(msg_file_path, msg->buffer, &tmp)) {
         free(msg);
         return NULL;
     }
@@ -150,7 +150,7 @@ static bool generate_signature(tpm2_verifysig_ctx *ctx) {
         buffer = (UINT8 *) &ctx->signature;
     }
 
-    bool result = files_load_bytes_from_file(ctx->sig_file_path, buffer, &size);
+    bool result = files_load_bytes_from_path(ctx->sig_file_path, buffer, &size);
     if (!result) {
         LOG_ERR("Could not create %s signature from file: \"%s\"",
                 ctx->flags.raw ? "raw" : "\0", ctx->sig_file_path);
@@ -258,7 +258,7 @@ static bool handle_options_and_init(int argc, char *argv[], tpm2_verifysig_ctx *
             break;
         case 'D': {
             UINT16 size = sizeof(ctx->msgHash);
-            if (!files_load_bytes_from_file(optarg, (UINT8 *) &ctx->msgHash, &size)) {
+            if (!files_load_bytes_from_path(optarg, (UINT8 *) &ctx->msgHash, &size)) {
                 LOG_ERR("Could not load digest from file!");
                 return false;
             }

@@ -166,7 +166,7 @@ static bool init(int argc, char *argv[], tpm_encrypt_decrypt_ctx *ctx) {
             break;
         case 'I':
             ctx->data.t.size = sizeof(ctx->data) - 2;
-            result = files_load_bytes_from_file(optarg, ctx->data.t.buffer, &ctx->data.t.size);
+            result = files_load_bytes_from_path(optarg, ctx->data.t.buffer, &ctx->data.t.size);
             if (!result) {
                 return result;
             }

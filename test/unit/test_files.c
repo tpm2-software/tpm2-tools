@@ -221,7 +221,7 @@ static void test_file_size(void **state) {
     assert_return_code(rc, errno);
 
     unsigned long file_size;
-    res = files_get_file_size(tf->path, &file_size);
+    res = files_get_file_size_path(tf->path, &file_size);
     assert_true(res);
 
     assert_int_equal(file_size, sizeof(data));
@@ -230,15 +230,15 @@ static void test_file_size(void **state) {
 static void test_file_size_bad_args(void **state) {
 
     unsigned long file_size;
-    bool res = files_get_file_size("this_should_be_a_bad_path", &file_size);
+    bool res = files_get_file_size_path("this_should_be_a_bad_path", &file_size);
     assert_false(res);
 
-    res = files_get_file_size(NULL, &file_size);
+    res = files_get_file_size_path(NULL, &file_size);
     assert_false(res);
 
     test_file *tf = test_file_from_state(state);
 
-    res = files_get_file_size(tf->path, NULL);
+    res = files_get_file_size_path(tf->path, NULL);
     assert_false(res);
 }
 

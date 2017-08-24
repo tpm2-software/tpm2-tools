@@ -170,7 +170,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         switch (opt) {
         case 'e': {
             UINT16 size = sizeof(ctx->public);
-            if (!files_load_bytes_from_file(optarg, (UINT8 *) &ctx->public, &size)) {
+            if (!files_load_bytes_from_path(optarg, (UINT8 *) &ctx->public, &size)) {
                 return false;
             }
             flags.e = 1;
@@ -178,7 +178,7 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
         }
         case 's':
             ctx->credential.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-            if (!files_load_bytes_from_file(optarg, ctx->credential.t.buffer,
+            if (!files_load_bytes_from_path(optarg, ctx->credential.t.buffer,
                     &ctx->credential.t.size)) {
                 return false;
             }
