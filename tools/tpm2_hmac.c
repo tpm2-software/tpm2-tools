@@ -178,11 +178,14 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
         return false;
     }
 
-    printf("\nhmac value(hex type): ");
-    UINT16 i;
-    for (i = 0; i < hmac_out.t.size; i++)
-        printf("%02x ", hmac_out.t.buffer[i]);
-    printf("\n");
+    if (hmac_out.t.size) {
+        UINT16 i;
+        TOOL_OUTPUT("hmac(%s):", tpm2_alg_util_algtostr(ctx->algorithm));
+        for (i = 0; i < hmac_out.t.size; i++) {
+            TOOL_OUTPUT("%02x", hmac_out.t.buffer[i]);
+        }
+        TOOL_OUTPUT("\n");
+    }
 
     if (ctx->hmac_output_file_path) {
         return files_save_bytes_to_file(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
