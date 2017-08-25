@@ -60,6 +60,8 @@ TPMS_AUTH_COMMAND sessionData = {
 };
 
 char *outFilePath;
+char *outPlainSigFilePath;
+char *outPlainQuoteFilePath;
 TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 TPML_PCR_SELECTION  pcrSelections;
 bool is_auth_session;
@@ -212,6 +214,81 @@ UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
     return size > sizeof(*sig) ? sizeof(*sig) : size;
 }
 
+FILE* open_file(const char *path)
+{
+    FILE *fp = fopen(path,"w+");
+
+    if(NULL == fp)
+    {
+        printf("OutFile: %s Can Not Be Created !\n",path);
+    }
+
+    return fp;
+}
+
+bool write_file(FILE *fp, void *data, size_t len,
+    const char *path, const char *label)
+{
+    if(fwrite(data, len, 1, fp) != 1)
+    {
+        printf("OutFile: %s Write %s Data In Error!\n", path, label);
+        fclose(fp);
+        return false;
+    }
+
+    return true;
+}
+
+int write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature)
+{
+    FILE *fp = open_file(outFilePath);
+
+    if(NULL == fp)
+        return -2;
+    else if(write_file(fp, quoted, calcSizeofTPM2B_ATTEST(quoted),
+        outFilePath, "quoted") != true)
+        return -3;
+    else if(write_file(fp, signature, calcSizeofTPMT_SIGNATURE(signature),
+        outFilePath, "signature") != true)
+        return -4;
+
+    fclose(fp);
+
+    if(outPlainQuoteFilePath != NULL)
+    {
+        fp = open_file(outPlainQuoteFilePath);
+        if(NULL == fp)
+            return -5;
+        else if(write_file(fp, (quoted->b).buffer, (quoted->b).size,
+                outPlainQuoteFilePath, "quoted") != true)
+            return -6;
+
+        fclose(fp);
+    }
+
+    if(outPlainSigFilePath != NULL)
+    {
+        BYTE *buffer;
+        UINT16 size;
+
+        fp = open_file(outPlainSigFilePath);
+        if(NULL == fp)
+            return -7;
+        else if(!tpm2_extract_plain_signature(&buffer, &size, signature))
+            return -8;
+        else if(write_file(fp, buffer, size,
+            outPlainSigFilePath, "buffer") != true)
+        {
+            free(buffer);
+            return -9;
+        }
+
+        free(buffer);
+    }
+
+    return 0;
+}
+
 int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 {
     UINT32 rval;
@@ -262,27 +339,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     PrintBuffer( (UINT8 *)&signature, sizeof(signature) );
     //PrintTPMT_SIGNATURE(&signature);
 
-    FILE *fp = fopen(outFilePath,"w+");
-    if(NULL == fp)
-    {
-        printf("OutFile: %s Can Not Be Created !\n",outFilePath);
-        return -2;
-    }
-    if(fwrite(&quoted, calcSizeofTPM2B_ATTEST(&quoted), 1 ,fp) != 1)
-    {
-        fclose(fp);
-        printf("OutFile: %s Write quoted Data In Error!\n",outFilePath);
-        return -3;
-    }
-    if(fwrite(&signature, calcSizeofTPMT_SIGNATURE(&signature), 1, fp) != 1)
-    {
-        fclose(fp);
-        printf("OutFile: %s Write signature Data In Error!\n",outFilePath);
-        return -4;
-    }
-
-    fclose(fp);
-    return 0;
+    return write_output_files(&quoted, &signature);
 }
 
 int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
@@ -292,7 +349,7 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
     (void) opts;
 
     int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:L:o:S:q:";
+    const char *optstring = "hvk:c:P:l:g:L:o:S:q:r:t:";
     static struct option long_options[] = {
         {"help",0,NULL,'h'},
         {"version",0,NULL,'v'},
@@ -305,6 +362,8 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         {"outFile",1,NULL,'o'},
         {"qualifyData",1,NULL,'q'},
         {"input-session-handle",1,NULL,'S'},
+        {"plainSig",1,NULL,'r'},
+        {"plainQuote",1,NULL,'t'},
         {0,0,0,0}
     };
 
@@ -318,7 +377,9 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
         l_flag = 0,
         g_flag = 0,
         L_flag = 0,
-        o_flag = 0;
+        o_flag = 0,
+        r_flag = 0,
+        t_flag = 0;
 
     if(argc == 1)
     {
@@ -390,6 +451,29 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
             }
             o_flag = 1;
             break;
+        case 'r': {
+            outPlainSigFilePath = optarg;
+            if(files_does_file_exist(optarg))
+            {
+                showArgError(optarg, argv[0]);
+                return 1;
+            }
+            r_flag = 1;
+            // currently unused
+            (void)r_flag;
+            break;
+        }
+        case 't':
+            outPlainQuoteFilePath = optarg;
+            if(files_does_file_exist(optarg))
+            {
+                showArgError(optarg, argv[0]);
+                return 1;
+            }
+            t_flag = 1;
+            // currently unused
+            (void)t_flag;
+            break;
         case 'q':
             qualifyingData.t.size = sizeof(qualifyingData) - 2;
             if(tpm2_util_hex_to_byte_structure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
@@ -406,13 +490,13 @@ int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
              }
              is_auth_session = true;
              break;
-       case ':':
+        case ':':
             LOG_ERR("Argument %c needs a value!", optopt);
             return 1;
         case '?':
             LOG_ERR("Unknown Argument: %c", optopt);
             return 1;
-	default:
+        default:
             LOG_ERR("?? getopt returned character code 0%o ??", opt);
             return 1;
         }
