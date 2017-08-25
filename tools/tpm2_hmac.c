@@ -184,9 +184,12 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
         printf("%02x ", hmac_out.t.buffer[i]);
     printf("\n");
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
+    if (ctx->hmac_output_file_path) {
+        return files_save_bytes_to_file(ctx->hmac_output_file_path, (UINT8 *) &hmac_out,
             sizeof(hmac_out));
+    }
+
+    return true;
 }
 
 #define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
@@ -211,10 +214,8 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
         struct {
             UINT8 k : 1;
             UINT8 P : 1;
-            UINT8 g : 1;
-            UINT8 o : 1;
             UINT8 c : 1;
-            UINT8 unused : 3;
+            UINT8 unused : 5;
         };
         UINT8 all;
     } flags = { .all = 0 };
@@ -256,7 +257,6 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
                         optarg);
                 return false;
             }
-            flags.g = 1;
             break;
         case 'o':
             result = files_does_file_exist(optarg);
@@ -264,7 +264,6 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
                 return false;
             }
             ctx->hmac_output_file_path = optarg;
-            flags.o = 1;
             break;
         case 'c':
             if (contextKeyFile) {
@@ -294,10 +293,10 @@ static bool init(int argc, char *argv[], tpm_hmac_ctx *ctx) {
     }
 
     /*
-     * Options g, I, o must be specified and k or c must be specified.
+     * Options k or c must be specified.
      */
-    if (!((flags.k || flags.c) && flags.o && flags.g)) {
-        LOG_ERR("Must specify options g, o and k or c");
+    if (!(flags.k || flags.c)) {
+        LOG_ERR("Must specify options k or c");
         return false;
     }
 
@@ -341,6 +340,8 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
             .key_handle = 0,
             .input = stdin,
+            .algorithm = TPM_ALG_SHA1,
+            .hmac_output_file_path = NULL,
             .sapi_context = sapi_context,
     };
 

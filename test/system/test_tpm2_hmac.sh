@@ -95,4 +95,25 @@ grep "persistentHandle: "$handle_hmac_key"" evict.log
 echo "12345678" > $file_input_data
 tpm2_hmac  -k $handle_hmac_key  -g $halg -o $file_hmac_output $file_input_data
 
+cleanup all
+
+# Test default algorithm selection of sha1
+echo "12345678" > $file_input_data
+
+tpm2_takeownership -c
+
+tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+
+tpm2_create -g sha1 -G $alg_create_key -o $file_hmac_key_pub -O $file_hmac_key_priv  -c $file_primary_key_ctx
+
+tpm2_load -c $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -C $file_hmac_key_ctx
+
+cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx -o $file_hmac_output
+
+# test no output file
+cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx
+
+# test no output file with halg
+cat $file_input_data | tpm2_hmac -g sha -c $file_hmac_key_ctx
+
 exit 0
