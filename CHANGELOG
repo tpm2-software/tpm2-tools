@@ -1,4 +1,6 @@
 next
+* tpm2_hmac: support for files greater than 1024 bytes, changes in options and arguments.
+* tpm2_hash: support for files greater than 1024 bytes, changes in options and arguments.
 * Install is now to bin vs sbin. Ensure that sbin tools get removed!
 * make dist and distcheck are now working.
 * installation into customized locations are now working, see issue #402 for details.
