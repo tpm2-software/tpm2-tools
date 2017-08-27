@@ -6,7 +6,7 @@ next
 * installation into customized locations are now working, see issue #402 for details.
 * tpm2_pcrlist: renamed from tpm2_listpcrs.
 * tpm2_pcrextend: new tool for extending PCRs.
-* tpm2_getmanufec: -E option no longer reqiored, defaults to stdout.
+* tpm2_getmanufec: -E option no longer required, defaults to stdout.
 * tpm2_nvlist: Support for friendly nv attributes in output.
 * Support for friendly algorithm names for algorithm identifiers.
 * tpm2_nvread: The option, -s, or size option is no longer required.
@@ -23,7 +23,7 @@ next
 * tpm2_createprimary: add ability to create objects with policy based authorization.
 * tpm2_nvdefine: add ability to create nv indexes with policy based authorization.
 * Support Clang Build.
-* tpm2_unseal test uses endorsment hiearchy as platform hiearchy is unavailable on a
+* tpm2_unseal test uses endorsement hierarchy as platform hierarchy is unavailable on a
   real tpm.
 * Numerous cleanups and minor bug fixes.
 
