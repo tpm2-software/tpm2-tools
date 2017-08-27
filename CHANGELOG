@@ -1,4 +1,6 @@
 next
+* Make tpm2_{createprimary,create,load,pcrlist,hmac} tools to support the --quiet option.
+* Support for a --quiet option to suppress messages printed by tools to standard output.
 * tpm2_hmac: support for files greater than 1024 bytes, changes in options and arguments.
 * tpm2_hash: support for files greater than 1024 bytes, changes in options and arguments.
 * Install is now to bin vs sbin. Ensure that sbin tools get removed!
