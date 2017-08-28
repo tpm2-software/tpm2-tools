@@ -130,4 +130,15 @@ bool pcr_parse_digest_list(char **argv, int len,
  */
 UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
 
+/**
+ * Extracts the plain signature data without any headers
+ * @param size
+ *  Will receive the number of bytes stored in buffer.
+ * @signature The actual signature struct to extract the plain signature from.
+ * @return
+ *  Returns a buffer filled with the extracted signature or NULL on error.
+ *  Needs to be free()'d by the caller.
+ */
+UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */

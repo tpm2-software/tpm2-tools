@@ -65,6 +65,18 @@ from the SHA256 bank.
 \fB\-o ,\-\-outFile\fR
 output file path, recording the two structures  output by tpm2_quote function 
 .TP
+\fB\-r ,\-\-plainSig\fR
+like -o but here only the plain signature data will be stored. This can be
+used by other tools like
+.RB openssl(1)
+for verification.
+.TP
+\fB\-t ,\-\-plainQuote\fR
+like -o but here only the plain quote message data will be stored. This is the
+structure that is actually signed. This can be used by other tools like
+.RB openssl(1)
+for verification.
+.TP
 \fB\-X ,\-\-passwdInHex\fR
 passwords given by any options are hex format.
 .TP

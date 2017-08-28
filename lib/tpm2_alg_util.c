@@ -300,3 +300,56 @@ bool pcr_parse_digest_list(char **argv, int len,
 
     return true;
 }
+
+UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
+
+    UINT8 *buffer = NULL;
+    *size = 0;
+
+    switch (signature->sigAlg) {
+    case TPM_ALG_RSASSA:
+        *size = sizeof((*signature).signature.rsassa.sig.t.buffer);
+        buffer = malloc(*size);
+        if(! buffer) {
+            goto nomem;
+        }
+        memcpy(buffer, (*signature).signature.rsassa.sig.t.buffer, *size);
+        break;
+    case TPM_ALG_HMAC: {
+        TPMU_HA *hmac_sig = &((*signature).signature.hmac.digest);
+        *size = tpm2_alg_util_get_hash_size((*signature).signature.hmac.hashAlg);
+        buffer = malloc(*size);
+        if(! buffer) {
+            goto nomem;
+        }
+        memcpy(buffer, &(hmac_sig->na), *size);
+        break;
+    }
+    case TPM_ALG_ECDSA: {
+        const size_t ECC_PAR_LEN = sizeof(TPM2B_ECC_PARAMETER);
+        *size = ECC_PAR_LEN * 2;
+        buffer = malloc(*size);
+        if(! buffer) {
+            goto nomem;
+        }
+        memcpy(buffer,
+            (UINT8*)&((*signature).signature.ecdsa.signatureR),
+            ECC_PAR_LEN
+        );
+        memcpy(buffer + ECC_PAR_LEN,
+            (UINT8*)&((*signature).signature.ecdsa.signatureS),
+            ECC_PAR_LEN
+        );
+        break;
+    }
+    default:
+        LOG_ERR("%s: unknown signature scheme: 0x%x", __func__,
+            signature->sigAlg);
+        return NULL;
+    }
+
+    return buffer;
+nomem:
+    LOG_ERR("%s: couldn't allocate memory", __func__);
+    return NULL;
+}
