@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2017, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,8 @@ struct key_blob {
     UINT8  *data;
 };
 
-#define MAX_KEY_BLOBS 8
+// currently at max two blobs for the points in ECC public keys
+#define MAX_KEY_BLOBS 2
 
 // holds the complete information as found in the input file
 struct key_data {
@@ -88,7 +89,9 @@ typedef enum {
 // in the correct endianess. error handling included.
 static bool read_alg_type(FILE *f, UINT16 *alg_type) {
 
-    if (fread(alg_type, 2, 1, f) != 1) {
+    size_t cnt = fread(alg_type, 2, 1, f);
+
+    if (cnt != 1) {
         LOG_ERR("Could not read algtype from input file: \"%s\".",
             (feof(f) ? "Premature end of file" : strerror(errno))
         );
@@ -120,11 +123,13 @@ static bool read_blobs(FILE *f, struct key_data *data) {
     const size_t MAX_LENGTH = 8192;
     struct key_blob blob;
     bool ret = false;
+    size_t cnt;
 
     // read in a variable number of blobs until EOF or error occurs
     while (true) {
+        cnt = fread(&blob.length, 2, 1, f);
 
-        if (fread(&blob.length, 2, 1, f) != 1) {
+        if (cnt != 1) {
             if (!feof(f)) {
                 LOG_ERR("Could not read key blob length from input file: \"%s\".",
                     strerror(errno)
@@ -153,8 +158,9 @@ static bool read_blobs(FILE *f, struct key_data *data) {
         }
 
         blob.data = malloc(blob.length);
+        cnt = fread(blob.data, blob.length, 1, f);
 
-        if (fread(blob.data, blob.length, 1, f) != 1) {
+        if (cnt != 1) {
             LOG_ERR("Failed to read key blob nr. %zd: \"%s\".",
                 data->num_blobs + 1,
                 (feof(f) ? "Premature end of file" : strerror(errno))
@@ -185,6 +191,7 @@ out:
 static bool read_key(const char *infile, struct key_data *data) {
     FILE *f;
     bool ret = false;
+    bool tmp_res = false;
 
     memset(data, 0, sizeof(struct key_data));
 
@@ -198,9 +205,14 @@ static bool read_key(const char *infile, struct key_data *data) {
         return false;
     }
 
-    if (read_alg_type(f, &data->alg_type) != true)
+    tmp_res = read_alg_type(f, &data->alg_type);
+
+    if (tmp_res != true)
         goto out;
-    else if (read_blobs(f, data) != true)
+
+    tmp_res = read_blobs(f, data);
+
+    if (tmp_res != true)
         goto out;
 
     if (data->num_blobs == 0) {
@@ -223,6 +235,8 @@ static bool write_key(
 
     FILE *f = NULL;
     bool ret = false;
+    bool tmp_res = false;
+    int ssl_res = -1;
     RSA *ssl_rsa_key = RSA_new();
     // openssl expects this in network byte order
     UINT32 exponent = tpm2_util_hton_32(RSA_DEFAULT_PUBLIC_EXPONENT);
@@ -243,7 +257,9 @@ static bool write_key(
         goto out;
     }
 
-    if (files_does_file_exist(outfile)) {
+    tmp_res = files_does_file_exist(outfile);
+
+    if (tmp_res) {
         goto out;
     }
 
@@ -258,13 +274,17 @@ static bool write_key(
 
     switch(format) {
     case FMT_PEM:
-        if (PEM_write_RSA_PUBKEY(f, ssl_rsa_key) <= 0) {
+        ssl_res = PEM_write_RSA_PUBKEY(f, ssl_rsa_key);
+
+        if (ssl_res <= 0) {
             LOG_ERR("OpenSSL PEM conversion failed: \"%s\"", strerror(errno));
             goto out;
         }
         break;
     case FMT_DER:
-        if (i2d_RSA_PUBKEY_fp(f, ssl_rsa_key) <= 0) {
+        ssl_res = i2d_RSA_PUBKEY_fp(f, ssl_rsa_key);
+
+        if (ssl_res <= 0) {
             LOG_ERR("OpenSSL DER conversion failed: \"%s\"", strerror(errno));
             goto out;
         }
@@ -302,10 +322,14 @@ static bool convert_key(const struct tpm_convert_key_ctx *ctx) {
     struct key_data data;
     convert_format format = get_format(ctx->key_output_format);
     bool ret = false;
+    bool tmp_res = false;
 
     if (format == FMT_INVAL)
         return false;
-    else if (! read_key(ctx->key_input_file_path, &data))
+
+    tmp_res = read_key(ctx->key_input_file_path, &data);
+
+    if (tmp_res != true)
         return false;
 
     if (data.alg_type != TPM_ALG_RSA) {
