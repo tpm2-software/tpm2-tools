@@ -27,6 +27,7 @@ addons:
     - libdbus-1-dev
     - libglib2.0-dev
     - clang-3.8
+    - ruby-dev
 
 env:
   global:
@@ -36,7 +37,16 @@ env:
 
 before_install:
     - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-    - pip install --user cpp-coveralls
+    - pip install --user cpp-coveralls pyyaml
+    - rvm list
+    # RVM didn't play nicely with the redcarpet and kept stating that the library it was loading
+    # was invalid, so we nuke it here. Note that you may need new invocations of shell to avoid
+    # a polluted rvm environment.
+    - rvm implode --force
+    - gem uninstall --force rvm || true
+    - bash -c 'sudo gem install md2man'
+    # Fail early if ruby is acting up.
+    - bash -c 'echo "foo\n===" | md2man-roff'
 
 install: 
     - wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm532.tar

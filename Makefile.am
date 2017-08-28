@@ -84,7 +84,8 @@ bin_PROGRAMS = \
     tools/tpm2_unseal \
     tools/tpm2_dictionarylockout \
     tools/tpm2_createpolicy \
-    tools/tpm2_pcrextend
+    tools/tpm2_pcrextend \
+    tools/tpm2_pcrevent
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
@@ -162,6 +163,7 @@ tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
 tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
+tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 
 # rc_decode does not use common main, since it does not need a dynamic TCTI.
 tools_tpm2_rc_decode_SOURCES = lib/rc-decode.c tools/tpm2_rc_decode.c
@@ -259,7 +261,8 @@ man8_MANS = \
     man/man8/tpm2_rc_decode.8 \
     man/man8/tpm2_dictionarylockout.8 \
     man/man8/tpm2_createpolicy.8 \
-    man/man8/tpm2_pcrextend.8
+    man/man8/tpm2_pcrextend.8 \
+    man/man8/tpm2_pcrevent.8
 
 MAN_DEPS := man/common-options.troff man/tcti-options.troff \
            man/tcti-environment.troff man/alg-common.troff \
@@ -267,6 +270,7 @@ MAN_DEPS := man/common-options.troff man/tcti-options.troff \
            man/sign-alg-common.troff man/password-fmt-common.troff \
            man/alg-notes-common.troff
 
+# DEPRECATED - No more raw troff files for manpages, use markdown (below).
 man/man8/%.8 : man/%.8.in $(MAN_DEPS)
 	rm -f $@
 	mkdir -p man/man8
@@ -295,5 +299,18 @@ endif
 	    -e '/@ALG_NOTES_COMMON_INCLUDE@/r man/alg-notes-common.troff' \
 	    -e '/@ALG_NOTES_COMMON_INCLUDE@/d' \
 	    < $< >> $@
+
+MARKDOWN_COMMON_DEPS = \
+	man/common/options.md \
+	man/common/tcti.md
+
+man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
+	rm -f $@
+	mkdir -p man/man8
+	sed -e '/@COMMON_OPTIONS@/r man/common/options.md' \
+	    -e '/@COMMON_OPTIONS@/d' \
+	    -e '/@COMMON_TCTI@/r man/common/tcti.md' \
+	    -e '/@COMMON_TCTI@/d' \
+	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man8_MANS)
