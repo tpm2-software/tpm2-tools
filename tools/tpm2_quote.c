@@ -274,8 +274,11 @@ int write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature)
         fp = open_file(outPlainSigFilePath);
         if(NULL == fp)
             return -7;
-        else if(!tpm2_extract_plain_signature(&buffer, &size, signature))
+        buffer = tpm2_extract_plain_signature(&size, signature);
+        if(!buffer)
+        {
             return -8;
+        }
         else if(write_file(fp, buffer, size,
             outPlainSigFilePath, "buffer") != true)
         {

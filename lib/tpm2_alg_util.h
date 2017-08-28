@@ -132,16 +132,13 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
 
 /**
  * Extracts the plain signature data without any headers
- * @param buffer
- *  Will be malloc()'d and filled with the extracted signature. Needs to be
- *  free()'d by the caller.
  * @param size
  *  Will receive the number of bytes stored in buffer.
  * @signature The actual signature struct to extract the plain signature from.
  * @return
- *  true on success, false on error. Errors will be logged via LOG_ERR.
+ *  Returns a buffer filled with the extracted signature or NULL on error.
+ *  Needs to be free()'d by the caller.
  */
-bool tpm2_extract_plain_signature(UINT8 **buffer, UINT16 *size,
-    TPMT_SIGNATURE *signature);
+UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature);
 
 #endif /* LIB_TPM2_ALG_UTIL_H_ */

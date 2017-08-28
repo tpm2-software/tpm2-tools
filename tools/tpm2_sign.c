@@ -170,8 +170,8 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
     if (ctx->outPlainFilePath) {
         UINT8 *buffer;
         UINT16 size;
-        result = tpm2_extract_plain_signature(&buffer, &size, &signature);
-        if (result) {
+        buffer = tpm2_extract_plain_signature(&size, &signature);
+        if (buffer != NULL) {
             result = files_save_bytes_to_file(ctx->outPlainFilePath, buffer, size);
             free(buffer);
         }
