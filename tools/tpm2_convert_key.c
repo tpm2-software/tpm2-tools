@@ -158,6 +158,10 @@ static bool read_blobs(FILE *f, struct key_data *data) {
         }
 
         blob.data = malloc(blob.length);
+        if(blob.data == NULL) {
+            LOG_ERR("Failed to allocate memory");
+            goto out;
+        }
         cnt = fread(blob.data, blob.length, 1, f);
 
         if (cnt != 1) {
@@ -297,8 +301,9 @@ static bool write_key(
     ret = true;
 
 out:
-    if (f)
+    if (f) {
         fclose(f);
+    }
     RSA_free(ssl_rsa_key);
     return ret;
 }
@@ -372,24 +377,12 @@ static bool init(int argc, char *argv[], tpm_convert_key_ctx *ctx) {
     while ((opt = getopt_long(argc, argv, "f:k:t:hv", options, NULL)) != -1) {
         switch (opt) {
         case 'f':
-            if (!optarg) {
-                LOG_ERR("Please specify the file containing the public key");
-                return false;
-            }
             ctx->key_input_file_path = optarg;
             break;
         case 'k':
-            if (!optarg) {
-                LOG_ERR("Please specify the file where to save the converted public key");
-                return false;
-            }
             ctx->key_output_file_path = optarg;
             break;
         case 't':
-            if (!optarg) {
-                LOG_ERR("Please specify the output file format");
-                return false;
-            }
             ctx->key_output_format = optarg;
             break;
         case ':':
@@ -404,10 +397,9 @@ static bool init(int argc, char *argv[], tpm_convert_key_ctx *ctx) {
         }
     }
 
-    if (
-        !ctx->key_input_file_path ||
-        !ctx->key_output_file_path ||
-        !ctx->key_output_format) {
+    if (!ctx->key_input_file_path ||
+            !ctx->key_output_file_path ||
+            !ctx->key_output_format) {
         LOG_ERR("One or more required parameters missing.");
         return false;
     }
