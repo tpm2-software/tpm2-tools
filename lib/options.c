@@ -402,20 +402,3 @@ dump_common_opts (common_opts_t *opts)
     printf ("  verbose:          %s\n", opts->verbose ? "true" : "false");
     printf ("  version:          %s\n", opts->version ? "true" : "false");
 }
-/*
- * Execute man page for the appropriate command.
- */
-void
-execute_man (char *prog_name,
-             char *envp[])
-{
-        char *argv[] = {
-                "/man", // ARGv[0] needs to be something.
-                basename(prog_name),
-                NULL
-        };
-
-        printf("%s\n", basename(prog_name));
-
-        execvpe ("man", argv, envp);
-}

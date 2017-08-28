@@ -55,35 +55,6 @@ str_to_tpm_rc (const char *rc_str)
     return rc_read & TPM_RC_MAX;
 }
 
-int
-process_cmdline (int   argc,
-                 char *argv[],
-                 char *envp[])
-{
-    int opt = -1;
-    const char *optstring = "hv";
-    static struct option long_options[] = {
-        { "help", 0 , NULL, 'h' },
-        { "version", 0, NULL, 'v' },
-        { .name = NULL }
-    };
-    while ((opt = getopt_long (argc, argv, optstring, long_options, NULL)) != -1)
-    {
-        switch (opt)
-        {
-            case 'h':
-                execute_man (argv[0], envp);
-                exit (0);
-            case 'v':
-                showVersion (argv[0]);
-                exit (0);
-            case '?':
-                exit (1);
-        }
-    }
-    return optind;
-}
-
 /* Dump the hex, identifier and description for the format zero / VER1 error
  * provided in TPM_RC parameter.
  */
@@ -266,18 +237,18 @@ print_tpm_rc (TPM_RC rc)
     return ret;
 }
 
-int
-main (int argc, char *argv[], char *envp[])
-{
-    TPM_RC rc = 0;
-    int pos_ind = -1, ret = -1;
+int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+        TSS2_SYS_CONTEXT *sapi_context) {
 
-    pos_ind = process_cmdline (argc, argv, envp);
-    if (pos_ind + 1 != argc) {
-        LOG_ERR ("No error code provided, try --help");
-        exit (1);
+    (void)opts;
+    (void)envp;
+    (void)sapi_context;
+
+    if (argc != 2) {
+        LOG_ERR("Expected 1 tpm2 rc code, got: %d", argc - 1);
+        return 1;
     }
-    rc = str_to_tpm_rc (argv[pos_ind]);
-    ret = print_tpm_rc (rc);
-    exit (ret);
+
+    TPM_RC rc = str_to_tpm_rc (argv[1]);
+    return print_tpm_rc (rc);
 }

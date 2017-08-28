@@ -240,7 +240,7 @@ static bool create_ek_handle(getpubek_context *ctx) {
     return true;
 }
 
-static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
+static bool init(int argc, char *argv[], getpubek_context *ctx) {
 
     struct option options[] =
     {
@@ -257,7 +257,7 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
     };
 
     if (argc == 1) {
-        execute_man(argv[0], envp);
+        LOG_ERR("Expected arguments, got none.");
         return 1;
     }
 
@@ -342,6 +342,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
 
     /* common options are not used, avoid compiler warning */
     (void) opts;
+    (void) envp;
 
     getpubek_context ctx = {
             .passwords = {
@@ -354,7 +355,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             .is_session_based_auth = false
     };
 
-    bool result = init(argc, argv, envp, &ctx);
+    bool result = init(argc, argv, &ctx);
     if (!result) {
         return 1;
     }

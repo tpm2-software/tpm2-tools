@@ -28,7 +28,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <errno.h>
 #include <stdbool.h>
+#include <string.h>
+
+#include <unistd.h>
 
 #include "context-util.h"
 #include "log.h"
@@ -36,6 +40,21 @@
 #include "options.h"
 
 bool output_enabled = true;
+
+/*
+ * Execute man page for the appropriate command.
+ */
+static void execute_man(char *prog_name, char *envp[]) {
+
+    char *argv[] = {
+        "/man", // ARGv[0] needs to be something.
+        basename(prog_name),
+        NULL
+    };
+
+    execvpe("man", argv, envp);
+    LOG_ERR("Could not invoke man pager: %s", strerror(errno));
+}
 
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
