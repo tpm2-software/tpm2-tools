@@ -1,4 +1,5 @@
 next
+- tpm2_pcrlist: support yaml output for parsing.
 * tpm2_pcrevent: new tool for hashing and extending pcrs.
 * Make tpm2_{createprimary,create,load,pcrlist,hmac} tools to support the --quiet option.
 * Support for a --quiet option to suppress messages printed by tools to standard output.
