@@ -229,7 +229,7 @@ FILE* open_file(const char *path)
 bool write_file(FILE *fp, void *data, size_t len,
     const char *path, const char *label)
 {
-    if(fwrite(data, len, 1, fp) != 1)
+    if(files_write_bytes(fp, data, len) != true)
     {
         printf("OutFile: %s Write %s Data In Error!\n", path, label);
         fclose(fp);
