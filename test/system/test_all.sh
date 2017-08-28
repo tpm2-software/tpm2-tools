@@ -33,7 +33,9 @@
 #!/bin/bash
 
 SRC_DIR=`realpath ../../tools/`
+TEST_DIR=`realpath .`
 PATH=$SRC_DIR:$PATH
+PATH=$TEST_DIR:$PATH
 
 pass=0
 fail=0
@@ -53,7 +55,7 @@ test_wrapper()
   fi
 
   # Scripts are sloppy, perform cleanup
-  rm `find . -maxdepth 1 -type f ! -name '*.sh' ! -name 'README.md'` 2>/dev/null
+  rm `find . -maxdepth 1 -type f ! -name '*.sh' ! -name 'README.md' ! -name 'yaml_get.py'` 2>/dev/null
   sleep 1
 }
 
