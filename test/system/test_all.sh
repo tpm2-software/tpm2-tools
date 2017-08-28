@@ -86,6 +86,7 @@ test_wrapper test_tpm2_verifysignature.sh
 test_wrapper test_tpm2_send_command.sh
 test_wrapper test_tpm2_dump_capability.sh
 test_wrapper test_tpm2_startup.sh
+test_wrapper test_tpm2_pcrevent.sh
 
 # Building with asan on clang, the leak sanitizier
 # portion (lsan) on ancient versions is:

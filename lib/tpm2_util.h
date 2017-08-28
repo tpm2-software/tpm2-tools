@@ -11,7 +11,8 @@
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
 
 #define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
-#define TPM2B_EMPTY_INIT { .t = { .size = 0, }, }
+#define TPM2B_INIT(xsize) { .t = { .size = xsize, }, }
+#define TPM2B_EMPTY_INIT TPM2B_INIT(0)
 #define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }
 
 #define TPMS_AUTH_COMMAND_INIT(session_handle) { \
@@ -42,6 +43,11 @@
 		.tag = 0, \
 		.hierarchy = 0, \
 		.digest = TPM2B_EMPTY_INIT \
+    }
+
+#define TSS2_SYS_CMD_AUTHS_INIT(array) { \
+        .cmdAuthsCount = ARRAY_LEN(array), \
+        .cmdAuths = array, \
     }
 
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
