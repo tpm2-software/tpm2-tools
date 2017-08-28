@@ -239,7 +239,6 @@ static bool write_key(
 
     FILE *f = NULL;
     bool ret = false;
-    bool tmp_res = false;
     int ssl_res = -1;
     RSA *ssl_rsa_key = RSA_new();
     // openssl expects this in network byte order
@@ -258,12 +257,6 @@ static bool write_key(
         LOG_ERR("Failed to convert input data to SSL internal format: \"%s\"",
             strerror(errno)
         );
-        goto out;
-    }
-
-    tmp_res = files_does_file_exist(outfile);
-
-    if (tmp_res) {
         goto out;
     }
 
