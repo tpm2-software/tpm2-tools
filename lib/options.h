@@ -130,10 +130,34 @@ showArgMismatch (const char *name)
     printf("Please type \"%s -h\" get the usage!\n", name);
 }
 
+#ifndef VERSION
+  #warning "VERSION Not known at compile time, not embedding..."
+  #define VERSION "UNKNOWN"
+#endif
+
 static inline void
-showVersion (const char *name)
-{
-    printf("%s, version %s\n", name, VERSION);
+showVersion (const char *name) {
+    #ifdef HAVE_TCTI_TABRMD
+      #define TCTI_TABRMD_CONF "tabrmd,"
+    #else
+      #define TCTI_TABRMD_CONF ""
+    #endif
+
+    #ifdef HAVE_TCTI_SOCK
+      #define TCTI_SOCK_CONF "socket,"
+    #else
+      #define TCTI_SOCK_CONF ""
+    #endif
+
+    #ifdef HAVE_TCTI_DEV
+      #define TCTI_DEV_CONF "device,"
+    #else
+      #define TCTI_DEV_CONF ""
+    #endif
+
+    static const char *tcti_conf = TCTI_TABRMD_CONF TCTI_SOCK_CONF TCTI_DEV_CONF;
+    printf("tool=\"%s\" version=\"%s\" tctis=\"%s\"\n", name, VERSION,
+            tcti_conf);
 }
 
 #endif /* OPTIONS_H */
