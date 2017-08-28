@@ -40,10 +40,7 @@ file inputFile, and output the key into file akKeyFile.
 parse the algorithm and key values in TPM2B_PUBLIC struct which input via
 file inputFile, and output the key into file akKeyFile.
 .PP
-The output file will start with a 2 byte algorithm identifier followed by one
-or more public key parts. Each public key part will start with a 2 byte
-length header followed by the actual data. Both header fields are stored in
-big endian byte order.
+The output file will be in an opaque implementation defined format.
 .SH OPTIONS
 .TP
 \fB\-f\fR
