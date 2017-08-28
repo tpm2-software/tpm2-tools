@@ -57,6 +57,16 @@ struct tpm2_pcrs {
     TPML_DIGEST pcr_values[24]; //XXX Why 24?
 };
 
+typedef union format_flags format_flags;
+union format_flags {
+    struct {
+        UINT8 yaml : 1;
+        UINT8 unused : 1;
+    };
+    UINT8 all;
+};
+
+
 typedef struct listpcr_context listpcr_context;
 struct listpcr_context {
     TSS2_SYS_CONTEXT *sapi_context;
@@ -65,6 +75,7 @@ struct listpcr_context {
     tpm2_pcrs pcrs;
     TPML_PCR_SELECTION pcr_selections;
     TPMS_CAPABILITY_DATA cap_data;
+    format_flags format;
 };
 
 static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
@@ -231,8 +242,13 @@ static bool show_pcr_values(listpcr_context *context) {
         const char *alg_name = tpm2_alg_util_algtostr(
                 context->pcr_selections.pcrSelections[i].hash);
 
-        TOOL_OUTPUT("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
+        if (context->format.yaml) {
+            TOOL_OUTPUT("%s :\n", alg_name);
+
+        } else {
+            TOOL_OUTPUT("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
                 context->pcr_selections.pcrSelections[i].hash);
+        }
 
         UINT32 pcr_id;
         for (pcr_id = 0; pcr_id < context->pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
@@ -245,10 +261,15 @@ static bool show_pcr_values(listpcr_context *context) {
                 return false;
             }
 
-            TOOL_OUTPUT("PCR_%02d:", pcr_id);
+            if (context->format.yaml) {
+                TOOL_OUTPUT("  %-2d : ", pcr_id);
+            } else {
+                TOOL_OUTPUT("PCR_%02d:", pcr_id);
+            }
             int k;
-            for (k = 0; k < context->pcrs.pcr_values[vi].digests[di].t.size; k++)
-                TOOL_OUTPUT(" %02x", context->pcrs.pcr_values[vi].digests[di].t.buffer[k]);
+            for (k = 0; k < context->pcrs.pcr_values[vi].digests[di].t.size; k++) {
+                TOOL_OUTPUT("%02x", context->pcrs.pcr_values[vi].digests[di].t.buffer[k]);
+            }
             TOOL_OUTPUT("\n");
 
             if (context->output_file != NULL
@@ -339,6 +360,17 @@ static void show_banks(tpm2_algorithm *g_banks) {
     TOOL_OUTPUT("\n");
 }
 
+static format_flags get_format(const char *optarg) {
+
+    format_flags flags = { .all = 0 };
+
+    if (!strcmp(optarg, "yaml")) {
+        flags.yaml = 1;
+    }
+
+    return flags;
+}
+
 int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
@@ -353,6 +385,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         .output_file = NULL,
         .pcr_selections = TPML_PCR_SELECTION_EMPTY_INIT,
         .pcrs = { .count = 0 },
+        .format = { .all = 0 },
         .sapi_context = sapi_context
     };
 
@@ -365,6 +398,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
         { "output", 1, NULL, 'o' },
         { "algs", 0, NULL, 's' },
         { "selList", 1, NULL, 'L' },
+        { "format", required_argument, NULL, 'f' },
         { NULL, 0, NULL, '\0' }
     };
 
@@ -400,6 +434,13 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
             break;
         case 's':
             s_flag = 1;
+            break;
+        case 'f':
+            context.format = get_format(optarg);
+            if (!context.format.all) {
+                LOG_ERR("Unknown format, got: \"%s\"", optarg);
+                goto error;
+            }
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!", optopt);
