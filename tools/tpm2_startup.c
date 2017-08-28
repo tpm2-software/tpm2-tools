@@ -115,12 +115,10 @@ sanity_check_startup_opts (startup_opts_t *startup_opts)
 int
 execute_tool (int               argc,
               char             *argv[],
-              char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
-    (void) opts;
-    (void) envp;
+    UNUSED(opts);
 
     TSS2_RC rc;
     TPM_SU startup_type;

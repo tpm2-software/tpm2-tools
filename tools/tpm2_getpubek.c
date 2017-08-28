@@ -337,12 +337,11 @@ static bool init(int argc, char *argv[], getpubek_context *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
     /* common options are not used, avoid compiler warning */
-    (void) opts;
-    (void) envp;
+    UNUSED(opts);
 
     getpubek_context ctx = {
             .passwords = {

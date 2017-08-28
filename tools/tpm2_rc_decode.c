@@ -34,8 +34,9 @@
 
 #include <sapi/tpm20.h>
 
-#include "options.h"
 #include "log.h"
+#include "main.h"
+#include "options.h"
 #include "rc-decode.h"
 
 #define TPM_RC_MAX 0xffffffff
@@ -237,12 +238,11 @@ print_tpm_rc (TPM_RC rc)
     return ret;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
-    (void)opts;
-    (void)envp;
-    (void)sapi_context;
+    UNUSED(opts);
+    UNUSED(sapi_context);
 
     if (argc != 2) {
         LOG_ERR("Expected 1 tpm2 rc code, got: %d", argc - 1);

@@ -157,10 +157,10 @@ static bool init(tpm2_send_command_ctx *ctx, int argc, char *argv[]) {
  * in network byte order (big-endian). We output the response in the same
  * form.
  */
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[], common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
-    (void) envp;
-    (void) opts;
+
+    UNUSED(opts);
 
     int ret = 1;
 

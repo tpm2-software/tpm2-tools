@@ -342,12 +342,11 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
     /* opts and envp are unused, avoid compiler warning */
-    (void)opts;
-    (void) envp;
+    UNUSED(opts);
 
     tpm_sign_ctx ctx = {
             .msg = NULL,

@@ -609,12 +609,10 @@ dump_tpm_capability (TPMU_CAPABILITIES    *capabilities,
 int
 execute_tool (int               argc,
               char             *argv[],
-              char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
-    (void) opts;
-    (void) envp;
+    UNUSED(opts);
 
     TSS2_RC              rc;
     TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;

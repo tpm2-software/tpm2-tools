@@ -80,14 +80,12 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
 int
 execute_tool (int              argc,
               char             *argv[],
-              char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
-    (void) opts;
-    (void) envp;
-    (void) argc;
-    (void) argv;
+    UNUSED(opts);
+    UNUSED(argc);
+    UNUSED(argv);
 
     TPMI_YES_NO moreData;
     TPMS_CAPABILITY_DATA capabilityData;

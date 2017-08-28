@@ -183,13 +183,12 @@ static bool init(int argc, char *argv[], tpm_akparse_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
     /* opts is unused, avoid compiler warning */
-    (void)opts;
-    (void)sapi_context;
-    (void)envp;
+    UNUSED(opts);
+    UNUSED(sapi_context);
 
     struct tpm_akparse_ctx ctx;
 

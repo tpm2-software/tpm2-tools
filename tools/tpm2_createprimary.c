@@ -178,12 +178,10 @@ int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy,
 int
 execute_tool (int               argc,
               char             *argv[],
-              char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
-    (void) envp;
-    (void) opts;
+    UNUSED(opts);
 
     TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_EMPTY_INIT;
 

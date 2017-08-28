@@ -285,11 +285,10 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     return 0;
 }
 
-int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool (int argc, char *argv[],  common_opts_t *opts,
               TSS2_SYS_CONTEXT *sapi_context) {
 
-    (void) envp;
-    (void) opts;
+    UNUSED(opts);
 
     int opt = -1;
     const char *optstring = "hvk:c:P:l:g:L:o:S:q:";

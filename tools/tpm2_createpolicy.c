@@ -221,12 +221,11 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
     /* opts and envp are unused */
-    (void) opts;
-    (void) envp;
+    UNUSED(opts);
 
     create_policy_ctx pctx = {
         .sapi_context = sapi_context,
