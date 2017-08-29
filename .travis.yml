@@ -21,8 +21,6 @@ addons:
   apt:
     packages:
     - autoconf-archive
-    - openssl
-    - libssl-dev
     - libcurl4-openssl-dev
     - libdbus-1-dev
     - libglib2.0-dev
@@ -65,6 +63,13 @@ install:
     - sha256sum libcmocka0_1.0.1-2_amd64.deb | grep -q 797155b45a8288a860c4ed9dd3f161420f09ebf362de30166d9f6b98bfc27dd0
     - sudo dpkg -i libcmocka0_1.0.1-2_amd64.deb
     - sudo dpkg -i libcmocka-dev_1.0.1-2_amd64.deb
+    # openssl 1.0.2g
+    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu4.6_amd64.deb
+    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_1.0.2g-1ubuntu4.6_amd64.deb
+    - sha256sum libssl1.0.0_1.0.2g-1ubuntu4.6_amd64.deb | grep -q b858321c5858533399320fc2d849962c25288fe17f545dc4fb3ce99630cea5fe
+    - sha256sum libssl-dev_1.0.2g-1ubuntu4.6_amd64.deb | grep -q e4ad54c12aaf88d65c04eaccf1e07baf81ab3d14acf7e118137e8b1e10bdd06b
+    - sudo dpkg -i libssl1.0.0_1.0.2g-1ubuntu4.6_amd64.deb
+    - sudo dpkg -i libssl-dev_1.0.2g-1ubuntu4.6_amd64.deb
 
 script:
     - ./.ci/travis-build-and-run-tests.sh
