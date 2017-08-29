@@ -350,25 +350,3 @@ get_common_opts (int                    *argc_param,
 
     return 0;
 }
-/*
- * Dump the contents of the common_opts_t structure to stdout.
- */
-void
-dump_common_opts (common_opts_t *opts)
-{
-    printf ("common_opts_t:\n");
-    printf ("  tcti_type:        %s\n", tcti_name_from_type (opts->tcti_type));
-#ifdef HAVE_TCTI_DEV
-    printf ("  device_file_name: %s\n", opts->device_file);
-#endif
-#ifdef HAVE_TCTI_SOCK
-    printf ("  address:          %s\n", opts->socket_address);
-    printf ("  port:             %d\n", opts->socket_port);
-#endif
-#ifdef HAVE_TCTI_TABRMD
-    /* No options for this TCTI yet. */
-#endif
-    printf ("  help:             %s\n", opts->help    ? "true" : "false");
-    printf ("  verbose:          %s\n", opts->verbose ? "true" : "false");
-    printf ("  version:          %s\n", opts->version ? "true" : "false");
-}
