@@ -1,0 +1,62 @@
+From e5674072ba54e4e9eca0482043bb6a252aac478c Mon Sep 17 00:00:00 2001
+From: William Roberts <william.c.roberts@intel.com>
+Date: Tue, 29 Aug 2017 11:47:01 -0700
+Subject: [PATCH 1/2] tpm2-command: fix compile errors
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Fixes:
+src/tpm2-command.c: In function ‘tpm2_command_get_auth_attrs’:
+src/tpm2-command.c:634:16: error: cast to union type from type not present in union
+         return (TPMA_SESSION)(UINT32)0;
+                ^
+src/tpm2-command.c:640:16: error: cast to union type from type not present in union
+         return (TPMA_SESSION)(UINT32)0;
+                ^
+src/tpm2-command.c:107:6: error: cast to union type from type not present in union
+     ((TPMA_SESSION)(UINT32)cmd->buffer [AUTH_SESSION_ATTRS_OFFSET (cmd, index)])
+      ^
+src/tpm2-command.c:642:12: note: in expansion of macro ‘AUTH_GET_SESSION_ATTRS’
+     return AUTH_GET_SESSION_ATTRS (command, auth_offset);
+            ^
+src/tpm2-command.c:643:1: error: control reaches end of non-void function [-Werror=return-type]
+ }
+
+Signed-off-by: William Roberts <william.c.roberts@intel.com>
+---
+ src/tpm2-command.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/tpm2-command.c b/src/tpm2-command.c
+index c2a255a..e4896ad 100644
+--- a/src/tpm2-command.c
++++ b/src/tpm2-command.c
+@@ -104,7 +104,7 @@
+ #define AUTH_SESSION_ATTRS_END_OFFSET(cmd, index) \
+     (AUTH_SESSION_ATTRS_OFFSET (cmd, index) + sizeof (UINT8))
+ #define AUTH_GET_SESSION_ATTRS(cmd, index) \
+-    ((TPMA_SESSION)(UINT32)cmd->buffer [AUTH_SESSION_ATTRS_OFFSET (cmd, index)])
++    ((TPMA_SESSION)(UINT8)cmd->buffer [AUTH_SESSION_ATTRS_OFFSET (cmd, index)])
+ /* authorization */
+ #define AUTH_AUTH_SIZE_OFFSET(cmd, index) \
+     (AUTH_SESSION_ATTRS_END_OFFSET (cmd, index))
+@@ -631,13 +631,13 @@ tpm2_command_get_auth_attrs (Tpm2Command *command,
+     size_t attrs_end;
+ 
+     if (command == NULL) {
+-        return (TPMA_SESSION)(UINT32)0;
++        return (TPMA_SESSION)(UINT8)0;
+     }
+     attrs_end = AUTH_SESSION_ATTRS_END_OFFSET (command, auth_offset);
+     if (attrs_end > command->buffer_size) {
+         g_warning ("%s attempt to access session attributes overruns command "
+                    "buffer", __func__);
+-        return (TPMA_SESSION)(UINT32)0;
++        return (TPMA_SESSION)(UINT8)0;
+     }
+     return AUTH_GET_SESSION_ATTRS (command, auth_offset);
+ }
+-- 
+2.7.4
+
