@@ -51,37 +51,6 @@ struct tpm_akparse_ctx {
     char *ak_key_file_path;
 };
 
-static bool is_big_endian() {
-
-    uint32_t test_word;
-    uint8_t *test_byte;
-
-    test_word = 0xFF000000;
-    test_byte = (uint8_t *) (&test_word);
-
-    return test_byte[0] == 0xFF;
-}
-
-static bool write_be_convert(FILE *file, UINT16 data) {
-
-    bool is_big_endian_arch = is_big_endian();
-    if (!is_big_endian_arch) {
-        BYTE *from = (BYTE *) &data;
-        UINT16 tmp;
-        BYTE *to = (BYTE *) &tmp;
-        to[1] = from[0];
-        to[0] = from[1];
-        data = tmp;
-    }
-
-    size_t size = fwrite(&data, 1, sizeof(UINT16), file);
-    if (size != sizeof(UINT16)) {
-        LOG_ERR("Short write, expected %zu, got: %zu", sizeof(UINT16), size);
-        return false;
-    }
-    return true;
-}
-
 static bool save_alg_and_key_to_file(const char *key_file, UINT16 alg_type,
         TPM2B **key_data, size_t key_data_len) {
 
@@ -92,7 +61,7 @@ static bool save_alg_and_key_to_file(const char *key_file, UINT16 alg_type,
         return false;
     }
 
-    bool res = write_be_convert(f, alg_type);
+    bool res = files_write_16(f, alg_type);
     if (!res) {
         /* write_be_convert prints error */
         goto out;
@@ -106,7 +75,7 @@ static bool save_alg_and_key_to_file(const char *key_file, UINT16 alg_type,
     for (i=0; i < key_data_len; i++) {
         TPM2B *tmp = key_data[i];
 
-        res = write_be_convert(f, tmp->size);
+        res = files_write_16(f, tmp->size);
         if (!res) {
             /* write_be_convert prints error */
             goto out;
