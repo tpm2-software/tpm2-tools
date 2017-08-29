@@ -218,6 +218,8 @@ test_unit_test_tpm2_password_util_SOURCES  = test/unit/test_tpm2_password_util.c
 
 endif
 
+if WITH_MANPAGES
+
 EXTRA_DIST = $(top_srcdir)/man
 
 man8_MANS = \
@@ -312,3 +314,5 @@ man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
 	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man8_MANS)
+
+endif

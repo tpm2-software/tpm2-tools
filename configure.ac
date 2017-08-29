@@ -93,6 +93,14 @@ AS_IF([test x"$enable_manpager" != x"no"],
   [ AC_DEFINE([ENABLE_MANPAGER], [1]) ]
 )
 
+AC_ARG_WITH([manpages],
+            [AS_HELP_STRING([--with-manpages],
+                            [Build manpages (default is yes)])],
+            [],
+            [with_manpages=check])
+
+AM_CONDITIONAL([WITH_MANPAGES], [test "x$with_manpages" != xno])
+
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--enable-hardening],
     [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
