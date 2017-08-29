@@ -75,7 +75,7 @@ AS_IF(
     [AC_MSG_ERROR(
         [no TCTIs: at least one TCTI library must be enabled],
         [1])])
-PKG_CHECK_MODULES([CRYPTO],[libcrypto])
+PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
 PKG_CHECK_MODULES([CURL],[libcurl])
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
