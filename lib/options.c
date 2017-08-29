@@ -178,31 +178,6 @@ get_common_opts_from_env (common_opts_t *common_opts)
     if (env_str != NULL)
         common_opts->socket_port = strtol (env_str, &end_ptr, 10);
 }
-/*
- * Append a string to the parameter argv array. We realloc this array adding
- * a new char* to point to the appended entry. The argc parameter is updated
- * to account for the new element in the array. We return the address of the
- * newly reallocated array. If the realloc fails we return NULL.
- */
-char**
-append_arg_to_vector (int*  argc,
-                      char* argv[],
-                      char* arg_string)
-{
-    char **new_argv;
-
-    ++(*argc);
-    new_argv = realloc (argv, sizeof (char*) * (*argc));
-    if (new_argv != NULL) {
-        new_argv[*argc - 1] = arg_string;
-    } else {
-        LOG_ERR("Failed to realloc new_argv to append string %s: %s",
-                arg_string,
-                strerror (errno));
-    }
-
-    return new_argv;
-}
 
 /*
  * Get data from the environment and the caller (by way of the argument
@@ -306,7 +281,7 @@ get_common_opts (int                    *argc_param,
 
     opterr = 0;
     optind = 1;
-    new_argv = calloc (1, sizeof (char*));
+    new_argv = calloc (argc, sizeof (char*));
     if (new_argv == NULL) {
         fprintf (stderr, "Failed to allocate memory for tool argument "
                  "vector: %s\n", strerror (errno));
@@ -316,16 +291,13 @@ get_common_opts (int                    *argc_param,
     while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
            != -1)
     {
-        switch (c) {
-        case 1: { /* positional arguments */
-            char **tmp = append_arg_to_vector (&new_argc, new_argv, optarg);
-            if (tmp == NULL) {
-                free(new_argv);
-                return 2;
-            }
-            new_argv = tmp;
+        if (new_argc >= argc) {
+            LOG_ERR("Error parsing common options");
+            free(new_argv);
+            return 2;
         }
-            break;
+
+        switch (c) {
         case 'T':
             common_opts->tcti_type = tcti_type_from_name (optarg);
             break;
@@ -363,14 +335,12 @@ get_common_opts (int                    *argc_param,
         case 'v':
             common_opts->version = true;
             break;
-        case '?': {
-            char **tmp = append_arg_to_vector (&new_argc, new_argv, argv[optind - 1]);
-            if (tmp == NULL) {
-                free(new_argv);
-                return 2;
-            }
-            new_argv = tmp;
-        }
+        case '?': /* unknown */
+            optarg = argv[optind - 1];
+            /* no break */
+        case 1: /* positional arguments */
+            new_argv[new_argc] = optarg;
+            new_argc++;
             break;
         }
     }
