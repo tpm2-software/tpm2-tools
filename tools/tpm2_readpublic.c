@@ -29,29 +29,34 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {
+    struct {
+        UINT8 H      : 1;
+        UINT8 o      : 1;
+        UINT8 c      : 1;
+        UINT8 unused : 5;
+    } flags;
     TPMI_DH_OBJECT objectHandle;
     char *outFilePath;
-    TSS2_SYS_CONTEXT *sapi_context;
+    char *context_file;
 };
 
-static int read_public_and_save(tpm_readpub_ctx *ctx) {
+static tpm_readpub_ctx ctx;
+
+static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_RESPONSE session_out_data;
     TSS2_SYS_RSP_AUTHS sessions_out_data;
@@ -67,91 +72,77 @@ static int read_public_and_save(tpm_readpub_ctx *ctx) {
     sessions_out_data.rspAuths = &session_out_data_array[0];
     sessions_out_data.rspAuthsCount = ARRAY_LEN(session_out_data_array);
 
-    TPM_RC rval = Tss2_Sys_ReadPublic(ctx->sapi_context, ctx->objectHandle, 0,
+    TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, ctx.objectHandle, 0,
             &public, &name, &qualified_name, &sessions_out_data);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_ReadPublic error: rval = 0x%0x", rval);
         return false;
     }
 
-    printf("\nTPM2_ReadPublic OutPut: \n");
-    printf("name: \n");
+    tpm2_tool_output("name:");
     UINT16 i;
-    for (i = 0; i < name.t.size; i++)
-        printf("%02x ", name.t.name[i]);
-    printf("\n");
+    for (i = 0; i < name.t.size; i++) {
+        tpm2_tool_output("%02x", name.t.name[i]);
+    }
+    tpm2_tool_output("\n");
 
-    printf("qualified_name: \n");
-    for (i = 0; i < qualified_name.t.size; i++)
-        printf("%02x ", qualified_name.t.name[i]);
-    printf("\n");
+    tpm2_tool_output("qualified_name:");
+    for (i = 0; i < qualified_name.t.size; i++) {
+        tpm2_tool_output("%02x", qualified_name.t.name[i]);
+    }
+    tpm2_tool_output("\n");
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &public,
+    return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *) &public,
             sizeof(public));
 }
 
-static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
+static bool on_option(char key, char *value) {
 
-    const char *short_options = "H:o:c:";
-    static struct option long_options[] = {
-        {"object",        required_argument, NULL,'H'},
-        {"opu",           required_argument, NULL,'o'},
-        {"contextObject", required_argument, NULL,'c'},
-        {NULL,            no_argument,       NULL, '\0'}
-    };
-
-    union {
-        struct {
-            UINT8 H      : 1;
-            UINT8 o      : 1;
-            UINT8 c      : 1;
-            UINT8 unused : 5;
-        };
-        UINT8 all;
-    } flags = { .all = 0 };
-
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return 0;
+    bool result;
+    switch (key) {
+    case 'H':
+        result = tpm2_util_string_to_uint32(value, &ctx.objectHandle);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.H = 1;
+        break;
+    case 'o':
+        ctx.outFilePath = optarg;
+        ctx.flags.o = 1;
+        break;
+    case 'c':
+        ctx.context_file = optarg;
+        ctx.flags.c = 1;
+        break;
     }
 
-    int opt = -1;
-    bool result;
-    char *context_file = NULL;
-    while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'H':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->objectHandle);
-            if (!result) {
-                return false;
-            }
-            flags.H = 1;
-            break;
-        case 'o':
-            result = files_does_file_exist(optarg);
-            if (result) {
-                return false;
-            }
-            ctx->outFilePath = optarg;
-            flags.o = 1;
-            break;
-        case 'c':
-            context_file = optarg;
-            flags.c = 1;
-            break;
-        }
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static const struct option topts[] = {
+        { "object",        required_argument, NULL,'H' },
+        { "opu",           required_argument, NULL,'o' },
+        { "contextObject", required_argument, NULL,'c' },
     };
 
-    if (!((flags.H || flags.c) && flags.o)) {
-        showArgMismatch(argv[0]);
+    *opts = tpm2_options_new("H:o:c:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
+
+    return *opts != NULL;
+}
+
+static bool init(TSS2_SYS_CONTEXT *sapi_context) {
+
+    if (!((ctx.flags.H || ctx.flags.c) && ctx.flags.o)) {
         return false;
     }
 
-    if (flags.c) {
-        result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->objectHandle,
-                context_file);
+    if (ctx.flags.c) {
+        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.objectHandle,
+                ctx.context_file);
         if (!result) {
             return false;
         }
@@ -160,22 +151,14 @@ static bool init(int argc, char *argv[], tpm_readpub_ctx * ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    (void)opts;
-    (void)envp;
+    UNUSED(flags);
 
-    tpm_readpub_ctx ctx = {
-            .objectHandle = 0,
-            .outFilePath = NULL,
-            .sapi_context = sapi_context
-    };
-
-    bool result = init(argc, argv, &ctx);
+    bool result = init(sapi_context);
     if (!result) {
         return 1;
     }
 
-    return read_public_and_save(&ctx) != true;
+    return read_public_and_save(sapi_context) != true;
 }

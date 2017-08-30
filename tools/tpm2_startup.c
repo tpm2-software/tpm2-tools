@@ -29,12 +29,11 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdbool.h>
-#include <stdio.h>
-#include <getopt.h>
 #include <stdlib.h>
 
-#include "main.h"
 #include "log.h"
+#include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 /*
  * Both the Microsoft and IBM TPM2 simulators require some specific setup
@@ -44,103 +43,49 @@
  * NOTE: In the code that interacts with a TPM this can be a very ugly
  * abstraction leak.
  */
+typedef struct tpm2_startup_ctx tpm2_startup_ctx;
+struct tpm2_startup_ctx {
+    UINT8 clear : 1;
+};
 
-typedef struct startup_opts {
-    bool          clear;
-    bool          state;
-} startup_opts_t;
-/*
- * Parse the command line options specific to the 'startup' command.
- * Populate the provided startup_opts_t structure with this data.
- */
-void
-get_startup_opts (int                 argc,
-                  char               *argv[],
-                  startup_opts_t     *startup_opts)
-{
-    int c = 0, option_index = 0;
-    char *arg_str = "cs";
-    static struct option long_options [] = {
-        {
-            .name    = "clear",
-            .has_arg = no_argument,
-            .flag    = NULL,
-            .val     = 'c',
-        },
-        {
-            .name    = "state",
-            .has_arg = no_argument,
-            .flag    = NULL,
-            .val     = 's',
-        },
-        { .name = NULL, },
-    };
-    while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
-           != -1)
-    {
-        switch (c) {
-        case 'c':
-            startup_opts->clear = true;
-            break;
-        case 's':
-            startup_opts->state = true;
-            break;
-        }
+static tpm2_startup_ctx ctx;
+
+static bool on_option(char key, char *value) {
+
+    UNUSED(value);
+
+    switch (key) {
+    case 'c':
+        ctx.clear = 1;
+        break;
+        /*no default */
     }
+
+    return true;
 }
 
-/*
- * Sanity check the options that were passed. This is simply being sure
- * we have either the 'clear' or 'state' flags set but not both.
- */
-int
-sanity_check_startup_opts (startup_opts_t *startup_opts)
-{
-    /*
-     * Detect when both clear and state are 'true' or 'false'. If this
-     * condition fails, then the know that either clear or state are set but
-     * not which (but we don't care).
-     */
-    if (startup_opts->clear == startup_opts->state) {
-        LOG_ERR ("Select either '--clear' or '--state'. Try --help.");
-        return 1;
-    }
-    return 0;
-}
-/*
- * Create a connection to the simulator using the provided parameters:
- * hostname / IP address and port. Then issue the commands necessary to bring
- * the simulator up to a point where it can be used by the SAPI.
- */
-int
-execute_tool (int               argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
-    (void) opts;
-    (void) envp;
+bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    TSS2_RC rc;
-    TPM_SU startup_type;
-    startup_opts_t startup_opts = {
-        .clear       = false,
-        .state       = false,
+    static struct option topts [] = {
+        { "clear", no_argument, NULL, 'c' },
     };
 
-    get_startup_opts (argc, argv, &startup_opts);
-    if (sanity_check_startup_opts (&startup_opts))
-        return 1;
-    /* cheat here a bit and use the 'clear' flag to determine the SU type */
-    if (startup_opts.clear)
-        startup_type = TPM_SU_CLEAR;
-    else
-        startup_type = TPM_SU_STATE;
+    *opts = tpm2_options_new("cs", ARRAY_LEN(topts), topts,
+            on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    TPM_SU startup_type = ctx.clear ? TPM_SU_CLEAR : TPM_SU_STATE;
 
     LOG_INFO ("Sending TPM_Startup command with type: %s",
-            startup_opts.clear ? "TPM_SU_CLEAR" : "TPM_SU_STATE");
-    rc = Tss2_Sys_Startup (sapi_context, startup_type);
+            ctx.clear ? "TPM_SU_CLEAR" : "TPM_SU_STATE");
+
+    TPM_RC rc = Tss2_Sys_Startup (sapi_context, startup_type);
     if (rc != TSS2_RC_SUCCESS && rc != TPM_RC_INITIALIZE) {
         LOG_ERR ("Tss2_Sys_Startup failed: 0x%x",
                  rc);

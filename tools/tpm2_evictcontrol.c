@@ -37,15 +37,14 @@
 
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
@@ -56,10 +55,21 @@ struct tpm_evictcontrol_ctx {
         TPMI_DH_OBJECT object;
         TPMI_DH_OBJECT persist;
     } handle;
-    TSS2_SYS_CONTEXT *sapi_context;
+    char *context_file;
+    struct {
+        UINT8 A : 1;
+        UINT8 H : 1;
+        UINT8 S : 1;
+        UINT8 c : 1;
+        UINT8 P : 1;
+    } flags;
 };
 
-static int evict_control(tpm_evictcontrol_ctx *ctx) {
+static tpm_evictcontrol_ctx ctx = {
+    .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
+};
+
+static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -67,7 +77,7 @@ static int evict_control(tpm_evictcontrol_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_ata_out_array[1];
 
-    session_data_array[0] = &ctx->session_data;
+    session_data_array[0] = &ctx.session_data;
     session_ata_out_array[0] = &session_data_out;
 
     sessions_data_out.rspAuths = &session_ata_out_array[0];
@@ -76,7 +86,8 @@ static int evict_control(tpm_evictcontrol_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_EvictControl(ctx->sapi_context, ctx->auth, ctx->handle.object, &sessions_data, ctx->handle.persist,&sessions_data_out);
+    TPM_RC rval = Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
+                                        &sessions_data, ctx.handle.persist,&sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EvictControl failed, error code: 0x%x", rval);
         return false;
@@ -84,10 +95,68 @@ static int evict_control(tpm_evictcontrol_ctx *ctx) {
     return true;
 }
 
-static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
-    const char *optstring = "A:H:S:P:c:i:";
-    static struct option long_options[] = {
+    bool result;
+
+    switch (key) {
+    case 'A':
+        if (!strcasecmp(value, "o")) {
+            ctx.auth = TPM_RH_OWNER;
+        } else if (!strcasecmp(value, "p")) {
+            ctx.auth = TPM_RH_PLATFORM;
+        } else {
+            LOG_ERR("Incorrect auth value, got: \"%s\", expected [o|O|p|P!",
+                    value);
+            return false;
+        }
+        ctx.flags.A = 1;
+        break;
+    case 'H':
+        result = tpm2_util_string_to_uint32(value, &ctx.handle.object);
+        if (!result) {
+            LOG_ERR("Could not convert object handle to a number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        ctx.flags.H = 1;
+        break;
+    case 'S':
+        result = tpm2_util_string_to_uint32(value, &ctx.handle.persist);
+        if (!result) {
+            LOG_ERR("Could not convert persistent handle to a number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        ctx.flags.S = 1;
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        if (!result) {
+            LOG_ERR("Invalid authorization password, got\"%s\"", value);
+            return false;
+        }
+        ctx.flags.P = 1;
+        break;
+    case 'c':
+        ctx.context_file = value;
+        ctx.flags.c = 1;
+        break;
+    case 'i':
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        break;
+    }
+
+    return  true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
       {"auth",        required_argument, NULL, 'A'},
       {"handle",      required_argument, NULL, 'H'},
       {"persistent",  required_argument, NULL, 'S'},
@@ -97,133 +166,31 @@ static bool init(int argc, char *argv[], tpm_evictcontrol_ctx *ctx) {
       {NULL,          no_argument,       NULL, '\0'}
     };
 
-    union {
-        struct {
-            UINT8 A : 1;
-            UINT8 H : 1;
-            UINT8 S : 1;
-            UINT8 c : 1;
-            UINT8 P : 1;
-        };
-        UINT8 all;
-    } flags = { .all = 0 };
-
-    char *contextFile = NULL;
-
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
-    int opt;
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'A':
-            if (!strcasecmp(optarg, "o")) {
-                ctx->auth = TPM_RH_OWNER;
-            } else if (!strcasecmp(optarg, "p")) {
-                ctx->auth = TPM_RH_PLATFORM;
-            } else {
-                LOG_ERR("Incorrect auth value, got: \"%s\", expected [o|O|p|P!",
-                        optarg);
-                return false;
-            }
-            flags.A = 1;
-            break;
-        case 'H': {
-            bool result = tpm2_util_string_to_uint32(optarg, &ctx->handle.object);
-            if (!result) {
-                LOG_ERR(
-                        "Could not convert object handle to a number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.H = 1;
-        }
-            break;
-        case 'S': {
-            bool result = tpm2_util_string_to_uint32(optarg, &ctx->handle.persist);
-            if (!result) {
-                LOG_ERR(
-                        "Could not convert persistent handle to a number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.S = 1;
-        }
-            break;
-        case 'P': {
-            bool result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid authorization password, got\"%s\"", optarg);
-                return false;
-            }
-            flags.P = 1;
-        }
-            break;
-        case 'c':
-            contextFile = optarg;
-            flags.c = 1;
-            break;
-        case 'i':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return false;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    if (!(flags.A && (flags.H || flags.c) && flags.S)) {
-        LOG_ERR("Invalid arguments");
-        return false;
-    }
-
-    if (flags.c) {
-        bool result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.object,
-                contextFile);
-        if (!result) {
-            return false;
-        }
-    }
-
-    return  true;
-}
-
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
-
-    /* opts and envp are unused, avoid compiler warning */
-    (void) opts;
-    (void) envp;
-
-    tpm_evictcontrol_ctx ctx = {
-            .auth = 0,
-            .handle = { .object = 0, .persist = 0 },
-            .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
-            .sapi_context = sapi_context
-    };
-
     ctx.session_data.sessionHandle = TPM_RS_PW;
 
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
+    *opts = tpm2_options_new("A:H:S:P:c:i:", ARRAY_LEN(topts), topts, on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    if (!(ctx.flags.A && (ctx.flags.H || ctx.flags.c) && ctx.flags.S)) {
+        LOG_ERR("Invalid arguments");
         return 1;
     }
 
-    /* FIXME required output for testing scripts */
-    printf("persistentHandle: 0x%x\n", ctx.handle.persist);
+    if (ctx.flags.c) {
+        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.handle.object,
+                                                       ctx.context_file);
+        if (!result) {
+            return 1;
+        }
+    }
 
-    return evict_control(&ctx) != true;
+    tpm2_tool_output("persistentHandle: 0x%x\n", ctx.handle.persist);
+
+    return evict_control(sapi_context) != true;
 }

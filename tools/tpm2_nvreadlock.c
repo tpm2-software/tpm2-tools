@@ -35,14 +35,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvreadlock_ctx tpm_nvreadlock_ctx;
@@ -52,10 +51,15 @@ struct tpm_nvreadlock_ctx {
     UINT32 size_to_read;
     UINT32 offset;
     TPMS_AUTH_COMMAND session_data;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
-static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
+static tpm_nvreadlock_ctx ctx = {
+    .auth_handle = TPM_RH_PLATFORM,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+
+};
+
+static bool nv_readlock(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -64,7 +68,7 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
 
-    session_data_array[0] = &ctx->session_data;
+    session_data_array[0] = &ctx.session_data;
     sessionDataOutArray[0] = &session_data_out;
 
     sessions_data_out.rspAuths = &sessionDataOutArray[0];
@@ -73,115 +77,85 @@ static bool nv_readlock(tpm_nvreadlock_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_NV_ReadLock(ctx->sapi_context, ctx->auth_handle, ctx->nv_index,
+    TPM_RC rval = Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
             &sessions_data, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed to lock NVRAM area at index 0x%x (%d).Error:0x%x",
-                ctx->nv_index, ctx->nv_index, rval);
+                ctx.nv_index, ctx.nv_index, rval);
         return false;
     }
 
     return true;
 }
 
-#define ARG_CNT(optional) ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - optional - 1)))
+static bool on_option(char key, char *value) {
 
-static bool init(int argc, char *argv[], tpm_nvreadlock_ctx *ctx) {
+    bool result;
 
-    struct option long_options[] = {
+    switch (key) {
+    case 'x':
+        result = tpm2_util_string_to_uint32(value, &ctx.nv_index);
+        if (!result) {
+            LOG_ERR("Could not convert NV index to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+
+        if (ctx.nv_index == 0) {
+            LOG_ERR("NV Index cannot be 0");
+            return false;
+        }
+        break;
+    case 'a':
+        result = tpm2_util_string_to_uint32(value, &ctx.auth_handle);
+        if (!result) {
+            LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+
+        if (ctx.auth_handle == 0) {
+            LOG_ERR("Auth handle cannot be 0");
+            return false;
+        }
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        if (!result) {
+            LOG_ERR("Invalid handle password, got\"%s\"", value);
+                return false;
+        }
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        break;
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
         { "index"       , required_argument, NULL, 'x' },
         { "authHandle"  , required_argument, NULL, 'a' },
         { "handlePasswd", required_argument, NULL, 'P' },
         { "passwdInHex" , no_argument,       NULL, 'X' },
         { "input-session-handle",1,          NULL, 'S' },
-        { NULL          , no_argument,       NULL, 0   },
     };
 
-    /* subtract 1 from argc to disregard argv[0] */
-    if ((argc - 1) < ARG_CNT(1) || (argc - 1) > ARG_CNT(0)) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
+    *opts = tpm2_options_new("x:a:P:Xp:d:S:hv", ARRAY_LEN(topts), topts, on_option, NULL);
 
-    int opt;
-    bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:P:Xp:d:S:hv", long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'x':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->nv_index);
-            if (!result) {
-                LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-
-            if (ctx->nv_index == 0) {
-                LOG_ERR("NV Index cannot be 0");
-                return false;
-            }
-            break;
-        case 'a':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->auth_handle);
-            if (!result) {
-                LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-
-            if (ctx->auth_handle == 0) {
-                LOG_ERR("Auth handle cannot be 0");
-                return false;
-            }
-            break;
-        case 'P':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return false;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    return true;
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    (void)opts;
-    (void)envp;
+    UNUSED(flags);
 
-    tpm_nvreadlock_ctx ctx = {
-            .nv_index = 0,
-            .auth_handle = TPM_RH_PLATFORM,
-            .size_to_read = 0,
-            .offset = 0,
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-            .sapi_context = sapi_context
-    };
-
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
-        return 1;
-    }
-
-    return nv_readlock(&ctx) != true;
+    return nv_readlock(sapi_context) != true;
 }

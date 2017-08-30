@@ -34,16 +34,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
 #include <limits.h>
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
@@ -54,17 +53,21 @@ struct tpm_nvwrite_ctx {
     UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
     TPMS_AUTH_COMMAND session_data;
     char *input_file;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
-static int nv_write(tpm_nvwrite_ctx *ctx) {
+static tpm_nvwrite_ctx ctx = {
+    .auth_handle = TPM_RH_PLATFORM,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+};
+
+static int nv_write(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
     TPM2B_MAX_NV_BUFFER nv_write_data;
 
-    TPMS_AUTH_COMMAND *session_data_array[1] = { &ctx->session_data };
+    TPMS_AUTH_COMMAND *session_data_array[1] = { &ctx.session_data };
     TPMS_AUTH_RESPONSE *session_data_out_array[1] = { &session_data_out };
 
     sessions_data_out.rspAuths = &session_data_out_array[0];
@@ -74,140 +77,118 @@ static int nv_write(tpm_nvwrite_ctx *ctx) {
     sessions_data.cmdAuthsCount = 1;
 
     UINT16 offset = 0;
-    while (ctx->data_size > 0) {
+    while (ctx.data_size > 0) {
 
         nv_write_data.t.size =
-                ctx->data_size > MAX_NV_BUFFER_SIZE ?
-                MAX_NV_BUFFER_SIZE : ctx->data_size;
+                ctx.data_size > MAX_NV_BUFFER_SIZE ?
+                MAX_NV_BUFFER_SIZE : ctx.data_size;
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.t.size);
 
         UINT16 i;
         for (i = 0; i < nv_write_data.t.size; i++) {
-            nv_write_data.t.buffer[i] = ctx->nv_buffer[offset + i];
-            printf("%02x ", ctx->nv_buffer[offset + i]);
+            nv_write_data.t.buffer[i] = ctx.nv_buffer[offset + i];
+            printf("%02x ", ctx.nv_buffer[offset + i]);
         }
         printf("\n\n");
 
-        TPM_RC rval = Tss2_Sys_NV_Write(ctx->sapi_context, ctx->auth_handle,
-                ctx->nv_index, &sessions_data, &nv_write_data, offset,
+        TPM_RC rval = Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
+                ctx.nv_index, &sessions_data, &nv_write_data, offset,
                 &sessions_data_out);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_ERR(
                     "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x",
-                    ctx->nv_index, ctx->nv_index, offset, rval);
+                    ctx.nv_index, ctx.nv_index, offset, rval);
             return false;
         }
 
         LOG_INFO("Success to write NV area at index 0x%x (%d) offset 0x%x.",
-                ctx->nv_index, ctx->nv_index, offset);
+                ctx.nv_index, ctx.nv_index, offset);
 
-        ctx->data_size -= nv_write_data.t.size;
+        ctx.data_size -= nv_write_data.t.size;
         offset += nv_write_data.t.size;
     }
 
     return true;
 }
 
-static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
-
-    struct option long_options[] = {
-        { "index"       , required_argument, NULL, 'x' },
-        { "authHandle"  , required_argument, NULL, 'a' },
-        { "file"        , required_argument, NULL, 'f' },
-        { "handlePasswd", required_argument, NULL, 'P' },
-        { "input-session-handle",1,          NULL, 'S' },
-        { NULL          , no_argument,       NULL,  0  },
-    };
-
-    int opt;
+static bool on_option(char key, char *value) {
     bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:f:P:S:", long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'x':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->nv_index);
-            if (!result) {
-                LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
 
-            if (ctx->nv_index == 0) {
-                LOG_ERR("NV Index cannot be 0");
-                return false;
-            }
-            break;
-        case 'a':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->auth_handle);
-            if (!result) {
-                LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-
-            if (ctx->auth_handle == 0) {
-                LOG_ERR("Auth handle cannot be 0");
-                return false;
-            }
-            break;
-        case 'f':
-            ctx->input_file = optarg;
-            break;
-        case 'P':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return false;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
+    switch (key) {
+    case 'x':
+        result = tpm2_util_string_to_uint32(value, &ctx.nv_index);
+        if (!result) {
+            LOG_ERR("Could not convert NV index to number, got: \"%s\"",
+                    value);
             return false;
         }
-    }
 
-    ctx->data_size = MAX_NV_INDEX_SIZE;
-    result = files_load_bytes_from_path(ctx->input_file, ctx->nv_buffer, &ctx->data_size);
-    if (!result) {
-        LOG_ERR("Failed to read data from %s", ctx->input_file);
-        return -false;
+        if (ctx.nv_index == 0) {
+            LOG_ERR("NV Index cannot be 0");
+            return false;
+        }
+        break;
+    case 'a':
+        result = tpm2_util_string_to_uint32(value, &ctx.auth_handle);
+        if (!result) {
+            LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+
+        if (ctx.auth_handle == 0) {
+            LOG_ERR("Auth handle cannot be 0");
+            return false;
+        }
+        break;
+    case 'f':
+        ctx.input_file = value;
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        if (!result) {
+            LOG_ERR("Invalid handle password, got\"%s\"", value);
+            return false;
+        }
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        break;
     }
 
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    (void)opts;
-    (void)envp;
-
-    tpm_nvwrite_ctx ctx = {
-        .nv_index = 0,
-        .auth_handle = TPM_RH_PLATFORM,
-        .data_size = 0,
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-        .sapi_context = sapi_context
+    const struct option topts[] = {
+        { "index"       , required_argument, NULL, 'x' },
+        { "authHandle"  , required_argument, NULL, 'a' },
+        { "file"        , required_argument, NULL, 'f' },
+        { "handlePasswd", required_argument, NULL, 'P' },
+        { "input-session-handle",1,          NULL, 'S' },
     };
 
-    bool result = init(argc, argv, &ctx);
+    *opts = tpm2_options_new("x:a:f:P:S:", ARRAY_LEN(topts), topts, on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    ctx.data_size = MAX_NV_INDEX_SIZE;
+    bool result = files_load_bytes_from_path(ctx.input_file, ctx.nv_buffer, &ctx.data_size);
     if (!result) {
-        return 1;
+        LOG_ERR("Failed to read data from %s", ctx.input_file);
+        return -false;
     }
 
-    return nv_write(&ctx) != true;
+    return nv_write(sapi_context) != true;
 }

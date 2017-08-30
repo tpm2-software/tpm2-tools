@@ -34,15 +34,13 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
-
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
 #include "tpm2_nv_util.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
@@ -52,7 +50,12 @@ struct tpm_nvread_ctx {
     UINT32 size_to_read;
     UINT32 offset;
     TPMS_AUTH_COMMAND session_data;
-    TSS2_SYS_CONTEXT *sapi_context;
+};
+
+static tpm_nvread_ctx ctx = {
+    .auth_handle = TPM_RH_PLATFORM,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+
 };
 
 static void hexdump(void *ptr, unsigned buflen) {
@@ -79,7 +82,7 @@ static void hexdump(void *ptr, unsigned buflen) {
     }
 }
 
-static bool nv_read(tpm_nvread_ctx *ctx) {
+static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -90,7 +93,7 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    session_data_array[0] = &ctx->session_data;
+    session_data_array[0] = &ctx.session_data;
     session_data_out_array[0] = &session_data_out;
 
     sessions_data_out.rspAuths = &session_data_out_array[0];
@@ -100,33 +103,33 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
     sessions_data.cmdAuthsCount = 1;
 
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    TPM_RC rval = tpm2_util_nv_read_public(ctx->sapi_context, ctx->nv_index, &nv_public);
+    TPM_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed to read NVRAM public area at index 0x%x (%d). Error:0x%x",
-                ctx->nv_index, ctx->nv_index, rval);
+                ctx.nv_index, ctx.nv_index, rval);
         return false;
     }
 
     UINT16 data_size = nv_public.t.nvPublic.dataSize;
 
     /* if no size was specified, assume the whole object */
-    if (ctx->size_to_read == 0) {
-        ctx->size_to_read = data_size;
+    if (ctx.size_to_read == 0) {
+        ctx.size_to_read = data_size;
     }
 
-    if (ctx->offset > data_size) {
+    if (ctx.offset > data_size) {
         LOG_ERR(
             "Requested offset to read from is greater than size. offset=%u"
-            ", size=%u", ctx->offset, data_size);
+            ", size=%u", ctx.offset, data_size);
         return false;
     }
 
-    if (ctx->offset + ctx->size_to_read > data_size) {
+    if (ctx.offset + ctx.size_to_read > data_size) {
         LOG_WARN(
             "Requested to read more bytes than available from offset,"
             " truncating read! offset=%u, request-read-size=%u"
-            " actual-data-size=%u", ctx->offset, ctx->size_to_read, data_size);
-        ctx->size_to_read = data_size - ctx->offset;
+            " actual-data-size=%u", ctx.offset, ctx.size_to_read, data_size);
+        ctx.size_to_read = data_size - ctx.offset;
         return false;
     }
 
@@ -139,21 +142,21 @@ static bool nv_read(tpm_nvread_ctx *ctx) {
 
     bool result = false;
     UINT16 data_offest = 0;
-    while (ctx->size_to_read) {
+    while (ctx.size_to_read) {
 
-        UINT16 bytes_to_read = ctx->size_to_read > MAX_NV_BUFFER_SIZE ?
-                        MAX_NV_BUFFER_SIZE : ctx->size_to_read;
+        UINT16 bytes_to_read = ctx.size_to_read > MAX_NV_BUFFER_SIZE ?
+                        MAX_NV_BUFFER_SIZE : ctx.size_to_read;
 
-        rval = Tss2_Sys_NV_Read(ctx->sapi_context, ctx->auth_handle, ctx->nv_index,
-                &sessions_data, bytes_to_read, ctx->offset, &nv_data, &sessions_data_out);
+        rval = Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
+                &sessions_data, bytes_to_read, ctx.offset, &nv_data, &sessions_data_out);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Failed to read NVRAM area at index 0x%x (%d). Error:0x%x",
-                    ctx->nv_index, ctx->nv_index, rval);
+                    ctx.nv_index, ctx.nv_index, rval);
             goto out;
         }
 
-        ctx->size_to_read -= nv_data.t.size;
-        ctx->offset += nv_data.t.size;
+        ctx.size_to_read -= nv_data.t.size;
+        ctx.offset += nv_data.t.size;
 
         memcpy(data_buffer, nv_data.t.buffer, data_offest);
         data_offest += nv_data.t.size;
@@ -167,113 +170,90 @@ out:
     return result;
 }
 
-static bool init(int argc, char *argv[], tpm_nvread_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
-    struct option long_options[] = {
+    bool result;
+
+    switch (key) {
+    case 'x':
+        result = tpm2_util_string_to_uint32(value, &ctx.nv_index);
+        if (!result) {
+            LOG_ERR("Could not convert NV index to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+
+        if (ctx.nv_index == 0) {
+            LOG_ERR("NV Index cannot be 0");
+            return false;
+        }
+        break;
+    case 'a':
+        result = tpm2_util_string_to_uint32(value, &ctx.auth_handle);
+        if (!result) {
+            LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+
+        if (ctx.auth_handle == 0) {
+            LOG_ERR("Auth handle cannot be 0");
+            return false;
+        }
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        if (!result) {
+            LOG_ERR("Invalid handle password, got\"%s\"", optarg);
+            return false;
+        }
+        break;
+    case 's':
+        result = tpm2_util_string_to_uint32(value, &ctx.size_to_read);
+        if (!result) {
+            LOG_ERR("Could not convert size to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        break;
+    case 'o':
+        result = tpm2_util_string_to_uint32(value, &ctx.offset);
+        if (!result) {
+            LOG_ERR("Could not convert offset to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        break;
+    }
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
         { "index"       , required_argument, NULL, 'x' },
         { "authHandle"  , required_argument, NULL, 'a' },
         { "size"        , required_argument, NULL, 's' },
         { "offset"      , required_argument, NULL, 'o' },
         { "handlePasswd", required_argument, NULL, 'P' },
         { "input-session-handle",1,          NULL, 'S' },
-        { NULL          , no_argument,       NULL, 0   },
     };
 
-    int opt;
-    bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:s:o:P:S:", long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'x':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->nv_index);
-            if (!result) {
-                LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
+    *opts = tpm2_options_new("x:a:s:o:P:S:", ARRAY_LEN(topts), topts, on_option, NULL);
 
-            if (ctx->nv_index == 0) {
-                LOG_ERR("NV Index cannot be 0");
-                return false;
-            }
-
-            break;
-        case 'a':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->auth_handle);
-            if (!result) {
-                LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-
-            if (ctx->auth_handle == 0) {
-                LOG_ERR("Auth handle cannot be 0");
-                return false;
-            }
-            break;
-        case 'P':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 's':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->size_to_read);
-            if (!result) {
-                LOG_ERR("Could not convert size to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            break;
-        case 'o':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->offset);
-            if (!result) {
-                LOG_ERR("Could not convert offset to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return false;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-    return true;
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    (void)opts;
-    (void)envp;
+    UNUSED(flags);
 
-    tpm_nvread_ctx ctx = {
-            .nv_index = 0,
-            .auth_handle = TPM_RH_PLATFORM,
-            .size_to_read = 0,
-            .offset = 0,
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-            .sapi_context = sapi_context,
-    };
-
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
-        return 1;
-    }
-
-    return nv_read(&ctx) != true;
+    return nv_read(sapi_context) != true;
 }

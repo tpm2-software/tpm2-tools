@@ -36,33 +36,48 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 #include <stdbool.h>
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
 #include "tpm2_util.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 
 TPM_HANDLE handle2048rsa;
-TPMS_AUTH_COMMAND sessionData = {
+
+typedef struct tpm_load_ctx tpm_load_ctx;
+struct tpm_load_ctx {
+    TPMS_AUTH_COMMAND session_data;
+    TPMI_DH_OBJECT parent_handle;
+    TPM2B_PUBLIC  in_public;
+    TPM2B_PRIVATE in_private;
+    char *out_file;
+    char *context_file;
+    char *context_parent_file;
+    struct {
+        UINT8 H : 1;
+        UINT8 u : 1;
+        UINT8 r : 1;
+        UINT8 c : 1;
+        UINT8 C : 1;
+        UINT8 n : 1;
+    } flags;
+};
+
+static tpm_load_ctx ctx = {
+    .session_data = {
         .sessionHandle = TPM_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
+    }
 };
 
-int
-load (TSS2_SYS_CONTEXT *sapi_context,
-      TPMI_DH_OBJECT    parentHandle,
-      TPM2B_PUBLIC     *inPublic,
-      TPM2B_PRIVATE    *inPrivate,
-      const char       *outFileName)
-{
+int load (TSS2_SYS_CONTEXT *sapi_context) {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
@@ -72,7 +87,7 @@ load (TSS2_SYS_CONTEXT *sapi_context,
 
     TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    sessionDataArray[0] = &sessionData;
+    sessionDataArray[0] = &ctx.session_data;
     sessionDataOutArray[0] = &sessionDataOut;
 
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
@@ -81,55 +96,97 @@ load (TSS2_SYS_CONTEXT *sapi_context,
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    rval = Tss2_Sys_Load (sapi_context,
-                          parentHandle,
-                          &sessionsData,
-                          inPrivate,
-                          inPublic,
-                          &handle2048rsa,
-                          &nameExt,
-                          &sessionsDataOut);
+    rval = Tss2_Sys_Load(sapi_context,
+                         ctx.parent_handle,
+                         &sessionsData,
+                         &ctx.in_private,
+                         &ctx.in_public,
+                         &handle2048rsa,
+                         &nameExt,
+                         &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
         LOG_ERR("\nLoad Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -1;
     }
-    TOOL_OUTPUT("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
+    tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
     /* TODO fix serialization */
-    if(!files_save_bytes_to_file(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
+    if(!files_save_bytes_to_file(ctx.out_file, (UINT8 *)&nameExt, sizeof(nameExt)))
         return -2;
 
     return 0;
 }
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
-    (void) envp;
-    (void) opts;
+static bool on_option(char key, char *value) {
 
-    TPMI_DH_OBJECT parentHandle;
-    TPM2B_PUBLIC  inPublic;
-    TPM2B_PRIVATE inPrivate;
+    bool res;
     UINT16 size;
-    char *outFilePath = NULL;
-    char *contextFile = NULL;
-    char *contextParentFilePath = NULL;
 
-    memset(&inPublic,0,sizeof(TPM2B_PUBLIC));
-    memset(&inPrivate,0,sizeof(TPM2B_SENSITIVE));
+    switch(key) {
+    case 'H':
+        if (!tpm2_util_string_to_uint32(optarg, &ctx.parent_handle)) {
+                return false;
+        }
+        ctx.flags.H = 1;
+        break;
+    case 'P':
+        res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        if (!res) {
+            LOG_ERR("Invalid parent key password, got\"%s\"", value);
+            return false;
+        }
+        break;
+    case 'u':
+        size = sizeof(ctx.in_public);
+        if(!files_load_bytes_from_path(optarg, (UINT8 *)&ctx.in_public, &size)) {
+            return false;;
+        }
+        ctx.flags.u = 1;
+        break;
+    case 'r':
+        size = sizeof(ctx.in_private);
+        if(!files_load_bytes_from_path(value, (UINT8 *)&ctx.in_private, &size)) {
+            return false;
+        }
+        ctx.flags.r = 1;
+        break;
+    case 'n':
+        ctx.out_file = value;
+        if(files_does_file_exist(ctx.out_file)) {
+            return false;
+        }
+        ctx.flags.n = 1;
+        break;
+    case 'c':
+        ctx.context_parent_file = value;
+        if(ctx.context_parent_file == NULL || ctx.context_parent_file[0] == '\0') {
+                return false;
+        }
+        ctx.flags.c = 1;
+        break;
+    case 'C':
+        ctx.context_file = value;
+        if(ctx.context_file == NULL || ctx.context_file[0] == '\0') {
+            return false;
+        }
+        ctx.flags.C = 1;
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        break;
+    }
 
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+    return true;
+}
 
-    int opt = -1;
-    const char *optstring = "H:P:u:r:n:C:c:S:";
-    static struct option long_options[] = {
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
       {"parent",1,NULL,'H'},
       {"pwdp",1,NULL,'P'},
       {"pubfile",1,NULL,'u'},
@@ -141,126 +198,49 @@ execute_tool (int              argc,
       {0,0,0,0}
     };
 
+    setbuf(stdout, NULL);
+    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+
+    *opts = tpm2_options_new("H:P:u:r:n:C:c:S:", ARRAY_LEN(topts), topts, on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
     int returnVal = 0;
     int flagCnt = 0;
-    int H_flag = 0,
-        u_flag = 0,
-        r_flag = 0,
-        c_flag = 0,
-        C_flag = 0,
-        n_flag = 0;
 
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
-        {
-        case 'H':
-            if (!tpm2_util_string_to_uint32(optarg, &parentHandle))
-            {
-                return 1;
-            }
-            TOOL_OUTPUT("\nparentHandle: 0x%x\n\n",parentHandle);
-            H_flag = 1;
-            break;
-        case 'P': {
-            bool res = tpm2_password_util_from_optarg(optarg, &sessionData.hmac);
-            if (!res) {
-                LOG_ERR("Invalid parent key password, got\"%s\"", optarg);
-                return 1;
-            }
-        } break;
+    flagCnt = ctx.flags.H + ctx.flags.u + ctx.flags.r + ctx.flags.n + ctx.flags.c;
 
-        case 'u':
-            size = sizeof(inPublic);
-            if(!files_load_bytes_from_path(optarg, (UINT8 *)&inPublic, &size))
-            {
-                return 1;
-            }
-            u_flag = 1;
-            break;
-        case 'r':
-            size = sizeof(inPrivate);
-            if(!files_load_bytes_from_path(optarg, (UINT8 *)&inPrivate, &size))
-            {
-                return 1;
-            }
-            r_flag = 1;
-            break;
-        case 'n':
-            outFilePath = optarg;
-            if(files_does_file_exist(outFilePath))
-            {
-                return 1;
-            }
-            n_flag = 1;
-            break;
-        case 'c':
-            contextParentFilePath = optarg;
-            if(contextParentFilePath == NULL || contextParentFilePath[0] == '\0')
-            {
-                return 1;
-            }
-            TOOL_OUTPUT("contextParentFile = %s\n", contextParentFilePath);
-            c_flag = 1;
-            break;
-        case 'C':
-            contextFile = optarg;
-            if(contextFile == NULL || contextFile[0] == '\0')
-            {
-                return 1;
-            }
-            TOOL_OUTPUT("contextFile = %s\n", contextFile);
-            C_flag = 1;
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &sessionData.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return 1;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return 1;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return 1;
-	default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return 1;
-        }
-    };
+    if(flagCnt == 4 && (ctx.flags.H == 1 || ctx.flags.c == 1) &&
+       ctx.flags.u == 1 && ctx.flags.r == 1 && ctx.flags.n == 1) {
 
-    flagCnt = H_flag + u_flag +r_flag + n_flag + c_flag;
-    if(flagCnt == 4 && (H_flag == 1 || c_flag == 1) && u_flag == 1 && r_flag == 1 && n_flag == 1)
-    {
-        if(c_flag) {
-            returnVal = files_load_tpm_context_from_file (sapi_context,
-                                                &parentHandle,
-                                                contextParentFilePath) != true;
+        if(ctx.flags.c) {
+            returnVal = files_load_tpm_context_from_file(sapi_context,
+                                               &ctx.parent_handle,
+                                               ctx.context_parent_file) != true;
             if (returnVal) {
                 return 1;
             }
         }
 
-        returnVal = load (sapi_context, parentHandle, &inPublic, &inPrivate,
-                          outFilePath);
+        returnVal = load (sapi_context);
         if (returnVal) {
             return 1;
         }
-        if (C_flag) {
+        if (ctx.flags.C) {
             returnVal = files_save_tpm_context_to_file (sapi_context,
                                               handle2048rsa,
-                                              contextFile) != true;
+                                              ctx.context_file) != true;
             if (returnVal) {
                 return 1;
             }
         }
 
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
+    } else {
         return 1;
     }
 
