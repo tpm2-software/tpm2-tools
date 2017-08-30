@@ -40,8 +40,8 @@
 
 #include "tpm2_header.h"
 #include "files.h"
-#include "main.h"
 #include "log.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm2_send_command_ctx tpm2_send_command_ctx;
 struct tpm2_send_command_ctx {

@@ -42,13 +42,13 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
 #include "tpm2_util.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 
 TPMS_AUTH_COMMAND sessionData = {
     .sessionHandle = TPM_RS_PW,
@@ -171,7 +171,7 @@ int createPrimary(TSS2_SYS_CONTEXT *sysContext, TPMI_RH_HIERARCHY hierarchy,
         LOG_ERR("\nCreatePrimary Failed ! ErrorCode: 0x%0x\n", rval);
         return -2;
     }
-    TOOL_OUTPUT("\nCreatePrimary Succeed ! Handle: 0x%8.8x\n\n", handle2048rsa);
+    tpm2_tool_output("\nCreatePrimary Succeed ! Handle: 0x%8.8x\n\n", handle2048rsa);
     return 0;
 }
 
@@ -260,7 +260,7 @@ execute_tool (int               argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            TOOL_OUTPUT("nameAlg = 0x%4.4x\n", nameAlg);
+            tpm2_tool_output("nameAlg = 0x%4.4x\n", nameAlg);
             g_flag = 1;
             break;
         case 'G':
@@ -270,7 +270,7 @@ execute_tool (int               argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            TOOL_OUTPUT("type = 0x%4.4x\n", type);
+            tpm2_tool_output("type = 0x%4.4x\n", type);
             G_flag = 1;
             break;
         case 'C':
@@ -279,7 +279,7 @@ execute_tool (int               argc,
             {
                 return 1;
             }
-            TOOL_OUTPUT("contextFile = %s\n", contextFile);
+            tpm2_tool_output("contextFile = %s\n", contextFile);
             C_flag = 1;
             break;
         case 'L':

@@ -41,12 +41,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
 #include "tpm2_util.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 
 TPM_HANDLE handle2048rsa;
 TPMS_AUTH_COMMAND sessionData = {
@@ -94,7 +94,7 @@ load (TSS2_SYS_CONTEXT *sapi_context,
         LOG_ERR("\nLoad Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -1;
     }
-    TOOL_OUTPUT("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
+    tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
     /* TODO fix serialization */
     if(!files_save_bytes_to_file(outFileName, (UINT8 *)&nameExt, sizeof(nameExt)))
@@ -159,7 +159,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            TOOL_OUTPUT("\nparentHandle: 0x%x\n\n",parentHandle);
+            tpm2_tool_output("\nparentHandle: 0x%x\n\n",parentHandle);
             H_flag = 1;
             break;
         case 'P': {
@@ -200,7 +200,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            TOOL_OUTPUT("contextParentFile = %s\n", contextParentFilePath);
+            tpm2_tool_output("contextParentFile = %s\n", contextParentFilePath);
             c_flag = 1;
             break;
         case 'C':
@@ -209,7 +209,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            TOOL_OUTPUT("contextFile = %s\n", contextFile);
+            tpm2_tool_output("contextFile = %s\n", contextFile);
             C_flag = 1;
             break;
         case 'S':

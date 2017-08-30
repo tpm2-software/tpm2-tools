@@ -35,11 +35,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 

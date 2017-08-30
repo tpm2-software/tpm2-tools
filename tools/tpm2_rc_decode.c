@@ -34,7 +34,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "options.h"
+#include "tpm2_options.h"
 #include "log.h"
 #include "rc-decode.h"
 
