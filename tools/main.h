@@ -37,12 +37,32 @@
 
 extern bool output_enabled;
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context);
+typedef struct tpm2_options tpm2_options;
+
+/**
+ * An optional interface for tools to specify what options they support.
+ * They are concatenated with main's options and passed to getopt_long.
+ * @param opts
+ *  The callee can choose to set *opts to a tpm_options pointer allocated
+ *  via tpm2_options_new(). Setting *opts to NULL is not an error, and
+ *  Indicates that no options are specified by the tool.
+ *
+ * @return
+ *  True on success, false on error.
+ */
+bool tool_get_options(tpm2_options **opts) __attribute__((weak));
+
+/**
+ * This is the main interface for tools, after tcti and sapi initialization
+ * are performed.
+ * @param sapi_context
+ *  The system api context.
+ * @param flags
+ *  Flags that tools may wish to respect.
+ * @return
+ *  0 on success.
+ */
+int tool_execute (TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) __attribute__((weak));
 
 /*
  * Prints output messages if not disabled. Output messages are what tools prints
