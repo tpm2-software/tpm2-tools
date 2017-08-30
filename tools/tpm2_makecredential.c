@@ -35,23 +35,14 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
-
-#define tpm_makecred_ctx_empty_init { \
-		.rsa2048_handle = 0, \
-		.object_name = TPM2B_EMPTY_INIT, \
-		.out_file_path = NULL, \
-        .public = TPM2B_EMPTY_INIT, \
-        .credential = TPM2B_EMPTY_INIT, \
-    }
 
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
@@ -60,6 +51,18 @@ struct tpm_makecred_ctx {
     char *out_file_path;
     TPM2B_PUBLIC public;
     TPM2B_DIGEST credential;
+    struct {
+        UINT8 e : 1;
+        UINT8 s : 1;
+        UINT8 n : 1;
+        UINT8 o : 1;
+    } flags;
+};
+
+static tpm_makecred_ctx ctx = {
+    .object_name = TPM2B_EMPTY_INIT,
+    .public = TPM2B_EMPTY_INIT,
+    .credential = TPM2B_EMPTY_INIT,
 };
 
 static bool write_cred_and_secret(const char *path, TPM2B_ID_OBJECT *cred,
@@ -95,7 +98,7 @@ out:
     return result;
 }
 
-static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context, tpm_makecred_ctx *ctx)
+static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
 {
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
@@ -111,34 +114,73 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context, tpm_makecre
     sessions_data_out.rspAuths = &session_data_out_array[0];
     sessions_data_out.rspAuthsCount = 1;
 
-    UINT32 rval = Tss2_Sys_LoadExternal(sapi_context, 0, NULL, &ctx->public,
-            TPM_RH_NULL, &ctx->rsa2048_handle, &name_ext, &sessions_data_out);
+    UINT32 rval = Tss2_Sys_LoadExternal(sapi_context, 0, NULL, &ctx.public,
+            TPM_RH_NULL, &ctx.rsa2048_handle, &name_ext, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("LoadExternal failed. TPM Error:0x%x", rval);
         return false;
     }
 
-    rval = Tss2_Sys_MakeCredential(sapi_context, ctx->rsa2048_handle, 0,
-            &ctx->credential, &ctx->object_name, &cred_blob, &secret,
+    rval = Tss2_Sys_MakeCredential(sapi_context, ctx.rsa2048_handle, 0,
+            &ctx.credential, &ctx.object_name, &cred_blob, &secret,
             &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("MakeCredential failed. TPM Error:0x%x", rval);
         return false;
     }
 
-    rval = Tss2_Sys_FlushContext(sapi_context, ctx->rsa2048_handle);
+    rval = Tss2_Sys_FlushContext(sapi_context, ctx.rsa2048_handle);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Flush loaded key failed. TPM Error:0x%x", rval);
         return false;
     }
 
-    return write_cred_and_secret(ctx->out_file_path, &cred_blob, &secret);
+    return write_cred_and_secret(ctx.out_file_path, &cred_blob, &secret);
 }
 
-static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
-    static const char *optstring = "e:s:n:o:";
-    static const struct option long_options[] = {
+    UINT16 size;
+
+    switch (key) {
+    case 'e':
+        size = sizeof(ctx.public);
+        if (!files_load_bytes_from_path(value, (UINT8 *) &ctx.public, &size)) {
+            return false;
+        }
+        ctx.flags.e = 1;
+        break;
+    case 's':
+        ctx.credential.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
+        if (!files_load_bytes_from_path(value, ctx.credential.t.buffer,
+                                        &ctx.credential.t.size)) {
+            return false;
+        }
+        ctx.flags.s = 1;
+        break;
+    case 'n':
+        ctx.object_name.t.size = BUFFER_SIZE(TPM2B_NAME, name);
+        if (tpm2_util_hex_to_byte_structure(value, &ctx.object_name.t.size,
+                                            ctx.object_name.t.name) != 0) {
+            return false;
+        }
+        ctx.flags.n = 1;
+        break;
+    case 'o':
+        ctx.out_file_path = optarg;
+        if (files_does_file_exist(ctx.out_file_path)) {
+            return false;
+        }
+            ctx.flags.o = 1;
+            break;
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
       {"encKey"  ,required_argument, NULL, 'e'},
       {"sec"     ,required_argument, NULL, 's'},
       {"name"    ,required_argument, NULL, 'n'},
@@ -146,92 +188,19 @@ static bool init(int argc, char *argv[], tpm_makecred_ctx *ctx) {
       {NULL      ,no_argument      , NULL, '\0'}
     };
 
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
+    *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts, on_option, NULL);
 
-    union {
-        struct {
-            UINT8 e : 1;
-            UINT8 s : 1;
-            UINT8 n : 1;
-            UINT8 o : 1;
-            UINT8 unused : 4;
-        };
-        UINT8 all;
-    } flags = {
-      .all = 0,
-    };
-
-    int opt = -1;
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'e': {
-            UINT16 size = sizeof(ctx->public);
-            if (!files_load_bytes_from_path(optarg, (UINT8 *) &ctx->public, &size)) {
-                return false;
-            }
-            flags.e = 1;
-            break;
-        }
-        case 's':
-            ctx->credential.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-            if (!files_load_bytes_from_path(optarg, ctx->credential.t.buffer,
-                    &ctx->credential.t.size)) {
-                return false;
-            }
-            flags.s = 1;
-            break;
-        case 'n':
-            ctx->object_name.t.size = BUFFER_SIZE(TPM2B_NAME, name);
-            if (tpm2_util_hex_to_byte_structure(optarg, &ctx->object_name.t.size,
-                    ctx->object_name.t.name) != 0) {
-                return false;
-            }
-            flags.n = 1;
-            break;
-        case 'o':
-            ctx->out_file_path = optarg;
-            if (files_does_file_exist(ctx->out_file_path)) {
-                return false;
-            }
-            flags.o = 1;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    if (!flags.e || !flags.n || !flags.o || !flags.s) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
-    return true;
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    /* opts is unused, avoid compiler warning */
-    (void) opts;
-    (void) envp;
+    UNUSED(flags);
 
-    tpm_makecred_ctx ctx = tpm_makecred_ctx_empty_init;
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
-        LOG_ERR("Initialization failed");
-        return 1;
+    if (!ctx.flags.e || !ctx.flags.n || !ctx.flags.o || !ctx.flags.s) {
+        LOG_ERR("Expected options e, n, o and s");
+        return false;
     }
 
-    return make_credential_and_save(sapi_context, &ctx) != true;
+    return make_credential_and_save(sapi_context) != true;
 }

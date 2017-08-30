@@ -29,36 +29,46 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <sapi/tpm20.h>
 
-#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
 #include "pcr.h"
-#include "tpm2_policy.h"
-#include "tpm2_util.h"
 #include "tpm_hash.h"
 #include "tpm_session.h"
+#include "tpm2_password_util.h"
+#include "tpm2_policy.h"
+#include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
     TPMS_AUTH_COMMAND sessionData;
     TPMI_DH_OBJECT itemHandle;
     char *outFilePath;
-    TSS2_SYS_CONTEXT *sapi_context;
+    char *contextItemFile;
+    char *raw_pcrs_file;
     SESSION *policy_session;
+    TPML_PCR_SELECTION pcr_selection;
+    struct {
+        UINT8 H : 1;
+        UINT8 c : 1;
+        UINT8 P : 1;
+        UINT8 L : 1;
+        UINT8 F : 1;
+    } flags;
 };
 
-bool unseal_and_save(tpm_unseal_ctx *ctx) {
+static tpm_unseal_ctx ctx = {
+        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+};
+
+bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -68,7 +78,7 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
 
     TPM2B_SENSITIVE_DATA outData = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_DATA, buffer);
 
-    session_data_array[0] = &ctx->sessionData;
+    session_data_array[0] = &ctx.sessionData;
     session_data_out_array[0] = &session_data_out;
 
     sessions_data_out.rspAuths = &session_data_out_array[0];
@@ -77,15 +87,15 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_Unseal(ctx->sapi_context, ctx->itemHandle,
+    TPM_RC rval = Tss2_Sys_Unseal(sapi_context, ctx.itemHandle,
             &sessions_data, &outData, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Sys_Unseal failed. Error Code: 0x%x", rval);
         return false;
     }
 
-    if (ctx->outFilePath) {
-        return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *)
+    if (ctx.outFilePath) {
+        return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
                                         outData.t.buffer, outData.t.size);
     } else {
         return files_write_bytes(stdout, (UINT8 *) outData.t.buffer,
@@ -93,163 +103,130 @@ bool unseal_and_save(tpm_unseal_ctx *ctx) {
     }
 }
 
-static bool init(int argc, char *argv[], tpm_unseal_ctx *ctx) {
+static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    static const char *optstring = "H:P:o:c:S:L:F:";
-    static const struct option long_options[] = {
-      {"item",1,NULL,'H'},
-      {"pwdi",1,NULL,'P'},
-      {"outfile",1,NULL,'o'},
-      {"itemContext",1,NULL,'c'},
-      {"input-session-handle",1,NULL,'S'},
-      {"set-list", 1, NULL, 'L' },
-      {"pcr-input-file", 1, NULL, 'F' },
-      {0,0,0,0}
-    };
-
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
-    union {
-        struct {
-            UINT8 H : 1;
-            UINT8 c : 1;
-            UINT8 P : 1;
-            UINT8 L : 1;
-            UINT8 F : 1;
-        };
-        UINT8 all;
-    } flags = { .all = 0 };
-
-    int opt;
-    char *contextItemFile = NULL;
-    char *raw_pcrs_file = NULL;
-    TPML_PCR_SELECTION pcr_selections;
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
-        switch (opt) {
-        case 'H': {
-            bool result = tpm2_util_string_to_uint32(optarg, &ctx->itemHandle);
-            if (!result) {
-                LOG_ERR("Could not convert item handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.H = 1;
-        }
-            break;
-        case 'P': {
-            bool result = tpm2_password_util_from_optarg(optarg, &ctx->sessionData.hmac);
-            if (!result) {
-                LOG_ERR("Invalid item handle password, got\"%s\"", optarg);
-                return false;
-            }
-            flags.P = 1;
-        }
-            break;
-        case 'o': {
-            bool result = files_does_file_exist(optarg);
-            if (result) {
-                return false;
-            }
-            ctx->outFilePath = optarg;
-        }
-            break;
-        case 'c':
-            contextItemFile = optarg;
-            flags.c = 1;
-            break;
-        case 'S': {
-            bool result = tpm2_util_string_to_uint32(optarg,
-                &ctx->sessionData.sessionHandle);
-            if (!result) {
-                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-        }
-            break;
-        case 'L':
-            if (!pcr_parse_selections(optarg, &pcr_selections)) {
-                showArgError(optarg, argv[0]);
-                return false;
-            }
-            flags.L = 1;
-            break;
-        case 'F':
-            raw_pcrs_file = optarg;
-            flags.F = 1;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    if (!(flags.H || flags.c)) {
+    if (!(ctx.flags.H || ctx.flags.c)) {
         LOG_ERR("Expected options H or c");
         return false;
     }
 
-    if (flags.c) {
-        bool result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->itemHandle,
-                contextItemFile);
+    if (ctx.flags.c) {
+        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.itemHandle,
+                ctx.contextItemFile);
         if (!result) {
             return false;
         }
     }
 
-    if (flags.L && flags.F) {
+    if (ctx.flags.L && ctx.flags.F) {
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-        TPM_RC rval = tpm2_policy_build(ctx->sapi_context, &ctx->policy_session,
-                                        TPM_SE_POLICY, TPM_ALG_SHA256, pcr_selections,
-                                        raw_pcrs_file, &pcr_digest, true,
+        TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
+                                        TPM_SE_POLICY, TPM_ALG_SHA256, ctx.pcr_selection,
+                                        ctx.raw_pcrs_file, &pcr_digest, true,
                                         tpm2_policy_pcr_build);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Building PCR policy failed: 0x%x", rval);
             return false;
         }
 
-        ctx->sessionData.sessionHandle = ctx->policy_session->sessionHandle;
-        ctx->sessionData.sessionAttributes.continueSession = 1;
+        ctx.sessionData.sessionHandle = ctx.policy_session->sessionHandle;
+        ctx.sessionData.sessionAttributes.continueSession = 1;
     }
 
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+static bool on_option(char key, char *value) {
 
-    /* opts and envp are unused, avoid compiler warning */
-    (void)opts;
-    (void) envp;
+    switch (key) {
+    case 'H': {
+        bool result = tpm2_util_string_to_uint32(value, &ctx.itemHandle);
+        if (!result) {
+            LOG_ERR("Could not convert item handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        ctx.flags.H = 1;
+    }
+        break;
+    case 'P': {
+        bool result = tpm2_password_util_from_optarg(value, &ctx.sessionData.hmac);
+        if (!result) {
+            LOG_ERR("Invalid item handle password, got\"%s\"", optarg);
+            return false;
+        }
+        ctx.flags.P = 1;
+    }
+        break;
+    case 'o':
+        ctx.outFilePath = optarg;
+        break;
+    case 'c':
+        ctx.contextItemFile = optarg;
+        ctx.flags.c = 1;
+        break;
+    case 'S': {
+        bool result = tpm2_util_string_to_uint32(value,
+            &ctx.sessionData.sessionHandle);
+        if (!result) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+    }
+        break;
+    case 'L':
+        if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
+            return false;
+        }
+        ctx.flags.L = 1;
+        break;
+    case 'F':
+        ctx.raw_pcrs_file = optarg;
+        ctx.flags.F = 1;
+        break;
+        /* no default */
+    }
 
-    tpm_unseal_ctx ctx = {
-            .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-            .sapi_context = sapi_context,
-            .policy_session = NULL
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static const struct option topts[] = {
+      {"item",                 required_argument, NULL, 'H'},
+      {"pwdi",                 required_argument, NULL, 'P'},
+      {"outfile",              required_argument, NULL, 'o'},
+      {"itemContext",          required_argument, NULL, 'c'},
+      {"input-session-handle", required_argument, NULL, 'S'},
+      {"set-list",             required_argument, NULL, 'L' },
+      {"pcr-input-file",       required_argument, NULL, 'F' },
+      {NULL,                   no_argument,       NULL, '\0'}
     };
 
-    bool result = init(argc, argv, &ctx);
+    *opts = tpm2_options_new("H:P:o:c:S:L:F:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    bool result = init(sapi_context);
     if (!result) {
         return 1;
     }
 
-    if (!unseal_and_save(&ctx)) {
+    if (!unseal_and_save(sapi_context)) {
         LOG_ERR("Unseal failed!");
         return 1;
     }
 
     if (ctx.policy_session) {
-        TPM_RC rval = Tss2_Sys_FlushContext(ctx.sapi_context,
+        TPM_RC rval = Tss2_Sys_FlushContext(sapi_context,
                                             ctx.policy_session->sessionHandle);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context: 0x%x", rval);

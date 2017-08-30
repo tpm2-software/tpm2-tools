@@ -35,16 +35,15 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
-#include "tpm_hash.h"
 #include "tpm2_alg_util.h"
+#include "tpm_hash.h"
+#include "tpm2_options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_hash_ctx tpm_hash_ctx;
@@ -54,7 +53,11 @@ struct tpm_hash_ctx {
     TPMI_ALG_HASH  halg;
     char *outHashFilePath;
     char *outTicketFilePath;
-    TSS2_SYS_CONTEXT *sapi_context;
+};
+
+static tpm_hash_ctx ctx = {
+    .hierarchyValue = TPM_RH_NULL,
+    .halg = TPM_ALG_SHA1,
 };
 
 static bool get_hierarchy_value(const char *hiearchy_code,
@@ -87,12 +90,12 @@ static bool get_hierarchy_value(const char *hiearchy_code,
     return true;
 }
 
-static bool hash_and_save(tpm_hash_ctx *ctx) {
+static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
-    TPM_RC rval = tpm_hash_file(ctx->sapi_context, ctx->halg, ctx->hierarchyValue, ctx->input_file, &outHash, &validation);
+    TPM_RC rval = tpm_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("tpm_hash_files() failed with error: 0x%X", rval);
         return false;
@@ -100,127 +103,106 @@ static bool hash_and_save(tpm_hash_ctx *ctx) {
 
     if (outHash.t.size) {
         UINT16 i;
-        TOOL_OUTPUT("hash(%s):", tpm2_alg_util_algtostr(ctx->halg));
+        tpm2_tool_output("hash(%s):", tpm2_alg_util_algtostr(ctx.halg));
         for (i = 0; i < outHash.t.size; i++) {
-            TOOL_OUTPUT("%02x", outHash.t.buffer[i]);
+            tpm2_tool_output("%02x", outHash.t.buffer[i]);
         }
-        TOOL_OUTPUT("\n");
+        tpm2_tool_output("\n");
     }
 
     if (validation.digest.t.size) {
         UINT16 i;
-        TOOL_OUTPUT("ticket:");
+        tpm2_tool_output("ticket:");
         for (i = 0; i < validation.digest.t.size; i++) {
-            TOOL_OUTPUT("%02x", validation.digest.t.buffer[i]);
+            tpm2_tool_output("%02x", validation.digest.t.buffer[i]);
         }
-        TOOL_OUTPUT("\n");
+        tpm2_tool_output("\n");
     }
 
-    if (ctx->outHashFilePath) {
-        bool result = files_save_bytes_to_file(ctx->outHashFilePath, (UINT8 *) &outHash,
+    if (ctx.outHashFilePath) {
+        bool result = files_save_bytes_to_file(ctx.outHashFilePath, (UINT8 *) &outHash,
                 sizeof(outHash));
         if (!result) {
             return false;
         }
     }
 
-    if (ctx->outTicketFilePath) {
-        return files_save_bytes_to_file(ctx->outTicketFilePath, (UINT8 *) &validation,
+    if (ctx.outTicketFilePath) {
+        return files_save_bytes_to_file(ctx.outTicketFilePath, (UINT8 *) &validation,
                 sizeof(validation));
     }
 
     return true;
 }
 
-static bool init(int argc, char *argv[], tpm_hash_ctx *ctx) {
+static bool on_args(int argc, char **argv) {
 
-    static struct option long_options[] = {
-        {"hierachy", required_argument, NULL, 'H'},
-        {"halg",     required_argument, NULL, 'g'},
-        {"outfile",  required_argument, NULL, 'o'},
-        {"ticket",   required_argument, NULL, 't'},
-        {NULL,       no_argument,       NULL, '\0'}
-    };
-
-    int opt;
-    bool res;
-    while ((opt = getopt_long(argc, argv, "H:g:o:t:", long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'H':
-            res = get_hierarchy_value(optarg, &ctx->hierarchyValue);
-            if (!res) {
-                return false;
-            }
-            break;
-        case 'g':
-            ctx->halg = tpm2_alg_util_from_optarg(optarg);
-            if (ctx->halg == TPM_ALG_ERROR) {
-                showArgError(optarg, argv[0]);
-                return false;
-            }
-            break;
-        case 'o':
-            ctx->outHashFilePath = optarg;
-            break;
-        case 't':
-            ctx->outTicketFilePath = optarg;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    int cnt = argc - optind;
-    if (cnt == 0) {
-        return true;
-    }
-
-    if (cnt > 1) {
-        LOG_ERR("Only supports one hash input file, got: %d", cnt);
+    if (argc > 1) {
+        LOG_ERR("Only supports one hash input file, got: %d", argc);
         return false;
     }
 
-    ctx->input_file = fopen(argv[optind], "rb");
-    if (!ctx->input_file) {
+    ctx.input_file = fopen(argv[0], "rb");
+    if (!ctx.input_file) {
         LOG_ERR("Could not open input file \"%s\", error: %s",
-                argv[optind], strerror(errno));
+                argv[0], strerror(errno));
         return false;
     }
 
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+static bool on_option(char key, char *value) {
 
-    /* opts is unused, avoid compiler warning */
-    (void)opts;
-    (void)envp;
-
-    int rc = 1;
-    tpm_hash_ctx ctx = {
-            .outHashFilePath = NULL,
-            .outTicketFilePath = NULL,
-            .input_file = stdin,
-            .hierarchyValue = TPM_RH_NULL,
-            .halg = TPM_ALG_SHA1,
-            .sapi_context = sapi_context,
-    };
-
-    bool res = init(argc, argv, &ctx);
-    if (!res) {
-        goto out;
+    bool res;
+    switch (key) {
+    case 'H':
+        res = get_hierarchy_value(value, &ctx.hierarchyValue);
+        if (!res) {
+            return false;
+        }
+        break;
+    case 'g':
+        ctx.halg = tpm2_alg_util_from_optarg(value);
+        if (ctx.halg == TPM_ALG_ERROR) {
+            return false;
+        }
+        break;
+    case 'o':
+        ctx.outHashFilePath = value;
+        break;
+    case 't':
+        ctx.outTicketFilePath = value;
+        break;
     }
 
-    res = hash_and_save(&ctx);
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static struct option topts[] = {
+        {"hierachy", required_argument, NULL, 'H'},
+        {"halg",     required_argument, NULL, 'g'},
+        {"outfile",  required_argument, NULL, 'o'},
+        {"ticket",   required_argument, NULL, 't'},
+    };
+
+    /* set up non-static defaults here */
+    ctx.input_file = stdin;
+
+    *opts = tpm2_options_new("H:g:o:t:", ARRAY_LEN(topts), topts, on_option, on_args);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    int rc = 1;
+
+    bool res = hash_and_save(sapi_context);
     if (!res) {
         goto out;
     }
