@@ -1,3 +1,4 @@
+#!/bin/bash
 #;**********************************************************************;
 #
 # Copyright (c) 2016, Intel Corporation
@@ -31,7 +32,6 @@
 #;**********************************************************************;
 ###this script use for test the implementation of all algorithms involved createprimary &create/load 
 
-#!/bin/sh
 halg_p=
 kalg_p=
 

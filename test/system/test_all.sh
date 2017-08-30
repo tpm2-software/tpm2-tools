@@ -1,3 +1,4 @@
+#!/bin/bash
 #;**********************************************************************;
 #
 # Copyright (c) 2016, Intel Corporation
@@ -30,7 +31,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-#!/bin/bash
 
 SRC_DIR=`realpath ../../tools/`
 TEST_DIR=`realpath .`
