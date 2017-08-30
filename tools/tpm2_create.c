@@ -41,13 +41,13 @@
 
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 
 TSS2_SYS_CONTEXT *sysContext;
 TPMS_AUTH_COMMAND sessionData = {
@@ -174,7 +174,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
 
     if(A_flag == 1)
         inPublic->t.publicArea.objectAttributes.val = objectAttributes;
-    TOOL_OUTPUT("ObjectAttribute: 0x%08X\n",inPublic->t.publicArea.objectAttributes.val);
+    tpm2_tool_output("ObjectAttribute: 0x%08X\n",inPublic->t.publicArea.objectAttributes.val);
 
     creationPCR.count = 0;
 
@@ -186,7 +186,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
         LOG_ERR("\nCreate Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -2;
     }
-    TOOL_OUTPUT("\nCreate Object Succeed !\n");
+    tpm2_tool_output("\nCreate Object Succeed !\n");
 
     /*
      * TODO These public and private serializations are not safe since its outputting size as well.
@@ -205,15 +205,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     return 0;
 }
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
-    (void)envp;
-    (void)opts;
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     sysContext = sapi_context;
 
@@ -302,7 +294,7 @@ execute_tool (int              argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            TOOL_OUTPUT("nameAlg = 0x%4.4x\n", nameAlg);
+            tpm2_tool_output("nameAlg = 0x%4.4x\n", nameAlg);
             g_flag = 1;
             break;
         case 'G':
@@ -312,7 +304,7 @@ execute_tool (int              argc,
                 showArgError(optarg, argv[0]);
                 return 1;
             }
-            TOOL_OUTPUT("type = 0x%4.4x\n", type);
+            tpm2_tool_output("type = 0x%4.4x\n", type);
             G_flag = 1;
             break;
         case 'A':
@@ -335,7 +327,7 @@ execute_tool (int              argc,
                 return 1;
             }
             I_flag = 1;
-            TOOL_OUTPUT("inSensitive.t.sensitive.data.t.size = %d\n",inSensitive.t.sensitive.data.t.size);
+            tpm2_tool_output("inSensitive.t.sensitive.data.t.size = %d\n",inSensitive.t.sensitive.data.t.size);
             break;
         case 'L':
             inPublic.t.publicArea.authPolicy.t.size = sizeof(inPublic.t.publicArea.authPolicy) - 2;
@@ -377,7 +369,7 @@ execute_tool (int              argc,
             {
                 return 1;
             }
-            TOOL_OUTPUT("contextParentFile = %s\n", contextParentFilePath);
+            tpm2_tool_output("contextParentFile = %s\n", contextParentFilePath);
             c_flag = 1;
             break;
         case ':':

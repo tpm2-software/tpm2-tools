@@ -38,16 +38,16 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
 #include "pcr.h"
 #include "tpm2_policy.h"
 #include "tpm2_util.h"
 #include "tpm_hash.h"
 #include "tpm_session.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {

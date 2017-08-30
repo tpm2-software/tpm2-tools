@@ -32,7 +32,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-INCLUDE_DIRS = -I$(top_srcdir)/src -I$(top_srcdir)/lib
+INCLUDE_DIRS = -I$(top_srcdir)/src -I$(top_srcdir)/lib -I$(top_srcdir)/lib/tcti
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS := \
@@ -45,58 +45,71 @@ LDADD = \
     $(LIB_COMMON) $(SAPI_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_TABRMD_LIBS) \
     $(TCTI_DEV_LIBS) $(CRYPTO_LIBS)
 
+# keep me sorted
 bin_PROGRAMS = \
-    tools/tpm2_create \
-    tools/tpm2_createprimary \
-    tools/tpm2_load \
-    tools/tpm2_send_command \
-    tools/tpm2_dump_capability \
-    tools/tpm2_pcrlist \
-    tools/tpm2_listpersistent \
-    tools/tpm2_startup \
-    tools/tpm2_rc_decode \
-    tools/tpm2_verifysignature \
-    tools/tpm2_getmanufec \
-    tools/tpm2_quote \
-    tools/tpm2_takeownership \
-    tools/tpm2_getpubek \
-    tools/tpm2_getpubak \
-    tools/tpm2_akparse \
-    tools/tpm2_hash \
     tools/tpm2_activatecredential \
-    tools/tpm2_makecredential \
-    tools/tpm2_nvlist \
-    tools/tpm2_nvread \
-    tools/tpm2_nvreadlock \
-    tools/tpm2_nvwrite \
-    tools/tpm2_nvdefine \
-    tools/tpm2_nvrelease \
-    tools/tpm2_hmac \
-    tools/tpm2_certify \
-    tools/tpm2_readpublic \
-    tools/tpm2_getrandom \
-    tools/tpm2_encryptdecrypt \
-    tools/tpm2_evictcontrol \
-    tools/tpm2_loadexternal \
-    tools/tpm2_rsadecrypt \
-    tools/tpm2_rsaencrypt \
-    tools/tpm2_sign \
-    tools/tpm2_unseal \
-    tools/tpm2_dictionarylockout \
-    tools/tpm2_createpolicy \
-    tools/tpm2_pcrextend \
-    tools/tpm2_pcrevent
+    tools/tpm2_hash
+
+# NEED TO PORT
+#    tools/tpm2_akparse \
+#    tools/tpm2_certify \
+#    tools/tpm2_create \
+#    tools/tpm2_createpolicy \
+#    tools/tpm2_createprimary \
+#    tools/tpm2_dictionarylockout \
+#    tools/tpm2_dump_capability \
+#    tools/tpm2_encryptdecrypt \
+#    tools/tpm2_evictcontrol \
+#    tools/tpm2_getmanufec \
+#    tools/tpm2_getpubak \
+#    tools/tpm2_getpubek \
+#    tools/tpm2_getrandom \
+#    tools/tpm2_hash \
+#    tools/tpm2_hmac \
+#    tools/tpm2_listpersistent \
+#    tools/tpm2_load \
+#    tools/tpm2_loadexternal \
+#    tools/tpm2_makecredential \
+#    tools/tpm2_nvdefine \
+#    tools/tpm2_nvlist \
+#    tools/tpm2_nvread \
+#    tools/tpm2_nvreadlock \
+#    tools/tpm2_nvrelease \
+#    tools/tpm2_nvwrite \
+#    tools/tpm2_pcrevent \
+#    tools/tpm2_pcrextend \
+#    tools/tpm2_pcrlist \
+#    tools/tpm2_quote \
+#    tools/tpm2_rc_decode \
+#    tools/tpm2_readpublic \
+#    tools/tpm2_rsadecrypt \
+#    tools/tpm2_rsaencrypt \
+#    tools/tpm2_send_command \
+#    tools/tpm2_sign \
+#    tools/tpm2_startup \
+#    tools/tpm2_takeownership \
+#    tools/tpm2_unseal \
+#    tools/tpm2_verifysignature
+
+tcti_src = ""
+if HAVE_TCTI_DEV
+tcti_src += lib/tcti/tpm2_tools_tcti_device.c
+endif
+if HAVE_TCTI_SOCK
+tcti_src += lib/tcti/tpm2_tools_tcti_socket.c
+endif
+if HAVE_TCTI_TABRMD
+tcti_src += lib/tcti/tpm2_tools_tcti_abrmd.c
+endif
+
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
-    lib/context-util.c \
-    lib/context-util.h \
+	$(tcti_src) \
     lib/files.c \
     lib/files.h \
     lib/log.c \
     lib/log.h \
-    lib/options.c \
-    lib/options.h \
     lib/pcr.c \
     lib/pcr.h \
     lib/rc-decode.c \
@@ -118,10 +131,12 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_hmac.h \
     lib/tpm_kdfa.c \
     lib/tpm_kdfa.h \
+    lib/tpm2_options.c \
+    lib/tpm2_options.h \
     lib/tpm_session.c \
     lib/tpm_session.h
 
-TOOL_SRC := tools/main.c tools/main.h
+TOOL_SRC := tools/tpm2_tool.c tools/tool.h
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)

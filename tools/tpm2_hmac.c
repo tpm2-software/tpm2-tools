@@ -39,13 +39,13 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
 struct tpm_hmac_ctx {
@@ -180,11 +180,11 @@ static bool do_hmac_and_output(tpm_hmac_ctx *ctx) {
 
     if (hmac_out.t.size) {
         UINT16 i;
-        TOOL_OUTPUT("hmac(%s):", tpm2_alg_util_algtostr(ctx->algorithm));
+        tpm2_tool_output("hmac(%s):", tpm2_alg_util_algtostr(ctx->algorithm));
         for (i = 0; i < hmac_out.t.size; i++) {
-            TOOL_OUTPUT("%02x", hmac_out.t.buffer[i]);
+            tpm2_tool_output("%02x", hmac_out.t.buffer[i]);
         }
-        TOOL_OUTPUT("\n");
+        tpm2_tool_output("\n");
     }
 
     if (ctx->hmac_output_file_path) {

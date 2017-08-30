@@ -41,9 +41,9 @@
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 
 typedef struct getpubek_context getpubek_context;
 struct getpubek_context {

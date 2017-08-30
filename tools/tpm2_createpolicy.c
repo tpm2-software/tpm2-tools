@@ -36,13 +36,13 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_options.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
 #include "pcr.h"
 #include "tpm2_policy.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 
 //Records the type of policy and if one is selected
 typedef struct {

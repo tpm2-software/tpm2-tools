@@ -38,12 +38,12 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "../lib/tpm2_options.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
 #include "pcr.h"
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {
@@ -243,10 +243,10 @@ static bool show_pcr_values(listpcr_context *context) {
                 context->pcr_selections.pcrSelections[i].hash);
 
         if (context->format.yaml) {
-            TOOL_OUTPUT("%s :\n", alg_name);
+            tpm2_tool_output("%s :\n", alg_name);
 
         } else {
-            TOOL_OUTPUT("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
+            tpm2_tool_output("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
                 context->pcr_selections.pcrSelections[i].hash);
         }
 
@@ -262,15 +262,15 @@ static bool show_pcr_values(listpcr_context *context) {
             }
 
             if (context->format.yaml) {
-                TOOL_OUTPUT("  %-2d : ", pcr_id);
+                tpm2_tool_output("  %-2d : ", pcr_id);
             } else {
-                TOOL_OUTPUT("PCR_%02d:", pcr_id);
+                tpm2_tool_output("PCR_%02d:", pcr_id);
             }
             int k;
             for (k = 0; k < context->pcrs.pcr_values[vi].digests[di].t.size; k++) {
-                TOOL_OUTPUT("%02x", context->pcrs.pcr_values[vi].digests[di].t.buffer[k]);
+                tpm2_tool_output("%02x", context->pcrs.pcr_values[vi].digests[di].t.buffer[k]);
             }
-            TOOL_OUTPUT("\n");
+            tpm2_tool_output("\n");
 
             if (context->output_file != NULL
                     && fwrite(context->pcrs.pcr_values[vi].digests[di].t.buffer,
@@ -351,13 +351,13 @@ static bool get_banks(listpcr_context *context) {
 
 static void show_banks(tpm2_algorithm *g_banks) {
 
-    TOOL_OUTPUT("Supported Bank/Algorithm:");
+    tpm2_tool_output("Supported Bank/Algorithm:");
     int i;
     for (i = 0; i < g_banks->count; i++) {
         const char *alg_name = tpm2_alg_util_algtostr(g_banks->alg[i]);
-        TOOL_OUTPUT(" %s(0x%04x)", alg_name, g_banks->alg[i]);
+        tpm2_tool_output(" %s(0x%04x)", alg_name, g_banks->alg[i]);
     }
-    TOOL_OUTPUT("\n");
+    tpm2_tool_output("\n");
 }
 
 static format_flags get_format(const char *optarg) {

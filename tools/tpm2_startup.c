@@ -33,8 +33,8 @@
 #include <getopt.h>
 #include <stdlib.h>
 
-#include "main.h"
 #include "log.h"
+#include "tpm2_tool.h"
 
 /*
  * Both the Microsoft and IBM TPM2 simulators require some specific setup
