@@ -1,3 +1,4 @@
+#!/bin/bash
 #;**********************************************************************;
 #
 # Copyright (c) 2016, Intel Corporation
@@ -29,7 +30,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
-#!/bin/bash
 
 echo "3a01000001000b00b20003002000837197674484b3f81a90cc8d46a5d724fd52\
 d76e06520b64f2a1da1b331469aa000000000000000000000000000000000000\

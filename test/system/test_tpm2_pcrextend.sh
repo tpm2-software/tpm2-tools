@@ -1,3 +1,4 @@
+#!/bin/bash
 #;**********************************************************************;
 #
 # Copyright (c) 2017, Intel Corporation
@@ -29,7 +30,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
-#!/bin/sh
 
 declare -A alg_hashes=(
   ["sha"]="f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"

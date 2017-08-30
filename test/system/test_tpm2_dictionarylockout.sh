@@ -1,3 +1,4 @@
+#!/bin/bash
 #;**********************************************************************;
 #
 # Copyright (c) 2016, Intel Corporation
@@ -31,7 +32,6 @@
 #;**********************************************************************;
 ###this script use for test the implementation tpm2_dictionarylockout 
 
-#!/bin/sh
 
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7
 if [ $? != 0 ];then
