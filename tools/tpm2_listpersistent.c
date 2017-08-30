@@ -40,9 +40,9 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 int readPublic(TSS2_SYS_CONTEXT *sapi_context,

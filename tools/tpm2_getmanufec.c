@@ -46,12 +46,12 @@
 #include <openssl/sha.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
 #include "tpm_hash.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 char *outputFile;

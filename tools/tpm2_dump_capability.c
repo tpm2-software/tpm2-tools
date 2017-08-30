@@ -34,8 +34,8 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
-#include "main.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 /* convenience macro to convert flags into "set" / "clear" strings */

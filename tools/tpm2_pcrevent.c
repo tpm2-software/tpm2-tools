@@ -39,12 +39,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_password_util.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
@@ -201,7 +201,7 @@ static bool do_hmac_and_output(tpm_pcrevent_ctx *ctx) {
     for (i = 0; i < digests.count; i++) {
         TPMT_HA *d = &digests.digests[i];
 
-        TOOL_OUTPUT("%s:", tpm2_alg_util_algtostr(d->hashAlg));
+        tpm2_tool_output("%s:", tpm2_alg_util_algtostr(d->hashAlg));
 
         BYTE *bytes;
         size_t size;
@@ -238,10 +238,10 @@ static bool do_hmac_and_output(tpm_pcrevent_ctx *ctx) {
 
         size_t j;
         for (j = 0; j < size; j++) {
-            TOOL_OUTPUT("%02x", bytes[j]);
+            tpm2_tool_output("%02x", bytes[j]);
         }
 
-        TOOL_OUTPUT("\n");
+        tpm2_tool_output("\n");
 
     }
 

@@ -38,10 +38,10 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
