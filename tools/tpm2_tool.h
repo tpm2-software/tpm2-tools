@@ -28,20 +28,59 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef CONTEXT_UTIL_H
-#define CONTEXT_UTIL_H
+#ifndef MAIN_H
+#define MAIN_H
 
 #include <sapi/tpm20.h>
-#include "options.h"
+#include <stdbool.h>
 
-/*
- * functions to setup TCTIs and SAPI contexts  using data from the common
- * options
+#include "tpm2_options.h"
+
+extern bool output_enabled;
+
+/**
+ * An optional interface for tools to specify what options they support.
+ * They are concatenated with main's options and passed to getopt_long.
+ * @param opts
+ *  The callee can choose to set *opts to a tpm_options pointer allocated
+ *  via tpm2_options_new(). Setting *opts to NULL is not an error, and
+ *  Indicates that no options are specified by the tool.
+ *
+ * @return
+ *  True on success, false on error.
  */
-TSS2_TCTI_CONTEXT*   tcti_init_from_options  (common_opts_t      *options);
-TSS2_SYS_CONTEXT*    sapi_init_from_options  (common_opts_t      *options);
-void                 tcti_teardown           (TSS2_TCTI_CONTEXT  *tcti_context);
-void                 sapi_teardown           (TSS2_SYS_CONTEXT   *sapi_context);
-void                 sapi_teardown_full      (TSS2_SYS_CONTEXT   *sapi_context);
+bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
 
-#endif /* CONTEXT_UTIL_H */
+/**
+ * This is the main interface for tools, after tcti and sapi initialization
+ * are performed.
+ * @param sapi_context
+ *  The system api context.
+ * @param flags
+ *  Flags that tools may wish to respect.
+ * @return
+ *  0 on success.
+ */
+int tpm2_tool_onrun (TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) __attribute__((weak));
+
+/**
+ * Called when the tool is exiting, useful for cleanup.
+ */
+void tpm2_tool_onexit(void) __attribute__((weak));
+
+/**
+ * prints output to stdout respecting the quiet option.
+ * Ie when quiet, don't print.
+ * @param fmt
+ *  The format specifier, ala printf.
+ * @param ...
+ *  The varargs, just like printf.
+ */
+#define tpm2_tool_output(fmt, ...)                   \
+    do {                                        \
+        if (output_enabled) {                   \
+            printf(fmt, ##__VA_ARGS__);         \
+        }                                       \
+    } while (0)
+
+#endif /* MAIN_H */

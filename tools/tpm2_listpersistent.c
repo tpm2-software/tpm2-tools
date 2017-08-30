@@ -34,15 +34,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "files.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 int readPublic(TSS2_SYS_CONTEXT *sapi_context,
@@ -77,17 +75,9 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
     return 0;
 }
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
-    (void) opts;
-    (void) envp;
-    (void) argc;
-    (void) argv;
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
 
     TPMI_YES_NO moreData;
     TPMS_CAPABILITY_DATA capabilityData;

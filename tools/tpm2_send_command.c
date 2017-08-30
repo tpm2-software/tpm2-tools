@@ -40,14 +40,16 @@
 
 #include "tpm2_header.h"
 #include "files.h"
-#include "main.h"
 #include "log.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm2_send_command_ctx tpm2_send_command_ctx;
 struct tpm2_send_command_ctx {
     FILE *input;
     FILE *output;
 };
+
+tpm2_send_command_ctx ctx;
 
 static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
@@ -119,35 +121,42 @@ static void close_file(FILE *f) {
     }
 }
 
-static bool init(tpm2_send_command_ctx *ctx, int argc, char *argv[]) {
+static bool on_option(char key, char *value) {
 
-    static const char *optstring = "i:o:";
-    static const struct option long_options[] = { { "--input",
-            required_argument, NULL, 'i' }, { "--output", required_argument,
-            NULL, 'o' }, { NULL, no_argument, NULL, '\0' }, };
-
-    int opt;
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
-        switch (opt) {
-        case 'i':
-            ctx->input = open_file(optarg, "rb");
-            break;
-        case 'o':
-            ctx->output = open_file(optarg, "wb");
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
+    switch (key) {
+     case 'i':
+         ctx.input = open_file(value, "rb");
+         if (!ctx.input) {
+             return false;
+         }
+         break;
+     case 'o':
+         ctx.output = open_file(value, "wb");
+         if (!ctx.output) {
+             return false;
+         }
+         break;
+    /* no break */
     }
 
-    return ctx->input && ctx->output;
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static const struct option topts[] = {
+        { "--input",  required_argument, NULL, 'i' },
+        { "--output", required_argument, NULL, 'o' },
+        { NULL }
+    };
+
+    *opts = tpm2_options_new("i:o:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
+
+    ctx.input = stdin;
+    ctx.output = stdout;
+
+    return *opts != NULL;
 }
 
 /*
@@ -157,26 +166,15 @@ static bool init(tpm2_send_command_ctx *ctx, int argc, char *argv[]) {
  * in network byte order (big-endian). We output the response in the same
  * form.
  */
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
-    (void) envp;
-    (void) opts;
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
 
     int ret = 1;
 
-    tpm2_send_command_ctx ctx = {
-            .input = stdin,
-            .output = stdout
-    };
-
-    bool result = init(&ctx, argc, argv);
-    if (!result) {
-        goto out_files;
-    }
-
     UINT32 size;
     tpm2_command_header *command;
-    result = read_command_from_file(ctx.input, &command, &size);
+    bool result = read_command_from_file(ctx.input, &command, &size);
     if (!result) {
         LOG_ERR("failed to read TPM2 command buffer from file");
         goto out_files;

@@ -32,24 +32,15 @@
 tpm2_startup \- Send a TPM2_Startup command with either TPM_SU_CLEAR or
 TPM_SU_STATE.
 .SH SYNOPSIS
-.B tpm2_startup [ \fBCOMMON OPTIONS\fR ] [ \fBTCTI OPTIONS\fR ] [ \fB\-\-clear\fR|\fB\-\-state\fR ]
+.B tpm2_startup [ \fBCOMMON OPTIONS\fR ] [ \fBTCTI OPTIONS\fR ] [ \fB\-\-clear\fR ]
 .PP
-Send a TPM2_Startup command, with the startupType set to TPM_SU_CLEAR using
-the specified TCTI.
+Send a TPM2_Startup command.
 .SH DESCRIPTION
-.B tpm2_send_command
-is a command line tool used to send a TPM command to the TPM. The command is
-read from stdin as a binary stream and transmitted to the TPM using the TCTI
-specified by the caller. The response received from the TPM is written to
-stdout. Likely the caller will want to redirect this to a file or into a
-program to decode and display the response in a human readable form.
+Send a startup command to the tpm.
 .SH OPTIONS
 .TP
 \fB\-c,\ \-\-clear\fR
-Startup type sent will be TPM_SU_CLEAR.
-.TP
-\fB\-s,\ \-\-state\fR
-Startup type sent will be TPM2_SU_STATE.
+Startup type sent will be TPM_SU_CLEAR instead of TPM2_SU_STATE.
 @COMMON_OPTIONS_INCLUDE@
 @TCTI_OPTIONS_INCLUDE@
 .SH ENVIRONMENT

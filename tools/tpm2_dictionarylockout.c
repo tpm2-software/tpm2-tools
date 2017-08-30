@@ -38,10 +38,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct dictionarylockout_ctx dictionarylockout_ctx;
@@ -56,10 +56,15 @@ struct dictionarylockout_ctx {
     TPMS_AUTH_COMMAND session_data;
 };
 
-bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
+static dictionarylockout_ctx ctx = {
+    .use_passwd = true,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+};
+
+bool dictionary_lockout_reset_and_parameter_setup() {
 
     TPMS_AUTH_COMMAND *sessionDataArray[1];
-    sessionDataArray[0] = &ctx->session_data;
+    sessionDataArray[0] = &ctx.session_data;
 
     TSS2_SYS_CMD_AUTHS sessionsData = { .cmdAuths = &sessionDataArray[0],
             .cmdAuthsCount = 1 };
@@ -75,10 +80,10 @@ bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
      * If setup params and clear lockout are both required, clear lockout should
      * preceed parameters setup.
      */
-    if (ctx->clear_lockout) {
+    if (ctx.clear_lockout) {
 
         LOG_INFO("Resetting dictionary lockout state.");
-        UINT32 rval = Tss2_Sys_DictionaryAttackLockReset(ctx->sapi_context,
+        UINT32 rval = Tss2_Sys_DictionaryAttackLockReset(ctx.sapi_context,
                 TPM_RH_LOCKOUT, &sessionsData, &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("0x%X Error clearing dictionary lockout.", rval);
@@ -86,11 +91,11 @@ bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
         }
     }
 
-    if (ctx->setup_parameters) {
+    if (ctx.setup_parameters) {
         LOG_INFO("Setting up Dictionary Lockout parameters.");
-        UINT32 rval = Tss2_Sys_DictionaryAttackParameters(ctx->sapi_context,
-                TPM_RH_LOCKOUT, &sessionsData, ctx->max_tries,
-                ctx->recovery_time, ctx->lockout_recovery_time,
+        UINT32 rval = Tss2_Sys_DictionaryAttackParameters(ctx.sapi_context,
+                TPM_RH_LOCKOUT, &sessionsData, ctx.max_tries,
+                ctx.recovery_time, ctx.lockout_recovery_time,
                 &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR(
@@ -103,127 +108,83 @@ bool dictionary_lockout_reset_and_parameter_setup(dictionarylockout_ctx *ctx) {
     return true;
 }
 
-static bool init(int argc, char *argv[], dictionarylockout_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
-    struct option long_options[] = {
-        { "max-tries", required_argument, NULL, 'n' }, 
-        { "recovery-time", required_argument, NULL, 't' }, 
-        { "lockout-recovery-time", required_argument, NULL, 'l' }, 
-        { "lockout-passwd", required_argument, NULL, 'P' }, 
-        { "clear-lockout", no_argument, NULL, 'c' }, 
-        { "setup-parameters", no_argument, NULL, 's' },
-        { "input-session-handle",required_argument,NULL,'S'},
-        { NULL, no_argument, NULL, 0 }, 
-    };
-
-    int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "n:t:l:P:S:cs", long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'c':
-            ctx->clear_lockout = true;
-            break;
-        case 's':
-            ctx->setup_parameters = true;
-            break;
-        case 'P':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid lockout password, got\"%s\"", optarg);
-                return false;
-            }
-            ctx->use_passwd = true;
-            break;
-        case 'n':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->max_tries);
-            if (!result) {
-                LOG_ERR("Could not convert max_tries to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            if (ctx->max_tries == 0) {
-                LOG_ERR("max_tries cannot be 0");
-                return false;
-            }
-            break;
-        case 't':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->recovery_time);
-            if (!result) {
-                LOG_ERR(
-                        "Could not convert recovery_time to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            break;
-        case 'l':
-            result = tpm2_util_string_to_uint32(optarg,
-                    &ctx->lockout_recovery_time);
-            if (!result) {
-                LOG_ERR(
-                        "Could not convert lockout_recovery_time to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return false;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
+
+    switch (key) {
+    case 'c':
+        ctx.clear_lockout = true;
+        break;
+    case 's':
+        ctx.setup_parameters = true;
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        if (!result) {
             return false;
         }
-    }
+        ctx.use_passwd = true;
+        break;
+    case 'n':
+        result = tpm2_util_string_to_uint32(value, &ctx.max_tries);
+        if (!result) {
+            return false;
+        }
 
-    if (!ctx->clear_lockout && !ctx->setup_parameters) {
-        LOG_ERR( "Invalid operational input: Neither Setup nor Clear lockout requested.");
-        return false;
+        if (ctx.max_tries == 0) {
+            return false;
+        }
+        break;
+    case 't':
+        result = tpm2_util_string_to_uint32(value, &ctx.recovery_time);
+        if (!result) {
+            return false;
+        }
+        break;
+    case 'l':
+        result = tpm2_util_string_to_uint32(value, &ctx.lockout_recovery_time);
+        if (!result) {
+            return false;
+        }
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            return false;
+        }
+        break;
     }
 
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    (void) opts;
-    (void) envp;
-
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return -1;
-    }
-
-    dictionarylockout_ctx ctx = { 
-        .max_tries = 0, 
-        .recovery_time = 0,
-        .lockout_recovery_time = 0, 
-        .clear_lockout = false,
-        .setup_parameters = false, 
-        .use_passwd = true,
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-        .sapi_context = sapi_context
+    const struct option topts[] = {
+        { "max-tries", required_argument, NULL, 'n' },
+        { "recovery-time", required_argument, NULL, 't' },
+        { "lockout-recovery-time", required_argument, NULL, 'l' },
+        { "lockout-passwd", required_argument, NULL, 'P' },
+        { "clear-lockout", no_argument, NULL, 'c' },
+        { "setup-parameters", no_argument, NULL, 's' },
+        { "input-session-handle",required_argument,NULL,'S'},
+        { NULL, no_argument, NULL, 0 },
     };
 
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
+    *opts = tpm2_options_new("n:t:l:P:S:cs", ARRAY_LEN(topts), topts, on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+    ctx.sapi_context = sapi_context;
+
+    if (!ctx.clear_lockout && !ctx.setup_parameters) {
+        LOG_ERR( "Invalid operational input: Neither Setup nor Clear lockout requested.");
         return 1;
     }
 
-    result = dictionary_lockout_reset_and_parameter_setup(&ctx);
-    if (!result) {
-        return 1;
-    }
-
-    return 0;
+    return dictionary_lockout_reset_and_parameter_setup() != true;
 }

@@ -29,32 +29,41 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;
 struct tpm_rsadecrypt_ctx {
+    struct {
+        UINT8 k : 1;
+        UINT8 P : 1;
+        UINT8 I : 1;
+        UINT8 c : 1;
+        UINT8 o : 1;
+        UINT8 unused : 3;
+    } flags;
     TPMI_DH_OBJECT key_handle;
     TPMS_AUTH_COMMAND session_data;
     TPM2B_PUBLIC_KEY_RSA cipher_text;
     char *output_file_path;
-    TSS2_SYS_CONTEXT *sapi_context;
+    char *context_key_file;
 };
 
-static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
+tpm_rsadecrypt_ctx ctx = {
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW)
+};
+
+static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMT_RSA_DECRYPT inScheme;
     TPM2B_DATA label;
@@ -66,7 +75,7 @@ static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    session_data_array[0] = &ctx->session_data;
+    session_data_array[0] = &ctx.session_data;
     sessions_data.cmdAuths = &session_data_array[0];
     session_data_out_array[0] = &session_data_out;
     sessions_data_out.rspAuths = &session_data_out_array[0];
@@ -76,121 +85,105 @@ static bool rsa_decrypt_and_save(tpm_rsadecrypt_ctx *ctx) {
     inScheme.scheme = TPM_ALG_RSAES;
     label.t.size = 0;
 
-    TPM_RC rval = Tss2_Sys_RSA_Decrypt(ctx->sapi_context, ctx->key_handle,
-            &sessions_data, &ctx->cipher_text, &inScheme, &label, &message,
+    TPM_RC rval = Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_handle,
+            &sessions_data, &ctx.cipher_text, &inScheme, &label, &message,
             &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("rsaDecrypt failed, error code: 0x%x", rval);
         return false;
     }
 
-    return files_save_bytes_to_file(ctx->output_file_path, message.t.buffer,
+    return files_save_bytes_to_file(ctx.output_file_path, message.t.buffer,
             message.t.size);
 }
 
-static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
-    const char *optstring = "k:P:I:o:c:S:";
-    static struct option long_options[] = {
+    switch (key) {
+    case 'k': {
+        bool result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
+        if (!result) {
+            LOG_ERR("Could not convert key handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        ctx.flags.k = 1;
+    }
+        break;
+    case 'P': {
+        bool result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        if (!result) {
+            LOG_ERR("Invalid key password, got\"%s\"", optarg);
+            return false;
+        }
+        ctx.flags.P = 1;
+    }
+        break;
+    case 'I': {
+        ctx.cipher_text.t.size = sizeof(ctx.cipher_text) - 2;
+        bool result = files_load_bytes_from_path(value, ctx.cipher_text.t.buffer,
+                &ctx.cipher_text.t.size);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.I = 1;
+    }
+        break;
+    case 'o': {
+        bool result = files_does_file_exist(optarg);
+        if (result) {
+            return false;
+        }
+        ctx.output_file_path = optarg;
+        ctx.flags.o = 1;
+    }
+        break;
+    case 'c':
+        ctx.context_key_file = optarg;
+        ctx.flags.c = 1;
+        break;
+    case 'S':
+         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                     optarg);
+             return false;
+         }
+         break;
+         /* no default */
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static struct option topts[] = {
       { "keyHandle",   required_argument, NULL, 'k'},
       { "pwdk",        required_argument, NULL, 'P'},
       { "inFile",      required_argument, NULL, 'I'},
       { "outFile",     required_argument, NULL, 'o'},
       { "keyContext",  required_argument, NULL, 'c'},
       { "input-session-handle",1,         NULL, 'S' },
-      { NULL,          no_argument,       NULL, '\0'}
+      { NULL }
     };
 
-    union {
-        struct {
-            UINT8 k : 1;
-            UINT8 P : 1;
-            UINT8 I : 1;
-            UINT8 c : 1;
-            UINT8 o : 1;
-            UINT8 unused : 3;
-        };
-        UINT8 all;
-    } flags = { .all = 0 };
+    *opts = tpm2_options_new("k:P:I:o:c:S:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
 
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
+    return *opts != NULL;
+}
 
-    int opt;
-    char *context_key_file = NULL;
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'k': {
-            bool result = tpm2_util_string_to_uint32(optarg, &ctx->key_handle);
-            if (!result) {
-                LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.k = 1;
-        }
-            break;
-        case 'P': {
-            bool result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid key password, got\"%s\"", optarg);
-                return false;
-            }
-            flags.P = 1;
-        }
-            break;
-        case 'I': {
-            ctx->cipher_text.t.size = sizeof(ctx->cipher_text) - 2;
-            bool result = files_load_bytes_from_path(optarg, ctx->cipher_text.t.buffer,
-                    &ctx->cipher_text.t.size);
-            if (!result) {
-                return false;
-            }
-            flags.I = 1;
-        }
-            break;
-        case 'o': {
-            bool result = files_does_file_exist(optarg);
-            if (result) {
-                return false;
-            }
-            ctx->output_file_path = optarg;
-            flags.o = 1;
-        }
-            break;
-        case 'c':
-            context_key_file = optarg;
-            flags.c = 1;
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return false;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
+static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!((flags.k || flags.c) && flags.I && flags.o)) {
+
+    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I && ctx.flags.o)) {
         LOG_ERR("Expected arguments I and o and (k or c)");
         return false;
     }
 
-    if (flags.c) {
-        bool result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle, context_key_file);
+    if (ctx.flags.c) {
+        bool result = files_load_tpm_context_from_file(sapi_context,
+                &ctx.key_handle, ctx.context_key_file);
         if (!result) {
             return false;
         }
@@ -199,27 +192,14 @@ static bool init(int argc, char *argv[], tpm_rsadecrypt_ctx *ctx) {
    return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    /* opts and envp are unused, avoid compiler warning */
-    (void)opts;
-    (void) envp;
+    UNUSED(flags);
 
-    tpm_rsadecrypt_ctx ctx = {
-            .key_handle = 0,
-            .cipher_text = TPM2B_EMPTY_INIT,
-            .output_file_path = NULL,
-            .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
-            .sapi_context = sapi_context
-    };
-
-    ctx.session_data.sessionHandle = TPM_RS_PW;
-
-    bool result = init(argc, argv, &ctx);
+    bool result = init(sapi_context);
     if (!result) {
         return 1;
     }
 
-    return rsa_decrypt_and_save(&ctx) != true;
+    return rsa_decrypt_and_save(sapi_context) != true;
 }
