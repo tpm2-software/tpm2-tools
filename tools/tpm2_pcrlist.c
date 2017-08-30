@@ -371,7 +371,7 @@ static format_flags get_format(const char *optarg) {
     return flags;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
     listpcr_context context = {
@@ -403,8 +403,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     };
 
     /* mark these as unused to prevent compiler warnings/errors */
-    (void) opts;
-    (void) envp;
+    UNUSED(opts);
 
     int opt;
     while ((opt = getopt_long(argc, argv, "g:o:L:s", long_options, NULL)) != -1) {

@@ -190,11 +190,10 @@ static bool init(int argc, char *argv[], tpm_nvwrite_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
-    (void)opts;
-    (void)envp;
+    UNUSED(opts);
 
     tpm_nvwrite_ctx ctx = {
         .nv_index = 0,

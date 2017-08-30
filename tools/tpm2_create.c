@@ -208,12 +208,10 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
 int
 execute_tool (int              argc,
               char             *argv[],
-              char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context)
 {
-    (void)envp;
-    (void)opts;
+    UNUSED(opts);
 
     sysContext = sapi_context;
 

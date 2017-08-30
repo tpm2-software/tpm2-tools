@@ -35,12 +35,13 @@
 #include <stdbool.h>
 #include "options.h"
 
+#define UNUSED(x) (void)x
+
 extern bool output_enabled;
 
 int
 execute_tool (int              argc,
               char             *argv[],
-              char             *envp[],
               common_opts_t    *opts,
               TSS2_SYS_CONTEXT *sapi_context);
 

@@ -134,7 +134,7 @@ static bool change_hierarchy_auth(takeownership_ctx *ctx) {
                 "Lockout", TPM_RH_LOCKOUT);
 }
 
-static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
+static bool init(int argc, char *argv[], takeownership_ctx *ctx,
         bool *clear_auth) {
 
     struct option sOpts[] = {
@@ -149,7 +149,7 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
     };
 
     if (argc == 1) {
-        execute_man(argv[0], envp);
+        LOG_ERR("Expected arguments, got none.");
         return false;
     }
 
@@ -221,18 +221,18 @@ static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
     /* opts is unused */
-    (void) opts;
+    UNUSED(opts);
 
     takeownership_ctx ctx = {
             .sapi_context = sapi_context,
     };
 
     bool clear_auth = false;
-    bool result = init(argc, argv, envp, &ctx, &clear_auth);
+    bool result = init(argc, argv, &ctx, &clear_auth);
     if (!result) {
         return 1;
     }

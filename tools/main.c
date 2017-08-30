@@ -28,7 +28,11 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <errno.h>
 #include <stdbool.h>
+#include <string.h>
+
+#include <unistd.h>
 
 #include "context-util.h"
 #include "log.h"
@@ -37,16 +41,41 @@
 
 bool output_enabled = true;
 
+#ifdef ENABLE_MANPAGER
+/*
+ * Execute man page for the appropriate command.
+ */
+#define execute_man(progname) _execute_man(progname, envp)
+static void _execute_man(char *prog_name, char *envp[]) {
+
+    char *argv[] = {
+        "/man", // ARGv[0] needs to be something.
+        basename(prog_name),
+        NULL
+    };
+
+    execvpe("man", argv, envp);
+    LOG_ERR("Could not invoke man pager: %s", strerror(errno));
+    LOG_ERR ("failed to load manpage, check your environment / MANPATH");
+}
+#else
+#define execute_man(progname) _execute_man(progname)
+static void _execute_man(char *prog_name) {
+    LOG_WARN("%s not configured with manpager support, invoke man manually!",
+            prog_name);
+}
+#endif
+
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
  * nothing more than parsing command line options that allow the caller to
  * specify which TCTI to use for the test.
  */
-int
-main (int   argc,
-      char *argv[],
-      char *envp[])
-{
+#ifdef ENABLE_MANPAGER
+int main(int argc, char *argv[], char *envp[]) {
+#else
+int main(int argc, char *argv[]) {
+#endif
     extern int opterr, optind;
     int ret;
     TSS2_SYS_CONTEXT *sapi_context;
@@ -60,8 +89,7 @@ main (int   argc,
     optind = 1;
     switch (sanity_check_common (&opts)) {
     case 1:
-        execute_man (argv[0], envp);
-        LOG_ERR ("failed to load manpage, check your environment / PATH");
+        execute_man (argv[0]);
         exit (1);
     case 2:
         exit (1);
@@ -93,7 +121,7 @@ main (int   argc,
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = execute_tool (argc, argv, envp, &opts, sapi_context) ? 1 : 0;
+    ret = execute_tool (argc, argv, &opts, sapi_context) ? 1 : 0;
     /*
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.

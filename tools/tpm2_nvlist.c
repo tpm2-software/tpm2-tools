@@ -97,13 +97,12 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
+int execute_tool(int argc, char *argv[],  common_opts_t *opts,
         TSS2_SYS_CONTEXT *sapi_context) {
 
     (void) argc;
     (void) argv;
-    (void) envp;
-    (void) opts;
+    UNUSED(opts);
 
     return !nv_list(sapi_context);
 }
