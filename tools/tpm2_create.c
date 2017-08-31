@@ -205,15 +205,7 @@ int create(TPMI_DH_OBJECT parentHandle, TPM2B_PUBLIC *inPublic, TPM2B_SENSITIVE_
     return 0;
 }
 
-int
-execute_tool (int              argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
-    (void)envp;
-    (void)opts;
+int tool_execute(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     sysContext = sapi_context;
 

@@ -40,8 +40,103 @@
 
 #include "log.h"
 #include "options.h"
-
 #include "tpm2_util.h"
+
+/*
+ * Default TCTI: this is a bit awkward since we allow users to enable /
+ * disable TCTIs using ./configure --with/--without magic.
+ * As simply put as possible:
+ * if the tabrmd TCTI is enabled, it's the default.
+ * else if the socket TCTI is enabled it's the default.
+ * else if the device TCTI is enabled it's the default.
+ * We do this to preserve the current default / expected behavior (use of
+ * the socket TCTI).
+ */
+#ifdef HAVE_TCTI_TABRMD
+  #define TCTI_DEFAULT_STR  "abrmd"
+#elif HAVE_TCTI_SOCK
+  #define TCTI_DEFAULT_STR  "socket"
+#elif  HAVE_TCTI_DEV
+  #define TCTI_DEFAULT_STR  "device"
+#endif
+
+#ifdef HAVE_TCTI_TABRMD
+#include "tpm2_tools_tcti_abrmd.h"
+#endif
+#ifdef HAVE_TCTI_SOCK
+#include "tpm2_tools_tcti_socket.h"
+#endif
+#ifdef HAVE_TCTI_DEV
+#include "tpm2_tools_tcti_device.h"
+#endif
+
+/* Environment variables usable as alternatives to command line options */
+#define TPM2TOOLS_ENV_TCTI_NAME      "TPM2TOOLS_TCTI_NAME"
+
+struct tpm2_options {
+    tpm2_option_handler on_opt;
+    tpm2_arg_handler on_arg;
+    char *short_opts;
+    size_t len;
+    struct option long_opts[];
+};
+
+tpm2_options *tpm2_options_new(const char *short_opts, size_t len, struct option *long_opts, tpm2_option_handler on_opt, tpm2_arg_handler on_arg) {
+
+    tpm2_options *opts = calloc(1, sizeof(*opts) + (sizeof(*long_opts) * len));
+    if (!opts) {
+        LOG_ERR("oom");
+        return NULL;
+    }
+
+    opts->short_opts = strdup(short_opts);
+    if (!opts) {
+        LOG_ERR("oom");
+        free(opts);
+        return NULL;
+    }
+
+    opts->on_opt = on_opt;
+    opts->on_arg = on_arg;
+    opts->len = len;
+    memcpy(opts->long_opts, long_opts, len * sizeof(*long_opts));
+
+    return opts;
+}
+
+#define OPTIONS_SIZE(x) (sizeof(*x) + (sizeof(x->long_opts) * x->len))
+tpm2_options *tpm2_options_cat(tpm2_options *a, tpm2_options *b) {
+
+    size_t long_opts_len = a->len + b->len;
+    /* +1 for a terminating NULL at the end of options array for getopt_long */
+    tpm2_options *tmp = calloc(1, sizeof(*a) + 1 + (long_opts_len * sizeof(a->long_opts[0])));
+    if (!tmp) {
+        LOG_ERR("oom");
+        return NULL;
+    }
+
+    size_t opts_len = strlen(a->short_opts) + strlen(b->short_opts) + 1;
+    tmp->short_opts = calloc(1, opts_len);
+    if (!tmp->short_opts) {
+        LOG_ERR("oom");
+        free(tmp);
+        return NULL;
+    }
+
+    sprintf(tmp->short_opts, "%s%s", a->short_opts, b->short_opts);
+
+    tmp->len = long_opts_len;
+
+    memcpy(tmp->long_opts, a->long_opts, a->len * sizeof(a->long_opts[0]));
+    memcpy(&tmp->long_opts[a->len], b->long_opts, b->len * sizeof(b->long_opts[0]));
+
+    return tmp;
+}
+
+void tpm2_options_free(tpm2_options *opts) {
+    free(opts->short_opts);
+    free(opts);
+}
 
 /*
  * A structure to map a string name to an element in the TCTI_TYPE
@@ -49,362 +144,145 @@
  */
 typedef struct {
     char       *name;
-    TCTI_TYPE   type;
-} tcti_map_entry_t;
+    tcti_init   init;
+} tcti_map_entry;
 /*
  * A table of tcti_map_entry_t structures. This is how we map a string
  * provided on the command line to the enumeration.
  */
-tcti_map_entry_t tcti_map_table[] = {
+#define ADD_TCTI(xname, xinit) { .name = xname, .init = xinit }
+
+tcti_map_entry tcti_map_table[] = {
 #ifdef HAVE_TCTI_DEV
-    {
-        .name = "device",
-        .type = DEVICE_TCTI,
-    },
+    ADD_TCTI("device", tpm2_tools_tcti_device_init),
 #endif
 #ifdef HAVE_TCTI_SOCK
-    {
-        .name = "socket",
-        .type = SOCKET_TCTI,
-    },
+    ADD_TCTI("socket", tpm2_tools_tcti_socket_init),
 #endif
 #ifdef HAVE_TCTI_TABRMD
-    {
-        .name = "tabrmd",
-        .type = TABRMD_TCTI,
-    },
+    ADD_TCTI("abrmd", tpm2_tools_tcti_abrmd_init)
 #endif
-    {
-        .name = "unknown",
-        .type = UNKNOWN_TCTI,
-    },
 };
-/*
- * Convert from a string to an element in the TCTI_TYPE enumeration.
- * An unkonwn name / string will map to UNKNOWN_TCTI.
- */
-TCTI_TYPE
-tcti_type_from_name (char const *tcti_str)
-{
-    int i;
 
-    if (tcti_str == NULL)
-        goto out;
-    for (i = 0; i < N_TCTI; ++i)
-        if (strcmp (tcti_str, tcti_map_table[i].name) == 0)
-            return tcti_map_table[i].type;
-out:
-    return UNKNOWN_TCTI;
-}
-/*
- * Convert from an element in the TCTI_TYPE enumeration to a string
- * representation.
- */
-char *
-tcti_name_from_type (TCTI_TYPE tcti_type)
-{
-    int i;
-    for (i = 0; i < N_TCTI; ++i)
-        if (tcti_type == tcti_map_table[i].type)
-            return tcti_map_table[i].name;
-    return NULL;
-}
-/*
- * Test a common_opts_t structure to be sure the member data has been
- * populated. We don't do any tests on the data for appropriate formats
- * (like testing socket_address for a valid IP address).
- * return 0 if sanity test passes
- * return 1 if help message was explicitly requested
- * return 2 if sanity test fails
- */
-int
-sanity_check_common (common_opts_t  *opts)
-{
-    if (opts->help)
-        return 1;
-    switch (opts->tcti_type) {
-#ifdef HAVE_TCTI_DEV
-    case DEVICE_TCTI:
-        if (opts->device_file == NULL) {
-            fprintf (stderr, "missing --device-file, see --help\n");
-            return 2;
-        }
-        break;
-#endif
-#ifdef HAVE_TCTI_SOCK
-    case SOCKET_TCTI:
-        if (opts->socket_address == NULL) {
-            fprintf (stderr, "missing --socket-address, see --help\n");
-            return 2;
-        }
-        if (opts->socket_port == 0) {
-            fprintf (stderr, "missing --socket-port, see --help\n");
-            return 2;
-        }
-        break;
-#endif
-#ifdef HAVE_TCTI_TABRMD
-    case TABRMD_TCTI:
-        /* no options for this one yet */
-        break;
-#endif
-    default:
-        fprintf (stderr, "invalid TCTI, see --help\n");
-        return 2;
-    }
-    return 0;
-}
-/*
- * Populate the provided common_opts_t structure with data provided through
- * the environment.
- */
-void
-get_common_opts_from_env (common_opts_t *common_opts)
-{
-    char *env_str, *end_ptr;
+bool tpm2_handle_options (int argc, char **argv, char **envp, tpm2_options  *tool_opts, tpm2_option_flags *flags, TSS2_TCTI_CONTEXT **tcti) {
 
-    if (common_opts == NULL)
-        return;
-    env_str = getenv (TPM2TOOLS_ENV_TCTI_NAME);
-    if (env_str != NULL)
-        common_opts->tcti_type = tcti_type_from_name (env_str);
-    env_str = getenv (TPM2TOOLS_ENV_DEVICE_FILE);
-    if (env_str != NULL)
-        common_opts->device_file = env_str;
-    env_str = getenv (TPM2TOOLS_ENV_SOCKET_ADDRESS);
-    if (env_str != NULL)
-        common_opts->socket_address = env_str;
-    env_str = getenv (TPM2TOOLS_ENV_SOCKET_PORT);
-    if (env_str != NULL)
-        common_opts->socket_port = strtol (env_str, &end_ptr, 10);
-}
-/*
- * Append a string to the parameter argv array. We realloc this array adding
- * a new char* to point to the appended entry. The argc parameter is updated
- * to account for the new element in the array. We return the address of the
- * newly reallocated array. If the realloc fails we return NULL.
- */
-char**
-append_arg_to_vector (int*  argc,
-                      char* argv[],
-                      char* arg_string)
-{
-    char **new_argv;
+    bool result = false;
 
-    ++(*argc);
-    new_argv = realloc (argv, sizeof (char*) * (*argc));
-    if (new_argv != NULL) {
-        new_argv[*argc - 1] = arg_string;
-    } else {
-        LOG_ERR("Failed to realloc new_argv to append string %s: %s",
-                arg_string,
-                strerror (errno));
-    }
+    // TODO handle execute man
+    UNUSED(envp);
 
-    return new_argv;
-}
-
-/*
- * Get data from the environment and the caller (by way of the argument
- * vector) to populate the provided common_opts_t structure. The data we get
- * from the command line / argument vector takes presedence so we fill in the
- * structure with data from the environment first, then from argv. Anything
- * retrieved from the environment will just be over written with whatever we
- * get from argv.
- * All options from argv that aren't from the common option set are ignored
- * and copied to a newly allocated vector. These are assumed to be options
- * specific to the tool. This new augmented argument vector and count are
- * returned to the caller through the argc_param and argv_param. The vector
- * must be freed by the caller.
- */
-int
-get_common_opts (int                    *argc_param,
-                 char                   **argv_param[],
-                 common_opts_t          *common_opts)
-{
-    int argc = *argc_param;
-    char **argv = *argv_param;
-
-    int c = 0, option_index = 0;
-    char *arg_str = "-T:d:R:p:hvVQ";
     struct option long_options [] = {
-        {
-            .name    = "tcti",
-            .has_arg = required_argument,
-            .flag    = NULL,
-            .val     = 'T',
-        },
-#ifdef HAVET_TCTI_DEV
-        {
-            .name    = "device-file",
-            .has_arg = required_argument,
-            .flag    = NULL,
-            .val     = 'd',
-        },
-#endif
-#ifdef HAVE_TCTI_SOCK
-        {
-            .name    = "socket-address",
-            .has_arg = required_argument,
-            .flag    = NULL,
-            .val     = 'R',
-        },
-        {
-            .name    = "socket-port",
-            .has_arg = required_argument,
-            .flag    = NULL,
-            .val     = 'p',
-        },
-#endif
-#ifdef HAVE_TCTI_TABRMD
-        /* no options for this TCTI yet */
-#endif
-        {
-            .name    = "help",
-            .has_arg = no_argument,
-            .flag    = &common_opts->help,
-            .val     = true,
-        },
-        {
-            .name    = "verbose",
-            .has_arg = no_argument,
-            .flag    = NULL,
-            .val     = 'V',
-        },
-        {
-            .name    = "quiet",
-            .has_arg = no_argument,
-            .flag    = NULL,
-            .val     = 'Q',
-        },
-        {
-            .name    = "version",
-            .has_arg = no_argument,
-            .flag    = NULL,
-            .val     = 'v',
-        },
-        {
-            .name = NULL,
-            .has_arg = no_argument,
-            .flag = NULL,
-            .val = '\0'
-        },
+        { "tcti",    required_argument, NULL,   'T' },
+        { "help",     no_argument,       NULL,  'h' },
+        { "verbose",   no_argument,       NULL, 'v' },
+        { "quiet",     no_argument,       NULL, 'Q' },
+        { "version",   no_argument,       NULL, 'V' },
     };
-    /*
-     * Start by populating the provided common_opts_t structure with data
-     * provided in the environment. Whatever we get here will be overriden
-     * by stuff from argv.
-     */
-    get_common_opts_from_env (common_opts);
-    /*
-     * Keep getopt_long quiet when we see options that aren't in the 'common'
-     * category. Reset option processing.
-     */
-    char **new_argv = { NULL, };
-    int new_argc = 1;
-    extern int opterr, optind;
 
-    opterr = 0;
-    optind = 1;
-    new_argv = calloc (1, sizeof (char*));
-    if (new_argv == NULL) {
-        fprintf (stderr, "Failed to allocate memory for tool argument "
-                 "vector: %s\n", strerror (errno));
-        return 2;
+    char *tcti_opts = NULL;
+    char *tcti_name = TCTI_DEFAULT_STR;
+    char *env_str = getenv (TPM2TOOLS_ENV_TCTI_NAME);
+    tcti_name = env_str ? env_str : tcti_name;
+
+    /* handle any options */
+    tpm2_options *opts = tpm2_options_new("T:hvVQ",
+            ARRAY_LEN(long_options), long_options, NULL, NULL);
+    if (!opts) {
+        return false;
     }
-    new_argv[0] = argv[0];
-    while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
+
+    /* Get the options from the tool */
+    if (tool_opts) {
+        tpm2_options *tmp = tpm2_options_cat(opts, tool_opts);
+        if (!tmp) {
+            tpm2_options_free(opts);
+            tpm2_options_free(tool_opts);
+            return false;
+        }
+        opts = tmp;
+    }
+
+    /* Parse the options, calling the tool callback if unknown */
+    int c;
+    while ((c = getopt_long (argc, argv, opts->short_opts, opts->long_opts, NULL))
            != -1)
     {
         switch (c) {
-        case 1: { /* positional arguments */
-            char **tmp = append_arg_to_vector (&new_argc, new_argv, optarg);
-            if (tmp == NULL) {
-                free(new_argv);
-                return 2;
-            }
-            new_argv = tmp;
-        }
-            break;
         case 'T':
-            common_opts->tcti_type = tcti_type_from_name (optarg);
+            tcti_name = optarg;
             break;
-#ifdef HAVE_TCTI_DEV
-        case 'd':
-            common_opts->device_file = optarg;
-            break;
-#endif
-#ifdef HAVE_TCTI_SOCK
-        case 'R':
-            common_opts->socket_address = optarg;
-            break;
-        case 'p': {
-            bool res = tpm2_util_string_to_uint16(optarg, &common_opts->socket_port);
-            if (!res) {
-                LOG_ERR("Could not convert port to a 16 bit unsigned number, "
-                        "got: %s", optarg);
-                free(new_argv);
-                return 2;
-            }
-        }   break;
-#endif
-#ifdef HAVE_TCTI_TABRMD
-        /* No options for this TCTI yet. */
-#endif
         case 'h':
-            common_opts->help = true;
+            // TODO
+            //execute_man();
             break;
         case 'V':
-            common_opts->verbose = true;
+            flags->verbose = 1;
             break;
         case 'Q':
-            common_opts->quiet = true;
+            flags->quiet = 1;
             break;
         case 'v':
-            common_opts->version = true;
+            // TODO
+            //showversion();
             break;
-        case '?': {
-            char **tmp = append_arg_to_vector (&new_argc, new_argv, argv[optind - 1]);
-            if (tmp == NULL) {
-                free(new_argv);
-                return 2;
+        case ':':
+            LOG_ERR("Argument %c needs a value!", optopt);
+            goto out;
+        case '?':
+            LOG_ERR("Unknown Argument: %c", optopt);
+            result = false;
+            goto out;
+        default:
+            result = tool_opts->on_opt(c, optarg);
+            if (!result) {
+                goto out;
             }
-            new_argv = tmp;
-        }
-            break;
         }
     }
-    /* return the new argument vector info to the caller */
-    *argc_param = new_argc;
-    *argv_param = new_argv;
 
-    return 0;
+    char **tool_args = &argv[optind];
+    int tool_argc = argc - optind;
+
+    /* have args and a handler to process */
+    if (tool_argc && tool_opts->on_arg) {
+        result = tool_opts->on_arg(tool_argc, tool_args);
+    /* have args and no handler, error condition */
+    } else if (tool_argc && !tool_opts->on_arg) {
+        result = false;
+        goto out;
+    }
+
+    size_t i;
+    bool found = false;
+    for(i=0; i < ARRAY_LEN(tcti_map_table); i++) {
+
+        char *name = tcti_map_table[i].name;
+        tcti_init init = tcti_map_table[i].init;
+        if (!strcmp(tcti_name, name)) {
+            found = true;
+            *tcti = init(tcti_opts);
+            if (!*tcti) {
+                result = false;
+                goto out;
+            }
+        }
+    }
+
+    if (!found) {
+        LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
+        result = false;
+        goto out;
+    }
+
+    result = true;
+
+out:
+    tpm2_options_free(opts);
+
+    return result;
+
 }
-/*
- * Dump the contents of the common_opts_t structure to stdout.
- */
-void
-dump_common_opts (common_opts_t *opts)
-{
-    printf ("common_opts_t:\n");
-    printf ("  tcti_type:        %s\n", tcti_name_from_type (opts->tcti_type));
-#ifdef HAVE_TCTI_DEV
-    printf ("  device_file_name: %s\n", opts->device_file);
-#endif
-#ifdef HAVE_TCTI_SOCK
-    printf ("  address:          %s\n", opts->socket_address);
-    printf ("  port:             %d\n", opts->socket_port);
-#endif
-#ifdef HAVE_TCTI_TABRMD
-    /* No options for this TCTI yet. */
-#endif
-    printf ("  help:             %s\n", opts->help    ? "true" : "false");
-    printf ("  verbose:          %s\n", opts->verbose ? "true" : "false");
-    printf ("  version:          %s\n", opts->version ? "true" : "false");
-}
-/*
- * Execute man page for the appropriate command.
- */
+
 void
 execute_man (char *prog_name,
              char *envp[])

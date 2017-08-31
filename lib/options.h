@@ -31,104 +31,15 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#include <getopt.h>
+
 #include <sapi/tpm20.h>
 
-/*
- * Default TCTI: this is a bit awkward since we allow users to enable /
- * disable TCTIs using ./configure --with/--without magic.
- * As simply put as possible:
- * if the tabrmd TCTI is enabled, it's the default.
- * else if the socket TCTI is enabled it's the default.
- * else if the device TCTI is enabled it's the default.
- * We do this to preserve the current default / expected behavior (use of
- * the socket TCTI).
- */
-#ifdef HAVE_TCTI_TABRMD
-  #define TCTI_DEFAULT      TABRMD_TCTI
-  #define TCTI_DEFAULT_STR  "tabrmd"
-#elif HAVE_TCTI_SOCK
-  #define TCTI_DEFAULT      SOCKET_TCTI
-  #define TCTI_DEFAULT_STR  "socket"
-#elif  HAVE_TCTI_DEV
-  #define TCTI_DEFAULT      DEVICE_TCTI
-  #define TCTI_DEFAULT_STR  "device"
-#endif
-
-/* Defaults for Device TCTI */
-#define TCTI_DEVICE_DEFAULT_PATH "/dev/tpm0"
-
-/* Deafults for Socket TCTI connections, port default is for resourcemgr */
-#define TCTI_SOCKET_DEFAULT_ADDRESS "127.0.0.1"
-#define TCTI_SOCKET_DEFAULT_PORT     2321
-
-/* Environment variables usable as alternatives to command line options */
-#define TPM2TOOLS_ENV_TCTI_NAME      "TPM2TOOLS_TCTI_NAME"
-#define TPM2TOOLS_ENV_DEVICE_FILE    "TPM2TOOLS_DEVICE_FILE"
-#define TPM2TOOLS_ENV_SOCKET_ADDRESS "TPM2TOOLS_SOCKET_ADDRESS"
-#define TPM2TOOLS_ENV_SOCKET_PORT    "TPM2TOOLS_SOCKET_PORT"
-
-#define COMMON_OPTS_INITIALIZER { \
-    .tcti_type      = TCTI_DEFAULT, \
-    .device_file    = TCTI_DEVICE_DEFAULT_PATH, \
-    .socket_address = TCTI_SOCKET_DEFAULT_ADDRESS, \
-    .socket_port    = TCTI_SOCKET_DEFAULT_PORT, \
-    .help           = false, \
-    .verbose        = false, \
-    .quiet          = false, \
-    .version        = false, \
-}
-
-typedef enum {
-#ifdef HAVE_TCTI_TABRMD
-    TABRMD_TCTI,
-#endif
-#ifdef HAVE_TCTI_SOCK
-    SOCKET_TCTI,
-#endif
-#ifdef HAVE_TCTI_DEV
-    DEVICE_TCTI,
-#endif
-    UNKNOWN_TCTI,
-    N_TCTI,
-} TCTI_TYPE;
-
-typedef struct {
-    TCTI_TYPE tcti_type;
-    char     *device_file;
-    char     *socket_address;
-    uint16_t  socket_port;
-    int       help;
-    int       verbose;
-    int       quiet;
-    int       version;
-} common_opts_t;
-
-/* functions to get common options from the user and to print helpful stuff */
-void        dump_common_opts           (common_opts_t        *opts);
-int         get_common_opts            (int                  *argc,
-                                        char                 **argv[],
-                                        common_opts_t        *common_opts);
-int         sanity_check_common        (common_opts_t        *opts);
-void        execute_man                (char                 *cmd_name,
-                                        char                 *envp[]);
-
-/* inline functions to print messages related to option processing*/
-static inline void
-showArgError (const char *arg,
-              const char *name)
-{
-    printf("Argument error: %s\n",arg);
-    printf("Please type \"%s -h\" get the usage!\n", name);
-}
-
-static inline void
-showArgMismatch (const char *name)
-{
-    printf("Argument mismatched!\n");
-    printf("Please type \"%s -h\" get the usage!\n", name);
-}
+typedef struct tpm2_options tpm2_options;
 
 #ifndef VERSION
   #warning "VERSION Not known at compile time, not embedding..."
@@ -159,5 +70,28 @@ showVersion (const char *name) {
     printf("tool=\"%s\" version=\"%s\" tctis=\"%s\"\n", name, VERSION,
             tcti_conf);
 }
+
+typedef union tpm2_option_flags tpm2_option_flags;
+union tpm2_option_flags {
+    struct {
+        UINT8 verbose : 1;
+        UINT8 quiet   : 1;
+        UINT8 unused  : 6;
+    };
+    UINT8 all;
+};
+
+typedef TSS2_TCTI_CONTEXT *(*tcti_init)(char *opts);
+
+typedef bool (*tpm2_option_handler)(char key, char *value);
+typedef bool (*tpm2_arg_handler)(int argc, char **argv);
+
+tpm2_options *tpm2_options_new(const char *short_opts, size_t len, struct option *long_opts, tpm2_option_handler on_opt, tpm2_arg_handler on_arg);
+
+tpm2_options *tpm2_options_cat(tpm2_options *a, tpm2_options *b);
+
+void tpm2_options_free(tpm2_options *opts);
+
+bool tpm2_handle_options (int argc, char **argv, char **envp, tpm2_options  *tool_opts, tpm2_option_flags *flags, TSS2_TCTI_CONTEXT **tcti);
 
 #endif /* OPTIONS_H */

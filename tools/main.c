@@ -37,68 +37,75 @@
 
 bool output_enabled = true;
 
+static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
+
+    TSS2_ABI_VERSION abi_version = {
+            .tssCreator = TSSWG_INTEROP,
+            .tssFamily = TSS_SAPI_FIRST_FAMILY,
+            .tssLevel = TSS_SAPI_FIRST_LEVEL,
+            .tssVersion = TSS_SAPI_FIRST_VERSION,
+    };
+
+    size_t size = Tss2_Sys_GetContextSize(0);
+    TSS2_SYS_CONTEXT *sapi_ctx = (TSS2_SYS_CONTEXT*) calloc(1, size);
+    if (sapi_ctx == NULL) {
+        LOG_ERR("Failed to allocate 0x%zx bytes for the SAPI context\n",
+                size);
+        return NULL;
+    }
+
+    TSS2_RC rc = Tss2_Sys_Initialize(sapi_ctx, size, tcti_ctx, &abi_version);
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_ERR("Failed to initialize SAPI context: 0x%x\n", rc);
+        free(sapi_ctx);
+        return NULL;
+    }
+
+    return sapi_ctx;
+}
+
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
  * nothing more than parsing command line options that allow the caller to
  * specify which TCTI to use for the test.
  */
-int
-main (int   argc,
-      char *argv[],
-      char *envp[])
-{
-    extern int opterr, optind;
-    int ret;
-    TSS2_SYS_CONTEXT *sapi_context;
-    common_opts_t opts = COMMON_OPTS_INITIALIZER;
-    /*
-     * Get common options and reset getopt global variables. This allows the
-     * tools to use getopt as they normally would.
-     */
-    get_common_opts (&argc, &argv, &opts);
-    opterr = 0;
-    optind = 1;
-    switch (sanity_check_common (&opts)) {
-    case 1:
-        execute_man (argv[0], envp);
-        LOG_ERR ("failed to load manpage, check your environment / PATH");
-        exit (1);
-    case 2:
-        exit (1);
+int main(int argc, char *argv[], char *envp[]) {
+
+    int ret = 1;
+
+    tpm2_options *tool_opts = NULL;
+    if (tool_get_options) {
+        bool res = tool_get_options(&tool_opts);
+        if (!res) {
+            LOG_ERR("retrieving tool options");
+            return 1;
+        }
     }
 
-    if (opts.version) {
-        showVersion (argv[0]);
-        exit (0);
-    }
-    if (opts.verbose)
-        log_set_level(log_level_verbose);
 
-    if (opts.quiet) {
-        disable_output();
+    tpm2_option_flags flags;
+    TSS2_TCTI_CONTEXT *tcti;
+    bool res = tpm2_handle_options(argc, argv, envp, tool_opts, &flags, &tcti);
+    if (!res) {
+        goto free_opts;
     }
 
-    sapi_context = sapi_init_from_options (&opts);
-    if (sapi_context == NULL)
-        exit (1);
+    /* figure out the tcti */
 
-    /*
-     * Per the notes in the manpage, since we use gnu extensions in optstring,
-     * we must set optind = 0 to re-initialize a subsequent getopt_long() call.
-     * We do this here, so the tools can be ignorant of this fact,
-     */
-    optind = 0;
+    /* TODO SAPI INIT */
+    TSS2_SYS_CONTEXT *sapi_context = sapi_ctx_init(tcti);
 
     /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = execute_tool (argc, argv, envp, &opts, sapi_context) ? 1 : 0;
+    ret = tool_execute(sapi_context, flags) ? 1 : 0;
     /*
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
      */
-    sapi_teardown_full (sapi_context);
-    free (argv);
-    exit (ret);
+    sapi_teardown_full(sapi_context);
+free_opts:
+    tpm2_options_free(tool_opts);
+    exit(ret);
 }
