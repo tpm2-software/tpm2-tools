@@ -70,6 +70,6 @@ file record the ticket, optional.
 .PP
 .nf
 .RS
-tpm2_hash -H <e|o|p|n> -g 0x004 -I <inputFilename> -o <hashFilename> -t <ticketFilename>
+tpm2_hash -H e -g sha1 -o hash.bin -t ticket.bin data.txt
 .RE
 .fi
