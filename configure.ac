@@ -6,6 +6,12 @@ LT_INIT
 AM_INIT_AUTOMAKE([foreign
                   subdir-objects])
 AC_CONFIG_FILES([Makefile])
+AC_CHECK_PROG([MD2MAN_ROFF],[md2man-roff],[yes])
+AS_IF(
+    [test "x${MD2MAN_ROFF}" == x"yes"],
+    [],
+    [AC_MSG_WARN([Required executable md2man-roff not found, some man pages will not be build])])
+AM_CONDITIONAL([HAVE_MD2MAN_ROFF],[test "x${MD2MAN_ROFF}" = "xyes"])
 PKG_CHECK_MODULES([SAPI],[sapi])
 # disable libtcti-device selectively (enabled by default)
 AC_ARG_WITH(
