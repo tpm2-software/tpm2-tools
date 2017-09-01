@@ -74,7 +74,6 @@ test_wrapper test_tpm2_quote.sh
 test_wrapper test_tpm2_unseal.sh
 test_wrapper test_tpm2_akparse.sh
 test_wrapper test_tpm2_certify.sh
-test_wrapper test_tpm2_evictcontrol.sh
 test_wrapper test_tpm2_getpubek.sh
 test_wrapper test_tpm2_getpubak.sh
 test_wrapper test_tpm2_makecredential.sh
