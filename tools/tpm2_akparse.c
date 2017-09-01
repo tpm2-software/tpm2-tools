@@ -49,7 +49,10 @@ typedef struct tpm_akparse_ctx tpm_akparse_ctx;
 struct tpm_akparse_ctx {
     char *ak_data_file_path;
     char *ak_key_file_path;
+    TSS2_SYS_CONTEXT *sapi_context;
 };
+
+static tpm_akparse_ctx ctx;
 
 static bool save_alg_and_key_to_file(const char *key_file, UINT16 alg_type,
         TPM2B **key_data, size_t key_data_len) {
@@ -101,12 +104,12 @@ out:
     return true;
 }
 
-static bool parse_and_save_ak_public(tpm_akparse_ctx *ctx) {
+static bool parse_and_save_ak_public() {
 
     TPM2B_PUBLIC outPublic;
     UINT16 size = sizeof(outPublic);
 
-    bool result = files_load_bytes_from_path(ctx->ak_data_file_path, (UINT8 *)&outPublic, &size);
+    bool result = files_load_bytes_from_path(ctx.ak_data_file_path, (UINT8 *)&outPublic, &size);
     if (!result) {
         /* loadDataFromFile prints error */
         return false;
@@ -135,69 +138,43 @@ static bool parse_and_save_ak_public(tpm_akparse_ctx *ctx) {
         return false;
     }
 
-    return save_alg_and_key_to_file(ctx->ak_key_file_path, outPublic.t.publicArea.type,
+    return save_alg_and_key_to_file(ctx.ak_key_file_path, outPublic.t.publicArea.type,
             key_data, key_data_len);
 }
 
-static bool init(int argc, char *argv[], tpm_akparse_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
-    struct option options[] = {
+    switch (key) {
+    case 'f':
+        ctx.ak_data_file_path = value;
+        break;
+    case 'k':
+        ctx.ak_key_file_path = value;
+        break;
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
             { "file",    required_argument, NULL, 'f' },
             { "keyFile", required_argument, NULL, 'k' },
             { NULL,      no_argument,       NULL, '\0' }
     };
 
-    if (argc <=1 || argc > (int) (2 * sizeof(options) / sizeof(struct option))) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
+    *opts = tpm2_options_new("f:k:", ARRAY_LEN(topts), topts, on_option, NULL);
 
-    int opt;
-    while ((opt = getopt_long(argc, argv, "f:k:hv", options, NULL)) != -1) {
-        switch (opt) {
-        case 'f':
-            if (!optarg) {
-                LOG_ERR("Please input the file that used to be parsed.");
-                return false;
-            }
-            ctx->ak_data_file_path = optarg;
-            break;
-        case 'k':
-            if (!optarg) {
-                LOG_ERR("Please input the file that used to save ak key.");
-                return false;
-            }
-            ctx->ak_key_file_path = optarg;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-    return true;
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    /* opts is unused, avoid compiler warning */
-    (void)opts;
-    (void)sapi_context;
-    (void)envp;
+    UNUSED(flags);
 
-    struct tpm_akparse_ctx ctx;
-
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
-        return 1;
-    }
+    ctx.sapi_context = sapi_context;
 
     /* 0 on success 1 on error */
-    return parse_and_save_ak_public(&ctx) != true;
+    return parse_and_save_ak_public() != true;
 }

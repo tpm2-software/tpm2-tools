@@ -48,10 +48,10 @@ LDADD = \
 # keep me sorted
 bin_PROGRAMS = \
     tools/tpm2_activatecredential \
+    tools/tpm2_akparse \
     tools/tpm2_hash
 
 # NEED TO PORT
-#    tools/tpm2_akparse \
 #    tools/tpm2_certify \
 #    tools/tpm2_create \
 #    tools/tpm2_createpolicy \
