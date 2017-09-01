@@ -60,6 +60,26 @@ struct tpm_certify_ctx {
         char *sig;
     } file_path;
     TSS2_SYS_CONTEXT *sapi_context;
+    struct {
+        UINT16 H : 1;
+        UINT16 k : 1;
+        UINT16 P : 1;
+        UINT16 K : 1;
+        UINT16 g : 1;
+        UINT16 a : 1;
+        UINT16 s : 1;
+        UINT16 C : 1;
+        UINT16 c : 1;
+    } flags;
+    char *context_file;
+    char *context_key_file;
+};
+
+static tpm_certify_ctx ctx = {
+    .cmd_auth = {
+        TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    },
 };
 
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_handle, TPMI_ALG_PUBLIC *type) {
@@ -123,11 +143,11 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle
     return true;
 }
 
-static bool certify_and_save_data(tpm_certify_ctx *ctx) {
+static bool certify_and_save_data(void) {
 
-    TPMS_AUTH_COMMAND *cmd_session_array[ARRAY_LEN(ctx->cmd_auth)] = {
-        &ctx->cmd_auth[0],
-        &ctx->cmd_auth[1]
+    TPMS_AUTH_COMMAND *cmd_session_array[ARRAY_LEN(ctx.cmd_auth)] = {
+        &ctx.cmd_auth[0],
+        &ctx.cmd_auth[1]
     };
 
     TSS2_SYS_CMD_AUTHS cmd_auth_array = {
@@ -135,7 +155,7 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
         .cmdAuths = cmd_session_array
     };
 
-    TPMS_AUTH_RESPONSE session_data_out[ARRAY_LEN(ctx->cmd_auth)];
+    TPMS_AUTH_RESPONSE session_data_out[ARRAY_LEN(ctx.cmd_auth)];
     TPMS_AUTH_RESPONSE *session_data_array[] = {
         &session_data_out[0],
         &session_data_out[1]
@@ -154,7 +174,7 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
     };
 
     TPMT_SIG_SCHEME scheme;
-    bool result = set_scheme(ctx->sapi_context, ctx->handle.key, ctx->halg, &scheme);
+    bool result = set_scheme(ctx.sapi_context, ctx.handle.key, ctx.halg, &scheme);
     if (!result) {
         LOG_ERR("No suitable signing scheme!");
         return false;
@@ -168,8 +188,8 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
 
     TPMT_SIGNATURE signature;
 
-    TPM_RC rval = Tss2_Sys_Certify(ctx->sapi_context, ctx->handle.obj,
-            ctx->handle.key, &cmd_auth_array, &qualifying_data, &scheme,
+    TPM_RC rval = Tss2_Sys_Certify(ctx.sapi_context, ctx.handle.obj,
+            ctx.handle.key, &cmd_auth_array, &qualifying_data, &scheme,
             &certify_info, &signature, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_Certify failed. Error Code: 0x%x", rval);
@@ -177,26 +197,93 @@ static bool certify_and_save_data(tpm_certify_ctx *ctx) {
     }
 
     /* serialization is safe here, since it's just a byte array */
-    result = files_save_bytes_to_file(ctx->file_path.attest,
+    result = files_save_bytes_to_file(ctx.file_path.attest,
             (UINT8 *) certify_info.t.attestationData, certify_info.t.size);
     if (!result) {
         return false;
     }
 
     /* TODO serialization is not safe here */
-    return files_save_bytes_to_file(ctx->file_path.sig, (UINT8 *) &signature,
+    return files_save_bytes_to_file(ctx.file_path.sig, (UINT8 *) &signature,
             sizeof(signature));
 }
 
-static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
     bool result;
 
-    char *context_file = NULL;
-    char *context_key_file = NULL;
+    switch (key) {
+    case 'H':
+        result = tpm2_util_string_to_uint32(value, &ctx.handle.obj);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.H = 1;
+        break;
+    case 'k':
+        result = tpm2_util_string_to_uint32(value, &ctx.handle.key);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.k = 1;
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.cmd_auth[0].hmac);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.P = 1;
+        break;
+    case 'K':
+        result = tpm2_password_util_from_optarg(value, &ctx.cmd_auth[1].hmac);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.K = 1;
+        break;
+    case 'g':
+        ctx.halg = tpm2_alg_util_from_optarg(value);
+        if (ctx.halg == TPM_ALG_ERROR) {
+            return false;
+        }
+        ctx.flags.g = 1;
+        break;
+    case 'a':
+        if (files_does_file_exist(value)) {
+            return false;
+        }
+        ctx.file_path.attest = value;
+        ctx.flags.a = 1;
+        break;
+    case 's':
+        if (files_does_file_exist(value)) {
+            return false;
+        }
+        ctx.file_path.sig = optarg;
+        ctx.flags.s = 1;
+        break;
+    case 'c':
+        if (ctx.context_key_file) {
+            return false;
+        }
+        ctx.context_key_file = value;
+        ctx.flags.c = 1;
+        break;
+    case 'C':
+        if (ctx.context_file) {
+            return false;
+        }
+        ctx.context_file = optarg;
+        ctx.flags.C = 1;
+        break;
+    }
 
-    const char *optstring = "H:k:P:K:g:a:s:C:c:";
-    static struct option long_options[] = {
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
       {"objectHandle", required_argument, NULL, 'H'},
       {"keyHandle",    required_argument, NULL, 'k'},
       {"pwdo",         required_argument, NULL, 'P'},
@@ -209,165 +296,39 @@ static bool init(int argc, char *argv[], tpm_certify_ctx *ctx) {
       {NULL,           no_argument,       NULL, '\0'}
     };
 
-    union {
-        struct {
-            UINT16 H : 1;
-            UINT16 k : 1;
-            UINT16 P : 1;
-            UINT16 K : 1;
-            UINT16 g : 1;
-            UINT16 a : 1;
-            UINT16 s : 1;
-            UINT16 C : 1;
-            UINT16 c : 1;
-            UINT16 unused : 7;
-        };
-        UINT16 all;
-    } flags = { .all = 0 };
+    *opts = tpm2_options_new("H:k:P:K:g:a:s:C:c:", ARRAY_LEN(topts), topts, on_option, NULL);
 
-
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
-    int opt = -1;
-
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'H':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.obj);
-            if (!result) {
-                LOG_ERR("Could not format object handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.H = 1;
-            break;
-        case 'k':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->handle.key);
-            if (!result) {
-                LOG_ERR("Could not format key handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.k = 1;
-            break;
-        case 'P':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->cmd_auth[0].hmac);
-            if (!result) {
-                LOG_ERR("Invalid object key password, got\"%s\"", optarg);
-                return false;
-            }
-            flags.P = 1;
-            break;
-        case 'K':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->cmd_auth[1].hmac);
-            if (!result) {
-                LOG_ERR("Invalid key handle password, got\"%s\"", optarg);
-                return false;
-            }
-            flags.K = 1;
-            break;
-        case 'g':
-            ctx->halg = tpm2_alg_util_from_optarg(optarg);
-            if (ctx->halg == TPM_ALG_ERROR) {
-                LOG_ERR("Could not format algorithm to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.g = 1;
-            break;
-        case 'a':
-            if (files_does_file_exist(optarg)) {
-                return false;
-            }
-            ctx->file_path.attest = optarg;
-            flags.a = 1;
-            break;
-        case 's':
-            if (files_does_file_exist(optarg)) {
-                return false;
-            }
-            ctx->file_path.sig = optarg;
-            flags.s = 1;
-            break;
-        case 'c':
-            if (context_key_file) {
-                LOG_ERR("Multiple specifications of -c");
-                return false;
-            }
-            context_key_file = optarg;
-            flags.c = 1;
-            break;
-        case 'C':
-            if (context_file) {
-                LOG_ERR("Multiple specifications of -C");
-                return false;
-            }
-            context_file = optarg;
-            flags.C = 1;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            result = false;
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            result = false;
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            result = false;
-            return false;
-        }
-    };
-
-    if (!(flags.H || flags.C) && (flags.k || flags.c) && (flags.g) && (flags.a)
-            && (flags.s)) {
-        return false;
-    }
-
-    /* Load input files */
-    if (flags.C) {
-        result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.obj,
-                context_file);
-        if (!result) {
-            return false;
-        }
-    }
-
-    if (flags.c) {
-        result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->handle.key,
-                context_key_file);
-        if (!result) {
-            return false;
-        }
-    }
-
-    return true;
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    (void)opts;
-    (void)envp;
+    bool result;
 
-    tpm_certify_ctx ctx = {
-        .cmd_auth = {
-            TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-            TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-        },
-        .file_path = { .attest = NULL, .sig = NULL },
-        .sapi_context = sapi_context
-    };
+    UNUSED(flags);
+    ctx.sapi_context = sapi_context;
 
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
+    if (!(ctx.flags.H || ctx.flags.C) && (ctx.flags.k || ctx.flags.c) && (ctx.flags.g) && (ctx.flags.a)
+        && (ctx.flags.s)) {
         return 1;
     }
 
-    return certify_and_save_data(&ctx) != true;
+    /* Load input files */
+    if (ctx.flags.C) {
+        result = files_load_tpm_context_from_file(ctx.sapi_context, &ctx.handle.obj,
+                                                  ctx.context_file);
+        if (!result) {
+            return 1;
+        }
+    }
+
+    if (ctx.flags.c) {
+        result = files_load_tpm_context_from_file(ctx.sapi_context, &ctx.handle.key,
+                                                  ctx.context_key_file);
+        if (!result) {
+            return 1;
+        }
+    }
+
+    return certify_and_save_data() != true;
 }
