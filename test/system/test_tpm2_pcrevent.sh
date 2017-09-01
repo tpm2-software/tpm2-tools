@@ -71,14 +71,14 @@ for l in `cat $hash_out_file`; do
 done;
 
 tpm2_pcrlist -L sha1:9 --format=yaml > $yaml_out_file
-old_pcr_value=`yaml_get.py sha1 9 $yaml_out_file`
+old_pcr_value=`./yaml_get.py sha1 9 $yaml_out_file`
 
 # Verify that extend works, and test large files
 dd if=/dev/urandom of=$hash_in_file count=1 bs=2093 2> /dev/null
 tpm2_pcrevent -Q -i 9 $hash_in_file
 
 tpm2_pcrlist -L sha1:9 --format=yaml > $yaml_out_file
-new_pcr_value=`yaml_get.py sha1 9 $yaml_out_file`
+new_pcr_value=`./yaml_get.py sha1 9 $yaml_out_file`
 
 if [ "$new_pcr_value" == "$old_pcr_value" ]; then
   echo "Expected PCR value to change after pcrevent with index 9."
@@ -110,5 +110,6 @@ if [ $? -eq 0 ]; then
   exit 1;
 fi
 
+echo "tpm2_pcrevent succeed"
 
 exit 0
