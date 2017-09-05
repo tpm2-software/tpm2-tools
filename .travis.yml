@@ -40,7 +40,7 @@ install:
     - mkdir ibmtpm532 && pushd ibmtpm532 && tar xzf ../ibmtpm532.tar && pushd ./src && make
     - ./tpm_server &
     - popd && popd
-    - git clone https://github.com/01org/TPM2.0-TSS.git
+    - git clone --single-branch 1.X https://github.com/01org/TPM2.0-TSS.git
     - pushd TPM2.0-TSS
     - ./bootstrap && ./configure && make -j$(nproc)
     - sudo ../.ci/travis-tss-install.sh
