@@ -56,7 +56,24 @@ struct tpm_sign_ctx {
     char *outFilePath;
     BYTE *msg;
     UINT16 length;
-    TSS2_SYS_CONTEXT *sapi_context;
+    char *contextKeyFile;
+    char *inMsgFileName;
+    struct {
+        UINT8 k : 1;
+        UINT8 P : 1;
+        UINT8 g : 1;
+        UINT8 m : 1;
+        UINT8 t : 1;
+        UINT8 s : 1;
+        UINT8 c : 1;
+        UINT8 unused : 1;
+    } flags;
+};
+
+tpm_sign_ctx ctx = {
+        .msg = NULL,
+        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        .halg = TPM_ALG_SHA1,
 };
 
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle,
@@ -69,7 +86,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
     };
 
     TSS2_SYS_RSP_AUTHS sessions_data_out = {
-            1,
+            required_argument,
             &session_data_out_array[0]
     };
 
@@ -120,7 +137,7 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT keyHandle,
     return true;
 }
 
-static bool sign_and_save(tpm_sign_ctx *ctx) {
+static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
@@ -133,33 +150,27 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
     TPMS_AUTH_COMMAND *session_data_array[1];
     TPMS_AUTH_RESPONSE *session_data_out_array[1];
 
-    session_data_array[0] = &ctx->sessionData;
+    session_data_array[0] = &ctx.sessionData;
     sessions_data.cmdAuths = &session_data_array[0];
     session_data_out_array[0] = &session_data_out;
     sessions_data_out.rspAuths = &session_data_out_array[0];
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    int rc = tpm_hash_compute_data(ctx->sapi_context, ctx->halg, TPM_RH_NULL,
-            ctx->msg, ctx->length, &digest, NULL);
+    int rc = tpm_hash_compute_data(sapi_context, ctx.halg, TPM_RH_NULL,
+            ctx.msg, ctx.length, &digest, NULL);
     if (rc) {
         LOG_ERR("Compute message hash failed!");
         return false;
     }
 
-//    printf("\ndigest(hex type):\n ");
-//    UINT16 i;
-//    for (i = 0; i < digest.t.size; i++)
-//        printf("%02x ", digest.t.buffer[i]);
-//    printf("\n");
-
-    bool result = set_scheme(ctx->sapi_context, ctx->keyHandle, ctx->halg, &in_scheme);
+    bool result = set_scheme(sapi_context, ctx.keyHandle, ctx.halg, &in_scheme);
     if (!result) {
         return false;
     }
 
-    TPM_RC rval = Tss2_Sys_Sign(ctx->sapi_context, ctx->keyHandle,
-            &sessions_data, &digest, &in_scheme, &ctx->validation, &signature,
+    TPM_RC rval = Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
+            &sessions_data, &digest, &in_scheme, &ctx.validation, &signature,
             &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Sys_Sign failed, error code: 0x%x", rval);
@@ -167,140 +178,28 @@ static bool sign_and_save(tpm_sign_ctx *ctx) {
     }
 
     /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx->outFilePath, (UINT8 *) &signature,
+    return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *) &signature,
             sizeof(signature));
 }
 
-static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
+static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    static const char *optstring = "k:P:g:m:t:s:c:S:";
-    static const struct option long_options[] = {
-      {"keyHandle",1,NULL,'k'},
-      {"pwdk",1,NULL,'P'},
-      {"halg",1,NULL,'g'},
-      {"msg",1,NULL,'m'},
-      {"sig",1,NULL,'s'},
-      {"ticket",1,NULL,'t'},
-      {"keyContext",1,NULL,'c'},
-      {"input-session-handle",1,NULL, 'S' },
-      {0,0,0,0}
-    };
-
-    if(argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
-    union {
-        struct {
-            UINT8 k : 1;
-            UINT8 P : 1;
-            UINT8 g : 1;
-            UINT8 m : 1;
-            UINT8 t : 1;
-            UINT8 s : 1;
-            UINT8 c : 1;
-            UINT8 unused : 1;
-        };
-        UINT8 all;
-    } flags = { .all = 0 };
-
-    int opt;
-    char *contextKeyFile = NULL;
-    char *inMsgFileName = NULL;
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL)) != -1) {
-        switch (opt) {
-        case 'k': {
-            bool result = tpm2_util_string_to_uint32(optarg, &ctx->keyHandle);
-            if (!result) {
-                LOG_ERR("Could not format key handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.k = 1;
-        }
-            break;
-        case 'P': {
-            bool result = tpm2_password_util_from_optarg(optarg, &ctx->sessionData.hmac);
-            if (!result) {
-                LOG_ERR("Invalid key password, got\"%s\"", optarg);
-                return false;
-            }
-            flags.P = 1;
-        }
-            break;
-        case 'g': {
-            ctx->halg = tpm2_alg_util_from_optarg(optarg);
-            if (ctx->halg == TPM_ALG_ERROR) {
-                LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.g = 1;
-        }
-            break;
-        case 'm':
-            inMsgFileName = optarg;
-            flags.m = 1;
-            break;
-        case 't': {
-            UINT16 size = sizeof(ctx->validation);
-            bool result = files_load_bytes_from_path(optarg, (UINT8 *) &ctx->validation,
-                    &size);
-            if (!result) {
-                return false;
-            }
-            flags.t = 1;
-        }
-            break;
-        case 's': {
-            bool result = files_does_file_exist(optarg);
-            if (result) {
-                return false;
-            }
-            ctx->outFilePath = optarg;
-            flags.s = 1;
-        }
-            break;
-        case 'c':
-            contextKeyFile = optarg;
-            flags.c = 1;
-            break;
-        case 'S':
-            if (!tpm2_util_string_to_uint32(optarg, &ctx->sessionData.sessionHandle)) {
-                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    if (!((flags.k || flags.c) && flags.m && flags.s)) {
+    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.m && ctx.flags.s)) {
         LOG_ERR("Expected options (k or c) and m and s");
         return false;
     }
 
-    if (!flags.t) {
-        ctx->validation.tag = TPM_ST_HASHCHECK;
-        ctx->validation.hierarchy = TPM_RH_NULL;
+    if (!ctx.flags.t) {
+        ctx.validation.tag = TPM_ST_HASHCHECK;
+        ctx.validation.hierarchy = TPM_RH_NULL;
     }
 
     /*
      * load tpm context from a file if -c is provided
      */
-    if (flags.c) {
-        bool result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->keyHandle,
-                contextKeyFile);
+    if (ctx.flags.c) {
+        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.keyHandle,
+                ctx.contextKeyFile);
         if (!result) {
             return false;
         }
@@ -310,12 +209,12 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
      * Process the msg file
      */
     unsigned long file_size;
-    bool result = files_get_file_size_path(inMsgFileName, &file_size);
+    bool result = files_get_file_size_path(ctx.inMsgFileName, &file_size);
     if (!result) {
         return false;
     }
     if (file_size == 0) {
-        LOG_ERR("The message file \"%s\" is empty!", inMsgFileName);
+        LOG_ERR("The message file \"%s\" is empty!", ctx.inMsgFileName);
         return false;
     }
 
@@ -326,46 +225,126 @@ static bool init(int argc, char *argv[], tpm_sign_ctx *ctx) {
         return false;
     }
 
-    ctx->msg = (BYTE*) calloc(1, file_size);
-    if (!ctx->msg) {
+    ctx.msg = (BYTE*) calloc(required_argument, file_size);
+    if (!ctx.msg) {
         LOG_ERR("oom");
         return false;
     }
 
-    ctx->length = file_size;
-    result = files_load_bytes_from_path(inMsgFileName, ctx->msg, &ctx->length);
+    ctx.length = file_size;
+    result = files_load_bytes_from_path(ctx.inMsgFileName, ctx.msg, &ctx.length);
     if (!result) {
-        free(ctx->msg);
+        free(ctx.msg);
         return false;
     }
 
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+static bool on_option(char key, char *value) {
 
-    /* opts and envp are unused, avoid compiler warning */
-    (void)opts;
-    (void) envp;
+    UNUSED(value);
 
-    tpm_sign_ctx ctx = {
-            .msg = NULL,
-            .sessionData = TPMS_AUTH_COMMAND_EMPTY_INIT,
-            .halg = TPM_ALG_SHA1,
-            .keyHandle = 0,
-            .validation = TPMT_TK_HASHCHECK_EMPTY_INIT,
-            .sapi_context = sapi_context
+    switch (key) {
+    case 'k': {
+        bool result = tpm2_util_string_to_uint32(value, &ctx.keyHandle);
+        if (!result) {
+            LOG_ERR("Could not format key handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        ctx.flags.k = 1;
+    }
+        break;
+    case 'P': {
+        bool result = tpm2_password_util_from_optarg(value, &ctx.sessionData.hmac);
+        if (!result) {
+            LOG_ERR("Invalid key password, got\"%s\"", optarg);
+            return false;
+        }
+        ctx.flags.P = 1;
+    }
+        break;
+    case 'g': {
+        ctx.halg = tpm2_alg_util_from_optarg(optarg);
+        if (ctx.halg == TPM_ALG_ERROR) {
+            LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        ctx.flags.g = 1;
+    }
+        break;
+    case 'm':
+        ctx.inMsgFileName = optarg;
+        ctx.flags.m = 1;
+        break;
+    case 't': {
+        UINT16 size = sizeof(ctx.validation);
+        bool result = files_load_bytes_from_path(value, (UINT8 *) &ctx.validation,
+                &size);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.t = 1;
+    }
+        break;
+    case 's': {
+        bool result = files_does_file_exist(optarg);
+        if (result) {
+            return false;
+        }
+        ctx.outFilePath = optarg;
+        ctx.flags.s = 1;
+    }
+        break;
+    case 'c':
+        ctx.contextKeyFile = optarg;
+        ctx.flags.c = 1;
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(value, &ctx.sessionData.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        break;
+    /* no default */
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static const struct option topts[] = {
+      {"keyHandle",            required_argument, NULL, 'k'},
+      {"pwdk",                 required_argument, NULL, 'P'},
+      {"halg",                 required_argument, NULL, 'g'},
+      {"msg",                  required_argument, NULL, 'm'},
+      {"sig",                  required_argument, NULL, 's'},
+      {"ticket",               required_argument, NULL, 't'},
+      {"keyContext",           required_argument, NULL, 'c'},
+      {"input-session-handle", required_argument,NULL,  'S'},
+      { NULL }
     };
 
-    ctx.sessionData.sessionHandle = TPM_RS_PW;
+    *opts = tpm2_options_new("k:P:g:m:t:s:c:S:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
 
-    bool result = init(argc, argv, &ctx);
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    bool result = init(sapi_context);
     if (!result) {
         return 1;
     }
 
-    result = sign_and_save(&ctx);
+    result = sign_and_save(sapi_context);
 
     free(ctx.msg);
 
