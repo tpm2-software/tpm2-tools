@@ -33,9 +33,18 @@
 #this script for tpm2_getrandom verification 
 
 LOG_FILE=random_pass_count.log
+
+cleanup() {
  if [ -e "$LOG_FILE" ];then
   rm -f "$LOG_FILE"
+  rm -f random_*.out
  fi
+}
+
+trap cleanup EXIT
+
+cleanup
+
 i=
 
 for i in `seq 100`; do
