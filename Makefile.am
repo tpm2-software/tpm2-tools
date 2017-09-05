@@ -54,10 +54,10 @@ bin_PROGRAMS = \
     tools/tpm2_create \
     tools/tpm2_createpolicy \
     tools/tpm2_createprimary \
-    tools/tpm2_dictionarylockout
+    tools/tpm2_dictionarylockout \
+    tools/tpm2_dump_capability
 
 # NEED TO PORT
-#    tools/tpm2_dump_capability \
 #    tools/tpm2_encryptdecrypt \
 #    tools/tpm2_evictcontrol \
 #    tools/tpm2_getmanufec \
