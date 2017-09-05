@@ -51,10 +51,10 @@ bin_PROGRAMS = \
     tools/tpm2_akparse \
     tools/tpm2_hash \
     tools/tpm2_certify \
-    tools/tpm2_create
+    tools/tpm2_create \
+    tools/tpm2_createpolicy
 
 # NEED TO PORT
-#    tools/tpm2_createpolicy \
 #    tools/tpm2_createprimary \
 #    tools/tpm2_dictionarylockout \
 #    tools/tpm2_dump_capability \
