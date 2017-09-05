@@ -6,7 +6,7 @@ LT_INIT
 AM_INIT_AUTOMAKE([foreign
                   subdir-objects])
 AC_CONFIG_FILES([Makefile])
-PKG_CHECK_MODULES([SAPI],[sapi])
+PKG_CHECK_MODULES([SAPI],[sapi < 2.0])
 # disable libtcti-device selectively (enabled by default)
 AC_ARG_WITH(
     [tcti-device],
