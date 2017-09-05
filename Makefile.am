@@ -58,10 +58,10 @@ bin_PROGRAMS = \
     tools/tpm2_dump_capability \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
-    tools/tpm2_getmanufec
+    tools/tpm2_getmanufec \
+    tools/tpm2_getpubak
 
 # NEED TO PORT
-#    tools/tpm2_getpubak \
 #    tools/tpm2_getpubek \
 #    tools/tpm2_getrandom \
 #    tools/tpm2_hash \
