@@ -85,66 +85,110 @@ struct create_policy_ctx {
             .policy_digest_hash_alg = TPM_ALG_SHA256, \
         }
 
-static TPM_RC parse_policy_type_specific_command (create_policy_ctx *pctx) {
+static create_policy_ctx pctx = {
+    .common_policy_options = TPM2_COMMON_POLICY_INIT
+};
+
+static TPM_RC parse_policy_type_specific_command (void) {
     TPM_RC rval = TPM_RC_SUCCESS;
-    if (!pctx->common_policy_options.policy_type.is_policy_type_selected){
+    if (!pctx.common_policy_options.policy_type.is_policy_type_selected){
         LOG_ERR("No Policy type chosen.");
         return rval;
     }
 
-    if (pctx->common_policy_options.policy_type.PolicyPCR) {
+    if (pctx.common_policy_options.policy_type.PolicyPCR) {
         //PCR inputs validation
-        if (pctx->pcr_policy_options.is_set_list == false) {
+        if (pctx.pcr_policy_options.is_set_list == false) {
             LOG_ERR("Need the pcr list to account for in the policy.");
             return TPM_RC_NO_RESULT;
         }
-        rval = tpm2_policy_build(pctx->sapi_context,
-                                 &pctx->common_policy_options.policy_session,
-                                 pctx->common_policy_options.policy_session_type,
-                                 pctx->common_policy_options.policy_digest_hash_alg,
-                                 pctx->pcr_policy_options.pcr_selections,
-                                 pctx->pcr_policy_options.raw_pcrs_file,
-                                 &pctx->common_policy_options.policy_digest,
-                                 pctx->common_policy_options.extend_policy_session,
+        rval = tpm2_policy_build(pctx.sapi_context,
+                                 &pctx.common_policy_options.policy_session,
+                                 pctx.common_policy_options.policy_session_type,
+                                 pctx.common_policy_options.policy_digest_hash_alg,
+                                 pctx.pcr_policy_options.pcr_selections,
+                                 pctx.pcr_policy_options.raw_pcrs_file,
+                                 &pctx.common_policy_options.policy_digest,
+                                 pctx.common_policy_options.extend_policy_session,
                                  tpm2_policy_pcr_build);
         if (rval != TPM_RC_SUCCESS) {
             return rval;
         }
 
         // Display the policy digest during real policy session.
-        if (pctx->common_policy_options.policy_session_type == TPM_SE_POLICY) {
-            printf("TPM_SE_POLICY: 0x");
+        if (pctx.common_policy_options.policy_session_type == TPM_SE_POLICY) {
+            tpm2_tool_output("TPM_SE_POLICY: 0x");
             int i;
-            for(i = 0; i < pctx->common_policy_options.policy_digest.t.size; i++) {
-                printf("%02X", pctx->common_policy_options.policy_digest.t.buffer[i]);
+            for(i = 0; i < pctx.common_policy_options.policy_digest.t.size; i++) {
+                tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest.t.buffer[i]);
             }
-            printf("\n");
+            tpm2_tool_output("\n");
         }
 
         // Additional operations when session if a trial policy session
-        if (pctx->common_policy_options.policy_session_type == TPM_SE_TRIAL) {
+        if (pctx.common_policy_options.policy_session_type == TPM_SE_TRIAL) {
             //save the policy buffer in a file for use later
-            bool result = files_save_bytes_to_file(pctx->common_policy_options.policy_file,
-                              (UINT8 *) &pctx->common_policy_options.policy_digest.t.buffer,
-                                          pctx->common_policy_options.policy_digest.t.size);
+            bool result = files_save_bytes_to_file(pctx.common_policy_options.policy_file,
+                              (UINT8 *) &pctx.common_policy_options.policy_digest.t.buffer,
+                                          pctx.common_policy_options.policy_digest.t.size);
             if (!result) {
                 LOG_ERR("Failed to save policy digest into file \"%s\"",
-                        pctx->common_policy_options.policy_file);
+                        pctx.common_policy_options.policy_file);
                 return TPM_RC_NO_RESULT;
             }
         }
     }
 
-    if (pctx->common_policy_options.extend_policy_session) {
-        printf("EXTENDED_POLICY_SESSION_HANDLE: 0x%08X",
-            pctx->common_policy_options.policy_session->sessionHandle );
+    if (pctx.common_policy_options.extend_policy_session) {
+        tpm2_tool_output("EXTENDED_POLICY_SESSION_HANDLE: 0x%08X",
+            pctx.common_policy_options.policy_session->sessionHandle );
     }
 
     return rval;
 }
 
-static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
-    struct option sOpts[] = {
+static bool on_option(char key, char *value) {
+ 
+    switch (key) {
+    case 'f':
+        pctx.common_policy_options.policy_file_flag = true;
+        pctx.common_policy_options.policy_file = value;
+        break;
+    case 'F':
+        pctx.pcr_policy_options.raw_pcrs_file = value;
+        break;
+    case 'g':
+        pctx.common_policy_options.policy_digest_hash_alg
+            = tpm2_alg_util_from_optarg(value);
+        if(pctx.common_policy_options.policy_digest_hash_alg == TPM_ALG_ERROR) {
+            return false;
+        }
+        break;
+    case 'L':
+        if (!pcr_parse_selections(value, &pctx.pcr_policy_options.pcr_selections)) {
+            return false;
+        }
+        pctx.pcr_policy_options.is_set_list = true;
+        break;
+    case 'P':
+        pctx.common_policy_options.policy_type.PolicyPCR = true;
+        pctx.common_policy_options.policy_type.is_policy_type_selected= true;
+        break;
+    case 'a':
+        pctx.common_policy_options.policy_session_type = TPM_SE_POLICY;
+        pctx.common_policy_options.extend_policy_session = true;
+        break;
+    case 'e':
+        pctx.common_policy_options.extend_policy_session = true;
+        break;
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
         { "policy-file",    required_argument,  NULL,   'f' },
         { "policy-digest-alg", required_argument, NULL, 'g'},
         { "set-list",       required_argument,  NULL,   'L' },
@@ -154,95 +198,23 @@ static bool init(int argc, char *argv[], create_policy_ctx *pctx) {
         { "extend-policy-session", no_argument, NULL,   'e'},
         { NULL,             no_argument,        NULL,   '\0'},
     };
-    if (argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
 
-    int opt;
-    while ((opt = getopt_long(argc, argv, "f:g:L:F:Pae", sOpts, NULL)) != -1) {
-        switch (opt) {
-        case 'f':
-            pctx->common_policy_options.policy_file_flag = true;
-            pctx->common_policy_options.policy_file = optarg;
-            break;
-        case 'F':
-            pctx->pcr_policy_options.raw_pcrs_file = optarg;
-            break;
-        case 'g':
-            pctx->common_policy_options.policy_digest_hash_alg
-                = tpm2_alg_util_from_optarg(optarg);
-            if(pctx->common_policy_options.policy_digest_hash_alg
-                    == TPM_ALG_ERROR) {
-                showArgError(optarg, argv[0]);
-                LOG_ERR("Invalid choice for policy digest hash algorithm");
-                return false;
-            }
-            break;
-        case 'L':
-            if (!pcr_parse_selections(optarg,
-                &pctx->pcr_policy_options.pcr_selections)) {
-                showArgError(optarg, argv[0]);
-                return false;
-            }
-            pctx->pcr_policy_options.is_set_list = true;
-            break;
-        case 'P':
-            pctx->common_policy_options.policy_type.PolicyPCR = true;
-            pctx->common_policy_options.policy_type.is_policy_type_selected= true;
-            LOG_INFO("Policy type chosen is policyPCR.");
-            break;
-        case 'a':
-            pctx->common_policy_options.policy_session_type = TPM_SE_POLICY;
-            pctx->common_policy_options.extend_policy_session = true;
-            LOG_INFO("Policy session setup for auth.");
-            break;
-        case 'e':
-            pctx->common_policy_options.extend_policy_session = true;
-            LOG_INFO("Policy session setup to extend after operation.");
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-    if (pctx->common_policy_options.policy_file_flag == false &&
-        pctx->common_policy_options.policy_session_type == TPM_SE_TRIAL) {
-        LOG_ERR("Provide the file name to store the resulting "
-            "policy digest");
-        return false;
-    }
-    return true;
+    *opts = tpm2_options_new("f:g:L:F:Pae", ARRAY_LEN(topts), topts, on_option, NULL);
+
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    /* opts and envp are unused */
-    (void) opts;
-    (void) envp;
+    UNUSED(flags);
+    pctx.sapi_context = sapi_context;
 
-    create_policy_ctx pctx = {
-        .sapi_context = sapi_context,
-        .common_policy_options = TPM2_COMMON_POLICY_INIT
-    };
-
-    bool result = init(argc, argv, &pctx);
-    if (!result) {
+    if (pctx.common_policy_options.policy_file_flag == false &&
+        pctx.common_policy_options.policy_session_type == TPM_SE_TRIAL) {
+        LOG_ERR("Provide the file name to store the resulting "
+                "policy digest");
         return 1;
     }
 
-    TPM_RC rval = parse_policy_type_specific_command(&pctx);
-    if (rval != TPM_RC_SUCCESS) {
-        return 1;
-    }
-
-    /* true is success, coerce to 0 for program success */
-    return 0;
+    return parse_policy_type_specific_command() != TPM_RC_SUCCESS;
 }
