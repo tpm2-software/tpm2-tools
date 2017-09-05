@@ -63,6 +63,7 @@ bin_PROGRAMS = \
     tools/tpm2_getpubek \
     tools/tpm2_getrandom \
     tools/tpm2_hmac \
+    tools/tpm2_startup \
     tools/tpm2_takeownership \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
@@ -87,8 +88,7 @@ bin_PROGRAMS = \
 #    tools/tpm2_rsadecrypt \
 #    tools/tpm2_rsaencrypt \
 #    tools/tpm2_send_command \
-#    tools/tpm2_sign \
-#    tools/tpm2_startup
+#    tools/tpm2_sign
 
 tcti_src = ""
 if HAVE_TCTI_DEV

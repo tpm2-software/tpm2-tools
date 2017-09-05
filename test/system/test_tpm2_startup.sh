@@ -37,9 +37,9 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-tpm2_startup --state
+tpm2_startup
 if [ $? -ne 0 ]; then
-    echo "tpm2_startup --state failed."
+    echo "tpm2_startup default failed."
     exit 1
 fi
 
