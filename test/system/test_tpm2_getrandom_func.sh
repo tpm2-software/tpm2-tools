@@ -38,9 +38,8 @@ LOG_FILE=random_pass_count.log
  fi
 i=
 
-#for((i=1;i<=10;i++)); do
 for i in `seq 100`; do
-	tpm2_getrandom o random_"$i".out 32
+	tpm2_getrandom -o random_"$i".out 32
 	 if  [ $? != 0 ];then
 	  echo " create random_"$i".out fail, please check the environment or parameters!"
 	  exit 2
