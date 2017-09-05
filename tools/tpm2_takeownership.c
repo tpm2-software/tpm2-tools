@@ -29,20 +29,14 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
 #include "log.h"
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -60,10 +54,16 @@ struct takeownership_ctx {
         password endorse;
         password lockout;
     } passwords;
-    TSS2_SYS_CONTEXT *sapi_context;
+
+    struct {
+        UINT8 clear_auth : 1;
+        UINT8 unused     : 7;
+    };
 };
 
-bool clear_hierarchy_auth(takeownership_ctx *ctx) {
+static takeownership_ctx ctx;
+
+static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_COMMAND sessionData = {
         .sessionHandle = TPM_RS_PW,
@@ -78,9 +78,9 @@ bool clear_hierarchy_auth(takeownership_ctx *ctx) {
     sessionsData.cmdAuths = &sessionDataArray[0];
     sessionsData.cmdAuthsCount = 1;
 
-    memcpy(&sessionData.hmac, &ctx->passwords.lockout.old, sizeof(ctx->passwords.lockout.old));
+    memcpy(&sessionData.hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
 
-    UINT32 rval = Tss2_Sys_Clear(ctx->sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0);
+    TPM_RC rval = Tss2_Sys_Clear(sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Clearing Failed! TPM error code: 0x%0x", rval);
         return false;
@@ -123,122 +123,100 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
     return true;
 }
 
-static bool change_hierarchy_auth(takeownership_ctx *ctx) {
+static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     // change owner, endorsement and lockout auth.
-    return change_auth(ctx->sapi_context, &ctx->passwords.owner,
+    return change_auth(sapi_context, &ctx.passwords.owner,
                 "Owner", TPM_RH_OWNER)
-        && change_auth(ctx->sapi_context, &ctx->passwords.endorse,
+        && change_auth(sapi_context, &ctx.passwords.endorse,
                 "Endorsement", TPM_RH_ENDORSEMENT)
-        && change_auth(ctx->sapi_context, &ctx->passwords.lockout,
+        && change_auth(sapi_context, &ctx.passwords.lockout,
                 "Lockout", TPM_RH_LOCKOUT);
 }
 
-static bool init(int argc, char *argv[], char *envp[], takeownership_ctx *ctx,
-        bool *clear_auth) {
+static bool on_option(char key, char *value) {
 
-    struct option sOpts[] = {
-            { "ownerPasswd",      required_argument, NULL, 'o' },
-            {"endorsePasswd",     required_argument, NULL, 'e' },
-            { "lockPasswd",       required_argument, NULL, 'l' },
-            { "oldOwnerPasswd",   required_argument, NULL, 'O' },
-            { "oldEndorsePasswd", required_argument, NULL, 'E' },
-            { "oldLockPasswd",    required_argument, NULL, 'L' },
-            { "clear",            no_argument,       NULL, 'c' },
-            { NULL,               no_argument,       NULL, '\0' },
-    };
-
-    if (argc == 1) {
-        execute_man(argv[0], envp);
-        return false;
-    }
-
-    if (argc > (int) (2 * sizeof(sOpts) / sizeof(struct option))) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
-
-    *clear_auth = false;
-
-    int opt;
     bool result;
-    while ((opt = getopt_long(argc, argv, "o:e:l:O:E:L:c", sOpts, NULL))
-            != -1) {
 
-        switch (opt) {
-        case 'c':
-            *clear_auth = true;
-            break;
+    switch (key) {
+    case 'c':
+        ctx.clear_auth = true;
+        break;
 
-        case 'o':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.owner.new);
-            if (!result) {
-                LOG_ERR("Invalid new owner password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'e':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.endorse.new);
-            if (!result) {
-                LOG_ERR("Invalid new endorse password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'l':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.lockout.new);
-            if (!result) {
-                LOG_ERR("Invalid new lockout password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'O':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.owner.old);
-            if (!result) {
-                LOG_ERR("Invalid current owner password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'E':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.endorse.old);
-            if (!result) {
-                LOG_ERR("Invalid current endorse password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'L':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.lockout.old);
-            if (!result) {
-                LOG_ERR("Invalid current lockout password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case '?':
-        default:
-            showArgMismatch(argv[0]);
+    case 'o':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.new);
+        if (!result) {
+            LOG_ERR("Invalid new owner password, got\"%s\"", optarg);
             return false;
         }
+        break;
+    case 'e':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.new);
+        if (!result) {
+            LOG_ERR("Invalid new endorse password, got\"%s\"", optarg);
+            return false;
+        }
+        break;
+    case 'l':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.new);
+        if (!result) {
+            LOG_ERR("Invalid new lockout password, got\"%s\"", optarg);
+            return false;
+        }
+        break;
+    case 'O':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.old);
+        if (!result) {
+            LOG_ERR("Invalid current owner password, got\"%s\"", optarg);
+            return false;
+        }
+        break;
+    case 'E':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.old);
+        if (!result) {
+            LOG_ERR("Invalid current endorse password, got\"%s\"", optarg);
+            return false;
+        }
+        break;
+    case 'L':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.old);
+        if (!result) {
+            LOG_ERR("Invalid current lockout password, got\"%s\"", optarg);
+            return false;
+        }
+        break;
+        /*no default */
     }
+
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    /* opts is unused */
-    (void) opts;
-
-    takeownership_ctx ctx = {
-            .sapi_context = sapi_context,
+    struct option topts[] = {
+        { "ownerPasswd",      required_argument, NULL, 'o' },
+        {"endorsePasswd",     required_argument, NULL, 'e' },
+        { "lockPasswd",       required_argument, NULL, 'l' },
+        { "oldOwnerPasswd",   required_argument, NULL, 'O' },
+        { "oldEndorsePasswd", required_argument, NULL, 'E' },
+        { "oldLockPasswd",    required_argument, NULL, 'L' },
+        { "clear",            no_argument,       NULL, 'c' },
+        { NULL,               no_argument,       NULL, '\0' },
     };
 
-    bool clear_auth = false;
-    bool result = init(argc, argv, envp, &ctx, &clear_auth);
-    if (!result) {
-        return 1;
-    }
+    *opts = tpm2_options_new("o:e:l:O:E:L:c", ARRAY_LEN(topts), topts,
+            on_option, NULL);
 
-    int rc = (clear_auth ? clear_hierarchy_auth(&ctx) : change_hierarchy_auth(&ctx));
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    bool result = (ctx.clear_auth ? clear_hierarchy_auth(sapi_context)
+            : change_hierarchy_auth(sapi_context));
 
     /* true is success, coerce to 0 for program success */
-    return rc == false;
+    return result == false;
 }
