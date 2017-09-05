@@ -62,7 +62,8 @@ bin_PROGRAMS = \
     tools/tpm2_getpubak \
     tools/tpm2_getpubek \
     tools/tpm2_getrandom \
-    tools/tpm2_hmac
+    tools/tpm2_hmac \
+    tools/tpm2_verifysignature
 
 # NEED TO PORT
 #    tools/tpm2_listpersistent \
@@ -87,8 +88,7 @@ bin_PROGRAMS = \
 #    tools/tpm2_sign \
 #    tools/tpm2_startup \
 #    tools/tpm2_takeownership \
-#    tools/tpm2_unseal \
-#    tools/tpm2_verifysignature
+#    tools/tpm2_unseal
 
 tcti_src = ""
 if HAVE_TCTI_DEV
