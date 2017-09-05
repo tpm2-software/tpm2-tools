@@ -60,7 +60,17 @@ struct getpubek_context {
     TPMI_SH_AUTH_SESSION auth_session_handle;
 };
 
-static bool set_key_algorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
+static getpubek_context ctx = {
+    .passwords = {
+        .owner = TPM2B_EMPTY_INIT,
+        .endorse = TPM2B_EMPTY_INIT,
+        .ek = TPM2B_EMPTY_INIT,
+    },
+    .algorithm = TPM_ALG_RSA,
+    .is_session_based_auth = false
+};
+
+static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
 {
 
     static BYTE auth_policy[] = {
@@ -84,9 +94,9 @@ static bool set_key_algorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
     inPublic->t.publicArea.authPolicy.t.size = 32;
     memcpy(inPublic->t.publicArea.authPolicy.t.buffer, auth_policy, 32);
 
-    inPublic->t.publicArea.type = algorithm;
+    inPublic->t.publicArea.type = ctx.algorithm;
 
-    switch (algorithm) {
+    switch (ctx.algorithm) {
     case TPM_ALG_RSA :
         inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm =
                 TPM_ALG_AES;
@@ -128,14 +138,14 @@ static bool set_key_algorithm(UINT16 algorithm, TPM2B_PUBLIC *inPublic)
         inPublic->t.publicArea.unique.sym.t.size = 0;
         break;
     default:
-        LOG_ERR("The algorithm type input(%4.4x) is not supported!", algorithm);
+        LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.algorithm);
         return false;
     }
 
     return true;
 }
 
-static bool create_ek_handle(getpubek_context *ctx) {
+static bool create_ek_handle(void) {
 
     TPMS_AUTH_COMMAND sessionData = {
         .sessionHandle = TPM_RS_PW,
@@ -144,8 +154,8 @@ static bool create_ek_handle(getpubek_context *ctx) {
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     };
 
-    if (ctx->is_session_based_auth) {
-        sessionData.sessionHandle = ctx->auth_session_handle;
+    if (ctx.is_session_based_auth) {
+        sessionData.sessionHandle = ctx.auth_session_handle;
     }
 
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -181,14 +191,14 @@ static bool create_ek_handle(getpubek_context *ctx) {
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    memcpy(&sessionData.hmac, &ctx->passwords.endorse, sizeof(ctx->passwords.endorse));
+    memcpy(&sessionData.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
-    memcpy(&ctx->passwords.ek, &inSensitive.t.sensitive.userAuth, sizeof(inSensitive.t.sensitive.userAuth));
+    memcpy(&ctx.passwords.ek, &inSensitive.t.sensitive.userAuth, sizeof(inSensitive.t.sensitive.userAuth));
 
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
-    bool result = set_key_algorithm(ctx->algorithm, &inPublic);
+    bool result = set_key_algorithm(&inPublic);
     if (!result) {
         return false;
     }
@@ -197,7 +207,7 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     /* Create EK and get a handle to the key */
     TPM_HANDLE handle2048ek;
-    UINT32 rval = Tss2_Sys_CreatePrimary(ctx->sapi_context, TPM_RH_ENDORSEMENT,
+    UINT32 rval = Tss2_Sys_CreatePrimary(ctx.sapi_context, TPM_RH_ENDORSEMENT,
             &sessionsData, &inSensitive, &inPublic, &outsideInfo, &creationPCR,
             &handle2048ek, &outPublic, &creationData, &creationHash,
             &creationTicket, &name, &sessionsDataOut);
@@ -208,10 +218,10 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     LOG_INFO("EK create success. Got handle: 0x%8.8x", handle2048ek);
 
-    memcpy(&sessionData.hmac, &ctx->passwords.owner, sizeof(ctx->passwords.owner));
+    memcpy(&sessionData.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = Tss2_Sys_EvictControl(ctx->sapi_context, TPM_RH_OWNER, handle2048ek,
-            &sessionsData, ctx->persistent_handle, &sessionsDataOut);
+    rval = Tss2_Sys_EvictControl(ctx.sapi_context, TPM_RH_OWNER, handle2048ek,
+            &sessionsData, ctx.persistent_handle, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EvictControl failed. Could not make EK persistent."
                 "TPM Error:0x%x", rval);
@@ -220,7 +230,7 @@ static bool create_ek_handle(getpubek_context *ctx) {
 
     LOG_INFO("EvictControl EK persistent success.");
 
-    rval = Tss2_Sys_FlushContext(ctx->sapi_context, handle2048ek);
+    rval = Tss2_Sys_FlushContext(ctx.sapi_context, handle2048ek);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Flush transient EK failed. TPM Error:0x%x",
                 rval);
@@ -230,20 +240,71 @@ static bool create_ek_handle(getpubek_context *ctx) {
     LOG_INFO("Flush transient EK success.");
 
     /* TODO fix this serialization */
-    if (!files_save_bytes_to_file(ctx->out_file_path, (UINT8 *) &outPublic,
+    if (!files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) &outPublic,
             sizeof(outPublic))) {
         LOG_ERR("Failed to save EK pub key into file \"%s\"",
-                ctx->out_file_path);
+                ctx.out_file_path);
         return false;
     }
 
     return true;
 }
 
-static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
+static bool on_option(char key, char *value) {
 
-    struct option options[] =
-    {
+    bool result;
+
+    switch (key) {
+    case 'H':
+        result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle);
+        if (!result) {
+            return false;
+        }
+        break;
+    case 'e':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse);
+        if (!result) {
+            return false;
+        }
+        break;
+    case 'o':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner);
+        if (!result) {
+            return false;
+        }
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.ek);
+        if (!result) {
+            return false;
+        }
+        break;
+    case 'g':
+        ctx.algorithm = tpm2_alg_util_from_optarg(value);
+        if (ctx.algorithm == TPM_ALG_ERROR) {
+            return false;
+        }
+        break;
+    case 'f':
+        if (!value) {
+            return false;
+        }
+        ctx.out_file_path = value;
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(value, &ctx.auth_session_handle)) {
+            return false;
+        }
+        ctx.is_session_based_auth = true;
+        break;
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
         { "endorsePasswd", required_argument, NULL, 'e' },
         { "ownerPasswd"  , required_argument, NULL, 'o' },
         { "handle"       , required_argument, NULL, 'H' },
@@ -256,109 +317,16 @@ static bool init(int argc, char *argv[], char *envp[], getpubek_context *ctx) {
         { NULL           , no_argument,       NULL,  '\0' },
     };
 
-    if (argc == 1) {
-        execute_man(argv[0], envp);
-        return 1;
-    }
+    *opts = tpm2_options_new("e:o:H:P:g:f:p:S:d:hv", ARRAY_LEN(topts), topts, on_option, NULL);
 
-    if (argc > (int) (2 * sizeof(options) / sizeof(struct option))) {
-        showArgMismatch(argv[0]);
-        return -1;
-    }
-
-    int opt;
-    while ((opt = getopt_long(argc, argv, "e:o:H:P:g:f:p:S:d:hv", options, NULL))
-            != -1) {
-        bool result;
-        switch (opt) {
-        case 'H':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->persistent_handle);
-            if (!result) {
-                LOG_ERR("Could not convert EK persistent from hex format.");
-                return false;
-            }
-            break;
-
-        case 'e':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.endorse);
-            if (!result) {
-                LOG_ERR("Invalid endorse password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'o':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.owner);
-            if (!result) {
-                LOG_ERR("Invalid owner password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'P':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->passwords.ek);
-            if (!result) {
-                LOG_ERR("Invalid EK password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'g':
-            ctx->algorithm = tpm2_alg_util_from_optarg(optarg);
-            if (ctx->algorithm == TPM_ALG_ERROR) {
-                LOG_ERR("Could not convert algorithm to value, got: %s",
-                        optarg);
-                return false;
-            }
-            break;
-        case 'f':
-            if (!optarg) {
-                LOG_ERR("Please specify an output file to save the pub ek to.");
-                return false;
-            }
-            ctx->out_file_path = optarg;
-            break;
-        case 'S':
-            if (!tpm2_util_string_to_uint32(optarg, &ctx->auth_session_handle)) {
-                LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            ctx->is_session_based_auth = true;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-        }
-
-    }
-    return true;
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    /* common options are not used, avoid compiler warning */
-    (void) opts;
+    UNUSED(flags);
 
-    getpubek_context ctx = {
-            .passwords = {
-                    .owner = TPM2B_EMPTY_INIT,
-                    .endorse = TPM2B_EMPTY_INIT,
-                    .ek = TPM2B_EMPTY_INIT,
-            },
-            .algorithm = TPM_ALG_RSA,
-            .sapi_context = sapi_context,
-            .is_session_based_auth = false
-    };
-
-    bool result = init(argc, argv, envp, &ctx);
-    if (!result) {
-        return 1;
-    }
-
+    ctx.sapi_context = sapi_context;
     /* normalize 0 success 1 failure */
-    return create_ek_handle(&ctx) != true;
+    return create_ek_handle() != true;
 }
