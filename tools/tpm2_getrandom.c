@@ -52,18 +52,20 @@ struct tpm_random_ctx {
     TSS2_SYS_CONTEXT *sapi_context;
 };
 
-static bool get_random_and_save(tpm_random_ctx *ctx) {
+static tpm_random_ctx ctx;
+
+static bool get_random_and_save(void) {
 
     TPM2B_DIGEST random_bytes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    TPM_RC rval = Tss2_Sys_GetRandom(ctx->sapi_context, NULL, ctx->num_of_bytes,
+    TPM_RC rval = Tss2_Sys_GetRandom(ctx.sapi_context, NULL, ctx.num_of_bytes,
             &random_bytes, NULL);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("TPM2_GetRandom Error. TPM Error:0x%x", rval);
         return false;
     }
 
-    if (!ctx->output_file_specified) {
+    if (!ctx.output_file_specified) {
         UINT16 i;
         for (i = 0; i < random_bytes.t.size; i++) {
             printf("%s0x%2.2X", i ? " " : "", random_bytes.t.buffer[i]);
@@ -72,72 +74,53 @@ static bool get_random_and_save(tpm_random_ctx *ctx) {
         return true;
     }
 
-    return files_save_bytes_to_file(ctx->output_file, (UINT8 *) random_bytes.t.buffer,
+    return files_save_bytes_to_file(ctx.output_file, (UINT8 *) random_bytes.t.buffer,
             random_bytes.t.size);
 }
 
-#define ARG_CNT (2 * (sizeof(long_options)/sizeof(long_options[0]) - 1))
+static bool on_option(char key, char *value) {
 
-static bool init(int argc, char *argv[], tpm_random_ctx *ctx) {
+    UNUSED(key);
 
-    static const char *short_options = "o:";
-    static const struct option long_options[] = {
-        { "output",   required_argument, NULL, 'o' },
-        { NULL,   no_argument,       NULL,  '\0' },
-    };
+    ctx.output_file_specified = true;
+    ctx.output_file = value;
 
-    if (argc !=2 && argc != 4) {
-        showArgMismatch(argv[0]);
+    return true;
+}
+
+static bool on_args(int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("Only supports one SIZE octets, got: %d", argc);
         return false;
     }
 
-    int opt;
-    while ((opt = getopt_long(argc, argv, short_options, long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'o':
-            ctx->output_file_specified = true;
-            ctx->output_file = optarg;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    bool result = tpm2_util_string_to_uint16(argv[optind], &ctx->num_of_bytes);
+    bool result = tpm2_util_string_to_uint16(argv[0], &ctx.num_of_bytes);
     if (!result) {
         LOG_ERR("Error converting size to a number, got: \"%s\".",
-                argv[optind]);
+                argv[0]);
         return false;
     }
 
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-            TSS2_SYS_CONTEXT *sapi_context) {
+bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    (void)opts;
-    (void)envp;
-
-    tpm_random_ctx ctx = {
-            .output_file_specified = false,
-            .num_of_bytes = 0,
-            .output_file = NULL,
-            .sapi_context = sapi_context
+    const struct option topts[] = {
+        { "output",   required_argument, NULL, 'o' },
+        { NULL,   no_argument,       NULL,  '\0' },
     };
 
-    bool result = init(argc, argv, &ctx);
-    if (!result) {
-        return 1;
-    }
+    *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts, on_option, on_args);
 
-    return get_random_and_save(&ctx) != true;
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+    ctx.sapi_context = sapi_context;
+
+    return get_random_and_save() != true;
 }

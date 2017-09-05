@@ -60,10 +60,10 @@ bin_PROGRAMS = \
     tools/tpm2_evictcontrol \
     tools/tpm2_getmanufec \
     tools/tpm2_getpubak \
-    tools/tpm2_getpubek
+    tools/tpm2_getpubek \
+    tools/tpm2_getrandom
 
 # NEED TO PORT
-#    tools/tpm2_getrandom \
 #    tools/tpm2_hash \
 #    tools/tpm2_hmac \
 #    tools/tpm2_listpersistent \
