@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <sapi/tpm20.h>
 
 #include "tpm2_options.h"
@@ -69,13 +68,32 @@ union format_flags {
 
 typedef struct listpcr_context listpcr_context;
 struct listpcr_context {
-    TSS2_SYS_CONTEXT *sapi_context;
+    struct {
+        UINT8 L : 1;
+        UINT8 s : 1;
+        UINT8 g : 1;
+        UINT8 o : 1;
+        UINT8 unused : 4;
+    } flags;
+    char *output_file_path;
     FILE *output_file;
     tpm2_algorithm algs;
     tpm2_pcrs pcrs;
     TPML_PCR_SELECTION pcr_selections;
     TPMS_CAPABILITY_DATA cap_data;
     format_flags format;
+    TPMI_ALG_HASH selected_algorithm;
+};
+
+static listpcr_context ctx = {
+    .algs = {
+        .count = 3,
+        .alg = {
+            TPM_ALG_SHA1,
+            TPM_ALG_SHA256,
+            TPM_ALG_SHA384
+        }
+    },
 };
 
 static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
@@ -118,21 +136,21 @@ static bool unset_pcr_sections(TPML_PCR_SELECTION *s) {
     return true;
 }
 
-static bool read_pcr_values(listpcr_context *context) {
+static bool read_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPML_PCR_SELECTION pcr_selection_tmp;
     TPML_PCR_SELECTION pcr_selection_out;
     UINT32 pcr_update_counter;
 
     //1. prepare pcrSelectionIn with g_pcrSelections
-    memcpy(&pcr_selection_tmp, &context->pcr_selections, sizeof(pcr_selection_tmp));
+    memcpy(&pcr_selection_tmp, &ctx.pcr_selections, sizeof(pcr_selection_tmp));
 
     //2. call pcr_read
-    context->pcrs.count = 0;
+    ctx.pcrs.count = 0;
     do {
-        UINT32 rval = Tss2_Sys_PCR_Read(context->sapi_context, 0, &pcr_selection_tmp,
+        UINT32 rval = Tss2_Sys_PCR_Read(sapi_context, no_argument, &pcr_selection_tmp,
                 &pcr_update_counter, &pcr_selection_out,
-                &context->pcrs.pcr_values[context->pcrs.count], 0);
+                &ctx.pcrs.pcr_values[ctx.pcrs.count], 0);
 
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("read pcr failed. tpm error 0x%0x", rval);
@@ -143,9 +161,9 @@ static bool read_pcr_values(listpcr_context *context) {
         update_pcr_selections(&pcr_selection_tmp, &pcr_selection_out);
 
         //4. goto step 2 if pcrSelctionIn still has bits set
-    } while (++context->pcrs.count < 24 && !unset_pcr_sections(&pcr_selection_tmp));
+    } while (++ctx.pcrs.count < 24 && !unset_pcr_sections(&pcr_selection_tmp));
 
-    if (context->pcrs.count >= 24 && !unset_pcr_sections(&pcr_selection_tmp)) {
+    if (ctx.pcrs.count >= 24 && !unset_pcr_sections(&pcr_selection_tmp)) {
         LOG_ERR("too much pcrs to get! try to split into multiple calls...");
         return false;
     }
@@ -153,11 +171,13 @@ static bool read_pcr_values(listpcr_context *context) {
     return true;
 }
 
-static bool init_pcr_selection(TPMI_ALG_HASH alg_id, listpcr_context *context) {
+static bool init_pcr_selection(void) {
 
-    TPMS_CAPABILITY_DATA *cap_data = &context->cap_data;
-    TPML_PCR_SELECTION *pcr_sel = &context->pcr_selections;
+    TPMS_CAPABILITY_DATA *cap_data = &ctx.cap_data;
+    TPML_PCR_SELECTION *pcr_sel = &ctx.pcr_selections;
     UINT32 i, j;
+
+    TPMI_ALG_HASH alg_id = ctx.selected_algorithm;
 
     pcr_sel->count = 0;
 
@@ -204,10 +224,10 @@ static void shrink_pcr_selection(TPML_PCR_SELECTION *s) {
     s->count = i;
 }
 
-static bool check_pcr_selection(listpcr_context *context) {
+static bool check_pcr_selection(void) {
 
-    TPMS_CAPABILITY_DATA *cap_data = &context->cap_data;
-    TPML_PCR_SELECTION *pcr_sel = &context->pcr_selections;
+    TPMS_CAPABILITY_DATA *cap_data = &ctx.cap_data;
+    TPML_PCR_SELECTION *pcr_sel = &ctx.pcr_selections;
     UINT32 i, j, k;
 
     for (i = 0; i < pcr_sel->count; i++) {
@@ -234,58 +254,58 @@ static bool check_pcr_selection(listpcr_context *context) {
 }
 
 // show all PCR banks according to g_pcrSelection & g_pcrs->
-static bool show_pcr_values(listpcr_context *context) {
+static bool show_pcr_values(void) {
 
     UINT32 vi = 0, di = 0, i;
 
-    for (i = 0; i < context->pcr_selections.count; i++) {
+    for (i = 0; i < ctx.pcr_selections.count; i++) {
         const char *alg_name = tpm2_alg_util_algtostr(
-                context->pcr_selections.pcrSelections[i].hash);
+                ctx.pcr_selections.pcrSelections[i].hash);
 
-        if (context->format.yaml) {
+        if (ctx.format.yaml) {
             tpm2_tool_output("%s :\n", alg_name);
 
         } else {
             tpm2_tool_output("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
-                context->pcr_selections.pcrSelections[i].hash);
+                ctx.pcr_selections.pcrSelections[i].hash);
         }
 
         UINT32 pcr_id;
-        for (pcr_id = 0; pcr_id < context->pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
-            if (!is_pcr_select_bit_set(&context->pcr_selections.pcrSelections[i],
+        for (pcr_id = 0; pcr_id < ctx.pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
+            if (!is_pcr_select_bit_set(&ctx.pcr_selections.pcrSelections[i],
                     pcr_id)) {
                 continue;
             }
-            if (vi >= context->pcrs.count || di >= context->pcrs.pcr_values[vi].count) {
+            if (vi >= ctx.pcrs.count || di >= ctx.pcrs.pcr_values[vi].count) {
                 LOG_ERR("Something wrong, trying to print but nothing more");
                 return false;
             }
 
-            if (context->format.yaml) {
+            if (ctx.format.yaml) {
                 tpm2_tool_output("  %-2d : ", pcr_id);
             } else {
                 tpm2_tool_output("PCR_%02d:", pcr_id);
             }
             int k;
-            for (k = 0; k < context->pcrs.pcr_values[vi].digests[di].t.size; k++) {
-                tpm2_tool_output("%02x", context->pcrs.pcr_values[vi].digests[di].t.buffer[k]);
+            for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].t.size; k++) {
+                tpm2_tool_output("%02x", ctx.pcrs.pcr_values[vi].digests[di].t.buffer[k]);
             }
             tpm2_tool_output("\n");
 
-            if (context->output_file != NULL
-                    && fwrite(context->pcrs.pcr_values[vi].digests[di].t.buffer,
-                            context->pcrs.pcr_values[vi].digests[di].t.size, 1,
-                            context->output_file) != 1) {
+            if (ctx.output_file != NULL
+                    && fwrite(ctx.pcrs.pcr_values[vi].digests[di].t.buffer,
+                            ctx.pcrs.pcr_values[vi].digests[di].t.size, required_argument,
+                            ctx.output_file) != 1) {
                 LOG_ERR("write to output file failed: %s", strerror(errno));
                 return false;
             }
 
-            if (++di < context->pcrs.pcr_values[vi].count) {
+            if (++di < ctx.pcrs.pcr_values[vi].count) {
                 continue;
             }
 
             di = 0;
-            if (++vi < context->pcrs.count) {
+            if (++vi < ctx.pcrs.count) {
                 continue;
             }
         }
@@ -294,43 +314,43 @@ static bool show_pcr_values(listpcr_context *context) {
     return true;
 }
 
-static bool show_selected_pcr_values(listpcr_context *context, bool check) {
+static bool show_selected_pcr_values(TSS2_SYS_CONTEXT *sapi_context, bool check) {
 
-    if (check && !check_pcr_selection(context))
+    if (check && !check_pcr_selection())
         return false;
 
-    if (!read_pcr_values(context))
+    if (!read_pcr_values(sapi_context))
         return false;
 
-    if (!show_pcr_values(context))
+    if (!show_pcr_values())
         return false;
 
     return true;
 }
 
-static bool show_all_pcr_values(listpcr_context *context) {
+static bool show_all_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!init_pcr_selection(0, context))
+    if (!init_pcr_selection())
         return false;
 
-    return show_selected_pcr_values(context, false);
+    return show_selected_pcr_values(sapi_context, false);
 }
 
-static bool show_alg_pcr_values(listpcr_context *context, TPMI_ALG_HASH alg_id) {
+static bool show_alg_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!init_pcr_selection(alg_id, context))
+    if (!init_pcr_selection())
         return false;
 
-    return show_selected_pcr_values(context, false);
+    return show_selected_pcr_values(sapi_context, false);
 }
 
-static bool get_banks(listpcr_context *context) {
+static bool get_banks(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMI_YES_NO more_data;
-    TPMS_CAPABILITY_DATA *capability_data = &context->cap_data;
+    TPMS_CAPABILITY_DATA *capability_data = &ctx.cap_data;
     UINT32 rval;
 
-    rval = Tss2_Sys_GetCapability(context->sapi_context, 0, TPM_CAP_PCRS, 0, 1,
+    rval = Tss2_Sys_GetCapability(sapi_context, no_argument, TPM_CAP_PCRS, no_argument, required_argument,
             &more_data, capability_data, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR(
@@ -341,10 +361,10 @@ static bool get_banks(listpcr_context *context) {
 
     unsigned i;
     for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
-        context->algs.alg[i] =
+        ctx.algs.alg[i] =
                 capability_data->data.assignedPCR.pcrSelections[i].hash;
     }
-    context->algs.count = capability_data->data.assignedPCR.count;
+    ctx.algs.count = capability_data->data.assignedPCR.count;
 
     return true;
 }
@@ -360,121 +380,115 @@ static void show_banks(tpm2_algorithm *g_banks) {
     tpm2_tool_output("\n");
 }
 
-static format_flags get_format(const char *optarg) {
+static format_flags get_format(const char *value) {
 
     format_flags flags = { .all = 0 };
 
-    if (!strcmp(optarg, "yaml")) {
+    if (!strcmp(value, "yaml")) {
         flags.yaml = 1;
     }
 
     return flags;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+static bool on_option(char key, char *value) {
 
-    listpcr_context context = {
-        .algs = {
-            .count = 3,
-            .alg = {
-                TPM_ALG_SHA1,
-                TPM_ALG_SHA256,
-                TPM_ALG_SHA384 }
-        },
-        .output_file = NULL,
-        .pcr_selections = TPML_PCR_SELECTION_EMPTY_INIT,
-        .pcrs = { .count = 0 },
-        .format = { .all = 0 },
-        .sapi_context = sapi_context
-    };
+    switch (key) {
+    case 'g':
+        ctx.selected_algorithm = tpm2_alg_util_from_optarg(value);
+        if (ctx.selected_algorithm == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid algorithm, got: \"%s\"", value);
+            return false;
+        }
+        ctx.flags.g = 1;
+        break;
+    case 'o':
+        ctx.output_file_path = value;
+        ctx.flags.o = 1;
+        break;
+    case 'L':
+        if (!pcr_parse_selections(value, &ctx.pcr_selections)) {
+            LOG_ERR("Could not parse pcr list, got: \"%s\"", value);
+            return false;
+        }
+        ctx.flags.L = 1;
+        break;
+    case 's':
+        ctx.flags.s = 1;
+        break;
+    case 'f':
+        ctx.format = get_format(value);
+        if (!ctx.format.all) {
+            LOG_ERR("Unknown format, got: \"%s\"", value);
+            return false;
+        }
+        break;
+        /* no default */
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static struct option topts[] = {
+         { "algorithm", required_argument, NULL, 'g' },
+         { "output",    required_argument, NULL, 'o' },
+         { "algs",      no_argument,       NULL, 's' },
+         { "selList",   required_argument, NULL, 'L' },
+         { "format",    required_argument, NULL, 'f' },
+         { NULL }
+     };
+
+    *opts = tpm2_options_new("g:o:L:s", ARRAY_LEN(topts), topts,
+            on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
 
     bool success = false;
-    TPMI_ALG_HASH selected_algorithm = TPM_ALG_RSA;
-    unsigned L_flag = 0, s_flag = 0, g_flag = 0;
 
-    static struct option long_options[] = {
-        { "algorithm", 1, NULL, 'g' },
-        { "output", 1, NULL, 'o' },
-        { "algs", 0, NULL, 's' },
-        { "selList", 1, NULL, 'L' },
-        { "format", required_argument, NULL, 'f' },
-        { NULL, 0, NULL, '\0' }
-    };
+    int flagCnt = ctx.flags.g + ctx.flags.L + ctx.flags.s;
+    if (flagCnt > 1) {
+        LOG_ERR("Expected only one of -g, -L or -s options, found: \"%s%s%s\"",
+                ctx.flags.g ? "-g" : "",
+                ctx.flags.L ? "-L" : "",
+                ctx.flags.s ? "-s" : ""
+        );
+        goto error;
+    }
 
-    /* mark these as unused to prevent compiler warnings/errors */
-    (void) opts;
-    (void) envp;
-
-    int opt;
-    while ((opt = getopt_long(argc, argv, "g:o:L:s", long_options, NULL)) != -1) {
-        switch (opt) {
-        case 'g':
-            selected_algorithm = tpm2_alg_util_from_optarg(optarg);
-            if (selected_algorithm == TPM_ALG_ERROR) {
-                showArgError(optarg, argv[0]);
-                goto error;
-            }
-            g_flag = 1;
-            break;
-        case 'o':
-            context.output_file = fopen(optarg, "wb+");
-            if (!context.output_file) {
-                LOG_ERR("Could not open output file \"%s\" error: \"%s\"",
-                        optarg, strerror(errno));
-                goto error;
-            }
-            break;
-        case 'L':
-            if (!pcr_parse_selections(optarg, &context.pcr_selections)) {
-                showArgError(optarg, argv[0]);
-                goto error;
-            }
-            L_flag = 1;
-            break;
-        case 's':
-            s_flag = 1;
-            break;
-        case 'f':
-            context.format = get_format(optarg);
-            if (!context.format.all) {
-                LOG_ERR("Unknown format, got: \"%s\"", optarg);
-                goto error;
-            }
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            goto error;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
+    if (ctx.flags.o) {
+        ctx.output_file = fopen(ctx.output_file_path, "wb+");
+        if (!ctx.output_file) {
+            LOG_ERR("Could not open output file \"%s\" error: \"%s\"",
+                    ctx.output_file_path, strerror(errno));
             goto error;
         }
     }
 
-    int flagCnt = g_flag + L_flag + s_flag;
-    if (flagCnt > 1) {
-        showArgMismatch(argv[0]);
-        goto error;
-    }
-
-    success = get_banks(&context);
+    success = get_banks(sapi_context);
     if (!success) {
         goto error;
     }
 
-    if (s_flag) {
-        show_banks(&context.algs);
-    } else if (g_flag) {
-        success = show_alg_pcr_values(&context, selected_algorithm);
-    } else if (L_flag) {
-        success = show_selected_pcr_values(&context, true);
+    if (ctx.flags.s) {
+        show_banks(&ctx.algs);
+    } else if (ctx.flags.g) {
+        success = show_alg_pcr_values(sapi_context);
+    } else if (ctx.flags.L) {
+        success = show_selected_pcr_values(sapi_context, true);
     } else {
-        success = show_all_pcr_values(&context);
+        success = show_all_pcr_values(sapi_context);
     }
 
 error:
-    if (context.output_file) {
-        fclose(context.output_file);
+    if (ctx.output_file) {
+        fclose(ctx.output_file);
     }
 
     /* 0 on success 1 otherwise */
