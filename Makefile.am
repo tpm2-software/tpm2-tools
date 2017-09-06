@@ -73,6 +73,7 @@ bin_PROGRAMS = \
     tools/tpm2_nvreadlock \
     tools/tpm2_nvrelease \
     tools/tpm2_nvwrite \
+    tools/tpm2_rc_decode \
     tools/tpm2_readpublic \
     tools/tpm2_rsadecrypt \
     tools/tpm2_rsaencrypt \
@@ -87,8 +88,7 @@ bin_PROGRAMS = \
 #    tools/tpm2_pcrevent \
 #    tools/tpm2_pcrextend \
 #    tools/tpm2_pcrlist \
-#    tools/tpm2_quote \
-#    tools/tpm2_rc_decode
+#    tools/tpm2_quote
 
 tcti_src = ""
 if HAVE_TCTI_DEV
@@ -178,9 +178,7 @@ tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
-
-# rc_decode does not use common main, since it does not need a dynamic TCTI.
-tools_tpm2_rc_decode_SOURCES = lib/rc-decode.c tools/tpm2_rc_decode.c
+tools_tpm2_rc_decode_SOURCES = tools/tpm2_rc_decode.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
