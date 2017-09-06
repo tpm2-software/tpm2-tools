@@ -33,7 +33,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <getopt.h>
 #include <limits.h>
 
 #include <sapi/tpm20.h>
@@ -58,7 +57,14 @@ struct tpm_nvdefine_ctx {
     char *policy_file;
 };
 
-static int nv_space_define(tpm_nvdefine_ctx *ctx) {
+static tpm_nvdefine_ctx ctx = {
+    .authHandle = TPM_RH_PLATFORM,
+    .nvAttribute = SESSION_ATTRIBUTES_INIT(0),
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .nvAuth = TPM2B_EMPTY_INIT,
+};
+
+static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
 
@@ -67,7 +73,7 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
     TSS2_SYS_RSP_AUTHS sessions_data_out;
 
     TPMS_AUTH_COMMAND *session_data_array[1] = {
-        &ctx->session_data
+        &ctx.session_data
     };
 
     TPMS_AUTH_RESPONSE *session_data_out_array[1] = {
@@ -82,39 +88,116 @@ static int nv_space_define(tpm_nvdefine_ctx *ctx) {
 
     public_info.t.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
-    public_info.t.nvPublic.nvIndex = ctx->nvIndex;
+    public_info.t.nvPublic.nvIndex = ctx.nvIndex;
     public_info.t.nvPublic.nameAlg = TPM_ALG_SHA256;
 
     // Now set the attributes.
-    public_info.t.nvPublic.attributes.val = ctx->nvAttribute.val;
+    public_info.t.nvPublic.attributes.val = ctx.nvAttribute.val;
 
-    if (ctx->policy_file) {
+    if (ctx.policy_file) {
         public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-        if(!files_load_bytes_from_path(ctx->policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
+        if(!files_load_bytes_from_path(ctx.policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
             return false;
         }
     } 
 
-    public_info.t.nvPublic.dataSize = ctx->size;
+    public_info.t.nvPublic.dataSize = ctx.size;
 
-    TPM_RC rval = Tss2_Sys_NV_DefineSpace(ctx->sapi_context, ctx->authHandle,
-            &sessions_data, &ctx->nvAuth, &public_info, &sessions_data_out);
+    TPM_RC rval = Tss2_Sys_NV_DefineSpace(sapi_context, ctx.authHandle,
+            &sessions_data, &ctx.nvAuth, &public_info, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed to define NV area at index 0x%x (%d).Error:0x%x",
-                ctx->nvIndex, ctx->nvIndex, rval);
+                ctx.nvIndex, ctx.nvIndex, rval);
         return false;
     }
 
-    LOG_INFO("Success to define NV area at index 0x%x (%d).", ctx->nvIndex, ctx->nvIndex);
+    LOG_INFO("Success to define NV area at index 0x%x (%d).", ctx.nvIndex, ctx.nvIndex);
 
     return true;
 }
 
-#define MAX_ARG_CNT ((int)(2 * (sizeof(long_options)/sizeof(long_options[0]) - 1)))
+static bool on_option(char key, char *value) {
 
-static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
+    bool result;
 
-    struct option long_options[] = {
+    switch (key) {
+    case 'x':
+        result = tpm2_util_string_to_uint32(value, &ctx.nvIndex);
+        if (!result) {
+            LOG_ERR("Could not convert NV index to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+
+        if (ctx.nvIndex == 0) {
+                LOG_ERR("NV Index cannot be 0");
+                return false;
+        }
+        break;
+    case 'a':
+        result = tpm2_util_string_to_uint32(value, &ctx.authHandle);
+        if (!result) {
+            LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+
+        if (ctx.authHandle == 0) {
+            LOG_ERR("Auth handle cannot be 0");
+            return false;
+        }
+        break;
+        case 'P':
+            result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+            if (!result) {
+                LOG_ERR("Invalid handle password, got\"%s\"", value);
+                return false;
+            }
+            break;
+    case 's':
+        result = tpm2_util_string_to_uint32(value, &ctx.size);
+        if (!result) {
+            LOG_ERR("Could not convert size to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        break;
+    case 't':
+        result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute.val);
+        if (!result) {
+            result = tpm2_nv_util_strtoattr(value, &ctx.nvAttribute);
+            if (!result) {
+                LOG_ERR("Could not convert NV attribute to number or keyword, got: \"%s\"",
+                        value);
+                return false;
+            }
+        }
+        break;
+    case 'I':
+        result = tpm2_password_util_from_optarg(value, &ctx.nvAuth);
+        if (!result) {
+            LOG_ERR("Invalid index password, got\"%s\"", value);
+            return false;
+        }
+        break;
+    case 'L':
+        ctx.policy_file = optarg;
+        break;
+    case 'S':
+        if (!tpm2_util_string_to_uint32(optarg, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
+            return false;
+        }
+        break;
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
         { "index",                  required_argument,  NULL,   'x' },
         { "authHandle",             required_argument,  NULL,   'a' },
         { "size",                   required_argument,  NULL,   's' },
@@ -127,121 +210,14 @@ static bool init(int argc, char* argv[], tpm_nvdefine_ctx *ctx) {
         { NULL,                     no_argument,        NULL,    0  },
     };
 
-    if (argc <= 1 || argc > MAX_ARG_CNT) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
+    *opts = tpm2_options_new("x:a:s:t:P:I:rwdL:S:X", ARRAY_LEN(topts), topts, on_option, NULL);
 
-    int opt;
-    bool result;
-    while ((opt = getopt_long(argc, argv, "x:a:s:t:P:I:rwdL:S:X", long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'x':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->nvIndex);
-            if (!result) {
-                LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-
-            if (ctx->nvIndex == 0) {
-                LOG_ERR("NV Index cannot be 0");
-                return false;
-            }
-            break;
-        case 'a':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->authHandle);
-            if (!result) {
-                LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-
-            if (ctx->authHandle == 0) {
-                LOG_ERR("Auth handle cannot be 0");
-                return false;
-            }
-            break;
-        case 'P':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid handle password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 's':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->size);
-            if (!result) {
-                LOG_ERR("Could not convert size to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            break;
-        case 't':
-            result = tpm2_util_string_to_uint32(optarg, &ctx->nvAttribute.val);
-            if (!result) {
-                result = tpm2_nv_util_strtoattr(optarg, &ctx->nvAttribute);
-                if (!result) {
-                    LOG_ERR("Could not convert NV attribute to number or keyword, got: \"%s\"",
-                        optarg);
-                    return false;
-                }
-            }
-            break;
-        case 'I':
-            result = tpm2_password_util_from_optarg(optarg, &ctx->nvAuth);
-            if (!result) {
-                LOG_ERR("Invalid index password, got\"%s\"", optarg);
-                return false;
-            }
-            break;
-        case 'L':
-            ctx->policy_file = optarg;
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &ctx->session_data.sessionHandle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return false;
-             }
-             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    return true;
+    return *opts != NULL;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-            TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-        (void)opts;
-        (void)envp;
+    UNUSED(flags);
 
-        tpm_nvdefine_ctx ctx = {
-            .nvIndex = 0,
-            .authHandle = TPM_RH_PLATFORM,
-            .size = 0,
-            .nvAttribute = SESSION_ATTRIBUTES_INIT(0),
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-            .nvAuth = TPM2B_EMPTY_INIT,
-            .sapi_context = sapi_context,
-            .policy_file = NULL,
-        };
-
-        bool result = init(argc, argv, &ctx);
-        if (!result) {
-            return 1;
-        }
-
-        return nv_space_define(&ctx) != true;
+    return nv_space_define(sapi_context) != true;
 }
