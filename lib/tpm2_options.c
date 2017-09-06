@@ -96,6 +96,14 @@ tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         return NULL;
     }
 
+    /*
+     * On NULL, just make it a zero length string so we don't have to keep
+     * checking it for NULL.
+     */
+    if (!short_opts) {
+        short_opts = "";
+    }
+
     opts->short_opts = strdup(short_opts);
     if (!opts->short_opts) {
         LOG_ERR("oom");
