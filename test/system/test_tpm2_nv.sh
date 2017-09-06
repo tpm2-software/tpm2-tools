@@ -134,7 +134,11 @@ fi
 large_file_name="nv.test_large_w"
 
 if [ ! -f $large_file_name ]; then
-  base64 /dev/urandom | head -c $large_file_size > $large_file_name
+  base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
+  if [ $? != 0 ];then
+    echo "creating large file $large_file_name failed"
+    exit 1
+  fi
 fi
 
 tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle  -f $large_file_name
