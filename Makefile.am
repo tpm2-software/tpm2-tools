@@ -64,6 +64,7 @@ bin_PROGRAMS = \
     tools/tpm2_getrandom \
     tools/tpm2_hmac \
     tools/tpm2_listpersistent \
+    tools/tpm2_load \
     tools/tpm2_send_command \
     tools/tpm2_sign \
     tools/tpm2_startup \
@@ -72,7 +73,6 @@ bin_PROGRAMS = \
     tools/tpm2_verifysignature
 
 # NEED TO PORT
-#    tools/tpm2_load \
 #    tools/tpm2_loadexternal \
 #    tools/tpm2_makecredential \
 #    tools/tpm2_nvdefine \
