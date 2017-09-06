@@ -35,27 +35,35 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
-
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
-#include "log.h"
 #include "files.h"
+#include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
+    struct {
+        UINT8 i : 1;
+        UINT8 S : 1;
+        UINT8 P : 1;
+        UINT8 unused : 5;
+    } flags;
     TPMI_DH_PCR pcr;
     FILE *input;
     TPMS_AUTH_COMMAND session_data;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
 #define TSS2_APP_PCREVENT_RC_FAILED (0x57 + 0x100 + TSS2_APP_ERROR_LEVEL)
+
+static tpm_pcrevent_ctx ctx = {
+        .pcr = TPM_RH_NULL,
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+};
 
 static inline void swap_auths(TPMS_AUTH_COMMAND **auths) {
 
@@ -64,13 +72,14 @@ static inline void swap_auths(TPMS_AUTH_COMMAND **auths) {
     auths[1] = tmp;
 }
 
-static TPM_RC tpm_pcrevent_file(tpm_pcrevent_ctx *ctx, TPML_DIGEST_VALUES *result) {
+static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
+        TPML_DIGEST_VALUES *result) {
 
     TPMS_AUTH_COMMAND empty_auth = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW);
 
     TPMS_AUTH_COMMAND *all_auths[] = {
-        &ctx->session_data, /* auth for the pcr handle */
-        &empty_auth,        /* auth for the sequence handle */
+        &ctx.session_data, /* auth for the pcr handle */
+        &empty_auth,       /* auth for the sequence handle */
 
     };
 
@@ -83,7 +92,7 @@ static TPM_RC tpm_pcrevent_file(tpm_pcrevent_ctx *ctx, TPML_DIGEST_VALUES *resul
 
     unsigned long file_size = 0;
 
-    FILE *input = ctx->input;
+    FILE *input = ctx.input;
 
     /* Suppress error reporting with NULL path */
     bool res = files_get_file_size(input, &file_size, NULL);
@@ -93,13 +102,13 @@ static TPM_RC tpm_pcrevent_file(tpm_pcrevent_ctx *ctx, TPML_DIGEST_VALUES *resul
 
         TPM2B_EVENT buffer = TPM2B_INIT(file_size);
 
-        res = files_read_bytes(ctx->input, buffer.t.buffer, buffer.t.size);
+        res = files_read_bytes(ctx.input, buffer.t.buffer, buffer.t.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
             return TSS2_APP_PCREVENT_RC_FAILED;
         }
 
-        return Tss2_Sys_PCR_Event(ctx->sapi_context, ctx->pcr, &cmd_auth_array,
+        return Tss2_Sys_PCR_Event(sapi_context, ctx.pcr, &cmd_auth_array,
                 &buffer, result,
                 NULL);
     }
@@ -112,7 +121,7 @@ static TPM_RC tpm_pcrevent_file(tpm_pcrevent_ctx *ctx, TPML_DIGEST_VALUES *resul
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TPM_RC rval = Tss2_Sys_HashSequenceStart(ctx->sapi_context, NULL, &nullAuth,
+    TPM_RC rval = Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
     TPM_ALG_NULL, &sequence_handle, NULL);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_HashSequenceStart failed: 0x%X", rval);
@@ -147,7 +156,7 @@ static TPM_RC tpm_pcrevent_file(tpm_pcrevent_ctx *ctx, TPML_DIGEST_VALUES *resul
         data.t.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Tss2_Sys_SequenceUpdate(ctx->sapi_context, sequence_handle,
+        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
                 &cmd_auth_array, &data, NULL);
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Tss2_Sys_SequenceUpdate failed: 0x%X", rval);
@@ -184,14 +193,14 @@ static TPM_RC tpm_pcrevent_file(tpm_pcrevent_ctx *ctx, TPML_DIGEST_VALUES *resul
     swap_auths(all_auths);
     cmd_auth_array.cmdAuthsCount = 2;
 
-    return Tss2_Sys_EventSequenceComplete(ctx->sapi_context, ctx->pcr,
+    return Tss2_Sys_EventSequenceComplete(sapi_context, ctx.pcr,
             sequence_handle, &cmd_auth_array, &data, result, NULL);
 }
 
-static bool do_hmac_and_output(tpm_pcrevent_ctx *ctx) {
+static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPML_DIGEST_VALUES digests;
-    TPM_RC rval = tpm_pcrevent_file(ctx, &digests);
+    TPM_RC rval = tpm_pcrevent_file(sapi_context, &digests);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("tpm_pcrevent_file() failed: 0x%X", rval);
         return false;
@@ -248,128 +257,111 @@ static bool do_hmac_and_output(tpm_pcrevent_ctx *ctx) {
     return true;
 }
 
-static bool init(int argc, char *argv[], tpm_pcrevent_ctx *ctx) {
+static bool init(void) {
 
-    static const struct option long_options[] = {
-        { "pcr-index",            required_argument, NULL, 'i' },
-        { "input-session-handle", required_argument, NULL, 'S' },
-        { "password",             required_argument, NULL, 'P' },
-        { NULL,                   no_argument,       NULL, '\0' }
-    };
+    ctx.input = ctx.input ? ctx.input : stdin;
 
-    union {
-        struct {
-            UINT8 i : 1;
-            UINT8 S : 1;
-            UINT8 P : 1;
-            UINT8 unused : 5;
-        };
-        UINT8 all;
-    } flags = { .all = 0 };
-
-    int opt;
-    bool res;
-    while ((opt = getopt_long(argc, argv, "i:P:S:", long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'i':
-            res = tpm2_util_string_to_uint32(optarg, &ctx->pcr);
-            if (!res) {
-                LOG_ERR("Could not convert \"%s\", to a pcr index.", argv[1]);
-                return false;
-            }
-            flags.i = 1;
-            break;
-        case 'S': {
-            bool result = tpm2_util_string_to_uint32(optarg,
-                    &ctx->session_data.sessionHandle);
-            if (!result) {
-                LOG_ERR(
-                        "Could not convert session handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-        }
-            flags.S = 1;
-            break;
-        case 'P': {
-            bool result = tpm2_password_util_from_optarg(optarg,
-                    &ctx->session_data.hmac);
-            if (!result) {
-                LOG_ERR("Invalid key handle password, got\"%s\"", optarg);
-                return false;
-            }
-        }
-            flags.P = 1;
-            break;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    }
-
-    if (flags.S && flags.P) {
+    if (ctx.flags.S && ctx.flags.P) {
         LOG_ERR("Cannot specify both -P and -S options.");
         return false;
     }
 
-    if ((flags.S || flags.P) && !flags.i) {
+    if ((ctx.flags.S || ctx.flags.P) && !ctx.flags.i) {
         LOG_ERR("Must specify a PCR index via -i with the -%c option.",
-                flags.P ? 'P' : 'S');
+                ctx.flags.P ? 'P' : 'S');
         return false;
-    }
-
-    size_t cnt = argc - optind;
-    if (cnt > 1) {
-        LOG_ERR("Expected a single FILE argument, got: %zu", cnt);
-        return false;
-    }
-
-    if (cnt) {
-        ctx->input = fopen(argv[optind], "rb");
-        if (!ctx->input) {
-            LOG_ERR("Error opening file \"%s\", error: %s", argv[optind],
-                    strerror(errno));
-            return false;
-        }
     }
 
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+static bool on_arg(int argc, char **argv) {
 
-    (void) opts;
-    (void) envp;
+    if (argc > 1) {
+        LOG_ERR("Expected a single FILE argument, got: %d", argc);
+        return false;
+    }
 
-    int rc = 1;
+    ctx.input = fopen(argv[0], "rb");
+    if (!ctx.input) {
+        LOG_ERR("Error opening file \"%s\", error: %s", argv[0],
+                strerror(errno));
+        return false;
+    }
 
-    tpm_pcrevent_ctx ctx = {
-            .pcr = TPM_RH_NULL,
-            .input = stdin,
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-            .sapi_context = sapi_context,
+    return true;
+}
+
+static bool on_option(char key, char *value) {
+
+    switch (key) {
+    case 'i': {
+        bool result = tpm2_util_string_to_uint32(value, &ctx.pcr);
+        if (!result) {
+            LOG_ERR("Could not convert \"%s\", to a pcr index.", value);
+            return false;
+        }
+    }
+        ctx.flags.i = 1;
+        break;
+    case 'S': {
+        bool result = tpm2_util_string_to_uint32(value,
+                &ctx.session_data.sessionHandle);
+        if (!result) {
+            LOG_ERR(
+                    "Could not convert session handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+    }
+        ctx.flags.S = 1;
+        break;
+    case 'P': {
+        bool result = tpm2_password_util_from_optarg(value,
+                &ctx.session_data.hmac);
+        if (!result) {
+            LOG_ERR("Invalid key handle password, got\"%s\"", optarg);
+            return false;
+        }
+    }
+        ctx.flags.P = 1;
+        break;
+        /* no default */
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static const struct option topts[] = {
+        { "pcr-index",            required_argument, NULL, 'i' },
+        { "input-session-handle", required_argument, NULL, 'S' },
+        { "password",             required_argument, NULL, 'P' },
+        { NULL }
     };
 
-    bool result = init(argc, argv, &ctx);
+    *opts = tpm2_options_new("i:S:P:", ARRAY_LEN(topts), topts,
+            on_option, on_arg);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    bool result = init();
     if (!result) {
-        goto out;
+        return 1;
     }
 
-    result = do_hmac_and_output(&ctx);
-    if (!result) {
-        goto out;
-    }
+    return do_hmac_and_output(sapi_context) != true;
+}
 
-    rc = 0;
-out:
+void tpm2_tool_onexit(void) {
+
     if (ctx.input && ctx.input != stdin) {
         fclose(ctx.input);
     }
-
-    return rc;
 }
