@@ -29,50 +29,43 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdarg.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
 
-#include "tpm2_password_util.h"
-#include "tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_password_util.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 typedef struct {
     int size;
     UINT32 id[24];
 } PCR_LIST;
 
-TPMS_AUTH_COMMAND sessionData = {
-    .hmac = TPM2B_EMPTY_INIT,
-};
+static TPMS_AUTH_COMMAND sessionData;
+static char *outFilePath;
+static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
+static TPML_PCR_SELECTION  pcrSelections;
+static bool is_auth_session;
+static TPMI_SH_AUTH_SESSION auth_session_handle;
+static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag;
+static char *contextFilePath;
+static TPM_HANDLE akHandle;
 
-char *outFilePath;
-TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
-TPML_PCR_SELECTION  pcrSelections;
-bool is_auth_session;
-TPMI_SH_AUTH_SESSION auth_session_handle;
-
-void PrintBuffer( UINT8 *buffer, UINT32 size )
+static void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
     UINT32 i;
     for( i = 0; i < size; i++ )
     {
-        printf( "%2.2x", buffer[i] );
+        tpm2_tool_output("%2.2x", buffer[i]);
     }
-    printf( "\n" );
+    tpm2_tool_output("\n");
 }
 
 #if 0
@@ -172,12 +165,12 @@ void PrintTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
 }
 #endif
 
-UINT16 calcSizeofTPM2B_ATTEST( TPM2B_ATTEST *attest )
+static UINT16 calcSizeofTPM2B_ATTEST( TPM2B_ATTEST *attest )
 {
     return 2 + attest->b.size;
 }
 
-UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
+static UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
 {
     UINT16 size = 2;
     switch ( sig->sigAlg )
@@ -212,7 +205,7 @@ UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
     return size > sizeof(*sig) ? sizeof(*sig) : size;
 }
 
-int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
+static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 {
     UINT32 rval;
     TPMT_SIG_SCHEME inScheme;
@@ -274,7 +267,7 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
         printf("OutFile: %s Write quoted Data In Error!\n",outFilePath);
         return -3;
     }
-    if(fwrite(&signature, calcSizeofTPMT_SIGNATURE(&signature), 1, fp) != 1)
+    if(fwrite(&signature, calcSizeofTPMT_SIGNATURE(&signature), required_argument, fp) != 1)
     {
         fclose(fp);
         printf("OutFile: %s Write signature Data In Error!\n",outFilePath);
@@ -285,161 +278,123 @@ int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTIO
     return 0;
 }
 
-int execute_tool (int argc, char *argv[], char *envp[], common_opts_t *opts,
-              TSS2_SYS_CONTEXT *sapi_context) {
+static bool on_option(char key, char *value) {
 
-    (void) envp;
-    (void) opts;
-
-    int opt = -1;
-    const char *optstring = "hvk:c:P:l:g:L:o:S:q:";
-    static struct option long_options[] = {
-        {"help",0,NULL,'h'},
-        {"version",0,NULL,'v'},
-        {"akHandle",1,NULL,'k'},
-        {"akContext",1,NULL,'c'},
-        {"akPassword",1,NULL,'P'},  //add ak auth
-        {"idList",1,NULL,'l'},
-        {"algorithm",1,NULL,'g'},
-        {"selList",1,NULL,'L'},
-        {"outFile",1,NULL,'o'},
-        {"qualifyData",1,NULL,'q'},
-        {"input-session-handle",1,NULL,'S'},
-        {0,0,0,0}
-    };
-
-    char *contextFilePath = NULL;
-    TPM_HANDLE akHandle;
-
-    int returnVal = 0;
-    int flagCnt = 0;
-    int k_flag = 0,
-        c_flag = 0,
-        l_flag = 0,
-        g_flag = 0,
-        L_flag = 0,
-        o_flag = 0;
-
-    if(argc == 1)
+    switch(key)
     {
-        LOG_ERR("Invalid usage, try --help for help!");
-        return 0;
-    }
-    while((opt = getopt_long(argc,argv,optstring,long_options,NULL)) != -1)
-    {
-        switch(opt)
+    case 'k':
+        if(!tpm2_util_string_to_uint32(value, &akHandle))
         {
-        case 'k':
-            if(!tpm2_util_string_to_uint32(optarg,&akHandle))
-            {
-                showArgError(optarg, argv[0]);
-                return 1;
-            }
-            k_flag = 1;
-            break;
-        case 'c':
-            contextFilePath = optarg;
-            if(contextFilePath == NULL || contextFilePath[0] == '\0')
-            {
-                showArgError(optarg, argv[0]);
-                return 1;
-            }
-            printf("contextFile = %s\n", contextFilePath);
-            c_flag = 1;
-            break;
-
-        case 'P': {
-            bool res = tpm2_password_util_from_optarg(optarg, &sessionData.hmac);
-            if (!res) {
-                LOG_ERR("Invalid AK password, got\"%s\"", optarg);
-                return 1;
-            }
-        } break;
-        case 'l':
-            if(!pcr_parse_list(optarg, strlen(optarg), &pcrSelections.pcrSelections[0]))
-            {
-                showArgError(optarg, argv[0]);
-                return 1;
-            }
-            l_flag = 1;
-            break;
-        case 'g':
-            pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(optarg);
-            if (pcrSelections.pcrSelections[0].hash == TPM_ALG_ERROR)
-            {
-                showArgError(optarg, argv[0]);
-                return 1;
-            }
-            pcrSelections.count = 1;
-            g_flag = 1;
-            break;
-        case 'L':
-            if(!pcr_parse_selections(optarg, &pcrSelections))
-            {
-                showArgError(optarg, argv[0]);
-                return 1;
-            }
-            L_flag = 1;
-            break;
-        case 'o':
-            outFilePath = optarg;
-            if(files_does_file_exist(outFilePath))
-            {
-                showArgError(optarg, argv[0]);
-                return 1;
-            }
-            o_flag = 1;
-            break;
-        case 'q':
-            qualifyingData.t.size = sizeof(qualifyingData) - 2;
-            if(tpm2_util_hex_to_byte_structure(optarg,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
-            {
-                showArgError(optarg, argv[0]);
-                return 1;
-            }
-            break;
-        case 'S':
-             if (!tpm2_util_string_to_uint32(optarg, &auth_session_handle)) {
-                 LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                         optarg);
-                 return 1;
-             }
-             is_auth_session = true;
-             break;
-       case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return 1;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return 1;
-	default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return 1;
+            LOG_ERR("Invalid AK handle, got\"%s\"", value);
+            return false;
         }
+        k_flag = 1;
+        break;
+    case 'c':
+        contextFilePath = optarg;
+        c_flag = 1;
+        break;
+
+    case 'P': {
+        bool res = tpm2_password_util_from_optarg(value, &sessionData.hmac);
+        if (!res) {
+            LOG_ERR("Invalid AK password, got\"%s\"", value);
+            return false;
+        }
+    } break;
+    case 'l':
+        if(!pcr_parse_list(value, strlen(value), &pcrSelections.pcrSelections[0]))
+        {
+            LOG_ERR("Could not parse pcr list, got: \"%s\"", value);
+            return false;
+        }
+        l_flag = 1;
+        break;
+    case 'g':
+        pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(optarg);
+        if (pcrSelections.pcrSelections[0].hash == TPM_ALG_ERROR)
+        {
+            LOG_ERR("Could not convert pcr hash selection, got: \"%s\"", value);
+            return false;
+        }
+        pcrSelections.count = 1;
+        g_flag = 1;
+        break;
+    case 'L':
+        if(!pcr_parse_selections(value, &pcrSelections))
+        {
+            LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
+            return false;
+        }
+        L_flag = 1;
+        break;
+    case 'o':
+        outFilePath = optarg;
+        o_flag = 1;
+        break;
+    case 'q':
+        qualifyingData.t.size = sizeof(qualifyingData) - 2;
+        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
+        {
+            LOG_ERR("Could not convert \"%s\" from a hex string to byte array!", value);
+            return false;
+        }
+        break;
+    case 'S':
+         if (!tpm2_util_string_to_uint32(value, &auth_session_handle)) {
+             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                     optarg);
+             return false;
+         }
+         is_auth_session = true;
+         break;
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static const struct option topts[] = {
+        { "akHandle",             required_argument, NULL, 'k' },
+        { "akContext",            required_argument, NULL, 'c' },
+        { "akPassword",           required_argument, NULL, 'P' },
+        { "idList",               required_argument, NULL, 'l' },
+        { "algorithm",            required_argument, NULL, 'g' },
+        { "selList",              required_argument, NULL, 'L' },
+        { "outFile",              required_argument, NULL, 'o' },
+        { "qualifyData",          required_argument, NULL, 'q' },
+        { "input-session-handle", required_argument, NULL, 'S' },
+        { NULL }
     };
 
-    flagCnt = k_flag + c_flag + l_flag + g_flag + L_flag + o_flag;
-    if(((flagCnt == 3 && L_flag) || (flagCnt == 4 && (g_flag && l_flag)))
-             && (k_flag || c_flag) && o_flag)
-    {
+    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
 
-        if(c_flag) {
-            returnVal = files_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath);
-            if (!returnVal) {
-                return 1;
-            }
-        }
+    return *opts != NULL;
+}
 
-        returnVal = quote(sapi_context, akHandle, &pcrSelections);
-        if(returnVal) {
-            return 1;
-        }
-    }
-    else
-    {
-        showArgMismatch(argv[0]);
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+
+    /* TODO this whole file needs to be re-done, especially the option validation */
+    if (!o_flag) {
+        LOG_ERR("Expected -o option to be specified");
         return 1;
     }
 
-    return 0;
+    if (!l_flag && !L_flag) {
+        LOG_ERR("Expected either -l or -L to be specified");
+        return 1;
+    }
+
+    if(c_flag) {
+        bool result = files_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath);
+        if (!result) {
+            return 1;
+        }
+    }
+
+    return quote(sapi_context, akHandle, &pcrSelections);
 }
