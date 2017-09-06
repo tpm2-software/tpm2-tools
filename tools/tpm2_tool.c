@@ -146,7 +146,9 @@ int main(int argc, char *argv[], char *envp[]) {
     sapi_teardown_full(sapi_context);
 
 free_opts:
-    tpm2_options_free(tool_opts);
+    if (tool_opts) {
+        tpm2_options_free(tool_opts);
+    }
 
     if (tpm2_tool_onexit) {
         tpm2_tool_onexit();

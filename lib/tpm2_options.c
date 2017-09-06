@@ -97,7 +97,7 @@ tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
     }
 
     opts->short_opts = strdup(short_opts);
-    if (!opts) {
+    if (!opts->short_opts) {
         LOG_ERR("oom");
         free(opts);
         return NULL;
