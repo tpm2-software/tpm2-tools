@@ -36,6 +36,8 @@
 
 #include <sapi/tpm20.h>
 
+#define UNUSED(x) (void)x
+
 #define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
 
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))

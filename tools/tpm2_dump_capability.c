@@ -34,8 +34,9 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
-#include "main.h"
+#include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 /* convenience macro to convert flags into "set" / "clear" strings */
@@ -89,43 +90,45 @@ typedef struct capability_opts {
     UINT32           property;
     UINT32           count;
 } capability_opts_t;
+
+static capability_opts_t options;
+
 /*
- * This function takes a capability_opts_t structure as a parameter. It
- * uses the 'param' field in this structure to locate the same string in
- * the capability_map array and then populates the 'capability' and
- * 'property' fields of the capability_opts_t structure with the appropriate
- * values from the capability_map.
+ * This function uses the 'param' field in the capabilities_opts structure to
+ * locate the same string in the capability_map array and then populates the
+ * 'capability' and 'property' fields of the capability_opts_t structure with
+ * the appropriate values from the capability_map.
  * Return values:
  * 0 - the function executed normally.
  * 1 - the parameter 'param' in the capability_opts_t structure is NULL.
  * 2 - no matching entry found in capability_map.
  */
-int
-sanity_check_capability_opts (capability_opts_t *capability_opts)
-{
+int sanity_check_capability_opts (void) {
 
-    if (capability_opts->capability_string == NULL) {
-        fprintf (stderr, "missing capability string, see --help\n");
+    if (options.capability_string == NULL) {
+        LOG_ERR("missing capability string, see --help");
         return 2;
     }
 
     size_t i;
     for (i = 0; i < CAPABILITY_MAP_COUNT; ++i) {
-        int cmp = strncmp (capability_map [i].capability_string,
-                           capability_opts->capability_string,
-                           strlen (capability_map [i].capability_string));
+        int cmp = strncmp(capability_map [i].capability_string,
+                          options.capability_string,
+                          strlen(capability_map [i].capability_string));
         if (cmp == 0) {
-            capability_opts->capability = capability_map [i].capability;
-            capability_opts->property   = capability_map [i].property;
-            capability_opts->count      = capability_map [i].count;
+            options.capability = capability_map[i].capability;
+            options.property   = capability_map[i].property;
+            options.count      = capability_map[i].count;
             return 0;
         }
     }
-    fprintf (stderr,
-             "invalid capability string: %s, see --help\n",
-             capability_opts->capability_string);
+
+    LOG_ERR("invalid capability string: %s, see --help",
+            options.capability_string);
+
     return 2;
 }
+
 /*
  * There are a number of fixed TPM properties (tagged properties) that are
  * characters (8bit chars) packed into 32bit integers.
@@ -510,77 +513,40 @@ dump_command_attr_array (TPMA_CC     command_attributes[],
  * Query the TPM for TPM capabilities.
  */
 TSS2_RC
-get_tpm_capability_all (TSS2_SYS_CONTEXT      *sapi_ctx,
-                        TPMS_CAPABILITY_DATA  *capability_data,
-                        TPM_CAP                capability,
-                        UINT32                 property,
-                        UINT32                 count)
-{
+get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
+                        TPMS_CAPABILITY_DATA  *capability_data) {
     TSS2_RC                rc;
     TPMI_YES_NO            more_data;
 
     rc = Tss2_Sys_GetCapability (sapi_ctx,
                                  NULL,
-                                 capability,
-                                 property,
-                                 count,
+                                 options.capability,
+                                 options.property,
+                                 options.count,
                                  &more_data,
                                  capability_data,
                                  NULL);
-    if (rc != TSS2_RC_SUCCESS)
-        fprintf (stderr,
-                 "Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                 "TSS2_RC: 0x%x\n", capability, property, rc);
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
+                 "TSS2_RC: 0x%x\n", options.capability, options.property, rc);
+    }
+
     return rc;
 }
-/*
- * Get options required by / for this tool.
- * Returns:
- * 0 if we get all of the options we expect.
- * 1 if we encounter an error.
- */
-void
-get_capability_opts (int                  argc,
-                     char                *argv[],
-                     capability_opts_t   *capability_opts)
-{
-    int c = 0, option_index = 0;
-    char *arg_str = "c:";
-    static struct option long_options [] = {
-        {
-            .name    = "capability",
-            .has_arg = required_argument,
-            .flag    = NULL,
-            .val     = 'c',
-        },
-        { .name = NULL, },
-    };
-    while ((c = getopt_long (argc, argv, arg_str, long_options, &option_index))
-           != -1)
-    {
-        switch (c) {
-        case 'c':
-            capability_opts->capability_string = optarg;
-            break;
-        }
-    }
-}
+
 /*
  * This function is a glorified switch statement. It uses the 'capability'
- * and 'property' parameters to find the right print function for the
- * capabilities in the 'capabilities' parameter.
+ * and 'property' fields from the capability_opts structure to find the right
+ * print function for the capabilities in the 'capabilities' parameter.
  * On success it will return 0, if it failes (is unable to find an
  * appropriate print function for the provided 'capability' / 'property'
  * pair) then it will return 1.
  */
-static int
-dump_tpm_capability (TPMU_CAPABILITIES    *capabilities,
-                     TPM_CAP              capability,
-                     UINT32               property)
-{
-    switch (capability) {
+static int dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
+
+    switch (options.capability) {
     case TPM_CAP_TPM_PROPERTIES:
-        switch (property) {
+        switch (options.property) {
         case PT_FIXED:
             dump_tpm_properties_fixed (capabilities->tpmProperties.tpmProperty,
                                        capabilities->tpmProperties.count);
@@ -606,27 +572,36 @@ dump_tpm_capability (TPMU_CAPABILITIES    *capabilities,
     }
     return 0;
 }
-int
-execute_tool (int               argc,
-              char             *argv[],
-              char             *envp[],
-              common_opts_t    *opts,
-              TSS2_SYS_CONTEXT *sapi_context)
-{
-    (void) opts;
-    (void) envp;
 
-    TSS2_RC              rc;
-    TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
-    int ret;
-    capability_opts_t options = {
-        .capability_string = NULL,
-        .capability        = 0,
-        .property          = 0,
+static bool on_option(char key, char *value) {
+
+    UNUSED(key);
+
+    options.capability_string = value;
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    const struct option topts[] = {
+        { "capability", required_argument, NULL, 'c' },
+        { NULL, no_argument, NULL, 0 },
     };
 
-    get_capability_opts (argc, argv, &options);
-    ret = sanity_check_capability_opts (&options);
+    *opts = tpm2_options_new("c:", ARRAY_LEN(topts), topts, on_option, NULL);
+
+    return *opts != NULL;
+}
+
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+
+    UNUSED(flags);
+    TSS2_RC rc;
+    TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
+    int ret;
+
+    ret = sanity_check_capability_opts();
     if (ret == 1) {
         fprintf (stderr, "Missing capability string. See --help.\n");
         return 1;
@@ -635,15 +610,10 @@ execute_tool (int               argc,
         return 1;
     }
     /* get requested capability from TPM, dump it to stdout */
-    rc = get_tpm_capability_all (sapi_context,
-                                 &capability_data,
-                                 options.capability,
-                                 options.property,
-                                 options.count);
+    rc = get_tpm_capability_all(sapi_context, &capability_data);
     if (rc != TSS2_RC_SUCCESS)
         return 1;
-    dump_tpm_capability (&capability_data.data,
-                         options.capability,
-                         options.property);
+
+    dump_tpm_capability(&capability_data.data);
     return 0;
 }

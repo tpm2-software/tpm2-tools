@@ -35,11 +35,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_options.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 #include "log.h"
-#include "main.h"
-#include "options.h"
+#include "tpm2_tool.h"
 
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
@@ -97,13 +97,9 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    (void) argc;
-    (void) argv;
-    (void) envp;
-    (void) opts;
+    UNUSED(flags);
 
     return !nv_list(sapi_context);
 }
