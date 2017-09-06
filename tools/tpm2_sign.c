@@ -243,8 +243,6 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool on_option(char key, char *value) {
 
-    UNUSED(value);
-
     switch (key) {
     case 'k': {
         bool result = tpm2_util_string_to_uint32(value, &ctx.keyHandle);
