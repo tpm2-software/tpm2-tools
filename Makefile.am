@@ -69,6 +69,7 @@ bin_PROGRAMS = \
     tools/tpm2_makecredential \
     tools/tpm2_nvdefine \
     tools/tpm2_nvlist \
+    tools/tpm2_nvread \
     tools/tpm2_send_command \
     tools/tpm2_sign \
     tools/tpm2_startup \
@@ -77,7 +78,6 @@ bin_PROGRAMS = \
     tools/tpm2_verifysignature
 
 # NEED TO PORT
-#    tools/tpm2_nvread \
 #    tools/tpm2_nvreadlock \
 #    tools/tpm2_nvrelease \
 #    tools/tpm2_nvwrite \
