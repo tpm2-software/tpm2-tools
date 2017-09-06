@@ -29,13 +29,10 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <sapi/tpm20.h>
 
 #include "tpm2_options.h"
@@ -46,13 +43,22 @@
 
 typedef struct tpm_rsaencrypt_ctx tpm_rsaencrypt_ctx;
 struct tpm_rsaencrypt_ctx {
+    struct {
+        UINT8 k : 1;
+        UINT8 I : 1;
+        UINT8 o : 1;
+        UINT8 c : 1;
+        UINT8 unused : 4;
+    } flags;
+    char *context_key_file;
     TPMI_DH_OBJECT key_handle;
     TPM2B_PUBLIC_KEY_RSA message;
     char *output_file_path;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
-static bool rsa_encrypt_and_save(tpm_rsaencrypt_ctx *ctx) {
+static tpm_rsaencrypt_ctx ctx;
+
+static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     // Inputs
     TPMT_RSA_DECRYPT scheme;
@@ -71,102 +77,85 @@ static bool rsa_encrypt_and_save(tpm_rsaencrypt_ctx *ctx) {
     scheme.scheme = TPM_ALG_RSAES;
     label.t.size = 0;
 
-    TPM_RC rval = Tss2_Sys_RSA_Encrypt(ctx->sapi_context, ctx->key_handle, NULL,
-            &ctx->message, &scheme, &label, &out_data, &out_sessions_data);
+    TPM_RC rval = Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_handle, NULL,
+            &ctx.message, &scheme, &label, &out_data, &out_sessions_data);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("RSA_Encrypt failed, error code: 0x%x", rval);
         return false;
     }
 
-    return files_save_bytes_to_file(ctx->output_file_path, out_data.t.buffer,
+    return files_save_bytes_to_file(ctx.output_file_path, out_data.t.buffer,
             out_data.t.size);
 }
 
-static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
+static bool on_option(char key, char *value) {
 
-    const char *optstring = "k:I:o:c:";
-    static struct option long_options[] = {
+    switch (key) {
+    case 'k': {
+        bool result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
+        if (!result) {
+            LOG_ERR("Could not convert key handle to number, got: \"%s\"",
+                    optarg);
+            return false;
+        }
+        ctx.flags.k = 1;
+    }
+        break;
+    case 'I': {
+        ctx.message.t.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
+        bool result = files_load_bytes_from_path(value, ctx.message.t.buffer,
+                &ctx.message.t.size);
+        if (!result) {
+            return false;
+        }
+        ctx.flags.I = 1;
+    }
+        break;
+    case 'o': {
+        bool result = files_does_file_exist(optarg);
+        if (result) {
+            return false;
+        }
+        ctx.output_file_path = optarg;
+        ctx.flags.o = 1;
+    }
+        break;
+    case 'c':
+        ctx.context_key_file = optarg;
+        ctx.flags.c = 1;
+        break;
+        /* no default */
+    }
+
+    return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static const struct option topts[] = {
       {"keyHandle",  required_argument, NULL, 'k'},
       {"inFile",     required_argument, NULL, 'I'},
       {"outFile",    required_argument, NULL, 'o'},
       {"keyContext", required_argument, NULL, 'c'},
-      { NULL,        no_argument,       NULL, '\0'}
+      { NULL }
     };
 
-    if(argc == 1) {
-        showArgMismatch(argv[0]);
-        return false;
-    }
+    *opts = tpm2_options_new("k:I:o:c:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
 
-    union {
-        struct {
-            UINT8 k : 1;
-            UINT8 I : 1;
-            UINT8 o : 1;
-            UINT8 c : 1;
-            UINT8 unused : 4;
-        };
-        UINT8 all;
-    } flags = { .all = 0 };
+    return *opts != NULL;
+}
 
-    int opt;
-    char *context_key_file = NULL;
-    while ((opt = getopt_long(argc, argv, optstring, long_options, NULL))
-            != -1) {
-        switch (opt) {
-        case 'k': {
-            bool result = tpm2_util_string_to_uint32(optarg, &ctx->key_handle);
-            if (!result) {
-                LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                        optarg);
-                return false;
-            }
-            flags.k = 1;
-        }
-            break;
-        case 'I': {
-            ctx->message.t.size = sizeof(ctx->message) - 2;
-            bool result = files_load_bytes_from_path(optarg, ctx->message.t.buffer,
-                    &ctx->message.t.size);
-            if (!result) {
-                return false;
-            }
-            flags.I = 1;
-        }
-            break;
-        case 'o': {
-            bool result = files_does_file_exist(optarg);
-            if (result) {
-                return false;
-            }
-            ctx->output_file_path = optarg;
-            flags.o = 1;
-        }
-            break;
-        case 'c':
-            context_key_file = optarg;
-            flags.c = 1;
-            break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            return false;
-        case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
-            return false;
-        default:
-            LOG_ERR("?? getopt returned character code 0%o ??", opt);
-            return false;
-        }
-    };
+static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!((flags.k || flags.c) && flags.I && flags.o)) {
+    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I && ctx.flags.o)) {
         LOG_ERR("Expected options I and o and (k or c)");
         return false;
     }
 
-    if (flags.c) {
-        bool result = files_load_tpm_context_from_file(ctx->sapi_context, &ctx->key_handle,
-                context_key_file);
+    if (ctx.flags.c) {
+        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.key_handle,
+                ctx.context_key_file);
         if (!result) {
             return false;
         }
@@ -175,24 +164,14 @@ static bool init(int argc, char *argv[], tpm_rsaencrypt_ctx *ctx) {
     return true;
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    /* opts and envp are unused, avoid compiler warning */
-    (void)opts;
-    (void) envp;
+    UNUSED(flags);
 
-    tpm_rsaencrypt_ctx ctx = {
-            .key_handle = 0,
-            .message = TPM2B_EMPTY_INIT,
-            .output_file_path = NULL,
-            .sapi_context = sapi_context
-    };
-
-    bool result = init(argc, argv, &ctx);
+    bool result = init(sapi_context);
     if (!result) {
         return 1;
     }
 
-    return rsa_encrypt_and_save(&ctx) != true;
+    return rsa_encrypt_and_save(sapi_context) != true;
 }
