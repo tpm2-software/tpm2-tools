@@ -33,9 +33,9 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -45,6 +45,8 @@ struct tpm_pcr_extend_ctx {
     size_t digest_spec_len;
     tpm2_pcr_digest_spec *digest_spec;
 };
+
+static tpm_pcr_extend_ctx ctx;
 
 static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_DH_PCR pcr_index, TPML_DIGEST_VALUES *digests) {
@@ -82,12 +84,12 @@ static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
     return true;
 }
 
-static bool pcr_extend(tpm_pcr_extend_ctx *ctx) {
+static bool pcr_extend(TSS2_SYS_CONTEXT *sapi_context) {
 
     size_t i;
-    for (i = 0; i < ctx->digest_spec_len; i++) {
-        tpm2_pcr_digest_spec *dspec = &ctx->digest_spec[i];
-        bool result = pcr_extend_one(ctx->sapi_context, dspec->pcr_index,
+    for (i = 0; i < ctx.digest_spec_len; i++) {
+        tpm2_pcr_digest_spec *dspec = &ctx.digest_spec[i];
+        bool result = pcr_extend_one(sapi_context, dspec->pcr_index,
                 &dspec->digests);
         if (!result) {
             return false;
@@ -97,47 +99,42 @@ static bool pcr_extend(tpm_pcr_extend_ctx *ctx) {
     return true;
 }
 
-static bool init(int argc, char *argv[], tpm_pcr_extend_ctx *ctx) {
+static bool on_arg(int argc, char **argv) {
 
-    if (argc < 2) {
+    if (argc < 1) {
         LOG_ERR("Expected at least one PCR Digest specification,"
-                "ie: <pcr index>:<hash alg>=<hash value>");
+                "ie: <pcr index>:<hash alg>=<hash value>, got: 0");
         return false;
     }
 
     /* this can never be negative */
-    ctx->digest_spec_len = (size_t) argc - 1;
+    ctx.digest_spec_len = (size_t) argc;
 
-    ctx->digest_spec = calloc(ctx->digest_spec_len, sizeof(*ctx->digest_spec));
-    if (!ctx->digest_spec) {
+    ctx.digest_spec = calloc(ctx.digest_spec_len, sizeof(*ctx.digest_spec));
+    if (!ctx.digest_spec) {
         LOG_ERR("oom");
         return false;
     }
 
-    return pcr_parse_digest_list(&argv[1], ctx->digest_spec_len, ctx->digest_spec);
+    return pcr_parse_digest_list(argv, ctx.digest_spec_len, ctx.digest_spec);
 }
 
-int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
-        TSS2_SYS_CONTEXT *sapi_context) {
+bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    /* opts is unused, avoid compiler warning */
-    (void) opts;
-    (void) envp;
+    *opts = tpm2_options_new(NULL, 0, NULL,
+            NULL, on_arg);
 
-    int rc = 1;
-    tpm_pcr_extend_ctx ctx = {
-        .sapi_context = sapi_context,
-        .digest_spec = NULL
-    };
+    return *opts != NULL;
+}
 
-    bool res = init(argc, argv, &ctx);
-    if (!res) {
-        goto out;
-    }
+int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    rc = pcr_extend(&ctx) != true;
+    UNUSED(flags);
 
-out:
+    return pcr_extend(sapi_context) != true;
+}
+
+void tpm2_tool_onexit(void) {
+
     free(ctx.digest_spec);
-    return rc;
 }

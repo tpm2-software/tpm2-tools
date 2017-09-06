@@ -73,6 +73,7 @@ bin_PROGRAMS = \
     tools/tpm2_nvreadlock \
     tools/tpm2_nvrelease \
     tools/tpm2_nvwrite \
+    tools/tpm2_pcrextend \
     tools/tpm2_pcrlist \
     tools/tpm2_quote \
     tools/tpm2_rc_decode \
@@ -87,8 +88,7 @@ bin_PROGRAMS = \
     tools/tpm2_verifysignature
 
 # NEED TO PORT
-#    tools/tpm2_pcrevent \
-#    tools/tpm2_pcrextend
+#    tools/tpm2_pcrevent
 
 tcti_src = ""
 if HAVE_TCTI_DEV
