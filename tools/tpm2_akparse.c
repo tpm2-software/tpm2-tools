@@ -36,7 +36,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <sapi/tpm20.h>
 
 #include "tpm2_options.h"
@@ -49,7 +48,6 @@ typedef struct tpm_akparse_ctx tpm_akparse_ctx;
 struct tpm_akparse_ctx {
     char *ak_data_file_path;
     char *ak_key_file_path;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
 static tpm_akparse_ctx ctx;
@@ -171,9 +169,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
+    UNUSED(sapi_context);
     UNUSED(flags);
-
-    ctx.sapi_context = sapi_context;
 
     /* 0 on success 1 on error */
     return parse_and_save_ak_public() != true;
