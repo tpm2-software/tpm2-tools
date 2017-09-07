@@ -36,7 +36,6 @@
 
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
@@ -55,7 +54,6 @@ struct tpm_encrypt_decrypt_ctx {
     TPM2B_MAX_BUFFER data;
     char *out_file_path;
     char *context_key_file;
-    TSS2_SYS_CONTEXT *sapi_context;
     struct {
         UINT8 k : 1;
         UINT8 P : 1;
@@ -73,7 +71,7 @@ static tpm_encrypt_decrypt_ctx ctx = {
     .data = TPM2B_EMPTY_INIT,
 };
 
-static bool encrypt_decrypt(void) {
+static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_MAX_BUFFER out_data = TPM2B_TYPE_INIT(TPM2B_MAX_BUFFER, buffer);
 
@@ -101,7 +99,7 @@ static bool encrypt_decrypt(void) {
         },
     };
 
-    TPM_RC rval = Tss2_Sys_EncryptDecrypt(ctx.sapi_context, ctx.key_handle,
+    TPM_RC rval = Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
             &sessions_data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &ctx.data, &out_data,
             &iv_out, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
@@ -121,13 +119,16 @@ static bool on_option(char key, char *value) {
     case 'k':
         result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
         if (!result) {
-            return result;
+            LOG_ERR("Could not convert keyhandle to number, got: \"%s\"",
+                    value);
+            return false;
         }
         ctx.flags.k = 1;
         break;
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!result) {
+            LOG_ERR("Invalid object key password, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -138,6 +139,7 @@ static bool on_option(char key, char *value) {
         } else if (!strcasecmp("NO", value)) {
             ctx.is_decrypt = NO;
         } else {
+            LOG_ERR("Invalid operation type, got\"%s\"", value);
             return false;
         }
         break;
@@ -159,6 +161,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'c':
         if (ctx.context_key_file) {
+            LOG_ERR("Multiple specifications of -c");
             return false;
         }
         ctx.context_key_file = value;
@@ -167,6 +170,8 @@ static bool on_option(char key, char *value) {
     case 'S':
         result = tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle);
         if (!result) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         break;
@@ -200,20 +205,18 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
     bool result;
 
-    ctx.sapi_context = sapi_context;
-
     if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I && ctx.flags.o)) {
         LOG_ERR("Invalid arguments");
         return 1;
     }
 
     if (ctx.flags.c) {
-        result = files_load_tpm_context_from_file(ctx.sapi_context, &ctx.key_handle,
+        result = files_load_tpm_context_from_file(sapi_context, &ctx.key_handle,
                                                   ctx.context_key_file);
         if (!result) {
             return 1;
         }
     }
 
-    return encrypt_decrypt() != true;
+    return encrypt_decrypt(sapi_context) != true;
 }
