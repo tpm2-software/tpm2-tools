@@ -16,8 +16,6 @@ the tpm where the user would not expect it. It appears likely unreachable in the
 ## Build and Installation instructions:
 Instructions for building and installing the tpm2-tools are provided in the [INSTALL](https://github.com/01org/tpm2-tools/blob/master/INSTALL) file.
 
-**For more details on this code and how to use it, the [manual](https://github.com/01org/tpm2-tools/blob/master/manual) file is a good place to start.**
-
 ## Support
 Please use the mailing list at https://lists.01.org/mailman/listinfo/tpm2 for general questions. The Issue Tracker on
 github should be reserved for actual feature requests or bugs.
