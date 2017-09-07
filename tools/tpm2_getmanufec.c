@@ -452,7 +452,7 @@ int RetrieveEndorsementCredentials(char *b64h)
      * If verbose is set, add in diagnostic information for debugging connections.
      * https://curl.haxx.se/libcurl/c/CURLOPT_VERBOSE.html
      */
-    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, ctx.verbose);
+    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, (long)ctx.verbose);
     if (rc != CURLE_OK) {
         LOG_ERR("curl_easy_setopt for CURLOPT_VERBOSE failed: %s", curl_easy_strerror(rc));
         goto out_easy_cleanup;
