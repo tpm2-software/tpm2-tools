@@ -35,7 +35,6 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
@@ -64,7 +63,6 @@ struct getpubak_context {
     TPM_ALG_ID algorithm_type;
     TPM_ALG_ID digest_alg;
     TPM_ALG_ID sign_alg;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
 static getpubak_context ctx = {
@@ -198,7 +196,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
     return true;
 }
 
-static bool create_ak(void) {
+static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPML_PCR_SELECTION creation_pcr;
     TPMS_AUTH_COMMAND session_data = {
@@ -258,7 +256,7 @@ static bool create_ak(void) {
     memcpy(&session_data.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
     SESSION *session = NULL;
-    UINT32 rval = tpm_session_start_auth_with_params(ctx.sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
+    UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
             &nonce_caller, &encrypted_salt, TPM_SE_POLICY, &symmetric,
             TPM_ALG_SHA256);
     if (rval != TPM_RC_SUCCESS) {
@@ -268,7 +266,7 @@ static bool create_ak(void) {
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    rval = Tss2_Sys_PolicySecret(ctx.sapi_context, TPM_RH_ENDORSEMENT,
+    rval = Tss2_Sys_PolicySecret(sapi_context, TPM_RH_ENDORSEMENT,
             session->sessionHandle, &sessions_data, 0, 0, 0, 0, 0, 0, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
@@ -281,7 +279,7 @@ static bool create_ak(void) {
     session_data.sessionAttributes.continueSession = 1;
     session_data.hmac.t.size = 0;
 
-    rval = Tss2_Sys_Create(ctx.sapi_context, handle_2048_rsa, &sessions_data,
+    rval = Tss2_Sys_Create(sapi_context, handle_2048_rsa, &sessions_data,
             &inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
             &out_public, &creation_data, &creation_hash, &creation_ticket,
             &sessions_data_out);
@@ -292,7 +290,7 @@ static bool create_ak(void) {
     LOG_INFO("TPM2_Create succ");
 
     // Need to flush the session here.
-    rval = Tss2_Sys_FlushContext(ctx.sapi_context, session->sessionHandle);
+    rval = Tss2_Sys_FlushContext(sapi_context, session->sessionHandle);
     if (rval != TPM_RC_SUCCESS) {
         LOG_INFO("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
         return false;
@@ -306,7 +304,7 @@ static bool create_ak(void) {
 
     memcpy(&session_data.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
-    rval = tpm_session_start_auth_with_params(ctx.sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
+    rval = tpm_session_start_auth_with_params(sapi_context, &session, TPM_RH_NULL, 0, TPM_RH_NULL, 0,
             &nonce_caller, &encrypted_salt, TPM_SE_POLICY, &symmetric,
             TPM_ALG_SHA256);
     if (rval != TPM_RC_SUCCESS) {
@@ -315,7 +313,7 @@ static bool create_ak(void) {
     }
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    rval = Tss2_Sys_PolicySecret(ctx.sapi_context, TPM_RH_ENDORSEMENT,
+    rval = Tss2_Sys_PolicySecret(sapi_context, TPM_RH_ENDORSEMENT,
             session->sessionHandle, &sessions_data, 0, 0, 0, 0, 0, 0, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
@@ -328,7 +326,7 @@ static bool create_ak(void) {
     session_data.hmac.t.size = 0;
 
     TPM_HANDLE loaded_sha1_key_handle;
-    rval = Tss2_Sys_Load(ctx.sapi_context, handle_2048_rsa, &sessions_data, &out_private,
+    rval = Tss2_Sys_Load(sapi_context, handle_2048_rsa, &sessions_data, &out_private,
             &out_public, &loaded_sha1_key_handle, &name, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_Load Error. TPM Error:0x%x", rval);
@@ -349,7 +347,7 @@ static bool create_ak(void) {
     }
 
     // Need to flush the session here.
-    rval = Tss2_Sys_FlushContext(ctx.sapi_context, session->sessionHandle);
+    rval = Tss2_Sys_FlushContext(sapi_context, session->sessionHandle);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
         return false;
@@ -365,7 +363,7 @@ static bool create_ak(void) {
     // use the owner auth here.
     memcpy(&session_data.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = Tss2_Sys_EvictControl(ctx.sapi_context, TPM_RH_OWNER, loaded_sha1_key_handle,
+    rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, loaded_sha1_key_handle,
             &sessions_data, ctx.persistent_handle.ak, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("\n......TPM2_EvictControl Error. TPM Error:0x%x......",
@@ -374,7 +372,7 @@ static bool create_ak(void) {
     }
     LOG_INFO("EvictControl: Make AK persistent succ.");
 
-    rval = Tss2_Sys_FlushContext(ctx.sapi_context, loaded_sha1_key_handle);
+    rval = Tss2_Sys_FlushContext(sapi_context, loaded_sha1_key_handle);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Flush transient AK error. TPM Error:0x%x", rval);
         return false;
@@ -399,59 +397,69 @@ static bool on_option(char key, char *value) {
     case 'E':
         result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle.ek);
         if (!result) {
+            LOG_ERR("Could not convert persistent EK handle.");
             return false;
         }
         break;
     case 'k':
         result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle.ak);
         if (!result) {
+            LOG_ERR("Could not convert persistent AK handle.");
             return false;
         }
         break;
     case 'g':
         ctx.algorithm_type = tpm2_alg_util_from_optarg(value);
         if (ctx.algorithm_type == TPM_ALG_ERROR) {
+            LOG_ERR("Could not convert algorithm. got: \"%s\".", value);
             return false;
         }
         break;
     case 'D':
         ctx.digest_alg = tpm2_alg_util_from_optarg(value);
         if (ctx.digest_alg == TPM_ALG_ERROR) {
+            LOG_ERR("Could not convert digest algorithm.");
             return false;
         }
         break;
     case 's':
         ctx.sign_alg = tpm2_alg_util_from_optarg(value);
         if (ctx.sign_alg == TPM_ALG_ERROR) {
+            LOG_ERR("Could not convert signing algorithm.");
             return false;
         }
         break;
     case 'o':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner);
         if (!result) {
+            LOG_ERR("Invalid owner password, got\"%s\"", value);
             return false;
         }
         break;
     case 'e':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse);
         if (!result) {
+            LOG_ERR("Invalid endorse password, got\"%s\"", value);
             return false;
         }
         break;
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.ak);
         if (!result) {
+            LOG_ERR("Invalid AK password, got\"%s\"", value);
             return false;
         }
         break;
     case 'f':
         if (!value) {
+            LOG_ERR("Please specify the output file used to save the pub ek.");
             return false;
         }
         ctx.output_file = value;
         break;
     case 'n':
         if (!value) {
+            LOG_ERR("Please specify the output file used to save the ak name.");
             return false;
         }
         ctx.akname_file = value;
@@ -486,7 +494,5 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    ctx.sapi_context = sapi_context;
-
-    return !create_ak();
+    return !create_ak(sapi_context);
 }
