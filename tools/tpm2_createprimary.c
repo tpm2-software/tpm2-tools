@@ -37,7 +37,6 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
@@ -54,7 +53,6 @@ TPM_HANDLE handle2048rsa;
 
 typedef struct tpm_createprimary_ctx tpm_createprimary_ctx;
 struct tpm_createprimary_ctx {
-    TSS2_SYS_CONTEXT *sapi_context;
     TPMS_AUTH_COMMAND session_data;
     TPM2B_PUBLIC in_public;
     TPMI_ALG_PUBLIC type;
@@ -154,7 +152,7 @@ int setup_alg(void) {
     return 0;
 }
 
-int create_primary(void) {
+int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
     UINT32 rval;
     TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_EMPTY_INIT;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -188,7 +186,7 @@ int create_primary(void) {
 
     creationPCR.count = 0;
 
-    rval = Tss2_Sys_CreatePrimary(ctx.sapi_context, ctx.hierarchy, &sessionsData,
+    rval = Tss2_Sys_CreatePrimary(sapi_context, ctx.hierarchy, &sessionsData,
                                   &inSensitive, &ctx.in_public, &outsideInfo, &creationPCR,
                                   &handle2048rsa, &outPublic, &creationData, &creationHash,
                                   &creationTicket, &name, &sessionsDataOut);
@@ -217,6 +215,7 @@ static bool on_option(char key, char *value) {
         else if(strcmp(value, "n") == 0 || strcmp(value, "N") == 0)
             ctx.hierarchy = TPM_RH_NULL;
         else {
+            LOG_ERR("Invalid hierarchy, got\"%s\"", value);
             return false;
         }
         ctx.flags.A = 1;
@@ -224,18 +223,21 @@ static bool on_option(char key, char *value) {
     case 'P':
         res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!res) {
+            LOG_ERR("Invalid parent key password, got\"%s\"", value);
             return false;
         }
         break;
     case 'K':
         res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!res) {
+            LOG_ERR("Invalid new key password, got\"%s\"", value);
             return false;
         }
         break;
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
         if(ctx.nameAlg == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid hash algorithm, got\"%s\"", value);
             return false;
         }
         ctx.flags.g = 1;
@@ -243,6 +245,7 @@ static bool on_option(char key, char *value) {
     case 'G':
         ctx.type = tpm2_alg_util_from_optarg(value);
         if(ctx.type == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid key algorithm, got\"%s\"", value);
             return false;
         }
         ctx.flags.G = 1;
@@ -266,6 +269,8 @@ static bool on_option(char key, char *value) {
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         break;
@@ -289,6 +294,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {0,0,0,0}
     };
 
+    setbuf(stdout, NULL);
+    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+
     *opts = tpm2_options_new("A:P:K:g:G:C:L:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
@@ -299,13 +307,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
     int returnVal = 0;
 
-    ctx.sapi_context = sapi_context;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
     if(ctx.flags.A == 1 && ctx.flags.g == 1 && ctx.flags.G == 1) {
-        returnVal = create_primary();
+        returnVal = create_primary(sapi_context);
 
         if (returnVal == 0 && ctx.flags.C) {
             returnVal = files_save_tpm_context_to_file(sapi_context, handle2048rsa,
