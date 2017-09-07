@@ -29,7 +29,6 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdio.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
