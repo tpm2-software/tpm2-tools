@@ -38,7 +38,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <curl/curl.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
@@ -517,23 +516,30 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'H':
         if (!tpm2_util_string_to_uint32(value, &ctx.persistent_handle)) {
+            LOG_ERR("\nPlease input the handle used to make EK persistent(hex) in correct format.");
             return false;
         }
         break;
     case 'e':
         if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
+            LOG_ERR("\nPlease input the endorsement password(optional,no more than %d characters).",
+                    (int)sizeof(TPMU_HA) - 1);
             return false;
         }
         ctx.endorse_passwd = value;
         break;
     case 'o':
         if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
+            LOG_ERR("\nPlease input the owner password(optional,no more than %d characters).",
+                    (int)sizeof(TPMU_HA) - 1);
             return false;
         }
         ctx.owner_passwd = value;
         break;
     case 'P':
         if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
+            LOG_ERR("\nPlease input the EK password(optional,no more than %d characters).",
+                    (int)sizeof(TPMU_HA) - 1);
             return false;
         }
         ctx.ek_passwd = value;
@@ -541,11 +547,13 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.algorithm_type = tpm2_alg_util_from_optarg(value);
         if (ctx.algorithm_type == TPM_ALG_ERROR) {
+             LOG_ERR("\nPlease input the algorithm type in correct format.");
             return false;
         }
         break;
     case 'f':
         if (value == NULL ) {
+            LOG_ERR("\nPlease input the file used to save the pub ek.");
             return false;
         }
         ctx.output_file = value;
@@ -564,9 +572,11 @@ static bool on_option(char key, char *value) {
         break;
     case 'U':
         ctx.SSL_NO_VERIFY = 1;
+        LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
         break;
     case 'S':
         if (ctx.ek_server_addr) {
+            LOG_ERR("Multiple specifications of -S");
             return false;
         }
         ctx.ek_server_addr = value;
@@ -574,6 +584,8 @@ static bool on_option(char key, char *value) {
     case 'i':
         return_val = tpm2_util_string_to_uint32(value, &ctx.auth_session_handle);
         if (!return_val) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         ctx.is_session_based_auth = true;

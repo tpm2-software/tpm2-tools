@@ -51,7 +51,6 @@ struct tpm_nvreadlock_ctx {
     UINT32 size_to_read;
     UINT32 offset;
     TPMS_AUTH_COMMAND session_data;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
 static tpm_nvreadlock_ctx ctx = {

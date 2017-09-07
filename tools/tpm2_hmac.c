@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <limits.h>
 #include <sapi/tpm20.h>
 
@@ -55,7 +54,6 @@ struct tpm_hmac_ctx {
     char *hmac_output_file_path;
     char *context_key_file_path;
     FILE *input;
-    TSS2_SYS_CONTEXT *sapi_context;
     struct {
         UINT8 k : 1;
         UINT8 P : 1;
@@ -70,7 +68,7 @@ static tpm_hmac_ctx ctx = {
 
 #define TSS2_APP_HMAC_RC_FAILED (0x42 + 0x100 + TSS2_APP_ERROR_LEVEL)
 
-TPM_RC tpm_hmac_file(TPM2B_DIGEST *result) {
+TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -105,7 +103,7 @@ TPM_RC tpm_hmac_file(TPM2B_DIGEST *result) {
             return TSS2_APP_HMAC_RC_FAILED;
         }
 
-        return Tss2_Sys_HMAC(ctx.sapi_context, ctx.key_handle,
+        return Tss2_Sys_HMAC(sapi_context, ctx.key_handle,
                 &sessions_data, &buffer, ctx.algorithm, result,
                 &sessions_data_out);
     }
@@ -118,7 +116,7 @@ TPM_RC tpm_hmac_file(TPM2B_DIGEST *result) {
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TPM_RC rval = Tss2_Sys_HMAC_Start(ctx.sapi_context, ctx.key_handle, &sessions_data,
+    TPM_RC rval = Tss2_Sys_HMAC_Start(sapi_context, ctx.key_handle, &sessions_data,
             &null_auth, ctx.algorithm, &sequence_handle, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_HMAC_Start failed: 0x%X", rval);
@@ -146,7 +144,7 @@ TPM_RC tpm_hmac_file(TPM2B_DIGEST *result) {
         data.t.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Tss2_Sys_SequenceUpdate(ctx.sapi_context, sequence_handle,
+        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
                 &sessions_data, &data, &sessions_data_out);
         if (rval != TPM_RC_SUCCESS) {
             return rval;
@@ -174,16 +172,16 @@ TPM_RC tpm_hmac_file(TPM2B_DIGEST *result) {
         data.t.size = 0;
     }
 
-    return Tss2_Sys_SequenceComplete(ctx.sapi_context, sequence_handle,
+    return Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
             &sessions_data, &data, TPM_RH_NULL, result, NULL,
             &sessions_data_out);
 }
 
 
-static bool do_hmac_and_output(void) {
+static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST hmac_out = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPM_RC rval = tpm_hmac_file(&hmac_out);
+    TPM_RC rval = tpm_hmac_file(sapi_context, &hmac_out);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("tpm_hmac_file() failed: 0x%X", rval);
         return false;
@@ -214,6 +212,8 @@ static bool on_option(char key, char *value) {
     case 'k':
         result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
         if (!result) {
+            LOG_ERR("Could not convert key handle to number, got \"%s\"",
+                    value);
             return false;
         }
         ctx.flags.k = 1;
@@ -221,6 +221,7 @@ static bool on_option(char key, char *value) {
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!result) {
+            LOG_ERR("Invalid key handle password, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -228,6 +229,8 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.algorithm = tpm2_alg_util_from_optarg(value);
         if (ctx.algorithm == TPM_ALG_ERROR) {
+            LOG_ERR("Could not convert algorithm to number, got \"%s\"",
+                    value);
             return false;
         }
         break;
@@ -240,6 +243,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'c':
         if (ctx.context_key_file_path) {
+            LOG_ERR("Multiple specifications of -c");
             return false;
         }
         ctx.context_key_file_path = value;
@@ -247,6 +251,8 @@ static bool on_option(char key, char *value) {
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         break;
@@ -294,7 +300,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
-    ctx.sapi_context = sapi_context;
 
     int rc = 1;
     bool result;
@@ -308,7 +313,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.c) {
-        result = files_load_tpm_context_from_file(ctx.sapi_context, &ctx.key_handle,
+        result = files_load_tpm_context_from_file(sapi_context, &ctx.key_handle,
                                                   ctx.context_key_file_path);
         if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",
@@ -317,7 +322,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = do_hmac_and_output();
+    result = do_hmac_and_output(sapi_context);
     if (!result) {
         goto out;
     }

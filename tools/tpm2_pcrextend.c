@@ -41,7 +41,6 @@
 
 typedef struct tpm_pcr_extend_ctx tpm_pcr_extend_ctx;
 struct tpm_pcr_extend_ctx {
-    TSS2_SYS_CONTEXT *sapi_context;
     size_t digest_spec_len;
     tpm2_pcr_digest_spec *digest_spec;
 };

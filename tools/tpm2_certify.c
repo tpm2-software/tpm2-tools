@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <limits.h>
 #include <sapi/tpm20.h>
 
@@ -59,7 +58,6 @@ struct tpm_certify_ctx {
         char *attest;
         char *sig;
     } file_path;
-    TSS2_SYS_CONTEXT *sapi_context;
     struct {
         UINT16 H : 1;
         UINT16 k : 1;
@@ -143,7 +141,7 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle
     return true;
 }
 
-static bool certify_and_save_data(void) {
+static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_COMMAND *cmd_session_array[ARRAY_LEN(ctx.cmd_auth)] = {
         &ctx.cmd_auth[0],
@@ -174,7 +172,7 @@ static bool certify_and_save_data(void) {
     };
 
     TPMT_SIG_SCHEME scheme;
-    bool result = set_scheme(ctx.sapi_context, ctx.handle.key, ctx.halg, &scheme);
+    bool result = set_scheme(sapi_context, ctx.handle.key, ctx.halg, &scheme);
     if (!result) {
         LOG_ERR("No suitable signing scheme!");
         return false;
@@ -188,7 +186,7 @@ static bool certify_and_save_data(void) {
 
     TPMT_SIGNATURE signature;
 
-    TPM_RC rval = Tss2_Sys_Certify(ctx.sapi_context, ctx.handle.obj,
+    TPM_RC rval = Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
             ctx.handle.key, &cmd_auth_array, &qualifying_data, &scheme,
             &certify_info, &signature, &sessions_data_out);
     if (rval != TPM_RC_SUCCESS) {
@@ -216,6 +214,8 @@ static bool on_option(char key, char *value) {
     case 'H':
         result = tpm2_util_string_to_uint32(value, &ctx.handle.obj);
         if (!result) {
+            LOG_ERR("Could not format object handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         ctx.flags.H = 1;
@@ -223,6 +223,8 @@ static bool on_option(char key, char *value) {
     case 'k':
         result = tpm2_util_string_to_uint32(value, &ctx.handle.key);
         if (!result) {
+            LOG_ERR("Could not format key handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         ctx.flags.k = 1;
@@ -230,6 +232,7 @@ static bool on_option(char key, char *value) {
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.cmd_auth[0].hmac);
         if (!result) {
+            LOG_ERR("Invalid object key password, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -237,6 +240,7 @@ static bool on_option(char key, char *value) {
     case 'K':
         result = tpm2_password_util_from_optarg(value, &ctx.cmd_auth[1].hmac);
         if (!result) {
+            LOG_ERR("Invalid key handle password, got\"%s\"", value);
             return false;
         }
         ctx.flags.K = 1;
@@ -244,6 +248,7 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value);
         if (ctx.halg == TPM_ALG_ERROR) {
+            LOG_ERR("Could not format algorithm to number, got: \"%s\"", value);
             return false;
         }
         ctx.flags.g = 1;
@@ -264,6 +269,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'c':
         if (ctx.context_key_file) {
+            LOG_ERR("Multiple specifications of -c");
             return false;
         }
         ctx.context_key_file = value;
@@ -271,6 +277,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'C':
         if (ctx.context_file) {
+            LOG_ERR("Multiple specifications of -C");
             return false;
         }
         ctx.context_file = optarg;
@@ -306,7 +313,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result;
 
     UNUSED(flags);
-    ctx.sapi_context = sapi_context;
 
     if (!(ctx.flags.H || ctx.flags.C) && (ctx.flags.k || ctx.flags.c) && (ctx.flags.g) && (ctx.flags.a)
         && (ctx.flags.s)) {
@@ -315,7 +321,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     /* Load input files */
     if (ctx.flags.C) {
-        result = files_load_tpm_context_from_file(ctx.sapi_context, &ctx.handle.obj,
+        result = files_load_tpm_context_from_file(sapi_context, &ctx.handle.obj,
                                                   ctx.context_file);
         if (!result) {
             return 1;
@@ -323,12 +329,12 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.c) {
-        result = files_load_tpm_context_from_file(ctx.sapi_context, &ctx.handle.key,
+        result = files_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
                                                   ctx.context_key_file);
         if (!result) {
             return 1;
         }
     }
 
-    return certify_and_save_data() != true;
+    return certify_and_save_data(sapi_context) != true;
 }

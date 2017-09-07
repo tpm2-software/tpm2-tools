@@ -53,7 +53,6 @@ struct tpm_nvdefine_ctx {
     TPMA_NV nvAttribute;
     TPM2B_AUTH nvAuth;
     TPMS_AUTH_COMMAND session_data;
-    TSS2_SYS_CONTEXT *sapi_context;
     char *policy_file;
 };
 

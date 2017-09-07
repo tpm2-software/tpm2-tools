@@ -35,7 +35,6 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 
 #include <sapi/tpm20.h>
 
@@ -54,7 +53,6 @@ struct tpm_hash_ctx {
     TPMI_ALG_HASH  halg;
     char *outHashFilePath;
     char *outTicketFilePath;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
 static tpm_hash_ctx ctx = {
@@ -92,12 +90,12 @@ static bool get_hierarchy_value(const char *hiearchy_code,
     return true;
 }
 
-static bool hash_and_save(void) {
+static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
-    TPM_RC rval = tpm_hash_file(ctx.sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
+    TPM_RC rval = tpm_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("tpm_hash_files() failed with error: 0x%X", rval);
         return false;
@@ -201,11 +199,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
-    ctx.sapi_context = sapi_context;
 
     int rc = 1;
 
-    bool res = hash_and_save();
+    bool res = hash_and_save(sapi_context);
     if (!res) {
         goto out;
     }

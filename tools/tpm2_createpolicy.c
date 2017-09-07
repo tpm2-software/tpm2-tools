@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <getopt.h>
 #include <sapi/tpm20.h>
 
 #include "tpm2_options.h"
@@ -73,7 +72,6 @@ struct tpm2_pcr_policy_options{
 
 typedef struct create_policy_ctx create_policy_ctx;
 struct create_policy_ctx {
-    TSS2_SYS_CONTEXT *sapi_context; // system API context from main
     tpm2_common_policy_options common_policy_options;
     tpm2_pcr_policy_options pcr_policy_options;
 };
@@ -89,7 +87,7 @@ static create_policy_ctx pctx = {
     .common_policy_options = TPM2_COMMON_POLICY_INIT
 };
 
-static TPM_RC parse_policy_type_specific_command (void) {
+static TPM_RC parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
     TPM_RC rval = TPM_RC_SUCCESS;
     if (!pctx.common_policy_options.policy_type.is_policy_type_selected){
         LOG_ERR("No Policy type chosen.");
@@ -102,7 +100,7 @@ static TPM_RC parse_policy_type_specific_command (void) {
             LOG_ERR("Need the pcr list to account for in the policy.");
             return TPM_RC_NO_RESULT;
         }
-        rval = tpm2_policy_build(pctx.sapi_context,
+        rval = tpm2_policy_build(sapi_context,
                                  &pctx.common_policy_options.policy_session,
                                  pctx.common_policy_options.policy_session_type,
                                  pctx.common_policy_options.policy_digest_hash_alg,
@@ -161,6 +159,7 @@ static bool on_option(char key, char *value) {
         pctx.common_policy_options.policy_digest_hash_alg
             = tpm2_alg_util_from_optarg(value);
         if(pctx.common_policy_options.policy_digest_hash_alg == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid choice for policy digest hash algorithm");
             return false;
         }
         break;
@@ -207,7 +206,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
-    pctx.sapi_context = sapi_context;
 
     if (pctx.common_policy_options.policy_file_flag == false &&
         pctx.common_policy_options.policy_session_type == TPM_SE_TRIAL) {
@@ -216,5 +214,5 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return 1;
     }
 
-    return parse_policy_type_specific_command() != TPM_RC_SUCCESS;
+    return parse_policy_type_specific_command(sapi_context) != TPM_RC_SUCCESS;
 }

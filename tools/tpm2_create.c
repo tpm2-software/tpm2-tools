@@ -36,7 +36,6 @@
 #include <string.h>
 #include <limits.h>
 #include <ctype.h>
-#include <getopt.h>
 #include <stdbool.h>
 
 #include <sapi/tpm20.h>
@@ -51,7 +50,6 @@
 
 typedef struct tpm_create_ctx tpm_create_ctx;
 struct tpm_create_ctx {
-    TSS2_SYS_CONTEXT *sapi_context;
     TPMS_AUTH_COMMAND session_data;
     TPM2B_SENSITIVE_CREATE in_sensitive;
     TPM2B_PUBLIC in_public;
@@ -167,7 +165,7 @@ int setup_alg()
     return 0;
 }
 
-int create(void)
+int create(TSS2_SYS_CONTEXT *sapi_context)
 {
     TPM_RC rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
@@ -207,7 +205,7 @@ int create(void)
 
     creationPCR.count = 0;
 
-    rval = Tss2_Sys_Create(ctx.sapi_context, ctx.parent_handle, &sessionsData, &ctx.in_sensitive,
+    rval = Tss2_Sys_Create(sapi_context, ctx.parent_handle, &sessionsData, &ctx.in_sensitive,
                            &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
                            &creationData, &creationHash, &creationTicket, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS) {
@@ -239,6 +237,7 @@ static bool on_option(char key, char *value) {
     switch(key) {
     case 'H':
         if(!tpm2_util_string_to_uint32(value, &ctx.parent_handle)) {
+            LOG_ERR("Invalid parent handle, got\"%s\"", value);
             return false;
         }
         ctx.flags.H = 1;
@@ -246,6 +245,7 @@ static bool on_option(char key, char *value) {
     case 'P':
         res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!res) {
+            LOG_ERR("Invalid parent key password, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -253,6 +253,7 @@ static bool on_option(char key, char *value) {
     case 'K':
         res = tpm2_password_util_from_optarg(value, &ctx.in_sensitive.t.sensitive.userAuth);
         if (!res) {
+            LOG_ERR("Invalid key password, got\"%s\"", value);
             return false;
         }
         ctx.flags.K = 1;
@@ -260,6 +261,7 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
         if(ctx.nameAlg == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid hash algorithm, got\"%s\"", value);
             return false;
         }
         ctx.flags.g = 1;
@@ -267,6 +269,7 @@ static bool on_option(char key, char *value) {
     case 'G':
         ctx.type = tpm2_alg_util_from_optarg(value);
         if(ctx.type == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid key algorithm, got\"%s\"", value);
             return false;
         }
 
@@ -274,6 +277,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'A':
         if(!tpm2_util_string_to_uint32(value, &ctx.objectAttributes)) {
+            LOG_ERR("Invalid object attribute, got\"%s\"", value);
             return false;
         }
         ctx.flags.A = 1;
@@ -297,10 +301,12 @@ static bool on_option(char key, char *value) {
                                        &ctx.in_public.t.publicArea.authPolicy.t.size)) {
             return false;
         }
-        ctx.flags.L  = 1;
+        ctx.flags.L = 1;
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(optarg, &ctx.session_data.sessionHandle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         break;
@@ -352,6 +358,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {0,0,0,0}
     };
 
+    setbuf(stdout, NULL);
+    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
+
     *opts = tpm2_options_new("H:P:K:g:G:A:I:L:o:O:c:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
@@ -360,11 +369,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
-
-    ctx.sapi_context = sapi_context;
-
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     int returnVal = 0;
     int flagCnt = 0;
@@ -390,10 +394,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     } else if(flagCnt == 3 && (ctx.flags.H == 1 || ctx.flags.c == 1) &&
               ctx.flags.g == 1 && ctx.flags.G == 1) {
         if(ctx.flags.c)
-            returnVal = files_load_tpm_context_from_file(ctx.sapi_context,
+            returnVal = files_load_tpm_context_from_file(sapi_context,
                                                          &ctx.parent_handle, ctx.context_parent_path) != true;
         if(returnVal == 0)
-            returnVal = create();
+            returnVal = create(sapi_context);
 
         if(returnVal)
             return 1;

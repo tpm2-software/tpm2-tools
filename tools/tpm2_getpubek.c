@@ -34,8 +34,6 @@
 #include <string.h>
 #include <limits.h>
 
-#include <getopt.h>
-
 #include <sapi/tpm20.h>
 
 #include "tpm2_password_util.h"
@@ -55,7 +53,6 @@ struct getpubek_context {
     char *out_file_path;
     TPM_HANDLE persistent_handle;
     TPM_ALG_ID algorithm;
-    TSS2_SYS_CONTEXT *sapi_context;
     bool is_session_based_auth;
     TPMI_SH_AUTH_SESSION auth_session_handle;
 };
@@ -145,7 +142,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
     return true;
 }
 
-static bool create_ek_handle(void) {
+static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_COMMAND sessionData = {
         .sessionHandle = TPM_RS_PW,
@@ -207,7 +204,7 @@ static bool create_ek_handle(void) {
 
     /* Create EK and get a handle to the key */
     TPM_HANDLE handle2048ek;
-    UINT32 rval = Tss2_Sys_CreatePrimary(ctx.sapi_context, TPM_RH_ENDORSEMENT,
+    UINT32 rval = Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT,
             &sessionsData, &inSensitive, &inPublic, &outsideInfo, &creationPCR,
             &handle2048ek, &outPublic, &creationData, &creationHash,
             &creationTicket, &name, &sessionsDataOut);
@@ -220,7 +217,7 @@ static bool create_ek_handle(void) {
 
     memcpy(&sessionData.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = Tss2_Sys_EvictControl(ctx.sapi_context, TPM_RH_OWNER, handle2048ek,
+    rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
             &sessionsData, ctx.persistent_handle, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EvictControl failed. Could not make EK persistent."
@@ -230,7 +227,7 @@ static bool create_ek_handle(void) {
 
     LOG_INFO("EvictControl EK persistent success.");
 
-    rval = Tss2_Sys_FlushContext(ctx.sapi_context, handle2048ek);
+    rval = Tss2_Sys_FlushContext(sapi_context, handle2048ek);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Flush transient EK failed. TPM Error:0x%x",
                 rval);
@@ -258,41 +255,50 @@ static bool on_option(char key, char *value) {
     case 'H':
         result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle);
         if (!result) {
+            LOG_ERR("Could not convert EK persistent from hex format.");
             return false;
         }
         break;
     case 'e':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse);
         if (!result) {
+            LOG_ERR("Invalid endorse password, got\"%s\"", value);
             return false;
         }
         break;
     case 'o':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner);
         if (!result) {
+            LOG_ERR("Invalid owner password, got\"%s\"", value);
             return false;
         }
         break;
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.ek);
         if (!result) {
+            LOG_ERR("Invalid EK password, got\"%s\"", value);
             return false;
         }
         break;
     case 'g':
         ctx.algorithm = tpm2_alg_util_from_optarg(value);
         if (ctx.algorithm == TPM_ALG_ERROR) {
+            LOG_ERR("Could not convert algorithm to value, got: %s",
+                    value);
             return false;
         }
         break;
     case 'f':
         if (!value) {
+            LOG_ERR("Please specify an output file to save the pub ek to.");
             return false;
         }
         ctx.out_file_path = value;
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.auth_session_handle)) {
+            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
+                    value);
             return false;
         }
         ctx.is_session_based_auth = true;
@@ -326,7 +332,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    ctx.sapi_context = sapi_context;
     /* normalize 0 success 1 failure */
-    return create_ek_handle() != true;
+    return create_ek_handle(sapi_context) != true;
 }
