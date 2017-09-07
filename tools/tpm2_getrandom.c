@@ -34,7 +34,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <getopt.h>
 #include <limits.h>
 #include <sapi/tpm20.h>
 
@@ -49,16 +48,15 @@ struct tpm_random_ctx {
     bool output_file_specified;
     char *output_file;
     UINT16 num_of_bytes;
-    TSS2_SYS_CONTEXT *sapi_context;
 };
 
 static tpm_random_ctx ctx;
 
-static bool get_random_and_save(void) {
+static bool get_random_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST random_bytes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    TPM_RC rval = Tss2_Sys_GetRandom(ctx.sapi_context, NULL, ctx.num_of_bytes,
+    TPM_RC rval = Tss2_Sys_GetRandom(sapi_context, NULL, ctx.num_of_bytes,
             &random_bytes, NULL);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("TPM2_GetRandom Error. TPM Error:0x%x", rval);
@@ -120,7 +118,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
-    ctx.sapi_context = sapi_context;
 
-    return get_random_and_save() != true;
+    return get_random_and_save(sapi_context) != true;
 }
