@@ -245,7 +245,6 @@ man8_MANS = \
     man/man8/tpm2_getmanufec.8 \
     man/man8/tpm2_akparse.8 \
     man/man8/tpm2_makecredential.8 \
-    man/man8/tpm2_activatecredential.8 \
     man/man8/tpm2_hash.8 \
     man/man8/tpm2_nvlist.8 \
     man/man8/tpm2_nvread.8 \
@@ -275,6 +274,7 @@ man8_MANS = \
 
 if HAVE_MD2MAN_ROFF
     man8_MANS += \
+    man/man8/tpm2_activatecredential.8 \
     man/man8/tpm2_pcrevent.8
 endif
 
@@ -315,6 +315,7 @@ endif
 	    < $< >> $@
 
 MARKDOWN_COMMON_DEPS = \
+	man/common/password.md \
 	man/common/options.md \
 	man/common/tcti.md
 
@@ -325,6 +326,8 @@ man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[common options\]/d' \
 	    -e '/\[common tcti options\]/r man/common/tcti.md' \
 	    -e '/\[common tcti options\]/d' \
+	    -e '/\[password formatting\]/r man/common/password.md' \
+	    -e '/\[password formatting\]/d' \
 	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man8_MANS)
