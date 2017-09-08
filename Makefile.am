@@ -321,10 +321,10 @@ MARKDOWN_COMMON_DEPS = \
 man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
 	rm -f $@
 	mkdir -p man/man8
-	sed -e '/@COMMON_OPTIONS@/r man/common/options.md' \
-	    -e '/@COMMON_OPTIONS@/d' \
-	    -e '/@COMMON_TCTI@/r man/common/tcti.md' \
-	    -e '/@COMMON_TCTI@/d' \
+	sed -e '/\[common options\]/r man/common/options.md' \
+	    -e '/\[common options\]/d' \
+	    -e '/\[common tcti options\]/r man/common/tcti.md' \
+	    -e '/\[common tcti options\]/d' \
 	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man8_MANS)
