@@ -243,7 +243,6 @@ man8_MANS = \
     man/man8/tpm2_getpubek.8 \
     man/man8/tpm2_getpubak.8 \
     man/man8/tpm2_getmanufec.8 \
-    man/man8/tpm2_akparse.8 \
     man/man8/tpm2_makecredential.8 \
     man/man8/tpm2_hash.8 \
     man/man8/tpm2_nvlist.8 \
@@ -275,6 +274,7 @@ man8_MANS = \
 if HAVE_MD2MAN_ROFF
     man8_MANS += \
     man/man8/tpm2_activatecredential.8 \
+    man/man8/tpm2_akparse.8 \
     man/man8/tpm2_pcrevent.8
 endif
 
