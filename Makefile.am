@@ -253,7 +253,6 @@ man8_MANS = \
     man/man8/tpm2_nvrelease.8 \
     man/man8/tpm2_create.8 \
     man/man8/tpm2_hmac.8 \
-    man/man8/tpm2_certify.8 \
     man/man8/tpm2_readpublic.8 \
     man/man8/tpm2_getrandom.8 \
     man/man8/tpm2_encryptdecrypt.8 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man8_MANS += \
     man/man8/tpm2_activatecredential.8 \
     man/man8/tpm2_akparse.8 \
+    man/man8/tpm2_certify.8 \
     man/man8/tpm2_pcrevent.8
 endif
 
