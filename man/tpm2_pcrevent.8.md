@@ -46,8 +46,9 @@ These options control extending the pcr:
     in _INDEX_.
     It is an error to specify `-P` without specifying a pcr index with `-i`.
 
-@@COMMON_OPTIONS@@
-@@COMMON_TCTI@@
+[common options](common/options.md)
+
+[common tcti options](common/tcti.md)
 
 EXAMPLES
 --------
