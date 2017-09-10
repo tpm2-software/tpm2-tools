@@ -141,7 +141,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     bool result = false;
-    UINT16 data_offest = 0;
+    UINT16 data_offset = 0;
     while (ctx.size_to_read) {
 
         UINT16 bytes_to_read = ctx.size_to_read > MAX_NV_BUFFER_SIZE ?
@@ -158,8 +158,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
         ctx.size_to_read -= nv_data.t.size;
         ctx.offset += nv_data.t.size;
 
-        memcpy(data_buffer, nv_data.t.buffer, data_offest);
-        data_offest += nv_data.t.size;
+        memcpy(data_buffer + data_offset, nv_data.t.buffer, nv_data.t.size);
+        data_offset += nv_data.t.size;
     }
 
     hexdump(data_buffer, data_size);
