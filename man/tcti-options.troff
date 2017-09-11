@@ -13,18 +13,15 @@ Supported TCTIs are
 .if (\n[HAVE_TCTI_SOCK]) or \fB\*(lqsocket\*(rq\fR
 .if (\n[HAVE_TCTI_TABRMD]) or \fB\*(lqtabrmd\*(rq\fR
 \[char46]
+Additional options for the TCTI can be specified after the TCTI name by adding a
+: as prefix.
 .TP
 .if (\n[HAVE_TCTI_DEV]) \{
-\fB\-d,\ \-\-device-file\fR
-Specify the TPM device file for use by the device TCTI. The default is
-/dev/tpm0.
+For the device TCTI, the TPM device file for use by the device TCTI can be specified.
+The default is /dev/tpm0. Example: -T device:/dev/tpm0
 \}
 .if (\n[HAVE_TCTI_SOCK]) \{
 .TP
-\fB\-R,\ \-\-socket-address\fR
-Specify the domain name or IP address used by the socket TCTI. The default
-is 127.0.0.1.
-.TP
-\fB\-p,\ \-\-socket-port\fR
-Specify the port number used by the socket TCTI. The default is 2321.
+For the socket TCTI, the domain name or IP address and port number used by the socket
+can be specified. The default are 127.0.0.1 and 2321. Example: -T socket:127.0.0.1:2321
 \}
