@@ -42,18 +42,19 @@ TCTI OPTIONS
 This collection of options are used to configure the varous TCTI modules
 available. They override any environment variables.
 
-  * `-T`, `--tcti`=_TCTI_NAME_:
+  * `-T`, `--tcti`=_TCTI\_NAME_`[`:_TCTI\_OPTIONS_`]`:
 	Select the TCTI used for communication with the next component down the TSS
 	stack. In most configurations this will be the resource manager:
 	[tabrmd](https://github.com/01org/tpm2-abrmd)
+	Optionally, tcti specific options can appended to _TCTI\_NAME_ by appending
+	a `:` to _TCTI\_NAME_.
 
-  * `-d`, `--device-file`=_DEVICE_FILE_:
-	Specify the TPM device file for use by the device TCTI. The default is
-	/dev/tpm0.
+    * For the device TCTI, the TPM device file for use by the device TCTI can be specified.
+      The default is /dev/tpm0.
+      Example: `-T device:/dev/tpm0`
 
-  * `-R`, `--socket-address`=_SOCKET_ADDRESS_:
-	Specify the domain name or IP address used by the socket TCTI. The default
-	is 127.0.0.1.
+    * For the socket TCTI, the domain name or IP address and port number used by the socket
+      can be specified. The default are 127.0.0.1 and 2321.
+      Example: `-T socket:127.0.0.1:2321`
 
-  * `-p`, `--socket-port`=_SOCKET_PORT_:
-	Specify the port number used by the socket TCTI. The default is 2321.
+    * For the abrmd TCTI, it takes no options. Example: `-T abrmd`
