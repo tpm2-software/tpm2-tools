@@ -251,7 +251,6 @@ man8_MANS = \
     man/man8/tpm2_nvwrite.8 \
     man/man8/tpm2_nvdefine.8 \
     man/man8/tpm2_nvrelease.8 \
-    man/man8/tpm2_create.8 \
     man/man8/tpm2_hmac.8 \
     man/man8/tpm2_readpublic.8 \
     man/man8/tpm2_getrandom.8 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man8/tpm2_activatecredential.8 \
     man/man8/tpm2_akparse.8 \
     man/man8/tpm2_certify.8 \
+    man/man8/tpm2_create.8 \
     man/man8/tpm2_pcrevent.8
 endif
 
@@ -328,6 +328,10 @@ man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[common tcti options\]/d' \
 	    -e '/\[password formatting\]/r man/common/password.md' \
 	    -e '/\[password formatting\]/d' \
+	    -e '/\[supported hash algorithms\]/r man/common/hash.md' \
+	    -e '/\[supported hash algorithms\]/d' \
+	    -e '/\[algorithm specifiers\]/r man/common/alg.md' \
+	    -e '/\[algorithm specifiers\]/d' \
 	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man8_MANS)
