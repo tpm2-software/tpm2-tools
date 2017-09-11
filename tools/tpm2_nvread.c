@@ -162,7 +162,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
         data_offset += nv_data.t.size;
     }
 
-    hexdump(data_buffer, data_size);
+    hexdump(data_buffer, data_offset);
     result = true;
 
 out:
