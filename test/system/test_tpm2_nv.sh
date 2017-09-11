@@ -174,4 +174,48 @@ fi
 
 tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle
 
+#
+# Test NV access locked
+#
+tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite|read_stclear"
+if [ $? != 0 ];then
+ echo "nvdefine failed!"
+ exit 1
+fi
+
+echo "foobar" > nv.readlock
+
+tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle -f nv.readlock
+if [ $? != 0 ];then
+ echo "nvwrite failed!"
+ exit 1
+fi
+
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 6 -o 0
+if [ $? != 0 ];then
+ echo "nvread failed!"
+ exit 1
+fi
+
+tpm2_nvreadlock -x $nv_test_index -a $nv_auth_handle
+if [ $? != 0 ];then
+ echo "nvreadlock failed!"
+fi
+
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 6 -o 0 2> /dev/null
+if [ $? != 1 ];then
+ echo "nvread didn't fail!"
+ exit 1
+fi
+
+tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle
+if [ $? != 0 ];then
+ echo "nvrelease failed!"
+ exit 1
+fi
+
+rm nv.readlock
+
+echo "tpm2_nv succeed"
+
 exit 0
