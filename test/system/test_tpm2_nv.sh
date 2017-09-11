@@ -34,6 +34,19 @@
  nv_test_index=0x1500018
  nv_auth_handle=0x40000001
 
+large_file_name="nv.test_large_w"
+large_file_read_name="nv.test_large_w"
+
+cleanup() {
+ rm -f policy.bin test.bin nv.test_w 2> /dev/null
+ rm -f $large_file_name $large_file_read_name 2> /dev/null
+ rm -f nv.readlock 2> /dev/null
+}
+
+trap cleanup EXIT
+
+cleanup
+
 tpm2_takeownership -c 
  if [ $? != 0 ];then 
  echo "clean ownership Fail!"
@@ -116,8 +129,6 @@ if [ $? != 0 ];then
  exit 1
 fi
 
-rm -f policy.bin test.bin nv.test_w
-
 #
 # Test large writes
 #
@@ -131,8 +142,6 @@ if [ $? != 0 ];then
  exit 1
 fi
 
-large_file_name="nv.test_large_w"
-
 if [ ! -f $large_file_name ]; then
   base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
   if [ $? != 0 ];then
@@ -143,23 +152,17 @@ fi
 
 tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle  -f $large_file_name
 if [ $? != 0 ];then
-  rm -f $large_file_name
   echo "nvwrite failed for testing large writes!"
   exit 1
 fi
 
-large_file_read_name="nv.test_large_w"
 tpm2_nvread -x $nv_test_index -a $nv_auth_handle | xxd -r > $large_file_read_name
 if [ $? != 0 ];then
-  rm -f $large_file_name
-  rm -f $large_file_read_name
   echo "nvread failed for testing large reads!"
   exit 1
 fi
 
 cmp -s $large_file_read_name $large_file_name
-rm -f $large_file_read_name
-rm -f $large_file_name
 
 rc=$?
 if [ $rc != 0 ]; then
@@ -213,8 +216,6 @@ if [ $? != 0 ];then
  echo "nvrelease failed!"
  exit 1
 fi
-
-rm nv.readlock
 
 echo "tpm2_nv succeed"
 
