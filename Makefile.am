@@ -233,7 +233,6 @@ endif
 EXTRA_DIST = $(top_srcdir)/man
 
 man8_MANS = \
-    man/man8/tpm2_createprimary.8 \
     man/man8/tpm2_dump_capability.8 \
     man/man8/tpm2_send_command.8 \
     man/man8/tpm2_startup.8 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man8/tpm2_certify.8 \
     man/man8/tpm2_create.8 \
     man/man8/tpm2_createpolicy.8 \
+    man/man8/tpm2_createprimary.8 \
     man/man8/tpm2_pcrevent.8
 endif
 
@@ -332,6 +332,8 @@ man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[supported hash algorithms\]/d' \
 	    -e '/\[algorithm specifiers\]/r man/common/alg.md' \
 	    -e '/\[algorithm specifiers\]/d' \
+	    -e '/\[supported public object algorithms\]/r man/common/object-alg.md' \
+	    -e '/\[supported public object algorithms\]/d' \
 	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man8_MANS)
