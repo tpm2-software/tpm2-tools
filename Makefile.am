@@ -264,7 +264,6 @@ man1_MANS = \
     man/man1/tpm2_verifysignature.1 \
     man/man1/tpm2_listpersistent.1 \
     man/man1/tpm2_rc_decode.1 \
-    man/man1/tpm2_dictionarylockout.1 \
     man/man1/tpm2_pcrextend.1
 
 if HAVE_MD2MAN_ROFF
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
+    man/man1/tpm2_dictionarylockout.1 \
     man/man1/tpm2_pcrevent.1
 endif
 
