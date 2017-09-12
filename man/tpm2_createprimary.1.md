@@ -1,10 +1,10 @@
-tpm2_createprimary 8 "SEPTEMBER 2017" Linux "User Manuals"
+tpm2_createprimary 1 "SEPTEMBER 2017" tpm2-tools
 ==================================================
 
 NAME
 ----
 
-tpm2_createprimary(8) - Create a primary key under a primary seed or a temporary
+tpm2_createprimary(1) - Create a primary key under a primary seed or a temporary
 primary key under the `TPM_RH_NULL` hierarchy.
 
 SYNOPSIS
@@ -15,7 +15,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-tpm2_createprimary(8) - This command is used to create a Primary Object under
+tpm2_createprimary(1) - This command is used to create a Primary Object under
 one of the Primary Seeds or a Temporary Object under `TPM_RH_NULL`. The command
 uses a `TPM2B_PUBLIC` as a template for the object to be created. The command
 will create and load a Primary Object. The sensitive area is not returned.

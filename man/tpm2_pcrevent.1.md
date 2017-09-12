@@ -1,10 +1,10 @@
-tpm2_pcrevent 8 "AUGUST 2017" Linux "User Manuals"
+tpm2_pcrevent 8 "AUGUST 2017" tpm2-tools
 ==================================================
 
 NAME
 ----
 
-tpm2_pcrevent(8) - hashes a file and optionally extends a pcr.
+tpm2_pcrevent(1) - hashes a file and optionally extends a pcr.
 
 SYNOPSIS
 --------
@@ -14,7 +14,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-tpm2_pcrevent(8) hashes _FILE_ if specified or stdin. It uses all of the
+tpm2_pcrevent(1) hashes _FILE_ if specified or stdin. It uses all of the
 hashing algorithms that the tpm supports. Optionally, if a pcr index is
 specified, it extends that pcr for all supported algorithms with the hash
 digest. In either case, it outputs to stdout the hash algorithm used and the

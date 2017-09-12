@@ -1,10 +1,10 @@
-tpm2_certify 8 "AUGUST 2017" Linux "User Manuals"
+tpm2_certify 1 "AUGUST 2017" tpm2-tools
 ==================================================
 
 NAME
 ----
 
-tpm2_certify(8) - prove that an object is loaded in the tpm.
+tpm2_certify(1) - prove that an object is loaded in the tpm.
 
 SYNOPSIS
 --------
@@ -14,7 +14,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-tpm2_certify(8) proves that an object with a specific _NAME_ is loaded in the TPM.
+tpm2_certify(1) proves that an object with a specific _NAME_ is loaded in the TPM.
 By certifying that the object is loaded, the TPM warrants that a public area
 with a given _NAME_ is self-consistent and associated with a valid sensitive area.
 If a relying party has a public area that has the same _NAME_ as a _NAME_ certified

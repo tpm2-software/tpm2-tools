@@ -1,10 +1,10 @@
-tpm2_create 8 "AUGUST 2017" Linux "User Manuals"
+tpm2_create 1 "AUGUST 2017" tpm2-tools
 ==================================================
 
 NAME
 ----
 
-tpm2_create(8) - create an object that can be loaded into a TPM using tpm2_load.
+tpm2_create(1) - create an object that can be loaded into a TPM using tpm2_load.
 The object will need to be loaded before it may be used.
 
 SYNOPSIS
@@ -15,7 +15,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-tpm2_create(8) - create an object that can be loaded into a TPM using tpm2_load.
+tpm2_create(1) - create an object that can be loaded into a TPM using tpm2_load.
 The object will need to be loaded before it may be used.
 
 OPTIONS

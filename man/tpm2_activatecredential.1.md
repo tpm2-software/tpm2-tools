@@ -1,10 +1,10 @@
-tpm2_activatecredential 8 "AUGUST 2017" Linux "User Manuals"
+tpm2_activatecredential 1 "AUGUST 2017" tpm2-tools
 ==================================================
 
 NAME
 ----
 
-tpm2_activatecredential(8) - verify that an object is protected with a specific
+tpm2_activatecredential(1) - verify that an object is protected with a specific
 key.
 
 SYNOPSIS
@@ -42,7 +42,7 @@ These options control the object verification:
 
   * `-f`, `--inFile`=_INPUT\_FILE_:
     Input file path, containing the two structures needed by tpm2_activatecredential function. This is created
-    via the tpm2_makecredential(8) command.
+    via the tpm2_makecredential(1) command.
 
   * `-o`, `--outFile`=_OUTPUT\_FILE_:
     Output file path, record the secret to decrypt  the certificate.
