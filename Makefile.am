@@ -240,7 +240,6 @@ man1_MANS = \
     man/man1/tpm2_takeownership.1 \
     man/man1/tpm2_getpubek.1 \
     man/man1/tpm2_getpubak.1 \
-    man/man1/tpm2_getmanufec.1 \
     man/man1/tpm2_makecredential.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_nvlist.1 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_dump_capability.1 \
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_evictcontrol.1 \
+    man/man1/tpm2_getmanufec.1 \
     man/man1/tpm2_pcrevent.1
 endif
 
