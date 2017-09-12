@@ -233,7 +233,6 @@ endif
 EXTRA_DIST = $(top_srcdir)/man
 
 man1_MANS = \
-    man/man1/tpm2_dump_capability.1 \
     man/man1/tpm2_send_command.1 \
     man/man1/tpm2_startup.1 \
     man/man1/tpm2_pcrlist.1 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
     man/man1/tpm2_dictionarylockout.1 \
+    man/man1/tpm2_dump_capability.1 \
     man/man1/tpm2_pcrevent.1
 endif
 
