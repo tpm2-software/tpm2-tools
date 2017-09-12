@@ -1,10 +1,10 @@
-tpm2_pcrevent 8 "AUGUST 2017" Linux "User Manuals"
+tpm2_pcrevent 1 "AUGUST 2017" tpm2-tools
 ==================================================
 
 NAME
 ----
 
-tpm2_akparse(8) - parses algorithm and key values from an ak output file generated via tpm2_getpubak(8).
+tpm2_akparse(1) - parses algorithm and key values from an ak output file generated via tpm2_getpubak(1).
 
 SYNOPSIS
 --------
@@ -14,7 +14,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-tpm2_akparse(8) - parse the algorithm and key values in `TPM2B_PUBLIC` struct
+tpm2_akparse(1) - parse the algorithm and key values in `TPM2B_PUBLIC` struct
 which is input via file _INPUT\_FILE_ and the output key sent to _OUTPUT\_FILE_.
 
 OPTIONS
@@ -23,7 +23,7 @@ OPTIONS
 These options control parsing:
 
   * `-f`, `--file`=_INPUT_FILE_:
-    The input file to parse. This file is output via tpm2_getpubak(8) via the -f option.
+    The input file to parse. This file is output via tpm2_getpubak(1) via the -f option.
 
   * `-k`, `--key-file`=_OUTPUT_FILE_:
     The output file for the raw key value(s).

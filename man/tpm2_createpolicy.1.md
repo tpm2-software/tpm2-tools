@@ -1,10 +1,10 @@
-tpm2_createpolicy 8 "AUGUST 2017" Linux "User Manuals"
+tpm2_createpolicy 1 "AUGUST 2017" tpm2-tools
 ==================================================
 
 NAME
 ----
 
-tpm2_createpolicy(8) - Creates simple assertion authorization policies based on
+tpm2_createpolicy(1) - Creates simple assertion authorization policies based on
 multiple pcr indices values across multiple enabled banks.
 
 SYNOPSIS
@@ -15,7 +15,7 @@ SYNOPSIS
 DESCRIPTION
 -----------
 
-tpm2_createpolicy(8) - Creates simple assertion authorization policies based on
+tpm2_createpolicy(1) - Creates simple assertion authorization policies based on
 multiple pcr indices values across multiple enabled banks. It can then be used with object creation and or tools using the object.
 
 OPTIONS

@@ -232,50 +232,50 @@ endif
 
 EXTRA_DIST = $(top_srcdir)/man
 
-man8_MANS = \
-    man/man8/tpm2_dump_capability.8 \
-    man/man8/tpm2_send_command.8 \
-    man/man8/tpm2_startup.8 \
-    man/man8/tpm2_pcrlist.8 \
-    man/man8/tpm2_quote.8 \
-    man/man8/tpm2_takeownership.8 \
-    man/man8/tpm2_getpubek.8 \
-    man/man8/tpm2_getpubak.8 \
-    man/man8/tpm2_getmanufec.8 \
-    man/man8/tpm2_makecredential.8 \
-    man/man8/tpm2_hash.8 \
-    man/man8/tpm2_nvlist.8 \
-    man/man8/tpm2_nvread.8 \
-    man/man8/tpm2_nvreadlock.8 \
-    man/man8/tpm2_nvwrite.8 \
-    man/man8/tpm2_nvdefine.8 \
-    man/man8/tpm2_nvrelease.8 \
-    man/man8/tpm2_hmac.8 \
-    man/man8/tpm2_readpublic.8 \
-    man/man8/tpm2_getrandom.8 \
-    man/man8/tpm2_encryptdecrypt.8 \
-    man/man8/tpm2_evictcontrol.8 \
-    man/man8/tpm2_load.8 \
-    man/man8/tpm2_loadexternal.8 \
-    man/man8/tpm2_rsadecrypt.8 \
-    man/man8/tpm2_rsaencrypt.8 \
-    man/man8/tpm2_sign.8 \
-    man/man8/tpm2_unseal.8 \
-    man/man8/tpm2_verifysignature.8 \
-    man/man8/tpm2_listpersistent.8 \
-    man/man8/tpm2_rc_decode.8 \
-    man/man8/tpm2_dictionarylockout.8 \
-    man/man8/tpm2_pcrextend.8
+man1_MANS = \
+    man/man1/tpm2_dump_capability.1 \
+    man/man1/tpm2_send_command.1 \
+    man/man1/tpm2_startup.1 \
+    man/man1/tpm2_pcrlist.1 \
+    man/man1/tpm2_quote.1 \
+    man/man1/tpm2_takeownership.1 \
+    man/man1/tpm2_getpubek.1 \
+    man/man1/tpm2_getpubak.1 \
+    man/man1/tpm2_getmanufec.1 \
+    man/man1/tpm2_makecredential.1 \
+    man/man1/tpm2_hash.1 \
+    man/man1/tpm2_nvlist.1 \
+    man/man1/tpm2_nvread.1 \
+    man/man1/tpm2_nvreadlock.1 \
+    man/man1/tpm2_nvwrite.1 \
+    man/man1/tpm2_nvdefine.1 \
+    man/man1/tpm2_nvrelease.1 \
+    man/man1/tpm2_hmac.1 \
+    man/man1/tpm2_readpublic.1 \
+    man/man1/tpm2_getrandom.1 \
+    man/man1/tpm2_encryptdecrypt.1 \
+    man/man1/tpm2_evictcontrol.1 \
+    man/man1/tpm2_load.1 \
+    man/man1/tpm2_loadexternal.1 \
+    man/man1/tpm2_rsadecrypt.1 \
+    man/man1/tpm2_rsaencrypt.1 \
+    man/man1/tpm2_sign.1 \
+    man/man1/tpm2_unseal.1 \
+    man/man1/tpm2_verifysignature.1 \
+    man/man1/tpm2_listpersistent.1 \
+    man/man1/tpm2_rc_decode.1 \
+    man/man1/tpm2_dictionarylockout.1 \
+    man/man1/tpm2_pcrextend.1
 
 if HAVE_MD2MAN_ROFF
-    man8_MANS += \
-    man/man8/tpm2_activatecredential.8 \
-    man/man8/tpm2_akparse.8 \
-    man/man8/tpm2_certify.8 \
-    man/man8/tpm2_create.8 \
-    man/man8/tpm2_createpolicy.8 \
-    man/man8/tpm2_createprimary.8 \
-    man/man8/tpm2_pcrevent.8
+    man1_MANS += \
+    man/man1/tpm2_activatecredential.1 \
+    man/man1/tpm2_akparse.1 \
+    man/man1/tpm2_certify.1 \
+    man/man1/tpm2_create.1 \
+    man/man1/tpm2_createpolicy.1 \
+    man/man1/tpm2_createprimary.1 \
+    man/man1/tpm2_pcrevent.1
 endif
 
 MAN_DEPS := man/common-options.troff man/tcti-options.troff \
@@ -285,9 +285,9 @@ MAN_DEPS := man/common-options.troff man/tcti-options.troff \
            man/alg-notes-common.troff
 
 # DEPRECATED - No more raw troff files for manpages, use markdown (below).
-man/man8/%.8 : man/%.8.in $(MAN_DEPS)
+man/man1/%.1 : man/%.1.in $(MAN_DEPS)
 	rm -f $@
-	mkdir -p man/man8
+	mkdir -p man/man1
 if HAVE_TCTI_DEV
 	echo ".nr HAVE_TCTI_DEV 1" >> $@
 endif
@@ -319,9 +319,9 @@ MARKDOWN_COMMON_DEPS = \
 	man/common/options.md \
 	man/common/tcti.md
 
-man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
+man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	rm -f $@
-	mkdir -p man/man8
+	mkdir -p man/man1
 	sed -e '/\[common options\]/r man/common/options.md' \
 	    -e '/\[common options\]/d' \
 	    -e '/\[common tcti options\]/r man/common/tcti.md' \
@@ -336,4 +336,4 @@ man/man8/%.8 : man/%.8.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[supported public object algorithms\]/d' \
 	    < $< | md2man-roff > $@
 
-CLEANFILES = $(man8_MANS)
+CLEANFILES = $(man1_MANS)
