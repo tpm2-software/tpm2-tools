@@ -239,7 +239,6 @@ man1_MANS = \
     man/man1/tpm2_quote.1 \
     man/man1/tpm2_takeownership.1 \
     man/man1/tpm2_getpubek.1 \
-    man/man1/tpm2_getpubak.1 \
     man/man1/tpm2_makecredential.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_nvlist.1 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_evictcontrol.1 \
     man/man1/tpm2_getmanufec.1 \
+    man/man1/tpm2_getpubak.1 \
     man/man1/tpm2_pcrevent.1
 endif
 
@@ -315,8 +315,12 @@ endif
 	    < $< >> $@
 
 MARKDOWN_COMMON_DEPS = \
-	man/common/password.md \
+	man/common/alg.md \
+	man/common/hash.md \
+	man/common/object-alg.md \
 	man/common/options.md \
+	man/common/password.md \
+	man/common/sign-alg.md \
 	man/common/tcti.md
 
 man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
@@ -334,6 +338,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[algorithm specifiers\]/d' \
 	    -e '/\[supported public object algorithms\]/r man/common/object-alg.md' \
 	    -e '/\[supported public object algorithms\]/d' \
+	    -e '/\[supported signing algorithms\]/r man/common/sign-alg.md' \
+	    -e '/\[supported signing algorithms\]/d' \
 	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man1_MANS)
