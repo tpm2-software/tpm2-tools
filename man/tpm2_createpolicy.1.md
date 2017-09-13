@@ -53,6 +53,9 @@ These options control creating the policy authorization session:
 
 [common tcti options](common/tcti.md)
 
+[supported hash algorithms](common/hash.md)
+
+[algorithm specifiers](common/alg.md)
 
 EXAMPLES
 --------
