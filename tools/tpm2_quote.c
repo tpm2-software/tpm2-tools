@@ -32,6 +32,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include <sapi/tpm20.h>
 
@@ -205,6 +206,41 @@ static UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
     return size > sizeof(*sig) ? sizeof(*sig) : size;
 }
 
+static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
+
+    bool res = false;
+    size_t num_bytes;
+    FILE *fp = fopen(outFilePath,"wb");
+
+    if (!fp) {
+        printf("Output file %s cannot be created: %s\n",
+                outFilePath, strerror(errno));
+        goto error;
+    }
+
+    num_bytes = calcSizeofTPM2B_ATTEST(quoted);
+    res = files_write_bytes(fp, (UINT8*)quoted, num_bytes);
+    if (!res) {
+        printf("Cannot write quote data structure to %s: %s\n",
+                outFilePath, strerror(errno));
+        goto error;
+    }
+
+    num_bytes = calcSizeofTPMT_SIGNATURE(signature);
+    res = files_write_bytes(fp, (UINT8*)signature, num_bytes);
+    if (!res) {
+        printf("Cannot write quote data structure to %s: %s\n",
+                outFilePath, strerror(errno));
+        goto error;
+    }
+
+error:
+    if (fp) {
+        fclose(fp);
+    }
+    return res;
+}
+
 static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 {
     UINT32 rval;
@@ -255,27 +291,8 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
     PrintBuffer( (UINT8 *)&signature, sizeof(signature) );
     //PrintTPMT_SIGNATURE(&signature);
 
-    FILE *fp = fopen(outFilePath,"w+");
-    if(NULL == fp)
-    {
-        printf("OutFile: %s Can Not Be Created !\n",outFilePath);
-        return -2;
-    }
-    if(fwrite(&quoted, calcSizeofTPM2B_ATTEST(&quoted), 1 ,fp) != 1)
-    {
-        fclose(fp);
-        printf("OutFile: %s Write quoted Data In Error!\n",outFilePath);
-        return -3;
-    }
-    if(fwrite(&signature, calcSizeofTPMT_SIGNATURE(&signature), required_argument, fp) != 1)
-    {
-        fclose(fp);
-        printf("OutFile: %s Write signature Data In Error!\n",outFilePath);
-        return -4;
-    }
-
-    fclose(fp);
-    return 0;
+    bool res = write_output_files(&quoted, &signature);
+    return res == true ? 0 : 1;
 }
 
 static bool on_option(char key, char *value) {
