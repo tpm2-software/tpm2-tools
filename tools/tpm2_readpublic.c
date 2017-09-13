@@ -38,6 +38,7 @@
 #include "tpm2_options.h"
 #include "files.h"
 #include "log.h"
+#include "conversion.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -47,14 +48,18 @@ struct tpm_readpub_ctx {
         UINT8 H      : 1;
         UINT8 o      : 1;
         UINT8 c      : 1;
-        UINT8 unused : 5;
+        UINT8 f      : 1;
+        UINT8 unused : 4;
     } flags;
     TPMI_DH_OBJECT objectHandle;
     char *outFilePath;
     char *context_file;
+    pubkey_format format;
 };
 
-static tpm_readpub_ctx ctx;
+static tpm_readpub_ctx ctx = {
+    .format = pubkey_format_tss
+};
 
 static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
@@ -92,8 +97,7 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     }
     tpm2_tool_output("\n");
 
-    return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *) &public,
-            sizeof(public));
+    return tpm2_convert_pubkey(&public, ctx.format, ctx.outFilePath);
 }
 
 static bool on_option(char key, char *value) {
@@ -115,6 +119,13 @@ static bool on_option(char key, char *value) {
         ctx.context_file = optarg;
         ctx.flags.c = 1;
         break;
+    case 'f':
+        ctx.format = tpm2_parse_pubkey_format(optarg);
+        if (ctx.format == pubkey_format_err) {
+            return false;
+        }
+        ctx.flags.f = 1;
+        break;
     }
 
     return true;
@@ -126,9 +137,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object",        required_argument, NULL,'H' },
         { "opu",           required_argument, NULL,'o' },
         { "contextObject", required_argument, NULL,'c' },
+        { "format",        required_argument, NULL,'f' }
     };
 
-    *opts = tpm2_options_new("H:o:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("H:o:c:f:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;
