@@ -103,6 +103,7 @@ endif
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
 	$(tcti_src) \
+    lib/conversion.c \
     lib/files.c \
     lib/files.h \
     lib/log.c \
