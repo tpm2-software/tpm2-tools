@@ -39,6 +39,7 @@
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
+#include "conversion.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_password_util.h"
 #include "tpm2_tool.h"
@@ -51,6 +52,9 @@ typedef struct {
 
 static TPMS_AUTH_COMMAND sessionData;
 static char *outFilePath;
+static char *signature_path;
+static char *message_path;
+static signature_format sig_format;
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
 static bool is_auth_session;
@@ -206,31 +210,31 @@ static UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
     return size > sizeof(*sig) ? sizeof(*sig) : size;
 }
 
-static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
-
+static bool write_tss_file(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature,
+        const char *path) {
     bool res = false;
     size_t num_bytes;
-    FILE *fp = fopen(outFilePath,"wb");
+    FILE *fp = fopen(path,"wb");
 
     if (!fp) {
-        printf("Output file %s cannot be created: %s\n",
-                outFilePath, strerror(errno));
+        LOG_ERR("Output file %s cannot be created: %s\n",
+                path, strerror(errno));
         goto error;
     }
 
     num_bytes = calcSizeofTPM2B_ATTEST(quoted);
     res = files_write_bytes(fp, (UINT8*)quoted, num_bytes);
     if (!res) {
-        printf("Cannot write quote data structure to %s: %s\n",
-                outFilePath, strerror(errno));
+        LOG_ERR("Cannot write quote data structure to %s: %s\n",
+                path, strerror(errno));
         goto error;
     }
 
     num_bytes = calcSizeofTPMT_SIGNATURE(signature);
     res = files_write_bytes(fp, (UINT8*)signature, num_bytes);
     if (!res) {
-        printf("Cannot write quote data structure to %s: %s\n",
-                outFilePath, strerror(errno));
+        LOG_ERR("Cannot write quote data structure to %s: %s\n",
+                path, strerror(errno));
         goto error;
     }
 
@@ -238,6 +242,23 @@ error:
     if (fp) {
         fclose(fp);
     }
+    return res;
+}
+
+static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
+
+    bool res = write_tss_file(quoted, signature, outFilePath);
+
+    if (signature_path) {
+        res &= tpm2_convert_signature(signature, sig_format, signature_path);
+    }
+
+    if (message_path) {
+        res &= files_save_bytes_to_file(message_path,
+                (UINT8*)(quoted->b).buffer,
+                (quoted->b).size);
+    }
+
     return res;
 }
 
@@ -365,6 +386,19 @@ static bool on_option(char key, char *value) {
          }
          is_auth_session = true;
          break;
+    case 's':
+         signature_path = optarg;
+         break;
+    case 'm':
+         message_path = optarg;
+         break;
+    case 'f':
+         sig_format = tpm2_parse_signature_format(optarg);
+
+         if (sig_format == signature_format_err) {
+            return false;
+         }
+         break;
     }
 
     return true;
@@ -382,9 +416,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "outFile",              required_argument, NULL, 'o' },
         { "qualifyData",          required_argument, NULL, 'q' },
         { "input-session-handle", required_argument, NULL, 'S' },
+        { "signature",            required_argument, NULL, 's' },
+        { "message",              required_argument, NULL, 'm' },
+        { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:s:m:f:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;
