@@ -4,7 +4,7 @@ tpm2_getmanufec 1 "AUGUST 2017" tpm2-tools
 NAME
 ----
 
-tpm2_create(1) - Retrieve the Endorsement Credential Certificate for the TPM
+tpm2_getmanufec(1) - Retrieve the Endorsement Credential Certificate for the TPM
 endorsement key from the TPM manufacturer's endorsement certificate hosting
 server.
 
@@ -100,4 +100,4 @@ See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 
 AUTHOR
 ------
-William Roberts <william.c.roberts@intel.com>
+Imran Desai <imran.desai@intel.com>
