@@ -46,6 +46,7 @@
 #include "tpm_hash.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
+#include "conversion.h"
 
 typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
@@ -58,6 +59,7 @@ struct tpm_sign_ctx {
     UINT16 length;
     char *contextKeyFile;
     char *inMsgFileName;
+    signature_format sig_format;
     struct {
         UINT8 k : 1;
         UINT8 P : 1;
@@ -66,7 +68,7 @@ struct tpm_sign_ctx {
         UINT8 t : 1;
         UINT8 s : 1;
         UINT8 c : 1;
-        UINT8 unused : 1;
+        UINT8 f : 1;
     } flags;
 };
 
@@ -177,9 +179,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *) &signature,
-            sizeof(signature));
+    return tpm2_convert_signature(&signature, ctx.sig_format, ctx.outFilePath);
 }
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
@@ -307,6 +307,13 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'f':
+        ctx.flags.f = 1;
+        ctx.sig_format = tpm2_parse_signature_format(optarg);
+
+        if (ctx.sig_format == signature_format_err) {
+            return false;
+        }
     /* no default */
     }
 
@@ -324,9 +331,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"ticket",               required_argument, NULL, 't'},
       {"keyContext",           required_argument, NULL, 'c'},
       {"input-session-handle", required_argument,NULL,  'S'},
+      {"format",               required_argument, NULL, 'f'}
     };
 
-    *opts = tpm2_options_new("k:P:g:m:t:s:c:S:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:P:g:m:t:s:c:S:f:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;
