@@ -248,7 +248,6 @@ man1_MANS = \
     man/man1/tpm2_nvrelease.1 \
     man/man1/tpm2_hmac.1 \
     man/man1/tpm2_readpublic.1 \
-    man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_load.1 \
     man/man1/tpm2_loadexternal.1 \
     man/man1/tpm2_rsadecrypt.1 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_getmanufec.1 \
     man/man1/tpm2_getpubak.1 \
     man/man1/tpm2_getpubek.1 \
+    man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_pcrevent.1
 endif
 
