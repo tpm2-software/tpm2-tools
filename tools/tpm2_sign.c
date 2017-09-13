@@ -330,7 +330,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"sig",                  required_argument, NULL, 's'},
       {"ticket",               required_argument, NULL, 't'},
       {"keyContext",           required_argument, NULL, 'c'},
-      {"input-session-handle", required_argument,NULL,  'S'},
+      {"input-session-handle", required_argument, NULL, 'S'},
       {"format",               required_argument, NULL, 'f'}
     };
 
