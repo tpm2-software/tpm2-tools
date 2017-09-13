@@ -24,7 +24,6 @@ OPTIONS
 -------
 
   * `-A`, `--auth`=_HIERARCHY_:
-    File to save the policy digest.
     Specify the hierarchy under which the object is created. This will also dictate which authorization secret (if any) must be supplied.
     Supported options are:
       * `o` for `TPM_RH_OWNER`
