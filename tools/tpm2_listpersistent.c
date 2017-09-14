@@ -40,6 +40,7 @@
 
 #include "tpm2_options.h"
 #include "files.h"
+#include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -63,7 +64,7 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
     rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\nTPM2_ReadPublic error: rval = 0x%0x\n\n",rval);
+        LOG_ERR("\nTPM2_ReadPublic error: rval = 0x%0x\n",rval);
         return -1;
     }
 
@@ -71,11 +72,11 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
     TPMI_ALG_PUBLIC type = outPublic.t.publicArea.type;
     TPMI_ALG_HASH nameAlg = outPublic.t.publicArea.nameAlg;
 
-    printf("  {\n");
-    printf("\tKey algorithm: %s(0x%x)\n", tpm2_alg_util_algtostr(type), type);
-    printf("\tHash algorithm: %s(0x%x)\n", tpm2_alg_util_algtostr(nameAlg), nameAlg);
-    printf("\tAttributes: 0x%x\n", outPublic.t.publicArea.objectAttributes.val);
-    printf("  }\n");
+    tpm2_tool_output("  {\n");
+    tpm2_tool_output("\tKey algorithm: %s(0x%x)\n", tpm2_alg_util_algtostr(type), type);
+    tpm2_tool_output("\tHash algorithm: %s(0x%x)\n", tpm2_alg_util_algtostr(nameAlg), nameAlg);
+    tpm2_tool_output("\tAttributes: 0x%x\n", outPublic.t.publicArea.objectAttributes.val);
+    tpm2_tool_output("  }\n");
 
     return 0;
 }
@@ -94,20 +95,20 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
                                    &capabilityData, 0 );
     if(rval != TPM_RC_SUCCESS)
     {
-        printf("\n......GetCapability: Get persistent object list Error."
-               " TPM Error:0x%x......\n", rval);
+        LOG_ERR("\n......GetCapability: Get persistent object list Error."
+               " TPM Error:0x%x......", rval);
         return 1;
     }
 
-    printf( "%d persistent objects defined.\n", capabilityData.data.handles.count);
+    tpm2_tool_output( "%d persistent objects defined.", capabilityData.data.handles.count);
     UINT32 i;
     for( i=0; i < capabilityData.data.handles.count; i++ )
     {
-        printf("\n  %d. Persistent handle: 0x%x\n", i, capabilityData.data.handles.handle[i]);
+        tpm2_tool_output("\n  %d. Persistent handle: 0x%x\n", i, capabilityData.data.handles.handle[i]);
         if(readPublic(sapi_context, capabilityData.data.handles.handle[i]))
             return 2;
     }
-    printf("\n");
+    tpm2_tool_output("\n");
 
     return 0;
 }
