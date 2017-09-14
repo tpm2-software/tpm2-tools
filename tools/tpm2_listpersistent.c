@@ -40,6 +40,7 @@
 
 #include "tpm2_options.h"
 #include "files.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -66,9 +67,13 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
         return -1;
     }
 
+
+    TPMI_ALG_PUBLIC type = outPublic.t.publicArea.type;
+    TPMI_ALG_HASH nameAlg = outPublic.t.publicArea.nameAlg;
+
     printf("  {\n");
-    printf("\tType: 0x%x\n ", outPublic.t.publicArea.type);
-    printf("\tHash algorithm(nameAlg): 0x%x\n ", outPublic.t.publicArea.nameAlg);
+    printf("\tKey algorithm: %s(0x%x)\n", tpm2_alg_util_algtostr(type), type);
+    printf("\tHash algorithm: %s(0x%x)\n", tpm2_alg_util_algtostr(nameAlg), nameAlg);
     printf("\tAttributes: 0x%x\n", outPublic.t.publicArea.objectAttributes.val);
     printf("  }\n");
 
