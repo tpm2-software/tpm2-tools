@@ -26,7 +26,13 @@ OPTIONS
     *  `p` for `TPM_RH_PLATFORM`
 
   * `-H`, `--handle`=_HANDLE_:
-    The handle of a loaded object.
+    The handle of a loaded transient or a persistent object.
+
+    If the handle is for a transient object, then a handle that will be assigned to the persisted
+    object must also be specified with the `-S` option.
+
+    If the handle is for a persistent object, then the same handle has to be specified with the
+    `-S` option for the persistent object to be evicted.
 
   * `-c`, `--context`=_OBJECT\_CONTEXT\_FILE_:
     Filename for object context.
@@ -49,7 +55,7 @@ EXAMPLES
 ```
 tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
 tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P abc123
-tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P 123abc -X
+tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P 123abc
 ```
 
 RETURNS
