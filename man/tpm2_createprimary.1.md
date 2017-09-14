@@ -92,6 +92,3 @@ HELP
 ----
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 
-AUTHOR
-------
-William Roberts <william.c.roberts@intel.com>

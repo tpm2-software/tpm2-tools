@@ -98,6 +98,3 @@ HELP
 ----
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 
-AUTHOR
-------
-Imran Desai <imran.desai@intel.com>
