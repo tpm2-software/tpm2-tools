@@ -253,7 +253,6 @@ man1_MANS = \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1 \
-    man/man1/tpm2_listpersistent.1 \
     man/man1/tpm2_rc_decode.1 \
     man/man1/tpm2_pcrextend.1
 
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
+    man/man1/tpm2_listpersistent.1 \
     man/man1/tpm2_pcrevent.1
 endif
 
