@@ -238,7 +238,6 @@ man1_MANS = \
     man/man1/tpm2_pcrlist.1 \
     man/man1/tpm2_quote.1 \
     man/man1/tpm2_takeownership.1 \
-    man/man1/tpm2_nvlist.1 \
     man/man1/tpm2_nvread.1 \
     man/man1/tpm2_nvreadlock.1 \
     man/man1/tpm2_nvwrite.1 \
@@ -275,6 +274,7 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_loadexternal.1 \
     man/man1/tpm2_makecredential.1 \
     man/man1/tpm2_nvdefine.1 \
+    man/man1/tpm2_nvlist.1 \
     man/man1/tpm2_pcrevent.1
 endif
 
