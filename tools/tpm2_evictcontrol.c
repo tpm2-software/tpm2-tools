@@ -120,6 +120,11 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.H = 1;
+
+        if (ctx.handle.object >> HR_SHIFT == TPM_HT_PERSISTENT) {
+            ctx.handle.persist = ctx.handle.object;
+            ctx.flags.S = 1;
+        }
         break;
     case 'S':
         result = tpm2_util_string_to_uint32(value, &ctx.handle.persist);

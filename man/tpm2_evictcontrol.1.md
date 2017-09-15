@@ -31,8 +31,8 @@ OPTIONS
     If the handle is for a transient object, then a handle that will be assigned to the persisted
     object must also be specified with the `-S` option.
 
-    If the handle is for a persistent object, then the same handle has to be specified with the
-    `-S` option for the persistent object to be evicted.
+    If the handle is for a persistent object, then the `-S` does not need to be provided since the
+    handle must be the same for both options.
 
   * `-c`, `--context`=_OBJECT\_CONTEXT\_FILE_:
     Filename for object context.
