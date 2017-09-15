@@ -45,7 +45,8 @@ These options for creating the tpm entity:
 
   * `-G`, `--kalg`=_KEY\_ALGORITHM_:
     The algorithm associated with this object. It accepts friendly names just
-    like -g option.
+    like -g option. See section "Supported Public Object Algorithms" for a list
+    of supported object algorithms.
 
   * `-A`, `--objectAttributes`=_ATTRIBUTES_:
     The object attributes, optional.
@@ -77,15 +78,17 @@ These options for creating the tpm entity:
 
 [supported hash algorithms](common/hash.md)
 
+[supported public object algorithms](common/object-alg.md)
+
 [algorithm specifiers](common/alg.md)
 
 EXAMPLES
 --------
 
 ```
-tpm2_create -H 0x81010001 -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
-tpm2_create -c parent.context -P abc123 -K def456 -g 0x000B -G 0x0008 -I data.File -o opu.File
-tpm2_create -H 0x81010001 -P 123abc -K 456def -X -g 0x000B -G 0x0008 -I data.File -o opu.File
+tpm2_create -H 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File -o opu.File
+tpm2_create -c parent.context -P abc123 -K def456 -g sha256 -G keyedhash -I data.File -o opu.File
+tpm2_create -H 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File -o opu.File
 ```
 
 RETURNS
