@@ -64,7 +64,6 @@ struct tpm_load_ctx {
         UINT8 r : 1;
         UINT8 c : 1;
         UINT8 C : 1;
-        UINT8 n : 1;
     } flags;
 };
 
@@ -111,9 +110,12 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
     }
     tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
-    /* TODO fix serialization */
-    if(!files_save_bytes_to_file(ctx.out_file, (UINT8 *)&nameExt, sizeof(nameExt)))
-        return -2;
+    if (ctx.out_file) {
+        /* TODO fix serialization */
+        if(!files_save_bytes_to_file(ctx.out_file, (UINT8 *)&nameExt, sizeof(nameExt))) {
+            return -2;
+        }
+    }
 
     return 0;
 }
@@ -156,7 +158,6 @@ static bool on_option(char key, char *value) {
         if(files_does_file_exist(ctx.out_file)) {
             return false;
         }
-        ctx.flags.n = 1;
         break;
     case 'c':
         ctx.context_parent_file = value;
@@ -211,37 +212,33 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int returnVal = 0;
-    int flagCnt = 0;
 
-    flagCnt = ctx.flags.H + ctx.flags.u + ctx.flags.r + ctx.flags.n + ctx.flags.c;
+    if ((!ctx.flags.H && !ctx.flags.c) || (!ctx.flags.u || !ctx.flags.r)) {
+        LOG_ERR("Expected options (H or c) and u and r");
+        return 1;
+    }
 
-    if(flagCnt == 4 && (ctx.flags.H == 1 || ctx.flags.c == 1) &&
-       ctx.flags.u == 1 && ctx.flags.r == 1 && ctx.flags.n == 1) {
-
-        if(ctx.flags.c) {
-            returnVal = files_load_tpm_context_from_file(sapi_context,
+    if(ctx.flags.c) {
+        returnVal = files_load_tpm_context_from_file(sapi_context,
                                                &ctx.parent_handle,
                                                ctx.context_parent_file) != true;
-            if (returnVal) {
-                return 1;
-            }
-        }
-
-        returnVal = load (sapi_context);
         if (returnVal) {
             return 1;
         }
-        if (ctx.flags.C) {
-            returnVal = files_save_tpm_context_to_file (sapi_context,
-                                              handle2048rsa,
-                                              ctx.context_file) != true;
-            if (returnVal) {
-                return 1;
-            }
-        }
+    }
 
-    } else {
+    returnVal = load(sapi_context);
+    if (returnVal) {
         return 1;
+    }
+
+    if (ctx.flags.C) {
+        returnVal = files_save_tpm_context_to_file (sapi_context,
+                                                    handle2048rsa,
+                                                    ctx.context_file) != true;
+        if (returnVal) {
+            return 1;
+        }
     }
 
     return 0;

@@ -21,7 +21,7 @@ OPTIONS
 -----------
 
   * `-H`, `--parent`=_PARENT\_HANDLE_:
-    The handle of the parent object.
+    The handle of the parent object. Either this option or `-c` must be used.
 
   * `-c`, `--contextParent`=_PARENT\_CONTEXT\_FILE_:
     The filename for parent context.
@@ -37,7 +37,7 @@ OPTIONS
     A file containing the sensitive portion of the object.
 
   * `-n`, `--name`=_NAME\_DATA\_FILE_:
-    A file containing the name structure of the object.
+    An optional file to save the name structure of the object.
 
   * `-C`, `--name`=_CONTEXT\_FILE_:
     An optional file to save the object context to.
