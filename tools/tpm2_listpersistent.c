@@ -45,10 +45,40 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-int readPublic(TSS2_SYS_CONTEXT *sapi_context,
-               TPMI_DH_OBJECT    objectHandle,
-               int               index)
-{
+typedef struct tpm_listpersistent_context tpm_listpersistent_context;
+struct tpm_listpersistent_context {
+    TPMI_ALG_HASH nameAlg;
+    TPMI_ALG_PUBLIC type;
+    UINT32 count;
+};
+
+static tpm_listpersistent_context ctx = {
+    .nameAlg = TPM_ALG_NULL,
+    .type = TPM_ALG_NULL,
+};
+
+static bool on_option(char key, char *value) {
+
+    switch (key) {
+    case 'g':
+        ctx.nameAlg = tpm2_alg_util_from_optarg(value);
+        if(ctx.nameAlg == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid hash algorithm, got \"%s\"", value);
+            return false;
+        }
+        break;
+    case 'G':
+        ctx.type = tpm2_alg_util_from_optarg(value);
+        if(ctx.type == TPM_ALG_ERROR) {
+            LOG_ERR("Invalid key algorithm, got \"%s\"", value);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
     UINT32 rval;
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -73,11 +103,27 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context,
     TPMI_ALG_HASH nameAlg = outPublic.t.publicArea.nameAlg;
     UINT32 attrs = outPublic.t.publicArea.objectAttributes.val;
 
+    if ((ctx.type != TPM_ALG_NULL && ctx.type != type) ||
+        (ctx.nameAlg != TPM_ALG_NULL && ctx.nameAlg != nameAlg))
+        return 0;
+
     tpm2_tool_output("persistent-handle[%d]:0x%x key-alg:%s hash-alg:%s object-attr:0x%x\n",
-                     index, objectHandle, tpm2_alg_util_algtostr(type),
+                     ctx.count++, objectHandle, tpm2_alg_util_algtostr(type),
                      tpm2_alg_util_algtostr(nameAlg), attrs);
 
     return 0;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    static struct option topts[] = {
+        {"halg", required_argument, NULL, 'g'},
+        {"kalg", required_argument, NULL, 'G'},
+    };
+
+    *opts = tpm2_options_new("g:G:", ARRAY_LEN(topts), topts, on_option, NULL);
+
+    return *opts != NULL;
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
@@ -101,7 +147,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UINT32 i;
     for(i = 0; i < capabilityData.data.handles.count; i++) {
-        if(readPublic(sapi_context, capabilityData.data.handles.handle[i], i))
+        if(readPublic(sapi_context, capabilityData.data.handles.handle[i]))
             return 2;
     }
 

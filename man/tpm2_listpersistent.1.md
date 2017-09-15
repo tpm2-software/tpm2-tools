@@ -19,18 +19,35 @@ tpm2_listpersistent(1) - display all defined persistent objects.
 
 OPTIONS
 -----------
-This tool takes no tool specific options.
+These options for listing the persistent objects:
+
+  * `-g`, `--halg`=_ALGORITHM_:
+    Only display persistent objects using this hash algorithm. Algorithms should
+    follow the " formatting standards, see section "Algorithm Specifiers".
+    Also, see section "Supported Hash Algorithms" for a list of supported
+    hash algorithms.
+
+  * `-G`, `--kalg`=_KEY\_ALGORITHM_:
+    Only display persistent objects using this key algorithm. It accepts friendly
+    names just like `-g` option. See section "Supported Public Object Algorithms"
+    for a list of supported object algorithms.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
+[supported hash algorithms](common/hash.md)
+
+[supported public object algorithms](common/object-alg.md)
+
+[algorithm specifiers](common/alg.md)
 
 EXAMPLES
 --------
 
 ```
 tpm2_listpersistent
+tpm2_listpersistent -g sha256 -G ecc
 
 ```
 
