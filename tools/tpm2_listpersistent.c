@@ -62,14 +62,16 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
-        if(ctx.nameAlg == TPM_ALG_ERROR) {
+        if(ctx.nameAlg == TPM_ALG_ERROR ||
+           !tpm2_alg_util_is_hash_alg(ctx.nameAlg)) {
             LOG_ERR("Invalid hash algorithm, got \"%s\"", value);
             return false;
         }
         break;
     case 'G':
         ctx.type = tpm2_alg_util_from_optarg(value);
-        if(ctx.type == TPM_ALG_ERROR) {
+        if(ctx.type == TPM_ALG_ERROR ||
+           tpm2_alg_util_is_hash_alg(ctx.type)) {
             LOG_ERR("Invalid key algorithm, got \"%s\"", value);
             return false;
         }
