@@ -78,7 +78,7 @@ tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary
 if [ $? != 0 ];then
 	 fail createprimary 
 fi
-tpm2_create -g $alg_create_obj -G $alg_create_key -o $file_en_decrypt_key_pub -O $file_en_decrypt_key_priv  -c $file_primary_key_ctx
+tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_en_decrypt_key_pub -r $file_en_decrypt_key_priv  -c $file_primary_key_ctx
 if [ $? != 0 ];then
 	fail create 
 fi

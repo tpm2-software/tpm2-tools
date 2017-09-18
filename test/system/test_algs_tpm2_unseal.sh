@@ -61,7 +61,7 @@ for  halg_p in 0x0004 0x000B 0x000C 0x000D 0x0012
  do
 	for kalg_c in 0x0001 0x0008 0x0023 0x0025
 	 do
-     tpm2_create  -g $halg_c  -G $kalg_c -o opu_"$halg_p""$kalg_p"_"$halg_c""$kalg_c" -O opr_"$halg_p""$kalg_p"_"$halg_c""$kalg_c"  -I secret.data  -c context.p_"$halg_p"_"$kalg_p"
+     tpm2_create  -g $halg_c  -G $kalg_c -u opu_"$halg_p""$kalg_p"_"$halg_c""$kalg_c" -r opr_"$halg_p""$kalg_p"_"$halg_c""$kalg_c"  -I secret.data  -c context.p_"$halg_p"_"$kalg_p"
     
 		if [ $? != 0 ];then
 		echo "create used context.p_"$halg_p"_"$kalg_p" with algs:"$halg_c""$kalg_c" fail, please check the environment or parameters!" 

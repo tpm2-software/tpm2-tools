@@ -67,7 +67,7 @@ tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary
 if [ $? != 0 ];then
 	 fail createprimary 
 fi
-tpm2_create -g $alg_create_obj -G $alg_create_key -o $file_load_key_pub -O $file_load_key_priv  -c $file_primary_key_ctx
+tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_load_key_pub -r $file_load_key_priv  -c $file_primary_key_ctx
 if [ $? != 0 ];then
 	fail create 
 fi
@@ -84,7 +84,7 @@ tpm2_evictcontrol -A o -c $file_primary_key_ctx  -S $Handle_parent
 if [ $? != 0 ];then
 	fail evict   
 fi
-tpm2_create  -H $Handle_parent   -g $alg_create_obj  -G $alg_create_key -o $file_load_key_pub  -O  $file_load_key_priv  
+tpm2_create  -H $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_load_key_pub  -r  $file_load_key_priv
 if [ $? != 0 ];then
 	fail create 
 fi

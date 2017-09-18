@@ -58,7 +58,7 @@ if [ $? != 0 ];then
 echo "createprimary fail, please check the environment or parameters!"
 exit 1
 fi
-tpm2_create -g $alg_hash -G $alg_rsaencrypt_key -o $file_rsaencrypt_key_pub -O $file_rsaencrypt_key_priv  -c $file_primary_key_ctx
+tpm2_create -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -c $file_primary_key_ctx
 if [ $? != 0 ];then
 echo "create fail, please check the environment or parameters!"
 exit 1

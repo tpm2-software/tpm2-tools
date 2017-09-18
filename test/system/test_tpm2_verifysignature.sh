@@ -71,7 +71,7 @@ tpm2_createprimary -A e -g $alg_hash -G $alg_primary_key -C $file_primary_key_ct
 if [ $? != 0 ];then
 	 fail createprimary 
 fi
-tpm2_create -g $alg_hash -G $alg_signing_key -o $file_signing_key_pub -O $file_signing_key_priv  -c $file_primary_key_ctx
+tpm2_create -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv  -c $file_primary_key_ctx
 if [ $? != 0 ];then
 	fail create 
 fi

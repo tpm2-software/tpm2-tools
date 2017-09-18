@@ -60,11 +60,11 @@ These options for creating the tpm entity:
   * `-E`, `--enforce-policy`:
     Enforce policy based authorization on the object.
 
-  * `-o`, `--opu`=_OUTPUT\_PUBLIC\_FILE_:
-    The output file which contains the public key, optional.
+  * `-u`, `--pubfile`=_OUTPUT\_PUBLIC\_FILE_:
+    The output file which contains the public portion of the created object, optional.
 
-  * `-O`, `--opr`=_OUTPUT\PRIVATE\_FILE_:
-    The output file which contains the private key, optional.
+  * `-r`, `--privfile`=_OUTPUT\_PRIVATE\_FILE_:
+    The output file which contains the sensitive portion of the object, optional.
 
 * `-S`, `--input-session-handle`=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.

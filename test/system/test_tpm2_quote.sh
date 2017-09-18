@@ -73,7 +73,7 @@ if [ $? != 0 ];then
 	 fail createprimary 
 	 exit 1
 fi
-tpm2_create -g $alg_create_obj -G $alg_create_key -o $file_quote_key_pub -O $file_quote_key_priv  -c $file_primary_key_ctx
+tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_quote_key_pub -r $file_quote_key_priv  -c $file_primary_key_ctx
 if [ $? != 0 ];then
 	fail create 
 	exit 1
