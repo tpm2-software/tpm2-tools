@@ -66,7 +66,7 @@ echo "createprimary fail, please check the environment or parameters!"
 exit 1
 fi
 
-tpm2_create -g $alg_create_obj -G $alg_create_key -o $file_unseal_key_pub -O $file_unseal_key_priv  -I $file_input_data -c $file_primary_key_ctx
+tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv  -I $file_input_data -c $file_primary_key_ctx
 if [ $? != 0 ];then
 echo "create fail, please check the environment or parameters!"
 exit 1
@@ -106,7 +106,7 @@ if [ $? != 0 ];then
     exit 1
 fi
 
-tpm2_create -g $alg_create_obj -G $alg_create_key -o $file_unseal_key_pub -O $file_unseal_key_priv -I- -c $file_primary_key_ctx -L $file_policy -A $obj_attr <<< $secret
+tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx -L $file_policy -A $obj_attr <<< $secret
 if [ $? != 0 ];then
     echo "create object with policy fail, please check the environment or parameters!"
     exit 1

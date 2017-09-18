@@ -52,7 +52,7 @@ for pCtx in `ls ctx.cpri*`
         do 
         for GAlg in rsa 0x08 ecc 0x25
             do 
-            tpm2_create -c $pCtx -g $gAlg -G $GAlg -o opu."$pCtx".g"$gAlg".G"$GAlg" -O opr."$pCtx".g"$gAlg".G"$GAlg"
+            tpm2_create -c $pCtx -g $gAlg -G $GAlg -u opu."$pCtx".g"$gAlg".G"$GAlg" -r opr."$pCtx".g"$gAlg".G"$GAlg"
             if [ $? != 0 ];then 
             echo "tpm2_create error: pCtx=$pCtx gAlg=$gAlg GAlg=$GAlg"
             echo "tpm2_create error: pCtx=$pCtx gAlg=$gAlg GAlg=$GAlg" >> create.error.log             
@@ -70,7 +70,7 @@ if [ $? != 0 ];then
  exit 1
 fi
 
-tpm2_create -c prim.ctx -g sha256 -G 0x1 -L policy.bin -o key.pub -O key.priv -E
+tpm2_create -c prim.ctx -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv -E
 if [ $? != 0 ];then
  echo "create object failed"
  exit 1

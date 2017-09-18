@@ -74,7 +74,7 @@ tpm2_takeownership -c
 
 tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -g $alg_create_obj -G $alg_create_key -o $file_hmac_key_pub -O $file_hmac_key_priv  -c $file_primary_key_ctx
+tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
 
 tpm2_load -c $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -C $file_hmac_key_ctx
 
@@ -104,7 +104,7 @@ tpm2_takeownership -c
 
 tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -g sha1 -G $alg_create_key -o $file_hmac_key_pub -O $file_hmac_key_priv  -c $file_primary_key_ctx
+tpm2_create -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
 
 tpm2_load -c $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -C $file_hmac_key_ctx
 

@@ -111,7 +111,7 @@ tpm2_createprimary -A p -g 0x0004 -G 0x001 -C context.p1.out
 	fail createprimary
   fi
 
-tpm2_create -c context.p1.out -g 0x000B -G 0x0008 -o opu1.out -O opr1.out -I secret.data 
+tpm2_create -c context.p1.out -g 0x000B -G 0x0008 -u opu1.out -r opr1.out -I secret.data
   if [ $? != 0 ];then
 	fail create
   fi
@@ -129,7 +129,7 @@ tpm2_createprimary -A p -g 0x000B -G 0x001 -C context.p2.out
   if [ $? != 0 ];then
 	fail createprimary 
   fi
-tpm2_create -c context.p2.out -g 0x000B -G 0x0008 -o opu2.out -O opr2.out 
+tpm2_create -c context.p2.out -g 0x000B -G 0x0008 -u opu2.out -r opr2.out
   if [ $? != 0 ];then
 	fail create 
   fi
@@ -147,7 +147,7 @@ tpm2_createprimary -A e -g 0x000B -G 0x0001 -C context.p3.out
   if [ $? != 0 ];then
 	fail createprimary 
   fi
-tpm2_create  -c  context.p3.out -g 0x000B -G 0x0008  -o opu3.out -O opr3.out
+tpm2_create  -c  context.p3.out -g 0x000B -G 0x0008  -u opu3.out -r opr3.out
   if [ $? != 0 ];then
 	fail create 
   fi
@@ -165,7 +165,7 @@ tpm2_createprimary -A e -g 0x000B -G 0x0001 -C context.p4.out
   if [ $? != 0 ];then
 	fail createprimary 
   fi
-tpm2_create  -c  context.p4.out -g 0x000B -G 0x0008  -o opu4.out -O opr4.out
+tpm2_create  -c  context.p4.out -g 0x000B -G 0x0008  -u opu4.out -r opr4.out
   if [ $? != 0 ];then
 	fail create 
   fi
@@ -183,7 +183,7 @@ tpm2_createprimary -A e -g 0x000B -G 0x0001 -C context.p5.out
   if [ $? != 0 ];then
 	fail createprimary 
   fi
-tpm2_create -g 0x000B -G 0x0008 -o opu5.out -O opr5.out -c context.p5.out
+tpm2_create -g 0x000B -G 0x0008 -u opu5.out -r opr5.out -c context.p5.out
   if [ $? != 0 ];then
 	fail create 
   fi
@@ -206,7 +206,7 @@ tpm2_createprimary -A e -g 0x000B -G 0x0001 -C context.p6.out
   if [ $? != 0 ];then
 	fail createprimary 
   fi
-tpm2_create  -g 0x000B -G 0x0001 -o opu6.out -O opr6.out -c context.p6.out
+tpm2_create  -g 0x000B -G 0x0001 -u opu6.out -r opr6.out -c context.p6.out
   if [ $? != 0 ];then
 	fail create 
   fi
@@ -233,7 +233,7 @@ tpm2_createprimary -A e -g 0x000B -G 0x0001 -C context.p7.out
 	fail createprimary 
   fi
   
-tpm2_create -g 0x000B -G 0x0008 -o opu7.out -O opr7.out -c context.p7.out
+tpm2_create -g 0x000B -G 0x0008 -u opu7.out -r opr7.out -c context.p7.out
   if [ $? != 0 ];then
 	fail create 
   fi
@@ -256,7 +256,7 @@ tpm2_createprimary -A e -g 0x000B -G 0x0001 -C context.p8.out
   if [ $? != 0 ];then
 	fail createprimary 
   fi
-tpm2_create  -g 0x000B -G 0x0025 -o opu8.out -O opr8.out -c context.p8.out
+tpm2_create  -g 0x000B -G 0x0025 -u opu8.out -r opr8.out -c context.p8.out
   if [ $? != 0 ];then
 	fail create 
   fi
@@ -278,7 +278,7 @@ tpm2_createprimary -A e -g 0x000B -G 0x0001 -C context.p9.out
   if [ $? != 0 ];then
 	fail createprimary 
   fi
-tpm2_create -g 0x000B -G 0x0001 -o opu9.out -O opr9.out -c context.p9.out 
+tpm2_create -g 0x000B -G 0x0001 -u opu9.out -r opr9.out -c context.p9.out
   if [ $? != 0 ];then
 	fail create 
   fi

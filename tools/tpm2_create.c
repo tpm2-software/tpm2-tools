@@ -313,14 +313,14 @@ static bool on_option(char key, char *value) {
     case 'E':
         ctx.is_policy_enforced = true;
         break;
-    case 'o':
+    case 'u':
         ctx.opu_path = value;
         if(files_does_file_exist(ctx.opu_path) != 0) {
             return false;
         }
         ctx.flags.o = 1;
         break;
-    case 'O':
+    case 'r':
         ctx.opr_path = value;
         if(files_does_file_exist(ctx.opr_path) != 0) {
             return false;
@@ -351,8 +351,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"inFile",1,NULL,'I'},
       {"policy-file",1,NULL,'L'},
       {"enforce-policy",1,NULL,'E'},
-      {"opu",1,NULL,'o'},
-      {"opr",1,NULL,'O'},
+      {"pubfile",1,NULL,'u'},
+      {"privfile",1,NULL,'r'},
       {"contextParent",1,NULL,'c'},
       {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
@@ -361,7 +361,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    *opts = tpm2_options_new("H:P:K:g:G:A:I:L:o:O:c:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("H:P:K:g:G:A:I:L:u:r:c:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }
