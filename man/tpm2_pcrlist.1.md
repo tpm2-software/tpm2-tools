@@ -21,9 +21,17 @@ OPTIONS
 
   * `-g`, `--algorithm`=_HASH\_ALGORITHM_:
     Only output PCR banks with the given algorithm.
+    Algorithms should follow the "formatting standards, see section
+    "Algorithm Specifiers".
+    Also, see section "Supported Hash Algorithms" for a list of supported hash
+    algorithms.
 
   * `-L`, `--selList`=_PCR\_SELECTION\_LIST_:
-    Only output the following PCRs ids. (0~23) for each bank.
+
+    The list of pcr banks and selected PCRs' ids for each bank to display.
+    _PCR\_SELECTION\_LIST_ values should follow the
+    pcr bank specifiers standards, see section "PCR Bank Specfiers".
+
 
   * `-s`, `--algs`:
     Output the list of supported algorithms.
@@ -31,6 +39,12 @@ OPTIONS
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
+
+[pcr bank specifiers](common/password.md)
+
+[supported hash algorithms](common/hash.md)
+
+[algorithm specifiers](common/alg.md)
 
 EXAMPLES
 --------
@@ -44,13 +58,13 @@ tpm2_pcrlist
 Display the PCR values with a specified bank:
 
 ```
-tpm2_pcrlist -g 0x04
+tpm2_pcrlist -g sha1
 ```
 
 Display the PCR values with specified banks and store in a file:
 
 ```
-tpm2_pcrlist -L 0x04:16,17,18+0x0b:16,17,18 -o pcrs
+tpm2_pcrlist -L sha1:16,17,18+sha256:16,17,18 -o pcrs
 ```
 
 Display the supported PCR bank algorithms and exit:
