@@ -54,6 +54,7 @@ TPM_HANDLE handle2048rsa;
 typedef struct tpm_createprimary_ctx tpm_createprimary_ctx;
 struct tpm_createprimary_ctx {
     TPMS_AUTH_COMMAND session_data;
+    TPM2B_SENSITIVE_CREATE inSensitive;
     TPM2B_PUBLIC in_public;
     TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
@@ -75,6 +76,7 @@ static tpm_createprimary_ctx ctx = {
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     },
+    .inSensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT,
     .in_public = TPM2B_EMPTY_INIT,
     .type = TPM_ALG_RSA,
     .nameAlg = TPM_ALG_SHA1,
@@ -154,7 +156,6 @@ int setup_alg(void) {
 
 int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
     UINT32 rval;
-    TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_EMPTY_INIT;
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -178,8 +179,8 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
     sessionsData.cmdAuthsCount = 1;
     sessionsDataOut.rspAuthsCount = 1;
 
-    inSensitive.t.sensitive.data.t.size = 0;
-    inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
+    ctx.inSensitive.t.size = ctx.inSensitive.t.sensitive.userAuth.b.size + 
+        sizeof(ctx.inSensitive.t.size);
 
     if(setup_alg())
         return -1;
@@ -187,7 +188,7 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
     creationPCR.count = 0;
 
     rval = Tss2_Sys_CreatePrimary(sapi_context, ctx.hierarchy, &sessionsData,
-                                  &inSensitive, &ctx.in_public, &outsideInfo, &creationPCR,
+                                  &ctx.inSensitive, &ctx.in_public, &outsideInfo, &creationPCR,
                                   &handle2048rsa, &outPublic, &creationData, &creationHash,
                                   &creationTicket, &name, &sessionsDataOut);
     if(rval != TPM_RC_SUCCESS) {
@@ -228,7 +229,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'K':
-        res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        res = tpm2_password_util_from_optarg(value, &ctx.inSensitive.t.sensitive.userAuth);
         if (!res) {
             LOG_ERR("Invalid new key password, got\"%s\"", value);
             return false;
