@@ -233,7 +233,6 @@ endif
 EXTRA_DIST = $(top_srcdir)/man
 
 man1_MANS = \
-    man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1
 
 if HAVE_MD2MAN_ROFF
@@ -275,7 +274,8 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_send_command.1 \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_startup.1 \
-    man/man1/tpm2_takeownership.1
+    man/man1/tpm2_takeownership.1 \
+    man/man1/tpm2_unseal.1
 endif
 
 MAN_DEPS := man/common-options.troff man/tcti-options.troff \
