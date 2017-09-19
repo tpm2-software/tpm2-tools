@@ -1,5 +1,5 @@
 next
-* tpm2_create - options 'o' and 'O' changed to 'u' and 'r' respectivly. 
+* tpm2_create - options 'o' and 'O' changed to 'u' and 'r' respectively. 
 * tpm2_pcrlist: support yaml output for parsing.
 * tpm2_pcrevent: new tool for hashing and extending pcrs.
 * Make tpm2_{createprimary,create,load,pcrlist,hmac} tools to support the --quiet option.
