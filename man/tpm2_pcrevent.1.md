@@ -1,4 +1,4 @@
-tpm2_pcrevent 8 "AUGUST 2017" tpm2-tools
+tpm2_pcrevent 1 "AUGUST 2017" tpm2-tools
 ==================================================
 
 NAME
