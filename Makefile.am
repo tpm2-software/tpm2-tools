@@ -235,7 +235,6 @@ EXTRA_DIST = $(top_srcdir)/man
 man1_MANS = \
     man/man1/tpm2_send_command.1 \
     man/man1/tpm2_startup.1 \
-    man/man1/tpm2_quote.1 \
     man/man1/tpm2_takeownership.1 \
     man/man1/tpm2_readpublic.1 \
     man/man1/tpm2_rsadecrypt.1 \
@@ -275,7 +274,8 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_nvwrite.1 \
     man/man1/tpm2_pcrevent.1 \
     man/man1/tpm2_pcrextend.1 \
-    man/man1/tpm2_pcrlist.1
+    man/man1/tpm2_pcrlist.1 \
+    man/man1/tpm2_quote.1
 endif
 
 MAN_DEPS := man/common-options.troff man/tcti-options.troff \
@@ -342,6 +342,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[supported signing algorithms\]/d' \
 	    -e '/\[nv attributes\]/r man/common/nv-attrs.md' \
 	    -e '/\[nv attributes\]/d' \
+	    -e '/\[pcr bank specifiers\]/r man/common/pcr.md' \
+	    -e '/\[pcr bank specifiers\]/d' \
 	    < $< | md2man-roff > $@
 
 CLEANFILES = $(man1_MANS)
