@@ -244,8 +244,7 @@ man1_MANS = \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1 \
-    man/man1/tpm2_rc_decode.1 \
-    man/man1/tpm2_pcrextend.1
+    man/man1/tpm2_rc_decode.1
 
 if HAVE_MD2MAN_ROFF
     man1_MANS += \
@@ -275,7 +274,8 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_nvreadlock.1 \
     man/man1/tpm2_nvrelease.1 \
     man/man1/tpm2_nvwrite.1 \
-    man/man1/tpm2_pcrevent.1
+    man/man1/tpm2_pcrevent.1 \
+    man/man1/tpm2_pcrextend.1
 endif
 
 MAN_DEPS := man/common-options.troff man/tcti-options.troff \
