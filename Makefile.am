@@ -276,42 +276,6 @@ if HAVE_MD2MAN_ROFF
     man/man1/tpm2_verifysignature.1
 endif
 
-MAN_DEPS := man/common-options.troff man/tcti-options.troff \
-           man/tcti-environment.troff man/alg-common.troff \
-           man/hash-alg-common.troff man/object-alg-common.troff \
-           man/sign-alg-common.troff man/password-fmt-common.troff \
-           man/alg-notes-common.troff
-
-# DEPRECATED - No more raw troff files for manpages, use markdown (below).
-man/man1/%.1 : man/%.1.in $(MAN_DEPS)
-	rm -f $@
-	mkdir -p man/man1
-if HAVE_TCTI_DEV
-	echo ".nr HAVE_TCTI_DEV 1" >> $@
-endif
-if HAVE_TCTI_SOCK
-	echo ".nr HAVE_TCTI_SOCK 1" >> $@
-endif
-	sed -e '/@COMMON_OPTIONS_INCLUDE@/r man/common-options.troff' \
-	    -e '/@COMMON_OPTIONS_INCLUDE@/d' \
-	    -e '/@TCTI_OPTIONS_INCLUDE@/r man/tcti-options.troff' \
-	    -e '/@TCTI_OPTIONS_INCLUDE@/d' \
-	    -e '/@TCTI_ENVIRONMENT_INCLUDE@/r man/tcti-environment.troff' \
-	    -e '/@TCTI_ENVIRONMENT_INCLUDE@/d' \
-	    -e '/@ALG_COMMON_INCLUDE@/r man/alg-common.troff' \
-	    -e '/@ALG_COMMON_INCLUDE@/d' \
-	    -e '/@HASH_ALG_COMMON_INCLUDE@/r man/hash-alg-common.troff' \
-	    -e '/@HASH_ALG_COMMON_INCLUDE@/d' \
-	    -e '/@OBJECT_ALG_COMMON_INCLUDE@/r man/object-alg-common.troff' \
-	    -e '/@OBJECT_ALG_COMMON_INCLUDE@/d' \
-	    -e '/@SIGN_ALG_COMMON_INCLUDE@/r man/sign-alg-common.troff' \
-	    -e '/@SIGN_ALG_COMMON_INCLUDE@/d' \
-	    -e '/@PASSWORD_FORMAT_COMMON_INCLUDE@/r man/password-fmt-common.troff' \
-	    -e '/@PASSWORD_FORMAT_COMMON_INCLUDE@/d' \
-	    -e '/@ALG_NOTES_COMMON_INCLUDE@/r man/alg-notes-common.troff' \
-	    -e '/@ALG_NOTES_COMMON_INCLUDE@/d' \
-	    < $< >> $@
-
 MARKDOWN_COMMON_DEPS = \
 	man/common/alg.md \
 	man/common/hash.md \
