@@ -30,15 +30,13 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
-alg_primary_obj=0x0004
-alg_primary_key=0x0001
-alg_create_obj=0x000B
-alg_create_key=0x0008
-alg_pcr_policy=0x0004
+alg_primary_obj=sha256
+alg_primary_key=ecc
+alg_create_obj=sha256
+alg_create_key=keyedhash
+alg_pcr_policy=sha1
 
 pcr_ids="0,1,2,3"
-
-obj_attr=0x492 # fixedTPM, fixedParent, adminWithPolicy, noDA
 
 file_pcr_value=pcr.bin
 file_input_data=secret.data
@@ -106,7 +104,7 @@ if [ $? != 0 ];then
     exit 1
 fi
 
-tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx -L $file_policy -A $obj_attr <<< $secret
+tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx -L $file_policy -E <<< $secret
 if [ $? != 0 ];then
     echo "create object with policy fail, please check the environment or parameters!"
     exit 1
