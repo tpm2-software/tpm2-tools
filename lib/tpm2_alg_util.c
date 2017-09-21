@@ -383,3 +383,64 @@ nomem:
     return NULL;
 }
 
+static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle,
+        TPMI_ALG_PUBLIC *type) {
+
+    TPMS_AUTH_RESPONSE session_data_out;
+
+    TPMS_AUTH_RESPONSE *session_data_out_array[1] = {
+            &session_data_out
+    };
+
+    TSS2_SYS_RSP_AUTHS sessions_data_out = {
+            1,
+            &session_data_out_array[0]
+    };
+
+    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
+
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+
+    TPM2B_NAME qaulified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+
+    TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
+            &qaulified_name, &sessions_data_out);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Sys_ReadPublic failed, error code: 0x%x", rval);
+        return false;
+    }
+    *type = out_public.t.publicArea.type;
+    return true;
+}
+
+bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg,
+        TPMT_SIG_SCHEME *scheme) {
+
+    TPM_ALG_ID type;
+    bool result = get_key_type(sapi_context, keyHandle, &type);
+    if (!result) {
+        return false;
+    }
+
+    switch (type) {
+    case TPM_ALG_RSA :
+        scheme->scheme = TPM_ALG_RSASSA;
+        scheme->details.rsassa.hashAlg = halg;
+        break;
+    case TPM_ALG_KEYEDHASH :
+        scheme->scheme = TPM_ALG_HMAC;
+        scheme->details.hmac.hashAlg = halg;
+        break;
+    case TPM_ALG_ECC :
+        scheme->scheme = TPM_ALG_ECDSA;
+        scheme->details.ecdsa.hashAlg = halg;
+        break;
+    case TPM_ALG_SYMCIPHER :
+    default:
+        LOG_ERR("Unknown key type, got: 0x%x", type);
+        return false;
+    }
+
+    return true;
+}
