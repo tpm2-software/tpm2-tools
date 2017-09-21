@@ -37,6 +37,12 @@ cleanup() {
 
 trap cleanup EXIT
 
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+trap onerror ERR
+
 echo "3a01000001000b00b20003002000837197674484b3f81a90cc8d46a5d724fd52\
 d76e06520b64f2a1da1b331469aa000000000000000000000000000000000000\
 0000000000000000000000000000000006008000430010000000000000080000\
@@ -51,24 +57,12 @@ e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859525118bd4470b18180ee\
 f78ae4267bcd0000" | xxd -r -p > test_ek.pub
 
 tpm2_getmanufec -g rsa -O -N -U -E ECcert.bin -f test_ek.pub -S https://ekop.intel.com/ekcertservice/
-if [ $? != 0 ];then
- echo "tpm2_getmanufec command failed, please check the environment or parameters!"
- exit 1
-fi
 
 # Test that stdoutput is the same
 tpm2_getmanufec -g rsa -O -N -U -f test_ek.pub -S https://ekop.intel.com/ekcertservice/ > ECcert2.bin
-if [ $? != 0 ]; then
- echo "tpm2_getmanufec to stdout command failed, please check the environment or parameters!"
- exit 1
-fi
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin
-if [ $? != 0 ]; then
- echo "Files produced by tpm2_getmanufec -E and stdout differ, expected to be the same!"
- exit 1
-fi
 
 if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91ff5" ]; then
  echo "Failed: retrieving endorsement certificate"
