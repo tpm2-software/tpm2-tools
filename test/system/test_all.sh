@@ -60,7 +60,7 @@ test_wrapper test_tpm2_nv.sh
 test_wrapper test_tpm2_pcrlist.sh
 test_wrapper test_tpm2_getrandom.sh
 test_wrapper test_tpm2_getrandom_func.sh
-#test_wrapper test_tpm2_createprimary_all.sh
+test_wrapper test_tpm2_createprimary_all.sh
 test_wrapper test_tpm2_create_all.sh
 test_wrapper test_tpm2_load.sh
 test_wrapper test_tpm2_loadexternal.sh
