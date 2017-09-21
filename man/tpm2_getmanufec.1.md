@@ -42,7 +42,10 @@ OPTIONS
     an algorithm argument.
 
   * `-f`, `--file`=_FILE_:
-    specifies to readout the EK public without  making it persistent.
+    specifies the file used to save the public portion of EK.
+
+  * `-N`, `--NonPersistent`:
+    specifies to readout the EK public without making it persistent.
 
   * `-O`, `--OfflineProv`:
     specifies that the file specifier from `-f` is an EK retrieved from offline
@@ -56,6 +59,10 @@ OPTIONS
   * `-S`, `--EKserverAddr`=_SERVER\_ADDRESS_:
     specifies to attempt retrieving the Endorsement Credentials from the
     specified   TPM manufacturer provisioning server.
+
+  * `-U`, `--SSL_NO_VERIFY`:
+    specifies to attempt connecting with the  TPM manufacturer provisioning server
+    with SSL_NO_VERIFY option.
 
   * `-X`, `--passwdInHex`:
     passwords given by any options are hex format.
