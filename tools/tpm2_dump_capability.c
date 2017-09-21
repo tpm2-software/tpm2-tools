@@ -146,13 +146,13 @@ get_uint32_as_chars (UINT32    value,
  * Print string representations of the TPMA_MODES.
  */
 void
-printf_tpma_modes (TPMA_MODES    modes)
+tpm2_tool_output_tpma_modes (TPMA_MODES    modes)
 {
-    printf ("TPM_PT_MODES: 0x%08x\n", modes.val);
+    tpm2_tool_output ("TPM_PT_MODES: 0x%08x\n", modes.val);
     if (modes.FIPS_140_2)
-        printf ("  TPMA_MODES_FIPS_140_2\n");
+        tpm2_tool_output ("  TPMA_MODES_FIPS_140_2\n");
     if (modes.reserved1)
-        printf ("  TPMA_MODES_RESERVED1 (these bits shouldn't be set)\n");
+        tpm2_tool_output ("  TPMA_MODES_RESERVED1 (these bits shouldn't be set)\n");
 }
 /*
  * Print string representation of the TPMA_PERMANENT attributes.
@@ -160,15 +160,15 @@ printf_tpma_modes (TPMA_MODES    modes)
 void
 dump_permanent_attrs (TPMA_PERMANENT attrs)
 {
-    printf ("TPM_PT_PERSISTENT:\n");
-    printf ("  ownerAuthSet:              %s\n", prop_str (attrs.ownerAuthSet));
-    printf ("  endorsementAuthSet:        %s\n", prop_str (attrs.endorsementAuthSet));
-    printf ("  lockoutAuthSet:            %s\n", prop_str (attrs.lockoutAuthSet));
-    printf ("  reserved1:                 %s\n", prop_str (attrs.reserved1));
-    printf ("  disableClear:              %s\n", prop_str (attrs.disableClear));
-    printf ("  inLockout:                 %s\n", prop_str (attrs.inLockout));
-    printf ("  tpmGeneratedEPS:           %s\n", prop_str (attrs.tpmGeneratedEPS));
-    printf ("  reserved2:                 %s\n", prop_str (attrs.reserved2));
+    tpm2_tool_output ("TPM_PT_PERSISTENT:\n");
+    tpm2_tool_output ("  ownerAuthSet:              %s\n", prop_str (attrs.ownerAuthSet));
+    tpm2_tool_output ("  endorsementAuthSet:        %s\n", prop_str (attrs.endorsementAuthSet));
+    tpm2_tool_output ("  lockoutAuthSet:            %s\n", prop_str (attrs.lockoutAuthSet));
+    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs.reserved1));
+    tpm2_tool_output ("  disableClear:              %s\n", prop_str (attrs.disableClear));
+    tpm2_tool_output ("  inLockout:                 %s\n", prop_str (attrs.inLockout));
+    tpm2_tool_output ("  tpmGeneratedEPS:           %s\n", prop_str (attrs.tpmGeneratedEPS));
+    tpm2_tool_output ("  reserved2:                 %s\n", prop_str (attrs.reserved2));
 }
 /*
  * Print string representations of the TPMA_STARTUP_CLEAR attributes.
@@ -176,13 +176,13 @@ dump_permanent_attrs (TPMA_PERMANENT attrs)
 void
 dump_startup_clear_attrs (TPMA_STARTUP_CLEAR attrs)
 {
-    printf ("TPM_PT_STARTUP_CLEAR:\n");
-    printf ("  phEnable:                  %s\n", prop_str (attrs.phEnable));
-    printf ("  shEnable:                  %s\n", prop_str (attrs.shEnable));
-    printf ("  ehEnable:                  %s\n", prop_str (attrs.ehEnable));
-    printf ("  phEnableNV:                %s\n", prop_str (attrs.phEnableNV));
-    printf ("  reserved1:                 %s\n", prop_str (attrs.reserved1));
-    printf ("  orderly:                   %s\n", prop_str (attrs.orderly));
+    tpm2_tool_output ("TPM_PT_STARTUP_CLEAR:\n");
+    tpm2_tool_output ("  phEnable:                  %s\n", prop_str (attrs.phEnable));
+    tpm2_tool_output ("  shEnable:                  %s\n", prop_str (attrs.shEnable));
+    tpm2_tool_output ("  ehEnable:                  %s\n", prop_str (attrs.ehEnable));
+    tpm2_tool_output ("  phEnableNV:                %s\n", prop_str (attrs.phEnableNV));
+    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs.reserved1));
+    tpm2_tool_output ("  orderly:                   %s\n", prop_str (attrs.orderly));
 }
 /*
  * Iterate over all fixed properties, call the unique print function for each.
@@ -200,30 +200,30 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
         switch (property) {
         case TPM_PT_FAMILY_INDICATOR:
             get_uint32_as_chars (value, buf);
-            printf ("TPM_PT_FAMILY_INDICATOR:\n"
+            tpm2_tool_output ("TPM_PT_FAMILY_INDICATOR:\n"
                     "  as UINT32:                0x08%x\n"
                     "  as string:                \"%s\"\n",
                     value,
                     buf);
             break;
         case TPM_PT_LEVEL:
-            printf ("TPM_PT_LEVEL:               %d\n", value);
+            tpm2_tool_output ("TPM_PT_LEVEL:               %d\n", value);
             break;
         case TPM_PT_REVISION:
-            printf ("TPM_PT_REVISION:            %.2f\n", (float)value / 100);
+            tpm2_tool_output ("TPM_PT_REVISION:            %.2f\n", (float)value / 100);
             break;
         case TPM_PT_DAY_OF_YEAR:
-            printf ("TPM_PT_DAY_OF_YEAR:         0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_DAY_OF_YEAR:         0x%08x\n", value);
             break;
         case TPM_PT_YEAR:
-            printf ("TPM_PT_YEAR:                0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_YEAR:                0x%08x\n", value);
             break;
         case TPM_PT_MANUFACTURER:
-            printf ("TPM_PT_MANUFACTURER:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MANUFACTURER:        0x%08x\n", value);
             break;
         case TPM_PT_VENDOR_STRING_1:
             get_uint32_as_chars (value, buf);
-            printf ("TPM_PT_VENDOR_STRING_1:\n"
+            tpm2_tool_output ("TPM_PT_VENDOR_STRING_1:\n"
                     "  as UINT32:                0x%08x\n"
                     "  as string:                \"%s\"\n",
                     value,
@@ -231,7 +231,7 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             break;
         case TPM_PT_VENDOR_STRING_2:
             get_uint32_as_chars (value, buf);
-            printf ("TPM_PT_VENDOR_STRING_2:\n"
+            tpm2_tool_output ("TPM_PT_VENDOR_STRING_2:\n"
                     "  as UINT32:                0x%08x\n"
                     "  as string:                \"%s\"\n",
                     value,
@@ -239,7 +239,7 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             break;
         case TPM_PT_VENDOR_STRING_3:
             get_uint32_as_chars (value, buf);
-            printf ("TPM_PT_VENDOR_STRING_3:\n"
+            tpm2_tool_output ("TPM_PT_VENDOR_STRING_3:\n"
                     "  as UINT32:                0x%08x\n"
                     "  as string:                \"%s\"\n",
                     value,
@@ -247,116 +247,116 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             break;
         case TPM_PT_VENDOR_STRING_4:
             get_uint32_as_chars (value, buf);
-            printf ("TPM_PT_VENDOR_STRING_4:\n"
+            tpm2_tool_output ("TPM_PT_VENDOR_STRING_4:\n"
                     "  as UINT32:                0x%08x\n"
                     "  as string:                \"%s\"\n",
                     value,
                     buf);
             break;
         case TPM_PT_VENDOR_TPM_TYPE:
-            printf ("TPM_PT_VENDOR_TPM_TYPE:     0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_VENDOR_TPM_TYPE:     0x%08x\n", value);
             break;
         case TPM_PT_FIRMWARE_VERSION_1:
-            printf ("TPM_PT_FIRMWARE_VERSION_1:  0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_FIRMWARE_VERSION_1:  0x%08x\n", value);
             break;
         case TPM_PT_FIRMWARE_VERSION_2:
-            printf ("TPM_PT_FIRMWARE_VERSION_2:  0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_FIRMWARE_VERSION_2:  0x%08x\n", value);
             break;
         case TPM_PT_INPUT_BUFFER:
-            printf ("TPM_PT_INPUT_BUFFER:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_INPUT_BUFFER:        0x%08x\n", value);
             break;
         case TPM_PT_HR_TRANSIENT_MIN:
-            printf ("TPM_PT_HR_TRANSIENT_MIN:    0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_TRANSIENT_MIN:    0x%08x\n", value);
             break;
         case TPM_PT_HR_PERSISTENT_MIN:
-            printf ("TPM_PT_HR_PERSISTENT_MIN:   0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_PERSISTENT_MIN:   0x%08x\n", value);
             break;
         case TPM_PT_HR_LOADED_MIN:
-            printf ("TPM_PT_HR_LOADED_MIN:       0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_LOADED_MIN:       0x%08x\n", value);
             break;
         case TPM_PT_ACTIVE_SESSIONS_MAX:
-            printf ("TPM_PT_ACTIVE_SESSIONS_MAX: 0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_ACTIVE_SESSIONS_MAX: 0x%08x\n", value);
             break;
         case TPM_PT_PCR_COUNT:
-            printf ("TPM_PT_PCR_COUNT:           0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_PCR_COUNT:           0x%08x\n", value);
             break;
         case TPM_PT_PCR_SELECT_MIN:
-            printf ("TPM_PT_PCR_SELECT_MIN:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_PCR_SELECT_MIN:      0x%08x\n", value);
             break;
         case TPM_PT_CONTEXT_GAP_MAX:
-            printf ("TPM_PT_CONTEXT_GAP_MAX:     0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_CONTEXT_GAP_MAX:     0x%08x\n", value);
             break;
         case TPM_PT_NV_COUNTERS_MAX:
-            printf ("TPM_PT_NV_COUNTERS_MAX:     0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_NV_COUNTERS_MAX:     0x%08x\n", value);
             break;
         case TPM_PT_NV_INDEX_MAX:
-            printf ("TPM_PT_NV_INDEX_MAX:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_NV_INDEX_MAX:        0x%08x\n", value);
             break;
         case TPM_PT_MEMORY:
-            printf ("TPM_PT_MEMORY:              0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MEMORY:              0x%08x\n", value);
             break;
         case TPM_PT_CLOCK_UPDATE:
-            printf ("TPM_PT_CLOCK_UPDATE:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_CLOCK_UPDATE:        0x%08x\n", value);
             break;
         case TPM_PT_CONTEXT_HASH: /* this may be a TPM_ALG_ID type */
-            printf ("TPM_PT_CONTEXT_HASH:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_CONTEXT_HASH:        0x%08x\n", value);
             break;
         case TPM_PT_CONTEXT_SYM: /* this is a TPM_ALG_ID type */
-            printf ("TPM_PT_CONTEXT_SYM:         0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_CONTEXT_SYM:         0x%08x\n", value);
             break;
         case TPM_PT_CONTEXT_SYM_SIZE:
-            printf ("TPM_PT_CONTEXT_SYM_SIZE:    0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_CONTEXT_SYM_SIZE:    0x%08x\n", value);
             break;
         case TPM_PT_ORDERLY_COUNT:
-            printf ("TPM_PT_ORDERLY_COUNT:       0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_ORDERLY_COUNT:       0x%08x\n", value);
             break;
         case TPM_PT_MAX_COMMAND_SIZE:
-            printf ("TPM_PT_MAX_COMMAND_SIZE:    0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MAX_COMMAND_SIZE:    0x%08x\n", value);
             break;
         case TPM_PT_MAX_RESPONSE_SIZE:
-            printf ("TPM_PT_MAX_RESPONSE_SIZE:   0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MAX_RESPONSE_SIZE:   0x%08x\n", value);
             break;
         case TPM_PT_MAX_DIGEST:
-            printf ("TPM_PT_MAX_DIGEST:          0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MAX_DIGEST:          0x%08x\n", value);
             break;
         case TPM_PT_MAX_OBJECT_CONTEXT:
-            printf ("TPM_PT_MAX_OBJECT_CONTEXT:  0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MAX_OBJECT_CONTEXT:  0x%08x\n", value);
             break;
         case TPM_PT_MAX_SESSION_CONTEXT:
-            printf ("TPM_PT_MAX_SESSION_CONTEXT: 0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MAX_SESSION_CONTEXT: 0x%08x\n", value);
             break;
         case TPM_PT_PS_FAMILY_INDICATOR:
-            printf ("TPM_PT_PS_FAMILY_INDICATOR: 0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_PS_FAMILY_INDICATOR: 0x%08x\n", value);
             break;
         case TPM_PT_PS_LEVEL:
-            printf ("TPM_PT_PS_LEVEL:            0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_PS_LEVEL:            0x%08x\n", value);
             break;
         case TPM_PT_PS_REVISION:
-            printf ("TPM_PT_PS_REVISION:         0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_PS_REVISION:         0x%08x\n", value);
             break;
         case TPM_PT_PS_DAY_OF_YEAR:
-            printf ("TPM_PT_PS_DAY_OF_YEAR:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_PS_DAY_OF_YEAR:      0x%08x\n", value);
             break;
         case TPM_PT_PS_YEAR:
-            printf ("TPM_PT_PS_YEAR:             0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_PS_YEAR:             0x%08x\n", value);
             break;
         case TPM_PT_SPLIT_MAX:
-            printf ("TPM_PT_SPLIT_MAX:           0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_SPLIT_MAX:           0x%08x\n", value);
             break;
         case TPM_PT_TOTAL_COMMANDS:
-            printf ("TPM_PT_TOTAL_COMMANDS:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_TOTAL_COMMANDS:      0x%08x\n", value);
             break;
         case TPM_PT_LIBRARY_COMMANDS:
-            printf ("TPM_PT_LIBRARY_COMMANDS:    0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_LIBRARY_COMMANDS:    0x%08x\n", value);
             break;
         case TPM_PT_VENDOR_COMMANDS:
-            printf ("TPM_PT_VENDOR_COMMANDS:     0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_VENDOR_COMMANDS:     0x%08x\n", value);
             break;
         case TPM_PT_NV_BUFFER_MAX:
-            printf ("TPM_PT_NV_BUFFER_MAX:       0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_NV_BUFFER_MAX:       0x%08x\n", value);
             break;
         case TPM_PT_MODES:
-            printf_tpma_modes ((TPMA_MODES)value);
+            tpm2_tool_output_tpma_modes ((TPMA_MODES)value);
             break;
         }
     }
@@ -381,64 +381,64 @@ dump_tpm_properties_var (TPMS_TAGGED_PROPERTY properties[],
             dump_startup_clear_attrs ((TPMA_STARTUP_CLEAR)value);
             break;
         case TPM_PT_HR_NV_INDEX:
-            printf ("TPM_PT_HR_NV_INDEX:          0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_NV_INDEX:          0x%08x\n", value);
             break;
         case TPM_PT_HR_LOADED:
-            printf ("TPM_PT_HR_LOADED:            0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_LOADED:            0x%08x\n", value);
             break;
         case TPM_PT_HR_LOADED_AVAIL:
-            printf ("TPM_PT_HR_LOADED_AVAIL:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_LOADED_AVAIL:      0x%08x\n", value);
             break;
         case TPM_PT_HR_ACTIVE:
-            printf ("TPM_PT_HR_ACTIVE:            0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_ACTIVE:            0x%08x\n", value);
             break;
         case TPM_PT_HR_ACTIVE_AVAIL:
-            printf ("TPM_PT_HR_ACTIVE_AVAIL:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_ACTIVE_AVAIL:      0x%08x\n", value);
             break;
         case TPM_PT_HR_TRANSIENT_AVAIL:
-            printf ("TPM_PT_HR_TRANSIENT_AVAIL:   0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_TRANSIENT_AVAIL:   0x%08x\n", value);
             break;
         case TPM_PT_HR_PERSISTENT:
-            printf ("TPM_PT_HR_PERSISTENT:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_PERSISTENT:        0x%08x\n", value);
             break;
         case TPM_PT_HR_PERSISTENT_AVAIL:
-            printf ("TPM_PT_HR_PERSISTENT_AVAIL:  0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_HR_PERSISTENT_AVAIL:  0x%08x\n", value);
             break;
         case TPM_PT_NV_COUNTERS:
-            printf ("TPM_PT_NV_COUNTERS:          0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_NV_COUNTERS:          0x%08x\n", value);
             break;
         case TPM_PT_NV_COUNTERS_AVAIL:
-            printf ("TPM_PT_NV_COUNTERS_AVAIL:    0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_NV_COUNTERS_AVAIL:    0x%08x\n", value);
             break;
         case TPM_PT_ALGORITHM_SET:
-            printf ("TPM_PT_ALGORITHM_SET:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_ALGORITHM_SET:        0x%08x\n", value);
             break;
         case TPM_PT_LOADED_CURVES:
-            printf ("TPM_PT_LOADED_CURVES:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_LOADED_CURVES:        0x%08x\n", value);
             break;
         case TPM_PT_LOCKOUT_COUNTER:
-            printf ("TPM_PT_LOCKOUT_COUNTER:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_LOCKOUT_COUNTER:      0x%08x\n", value);
             break;
         case TPM_PT_MAX_AUTH_FAIL:
-            printf ("TPM_PT_MAX_AUTH_FAIL:        0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_MAX_AUTH_FAIL:        0x%08x\n", value);
             break;
         case TPM_PT_LOCKOUT_INTERVAL:
-            printf ("TPM_PT_LOCKOUT_INTERVAL:     0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_LOCKOUT_INTERVAL:     0x%08x\n", value);
             break;
         case TPM_PT_LOCKOUT_RECOVERY:
-            printf ("TPM_PT_LOCKOUT_RECOVERY:     0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_LOCKOUT_RECOVERY:     0x%08x\n", value);
             break;
         case TPM_PT_NV_WRITE_RECOVERY:
-            printf ("TPM_PT_NV_WRITE_RECOVERY:    0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_NV_WRITE_RECOVERY:    0x%08x\n", value);
             break;
         case TPM_PT_AUDIT_COUNTER_0:
-            printf ("TPM_PT_AUDIT_COUNTER_0:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_AUDIT_COUNTER_0:      0x%08x\n", value);
             break;
         case TPM_PT_AUDIT_COUNTER_1:
-            printf ("TPM_PT_AUDIT_COUNTER_1:      0x%08x\n", value);
+            tpm2_tool_output ("TPM_PT_AUDIT_COUNTER_1:      0x%08x\n", value);
             break;
         default:
-            fprintf (stderr, "Unknown property:   0x%08x\n", properties[i].property);
+            LOG_ERR("Unknown property:   0x%08x\n", properties[i].property);
             break;
         }
     }
@@ -453,15 +453,15 @@ dump_algorithm_properties (TPM_ALG_ID       id,
     const char *id_name = tpm2_alg_util_algtostr(id);
     id_name = id_name ? id_name : "unknown";
 
-    printf ("TPMA_ALGORITHM for ALG_ID: 0x%x - %s\n", id, id_name);
-    printf ("  asymmetric: %s\n", prop_str (alg_attrs.asymmetric));
-    printf ("  symmetric:  %s\n", prop_str (alg_attrs.symmetric));
-    printf ("  hash:       %s\n", prop_str (alg_attrs.hash));
-    printf ("  object:     %s\n", prop_str (alg_attrs.object));
-    printf ("  reserved:   0x%x\n", alg_attrs.reserved1);
-    printf ("  signing:    %s\n", prop_str (alg_attrs.signing));
-    printf ("  encrypting: %s\n", prop_str (alg_attrs.encrypting));
-    printf ("  method:     %s\n", prop_str (alg_attrs.method));
+    tpm2_tool_output ("TPMA_ALGORITHM for ALG_ID: 0x%x - %s\n", id, id_name);
+    tpm2_tool_output ("  asymmetric: %s\n", prop_str (alg_attrs.asymmetric));
+    tpm2_tool_output ("  symmetric:  %s\n", prop_str (alg_attrs.symmetric));
+    tpm2_tool_output ("  hash:       %s\n", prop_str (alg_attrs.hash));
+    tpm2_tool_output ("  object:     %s\n", prop_str (alg_attrs.object));
+    tpm2_tool_output ("  reserved:   0x%x\n", alg_attrs.reserved1);
+    tpm2_tool_output ("  signing:    %s\n", prop_str (alg_attrs.signing));
+    tpm2_tool_output ("  encrypting: %s\n", prop_str (alg_attrs.encrypting));
+    tpm2_tool_output ("  method:     %s\n", prop_str (alg_attrs.method));
 }
 
 /*
@@ -484,16 +484,16 @@ dump_algorithms (TPMS_ALG_PROPERTY   alg_properties[],
 void
 dump_command_attrs (TPMA_CC tpma_cc)
 {
-    printf ("TPMA_CC: 0x%08x\n", tpma_cc.val);
-    printf ("  commandIndex: 0x%x\n", tpma_cc.commandIndex);
-    printf ("  reserved1:    0x%x\n", tpma_cc.reserved1);
-    printf ("  nv:           %s\n",   prop_str (tpma_cc.nv));
-    printf ("  extensive:    %s\n",   prop_str (tpma_cc.extensive));
-    printf ("  flushed:      %s\n",   prop_str (tpma_cc.flushed));
-    printf ("  cHandles:     0x%x\n", tpma_cc.cHandles);
-    printf ("  rHandle:      %s\n",   prop_str (tpma_cc.rHandle));
-    printf ("  V:            %s\n",   prop_str (tpma_cc.V));
-    printf ("  Res:          0x%x\n", tpma_cc.Res);
+    tpm2_tool_output ("TPMA_CC: 0x%08x\n", tpma_cc.val);
+    tpm2_tool_output ("  commandIndex: 0x%x\n", tpma_cc.commandIndex);
+    tpm2_tool_output ("  reserved1:    0x%x\n", tpma_cc.reserved1);
+    tpm2_tool_output ("  nv:           %s\n",   prop_str (tpma_cc.nv));
+    tpm2_tool_output ("  extensive:    %s\n",   prop_str (tpma_cc.extensive));
+    tpm2_tool_output ("  flushed:      %s\n",   prop_str (tpma_cc.flushed));
+    tpm2_tool_output ("  cHandles:     0x%x\n", tpma_cc.cHandles);
+    tpm2_tool_output ("  rHandle:      %s\n",   prop_str (tpma_cc.rHandle));
+    tpm2_tool_output ("  V:            %s\n",   prop_str (tpma_cc.V));
+    tpm2_tool_output ("  Res:          0x%x\n", tpma_cc.Res);
 }
 /*
  * Iterate over an array of TPMA_CCs and dump out a human readable
@@ -601,10 +601,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     ret = sanity_check_capability_opts();
     if (ret == 1) {
-        fprintf (stderr, "Missing capability string. See --help.\n");
+        LOG_ERR("Missing capability string. See --help.\n");
         return 1;
     } else if (ret == 2) {
-        fprintf (stderr, "Invalid capability string. See --help.\n");
+        LOG_ERR("Invalid capability string. See --help.\n");
         return 1;
     }
     /* get requested capability from TPM, dump it to stdout */
