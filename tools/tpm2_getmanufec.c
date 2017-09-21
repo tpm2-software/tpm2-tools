@@ -132,7 +132,7 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
         inPublic->t.publicArea.unique.sym.t.size = 0;
         break;
     default:
-        LOG_ERR("\nThe algorithm type input(%4.4x) is not supported!", ctx.algorithm_type);
+        LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.algorithm_type);
         return 1;
     }
 
@@ -229,10 +229,10 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                                   &creationData, &creationHash, &creationTicket,
                                   &name, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS ) {
-          LOG_ERR("\nTPM2_CreatePrimary Error. TPM Error:0x%x", rval);
+          LOG_ERR("TPM2_CreatePrimary Error. TPM Error:0x%x", rval);
           return 1;
     }
-    LOG_INFO("\nEK create succ.. Handle: 0x%8.8x", handle2048ek);
+    LOG_INFO("EK create succ.. Handle: 0x%8.8x", handle2048ek);
 
     if (!ctx.non_persistent_read) {
          /*
@@ -259,7 +259,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
         rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
                                      &sessionsData, ctx.persistent_handle, &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS ) {
-            LOG_ERR("\nEvictControl:Make EK persistent Error. TPM Error:0x%x", rval);
+            LOG_ERR("EvictControl:Make EK persistent Error. TPM Error:0x%x", rval);
             return 1;
         }
         LOG_INFO("EvictControl EK persistent succ.");
@@ -268,7 +268,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     rval = Tss2_Sys_FlushContext(sapi_context,
                                  handle2048ek);
     if (rval != TPM_RC_SUCCESS ) {
-        LOG_ERR("\nFlush transient EK failed. TPM Error:0x%x", rval);
+        LOG_ERR("Flush transient EK failed. TPM Error:0x%x", rval);
         return 1;
     }
 
@@ -276,7 +276,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     /* TODO this serialization is not correct */
     if (!files_save_bytes_to_file(ctx.output_file, (UINT8 *)&outPublic, sizeof(outPublic))) {
-        LOG_ERR("\nFailed to save EK pub key into file(%s)", ctx.output_file);
+        LOG_ERR("Failed to save EK pub key into file(%s)", ctx.output_file);
         return 1;
     }
 
@@ -518,13 +518,13 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'H':
         if (!tpm2_util_string_to_uint32(value, &ctx.persistent_handle)) {
-            LOG_ERR("\nPlease input the handle used to make EK persistent(hex) in correct format.");
+            LOG_ERR("Please input the handle used to make EK persistent(hex) in correct format.");
             return false;
         }
         break;
     case 'e':
         if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
-            LOG_ERR("\nPlease input the endorsement password(optional,no more than %d characters).",
+            LOG_ERR("Please input the endorsement password(optional,no more than %d characters).",
                     (int)sizeof(TPMU_HA) - 1);
             return false;
         }
@@ -532,7 +532,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'o':
         if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
-            LOG_ERR("\nPlease input the owner password(optional,no more than %d characters).",
+            LOG_ERR("Please input the owner password(optional,no more than %d characters).",
                     (int)sizeof(TPMU_HA) - 1);
             return false;
         }
@@ -540,7 +540,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'P':
         if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
-            LOG_ERR("\nPlease input the EK password(optional,no more than %d characters).",
+            LOG_ERR("Please input the EK password(optional,no more than %d characters).",
                     (int)sizeof(TPMU_HA) - 1);
             return false;
         }
@@ -549,13 +549,13 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.algorithm_type = tpm2_alg_util_from_optarg(value);
         if (ctx.algorithm_type == TPM_ALG_ERROR) {
-             LOG_ERR("\nPlease input the algorithm type in correct format.");
+             LOG_ERR("Please input the algorithm type in correct format.");
             return false;
         }
         break;
     case 'f':
         if (value == NULL ) {
-            LOG_ERR("\nPlease input the file used to save the pub ek.");
+            LOG_ERR("Please input the file used to save the pub ek.");
             return false;
         }
         ctx.output_file = value;
