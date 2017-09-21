@@ -32,7 +32,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-INCLUDE_DIRS = -I$(top_srcdir)/src -I$(top_srcdir)/lib -I$(top_srcdir)/lib/tcti
+INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib -I$(top_srcdir)/lib/tcti
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS := \
