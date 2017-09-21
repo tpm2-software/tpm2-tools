@@ -55,11 +55,12 @@ static char *outFilePath;
 static char *signature_path;
 static char *message_path;
 static signature_format sig_format;
+static TPMI_ALG_HASH sig_hash_algorithm;
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
 static bool is_auth_session;
 static TPMI_SH_AUTH_SESSION auth_session_handle;
-static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag;
+static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag;
 static char *contextFilePath;
 static TPM_HANDLE akHandle;
 
@@ -292,7 +293,9 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
     sessionData.nonce.t.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
-    inScheme.scheme = TPM_ALG_NULL;
+    if(!G_flag || !get_signature_scheme(sapi_context, akHandle, sig_hash_algorithm, &inScheme)) {
+        inScheme.scheme = TPM_ALG_NULL;
+    }
 
     memset( (void *)&signature, 0, sizeof(signature) );
 
@@ -399,6 +402,14 @@ static bool on_option(char key, char *value) {
             return false;
          }
          break;
+    case 'G':
+        sig_hash_algorithm = tpm2_alg_util_from_optarg(optarg);
+        if(sig_hash_algorithm == TPM_ALG_ERROR) {
+            LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
+            return false;
+        }
+        G_flag = 1;
+        break;
     }
 
     return true;
@@ -418,10 +429,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "input-session-handle", required_argument, NULL, 'S' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
-        { "format",               required_argument, NULL, 'f' }
+        { "format",               required_argument, NULL, 'f' },
+        { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:s:m:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;
