@@ -186,6 +186,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
      */
     if (ctx.endorse_passwd && strlen(ctx.endorse_passwd) > 0) {
         if (!ctx.hex_passwd) {
+            sessionData.hmac.t.size = strlen(ctx.endorse_passwd);
             memcpy(&sessionData.hmac.t.buffer[0], ctx.endorse_passwd,
                    sessionData.hmac.t.size );
         } else {
