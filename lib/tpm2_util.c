@@ -28,12 +28,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-#include "tpm2_util.h"
-
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+
+#include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
 
@@ -129,6 +130,10 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
 }
 
 void tpm2_util_print_tpm2b(TPM2B *buffer) {
+
+    if (!output_enabled) {
+        return;
+    }
 
     unsigned i;
     for (i = 0; i < buffer->size; i++) {
