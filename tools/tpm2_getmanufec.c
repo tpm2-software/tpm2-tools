@@ -184,36 +184,35 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     /*
      * use enAuth in Tss2_Sys_CreatePrimary
      */
-    if (strlen(ctx.endorse_passwd) > 0 && !ctx.hex_passwd) {
-            sessionData.hmac.t.size = strlen(ctx.endorse_passwd);
-            memcpy( &sessionData.hmac.t.buffer[0], ctx.endorse_passwd, sessionData.hmac.t.size );
-    }
-    else {
-        if (strlen(ctx.endorse_passwd) > 0 && ctx.hex_passwd) {
-                sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+    if (ctx.endorse_passwd && strlen(ctx.endorse_passwd) > 0) {
+        if (!ctx.hex_passwd) {
+            memcpy(&sessionData.hmac.t.buffer[0], ctx.endorse_passwd,
+                   sessionData.hmac.t.size );
+        } else {
+            sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
 
-                if (tpm2_util_hex_to_byte_structure(ctx.endorse_passwd, &sessionData.hmac.t.size,
-                                      sessionData.hmac.t.buffer) != 0) {
-                        LOG_ERR("Failed to convert Hex format password for endorsePasswd.");
-                        return 1;
-                }
-        }
-    }
-
-    if (strlen(ctx.ek_passwd) > 0 && !ctx.hex_passwd) {
-        inSensitive.t.sensitive.userAuth.t.size = strlen(ctx.ek_passwd);
-        memcpy(&inSensitive.t.sensitive.userAuth.t.buffer[0], ctx.ek_passwd,
-               inSensitive.t.sensitive.userAuth.t.size );
-    }
-    else {
-        if (strlen(ctx.ek_passwd) > 0 && ctx.hex_passwd) {
-             inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
-             if (tpm2_util_hex_to_byte_structure(ctx.ek_passwd, &inSensitive.t.sensitive.userAuth.t.size,
-                                   inSensitive.t.sensitive.userAuth.t.buffer) != 0) {
-                  LOG_ERR("Failed to convert Hex format password for ekPasswd.");
-                  return 1;
+            if (tpm2_util_hex_to_byte_structure(ctx.endorse_passwd,
+                                                &sessionData.hmac.t.size,
+                                                sessionData.hmac.t.buffer) != 0) {
+                LOG_ERR("Failed to convert Hex format password for endorsePasswd.");
+                return 1;
             }
         }
+    }
+
+    if (ctx.ek_passwd && strlen(ctx.ek_passwd) > 0) {
+        if (!ctx.hex_passwd) {
+            inSensitive.t.sensitive.userAuth.t.size = strlen(ctx.ek_passwd);
+            memcpy(&inSensitive.t.sensitive.userAuth.t.buffer[0], ctx.ek_passwd,
+                   inSensitive.t.sensitive.userAuth.t.size );
+        } else {
+            inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
+            if (tpm2_util_hex_to_byte_structure(ctx.ek_passwd, &inSensitive.t.sensitive.userAuth.t.size,
+                                                inSensitive.t.sensitive.userAuth.t.buffer) != 0) {
+                LOG_ERR("Failed to convert Hex format password for ekPasswd.");
+                return 1;
+             }
+         }
     }
 
     inSensitive.t.sensitive.data.t.size = 0;
@@ -240,19 +239,22 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
           * To make EK persistent, use own auth
           */
          sessionData.hmac.t.size = 0;
-         if (strlen(ctx.owner_passwd) > 0 && !ctx.hex_passwd) {
-             sessionData.hmac.t.size = strlen(ctx.owner_passwd);
-             memcpy(&sessionData.hmac.t.buffer[0], ctx.owner_passwd, sessionData.hmac.t.size );
-         } else {
-             if (strlen(ctx.owner_passwd) > 0 && ctx.hex_passwd) {
-                sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-                if (tpm2_util_hex_to_byte_structure(ctx.owner_passwd, &sessionData.hmac.t.size,
-                                   sessionData.hmac.t.buffer) != 0) {
-                 LOG_ERR("Failed to convert Hex format password for ownerPasswd.");
-                 return 1;
-                }
-            }
-        }
+
+         if (ctx.owner_passwd && strlen(ctx.owner_passwd) > 0) {
+             if (!ctx.hex_passwd) {
+                 sessionData.hmac.t.size = strlen(ctx.owner_passwd);
+                 memcpy(&sessionData.hmac.t.buffer[0], ctx.owner_passwd,
+                        sessionData.hmac.t.size);
+             } else {
+                 sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
+                 if (tpm2_util_hex_to_byte_structure(ctx.owner_passwd,
+                                                     &sessionData.hmac.t.size,
+                                                     sessionData.hmac.t.buffer) != 0) {
+                     LOG_ERR("Failed to convert Hex format password for ownerPasswd.");
+                     return 1;
+                 }
+             }
+         }
 
         rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
                                      &sessionsData, ctx.persistent_handle, &sessionsDataOut);
