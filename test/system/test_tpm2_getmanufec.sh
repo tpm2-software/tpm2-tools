@@ -31,6 +31,10 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+handle=0x81000000
+opass=abc123
+epass=abc123
+
 cleanup() {
     rm -f test_ek.pub ECcert.bin ECcert2.bin test_ek.pub
 }
@@ -63,6 +67,17 @@ tpm2_getmanufec -g rsa -O -N -U -f test_ek.pub -S https://ekop.intel.com/ekcerts
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin
+
+# Test providing endorsement password to create EK and owner password to persist.
+tpm2_takeownership -c
+tpm2_takeownership -o $opass -e $epass
+
+tpm2_getmanufec -H $handle -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass \
+                -S https://ekop.intel.com/ekcertservice/
+
+tpm2_listpersistent | grep -q $handle
+
+tpm2_evictcontrol -H $handle -A o -P $opass
 
 if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91ff5" ]; then
  echo "Failed: retrieving endorsement certificate"
