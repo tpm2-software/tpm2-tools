@@ -53,10 +53,6 @@ test_wrapper()
     let "fail++"
     fail_summary="$fail_summary"$'\n'"$1"
   fi
-
-  # Scripts are sloppy, perform cleanup
-  rm `find . -maxdepth 1 -type f ! -name '*.sh' ! -name 'README.md' ! -name 'yaml_get.py'` 2>/dev/null
-  sleep 1
 }
 
 test_wrapper test_tpm2_takeownership_all.sh
@@ -65,7 +61,7 @@ test_wrapper test_tpm2_pcrlist.sh
 test_wrapper test_tpm2_getrandom.sh
 test_wrapper test_tpm2_getrandom_func.sh
 #test_wrapper test_tpm2_createprimary_all.sh
-#test_wrapper test_tpm2_create_all.sh
+test_wrapper test_tpm2_create_all.sh
 test_wrapper test_tpm2_load.sh
 test_wrapper test_tpm2_loadexternal.sh
 test_wrapper test_tpm2_evictcontrol.sh
