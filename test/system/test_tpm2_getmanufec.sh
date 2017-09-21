@@ -31,6 +31,12 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+cleanup() {
+    rm -f test_ek.pub ECcert.bin ECcert2.bin test_ek.pub
+}
+
+trap cleanup EXIT
+
 echo "3a01000001000b00b20003002000837197674484b3f81a90cc8d46a5d724fd52\
 d76e06520b64f2a1da1b331469aa000000000000000000000000000000000000\
 0000000000000000000000000000000006008000430010000000000000080000\
@@ -70,14 +76,3 @@ if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91f
 else
  echo "Successful: retrieving endorsement certificate"
 fi
-
-if [ ! -f ECcert.bin ]; then
- echo "ECcert.bin File not found!"
-else
- rm -f ECcert.bin
-fi
-if [ ! -f test_ek.pub ]; then
- echo "ECcert.bin File not found!"
-else
- rm -f test_ek.pub
-fi 
