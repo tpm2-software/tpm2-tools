@@ -133,7 +133,7 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
         break;
     default:
         LOG_ERR("\nThe algorithm type input(%4.4x) is not supported!", ctx.algorithm_type);
-        return -1;
+        return 1;
     }
 
     return 0;
@@ -195,7 +195,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                 if (tpm2_util_hex_to_byte_structure(ctx.endorse_passwd, &sessionData.hmac.t.size,
                                       sessionData.hmac.t.buffer) != 0) {
                         LOG_ERR("Failed to convert Hex format password for endorsePasswd.");
-                        return -1;
+                        return 1;
                 }
         }
     }
@@ -211,7 +211,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
              if (tpm2_util_hex_to_byte_structure(ctx.ek_passwd, &inSensitive.t.sensitive.userAuth.t.size,
                                    inSensitive.t.sensitive.userAuth.t.buffer) != 0) {
                   LOG_ERR("Failed to convert Hex format password for ekPasswd.");
-                  return -1;
+                  return 1;
             }
         }
     }
@@ -220,7 +220,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
 
     if (set_key_algorithm(&inPublic) )
-          return -1;
+          return 1;
 
     creationPCR.count = 0;
 
@@ -231,7 +231,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                                   &name, &sessionsDataOut);
     if (rval != TPM_RC_SUCCESS ) {
           LOG_ERR("\nTPM2_CreatePrimary Error. TPM Error:0x%x", rval);
-          return -2;
+          return 1;
     }
     LOG_INFO("\nEK create succ.. Handle: 0x%8.8x", handle2048ek);
 
@@ -249,7 +249,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                 if (tpm2_util_hex_to_byte_structure(ctx.owner_passwd, &sessionData.hmac.t.size,
                                    sessionData.hmac.t.buffer) != 0) {
                  LOG_ERR("Failed to convert Hex format password for ownerPasswd.");
-                 return -1;
+                 return 1;
                 }
             }
         }
@@ -258,7 +258,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                                      &sessionsData, ctx.persistent_handle, &sessionsDataOut);
         if (rval != TPM_RC_SUCCESS ) {
             LOG_ERR("\nEvictControl:Make EK persistent Error. TPM Error:0x%x", rval);
-            return -3;
+            return 1;
         }
         LOG_INFO("EvictControl EK persistent succ.");
     }
@@ -267,7 +267,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
                                  handle2048ek);
     if (rval != TPM_RC_SUCCESS ) {
         LOG_ERR("\nFlush transient EK failed. TPM Error:0x%x", rval);
-        return -4;
+        return 1;
     }
 
     LOG_INFO("Flush transient EK succ.");
@@ -275,7 +275,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     /* TODO this serialization is not correct */
     if (!files_save_bytes_to_file(ctx.output_file, (UINT8 *)&outPublic, sizeof(outPublic))) {
         LOG_ERR("\nFailed to save EK pub key into file(%s)", ctx.output_file);
-        return -5;
+        return 1;
     }
 
     return 0;
@@ -493,13 +493,13 @@ int TPMinitialProvisioning(void)
 {
     if (ctx.ek_server_addr == NULL) {
         LOG_ERR("TPM Manufacturer Endorsement Credential Server Address cannot be NULL");
-        return -99;
+        return 1;
     }
 
     char *b64 = Base64Encode(HashEKPublicKey());
     if (!b64) {
         LOG_ERR("Base64Encode returned null");
-        return -1;
+        return 1;
     }
 
     LOG_INFO("%s", b64);
