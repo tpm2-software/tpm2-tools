@@ -235,6 +235,12 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     LOG_INFO("EK create succ.. Handle: 0x%8.8x", handle2048ek);
 
     if (!ctx.non_persistent_read) {
+
+        if (!ctx.persistent_handle) {
+            LOG_ERR("Persistent handle for EK was not provided");
+            return 1;
+        }
+
          /*
           * To make EK persistent, use own auth
           */
