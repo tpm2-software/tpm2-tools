@@ -58,6 +58,10 @@
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
 
+  * **-G**, **--sig-hash-algorithm**:
+
+    Hash algorithm for signature.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
