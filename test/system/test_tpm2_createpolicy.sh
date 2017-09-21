@@ -32,32 +32,40 @@
 #;**********************************************************************;
 ###this script use for test the implementation tpm2_createpolicy
 
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+trap onerror ERR
+
+cleanup() {
+    rm -f policy.out &>/dev/null
+}
+trap cleanup EXIT
 
 declare -A expected_policy_digest=(["sha1"]="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
                                    ["sha256"]="33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8")
-pcr_index=0
 
 for halg in sha1 sha256
 do
-    cmd="tpm2_createpolicy -P -L ${halg}:${pcr_index} -f policy.file"
-    `$cmd`
-    if [ $? != 0 ];then
-        echo "command: $cmd failed: $?"
-        exit 1
-    fi
+    cleanup
 
-    if [ $(xxd -p policy.file | tr -d '\n' ) != "${expected_policy_digest[${halg}]}" ];then
-        echo "Failure: Creating Policy Digest with PCR policy for index ${pcr_index} and ${halg} pcr index hash"
+    #
+    # This script expects PCR index 0 to be equal to 0x03
+    #
+    value=`tpm2_pcrlist -L $halg:0 | grep PCR_00 | cut -d\: -f 2-`
+    if [[ $value -ne 0x03 ]]; then
+        echo "Expected PCR 0 \"$halg\" bank to be 0x3, found: \"$value\"" 1>&2
         exit 1
-    else
-        echo "Success: Creating Policy Digest with PCR policy for index ${pcr_index} and ${halg} pcr index hash"
+	fi
+
+    tpm2_createpolicy -P -L $halg:0 -f policy.out
+
+    # Test the policy creation hashes against expected
+    if [ $(xxd -p policy.out | tr -d '\n' ) != "${expected_policy_digest[${halg}]}" ]; then
+        echo "Failure: Creating Policy Digest with PCR policy for index 0 and ${halg} pcr index hash"
+        exit 1
     fi
 done
 
-if [ ! -f policy.file ]; then
- echo "Policy File not found!"
-else
- rm -f policy.file
-fi
-
-echo "passed pcr policy test"
+exit 0
