@@ -32,6 +32,9 @@ OPTIONS
   * `-P`, `--ekPasswd`=_EK\_PASSWORD_:
     specifies the EK password when created (string,optional,default:NULL).
 
+    Passwords should follow the password formatting standards, see
+    section "Password Formatting".
+
   * `-H`, `--handle`=_HANDLE_:
     specifies the handle used to make EK  persistent (hex).
 
@@ -64,9 +67,6 @@ OPTIONS
     specifies to attempt connecting with the  TPM manufacturer provisioning server
     with SSL_NO_VERIFY option.
 
-  * `-X`, `--passwdInHex`:
-    passwords given by any options are hex format.
-
   * `-i`, `--input-session-handle`=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
 
@@ -74,6 +74,8 @@ OPTIONS
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
+
+[password formatting](common/password.md)
 
 [supported public object algorithms](common/object-alg.md)
 
@@ -90,7 +92,7 @@ EXAMPLES
 --------
 ```
 tpm2_getmanufec -e abc123 -o abc123 -P passwd -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/ 
-tpm2_getmanufec -e 1a1b1c -o 1a1b1c -P 123abc -X -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/ 
+tpm2_getmanufec -e 1a1b1c -o 1a1b1c -P 123abc -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/
 ```
 
 RETURNS

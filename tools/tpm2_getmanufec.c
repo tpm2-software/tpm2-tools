@@ -50,15 +50,16 @@
 #include "files.h"
 #include "tpm_hash.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_password_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_getmanufec_ctx tpm_getmanufec_ctx;
 struct tpm_getmanufec_ctx {
     char *output_file;
-    char *owner_passwd;
-    char *endorse_passwd;
-    char *ek_passwd;
+    TPMS_AUTH_COMMAND endorse_session_data;
+    TPMS_AUTH_COMMAND owner_session_data;
+    TPM2B_AUTH ek_password;
     char *ec_cert_path;
     bool hex_passwd;
     TPM_HANDLE persistent_handle;
@@ -68,13 +69,13 @@ struct tpm_getmanufec_ctx {
     unsigned int non_persistent_read;
     unsigned int SSL_NO_VERIFY;
     unsigned int offline_prov;
-    bool is_session_based_auth;
-    TPMI_SH_AUTH_SESSION auth_session_handle;
     bool verbose;
 };
 
 static tpm_getmanufec_ctx ctx = {
-    .algorithm_type = TPM_ALG_RSA
+    .algorithm_type = TPM_ALG_RSA,
+    .endorse_session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .owner_session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
 };
 
 BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8,
@@ -142,15 +143,6 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
 int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 {
     UINT32 rval;
-    TPMS_AUTH_COMMAND sessionData = {
-            .sessionHandle = TPM_RS_PW,
-            .nonce = TPM2B_EMPTY_INIT,
-            .hmac = TPM2B_EMPTY_INIT,
-            .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
-    };
-    if (ctx.is_session_based_auth) {
-        sessionData.sessionHandle = ctx.auth_session_handle;
-    }
     TPMS_AUTH_RESPONSE sessionDataOut;
     TSS2_SYS_CMD_AUTHS sessionsData;
     TSS2_SYS_RSP_AUTHS sessionsDataOut;
@@ -172,7 +164,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     TPM_HANDLE handle2048ek;
 
-    sessionDataArray[0] = &sessionData;
+    sessionDataArray[0] = &ctx.endorse_session_data;
     sessionDataOutArray[0] = &sessionDataOut;
 
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
@@ -181,40 +173,8 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    /*
-     * use enAuth in Tss2_Sys_CreatePrimary
-     */
-    if (ctx.endorse_passwd && strlen(ctx.endorse_passwd) > 0) {
-        if (!ctx.hex_passwd) {
-            sessionData.hmac.t.size = strlen(ctx.endorse_passwd);
-            memcpy(&sessionData.hmac.t.buffer[0], ctx.endorse_passwd,
-                   sessionData.hmac.t.size );
-        } else {
-            sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-
-            if (tpm2_util_hex_to_byte_structure(ctx.endorse_passwd,
-                                                &sessionData.hmac.t.size,
-                                                sessionData.hmac.t.buffer) != 0) {
-                LOG_ERR("Failed to convert Hex format password for endorsePasswd.");
-                return 1;
-            }
-        }
-    }
-
-    if (ctx.ek_passwd && strlen(ctx.ek_passwd) > 0) {
-        if (!ctx.hex_passwd) {
-            inSensitive.t.sensitive.userAuth.t.size = strlen(ctx.ek_passwd);
-            memcpy(&inSensitive.t.sensitive.userAuth.t.buffer[0], ctx.ek_passwd,
-                   inSensitive.t.sensitive.userAuth.t.size );
-        } else {
-            inSensitive.t.sensitive.userAuth.t.size = sizeof(inSensitive.t.sensitive.userAuth) - 2;
-            if (tpm2_util_hex_to_byte_structure(ctx.ek_passwd, &inSensitive.t.sensitive.userAuth.t.size,
-                                                inSensitive.t.sensitive.userAuth.t.buffer) != 0) {
-                LOG_ERR("Failed to convert Hex format password for ekPasswd.");
-                return 1;
-             }
-         }
-    }
+    memcpy(&inSensitive.t.sensitive.userAuth, &ctx.ek_password,
+           sizeof(ctx.ek_password));
 
     inSensitive.t.sensitive.data.t.size = 0;
     inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
@@ -242,26 +202,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
             return 1;
         }
 
-         /*
-          * To make EK persistent, use own auth
-          */
-         sessionData.hmac.t.size = 0;
-
-         if (ctx.owner_passwd && strlen(ctx.owner_passwd) > 0) {
-             if (!ctx.hex_passwd) {
-                 sessionData.hmac.t.size = strlen(ctx.owner_passwd);
-                 memcpy(&sessionData.hmac.t.buffer[0], ctx.owner_passwd,
-                        sessionData.hmac.t.size);
-             } else {
-                 sessionData.hmac.t.size = sizeof(sessionData.hmac) - 2;
-                 if (tpm2_util_hex_to_byte_structure(ctx.owner_passwd,
-                                                     &sessionData.hmac.t.size,
-                                                     sessionData.hmac.t.buffer) != 0) {
-                     LOG_ERR("Failed to convert Hex format password for ownerPasswd.");
-                     return 1;
-                 }
-             }
-         }
+        sessionDataArray[0] = &ctx.owner_session_data;
 
         rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
                                      &sessionsData, ctx.persistent_handle, &sessionsDataOut);
@@ -521,6 +462,7 @@ int TPMinitialProvisioning(void)
 static bool on_option(char key, char *value) {
 
     bool return_val;
+    UINT32 handle;
 
     switch (key) {
     case 'H':
@@ -530,28 +472,25 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'e':
-        if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
-            LOG_ERR("Please input the endorsement password(optional,no more than %d characters).",
-                    (int)sizeof(TPMU_HA) - 1);
+        return_val = tpm2_password_util_from_optarg(value, &ctx.endorse_session_data.hmac);
+        if (!return_val) {
+            LOG_ERR("Invalid endorsement password, got\"%s\"", optarg);
             return false;
         }
-        ctx.endorse_passwd = value;
         break;
     case 'o':
-        if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
-            LOG_ERR("Please input the owner password(optional,no more than %d characters).",
-                    (int)sizeof(TPMU_HA) - 1);
+        return_val = tpm2_password_util_from_optarg(value, &ctx.owner_session_data.hmac);
+        if (!return_val) {
+            LOG_ERR("Invalid owner password, got\"%s\"", optarg);
             return false;
         }
-        ctx.owner_passwd = value;
         break;
     case 'P':
-        if (value == NULL || (strlen(value) >= sizeof(TPMU_HA)) ) {
-            LOG_ERR("Please input the EK password(optional,no more than %d characters).",
-                    (int)sizeof(TPMU_HA) - 1);
+        return_val = tpm2_password_util_from_optarg(value, &ctx.ek_password);
+        if (!return_val) {
+            LOG_ERR("Invalid EK password, got\"%s\"", optarg);
             return false;
         }
-        ctx.ek_passwd = value;
         break;
     case 'g':
         ctx.algorithm_type = tpm2_alg_util_from_optarg(value);
@@ -566,9 +505,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.output_file = value;
-        break;
-    case 'X':
-        ctx.hex_passwd = true;
         break;
     case 'E':
         ctx.ec_cert_path = value;
@@ -591,13 +527,16 @@ static bool on_option(char key, char *value) {
         ctx.ek_server_addr = value;
         break;
     case 'i':
-        return_val = tpm2_util_string_to_uint32(value, &ctx.auth_session_handle);
+        return_val = tpm2_util_string_to_uint32(value, &handle);
         if (!return_val) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                     value);
             return false;
         }
-        ctx.is_session_based_auth = true;
+
+        ctx.owner_session_data.sessionHandle =
+        ctx.endorse_session_data.sessionHandle = handle;
+
         break;
     }
 
@@ -614,7 +553,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ekPasswd"     , 1, NULL, 'P' },
         { "alg"          , 1, NULL, 'g' },
         { "file"         , 1, NULL, 'f' },
-        { "passwdInHex"  , 0, NULL, 'X' },
         { "NonPersistent", 0, NULL, 'N' },
         { "OfflineProv"  , 0, NULL, 'O' },
         { "ECcertFile"   , 1, NULL, 'E' },
@@ -623,7 +561,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"input-session-handle",1,NULL,'i'},
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:f:XNOE:S:i:U", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("e:o:H:P:g:f:NOE:S:i:U", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }
