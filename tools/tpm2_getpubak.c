@@ -334,10 +334,10 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     /* required output of testing scripts */
-    printf("Name of loaded key: ");
+    tpm2_tool_output("Name of loaded key: ");
     tpm2_util_print_tpm2b(&name.b);
-    printf("\n");
-    printf("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
+    tpm2_tool_output("\n");
+    tpm2_tool_output("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
     // write name to ak.name file
     result = files_save_bytes_to_file(ctx.akname_file, &name.t.name[0], name.t.size);
