@@ -30,72 +30,43 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
-encrypt_decrypt_cc=0x164
-tpm2_dump_capability -c commands | grep $encrypt_decrypt_cc
+
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+
+cleanup() {
+  rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
+        encrypt.out secret.dat &>/dev/null
+}
+trap cleanup EXIT
+
+cleanup
+
+# Check for encryptdecrypt command code 0x164
+tpm2_dump_capability -c commands | grep -q 0x164
 if [ $? != 0 ];then
-    echo "Command EncryptDecrypt is not supported by your device"
+    echo "WARN: Command EncryptDecrypt is not supported by your device, skipping..."
     exit 0
 fi
 
-alg_primary_obj=0x0004
-alg_primary_key=0x0001
-alg_create_obj=0x000B
-alg_create_key=0x0025
+# Now set the trap handler for ERR since we're past the command code check
+trap onerror ERR
 
-file_input_data=secret.data
-file_primary_key_ctx=context.p_"$alg_primary_obj"_"$alg_primary_key"
-file_en_decrypt_key_pub=opu_"$alg_create_obj"_"$alg_create_key"
-file_en_decrypt_key_priv=opr_"$alg_create_obj"_"$alg_create_key"
-file_en_decrypt_key_name=name.load_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
-file_en_decrypt_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
-file_encrypt_output_data=encrypt_"$file_en_decrypt_key_ctx"
-file_decrypt_output_data=decrypt_"$file_en_decrypt_key_ctx"
+echo "12345678" > secret.dat
 
-fail()
-{
-	    echo "$1 test fail, please check the environment or parameters!"
- exit 1
-}
-Pass()
-{
-	    echo ""$1" pass" >>test_getpubak_pass.log
-}
+tpm2_takeownership -Q -c
 
-rm $file_primary_key_ctx $file_en_decrypt_key_pub $file_en_decrypt_key_priv $file_en_decrypt_key_name $file_en_decrypt_key_ctx  $file_encrypt_output_data $file_decrypt_output_data -rf
+tpm2_createprimary -Q -A e -g sha -G rsa -C primary.ctx
 
+tpm2_create -Q -g sha256 -G symcipher -u key.pub -r key.priv -c primary.ctx
 
-if [ ! -e "$file_input_data" ]   
-  then    
-echo "12345678" > $file_input_data
-fi 
+tpm2_load -Q -c primary.ctx -u key.pub -r key.priv -n key.name -C decrypt.ctx
 
-tpm2_takeownership -c
-if [ $? != 0 ];then
-    fail takeownership
-fi
+tpm2_encryptdecrypt -Q -c decrypt.ctx -D NO -I secret.dat -o encrypt.out
 
-tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
-if [ $? != 0 ];then
-	 fail createprimary 
-fi
-tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_en_decrypt_key_pub -r $file_en_decrypt_key_priv  -c $file_primary_key_ctx
-if [ $? != 0 ];then
-	fail create 
-fi
+tpm2_encryptdecrypt -Q -c  decrypt.ctx -D YES -I encrypt.out -o decrypt.out
 
-tpm2_load -c $file_primary_key_ctx  -u $file_en_decrypt_key_pub  -r $file_en_decrypt_key_priv -n $file_en_decrypt_key_name -C $file_en_decrypt_key_ctx
-if [ $? != 0 ];then
-	fail load   
-fi
-
-tpm2_encryptdecrypt -c $file_en_decrypt_key_ctx  -D NO -I secret.data -o $file_encrypt_output_data
-if [ $? != 0 ];then
-	fail decrypt 
-fi
-tpm2_encryptdecrypt -c  $file_en_decrypt_key_ctx -D YES -I $file_encrypt_output_data -o $file_decrypt_output_data
-if [ $? != 0 ];then
-	fail decrypt 
-fi
-
-echo "encryptdecrypt test OK!"
+exit 0
 
