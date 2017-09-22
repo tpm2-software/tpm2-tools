@@ -50,9 +50,7 @@ data and validation shall indicate that hashed data did not start with
 
     The ticket file, containning the validation structure, optional.
 
-  * **-s**, **--sig**=_TICKET\_FILE_:
-
-    The signature file, records the signature structure.
+[signature options](common/signature.md)
 
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
 
