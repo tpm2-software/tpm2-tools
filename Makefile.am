@@ -283,7 +283,9 @@ MARKDOWN_COMMON_DEPS = \
 	man/common/object-alg.md \
 	man/common/options.md \
 	man/common/password.md \
+	man/common/pubkey.md \
 	man/common/sign-alg.md \
+	man/common/signature.md \
 	man/common/tcti.md
 
 man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
@@ -307,6 +309,10 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[nv attributes\]/d' \
 	    -e '/\[pcr bank specifiers\]/r man/common/pcr.md' \
 	    -e '/\[pcr bank specifiers\]/d' \
+	    -e '/\[pubkey options\]/r man/common/pubkey.md' \
+	    -e '/\[pubkey options\]/d' \
+	    -e '/\[signature options\]/r man/common/signature.md' \
+	    -e '/\[signature options\]/d' \
 	    < $< | pandoc -s -t man > $@
 
 CLEANFILES = $(man1_MANS)

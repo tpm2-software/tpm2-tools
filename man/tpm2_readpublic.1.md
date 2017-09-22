@@ -28,6 +28,8 @@
 
     The output file path, recording the public portion of the object.
 
+[pubkey options](common/pubkey.md)
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
