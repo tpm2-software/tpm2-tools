@@ -42,9 +42,6 @@ OPTIONS
   * `-C`, `--name`=_CONTEXT\_FILE_:
     An optional file to save the object context to.
 
-  * `-C`, `--name`=_CONTEXT\_FILE_:
-    An optional file to save the object context to.
-
   * `-S`, `--input-session-handle`=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
 
