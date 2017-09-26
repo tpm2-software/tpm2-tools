@@ -1,12 +1,15 @@
-Guidelines for submitting bugs:
+## Guidelines for submitting bugs:
+
 All non security bugs can be filed on the Issues tracker:
-  https://github.com/01org/tpm2-tools/issues
+
+<https://github.com/01org/tpm2-tools/issues>
 
 Security sensitive bugs should be emailed to a maintainer or to Intel
 via the guidelines here:
-  https://security-center.intel.com/VulnerabilityHandlingGuidelines.aspx
 
-Guidelines for submitting changes:
+<ttps://security-center.intel.com/VulnerabilityHandlingGuidelines.aspx>
+
+## Guidelines for submitting changes:
 
 All changes should be introduced via github pull requests. This allows anyone to
 comment and provide feedback in lieu of having a mailing list. For pull requests
@@ -19,6 +22,6 @@ All tests must pass on Travis CI for the merge to occur.
 All changes must not introduce superfluous whitespace changes or whitespace errors.
 All changes should adhere to the coding standard documented under misc.
 
-Guideline for merging changes:
+### Guideline for merging changes:
 Changes should be merged with the "rebase" option on github to avoid merge commits.
 This provides for a clear linear history.
