@@ -27,6 +27,9 @@ OPTIONS
     * `0x40000001` for `TPM_RH_OWNER`
     * `0x4000000C` for `TPM_RH_PLATFORM`
 
+  * `-f`, `--output`=_FILE\:
+    file to write data
+
   * `-P`, `--handlePasswd`=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
     "password formatting standards, see section "Password Formatting".

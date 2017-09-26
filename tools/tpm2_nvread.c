@@ -42,6 +42,7 @@
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "files.h"
 
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
 struct tpm_nvread_ctx {
@@ -50,6 +51,7 @@ struct tpm_nvread_ctx {
     UINT32 size_to_read;
     UINT32 offset;
     TPMS_AUTH_COMMAND session_data;
+    char *output_file;
 };
 
 static tpm_nvread_ctx ctx = {
@@ -133,7 +135,6 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return false;
     }
 
-
     UINT8 *data_buffer = malloc(data_size);
     if (!data_buffer) {
         LOG_ERR("oom");
@@ -165,6 +166,14 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (!flags.quiet) {
         hexdump(data_buffer, data_offset);
     }
+
+    /* dump data_buffer to output file, if specified */
+    if (ctx.output_file) {
+        if (!files_save_bytes_to_file(ctx.output_file, data_buffer, data_offset)) {
+            goto out;
+        }
+    }
+
     result = true;
 
 out:
@@ -202,6 +211,9 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Auth handle cannot be 0");
             return false;
         }
+        break;
+    case 'f':
+        ctx.output_file = value;
         break;
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
@@ -242,6 +254,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "index"       , required_argument, NULL, 'x' },
         { "authHandle"  , required_argument, NULL, 'a' },
+        { "output"      , required_argument, NULL, 'f' },
         { "size"        , required_argument, NULL, 's' },
         { "offset"      , required_argument, NULL, 'o' },
         { "handlePasswd", required_argument, NULL, 'P' },
