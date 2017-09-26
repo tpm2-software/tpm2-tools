@@ -184,6 +184,7 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
 
     if(setup_alg())
         return -1;
+    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.t.publicArea.objectAttributes.val);
 
     creationPCR.count = 0;
 
