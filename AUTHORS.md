@@ -1,6 +1,8 @@
-The tpm2-tools project was created by Gang Wei at Intel Inc.
+## Authors
 
-A list of MUCH-APPRECIATED contributors follows. If you are not on this list
+The *tpm2-tools* project was created by Gang Wei at Intel Inc.
+
+A list of **MUCH APPRECIATED** contributors follows. If you are not on this list
 but feel you should be, please contact the current maintainer(s).
 
 * atomsoftwarestudios <github@atomsoftwarestudios.com>
