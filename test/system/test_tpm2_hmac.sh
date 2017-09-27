@@ -72,28 +72,28 @@ echo "12345678" > $file_input_data
 
 tpm2_takeownership -c
 
-tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
+tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
 
-tpm2_load -c $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -C $file_hmac_key_ctx
+tpm2_load -Q -c $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -C $file_hmac_key_ctx
 
-cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx  -g $halg -o $file_hmac_output
+cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx  -g $halg -o $file_hmac_output
 
 cleanup
 
 # Test large file, ie sequence hmac'ing.
 dd if=/dev/urandom of=$file_input_data bs=2093 count=1 2>/dev/null
-tpm2_hmac  -c $file_hmac_key_ctx  -g $halg -o $file_hmac_output $file_input_data
+tpm2_hmac -Q -c $file_hmac_key_ctx -g $halg -o $file_hmac_output $file_input_data
 
 ####handle test
 rm -f $file_hmac_output  
 
-tpm2_evictcontrol -A o -c $file_hmac_key_ctx -S $handle_hmac_key | tee evict.log
-grep "persistentHandle: "$handle_hmac_key"" evict.log
+tpm2_evictcontrol -A o -c $file_hmac_key_ctx -S $handle_hmac_key > evict.log
+grep -q "persistentHandle: "$handle_hmac_key"" evict.log
 
 echo "12345678" > $file_input_data
-tpm2_hmac  -k $handle_hmac_key  -g $halg -o $file_hmac_output $file_input_data
+tpm2_hmac -Q -k $handle_hmac_key  -g $halg -o $file_hmac_output $file_input_data
 
 cleanup all
 
@@ -102,19 +102,19 @@ echo "12345678" > $file_input_data
 
 tpm2_takeownership -c
 
-tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
+tpm2_create -Q -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
 
-tpm2_load -c $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -C $file_hmac_key_ctx
+tpm2_load -Q -c $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -C $file_hmac_key_ctx
 
-cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx -o $file_hmac_output
+cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx -o $file_hmac_output
 
 # test no output file
-cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx
+cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx 1>/dev/null
 
 # test no output file with halg
-cat $file_input_data | tpm2_hmac -g sha -c $file_hmac_key_ctx
+cat $file_input_data | tpm2_hmac -g sha -c $file_hmac_key_ctx 1>/dev/null
 
 # verify that silent is indeed silent
 stdout=`cat $file_input_data | tpm2_hmac -Q -g sha -c $file_hmac_key_ctx`
