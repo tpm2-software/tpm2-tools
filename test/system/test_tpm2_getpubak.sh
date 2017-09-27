@@ -40,6 +40,8 @@ output_ek_pub=ek_pub.out
 output_ak_pub=ak_pub.out
 output_ak_pub_name=ak_name_pub.out
 
+tpm2_takeownership -c
+
 rm $output_ek_pub $output_ak_pub $output_ak_pub_name -rf 
 
  tpm2_getpubek  -H $handle_ek -g $ek_alg -f $output_ek_pub 
