@@ -30,20 +30,24 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
-handle_ek=0x81010005
-ek_alg=0x001
-output_ek_pub=ek_pub.out
 
-if [ -f $output_ek_pub ]; then
-    rm $output_ek_pub
-fi
-
-tpm2_getpubek  -H $handle_ek -g $ek_alg -f $output_ek_pub 
-if [ $? != 0 ] || [ ! -e $output_ek_pub ];then
-    echo "getpubek fail, please check the environment or parameters!"
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
-fi
+}
+trap onerror ERR
 
-echo "getpubek successfully!"
+cleanup() {
+    rm -f ek.pub
 
+    # Evict persistent handles, we want them to always succeed and never trip
+    # the onerror trap.
+	tpm2_evictcontrol -Q -A o -H 0x81010005 2>/dev/null || true
+}
+trap cleanup EXIT
 
+cleanup
+
+tpm2_getpubek -H 0x81010005 -g rsa -f ek.pub
+
+exit 0
