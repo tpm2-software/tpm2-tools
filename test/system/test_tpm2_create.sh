@@ -49,7 +49,7 @@ trap cleanup EXIT
 
 cleanup
 
-tpm2_createprimary -Q -A p -g sha -G rsa -C context.out
+tpm2_createprimary -Q -A p -g sha1 -G rsa -C context.out
 
 # Keep the algorithm specifiers mixed to test friendly and raw
 # values.

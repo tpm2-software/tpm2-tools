@@ -114,10 +114,10 @@ cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx -o $file_hmac_output
 cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx 1>/dev/null
 
 # test no output file with halg
-cat $file_input_data | tpm2_hmac -g sha -c $file_hmac_key_ctx 1>/dev/null
+cat $file_input_data | tpm2_hmac -g sha1 -c $file_hmac_key_ctx 1>/dev/null
 
 # verify that silent is indeed silent
-stdout=`cat $file_input_data | tpm2_hmac -Q -g sha -c $file_hmac_key_ctx`
+stdout=`cat $file_input_data | tpm2_hmac -Q -g sha1 -c $file_hmac_key_ctx`
 if [ -n "$stdout" ]; then
     echo "Expected no output when run in quiet mode, got\"$stdout\""
     exit 1

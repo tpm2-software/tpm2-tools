@@ -32,7 +32,6 @@
 #;**********************************************************************;
 
 declare -A alg_hashes=(
-  ["sha"]="f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
   ["sha1"]="f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
   ["sha256"]="6ea40aa7267bb71251c1de1c3605a3df759b86b22fa9f62aa298d4197cd88a38"
   ["sha384"]="ecf669bad80a9b2b267d8671bd7d012d92e8cd30fd28d88dcdbcc2ddffbb995c7f226011ac24ae92dcfb493e0a5ecf89"
@@ -61,20 +60,20 @@ done;
 
 #
 # To keep things simple, compound specifications are just done with
-# sha, which is guaranteed to be enabled by the TPM2.0 specification.
+# sha1, which is guaranteed to be enabled by the TPM2.0 specification.
 #
-shahash=${alg_hashes["sha"]}
-# Do sha multiple times in the same spec, even use sha1 with sha (same thing)
-cmd="tpm2_pcrextend 8:sha=$shahash,sha=$shahash,sha1=$shahash"
+sha1hash=${alg_hashes["sha1"]}
+# Do sha1 multiple times in the same spec
+cmd="tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash"
 `$cmd`
 if [ $? -ne 0 ]; then
   echo "Could not perform command: $cmd - $?"
   exit 1;
 fi
 
-# Do sha multiple times in the same spec and separate specs
+# Do sha1 multiple times in the same spec and separate specs
 # with the same pcr.
-cmd="tpm2_pcrextend 8:sha=$shahash,sha=$shahash,sha1=$shahash 9:sha=$shahash,sha=$shahash,sha1=$shahash"
+cmd="tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash 9:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash"
 `$cmd`
 if [ $? -ne 0 ]; then
   echo "Could not perform command: $cmd - $?"
@@ -82,7 +81,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Over-length spec should fail
-cmd="tpm2_pcrextend 8:sha=$shahash,sha=$shahash,sha1=$shahash,sha=$shahash,sha=$shahash,sha1=$shahash"
+cmd="tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha=$sha1hash,sha=$sha1hash,sha1=$sha1hash"
 `$cmd`
 if [ $? -eq 0 ]; then
   echo "Command should fail: $cmd - $?"
