@@ -31,18 +31,23 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-size=32
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+trap onerror ERR
 
-rm -f  random.out
+cleanup() {
+    rm -f random.out
+}
+trap cleanup EXIT
 
+cleanup
+
+# test file output
 tpm2_getrandom -o random.out 32
-if [ $? != 0 ];then
-	    echo "getrandom test fail, please check the environment or parameters!"
-		exit 1
-else
-	    echo "getrandom  succeed"
-fi
-	
 
+#test stdout
+tpm2_getrandom 4 > random.out
 
-
+exit 0
