@@ -55,36 +55,7 @@ test_wrapper()
   fi
 }
 
-test_wrapper test_tpm2_takeownership_all.sh
-test_wrapper test_tpm2_nv.sh
-test_wrapper test_tpm2_pcrlist.sh
-test_wrapper test_tpm2_getrandom.sh
-test_wrapper test_tpm2_getrandom_func.sh
-test_wrapper test_tpm2_createprimary_all.sh
-test_wrapper test_tpm2_create_all.sh
-test_wrapper test_tpm2_load.sh
-test_wrapper test_tpm2_loadexternal.sh
-test_wrapper test_tpm2_evictcontrol.sh
-test_wrapper test_tpm2_hash.sh
-test_wrapper test_tpm2_hmac.sh
-test_wrapper test_tpm2_quote.sh
-test_wrapper test_tpm2_unseal.sh
-test_wrapper test_tpm2_akparse.sh
-test_wrapper test_tpm2_certify.sh
-test_wrapper test_tpm2_getpubek.sh
-test_wrapper test_tpm2_getpubak.sh
-test_wrapper test_tpm2_makecredential.sh
-test_wrapper test_tpm2_activecredential.sh
-test_wrapper test_tpm2_readpublic.sh
-test_wrapper test_tpm2_rsaencrypt.sh
-test_wrapper test_tpm2_rsadecrypt.sh
-test_wrapper test_tpm2_encryptdecrypt.sh
-test_wrapper test_tpm2_sign.sh
-test_wrapper test_tpm2_verifysignature.sh
-test_wrapper test_tpm2_send_command.sh
-test_wrapper test_tpm2_dump_capability.sh
-test_wrapper test_tpm2_startup.sh
-test_wrapper test_tpm2_pcrevent.sh
+tests=`ls test_tpm2_*.sh`
 
 # Building with asan on clang, the leak sanitizier
 # portion (lsan) on ancient versions is:
@@ -94,14 +65,13 @@ test_wrapper test_tpm2_pcrevent.sh
 #    exist for 3.6.
 # TODO When this is fixed, remove it.
 # Bug: https://github.com/01org/tpm2-tools/issues/390
-if [ "$ASAN_ENABLED" != "true" ]; then
-  test_wrapper test_tpm2_getmanufec.sh
+if [ "$ASAN_ENABLED" == "true" ]; then
+    tests=`echo $tests | grep -v test_tpm2_getmanufec.sh`
 fi
 
-test_wrapper test_tpm2_dictionarylockout.sh
-test_wrapper test_tpm2_createpolicy.sh
-test_wrapper test_tpm2_pcrextend.sh
-test_wrapper test_tpm2_rc_decode.sh
+for t in $tests; do
+    test_wrapper $t;
+done;
 
 echo -e "\033[32m Tests passed: $pass \033[0m"
 echo -e "\033[31m Tests Failed: $fail  \033[0m"
