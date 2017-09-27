@@ -46,12 +46,6 @@ with open(sys.argv[3], 'r') as stream:
     try:
         y = yaml.load(stream)
         algid=sys.argv[1]
-        if (algid == "sha"):
-            if "sha" not in y:
-                algid="sha1"
-        elif (algid == "sha1"):
-            if "sha1" not in y:
-                algid="sha"
 
         alg = y[algid]
 

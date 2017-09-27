@@ -123,46 +123,26 @@ static bool find_unkown(TPM_ALG_ID id, const char *name, void *userdata) {
     return false;
 }
 
-static void test_tpm2_alg_util_sha_test(void **state) {
+static void test_tpm2_alg_util_sha1_test(void **state) {
 
     (void) state;
-
-    TPM_ALG_ID sha_found_id = tpm2_alg_util_strtoalg("sha");
-
-    const char *sha_found_str = tpm2_alg_util_algtostr(TPM_ALG_SHA);
 
     TPM_ALG_ID sha1_found_id = tpm2_alg_util_strtoalg("sha1");
     const char *sha1_found_str = tpm2_alg_util_algtostr(TPM_ALG_SHA1);
 
-    TPM_ALG_ID sha_from_hex_str = tpm2_alg_util_from_optarg("sha");
-
     char buf[256];
-    snprintf(buf, sizeof(buf), "0x%X", TPM_ALG_SHA);
-    TPM_ALG_ID sha_from_nice_str = tpm2_alg_util_from_optarg(buf);
 
     TPM_ALG_ID sha1_from_hex_str = tpm2_alg_util_from_optarg("sha1");
 
     snprintf(buf, sizeof(buf), "0x%X", TPM_ALG_SHA1);
     TPM_ALG_ID sha1_from_nice_str = tpm2_alg_util_from_optarg(buf);
 
-    assert_int_equal(TPM_ALG_SHA, sha_found_id);
-    assert_int_equal(TPM_ALG_SHA, sha_from_hex_str);
-    assert_int_equal(TPM_ALG_SHA, sha_from_nice_str);
-
     assert_int_equal(TPM_ALG_SHA1, sha1_found_id);
-    assert_int_equal(TPM_ALG_SHA, sha1_from_hex_str);
-    assert_int_equal(TPM_ALG_SHA, sha1_from_nice_str);
-
-    bool sha_pass = false;
-    sha_pass = !strcmp(sha_found_str, "sha");
-    sha_pass = !strcmp(sha_found_str, "sha1") || sha_pass;
-
-    assert_true(sha_pass);
+    assert_int_equal(TPM_ALG_SHA1, sha1_from_hex_str);
+    assert_int_equal(TPM_ALG_SHA1, sha1_from_nice_str);
 
     bool sha1_pass = false;
-    sha1_pass = !strcmp(sha1_found_str, "sha");
-    sha1_pass = !strcmp(sha1_found_str, "sha") || sha1_pass;
-
+    sha1_pass = !strcmp(sha1_found_str, "sha1");
     assert_true(sha1_pass);
 }
 
@@ -173,7 +153,6 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
 
     TPM_ALG_ID known_algs[] = {
     TPM_ALG_RSA,
-    TPM_ALG_SHA,
     TPM_ALG_SHA1,
     TPM_ALG_HMAC,
     TPM_ALG_AES,
@@ -237,7 +216,7 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
 
 /* Test the digest specification langauge */
 
-#define HASH_SHA    "f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
+#define HASH_SHA1    "f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
 #define HASH_SHA256 "c324d5e9514f00b1a42052666721fb0911090ca197bf831f6568e735bc8522c3"
 #define HASH_SHA384 "8effdabfe14416214a250f935505250bd991f106065d899db6e19bdc8bf648f3ac0f1935c4f65fe8f798289b1a0d1e06"
 #define HASH_SHA512 "0cf9180a764aba863a67b6d72f0918bc131c6772642cb2dce5a34f0a702f9470ddc2bf125c12198b1995c233c34b4afd346c54a2334c350a948a51b6e8b4e6b6"
@@ -254,7 +233,7 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
                 expected_hash_len); \
     } while (0)
 
-#define test_digest_sha1(digest)    test_digest(digest, HASH_SHA, TPM_ALG_SHA1, SHA1_DIGEST_SIZE)
+#define test_digest_sha1(digest)    test_digest(digest, HASH_SHA1, TPM_ALG_SHA1, SHA1_DIGEST_SIZE)
 #define test_digest_sha256(digest)  test_digest(digest, HASH_SHA256, TPM_ALG_SHA256, SHA256_DIGEST_SIZE)
 #define test_digest_sha384(digest)  test_digest(digest, HASH_SHA384, TPM_ALG_SHA384, SHA384_DIGEST_SIZE)
 #define test_digest_sha512(digest)  test_digest(digest, HASH_SHA512, TPM_ALG_SHA512, SHA512_DIGEST_SIZE)
@@ -279,7 +258,7 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
         test_digest(digest, hash_value, hash_id, hash_size); \
     }
 
-add_single_digest_pcr_parse_test(4, sha, HASH_SHA,
+add_single_digest_pcr_parse_test(4, sha1, HASH_SHA1,
         TPM_ALG_SHA1, SHA1_DIGEST_SIZE)
 
 add_single_digest_pcr_parse_test(9, sha256, HASH_SHA256,
@@ -294,7 +273,7 @@ add_single_digest_pcr_parse_test(21, sha512, HASH_SHA512,
 static void test_pcr_parse_digest_list_many_items(void **state) {
     (void) state;
 
-    char mutable_1[] = "12:sha="HASH_SHA;
+    char mutable_1[] = "12:sha1="HASH_SHA1;
     char mutable_2[] = "5:sha256="HASH_SHA256;
     char mutable_3[] = "7:sha512="HASH_SHA512;
     char *optstr[] = {
@@ -338,7 +317,7 @@ static void test_pcr_parse_digest_list_many_items(void **state) {
 static void test_pcr_parse_digest_list_compound(void **state) {
     (void) state;
 
-    char mutable_1[] = "12:sha="HASH_SHA",sha256="HASH_SHA256",sha512="HASH_SHA512;
+    char mutable_1[] = "12:sha1="HASH_SHA1",sha256="HASH_SHA256",sha512="HASH_SHA512;
     char *optstr[] = {
         mutable_1,
     };
@@ -394,7 +373,7 @@ static void test_pcr_parse_digest_list_bad(void **state) {
     res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
     assert_false(res);
 
-    char mutable_4[] = "12:sha256="HASH_SHA;
+    char mutable_4[] = "12:sha256="HASH_SHA1;
     optstr[0] = mutable_4;
     res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
     assert_false(res);
@@ -422,7 +401,7 @@ static void test_pcr_parse_digest_list_bad_alg(void **state) {
     bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
     assert_false(res);
 
-    char mutable_2[] = "12:rsa="HASH_SHA;
+    char mutable_2[] = "12:rsa="HASH_SHA1;
     optstr[0] = mutable_2;
     res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
     assert_false(res);
@@ -456,7 +435,7 @@ int main(int argc, char* argv[]) {
 
     const struct CMUnitTest tests[] = {
         single_item_test_get(rsa),
-        cmocka_unit_test(test_tpm2_alg_util_sha_test),
+        cmocka_unit_test(test_tpm2_alg_util_sha1_test),
         single_item_test_get(hmac),
         single_item_test_get(aes),
         single_item_test_get(mgf1),
@@ -493,7 +472,7 @@ int main(int argc, char* argv[]) {
         single_item_test_get(cfb),
         single_item_test_get(ecb),
         cmocka_unit_test(test_tpm2_alg_util_everything_is_tested),
-        get_single_digest_pcr_parse_test(sha),
+        get_single_digest_pcr_parse_test(sha1),
         get_single_digest_pcr_parse_test(sha256),
         get_single_digest_pcr_parse_test(sha384),
         get_single_digest_pcr_parse_test(sha512),

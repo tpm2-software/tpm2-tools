@@ -50,7 +50,6 @@ void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iteraror iterator, void *userd
 
     static const alg_pair algs[] = {
         { .name = "rsa", .id = TPM_ALG_RSA },
-        { .name = "sha", .id = TPM_ALG_SHA },
         { .name = "sha1", .id = TPM_ALG_SHA1 },
         { .name = "hmac", .id = TPM_ALG_HMAC },
         { .name = "aes", .id = TPM_ALG_AES },
