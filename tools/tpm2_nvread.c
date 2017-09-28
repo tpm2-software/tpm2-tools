@@ -82,7 +82,7 @@ static void hexdump(void *ptr, unsigned buflen) {
     }
 }
 
-static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
+static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -162,7 +162,9 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context) {
         data_offset += nv_data.t.size;
     }
 
-    hexdump(data_buffer, data_offset);
+    if (!flags.quiet) {
+        hexdump(data_buffer, data_offset);
+    }
     result = true;
 
 out:
@@ -253,7 +255,5 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    UNUSED(flags);
-
-    return nv_read(sapi_context) != true;
+    return nv_read(sapi_context, flags) != true;
 }
