@@ -49,7 +49,7 @@ before_install:
     - bash -c 'echo "foo\n===" | md2man-roff'
 
 install: 
-    - xxd -r .ci/resources/ibmtpm532.tar.xxd ibmtpm532.tar
+    - wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm532.tar
     - sha256sum ibmtpm532.tar | grep -q abc0b420257917ccb42a9750588565d5e84a2b4e99a6f9f46c3dad1f9912864f
     - mkdir ibmtpm532 && pushd ibmtpm532 && tar xzf ../ibmtpm532.tar && pushd ./src && make
     - ./tpm_server &
