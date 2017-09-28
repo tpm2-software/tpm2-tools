@@ -88,9 +88,9 @@ static int nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         UINT16 i;
         for (i = 0; i < nv_write_data.t.size; i++) {
             nv_write_data.t.buffer[i] = ctx.nv_buffer[offset + i];
-            printf("%02x ", ctx.nv_buffer[offset + i]);
+            tpm2_tool_output("%02x ", ctx.nv_buffer[offset + i]);
         }
-        printf("\n\n");
+        tpm2_tool_output("\n\n");
 
         TPM_RC rval = Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
                 ctx.nv_index, &sessions_data, &nv_write_data, offset,
