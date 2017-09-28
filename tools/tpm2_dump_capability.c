@@ -56,6 +56,18 @@ typedef struct capability_map_entry {
  */
 capability_map_entry_t capability_map[] = {
     {
+        .capability_string = "algorithms",
+        .capability        = TPM_CAP_ALGS,
+        .property          = TPM_ALG_FIRST,
+        .count             = MAX_ALG_LIST_SIZE,
+    },
+    {
+        .capability_string = "commands",
+        .capability        = TPM_CAP_COMMANDS,
+        .property          = TPM_CC_FIRST,
+        .count             = MAX_CAP_CC,
+    },
+    {
         .capability_string = "properties-fixed",
         .capability        = TPM_CAP_TPM_PROPERTIES,
         .property          = PT_FIXED,
@@ -68,16 +80,10 @@ capability_map_entry_t capability_map[] = {
         .count             = MAX_TPM_PROPERTIES,
     },
     {
-        .capability_string = "algorithms",
-        .capability        = TPM_CAP_ALGS,
-        .property          = TPM_ALG_FIRST,
-        .count             = MAX_ALG_LIST_SIZE,
-    },
-    {
-        .capability_string = "commands",
-        .capability        = TPM_CAP_COMMANDS,
-        .property          = TPM_CC_FIRST,
-        .count             = MAX_CAP_CC,
+        .capability_string = "ecc-curves",
+        .capability        = TPM_CAP_ECC_CURVES,
+        .property          = TPM_ECC_NIST_P192,
+        .count             = MAX_ECC_CURVES,
     },
 };
 /*
@@ -496,6 +502,48 @@ dump_command_attrs (TPMA_CC tpma_cc)
     tpm2_tool_output ("  Res:          0x%x\n", tpma_cc.Res);
 }
 /*
+ * Iterate over an array of TPM_ECC_CURVEs and dump out a human readable
+ * representation of each array member.
+ */
+void
+dump_ecc_curves (TPM_ECC_CURVE     curve[],
+                 UINT32            count)
+{
+    size_t i;
+
+    for (i = 0; i < count; ++i) {
+        switch(curve[i]) {
+            case TPM_ECC_NIST_P192:
+                tpm2_tool_output ("TPM_ECC_NIST_P192 (0x%04x)\n", curve[i]);
+		break;
+            case TPM_ECC_NIST_P224:
+                tpm2_tool_output ("TPM_ECC_NIST_P224 (0x%04x)\n", curve[i]);
+		break;
+            case TPM_ECC_NIST_P256:
+                tpm2_tool_output ("TPM_ECC_NIST_P256 (0x%04x)\n", curve[i]);
+		break;
+            case TPM_ECC_NIST_P384:
+                tpm2_tool_output ("TPM_ECC_NIST_P384 (0x%04x)\n", curve[i]);
+		break;
+            case TPM_ECC_NIST_P521:
+                tpm2_tool_output ("TPM_ECC_NIST_P521 (0x%04x)\n", curve[i]);
+		break;
+            case TPM_ECC_BN_P256:
+                tpm2_tool_output ("TPM_ECC_BN_P256   (0x%04x)\n", curve[i]);
+		break;
+            case TPM_ECC_BN_P638:
+                tpm2_tool_output ("TPM_ECC_BN_P638   (0x%04x)\n", curve[i]);
+		break;
+            case TPM_ECC_SM2_P256:
+                tpm2_tool_output ("TPM_ECC_SM2_P256 (0x%04x)\n", curve[i]);
+		break;
+            default:
+                tpm2_tool_output ("UNKNOWN          (0x%04x)\n", curve[i]);
+		break;
+        }
+    }
+}
+/*
  * Iterate over an array of TPMA_CCs and dump out a human readable
  * representation of each array member.
  */
@@ -544,6 +592,14 @@ get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
 static int dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
 
     switch (options.capability) {
+    case TPM_CAP_ALGS:
+        dump_algorithms (capabilities->algorithms.algProperties,
+                         capabilities->algorithms.count);
+        break;
+    case TPM_CAP_COMMANDS:
+        dump_command_attr_array (capabilities->command.commandAttributes,
+                                 capabilities->command.count);
+        break;
     case TPM_CAP_TPM_PROPERTIES:
         switch (options.property) {
         case PT_FIXED:
@@ -558,14 +614,10 @@ static int dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
             return 1;
         }
         break;
-    case TPM_CAP_ALGS:
-        dump_algorithms (capabilities->algorithms.algProperties,
-                         capabilities->algorithms.count);
-        break;
-    case TPM_CAP_COMMANDS:
-        dump_command_attr_array (capabilities->command.commandAttributes,
-                                 capabilities->command.count);
-        break;
+    case TPM_CAP_ECC_CURVES:
+	dump_ecc_curves (capabilities->eccCurves.eccCurves,
+                         capabilities->eccCurves.count);
+	break;
     default:
         return 1;
     }
