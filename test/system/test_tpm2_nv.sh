@@ -38,13 +38,11 @@ large_file_name="nv.test_large_w"
 large_file_read_name="nv.test_large_w"
 
 cleanup() {
- tpm2_nvlist|grep -i $nv_test_index
- if [ $? = 0 ];then
-  tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle
- fi
- rm -f policy.bin test.bin nv.test_w 2> /dev/null
- rm -f $large_file_name $large_file_read_name 2> /dev/null
- rm -f nv.readlock 2> /dev/null
+  tpm2_nvrelease -Q -x $nv_test_index -a $nv_auth_handle 2>/dev/null || true
+  tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001 2>/dev/null || true
+
+  rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
+        nv.readlock
 }
 
 trap cleanup EXIT
@@ -59,31 +57,29 @@ cleanup
 
 tpm2_takeownership -c 
 
-tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite"
 
-if [ ! -f nv.test_w ];then
- echo "please123abc" >nv.test_w
-fi
+echo "please123abc" > nv.test_w
 
-tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle  -f nv.test_w 
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -f nv.test_w 
 
-tpm2_nvread -x $nv_test_index -a $nv_auth_handle  -s 32 -o 0
+tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 32 -o 0
 
-tpm2_nvlist|grep -i $nv_test_index
+tpm2_nvlist | grep -q -i $nv_test_index
 
 tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle  
 
 echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
 | xxd -r -p > policy.bin
 
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -L policy.bin -t "ownerread|ownerwrite|policywrite|policyread"
+tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -L policy.bin -t "ownerread|ownerwrite|policywrite|policyread"
 
 tpm2_nvlist | grep 0x1500016 -A5 | grep Auth | grep -o ": [a-zA-Z0-9]\{1,\}" | \
 grep -o "[a-zA-Z0-9]\{1\}" | xxd -r -p >test.bin
 
 cmp test.bin policy.bin -s
 
-tpm2_nvrelease -x 0x1500016 -a 0x40000001
+tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 
 #
 # Test large writes
@@ -92,44 +88,40 @@ large_file_size=$(tpm2_dump_capability -c properties-fixed | grep TPM_PT_NV_INDE
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
-tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s $large_file_size -t 0x2000A
+tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s $large_file_size -t 0x2000A
 
-if [ ! -f $large_file_name ]; then
-  base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
-fi
+base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
 
-tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle  -f $large_file_name
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle  -f $large_file_name
 
-tpm2_nvread -x $nv_test_index -a $nv_auth_handle | xxd -r > $large_file_read_name
+tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle | xxd -r > $large_file_read_name
 
 cmp -s $large_file_read_name $large_file_name
 
-tpm2_nvlist|grep -i $nv_test_index
+tpm2_nvlist|grep -q -i $nv_test_index
 
-tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle
+tpm2_nvrelease -Q -x $nv_test_index -a $nv_auth_handle
 
 #
 # Test NV access locked
 #
-tpm2_nvdefine -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite|read_stclear"
+tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite|read_stclear"
 
 echo "foobar" > nv.readlock
 
-tpm2_nvwrite -x $nv_test_index -a $nv_auth_handle -f nv.readlock
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -f nv.readlock
 
-tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 6 -o 0
+tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 6 -o 0
 
-tpm2_nvreadlock -x $nv_test_index -a $nv_auth_handle
+tpm2_nvreadlock -Q -x $nv_test_index -a $nv_auth_handle
 
 # Reset ERR signal handler to test for expected nvread error
 trap - ERR
 
-tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 6 -o 0 2> /dev/null
+tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 6 -o 0 2> /dev/null
 if [ $? != 1 ];then
  echo "nvread didn't fail!"
  exit 1
 fi
-
-echo "tpm2_nv succeed"
 
 exit 0
