@@ -37,6 +37,9 @@ OPTIONS
     * commands:
       Display data about supported commands.
 
+    * ecc-curves:
+      Display data about elliptic curves.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
