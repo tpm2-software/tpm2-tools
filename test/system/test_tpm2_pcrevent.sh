@@ -110,6 +110,4 @@ if [ $? -eq 0 ]; then
   exit 1;
 fi
 
-echo "tpm2_pcrevent succeed"
-
 exit 0
