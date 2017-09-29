@@ -42,7 +42,7 @@ This specifies the transmission interfaces or how bytes get from the system api 
 <https://trustedcomputinggroup.org/wp-content/uploads/TSS_TCTI_v1.0_r04_Public-Review.pdf>
 
 ### Books
-  * "A Practical Guide to TPM 2.0" `ISBN: 978-1-4302-6583-2 (Print) 978-1-4302-6584-9 (Online)`
+  * [A Practical Guide to TPM 2.0](https://link.springer.com/book/10.1007%2F978-1-4302-6584-9) `ISBN: 978-1-4302-6583-2 (Print) 978-1-4302-6584-9 (Online)`
 
 ## Contributing
 Instructions for contributing to the project are provided in the [CONTRIBUTING.md](CONTRIBUTING.md) file.
