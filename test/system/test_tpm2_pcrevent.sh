@@ -62,6 +62,12 @@ cat $hash_in_file | tpm2_pcrevent > $hash_out_file
 # Verify output as expected.
 for l in `cat $hash_out_file`; do
   alg=`echo -n $l | cut -d\: -f 1-1`
+
+  if ! which "$alg"sum >/dev/null 2>&1; then
+      echo "Ignore checking $alg algorithm due to unavailable \"${alg}sum\" program"
+      continue
+  fi
+
   hash=`echo -n $l | cut -d\: -f 2-2`
   check=`"$alg"sum $hash_in_file | cut -d' ' -f 1-1`
   if [ "$check" != "$hash" ]; then
