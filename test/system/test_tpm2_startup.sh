@@ -31,17 +31,14 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-tpm2_startup --clear
-if [ $? -ne 0 ]; then
-    echo "tpm2_startup --clear failed."
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
-fi
+}
+trap onerror ERR
+
+tpm2_startup --clear
 
 tpm2_startup
-if [ $? -ne 0 ]; then
-    echo "tpm2_startup default failed."
-    exit 1
-fi
 
-echo "tpm2_startup success"
 exit 0
