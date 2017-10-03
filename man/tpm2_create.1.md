@@ -1,73 +1,70 @@
-tpm2_create 1 "AUGUST 2017" tpm2-tools
-==================================================
+% tpm2_create(1) tpm2-tools | General Commands Manual
+%
+% AUGUST 2017
 
-NAME
-----
+# NAME
 
-tpm2_create(1) - create an object that can be loaded into a TPM using tpm2_load.
+**tpm2_create**(1) - create an object that can be loaded into a TPM using tpm2_load.
 The object will need to be loaded before it may be used.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_create` [OPTIONS]
+**tpm2_create** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_create(1) - create an object that can be loaded into a TPM using tpm2_load.
+**tpm2_create**(1) - create an object that can be loaded into a TPM using tpm2_load.
 The object will need to be loaded before it may be used.
 
-OPTIONS
--------
+# OPTIONS
 
 These options for creating the tpm entity:
 
-  * `-H`, `--pparent`=_PARENT\_HANDLE_:
+  * **-H**, **--pparent**=_PARENT\_HANDLE_:
     The handle of the parent object to create this object under.
 
-  * `-c`, `--contextParent`=_PARENT\_CONTEXT\_FILE_:
+  * **-c**, **--contextParent**=_PARENT\_CONTEXT\_FILE_:
     The filename for parent context.
 
-  * `-P`, `--pwdp`=_PARENT\_KEY\_PASSWORD_:
+  * **-P**, **--pwdp**=_PARENT\_KEY\_PASSWORD_:
     The password for parent key, optional. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
-  * `-K`, `--pwdk`=_KEY\_PASSWORD_:
+  * **-K**, **--pwdk**=_KEY\_PASSWORD_:
     The password for key, optional. Follows the password formatting of the
     "password for parent key" option: -P.
 
-  * `-g`, `--halg`=_ALGORITHM_:
+  * **-g**, **--halg**=_ALGORITHM_:
     The hash algorithm to use. Algorithms should follow the
     " formatting standards, see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * `-G`, `--kalg`=_KEY\_ALGORITHM_:
+  * **-G**, **--kalg**=_KEY\_ALGORITHM_:
     The algorithm associated with this object. It accepts friendly names just
     like -g option. See section "Supported Public Object Algorithms" for a list
     of supported object algorithms.
 
-  * `-A`, `--objectAttributes`=_ATTRIBUTES_:
+  * **-A**, **--objectAttributes**=_ATTRIBUTES_:
     The object attributes, optional.
 
-  * `-I`, `--inFile`=_FILE_:
+  * **-I**, **--inFile**=_FILE_:
     The data file to be sealed, optional. If file is -, read from stdin.
     When sealing data only the TPM_ALG_KEYEDHASH algorithm is allowed.
 
-  * `-L`, `--policy-file`=_POLICY\_FILE_:
+  * **-L**, **--policy-file**=_POLICY\_FILE_:
     The input policy file, optional.
 
-  * `-E`, `--enforce-policy`:
+  * **-E**, **--enforce-policy**:
     Enforce policy based authorization on the object.
 
-  * `-u`, `--pubfile`=_OUTPUT\_PUBLIC\_FILE_:
+  * **-u**, **--pubfile**=_OUTPUT\_PUBLIC\_FILE_:
     The output file which contains the public portion of the created object, optional.
 
-  * `-r`, `--privfile`=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **--privfile**=_OUTPUT\_PRIVATE\_FILE_:
     The output file which contains the sensitive portion of the object, optional.
 
-* `-S`, `--input-session-handle`=_SESSION\_HANDLE_:
+* **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
 
 [common options](common/options.md)
@@ -82,8 +79,7 @@ These options for creating the tpm entity:
 
 [algorithm specifiers](common/alg.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_create -H 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File -o opu.File
@@ -91,15 +87,15 @@ tpm2_create -c parent.context -P abc123 -K def456 -g sha256 -G keyedhash -I data
 tpm2_create -H 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File -o opu.File
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 

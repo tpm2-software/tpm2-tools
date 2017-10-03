@@ -6,12 +6,12 @@ LT_INIT
 AM_INIT_AUTOMAKE([foreign
                   subdir-objects])
 AC_CONFIG_FILES([Makefile])
-AC_CHECK_PROG([MD2MAN_ROFF],[md2man-roff],[yes])
+AC_CHECK_PROG([PANDOC],[pandoc],[yes])
 AS_IF(
-    [test "x${MD2MAN_ROFF}" == x"yes"],
+    [test "x${PANDOC}" == x"yes"],
     [],
-    [AC_MSG_WARN([Required executable md2man-roff not found, man pages will not be built])])
-AM_CONDITIONAL([HAVE_MD2MAN_ROFF],[test "x${MD2MAN_ROFF}" = "xyes"])
+    [AC_MSG_WARN([Required executable pandoc not found, man pages will not be built])])
+AM_CONDITIONAL([HAVE_PANDOC],[test "x${PANDOC}" = "xyes"])
 PKG_CHECK_MODULES([SAPI],[sapi])
 # disable libtcti-device selectively (enabled by default)
 AC_ARG_WITH(

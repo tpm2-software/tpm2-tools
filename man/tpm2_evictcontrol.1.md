@@ -1,46 +1,43 @@
-tpm2_evictcontrol 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_evictcontrol(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_evictcontrol(1) - Make a transient object persistent or evict a persistent object.
+**tpm2_evictcontrol**(1) - Make a transient object persistent or evict a persistent object.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_evictcontrol` [OPTIONS]
+**tpm2_evictcontrol** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_evictcontrol(1) - allows a transient object to be made persistent or a persistent object to
+**tpm2_evictcontrol**(1) - allows a transient object to be made persistent or a persistent object to
 be evicted.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-A`, `--auth`=_AUTH_:
+  * **-A**, **--auth**=_AUTH_:
     The authorization used to authorize the commands. Valid choices are:
-    *  `o` for `TPM_RH_OWNER`
-    *  `p` for `TPM_RH_PLATFORM`
+    *  **o** for **TPM_RH_OWNER**
+    *  **p** for **TPM_RH_PLATFORM**
 
-  * `-H`, `--handle`=_HANDLE_:
+  * **-H**, **--handle**=_HANDLE_:
     The handle of a loaded transient or a persistent object.
 
     If the handle is for a transient object, then a handle that will be assigned to the persisted
-    object must also be specified with the `-S` option.
+    object must also be specified with the **-S** option.
 
-    If the handle is for a persistent object, then the `-S` does not need to be provided since the
+    If the handle is for a persistent object, then the **-S** does not need to be provided since the
     handle must be the same for both options.
 
-  * `-c`, `--context`=_OBJECT\_CONTEXT\_FILE_:
+  * **-c**, **--context**=_OBJECT\_CONTEXT\_FILE_:
     Filename for object context.
 
-  * `-S`, `--persistent`=_PERSISTENT\_HANDLE_:
+  * **-S**, **--persistent**=_PERSISTENT\_HANDLE_:
     The persistent handle for the object handle specified via _HANDLE_.
 
-  * `-P`, `--pwda`=_AUTH\_PASSWORD_:
+  * **-P**, **--pwda**=_AUTH\_PASSWORD_:
     authorization password, optional. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
@@ -50,23 +47,23 @@ OPTIONS
 
 [password formatting](common/password.md)
 
-EXAMPLES
---------
+# EXAMPLES
+
 ```
 tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
 tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P abc123
 tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P 123abc
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 

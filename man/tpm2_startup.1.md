@@ -1,52 +1,48 @@
-tpm2_startup 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_startup(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_startup(1) - Send a startup command to the TPM.
+**tpm2_startup**(1) - Send a startup command to the TPM.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_startup` [OPTIONS]
+**tpm2_startup** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_startup(1) Send a `TPM2_Startup` command with either `TPM_SU_CLEAR` or
-`TPM_SU_STATE`.
+**tpm2_startup**(1) Send a **TPM2_Startup** command with either **TPM_SU_CLEAR** or
+**TPM_SU_STATE**.
 
 **NOTE**: Typically a Resource Manager or low-level/boot software will
 have already sent this command.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-c`, `--clear`:
+  * **-c**, **--clear**:
 
-    Startup type sent will be `TPM_SU_CLEAR` instead of `TPM2_SU_STATE`.
+    Startup type sent will be **TPM_SU_CLEAR** instead of **TPM2_SU_STATE**.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_startup
 tpm2_startup -c
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)

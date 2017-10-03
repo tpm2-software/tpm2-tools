@@ -1,57 +1,54 @@
-tpm2_getpubek 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_getpubek(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_getpubek(1) - Generate TCG profile compliant endorsement key.
+**tpm2_getpubek**(1) - Generate TCG profile compliant endorsement key.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_getpubek` [OPTIONS]
+**tpm2_getpubek** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_getpubek(1) - Generate TCG profile compliant endorsement key(endorsement
+**tpm2_getpubek**(1) - Generate TCG profile compliant endorsement key(endorsement
 hierarchy primary object), make it persistent with give ek handle, and return
 public EK, if any passwd option is missing, assume NULL.
 
 Refer to:
 <http://www.trustedcomputinggroup.org/files/static_page_files/7CAA5687-1A4B-B294-D04080D058E86C5F>
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-e`, `--endorsePasswd`=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorsePasswd**=_ENDORSE\_PASSWORD_:
     Specifies current endorsement password, defaults to NULL.
     Passwords should follow the "password formatting standards, see section
     "Password Formatting".
 
-  * `-o`, `--ownerPasswd`=_OWNER\_PASSWORD_
+  * **-o**, **--ownerPasswd**=_OWNER\_PASSWORD_
     Specifies the current owner password, defaults to NULL.
     Same formatting as the endorse password value or -e option.
 
-  * `-P`, `--eKPasswd`=_EK\_PASSWORD_
+  * **-P**, **--eKPasswd**=_EK\_PASSWORD_
     Specifies the EK password when created, defaults to NULL.
     Same formatting as the endorse password value or -e option.
 
-  * `-H`, `--handle`=_HANDLE_:
+  * **-H**, **--handle**=_HANDLE_:
     specifies the handle used to make EK  persistent (hex).
 
-  * `-g`, `--alg`=_ALGORITHM_:
+  * **-g**, **--alg**=_ALGORITHM_:
     specifies the algorithm type of EK.
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms. See section "Algorithm Specifiers" on how to specify
     an algorithm argument.
 
-  * `-f`, `--file`=_FILE_:
+  * **-f**, **--file**=_FILE_:
     specifies the file used to save the public  portion of EK. This will be a
     binary data structure corresponding to the TPM2B_PUBLIC struct in the
     specification.
 
-  * `-S`, `--input-session-handle`=_SESSION_:
+  * **-S**, **--input-session-handle**=_SESSION_:
     Optional Input session handle from a policy session for authorization.
 
 [common options](common/options.md)
@@ -62,21 +59,21 @@ OPTIONS
 
 [algorithm specifiers](common/alg.md)
 
-EXAMPLES
---------
+# EXAMPLES
+
 ```
 tpm2_getpubek -e abc123 -o abc123 -P passwd -H 0x81010001 -g rsa -f ek.pub
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 

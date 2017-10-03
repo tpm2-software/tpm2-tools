@@ -1,53 +1,49 @@
-tpm2_pcrevent 1 "AUGUST 2017" tpm2-tools
-==================================================
+% tpm2_akparse(1) tpm2-tools | General Commands Manual
+%
+% AUGUST 2017 2017
 
-NAME
-----
+# NAME
 
-tpm2_akparse(1) - parses algorithm and key values from an ak output file generated via tpm2_getpubak(1).
+**tpm2_akparse**(1) - parses algorithm and key values from an ak output file generated via tpm2_getpubak(1).
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_akparse` [OPTIONS]
+**tpm2_akparse** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_akparse(1) - parse the algorithm and key values in `TPM2B_PUBLIC` struct
+tpm2_akparse(1) - parse the algorithm and key values in **TPM2B_PUBLIC** struct
 which is input via file _INPUT\_FILE_ and the output key sent to _OUTPUT\_FILE_.
 
-OPTIONS
--------
+# OPTIONS
 
 These options control parsing:
 
-  * `-f`, `--file`=_INPUT_FILE_:
+  * **-f**, **--file**=_INPUT_FILE_:
     The input file to parse. This file is output via tpm2_getpubak(1) via the -f option.
 
-  * `-k`, `--key-file`=_OUTPUT_FILE_:
+  * **-k**, **--key-file**=_OUTPUT_FILE_:
     The output file for the raw key value(s).
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_akparse -f ak.data -k ak.key
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 

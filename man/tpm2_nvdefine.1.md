@@ -1,52 +1,49 @@
-tpm2_nvdefine 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_nvdefine(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_nvdefine(1) - define a TPM Non-Volatile (NV) index.
+**tpm2_nvdefine**(1) - define a TPM Non-Volatile (NV) index.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_nvdefine` [OPTIONS]
+**tpm2_nvdefine** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_nvdefine(1) - Define NV index with given auth value.
+**tpm2_nvdefine**(1) - Define NV index with given auth value.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-x`, `--index`=_NV\_INDEX_:
+  * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to define the space at.
 
-  * `-a`, `--authHandle`=_SECRET\_DATA\_FILE_:
+  * **-a**, **--authHandle**=_SECRET\_DATA\_FILE_:
     specifies the handle used to authorize:
-    * `0x40000001` for `TPM_RH_OWNER`
-    * `0x4000000C` for `TPM_RH_PLATFORM`
+    * **0x40000001** for **TPM_RH_OWNER**
+    * **0x4000000C** for **TPM_RH_PLATFORM**
 
-  * `-s`, `--size`=_SIZE_:
+  * **-s**, **--size**=_SIZE_:
     specifies the size of data area in bytes.
 
-  * `-t`, `--attributes`=_ATTRIBUTES_
+  * **-t**, **--attributes**=_ATTRIBUTES_
     Specifies the attribute values for the nv region used when creating the
     entitiy. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
-  * `-P`, `--handlePasswd`=_HANDLE\_PASSWORD_:
+  * **-P**, **--handlePasswd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
-  * `-I`, `--indexPasswd`=_INDEX\_PASSWORD_:
+  * **-I**, **--indexPasswd**=_INDEX\_PASSWORD_:
     specifies the password of NV Index when created. Follows the same formatting
     guidelines as the handle password or -P option.
 
-  * `-L`, `--policy-file`=_POLICY\_FILE_:
+  * **-L**, **--policy-file**=_POLICY\_FILE_:
     Specifies the policy digest file for policy based authorizations.
 
-  * `-S`, `--input-session-handle`=_SIZE_:
+  * **-S**, **--input-session-handle**=_SIZE_:
     Optional Input session handle from a policy session for authorization.
 
 [common options](common/options.md)
@@ -57,22 +54,21 @@ OPTIONS
 
 [password formatting](common/password.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A
 tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t ownerread|ownerwrite|policywrite -I 1a1b1c
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
