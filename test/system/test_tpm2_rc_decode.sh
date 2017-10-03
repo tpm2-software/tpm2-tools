@@ -154,8 +154,7 @@ codes=(
 
 for key in "${!codes[@]}"; do
   value=${codes[$key]}
-  echo "testing $key=$value"
-  tpm2_rc_decode $value
+  tpm2_rc_decode $value &>/dev/null
 done;
 
 #
@@ -163,7 +162,7 @@ done;
 # clear the ERR trap before continuing.
 #
 trap - ERR
-cmd="tpm2_rc_decode 0x6666329840938498293849238"
+cmd="tpm2_rc_decode 0x6666329840938498293849238 &>/dev/null"
 eval "$cmd"
 if [ $? -eq 0 ]; then
   echo "Expected \"$cmd\" to fail."
