@@ -1,36 +1,33 @@
-tpm2_makecredential 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_makecredential(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_makecredential(1) - load an object that is not a Protected Object into the
+**tpm2_makecredential**(1) - load an object that is not a Protected Object into the
 TPM.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_makecredential` [OPTIONS]
+**tpm2_makecredential** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_makecredential(1) - Use a TPM public key to protect a secret that is used
+**tpm2_makecredential**(1) - Use a TPM public key to protect a secret that is used
 to encrypt the AK certififcate.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-e`, `--enckey`=_PUBLIC\_FILE_:
+  * **-e**, **--enckey**=_PUBLIC\_FILE_:
     A tpm Public Key which was used to wrap the seed.
 
-  * `-s`, `--sec`=_SECRET\_DATA\_FILE_:
+  * **-s**, **--sec**=_SECRET\_DATA\_FILE_:
     The secret which will be protected by the key derived from the random seed.
 
-  * `-n`, `--name`=_NAME_
+  * **-n**, **--name**=_NAME_
     The name of the key for which certificate is to be created.
 
-  * `-o`, `--outFile`=_OUT\_FILE_
+  * **-o**, **--outFile**=_OUT\_FILE_
     The output file path, recording the two structures output by
     tpm2_makecredential function.
 
@@ -38,21 +35,20 @@ OPTIONS
 
 [common tcti options](common/tcti.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_makecredential -e <keyFile> -s <secFile> -n <hexString> -o <outFile>
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)

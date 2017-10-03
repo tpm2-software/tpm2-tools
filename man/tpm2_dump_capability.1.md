@@ -1,27 +1,24 @@
-tpm2_dump_capability 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_dump_capability(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_dump_capability(1) - Display TPM capabilities in a human readable form.
+**tpm2_dump_capability**(1) - Display TPM capabilities in a human readable form.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_dump_capability` [OPTIONS]
+**tpm2_dump_capability** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_dump_capability(1) - Query the TPM for it's capabilities / properties and
+**tpm2_dump_capability**(1) - Query the TPM for it's capabilities / properties and
 dump them to the console. This is a thin wrapper around the GetCapability
 command.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-c`, `--capability`=_CAPABILITY\_NAME_:
+  * **-c**, **--capability**=_CAPABILITY\_NAME_:
     The name of the capability group to query.
     Currently supported capability groups are:
 
@@ -44,22 +41,22 @@ OPTIONS
 
 [common tcti options](common/tcti.md)
 
-EXAMPLES
---------
+# EXAMPLES
+
 ```
 tpm2_dump_capability --capability="properties-fixed"
 
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 

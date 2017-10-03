@@ -1,4 +1,4 @@
-## Password Formatting
+# Password Formatting
 
 Passwords are interpreted in two forms, string and hex-string. A string password is not
 interpreted, and is directly used for authorization. A hex-string, is converted from

@@ -1,5 +1,4 @@
-PCR Bank Specfiers
--------------------
+# PCR Bank Specfiers
 
 PCR Bank Selection lists follow the below specification:
 

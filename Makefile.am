@@ -232,7 +232,7 @@ endif
 
 EXTRA_DIST = $(top_srcdir)/man
 
-if HAVE_MD2MAN_ROFF
+if HAVE_PANDOC
     man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_akparse.1 \
@@ -306,6 +306,6 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[nv attributes\]/d' \
 	    -e '/\[pcr bank specifiers\]/r man/common/pcr.md' \
 	    -e '/\[pcr bank specifiers\]/d' \
-	    < $< | md2man-roff > $@
+	    < $< | pandoc -s -t man > $@
 
 CLEANFILES = $(man1_MANS)

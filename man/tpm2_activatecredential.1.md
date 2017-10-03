@@ -1,50 +1,48 @@
-tpm2_activatecredential 1 "AUGUST 2017" tpm2-tools
-==================================================
+% tpm2_activatecredential(1) tpm2-tools | General Commands Manual
+%
+% AUGUST 2017
 
-NAME
-----
+# NAME
 
-tpm2_activatecredential(1) - verify that an object is protected with a specific
+**tpm2_activatecredential**(1) - verify that an object is protected with a specific
 key.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_activatecredential` [OPTIONS]
+**tpm2_activatecredential** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
+
 Verify that the given content is protected with given keyHandle for given
 handle, and then decrypt and return the secret, if any passwd option is
 missing, assume NULL. Currently only support using TCG profile compliant EK as
 the keyHandle.
 
-OPTIONS
--------
+# OPTIONS
 
 These options control the object verification:
 
-  * `-H`, `--handle`=_HANDLE_:
+  * **-H**, **--handle**=_HANDLE_:
     _HANDLE_ of the object associated with the created certificate by CA.
 
-  * `-k`, `--key-handle`=_KEY\_HANDLE_:
+  * **-k**, **--key-handle**=_KEY\_HANDLE_:
     The _KEY\_HANDLE_ of Loaded key used to decrypt the the random seed.
 
-  * `-C`, `--keyContext`=_KEY\_CONTEXT\_FILE_:
+  * **-C**, **--keyContext**=_KEY\_CONTEXT\_FILE_:
     _KEY\_CONTEXT\_FILE_ is the path to a context file.
 
-  * `-P`, `--password`=_PASSWORD_:
+  * **-P**, **--password**=_PASSWORD_:
     Use _PASSWORD_ for providing an authorization value for the _KEY\_HANDLE_.
     Passwords should follow the "password formatting standards, see section "Password Formatting".
 
-  * `-e`, `--endorsePassword`=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorsePassword**=_ENDORSE\_PASSWORD_:
     The endorsement password, optional. Follows the same formating guidelines as the handle password option -P.
 
-  * `-f`, `--inFile`=_INPUT\_FILE_:
+  * **-f**, **--inFile**=_INPUT\_FILE_:
     Input file path, containing the two structures needed by tpm2_activatecredential function. This is created
     via the tpm2_makecredential(1) command.
 
-  * `-o`, `--outFile`=_OUTPUT\_FILE_:
+  * **-o**, **--outFile**=_OUTPUT\_FILE_:
     Output file path, record the secret to decrypt  the certificate.
 
 [common options](common/options.md)
@@ -53,8 +51,7 @@ These options control the object verification:
 
 [password formatting](common/password.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P abc123 -e abc123 -f <filePath> -o <filePath>
@@ -62,15 +59,15 @@ tpm2_activatecredential -c ak.context -C ek.context -P abc123 -e abc123 -f <file
 tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P 123abc -e 1a1b1c -X -f <filePath> -o <filePath>
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 

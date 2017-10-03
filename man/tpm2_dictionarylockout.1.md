@@ -1,68 +1,65 @@
-tpm2_dictionarylockout 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_dictionarylockout(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_dictionarylockout(1) - setup or clear dictionary-attack-lockout parameters.
+**tpm2_dictionarylockout**(1) - setup or clear dictionary-attack-lockout parameters.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_dictionarylockout` [OPTIONS]
+**tpm2_dictionarylockout** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_dictionarylockout(1) - setup dictionary-attack-lockout parameters or clear
+**tpm2_dictionarylockout**(1) - setup dictionary-attack-lockout parameters or clear
 dictionary-attack-lockout state, if any passwd option is missing, assume NULL.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-s`, `--setup-parameters`=_SETUP\_PARAMETERS_:
+  * **-s**, **--setup-parameters**=_SETUP\_PARAMETERS_:
     specifies the tool should operate to setup dictionary-attack-lockout
     parameters.
 
-  * `-c`, `--clear-lockout`:
+  * **-c**, **--clear-lockout**:
     specifies the tool should operate to clear dictionary-attack-lockout state.
 
-  * `-l`, `-lockout-recovery-time`=_LOCKOUT\_TIME_:
+  * **-l**, **-lockout-recovery-time**=_LOCKOUT\_TIME_:
     specifies the wait time in seconds before another TPM_RH_LOCKOUT
     authentication attempt can be made after a failed authentication.
 
-  * `-t`, `--recovery-time`=_RECOVERY\_TIME_:
+  * **-t**, **--recovery-time**=_RECOVERY\_TIME_:
     specifies the wait time in seconds before another DA-protected-object
     authentication attempt can be made after max-tries number of failed
     authentications.
 
-  * `-n`, `--max-tries`=_MAX\_TRYS_:
+  * **-n**, **--max-tries**=_MAX\_TRYS_:
     specifies the maximum number of allowed authentication attempts on
     DA-protected-object; after which DA is activated.
 
-  * `-S`, `--input-session-handle`=_SESSION\_HANDLE_:
+  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-EXAMPLES
---------
+# EXAMPLES
+
 ```
 tpm2_dictionarylockout -c -p passwd
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7 -p passwd
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
 

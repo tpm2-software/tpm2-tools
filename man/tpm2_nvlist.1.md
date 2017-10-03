@@ -1,20 +1,20 @@
-tpm2_nvlist 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_nvlist(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_nvlist(1) - display all defined Non-Volatile (NV)s indices.
+**tpm2_nvlist**(1) - display all defined Non-Volatile (NV)s indices.
 
 SYNOPSIS
 --------
 
-`tpm2_nvlist` [OPTIONS]
+**tpm2_nvlist** [*OPTIONS*]
 
 DESCRIPTION
 -----------
 
-tpm2_nvlist(1) - display all defined Non-Volatile (NV)s indices to stdout.
+**tpm2_nvlist**(1) - display all defined Non-Volatile (NV)s indices to stdout.
 
 Display metadata for all defined NV indices. Metadata includes:
 
@@ -23,8 +23,8 @@ Display metadata for all defined NV indices. Metadata includes:
   * The auth policy.
   * The NV attributes as defined in section "NV Attributes".
 
-OPTIONS
--------
+# OPTIONS
+
 This tool takes no tool specific options.
 
 [common options](common/options.md)
@@ -33,8 +33,7 @@ This tool takes no tool specific options.
 
 [nv attributes](common/nv-attrs.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 To list the defined NV indeces to stdout:
 
@@ -42,14 +41,14 @@ To list the defined NV indeces to stdout:
 tpm2_nvlist
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)

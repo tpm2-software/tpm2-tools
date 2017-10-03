@@ -1,35 +1,32 @@
-tpm2_listpersistent 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_listpersistent(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_listpersistent(1) - Display all defined persistent objects.
+**tpm2_listpersistent**(1) - Display all defined persistent objects.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_listpersistent` [OPTIONS] _FILE_
+**tpm2_listpersistent** [*OPTIONS*] _FILE_
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_listpersistent(1) - display all defined persistent objects.
+**tpm2_listpersistent**(1) - display all defined persistent objects.
 
+# OPTIONS
 
-OPTIONS
------------
 These options for listing the persistent objects:
 
-  * `-g`, `--halg`=_ALGORITHM_:
+  * **-g**, **--halg**=_ALGORITHM_:
     Only display persistent objects using this hash algorithm. Algorithms should
     follow the " formatting standards, see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * `-G`, `--kalg`=_KEY\_ALGORITHM_:
+  * **-G**, **--kalg**=_KEY\_ALGORITHM_:
     Only display persistent objects using this key algorithm. It accepts friendly
-    names just like `-g` option. See section "Supported Public Object Algorithms"
+    names just like **-g** option. See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
 
 [common options](common/options.md)
@@ -42,8 +39,7 @@ These options for listing the persistent objects:
 
 [algorithm specifiers](common/alg.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_listpersistent
@@ -51,14 +47,14 @@ tpm2_listpersistent -g sha256 -G ecc
 
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)

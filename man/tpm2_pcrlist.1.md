@@ -1,39 +1,36 @@
-tpm2_pcrlist 1 "AUGUST 2017" tpm2-tools
-==================================================
+% tpm2_pcrlist(1) tpm2-tools | General Commands Manual
+%
+% AUGUST 2017
 
-NAME
-----
+# NAME
 
-tpm2_pcrlist(1) - List PCR values.
+**tpm2_pcrlist**(1) - List PCR values.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_pcrlist` [OPTIONS]
+**tpm2_pcrlist** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_pcrlist(1) Displays PCR values.
+**tpm2_pcrlist**(1) Displays PCR values.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-g`, `--algorithm`=_HASH\_ALGORITHM_:
+  * **-g**, **--algorithm**=_HASH\_ALGORITHM_:
     Only output PCR banks with the given algorithm.
     Algorithms should follow the "formatting standards, see section
     "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * `-L`, `--selList`=_PCR\_SELECTION\_LIST_:
+  * **-L**, **--selList**=_PCR\_SELECTION\_LIST_:
 
     The list of pcr banks and selected PCRs' ids for each bank to display.
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specfiers".
 
 
-  * `-s`, `--algs`:
+  * **-s**, **--algs**:
     Output the list of supported algorithms.
 
 [common options](common/options.md)
@@ -46,8 +43,7 @@ OPTIONS
 
 [algorithm specifiers](common/alg.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 display all PCR values:
 
@@ -73,14 +69,14 @@ Display the supported PCR bank algorithms and exit:
 tpm2_pcrlist -s
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)

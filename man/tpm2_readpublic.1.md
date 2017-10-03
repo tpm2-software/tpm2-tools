@@ -1,33 +1,30 @@
-tpm2_readpublic 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_readpublic(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_readpublic(1) - Read the public area of a loaded object.
+**tpm2_readpublic**(1) - Read the public area of a loaded object.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_readpublic` [OPTIONS]
+**tpm2_readpublic** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_readpublic(1) Reads the public area of a loaded object.
+**tpm2_readpublic**(1) Reads the public area of a loaded object.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-H`, `--object`=_HANDLE_:
+  * **-H**, **--object**=_HANDLE_:
 
     The loaded object handle to read the public data of.
 
-  * `-c`, `--akContext`=_OBJECT\_CONTEXT\_FILE_:
+  * **-c**, **--akContext**=_OBJECT\_CONTEXT\_FILE_:
 
     Filename for object context.
 
-  * `-o`, `--opu`:
+  * **-o**, **--opu**:
 
     The output file path, recording the public portion of the object.
 
@@ -35,21 +32,20 @@ OPTIONS
 
 [common tcti options](common/tcti.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_readpublic -H 0x81010002 --opu output.dat
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)

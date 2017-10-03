@@ -1,52 +1,49 @@
-tpm2_rsaencrypt 1 "SEPTEMBER 2017" tpm2-tools
-==================================================
+% tpm2_rsaencrypt(1) tpm2-tools | General Commands Manual
+%
+% SEPTEMBER 2017
 
-NAME
-----
+# NAME
 
-tpm2_rsaencrypt(1) - Performs an RSA Encryption operation using the TPM.
+**tpm2_rsaencrypt**(1) - Performs an RSA Encryption operation using the TPM.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_rsaencrypt` [OPTIONS]
+**tpm2_rsaencrypt** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
-tpm2_rsaencrypt(1) performs RSA encryption using the indicated padding scheme according to
-IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be `TPM_ALG_NULL`.
+**tpm2_rsaencrypt**(1) performs RSA encryption using the indicated padding scheme according to
+IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be **TPM_ALG_NULL**.
 
 The key referenced by keyHandle is **required** to be:
 
 1. an RSA key
 2. Have the attribute *decrypt* **SET** in it's attributes.
 
-OPTIONS
--------
+# OPTIONS
 
-  * `-k`, `--keyHandle`=_KEY\_HANDLE_:
+  * **-k**, **--keyHandle**=_KEY\_HANDLE_:
 
     the public portion of RSA key to use for encryption.
 
-  * `-c`, `--keyContext`=_KEY\_CONTEXT\_FILE_:
+  * **-c**, **--keyContext**=_KEY\_CONTEXT\_FILE_:
 
     filename of the key context used for the operation.
 
-  * `-P`, `--pwdk`=_KEY\_PASSWORD_:
+  * **-P**, **--pwdk**=_KEY\_PASSWORD_:
 
     specifies the password of _KEY\_HANDLE_. Passwords should follow the
     password formatting standards, see section "Password Formatting".
 
-  * `-I`, `--inFile`=_INPUT\FILE_:
+  * **-I**, **--inFile**=_INPUT\FILE_:
 
     Input file path, containing the data to be encrypted.
 
-  * `-o`, `--outFile`=_OUTPUT\_FILE_:
+  * **-o**, **--outFile**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data.
 
-  * `-S`, `--input-session-handle`=_SESSION\_HANDLE_:
+  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
 
     Optional Input session handle from a policy session for authorization.
 
@@ -56,21 +53,20 @@ OPTIONS
 
 [password formatting](common/password.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 ```
 tpm2_rsaencrypt -k 0x81010001 -I plain.in -o encrypted.out
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
