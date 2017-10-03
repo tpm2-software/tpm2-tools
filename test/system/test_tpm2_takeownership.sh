@@ -38,31 +38,18 @@ new_ownerPasswd=newpswd
 new_endorsePasswd=newpswd
 new_lockPasswd=newpswd
 
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+trap onerror ERR
 
 tpm2_takeownership -c 
- if [ $? != 0 ];then 
-	echo "clean ownership Fail!"
-	exit 1
- fi
- 
  
 tpm2_takeownership -o $ownerPasswd -e $endorsePasswd -l $lockPasswd
-	if [ $? != 0 ];then
-	 echo "take ownership Fail, check your envirnoment!"
-	 exit 1
-	fi
-
-
 
 tpm2_takeownership -O $ownerPasswd -E $endorsePasswd -L $lockPasswd -o $new_ownerPasswd -e $new_endorsePasswd -l $new_lockPasswd
-	if [ $? != 0 ];then
-	 echo "re-take ownership Fail, check your envirnoment!"
-	 exit 1
-	fi 
-
 
 tpm2_takeownership -c -L $new_lockPasswd
-	if [ $? != 0 ];then
-	 echo "clean ownership fail with lock password!"
-	 exit 1
-	fi 
+
+exit 0
