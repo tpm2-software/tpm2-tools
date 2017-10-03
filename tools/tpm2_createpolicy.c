@@ -138,7 +138,7 @@ static TPM_RC parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context)
     }
 
     if (pctx.common_policy_options.extend_policy_session) {
-        tpm2_tool_output("EXTENDED_POLICY_SESSION_HANDLE: 0x%08X",
+        tpm2_tool_output("EXTENDED_POLICY_SESSION_HANDLE: 0x%08X\n",
             pctx.common_policy_options.policy_session->sessionHandle );
     }
 
