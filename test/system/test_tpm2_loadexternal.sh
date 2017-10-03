@@ -45,9 +45,13 @@ file_loadexternal_output=loadexternal_"$file_loadexternal_key_ctx"
 Handle_parent=0x81010019
 
 cleanup() {
-  rm -rf $file_primary_key_ctx $file_loadexternal_key_pub $file_loadexternal_key_priv \
+  rm -f $file_primary_key_ctx $file_loadexternal_key_pub $file_loadexternal_key_priv \
          $file_loadexternal_key_name $file_loadexternal_key_ctx \
-         $file_loadexternal_output 2>/dev/null
+         $file_loadexternal_output
+
+  if [ "$1" != "keep_handle" ]; then
+    tpm2_evictcontrol -Q -Ao -H $Handle_parent 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT
 
@@ -61,21 +65,19 @@ cleanup
 
 tpm2_takeownership -c
 
-tpm2_createprimary -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -c $file_primary_key_ctx
+tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -c $file_primary_key_ctx
 
-tpm2_loadexternal -H n   -u $file_loadexternal_key_pub   -C $file_loadexternal_key_ctx
+tpm2_loadexternal -Q -H n   -u $file_loadexternal_key_pub   -C $file_loadexternal_key_ctx
 
-tpm2_evictcontrol -A o -c $file_primary_key_ctx  -S $Handle_parent
+tpm2_evictcontrol -Q -A o -c $file_primary_key_ctx  -S $Handle_parent
 
 # Test with Handle
-cleanup
+cleanup keep_handle
 
-tpm2_create  -H $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
+tpm2_create -Q -H $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
 
-tpm2_loadexternal  -H n   -u $file_loadexternal_key_pub
-
-echo "loadexternal test OK!"
+tpm2_loadexternal -Q -H n   -u $file_loadexternal_key_pub
 
 exit 0
