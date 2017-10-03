@@ -248,10 +248,10 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
         return -1;
     }
 
-    printf( "\nquoted:\n " );
+    tpm2_tool_output( "\nquoted:\n " );
     tpm2_util_print_tpm2b( (TPM2B *)&quoted );
     //PrintTPM2B_ATTEST(&quoted);
-    printf( "\nsignature:\n " );
+    tpm2_tool_output( "\nsignature:\n " );
     PrintBuffer( (UINT8 *)&signature, sizeof(signature) );
     //PrintTPMT_SIGNATURE(&signature);
 
