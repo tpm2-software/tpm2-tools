@@ -55,6 +55,18 @@ mag=$'\e[1;35m'
 cyn=$'\e[1;36m'
 end=$'\e[0m'
 
+PRETTY=false
+
+clear_colors() {
+  red=''
+  grn=''
+  yel=''
+  blu=''
+  mag=''
+  cyn=''
+  end=''
+}
+
 test_wrapper() {
 
   ./$1 &
@@ -63,9 +75,11 @@ test_wrapper() {
   spin='-\|/'
   i=0
   while kill -0 $pid 2>/dev/null; do
-    i=$(( (i+1) %4 ))
-    printf "\r${yel}${spin:$i:1}${end}"
-    sleep .1
+    if [ "$PRETTY" == true ]; then
+      i=$(( (i+1) %4 ))
+      printf "\r${yel}${spin:$i:1}${end}"
+      sleep .1
+    fi
   done
 
   wait $pid
@@ -117,6 +131,14 @@ if [ "$ASAN_ENABLED" == "true" ]; then
   tests=`echo $tests | grep -v test_tpm2_getmanufec.sh`
 fi
 
+while true; do
+  case "$1" in
+    -p | --pretty ) PRETTY=true; shift ;;
+    -- ) shift; break ;;
+    * ) break ;;
+  esac
+done
+
 # If command line arguments are provided, assume it is
 # the test suite to execute.
 # IE: test_tpm2_getrandom.sh
@@ -124,6 +146,9 @@ if [ "$#" -gt 0 ]; then
   tests="$@"
 fi
 
+if [ "$PRETTY" != true ]; then
+  clear_colors
+fi
 
 for t in $tests; do
   test_wrapper $t;
