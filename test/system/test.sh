@@ -55,7 +55,8 @@ mag=$'\e[1;35m'
 cyn=$'\e[1;36m'
 end=$'\e[0m'
 
-PRETTY=false
+# Set the default to print in a prety output
+PRETTY=true
 
 clear_colors() {
   red=''
@@ -116,7 +117,7 @@ test_wrapper() {
 }
 
 # Get a list of test scripts, all tests should begin with test_tpm2_ and
-# be a shell script. This avoids adding test_all.sh
+# be a shell script.
 tests=`ls test_tpm2_*.sh`
 
 # Building with asan on clang, the leak sanitizier
@@ -133,7 +134,7 @@ fi
 
 while true; do
   case "$1" in
-    -p | --pretty ) PRETTY=true; shift ;;
+    -p | --plain ) PRETTY=false; shift ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
