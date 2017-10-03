@@ -38,6 +38,12 @@ declare -A alg_hashes=(
   ["sha512"]="18b7381f36cdf5dd7c0b64835e0bf5041a52a38e3c3f4cbabcc4099d52590bf9916808138de511fb172cb64fcc11601f07d114f03e95e3d5ceacb330ce0f856a"
 )
 
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+trap onerror ERR
+
 # test a single algorithm based on what is supported
 for alg in `tpm2_pcrlist -s | cut -d\  -f 3-`; do
   alg=`echo $alg | cut -d\( -f 1-1`;
@@ -48,13 +54,7 @@ for alg in `tpm2_pcrlist -s | cut -d\  -f 3-`; do
 
   hash=${alg_hashes[$alg]}
 
-  cmd="tpm2_pcrextend 9:$alg=$hash"
-  echo "Testing: $cmd"
-  `$cmd`
-  if [ $? -ne 0 ]; then
-    echo "Could not perform command: $cmd - $?"
-    exit 1;
-  fi
+  tpm2_pcrextend 9:$alg=$hash
 
 done;
 
@@ -63,29 +63,17 @@ done;
 # sha1, which is guaranteed to be enabled by the TPM2.0 specification.
 #
 sha1hash=${alg_hashes["sha1"]}
+
 # Do sha1 multiple times in the same spec
-cmd="tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash"
-`$cmd`
-if [ $? -ne 0 ]; then
-  echo "Could not perform command: $cmd - $?"
-  exit 1;
-fi
+tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash
 
 # Do sha1 multiple times in the same spec and separate specs
 # with the same pcr.
-cmd="tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash 9:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash"
-`$cmd`
-if [ $? -ne 0 ]; then
-  echo "Could not perform command: $cmd - $?"
-  exit 1;
-fi
+tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash 9:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash
+
+trap - ERR
 
 # Over-length spec should fail
-cmd="tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha=$sha1hash,sha=$sha1hash,sha1=$sha1hash"
-`$cmd`
-if [ $? -eq 0 ]; then
-  echo "Command should fail: $cmd - $?"
-  exit 1;
-fi
+tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash 2>/dev/null
 
 exit 0
