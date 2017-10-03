@@ -34,15 +34,17 @@
 # assume this script is run from the test/ directory
 TPM2_COMMAND_FILE=fixtures/get-capability-tpm-prop-fixed.bin
 
+onerror() {
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+    exit 1
+}
+trap onerror ERR
+
 if [ ! -f "${TPM2_COMMAND_FILE}" ]; then
     echo "No TPM2 command file, cannot run $0"
     exit 1
 fi
 
 tpm2_send_command < ${TPM2_COMMAND_FILE} > /dev/null
-if [ $? -ne 0 ]; then
-    echo "tpm2_send_command failed."
-    exit 1
-fi
 
-echo "tpm2_send_command success"
+exit 0
