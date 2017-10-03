@@ -39,7 +39,7 @@ trap onerror ERR
 
 cleanup() {
   rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat &>/dev/null
+        encrypt.out secret.dat key.ctx
 }
 trap cleanup EXIT
 
