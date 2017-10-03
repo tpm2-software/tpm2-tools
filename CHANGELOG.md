@@ -2,6 +2,7 @@
 
 ### next
 
+  * tpm2_nvread: Has an output file option, -f.
   * manpages: Are now in Markdown and converted to roff using md2man-roff.
   * tpm2_create - options 'o' and 'O' changed to 'u' and 'r' respectively. 
   * tpm2_pcrlist: support yaml output for parsing.
