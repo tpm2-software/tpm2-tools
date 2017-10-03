@@ -55,7 +55,7 @@ trap onerror ERR
 
 cleanup() {
   rm -f $file_primary_key_ctx $file_hmac_key_pub $file_hmac_key_priv \
-        $file_hmac_key_name $file_hmac_output
+        $file_hmac_key_name $file_hmac_output evict.log
   if [ "$1" == "all" ]; then
     rm -f $file_hmac_key_ctx $file_input_data
   fi
