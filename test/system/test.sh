@@ -69,7 +69,29 @@ test_wrapper() {
   done
 
   wait $pid
-  if [ $? -eq 0 ]; then
+  rc=$?
+
+  failed_checks=0
+  # check for leftover files and fail if present.
+  leftovers=`git ls-files -o`
+  if [ "$leftovers" != "" ]; then
+    printf "Test left files around, found: %s\n" "$leftovers"
+    failed_checks=1
+  fi
+
+  # check for persistent handles
+  leftovers=`tpm2_listpersistent`
+  if [ "$leftovers" != "" ]; then
+    printf "Test left peristent objects loaded, found: %s\n" "$leftovers"
+    failed_checks=1
+  fi
+
+  if [ $failed_checks -ne 0 ]; then
+    # set the $? variable to not be 0!
+    false
+  fi
+
+  if [ $rc -eq 0 ]; then
     printf "\r${grn}$1 ... PASSED${end}\n"
     let "pass++"
   else
