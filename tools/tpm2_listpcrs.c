@@ -63,6 +63,7 @@ struct listpcr_context {
     tpm2_algorithm algs;
     tpm2_pcrs pcrs;
     TPML_PCR_SELECTION pcr_selections;
+    TPMS_CAPABILITY_DATA cap_data;
 };
 
 static inline void set_pcr_select_bit(TPMS_PCR_SELECTION *pcr_selection,
@@ -173,38 +174,84 @@ static bool read_pcr_values(listpcr_context *context) {
     return true;
 }
 
-static void init_pcr_selection_from_algorithm(TPMI_ALG_HASH alg_id,
-        TPML_PCR_SELECTION *pcr_selections) {
+static bool init_pcr_selection(TPMI_ALG_HASH alg_id, listpcr_context *context) {
 
-    pcr_selections->count = 1;
-    pcr_selections->pcrSelections[0].hash = alg_id;
-    set_pcr_select_size(&pcr_selections->pcrSelections[0], 3);
-    clear_pcr_select_bits(&pcr_selections->pcrSelections[0]);
+    TPMS_CAPABILITY_DATA *cap_data = &context->cap_data;
+    TPML_PCR_SELECTION *pcr_sel = &context->pcr_selections;
+    UINT32 i, j;
 
-    UINT32 pcr_id;
-    for (pcr_id = 0; pcr_id < 24; pcr_id++) {
-        set_pcr_select_bit(&pcr_selections->pcrSelections[0], pcr_id);
+    pcr_sel->count = 0;
+
+    for (i = 0; i < cap_data->data.assignedPCR.count; i++) {
+        if (alg_id && (cap_data->data.assignedPCR.pcrSelections[i].hash != alg_id))
+            continue;
+        pcr_sel->pcrSelections[pcr_sel->count].hash = cap_data->data.assignedPCR.pcrSelections[i].hash;
+        set_pcr_select_size(&pcr_sel->pcrSelections[pcr_sel->count], cap_data->data.assignedPCR.pcrSelections[i].sizeofSelect);
+        for (j = 0; j < pcr_sel->pcrSelections[pcr_sel->count].sizeofSelect; j++)
+            pcr_sel->pcrSelections[pcr_sel->count].pcrSelect[j] = cap_data->data.assignedPCR.pcrSelections[i].pcrSelect[j];
+        pcr_sel->count++;
     }
+
+    if (pcr_sel->count == 0)
+        return false;
+
+    return true;
 }
 
-/* XXX Could this internally call init_pcr_selection_from_algorithm to reduce duplicate code? */
-static void init_pcr_selection_all(tpm2_algorithm *algorithm,
-        TPML_PCR_SELECTION *pcr_selections) {
+static void shrink_pcr_selection(TPML_PCR_SELECTION *s) {
 
-    pcr_selections->count = 0;
+    UINT32 i, j;
 
-    int i;
-    for (i = 0; i < algorithm->count; i++) {
-        pcr_selections->pcrSelections[i].hash = algorithm->alg[i];
-        set_pcr_select_size(&pcr_selections->pcrSelections[i], 3);
-        clear_pcr_select_bits(&pcr_selections->pcrSelections[i]);
+    //seek for the first empty item
+    for (i = 0; i < s->count; i++)
+        if (!s->pcrSelections[i].hash)
+            break;
+    j = i + 1;
 
-        UINT32 pcr_id;
-        for (pcr_id = 0; pcr_id < 24; pcr_id++) {
-            set_pcr_select_bit(&pcr_selections->pcrSelections[i], pcr_id);
+    for (; i < s->count; i++) {
+        if (!s->pcrSelections[i].hash) {
+            for (; j < s->count; j++)
+                if (s->pcrSelections[j].hash)
+                    break;
+            if (j >= s->count)
+                break;
+
+            memcpy(&s->pcrSelections[i], &s->pcrSelections[j], sizeof(s->pcrSelections[i]));
+            s->pcrSelections[j].hash = 0;
+            j++;
         }
-        pcr_selections->count++;
     }
+
+    s->count = i;
+}
+
+static bool check_pcr_selection(listpcr_context *context) {
+
+    TPMS_CAPABILITY_DATA *cap_data = &context->cap_data;
+    TPML_PCR_SELECTION *pcr_sel = &context->pcr_selections;
+    UINT32 i, j, k;
+
+    for (i = 0; i < pcr_sel->count; i++) {
+        for (j = 0; j < cap_data->data.assignedPCR.count; j++) {
+            if (pcr_sel->pcrSelections[i].hash == cap_data->data.assignedPCR.pcrSelections[j].hash) {
+                for (k = 0; k < pcr_sel->pcrSelections[i].sizeofSelect; k++)
+                    pcr_sel->pcrSelections[i].pcrSelect[k] &= cap_data->data.assignedPCR.pcrSelections[j].pcrSelect[k];
+                break;
+            }
+        }
+
+        if (j >= cap_data->data.assignedPCR.count) {
+            const char *alg_name = get_algorithm_name(pcr_sel->pcrSelections[i].hash);
+            LOG_WARN("Ignore unsupported bank/algorithm: %s(0x%04x)\n", alg_name, pcr_sel->pcrSelections[i].hash);
+            pcr_sel->pcrSelections[i].hash = 0; //mark it as to be removed
+        }
+    }
+
+    shrink_pcr_selection(pcr_sel);
+    if (pcr_sel->count == 0)
+        return false;
+
+    return true;
 }
 
 // show all PCR banks according to g_pcrSelection & g_pcrs->
@@ -220,7 +267,7 @@ static bool show_pcr_values(listpcr_context *context) {
                 context->pcr_selections.pcrSelections[i].hash);
 
         UINT32 pcr_id;
-        for (pcr_id = 0; pcr_id < 24; pcr_id++) {
+        for (pcr_id = 0; pcr_id < context->pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
             if (!is_pcr_select_bit_set(&context->pcr_selections.pcrSelections[i],
                     pcr_id)) {
                 continue;
@@ -258,7 +305,10 @@ static bool show_pcr_values(listpcr_context *context) {
     return true;
 }
 
-static bool show_selected_pcr_values(listpcr_context *context) {
+static bool show_selected_pcr_values(listpcr_context *context, bool check) {
+
+    if (check && !check_pcr_selection(context))
+        return false;
 
     if (!read_pcr_values(context))
         return false;
@@ -271,26 +321,28 @@ static bool show_selected_pcr_values(listpcr_context *context) {
 
 static bool show_all_pcr_values(listpcr_context *context) {
 
-    init_pcr_selection_all(&context->algs, &context->pcr_selections);
+    if (!init_pcr_selection(0, context))
+        return false;
 
-    return show_selected_pcr_values(context);
+    return show_selected_pcr_values(context, false);
 }
 
 static bool show_alg_pcr_values(listpcr_context *context, TPMI_ALG_HASH alg_id) {
 
-    init_pcr_selection_from_algorithm(alg_id, &context->pcr_selections);
+    if (!init_pcr_selection(alg_id, context))
+        return false;
 
-    return show_selected_pcr_values(context);
+    return show_selected_pcr_values(context, false);
 }
 
 static bool get_banks(listpcr_context *context) {
 
     TPMI_YES_NO more_data;
-    TPMS_CAPABILITY_DATA capability_data;
+    TPMS_CAPABILITY_DATA *capability_data = &context->cap_data;
     UINT32 rval;
 
     rval = Tss2_Sys_GetCapability(context->sapi_context, 0, TPM_CAP_PCRS, 0, 1,
-            &more_data, &capability_data, 0);
+            &more_data, capability_data, 0);
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR(
                 "GetCapability: Get PCR allocation status Error. TPM Error:0x%x......\n",
@@ -299,11 +351,11 @@ static bool get_banks(listpcr_context *context) {
     }
 
     unsigned i;
-    for (i = 0; i < capability_data.data.assignedPCR.count; i++) {
+    for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
         context->algs.alg[i] =
-                capability_data.data.assignedPCR.pcrSelections[i].hash;
+                capability_data->data.assignedPCR.pcrSelections[i].hash;
     }
-    context->algs.count = capability_data.data.assignedPCR.count;
+    context->algs.count = capability_data->data.assignedPCR.count;
 
     return true;
 }
@@ -406,7 +458,7 @@ int execute_tool(int argc, char *argv[], char *envp[], common_opts_t *opts,
     } else if (g_flag) {
         success = show_alg_pcr_values(&context, selected_algorithm);
     } else if (L_flag) {
-        success = show_selected_pcr_values(&context);
+        success = show_selected_pcr_values(&context, true);
     } else {
         success = show_all_pcr_values(&context);
     }
