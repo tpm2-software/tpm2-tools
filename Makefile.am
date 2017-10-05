@@ -209,6 +209,9 @@ endif
 if HAVE_TCTI_SOCK
 	echo ".nr HAVE_TCTI_SOCK 1" >> $@
 endif
+if HAVE_TCTI_TABRMD
+	echo ".nr HAVE_TCTI_TABRMD 1" >> $@
+endif
 	sed -e '/@COMMON_OPTIONS_INCLUDE@/r man/common-options.troff' \
 	    -e '/@COMMON_OPTIONS_INCLUDE@/d' \
 	    -e '/@TCTI_OPTIONS_INCLUDE@/r man/tcti-options.troff' \
