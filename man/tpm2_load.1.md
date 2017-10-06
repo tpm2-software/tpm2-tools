@@ -36,7 +36,7 @@ into the TPM.
   * **-n**, **--name**=_NAME\_DATA\_FILE_:
     An optional file to save the name structure of the object.
 
-  * **-C**, **--name**=_CONTEXT\_FILE_:
+  * **-C**, **--context**=_CONTEXT\_FILE_:
     An optional file to save the object context to.
 
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
