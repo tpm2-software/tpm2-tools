@@ -196,7 +196,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
       {"item",                 required_argument, NULL, 'H'},
-      {"pwdi",                 required_argument, NULL, 'P'},
+      {"pwdk",                 required_argument, NULL, 'P'},
       {"outfile",              required_argument, NULL, 'o'},
       {"itemContext",          required_argument, NULL, 'c'},
       {"input-session-handle", required_argument, NULL, 'S'},
