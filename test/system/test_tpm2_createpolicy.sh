@@ -54,10 +54,10 @@ do
     # This script expects PCR index 0 to be equal to 0x03
     #
     value=`tpm2_pcrlist -L $halg:0 | grep PCR_00 | cut -d\: -f 2-`
-    if [[ $value -ne 0x03 ]]; then
+    if [[ 16#$value -ne 0x03 ]]; then
         echo "Expected PCR 0 \"$halg\" bank to be 0x3, found: \"$value\"" 1>&2
         exit 1
-	fi
+    fi
 
     tpm2_createpolicy -P -L $halg:0 -f policy.out
 
