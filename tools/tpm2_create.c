@@ -350,7 +350,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"objectAttributes",1,NULL,'A'},
       {"inFile",1,NULL,'I'},
       {"policy-file",1,NULL,'L'},
-      {"enforce-policy",1,NULL,'E'},
+      {"enforce-policy",0,NULL,'E'},
       {"pubfile",1,NULL,'u'},
       {"privfile",1,NULL,'r'},
       {"contextParent",1,NULL,'c'},
