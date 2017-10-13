@@ -39,7 +39,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-    rm -f policy.out &>/dev/null
+    rm -f policy.out
 }
 trap cleanup EXIT
 

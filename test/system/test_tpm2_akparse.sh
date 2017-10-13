@@ -38,7 +38,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-    rm -f ak.out akparse.out ek.pub ak.pub ak.name &>/dev/null
+    rm -f ak.out akparse.out ek.pub ak.pub ak.name
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
