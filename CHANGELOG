@@ -1,3 +1,10 @@
+v2.1.1 - next:
+* tpm2_listpcrs: use TPM2_GetCapability to determine PCRs to read
+* listpcrs: remove one redundant call to tpm get cap
+* listpcrs: fix for unsupported/disabled alg in -L
+* build: use supported comment to suppress GCC7 fallthrough warning
+* kdfa: allow to build with OpenSSL 1.1.x
+
 v2.1.0 - 2017-7-24
 * Fix readx and writex on multiple EINTR returns.
 * Add support for the tabrmd TCTI. This is the new default.
