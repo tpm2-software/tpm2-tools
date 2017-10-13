@@ -88,6 +88,11 @@
         .cmdAuths = array, \
     }
 
+#define TSS2_SYS_RSP_AUTHS_INIT(array) { \
+        .rspAuthsCount = ARRAY_LEN(array), \
+        .rspAuths = array, \
+    }
+
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 
 /**
