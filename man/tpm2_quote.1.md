@@ -84,12 +84,6 @@ tpm2_quote -k 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -o out
 
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-<<<<<<< HEAD
 # HELP
 
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
-=======
-HELP
-----
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
->>>>>>> 1312f16... man pages: added documentation for new output and format switches
