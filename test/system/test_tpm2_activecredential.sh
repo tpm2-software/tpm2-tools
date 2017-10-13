@@ -38,8 +38,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-    rm -f secret.data ek.pub ak.pub ak.name mkcred.out ak.out actcred.out \
-          &>/dev/null
+    rm -f secret.data ek.pub ak.pub ak.name mkcred.out ak.out actcred.out
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
