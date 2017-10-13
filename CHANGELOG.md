@@ -1,7 +1,8 @@
 ## Changelog
 
 ### next
-
+  * tpm2_quote,readpublic, and sign now have support for pem/der output/inputs. See the
+    respective man pages for more details.
   * tpm2_nvread: Has an output file option, -f.
   * manpages: Are now in Markdown and converted to roff using pandoc.
   * tpm2_create - options 'o' and 'O' changed to 'u' and 'r' respectively. 
