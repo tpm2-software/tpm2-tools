@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source test_helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -52,7 +54,7 @@ cleanup
 
 # Keep the algorithm specifiers mixed to test friendly and raw
 # values.
-for gAlg in 0x04 sha256 0x0C; do
+for gAlg in `populate_hash_algs mixed`; do
     for GAlg in 0x01 keyedhash ecc 0x25; do
         for Atype in o e p n; do
             tpm2_createprimary -Q -A $Atype -g $gAlg -G $GAlg -C context.out
