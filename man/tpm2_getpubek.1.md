@@ -21,12 +21,12 @@ Refer to:
 
 # OPTIONS
 
-  * **-e**, **--endorsePasswd**=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
     Specifies current endorsement password, defaults to NULL.
     Passwords should follow the "password formatting standards, see section
     "Password Formatting".
 
-  * **-o**, **--ownerPasswd**=_OWNER\_PASSWORD_
+  * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_
     Specifies the current owner password, defaults to NULL.
     Same formatting as the endorse password value or -e option.
 
