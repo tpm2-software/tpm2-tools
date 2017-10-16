@@ -17,10 +17,10 @@ specified symmetric key.
 
 # OPTIONS
 
-  * **-k**, **--keyHandle**=_KEY\_HANDLE_:
+  * **-k**, **--key-handle**=_KEY\_HANDLE_:
     the symmetric key used for the operation (encryption/decryption).
 
-  * **-c**, **--keyContext**=_KEY\_CONTEXT\_FILE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
     filename of the key context used for the  operation.
 
   * **-P**, **--pwdk**=_KEY\_PASSWORD_:
@@ -31,7 +31,7 @@ specified symmetric key.
   * **-D**, **--decrypt**:
     Perform a decrypt operation. Default is encryption.
 
-  * **-I**, **--inFile**=_INPUT\_FILE_:
+  * **-I**, **--in-file**=_INPUT\_FILE_:
     Input file path containing data for decrypt or encrypt operation.
 
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
