@@ -20,7 +20,7 @@ defined with tpm2_nvdefine(1).
   * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to release.
 
-  * **-a**, **--authHandle**=_SECRET\_DATA\_FILE_:
+  * **-a**, **--auth-handle**=_SECRET\_DATA\_FILE_:
     specifies the handle used to authorize:
     * **0x40000001** for **TPM_RH_OWNER**
     * **0x4000000C** for **TPM_RH_PLATFORM**
@@ -28,7 +28,7 @@ defined with tpm2_nvdefine(1).
   * **-s**, **--size**=_SIZE_:
     specifies the size of data area in bytes.
 
-  * **-P**, **--handlePasswd**=_HANDLE\_PASSWORD_:
+  * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
