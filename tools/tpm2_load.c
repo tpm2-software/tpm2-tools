@@ -194,7 +194,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"privfile",1,NULL,'r'},
       {"name",1,NULL,'n'},
       {"context",1,NULL,'C'},
-      {"contextParent",1,NULL,'c'},
+      {"context-parent",1,NULL,'c'},
       {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
