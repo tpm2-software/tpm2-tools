@@ -133,10 +133,10 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      {"keyHandle",  required_argument, NULL, 'k'},
-      {"inFile",     required_argument, NULL, 'I'},
-      {"outFile",    required_argument, NULL, 'o'},
-      {"keyContext", required_argument, NULL, 'c'},
+      {"key-handle",  required_argument, NULL, 'k'},
+      {"in-file",     required_argument, NULL, 'I'},
+      {"out-file",    required_argument, NULL, 'o'},
+      {"key-context", required_argument, NULL, 'c'},
     };
 
     *opts = tpm2_options_new("k:I:o:c:", ARRAY_LEN(topts), topts,
