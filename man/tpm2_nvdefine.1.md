@@ -19,7 +19,7 @@
   * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to define the space at.
 
-  * **-a**, **--authHandle**=_SECRET\_DATA\_FILE_:
+  * **-a**, **--auth-handle**=_SECRET\_DATA\_FILE_:
     specifies the handle used to authorize:
     * **0x40000001** for **TPM_RH_OWNER**
     * **0x4000000C** for **TPM_RH_PLATFORM**
@@ -32,11 +32,11 @@
     entitiy. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
-  * **-P**, **--handlePasswd**=_HANDLE\_PASSWORD_:
+  * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
-  * **-I**, **--indexPasswd**=_INDEX\_PASSWORD_:
+  * **-I**, **--index-passwd**=_INDEX\_PASSWORD_:
     specifies the password of NV Index when created. Follows the same formatting
     guidelines as the handle password or -P option.
 
