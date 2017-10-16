@@ -194,9 +194,9 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
-        { "ownerPasswd",      required_argument, NULL, 'o' },
-        {"endorsePasswd",     required_argument, NULL, 'e' },
-        { "lockPasswd",       required_argument, NULL, 'l' },
+        { "owner-passwd",      required_argument, NULL, 'o' },
+        {"endorse-passwd",     required_argument, NULL, 'e' },
+        { "lock-passwd",       required_argument, NULL, 'l' },
         { "oldOwnerPasswd",   required_argument, NULL, 'O' },
         { "oldEndorsePasswd", required_argument, NULL, 'E' },
         { "oldLockPasswd",    required_argument, NULL, 'L' },
