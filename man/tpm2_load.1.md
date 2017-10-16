@@ -20,7 +20,7 @@ into the TPM.
   * **-H**, **--parent**=_PARENT\_HANDLE_:
     The handle of the parent object. Either this option or **-c** must be used.
 
-  * **-c**, **--contextParent**=_PARENT\_CONTEXT\_FILE_:
+  * **-c**, **--context-parent**=_PARENT\_CONTEXT\_FILE_:
     The filename for parent context.
 
   * **-P**, **--pwdp**=_PARENT\_KEY\_PASSWORD_:
