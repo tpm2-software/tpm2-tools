@@ -20,11 +20,11 @@ data and validation shall indicate that hashed data did not start with
 
 # OPTIONS
 
-  * **-k**, **--keyHandle**=_KEY\_HANDLE_:
+  * **-k**, **--key-handle**=_KEY\_HANDLE_:
 
     Handle of key that will perform signing.
 
-  * **-c**, **--keyContext**=_KEY\_CONTEXT\_FILE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
 
     Filename of the key context used for the operation.
 
