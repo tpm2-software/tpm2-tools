@@ -281,8 +281,8 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        {"keyHandle",   required_argument, NULL, 'k'},
-        {"keyContext",  required_argument, NULL, 'c'},
+        {"key-handle",   required_argument, NULL, 'k'},
+        {"key-context",  required_argument, NULL, 'c'},
         {"pwdk",        required_argument, NULL, 'P'},
         {"algorithm",   required_argument, NULL, 'g'},
         {"outfile",     required_argument, NULL, 'o'},
