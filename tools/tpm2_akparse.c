@@ -158,7 +158,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
             { "file",    required_argument, NULL, 'f' },
-            { "keyFile", required_argument, NULL, 'k' },
+            { "key-file", required_argument, NULL, 'k' },
     };
 
     *opts = tpm2_options_new("f:k:", ARRAY_LEN(topts), topts, on_option, NULL);
