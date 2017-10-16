@@ -22,11 +22,11 @@ The key referenced by keyHandle is **required** to be:
 
 # OPTIONS
 
-  * **-k**, **--keyHandle**=_KEY\_HANDLE_:
+  * **-k**, **--key-handle**=_KEY\_HANDLE_:
 
     the public portion of RSA key to use for encryption.
 
-  * **-c**, **--keyContext**=_KEY\_CONTEXT\_FILE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
 
     filename of the key context used for the operation.
 
@@ -35,11 +35,11 @@ The key referenced by keyHandle is **required** to be:
     specifies the password of _KEY\_HANDLE_. Passwords should follow the
     password formatting standards, see section "Password Formatting".
 
-  * **-I**, **--inFile**=_INPUT\FILE_:
+  * **-I**, **--in-file**=_INPUT\FILE_:
 
     Input file path, containing the data to be encrypted.
 
-  * **-o**, **--outFile**=_OUTPUT\_FILE_:
+  * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data.
 
