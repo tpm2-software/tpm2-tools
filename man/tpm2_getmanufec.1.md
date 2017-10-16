@@ -20,13 +20,13 @@ server.
 
 # OPTIONS
 
-  * **-e**, **--endorsePasswd**=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
     specifies current endorse password (string, optional,default:NULL).
 
-  * **-o**, **--ownerPasswd**=_OWNER\_PASSWORD_:
+  * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_:
     specifies current owner password (string, optional,default:NULL).
 
-  * **-P**, **--ekPasswd**=_EK\_PASSWORD_:
+  * **-P**, **--ek-passwd**=_EK\_PASSWORD_:
     specifies the EK password when created (string,optional,default:NULL).
 
     Passwords should follow the password formatting standards, see
