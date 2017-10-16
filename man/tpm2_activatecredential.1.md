@@ -28,21 +28,21 @@ These options control the object verification:
   * **-k**, **--key-handle**=_KEY\_HANDLE_:
     The _KEY\_HANDLE_ of Loaded key used to decrypt the the random seed.
 
-  * **-C**, **--keyContext**=_KEY\_CONTEXT\_FILE_:
+  * **-C**, **--key-context**=_KEY\_CONTEXT\_FILE_:
     _KEY\_CONTEXT\_FILE_ is the path to a context file.
 
   * **-P**, **--password**=_PASSWORD_:
     Use _PASSWORD_ for providing an authorization value for the _KEY\_HANDLE_.
     Passwords should follow the "password formatting standards, see section "Password Formatting".
 
-  * **-e**, **--endorsePassword**=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorse-password**=_ENDORSE\_PASSWORD_:
     The endorsement password, optional. Follows the same formating guidelines as the handle password option -P.
 
-  * **-f**, **--inFile**=_INPUT\_FILE_:
+  * **-f**, **--in-file**=_INPUT\_FILE_:
     Input file path, containing the two structures needed by tpm2_activatecredential function. This is created
     via the tpm2_makecredential(1) command.
 
-  * **-o**, **--outFile**=_OUTPUT\_FILE_:
+  * **-o**, **--out-file**=_OUTPUT\_FILE_:
     Output file path, record the secret to decrypt  the certificate.
 
 [common options](common/options.md)
