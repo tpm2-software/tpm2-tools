@@ -100,6 +100,7 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
     bool ret = false;
     FILE *fp = NULL;
     RSA *ssl_rsa_key = NULL;
+    BIGNUM *e = NULL, *n = NULL;
 
     // need this before the first SSL call for getting human readable error
     // strings in print_ssl_error()
@@ -123,16 +124,27 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
         goto error;
     }
 
-    ssl_rsa_key->e = BN_bin2bn((void*)&exponent, sizeof(exponent), NULL);
-    ssl_rsa_key->n = BN_bin2bn(
-            (public->unique).rsa.t.buffer,
-            (public->unique).rsa.t.size,
-            NULL);
+    e = BN_bin2bn((void*)&exponent, sizeof(exponent), NULL);
+    n = BN_bin2bn(public->unique.rsa.t.buffer, public->unique.rsa.t.size,
+                  NULL);
 
-    if (!ssl_rsa_key->n || !ssl_rsa_key->e) {
+    if (!n || !e) {
         print_ssl_error("Failed to convert data to SSL internal format");
         goto error;
     }
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+    ssl_rsa_key->e = e;
+    ssl_rsa_key->n = n;
+#else
+    if (!RSA_set0_key(ssl_rsa_key, n, e, NULL)) {
+        print_ssl_error("Failed to set RSA modulus and exponent components");
+        goto error;
+    }
+#endif
+
+    /* modulus and exponent components are now owned by the RSA struct */
+    n = e = NULL;
 
     fp = fopen(path, "wb");
     if (!fp) {
@@ -165,6 +177,12 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
 error:
     if (fp) {
         fclose(fp);
+    }
+    if (n) {
+        BN_free(n);
+    }
+    if (e) {
+        BN_free(e);
     }
     if (ssl_rsa_key) {
         RSA_free(ssl_rsa_key);
