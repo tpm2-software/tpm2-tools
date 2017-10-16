@@ -24,16 +24,16 @@ An object that only has its public area loaded cannot be certified.
 
 These options control the ceritifcation:
 
-  * **-H**, **--objHandle**=_OBJECT\_HANDLE_:
+  * **-H**, **--obj-handle**=_OBJECT\_HANDLE_:
     The handle of the object to be certified.
 
-  * **-C**, **--objContext**=_FILE_:
+  * **-C**, **--obj-context**=_FILE_:
     Use _FILE_ for providing the object context.
 
-  * **-k**, **--keyHandle**=_KEY\_HANDLE_:
+  * **-k**, **--key-handle**=_KEY\_HANDLE_:
     Handle of the key used to sign the attestation  structure.
 
-  * **-c**, **--keyContext**=_KEY\_CONTEXT_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT_:
     Filename of the key context used to sign the  attestation structure.
 
   * **-P**, **--pwdo**=_OBJECT\_PASSWORD_:
@@ -48,10 +48,10 @@ These options control the ceritifcation:
     Follows the same formatting guidelines as the object handle password or
     -P option.
 
-  * **-a**, **--attestFile**=_ATTEST\_FILE_:
+  * **-a**, **--attest-file**=_ATTEST\_FILE_:
     Output file name for the attestation data.
 
-  * **-s**, **--sigFile**=_SIG\_FILE_:
+  * **-s**, **--sig-file**=_SIG\_FILE_:
     Output file name for the signature data.
 
 [common options](common/options.md)
