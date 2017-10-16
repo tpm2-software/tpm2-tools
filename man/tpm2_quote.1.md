@@ -16,30 +16,30 @@
 
 # OPTIONS
 
-  * **-k**, **--akHandle**=_AK\_HANDLE_:
+  * **-k**, **--ak-handle**=_AK\_HANDLE_:
 
     Handle of existing AK.
 
-  * **-c**, **--akContext**=_AK\_CONTEXT\_FILE_:
+  * **-c**, **--ak-context**=_AK\_CONTEXT\_FILE_:
 
     Filename for the existing AK's context.
 
-  * **-P**, **--akPassword**=_AK\_PASSWORD_:
+  * **-P**, **--ak-password**=_AK\_PASSWORD_:
 
     specifies the password of _AK\_HANDLE_. Passwords should follow the
     password formatting standards, see section "Password Formatting".
 
-  * **-l**, **--idList**=_PCR\_ID\_LIST_
+  * **-l**, **--id-list**=_PCR\_ID\_LIST_
 	
 	The comma separated list of selected PCRs' ids, 0~23 e.g. "4,5,6".
 
-  * **-L**, **--selList**=_PCR\_SELECTION\_LIST_:
+  * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:
 
     The list of pcr banks and selected PCRs' ids for each bank.
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specfiers".
 
-  * **-o**, **--outFile**:
+  * **-o**, **--out-file**:
 
     Output file path, recording the two structures output by tpm2_quote function.
 
@@ -50,7 +50,7 @@
 
 [signature options](common/signature.md)
 
-  * **-q**, **--qualifyData**:
+  * **-q**, **--qualify-data**:
 
     Data given as a Hex string to qualify the  quote, optional. This is typically
     used to add a nonce against replay attacks.
