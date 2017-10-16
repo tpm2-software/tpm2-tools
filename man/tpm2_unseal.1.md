@@ -29,7 +29,7 @@ session using the **--input-session-handle** option.
 
     Item handle of loaded object.
 
-  * **-c**, **--itemContext**=_ITEM\_CONTEXT\_FILE_:
+  * **-c**, **--item-context**=_ITEM\_CONTEXT\_FILE_:
 
     Filename of the item context.
 
