@@ -484,6 +484,134 @@ dump_algorithms (TPMS_ALG_PROPERTY   alg_properties[],
         dump_algorithm_properties (alg_properties[i].alg,
                                    alg_properties[i].algProperties);
 }
+
+static const char *cc_to_str(UINT32 cc) {
+
+    struct {
+        UINT32 cc;
+        const char *name;
+    } commands[] = {
+        { TPM_CC_NV_UndefineSpaceSpecial, "nv" },
+        { TPM_CC_EvictControl, "evictcontrol" },
+        { TPM_CC_HierarchyControl, "hierarchycontrol" },
+        { TPM_CC_NV_UndefineSpace, "nv" },
+        { TPM_CC_ChangeEPS, "changeeps" },
+        { TPM_CC_ChangePPS, "changepps" },
+        { TPM_CC_Clear, "clear" },
+        { TPM_CC_ClearControl, "clearcontrol" },
+        { TPM_CC_ClockSet, "clockset" },
+        { TPM_CC_HierarchyChangeAuth, "hierarchychangeauth" },
+        { TPM_CC_NV_DefineSpace, "nv" },
+        { TPM_CC_PCR_Allocate, "pcr" },
+        { TPM_CC_PCR_SetAuthPolicy, "pcr" },
+        { TPM_CC_PP_Commands, "pp" },
+        { TPM_CC_SetPrimaryPolicy, "setprimarypolicy" },
+        { TPM_CC_FieldUpgradeStart, "fieldupgradestart" },
+        { TPM_CC_ClockRateAdjust, "clockrateadjust" },
+        { TPM_CC_CreatePrimary, "createprimary" },
+        { TPM_CC_NV_GlobalWriteLock, "nv" },
+        { TPM_CC_GetCommandAuditDigest, "getcommandauditdigest" },
+        { TPM_CC_NV_Increment, "nv" },
+        { TPM_CC_NV_SetBits, "nv" },
+        { TPM_CC_NV_Extend, "nv" },
+        { TPM_CC_NV_Write, "nv" },
+        { TPM_CC_NV_WriteLock, "nv" },
+        { TPM_CC_DictionaryAttackLockReset, "dictionaryattacklockreset" },
+        { TPM_CC_DictionaryAttackParameters, "dictionaryattackparameters" },
+        { TPM_CC_NV_ChangeAuth, "nv" },
+        { TPM_CC_PCR_Event, "pcr" },
+        { TPM_CC_PCR_Reset, "pcr" },
+        { TPM_CC_SequenceComplete, "sequencecomplete" },
+        { TPM_CC_SetAlgorithmSet, "setalgorithmset" },
+        { TPM_CC_SetCommandCodeAuditStatus, "setcommandcodeauditstatus" },
+        { TPM_CC_FieldUpgradeData, "fieldupgradedata" },
+        { TPM_CC_Startup, "startup" },
+        { TPM_CC_Shutdown, "shutdown" },
+        { TPM_CC_StirRandom, "stirrandom" },
+        { TPM_CC_ActivateCredential, "activatecredential" },
+        { TPM_CC_Certify, "certify" },
+        { TPM_CC_PolicyNV, "policynv" },
+        { TPM_CC_CertifyCreation, "certifycreation" },
+        { TPM_CC_Duplicate, "duplicate" },
+        { TPM_CC_GetTime, "gettime" },
+        { TPM_CC_GetSessionAuditDigest, "getsessionauditdigest" },
+        { TPM_CC_NV_Read, "nv" },
+        { TPM_CC_NV_ReadLock, "nv" },
+        { TPM_CC_ObjectChangeAuth, "objectchangeauth" },
+        { TPM_CC_PolicySecret, "policysecret" },
+        { TPM_CC_Rewrap, "rewrap" },
+        { TPM_CC_Create, "create" },
+        { TPM_CC_ECDH_ZGen, "ecdh" },
+        { TPM_CC_HMAC, "hmac" },
+        { TPM_CC_Import, "import" },
+        { TPM_CC_Load, "load" },
+        { TPM_CC_Quote, "quote" },
+        { TPM_CC_RSA_Decrypt, "rsa" },
+        { TPM_CC_HMAC_Start, "hmac" },
+        { TPM_CC_SequenceUpdate, "sequenceupdate" },
+        { TPM_CC_Sign, "sign" },
+        { TPM_CC_Unseal, "unseal" },
+        { TPM_CC_PolicySigned, "policysigned" },
+        { TPM_CC_ContextLoad, "contextload" },
+        { TPM_CC_ContextSave, "contextsave" },
+        { TPM_CC_ECDH_KeyGen, "ecdh" },
+        { TPM_CC_EncryptDecrypt, "encryptdecrypt" },
+        { TPM_CC_FlushContext, "flushcontext" },
+        { TPM_CC_LoadExternal, "loadexternal" },
+        { TPM_CC_MakeCredential, "makecredential" },
+        { TPM_CC_NV_ReadPublic, "nv" },
+        { TPM_CC_PolicyAuthorize, "policyauthorize" },
+        { TPM_CC_PolicyAuthValue, "policyauthvalue" },
+        { TPM_CC_PolicyCommandCode, "policycommandcode" },
+        { TPM_CC_PolicyCounterTimer, "policycountertimer" },
+        { TPM_CC_PolicyCpHash, "policycphash" },
+        { TPM_CC_PolicyLocality, "policylocality" },
+        { TPM_CC_PolicyNameHash, "policynamehash" },
+        { TPM_CC_PolicyOR, "policyor" },
+        { TPM_CC_PolicyTicket, "policyticket" },
+        { TPM_CC_ReadPublic, "readpublic" },
+        { TPM_CC_RSA_Encrypt, "rsa" },
+        { TPM_CC_StartAuthSession, "startauthsession" },
+        { TPM_CC_VerifySignature, "verifysignature" },
+        { TPM_CC_ECC_Parameters, "ecc" },
+        { TPM_CC_FirmwareRead, "firmwareread" },
+        { TPM_CC_GetCapability, "getcapability" },
+        { TPM_CC_GetRandom, "getrandom" },
+        { TPM_CC_Hash, "hash" },
+        { TPM_CC_PCR_Read, "pcr" },
+        { TPM_CC_PolicyPCR, "policypcr" },
+        { TPM_CC_PolicyRestart, "policyrestart" },
+        { TPM_CC_ReadClock, "readclock" },
+        { TPM_CC_PCR_Extend, "pcr" },
+        { TPM_CC_PCR_SetAuthValue, "pcr" },
+        { TPM_CC_NV_Certify, "nv" },
+        { TPM_CC_EventSequenceComplete, "eventsequencecomplete" },
+        { TPM_CC_HashSequenceStart, "hashsequencestart" },
+        { TPM_CC_PolicyPhysicalPresence, "policyphysicalpresence" },
+        { TPM_CC_PolicyDuplicationSelect, "policyduplicationselect" },
+        { TPM_CC_PolicyGetDigest, "policygetdigest" },
+        { TPM_CC_Commit, "commit" },
+        { TPM_CC_PolicyPassword, "policypassword" },
+        { TPM_CC_ZGen_2Phase, "zgen" },
+        { TPM_CC_EC_Ephemeral, "ec" },
+        { TPM_CC_PolicyNvWritten, "policynvwritten" }
+    };
+
+    if (cc < TPM_CC_FIRST || cc > TPM_CC_LAST) {
+        return "Unknown";
+    }
+
+    size_t i;
+    for(i=0; i < ARRAY_LEN(commands); i++) {
+        if (cc == commands[i].cc) {
+            return commands[i].name;
+        }
+    }
+
+    /* Impossible condition*/
+    return "Impossible";
+}
+
 /*
  * Pretty print the bit fields from the TPMA_CC (UINT32)
  */
@@ -491,6 +619,7 @@ void
 dump_command_attrs (TPMA_CC tpma_cc)
 {
     tpm2_tool_output ("TPMA_CC: 0x%08x\n", tpma_cc.val);
+    tpm2_tool_output ("  name: %s\n", cc_to_str(tpma_cc.commandIndex));
     tpm2_tool_output ("  commandIndex: 0x%x\n", tpma_cc.commandIndex);
     tpm2_tool_output ("  reserved1:    0x%x\n", tpma_cc.reserved1);
     tpm2_tool_output ("  nv:           %s\n",   prop_str (tpma_cc.nv));
