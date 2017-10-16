@@ -435,7 +435,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          { "algorithm", required_argument, NULL, 'g' },
          { "output",    required_argument, NULL, 'o' },
          { "algs",      no_argument,       NULL, 's' },
-         { "selList",   required_argument, NULL, 'L' },
+         { "sel-list",   required_argument, NULL, 'L' },
          { "format",    required_argument, NULL, 'f' },
      };
 
