@@ -547,10 +547,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
-        { "endorsePasswd", 1, NULL, 'e' },
-        { "ownerPasswd"  , 1, NULL, 'o' },
+        { "endorse-passwd", 1, NULL, 'e' },
+        { "owner-passwd"  , 1, NULL, 'o' },
         { "handle"       , 1, NULL, 'H' },
-        { "ekPasswd"     , 1, NULL, 'P' },
+        { "ek-passwd"     , 1, NULL, 'P' },
         { "alg"          , 1, NULL, 'g' },
         { "file"         , 1, NULL, 'f' },
         { "NonPersistent", 0, NULL, 'N' },
