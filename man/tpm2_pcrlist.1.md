@@ -23,7 +23,7 @@
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-L**, **--selList**=_PCR\_SELECTION\_LIST_:
+  * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:
 
     The list of pcr banks and selected PCRs' ids for each bank to display.
     _PCR\_SELECTION\_LIST_ values should follow the
