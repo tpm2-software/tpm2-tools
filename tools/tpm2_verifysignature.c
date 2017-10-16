@@ -289,14 +289,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-            { "keyHandle",  1, NULL, 'k' },
+            { "key-handle",  1, NULL, 'k' },
             { "digest",     1, NULL, 'D' },
             { "halg",       1, NULL, 'g' },
             { "msg",        1, NULL, 'm' },
             { "raw",        0, NULL, 'r' },
             { "sig",        1, NULL, 's' },
             { "ticket",     1, NULL, 't' },
-            { "keyContext", 1, NULL, 'c' },
+            { "key-context", 1, NULL, 'c' },
     };
 
 
