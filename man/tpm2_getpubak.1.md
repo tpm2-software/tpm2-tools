@@ -19,23 +19,23 @@ return pub AK and AK name. If any passwd option is missing, assume NULL.
 
 # OPTIONS
 
-  * **-e**, **--endorsePasswd**=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
     Specifies current endorsement password, defaults to NULL.
     Passwords should follow the "password formatting standards, see section
     "Password Formatting".
 
-  * **-P**, **--akPasswd**=_AK\_PASSWORD_
+  * **-P**, **--ak-passwd**=_AK\_PASSWORD_
     Specifies the AK password when created, defaults to NULL.
     Same formatting as the endorse password value or -e option.
 
-  * **-o**, **--ownerPasswd**=_OWNER\_PASSWORD_
+  * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_
     Specifies the current owner password, defaults to NULL.
     Same formatting as the endorse password value or -e option.
 
-  * **-E**, **--ekHandle**=_EK\_HANDLE_:
+  * **-E**, **--ek-handle**=_EK\_HANDLE_:
     Specifies the handle used to make EK persistent.
 
-  * **-k**, **--akHandle**=_AK\_HANDLE_:
+  * **-k**, **--ak-handle**=_AK\_HANDLE_:
     Specifies the handle used to make AK persistent.
 
   * **-g**, **--alg**=_ALGORITHM_:
@@ -53,7 +53,7 @@ return pub AK and AK name. If any passwd option is missing, assume NULL.
     binary data structure corresponding to the TPM2B_PUBLIC struct in the
     specification.
 
-  * **-n**, **--akName**=_NAME_:
+  * **-n**, **--ak-name**=_NAME_:
     Specifies the file used to save the ak name.
 
 [common options](common/options.md)
