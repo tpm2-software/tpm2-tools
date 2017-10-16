@@ -283,12 +283,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
          {"handle",        required_argument, NULL, 'H'},
          {"context",       required_argument, NULL, 'c'},
-         {"keyHandle",     required_argument, NULL, 'k'},
-         {"keyContext",    required_argument, NULL, 'C'},
+         {"key-handle",     required_argument, NULL, 'k'},
+         {"key-context",    required_argument, NULL, 'C'},
          {"Password",      required_argument, NULL, 'P'},
-         {"endorsePasswd", required_argument, NULL, 'e'},
-         {"inFile",        required_argument, NULL, 'f'},
-         {"outFile",       required_argument, NULL, 'o'},
+         {"endorse-passwd", required_argument, NULL, 'e'},
+         {"in-file",        required_argument, NULL, 'f'},
+         {"out-file",       required_argument, NULL, 'o'},
          {"passwdInHex",   no_argument,       NULL, 'X'},
     };
 
