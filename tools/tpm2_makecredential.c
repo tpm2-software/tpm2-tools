@@ -181,10 +181,10 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      {"encKey"  ,required_argument, NULL, 'e'},
+      {"enc-key"  ,required_argument, NULL, 'e'},
       {"sec"     ,required_argument, NULL, 's'},
       {"name"    ,required_argument, NULL, 'n'},
-      {"outFile" ,required_argument, NULL, 'o'},
+      {"out-file" ,required_argument, NULL, 'o'},
       {NULL      ,no_argument      , NULL, '\0'}
     };
 
