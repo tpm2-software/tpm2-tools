@@ -142,8 +142,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index"       , required_argument, NULL, 'x' },
-        { "authHandle"  , required_argument, NULL, 'a' },
-        { "handlePasswd", required_argument, NULL, 'P' },
+        { "auth-handle"  , required_argument, NULL, 'a' },
+        { "handle-passwd", required_argument, NULL, 'P' },
         { "passwdInHex" , no_argument,       NULL, 'X' },
         { "input-session-handle",1,          NULL, 'S' },
     };
