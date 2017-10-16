@@ -23,7 +23,7 @@ These options for creating the tpm entity:
   * **-H**, **--pparent**=_PARENT\_HANDLE_:
     The handle of the parent object to create this object under.
 
-  * **-c**, **--contextParent**=_PARENT\_CONTEXT\_FILE_:
+  * **-c**, **--context-parent**=_PARENT\_CONTEXT\_FILE_:
     The filename for parent context.
 
   * **-P**, **--pwdp**=_PARENT\_KEY\_PASSWORD_:
@@ -45,10 +45,10 @@ These options for creating the tpm entity:
     like -g option. See section "Supported Public Object Algorithms" for a list
     of supported object algorithms.
 
-  * **-A**, **--objectAttributes**=_ATTRIBUTES_:
+  * **-A**, **--object-attributes**=_ATTRIBUTES_:
     The object attributes, optional.
 
-  * **-I**, **--inFile**=_FILE_:
+  * **-I**, **--in-file**=_FILE_:
     The data file to be sealed, optional. If file is -, read from stdin.
     When sealing data only the TPM_ALG_KEYEDHASH algorithm is allowed.
 
