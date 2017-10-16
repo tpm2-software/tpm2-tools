@@ -17,10 +17,10 @@ _FILE_ is not specified, then data is read from stdin.
 
 # OPTIONS
 
- * **-k**, **--keyHandle**=_KEY\_CONTEXT\_FILE_:
+ * **-k**, **--key-handle**=_KEY\_CONTEXT\_FILE_:
     The key handle for the symmetric signing key providing the HMAC key.
 
-  * **-c**, **--keyContext**=_KEY\_CONTEXT\_FILE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
     The filename of the key context used for the operation.
 
   * **-P**, **--pwdk**=_KEY\_PASSWORD_:
