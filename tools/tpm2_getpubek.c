@@ -311,10 +311,10 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "endorsePasswd", required_argument, NULL, 'e' },
-        { "ownerPasswd"  , required_argument, NULL, 'o' },
+        { "endorse-passwd", required_argument, NULL, 'e' },
+        { "owner-passwd"  , required_argument, NULL, 'o' },
         { "handle"       , required_argument, NULL, 'H' },
-        { "ekPasswd"     , required_argument, NULL, 'P' },
+        { "ek-passwd"     , required_argument, NULL, 'P' },
         { "alg"          , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
         {"input-session-handle",1,            NULL, 'S' },
