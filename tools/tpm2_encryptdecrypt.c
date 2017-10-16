@@ -183,12 +183,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        {"keyHandle",   required_argument, NULL, 'k'},
+        {"key-handle",   required_argument, NULL, 'k'},
         {"pwdk",        required_argument, NULL, 'P'},
         {"decrypt",     required_argument, NULL, 'D'},
-        {"inFile",      required_argument, NULL, 'I'},
-        {"outFile",     required_argument, NULL, 'o'},
-        {"keyContext",  required_argument, NULL, 'c'},
+        {"in-file",      required_argument, NULL, 'I'},
+        {"out-file",     required_argument, NULL, 'o'},
+        {"key-context",  required_argument, NULL, 'c'},
         {"input-session-handle",1,         NULL, 'S'},
         {NULL,          no_argument,       NULL, '\0'}
     };
