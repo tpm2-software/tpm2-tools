@@ -347,13 +347,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"pwdk",1,NULL,'K'},
       {"halg",1,NULL,'g'},
       {"kalg",1,NULL,'G'},
-      {"objectAttributes",1,NULL,'A'},
-      {"inFile",1,NULL,'I'},
+      {"object-attributes",1,NULL,'A'},
+      {"in-file",1,NULL,'I'},
       {"policy-file",1,NULL,'L'},
       {"enforce-policy",0,NULL,'E'},
       {"pubfile",1,NULL,'u'},
       {"privfile",1,NULL,'r'},
-      {"contextParent",1,NULL,'c'},
+      {"context-parent",1,NULL,'c'},
       {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
