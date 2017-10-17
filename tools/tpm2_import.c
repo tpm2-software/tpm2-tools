@@ -148,19 +148,19 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     return_code = BN_set_word(bne, RSA_F4);
     if (return_code != 1) {
         LOG_ERR("BN_set_word failed\n");
-        return 1;
+        return false;
     }
     rsa = RSA_new();
     return_code = RSA_generate_key_ex(rsa, 2048, bne, NULL);
     if (return_code != 1) {
         LOG_ERR("RSA_generate_key_ex failed\n");
-        return 1;
+        return false;
     }
     BIGNUM *n = BN_bin2bn(pub_modulus, MAX_RSA_KEY_BYTES, NULL);
     ssl_RSA_set0_key(rsa, n, NULL, NULL);
     if (n == NULL) {
         LOG_ERR("Failed RSA_set0_key\n");
-        return 1;
+        return false;
     }
     // Encrypting
     return_code = RSA_public_encrypt(MAX_RSA_KEY_BYTES, encoded,
