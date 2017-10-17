@@ -117,6 +117,8 @@ static void ssl_RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 }
 
 static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
+    bool rval = false;
+
     //Public Modulus
     FILE *fp = fopen(ctx.parent_key_public_file, "rb");
     if (fp == NULL) {
@@ -125,12 +127,14 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     }
     if (fseek(fp, 102, SEEK_SET) != 0) {
         LOG_ERR("Expected parent key public data file size failure");
+        fclose(fp);
         return false;
     }
     unsigned char pub_modulus[MAX_RSA_KEY_BYTES] = { 0 };
     int ret = fread(pub_modulus, 1, MAX_RSA_KEY_BYTES, fp);
     if (ret != MAX_RSA_KEY_BYTES) {
         LOG_ERR("Failed reading public modulus from parent key public file");
+        fclose(fp);
         return false;
     }
     fclose(fp);
@@ -152,6 +156,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     return_code = BN_set_word(bne, RSA_F4);
     if (return_code != 1) {
         LOG_ERR("BN_set_word failed\n");
+        BN_free(bne);
         return false;
     }
     rsa = RSA_new();
@@ -164,12 +169,12 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     BN_free(bne);
     if (return_code != 1) {
         LOG_ERR("RSA_generate_key_ex failed\n");
-        return false;
+        goto error;
     }
     BIGNUM *n = BN_bin2bn(pub_modulus, MAX_RSA_KEY_BYTES, NULL);
     if (n == NULL) {
         LOG_ERR("BN_bin2bn failed\n");
-        return false;
+        goto error;
     }
     ssl_RSA_set0_key(rsa, n, NULL, NULL);
     // Encrypting
@@ -177,9 +182,14 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
             ctx.encrypted_protection_seed_data, rsa, RSA_NO_PADDING);
     if (return_code < 0) {
         LOG_ERR("Failed RSA_public_encrypt\n");
+        goto error;
     }
+
+    rval = true;
+
+error:
     RSA_free(rsa);
-    return true;
+    return rval;
 }
 
 static void aes_128_cfb_encrypt_buffers(uint8_t *buffer1, uint16_t buffer1_size,
