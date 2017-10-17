@@ -157,11 +157,11 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         return false;
     }
     BIGNUM *n = BN_bin2bn(pub_modulus, MAX_RSA_KEY_BYTES, NULL);
-    ssl_RSA_set0_key(rsa, n, NULL, NULL);
     if (n == NULL) {
-        LOG_ERR("Failed RSA_set0_key\n");
+        LOG_ERR("BN_bin2bn failed\n");
         return false;
     }
+    ssl_RSA_set0_key(rsa, n, NULL, NULL);
     // Encrypting
     return_code = RSA_public_encrypt(MAX_RSA_KEY_BYTES, encoded,
             ctx.encrypted_protection_seed_data, rsa, RSA_NO_PADDING);
