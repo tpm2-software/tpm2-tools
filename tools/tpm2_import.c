@@ -145,12 +145,21 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         return false;
     }
     BIGNUM* bne = BN_new();
+    if (!bne) {
+        LOG_ERR("BN_new for bne failed\n");
+        return false;
+    }
     return_code = BN_set_word(bne, RSA_F4);
     if (return_code != 1) {
         LOG_ERR("BN_set_word failed\n");
         return false;
     }
     rsa = RSA_new();
+    if (!rsa) {
+        LOG_ERR("RSA_new failed\n");
+        BN_free(bne);
+        return false;
+    }
     return_code = RSA_generate_key_ex(rsa, 2048, bne, NULL);
     if (return_code != 1) {
         LOG_ERR("RSA_generate_key_ex failed\n");
