@@ -95,10 +95,10 @@ static tpm_import_ctx ctx = {
 };
 
 #if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
-static void ssl_RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
+static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 
     if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
-        return;
+        return 0;
     }
 
     if (n != NULL) {
@@ -115,6 +115,8 @@ static void ssl_RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
         BN_free(r->d);
         r->d = d;
     }
+
+    return 1;
 }
 #endif
 
@@ -178,15 +180,11 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         LOG_ERR("BN_bin2bn failed\n");
         goto error;
     }
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
-    ssl_RSA_set0_key(rsa, n, NULL, NULL);
-#else
     if (!RSA_set0_key(rsa, n, NULL, NULL)) {
         LOG_ERR("RSA_set0_key failed\n");
         BN_free(n);
         goto error;
     }
-#endif
     // Encrypting
     return_code = RSA_public_encrypt(MAX_RSA_KEY_BYTES, encoded,
             ctx.encrypted_protection_seed_data, rsa, RSA_NO_PADDING);
