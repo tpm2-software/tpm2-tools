@@ -161,6 +161,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         return false;
     }
     return_code = RSA_generate_key_ex(rsa, 2048, bne, NULL);
+    BN_free(bne);
     if (return_code != 1) {
         LOG_ERR("RSA_generate_key_ex failed\n");
         return false;
@@ -178,7 +179,6 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         LOG_ERR("Failed RSA_public_encrypt\n");
     }
     RSA_free(rsa);
-    BN_free(bne);
     return true;
 }
 
