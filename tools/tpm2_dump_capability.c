@@ -85,6 +85,48 @@ capability_map_entry_t capability_map[] = {
         .property          = TPM_ECC_NIST_P192,
         .count             = MAX_ECC_CURVES,
     },
+    {
+        .capability_string = "handles-transient",
+        .capability        = TPM_CAP_HANDLES,
+        .property          = TRANSIENT_FIRST,
+        .count             = MAX_CAP_HANDLES,
+    },
+    {
+        .capability_string = "handles-persistent",
+        .capability        = TPM_CAP_HANDLES,
+        .property          = PERSISTENT_FIRST,
+        .count             = MAX_CAP_HANDLES,
+    },
+    {
+        .capability_string = "handles-permanent",
+        .capability        = TPM_CAP_HANDLES,
+        .property          = PERMANENT_FIRST,
+        .count             = MAX_CAP_HANDLES,
+    },
+    {
+        .capability_string = "handles-pcr",
+        .capability        = TPM_CAP_HANDLES,
+        .property          = PCR_FIRST,
+        .count             = MAX_CAP_HANDLES,
+    },
+    {
+        .capability_string = "handles-nv-index",
+        .capability        = TPM_CAP_HANDLES,
+        .property          = NV_INDEX_FIRST,
+        .count             = MAX_CAP_HANDLES,
+    },
+    {
+        .capability_string = "handles-hmac-session",
+        .capability        = TPM_CAP_HANDLES,
+        .property          = HMAC_SESSION_FIRST,
+        .count             = MAX_CAP_HANDLES,
+    },
+    {
+        .capability_string = "handles-policy-session",
+        .capability        = TPM_CAP_HANDLES,
+        .property          = POLICY_SESSION_FIRST,
+        .count             = MAX_CAP_HANDLES,
+    },
 };
 /*
  * Structure to hold options for this tool.
@@ -686,6 +728,19 @@ dump_command_attr_array (TPMA_CC     command_attributes[],
         dump_command_attrs (command_attributes [i]);
 }
 /*
+ * Iterate over an array of TPML_HANDLEs and dump out the handle
+ * values.
+ */
+void
+dump_handles (TPM_HANDLE     handles[],
+              UINT32         count)
+{
+    UINT32 i;
+    
+    for (i = 0; i < count; ++i)
+         tpm2_tool_output ("0x%08x\n", handles[i]);
+}
+/*
  * Query the TPM for TPM capabilities.
  */
 TSS2_RC
@@ -750,6 +805,22 @@ static int dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
 	dump_ecc_curves (capabilities->eccCurves.eccCurves,
                          capabilities->eccCurves.count);
 	break;
+    case TPM_CAP_HANDLES:
+        switch (options.property & HR_RANGE_MASK) {
+        case HR_TRANSIENT:
+        case HR_PERSISTENT:
+        case HR_PERMANENT:
+        case HR_PCR:
+        case HR_NV_INDEX:
+        case HR_HMAC_SESSION:
+        case HR_POLICY_SESSION:
+            dump_handles (capabilities->handles.handle,
+                          capabilities->handles.count);
+            break;
+        default:
+            return 1;
+        }
+        break;
     default:
         return 1;
     }
