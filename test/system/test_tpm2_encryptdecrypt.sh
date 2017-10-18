@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source test_helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -60,7 +62,7 @@ tpm2_takeownership -Q -c
 
 tpm2_createprimary -Q -A e -g sha1 -G rsa -C primary.ctx
 
-tpm2_create -Q -g sha256 -G symcipher -u key.pub -r key.priv -c primary.ctx
+create_object -g sha256 -G symcipher -u key.pub -r key.priv -c primary.ctx
 
 tpm2_load -Q -c primary.ctx -u key.pub -r key.priv -n key.name -C decrypt.ctx
 
