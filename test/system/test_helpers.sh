@@ -99,3 +99,18 @@ hash_alg_supported() {
         fi
     done
 }
+
+# Certain TPM 2.0 chip, e.g, Nationz Z32H320TC, and tpm2simulator referring
+# to TPM 2.0 spec rev 1.16 may have an errata, disallowing both decrypt and
+# sign set for a symcipher object, and in response to RC_ATTRIBUTES. In
+# order to work around it, we attempt to run tpm2_create again with sign bit
+# clear.
+create_object() {
+    local alg_create_obj=0x20072
+
+    if tpm2_create $@ 2>&1 | grep -q 'Create Object Failed ! ErrorCode: 0x2c2'; then
+        tpm2_create -Q -A $alg_create_obj $@
+    else
+        true
+    fi
+}

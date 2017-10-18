@@ -57,7 +57,7 @@ tpm2_createprimary -Q -A o -g sha1 -G rsa -C context.out
 # values.
 for gAlg in `populate_hash_algs mixed`; do
     for GAlg in rsa 0x08 ecc 0x25; do
-        tpm2_create -Q -c context.out -g $gAlg -G $GAlg -u key.pub -r key.priv
+        create_object -c context.out -g $gAlg -G $GAlg -u key.pub -r key.priv
         cleanup keep_context
     done
 done
@@ -67,7 +67,7 @@ cleanup keep_context
 echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
 | xxd -r -p > policy.bin
 
-tpm2_create -Q -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv -E
+create_object -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv -E
 
 cmp -i 14:0 -n 32 key.pub policy.bin -s
 
