@@ -705,6 +705,9 @@ get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
     if (rc != TSS2_RC_SUCCESS) {
         LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
                  "TSS2_RC: 0x%x\n", options.capability, options.property, rc);
+    } else if (more_data == YES) {
+        LOG_WARN("More data to be queried: capability: 0x%x, property: "
+                 "0x%x\n", options.capability, options.property);
     }
 
     return rc;
