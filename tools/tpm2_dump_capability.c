@@ -59,7 +59,7 @@ capability_map_entry_t capability_map[] = {
         .capability_string = "algorithms",
         .capability        = TPM_CAP_ALGS,
         .property          = TPM_ALG_FIRST,
-        .count             = MAX_ALG_LIST_SIZE,
+        .count             = MAX_CAP_ALGS,
     },
     {
         .capability_string = "commands",
