@@ -37,6 +37,27 @@ command.
     * ecc-curves:
       Display data about elliptic curves.
 
+    * handles-transient:
+      Display handles about transient objects.
+
+    * handles-persistent:
+      Display handles about persistent objects.
+
+    * handles-permanent:
+      Display handles about permanent objects.
+
+    * handles-pcr:
+      Display handles about PCRs.
+
+    * handles-nv-index:
+      Display handles about NV Indices.
+
+    * handles-hmac-session:
+      Display handles about HMAC sessions.
+
+    * handles-policy-session:
+      Display handles about policy sessions.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
