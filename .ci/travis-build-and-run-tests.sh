@@ -77,12 +77,23 @@ fi
 # Bootstrap in the tpm2.0-tss tools directory
 ./bootstrap
 
+# clang has asan enabled with options exported that fail
+# make distcheck, so only do this with gcc.
+# Do a make distcheck in the root, clear it and than
+# cd to the variant directory.
+if [ "$CC" == "gcc" ]; then
+    ./configure
+    make distcheck
+    make distclean
+fi
+
 # Make a build variant directory and change to it
 mkdir ./build
 pushd ./build
 
 # Test building without tcti tabrmd
 ../configure --enable-unit --without-tcti-tabrmd $config_flags
+
 make -j$(nproc)
 make -j$(nproc) check
 make -j$(nproc) clean
