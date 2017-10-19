@@ -37,12 +37,12 @@ onerror() {
 }
 trap onerror ERR
 
-tpm2_dump_capability -Q --capability="properties-fixed"
+tpm2_getcap -Q --capability="properties-fixed"
 
-tpm2_dump_capability -Q --capability="properties-variable"
+tpm2_getcap -Q --capability="properties-variable"
 
-tpm2_dump_capability -Q --capability="algorithms"
+tpm2_getcap -Q --capability="algorithms"
 
-tpm2_dump_capability -Q --capability="commands"
+tpm2_getcap -Q --capability="commands"
 
 exit 0

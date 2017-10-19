@@ -54,7 +54,7 @@ bin_PROGRAMS = \
     tools/tpm2_createpolicy \
     tools/tpm2_createprimary \
     tools/tpm2_dictionarylockout \
-    tools/tpm2_dump_capability \
+    tools/tpm2_getcap \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
     tools/tpm2_getmanufec \
@@ -139,7 +139,7 @@ TOOL_SRC := tools/tpm2_tool.c tools/tool.h
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
-tools_tpm2_dump_capability_SOURCES = tools/tpm2_dump_capability.c $(TOOL_SRC)
+tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
 tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c $(TOOL_SRC)
 tools_tpm2_listpersistent_SOURCES = tools/tpm2_listpersistent.c $(TOOL_SRC)
 tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
@@ -244,7 +244,7 @@ if HAVE_PANDOC
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
     man/man1/tpm2_dictionarylockout.1 \
-    man/man1/tpm2_dump_capability.1 \
+    man/man1/tpm2_getcap.1 \
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_evictcontrol.1 \
     man/man1/tpm2_getmanufec.1 \
