@@ -36,8 +36,6 @@
 
 #include <getopt.h>
 
-#include <tcti/tcti_socket.h>
-
 #include "tpm2_header.h"
 #include "files.h"
 #include "log.h"
