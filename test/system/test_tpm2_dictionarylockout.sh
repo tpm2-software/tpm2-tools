@@ -40,16 +40,16 @@ trap onerror ERR
 
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7
 
-if [ $(tpm2_dump_capability -c properties-variable | grep TPM_PT_MAX_AUTH_FAIL | sed -e 's/TPM_PT_MAX_AUTH_FAIL: \+//') != "0x00000005" ];then
+if [ $(tpm2_getcap -c properties-variable | grep TPM_PT_MAX_AUTH_FAIL | sed -e 's/TPM_PT_MAX_AUTH_FAIL: \+//') != "0x00000005" ];then
  echo "Failure: setting up the number of allowed tries in the lockout parameters"
  exit 1
 fi
 
-if [ $(tpm2_dump_capability -c properties-variable | grep TPM_PT_LOCKOUT_INTERVAL | sed -e 's/TPM_PT_LOCKOUT_INTERVAL: \+//') != "0x00000006" ];then
+if [ $(tpm2_getcap -c properties-variable | grep TPM_PT_LOCKOUT_INTERVAL | sed -e 's/TPM_PT_LOCKOUT_INTERVAL: \+//') != "0x00000006" ];then
  echo "Failure: setting up the lockout period in the lockout parameters"
 fi
 
-if [ $(tpm2_dump_capability -c properties-variable | grep TPM_PT_LOCKOUT_RECOVERY | sed -e 's/TPM_PT_LOCKOUT_RECOVERY: \+//') != "0x00000007" ];then
+if [ $(tpm2_getcap -c properties-variable | grep TPM_PT_LOCKOUT_RECOVERY | sed -e 's/TPM_PT_LOCKOUT_RECOVERY: \+//') != "0x00000007" ];then
  echo "Failure: setting up the lockout recovery period in the lockout parameters"
 fi
 

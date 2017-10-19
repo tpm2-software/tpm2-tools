@@ -1,18 +1,18 @@
-% tpm2_dump_capability(1) tpm2-tools | General Commands Manual
+% tpm2_getcap(1) tpm2-tools | General Commands Manual
 %
 % SEPTEMBER 2017
 
 # NAME
 
-**tpm2_dump_capability**(1) - Display TPM capabilities in a human readable form.
+**tpm2_getcap**(1) - Display TPM capabilities in a human readable form.
 
 # SYNOPSIS
 
-**tpm2_dump_capability** [*OPTIONS*]
+**tpm2_getcap** [*OPTIONS*]
 
 # DESCRIPTION
 
-**tpm2_dump_capability**(1) - Query the TPM for it's capabilities / properties and
+**tpm2_getcap**(1) - Query the TPM for it's capabilities / properties and
 dump them to the console. This is a thin wrapper around the GetCapability
 command.
 
@@ -65,7 +65,7 @@ command.
 # EXAMPLES
 
 ```
-tpm2_dump_capability --capability="properties-fixed"
+tpm2_getcap --capability="properties-fixed"
 
 ```
 
