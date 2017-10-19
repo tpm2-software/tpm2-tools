@@ -1,6 +1,7 @@
 ## Changelog
 
 ### next
+  * tpm2_dump_capability: renamed to tpm2_getcap.
   * tpm2_send_command: renamed to tpm2_send and the input file is now an
     argument vs using -i.
   * tpm2_dump_capability: outputs human readable command codes.
