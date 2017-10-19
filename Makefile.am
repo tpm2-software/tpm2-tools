@@ -89,15 +89,21 @@ bin_PROGRAMS = \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
-tcti_src = ""
+tcti_src =
 if HAVE_TCTI_DEV
-tcti_src += lib/tcti/tpm2_tools_tcti_device.c
+tcti_src += \
+    lib/tcti/tpm2_tools_tcti_device.c \
+    lib/tcti/tpm2_tools_tcti_device.h
 endif
 if HAVE_TCTI_SOCK
-tcti_src += lib/tcti/tpm2_tools_tcti_socket.c
+tcti_src += \
+    lib/tcti/tpm2_tools_tcti_socket.c \
+    lib/tcti/tpm2_tools_tcti_socket.h
 endif
 if HAVE_TCTI_TABRMD
-tcti_src += lib/tcti/tpm2_tools_tcti_abrmd.c
+tcti_src += \
+    lib/tcti/tpm2_tools_tcti_abrmd.c \
+    lib/tcti/tpm2_tools_tcti_abrmd.h
 endif
 
 
@@ -105,6 +111,7 @@ noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
 	$(tcti_src) \
     lib/conversion.c \
+    lib/conversion.h \
     lib/files.c \
     lib/files.h \
     lib/log.c \
@@ -135,7 +142,7 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_session.c \
     lib/tpm_session.h
 
-TOOL_SRC := tools/tpm2_tool.c tools/tool.h
+TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
