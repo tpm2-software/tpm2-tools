@@ -41,13 +41,13 @@
 #include "log.h"
 #include "tpm2_tool.h"
 
-typedef struct tpm2_send_command_ctx tpm2_send_command_ctx;
-struct tpm2_send_command_ctx {
+typedef struct tpm2_send_ctx tpm2_send_ctx;
+struct tpm2_send_ctx {
     FILE *input;
     FILE *output;
 };
 
-tpm2_send_command_ctx ctx;
+tpm2_send_ctx ctx;
 
 static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
