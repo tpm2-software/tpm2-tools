@@ -89,5 +89,14 @@ $ git push origin [signed-tag-name]
 ```
 **NOTE**: this assumes origin is the tpm2-tools official repo.
 
+### Making a GitHub release.
+
+1. Create a release using the signed release tag.
+2. Add to the binary file section:
+
+    1. A release tarball from `make dist`.
+    2. A detached signature for the tarball made via:
+      `gpg --armor --detach-sign <tarball>`
+
 A lot of this git/gpg information was edited from:
 <https://blog.thesoftwarecraft.com/2013/03/signing-git-tags.html>
