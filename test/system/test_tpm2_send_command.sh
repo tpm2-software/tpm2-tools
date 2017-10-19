@@ -45,6 +45,13 @@ if [ ! -f "${TPM2_COMMAND_FILE}" ]; then
     exit 1
 fi
 
+# check default stdin(file fd)/stdout
 tpm2_send_command < ${TPM2_COMMAND_FILE} > /dev/null
+
+# check default stdin(pipe fd) with output file
+cat ${TPM2_COMMAND_FILE} | tpm2_send_command -o /dev/null
+
+# check -o out and argument file input
+tpm2_send_command -o /dev/null ${TPM2_COMMAND_FILE}
 
 exit 0
