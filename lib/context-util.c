@@ -205,8 +205,10 @@ sapi_init_from_options (common_opts_t *options)
     if (tcti_ctx == NULL)
         return NULL;
     sapi_ctx = sapi_ctx_init (tcti_ctx);
-    if (sapi_ctx == NULL)
+    if (sapi_ctx == NULL) {
+        free (tcti_ctx);
         return NULL;
+    }
     return sapi_ctx;
 }
 /*
