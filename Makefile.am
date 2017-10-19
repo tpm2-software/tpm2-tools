@@ -82,7 +82,7 @@ bin_PROGRAMS = \
     tools/tpm2_readpublic \
     tools/tpm2_rsadecrypt \
     tools/tpm2_rsaencrypt \
-    tools/tpm2_send_command \
+    tools/tpm2_send \
     tools/tpm2_sign \
     tools/tpm2_startup \
     tools/tpm2_takeownership \
@@ -143,7 +143,7 @@ tools_tpm2_dump_capability_SOURCES = tools/tpm2_dump_capability.c $(TOOL_SRC)
 tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c $(TOOL_SRC)
 tools_tpm2_listpersistent_SOURCES = tools/tpm2_listpersistent.c $(TOOL_SRC)
 tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
-tools_tpm2_send_command_SOURCES = tools/tpm2_send_command.c $(TOOL_SRC)
+tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
 tools_tpm2_startup_SOURCES = tools/tpm2_startup.c $(TOOL_SRC)
 tools_tpm2_verifysignature_SOURCES = tools/tpm2_verifysignature.c $(TOOL_SRC)
 tools_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
@@ -272,7 +272,7 @@ if HAVE_PANDOC
     man/man1/tpm2_readpublic.1 \
     man/man1/tpm2_rsadecrypt.1 \
     man/man1/tpm2_rsaencrypt.1 \
-    man/man1/tpm2_send_command.1 \
+    man/man1/tpm2_send.1 \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_startup.1 \
     man/man1/tpm2_takeownership.1 \
