@@ -51,6 +51,7 @@
 #include "tpm_kdfa.h"
 #include "tpm2_options.h"
 #include "tpm2_util.h"
+#include "tpm2_tool.h"
 
 #define SYM_KEY_SIZE 16
 #define max_buffer_size  1024
@@ -83,6 +84,10 @@ struct tpm_import_ctx {
     TPM2B_DATA enc_sensitive_key;
     TPM2B_MAX_BUFFER encrypted_inner_integrity;
     TPM2B_MAX_BUFFER encrypted_duplicate_sensitive;
+    UINT32 objectAttributes;
+    struct {
+        UINT16 A : 1;
+    } flags;
 };
 
 static tpm_import_ctx ctx = { 
@@ -287,6 +292,13 @@ static bool calc_sensitive_unique_data(void) {
 static bool create_import_key_public_data_and_name(void) {
 
     IMPORT_KEY_SYM_PUBLIC_AREA(ctx.import_key_public)
+
+    if (ctx.flags.A) {
+        ctx.import_key_public.t.publicArea.objectAttributes.val = ctx.objectAttributes;
+    }
+
+    tpm2_tool_output("ObjectAttribute: 0x%08X\n",
+                     ctx.import_key_public.t.publicArea.objectAttributes.val);
 
     memcpy(ctx.import_key_public.t.publicArea.unique.sym.t.buffer,
             ctx.import_key_public_unique_data, SHA256_DIGEST_SIZE);
@@ -553,6 +565,13 @@ static bool on_option(char key, char *value) {
     case 'r':
         ctx.import_key_private_file = value;
         break;
+    case 'A':
+        if(!tpm2_util_string_to_uint32(value, &ctx.objectAttributes)) {
+            LOG_ERR("Invalid object attribute, got\"%s\"", value);
+            return false;
+        }
+        ctx.flags.A = 1;
+        break;
     default:
         LOG_ERR("Invalid option");
         return false;
@@ -564,17 +583,18 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "input-key-file",     required_argument, NULL, 'k'},
-      { "parent-key-handle",  required_argument, NULL, 'H'},
-      { "parent-key-public",  required_argument, NULL, 'f'},
-      { "import-key-private", required_argument, NULL, 'r'},
-      { "import-key-public",  required_argument, NULL, 'q'},
+      { "input-key-file",     required_argument, NULL, 'k' },
+      { "parent-key-handle",  required_argument, NULL, 'H' },
+      { "parent-key-public",  required_argument, NULL, 'f' },
+      { "import-key-private", required_argument, NULL, 'r' },
+      { "import-key-public",  required_argument, NULL, 'q' },
+      { "object-attributes",  required_argument, NULL, 'A' },
     };
 
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    *opts = tpm2_options_new("k:H:f:q:r:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("k:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }

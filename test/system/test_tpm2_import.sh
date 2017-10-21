@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source test_helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -53,7 +55,7 @@ dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 
 tpm2_readpublic -Q -H 0x81010005 --opu parent.pub
 
-tpm2_import -Q -k sym.key -H 0x81010005 -f parent.pub -q import_key.pub \
+import_object -k sym.key -H 0x81010005 -f parent.pub -q import_key.pub \
 -r import_key.priv
 
 tpm2_load -Q -H 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
