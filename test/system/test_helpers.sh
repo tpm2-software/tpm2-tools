@@ -38,7 +38,7 @@ populate_hash_algs() {
         ["sha512"]=0x0D
         ["sm3_256"]=0x12
     )
-    local algs="`tpm2_dump_capability -c algorithms | grep 'hash:\s*set$' -B 3 | awk '{ print $6 }' | xargs`"
+    local algs="`tpm2_getcap -c algorithms | grep 'hash:\s*set$' -B 3 | awk '{ print $6 }' | xargs`"
     local algs_supported=""
     local t_alg
 

@@ -40,7 +40,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-    tpm2_evictcontrol -A o -H 0x81010005 -S 0x81010005 2>/dev/null
+    tpm2_evictcontrol -Q -A o -H 0x81010005 -S 0x81010005 2>/dev/null
     rm -f import_key.ctx  import_key.name  import_key.priv  import_key.pub \
           parent.ctx parent.pub  plain.dec.ssl  plain.enc  plain.txt  sym.key
 }
@@ -48,17 +48,17 @@ trap cleanup EXIT
 
 cleanup
 
-tpm2_createprimary -G 1 -g 0xb -A o -C parent.ctx
-tpm2_evictcontrol -A o -c parent.ctx -S 0x81010005
+tpm2_createprimary -Q -G 1 -g 0xb -A o -C parent.ctx
+tpm2_evictcontrol -Q -A o -c parent.ctx -S 0x81010005
 
-dd if=/dev/urandom of=sym.key bs=1 count=16
+dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 
-tpm2_readpublic -H 0x81010005 --opu parent.pub
+tpm2_readpublic -Q -H 0x81010005 --opu parent.pub
 
 import_object -k sym.key -H 0x81010005 -f parent.pub -q import_key.pub \
 -r import_key.priv
 
-tpm2_load  -H 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
+tpm2_load -Q -H 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
 -C import_key.ctx
 
 echo "plaintext" > "plain.txt"
@@ -73,7 +73,5 @@ if [ $? != 0 ];then
 echo "TEST: tpm2_import failed"
 exit 1
 fi
-
-echo "TEST: tpm2_import succeeded"
 
 exit 0

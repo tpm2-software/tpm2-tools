@@ -54,7 +54,7 @@ bin_PROGRAMS = \
     tools/tpm2_createpolicy \
     tools/tpm2_createprimary \
     tools/tpm2_dictionarylockout \
-    tools/tpm2_dump_capability \
+    tools/tpm2_getcap \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
     tools/tpm2_getmanufec \
@@ -82,22 +82,28 @@ bin_PROGRAMS = \
     tools/tpm2_readpublic \
     tools/tpm2_rsadecrypt \
     tools/tpm2_rsaencrypt \
-    tools/tpm2_send_command \
+    tools/tpm2_send \
     tools/tpm2_sign \
     tools/tpm2_startup \
     tools/tpm2_takeownership \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
-tcti_src = ""
+tcti_src =
 if HAVE_TCTI_DEV
-tcti_src += lib/tcti/tpm2_tools_tcti_device.c
+tcti_src += \
+    lib/tcti/tpm2_tools_tcti_device.c \
+    lib/tcti/tpm2_tools_tcti_device.h
 endif
 if HAVE_TCTI_SOCK
-tcti_src += lib/tcti/tpm2_tools_tcti_socket.c
+tcti_src += \
+    lib/tcti/tpm2_tools_tcti_socket.c \
+    lib/tcti/tpm2_tools_tcti_socket.h
 endif
 if HAVE_TCTI_TABRMD
-tcti_src += lib/tcti/tpm2_tools_tcti_abrmd.c
+tcti_src += \
+    lib/tcti/tpm2_tools_tcti_abrmd.c \
+    lib/tcti/tpm2_tools_tcti_abrmd.h
 endif
 
 
@@ -105,6 +111,7 @@ noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
 	$(tcti_src) \
     lib/conversion.c \
+    lib/conversion.h \
     lib/files.c \
     lib/files.h \
     lib/log.c \
@@ -135,15 +142,15 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_session.c \
     lib/tpm_session.h
 
-TOOL_SRC := tools/tpm2_tool.c tools/tool.h
+TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
-tools_tpm2_dump_capability_SOURCES = tools/tpm2_dump_capability.c $(TOOL_SRC)
+tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
 tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c $(TOOL_SRC)
 tools_tpm2_listpersistent_SOURCES = tools/tpm2_listpersistent.c $(TOOL_SRC)
 tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
-tools_tpm2_send_command_SOURCES = tools/tpm2_send_command.c $(TOOL_SRC)
+tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
 tools_tpm2_startup_SOURCES = tools/tpm2_startup.c $(TOOL_SRC)
 tools_tpm2_verifysignature_SOURCES = tools/tpm2_verifysignature.c $(TOOL_SRC)
 tools_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
@@ -244,7 +251,7 @@ if HAVE_PANDOC
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
     man/man1/tpm2_dictionarylockout.1 \
-    man/man1/tpm2_dump_capability.1 \
+    man/man1/tpm2_getcap.1 \
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_evictcontrol.1 \
     man/man1/tpm2_getmanufec.1 \
@@ -272,7 +279,7 @@ if HAVE_PANDOC
     man/man1/tpm2_readpublic.1 \
     man/man1/tpm2_rsadecrypt.1 \
     man/man1/tpm2_rsaencrypt.1 \
-    man/man1/tpm2_send_command.1 \
+    man/man1/tpm2_send.1 \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_startup.1 \
     man/man1/tpm2_takeownership.1 \

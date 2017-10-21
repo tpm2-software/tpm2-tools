@@ -84,7 +84,7 @@ tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 #
 # Test large writes
 #
-large_file_size=$(tpm2_dump_capability -c properties-fixed | grep TPM_PT_NV_INDEX_MAX | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
+large_file_size=$(tpm2_getcap -c properties-fixed | grep TPM_PT_NV_INDEX_MAX | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE

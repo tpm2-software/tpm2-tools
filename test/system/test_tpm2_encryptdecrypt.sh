@@ -47,7 +47,7 @@ trap cleanup EXIT
 cleanup
 
 # Check for encryptdecrypt command code 0x164
-tpm2_dump_capability -c commands | grep -q 0x164
+tpm2_getcap -c commands | grep -q 0x164
 if [ $? != 0 ];then
     echo "WARN: Command EncryptDecrypt is not supported by your device, skipping..."
     exit 0

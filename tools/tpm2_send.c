@@ -36,20 +36,18 @@
 
 #include <getopt.h>
 
-#include <tcti/tcti_socket.h>
-
 #include "tpm2_header.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_tool.h"
 
-typedef struct tpm2_send_command_ctx tpm2_send_command_ctx;
-struct tpm2_send_command_ctx {
+typedef struct tpm2_send_ctx tpm2_send_ctx;
+struct tpm2_send_ctx {
     FILE *input;
     FILE *output;
 };
 
-tpm2_send_command_ctx ctx;
+tpm2_send_ctx ctx;
 
 static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
@@ -124,12 +122,6 @@ static void close_file(FILE *f) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-     case 'i':
-         ctx.input = open_file(value, "rb");
-         if (!ctx.input) {
-             return false;
-         }
-         break;
      case 'o':
          ctx.output = open_file(value, "wb");
          if (!ctx.output) {
@@ -142,15 +134,31 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_args(int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("Expected 1 tpm buffer input file, got: %d", argc);
+        return false;
+    }
+
+    ctx.input = fopen(argv[0], "rb");
+    if (!ctx.input) {
+        LOG_ERR("Error opening file \"%s\", error: %s", argv[0],
+                strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "--input",  required_argument, NULL, 'i' },
         { "--output", required_argument, NULL, 'o' },
     };
 
     *opts = tpm2_options_new("i:o:", ARRAY_LEN(topts), topts,
-            on_option, NULL);
+            on_option, on_args);
 
     ctx.input = stdin;
     ctx.output = stdout;

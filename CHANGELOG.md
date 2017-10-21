@@ -1,6 +1,9 @@
 ## Changelog
 
 ### next
+  * tpm2_dump_capability: renamed to tpm2_getcap.
+  * tpm2_send_command: renamed to tpm2_send and the input file is now an
+    argument vs using -i.
   * tpm2_dump_capability: outputs human readable command codes.
   * camelCase options are now all lower case. For example, --camelCase becomes --camel-case.
   * tpm2_import - A new tool for importing external entities, very limited key support.
