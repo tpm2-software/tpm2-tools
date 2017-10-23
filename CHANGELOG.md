@@ -1,6 +1,7 @@
 ## Changelog
 
 ### next
+  * tpm2_quote: -G option for signature hash algorithm specification.
   * tpm2_dump_capability: renamed to tpm2_getcap.
   * tpm2_send_command: renamed to tpm2_send and the input file is now an
     argument vs using -i.
