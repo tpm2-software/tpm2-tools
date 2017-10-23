@@ -89,6 +89,9 @@ bin_PROGRAMS = \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
+# command intermediate, ie tpm2 load vs tpm2_load
+bin_PROGRAMS += tools/tpm2
+
 tcti_src =
 if HAVE_TCTI_DEV
 tcti_src += \
@@ -188,6 +191,9 @@ tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_rc_decode_SOURCES = tools/tpm2_rc_decode.c $(TOOL_SRC)
 tools_tpm2_import_SOURCES = tools/tpm2_import.c $(TOOL_SRC)
 
+# tpm2 intermediate
+tools_tpm2_SOURCES = tools/tpm2.c
+
 if UNIT
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = \
@@ -283,6 +289,7 @@ if HAVE_PANDOC
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_startup.1 \
     man/man1/tpm2_takeownership.1 \
+    man/man1/tpm2.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1
 endif
