@@ -44,14 +44,14 @@ server.
   * **-f**, **--file**=_FILE_:
     specifies the file used to save the public portion of EK.
 
-  * **-N**, **--NonPersistent**:
+  * **-N**, **--non-persistent**:
     specifies to readout the EK public without making it persistent.
 
-  * **-O**, **--OfflineProv**:
+  * **-O**, **--offline**:
     specifies that the file specifier from **-f** is an EK retrieved from offline
     platform that needs to be provisioned.
 
-  * **-E**, **--ECertFile**=_EC\_CERT\_FILE_:
+  * **-E**, **--ec-cert**=_EC\_CERT\_FILE_:
     Specifies the file used to save the Endorsement Credentials retrieved from
     the TPM manufacturer provisioning server. Defaults to stdout if not
     specified.
