@@ -167,6 +167,12 @@ AS_IF([test x"$strip" == x"yyy"], [
   AC_MSG_NOTICE([Not using compiler options to reduce binary size!])
 )
 
+AC_CHECK_PROG([BASH],[bash],[yes])
+AS_IF(
+    [test "x${BASH}" == x"yes"],
+    [],
+    [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
+
 AC_CHECK_PROG([PYTHON],[python],[yes])
 AS_IF(
     [test "x${PYTHON}" == x"yes"],
