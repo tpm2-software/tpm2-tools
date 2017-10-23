@@ -60,10 +60,10 @@ d76e06520b64f2a1da1b331469aa000000000000000000000000000000000000\
 e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859525118bd4470b18180ee\
 f78ae4267bcd0000" | xxd -r -p > test_ek.pub
 
-tpm2_getmanufec -g rsa -O -N -U -E ECcert.bin -f test_ek.pub -S https://ekop.intel.com/ekcertservice/
+tpm2_getmanufec -g rsa -O -N -U -E ECcert.bin -f test_ek.pub https://ekop.intel.com/ekcertservice/
 
 # Test that stdoutput is the same
-tpm2_getmanufec -g rsa -O -N -U -f test_ek.pub -S https://ekop.intel.com/ekcertservice/ > ECcert2.bin
+tpm2_getmanufec -g rsa -O -N -U -f test_ek.pub https://ekop.intel.com/ekcertservice/ > ECcert2.bin
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin
@@ -73,7 +73,7 @@ tpm2_takeownership -c
 tpm2_takeownership -o $opass -e $epass
 
 tpm2_getmanufec -H $handle -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass \
-                -S https://ekop.intel.com/ekcertservice/
+                https://ekop.intel.com/ekcertservice/
 
 tpm2_listpersistent | grep -q $handle
 
