@@ -441,11 +441,6 @@ out_memory:
 
 int TPMinitialProvisioning(void)
 {
-    if (ctx.ek_server_addr == NULL) {
-        LOG_ERR("TPM Manufacturer Endorsement Credential Server Address cannot be NULL");
-        return 1;
-    }
-
     char *b64 = Base64Encode(HashEKPublicKey());
     if (!b64) {
         LOG_ERR("Base64Encode returned null");
@@ -520,13 +515,6 @@ static bool on_option(char key, char *value) {
         LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
         break;
     case 'S':
-        if (ctx.ek_server_addr) {
-            LOG_ERR("Multiple specifications of -S");
-            return false;
-        }
-        ctx.ek_server_addr = value;
-        break;
-    case 'i':
         return_val = tpm2_util_string_to_uint32(value, &handle);
         if (!return_val) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
@@ -539,6 +527,18 @@ static bool on_option(char key, char *value) {
 
         break;
     }
+
+    return true;
+}
+
+static bool on_args(int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("Only supports one remote server url, got: %d", argc);
+        return false;
+    }
+
+    ctx.ek_server_addr = argv[0];
 
     return true;
 }
@@ -556,12 +556,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "NonPersistent", 0, NULL, 'N' },
         { "OfflineProv"  , 0, NULL, 'O' },
         { "ECcertFile"   , 1, NULL, 'E' },
-        { "EKserverAddr" , 1, NULL, 'S' },
         { "SSL_NO_VERIFY", 0, NULL, 'U' },
-        {"input-session-handle",1,NULL,'i'},
+        {"input-session-handle",1,NULL,'S'},
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:f:NOE:S:i:U", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("e:o:H:P:g:f:NOE:S:i:U", ARRAY_LEN(topts), topts,
+            on_option, on_args);
 
     return *opts != NULL;
 }
@@ -571,6 +571,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
     int return_val = 1;
     int provisioning_return_val = 0;
+
+    if (!ctx.ek_server_addr) {
+        LOG_ERR("Must specify a remote server url!");
+        return 1;
+    }
 
     ctx.verbose = flags.verbose;
 

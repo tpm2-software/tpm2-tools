@@ -10,7 +10,7 @@ server.
 
 # SYNOPSIS
 
-**tpm2_getmanufec** [*OPTIONS*]
+**tpm2_getmanufec** [*OPTIONS*] [*URL*]
 
 # DESCRIPTION
 
@@ -56,15 +56,11 @@ server.
     the TPM manufacturer provisioning server. Defaults to stdout if not
     specified.
 
-  * **-S**, **--EKserverAddr**=_SERVER\_ADDRESS_:
-    specifies to attempt retrieving the Endorsement Credentials from the
-    specified   TPM manufacturer provisioning server.
-
   * **-U**, **--SSL_NO_VERIFY**:
     specifies to attempt connecting with the  TPM manufacturer provisioning server
     with SSL_NO_VERIFY option.
 
-  * **-i**, **--input-session-handle**=_SESSION\_HANDLE_:
+  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
 
 
@@ -87,8 +83,8 @@ provided by setting the curl mode verbose, see:
 # EXAMPLES
 
 ```
-tpm2_getmanufec -e abc123 -o abc123 -P passwd -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/ 
-tpm2_getmanufec -e 1a1b1c -o 1a1b1c -P 123abc -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin -S https://tpm.manufacturer.com/ekcertserver/
+tpm2_getmanufec -e abc123 -o abc123 -P passwd -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin https://tpm.manufacturer.com/ekcertserver/
+tpm2_getmanufec -e 1a1b1c -o 1a1b1c -P 123abc -H 0x81010001-g 0x01 -O -N -U -E ECcert.bin -f ek.bin https://tpm.manufacturer.com/ekcertserver/
 ```
 
 # RETURNS
