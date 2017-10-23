@@ -553,10 +553,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ek-passwd"     , 1, NULL, 'P' },
         { "alg"          , 1, NULL, 'g' },
         { "file"         , 1, NULL, 'f' },
-        { "NonPersistent", 0, NULL, 'N' },
-        { "OfflineProv"  , 0, NULL, 'O' },
-        { "ECcertFile"   , 1, NULL, 'E' },
-        { "SSL_NO_VERIFY", 0, NULL, 'U' },
+        { "non-persistent", 0, NULL, 'N' },
+        { "offline"       , 0, NULL, 'O' },
+        { "ec-cert"       , 1, NULL, 'E' },
+        { "SSL-NO-VERIFY" , 0, NULL, 'U' },
         {"input-session-handle",1,NULL,'S'},
     };
 
