@@ -114,3 +114,13 @@ create_object() {
         true
     fi
 }
+
+import_object() {
+    local alg_import_obj=0x20040
+
+    if tpm2_import $@ 2>&1 | grep -q 'ERROR: Failed Key Import 000002C2'; then
+        tpm2_import -A $alg_import_obj $@
+    else
+        true
+    fi
+}
