@@ -38,6 +38,9 @@ These options control the key importation process:
   * `-q`, `--import-key-public`=_FILE_:
     Specifies the file path required to save the public portion of the object imported as key
 
+  * **-A**, **--object-attributes**=_ATTRIBUTES_:
+    The object attributes, optional.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
