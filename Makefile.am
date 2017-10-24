@@ -122,6 +122,8 @@ lib_libcommon_a_SOURCES = \
     lib/rc-decode.h \
     lib/tpm2_alg_util.c \
     lib/tpm2_alg_util.h \
+    lib/tpm2_errata.c \
+    lib/tpm2_errata.h \
     lib/tpm2_header.h \
     lib/tpm2_nv_util.c \
     lib/tpm2_nv_util.h \
