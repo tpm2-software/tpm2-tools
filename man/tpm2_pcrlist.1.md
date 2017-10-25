@@ -12,7 +12,9 @@
 
 # DESCRIPTION
 
-**tpm2_pcrlist**(1) Displays PCR values.
+**tpm2_pcrlist**(1) Displays PCR values. Without any options, **tpm2_pcrlist**
+outputs all pcrs and their hash banks. One can use either the **-g** or **-L**
+mutually exclusive options to filter the output.
 
 # OPTIONS
 
@@ -37,7 +39,7 @@
 
 [common tcti options](common/tcti.md)
 
-[pcr bank specifiers](common/password.md)
+[pcr bank specifiers](common/pcr.md)
 
 [supported hash algorithms](common/hash.md)
 
