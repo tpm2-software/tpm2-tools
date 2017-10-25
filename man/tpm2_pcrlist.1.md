@@ -35,7 +35,6 @@ mutually exclusive options to filter the output.
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specfiers".
 
-
   * **-s**, **--algs**:
     Output the list of supported algorithms.
 
