@@ -54,11 +54,17 @@ These options control the ceritifcation:
   * **-s**, **--sig-file**=_SIG\_FILE_:
     Output file name for the signature data.
 
+  * **-f**, **--format**
+
+    Format selection for the signature output file. See section "Signature Format Specifiers".
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
 [password formatting](common/password.md)
+
+[signature format specifiers](common/signature.md)
 
 # EXAMPLES
 

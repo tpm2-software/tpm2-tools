@@ -321,8 +321,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[pcr bank specifiers\]/d' \
 	    -e '/\[pubkey options\]/r man/common/pubkey.md' \
 	    -e '/\[pubkey options\]/d' \
-	    -e '/\[signature options\]/r man/common/signature.md' \
-	    -e '/\[signature options\]/d' \
+	    -e '/\[signature format specifiers\]/r man/common/signature.md' \
+	    -e '/\[signature format specifiers\]/d' \
 	    < $< | pandoc -s -t man > $@
 
 CLEANFILES = $(man1_MANS)

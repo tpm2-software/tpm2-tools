@@ -48,7 +48,9 @@
     message output file, records the quote message that makes up the data that
     is signed by the TPM.
 
-[signature options](common/signature.md)
+  * **-f**, **--format**
+
+    Format selection for the signature output file. See section "Signature Format Specifiers".
 
   * **-q**, **--qualify-data**:
 
@@ -69,6 +71,8 @@
 [password formatting](common/password.md)
 
 [pcr bank specifiers](common/password.md)
+
+[signature format specifiers](common/signature.md)
 
 # EXAMPLES
 

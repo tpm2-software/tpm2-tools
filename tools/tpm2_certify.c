@@ -37,6 +37,7 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "conversion.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_util.h"
@@ -68,9 +69,12 @@ struct tpm_certify_ctx {
         UINT16 s : 1;
         UINT16 C : 1;
         UINT16 c : 1;
+        UINT16 f : 1;
+        UINT16 unused : 6;
     } flags;
     char *context_file;
     char *context_key_file;
+    signature_format sig_fmt;
 };
 
 static tpm_certify_ctx ctx = {
@@ -78,6 +82,7 @@ static tpm_certify_ctx ctx = {
         TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
         TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
     },
+    .sig_fmt = signature_format_tss,
 };
 
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_handle, TPMI_ALG_PUBLIC *type) {
@@ -196,14 +201,12 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* serialization is safe here, since it's just a byte array */
     result = files_save_bytes_to_file(ctx.file_path.attest,
-            (UINT8 *) certify_info.t.attestationData, certify_info.t.size);
+            certify_info.t.attestationData, certify_info.t.size);
     if (!result) {
         return false;
     }
 
-    /* TODO serialization is not safe here */
-    return files_save_bytes_to_file(ctx.file_path.sig, (UINT8 *) &signature,
-            sizeof(signature));
+    return tpm2_convert_signature(&signature, ctx.sig_fmt, ctx.file_path.sig);
 }
 
 static bool on_option(char key, char *value) {
@@ -283,6 +286,13 @@ static bool on_option(char key, char *value) {
         ctx.context_file = optarg;
         ctx.flags.C = 1;
         break;
+    case 'f':
+        ctx.flags.f = 1;
+        ctx.sig_fmt = tpm2_parse_signature_format(optarg);
+
+        if (ctx.sig_fmt == signature_format_err) {
+            return false;
+        }
     }
 
     return true;
@@ -300,10 +310,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"sig-file",      required_argument, NULL, 's'},
       {"obj-context",   required_argument, NULL, 'C'},
       {"key-context",   required_argument, NULL, 'c'},
+      { "format",      required_argument, NULL, 'f' },
       {NULL,           no_argument,       NULL, '\0'}
     };
 
-    *opts = tpm2_options_new("H:k:P:K:g:a:s:C:c:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("H:k:P:K:g:a:s:C:c:f:", ARRAY_LEN(topts), topts,
+            on_option, NULL);
 
     return *opts != NULL;
 }
