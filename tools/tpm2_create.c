@@ -46,6 +46,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_errata.h"
 #include "tpm2_tool.h"
 
 typedef struct tpm_create_ctx tpm_create_ctx;
@@ -152,6 +153,9 @@ int setup_alg()
         break;
 
     case TPM_ALG_SYMCIPHER:
+        tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+                          &ctx.in_public.t.publicArea.objectAttributes);
+
         ctx.in_public.t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
         ctx.in_public.t.publicArea.parameters.symDetail.sym.keyBits.sym = 128;
         ctx.in_public.t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
