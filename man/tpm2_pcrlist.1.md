@@ -18,6 +18,10 @@ mutually exclusive options to filter the output.
 
 # OPTIONS
 
+  * **-f**, **--format**=_FORMAT_:
+    Specify the output format. Valid output formats are:
+    * yaml - output in the YAML file format.
+
   * **-g**, **--algorithm**=_HASH\_ALGORITHM_:
     Only output PCR banks with the given algorithm.
     Algorithms should follow the "formatting standards, see section
