@@ -49,6 +49,7 @@
 #include "log.h"
 #include "files.h"
 #include "tpm_kdfa.h"
+#include "tpm2_errata.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -289,6 +290,9 @@ static bool calc_sensitive_unique_data(void) {
 static bool create_import_key_public_data_and_name(void) {
 
     IMPORT_KEY_SYM_PUBLIC_AREA(ctx.import_key_public)
+
+    tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+                      &ctx.import_key_public.t.publicArea.objectAttributes);
 
     if (ctx.objectAttributes) {
         ctx.import_key_public.t.publicArea.objectAttributes.val = ctx.objectAttributes;
