@@ -50,7 +50,13 @@ data and validation shall indicate that hashed data did not start with
 
     The ticket file, containning the validation structure, optional.
 
-[signature options](common/signature.md)
+  * **-s**, **--sig**=_TICKET\_FILE_:
+
+    The signature file, records the signature structure.
+
+  * **-f**, **--format**
+
+    Format selection for the signature output file. See section "Signature Format Specifiers".
 
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
 
@@ -65,6 +71,8 @@ data and validation shall indicate that hashed data did not start with
 [supported hash algorithms](common/hash.md)
 
 [algorithm specifiers](common/alg.md)
+
+[signature format specifiers](common/signature.md)
 
 # EXAMPLES
 
