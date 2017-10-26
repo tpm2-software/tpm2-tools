@@ -48,6 +48,7 @@ LDADD = \
 
 # keep me sorted
 bin_PROGRAMS = \
+    tools/aux/tpm2_print \
     tools/tpm2_activatecredential \
     tools/tpm2_certify \
     tools/tpm2_changeauth \
@@ -154,6 +155,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_session.h
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
+
+tools_aux_tpm2_print_SOURCES = tools/aux/tpm2_print.c $(TOOL_SRC)
 
 tools_tpm2_clear_SOURCES = tools/tpm2_clear.c $(TOOL_SRC)
 tools_tpm2_clearlock_SOURCES = tools/tpm2_clearlock.c $(TOOL_SRC)
