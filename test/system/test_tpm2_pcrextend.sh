@@ -45,6 +45,7 @@ onerror() {
 }
 trap onerror ERR
 
+digests=""
 # test a single algorithm based on what is supported
 for alg in `tpm2_pcrlist -s | cut -d\  -f 3-`; do
   alg=`echo $alg | cut -d\( -f 1-1`;
@@ -55,26 +56,33 @@ for alg in `tpm2_pcrlist -s | cut -d\  -f 3-`; do
 
   hash=${alg_hashes[$alg]}
 
+  if [ ! -z  $digests ]; then
+      digests="$digests,"
+  fi
+
+  digests="$digests$alg=$hash"
+
   tpm2_pcrextend 9:$alg=$hash
 
 done;
 
 #
 # To keep things simple, compound specifications are just done with
-# sha1, which is guaranteed to be enabled by the TPM2.0 specification.
+# the supported sha1 algorithms to guarantee the command to succeed.
 #
-sha1hash=${alg_hashes["sha1"]}
+tpm2_pcrextend 8:$digests
 
-# Do sha1 multiple times in the same spec
-tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash
-
-# Do sha1 multiple times in the same spec and separate specs
-# with the same pcr.
-tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash 9:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash
+# Extend a PCR for all supported banks like in the previous test but
+# try extending two PCR in the same command.
+tpm2_pcrextend 8:$digests 9:$digests
 
 trap - ERR
 
 # Over-length spec should fail
-tpm2_pcrextend 8:sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash,sha1=$sha1hash 2>/dev/null
+tpm2_pcrextend 8:$digests,sha1=$sha1hash 2>/dev/null
+if [ $? != 1 ]; then
+  echo "tpm2_pcrextend with over-length spec didn't fail!"
+  exit 1
+fi
 
 exit 0
