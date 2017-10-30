@@ -93,6 +93,10 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
     // Now set the attributes.
     public_info.t.nvPublic.attributes.val = ctx.nvAttribute.val;
 
+    if (!ctx.size) {
+        LOG_WARN("Defining an index with size 0");
+    }
+
     if (ctx.policy_file) {
         public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
         if(!files_load_bytes_from_path(ctx.policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
