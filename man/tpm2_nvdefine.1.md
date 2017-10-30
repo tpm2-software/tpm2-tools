@@ -25,7 +25,8 @@
     * **0x4000000C** for **TPM_RH_PLATFORM**
 
   * **-s**, **--size**=_SIZE_:
-    specifies the size of data area in bytes.
+    specifies the size of data area in bytes. Defaults to MAX_NV_INDEX_SIZE
+    which is typically 2048.
 
   * **-t**, **--attributes**=_ATTRIBUTES_
     Specifies the attribute values for the nv region used when creating the

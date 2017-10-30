@@ -61,6 +61,7 @@ static tpm_nvdefine_ctx ctx = {
     .nvAttribute = SESSION_ATTRIBUTES_INIT(0),
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
     .nvAuth = TPM2B_EMPTY_INIT,
+    .size = MAX_NV_INDEX_SIZE,
 };
 
 static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
