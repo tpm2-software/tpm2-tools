@@ -81,6 +81,10 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
 
     UINT16 data_offset = 0;
 
+    if (!ctx.data_size) {
+        LOG_WARN("Data to write is of size 0");
+    }
+
     /*
      * Ensure that writes will fit before attempting write to prevent data
      * from being partially written to the index.
