@@ -29,11 +29,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <errno.h>
 #include <stdbool.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
 #include <limits.h>
 
 #include <sapi/tpm20.h>
@@ -53,7 +54,7 @@ struct tpm_nvwrite_ctx {
     UINT16 data_size;
     UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
     TPMS_AUTH_COMMAND session_data;
-    char *input_file;
+    FILE *input_file;
     UINT16 offset;
 };
 
@@ -62,7 +63,7 @@ static tpm_nvwrite_ctx ctx = {
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
 };
 
-static int nv_write(TSS2_SYS_CONTEXT *sapi_context) {
+static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -113,7 +114,7 @@ static int nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         }
         tpm2_tool_output("\n\n");
 
-        rval = Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
+        TPM_RC rval = Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
                 ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
                 &sessions_data_out);
         if (rval != TSS2_RC_SUCCESS) {
@@ -163,9 +164,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'f':
-        ctx.input_file = value;
-        break;
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!result) {
@@ -192,18 +190,37 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_args(int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("Only supports one input file, got: %d", argc);
+        return false;
+    }
+
+    ctx.input_file = fopen(argv[0], "rb");
+    if (!ctx.input_file) {
+        LOG_ERR("Could not open input file \"%s\", error: %s",
+                argv[0], strerror(errno));
+        return false;
+    }
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index"       , required_argument, NULL, 'x' },
         { "auth-handle"  , required_argument, NULL, 'a' },
-        { "file"        , required_argument, NULL, 'f' },
         { "handle-passwd", required_argument, NULL, 'P' },
         { "input-session-handle",1,          NULL, 'S' },
         { "offset"      , required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("x:a:f:P:S:o:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("x:a:P:S:o:", ARRAY_LEN(topts), topts,
+            on_option, on_args);
+
+    ctx.input_file = stdin;
 
     return *opts != NULL;
 }
@@ -212,12 +229,59 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    ctx.data_size = MAX_NV_INDEX_SIZE;
-    bool result = files_load_bytes_from_path(ctx.input_file, ctx.nv_buffer, &ctx.data_size);
-    if (!result) {
-        LOG_ERR("Failed to read data from %s", ctx.input_file);
-        return -false;
+    int rc = 1;
+
+    /* Suppress error reporting with NULL path */
+    unsigned long file_size;
+    bool res = files_get_file_size(ctx.input_file, &file_size, NULL);
+
+    if (res && file_size > MAX_NV_INDEX_SIZE) {
+        LOG_ERR("File larger than MAX_NV_INDEX_SIZE, got %lu expected %u", file_size,
+                MAX_NV_INDEX_SIZE);
+        goto out;
     }
 
-    return nv_write(sapi_context) != true;
+    if (res) {
+        /*
+         * We know the size upfront, read it. Note that the size was already
+         * bounded by MAX_NV_INDEX_SIZE
+         */
+        ctx.data_size = (UINT16) file_size;
+        res = files_read_bytes(ctx.input_file, ctx.nv_buffer, ctx.data_size);
+        if (!res)  {
+            LOG_ERR("could not read input file");
+            goto out;
+        }
+    } else {
+        /* we don't know the file size, ie it's a stream, read till end */
+        size_t bytes = fread(ctx.nv_buffer, 1, MAX_NV_INDEX_SIZE, ctx.input_file);
+        if (bytes != MAX_NV_INDEX_SIZE) {
+            if (ferror(ctx.input_file)) {
+                LOG_ERR("reading from input file failed: %s", strerror(errno));
+                goto out;
+            }
+
+            if (!feof(ctx.input_file)) {
+                LOG_ERR("File larger than MAX_NV_INDEX_SIZE: %u",
+                        MAX_NV_INDEX_SIZE);
+                goto out;
+            }
+        }
+
+        ctx.data_size = (UINT16)bytes;
+    }
+
+    res = nv_write(sapi_context);
+    if (!res) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+    if (ctx.input_file) {
+        fclose(ctx.input_file);
+    }
+
+    return rc;
 }

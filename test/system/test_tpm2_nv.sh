@@ -56,13 +56,13 @@ trap onerror ERR
 
 cleanup
 
-tpm2_takeownership -c 
+tpm2_takeownership -c
 
 tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite"
 
 echo "please123abc" > nv.test_w
 
-tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -f nv.test_w 
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle nv.test_w
 
 tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 32 -o 0
 
@@ -78,7 +78,8 @@ echo -n "foo" > foo.dat
 
 dd if=foo.dat of=nv.test_w bs=1 seek=4 conv=notrunc 2>/dev/null
 
-tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -o 4 -f foo.dat
+# Test a pipe input
+cat foo.dat | tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -o 4
 
 tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 13 | xxd -r > cmp.dat
 
@@ -89,7 +90,7 @@ cmp nv.test_w cmp.dat
 
 trap - ERR
 
-tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -o 30 -f foo.dat 2>/dev/null
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -o 30 foo.dat 2>/dev/null
 if [ $? -eq 0 ]; then
   echo "Writing past the public size shouldn't work!"
   exit 1
@@ -125,7 +126,8 @@ tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s $large_file_size -t 0x2
 
 base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
 
-tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle  -f $large_file_name
+# Test file input redirection
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle <<< $large_file_name
 
 tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle | xxd -r > $large_file_read_name
 
@@ -142,7 +144,7 @@ tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policy
 
 echo "foobar" > nv.readlock
 
-tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -f nv.readlock
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle nv.readlock
 
 tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 6 -o 0
 
@@ -175,16 +177,16 @@ tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
   -I "index" -P "owner"
 
 # Use index password write/read
-tpm2_nvwrite -Q -x 0x1500015 -a 0x1500015 -f nv.test_w -P "index"
+tpm2_nvwrite -Q -x 0x1500015 -a 0x1500015 -P "index" nv.test_w
 tpm2_nvread -Q -x 0x1500015 -a 0x1500015 -P "index"
 
 # use owner password
-tpm2_nvwrite -Q -x 0x1500015 -a 0x40000001 -f nv.test_w -P "owner"
+tpm2_nvwrite -Q -x 0x1500015 -a 0x40000001 -P "owner" nv.test_w
 tpm2_nvread -Q -x 0x1500015 -a 0x40000001 -P "owner"
 
 # Check a bad password fails
 trap - ERR
-tpm2_nvwrite -Q -x 0x1500015 -a 0x1500015 -f nv.test_w -P "wrong" 2>/dev/null
+tpm2_nvwrite -Q -x 0x1500015 -a 0x1500015 -P "wrong" nv.test_w 2>/dev/null
 if [ $? -eq 0 ];then
  echo "nvwrite with bad password should fail!"
  exit 1

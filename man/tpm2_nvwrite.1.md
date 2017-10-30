@@ -8,11 +8,12 @@
 
 # SYNOPSIS
 
-**tpm2_nvwrite** [*OPTIONS*]
+**tpm2_nvwrite** [*OPTIONS*] _FILE_
 
 # DESCRIPTION
 
-**tpm2_nvwrite**(1) - Write data to a Non-Volatile (NV) index.
+**tpm2_nvwrite**(1) - Write data specified via _FILE_ to a Non-Volatile (NV) index.
+If _FILE_ is not specified, it defaults to stdin.
 
 # OPTIONS
 
@@ -27,9 +28,6 @@
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
-
-  * **-f**, **--file**=_FILE_:
-    The data to write.
 
   * **-S**, **--input-session-handle**=_SIZE_:
     Optional Input session handle from a policy session for authorization.
