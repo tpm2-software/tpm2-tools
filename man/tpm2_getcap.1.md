@@ -52,11 +52,11 @@ command.
     * handles-nv-index:
       Display handles about NV Indices.
 
-    * handles-hmac-session:
-      Display handles about HMAC sessions.
+    * handles-loaded-session:
+      Display handles about both loaded HMAC and policy sessions.
 
-    * handles-policy-session:
-      Display handles about policy sessions.
+    * handles-saved-session:
+      Display handles about saved sessions.
 
 [common options](common/options.md)
 

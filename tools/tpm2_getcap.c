@@ -116,15 +116,15 @@ capability_map_entry_t capability_map[] = {
         .count             = MAX_CAP_HANDLES,
     },
     {
-        .capability_string = "handles-hmac-session",
+        .capability_string = "handles-loaded-session",
         .capability        = TPM_CAP_HANDLES,
-        .property          = HMAC_SESSION_FIRST,
+        .property          = LOADED_SESSION_FIRST,
         .count             = MAX_CAP_HANDLES,
     },
     {
-        .capability_string = "handles-policy-session",
+        .capability_string = "handles-saved-session",
         .capability        = TPM_CAP_HANDLES,
-        .property          = POLICY_SESSION_FIRST,
+        .property          = ACTIVE_SESSION_FIRST,
         .count             = MAX_CAP_HANDLES,
     },
 };
@@ -812,8 +812,8 @@ static int dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
         case HR_PERMANENT:
         case HR_PCR:
         case HR_NV_INDEX:
-        case HR_HMAC_SESSION:
-        case HR_POLICY_SESSION:
+        case TPM_HT_LOADED_SESSION << HR_SHIFT:
+        case TPM_HT_SAVED_SESSION << HR_SHIFT:
             dump_handles (capabilities->handles.handle,
                           capabilities->handles.count);
             break;
