@@ -43,7 +43,7 @@ cleanup() {
   tpm2_nvrelease -Q -x 0x1500015 -a 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
-        nv.readlock
+        nv.readlock foo.dat cmp.dat
 }
 
 trap cleanup EXIT
@@ -67,6 +67,38 @@ tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -f nv.test_w
 tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 32 -o 0
 
 tpm2_nvlist | grep -q -i $nv_test_index
+
+# Test writing to and reading from an offset by:
+# 1. writing "foo" into the nv file at an offset
+# 2. writing to the same offset in the nv index
+# 3. reading back the index
+# 4. comparing the result.
+
+echo -n "foo" > foo.dat
+
+dd if=foo.dat of=nv.test_w bs=1 seek=4 conv=notrunc 2>/dev/null
+
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -o 4 -f foo.dat
+
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 13 | xxd -r > cmp.dat
+
+cmp nv.test_w cmp.dat
+
+# Writing at an offset and data size too big shouldn't result in a change
+# to the index value.
+
+trap - ERR
+
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -o 30 -f foo.dat 2>/dev/null
+if [ $? -eq 0 ]; then
+  echo "Writing past the public size shouldn't work!"
+  exit 1
+fi
+trap onerror ERR
+
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 13 | xxd -r > cmp.dat
+
+cmp nv.test_w cmp.dat
 
 tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle  
 
