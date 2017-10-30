@@ -40,24 +40,24 @@
  *
  * Note that it is unnecessary to describe errata version
  * because the section number should be kept consistent
- * accoss all errata versions for a specific spec revision.
+ * across all errata versions for a specific spec revision.
  */
 typedef enum {
     SPEC_116_ERRATA_2_7,
 } tpm2_errata_index_t;
 
-/*
- * Initialize errata subsystem.
- * @sapi_ctx: SAPI context to be queried.
+/**
+ * Initialize errata subsystem
  *
- * Return value:
- * return true if TPM_SPEC is known and valid, or false if opposite.
+ * @param sapi_ctx
+ *  SAPI context to be queried.
  */
-bool tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx);
+void tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx);
 
-/*
- * Request an errata correction.
- * @index: the errata to be queried.
+/**
+ * Request an errata correction for a specific errata version.
+ * @param index
+ *  the errata to be queried.
  *
  * This function requests an errata correction to work
  * around a known issue well documented in errata doc.
@@ -66,19 +66,7 @@ bool tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx);
  * correction handler. The fixup process is transparent to
  * the callers so there is no return values. Any tools can
  * call this function to apply an errata if necessary.
- *
- * Return value:
- * N/A
  */
 void tpm2_errata_fixup(tpm2_errata_index_t index, ...);
-
-/*
- * Query the full name of an errata.
- * @index: the errata to be queried.
- *
- * Return value:
- * the full name of an errata, or NULL if the query fails.
- */
-const char *tpm2_errata_name(tpm2_errata_index_t index);
 
 #endif /* TPM2_ERRATA_H */

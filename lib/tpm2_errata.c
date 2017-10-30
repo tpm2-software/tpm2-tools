@@ -136,36 +136,10 @@ void tpm2_errata_fixup(tpm2_errata_index_t index, ...) {
     errata->fixup(&ap);
     va_end(ap);
 
-    LOG_INFO("Errata %s applied\n", errata->name);
+    LOG_INFO("Errata %s applied", errata->name);
 }
 
-/*
- * Query the full name of an errata.
- * @index: the errata to be queried.
- *
- * Return value:
- * the full name of an errata, or NULL if the query fails.
- */
-const char *tpm2_errata_name(tpm2_errata_index_t index) {
-
-    struct tpm2_errata_desc *errata;
-
-    errata = errata_query(index);
-    if (!errata) {
-        return NULL;
-    }
-
-    return errata->name;
-}
-
-/*
- * Initialize errata subsystem.
- * @sapi_ctx: SAPI context to be queried.
- *
- * Return value:
- * return true if TPM_SPEC is known and valid, or false if opposite.
- */
-bool tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
+void tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
 
     TPMS_CAPABILITY_DATA capability_data;
     TPMI_YES_NO more_data;
@@ -176,11 +150,11 @@ bool tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
                                 &capability_data, NULL);
     if (rc != TSS2_RC_SUCCESS) {
         LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                "TSS2_RC: 0x%x\n", TPM_CAP_TPM_PROPERTIES, PT_FIXED, rc);
-        return false;
+                "TSS2_RC: 0x%x", TPM_CAP_TPM_PROPERTIES, PT_FIXED, rc);
+        return;
     } else if (more_data == YES) {
         LOG_WARN("More data to be queried: capability: 0x%x, property: "
-                 "0x%x\n", TPM_CAP_TPM_PROPERTIES, PT_FIXED);
+                 "0x%x", TPM_CAP_TPM_PROPERTIES, PT_FIXED);
     }
 
     /* Distinguish current spec level 0 */
@@ -209,8 +183,8 @@ bool tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
     }
 
     if (!spec_rev || !day_of_year || !year) {
-        LOG_ERR("Invalid TPM_SPEC parameter\n");
-        return false;
+        LOG_WARN("Invalid TPM_SPEC parameter");
+        return;
     }
 
     /* Determine the TPM spec and errata */
@@ -220,23 +194,18 @@ bool tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
              known_errata_info[i].spec_rev == spec_rev &&
              known_errata_info[i].spec_level == spec_level) {
              this_errata_info = known_errata_info + i;
-             break;
+
+             LOG_INFO("TPM_SPEC: spec level %d, spec rev %f, errata ver %f",
+                      this_errata_info->spec_level,
+                      (float)this_errata_info->spec_rev / 100,
+                      (float)this_errata_info->errata_ver / 100);
+             return;
          }
     }
 
-    if (!this_errata_info) {
-        LOG_ERR("Unknow TPM_SPEC. spec_level: %d, spec_rev: 0x%x, "
-                "year: %d, day_of_year: %d\n", spec_level, spec_rev,
-                year, day_of_year);
-        return false;
-    }
-
-    LOG_INFO("TPM_SPEC: spec level %d, spec rev %f, errata ver %f\n",
-             this_errata_info->spec_level,
-             (float)this_errata_info->spec_rev / 100,
-             (float)this_errata_info->errata_ver / 100);
-
-    return true;
+    LOG_INFO("Unknown TPM_SPEC. spec_level: %d, spec_rev: 0x%x, "
+            "year: %d, day_of_year: %d", spec_level, spec_rev,
+            year, day_of_year);
 }
 
 static void fixup_sign_decrypt_attribute_encoding(va_list *ap) {
@@ -249,7 +218,7 @@ static void fixup_sign_decrypt_attribute_encoding(va_list *ap) {
 static bool errata_match(struct tpm2_errata_desc *errata) {
 
     if (!this_errata_info) {
-        LOG_ERR("Unrecognized TPM_SPEC for errata check\n");
+        LOG_ERR("Unrecognized TPM_SPEC for errata check");
         return false;
     }
 
@@ -261,7 +230,7 @@ static bool errata_match(struct tpm2_errata_desc *errata) {
 static struct tpm2_errata_desc *errata_query(tpm2_errata_index_t index) {
 
     if ((size_t)index >= ARRAY_LEN(errata_desc_list)) {
-        LOG_ERR("Invalid errata index queried: %u\n", (unsigned int)index);
+        LOG_ERR("Invalid errata index queried: %u", (unsigned int)index);
         return NULL;
     }
 
