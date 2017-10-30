@@ -49,7 +49,7 @@ typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
 struct tpm_nvdefine_ctx {
     UINT32 nvIndex;
     UINT32 authHandle;
-    UINT32 size;
+    UINT16 size;
     TPMA_NV nvAttribute;
     TPM2B_AUTH nvAuth;
     TPMS_AUTH_COMMAND session_data;
@@ -154,7 +154,7 @@ static bool on_option(char key, char *value) {
             }
             break;
     case 's':
-        result = tpm2_util_string_to_uint32(value, &ctx.size);
+        result = tpm2_util_string_to_uint16(value, &ctx.size);
         if (!result) {
             LOG_ERR("Could not convert size to number, got: \"%s\"",
                     value);
