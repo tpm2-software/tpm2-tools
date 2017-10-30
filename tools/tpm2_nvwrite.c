@@ -43,6 +43,7 @@
 #include "log.h"
 #include "files.h"
 #include "tpm2_tool.h"
+#include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
@@ -53,6 +54,7 @@ struct tpm_nvwrite_ctx {
     UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
     TPMS_AUTH_COMMAND session_data;
     char *input_file;
+    UINT16 offset;
 };
 
 static tpm_nvwrite_ctx ctx = {
@@ -76,7 +78,26 @@ static int nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    UINT16 offset = 0;
+    UINT16 data_offset = 0;
+
+    /*
+     * Ensure that writes will fit before attempting write to prevent data
+     * from being partially written to the index.
+     */
+    TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
+    TPM_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
+    if (rval != TPM_RC_SUCCESS) {
+        LOG_ERR("Reading the public part of the nv index failed with: 0x%x", rval);
+        return false;
+    }
+
+    if (ctx.offset + ctx.data_size > nv_public.t.nvPublic.dataSize) {
+        LOG_ERR("The starting offset (%u) and the size (%u) are larger than the"
+                " defined space: %u.",
+                ctx.offset, ctx.data_size, nv_public.t.nvPublic.dataSize);
+        return false;
+    }
+
     while (ctx.data_size > 0) {
 
         nv_write_data.t.size =
@@ -87,26 +108,26 @@ static int nv_write(TSS2_SYS_CONTEXT *sapi_context) {
 
         UINT16 i;
         for (i = 0; i < nv_write_data.t.size; i++) {
-            nv_write_data.t.buffer[i] = ctx.nv_buffer[offset + i];
-            tpm2_tool_output("%02x ", ctx.nv_buffer[offset + i]);
+            nv_write_data.t.buffer[i] = ctx.nv_buffer[data_offset + i];
+            tpm2_tool_output("%02x ", ctx.nv_buffer[data_offset + i]);
         }
         tpm2_tool_output("\n\n");
 
-        TPM_RC rval = Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
-                ctx.nv_index, &sessions_data, &nv_write_data, offset,
+        rval = Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
+                ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
                 &sessions_data_out);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_ERR(
                     "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x",
-                    ctx.nv_index, ctx.nv_index, offset, rval);
+                    ctx.nv_index, ctx.nv_index, data_offset, rval);
             return false;
         }
 
         LOG_INFO("Success to write NV area at index 0x%x (%d) offset 0x%x.",
-                ctx.nv_index, ctx.nv_index, offset);
+                ctx.nv_index, ctx.nv_index, data_offset);
 
         ctx.data_size -= nv_write_data.t.size;
-        offset += nv_write_data.t.size;
+        data_offset += nv_write_data.t.size;
     }
 
     return true;
@@ -159,6 +180,13 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'o':
+        if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {
+            LOG_ERR("Could not convert starting offset, got: \"%s\"",
+                    value);
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -172,9 +200,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "file"        , required_argument, NULL, 'f' },
         { "handle-passwd", required_argument, NULL, 'P' },
         { "input-session-handle",1,          NULL, 'S' },
+        { "offset"      , required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("x:a:f:P:S:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("x:a:f:P:S:o:", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }

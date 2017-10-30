@@ -34,6 +34,9 @@
   * **-S**, **--input-session-handle**=_SIZE_:
     Optional Input session handle from a policy session for authorization.
 
+  * **-o**, **--offset**=_OFFSET_:
+    The offset within the NV index to start writing at.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
