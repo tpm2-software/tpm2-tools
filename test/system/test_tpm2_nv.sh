@@ -40,6 +40,7 @@ large_file_read_name="nv.test_large_w"
 cleanup() {
   tpm2_nvrelease -Q -x $nv_test_index -a $nv_auth_handle 2>/dev/null || true
   tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001 2>/dev/null || true
+  tpm2_nvrelease -Q -x 0x1500015 -a 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
         nv.readlock
@@ -121,6 +122,39 @@ trap - ERR
 tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 6 -o 0 2> /dev/null
 if [ $? != 1 ];then
  echo "nvread didn't fail!"
+ exit 1
+fi
+
+#
+# Test that owner and index passwords work by
+# 1. Setting up the owner password
+# 2. Defining an nv index that can be satisfied by an:
+#   a. Owner authorization
+#   b. Index authorization
+# 3. Using index and owner based auth during write/read operations
+# 4. Testing that auth is needed or a failure occurs.
+#
+trap onerror ERR
+
+tpm2_takeownership -o owner
+
+tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
+  -t "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
+  -I "index" -P "owner"
+
+# Use index password write/read
+tpm2_nvwrite -Q -x 0x1500015 -a 0x1500015 -f nv.test_w -P "index"
+tpm2_nvread -Q -x 0x1500015 -a 0x1500015 -P "index"
+
+# use owner password
+tpm2_nvwrite -Q -x 0x1500015 -a 0x40000001 -f nv.test_w -P "owner"
+tpm2_nvread -Q -x 0x1500015 -a 0x40000001 -P "owner"
+
+# Check a bad password fails
+trap - ERR
+tpm2_nvwrite -Q -x 0x1500015 -a 0x1500015 -f nv.test_w -P "wrong" 2>/dev/null
+if [ $? -eq 0 ];then
+ echo "nvwrite with bad password should fail!"
  exit 1
 fi
 
