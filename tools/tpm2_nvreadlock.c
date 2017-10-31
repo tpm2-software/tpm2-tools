@@ -77,8 +77,8 @@ static bool nv_readlock(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
-            &sessions_data, &sessions_data_out);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
+            &sessions_data, &sessions_data_out));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed to lock NVRAM area at index 0x%x (%d).Error:0x%x",
                 ctx.nv_index, ctx.nv_index, rval);

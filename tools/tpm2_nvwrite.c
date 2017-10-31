@@ -92,9 +92,9 @@ static int nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         }
         tpm2_tool_output("\n\n");
 
-        TPM_RC rval = Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
+        TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
                 ctx.nv_index, &sessions_data, &nv_write_data, offset,
-                &sessions_data_out);
+                &sessions_data_out));
         if (rval != TSS2_RC_SUCCESS) {
             LOG_ERR(
                     "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x",

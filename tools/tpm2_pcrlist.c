@@ -148,9 +148,9 @@ static bool read_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
     //2. call pcr_read
     ctx.pcrs.count = 0;
     do {
-        UINT32 rval = Tss2_Sys_PCR_Read(sapi_context, no_argument, &pcr_selection_tmp,
+        UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Read(sapi_context, no_argument, &pcr_selection_tmp,
                 &pcr_update_counter, &pcr_selection_out,
-                &ctx.pcrs.pcr_values[ctx.pcrs.count], 0);
+                &ctx.pcrs.pcr_values[ctx.pcrs.count], 0));
 
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("read pcr failed. tpm error 0x%0x", rval);
@@ -350,8 +350,8 @@ static bool get_banks(TSS2_SYS_CONTEXT *sapi_context) {
     TPMS_CAPABILITY_DATA *capability_data = &ctx.cap_data;
     UINT32 rval;
 
-    rval = Tss2_Sys_GetCapability(sapi_context, no_argument, TPM_CAP_PCRS, no_argument, required_argument,
-            &more_data, capability_data, 0);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, no_argument, TPM_CAP_PCRS, no_argument, required_argument,
+            &more_data, capability_data, 0));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR(
                 "GetCapability: Get PCR allocation status Error. TPM Error:0x%x......",

@@ -86,8 +86,8 @@ static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
-                                        &sessions_data, ctx.handle.persist,&sessions_data_out);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
+                                        &sessions_data, ctx.handle.persist,&sessions_data_out));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EvictControl failed, error code: 0x%x", rval);
         return false;

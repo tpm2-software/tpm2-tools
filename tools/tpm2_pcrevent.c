@@ -108,9 +108,9 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
             return TSS2_APP_PCREVENT_RC_FAILED;
         }
 
-        return Tss2_Sys_PCR_Event(sapi_context, ctx.pcr, &cmd_auth_array,
+        return TSS2_RETRY_EXP(Tss2_Sys_PCR_Event(sapi_context, ctx.pcr, &cmd_auth_array,
                 &buffer, result,
-                NULL);
+                NULL));
     }
 
     TPMI_DH_OBJECT sequence_handle;
@@ -121,8 +121,8 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TPM_RC rval = Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
-    TPM_ALG_NULL, &sequence_handle, NULL);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
+    TPM_ALG_NULL, &sequence_handle, NULL));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_HashSequenceStart failed: 0x%X", rval);
         return rval;
@@ -156,8 +156,8 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         data.t.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
-                &cmd_auth_array, &data, NULL);
+        rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
+                &cmd_auth_array, &data, NULL));
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Tss2_Sys_SequenceUpdate failed: 0x%X", rval);
             return rval;
@@ -193,8 +193,8 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
     swap_auths(all_auths);
     cmd_auth_array.cmdAuthsCount = 2;
 
-    return Tss2_Sys_EventSequenceComplete(sapi_context, ctx.pcr,
-            sequence_handle, &cmd_auth_array, &data, result, NULL);
+    return TSS2_RETRY_EXP(Tss2_Sys_EventSequenceComplete(sapi_context, ctx.pcr,
+            sequence_handle, &cmd_auth_array, &data, result, NULL));
 }
 
 static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {

@@ -80,7 +80,7 @@ static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     memcpy(&sessionData.hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
 
-    TPM_RC rval = Tss2_Sys_Clear(sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear(sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Clearing Failed! TPM error code: 0x%0x", rval);
         return false;
@@ -110,8 +110,8 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
     memcpy(&newAuth, &pwd->new, sizeof(pwd->new));
     memcpy(&sessionData.hmac, &pwd->old, sizeof(pwd->old));
 
-    UINT32 rval = Tss2_Sys_HierarchyChangeAuth(sapi_context,
-            auth_handle, &sessionsData, &newAuth, 0);
+    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_HierarchyChangeAuth(sapi_context,
+            auth_handle, &sessionsData, &newAuth, 0));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Could not change hierarchy for %s. TPM Error:0x%x",
                 desc, rval);

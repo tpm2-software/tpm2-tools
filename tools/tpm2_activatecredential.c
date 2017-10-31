@@ -187,8 +187,8 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    rval = Tss2_Sys_PolicySecret(sapi_context, TPM_RH_ENDORSEMENT,
-            session->sessionHandle, &cmd_auth_array_endorse, 0, 0, 0, 0, 0, 0, 0);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM_RH_ENDORSEMENT,
+            session->sessionHandle, &cmd_auth_array_endorse, 0, 0, 0, 0, 0, 0, 0));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
         return false;
@@ -198,16 +198,16 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
     tmp_auth.sessionAttributes.continueSession = 1;
     tmp_auth.hmac.t.size = 0;
 
-    rval = Tss2_Sys_ActivateCredential(sapi_context, ctx.handle.activate,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.handle.activate,
             ctx.handle.key, &cmd_auth_array_password, &ctx.credentialBlob, &ctx.secret,
-            &certInfoData, 0);
+            &certInfoData, 0));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("ActivateCredential failed. TPM Error:0x%x", rval);
         return false;
     }
 
     // Need to flush the session here.
-    rval = Tss2_Sys_FlushContext(sapi_context, session->sessionHandle);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, session->sessionHandle));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
         return false;
