@@ -1,6 +1,7 @@
 ## Changelog
 
 ### next
+  * tpm2_encryptdecrypt: has support for EncryptDecrypt2 command.
   * tpm2_nvwrite: -f option removed, support for stdin data supported. Support for starting
       index to write to.
   * errata framework added for dealing with spec errata.
