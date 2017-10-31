@@ -101,10 +101,10 @@ static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_LoadExternal(sapi_context, 0,
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0,
             ctx.has_private_key ? &ctx.private_key : NULL, &ctx.public_key,
             ctx.hierarchy_value, &ctx.rsa2048_handle, &nameExt,
-            &sessionsDataOut);
+            &sessionsDataOut));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("LoadExternal Failed ! ErrorCode: 0x%0x", rval);
         return false;

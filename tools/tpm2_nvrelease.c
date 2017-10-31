@@ -62,8 +62,8 @@ static bool nv_space_release(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.cmdAuths = &session_data_array[0];
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = Tss2_Sys_NV_UndefineSpace(sapi_context, ctx.auth_handle,
-                                            ctx.nv_index, &sessions_data, 0);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_UndefineSpace(sapi_context, ctx.auth_handle,
+                                            ctx.nv_index, &sessions_data, 0));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed to release NV area at index 0x%x (%d).Error:0x%x",
                 ctx.nv_index, ctx.nv_index, rval);

@@ -299,9 +299,9 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
 
     memset( (void *)&signature, 0, sizeof(signature) );
 
-    rval = Tss2_Sys_Quote(sapi_context, akHandle, &sessionsData,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &sessionsData,
             &qualifyingData, &inScheme, pcrSelection, &quoted,
-            &signature, &sessionsDataOut );
+            &signature, &sessionsDataOut));
     if(rval != TPM_RC_SUCCESS)
     {
         printf("\nQuote Failed ! ErrorCode: 0x%0x\n\n", rval);

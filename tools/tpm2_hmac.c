@@ -103,9 +103,9 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
             return TSS2_APP_HMAC_RC_FAILED;
         }
 
-        return Tss2_Sys_HMAC(sapi_context, ctx.key_handle,
+        return TSS2_RETRY_EXP(Tss2_Sys_HMAC(sapi_context, ctx.key_handle,
                 &sessions_data, &buffer, ctx.algorithm, result,
-                &sessions_data_out);
+                &sessions_data_out));
     }
 
     TPM2B_AUTH null_auth = { .t.size = 0 };
@@ -116,8 +116,8 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TPM_RC rval = Tss2_Sys_HMAC_Start(sapi_context, ctx.key_handle, &sessions_data,
-            &null_auth, ctx.algorithm, &sequence_handle, &sessions_data_out);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HMAC_Start(sapi_context, ctx.key_handle, &sessions_data,
+            &null_auth, ctx.algorithm, &sequence_handle, &sessions_data_out));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_HMAC_Start failed: 0x%X", rval);
         return rval;
@@ -144,8 +144,8 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
         data.t.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
-                &sessions_data, &data, &sessions_data_out);
+        rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
+                &sessions_data, &data, &sessions_data_out));
         if (rval != TPM_RC_SUCCESS) {
             return rval;
         }
@@ -172,9 +172,9 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
         data.t.size = 0;
     }
 
-    return Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
+    return TSS2_RETRY_EXP(Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
             &sessions_data, &data, TPM_RH_NULL, result, NULL,
-            &sessions_data_out);
+            &sessions_data_out));
 }
 
 

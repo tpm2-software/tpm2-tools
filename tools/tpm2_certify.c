@@ -103,8 +103,8 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
 
     TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
-            &out_public, &name, &qualified_name, &sessions_data_out);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
+            &out_public, &name, &qualified_name, &sessions_data_out));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_ReadPublic failed. Error Code: 0x%x", rval);
         return false;
@@ -191,9 +191,9 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMT_SIGNATURE signature;
 
-    TPM_RC rval = Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
             ctx.handle.key, &cmd_auth_array, &qualifying_data, &scheme,
-            &certify_info, &signature, &sessions_data_out);
+            &certify_info, &signature, &sessions_data_out));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_Certify failed. Error Code: 0x%x", rval);
         return false;

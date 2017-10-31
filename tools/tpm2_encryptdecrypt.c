@@ -43,6 +43,7 @@
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
+#include "rc-decode.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -99,9 +100,15 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
         },
     };
 
-    TPM_RC rval = Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
-            &sessions_data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &ctx.data, &out_data,
-            &iv_out, &sessions_data_out);
+    /* try EncryptDecrypt2 first, fallback to EncryptDecrypt if not supported */
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
+            &sessions_data, &ctx.data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &out_data,
+            &iv_out, &sessions_data_out));
+    if (rval == TPM_RC_COMMAND_CODE) {
+        rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
+                &sessions_data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &ctx.data,
+                &out_data, &iv_out, &sessions_data_out));
+    }
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EncryptDecrypt failed, error code: 0x%x", rval);
         return false;

@@ -110,9 +110,9 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    TPM_RC rval = Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
             &sessions_data, &digest, &in_scheme, &ctx.validation, &signature,
-            &sessions_data_out);
+            &sessions_data_out));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Sys_Sign failed, error code: 0x%x", rval);
         return false;
