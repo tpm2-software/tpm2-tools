@@ -148,8 +148,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         UINT16 bytes_to_read = ctx.size_to_read > MAX_NV_BUFFER_SIZE ?
                         MAX_NV_BUFFER_SIZE : ctx.size_to_read;
 
-        rval = Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
-                &sessions_data, bytes_to_read, ctx.offset, &nv_data, &sessions_data_out);
+        rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
+                &sessions_data, bytes_to_read, ctx.offset, &nv_data, &sessions_data_out));
         if (rval != TPM_RC_SUCCESS) {
             LOG_ERR("Failed to read NVRAM area at index 0x%x (%d). Error:0x%x",
                     ctx.nv_index, ctx.nv_index, rval);

@@ -749,14 +749,14 @@ get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
     TSS2_RC                rc;
     TPMI_YES_NO            more_data;
 
-    rc = Tss2_Sys_GetCapability (sapi_ctx,
+    rc = TSS2_RETRY_EXP(Tss2_Sys_GetCapability (sapi_ctx,
                                  NULL,
                                  options.capability,
                                  options.property,
                                  options.count,
                                  &more_data,
                                  capability_data,
-                                 NULL);
+                                 NULL));
     if (rc != TSS2_RC_SUCCESS) {
         LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
                  "TSS2_RC: 0x%x\n", options.capability, options.property, rc);

@@ -479,10 +479,10 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     memcpy(enc_inp_seed.t.secret, ctx.encrypted_protection_seed_data,
             MAX_RSA_KEY_BYTES);
 
-    TPM_RC rval = Tss2_Sys_Import(sapi_context, ctx.parent_key_handle,
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_key_handle,
             &npsessionsData, &ctx.enc_sensitive_key, &ctx.import_key_public,
             &ctx.import_key_private, &enc_inp_seed, &symmetricAlg,
-            &importPrivate, &npsessionsDataOut);
+            &importPrivate, &npsessionsDataOut));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Failed Key Import %08X", rval);
         return false;

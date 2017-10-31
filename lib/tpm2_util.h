@@ -93,6 +93,19 @@
         .rspAuths = array, \
     }
 
+/*
+ * This macro is useful as a wrapper around SAPI functions to automatically
+ * retry function calls when the RC is TPM_RC_RETRY.
+ */
+#define TSS2_RETRY_EXP(expression)                         \
+    ({                                                     \
+        TSS2_RC __result = 0;                              \
+        do {                                               \
+            __result = (expression);                       \
+        } while ((__result & 0x0000ffff) == TPM_RC_RETRY); \
+        __result;                                          \
+    })
+
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 
 /**

@@ -72,8 +72,8 @@ static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
     sessions_data.cmdAuthsCount = 1;
     sessions_data_out.rspAuthsCount = 1;
 
-    TPM_RC rc = Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
-            digests, &sessions_data_out);
+    TPM_RC rc = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
+            digests, &sessions_data_out));
     if (rc != TPM_RC_SUCCESS) {
         LOG_ERR("Could not extend pcr index: 0x%X, due to error: 0x%X",
                 pcr_index, rc);

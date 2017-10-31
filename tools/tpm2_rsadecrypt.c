@@ -85,9 +85,9 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     inScheme.scheme = TPM_ALG_RSAES;
     label.t.size = 0;
 
-    TPM_RC rval = Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_handle,
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_handle,
             &sessions_data, &ctx.cipher_text, &inScheme, &label, &message,
-            &sessions_data_out);
+            &sessions_data_out));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("rsaDecrypt failed, error code: 0x%x", rval);
         return false;

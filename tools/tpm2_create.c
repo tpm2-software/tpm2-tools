@@ -209,9 +209,9 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
 
     creationPCR.count = 0;
 
-    rval = Tss2_Sys_Create(sapi_context, ctx.parent_handle, &sessionsData, &ctx.in_sensitive,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.parent_handle, &sessionsData, &ctx.in_sensitive,
                            &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
-                           &creationData, &creationHash, &creationTicket, &sessionsDataOut);
+                           &creationData, &creationHash, &creationTicket, &sessionsDataOut));
     if(rval != TPM_RC_SUCCESS) {
         LOG_ERR("\nCreate Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -2;

@@ -204,10 +204,10 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* Create EK and get a handle to the key */
     TPM_HANDLE handle2048ek;
-    UINT32 rval = Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT,
+    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT,
             &sessionsData, &inSensitive, &inPublic, &outsideInfo, &creationPCR,
             &handle2048ek, &outPublic, &creationData, &creationHash,
-            &creationTicket, &name, &sessionsDataOut);
+            &creationTicket, &name, &sessionsDataOut));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("TPM2_CreatePrimary Error. TPM Error:0x%x", rval);
         return false;
@@ -217,8 +217,8 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     memcpy(&sessionData.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
-            &sessionsData, ctx.persistent_handle, &sessionsDataOut);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
+            &sessionsData, ctx.persistent_handle, &sessionsDataOut));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("EvictControl failed. Could not make EK persistent."
                 "TPM Error:0x%x", rval);
@@ -227,7 +227,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("EvictControl EK persistent success.");
 
-    rval = Tss2_Sys_FlushContext(sapi_context, handle2048ek);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle2048ek));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("Flush transient EK failed. TPM Error:0x%x",
                 rval);
