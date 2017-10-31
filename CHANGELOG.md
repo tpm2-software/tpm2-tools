@@ -1,6 +1,8 @@
 ## Changelog
 
 ### next
+  * tpm2_nvwrite: -f option removed, support for stdin data supported. Support for starting
+      index to write to.
   * errata framework added for dealing with spec errata.
   * tpm2_quote: -G option for signature hash algorithm specification.
   * tpm2_dump_capability: renamed to tpm2_getcap.
