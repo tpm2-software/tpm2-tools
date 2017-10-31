@@ -188,10 +188,10 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
 
     creationPCR.count = 0;
 
-    rval = Tss2_Sys_CreatePrimary(sapi_context, ctx.hierarchy, &sessionsData,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, ctx.hierarchy, &sessionsData,
                                   &ctx.inSensitive, &ctx.in_public, &outsideInfo, &creationPCR,
                                   &handle2048rsa, &outPublic, &creationData, &creationHash,
-                                  &creationTicket, &name, &sessionsDataOut);
+                                  &creationTicket, &name, &sessionsDataOut));
     if(rval != TPM_RC_SUCCESS) {
         LOG_ERR("\nCreatePrimary Failed ! ErrorCode: 0x%0x\n", rval);
         return -2;

@@ -94,7 +94,7 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
 
-    rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut));
     if(rval != TPM_RC_SUCCESS)
     {
         LOG_ERR("\nTPM2_ReadPublic error: rval = 0x%0x\n",rval);
@@ -137,9 +137,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UINT32 rval;
 
     UINT32 property = tpm2_util_endian_swap_32(TPM_HT_PERSISTENT);
-    rval = Tss2_Sys_GetCapability( sapi_context, 0, TPM_CAP_HANDLES,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM_CAP_HANDLES,
                                    property, TPM_PT_HR_PERSISTENT, &moreData,
-                                   &capabilityData, 0 );
+                                   &capabilityData, 0));
     if(rval != TPM_RC_SUCCESS)
     {
         LOG_ERR("\n......GetCapability: Get persistent object list Error."

@@ -95,14 +95,14 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    rval = Tss2_Sys_Load(sapi_context,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context,
                          ctx.parent_handle,
                          &sessionsData,
                          &ctx.in_private,
                          &ctx.in_public,
                          &handle2048rsa,
                          &nameExt,
-                         &sessionsDataOut);
+                         &sessionsDataOut));
     if(rval != TPM_RC_SUCCESS)
     {
         LOG_ERR("\nLoad Object Failed ! ErrorCode: 0x%0x\n",rval);

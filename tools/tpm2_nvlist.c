@@ -69,8 +69,8 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
     TPMI_YES_NO moreData;
     TPMS_CAPABILITY_DATA capabilityData;
     UINT32 property = tpm2_util_endian_swap_32(TPM_HT_NV_INDEX);
-    TPM_RC rval = Tss2_Sys_GetCapability(sapi_context, 0, TPM_CAP_HANDLES,
-            property, TPM_PT_NV_INDEX_MAX, &moreData, &capabilityData, 0);
+    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM_CAP_HANDLES,
+            property, TPM_PT_NV_INDEX_MAX, &moreData, &capabilityData, 0));
     if (rval != TPM_RC_SUCCESS) {
         LOG_ERR("GetCapability:Get NV Index list Error. TPM Error:0x%x", rval);
         return false;
