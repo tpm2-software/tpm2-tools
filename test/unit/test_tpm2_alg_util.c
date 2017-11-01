@@ -42,7 +42,7 @@
 #define single_item_test_get(friendly) \
     cmocka_unit_test(test_tpm2_alg_util_convert_##friendly)
 
-#define single_item_test(friendly, value) \
+#define nv_single_item_test(friendly, value) \
     static void test_tpm2_alg_util_convert_##friendly(void **state) { \
     \
         (void)state; \
@@ -59,47 +59,47 @@
         assert_int_equal(value, from_nice_str); \
     }
 
-single_item_test(rsa, TPM_ALG_RSA)
+nv_single_item_test(rsa, TPM_ALG_RSA)
 /*
  * sha sha1 is it's own test, as alg to string
  * can return either, based on the map ordering.
  *
  */
-single_item_test(hmac, TPM_ALG_HMAC)
-single_item_test(aes, TPM_ALG_AES)
-single_item_test(mgf1, TPM_ALG_MGF1)
-single_item_test(keyedhash, TPM_ALG_KEYEDHASH)
-single_item_test(xor, TPM_ALG_XOR)
-single_item_test(sha256, TPM_ALG_SHA256)
-single_item_test(sha384, TPM_ALG_SHA384)
-single_item_test(sha512, TPM_ALG_SHA512)
-single_item_test(null, TPM_ALG_NULL)
-single_item_test(sm3_256, TPM_ALG_SM3_256)
-single_item_test(sm4, TPM_ALG_SM4)
-single_item_test(rsassa, TPM_ALG_RSASSA)
-single_item_test(rsaes, TPM_ALG_RSAES)
-single_item_test(rsapss, TPM_ALG_RSAPSS)
-single_item_test(oaep, TPM_ALG_OAEP)
-single_item_test(ecdsa, TPM_ALG_ECDSA)
-single_item_test(ecdh, TPM_ALG_ECDH)
-single_item_test(ecdaa, TPM_ALG_ECDAA)
-single_item_test(sm2, TPM_ALG_SM2)
-single_item_test(ecschnorr, TPM_ALG_ECSCHNORR)
-single_item_test(ecmqv, TPM_ALG_ECMQV)
-single_item_test(kdf1_sp800_56a, TPM_ALG_KDF1_SP800_56A)
-single_item_test(kdf2, TPM_ALG_KDF2)
-single_item_test(kdf1_sp800_108, TPM_ALG_KDF1_SP800_108)
-single_item_test(ecc, TPM_ALG_ECC)
-single_item_test(symcipher, TPM_ALG_SYMCIPHER)
-single_item_test(camellia, TPM_ALG_CAMELLIA)
-single_item_test(sha3_256, TPM_ALG_SHA3_256)
-single_item_test(sha3_384, TPM_ALG_SHA3_384)
-single_item_test(sha3_512, TPM_ALG_SHA3_512)
-single_item_test(ctr, TPM_ALG_CTR)
-single_item_test(ofb, TPM_ALG_OFB)
-single_item_test(cbc, TPM_ALG_CBC)
-single_item_test(cfb, TPM_ALG_CFB)
-single_item_test(ecb, TPM_ALG_ECB)
+nv_single_item_test(hmac, TPM_ALG_HMAC)
+nv_single_item_test(aes, TPM_ALG_AES)
+nv_single_item_test(mgf1, TPM_ALG_MGF1)
+nv_single_item_test(keyedhash, TPM_ALG_KEYEDHASH)
+nv_single_item_test(xor, TPM_ALG_XOR)
+nv_single_item_test(sha256, TPM_ALG_SHA256)
+nv_single_item_test(sha384, TPM_ALG_SHA384)
+nv_single_item_test(sha512, TPM_ALG_SHA512)
+nv_single_item_test(null, TPM_ALG_NULL)
+nv_single_item_test(sm3_256, TPM_ALG_SM3_256)
+nv_single_item_test(sm4, TPM_ALG_SM4)
+nv_single_item_test(rsassa, TPM_ALG_RSASSA)
+nv_single_item_test(rsaes, TPM_ALG_RSAES)
+nv_single_item_test(rsapss, TPM_ALG_RSAPSS)
+nv_single_item_test(oaep, TPM_ALG_OAEP)
+nv_single_item_test(ecdsa, TPM_ALG_ECDSA)
+nv_single_item_test(ecdh, TPM_ALG_ECDH)
+nv_single_item_test(ecdaa, TPM_ALG_ECDAA)
+nv_single_item_test(sm2, TPM_ALG_SM2)
+nv_single_item_test(ecschnorr, TPM_ALG_ECSCHNORR)
+nv_single_item_test(ecmqv, TPM_ALG_ECMQV)
+nv_single_item_test(kdf1_sp800_56a, TPM_ALG_KDF1_SP800_56A)
+nv_single_item_test(kdf2, TPM_ALG_KDF2)
+nv_single_item_test(kdf1_sp800_108, TPM_ALG_KDF1_SP800_108)
+nv_single_item_test(ecc, TPM_ALG_ECC)
+nv_single_item_test(symcipher, TPM_ALG_SYMCIPHER)
+nv_single_item_test(camellia, TPM_ALG_CAMELLIA)
+nv_single_item_test(sha3_256, TPM_ALG_SHA3_256)
+nv_single_item_test(sha3_384, TPM_ALG_SHA3_384)
+nv_single_item_test(sha3_512, TPM_ALG_SHA3_512)
+nv_single_item_test(ctr, TPM_ALG_CTR)
+nv_single_item_test(ofb, TPM_ALG_OFB)
+nv_single_item_test(cbc, TPM_ALG_CBC)
+nv_single_item_test(cfb, TPM_ALG_CFB)
+nv_single_item_test(ecb, TPM_ALG_ECB)
 
 typedef struct find_unk_data find_unk_data;
 struct find_unk_data {

@@ -122,10 +122,11 @@ lib_libcommon_a_SOURCES = \
     lib/rc-decode.h \
     lib/tpm2_alg_util.c \
     lib/tpm2_alg_util.h \
+    lib/tpm2_attr_util.c \
+    lib/tpm2_attr_util.h \
     lib/tpm2_errata.c \
     lib/tpm2_errata.h \
     lib/tpm2_header.h \
-    lib/tpm2_nv_util.c \
     lib/tpm2_nv_util.h \
     lib/tpm2_password_util.c \
     lib/tpm2_password_util.h \
@@ -198,7 +199,7 @@ check_PROGRAMS = \
     test/unit/test_string_bytes \
     test/unit/test_files \
     test/unit/test_tpm2_header \
-    test/unit/test_tpm2_nv_util \
+    test/unit/test_tpm2_attr_util \
     test/unit/test_tpm2_alg_util \
     test/unit/test_pcr \
     test/unit/test_tpm2_password_util
@@ -224,9 +225,9 @@ test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_tpm2_header_SOURCES  = test/unit/test_tpm2_header.c
 
-test_unit_test_tpm2_nv_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_nv_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
-test_unit_test_tpm2_nv_util_SOURCES  = test/unit/test_tpm2_nv_util.c
+test_unit_test_tpm2_attr_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_attr_util_SOURCES  = test/unit/test_tpm2_attr_util.c
 
 test_unit_test_tpm2_alg_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
