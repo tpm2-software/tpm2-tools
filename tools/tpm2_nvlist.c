@@ -35,15 +35,16 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
+#include "tpm2_attr_util.h"
 #include "tpm2_nv_util.h"
+#include "tpm2_options.h"
 #include "tpm2_util.h"
 #include "log.h"
 #include "tpm2_tool.h"
 
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
-    char *attrs = tpm2_nv_util_attrtostr(nv_public->t.nvPublic.attributes);
+    char *attrs = tpm2_attr_util_nv_attrtostr(nv_public->t.nvPublic.attributes);
     if (!attrs) {
         LOG_ERR("Could not convert attributes to string form");
     }
