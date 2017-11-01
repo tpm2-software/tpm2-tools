@@ -36,6 +36,9 @@
 
 #include <sapi/tpm20.h>
 
+#define xstr(s) str(s)
+#define str(s) #s
+
 #define UNUSED(x) (void)x
 
 #define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))

@@ -31,35 +31,9 @@
 #ifndef LIB_TPM2_NV_UTIL_H_
 #define LIB_TPM2_NV_UTIL_H_
 
-#include <stdbool.h>
-
 #include <sapi/tpm20.h>
 
-/**
- * Converts a list of | (pipe) separated attributes as defined in tavle 204
- * of https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
- * to an actual bit field representation. The trailing TPMA_NV_ can be omitted and must be lower-case.
- * For exmaple, TPMA_NV_PPWRITE, bcomes ppwrite. To append them together, just do the pipe inbetwwen.
- * ppwrite|ownerwrite.
- *
- * @param attribute_list
- *  The attribute string to parse, which may be modified in place.
- * @param nvattrs
- *  The TPMA_NV attributes set based on the attribute list. Only valid on true returns.
- * @return
- *  true on success, false on error.
- */
-bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs);
-
-/**
- * Converts a TPMA_NV structure to a friendly name style string.
- * @param nvattrs
- *  The nvattrs to convert to nice name.
- * @return A string allocated with calloc(), callers shall use
- * free() to free it. The string is a null terminated text representation
- * of the TPMA_NV attributes.
- */
-char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs);
+#include "tpm2_util.h"
 
 /**
  * Reads the public portion of a Non-Volatile (nv) index.
@@ -72,7 +46,13 @@ char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs);
  * @return
  *  The error code from the TPM. TPM_RC_SUCCESS on success.
  */
-TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public);
+static inline TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
+
+    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+
+    return Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, NULL, nv_public,
+            &nv_name, NULL);
+}
 
 #endif /* LIB_TPM2_NV_UTIL_H_ */

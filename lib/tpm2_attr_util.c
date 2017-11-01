@@ -35,17 +35,14 @@
 #include <sapi/tpm20.h>
 
 #include "log.h"
-#include "tpm2_nv_util.h"
+#include "tpm2_attr_util.h"
 #include "tpm2_util.h"
 
-#define xstr(s) str(s)
-#define str(s) #s
-
 #define dispatch_no_arg_add(x) \
-    { .name = str(x), .callback=x, .width = 1 }
+    { .name = str(x), .callback=(action)x, .width = 1 }
 
 #define dispatch_arg_add(x, w) \
-    { .name = str(x), .callback=x, .width = w }
+    { .name = str(x), .callback=(action)x, .width = w }
 
 #define dispatch_reserved(pos) \
     { .name = "<reserved("xstr(pos)")>", .callback=NULL, .width = 1 }
@@ -57,7 +54,7 @@ enum dispatch_error {
     dispatch_no_match,
 };
 
-typedef bool (*action)(TPMA_NV *nv, char *arg);
+typedef bool (*action)(void *obj, char *arg);
 
 typedef struct dispatch_table dispatch_table;
 struct dispatch_table {
@@ -68,147 +65,147 @@ struct dispatch_table {
 
 static bool authread(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_AUTHREAD = 1;
     return true;
 }
 
 static bool authwrite(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_AUTHWRITE = 1;
     return true;
 }
 
 static bool clear_stclear(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_CLEAR_STCLEAR = 1;
     return true;
 }
 
 static bool globallock(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_GLOBALLOCK = 1;
     return true;
 }
 
 static bool no_da(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_NO_DA = 1;
     return true;
 }
 
 static bool orderly(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_ORDERLY = 1;
     return true;
 }
 
 static bool ownerread(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_OWNERREAD = 1;
     return true;
 }
 
 static bool ownerwrite(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_OWNERWRITE = 1;
     return true;
 }
 
 static bool platformcreate(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_PLATFORMCREATE = 1;
     return true;
 }
 
 static bool policyread(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_POLICYREAD = 1;
     return true;
 }
 
 static bool policywrite(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_POLICYWRITE = 1;
     return true;
 }
 
 static bool policydelete(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_POLICY_DELETE = 1;
     return true;
 }
 
 static bool ppread(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_PPREAD = 1;
     return true;
 }
 
 static bool ppwrite(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_PPWRITE = 1;
     return true;
 }
 
 static bool readlocked(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_READLOCKED = 1;
     return true;
 }
 
 static bool read_stclear(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_READ_STCLEAR = 1;
     return true;
 }
 
 static bool writeall(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_WRITEALL = 1;
     return true;
 }
 
 static bool writedefine(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_WRITEDEFINE = 1;
     return true;
 }
 
 static bool writelocked(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_WRITELOCKED = 1;
     return true;
 }
 
 static bool write_stclear(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_WRITE_STCLEAR = 1;
     return true;
 }
 
 static bool written(TPMA_NV *nv, char *arg) {
 
-    (void) arg;
+    UNUSED(arg);
     nv->TPMA_NV_WRITTEN = 1;
     return true;
 }
@@ -242,39 +239,151 @@ static bool nt(TPMA_NV *nv, char *arg) {
  *
  * if not the logic in tpm2_nv_util_strtoattr would need to change!
  */
-static dispatch_table dtable[] = {       // Bit Index
-    dispatch_no_arg_add(ppwrite),        //  0
-    dispatch_no_arg_add(ownerwrite),     //  1
-    dispatch_no_arg_add(authwrite),      //  2
-    dispatch_no_arg_add(policywrite),    //  3
-    dispatch_arg_add(nt, 4),             //  4
-    dispatch_arg_add(nt, 3),             //  5
-    dispatch_arg_add(nt, 2),             //  6
-    dispatch_arg_add(nt, 1),             //  7
-    dispatch_reserved(8),                //  8
-    dispatch_reserved(9),                //  9
-    dispatch_no_arg_add(policydelete),   // 10
-    dispatch_no_arg_add(writelocked),    // 11
-    dispatch_no_arg_add(writeall),       // 12
-    dispatch_no_arg_add(writedefine),    // 13
-    dispatch_no_arg_add(write_stclear),  // 14
-    dispatch_no_arg_add(globallock),     // 15
-    dispatch_no_arg_add(ppread),         // 16
-    dispatch_no_arg_add(ownerread),      // 17
-    dispatch_no_arg_add(authread),       // 18
-    dispatch_no_arg_add(policyread),     // 19
-    dispatch_reserved(20),               // 20
-    dispatch_reserved(21),               // 21
-    dispatch_reserved(22),               // 22
-    dispatch_reserved(23),               // 23
-    dispatch_reserved(24),               // 24
-    dispatch_no_arg_add(no_da),          // 25
-    dispatch_no_arg_add(orderly),        // 26
-    dispatch_no_arg_add(clear_stclear),  // 27
-    dispatch_no_arg_add(readlocked),     // 28
-    dispatch_no_arg_add(written),        // 29
-    dispatch_no_arg_add(platformcreate), // 30
-    dispatch_no_arg_add(read_stclear),   // 31
+static dispatch_table nv_attr_table[] = { // Bit Index
+    dispatch_no_arg_add(ppwrite),         //  0
+    dispatch_no_arg_add(ownerwrite),      //  1
+    dispatch_no_arg_add(authwrite),       //  2
+    dispatch_no_arg_add(policywrite),     //  3
+    dispatch_arg_add(nt, 4),              //  4
+    dispatch_arg_add(nt, 3),              //  5
+    dispatch_arg_add(nt, 2),              //  6
+    dispatch_arg_add(nt, 1),              //  7
+    dispatch_reserved(8),                 //  8
+    dispatch_reserved(9),                 //  9
+    dispatch_no_arg_add(policydelete),    // 10
+    dispatch_no_arg_add(writelocked),     // 11
+    dispatch_no_arg_add(writeall),        // 12
+    dispatch_no_arg_add(writedefine),     // 13
+    dispatch_no_arg_add(write_stclear),   // 14
+    dispatch_no_arg_add(globallock),      // 15
+    dispatch_no_arg_add(ppread),          // 16
+    dispatch_no_arg_add(ownerread),       // 17
+    dispatch_no_arg_add(authread),        // 18
+    dispatch_no_arg_add(policyread),      // 19
+    dispatch_reserved(20),                // 20
+    dispatch_reserved(21),                // 21
+    dispatch_reserved(22),                // 22
+    dispatch_reserved(23),                // 23
+    dispatch_reserved(24),                // 24
+    dispatch_no_arg_add(no_da),           // 25
+    dispatch_no_arg_add(orderly),         // 26
+    dispatch_no_arg_add(clear_stclear),   // 27
+    dispatch_no_arg_add(readlocked),      // 28
+    dispatch_no_arg_add(written),         // 29
+    dispatch_no_arg_add(platformcreate),  // 30
+    dispatch_no_arg_add(read_stclear),    // 31
+};
+
+static bool fixedtpm(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->fixedTPM = 1;
+    return true;
+}
+
+static bool stclear(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->stClear = 1;
+    return true;
+}
+
+static bool fixedparent(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->fixedParent = 1;
+    return true;
+}
+
+static bool sensitivedataorigin(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->sensitiveDataOrigin = 1;
+    return true;
+}
+
+static bool userwithauth(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->userWithAuth = 1;
+    return true;
+}
+
+static bool adminwithpolicy(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->adminWithPolicy = 1;
+    return true;
+}
+
+static bool noda(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->noDA = 1;
+    return true;
+}
+
+static bool encryptedduplication(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->encryptedDuplication = 1;
+    return true;
+}
+
+static bool restricted(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->restricted = 1;
+    return true;
+}
+
+static bool decrypt(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->decrypt = 1;
+    return true;
+}
+
+static bool sign(TPMA_OBJECT *obj, char *arg) {
+
+    UNUSED(arg);
+    obj->sign = 1;
+    return true;
+}
+
+static dispatch_table obj_attr_table[] = {         // Bit Index
+        dispatch_reserved(0),                      //  0
+        dispatch_no_arg_add(fixedtpm),             //  1
+        dispatch_no_arg_add(stclear),              //  2
+        dispatch_reserved(3),                      //  3
+        dispatch_no_arg_add(fixedparent),          //  4
+        dispatch_no_arg_add(sensitivedataorigin),  //  5
+        dispatch_no_arg_add(userwithauth),         //  6
+        dispatch_no_arg_add(adminwithpolicy),      //  7
+        dispatch_reserved(8),                      //  8
+        dispatch_reserved(9),                      //  9
+        dispatch_no_arg_add(noda),                 // 10
+        dispatch_no_arg_add(encryptedduplication), // 11
+        dispatch_reserved(12),                     // 12
+        dispatch_reserved(13),                     // 13
+        dispatch_reserved(14),                     // 14
+        dispatch_reserved(15),                     // 15
+        dispatch_no_arg_add(restricted),           // 16
+        dispatch_no_arg_add(decrypt),              // 17
+        dispatch_no_arg_add(sign),                 // 18
+        dispatch_reserved(19),                     // 19
+        dispatch_reserved(20),                     // 20
+        dispatch_reserved(21),                     // 21
+        dispatch_reserved(22),                     // 22
+        dispatch_reserved(23),                     // 23
+        dispatch_reserved(24),                     // 24
+        dispatch_reserved(25),                     // 25
+        dispatch_reserved(26),                     // 26
+        dispatch_reserved(27),                     // 27
+        dispatch_reserved(28),                     // 28
+        dispatch_reserved(29),                     // 29
+        dispatch_reserved(30),                     // 30
+        dispatch_reserved(31),                     // 31
 };
 
 static bool token_match(const char *name, const char *token, bool has_arg, char **sep) {
@@ -335,7 +444,7 @@ static dispatch_error handle_dispatch(dispatch_table *d, char *token,
     return result ? dispatch_ok : dispatch_err;
 }
 
-bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
+static bool common_strtoattr(char *attribute_list, void *attrs, dispatch_table *table, size_t size) {
 
     char *token;
     char *save;
@@ -345,12 +454,10 @@ bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
      * error: ‘attribute_list’ may be used uninitialized in this function [-Werror=maybe-uninitialized]
      * Might as well check nvattrs as well.
      */
-    if (!attribute_list || !nvattrs) {
-        LOG_ERR("attribute listr or nvattrs is NULL");
+    if (!attribute_list || !attrs) {
+        LOG_ERR("attribute list or attributes structure is NULL");
         return false;
     }
-
-    size_t dlen = ARRAY_LEN(dtable);
 
     while ((token = strtok_r(attribute_list, "|", &save))) {
         attribute_list = NULL;
@@ -358,10 +465,10 @@ bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
         bool did_dispatch = false;
 
         size_t i;
-        for (i = 0; i < dlen; i++) {
-            dispatch_table *d = &dtable[i];
+        for (i = 0; i < size; i++) {
+            dispatch_table *d = &table[i];
 
-            dispatch_error err = handle_dispatch(d, token, nvattrs);
+            dispatch_error err = handle_dispatch(d, token, attrs);
             if (err == dispatch_ok) {
                 did_dispatch = true;
                 break;
@@ -385,6 +492,17 @@ bool tpm2_nv_util_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
     return true;
 }
 
+bool tpm2_attr_util_nv_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
+
+    return common_strtoattr(attribute_list, nvattrs, nv_attr_table, ARRAY_LEN(nv_attr_table));
+}
+
+bool tpm2_attr_util_obj_strtoattr(char *attribute_list, TPMA_OBJECT *objattrs) {
+
+    return common_strtoattr(attribute_list, objattrs, obj_attr_table, ARRAY_LEN(obj_attr_table));
+}
+
+
 static UINT8 find_first_set(UINT32 bits) {
 
     UINT8 n = 0;
@@ -402,9 +520,9 @@ static UINT8 find_first_set(UINT32 bits) {
     return n;
 }
 
-char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs) {
+static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table, size_t size) {
 
-    if (nvattrs.val == 0) {
+    if (attrs == 0) {
         return strdup("<none>");
     }
 
@@ -418,26 +536,25 @@ char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs) {
      * This will provide us an ample buffer size for generating the string
      * in without having to constantly realloc.
      */
-    UINT32 pop_cnt = tpm2_util_pop_count(nvattrs.val);
+    UINT32 pop_cnt = tpm2_util_pop_count(attrs);
 
     size_t i;
     size_t max_name_len = 0;
-    for (i=0; i < ARRAY_LEN(dtable); i++) {
-        dispatch_table *d = &dtable[i];
+    for (i=0; i < size; i++) {
+        dispatch_table *d = &table[i];
         size_t name_len = strlen(d->name);
         max_name_len = name_len > max_name_len ? name_len : max_name_len;
     }
 
-    size_t size = pop_cnt * max_name_len + pop_cnt - 1 + 3;
+    size_t length = pop_cnt * max_name_len + pop_cnt - 1 + 3;
 
-    char *str = calloc(size, 1);
+    char *str = calloc(length, 1);
     if (!str) {
         return NULL;
     }
 
 
     size_t string_index = 0;
-    UINT32 attrs = nvattrs.val;
 
     /*
      * Start at the lowest, first bit set, index into the array,
@@ -446,14 +563,14 @@ char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs) {
     while (attrs) {
         UINT8 bit_index = find_first_set(attrs);
 
-        dispatch_table *d = &dtable[bit_index];
+        dispatch_table *d = &table[bit_index];
 
         const char *name = d->name;
         unsigned w = d->width;
 
         /* current position and size left of the string */
         char *s = &str[string_index];
-        size_t left = size - string_index;
+        size_t left = length - string_index;
 
         /* this is a mask that is field width wide */
         UINT8 mask = ((UINT32)1 << w) - 1;
@@ -508,11 +625,10 @@ char *tpm2_nv_util_attrtostr(TPMA_NV nvattrs) {
     return str;
 }
 
-TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
+char *tpm2_attr_util_nv_attrtostr(TPMA_NV nvattrs) {
+    return tpm2_attr_util_common_attrtostr(nvattrs.val, nv_attr_table, ARRAY_LEN(nv_attr_table));
+}
 
-    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    return Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, 0, nv_public,
-            &nv_name, 0);
+char *tpm2_attr_util_obj_attrtostr(TPMA_OBJECT objattrs) {
+    return tpm2_attr_util_common_attrtostr(objattrs.val, obj_attr_table, ARRAY_LEN(obj_attr_table));
 }

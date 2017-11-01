@@ -37,11 +37,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_attr_util.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -169,7 +169,7 @@ static bool on_option(char key, char *value) {
     case 't':
         result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute.val);
         if (!result) {
-            result = tpm2_nv_util_strtoattr(value, &ctx.nvAttribute);
+            result = tpm2_attr_util_nv_strtoattr(value, &ctx.nvAttribute);
             if (!result) {
                 LOG_ERR("Could not convert NV attribute to number or keyword, got: \"%s\"",
                         value);
