@@ -60,7 +60,6 @@ struct tpm_unseal_ctx {
         UINT8 c : 1;
         UINT8 P : 1;
         UINT8 L : 1;
-        UINT8 F : 1;
     } flags;
 };
 
@@ -118,7 +117,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         }
     }
 
-    if (ctx.flags.L && ctx.flags.F) {
+    if (ctx.flags.L) {
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
         TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
@@ -184,7 +183,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'F':
         ctx.raw_pcrs_file = optarg;
-        ctx.flags.F = 1;
         break;
         /* no default */
     }
