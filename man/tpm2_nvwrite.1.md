@@ -20,6 +20,9 @@ If _FILE_ is not specified, it defaults to stdin.
   * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to define the space at.
 
+  * **-o**, **--offset**=_OFFSET_:
+    The offset within the NV index to start writing at.
+
   * **-a**, **--auth-handle**=_SECRET\_DATA\_FILE_:
     specifies the handle used to authorize:
     * **0x40000001** for **TPM_RH_OWNER**
@@ -32,8 +35,16 @@ If _FILE_ is not specified, it defaults to stdin.
   * **-S**, **--input-session-handle**=_SIZE_:
     Optional Input session handle from a policy session for authorization.
 
-  * **-o**, **--offset**=_OFFSET_:
-    The offset within the NV index to start writing at.
+  * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
+
+    The list of pcr banks and selected PCRs' ids.
+    _PCR\_SELECTION\_LIST_ values should follow the
+    pcr bank specifiers standards, see section "PCR Bank Specfiers".
+
+  * **-F**,**--pcr-input-file=_PCR\_INPUT\_FILE_
+
+    Optional Path or Name of the file containing expected pcr values for the specified index.
+    Default is to read the current PCRs per the set list.
 
 [common options](common/options.md)
 

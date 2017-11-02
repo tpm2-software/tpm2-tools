@@ -39,12 +39,15 @@
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
+#include "log.h"
+#include "pcr.h"
+#include "tpm_session.h"
+#include "tpm2_nv_util.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
-#include "log.h"
-#include "files.h"
+#include "tpm2_policy.h"
 #include "tpm2_tool.h"
-#include "tpm2_nv_util.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
@@ -56,6 +59,12 @@ struct tpm_nvwrite_ctx {
     TPMS_AUTH_COMMAND session_data;
     FILE *input_file;
     UINT16 offset;
+    char *raw_pcrs_file;
+    SESSION *policy_session;
+    TPML_PCR_SELECTION pcr_selection;
+    struct {
+        UINT8 L : 1;
+    } flags;
 };
 
 static tpm_nvwrite_ctx ctx = {
@@ -189,6 +198,15 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'L':
+        if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
+            return false;
+        }
+        ctx.flags.L = 1;
+        break;
+    case 'F':
+        ctx.raw_pcrs_file = optarg;
+        break;
     }
 
     return true;
@@ -219,9 +237,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "handle-passwd", required_argument, NULL, 'P' },
         { "input-session-handle",1,          NULL, 'S' },
         { "offset"      , required_argument, NULL, 'o' },
+        {"set-list",       required_argument, NULL, 'L' },
+        {"pcr-input-file", required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("x:a:P:S:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:P:S:o:L:F:", ARRAY_LEN(topts), topts,
             on_option, on_args);
 
     ctx.input_file = stdin;
@@ -234,6 +254,22 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int rc = 1;
+
+    /* set up PCR policy if specified */
+    if (ctx.flags.L) {
+        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+
+        TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
+                                        TPM_SE_POLICY, TPM_ALG_SHA256, ctx.pcr_selection,
+                                        ctx.raw_pcrs_file, &pcr_digest, true,
+                                        tpm2_policy_pcr_build);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Building PCR policy failed: 0x%x", rval);
+            return 1;
+        }
+        ctx.session_data.sessionHandle = ctx.policy_session->sessionHandle;
+        ctx.session_data.sessionAttributes.continueSession = 1;
+    }
 
     /* Suppress error reporting with NULL path */
     unsigned long file_size;
