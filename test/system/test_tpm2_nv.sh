@@ -37,13 +37,18 @@
 large_file_name="nv.test_large_w"
 large_file_read_name="nv.test_large_w"
 
+alg_pcr_policy=sha1
+pcr_ids="0,1,2,3"
+file_pcr_value=pcr.bin
+file_policy=policy.data
+
 cleanup() {
   tpm2_nvrelease -Q -x $nv_test_index -a $nv_auth_handle 2>/dev/null || true
   tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001 2>/dev/null || true
   tpm2_nvrelease -Q -x 0x1500015 -a 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
-        nv.readlock foo.dat cmp.dat
+        nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy
 }
 
 trap cleanup EXIT
@@ -103,15 +108,23 @@ cmp nv.test_w cmp.dat
 
 tpm2_nvrelease -x $nv_test_index -a $nv_auth_handle  
 
-echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
-| xxd -r -p > policy.bin
+tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A -L policy.bin -t "ownerread|ownerwrite|policywrite|policyread"
+tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 
-tpm2_nvlist | grep 0x1500016 -A5 | grep Auth | grep -o ": [a-zA-Z0-9]\{1,\}" | \
-grep -o "[a-zA-Z0-9]\{1\}" | xxd -r -p >test.bin
+tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -L $file_policy -t "policyread|policywrite|authwrite" -I "index"
 
-cmp test.bin policy.bin -s
+# Write with index authorization for now, since tpm2_nvwrite does not support pcr policy.
+echo -n "policy locked" | tpm2_nvwrite -Q -x 0x1500016 -a 0x1500016 -P "index"
+
+str=`tpm2_nvread -x 0x1500016 -a 0x1500016 -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -s 13 | xxd -r`
+
+test "policy locked" == "$str"
+
+# this should fail because authread is not allowed
+trap - ERR
+tpm2_nvread -x 0x1500016 -a 0x1500016 -P "index" 2>/dev/null
+trap onerror ERR
 
 tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 

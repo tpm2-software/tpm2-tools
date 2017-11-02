@@ -36,9 +36,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "pcr.h"
+#include "tpm_session.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "log.h"
+#include "tpm2_policy.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -52,12 +55,17 @@ struct tpm_nvread_ctx {
     UINT32 offset;
     TPMS_AUTH_COMMAND session_data;
     char *output_file;
+    char *raw_pcrs_file;
+    SESSION *policy_session;
+    TPML_PCR_SELECTION pcr_selection;
+    struct {
+        UINT8 L : 1;
+    } flags;
 };
 
 static tpm_nvread_ctx ctx = {
     .auth_handle = TPM_RH_PLATFORM,
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-
 };
 
 static void hexdump(void *ptr, unsigned buflen) {
@@ -86,23 +94,19 @@ static void hexdump(void *ptr, unsigned buflen) {
 
 static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
+
+    TPMS_AUTH_COMMAND *session_data_array[] = {
+        &ctx.session_data
+    };
+    TSS2_SYS_CMD_AUTHS sessions_data = TSS2_SYS_CMD_AUTHS_INIT(session_data_array);
+
+
     TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TPMS_AUTH_RESPONSE *session_data_out_array[] = {
+        &session_data_out
+    };
+    TSS2_SYS_RSP_AUTHS sessions_data_out = TSS2_SYS_RSP_AUTHS_INIT(session_data_out_array);
 
-    TPM2B_MAX_NV_BUFFER nv_data = TPM2B_TYPE_INIT(TPM2B_MAX_NV_BUFFER, buffer);
-
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
-
-    session_data_array[0] = &ctx.session_data;
-    session_data_out_array[0] = &session_data_out;
-
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
 
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
     TPM_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
@@ -147,6 +151,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
         UINT16 bytes_to_read = ctx.size_to_read > MAX_NV_BUFFER_SIZE ?
                         MAX_NV_BUFFER_SIZE : ctx.size_to_read;
+
+        TPM2B_MAX_NV_BUFFER nv_data = TPM2B_TYPE_INIT(TPM2B_MAX_NV_BUFFER, buffer);
 
         rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
                 &sessions_data, bytes_to_read, ctx.offset, &nv_data, &sessions_data_out));
@@ -245,6 +251,16 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'L':
+        if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
+            return false;
+        }
+        ctx.flags.L = 1;
+        break;
+    case 'F':
+        ctx.raw_pcrs_file = optarg;
+        break;
+        /* no default */
     }
     return true;
 }
@@ -259,14 +275,46 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "offset"      , required_argument, NULL, 'o' },
         { "handle-passwd", required_argument, NULL, 'P' },
         { "input-session-handle",1,          NULL, 'S' },
+        {"set-list",       required_argument, NULL, 'L' },
+        {"pcr-input-file", required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("x:a:f:s:o:P:S:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("x:a:f:s:o:P:S:L:F:", ARRAY_LEN(topts),
+            topts, on_option, NULL);
 
     return *opts != NULL;
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    return nv_read(sapi_context, flags) != true;
+    if (ctx.flags.L) {
+        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+
+        TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
+                                        TPM_SE_POLICY, TPM_ALG_SHA256, ctx.pcr_selection,
+                                        ctx.raw_pcrs_file, &pcr_digest, true,
+                                        tpm2_policy_pcr_build);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Building PCR policy failed: 0x%x", rval);
+            return 1;
+        }
+        ctx.session_data.sessionHandle = ctx.policy_session->sessionHandle;
+        ctx.session_data.sessionAttributes.continueSession = 1;
+    }
+
+
+    bool res = nv_read(sapi_context, flags);
+
+    if (ctx.policy_session) {
+        TPM_RC rval = Tss2_Sys_FlushContext(sapi_context,
+                                            ctx.policy_session->sessionHandle);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Failed Flush Context: 0x%x", rval);
+            return 1;
+        }
+
+        tpm_session_auth_end(ctx.policy_session);
+    }
+
+    return res != true;
 }
