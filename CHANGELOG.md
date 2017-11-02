@@ -1,6 +1,7 @@
 ## Changelog
 
 ### next
+  * tpm2_nvwrite and tpm2_nvread have support for satisfying PCR policies.
   * tpm2_encryptdecrypt: has support for EncryptDecrypt2 command.
   * tpm2_nvwrite: -f option removed, support for stdin data supported. Support for starting
       index to write to.
