@@ -40,14 +40,15 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
-#include "tpm2_password_util.h"
-#include "tpm2_util.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_attr_util.h"
 #include "tpm2_errata.h"
+#include "tpm2_options.h"
+#include "tpm2_password_util.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_create_ctx tpm_create_ctx;
 struct tpm_create_ctx {
@@ -56,9 +57,7 @@ struct tpm_create_ctx {
     TPM2B_PUBLIC in_public;
     TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
-    bool is_policy_enforced;
     TPMI_DH_OBJECT parent_handle;
-    UINT32 objectAttributes;
     char *opu_path;
     char *opr_path;
     char *context_parent_path;
@@ -77,17 +76,26 @@ struct tpm_create_ctx {
     } flags;
 };
 
+#define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
+    .t = { \
+        .publicArea = { \
+            .objectAttributes = { \
+                .val = TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM \
+                      |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN| \
+					  TPMA_OBJECT_USERWITHAUTH \
+            }, \
+        }, \
+    }, \
+}
+
 static tpm_create_ctx ctx = {
     .session_data = {
         .sessionHandle = TPM_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     },
-    .in_sensitive = TPM2B_EMPTY_INIT,
-    .in_public = TPM2B_EMPTY_INIT,
     .type = TPM_ALG_SHA1,
     .nameAlg = TPM_ALG_RSA,
+    .in_public = PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT
 };
 
 int setup_alg()
@@ -105,17 +113,6 @@ int setup_alg()
         LOG_ERR("nameAlg algrithm: 0x%0x not support !", ctx.nameAlg);
         return -1;
     }
-
-    // First clear attributes bit field.
-    *(UINT32 *)&(ctx.in_public.t.publicArea.objectAttributes) = 0;
-    ctx.in_public.t.publicArea.objectAttributes.restricted = 0;
-    //check if auth policy needs to be enforced
-    ctx.in_public.t.publicArea.objectAttributes.userWithAuth = !ctx.is_policy_enforced;
-    ctx.in_public.t.publicArea.objectAttributes.decrypt = 1;
-    ctx.in_public.t.publicArea.objectAttributes.sign = 1;
-    ctx.in_public.t.publicArea.objectAttributes.fixedTPM = 1;
-    ctx.in_public.t.publicArea.objectAttributes.fixedParent = 1;
-    ctx.in_public.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
 
     ctx.in_public.t.publicArea.type = ctx.type;
     switch(ctx.type) {
@@ -203,8 +200,6 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     if(setup_alg())
         return -1;
 
-    if(ctx.flags.A == 1)
-        ctx.in_public.t.publicArea.objectAttributes.val = ctx.objectAttributes;
     tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.t.publicArea.objectAttributes.val);
 
     creationPCR.count = 0;
@@ -279,13 +274,15 @@ static bool on_option(char key, char *value) {
 
         ctx.flags.G = 1;
         break;
-    case 'A':
-        if(!tpm2_util_string_to_uint32(value, &ctx.objectAttributes)) {
+    case 'A': {
+        bool res = tpm2_attr_util_obj_from_optarg(value,
+                &ctx.in_public.t.publicArea.objectAttributes);
+        if(!res) {
             LOG_ERR("Invalid object attribute, got\"%s\"", value);
             return false;
         }
         ctx.flags.A = 1;
-        break;
+    } break;
     case 'I':
         ctx.in_sensitive.t.sensitive.data.t.size = sizeof(ctx.in_sensitive.t.sensitive.data) - 2;
         if (!strcmp(optarg, "-")) {
@@ -313,9 +310,6 @@ static bool on_option(char key, char *value) {
                     value);
             return false;
         }
-        break;
-    case 'E':
-        ctx.is_policy_enforced = true;
         break;
     case 'u':
         ctx.opu_path = value;
@@ -354,7 +348,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"object-attributes",1,NULL,'A'},
       {"in-file",1,NULL,'I'},
       {"policy-file",1,NULL,'L'},
-      {"enforce-policy",0,NULL,'E'},
       {"pubfile",1,NULL,'u'},
       {"privfile",1,NULL,'r'},
       {"context-parent",1,NULL,'c'},
@@ -365,7 +358,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    *opts = tpm2_options_new("H:P:K:g:G:A:I:L:u:r:c:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("H:P:K:g:G:A:I:L:u:r:c:S:", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }
