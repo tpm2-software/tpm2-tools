@@ -46,7 +46,10 @@ These options for creating the tpm entity:
     of supported object algorithms.
 
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
-    The object attributes, optional.
+    The object attributes, optional. Object attribytes follow the specifications
+    as outlined in "object attribute specifiers". The default for created objects is:
+
+    `TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
 
   * **-I**, **--in-file**=_FILE_:
     The data file to be sealed, optional. If file is -, read from stdin.
@@ -54,9 +57,6 @@ These options for creating the tpm entity:
 
   * **-L**, **--policy-file**=_POLICY\_FILE_:
     The input policy file, optional.
-
-  * **-E**, **--enforce-policy**:
-    Enforce policy based authorization on the object.
 
   * **-u**, **--pubfile**=_OUTPUT\_PUBLIC\_FILE_:
     The output file which contains the public portion of the created object, optional.
@@ -78,6 +78,8 @@ These options for creating the tpm entity:
 [supported public object algorithms](common/object-alg.md)
 
 [algorithm specifiers](common/alg.md)
+
+[object attribute specifiers](common/object-attrs.md)
 
 # EXAMPLES
 
