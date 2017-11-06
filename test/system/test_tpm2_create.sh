@@ -67,7 +67,8 @@ cleanup keep_context
 echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
 | xxd -r -p > policy.bin
 
-tpm2_create -Q -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv -E
+tpm2_create -Q -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv \
+  -A 'sign|fixedtpm|fixedparent|sensitivedataorigin'
 
 cmp -i 14:0 -n 32 key.pub policy.bin -s
 
