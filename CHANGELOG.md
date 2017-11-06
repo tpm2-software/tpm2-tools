@@ -1,6 +1,10 @@
 ## Changelog
 
 ### next
+  * tpm2_listpersistent: output friendly object attributes.
+  * tpm2_createprimary: support friendly object attributes via -A. -H becomes auth
+    hierarchy.
+  * tpm2_create: support friendly object attributes via -A.
   * tpm2_nvwrite and tpm2_nvread have support for satisfying PCR policies.
   * tpm2_encryptdecrypt: has support for EncryptDecrypt2 command.
   * tpm2_nvwrite: -f option removed, support for stdin data supported. Support for starting
