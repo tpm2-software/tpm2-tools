@@ -632,3 +632,13 @@ char *tpm2_attr_util_nv_attrtostr(TPMA_NV nvattrs) {
 char *tpm2_attr_util_obj_attrtostr(TPMA_OBJECT objattrs) {
     return tpm2_attr_util_common_attrtostr(objattrs.val, obj_attr_table, ARRAY_LEN(obj_attr_table));
 }
+
+bool tpm2_attr_util_obj_from_optarg(char *argvalue, TPMA_OBJECT *objattrs) {
+
+    bool res = tpm2_util_string_to_uint32(argvalue, &objattrs->val);
+    if (!res) {
+        res = tpm2_attr_util_obj_strtoattr(argvalue, objattrs);
+    }
+
+    return res;
+}

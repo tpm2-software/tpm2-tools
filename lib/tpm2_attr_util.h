@@ -63,6 +63,19 @@ bool tpm2_attr_util_nv_strtoattr(char *attribute_list, TPMA_NV *nvattrs);
 bool tpm2_attr_util_obj_strtoattr(char *attribute_list, TPMA_OBJECT *objattrs);
 
 /**
+ * Converts a numerical or friendly string described object attribute into the
+ * TPMA_OBJECT. Similar to tpm2_alg_util_from_optarg().
+ * @param argvalue
+ *  Either a raw numeric for a UINT32 or a friendly name object attribute list
+ *  as in tpm2_attr_util_nv_strtoattr().
+ * @param objattrs
+ *  The converted bits for a TPMA_OBJECT
+ * @return
+ *  true on success or false on error.
+ */
+bool tpm2_attr_util_obj_from_optarg(char *argvalue, TPMA_OBJECT *objattrs);
+
+/**
  * Converts a TPMA_NV structure to a friendly name style string.
  * @param nvattrs
  *  The nvattrs to convert to nice name.
