@@ -60,7 +60,7 @@ echo "12345678" > secret.dat
 
 tpm2_takeownership -Q -c
 
-tpm2_createprimary -Q -A e -g sha1 -G rsa -C primary.ctx
+tpm2_createprimary -Q -H e -g sha1 -G rsa -C primary.ctx
 
 tpm2_create -Q -g sha256 -G symcipher -u key.pub -r key.priv -c primary.ctx
 

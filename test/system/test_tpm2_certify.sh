@@ -47,7 +47,7 @@ cleanup
 
 tpm2_takeownership -Q -c
 
-tpm2_createprimary -Q -A e -g sha256 -G rsa -C primary.ctx
+tpm2_createprimary -Q -H e -g sha256 -G rsa -C primary.ctx
 
 tpm2_create -Q -g sha256 -G rsa -u certify.pub -r certify.priv  -c primary.ctx
 
