@@ -65,7 +65,7 @@ cleanup
 
 tpm2_takeownership -c
 
-tpm2_createprimary -Q -A e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -c $file_primary_key_ctx
 
