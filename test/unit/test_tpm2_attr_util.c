@@ -356,6 +356,22 @@ static void test_tpm2_attr_util_obj_strtoattr_token_unknown(void **state) {
     res = tpm2_attr_util_obj_strtoattr(arg1, &objattrrs);
     assert_false(res);
 }
+
+static void test_tpm2_attr_util_obj_from_optarg_good(void **state) {
+    (void) state;
+
+    TPMA_OBJECT objattrs = { .val = 0, };
+    bool res = tpm2_attr_util_obj_from_optarg("0x00000002", &objattrs);
+    assert_true(res);
+    assert_int_equal(0x02, objattrs.val);
+
+    objattrs.val = 0;
+    char buf[] = "fixedtpm";
+    res = tpm2_attr_util_obj_from_optarg(buf, &objattrs);
+    assert_true(res);
+    assert_int_equal(TPMA_OBJECT_FIXEDTPM, objattrs.val);
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -464,6 +480,9 @@ int main(int argc, char* argv[]) {
 
             /* negative tests */
             cmocka_unit_test(test_tpm2_attr_util_obj_strtoattr_token_unknown),
+
+            /* test from an optarg */
+            cmocka_unit_test(test_tpm2_attr_util_obj_from_optarg_good)
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
