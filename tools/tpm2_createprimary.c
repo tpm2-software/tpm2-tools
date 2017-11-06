@@ -41,26 +41,24 @@
 #include <sapi/tpm20.h>
 #include <tcti/tcti_socket.h>
 
+#include "files.h"
+#include "log.h"
+#include "tpm2_alg_util.h"
+#include "tpm2_attr_util.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
-#include "log.h"
-#include "tpm2_util.h"
-#include "files.h"
-#include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
-
-TPM_HANDLE handle2048rsa;
+#include "tpm2_util.h"
 
 typedef struct tpm_createprimary_ctx tpm_createprimary_ctx;
 struct tpm_createprimary_ctx {
     TPMS_AUTH_COMMAND session_data;
     TPM2B_SENSITIVE_CREATE inSensitive;
     TPM2B_PUBLIC in_public;
-    TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
     TPMI_RH_HIERARCHY hierarchy;
-    bool is_policy_enforced;
     char *context_file;
+    TPM_HANDLE handle2048rsa;
     struct {
         UINT8 A : 1;
         UINT8 g : 1;
@@ -68,6 +66,19 @@ struct tpm_createprimary_ctx {
         UINT8 C : 1;
     } flags;
 };
+
+#define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
+    .t = { \
+        .publicArea = { \
+            .type = TPM_ALG_RSA, \
+            .objectAttributes = { \
+                .val = TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT \
+                |TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT \
+				|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH \
+            }, \
+        }, \
+    }, \
+}
 
 static tpm_createprimary_ctx ctx = {
     .session_data = {
@@ -77,11 +88,9 @@ static tpm_createprimary_ctx ctx = {
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     },
     .inSensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT,
-    .in_public = TPM2B_EMPTY_INIT,
-    .type = TPM_ALG_RSA,
+    .in_public = PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT,
     .nameAlg = TPM_ALG_SHA1,
     .hierarchy = TPM_RH_NULL,
-    .is_policy_enforced = false
 };
 
 int setup_alg(void) {
@@ -96,22 +105,11 @@ int setup_alg(void) {
         ctx.in_public.t.publicArea.nameAlg = ctx.nameAlg;
         break;
     default:
-        LOG_ERR("nameAlg algrithm: 0x%0x not support !", ctx.nameAlg);
+        LOG_ERR("nameAlg algorithm: 0x%0x not support !", ctx.nameAlg);
         return -1;
     }
 
-    // First clear attributes bit field.
-    *(UINT32 *)&(ctx.in_public.t.publicArea.objectAttributes) = 0;
-    ctx.in_public.t.publicArea.objectAttributes.restricted = 1;
-    //check if auth policy needs to be enforced
-    ctx.in_public.t.publicArea.objectAttributes.userWithAuth = !ctx.is_policy_enforced;
-    ctx.in_public.t.publicArea.objectAttributes.decrypt = 1;
-    ctx.in_public.t.publicArea.objectAttributes.fixedTPM = 1;
-    ctx.in_public.t.publicArea.objectAttributes.fixedParent = 1;
-    ctx.in_public.t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    ctx.in_public.t.publicArea.type = ctx.type;
-
-    switch(ctx.type) {
+    switch(ctx.in_public.t.publicArea.type) {
     case TPM_ALG_RSA:
         ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
         ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
@@ -148,7 +146,7 @@ int setup_alg(void) {
         break;
 
     default:
-        LOG_ERR("type algrithm: 0x%0x not support !", ctx.type);
+        LOG_ERR("type algrithm: 0x%0x not support !", ctx.in_public.t.publicArea.type);
         return -2;
     }
     return 0;
@@ -190,14 +188,14 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, ctx.hierarchy, &sessionsData,
                                   &ctx.inSensitive, &ctx.in_public, &outsideInfo, &creationPCR,
-                                  &handle2048rsa, &outPublic, &creationData, &creationHash,
+                                  &ctx.handle2048rsa, &outPublic, &creationData, &creationHash,
                                   &creationTicket, &name, &sessionsDataOut));
     if(rval != TPM_RC_SUCCESS) {
         LOG_ERR("\nCreatePrimary Failed ! ErrorCode: 0x%0x\n", rval);
         return -2;
     }
 
-    tpm2_tool_output("\nCreatePrimary Succeed ! Handle: 0x%8.8x\n\n", handle2048rsa);
+    tpm2_tool_output("\nCreatePrimary Succeed ! Handle: 0x%8.8x\n\n", ctx.handle2048rsa);
 
     return 0;
 }
@@ -207,7 +205,7 @@ static bool on_option(char key, char *value) {
     bool res;
 
     switch(key) {
-    case 'A':
+    case 'H':
         if(strcmp(value, "o") == 0 || strcmp(value, "O") == 0)
             ctx.hierarchy = TPM_RH_OWNER;
         else if(strcmp(value, "p") == 0 || strcmp(value, "P") == 0)
@@ -245,8 +243,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.g = 1;
         break;
     case 'G':
-        ctx.type = tpm2_alg_util_from_optarg(value);
-        if(ctx.type == TPM_ALG_ERROR) {
+        ctx.in_public.t.publicArea.type = tpm2_alg_util_from_optarg(value);
+        if(ctx.in_public.t.publicArea.type == TPM_ALG_ERROR) {
             LOG_ERR("Invalid key algorithm, got\"%s\"", value);
             return false;
         }
@@ -266,9 +264,14 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'E':
-        ctx.is_policy_enforced = true;
-        break;
+    case 'A': {
+        bool res = tpm2_attr_util_obj_from_optarg(value,
+                &ctx.in_public.t.publicArea.objectAttributes);
+        if(!res) {
+            LOG_ERR("Invalid object attribute, got\"%s\"", value);
+            return false;
+        }
+    } break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
@@ -284,14 +287,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      {"auth",1,NULL,'A'},
+      {"hierarchy", required_argument, NULL, 'H'},
       {"pwdp",1,NULL,'P'},
       {"pwdk",1,NULL,'K'},
       {"halg",1,NULL,'g'},
       {"kalg",1,NULL,'G'},
       {"context",1,NULL,'C'},
       {"policy-file",1,NULL,'L'},
-      {"enforce-policy",1,NULL,'E'},
+      {"object-attributes", required_argument, NULL, 'A'},
       {"input-session-handle",1,NULL,'S'},
       {0,0,0,0}
     };
@@ -299,7 +302,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    *opts = tpm2_options_new("A:P:K:g:G:C:L:S:E", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("A:P:K:g:G:C:L:S:H:", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }
@@ -313,7 +316,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         returnVal = create_primary(sapi_context);
 
         if (returnVal == 0 && ctx.flags.C) {
-            returnVal = files_save_tpm_context_to_file(sapi_context, handle2048rsa,
+            returnVal = files_save_tpm_context_to_file(sapi_context, ctx.handle2048rsa,
                                                        ctx.context_file) != true;
         }
 

@@ -20,7 +20,7 @@ will create and load a Primary Object. The sensitive area is not returned.
 
 # OPTIONS
 
-  * **-A**, **--auth**=_HIERARCHY_:
+  * **-H**, **--hierarchy**=_HIERARCHY_:
     Specify the hierarchy under which the object is created. This will also dictate which authorization secret (if any) must be supplied.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
@@ -53,8 +53,11 @@ will create and load a Primary Object. The sensitive area is not returned.
   * **-L**, **--policy-file**=_POLICY\_FILE_:
     An optional file input that contains the policy digest for policy based authorization of the object.
 
-  * **-E**, **--enforce-policy**:
-    Option to enforce policy based authorization on the created primary object.
+  * **-A**, **--object-attributes**=_ATTRIBUTES_:
+    The object attributes, optional. Object attribytes follow the specifications
+    as outlined in "object attribute specifiers". The default for created objects is:
+
+    `TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
 
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
@@ -71,10 +74,12 @@ will create and load a Primary Object. The sensitive area is not returned.
 
 [algorithm specifiers](common/alg.md)
 
+[object attribute specifiers](common/object-attrs.md)
+
 # EXAMPLES
 
 ```
-tpm2_createprimary -A o -g sha256 -G ecc -C context.out
+tpm2_createprimary -H o -g sha256 -G ecc -C context.out
 ```
 
 # RETURNS
