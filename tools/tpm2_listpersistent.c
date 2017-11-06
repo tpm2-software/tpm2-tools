@@ -38,10 +38,12 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
+
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_attr_util.h"
+#include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -103,15 +105,27 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
 
     TPMI_ALG_PUBLIC type = outPublic.t.publicArea.type;
     TPMI_ALG_HASH nameAlg = outPublic.t.publicArea.nameAlg;
-    UINT32 attrs = outPublic.t.publicArea.objectAttributes.val;
+    char *attrs = tpm2_attr_util_obj_attrtostr(
+            outPublic.t.publicArea.objectAttributes);
+    char *attrbuf = attrs;
+    if (!attrs) {
+        LOG_WARN("Could not convert objectAttributes, converting to hex output");
+        char tmp[11]; /* UINT32 in hex (8) + "0x" + '\0' */
+        snprintf(tmp, sizeof(tmp), "0x%x", outPublic.t.publicArea.objectAttributes.val);
+        attrbuf = tmp;
+    }
 
     if ((ctx.type != TPM_ALG_NULL && ctx.type != type) ||
-        (ctx.nameAlg != TPM_ALG_NULL && ctx.nameAlg != nameAlg))
-        return 0;
+        (ctx.nameAlg != TPM_ALG_NULL && ctx.nameAlg != nameAlg)) {
+        goto out;
+    }
 
-    tpm2_tool_output("persistent-handle[%d]:0x%x key-alg:%s hash-alg:%s object-attr:0x%x\n",
+    tpm2_tool_output("persistent-handle[%d]:0x%x key-alg:%s hash-alg:%s object-attr:%s\n",
                      ctx.count++, objectHandle, tpm2_alg_util_algtostr(type),
-                     tpm2_alg_util_algtostr(nameAlg), attrs);
+                     tpm2_alg_util_algtostr(nameAlg), attrbuf);
+
+out:
+    free(attrs);
 
     return 0;
 }
