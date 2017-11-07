@@ -120,11 +120,24 @@ void tpm2_errata_fixup(tpm2_errata_index_t index, ...) {
 
     struct tpm2_errata_desc *errata;
 
+    /*
+     * There was no match against the TPMs details to a
+     * known errata.
+     */
+    if (!this_errata_info) {
+        return;
+    }
+
+    /* Look up what errata the caller wants us to fix. */
     errata = errata_query(index);
     if (!errata) {
         return;
     }
 
+    /*
+     * Check to see if that errata matches the tpm's
+     * information and thus needs to be applied.
+     */
     bool res = errata_match(errata);
     if (res == false) {
         return;
@@ -217,11 +230,6 @@ static void fixup_sign_decrypt_attribute_encoding(va_list *ap) {
 
 static bool errata_match(struct tpm2_errata_desc *errata) {
 
-    if (!this_errata_info) {
-        LOG_ERR("Unrecognized TPM_SPEC for errata check");
-        return false;
-    }
-
     return errata->errata_ver > this_errata_info->errata_ver &&
            errata->spec_rev >= this_errata_info->spec_rev &&
            errata->spec_level == this_errata_info->spec_level;
@@ -230,7 +238,7 @@ static bool errata_match(struct tpm2_errata_desc *errata) {
 static struct tpm2_errata_desc *errata_query(tpm2_errata_index_t index) {
 
     if ((size_t)index >= ARRAY_LEN(errata_desc_list)) {
-        LOG_ERR("Invalid errata index queried: %u", (unsigned int)index);
+        LOG_WARN("Invalid errata index queried: %u", (unsigned int)index);
         return NULL;
     }
 
