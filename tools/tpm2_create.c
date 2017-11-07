@@ -29,14 +29,14 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
-
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
-#include <stdbool.h>
 
 #include <sapi/tpm20.h>
 
@@ -58,6 +58,7 @@ struct tpm_create_ctx {
     TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
     TPMI_DH_OBJECT parent_handle;
+    char *input;
     char *opu_path;
     char *opr_path;
     char *context_parent_path;
@@ -114,8 +115,7 @@ int setup_alg()
         return -1;
     }
 
-    ctx.in_public.t.publicArea.type = ctx.type;
-    switch(ctx.type) {
+    switch(ctx.in_public.t.publicArea.type) {
     case TPM_ALG_RSA:
         ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
         ctx.in_public.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
@@ -160,7 +160,7 @@ int setup_alg()
         break;
 
     default:
-        LOG_ERR("type algrithm: 0x%0x not support !", ctx.type);
+        LOG_ERR("type algrithm: 0x%0x not support !", ctx.in_public.t.publicArea.type);
         return -2;
     }
     return 0;
@@ -266,8 +266,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.g = 1;
         break;
     case 'G':
-        ctx.type = tpm2_alg_util_from_optarg(value);
-        if(ctx.type == TPM_ALG_ERROR) {
+        ctx.in_public.t.publicArea.type = tpm2_alg_util_from_optarg(value);
+        if(ctx.in_public.t.publicArea.type == TPM_ALG_ERROR) {
             LOG_ERR("Invalid key algorithm, got\"%s\"", value);
             return false;
         }
@@ -284,16 +284,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.A = 1;
     } break;
     case 'I':
-        ctx.in_sensitive.t.sensitive.data.t.size = sizeof(ctx.in_sensitive.t.sensitive.data) - 2;
-        if (!strcmp(optarg, "-")) {
-            if (!files_load_bytes_from_stdin(ctx.in_sensitive.t.sensitive.data.t.buffer,
-                                             &ctx.in_sensitive.t.sensitive.data.t.size)) {
-                return false;
-            }
-        } else if(!files_load_bytes_from_path(value, ctx.in_sensitive.t.sensitive.data.t.buffer,
-                                              &ctx.in_sensitive.t.sensitive.data.t.size)) {
-            return false;
-        }
+        ctx.input = value;
         ctx.flags.I = 1;
         break;
     case 'L':
@@ -305,7 +296,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.L = 1;
         break;
     case 'S':
-        if (!tpm2_util_string_to_uint32(optarg, &ctx.session_data.sessionHandle)) {
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                     value);
             return false;
@@ -326,7 +317,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.O = 1;
         break;
     case 'c':
-        ctx.context_parent_path = optarg;
+        ctx.context_parent_path = value;
         if(ctx.context_parent_path == NULL || ctx.context_parent_path[0] == '\0') {
             return false;
         }
@@ -363,6 +354,50 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
+static bool load_sensitive(void) {
+
+    bool is_stdin = !strcmp(ctx.input, "-");
+    FILE *file =  !is_stdin ? fopen(ctx.input, "rb") : stdin;
+    char *path = !is_stdin ? ctx.input : "<stdin>";
+    if (!file) {
+        LOG_ERR("Could not open file: \"%s\", error: %s", path, strerror(errno));
+        return false;
+    }
+
+    /*
+     * Attempt to accurately read the file based on the file size.
+     * This may fail on stdin when it's a pipe.
+     */
+    if (is_stdin) {
+        path = NULL;
+    }
+
+    ctx.in_sensitive.t.sensitive.data.t.size = BUFFER_SIZE(typeof(ctx.in_sensitive.t.sensitive.data), buffer);
+    bool res = files_load_bytes_from_file(file, ctx.in_sensitive.t.sensitive.data.t.buffer,
+            &ctx.in_sensitive.t.sensitive.data.t.size, path);
+
+    if (!res) {
+        res = true;
+        ctx.in_sensitive.t.sensitive.data.t.size = fread(ctx.in_sensitive.t.sensitive.data.t.buffer, 1,
+                ctx.in_sensitive.t.sensitive.data.t.size, file);
+        if (!feof(file)) {
+            LOG_ERR("Data to be sealed larger than expected. Got %u expected %u",
+                    ctx.in_sensitive.t.sensitive.data.t.size, res);
+            res = false;
+        }
+        else if (ferror(file)) {
+            LOG_ERR("Error reading sealed data from \"<stdin>\"");
+            res = false;
+        }
+    }
+
+    if (!is_stdin) {
+        fclose(file);
+    }
+
+    return res;
+}
+
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
@@ -373,17 +408,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if(ctx.flags.P == 0)
         ctx.session_data.hmac.t.size = 0;
 
-    if(ctx.flags.I == 0) {
-        ctx.in_sensitive.t.sensitive.data.t.size = 0;
-    } else if (ctx.type != TPM_ALG_KEYEDHASH) {
+    if (ctx.flags.I) {
+        bool res = load_sensitive();
+        if (!res) {
+            return 1;
+        }
+    }
+
+    if (ctx.flags.I && ctx.in_public.t.publicArea.type != TPM_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM_ALG_KEYEDHASH algorithm is allowed when sealing data");
         return 1;
     }
-
-    if(ctx.flags.K == 0)
-        ctx.in_sensitive.t.sensitive.userAuth.t.size = 0;
-    if(ctx.flags.L == 0)
-        ctx.in_public.t.publicArea.authPolicy.t.size = 0;
 
     flagCnt = ctx.flags.H + ctx.flags.g + ctx.flags.G + ctx.flags.c;
     if(flagCnt == 1) {
