@@ -72,7 +72,7 @@ tpm2_takeownership -c
 
 tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv  -I $file_input_data -c $file_primary_key_ctx
+tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I $file_input_data -c $file_primary_key_ctx
 
 tpm2_load -Q -c $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -C $file_unseal_key_ctx
 
@@ -80,7 +80,19 @@ tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
-# Test using a PCR policy for auth
+# Test -I using stdin via pipe
+
+rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
+
+cat $file_input_data | tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx
+
+tpm2_load -Q -c $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -C $file_unseal_key_ctx
+
+tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
+
+cmp -s $file_unseal_output_data $file_input_data
+
+# Test using a PCR policy for auth and use file based stdin for -I
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
 
