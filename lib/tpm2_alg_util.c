@@ -351,7 +351,7 @@ UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
         if (!buffer) {
             goto nomem;
         }
-        memcpy(buffer, &hmac_sig->na, *size);
+        memcpy(buffer, &hmac_sig, *size);
         break;
     }
     case TPM2_ALG_ECDSA: {
