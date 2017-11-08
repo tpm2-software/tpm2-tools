@@ -100,7 +100,7 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
     /* If we can get the file size and its less than 1024, just do it in one hash invocation */
     if (res && file_size <= BUFFER_SIZE(TPM2B_EVENT, buffer)) {
 
-        TPM2B_EVENT buffer = TPM2B_INIT(file_size);
+        TPM2B_EVENT buffer = TPM2B_INIT_SIZE(file_size);
 
         res = files_read_bytes(ctx.input, buffer.t.buffer, buffer.t.size);
         if (!res) {
