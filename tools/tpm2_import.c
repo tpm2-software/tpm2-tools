@@ -91,7 +91,7 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .input_key_file = NULL, 
     .parent_key_handle = 0,
-    .parent_public_key = TPM2B_INIT(MAX_RSA_KEY_BYTES),
+    .parent_public_key = TPM2B_INIT_SIZE(MAX_RSA_KEY_BYTES),
     .import_key_public = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea),
     .import_key_public_name = TPM2B_TYPE_INIT(TPM2B_NAME, name),
     .import_key_private = TPM2B_EMPTY_INIT,
@@ -348,7 +348,7 @@ static void create_import_key_sensitive_data(void) {
 static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(void) {
 
     TPM2B null_2b = { .size = 0 };
-    TPM2B_DIGEST to_TPM2B_seed = TPM2B_INIT(SHA256_DIGEST_SIZE);
+    TPM2B_DIGEST to_TPM2B_seed = TPM2B_INIT_SIZE(SHA256_DIGEST_SIZE);
     memcpy(to_TPM2B_seed.t.buffer, ctx.protection_seed_data,
             SHA256_DIGEST_SIZE); //max digest size
     TPM2B_MAX_BUFFER result_key;
@@ -474,7 +474,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     };
 
     TPM2B_PRIVATE importPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
-    TPM2B_ENCRYPTED_SECRET enc_inp_seed = TPM2B_INIT(MAX_RSA_KEY_BYTES);
+    TPM2B_ENCRYPTED_SECRET enc_inp_seed = TPM2B_INIT_SIZE(MAX_RSA_KEY_BYTES);
 
     memcpy(enc_inp_seed.t.secret, ctx.encrypted_protection_seed_data,
             MAX_RSA_KEY_BYTES);
