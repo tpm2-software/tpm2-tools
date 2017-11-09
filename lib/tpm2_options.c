@@ -338,6 +338,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         }
     /* have args and no handler, error condition */
     } else if (tool_argc && !tool_opts->callbacks.on_arg) {
+        LOG_ERR("Got arguments but the tool takes no arguments");
         goto out;
     }
 
