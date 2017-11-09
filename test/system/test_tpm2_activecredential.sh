@@ -38,7 +38,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-    rm -f secret.data ek.pub ak.pub ak.name mkcred.out actcred.out
+    rm -f secret.data ek.pub ak.pub ak.name mkcred.out actcred.out ak.out
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -53,11 +53,21 @@ echo "12345678" > secret.data
 
 tpm2_getpubek -Q -H 0x81010009 -g rsa -f ek.pub
 
-tpm2_getpubak -Q -E 0x81010009 -k 0x8101000a -g rsa -D sha256 -s rsassa -f ak.pub -n ak.name
+tpm2_getpubak -E 0x81010009 -k 0x8101000a -g rsa -D sha256 -s rsassa -f ak.pub -n ak.name > ak.out
+
+# Capture the yaml output and verify that its the same as the name output
+loaded_key_name_yaml=`python << pyscript
+import yaml
+with open('ak.out', 'r') as f:
+    doc = yaml.load(f)
+    print doc['loaded-key']['name']
+pyscript`
 
 # Use -c in xxd so there is no line wrapping
 file_size=`stat --printf="%s" ak.name`
 loaded_key_name=`cat ak.name | xxd -p -c $file_size`
+
+test "$loaded_key_name_yaml" == "$loaded_key_name"
 
 tpm2_makecredential -Q -e ek.pub  -s secret.data -n $loaded_key_name -o mkcred.out
 
