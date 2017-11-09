@@ -48,6 +48,27 @@ cleanup() {
 }
 trap cleanup EXIT
 
+function yaml_get() {
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$1", 'r') as stream:
+
+    try:
+        y = yaml.load(stream)
+        alg = y["$2"]
+        value = alg[$3]
+        print(value)
+    except yaml.YAMLError as exc:
+        sys.exit(exc)
+
+    sys.exit(0)
+pyscript
+}
 cleanup
 
 echo "T0naX0u123abc" > $hash_in_file
@@ -77,14 +98,14 @@ for l in `cat $hash_out_file`; do
 done;
 
 tpm2_pcrlist -L sha1:9 --format=yaml > $yaml_out_file
-old_pcr_value=`./yaml_get.py sha1 9 $yaml_out_file`
+old_pcr_value=`yaml_get $yaml_out_file sha1 9`
 
 # Verify that extend works, and test large files
 dd if=/dev/urandom of=$hash_in_file count=1 bs=2093 2> /dev/null
 tpm2_pcrevent -Q -i 9 $hash_in_file
 
 tpm2_pcrlist -L sha1:9 --format=yaml > $yaml_out_file
-new_pcr_value=`./yaml_get.py sha1 9 $yaml_out_file`
+new_pcr_value=`yaml_get $yaml_out_file sha1 9`
 
 if [ "$new_pcr_value" == "$old_pcr_value" ]; then
   echo "Expected PCR value to change after pcrevent with index 9."
