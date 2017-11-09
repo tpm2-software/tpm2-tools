@@ -340,10 +340,12 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     tpm2_tool_output("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
     // write name to ak.name file
-    result = files_save_bytes_to_file(ctx.akname_file, &name.name[0], name.size);
-    if (!result) {
-        LOG_ERR("Failed to save AK name into file \"%s\"", ctx.akname_file);
-        return false;
+    if (ctx.akname_file) {
+        result = files_save_bytes_to_file(ctx.akname_file, &name.name[0], name.size);
+        if (!result) {
+            LOG_ERR("Failed to save AK name into file \"%s\"", ctx.akname_file);
+            return false;
+        }
     }
 
     // Need to flush the session here.
