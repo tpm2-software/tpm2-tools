@@ -36,6 +36,16 @@
 #include <sapi/tpm20.h>
 
 /**
+ * Add definitions for algorithms that are not defined in tpm2-tss 1.x version
+ */
+#define  TPM_ALG_ECMQV               0x001D
+#define  TPM_ALG_KDF2                0x0021
+#define  TPM_ALG_CAMELLIA            0x0026
+#define  TPM_ALG_SHA3_256            0x0027
+#define  TPM_ALG_SHA3_384            0x0028
+#define  TPM_ALG_SHA3_512            0x0029
+
+/**
  * Iterator callback routine for iterating over known algorithm name and value
  * pairs.
  * @param id
