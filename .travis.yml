@@ -64,12 +64,12 @@ install:
     - sudo dpkg -i libcmocka0_1.0.1-2_amd64.deb
     - sudo dpkg -i libcmocka-dev_1.0.1-2_amd64.deb
     # openssl 1.0.2g
-    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu4.6_amd64.deb
-    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_1.0.2g-1ubuntu4.6_amd64.deb
-    - sha256sum libssl1.0.0_1.0.2g-1ubuntu4.6_amd64.deb | grep -q b858321c5858533399320fc2d849962c25288fe17f545dc4fb3ce99630cea5fe
-    - sha256sum libssl-dev_1.0.2g-1ubuntu4.6_amd64.deb | grep -q e4ad54c12aaf88d65c04eaccf1e07baf81ab3d14acf7e118137e8b1e10bdd06b
-    - sudo dpkg -i libssl1.0.0_1.0.2g-1ubuntu4.6_amd64.deb
-    - sudo dpkg -i libssl-dev_1.0.2g-1ubuntu4.6_amd64.deb
+    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu4.9_amd64.deb
+    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_1.0.2g-1ubuntu4.9_amd64.deb
+    - sha256sum libssl1.0.0_1.0.2g-1ubuntu4.9_amd64.deb | grep -q 6bb092abbd6f7bfc6d6fff951b7e5d4fc53922d5ae05046a9d070657d4137679
+    - sha256sum libssl-dev_1.0.2g-1ubuntu4.9_amd64.deb | grep -q 3b5b6b97d7ea5b5d5da1696d102986af77c4877dc985ef30c2b5dc117e9d89f6
+    - sudo dpkg -i libssl1.0.0_1.0.2g-1ubuntu4.9_amd64.deb
+    - sudo dpkg -i libssl-dev_1.0.2g-1ubuntu4.9_amd64.deb
 
 script:
     - ./.ci/travis-build-and-run-tests.sh
