@@ -54,7 +54,7 @@ return pub AK and AK name. If any passwd option is missing, assume NULL.
     specification.
 
   * **-n**, **--ak-name**=_NAME_:
-    Specifies the file used to save the ak name.
+    Specifies the file used to save the ak name, optional.
 
 [common options](common/options.md)
 
