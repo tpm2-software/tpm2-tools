@@ -56,7 +56,6 @@ file_hash_result=hash.result
 file_sig_base=hash.sig
 alg_hash=sha256
 
-file_quote_combined=quote.out
 file_quote_msg=quote.msg
 file_quote_sig_base=quote.sig
 
@@ -70,7 +69,7 @@ cleanup() {
     rm -f "$file_pubek_base".*
     rm -f "$file_pubak_tss" "$file_pubak_name" "$file_pubak_pem"
     rm -f "$file_hash_ticket" "$file_hash_result" "$file_sig_base".*
-    rm -f "$file_quote_msg" "$file_quote_combined" "$file_quote_sig_base".*
+    rm -f "$file_quote_msg" "$file_quote_sig_base".*
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -115,7 +114,7 @@ done
 
 for fmt in tss plain; do
     this_sig="${file_quote_sig_base}.${fmt}"
-    tpm2_quote -Q -k $handle_ak -l 0 -g "$alg_hash" -f $fmt -m "$file_quote_msg" -s "$this_sig" -o "$file_quote_combined"
+    tpm2_quote -Q -k $handle_ak -l 0 -g "$alg_hash" -f $fmt -m "$file_quote_msg" -s "$this_sig"
 
     if [ "$fmt" = plain ]; then
         openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} -signature "$this_sig" "$file_quote_msg" > /dev/null

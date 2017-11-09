@@ -171,85 +171,9 @@ void PrintTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
 }
 #endif
 
-static UINT16 calcSizeofTPM2B_ATTEST( TPM2B_ATTEST *attest )
-{
-    return 2 + attest->b.size;
-}
-
-static UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
-{
-    UINT16 size = 2;
-    switch ( sig->sigAlg )
-    {
-        case TPM_ALG_RSASSA:
-        case TPM_ALG_RSAPSS:
-            size += 2 + 2 + sig->signature.rsassa.sig.t.size;
-            break;
-        case TPM_ALG_ECDSA:
-        case TPM_ALG_ECDAA:
-        case TPM_ALG_SM2:
-        case TPM_ALG_ECSCHNORR:
-            size += 2 + 2*sizeof(TPM2B_ECC_PARAMETER);
-            break;
-        case TPM_ALG_HMAC:
-            size += 2;
-            switch ( sig->signature.hmac.hashAlg )
-            {
-                case TPM_ALG_SHA1:    size += SHA1_DIGEST_SIZE;    break;
-                case TPM_ALG_SHA256:  size += SHA256_DIGEST_SIZE;  break;
-                case TPM_ALG_SHA384:  size += SHA384_DIGEST_SIZE;  break;
-                case TPM_ALG_SHA512:  size += SHA512_DIGEST_SIZE;  break;
-                case TPM_ALG_SM3_256: size += SM3_256_DIGEST_SIZE; break;
-                default: size = 0; break;
-            }
-            break;
-        default:
-            size = 0;
-            break;
-    }
-
-    return size > sizeof(*sig) ? sizeof(*sig) : size;
-}
-
-static bool write_tss_file(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature,
-        const char *path) {
-    bool res = false;
-    size_t num_bytes;
-    FILE *fp = fopen(path,"wb");
-
-    if (!fp) {
-        LOG_ERR("Output file %s cannot be created: %s\n",
-                path, strerror(errno));
-        goto error;
-    }
-
-    num_bytes = calcSizeofTPM2B_ATTEST(quoted);
-    res = files_write_bytes(fp, (UINT8*)quoted, num_bytes);
-    if (!res) {
-        LOG_ERR("Cannot write quote data structure to %s: %s\n",
-                path, strerror(errno));
-        goto error;
-    }
-
-    num_bytes = calcSizeofTPMT_SIGNATURE(signature);
-    res = files_write_bytes(fp, (UINT8*)signature, num_bytes);
-    if (!res) {
-        LOG_ERR("Cannot write quote data structure to %s: %s\n",
-                path, strerror(errno));
-        goto error;
-    }
-
-error:
-    if (fp) {
-        fclose(fp);
-    }
-    return res;
-}
-
 static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
 
-    bool res = write_tss_file(quoted, signature, outFilePath);
-
+    bool res = true;
     if (signature_path) {
         res &= tpm2_convert_signature(signature, sig_format, signature_path);
     }
@@ -424,7 +348,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "id-list",               required_argument, NULL, 'l' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "sel-list",              required_argument, NULL, 'L' },
-        { "out-file",              required_argument, NULL, 'o' },
         { "qualify-data",          required_argument, NULL, 'q' },
         { "input-session-handle", required_argument, NULL, 'S' },
         { "signature",            required_argument, NULL, 's' },
@@ -433,7 +356,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:c:P:l:g:L:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;
@@ -444,11 +367,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     /* TODO this whole file needs to be re-done, especially the option validation */
-    if (!o_flag) {
-        LOG_ERR("Expected -o option to be specified");
-        return 1;
-    }
-
     if (!l_flag && !L_flag) {
         LOG_ERR("Expected either -l or -L to be specified");
         return 1;
