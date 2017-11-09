@@ -48,6 +48,11 @@
     message output file, records the quote message that makes up the data that
     is signed by the TPM.
 
+  * **-s**, **--signature**:
+
+    signature output file, records the signature in the format specified via the **-f**
+    option.
+
   * **-f**, **--format**
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
