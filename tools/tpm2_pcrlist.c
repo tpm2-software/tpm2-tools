@@ -56,16 +56,6 @@ struct tpm2_pcrs {
     TPML_DIGEST pcr_values[24]; //XXX Why 24?
 };
 
-typedef union format_flags format_flags;
-union format_flags {
-    struct {
-        UINT8 yaml : 1;
-        UINT8 unused : 1;
-    };
-    UINT8 all;
-};
-
-
 typedef struct listpcr_context listpcr_context;
 struct listpcr_context {
     struct {
@@ -81,7 +71,6 @@ struct listpcr_context {
     tpm2_pcrs pcrs;
     TPML_PCR_SELECTION pcr_selections;
     TPMS_CAPABILITY_DATA cap_data;
-    format_flags format;
     TPMI_ALG_HASH selected_algorithm;
 };
 
@@ -262,13 +251,7 @@ static bool show_pcr_values(void) {
         const char *alg_name = tpm2_alg_util_algtostr(
                 ctx.pcr_selections.pcrSelections[i].hash);
 
-        if (ctx.format.yaml) {
-            tpm2_tool_output("%s :\n", alg_name);
-
-        } else {
-            tpm2_tool_output("\nBank/Algorithm: %s(0x%04x)\n", alg_name,
-                ctx.pcr_selections.pcrSelections[i].hash);
-        }
+        tpm2_tool_output("%s :\n", alg_name);
 
         UINT32 pcr_id;
         for (pcr_id = 0; pcr_id < ctx.pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
@@ -281,11 +264,8 @@ static bool show_pcr_values(void) {
                 return false;
             }
 
-            if (ctx.format.yaml) {
-                tpm2_tool_output("  %-2d : ", pcr_id);
-            } else {
-                tpm2_tool_output("PCR_%02d:", pcr_id);
-            }
+            tpm2_tool_output("  %-2d : ", pcr_id);
+
             int k;
             for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].size; k++) {
                 tpm2_tool_output("%02x", ctx.pcrs.pcr_values[vi].digests[di].buffer[k]);
@@ -380,17 +360,6 @@ static void show_banks(tpm2_algorithm *g_banks) {
     tpm2_tool_output("\n");
 }
 
-static format_flags get_format(const char *value) {
-
-    format_flags flags = { .all = 0 };
-
-    if (!strcmp(value, "yaml")) {
-        flags.yaml = 1;
-    }
-
-    return flags;
-}
-
 static bool on_option(char key, char *value) {
 
     switch (key) {
@@ -415,13 +384,6 @@ static bool on_option(char key, char *value) {
         break;
     case 's':
         ctx.flags.s = 1;
-        break;
-    case 'f':
-        ctx.format = get_format(value);
-        if (!ctx.format.all) {
-            LOG_ERR("Unknown format, got: \"%s\"", value);
-            return false;
-        }
         break;
         /* no default */
     }
