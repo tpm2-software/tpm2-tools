@@ -31,10 +31,6 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-echo "WARNING FIXME TEST IS DISABLED"
-
-exit 0
-
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
