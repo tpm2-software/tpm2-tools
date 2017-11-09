@@ -46,7 +46,6 @@ file_quote_key_pub=opu_"$alg_create_obj"_"$alg_create_key"
 file_quote_key_priv=opr_"$alg_create_obj"_"$alg_create_key"
 file_quote_key_name=name.load_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
 file_quote_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
-file_quote_output=quote_"$file_quote_key_ctx"
 
 Handle_ak_quote=0x81010016
 Handle_ek_quote=0x81010017
@@ -64,9 +63,7 @@ trap onerror ERR
 
 cleanup() {
     rm -f $file_primary_key_ctx $file_quote_key_pub $file_quote_key_priv \
-    $file_quote_key_name $file_quote_key_ctx $file_quote_output \
-    quote_handle_output_"$Handle_ak_quote" ek.pub2 ak.pub2 ak.name_2 \
-    quote_handle_output_"$Handle_ak_quote2"
+    $file_quote_key_name $file_quote_key_ctx ek.pub2 ak.pub2 ak.name_2 \
 
     tpm2_evictcontrol -Q -Ao -H $Handle_ek_quote 2>/dev/null || true
     tpm2_evictcontrol -Q -Ao -H $Handle_ak_quote 2>/dev/null || true
@@ -84,28 +81,22 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_quote_key_pub -r $
 
 tpm2_load -Q -c $file_primary_key_ctx  -u $file_quote_key_pub  -r $file_quote_key_priv -n $file_quote_key_name -C $file_quote_key_ctx
 
-tpm2_quote -Q -c $file_quote_key_ctx  -g $alg_quote -l 16,17,18 -o $file_quote_output -q $nonce
+tpm2_quote -Q -c $file_quote_key_ctx  -g $alg_quote -l 16,17,18 -q $nonce
 
-rm -f $file_quote_output
-
-tpm2_quote -Q -c $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -o $file_quote_output -q $nonce
+tpm2_quote -Q -c $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
 #####handle testing
 tpm2_evictcontrol -Q -A o -c $file_quote_key_ctx -S $Handle_ak_quote
 
-rm -f quote_handle_output_"$Handle_ak_quote"
-tpm2_quote -Q -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -o quote_handle_output_"$Handle_ak_quote" -q $nonce
+tpm2_quote -Q -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -q $nonce
 
-rm -f quote_handle_output_"$Handle_ak_quote"
-tpm2_quote -Q -k $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -o quote_handle_output_"$Handle_ak_quote" -q $nonce
+tpm2_quote -Q -k $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
 #####AK
 tpm2_getpubek -Q -H  $Handle_ek_quote -g 0x01 -f ek.pub2
 
 tpm2_getpubak -Q -E  $Handle_ek_quote -k  $Handle_ak_quote2 -f ak.pub2 -n ak.name_2
 
-rm -f quote_handle_output_"$Handle_ak_quote2"
-
-tpm2_quote -Q -k $Handle_ak_quote -g $alg_quote -l 16,17,18 -o quote_handle_output_"$Handle_ak_quote2" -q $nonce
+tpm2_quote -Q -k $Handle_ak_quote -g $alg_quote -l 16,17,18 -q $nonce
 
 exit 0

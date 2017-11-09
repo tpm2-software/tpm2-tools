@@ -39,10 +39,6 @@
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specfiers".
 
-  * **-o**, **--out-file**:
-
-    Output file path, recording the two structures output by tpm2_quote function.
-
   * **-m**, **--message**:
 
     message output file, records the quote message that makes up the data that
@@ -82,11 +78,11 @@
 # EXAMPLES
 
 ```
-tpm2_quote -k 0x81010002 -P abc123 -g sha1 -l 16,17,18 -o outFile001
-tpm2_quote -c ak.context -P "str:abc123" -g sha1 -l 16,17,18 -o outFile001
-tpm2_quote -k 0x81010002 -g sha1 -l 16,17,18 -o outFile001
-tpm2_quote -c ak.context -g sha1 -l 16,17,18 -o outFile001
-tpm2_quote -k 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -o outFile001 -q 11aa22bb
+tpm2_quote -k 0x81010002 -P abc123 -g sha1 -l 16,17,18
+tpm2_quote -c ak.context -P "str:abc123" -g sha1 -l 16,17,18
+tpm2_quote -k 0x81010002 -g sha1 -l 16,17,18
+tpm2_quote -c ak.context -g sha1 -l 16,17,18
+tpm2_quote -k 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -q 11aa22bb
 ```
 
 # RETURNS
