@@ -174,14 +174,16 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.s = 1;
         break;
-    case 'n':
+    case 'n': {
         ctx.object_name.size = BUFFER_SIZE(TPM2B_NAME, name);
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.object_name.size,
-                                            ctx.object_name.name) != 0) {
+        int q;
+        if ((q = tpm2_util_hex_to_byte_structure(value, &ctx.object_name.size,
+                                            ctx.object_name.name)) != 0) {
+            LOG_ERR("FAILED: %d", q);
             return false;
         }
         ctx.flags.n = 1;
-        break;
+    } break;
     case 'o':
         ctx.out_file_path = optarg;
         ctx.flags.o = 1;
