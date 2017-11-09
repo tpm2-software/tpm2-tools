@@ -176,8 +176,10 @@ static bool on_option(char key, char *value) {
         break;
     case 'n':
         ctx.object_name.t.size = BUFFER_SIZE(TPM2B_NAME, name);
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.object_name.t.size,
-                                            ctx.object_name.t.name) != 0) {
+        int q;
+        if ((q = tpm2_util_hex_to_byte_structure(value, &ctx.object_name.t.size,
+                                            ctx.object_name.t.name)) != 0) {
+            LOG_ERR("FAILED: %d", q);
             return false;
         }
         ctx.flags.n = 1;

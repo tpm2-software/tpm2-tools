@@ -38,7 +38,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-    rm -f secret.data ek.pub ak.pub ak.name mkcred.out ak.out actcred.out
+    rm -f secret.data ek.pub ak.pub ak.name mkcred.out actcred.out
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -53,9 +53,11 @@ echo "12345678" > secret.data
 
 tpm2_getpubek -Q -H 0x81010009 -g rsa -f ek.pub
 
-tpm2_getpubak -E 0x81010009 -k 0x8101000a -g rsa -D sha256 -s rsassa -f ak.pub -n ak.name > ak.out
+tpm2_getpubak -Q -E 0x81010009 -k 0x8101000a -g rsa -D sha256 -s rsassa -f ak.pub -n ak.name
 
-loaded_key_name=`grep -A 3 "Name of loaded key:" ak.out | tr "\n" " " | sed -e 's/ //g' | awk  -F':' '{print $2}'`
+# Use -c in xxd so there is no line wrapping
+file_size=`stat --printf="%s" ak.name`
+loaded_key_name=`cat ak.name | xxd -p -c $file_size`
 
 tpm2_makecredential -Q -e ek.pub  -s secret.data -n $loaded_key_name -o mkcred.out
 
