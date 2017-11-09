@@ -16,7 +16,7 @@
 outputs all pcrs and their hash banks. One can use either the **-g** or **-L**
 mutually exclusive options to filter the output.
 
-Output is writtien in a YAML format to stdout, with each algorithm followed by
+Output is written in a YAML format to stdout, with each algorithm followed by
 a PCR index and its value. As a simple example assume just sha1 and sha256
 support and only 1 PCR. The output would be:
 ```
@@ -27,10 +27,6 @@ sha256 :
 ```
 
 # OPTIONS
-
-  * **-f**, **--format**=_FORMAT_:
-    Specify the output format. Valid output formats are:
-    * yaml - output in the YAML file format.
 
   * **-g**, **--algorithm**=_HASH\_ALGORITHM_:
     Only output PCR banks with the given algorithm.

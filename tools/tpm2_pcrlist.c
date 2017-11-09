@@ -201,7 +201,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          { "output",    required_argument, NULL, 'o' },
          { "algs",      no_argument,       NULL, 's' },
          { "sel-list",   required_argument, NULL, 'L' },
-         { "format",    required_argument, NULL, 'f' },
      };
 
     *opts = tpm2_options_new("g:o:L:s", ARRAY_LEN(topts), topts,
