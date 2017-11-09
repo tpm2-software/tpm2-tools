@@ -12,7 +12,7 @@ AS_IF(
     [],
     [AC_MSG_WARN([Required executable pandoc not found, man pages will not be built])])
 AM_CONDITIONAL([HAVE_PANDOC],[test "x${PANDOC}" = "xyes"])
-PKG_CHECK_MODULES([SAPI],[sapi])
+PKG_CHECK_MODULES([SAPI],[sapi < 2.0.0])
 # disable libtcti-device selectively (enabled by default)
 AC_ARG_WITH(
     [tcti-device],

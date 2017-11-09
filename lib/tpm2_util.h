@@ -46,8 +46,8 @@
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
 
 #define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
-#define TPM2B_INIT(xsize) { .t = { .size = xsize, }, }
-#define TPM2B_EMPTY_INIT TPM2B_INIT(0)
+#define TPM2B_INIT_SIZE(xsize) { .t = { .size = xsize, }, }
+#define TPM2B_EMPTY_INIT TPM2B_INIT_SIZE(0)
 #define TPM2B_SENSITIVE_CREATE_EMPTY_INIT { \
            .t.sensitive = { \
                 .data.t.size = 0, \

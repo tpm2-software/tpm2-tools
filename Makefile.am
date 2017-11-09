@@ -63,7 +63,6 @@ bin_PROGRAMS = \
     tools/tpm2_getrandom \
     tools/tpm2_hash \
     tools/tpm2_hmac \
-    tools/tpm2_import \
     tools/tpm2_listpersistent \
     tools/tpm2_load \
     tools/tpm2_loadexternal \
