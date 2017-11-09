@@ -95,10 +95,10 @@ bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (ctx.outFilePath) {
         return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
-                                        outData.t.buffer, outData.t.size);
+                                        outData.buffer, outData.size);
     } else {
-        return files_write_bytes(stdout, (UINT8 *) outData.t.buffer,
-                                 outData.t.size);
+        return files_write_bytes(stdout, (UINT8 *) outData.buffer,
+                                 outData.size);
     }
 }
 

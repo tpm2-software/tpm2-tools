@@ -101,20 +101,20 @@ static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    if (outHash.t.size) {
+    if (outHash.size) {
         UINT16 i;
         tpm2_tool_output("hash(%s):", tpm2_alg_util_algtostr(ctx.halg));
-        for (i = 0; i < outHash.t.size; i++) {
-            tpm2_tool_output("%02x", outHash.t.buffer[i]);
+        for (i = 0; i < outHash.size; i++) {
+            tpm2_tool_output("%02x", outHash.buffer[i]);
         }
         tpm2_tool_output("\n");
     }
 
-    if (validation.digest.t.size) {
+    if (validation.digest.size) {
         UINT16 i;
         tpm2_tool_output("ticket:");
-        for (i = 0; i < validation.digest.t.size; i++) {
-            tpm2_tool_output("%02x", validation.digest.t.buffer[i]);
+        for (i = 0; i < validation.digest.size; i++) {
+            tpm2_tool_output("%02x", validation.digest.buffer[i]);
         }
         tpm2_tool_output("\n");
     }

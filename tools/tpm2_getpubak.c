@@ -85,11 +85,11 @@ static bool set_rsa_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg, TPM2B_
         sign_alg = TPM_ALG_RSASSA;
     }
 
-    in_public->t.publicArea.parameters.rsaDetail.scheme.scheme = sign_alg;
+    in_public->publicArea.parameters.rsaDetail.scheme.scheme = sign_alg;
     switch (sign_alg) {
     case TPM_ALG_RSASSA :
     case TPM_ALG_RSAPSS :
-        in_public->t.publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg =
+        in_public->publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg =
                 digest_alg;
         break;
     default:
@@ -108,13 +108,13 @@ static bool set_ecc_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
         sign_alg = TPM_ALG_ECDSA;
     }
 
-    in_public->t.publicArea.parameters.eccDetail.scheme.scheme = sign_alg;
+    in_public->publicArea.parameters.eccDetail.scheme.scheme = sign_alg;
     switch (sign_alg) {
     case TPM_ALG_ECDSA :
     case TPM_ALG_SM2 :
     case TPM_ALG_ECSCHNORR :
     case TPM_ALG_ECDAA :
-        in_public->t.publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg =
+        in_public->publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg =
                 digest_alg;
         break;
     default:
@@ -133,10 +133,10 @@ static bool set_keyed_hash_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
         sign_alg = TPM_ALG_HMAC;
     }
 
-    in_public->t.publicArea.parameters.keyedHashDetail.scheme.scheme = sign_alg;
+    in_public->publicArea.parameters.keyedHashDetail.scheme.scheme = sign_alg;
     switch (sign_alg) {
     case TPM_ALG_HMAC :
-        in_public->t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg =
+        in_public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg =
                 digest_alg;
         break;
     default:
@@ -151,41 +151,41 @@ static bool set_keyed_hash_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
 
 static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
 {
-    in_public->t.publicArea.nameAlg = TPM_ALG_SHA256;
+    in_public->publicArea.nameAlg = TPM_ALG_SHA256;
     // First clear attributes bit field.
-    *(UINT32 *)&(in_public->t.publicArea.objectAttributes) = 0;
-    in_public->t.publicArea.objectAttributes.restricted = 1;
-    in_public->t.publicArea.objectAttributes.userWithAuth = 1;
-    in_public->t.publicArea.objectAttributes.sign = 1;
-    in_public->t.publicArea.objectAttributes.decrypt = 0;
-    in_public->t.publicArea.objectAttributes.fixedTPM = 1;
-    in_public->t.publicArea.objectAttributes.fixedParent = 1;
-    in_public->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    in_public->t.publicArea.authPolicy.t.size = 0;
+    *(UINT32 *)&(in_public->publicArea.objectAttributes) = 0;
+    in_public->publicArea.objectAttributes.restricted = 1;
+    in_public->publicArea.objectAttributes.userWithAuth = 1;
+    in_public->publicArea.objectAttributes.sign = 1;
+    in_public->publicArea.objectAttributes.decrypt = 0;
+    in_public->publicArea.objectAttributes.fixedTPM = 1;
+    in_public->publicArea.objectAttributes.fixedParent = 1;
+    in_public->publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    in_public->publicArea.authPolicy.size = 0;
 
-    in_public->t.publicArea.type = ctx.algorithm_type;
+    in_public->publicArea.type = ctx.algorithm_type;
 
     switch(ctx.algorithm_type)
     {
     case TPM_ALG_RSA:
-        in_public->t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
-        in_public->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 0;
-        in_public->t.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_NULL;
-        in_public->t.publicArea.parameters.rsaDetail.keyBits = 2048;
-        in_public->t.publicArea.parameters.rsaDetail.exponent = 0;
-        in_public->t.publicArea.unique.rsa.t.size = 0;
+        in_public->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
+        in_public->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 0;
+        in_public->publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_NULL;
+        in_public->publicArea.parameters.rsaDetail.keyBits = 2048;
+        in_public->publicArea.parameters.rsaDetail.exponent = 0;
+        in_public->publicArea.unique.rsa.size = 0;
         return set_rsa_signing_algorithm(ctx.sign_alg, ctx.digest_alg, in_public);
     case TPM_ALG_ECC:
-        in_public->t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
-        in_public->t.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_NULL;
-        in_public->t.publicArea.parameters.eccDetail.symmetric.keyBits.sym = 0;
-        in_public->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        in_public->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        in_public->t.publicArea.unique.ecc.x.t.size = 0;
-        in_public->t.publicArea.unique.ecc.y.t.size = 0;
+        in_public->publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
+        in_public->publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_NULL;
+        in_public->publicArea.parameters.eccDetail.symmetric.keyBits.sym = 0;
+        in_public->publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
+        in_public->publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+        in_public->publicArea.unique.ecc.x.size = 0;
+        in_public->publicArea.unique.ecc.y.size = 0;
         return set_ecc_signing_algorithm(ctx.sign_alg, ctx.digest_alg, in_public);
     case TPM_ALG_KEYEDHASH:
-        in_public->t.publicArea.unique.keyedHash.t.size = 0;
+        in_public->publicArea.unique.keyedHash.size = 0;
         return set_keyed_hash_signing_algorithm(ctx.sign_alg, ctx.digest_alg, in_public);
     case TPM_ALG_SYMCIPHER:
     default:
@@ -242,11 +242,11 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     sessions_data.cmdAuthsCount = 1;
     sessions_data_out.rspAuthsCount = 1;
-    inSensitive.t.sensitive.data.t.size = 0;
-    inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
+    inSensitive.sensitive.data.size = 0;
+    inSensitive.size = inSensitive.sensitive.userAuth.size + 2;
     creation_pcr.count = 0;
 
-    memcpy(&inSensitive.t.sensitive.userAuth, &ctx.passwords.ak, sizeof(ctx.passwords.ak));
+    memcpy(&inSensitive.sensitive.userAuth, &ctx.passwords.ak, sizeof(ctx.passwords.ak));
 
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
@@ -277,7 +277,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     session_data.sessionHandle = session->sessionHandle;
     session_data.sessionAttributes.continueSession = 1;
-    session_data.hmac.t.size = 0;
+    session_data.hmac.size = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, handle_2048_rsa, &sessions_data,
             &inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
@@ -300,7 +300,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     session_data.sessionHandle = TPM_RS_PW;
     session_data.sessionAttributes.continueSession = 0;
-    session_data.hmac.t.size = 0;
+    session_data.hmac.size = 0;
 
     memcpy(&session_data.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
@@ -323,7 +323,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     session_data.sessionHandle = session->sessionHandle;
     session_data.sessionAttributes.continueSession = 1;
-    session_data.hmac.t.size = 0;
+    session_data.hmac.size = 0;
 
     TPM_HANDLE loaded_sha1_key_handle;
     rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context, handle_2048_rsa, &sessions_data, &out_private,
@@ -335,12 +335,12 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* required output of testing scripts */
     tpm2_tool_output("Name of loaded key: ");
-    tpm2_util_print_tpm2b(&name.b);
+    tpm2_util_print_tpm2b((TPM2B *)&name);
     tpm2_tool_output("\n");
     tpm2_tool_output("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
     // write name to ak.name file
-    result = files_save_bytes_to_file(ctx.akname_file, &name.t.name[0], name.t.size);
+    result = files_save_bytes_to_file(ctx.akname_file, &name.name[0], name.size);
     if (!result) {
         LOG_ERR("Failed to save AK name into file \"%s\"", ctx.akname_file);
         return false;
@@ -358,7 +358,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     session_data.sessionHandle = TPM_RS_PW;
     session_data.sessionAttributes.continueSession = 0;
-    session_data.hmac.t.size = 0;
+    session_data.hmac.size = 0;
 
     // use the owner auth here.
     memcpy(&session_data.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));

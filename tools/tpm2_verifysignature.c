@@ -88,8 +88,8 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
     sessionsDataOut.rspAuthsCount = 1;
 
     UINT16 i;
-    for (i = 0; i < ctx.msgHash.t.size; i++) {
-        tpm2_tool_output("%02x ", ctx.msgHash.t.buffer[i]);
+    for (i = 0; i < ctx.msgHash.size; i++) {
+        tpm2_tool_output("%02x ", ctx.msgHash.buffer[i]);
     }
     tpm2_tool_output("\n");
 
@@ -141,11 +141,11 @@ static bool generate_signature(void) {
     if (ctx.flags.raw) {
         ctx.signature.sigAlg = TPM_ALG_RSASSA;
         ctx.signature.signature.rsassa.hash = ctx.halg;
-        ctx.signature.signature.rsassa.sig.t.size =
+        ctx.signature.signature.rsassa.sig.size =
                 sizeof(ctx.signature.signature.rsassa.sig) - 2;
 
-        buffer = ctx.signature.signature.rsassa.sig.t.buffer;
-        size = ctx.signature.signature.rsassa.sig.t.size;
+        buffer = ctx.signature.signature.rsassa.sig.buffer;
+        size = ctx.signature.signature.rsassa.sig.size;
     } else {
         size = sizeof(ctx.signature);
         buffer = (UINT8 *) &ctx.signature;

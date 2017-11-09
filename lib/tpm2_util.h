@@ -43,15 +43,15 @@
 
 #define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
 
-#define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
+#define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->field)))
 
-#define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
-#define TPM2B_INIT(xsize) { .t = { .size = xsize, }, }
+#define TPM2B_TYPE_INIT(type, field) { .size = BUFFER_SIZE(type, field), }
+#define TPM2B_INIT(xsize) { .size = xsize, }
 #define TPM2B_EMPTY_INIT TPM2B_INIT(0)
 #define TPM2B_SENSITIVE_CREATE_EMPTY_INIT { \
-           .t.sensitive = { \
-                .data.t.size = 0, \
-                .userAuth.b.size = 0, \
+           .sensitive = { \
+                .data.size = 0, \
+                .userAuth.size = 0, \
             }, \
     }
 #define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }

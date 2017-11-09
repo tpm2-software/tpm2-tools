@@ -59,7 +59,7 @@ TPM_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
         TPM2B_DIGEST *buffer_list, TPM2B_DIGEST *result,
         TPMT_TK_HASHCHECK *validation) {
 
-    TPM2B_AUTH null_auth = { .t.size = 0 };
+    TPM2B_AUTH null_auth = { .size = 0 };
     TPMI_DH_OBJECT sequence_handle;
     UINT32 rval = Tss2_Sys_HashSequenceStart(sapi_context, 0, &null_auth,
             hash_alg, &sequence_handle, 0);
@@ -107,9 +107,9 @@ TPM_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
     /* If we can get the file size and its less than 1024, just do it in one hash invocation */
     if (res && file_size <= MAX_DIGEST_BUFFER) {
 
-        TPM2B_MAX_BUFFER buffer = { .t = { .size = file_size }, };
+        TPM2B_MAX_BUFFER buffer = { .size = file_size };
 
-        res = files_read_bytes(input, buffer.t.buffer, buffer.t.size);
+        res = files_read_bytes(input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
             return TSS2_APP_HMAC_RC_FAILED;
@@ -142,14 +142,14 @@ TPM_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
     bool done = false;
     while (!done) {
 
-        size_t bytes_read = fread(data.t.buffer, 1,
+        size_t bytes_read = fread(data.buffer, 1,
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
             return TSS2_APP_HMAC_RC_FAILED;
         }
 
-        data.t.size = bytes_read;
+        data.size = bytes_read;
 
         /* if data was read, update the sequence */
         rval = Tss2_Sys_SequenceUpdate(sapi_context, sequenceHandle,
@@ -170,14 +170,14 @@ TPM_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
     } /* end file read/hash update loop */
 
     if (use_left) {
-        data.t.size = left;
-        bool res = files_read_bytes(input, data.t.buffer, left);
+        data.size = left;
+        bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
             return TSS2_APP_HMAC_RC_FAILED;
         }
     } else {
-        data.t.size = 0;
+        data.size = 0;
     }
 
     return Tss2_Sys_SequenceComplete(sapi_context, sequenceHandle,

@@ -74,7 +74,7 @@ static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     out_sessions_data.rspAuthsCount = 1;
 
     scheme.scheme = TPM_ALG_RSAES;
-    label.t.size = 0;
+    label.size = 0;
 
     TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_handle, NULL,
             &ctx.message, &scheme, &label, &out_data, &out_sessions_data));
@@ -84,11 +84,11 @@ static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.output_path) {
-        return files_save_bytes_to_file(ctx.output_path, out_data.t.buffer,
-            out_data.t.size);
+        return files_save_bytes_to_file(ctx.output_path, out_data.buffer,
+            out_data.size);
     }
 
-    tpm2_util_print_tpm2b(&out_data.b);
+    tpm2_util_print_tpm2b((TPM2B *)&out_data);
 
     return true;
 }
@@ -161,8 +161,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         }
     }
 
-    ctx.message.t.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
-    return files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.message.t.size, ctx.message.t.buffer);
+    ctx.message.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
+    return files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.message.size, ctx.message.buffer);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
