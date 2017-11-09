@@ -244,8 +244,8 @@ static void hmac_outer_integrity(uint8_t *buffer1, uint16_t buffer1_size,
 static void create_random_seed_and_sensitive_enc_key(void) {
 
     RAND_bytes(ctx.protection_seed_data, SHA256_DIGEST_SIZE); //max tpm digest
-    ctx.enc_sensitive_key.b.size = SYM_KEY_SIZE;
-    RAND_bytes(ctx.enc_sensitive_key.b.buffer, SYM_KEY_SIZE);
+    ctx.enc_sensitive_key.size = SYM_KEY_SIZE;
+    RAND_bytes(ctx.enc_sensitive_key.buffer, SYM_KEY_SIZE);
 
 }
 
@@ -272,36 +272,36 @@ static bool calc_sensitive_unique_data(void) {
 }
 
 #define IMPORT_KEY_SYM_PUBLIC_AREA(X) \
-    (X).t.publicArea.type = TPM_ALG_SYMCIPHER; \
-    (X).t.publicArea.nameAlg = TPM_ALG_SHA256;\
-    (X).t.publicArea.objectAttributes.restricted = 0;\
-    (X).t.publicArea.objectAttributes.userWithAuth = 1;\
-    (X).t.publicArea.objectAttributes.decrypt = 1;\
-    (X).t.publicArea.objectAttributes.sign = 1;\
-    (X).t.publicArea.objectAttributes.fixedTPM = 0;\
-    (X).t.publicArea.objectAttributes.fixedParent = 0;\
-    (X).t.publicArea.objectAttributes.sensitiveDataOrigin = 0;\
-    (X).t.publicArea.authPolicy.t.size = 0;\
-    (X).t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;\
-    (X).t.publicArea.parameters.symDetail.sym.keyBits.sym = 128;\
-    (X).t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;\
-    (X).t.publicArea.unique.sym.t.size = SHA256_DIGEST_SIZE;\
+    (X).publicArea.type = TPM_ALG_SYMCIPHER; \
+    (X).publicArea.nameAlg = TPM_ALG_SHA256;\
+    (X).publicArea.objectAttributes.restricted = 0;\
+    (X).publicArea.objectAttributes.userWithAuth = 1;\
+    (X).publicArea.objectAttributes.decrypt = 1;\
+    (X).publicArea.objectAttributes.sign = 1;\
+    (X).publicArea.objectAttributes.fixedTPM = 0;\
+    (X).publicArea.objectAttributes.fixedParent = 0;\
+    (X).publicArea.objectAttributes.sensitiveDataOrigin = 0;\
+    (X).publicArea.authPolicy.size = 0;\
+    (X).publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;\
+    (X).publicArea.parameters.symDetail.sym.keyBits.sym = 128;\
+    (X).publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;\
+    (X).publicArea.unique.sym.size = SHA256_DIGEST_SIZE;\
 
 static bool create_import_key_public_data_and_name(void) {
 
     IMPORT_KEY_SYM_PUBLIC_AREA(ctx.import_key_public)
 
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
-                      &ctx.import_key_public.t.publicArea.objectAttributes);
+                      &ctx.import_key_public.publicArea.objectAttributes);
 
     if (ctx.objectAttributes) {
-        ctx.import_key_public.t.publicArea.objectAttributes.val = ctx.objectAttributes;
+        ctx.import_key_public.publicArea.objectAttributes.val = ctx.objectAttributes;
     }
 
     tpm2_tool_output("ObjectAttribute: 0x%08X\n",
-                     ctx.import_key_public.t.publicArea.objectAttributes.val);
+                     ctx.import_key_public.publicArea.objectAttributes.val);
 
-    memcpy(ctx.import_key_public.t.publicArea.unique.sym.t.buffer,
+    memcpy(ctx.import_key_public.publicArea.unique.sym.buffer,
             ctx.import_key_public_unique_data, SHA256_DIGEST_SIZE);
 
     size_t public_area_marshalled_offset = 0;
@@ -314,33 +314,33 @@ static bool create_import_key_public_data_and_name(void) {
     Tss2_MU_TPM2B_PUBLIC_Marshal(&ctx.import_key_public, marshalled_bytes,
             sizeof(ctx.import_key_public), &public_area_marshalled_offset);
 
-    ctx.import_key_public_name.t.size = SHA256_DIGEST_SIZE;
+    ctx.import_key_public_name.size = SHA256_DIGEST_SIZE;
     size_t name_digest_alg_offset = 0;
-    Tss2_MU_UINT16_Marshal(TPM_ALG_SHA256, ctx.import_key_public_name.t.name,
+    Tss2_MU_UINT16_Marshal(TPM_ALG_SHA256, ctx.import_key_public_name.name,
             sizeof(TPM_ALG_ID), &name_digest_alg_offset);
-    ctx.import_key_public_name.t.size += name_digest_alg_offset;
+    ctx.import_key_public_name.size += name_digest_alg_offset;
     SHA256(marshalled_bytes + sizeof(uint16_t),
             public_area_marshalled_offset - sizeof(uint16_t),
-            ctx.import_key_public_name.t.name + sizeof(TPM_ALG_ID));
+            ctx.import_key_public_name.name + sizeof(TPM_ALG_ID));
     free(marshalled_bytes);
 
     return true;
 }
 
 #define IMPORT_KEY_SYM_SENSITIVE_AREA(X) \
-    (X).t.sensitiveArea.sensitiveType = TPM_ALG_SYMCIPHER; \
-    (X).t.sensitiveArea.authValue.t.size = 0; \
-    (X).t.sensitiveArea.seedValue.t.size = SHA256_DIGEST_SIZE; \
-    (X).t.sensitiveArea.sensitive.sym.t.size = SYM_KEY_SIZE; \
+    (X).sensitiveArea.sensitiveType = TPM_ALG_SYMCIPHER; \
+    (X).sensitiveArea.authValue.size = 0; \
+    (X).sensitiveArea.seedValue.size = SHA256_DIGEST_SIZE; \
+    (X).sensitiveArea.sensitive.sym.size = SYM_KEY_SIZE; \
 
 static void create_import_key_sensitive_data(void) {
 
     IMPORT_KEY_SYM_SENSITIVE_AREA(ctx.import_key_sensitive);
 
-    memcpy(ctx.import_key_sensitive.t.sensitiveArea.seedValue.t.buffer,
+    memcpy(ctx.import_key_sensitive.sensitiveArea.seedValue.buffer,
             ctx.protection_seed_data, SHA256_DIGEST_SIZE); //max digest size
 
-    memcpy(ctx.import_key_sensitive.t.sensitiveArea.sensitive.sym.t.buffer,
+    memcpy(ctx.import_key_sensitive.sensitiveArea.sensitive.sym.buffer,
             ctx.input_key_buffer, SYM_KEY_SIZE);
 }
 
@@ -349,24 +349,24 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(void) {
 
     TPM2B null_2b = { .size = 0 };
     TPM2B_DIGEST to_TPM2B_seed = TPM2B_INIT(SHA256_DIGEST_SIZE);
-    memcpy(to_TPM2B_seed.t.buffer, ctx.protection_seed_data,
+    memcpy(to_TPM2B_seed.buffer, ctx.protection_seed_data,
             SHA256_DIGEST_SIZE); //max digest size
     TPM2B_MAX_BUFFER result_key;
 
-    TPM_RC rval = tpm_kdfa(PARENT_NAME_ALG, &to_TPM2B_seed.b, "INTEGRITY",
+    TPM_RC rval = tpm_kdfa(PARENT_NAME_ALG, (TPM2B *)&to_TPM2B_seed, "INTEGRITY",
             &null_2b, &null_2b, SHA256_DIGEST_SIZE * 8, &result_key);
     if (rval != TPM_RC_SUCCESS) {
         return false;
     }
-    memcpy(ctx.protection_hmac_key, result_key.t.buffer, SHA256_DIGEST_SIZE);
+    memcpy(ctx.protection_hmac_key, result_key.buffer, SHA256_DIGEST_SIZE);
 
-    rval = tpm_kdfa(PARENT_NAME_ALG, &to_TPM2B_seed.b, "STORAGE",
-            &ctx.import_key_public_name.b, &null_2b, SYM_KEY_SIZE * 8,
+    rval = tpm_kdfa(PARENT_NAME_ALG, (TPM2B *)&to_TPM2B_seed, "STORAGE",
+            (TPM2B *)&ctx.import_key_public_name, &null_2b, SYM_KEY_SIZE * 8,
             &result_key);
     if (rval != TPM_RC_SUCCESS) {
         return false;
     }
-    memcpy(ctx.protection_enc_key, result_key.t.buffer, SYM_KEY_SIZE);
+    memcpy(ctx.protection_enc_key, result_key.buffer, SYM_KEY_SIZE);
 
     return true;
 }
@@ -376,7 +376,7 @@ static void calculate_inner_integrity(void) {
     //Marshal sensitive area
     uint8_t buffer_marshalled_sensitiveArea[max_buffer_size] = { 0 };
     size_t marshalled_sensitive_size = 0;
-    Tss2_MU_TPMT_SENSITIVE_Marshal(&ctx.import_key_sensitive.t.sensitiveArea,
+    Tss2_MU_TPMT_SENSITIVE_Marshal(&ctx.import_key_sensitive.sensitiveArea,
             buffer_marshalled_sensitiveArea + sizeof(uint16_t), max_buffer_size,
             &marshalled_sensitive_size);
     size_t marshalled_sensitive_size_info = 0;
@@ -387,65 +387,65 @@ static void calculate_inner_integrity(void) {
     memcpy(
             buffer_marshalled_sensitiveArea + marshalled_sensitive_size
                     + marshalled_sensitive_size_info,
-            ctx.import_key_public_name.t.name,
-            ctx.import_key_public_name.t.size);
+            ctx.import_key_public_name.name,
+            ctx.import_key_public_name.size);
 
     //Digest marshalled-sensitive || name
     uint8_t *marshalled_sensitive_and_name_digest =
             buffer_marshalled_sensitiveArea + marshalled_sensitive_size
                     + marshalled_sensitive_size_info
-                    + ctx.import_key_public_name.t.size;
+                    + ctx.import_key_public_name.size;
     size_t digest_size_info = 0;
     Tss2_MU_UINT16_Marshal(SHA256_DIGEST_SIZE, marshalled_sensitive_and_name_digest,
             sizeof(uint16_t), &digest_size_info);
 
     SHA256(buffer_marshalled_sensitiveArea,
             marshalled_sensitive_size_info + marshalled_sensitive_size
-                    + ctx.import_key_public_name.t.size,
+                    + ctx.import_key_public_name.size,
             marshalled_sensitive_and_name_digest + digest_size_info);
 
     //Inner integrity
-    ctx.encrypted_inner_integrity.t.size = marshalled_sensitive_size_info
-            + marshalled_sensitive_size + ctx.import_key_public_name.t.size;
+    ctx.encrypted_inner_integrity.size = marshalled_sensitive_size_info
+            + marshalled_sensitive_size + ctx.import_key_public_name.size;
     aes_128_cfb_encrypt_buffers(marshalled_sensitive_and_name_digest,
             SHA256_DIGEST_SIZE + digest_size_info,
             buffer_marshalled_sensitiveArea,
             marshalled_sensitive_size_info + marshalled_sensitive_size,
-            ctx.enc_sensitive_key.b.buffer,
-            &ctx.encrypted_inner_integrity.t.buffer[0]);
+            ctx.enc_sensitive_key.buffer,
+            &ctx.encrypted_inner_integrity.buffer[0]);
 }
 
 static void calculate_outer_integrity(void) {
 
     //Calculate dupSensitive
-    ctx.encrypted_duplicate_sensitive.t.size =
-            ctx.encrypted_inner_integrity.t.size;
+    ctx.encrypted_duplicate_sensitive.size =
+            ctx.encrypted_inner_integrity.size;
 
-    aes_128_cfb_encrypt_buffers(ctx.encrypted_inner_integrity.t.buffer,
-            ctx.encrypted_inner_integrity.t.size, NULL, 0,
+    aes_128_cfb_encrypt_buffers(ctx.encrypted_inner_integrity.buffer,
+            ctx.encrypted_inner_integrity.size, NULL, 0,
             ctx.protection_enc_key,
-            &ctx.encrypted_duplicate_sensitive.t.buffer[0]);
+            &ctx.encrypted_duplicate_sensitive.buffer[0]);
     //Calculate outerHMAC
-    hmac_outer_integrity(ctx.encrypted_duplicate_sensitive.b.buffer,
-            ctx.encrypted_duplicate_sensitive.t.size,
-            ctx.import_key_public_name.t.name,
-            ctx.import_key_public_name.t.size, ctx.protection_hmac_key,
+    hmac_outer_integrity(ctx.encrypted_duplicate_sensitive.buffer,
+            ctx.encrypted_duplicate_sensitive.size,
+            ctx.import_key_public_name.name,
+            ctx.import_key_public_name.size, ctx.protection_hmac_key,
             ctx.outer_integrity_hmac);
 }
 
 static void create_import_key_private_data(void) {
-    ctx.import_key_private.b.size = sizeof(uint16_t) + SHA256_DIGEST_SIZE
-            + ctx.encrypted_duplicate_sensitive.t.size;
+    ctx.import_key_private.size = sizeof(uint16_t) + SHA256_DIGEST_SIZE
+            + ctx.encrypted_duplicate_sensitive.size;
     size_t hmac_size_offset = 0;
-    Tss2_MU_UINT16_Marshal(SHA256_DIGEST_SIZE, ctx.import_key_private.b.buffer,
+    Tss2_MU_UINT16_Marshal(SHA256_DIGEST_SIZE, ctx.import_key_private.buffer,
             sizeof(uint16_t), &hmac_size_offset);
-    memcpy(ctx.import_key_private.b.buffer + hmac_size_offset,
+    memcpy(ctx.import_key_private.buffer + hmac_size_offset,
             ctx.outer_integrity_hmac, SHA256_DIGEST_SIZE);
     memcpy(
-            ctx.import_key_private.b.buffer + hmac_size_offset
+            ctx.import_key_private.buffer + hmac_size_offset
                     + SHA256_DIGEST_SIZE,
-            ctx.encrypted_duplicate_sensitive.t.buffer,
-            ctx.encrypted_duplicate_sensitive.t.size);
+            ctx.encrypted_duplicate_sensitive.buffer,
+            ctx.encrypted_duplicate_sensitive.size);
 }
 
 static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context) {
@@ -476,7 +476,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     TPM2B_PRIVATE importPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
     TPM2B_ENCRYPTED_SECRET enc_inp_seed = TPM2B_INIT(MAX_RSA_KEY_BYTES);
 
-    memcpy(enc_inp_seed.t.secret, ctx.encrypted_protection_seed_data,
+    memcpy(enc_inp_seed.secret, ctx.encrypted_protection_seed_data,
             MAX_RSA_KEY_BYTES);
 
     TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_key_handle,

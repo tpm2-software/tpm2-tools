@@ -44,21 +44,21 @@
 
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
-    char *attrs = tpm2_attr_util_nv_attrtostr(nv_public->t.nvPublic.attributes);
+    char *attrs = tpm2_attr_util_nv_attrtostr(nv_public->nvPublic.attributes);
     if (!attrs) {
         LOG_ERR("Could not convert attributes to string form");
     }
 
     printf("  {\n");
-    printf("\tHash algorithm(nameAlg):%d\n ", nv_public->t.nvPublic.nameAlg);
+    printf("\tHash algorithm(nameAlg):%d\n ", nv_public->nvPublic.nameAlg);
     printf("\tattributes: %s(0x%X)\n ", attrs,
-            tpm2_util_ntoh_32(nv_public->t.nvPublic.attributes.val));
+            tpm2_util_ntoh_32(nv_public->nvPublic.attributes.val));
     printf("\tThe size of the data area(dataSize):%d\n ",
-            nv_public->t.nvPublic.dataSize);
+            nv_public->nvPublic.dataSize);
     printf("\tAuthorization Policy for R/W/D: ");
     int i;
-    for(i=0; i<nv_public->t.nvPublic.authPolicy.t.size; i++) {
-        printf("%02X", nv_public->t.nvPublic.authPolicy.t.buffer[i] );
+    for(i=0; i<nv_public->nvPublic.authPolicy.size; i++) {
+        printf("%02X", nv_public->nvPublic.authPolicy.buffer[i] );
     }
     printf("\n  }\n");
 

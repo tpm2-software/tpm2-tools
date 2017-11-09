@@ -77,23 +77,23 @@ static void PrintBuffer( UINT8 *buffer, UINT32 size )
 #if 0
 void PrintTPM2B_ATTEST( TPM2B_ATTEST *attest )
 {
-    TPMS_ATTEST *s_att = (TPMS_ATTEST *)&attest->t.attestationData[0];
+    TPMS_ATTEST *s_att = (TPMS_ATTEST *)&attest->attestationData[0];
 
     printf( "ATTEST_2B:\n" );
-    printf( "\tsize = 0x%4.4x\n", attest->t.size ); //already little endian
+    printf( "\tsize = 0x%4.4x\n", attest->size ); //already little endian
     printf( "\tattestationData(TPMS_ATTEST):\n" );
     printf( "\t\tmagic = 0x%8.8x\n", ntohl(s_att->magic) );//big endian
     printf( "\t\ttype  = 0x%4.4x\n", ntohs(s_att->type) );
     printf( "\t\tqualifiedSigner(NAME_2B):\n" );
-    printf( "\t\t\tsize = 0x%4.4x\n", ntohs(s_att->qualifiedSigner.t.size) );
+    printf( "\t\t\tsize = 0x%4.4x\n", ntohs(s_att->qualifiedSigner.size) );
     printf( "\t\t\tname = " );
-    PrintBuffer( s_att->qualifiedSigner.b.buffer, ntohs(s_att->qualifiedSigner.b.size) );
-    s_att = (TPMS_ATTEST *)(((BYTE *)s_att) - sizeof(s_att->qualifiedSigner.t) + ntohs(s_att->qualifiedSigner.t.size) + 2);
+    PrintBuffer( s_att->qualifiedSigner.buffer, ntohs(s_att->qualifiedSigner.size) );
+    s_att = (TPMS_ATTEST *)(((BYTE *)s_att) - sizeof(s_att->qualifiedSigner.t) + ntohs(s_att->qualifiedSigner.size) + 2);
     printf( "\t\textraData(DATA_2B):\n" );
-    printf( "\t\t\tsize   = 0x%4.4x\n", ntohs(s_att->extraData.t.size) );
+    printf( "\t\t\tsize   = 0x%4.4x\n", ntohs(s_att->extraData.size) );
     printf( "\t\t\tbuffer = " );
-    PrintBuffer( s_att->extraData.b.buffer, ntohs(s_att->extraData.b.size) );
-    s_att = (TPMS_ATTEST *)(((BYTE *)s_att) - sizeof(s_att->extraData.t) + ntohs(s_att->extraData.t.size) + 2);
+    PrintBuffer( s_att->extraData.buffer, ntohs(s_att->extraData.size) );
+    s_att = (TPMS_ATTEST *)(((BYTE *)s_att) - sizeof(s_att->extraData.t) + ntohs(s_att->extraData.size) + 2);
     printf( "\t\tclockInfo(TPMS_CLOCK_INFO):\n" );
     printf( "\t\t\tclock        = 0x%16.16lx\n", s_att->clockInfo.clock );
     printf( "\t\t\tresetCount   = 0x%8.8x\n", ntohl(s_att->clockInfo.resetCount) );
@@ -116,9 +116,9 @@ void PrintTPM2B_ATTEST( TPM2B_ATTEST *attest )
     }
     s_att = (TPMS_ATTEST *)(((BYTE *)s_att) - sizeof(s_att->attested.quote.pcrSelect) + ntohl(s_att->attested.quote.pcrSelect.count) * sizeof(TPMS_PCR_SELECTION) + 4 );
     printf( "\t\t\tpcrDigest(DIGEST_2B):\n" );
-    printf( "\t\t\t\tsize = 0x%4.4x\n", ntohs(s_att->attested.quote.pcrDigest.t.size) );
+    printf( "\t\t\t\tsize = 0x%4.4x\n", ntohs(s_att->attested.quote.pcrDigest.size) );
     printf( "\t\t\t\tbuffer = " );
-    PrintBuffer( s_att->attested.quote.pcrDigest.b.buffer, ntohs(s_att->attested.quote.pcrDigest.b.size) );
+    PrintBuffer( s_att->attested.quote.pcrDigest.buffer, ntohs(s_att->attested.quote.pcrDigest.size) );
 }
 
 void PrintTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
@@ -133,7 +133,7 @@ void PrintTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
             printf( "\t\tTPMS_SIGNATURE_RSA:\n" );
             printf( "\t\t\thash = 0x%4.4x\n", sig->signature.rsassa.hash );
             printf( "\t\t\tsig(PUBLIC_KEY_RSA_2B):\n" );
-            printf( "\t\t\t\tsize = 0x%4.4x\n", sig->signature.rsassa.sig.t.size );
+            printf( "\t\t\t\tsize = 0x%4.4x\n", sig->signature.rsassa.sig.size );
             printf( "\t\t\t\tbuffer = " );
             PrintSizedBuffer( &sig->signature.rsassa.sig.b );
             break;
@@ -144,11 +144,11 @@ void PrintTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
             printf( "\t\tTPMS_SIGNATURE_ECC:\n" );
             printf( "\t\t\thash = 0x%4.4x\n", sig->signature.ecdsa.hash);
             printf( "\t\t\tsignatureR(TPM2B_ECC_PARAMETER):\n" );
-            printf( "\t\t\t\tsize = 0x%4.4x\n", sig->signature.ecdsa.signatureR.t.size );
+            printf( "\t\t\t\tsize = 0x%4.4x\n", sig->signature.ecdsa.signatureR.size );
             printf( "\t\t\t\tbuffer = " );
             PrintSizedBuffer( &sig->signature.ecdsa.signatureR.b );
             printf( "\t\t\tsignatureS(TPM2B_ECC_PARAMETER):\n" );
-            printf( "\t\t\t\tsize = 0x%4.4x\n", sig->signature.ecdsa.signatureS.t.size );
+            printf( "\t\t\t\tsize = 0x%4.4x\n", sig->signature.ecdsa.signatureS.size );
             printf( "\t\t\t\tbuffer = " );
             PrintSizedBuffer( &sig->signature.ecdsa.signatureS.b );
             break;
@@ -173,7 +173,7 @@ void PrintTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
 
 static UINT16 calcSizeofTPM2B_ATTEST( TPM2B_ATTEST *attest )
 {
-    return 2 + attest->b.size;
+    return 2 + attest->size;
 }
 
 static UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
@@ -183,7 +183,7 @@ static UINT16  calcSizeofTPMT_SIGNATURE( TPMT_SIGNATURE *sig )
     {
         case TPM_ALG_RSASSA:
         case TPM_ALG_RSAPSS:
-            size += 2 + 2 + sig->signature.rsassa.sig.t.size;
+            size += 2 + 2 + sig->signature.rsassa.sig.size;
             break;
         case TPM_ALG_ECDSA:
         case TPM_ALG_ECDAA:
@@ -256,8 +256,8 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
 
     if (message_path) {
         res &= files_save_bytes_to_file(message_path,
-                (UINT8*)(quoted->b).buffer,
-                (quoted->b).size);
+                (UINT8*)quoted->attestationData,
+                quoted->size);
     }
 
     return res;
@@ -290,7 +290,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
         sessionData.sessionHandle = auth_session_handle;
     }
 
-    sessionData.nonce.t.size = 0;
+    sessionData.nonce.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
     if(!G_flag || !get_signature_scheme(sapi_context, akHandle, sig_hash_algorithm, &inScheme)) {
@@ -374,8 +374,8 @@ static bool on_option(char key, char *value) {
         o_flag = 1;
         break;
     case 'q':
-        qualifyingData.t.size = sizeof(qualifyingData) - 2;
-        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
+        qualifyingData.size = sizeof(qualifyingData) - 2;
+        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.size,qualifyingData.buffer) != 0)
         {
             LOG_ERR("Could not convert \"%s\" from a hex string to byte array!", value);
             return false;

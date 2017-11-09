@@ -151,17 +151,17 @@ static bool on_option(char key, char *value) {
         ctx.flags.e = 1;
         break;
     case 's':
-        ctx.credential.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-        if (!files_load_bytes_from_path(value, ctx.credential.t.buffer,
-                                        &ctx.credential.t.size)) {
+        ctx.credential.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
+        if (!files_load_bytes_from_path(value, ctx.credential.buffer,
+                                        &ctx.credential.size)) {
             return false;
         }
         ctx.flags.s = 1;
         break;
     case 'n':
-        ctx.object_name.t.size = BUFFER_SIZE(TPM2B_NAME, name);
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.object_name.t.size,
-                                            ctx.object_name.t.name) != 0) {
+        ctx.object_name.size = BUFFER_SIZE(TPM2B_NAME, name);
+        if (tpm2_util_hex_to_byte_structure(value, &ctx.object_name.size,
+                                            ctx.object_name.name) != 0) {
             return false;
         }
         ctx.flags.n = 1;

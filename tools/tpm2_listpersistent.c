@@ -103,15 +103,15 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
         return -1;
     }
 
-    TPMI_ALG_PUBLIC type = outPublic.t.publicArea.type;
-    TPMI_ALG_HASH nameAlg = outPublic.t.publicArea.nameAlg;
+    TPMI_ALG_PUBLIC type = outPublic.publicArea.type;
+    TPMI_ALG_HASH nameAlg = outPublic.publicArea.nameAlg;
     char *attrs = tpm2_attr_util_obj_attrtostr(
-            outPublic.t.publicArea.objectAttributes);
+            outPublic.publicArea.objectAttributes);
     char *attrbuf = attrs;
     if (!attrs) {
         LOG_WARN("Could not convert objectAttributes, converting to hex output");
         char tmp[11]; /* UINT32 in hex (8) + "0x" + '\0' */
-        snprintf(tmp, sizeof(tmp), "0x%x", outPublic.t.publicArea.objectAttributes.val);
+        snprintf(tmp, sizeof(tmp), "0x%x", outPublic.publicArea.objectAttributes.val);
         attrbuf = tmp;
     }
 

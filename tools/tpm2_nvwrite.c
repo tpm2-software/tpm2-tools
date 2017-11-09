@@ -105,24 +105,24 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    if (ctx.offset + ctx.data_size > nv_public.t.nvPublic.dataSize) {
+    if (ctx.offset + ctx.data_size > nv_public.nvPublic.dataSize) {
         LOG_ERR("The starting offset (%u) and the size (%u) are larger than the"
                 " defined space: %u.",
-                ctx.offset, ctx.data_size, nv_public.t.nvPublic.dataSize);
+                ctx.offset, ctx.data_size, nv_public.nvPublic.dataSize);
         return false;
     }
 
     while (ctx.data_size > 0) {
 
-        nv_write_data.t.size =
+        nv_write_data.size =
                 ctx.data_size > MAX_NV_BUFFER_SIZE ?
                 MAX_NV_BUFFER_SIZE : ctx.data_size;
 
-        LOG_INFO("The data(size=%d) to be written:", nv_write_data.t.size);
+        LOG_INFO("The data(size=%d) to be written:", nv_write_data.size);
 
         UINT16 i;
-        for (i = 0; i < nv_write_data.t.size; i++) {
-            nv_write_data.t.buffer[i] = ctx.nv_buffer[data_offset + i];
+        for (i = 0; i < nv_write_data.size; i++) {
+            nv_write_data.buffer[i] = ctx.nv_buffer[data_offset + i];
             tpm2_tool_output("%02x ", ctx.nv_buffer[data_offset + i]);
         }
         tpm2_tool_output("\n\n");
@@ -140,8 +140,8 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         LOG_INFO("Success to write NV area at index 0x%x (%d) offset 0x%x.",
                 ctx.nv_index, ctx.nv_index, data_offset);
 
-        ctx.data_size -= nv_write_data.t.size;
-        data_offset += nv_write_data.t.size;
+        ctx.data_size -= nv_write_data.size;
+        data_offset += nv_write_data.size;
     }
 
     return true;

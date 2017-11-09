@@ -337,12 +337,12 @@ UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
 
     switch (signature->sigAlg) {
     case TPM_ALG_RSASSA:
-        *size = sizeof(signature->signature.rsassa.sig.t.buffer);
+        *size = sizeof(signature->signature.rsassa.sig.buffer);
         buffer = malloc(*size);
         if (!buffer) {
             goto nomem;
         }
-        memcpy(buffer, signature->signature.rsassa.sig.t.buffer, *size);
+        memcpy(buffer, signature->signature.rsassa.sig.buffer, *size);
         break;
     case TPM_ALG_HMAC: {
         TPMU_HA *hmac_sig = &(signature->signature.hmac.digest);
@@ -409,7 +409,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
         LOG_ERR("Sys_ReadPublic failed, error code: 0x%x", rval);
         return false;
     }
-    *type = out_public.t.publicArea.type;
+    *type = out_public.publicArea.type;
     return true;
 }
 

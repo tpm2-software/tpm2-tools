@@ -78,13 +78,11 @@ struct tpm_create_ctx {
 };
 
 #define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
-    .t = { \
-        .publicArea = { \
-            .objectAttributes = { \
-                .val = TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM \
-                      |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN| \
-					  TPMA_OBJECT_USERWITHAUTH \
-            }, \
+    .publicArea = { \
+        .objectAttributes = { \
+            .val = TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM \
+                  |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN| \
+                   TPMA_OBJECT_USERWITHAUTH \
         }, \
     }, \
 }
@@ -108,59 +106,59 @@ int setup_alg()
     case TPM_ALG_SHA512:
     case TPM_ALG_SM3_256:
     case TPM_ALG_NULL:
-        ctx.in_public.t.publicArea.nameAlg = ctx.nameAlg;
+        ctx.in_public.publicArea.nameAlg = ctx.nameAlg;
         break;
     default:
         LOG_ERR("nameAlg algrithm: 0x%0x not support !", ctx.nameAlg);
         return -1;
     }
 
-    switch(ctx.in_public.t.publicArea.type) {
+    switch(ctx.in_public.publicArea.type) {
     case TPM_ALG_RSA:
-        ctx.in_public.t.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
-        ctx.in_public.t.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
-        ctx.in_public.t.publicArea.parameters.rsaDetail.keyBits = 2048;
-        ctx.in_public.t.publicArea.parameters.rsaDetail.exponent = 0;
-        ctx.in_public.t.publicArea.unique.rsa.t.size = 0;
+        ctx.in_public.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_NULL;
+        ctx.in_public.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        ctx.in_public.publicArea.parameters.rsaDetail.keyBits = 2048;
+        ctx.in_public.publicArea.parameters.rsaDetail.exponent = 0;
+        ctx.in_public.publicArea.unique.rsa.size = 0;
         break;
 
     case TPM_ALG_KEYEDHASH:
-        ctx.in_public.t.publicArea.unique.keyedHash.t.size = 0;
-        ctx.in_public.t.publicArea.objectAttributes.decrypt = 0;
+        ctx.in_public.publicArea.unique.keyedHash.size = 0;
+        ctx.in_public.publicArea.objectAttributes.decrypt = 0;
         if (ctx.flags.I) {
             // sealing
-            ctx.in_public.t.publicArea.objectAttributes.sign = 0;
-            ctx.in_public.t.publicArea.objectAttributes.sensitiveDataOrigin = 0;
-            ctx.in_public.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_NULL;
+            ctx.in_public.publicArea.objectAttributes.sign = 0;
+            ctx.in_public.publicArea.objectAttributes.sensitiveDataOrigin = 0;
+            ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_NULL;
         } else {
             // hmac
-            ctx.in_public.t.publicArea.objectAttributes.sign = 1;
-            ctx.in_public.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_HMAC;
-            ctx.in_public.t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = ctx.nameAlg;  //for tpm2_hmac multi alg
+            ctx.in_public.publicArea.objectAttributes.sign = 1;
+            ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_HMAC;
+            ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = ctx.nameAlg;  //for tpm2_hmac multi alg
         }
         break;
 
     case TPM_ALG_ECC:
-        ctx.in_public.t.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
-        ctx.in_public.t.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
-        ctx.in_public.t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        ctx.in_public.t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        ctx.in_public.t.publicArea.unique.ecc.x.t.size = 0;
-        ctx.in_public.t.publicArea.unique.ecc.y.t.size = 0;
+        ctx.in_public.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_NULL;
+        ctx.in_public.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
+        ctx.in_public.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
+        ctx.in_public.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+        ctx.in_public.publicArea.unique.ecc.x.size = 0;
+        ctx.in_public.publicArea.unique.ecc.y.size = 0;
         break;
 
     case TPM_ALG_SYMCIPHER:
         tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
-                          &ctx.in_public.t.publicArea.objectAttributes);
+                          &ctx.in_public.publicArea.objectAttributes);
 
-        ctx.in_public.t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
-        ctx.in_public.t.publicArea.parameters.symDetail.sym.keyBits.sym = 128;
-        ctx.in_public.t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
-        ctx.in_public.t.publicArea.unique.sym.t.size = 0;
+        ctx.in_public.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
+        ctx.in_public.publicArea.parameters.symDetail.sym.keyBits.sym = 128;
+        ctx.in_public.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
+        ctx.in_public.publicArea.unique.sym.size = 0;
         break;
 
     default:
-        LOG_ERR("type algrithm: 0x%0x not support !", ctx.in_public.t.publicArea.type);
+        LOG_ERR("type algrithm: 0x%0x not support !", ctx.in_public.publicArea.type);
         return -2;
     }
     return 0;
@@ -195,12 +193,12 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     sessionsData.cmdAuthsCount = 1;
     sessionsData.cmdAuths[0] = &ctx.session_data;
 
-    ctx.in_sensitive.t.size = ctx.in_sensitive.t.sensitive.userAuth.b.size + 2;
+    ctx.in_sensitive.size = ctx.in_sensitive.sensitive.userAuth.size + 2;
 
     if(setup_alg())
         return -1;
 
-    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.t.publicArea.objectAttributes.val);
+    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.publicArea.objectAttributes.val);
 
     creationPCR.count = 0;
 
@@ -250,7 +248,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         break;
     case 'K':
-        res = tpm2_password_util_from_optarg(value, &ctx.in_sensitive.t.sensitive.userAuth);
+        res = tpm2_password_util_from_optarg(value, &ctx.in_sensitive.sensitive.userAuth);
         if (!res) {
             LOG_ERR("Invalid key password, got\"%s\"", value);
             return false;
@@ -266,8 +264,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.g = 1;
         break;
     case 'G':
-        ctx.in_public.t.publicArea.type = tpm2_alg_util_from_optarg(value);
-        if(ctx.in_public.t.publicArea.type == TPM_ALG_ERROR) {
+        ctx.in_public.publicArea.type = tpm2_alg_util_from_optarg(value);
+        if(ctx.in_public.publicArea.type == TPM_ALG_ERROR) {
             LOG_ERR("Invalid key algorithm, got\"%s\"", value);
             return false;
         }
@@ -276,7 +274,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'A': {
         bool res = tpm2_attr_util_obj_from_optarg(value,
-                &ctx.in_public.t.publicArea.objectAttributes);
+                &ctx.in_public.publicArea.objectAttributes);
         if(!res) {
             LOG_ERR("Invalid object attribute, got\"%s\"", value);
             return false;
@@ -288,9 +286,9 @@ static bool on_option(char key, char *value) {
         ctx.flags.I = 1;
         break;
     case 'L':
-        ctx.in_public.t.publicArea.authPolicy.t.size = sizeof(ctx.in_public.t.publicArea.authPolicy) - 2;
-        if(!files_load_bytes_from_path(value, ctx.in_public.t.publicArea.authPolicy.t.buffer,
-                                       &ctx.in_public.t.publicArea.authPolicy.t.size)) {
+        ctx.in_public.publicArea.authPolicy.size = sizeof(ctx.in_public.publicArea.authPolicy) - 2;
+        if(!files_load_bytes_from_path(value, ctx.in_public.publicArea.authPolicy.buffer,
+                                       &ctx.in_public.publicArea.authPolicy.size)) {
             return false;
         }
         ctx.flags.L = 1;
@@ -356,9 +354,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool load_sensitive(void) {
 
-    ctx.in_sensitive.t.sensitive.data.t.size = BUFFER_SIZE(typeof(ctx.in_sensitive.t.sensitive.data), buffer);
+    ctx.in_sensitive.sensitive.data.size = BUFFER_SIZE(typeof(ctx.in_sensitive.sensitive.data), buffer);
     return files_load_bytes_from_file_or_stdin(ctx.input,
-            &ctx.in_sensitive.t.sensitive.data.t.size, ctx.in_sensitive.t.sensitive.data.t.buffer);
+            &ctx.in_sensitive.sensitive.data.size, ctx.in_sensitive.sensitive.data.buffer);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
@@ -369,7 +367,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     int flagCnt = 0;
 
     if(ctx.flags.P == 0)
-        ctx.session_data.hmac.t.size = 0;
+        ctx.session_data.hmac.size = 0;
 
     if (ctx.flags.I) {
         bool res = load_sensitive();
@@ -378,7 +376,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.I && ctx.in_public.t.publicArea.type != TPM_ALG_KEYEDHASH) {
+    if (ctx.flags.I && ctx.in_public.publicArea.type != TPM_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM_ALG_KEYEDHASH algorithm is allowed when sealing data");
         return 1;
     }

@@ -95,9 +95,9 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
     /* If we can get the file size and its less than 1024, just do it in one hash invocation */
     if (res && file_size <= MAX_DIGEST_BUFFER) {
 
-        TPM2B_MAX_BUFFER buffer = { .t = { .size = file_size }, };
+        TPM2B_MAX_BUFFER buffer = { .size = file_size };
 
-        res = files_read_bytes(ctx.input, buffer.t.buffer, buffer.t.size);
+        res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
             return TSS2_APP_HMAC_RC_FAILED;
@@ -108,7 +108,7 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
                 &sessions_data_out));
     }
 
-    TPM2B_AUTH null_auth = { .t.size = 0 };
+    TPM2B_AUTH null_auth = { .size = 0 };
     TPMI_DH_OBJECT sequence_handle;
 
     /*
@@ -134,14 +134,14 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
     bool done = false;
     while (!done) {
 
-        size_t bytes_read = fread(data.t.buffer, 1,
+        size_t bytes_read = fread(data.buffer, 1,
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
             return TSS2_APP_HMAC_RC_FAILED;
         }
 
-        data.t.size = bytes_read;
+        data.size = bytes_read;
 
         /* if data was read, update the sequence */
         rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
@@ -162,14 +162,14 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
     } /* end file read/hash update loop */
 
     if (use_left) {
-        data.t.size = left;
-        bool res = files_read_bytes(input, data.t.buffer, left);
+        data.size = left;
+        bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
             return TSS2_APP_HMAC_RC_FAILED;
         }
     } else {
-        data.t.size = 0;
+        data.size = 0;
     }
 
     return TSS2_RETRY_EXP(Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
@@ -187,11 +187,11 @@ static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    if (hmac_out.t.size) {
+    if (hmac_out.size) {
         UINT16 i;
         tpm2_tool_output("hmac(%s):", tpm2_alg_util_algtostr(ctx.algorithm));
-        for (i = 0; i < hmac_out.t.size; i++) {
-            tpm2_tool_output("%02x", hmac_out.t.buffer[i]);
+        for (i = 0; i < hmac_out.size; i++) {
+            tpm2_tool_output("%02x", hmac_out.buffer[i]);
         }
         tpm2_tool_output("\n");
     }

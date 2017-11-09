@@ -85,7 +85,7 @@ static void print_ssl_error(const char *failed_action) {
 bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char *path) {
 
     if (format == pubkey_format_der || format == pubkey_format_pem) {
-        return tpm2_convert_pubkey_ssl(&public->t.publicArea, format, path);
+        return tpm2_convert_pubkey_ssl(&public->publicArea, format, path);
     }
     else if (format == pubkey_format_tss) {
         // save raw as is
@@ -125,7 +125,7 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
     }
 
     e = BN_bin2bn((void*)&exponent, sizeof(exponent), NULL);
-    n = BN_bin2bn(public->unique.rsa.t.buffer, public->unique.rsa.t.size,
+    n = BN_bin2bn(public->unique.rsa.buffer, public->unique.rsa.size,
                   NULL);
 
     if (!n || !e) {

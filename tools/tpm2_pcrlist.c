@@ -287,14 +287,14 @@ static bool show_pcr_values(void) {
                 tpm2_tool_output("PCR_%02d:", pcr_id);
             }
             int k;
-            for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].t.size; k++) {
-                tpm2_tool_output("%02x", ctx.pcrs.pcr_values[vi].digests[di].t.buffer[k]);
+            for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].size; k++) {
+                tpm2_tool_output("%02x", ctx.pcrs.pcr_values[vi].digests[di].buffer[k]);
             }
             tpm2_tool_output("\n");
 
             if (ctx.output_file != NULL
-                    && fwrite(ctx.pcrs.pcr_values[vi].digests[di].t.buffer,
-                            ctx.pcrs.pcr_values[vi].digests[di].t.size, required_argument,
+                    && fwrite(ctx.pcrs.pcr_values[vi].digests[di].buffer,
+                            ctx.pcrs.pcr_values[vi].digests[di].size, required_argument,
                             ctx.output_file) != 1) {
                 LOG_ERR("write to output file failed: %s", strerror(errno));
                 return false;

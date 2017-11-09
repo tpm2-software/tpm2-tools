@@ -65,15 +65,15 @@ static bool get_random_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (!ctx.output_file_specified) {
         UINT16 i;
-        for (i = 0; i < random_bytes.t.size; i++) {
-            printf("%s0x%2.2X", i ? " " : "", random_bytes.t.buffer[i]);
+        for (i = 0; i < random_bytes.size; i++) {
+            printf("%s0x%2.2X", i ? " " : "", random_bytes.buffer[i]);
         }
         printf("\n");
         return true;
     }
 
-    return files_save_bytes_to_file(ctx.output_file, (UINT8 *) random_bytes.t.buffer,
-            random_bytes.t.size);
+    return files_save_bytes_to_file(ctx.output_file, (UINT8 *) random_bytes.buffer,
+            random_bytes.size);
 }
 
 static bool on_option(char key, char *value) {

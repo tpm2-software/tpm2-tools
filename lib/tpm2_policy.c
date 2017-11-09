@@ -74,7 +74,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
          * Once iterated through all banks, creates an file offsets map for all pcr indices
          */
         for (k=0; k < total_indices_for_this_alg; k++) {
-            pcr_values->digests[dgst_cnt+k].t.size = dgst_size;
+            pcr_values->digests[dgst_cnt+k].size = dgst_size;
         }
         dgst_cnt++;
 
@@ -124,8 +124,8 @@ TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
        // Bank hashAlg values dictates the order of the list of digests
         unsigned i;
         for(i=0; i<pcr_values.count; i++) {
-            size_t sz = fread(&pcr_values.digests[i].t.buffer, 1, pcr_values.digests[i].t.size, fp);
-            if (sz != pcr_values.digests[i].t.size) {
+            size_t sz = fread(&pcr_values.digests[i].buffer, 1, pcr_values.digests[i].size, fp);
+            if (sz != pcr_values.digests[i].size) {
                 const char *msg = ferror(fp) ? strerror(errno) :
                         "end of file reached";
                 LOG_ERR("Reading from file \"%s\" failed: %s",
