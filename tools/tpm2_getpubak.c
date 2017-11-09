@@ -333,11 +333,11 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    /* required output of testing scripts */
-    tpm2_tool_output("Name of loaded key: ");
+    /* Output in YAML format */
+    tpm2_tool_output("loaded-key:\n");
+    tpm2_tool_output("  handle: %8.8x\n  name: ", loaded_sha1_key_handle);
     tpm2_util_print_tpm2b((TPM2B *)&name);
     tpm2_tool_output("\n");
-    tpm2_tool_output("Loaded key handle:  %8.8x\n", loaded_sha1_key_handle);
 
     // write name to ak.name file
     if (ctx.akname_file) {

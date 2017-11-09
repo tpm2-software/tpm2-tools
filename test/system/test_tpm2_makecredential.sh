@@ -64,10 +64,11 @@ echo "12345678" > $file_input_data
 
 tpm2_getpubek -Q -H $handle_ek -g $ek_alg -f $output_ek_pub
 
-tpm2_getpubak -E $handle_ek  -k $handle_ak -g $ak_alg -D $digestAlg -s $signAlg -f $output_ak_pub  -n $output_ak_pub_name > output_ak
+tpm2_getpubak -Q -E $handle_ek  -k $handle_ak -g $ak_alg -D $digestAlg -s $signAlg -f $output_ak_pub -n $output_ak_pub_name
 
-grep -A 3 "Name of loaded key:" output_ak | tr "\n" " " > grep.txt
-Loadkeyname=`sed -e 's/ //g'  grep.txt | awk  -F':' '{print $2}'`
+# Use -c in xxd so there is no line wrapping
+file_size=`stat --printf="%s" $output_ak_pub_name`
+Loadkeyname=`cat $output_ak_pub_name | xxd -p -c $file_size`
 
 tpm2_makecredential -Q -e $output_ek_pub  -s $file_input_data  -n $Loadkeyname -o $output_mkcredential
 

@@ -17,6 +17,14 @@ endorsement hierarchy.
 endorsement hierarchy, make it persistent with given ak handle, and
 return pub AK and AK name. If any passwd option is missing, assume NULL.
 
+The tool outputs to stdout a YAML representation of the loaded key handle
+as well as it's name, for example:
+```
+loaded-key:
+  handle: 800000ff
+  name: 000bac149518baa05540a0678bd9b624f8a98d042e46c60f4d098ba394d36fc49268
+```
+
 # OPTIONS
 
   * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
