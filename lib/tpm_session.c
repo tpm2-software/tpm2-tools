@@ -49,16 +49,16 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
     UINT16 bytes;
     int i;
 
-    key.t.size = 0;
+    key.size = 0;
 
-    if( session->nonceOlder.t.size == 0 )
+    if( session->nonceOlder.size == 0 )
     {
-        session->nonceOlder.t.size = tpm2_alg_util_get_hash_size( TPM_ALG_SHA1 );
-        for( i = 0; i < session->nonceOlder.t.size; i++ )
-            session->nonceOlder.t.buffer[i] = 0;
+        session->nonceOlder.size = tpm2_alg_util_get_hash_size( TPM_ALG_SHA1 );
+        for( i = 0; i < session->nonceOlder.size; i++ )
+            session->nonceOlder.buffer[i] = 0;
     }
 
-    session->nonceNewer.t.size = session->nonceOlder.t.size;
+    session->nonceNewer.size = session->nonceOlder.size;
     rval = Tss2_Sys_StartAuthSession( sapi_context, session->tpmKey, session->bind, 0,
             &( session->nonceOlder ), &( session->encryptedSalt ), session->sessionType,
             &( session->symmetric ), session->authHash, &( session->sessionHandle ),
@@ -67,25 +67,25 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
     if( rval == TPM_RC_SUCCESS )
     {
         if( session->tpmKey == TPM_RH_NULL )
-            session->salt.t.size = 0;
+            session->salt.size = 0;
         if( session->bind == TPM_RH_NULL )
-            session->authValueBind.t.size = 0;
+            session->authValueBind.size = 0;
 
         if( session->tpmKey == TPM_RH_NULL && session->bind == TPM_RH_NULL )
         {
-            session->sessionKey.b.size = 0;
+            session->sessionKey.size = 0;
         }
         else
         {
             // Generate the key used as input to the KDF.
             // Generate the key used as input to the KDF.
-            bool result = tpm2_util_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->authValueBind.b ) );
+            bool result = tpm2_util_concat_buffer( (TPM2B_MAX_BUFFER *)&key, (TPM2B *)&session->authValueBind);
             if (!result)
             {
                return TSS2_SYS_RC_BAD_VALUE;
             }
 
-            result = tpm2_util_concat_buffer( (TPM2B_MAX_BUFFER *)&key, &( session->salt.b ) );
+            result = tpm2_util_concat_buffer( (TPM2B_MAX_BUFFER *)&key, (TPM2B *)&session->salt);
             if (!result)
             {
                 return TSS2_SYS_RC_BAD_VALUE;
@@ -93,14 +93,14 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
 
             bytes = tpm2_alg_util_get_hash_size( session->authHash );
 
-            if( key.t.size == 0 )
+            if( key.size == 0 )
             {
-                session->sessionKey.t.size = 0;
+                session->sessionKey.size = 0;
             }
             else
             {
-                rval = tpm_kdfa(session->authHash, &(key.b), label, &( session->nonceNewer.b ),
-                        &( session->nonceOlder.b ), bytes * 8, (TPM2B_MAX_BUFFER *)&( session->sessionKey ) );
+                rval = tpm_kdfa(session->authHash, (TPM2B *)&key, label, (TPM2B *)&session->nonceNewer,
+                        (TPM2B *)&session->nonceOlder, bytes * 8, (TPM2B_MAX_BUFFER *)&session->sessionKey);
             }
 
             if( rval != TPM_RC_SUCCESS )
@@ -109,8 +109,8 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
             }
         }
 
-        session->nonceTpmDecrypt.b.size = 0;
-        session->nonceTpmEncrypt.b.size = 0;
+        session->nonceTpmDecrypt.size = 0;
+        session->nonceTpmEncrypt.size = 0;
         session->nvNameChanged = 0;
     }
 
@@ -152,10 +152,10 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
     // Copy nonceCaller to nonceOlder in session struct.
     // This will be used as nonceCaller when StartAuthSession
     // is called.
-    memcpy( &(*session)->nonceOlder.b, &nonceCaller->b, sizeof(nonceCaller->b));
+    memcpy( &(*session)->nonceOlder, nonceCaller, sizeof(*nonceCaller));
 
     // Copy encryptedSalt
-    memcpy( &(*session)->encryptedSalt.b, &encryptedSalt->b, sizeof(encryptedSalt->b));
+    memcpy( &(*session)->encryptedSalt, encryptedSalt, sizeof(*encryptedSalt));
 
     // Copy sessionType.
     (*session)->sessionType = sessionType;
@@ -169,25 +169,25 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
     // Copy bind' authValue.
     if( bindAuth == 0 )
     {
-        (*session)->authValueBind.b.size = 0;
+        (*session)->authValueBind.size = 0;
     }
     else
     {
-        memcpy( &( (*session)->authValueBind.b ), &( bindAuth->b ), sizeof(bindAuth->b));
+        memcpy(&(*session)->authValueBind, bindAuth, sizeof(*bindAuth));
     }
 
     // Calculate sessionKey
     if( (*session)->tpmKey == TPM_RH_NULL )
     {
-        (*session)->salt.t.size = 0;
+        (*session)->salt.size = 0;
     }
     else
     {
-        memcpy( &(*session)->salt.b, &salt->b, sizeof(salt->b));
+        memcpy(&(*session)->salt, salt, sizeof(*salt));
     }
 
     if( (*session)->bind == TPM_RH_NULL )
-        (*session)->authValueBind.t.size = 0;
+        (*session)->authValueBind.size = 0;
 
     rval = StartAuthSession(sapi_context, *session );
 

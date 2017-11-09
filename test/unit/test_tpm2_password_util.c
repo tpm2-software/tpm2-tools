@@ -43,8 +43,8 @@ static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {
     TPM2B_AUTH dest;
     bool res = tpm2_password_util_from_optarg("abcd", &dest);
     assert_true(res);
-    assert_int_equal(dest.t.size, 4);
-    assert_memory_equal(dest.t.buffer, "abcd", 4);
+    assert_int_equal(dest.size, 4);
+    assert_memory_equal(dest.buffer, "abcd", 4);
 }
 
 static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
@@ -53,8 +53,8 @@ static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
     TPM2B_AUTH dest;
     bool res = tpm2_password_util_from_optarg("str:abcd", &dest);
     assert_true(res);
-    assert_int_equal(dest.t.size, 4);
-    assert_memory_equal(dest.t.buffer, "abcd", 4);
+    assert_int_equal(dest.size, 4);
+    assert_memory_equal(dest.buffer, "abcd", 4);
 }
 
 static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
@@ -67,8 +67,8 @@ static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
 
     bool res = tpm2_password_util_from_optarg("hex:1234abcd", &dest);
     assert_true(res);
-    assert_int_equal(dest.t.size, sizeof(expected));
-    assert_memory_equal(dest.t.buffer, expected, sizeof(expected));
+    assert_int_equal(dest.size, sizeof(expected));
+    assert_memory_equal(dest.buffer, expected, sizeof(expected));
 }
 
 static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **state) {
@@ -78,8 +78,8 @@ static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **st
 
     bool res = tpm2_password_util_from_optarg("str:hex:1234abcd", &dest);
     assert_true(res);
-    assert_int_equal(dest.t.size, 12);
-    assert_memory_equal(dest.t.buffer, "hex:1234abcd", 12);
+    assert_int_equal(dest.size, 12);
+    assert_memory_equal(dest.buffer, "hex:1234abcd", 12);
 }
 
 static void test_tpm2_password_util_from_optarg_raw_overlength(void **state) {
@@ -112,7 +112,7 @@ static void test_tpm2_password_util_from_optarg_empty_str(void **state) {
 
     bool res = tpm2_password_util_from_optarg("", &dest);
     assert_true(res);
-    assert_int_equal(dest.t.size, 0);
+    assert_int_equal(dest.size, 0);
 }
 
 static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(void **state) {
@@ -124,7 +124,7 @@ static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(void **stat
 
     bool res = tpm2_password_util_from_optarg("str:", &dest);
     assert_true(res);
-    assert_int_equal(dest.t.size, 0);
+    assert_int_equal(dest.size, 0);
 }
 
 
@@ -137,7 +137,7 @@ static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(void **stat
 
     bool res = tpm2_password_util_from_optarg("hex:", &dest);
     assert_true(res);
-    assert_int_equal(dest.t.size, 0);
+    assert_int_equal(dest.size, 0);
 }
 
 int main(int argc, char* argv[]) {

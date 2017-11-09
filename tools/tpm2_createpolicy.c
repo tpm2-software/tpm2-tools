@@ -117,8 +117,8 @@ static TPM_RC parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context)
         if (pctx.common_policy_options.policy_session_type == TPM_SE_POLICY) {
             tpm2_tool_output("TPM_SE_POLICY: 0x");
             int i;
-            for(i = 0; i < pctx.common_policy_options.policy_digest.t.size; i++) {
-                tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest.t.buffer[i]);
+            for(i = 0; i < pctx.common_policy_options.policy_digest.size; i++) {
+                tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest.buffer[i]);
             }
             tpm2_tool_output("\n");
         }
@@ -127,8 +127,8 @@ static TPM_RC parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context)
         if (pctx.common_policy_options.policy_session_type == TPM_SE_TRIAL) {
             //save the policy buffer in a file for use later
             bool result = files_save_bytes_to_file(pctx.common_policy_options.policy_file,
-                              (UINT8 *) &pctx.common_policy_options.policy_digest.t.buffer,
-                                          pctx.common_policy_options.policy_digest.t.size);
+                              (UINT8 *) &pctx.common_policy_options.policy_digest.buffer,
+                                          pctx.common_policy_options.policy_digest.size);
             if (!result) {
                 LOG_ERR("Failed to save policy digest into file \"%s\"",
                         pctx.common_policy_options.policy_file);

@@ -110,7 +110,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
         return false;
     }
 
-    *type = out_public.t.publicArea.type;
+    *type = out_public.publicArea.type;
 
     return true;
 }
@@ -170,10 +170,8 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
     };
 
     TPM2B_DATA qualifying_data = {
-        .t = {
-            .size = 4,
-            .buffer = { 0x00, 0xff, 0x55,0xaa }
-        }
+        .size = 4,
+        .buffer = { 0x00, 0xff, 0x55,0xaa }
     };
 
     TPMT_SIG_SCHEME scheme;
@@ -184,9 +182,7 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     TPM2B_ATTEST certify_info = {
-        .t = {
-            .size = sizeof(certify_info)-2
-        }
+        .size = sizeof(certify_info)-2
     };
 
     TPMT_SIGNATURE signature;
@@ -201,7 +197,7 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* serialization is safe here, since it's just a byte array */
     result = files_save_bytes_to_file(ctx.file_path.attest,
-            certify_info.t.attestationData, certify_info.t.size);
+            certify_info.attestationData, certify_info.size);
     if (!result) {
         return false;
     }

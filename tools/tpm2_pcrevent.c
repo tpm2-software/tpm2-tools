@@ -102,7 +102,7 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
 
         TPM2B_EVENT buffer = TPM2B_INIT(file_size);
 
-        res = files_read_bytes(ctx.input, buffer.t.buffer, buffer.t.size);
+        res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
             return TSS2_APP_PCREVENT_RC_FAILED;
@@ -146,14 +146,14 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
     bool done = false;
     while (!done) {
 
-        size_t bytes_read = fread(data.t.buffer, 1,
+        size_t bytes_read = fread(data.buffer, 1,
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
             return TSS2_APP_PCREVENT_RC_FAILED;
         }
 
-        data.t.size = bytes_read;
+        data.size = bytes_read;
 
         /* if data was read, update the sequence */
         rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
@@ -175,14 +175,14 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
     } /* end file read/hash update loop */
 
     if (use_left) {
-        data.t.size = left;
-        bool res = files_read_bytes(input, data.t.buffer, left);
+        data.size = left;
+        bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
             return TSS2_APP_PCREVENT_RC_FAILED;
         }
     } else {
-        data.t.size = 0;
+        data.size = 0;
     }
 
     /*

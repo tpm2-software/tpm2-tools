@@ -131,20 +131,20 @@ static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
     tpm2_tool_output("certinfodata:");
 
     unsigned k;
-    for (k = 0; k < digest->t.size; k++) {
-        tpm2_tool_output("%.2x", digest->t.buffer[k]);
+    for (k = 0; k < digest->size; k++) {
+        tpm2_tool_output("%.2x", digest->buffer[k]);
     }
     tpm2_tool_output("\n");
 
-    return files_save_bytes_to_file(path, digest->t.buffer, digest->t.size);
+    return files_save_bytes_to_file(path, digest->buffer, digest->size);
 }
 
 static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST certInfoData = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMS_AUTH_COMMAND tmp_auth = {
-            .nonce = { .t = { .size = 0 } },
-            .hmac =  { .t = { .size = 0 } },
+            .nonce = { .size = 0 },
+            .hmac =  { .size = 0 },
             .sessionHandle = 0,
             .sessionAttributes = { .val = 0 },
     };
@@ -196,7 +196,7 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     tmp_auth.sessionHandle = session->sessionHandle;
     tmp_auth.sessionAttributes.continueSession = 1;
-    tmp_auth.hmac.t.size = 0;
+    tmp_auth.hmac.size = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.handle.activate,
             ctx.handle.key, &cmd_auth_array_password, &ctx.credentialBlob, &ctx.secret,

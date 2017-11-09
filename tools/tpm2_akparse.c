@@ -115,28 +115,28 @@ static bool parse_and_save_ak_public() {
 
     size_t key_data_len = 1;
     TPM2B *key_data[2];
-    switch (outPublic.t.publicArea.type) {
+    switch (outPublic.publicArea.type) {
     case TPM_ALG_RSA:
-        key_data[0] = &outPublic.t.publicArea.unique.rsa.b;
+        key_data[0] = (TPM2B *)&outPublic.publicArea.unique.rsa;
         break;
     case TPM_ALG_KEYEDHASH:
-        key_data[0] = &outPublic.t.publicArea.unique.keyedHash.b;
+        key_data[0] = (TPM2B *)&outPublic.publicArea.unique.keyedHash;
         break;
     case TPM_ALG_SYMCIPHER:
-        key_data[0] = &outPublic.t.publicArea.unique.sym.b;
+        key_data[0] = (TPM2B *)&outPublic.publicArea.unique.sym;
         break;
     case TPM_ALG_ECC:
         key_data_len = 2;
-        key_data[0] = &outPublic.t.publicArea.unique.ecc.x.b;
-        key_data[1] = &outPublic.t.publicArea.unique.ecc.y.b;
+        key_data[0] = (TPM2B *)&outPublic.publicArea.unique.ecc.x;
+        key_data[1] = (TPM2B *)&outPublic.publicArea.unique.ecc.y;
         break;
     default:
         LOG_ERR("The algorithm type(0x%4.4x) is not supported",
-                outPublic.t.publicArea.type);
+                outPublic.publicArea.type);
         return false;
     }
 
-    return save_alg_and_key_to_file(ctx.ak_key_file_path, outPublic.t.publicArea.type,
+    return save_alg_and_key_to_file(ctx.ak_key_file_path, outPublic.publicArea.type,
             key_data, key_data_len);
 }
 

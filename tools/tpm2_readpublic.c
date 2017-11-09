@@ -86,14 +86,14 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     tpm2_tool_output("name:");
     UINT16 i;
-    for (i = 0; i < name.t.size; i++) {
-        tpm2_tool_output("%02x", name.t.name[i]);
+    for (i = 0; i < name.size; i++) {
+        tpm2_tool_output("%02x", name.name[i]);
     }
     tpm2_tool_output("\n");
 
     tpm2_tool_output("qualified_name:");
-    for (i = 0; i < qualified_name.t.size; i++) {
-        tpm2_tool_output("%02x", qualified_name.t.name[i]);
+    for (i = 0; i < qualified_name.size; i++) {
+        tpm2_tool_output("%02x", qualified_name.name[i]);
     }
     tpm2_tool_output("\n");
 

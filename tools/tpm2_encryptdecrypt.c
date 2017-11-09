@@ -94,10 +94,8 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.cmdAuths[0] = &ctx.session_data;
 
     TPM2B_IV iv_in = {
-        .t = {
-            .size = MAX_SYM_BLOCK_SIZE,
-            .buffer = { 0 }
-        },
+        .size = MAX_SYM_BLOCK_SIZE,
+        .buffer = { 0 }
     };
 
     /* try EncryptDecrypt2 first, fallback to EncryptDecrypt if not supported */
@@ -114,8 +112,8 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) out_data.t.buffer,
-            out_data.t.size);
+    return files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) out_data.buffer,
+            out_data.size);
 }
 
 static bool on_option(char key, char *value) {
@@ -151,8 +149,8 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'I':
-        ctx.data.t.size = sizeof(ctx.data) - 2;
-        result = files_load_bytes_from_path(value, ctx.data.t.buffer, &ctx.data.t.size);
+        ctx.data.size = sizeof(ctx.data) - 2;
+        result = files_load_bytes_from_path(value, ctx.data.buffer, &ctx.data.size);
         if (!result) {
             return false;
         }

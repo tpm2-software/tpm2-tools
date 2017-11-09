@@ -86,26 +86,26 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    public_info.t.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
+    public_info.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
-    public_info.t.nvPublic.nvIndex = ctx.nvIndex;
-    public_info.t.nvPublic.nameAlg = TPM_ALG_SHA256;
+    public_info.nvPublic.nvIndex = ctx.nvIndex;
+    public_info.nvPublic.nameAlg = TPM_ALG_SHA256;
 
     // Now set the attributes.
-    public_info.t.nvPublic.attributes.val = ctx.nvAttribute.val;
+    public_info.nvPublic.attributes.val = ctx.nvAttribute.val;
 
     if (!ctx.size) {
         LOG_WARN("Defining an index with size 0");
     }
 
     if (ctx.policy_file) {
-        public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-        if(!files_load_bytes_from_path(ctx.policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
+        public_info.nvPublic.authPolicy.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
+        if(!files_load_bytes_from_path(ctx.policy_file, public_info.nvPublic.authPolicy.buffer, &public_info.nvPublic.authPolicy.size )) {
             return false;
         }
     } 
 
-    public_info.t.nvPublic.dataSize = ctx.size;
+    public_info.nvPublic.dataSize = ctx.size;
 
     TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.authHandle,
             &sessions_data, &ctx.nvAuth, &public_info, &sessions_data_out));

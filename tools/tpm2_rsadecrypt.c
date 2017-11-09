@@ -83,7 +83,7 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.cmdAuthsCount = 1;
 
     inScheme.scheme = TPM_ALG_RSAES;
-    label.t.size = 0;
+    label.size = 0;
 
     TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_handle,
             &sessions_data, &ctx.cipher_text, &inScheme, &label, &message,
@@ -93,8 +93,8 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return files_save_bytes_to_file(ctx.output_file_path, message.t.buffer,
-            message.t.size);
+    return files_save_bytes_to_file(ctx.output_file_path, message.buffer,
+            message.size);
 }
 
 static bool on_option(char key, char *value) {
@@ -120,9 +120,9 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'I': {
-        ctx.cipher_text.t.size = sizeof(ctx.cipher_text) - 2;
-        bool result = files_load_bytes_from_path(value, ctx.cipher_text.t.buffer,
-                &ctx.cipher_text.t.size);
+        ctx.cipher_text.size = sizeof(ctx.cipher_text) - 2;
+        bool result = files_load_bytes_from_path(value, ctx.cipher_text.buffer,
+                &ctx.cipher_text.size);
         if (!result) {
             return false;
         }

@@ -83,8 +83,8 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
 
     if (message_path) {
         res &= files_save_bytes_to_file(message_path,
-                (UINT8*)(quoted->b).buffer,
-                (quoted->b).size);
+                (UINT8*)quoted->attestationData,
+                quoted->size);
     }
 
     return res;
@@ -117,7 +117,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
         sessionData.sessionHandle = auth_session_handle;
     }
 
-    sessionData.nonce.t.size = 0;
+    sessionData.nonce.size = 0;
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
     if(!G_flag || !get_signature_scheme(sapi_context, akHandle, sig_hash_algorithm, &inScheme)) {
@@ -201,8 +201,8 @@ static bool on_option(char key, char *value) {
         o_flag = 1;
         break;
     case 'q':
-        qualifyingData.t.size = sizeof(qualifyingData) - 2;
-        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
+        qualifyingData.size = sizeof(qualifyingData) - 2;
+        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.size,qualifyingData.buffer) != 0)
         {
             LOG_ERR("Could not convert \"%s\" from a hex string to byte array!", value);
             return false;
@@ -259,7 +259,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;

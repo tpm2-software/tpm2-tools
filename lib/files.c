@@ -206,15 +206,15 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE han
     }
 
     // U16 LENGTH
-    result = files_write_16(f, context.contextBlob.t.size);
+    result = files_write_16(f, context.contextBlob.size);
     if (!result) {
         LOG_ERR("Could not write contextBob size file: \"%s\"", path);
         goto out;
     }
 
     // BYTE[] contextBlob
-    result = files_write_bytes(f, context.contextBlob.t.buffer,
-            context.contextBlob.t.size);
+    result = files_write_bytes(f, context.contextBlob.buffer,
+            context.contextBlob.size);
     if (!result) {
         LOG_ERR("Could not write contextBlob buffer for file: \"%s\"", path);
     }
@@ -288,23 +288,23 @@ bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
         goto out;
     }
 
-    result = files_read_16(f, &context.contextBlob.t.size);
+    result = files_read_16(f, &context.contextBlob.size);
     if (!result) {
         LOG_ERR("Error reading contextBlob.size!");
         goto out;
     }
 
-    if (context.contextBlob.t.size > sizeof(context.contextBlob.t.buffer)) {
+    if (context.contextBlob.size > sizeof(context.contextBlob.buffer)) {
         LOG_ERR(
                 "Size mismatch found on contextBlob, got %"PRIu16" expected less than or equal to %zu",
-                context.contextBlob.t.size,
-                sizeof(context.contextBlob.t.buffer));
+                context.contextBlob.size,
+                sizeof(context.contextBlob.buffer));
         result = false;
         goto out;
     }
 
-    result = files_read_bytes(f, context.contextBlob.t.buffer,
-            context.contextBlob.t.size);
+    result = files_read_bytes(f, context.contextBlob.buffer,
+            context.contextBlob.size);
     if (!result) {
         LOG_ERR("Error reading contextBlob.size!");
         goto out;

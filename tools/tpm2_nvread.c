@@ -91,7 +91,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return false;
     }
 
-    UINT16 data_size = nv_public.t.nvPublic.dataSize;
+    UINT16 data_size = nv_public.nvPublic.dataSize;
 
     /* if no size was specified, assume the whole object */
     if (ctx.size_to_read == 0) {
@@ -137,11 +137,11 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             goto out;
         }
 
-        ctx.size_to_read -= nv_data.t.size;
-        ctx.offset += nv_data.t.size;
+        ctx.size_to_read -= nv_data.size;
+        ctx.offset += nv_data.size;
 
-        memcpy(data_buffer + data_offset, nv_data.t.buffer, nv_data.t.size);
-        data_offset += nv_data.t.size;
+        memcpy(data_buffer + data_offset, nv_data.buffer, nv_data.size);
+        data_offset += nv_data.size;
     }
 
     if (!flags.quiet) {
