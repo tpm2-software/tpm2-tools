@@ -129,9 +129,17 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
     return 0;
 }
 
-void tpm2_util_hexdump(BYTE *data, size_t len) {
+void tpm2_util_hexdump(BYTE *data, size_t len, bool plain) {
 
     if (!output_enabled) {
+        return;
+    }
+
+    if (plain) {
+        size_t i;
+        for (i=0; i < len; i++) {
+            printf("%02x", data[i]);
+        }
         return;
     }
 
