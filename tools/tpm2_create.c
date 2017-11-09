@@ -356,46 +356,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool load_sensitive(void) {
 
-    bool is_stdin = !strcmp(ctx.input, "-");
-    FILE *file =  !is_stdin ? fopen(ctx.input, "rb") : stdin;
-    char *path = !is_stdin ? ctx.input : "<stdin>";
-    if (!file) {
-        LOG_ERR("Could not open file: \"%s\", error: %s", path, strerror(errno));
-        return false;
-    }
-
-    /*
-     * Attempt to accurately read the file based on the file size.
-     * This may fail on stdin when it's a pipe.
-     */
-    if (is_stdin) {
-        path = NULL;
-    }
-
     ctx.in_sensitive.t.sensitive.data.t.size = BUFFER_SIZE(typeof(ctx.in_sensitive.t.sensitive.data), buffer);
-    bool res = files_load_bytes_from_file(file, ctx.in_sensitive.t.sensitive.data.t.buffer,
-            &ctx.in_sensitive.t.sensitive.data.t.size, path);
-
-    if (!res) {
-        res = true;
-        ctx.in_sensitive.t.sensitive.data.t.size = fread(ctx.in_sensitive.t.sensitive.data.t.buffer, 1,
-                ctx.in_sensitive.t.sensitive.data.t.size, file);
-        if (!feof(file)) {
-            LOG_ERR("Data to be sealed larger than expected. Got %u expected %u",
-                    ctx.in_sensitive.t.sensitive.data.t.size, res);
-            res = false;
-        }
-        else if (ferror(file)) {
-            LOG_ERR("Error reading sealed data from \"<stdin>\"");
-            res = false;
-        }
-    }
-
-    if (!is_stdin) {
-        fclose(file);
-    }
-
-    return res;
+    return files_load_bytes_from_file_or_stdin(ctx.input,
+            &ctx.in_sensitive.t.sensitive.data.t.size, ctx.in_sensitive.t.sensitive.data.t.buffer);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {

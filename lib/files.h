@@ -54,36 +54,17 @@
 bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
 
 /**
- * Reads a series of bytes from a stdio FILE object.
- * @param file
- *  The file to read from.
- * @param buf
- *  The buffer to read into.
- * @param size
- *  The size of the buffer to read into.
+ * Loads data from a file path or stdin enforcing an upper bound on size.
  * @param path
- *  An optional path for error reporting. A NULL path disables error logging.
- * @return
- *  True on success, False otherwise.
- */
-bool files_load_bytes_from_file(FILE *file, UINT8 *buf, UINT16 *size, const char *path);
-
-/**
- * Reads a series of bytes from the standard input as a byte array. This is similar to
- * files_read_bytes(), but it calculates the size to read for the caller. Size is both
- * an input and output value where the size value is the max buffer size on call and
- * the returned size is how much was read.
- *
- * @param buf
- *  The buffer to read the data into
+ *  The path to load data from, NULL means stdin.
  * @param size
- *  The max size of the buffer on call, and the size of the data read on return.
+ *  The maximum size.
+ * @param buf
+ *  The buffer to write the data into.
  * @return
- *  True on success, false otherwise.
+ *  True on success or false otherwise.
  */
-static inline bool files_load_bytes_from_stdin(UINT8 *buf, UINT16 *size) {
-    return files_load_bytes_from_file(stdin, buf, size, "<stdin>");
-}
+bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *buf);
 
 /**
  * Similar to files_write_bytes(), in that it writes an array of bytes to disk,

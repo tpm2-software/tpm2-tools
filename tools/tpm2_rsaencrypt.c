@@ -46,14 +46,13 @@ typedef struct tpm_rsaencrypt_ctx tpm_rsaencrypt_ctx;
 struct tpm_rsaencrypt_ctx {
     struct {
         UINT8 k : 1;
-        UINT8 I : 1;
         UINT8 c : 1;
-        UINT8 unused : 5;
     } flags;
     char *context_key_file;
     TPMI_DH_OBJECT key_handle;
     TPM2B_PUBLIC_KEY_RSA message;
     char *output_path;
+    char *input_path;
 };
 
 static tpm_rsaencrypt_ctx ctx;
@@ -107,16 +106,6 @@ static bool on_option(char key, char *value) {
         ctx.flags.k = 1;
     }
         break;
-    case 'I': {
-        ctx.message.t.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
-        bool result = files_load_bytes_from_path(value, ctx.message.t.buffer,
-                &ctx.message.t.size);
-        if (!result) {
-            return false;
-        }
-        ctx.flags.I = 1;
-    }
-        break;
     case 'o': {
         ctx.output_path = value;
     }
@@ -131,25 +120,36 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_args(int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("Only supports one hash input file, got: %d", argc);
+        return false;
+    }
+
+    ctx.input_path = argv[1];
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
       {"key-handle",  required_argument, NULL, 'k'},
-      {"in-file",     required_argument, NULL, 'I'},
       {"out-file",    required_argument, NULL, 'o'},
       {"key-context", required_argument, NULL, 'c'},
     };
 
-    *opts = tpm2_options_new("k:I:o:c:", ARRAY_LEN(topts), topts,
-            on_option, NULL);
+    *opts = tpm2_options_new("k:o:c:", ARRAY_LEN(topts), topts,
+            on_option, on_args);
 
     return *opts != NULL;
 }
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I)) {
-        LOG_ERR("Expected options I and (k or c)");
+    if (!(ctx.flags.k || ctx.flags.c)) {
+        LOG_ERR("Expected options k or c");
         return false;
     }
 
@@ -161,7 +161,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         }
     }
 
-    return true;
+    ctx.message.t.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
+    return files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.message.t.size, ctx.message.t.buffer);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {

@@ -8,11 +8,12 @@
 
 # SYNOPSIS
 
-**tpm2_rsaencrypt** [*OPTIONS*]
+**tpm2_rsaencrypt** [*OPTIONS*] _FILE_
 
 # DESCRIPTION
 
-**tpm2_rsaencrypt**(1) performs RSA encryption using the indicated padding scheme according to
+**tpm2_rsaencrypt**(1) performs RSA encryption on the contents of _FILE_
+(defaulting to stdin) using the indicated padding scheme according to
 IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be **TPM_ALG_NULL**.
 
 The key referenced by keyHandle is **required** to be:
@@ -34,10 +35,6 @@ The key referenced by keyHandle is **required** to be:
 
     specifies the password of _KEY\_HANDLE_. Passwords should follow the
     password formatting standards, see section "Password Formatting".
-
-  * **-I**, **--in-file**=_INPUT\FILE_:
-
-    Input file path, containing the data to be encrypted.
 
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
