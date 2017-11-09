@@ -145,7 +145,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (!flags.quiet) {
-        tpm2_util_hexdump(data_buffer, data_offset);
+        tpm2_util_hexdump(data_buffer, data_offset, false);
     }
 
     /* dump data_buffer to output file, if specified */

@@ -148,12 +148,15 @@ bool tpm2_util_string_to_uint16(const char *str, uint16_t *value);
  * Prints an xxd compatible hexdump to stdout if output is enabled,
  * ie no -Q option.
  *
- * @param dats
+ * @param data
  *  The data to print.
  * @param len
  *  The length of the data.
+ * @param plain
+ *  true for a plain hex string false for an xxd compatable
+ *  dump.
  */
-void tpm2_util_hexdump(BYTE *dara, size_t len);
+void tpm2_util_hexdump(BYTE *data, size_t len, bool plain);
 
 /**
  * Prints a TPM2B as a hex dump.
@@ -161,7 +164,7 @@ void tpm2_util_hexdump(BYTE *dara, size_t len);
  */
 static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
 
-    return tpm2_util_hexdump(buffer->buffer, buffer->size);
+    return tpm2_util_hexdump(buffer->buffer, buffer->size, true);
 }
 
 
