@@ -30,7 +30,7 @@
     password formatting standards, see section "Password Formatting".
 
   * **-l**, **--id-list**=_PCR\_ID\_LIST_
-	
+
 	The comma separated list of selected PCRs' ids, 0~23 e.g. "4,5,6".
 
   * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:
