@@ -41,7 +41,9 @@ The key referenced by keyHandle is **required** to be:
 
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
-    Output file path, record the decrypted data.
+    Output file path, record the decrypted data. The default is to print an
+    xxd compatible hexdump to stdout. If a file is specified, raw binary
+    output is performed.
 
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
 

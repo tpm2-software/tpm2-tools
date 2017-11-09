@@ -71,4 +71,7 @@ tpm2_loadexternal -Q -H n   -u $file_rsaencrypt_key_pub  -C $file_rsaencrypt_key
 #./tpm2_rsaencrypt -c context_loadexternal_out6.out -I secret.data -o rsa_en.out
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -I $file_input_data -o $file_rsa_en_output_data
 
+# Test stdout for -o and ensure that output is xxd format
+tpm2_rsaencrypt -c $file_rsaencrypt_key_ctx -I $file_input_data | xxd -r > /dev/null
+
 exit 0

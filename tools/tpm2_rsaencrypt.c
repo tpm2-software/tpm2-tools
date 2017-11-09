@@ -29,15 +29,16 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
 #include "files.h"
 #include "log.h"
+#include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -46,14 +47,13 @@ struct tpm_rsaencrypt_ctx {
     struct {
         UINT8 k : 1;
         UINT8 I : 1;
-        UINT8 o : 1;
         UINT8 c : 1;
-        UINT8 unused : 4;
+        UINT8 unused : 5;
     } flags;
     char *context_key_file;
     TPMI_DH_OBJECT key_handle;
     TPM2B_PUBLIC_KEY_RSA message;
-    char *output_file_path;
+    char *output_path;
 };
 
 static tpm_rsaencrypt_ctx ctx;
@@ -84,8 +84,14 @@ static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return files_save_bytes_to_file(ctx.output_file_path, out_data.t.buffer,
+    if (ctx.output_path) {
+        return files_save_bytes_to_file(ctx.output_path, out_data.t.buffer,
             out_data.t.size);
+    }
+
+    tpm2_util_print_tpm2b(&out_data.b);
+
+    return true;
 }
 
 static bool on_option(char key, char *value) {
@@ -95,7 +101,7 @@ static bool on_option(char key, char *value) {
         bool result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
         if (!result) {
             LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         ctx.flags.k = 1;
@@ -112,16 +118,11 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'o': {
-        bool result = files_does_file_exist(optarg);
-        if (result) {
-            return false;
-        }
-        ctx.output_file_path = optarg;
-        ctx.flags.o = 1;
+        ctx.output_path = value;
     }
         break;
     case 'c':
-        ctx.context_key_file = optarg;
+        ctx.context_key_file = value;
         ctx.flags.c = 1;
         break;
         /* no default */
@@ -147,8 +148,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I && ctx.flags.o)) {
-        LOG_ERR("Expected options I and o and (k or c)");
+    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I)) {
+        LOG_ERR("Expected options I and (k or c)");
         return false;
     }
 
