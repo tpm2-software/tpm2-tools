@@ -70,24 +70,40 @@ static bool write_cred_and_secret(const char *path, TPM2B_ID_OBJECT *cred,
 
     bool result = false;
 
-    FILE *fp = fopen(path, "w+");
+    FILE *fp = fopen(path, "wb+");
     if (!fp) {
         LOG_ERR("Could not open file \"%s\" error: \"%s\"", path,
                 strerror(errno));
         return false;
     }
 
-    size_t items = fwrite(cred, sizeof(TPM2B_ID_OBJECT), 1, fp);
-    if (items != 1) {
-        LOG_ERR("writing credential to file \"%s\" failed, error: \"%s\"", path,
-                strerror(errno));
+    result = files_write_header(fp, 1);
+    if (!result) {
+        LOG_ERR("Could not write version header");
         goto out;
     }
 
-    items = fwrite(secret, sizeof(TPM2B_ENCRYPTED_SECRET), 1, fp);
-    if (items != 1) {
-        LOG_ERR("writing secret to file \"%s\" failed, error: \"%s\"", path,
-                strerror(errno));
+    result = files_write_16(fp, cred->size);
+    if (!result) {
+        LOG_ERR("Could not write credential size");
+        goto out;
+    }
+
+    result = files_write_bytes(fp, cred->credential, cred->size);
+    if (!result) {
+        LOG_ERR("Could not write credential data");
+        goto out;
+    }
+
+    result = files_write_16(fp, secret->size);
+    if (!result) {
+        LOG_ERR("Could not write secret size");
+        goto out;
+    }
+
+    result = files_write_bytes(fp, secret->secret, secret->size);
+    if (!result) {
+        LOG_ERR("Could not write secret data");
         goto out;
     }
 
@@ -168,11 +184,8 @@ static bool on_option(char key, char *value) {
         break;
     case 'o':
         ctx.out_file_path = optarg;
-        if (files_does_file_exist(ctx.out_file_path)) {
-            return false;
-        }
-            ctx.flags.o = 1;
-            break;
+        ctx.flags.o = 1;
+        break;
     }
 
     return true;

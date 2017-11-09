@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -81,7 +82,7 @@ struct tpm_activatecred_ctx {
 
 static tpm_activatecred_ctx ctx;
 
-static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *credentialBlob,
+static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *cred,
         TPM2B_ENCRYPTED_SECRET *secret) {
 
     bool result = false;
@@ -92,37 +93,47 @@ static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *credentialBlob,
         return false;
     }
 
-    size_t items = fread(credentialBlob, sizeof(TPM2B_ID_OBJECT), 1, fp);
-    if (items != 1) {
-        const char *fmt_msg =
-                "Reading credential from file \"%s\" failed, error: \"%s\"";
-        const char *err_msg = "Unknown error";
-        if (ferror(fp)) {
-            err_msg = strerror(errno);
-        } else if (feof(fp)) {
-            err_msg = "end of file";
-        }
-        LOG_ERR(fmt_msg, path, err_msg);
+    uint32_t version;
+    result = files_read_header(fp, &version);
+    if (!result) {
+        LOG_ERR("Could not read version header");
         goto out;
     }
 
-    items = fread(secret, sizeof(TPM2B_ENCRYPTED_SECRET), 1, fp);
-    if (items != 1) {
-        const char *fmt_msg =
-                "Reading secret from file \"%s\" failed, error: \"%s\"";
-        const char *err_msg = "Unknown error";
-        if (ferror(fp)) {
-            err_msg = strerror(errno);
-        } else if (feof(fp)) {
-            err_msg = "end of file";
-        }
-        LOG_ERR(fmt_msg, path, err_msg);
+    if (version != 1) {
+        LOG_ERR("Unknown credential format, got %"PRIu32" expected 1",
+                version);
+        goto out;
+    }
+
+    result = files_read_16(fp, &cred->size);
+    if (!result) {
+        LOG_ERR("Could not read credential size");
+        goto out;
+    }
+
+    result = files_read_bytes(fp, cred->credential, cred->size);
+    if (!result) {
+        LOG_ERR("Could not read credential data");
+        goto out;
+    }
+
+    result = files_read_16(fp, &secret->size);
+    if (!result) {
+        LOG_ERR("Could not read secret size");
+        goto out;
+    }
+
+    result = files_read_bytes(fp, secret->secret, secret->size);
+    if (!result) {
+        LOG_ERR("Could not write secret data");
         goto out;
     }
 
     result = true;
-    out: fclose(fp);
 
+out:
+    fclose(fp);
     return result;
 }
 
