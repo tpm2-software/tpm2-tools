@@ -107,7 +107,7 @@ static void test_tpm2_password_util_from_optarg_empty_str(void **state) {
     (void)state;
 
     TPM2B_AUTH dest = {
-        .t = { .size = 42 }
+        .size = 42
     };
 
     bool res = tpm2_password_util_from_optarg("", &dest);
@@ -119,7 +119,7 @@ static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(void **stat
     (void)state;
 
     TPM2B_AUTH dest = {
-        .t = { .size = 42 }
+        .size = 42
     };
 
     bool res = tpm2_password_util_from_optarg("str:", &dest);
@@ -132,7 +132,7 @@ static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(void **stat
     (void)state;
 
     TPM2B_AUTH dest = {
-        .t = { .size = 42 }
+        .size = 42
     };
 
     bool res = tpm2_password_util_from_optarg("hex:", &dest);
