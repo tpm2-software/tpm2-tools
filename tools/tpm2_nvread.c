@@ -67,30 +67,6 @@ static tpm_nvread_ctx ctx = {
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
 };
 
-static void hexdump(void *ptr, unsigned buflen) {
-
-    unsigned char *buf = (unsigned char*) ptr;
-    unsigned i, j;
-
-    for (i = 0; i < buflen; i += 16) {
-        printf("%06x: ", i);
-        for (j = 0; j < 16; j++) {
-            if (i + j < buflen) {
-                printf("%02x ", buf[i + j]);
-            } else {
-                printf("   ");
-            }
-        }
-        printf(" ");
-        for (j = 0; j < 16; j++) {
-            if (i + j < buflen) {
-                printf("%c", isprint(buf[i + j]) ? buf[i + j] : '.');
-            }
-        }
-        printf("\n");
-    }
-}
-
 static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
 
@@ -169,7 +145,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (!flags.quiet) {
-        hexdump(data_buffer, data_offset);
+        tpm2_util_hexdump(data_buffer, data_offset);
     }
 
     /* dump data_buffer to output file, if specified */
