@@ -284,7 +284,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.A = 1;
     } break;
     case 'I':
-        ctx.input = value;
+        ctx.input = strcmp("-", value) ? value : NULL;
         ctx.flags.I = 1;
         break;
     case 'L':
