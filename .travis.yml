@@ -43,13 +43,13 @@ install:
     - mkdir ibmtpm974 && pushd ibmtpm974 && tar axf ../ibmtpm974.tar.gz && pushd ./src && make
     - ./tpm_server &
     - popd && popd
-    - git clone https://github.com/01org/TPM2.0-TSS.git
-    - pushd TPM2.0-TSS
+    - git clone -b 1.x https://github.com/intel/tpm2-tss.git
+    - pushd tpm2-tss
     - ./bootstrap && ./configure && make -j$(nproc)
     - sudo ../.ci/travis-tss-install.sh
     - popd
     - sudo ldconfig /usr/local/lib
-    - git clone https://github.com/01org/tpm2-abrmd.git
+    - git clone -b 1.x https://github.com/intel/tpm2-abrmd.git
     - pushd tpm2-abrmd
     - git am ../.ci/patches/abrmd/* || true
     - ./bootstrap && ./configure --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
