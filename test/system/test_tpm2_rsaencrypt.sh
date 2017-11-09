@@ -69,9 +69,9 @@ tpm2_create -Q -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -
 tpm2_loadexternal -Q -H n   -u $file_rsaencrypt_key_pub  -C $file_rsaencrypt_key_ctx
 
 #./tpm2_rsaencrypt -c context_loadexternal_out6.out -I secret.data -o rsa_en.out
-tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -I $file_input_data -o $file_rsa_en_output_data
+tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data $file_input_data
 
-# Test stdout for -o and ensure that output is xxd format
-tpm2_rsaencrypt -c $file_rsaencrypt_key_ctx -I $file_input_data | xxd -r > /dev/null
+# Test stdout for -o and ensure that output is xxd format, test that stdin pipe works as well.
+cat $file_input_data | tpm2_rsaencrypt -c $file_rsaencrypt_key_ctx | xxd -r > /dev/null
 
 exit 0

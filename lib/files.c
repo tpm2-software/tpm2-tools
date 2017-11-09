@@ -125,14 +125,6 @@ bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size) {
     return result;
 }
 
-bool files_load_bytes_from_file(FILE *file, UINT8 *buf, UINT16 *size, const char *path) {
-    if (!buf || !size) {
-        return false;
-    }
-
-    return read_bytes_from_file(file, buf, size, path);
-}
-
 bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
 
     if (!path || !buf) {
@@ -532,4 +524,47 @@ bool files_read_header(FILE *out, uint32_t *version) {
     }
 
     return files_read_32(out, version);
+}
+
+bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *buf) {
+
+    FILE *file =  path ? fopen(path, "rb") : stdin;
+    path = file != stdin ? path : "<stdin>";
+    if (!file) {
+        LOG_ERR("Could not open file: \"%s\", error: %s", path,
+                strerror(errno));
+        return false;
+    }
+
+    /*
+     * Attempt to accurately read the file based on the file size.
+     * This may fail on stdin when it's a pipe.
+     */
+    if (file == stdin) {
+        path = NULL;
+    }
+
+    UINT16 original_size = *size;
+    bool res = files_load_bytes_from_path(path, buf,
+            size);
+    if (!res) {
+        res = true;
+        *size = fread(buf, 1,
+                *size, file);
+        if (!feof(file)) {
+            LOG_ERR("Data to be sealed larger than expected. Got %u expected %u",
+                    original_size, res);
+            res = false;
+        }
+        else if (ferror(file)) {
+            LOG_ERR("Error reading sealed data from \"<stdin>\"");
+            res = false;
+        }
+    }
+
+    if (file != stdin) {
+        fclose(file);
+    }
+
+    return res;
 }
