@@ -129,21 +129,34 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
     return 0;
 }
 
-void tpm2_util_print_tpm2b(TPM2B *buffer) {
+void tpm2_util_hexdump(BYTE *data, size_t len) {
 
     if (!output_enabled) {
         return;
     }
 
-    unsigned i;
-    for (i = 0; i < buffer->size; i++) {
-        printf("%2.2x ", buffer->buffer[i]);
+    size_t i;
+    size_t j;
+    for (i = 0; i < len; i += 16) {
+        printf("%06zx: ", i);
 
-        if (((i + 1) % 16) == 0) {
-            printf("\n");
+        for (j = 0; j < 16; j++) {
+            if (i + j < len) {
+                printf("%02x ", data[i + j]);
+            } else {
+                printf("   ");
+            }
         }
+
+        printf(" ");
+
+        for (j = 0; j < 16; j++) {
+            if (i + j < len) {
+                printf("%c", isprint(data[i + j]) ? data[i + j] : '.');
+            }
+        }
+        printf("\n");
     }
-    printf("\n");
 }
 
 /* TODO OPTIMIZE ME */
