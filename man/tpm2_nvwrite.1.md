@@ -13,7 +13,7 @@
 # DESCRIPTION
 
 **tpm2_nvwrite**(1) - Write data specified via _FILE_ to a Non-Volatile (NV) index.
-If _FILE_ is not specified, it defaults to stdin.
+If _FILE_ is not specified, it defaults to stdout.
 
 # OPTIONS
 
@@ -57,7 +57,7 @@ If _FILE_ is not specified, it defaults to stdin.
 To write the file nv.data to index 0x150016:
 
 ```
-tpm2_nvwrite -x 0x1500016 -a 0x40000001 -f nv.data
+tpm2_nvwrite -x 0x1500016 -a 0x40000001 nv.data
 ```
 
 # RETURNS
