@@ -39,7 +39,7 @@ This specifies the external programatic interface to the TPM:
 
 ### The System API Specification
 This is the *SAPI* dependency mentioned in [INSTALL.md](INSTALL.md). This is the low-level software API to the tpm. The tpm2-tools
-project relys heavily on this. <https://trustedcomputinggroup.org/wp-content/uploads/TSS_SAPI_v1.1_r21_Public_Review.pdf>
+project relies heavily on this. <https://trustedcomputinggroup.org/wp-content/uploads/TSS_SAPI_v1.1_r21_Public_Review.pdf>
 
 ### The TCTI Specification
 This specifies the transmission interfaces or how bytes get from the system api to the tpm.
