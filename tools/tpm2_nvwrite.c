@@ -50,12 +50,13 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
+TPM2B_TYPE1(MAX_NV_DATA, MAX_NV_INDEX_SIZE, buffer);
+
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
 struct tpm_nvwrite_ctx {
     UINT32 nv_index;
     UINT32 auth_handle;
-    UINT16 data_size;
-    UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
+    TPM2B_MAX_NV_DATA nv_buffer;
     TPMS_AUTH_COMMAND session_data;
     FILE *input_file;
     UINT16 offset;
@@ -77,7 +78,6 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
     TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPM2B_MAX_NV_BUFFER nv_write_data;
 
     TPMS_AUTH_COMMAND *session_data_array[1] = { &ctx.session_data };
     TPMS_AUTH_RESPONSE *session_data_out_array[1] = { &session_data_out };
@@ -88,9 +88,7 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    UINT16 data_offset = 0;
-
-    if (!ctx.data_size) {
+    if (!ctx.nv_buffer.t.size) {
         LOG_WARN("Data to write is of size 0");
     }
 
@@ -105,27 +103,25 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    if (ctx.offset + ctx.data_size > nv_public.t.nvPublic.dataSize) {
+    if (ctx.offset + ctx.nv_buffer.t.size > nv_public.t.nvPublic.dataSize) {
         LOG_ERR("The starting offset (%u) and the size (%u) are larger than the"
                 " defined space: %u.",
-                ctx.offset, ctx.data_size, nv_public.t.nvPublic.dataSize);
+                ctx.offset, ctx.nv_buffer.t.size, nv_public.t.nvPublic.dataSize);
         return false;
     }
 
-    while (ctx.data_size > 0) {
+    UINT16 data_offset = 0;
+    UINT16 bytes_left = ctx.nv_buffer.t.size;
+    while (bytes_left > 0) {
 
-        nv_write_data.t.size =
-                ctx.data_size > MAX_NV_BUFFER_SIZE ?
-                MAX_NV_BUFFER_SIZE : ctx.data_size;
+        TPM2B_MAX_NV_BUFFER nv_write_data = TPM2B_INIT_SIZE(
+                bytes_left > MAX_NV_BUFFER_SIZE ?
+                MAX_NV_BUFFER_SIZE : bytes_left);
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.t.size);
 
-        UINT16 i;
-        for (i = 0; i < nv_write_data.t.size; i++) {
-            nv_write_data.t.buffer[i] = ctx.nv_buffer[data_offset + i];
-            tpm2_tool_output("%02x ", ctx.nv_buffer[data_offset + i]);
-        }
-        tpm2_tool_output("\n\n");
+        memcpy(nv_write_data.t.buffer, &ctx.nv_buffer.t.buffer[data_offset],
+                ctx.nv_buffer.t.size);
 
         TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
                 ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
@@ -140,7 +136,7 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         LOG_INFO("Success to write NV area at index 0x%x (%d) offset 0x%x.",
                 ctx.nv_index, ctx.nv_index, data_offset);
 
-        ctx.data_size -= nv_write_data.t.size;
+        bytes_left -= nv_write_data.t.size;
         data_offset += nv_write_data.t.size;
     }
 
@@ -286,15 +282,15 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
          * We know the size upfront, read it. Note that the size was already
          * bounded by MAX_NV_INDEX_SIZE
          */
-        ctx.data_size = (UINT16) file_size;
-        res = files_read_bytes(ctx.input_file, ctx.nv_buffer, ctx.data_size);
+        ctx.nv_buffer.t.size = (UINT16) file_size;
+        res = files_read_bytes(ctx.input_file, ctx.nv_buffer.t.buffer, ctx.nv_buffer.t.size);
         if (!res)  {
             LOG_ERR("could not read input file");
             goto out;
         }
     } else {
         /* we don't know the file size, ie it's a stream, read till end */
-        size_t bytes = fread(ctx.nv_buffer, 1, MAX_NV_INDEX_SIZE, ctx.input_file);
+        size_t bytes = fread(ctx.nv_buffer.t.buffer, 1, MAX_NV_INDEX_SIZE, ctx.input_file);
         if (bytes != MAX_NV_INDEX_SIZE) {
             if (ferror(ctx.input_file)) {
                 LOG_ERR("reading from input file failed: %s", strerror(errno));
@@ -308,12 +304,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             }
         }
 
-        ctx.data_size = (UINT16)bytes;
+        ctx.nv_buffer.t.size = (UINT16)bytes;
     }
 
     res = nv_write(sapi_context);
     if (!res) {
         goto out;
+    }
+
+    if (flags.verbose) {
+        tpm2_util_print_tpm2b(&ctx.nv_buffer.b);
     }
 
     rc = 0;
