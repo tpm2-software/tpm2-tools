@@ -20,7 +20,6 @@
     argument vs using -i.
   * tpm2_dump_capability: outputs human readable command codes.
   * camelCase options are now all lower case. For example, --camelCase becomes --camel-case.
-  * tpm2_import - A new tool for importing external entities, very limited key support.
   * tpm2_quote,readpublic, and sign now have support for pem/der output/inputs. See the
     respective man pages for more details.
   * tpm2_nvread: Has an output file option, -f.
