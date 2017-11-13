@@ -1,3 +1,5 @@
+v2.2.2 - next:
+*  fix make distcheck
 v2.1.1 - next:
 * Potential memory leak fix when tcti/sapi initialization fails.
 * tpm2_listpcrs: use TPM2_GetCapability to determine PCRs to read
