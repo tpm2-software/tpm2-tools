@@ -68,14 +68,15 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     tpm2_tool_output("  size: %d\n",
                nv_public->nvPublic.dataSize);
 
-    tpm2_tool_output("  authorization policy: ");
+    if (nv_public->nvPublic.authPolicy.size) {
+        tpm2_tool_output("  authorization policy: ");
 
-    UINT16 i;
-    for(i=0; i<nv_public->nvPublic.authPolicy.size; i++) {
-        tpm2_tool_output("%02X", nv_public->nvPublic.authPolicy.buffer[i] );
+        UINT16 i;
+        for (i=0; i<nv_public->nvPublic.authPolicy.size; i++) {
+            tpm2_tool_output("%02X", nv_public->nvPublic.authPolicy.buffer[i] );
+        }
+        tpm2_tool_output("\n");
     }
-
-    tpm2_tool_output("\n");
 
     free(attrs);
 }
