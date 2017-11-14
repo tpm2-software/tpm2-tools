@@ -1,6 +1,7 @@
 ## Changelog
 
 ### next
+  * tpm2_nvlist: output in yaml format.
   * tpm2_makecredential format changes to the -o output file.
   * tpm2-quote: -o option removed.
   * tpm2_rsaencrypt: -I is now an argument and input defaults to stdin. -o is optional and
