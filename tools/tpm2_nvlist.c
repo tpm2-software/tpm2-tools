@@ -35,6 +35,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_options.h"
@@ -49,18 +50,33 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
         LOG_ERR("Could not convert attributes to string form");
     }
 
-    printf("  {\n");
-    printf("\tHash algorithm(nameAlg):%d\n ", nv_public->t.nvPublic.nameAlg);
-    printf("\tattributes: %s(0x%X)\n ", attrs,
-            tpm2_util_ntoh_32(nv_public->t.nvPublic.attributes.val));
-    printf("\tThe size of the data area(dataSize):%d\n ",
-            nv_public->t.nvPublic.dataSize);
-    printf("\tAuthorization Policy for R/W/D: ");
-    int i;
-    for(i=0; i<nv_public->t.nvPublic.authPolicy.t.size; i++) {
-        printf("%02X", nv_public->t.nvPublic.authPolicy.t.buffer[i] );
+    const char *alg = tpm2_alg_util_algtostr(nv_public->t.nvPublic.nameAlg);
+    if (!alg) {
+        LOG_ERR("Could not convert algorithm to string form");
     }
-    printf("\n  }\n");
+
+    tpm2_tool_output("  hash algorithm:\n");
+    tpm2_tool_output("    friendly: %s\n", alg);
+    tpm2_tool_output("    value: 0x%X\n",
+            nv_public->t.nvPublic.nameAlg);
+
+    tpm2_tool_output("  attributes:\n");
+    tpm2_tool_output("    friendly: %s\n", attrs);
+    tpm2_tool_output("    value: 0x%X\n",
+            tpm2_util_ntoh_32(nv_public->t.nvPublic.attributes.val));
+
+    tpm2_tool_output("  size: %d\n",
+               nv_public->t.nvPublic.dataSize);
+
+    if (nv_public->t.nvPublic.authPolicy.t.size) {
+        tpm2_tool_output("  authorization policy: ");
+
+        UINT16 i;
+        for (i=0; i<nv_public->t.nvPublic.authPolicy.t.size; i++) {
+            tpm2_tool_output("%02X", nv_public->t.nvPublic.authPolicy.t.buffer[i] );
+        }
+        tpm2_tool_output("\n");
+    }
 
     free(attrs);
 }
@@ -77,13 +93,11 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    printf("%d NV indexes defined.\n", capabilityData.data.handles.count);
-
     UINT32 i;
     for (i = 0; i < capabilityData.data.handles.count; i++) {
         TPMI_RH_NV_INDEX index = capabilityData.data.handles.handle[i];
 
-        printf("\n  %d. NV Index: 0x%x\n", i, index);
+        tpm2_tool_output("0x%x:\n", index);
 
         TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
         rval = tpm2_util_nv_read_public(sapi_context, index, &nv_public);
@@ -92,8 +106,8 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
             return false;
         }
         print_nv_public(&nv_public);
+        tpm2_tool_output("\n");
     }
-    printf("\n");
 
     return true;
 }

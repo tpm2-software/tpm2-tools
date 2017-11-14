@@ -48,7 +48,7 @@ cleanup() {
   tpm2_nvrelease -Q -x 0x1500015 -a 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
-        nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy
+        nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out
 }
 
 trap cleanup EXIT
@@ -58,6 +58,26 @@ onerror() {
     exit 1
 }
 trap onerror ERR
+
+function yaml_get() {
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$2") as f:
+	try:
+		y = yaml.load(f)
+		found = $1 in y
+		if (not found):
+			sys.stderr.write('Could not find index 0x%X\n' % ($1))
+		sys.exit(not found)
+	except yaml.YAMLError as exc:
+		sys.exit(exc)
+pyscript
+}
 
 cleanup
 
@@ -71,7 +91,9 @@ tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle nv.test_w
 
 tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle -s 32 -o 0
 
-tpm2_nvlist | grep -q -i $nv_test_index
+tpm2_nvlist > nv.out
+yaml_get $nv_test_index nv.out
+
 
 # Test writing to and reading from an offset by:
 # 1. writing "foo" into the nv file at an offset
@@ -146,7 +168,8 @@ tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle | xxd -r > $large_file_read_
 
 cmp -s $large_file_read_name $large_file_name
 
-tpm2_nvlist|grep -q -i $nv_test_index
+tpm2_nvlist > nv.out
+yaml_get $nv_test_index nv.out
 
 tpm2_nvrelease -Q -x $nv_test_index -a $nv_auth_handle
 
