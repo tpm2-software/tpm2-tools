@@ -50,10 +50,6 @@ digests=""
 for alg in `tpm2_pcrlist -s | cut -d\  -f 3-`; do
   alg=`echo $alg | cut -d\( -f 1-1`;
 
-  if [[ -v supported_algs["$alg"] ]]; then
-      continue
-  fi
-
   hash=${alg_hashes[$alg]}
 
   if [ ! -z  $digests ]; then
