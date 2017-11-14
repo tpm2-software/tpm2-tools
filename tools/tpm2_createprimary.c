@@ -146,7 +146,7 @@ int setup_alg(void) {
         break;
 
     default:
-        LOG_ERR("type algrithm: 0x%0x not support !", ctx.in_public.t.publicArea.type);
+        LOG_ERR("type algorithm: 0x%0x not support !", ctx.in_public.t.publicArea.type);
         return -2;
     }
     return 0;
