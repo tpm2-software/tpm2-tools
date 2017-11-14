@@ -111,7 +111,7 @@ int setup_alg()
         ctx.in_public.t.publicArea.nameAlg = ctx.nameAlg;
         break;
     default:
-        LOG_ERR("nameAlg algrithm: 0x%0x not support !", ctx.nameAlg);
+        LOG_ERR("nameAlg algorithm: 0x%0x not support !", ctx.nameAlg);
         return -1;
     }
 
@@ -160,7 +160,7 @@ int setup_alg()
         break;
 
     default:
-        LOG_ERR("type algrithm: 0x%0x not support !", ctx.in_public.t.publicArea.type);
+        LOG_ERR("type algorithm: 0x%0x not support !", ctx.in_public.t.publicArea.type);
         return -2;
     }
     return 0;
