@@ -323,5 +323,16 @@ out:
         fclose(ctx.input_file);
     }
 
+    if (ctx.policy_session) {
+        TPM_RC rval = Tss2_Sys_FlushContext(sapi_context,
+                                            ctx.policy_session->sessionHandle);
+        if (rval != TPM_RC_SUCCESS) {
+            LOG_ERR("Failed Flush Context: 0x%x", rval);
+            return 1;
+        }
+
+        tpm_session_auth_end(ctx.policy_session);
+    }
+
     return rc;
 }
