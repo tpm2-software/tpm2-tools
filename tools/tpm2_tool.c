@@ -139,7 +139,9 @@ int main(int argc, char *argv[], char *envp[]) {
     /* TODO SAPI INIT */
     TSS2_SYS_CONTEXT *sapi_context = sapi_ctx_init(tcti);
 
-    tpm2_errata_init(sapi_context);
+    if (flags.enable_errata) {
+        tpm2_errata_init(sapi_context);
+    }
 
     /*
      * Call the specific tool, all tools implement this function instead of
