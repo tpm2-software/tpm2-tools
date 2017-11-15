@@ -46,7 +46,7 @@ union tpm2_option_flags {
     struct {
         UINT8 verbose : 1;
         UINT8 quiet   : 1;
-        UINT8 unused  : 6;
+        UINT8 enable_errata  : 1;
     };
     UINT8 all;
 };

@@ -252,12 +252,17 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
 
     UNUSED(envp);
 
+    /*
+     * Handy way to *try* and find all used options:
+     * grep -rn case\ \'[a-zA-Z]\' | awk '{print $3}' | sed s/\'//g | sed s/\://g | sort | uniq | less
+     */
     struct option long_options [] = {
-        { "tcti",    required_argument, NULL, 'T' },
-        { "help",    no_argument,       NULL, 'h' },
-        { "verbose", no_argument,       NULL, 'v' },
-        { "quiet",   no_argument,       NULL, 'Q' },
-        { "version", no_argument,       NULL, 'V' },
+        { "tcti",           required_argument, NULL, 'T' },
+        { "help",           no_argument,       NULL, 'h' },
+        { "verbose",        no_argument,       NULL, 'v' },
+        { "quiet",          no_argument,       NULL, 'Q' },
+        { "version",        no_argument,       NULL, 'V' },
+        { "enable-errata", no_argument,        NULL, 'Z' },
     };
 
     char *tcti_opts = NULL;
@@ -266,7 +271,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     tcti_name = env_str ? env_str : tcti_name;
 
     /* handle any options */
-    tpm2_options *opts = tpm2_options_new("T:hvVQ",
+    tpm2_options *opts = tpm2_options_new("T:hvVQZ",
             ARRAY_LEN(long_options), long_options, NULL, NULL);
     if (!opts) {
         return tpm2_option_code_err;
@@ -306,6 +311,9 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
             show_version(argv[0]);
             rc = tpm2_option_code_stop;
             goto out;
+            break;
+        case 'Z':
+            flags->enable_errata = 1;
             break;
         case ':':
             LOG_ERR("Argument %c needs a value!", optopt);

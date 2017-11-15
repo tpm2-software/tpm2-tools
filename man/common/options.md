@@ -16,3 +16,7 @@ information that many users may expect.
 
   * **-Q**, **--quiet**:
     Silence normal tool output to stdout.
+
+  * **-Z**, **--enable-errata**:
+    Enable the application of errata fixups. Useful if an errata fixup needs to be
+    applied to commands sent to the TPM.
