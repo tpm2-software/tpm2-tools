@@ -119,6 +119,10 @@ int main(int argc, char *argv[], char *envp[]) {
         goto free_opts;
     }
 
+    if (flags.verbose) {
+        log_set_level(log_level_verbose);
+    }
+
     /*
      * We don't want a cyclic dependency between tools/options. Resolving those
      * works well on linux/elf based systems, but darwin and windows tend to
