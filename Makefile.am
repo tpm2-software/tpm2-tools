@@ -201,7 +201,8 @@ check_PROGRAMS = \
     test/unit/test_tpm2_attr_util \
     test/unit/test_tpm2_alg_util \
     test/unit/test_pcr \
-    test/unit/test_tpm2_password_util
+    test/unit/test_tpm2_password_util \
+    test/unit/test_tpm2_errata
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -239,6 +240,11 @@ test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
 test_unit_test_tpm2_password_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_password_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_tpm2_password_util_SOURCES  = test/unit/test_tpm2_password_util.c
+
+test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Tss2_Sys_GetCapability
+test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
 endif
 
