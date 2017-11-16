@@ -91,7 +91,7 @@ tpm2_tools_tcti_socket_init (char *opts)
     TSS2_TCTI_CONTEXT *tcti_ctx;
 
     rc = InitSocketTcti (NULL, &size, &conf, 0);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Faled to get allocation size for tcti context: "
                  "0x%x", rc);
         return NULL;
@@ -102,7 +102,7 @@ tpm2_tools_tcti_socket_init (char *opts)
         return NULL;
     }
     rc = InitSocketTcti (tcti_ctx, &size, &conf, 0);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to initialize tcti context: 0x%x\n", rc);
         free (tcti_ctx);
         return NULL;

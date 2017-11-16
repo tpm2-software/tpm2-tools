@@ -150,13 +150,13 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
  */
 #define CONTEXT_VERSION 1
 
-bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle,
+bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM2_HANDLE handle,
         const char *path) {
 
     TPMS_CONTEXT context;
 
-    TPM_RC rval = Tss2_Sys_ContextSave(sysContext, handle, &context);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = Tss2_Sys_ContextSave(sysContext, handle, &context);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR(
                 "Tss2_Sys_ContextSave: Saving handle 0x%x context failed. TPM Error:0x%x",
                 handle, rval);
@@ -226,9 +226,9 @@ out:
 }
 
 bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
-        TPM_HANDLE *handle, const char *path) {
+        TPM2_HANDLE *handle, const char *path) {
 
-    TPM_RC rval;
+    TSS2_RC rval;
 
     FILE *f = fopen(path, "rb");
     if (!f) {
@@ -312,7 +312,7 @@ bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
 
 load_to_tpm:
     rval = Tss2_Sys_ContextLoad(sapi_context, &context, handle);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("ContextLoad Error. TPM Error:0x%x", rval);
         result = false;
         goto out;

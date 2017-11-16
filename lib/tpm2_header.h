@@ -47,7 +47,7 @@ union tpm2_command_header {
     struct {
         TPMI_ST_COMMAND_TAG tag; // uint16
         UINT32 size; //
-        TPM_CC command_code;
+        TPM2_CC command_code;
         UINT8 data[];
     } __attribute__((packed));
     UINT8 bytes[0];
@@ -56,7 +56,7 @@ union tpm2_command_header {
 typedef union tpm2_response_header tpm2_response_header;
 union tpm2_response_header {
     struct {
-        TPM_ST tag;
+        TPM2_ST tag;
         UINT32 size;
         TSS2_RC response_code;
         UINT8 data[];
@@ -116,7 +116,7 @@ static inline UINT32 tpm2_command_header_get_size(tpm2_command_header *command, 
  * @param command
  * @return
  */
-static inline TPM_CC tpm2_command_header_get_code(tpm2_command_header *command) {
+static inline TPM2_CC tpm2_command_header_get_code(tpm2_command_header *command) {
 
     return tpm2_util_ntoh_32(command->command_code);
 }
@@ -152,7 +152,7 @@ static inline UINT32 tpm2_response_header_get_size(tpm2_response_header *respons
  * @param response_header
  * @return
  */
-static inline TPM_ST tpm2_response_header_get_tag(tpm2_response_header *response) {
+static inline TPM2_ST tpm2_response_header_get_tag(tpm2_response_header *response) {
 
     return tpm2_util_ntoh_16(response->tag);
 }

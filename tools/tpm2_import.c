@@ -66,7 +66,7 @@ struct tpm_import_ctx {
     uint8_t input_key_buffer[SYM_KEY_SIZE];
     //Parent public key for seed encryption
     TPM2B_PUBLIC_KEY_RSA parent_public_key;
-    TPM_HANDLE parent_key_handle;
+    TPM2_HANDLE parent_key_handle;
     //External key public
     TPM2B_PUBLIC import_key_public;
     //External key name
@@ -76,12 +76,12 @@ struct tpm_import_ctx {
     //External key private
     TPM2B_PRIVATE import_key_private;
     //Protection Seed and keys
-    uint8_t protection_seed_data[SHA256_DIGEST_SIZE]; //max tpm digest
-    uint8_t encrypted_protection_seed_data[MAX_RSA_KEY_BYTES];
-    uint8_t protection_hmac_key[SHA256_DIGEST_SIZE];
+    uint8_t protection_seed_data[TPM2_SHA256_DIGEST_SIZE]; //max tpm digest
+    uint8_t encrypted_protection_seed_data[TPM2_MAX_RSA_KEY_BYTES];
+    uint8_t protection_hmac_key[TPM2_SHA256_DIGEST_SIZE];
     uint8_t protection_enc_key[SYM_KEY_SIZE];
-    uint8_t import_key_public_unique_data[SHA256_DIGEST_SIZE];
-    uint8_t outer_integrity_hmac[SHA256_DIGEST_SIZE];
+    uint8_t import_key_public_unique_data[TPM2_SHA256_DIGEST_SIZE];
+    uint8_t outer_integrity_hmac[TPM2_SHA256_DIGEST_SIZE];
     TPM2B_DATA enc_sensitive_key;
     TPM2B_MAX_BUFFER encrypted_inner_integrity;
     TPM2B_MAX_BUFFER encrypted_duplicate_sensitive;
@@ -91,7 +91,7 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .input_key_file = NULL, 
     .parent_key_handle = 0,
-    .parent_public_key = TPM2B_INIT(MAX_RSA_KEY_BYTES),
+    .parent_public_key = TPM2B_INIT(TPM2_MAX_RSA_KEY_BYTES),
     .import_key_public = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea),
     .import_key_public_name = TPM2B_TYPE_INIT(TPM2B_NAME, name),
     .import_key_private = TPM2B_EMPTY_INIT,
@@ -137,19 +137,19 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         fclose(fp);
         return false;
     }
-    unsigned char pub_modulus[MAX_RSA_KEY_BYTES] = { 0 };
-    int ret = fread(pub_modulus, 1, MAX_RSA_KEY_BYTES, fp);
-    if (ret != MAX_RSA_KEY_BYTES) {
+    unsigned char pub_modulus[TPM2_MAX_RSA_KEY_BYTES] = { 0 };
+    int ret = fread(pub_modulus, 1, TPM2_MAX_RSA_KEY_BYTES, fp);
+    if (ret != TPM2_MAX_RSA_KEY_BYTES) {
         LOG_ERR("Failed reading public modulus from parent key public file");
         fclose(fp);
         return false;
     }
     fclose(fp);
     RSA *rsa = NULL;
-    unsigned char encoded[MAX_RSA_KEY_BYTES];
+    unsigned char encoded[TPM2_MAX_RSA_KEY_BYTES];
     unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
     int return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded,
-            MAX_RSA_KEY_BYTES, ctx.protection_seed_data, 32, label, 10,
+            TPM2_MAX_RSA_KEY_BYTES, ctx.protection_seed_data, 32, label, 10,
             EVP_sha256(), NULL);
     if (return_code != 1) {
         LOG_ERR("Failed RSA_padding_add_PKCS1_OAEP_mgf1\n");
@@ -178,7 +178,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         LOG_ERR("RSA_generate_key_ex failed\n");
         goto error;
     }
-    BIGNUM *n = BN_bin2bn(pub_modulus, MAX_RSA_KEY_BYTES, NULL);
+    BIGNUM *n = BN_bin2bn(pub_modulus, TPM2_MAX_RSA_KEY_BYTES, NULL);
     if (n == NULL) {
         LOG_ERR("BN_bin2bn failed\n");
         goto error;
@@ -189,7 +189,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         goto error;
     }
     // Encrypting
-    return_code = RSA_public_encrypt(MAX_RSA_KEY_BYTES, encoded,
+    return_code = RSA_public_encrypt(TPM2_MAX_RSA_KEY_BYTES, encoded,
             ctx.encrypted_protection_seed_data, rsa, RSA_NO_PADDING);
     if (return_code < 0) {
         LOG_ERR("Failed RSA_public_encrypt\n");
@@ -237,13 +237,13 @@ static void hmac_outer_integrity(uint8_t *buffer1, uint16_t buffer1_size,
     memcpy(to_hmac_buffer, buffer1, buffer1_size);
     memcpy(to_hmac_buffer + buffer1_size, buffer2, buffer2_size);
     uint32_t size_in = 0;
-    HMAC(EVP_sha256(), hmac_key, SHA256_DIGEST_SIZE, to_hmac_buffer,
+    HMAC(EVP_sha256(), hmac_key, TPM2_SHA256_DIGEST_SIZE, to_hmac_buffer,
             buffer1_size + buffer2_size, outer_integrity_hmac, &size_in);
 }
 
 static void create_random_seed_and_sensitive_enc_key(void) {
 
-    RAND_bytes(ctx.protection_seed_data, SHA256_DIGEST_SIZE); //max tpm digest
+    RAND_bytes(ctx.protection_seed_data, TPM2_SHA256_DIGEST_SIZE); //max tpm digest
     ctx.enc_sensitive_key.size = SYM_KEY_SIZE;
     RAND_bytes(ctx.enc_sensitive_key.buffer, SYM_KEY_SIZE);
 
@@ -252,18 +252,18 @@ static void create_random_seed_and_sensitive_enc_key(void) {
 static bool calc_sensitive_unique_data(void) {
 
     uint8_t *concatenated_seed_unique = malloc(
-            SHA256_DIGEST_SIZE + SYM_KEY_SIZE);
+            TPM2_SHA256_DIGEST_SIZE + SYM_KEY_SIZE);
     if (!concatenated_seed_unique) {
         LOG_ERR("oom");
         return false;
     }
 
     memcpy(concatenated_seed_unique, ctx.protection_seed_data,
-            SHA256_DIGEST_SIZE);
-    memcpy(concatenated_seed_unique + SHA256_DIGEST_SIZE, ctx.input_key_buffer,
+            TPM2_SHA256_DIGEST_SIZE);
+    memcpy(concatenated_seed_unique + TPM2_SHA256_DIGEST_SIZE, ctx.input_key_buffer,
             SYM_KEY_SIZE);
 
-    SHA256(concatenated_seed_unique, SHA256_DIGEST_SIZE + SYM_KEY_SIZE,
+    SHA256(concatenated_seed_unique, TPM2_SHA256_DIGEST_SIZE + SYM_KEY_SIZE,
             ctx.import_key_public_unique_data);
 
     free(concatenated_seed_unique);
@@ -272,8 +272,8 @@ static bool calc_sensitive_unique_data(void) {
 }
 
 #define IMPORT_KEY_SYM_PUBLIC_AREA(X) \
-    (X).publicArea.type = TPM_ALG_SYMCIPHER; \
-    (X).publicArea.nameAlg = TPM_ALG_SHA256;\
+    (X).publicArea.type = TPM2_ALG_SYMCIPHER; \
+    (X).publicArea.nameAlg = TPM2_ALG_SHA256;\
     (X).publicArea.objectAttributes.restricted = 0;\
     (X).publicArea.objectAttributes.userWithAuth = 1;\
     (X).publicArea.objectAttributes.decrypt = 1;\
@@ -282,10 +282,10 @@ static bool calc_sensitive_unique_data(void) {
     (X).publicArea.objectAttributes.fixedParent = 0;\
     (X).publicArea.objectAttributes.sensitiveDataOrigin = 0;\
     (X).publicArea.authPolicy.size = 0;\
-    (X).publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;\
+    (X).publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;\
     (X).publicArea.parameters.symDetail.sym.keyBits.sym = 128;\
-    (X).publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;\
-    (X).publicArea.unique.sym.size = SHA256_DIGEST_SIZE;\
+    (X).publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;\
+    (X).publicArea.unique.sym.size = TPM2_SHA256_DIGEST_SIZE;\
 
 static bool create_import_key_public_data_and_name(void) {
 
@@ -302,7 +302,7 @@ static bool create_import_key_public_data_and_name(void) {
                      ctx.import_key_public.publicArea.objectAttributes.val);
 
     memcpy(ctx.import_key_public.publicArea.unique.sym.buffer,
-            ctx.import_key_public_unique_data, SHA256_DIGEST_SIZE);
+            ctx.import_key_public_unique_data, TPM2_SHA256_DIGEST_SIZE);
 
     size_t public_area_marshalled_offset = 0;
     uint8_t *marshalled_bytes = malloc(sizeof(ctx.import_key_public));
@@ -314,23 +314,23 @@ static bool create_import_key_public_data_and_name(void) {
     Tss2_MU_TPM2B_PUBLIC_Marshal(&ctx.import_key_public, marshalled_bytes,
             sizeof(ctx.import_key_public), &public_area_marshalled_offset);
 
-    ctx.import_key_public_name.size = SHA256_DIGEST_SIZE;
+    ctx.import_key_public_name.size = TPM2_SHA256_DIGEST_SIZE;
     size_t name_digest_alg_offset = 0;
-    Tss2_MU_UINT16_Marshal(TPM_ALG_SHA256, ctx.import_key_public_name.name,
-            sizeof(TPM_ALG_ID), &name_digest_alg_offset);
+    Tss2_MU_UINT16_Marshal(TPM2_ALG_SHA256, ctx.import_key_public_name.name,
+            sizeof(TPM2_ALG_ID), &name_digest_alg_offset);
     ctx.import_key_public_name.size += name_digest_alg_offset;
     SHA256(marshalled_bytes + sizeof(uint16_t),
             public_area_marshalled_offset - sizeof(uint16_t),
-            ctx.import_key_public_name.name + sizeof(TPM_ALG_ID));
+            ctx.import_key_public_name.name + sizeof(TPM2_ALG_ID));
     free(marshalled_bytes);
 
     return true;
 }
 
 #define IMPORT_KEY_SYM_SENSITIVE_AREA(X) \
-    (X).sensitiveArea.sensitiveType = TPM_ALG_SYMCIPHER; \
+    (X).sensitiveArea.sensitiveType = TPM2_ALG_SYMCIPHER; \
     (X).sensitiveArea.authValue.size = 0; \
-    (X).sensitiveArea.seedValue.size = SHA256_DIGEST_SIZE; \
+    (X).sensitiveArea.seedValue.size = TPM2_SHA256_DIGEST_SIZE; \
     (X).sensitiveArea.sensitive.sym.size = SYM_KEY_SIZE; \
 
 static void create_import_key_sensitive_data(void) {
@@ -338,32 +338,32 @@ static void create_import_key_sensitive_data(void) {
     IMPORT_KEY_SYM_SENSITIVE_AREA(ctx.import_key_sensitive);
 
     memcpy(ctx.import_key_sensitive.sensitiveArea.seedValue.buffer,
-            ctx.protection_seed_data, SHA256_DIGEST_SIZE); //max digest size
+            ctx.protection_seed_data, TPM2_SHA256_DIGEST_SIZE); //max digest size
 
     memcpy(ctx.import_key_sensitive.sensitiveArea.sensitive.sym.buffer,
             ctx.input_key_buffer, SYM_KEY_SIZE);
 }
 
-#define PARENT_NAME_ALG TPM_ALG_SHA256
+#define PARENT_NAME_ALG TPM2_ALG_SHA256
 static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(void) {
 
     TPM2B null_2b = { .size = 0 };
-    TPM2B_DIGEST to_TPM2B_seed = TPM2B_INIT(SHA256_DIGEST_SIZE);
+    TPM2B_DIGEST to_TPM2B_seed = TPM2B_INIT(TPM2_SHA256_DIGEST_SIZE);
     memcpy(to_TPM2B_seed.buffer, ctx.protection_seed_data,
-            SHA256_DIGEST_SIZE); //max digest size
+            TPM2_SHA256_DIGEST_SIZE); //max digest size
     TPM2B_MAX_BUFFER result_key;
 
-    TPM_RC rval = tpm_kdfa(PARENT_NAME_ALG, (TPM2B *)&to_TPM2B_seed, "INTEGRITY",
-            &null_2b, &null_2b, SHA256_DIGEST_SIZE * 8, &result_key);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = tpm_kdfa(PARENT_NAME_ALG, (TPM2B *)&to_TPM2B_seed, "INTEGRITY",
+            &null_2b, &null_2b, TPM2_SHA256_DIGEST_SIZE * 8, &result_key);
+    if (rval != TPM2_RC_SUCCESS) {
         return false;
     }
-    memcpy(ctx.protection_hmac_key, result_key.buffer, SHA256_DIGEST_SIZE);
+    memcpy(ctx.protection_hmac_key, result_key.buffer, TPM2_SHA256_DIGEST_SIZE);
 
     rval = tpm_kdfa(PARENT_NAME_ALG, (TPM2B *)&to_TPM2B_seed, "STORAGE",
             (TPM2B *)&ctx.import_key_public_name, &null_2b, SYM_KEY_SIZE * 8,
             &result_key);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         return false;
     }
     memcpy(ctx.protection_enc_key, result_key.buffer, SYM_KEY_SIZE);
@@ -396,7 +396,7 @@ static void calculate_inner_integrity(void) {
                     + marshalled_sensitive_size_info
                     + ctx.import_key_public_name.size;
     size_t digest_size_info = 0;
-    Tss2_MU_UINT16_Marshal(SHA256_DIGEST_SIZE, marshalled_sensitive_and_name_digest,
+    Tss2_MU_UINT16_Marshal(TPM2_SHA256_DIGEST_SIZE, marshalled_sensitive_and_name_digest,
             sizeof(uint16_t), &digest_size_info);
 
     SHA256(buffer_marshalled_sensitiveArea,
@@ -408,7 +408,7 @@ static void calculate_inner_integrity(void) {
     ctx.encrypted_inner_integrity.size = marshalled_sensitive_size_info
             + marshalled_sensitive_size + ctx.import_key_public_name.size;
     aes_128_cfb_encrypt_buffers(marshalled_sensitive_and_name_digest,
-            SHA256_DIGEST_SIZE + digest_size_info,
+            TPM2_SHA256_DIGEST_SIZE + digest_size_info,
             buffer_marshalled_sensitiveArea,
             marshalled_sensitive_size_info + marshalled_sensitive_size,
             ctx.enc_sensitive_key.buffer,
@@ -434,16 +434,16 @@ static void calculate_outer_integrity(void) {
 }
 
 static void create_import_key_private_data(void) {
-    ctx.import_key_private.size = sizeof(uint16_t) + SHA256_DIGEST_SIZE
+    ctx.import_key_private.size = sizeof(uint16_t) + TPM2_SHA256_DIGEST_SIZE
             + ctx.encrypted_duplicate_sensitive.size;
     size_t hmac_size_offset = 0;
-    Tss2_MU_UINT16_Marshal(SHA256_DIGEST_SIZE, ctx.import_key_private.buffer,
+    Tss2_MU_UINT16_Marshal(TPM2_SHA256_DIGEST_SIZE, ctx.import_key_private.buffer,
             sizeof(uint16_t), &hmac_size_offset);
     memcpy(ctx.import_key_private.buffer + hmac_size_offset,
-            ctx.outer_integrity_hmac, SHA256_DIGEST_SIZE);
+            ctx.outer_integrity_hmac, TPM2_SHA256_DIGEST_SIZE);
     memcpy(
             ctx.import_key_private.buffer + hmac_size_offset
-                    + SHA256_DIGEST_SIZE,
+                    + TPM2_SHA256_DIGEST_SIZE,
             ctx.encrypted_duplicate_sensitive.buffer,
             ctx.encrypted_duplicate_sensitive.size);
 }
@@ -451,7 +451,7 @@ static void create_import_key_private_data(void) {
 static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context) {
 
 
-    TPMS_AUTH_COMMAND npsessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW);
+    TPMS_AUTH_COMMAND npsessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
     TPMS_AUTH_COMMAND *npsessionDataArray[] = {
         &npsessionData
     };
@@ -468,22 +468,22 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
             TSS2_SYS_RSP_AUTHS_INIT(npsessionDataOutArray);
 
     TPMT_SYM_DEF_OBJECT symmetricAlg = {
-            .algorithm = TPM_ALG_AES,
+            .algorithm = TPM2_ALG_AES,
             .keyBits.aes = 128,
-            .mode.aes = TPM_ALG_CFB
+            .mode.aes = TPM2_ALG_CFB
     };
 
     TPM2B_PRIVATE importPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
-    TPM2B_ENCRYPTED_SECRET enc_inp_seed = TPM2B_INIT(MAX_RSA_KEY_BYTES);
+    TPM2B_ENCRYPTED_SECRET enc_inp_seed = TPM2B_INIT(TPM2_MAX_RSA_KEY_BYTES);
 
     memcpy(enc_inp_seed.secret, ctx.encrypted_protection_seed_data,
-            MAX_RSA_KEY_BYTES);
+            TPM2_MAX_RSA_KEY_BYTES);
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_key_handle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_key_handle,
             &npsessionsData, &ctx.enc_sensitive_key, &ctx.import_key_public,
             &ctx.import_key_private, &enc_inp_seed, &symmetricAlg,
             &importPrivate, &npsessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed Key Import %08X", rval);
         return false;
     }

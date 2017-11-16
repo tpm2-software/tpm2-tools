@@ -57,7 +57,7 @@ static void test_tpm_command_header(void **state) {
     TPMI_ST_COMMAND_TAG tag = tpm2_command_header_get_tag(c);
     UINT32 size_with_header = tpm2_command_header_get_size(c, true);
     UINT32 size_with_out_header = tpm2_command_header_get_size(c, false);
-    TPM_CC cc = tpm2_command_header_get_code(c);
+    TPM2_CC cc = tpm2_command_header_get_code(c);
 
     assert_true(tag == 0x8001);
     assert_true(size_with_header == 0x16);

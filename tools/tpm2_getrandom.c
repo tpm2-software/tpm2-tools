@@ -56,9 +56,9 @@ static bool get_random_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST random_bytes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetRandom(sapi_context, NULL, ctx.num_of_bytes,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetRandom(sapi_context, NULL, ctx.num_of_bytes,
             &random_bytes, NULL));
-    if (rval != TSS2_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_GetRandom Error. TPM Error:0x%x", rval);
         return false;
     }

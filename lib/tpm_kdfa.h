@@ -42,7 +42,7 @@
  * @param resultKey
  * @return
  */
-TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
+TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV,
         UINT16 bits, TPM2B_MAX_BUFFER *resultKey );
 

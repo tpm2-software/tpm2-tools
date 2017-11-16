@@ -58,7 +58,7 @@ struct tpm_createprimary_ctx {
     TPMI_ALG_HASH nameAlg;
     TPMI_RH_HIERARCHY hierarchy;
     char *context_file;
-    TPM_HANDLE handle2048rsa;
+    TPM2_HANDLE handle2048rsa;
     struct {
         UINT8 A : 1;
         UINT8 g : 1;
@@ -69,7 +69,7 @@ struct tpm_createprimary_ctx {
 
 #define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
     .publicArea = { \
-        .type = TPM_ALG_RSA, \
+        .type = TPM2_ALG_RSA, \
         .objectAttributes = { \
             .val = TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT \
             |TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT \
@@ -80,26 +80,26 @@ struct tpm_createprimary_ctx {
 
 static tpm_createprimary_ctx ctx = {
     .session_data = {
-        .sessionHandle = TPM_RS_PW,
+        .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
     },
     .inSensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT,
     .in_public = PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT,
-    .nameAlg = TPM_ALG_SHA1,
-    .hierarchy = TPM_RH_NULL,
+    .nameAlg = TPM2_ALG_SHA1,
+    .hierarchy = TPM2_RH_NULL,
 };
 
 int setup_alg(void) {
 
     switch(ctx.nameAlg) {
-    case TPM_ALG_SHA1:
-    case TPM_ALG_SHA256:
-    case TPM_ALG_SHA384:
-    case TPM_ALG_SHA512:
-    case TPM_ALG_SM3_256:
-    case TPM_ALG_NULL:
+    case TPM2_ALG_SHA1:
+    case TPM2_ALG_SHA256:
+    case TPM2_ALG_SHA384:
+    case TPM2_ALG_SHA512:
+    case TPM2_ALG_SM3_256:
+    case TPM2_ALG_NULL:
         ctx.in_public.publicArea.nameAlg = ctx.nameAlg;
         break;
     default:
@@ -108,38 +108,38 @@ int setup_alg(void) {
     }
 
     switch(ctx.in_public.publicArea.type) {
-    case TPM_ALG_RSA:
-        ctx.in_public.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM_ALG_AES;
+    case TPM2_ALG_RSA:
+        ctx.in_public.publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_AES;
         ctx.in_public.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        ctx.in_public.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM_ALG_CFB;
-        ctx.in_public.publicArea.parameters.rsaDetail.scheme.scheme = TPM_ALG_NULL;
+        ctx.in_public.publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM2_ALG_CFB;
+        ctx.in_public.publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
         ctx.in_public.publicArea.parameters.rsaDetail.keyBits = 2048;
         ctx.in_public.publicArea.parameters.rsaDetail.exponent = 0;
         ctx.in_public.publicArea.unique.rsa.size = 0;
         break;
 
-    case TPM_ALG_KEYEDHASH:
-        ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_XOR;
-        ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM_ALG_SHA256;
-        ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM_ALG_KDF1_SP800_108;
+    case TPM2_ALG_KEYEDHASH:
+        ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_XOR;
+        ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM2_ALG_SHA256;
+        ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
         ctx.in_public.publicArea.unique.keyedHash.size = 0;
         break;
 
-    case TPM_ALG_ECC:
-        ctx.in_public.publicArea.parameters.eccDetail.symmetric.algorithm = TPM_ALG_AES;
+    case TPM2_ALG_ECC:
+        ctx.in_public.publicArea.parameters.eccDetail.symmetric.algorithm = TPM2_ALG_AES;
         ctx.in_public.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
-        ctx.in_public.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM_ALG_CFB;
-        ctx.in_public.publicArea.parameters.eccDetail.scheme.scheme = TPM_ALG_NULL;
-        ctx.in_public.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        ctx.in_public.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+        ctx.in_public.publicArea.parameters.eccDetail.symmetric.mode.sym = TPM2_ALG_CFB;
+        ctx.in_public.publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
+        ctx.in_public.publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
+        ctx.in_public.publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
         ctx.in_public.publicArea.unique.ecc.x.size = 0;
         ctx.in_public.publicArea.unique.ecc.y.size = 0;
         break;
 
-    case TPM_ALG_SYMCIPHER:
-        ctx.in_public.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
+    case TPM2_ALG_SYMCIPHER:
+        ctx.in_public.publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
         ctx.in_public.publicArea.parameters.symDetail.sym.keyBits.sym = 128;
-        ctx.in_public.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
+        ctx.in_public.publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
         ctx.in_public.publicArea.unique.sym.size = 0;
         break;
 
@@ -188,7 +188,7 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
                                   &ctx.inSensitive, &ctx.in_public, &outsideInfo, &creationPCR,
                                   &ctx.handle2048rsa, &outPublic, &creationData, &creationHash,
                                   &creationTicket, &name, &sessionsDataOut));
-    if(rval != TPM_RC_SUCCESS) {
+    if(rval != TPM2_RC_SUCCESS) {
         LOG_ERR("\nCreatePrimary Failed ! ErrorCode: 0x%0x\n", rval);
         return -2;
     }
@@ -205,13 +205,13 @@ static bool on_option(char key, char *value) {
     switch(key) {
     case 'H':
         if(strcmp(value, "o") == 0 || strcmp(value, "O") == 0)
-            ctx.hierarchy = TPM_RH_OWNER;
+            ctx.hierarchy = TPM2_RH_OWNER;
         else if(strcmp(value, "p") == 0 || strcmp(value, "P") == 0)
-            ctx.hierarchy = TPM_RH_PLATFORM;
+            ctx.hierarchy = TPM2_RH_PLATFORM;
         else if(strcmp(value, "e") == 0 || strcmp(value, "E") == 0)
-            ctx.hierarchy = TPM_RH_ENDORSEMENT;
+            ctx.hierarchy = TPM2_RH_ENDORSEMENT;
         else if(strcmp(value, "n") == 0 || strcmp(value, "N") == 0)
-            ctx.hierarchy = TPM_RH_NULL;
+            ctx.hierarchy = TPM2_RH_NULL;
         else {
             LOG_ERR("Invalid hierarchy, got\"%s\"", value);
             return false;
@@ -234,7 +234,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
-        if(ctx.nameAlg == TPM_ALG_ERROR) {
+        if(ctx.nameAlg == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid hash algorithm, got\"%s\"", value);
             return false;
         }
@@ -242,7 +242,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'G':
         ctx.in_public.publicArea.type = tpm2_alg_util_from_optarg(value);
-        if(ctx.in_public.publicArea.type == TPM_ALG_ERROR) {
+        if(ctx.in_public.publicArea.type == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid key algorithm, got\"%s\"", value);
             return false;
         }

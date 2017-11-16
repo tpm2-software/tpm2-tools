@@ -44,9 +44,9 @@
  * @param nv_public
  *  The public data structure to store the results in.
  * @return
- *  The error code from the TPM. TPM_RC_SUCCESS on success.
+ *  The error code from the TPM. TPM2_RC_SUCCESS on success.
  */
-static inline TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+static inline TSS2_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
 
     TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);

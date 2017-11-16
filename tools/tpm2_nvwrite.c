@@ -55,7 +55,7 @@ struct tpm_nvwrite_ctx {
     UINT32 nv_index;
     UINT32 auth_handle;
     UINT16 data_size;
-    UINT8 nv_buffer[MAX_NV_INDEX_SIZE];
+    UINT8 nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
     TPMS_AUTH_COMMAND session_data;
     FILE *input_file;
     UINT16 offset;
@@ -68,8 +68,8 @@ struct tpm_nvwrite_ctx {
 };
 
 static tpm_nvwrite_ctx ctx = {
-    .auth_handle = TPM_RH_PLATFORM,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .auth_handle = TPM2_RH_PLATFORM,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
@@ -99,8 +99,8 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
      * from being partially written to the index.
      */
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    TPM_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Reading the public part of the nv index failed with: 0x%x", rval);
         return false;
     }
@@ -115,8 +115,8 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     while (ctx.data_size > 0) {
 
         nv_write_data.size =
-                ctx.data_size > MAX_NV_BUFFER_SIZE ?
-                MAX_NV_BUFFER_SIZE : ctx.data_size;
+                ctx.data_size > TPM2_MAX_NV_BUFFER_SIZE ?
+                TPM2_MAX_NV_BUFFER_SIZE : ctx.data_size;
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.size);
 
@@ -127,10 +127,10 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         }
         tpm2_tool_output("\n\n");
 
-        TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
                 ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
                 &sessions_data_out));
-        if (rval != TSS2_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR(
                     "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x",
                     ctx.nv_index, ctx.nv_index, data_offset, rval);
@@ -259,11 +259,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (ctx.flags.L) {
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-        TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
-                                        TPM_SE_POLICY, TPM_ALG_SHA256, ctx.pcr_selection,
+        TSS2_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
+                                        TPM2_SE_POLICY, TPM2_ALG_SHA256, ctx.pcr_selection,
                                         ctx.raw_pcrs_file, &pcr_digest, true,
                                         tpm2_policy_pcr_build);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Building PCR policy failed: 0x%x", rval);
             return 1;
         }
@@ -275,16 +275,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     unsigned long file_size;
     bool res = files_get_file_size(ctx.input_file, &file_size, NULL);
 
-    if (res && file_size > MAX_NV_INDEX_SIZE) {
-        LOG_ERR("File larger than MAX_NV_INDEX_SIZE, got %lu expected %u", file_size,
-                MAX_NV_INDEX_SIZE);
+    if (res && file_size > TPM2_MAX_NV_BUFFER_SIZE) {
+        LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE, got %lu expected %u", file_size,
+                TPM2_MAX_NV_BUFFER_SIZE);
         goto out;
     }
 
     if (res) {
         /*
          * We know the size upfront, read it. Note that the size was already
-         * bounded by MAX_NV_INDEX_SIZE
+         * bounded by TPM2_MAX_NV_BUFFER_SIZE
          */
         ctx.data_size = (UINT16) file_size;
         res = files_read_bytes(ctx.input_file, ctx.nv_buffer, ctx.data_size);
@@ -294,16 +294,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     } else {
         /* we don't know the file size, ie it's a stream, read till end */
-        size_t bytes = fread(ctx.nv_buffer, 1, MAX_NV_INDEX_SIZE, ctx.input_file);
-        if (bytes != MAX_NV_INDEX_SIZE) {
+        size_t bytes = fread(ctx.nv_buffer, 1, TPM2_MAX_NV_BUFFER_SIZE, ctx.input_file);
+        if (bytes != TPM2_MAX_NV_BUFFER_SIZE) {
             if (ferror(ctx.input_file)) {
                 LOG_ERR("reading from input file failed: %s", strerror(errno));
                 goto out;
             }
 
             if (!feof(ctx.input_file)) {
-                LOG_ERR("File larger than MAX_NV_INDEX_SIZE: %u",
-                        MAX_NV_INDEX_SIZE);
+                LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE: %u",
+                        TPM2_MAX_NV_BUFFER_SIZE);
                 goto out;
             }
         }
@@ -324,9 +324,9 @@ out:
     }
 
     if (ctx.policy_session) {
-        TPM_RC rval = Tss2_Sys_FlushContext(sapi_context,
+        TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
                                             ctx.policy_session->sessionHandle);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context: 0x%x", rval);
             return 1;
         }
