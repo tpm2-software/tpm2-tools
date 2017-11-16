@@ -78,9 +78,9 @@ static listpcr_context ctx = {
     .algs = {
         .count = 3,
         .alg = {
-            TPM_ALG_SHA1,
-            TPM_ALG_SHA256,
-            TPM_ALG_SHA384
+            TPM2_ALG_SHA1,
+            TPM2_ALG_SHA256,
+            TPM2_ALG_SHA384
         }
     },
 };
@@ -141,7 +141,7 @@ static bool read_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
                 &pcr_update_counter, &pcr_selection_out,
                 &ctx.pcrs.pcr_values[ctx.pcrs.count], 0));
 
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("read pcr failed. tpm error 0x%0x", rval);
             return -1;
         }
@@ -330,9 +330,9 @@ static bool get_banks(TSS2_SYS_CONTEXT *sapi_context) {
     TPMS_CAPABILITY_DATA *capability_data = &ctx.cap_data;
     UINT32 rval;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, no_argument, TPM_CAP_PCRS, no_argument, required_argument,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, no_argument, TPM2_CAP_PCRS, no_argument, required_argument,
             &more_data, capability_data, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR(
                 "GetCapability: Get PCR allocation status Error. TPM Error:0x%x......",
                 rval);
@@ -365,7 +365,7 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'g':
         ctx.selected_algorithm = tpm2_alg_util_from_optarg(value);
-        if (ctx.selected_algorithm == TPM_ALG_ERROR) {
+        if (ctx.selected_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid algorithm, got: \"%s\"", value);
             return false;
         }

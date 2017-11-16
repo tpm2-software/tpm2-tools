@@ -47,7 +47,7 @@ typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {
     char *context_file_path;
     TPMI_RH_HIERARCHY hierarchy_value;
-    TPM_HANDLE rsa2048_handle;
+    TPM2_HANDLE rsa2048_handle;
     TPM2B_PUBLIC public_key;
     TPM2B_SENSITIVE private_key;
     bool has_private_key;
@@ -71,16 +71,16 @@ static bool get_hierarchy_value(const char *argument_opt,
 
     switch (argument_opt[0]) {
     case 'e':
-        *hierarchy_value = TPM_RH_ENDORSEMENT;
+        *hierarchy_value = TPM2_RH_ENDORSEMENT;
         break;
     case 'o':
-        *hierarchy_value = TPM_RH_OWNER;
+        *hierarchy_value = TPM2_RH_OWNER;
         break;
     case 'p':
-        *hierarchy_value = TPM_RH_PLATFORM;
+        *hierarchy_value = TPM2_RH_PLATFORM;
         break;
     case 'n':
-        *hierarchy_value = TPM_RH_NULL;
+        *hierarchy_value = TPM2_RH_NULL;
         break;
     default:
         LOG_ERR("Wrong Hierarchy Value, got: \"%s\", expected one of e,o,p,n",
@@ -101,11 +101,11 @@ static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
     sessionsDataOut.rspAuths = &sessionDataOutArray[0];
     sessionsDataOut.rspAuthsCount = 1;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0,
             ctx.has_private_key ? &ctx.private_key : NULL, &ctx.public_key,
             ctx.hierarchy_value, &ctx.rsa2048_handle, &nameExt,
             &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("LoadExternal Failed ! ErrorCode: 0x%0x", rval);
         return false;
     }

@@ -44,7 +44,7 @@ TSS2_TCTI_CONTEXT *tpm2_tools_tcti_abrmd_init(char *opts) {
 
     size_t size;
     TSS2_RC rc = tss2_tcti_tabrmd_init(NULL, &size);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to get size for TABRMD TCTI context: 0x%" PRIx32, rc);
         return NULL;
     }
@@ -56,7 +56,7 @@ TSS2_TCTI_CONTEXT *tpm2_tools_tcti_abrmd_init(char *opts) {
     }
 
     rc = tss2_tcti_tabrmd_init(tcti_ctx, &size);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR ("Failed to initialize TABRMD TCTI context: 0x%" PRIx32, rc);
         free(tcti_ctx);
         return NULL;

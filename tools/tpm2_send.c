@@ -189,13 +189,13 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     TSS2_TCTI_CONTEXT *tcti_context;
     TSS2_RC rc = Tss2_Sys_GetTctiContext(sapi_context, &tcti_context);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to get TCTI context from SAPI context: 0x%x", rc);
         goto out;
     }
 
     rc = tss2_tcti_transmit(tcti_context, size, command->bytes);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_transmit failed: 0x%x", rc);
         goto out;
     }
@@ -203,7 +203,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     size_t rsize = TPM2_MAX_SIZE;
     UINT8 rbuf[TPM2_MAX_SIZE];
     rc = tss2_tcti_receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_receive failed: 0x%x", rc);
         goto out;
     }

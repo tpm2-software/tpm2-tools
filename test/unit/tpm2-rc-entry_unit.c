@@ -38,25 +38,25 @@
 
 /* Lookup an error code using the provided function. Assert that the returned
  * id matches the one that we looked up.
- *   tpm_rc: TPM_RC we're looking up
- *   lookup_func: function to lookup the TPM_RC
+ *   tpm_rc: TSS2_RC we're looking up
+ *   lookup_func: function to lookup the TSS2_RC
  */
 #define LOOKUP_SUCCESS(tpm_rc, lookup_func) \
     LOOKUP_EXPECTED_SUCCESS (tpm_rc, tpm_rc, lookup_func);
 /* Same as LOOKUP_SUCCESS but expect a failure.
  */
 #define LOOKUP_FAILURE(tpm_rc, lookup_func) \
-    TPM_RC rc = (tpm_rc); \
+    TSS2_RC rc = (tpm_rc); \
     tpm2_rc_entry_t *entry = NULL; \
     entry = (lookup_func)(rc); \
     assert_null (entry);
-/* Lookup TPM_RC and compare to expected value. Assert success condition.
- *   tpm_rc: TPM_RC we're looking up
+/* Lookup TSS2_RC and compare to expected value. Assert success condition.
+ *   tpm_rc: TSS2_RC we're looking up
  *   layer:  expected layer
- *   lookup_func: function to lookup the layer from the provided TPM_RC
+ *   lookup_func: function to lookup the layer from the provided TSS2_RC
  */
 #define LOOKUP_EXPECTED_SUCCESS(rc_in, rc_expect, lookup_func) \
-    TPM_RC rc = (rc_in); \
+    TSS2_RC rc = (rc_in); \
     tpm2_rc_entry_t *entry = NULL; \
     entry = (lookup_func)(rc); \
     assert_non_null (entry); \
@@ -114,16 +114,16 @@ static void
 tpm2_rc_entry_parameter_1 (void **state)
 {
     (void) state;
-    LOOKUP_EXPECTED_SUCCESS (TPM_RC_P + TPM_RC_1,
-                             TPM_RC_1,
+    LOOKUP_EXPECTED_SUCCESS (TPM2_RC_P + TPM2_RC_1,
+                             TPM2_RC_1,
                              tpm2_get_parameter_entry);
 }
 static void
 tpm2_rc_entry_parameter_a (void **state)
 {
     (void) state;
-    LOOKUP_EXPECTED_SUCCESS (TPM_RC_P + TPM_RC_A,
-                             TPM_RC_A,
+    LOOKUP_EXPECTED_SUCCESS (TPM2_RC_P + TPM2_RC_A,
+                             TPM2_RC_A,
                              tpm2_get_parameter_entry);
 }
 /* same for tpm2_handle_entry */
@@ -131,16 +131,16 @@ static void
 tpm2_rc_entry_handle_3 (void **state)
 {
     (void) state;
-    LOOKUP_EXPECTED_SUCCESS (TPM_RC_H + TPM_RC_3,
-                             TPM_RC_3,
+    LOOKUP_EXPECTED_SUCCESS (TPM2_RC_H + TPM2_RC_3,
+                             TPM2_RC_3,
                              tpm2_get_handle_entry);
 }
 static void
 tpm2_rc_entry_handle_7 (void **state)
 {
     (void) state;
-    LOOKUP_EXPECTED_SUCCESS (TPM_RC_H + TPM_RC_7,
-                             TPM_RC_7,
+    LOOKUP_EXPECTED_SUCCESS (TPM2_RC_H + TPM2_RC_7,
+                             TPM2_RC_7,
                              tpm2_get_handle_entry);
 }
 /* same for tpm2_session_entry */
@@ -148,16 +148,16 @@ static void
 tpm2_rc_entry_session_2 (void **state)
 {
     (void) state;
-    LOOKUP_EXPECTED_SUCCESS (TPM_RC_H + TPM_RC_2,
-                             TPM_RC_2,
+    LOOKUP_EXPECTED_SUCCESS (TPM2_RC_H + TPM2_RC_2,
+                             TPM2_RC_2,
                              tpm2_get_session_entry);
 }
 static void
 tpm2_rc_entry_session_5 (void **state)
 {
     (void) state;
-    LOOKUP_EXPECTED_SUCCESS (TPM_RC_H + TPM_RC_5,
-                             TPM_RC_5,
+    LOOKUP_EXPECTED_SUCCESS (TPM2_RC_H + TPM2_RC_5,
+                             TPM2_RC_5,
                              tpm2_get_session_entry);
 }
 /* Check for match in tpm2_tss_layer_entry for the TCTI layer. */
@@ -227,13 +227,13 @@ static void
 tpm2_rc_entry_fmt0_failure (void **state)
 {
     (void) state;
-    LOOKUP_SUCCESS (TPM_RC_FAILURE, tpm2_get_fmt0_entry);
+    LOOKUP_SUCCESS (TPM2_RC_FAILURE, tpm2_get_fmt0_entry);
 }
 static void
 tpm2_rc_entry_fmt0_pcr_changed (void **state)
 {
     (void) state;
-    LOOKUP_SUCCESS (TPM_RC_PCR_CHANGED, tpm2_get_fmt0_entry);
+    LOOKUP_SUCCESS (TPM2_RC_PCR_CHANGED, tpm2_get_fmt0_entry);
 }
 /* Check for no match on invalid fmt0 / ver1 error code */
 static void
@@ -248,13 +248,13 @@ static void
 tpm2_rc_entry_fmt1_hierarchy (void **state)
 {
     (void) state;
-    LOOKUP_SUCCESS (TPM_RC_HIERARCHY, tpm2_get_fmt1_entry);
+    LOOKUP_SUCCESS (TPM2_RC_HIERARCHY, tpm2_get_fmt1_entry);
 }
 static void
 tpm2_rc_entry_fmt1_expired (void **state)
 {
     (void) state;
-    LOOKUP_SUCCESS (TPM_RC_EXPIRED, tpm2_get_fmt1_entry);
+    LOOKUP_SUCCESS (TPM2_RC_EXPIRED, tpm2_get_fmt1_entry);
 }
 static void
 tpm2_rc_entry_fmt1_bad (void **state)
@@ -268,13 +268,13 @@ static void
 tpm2_rc_entry_warn_memory (void **state)
 {
     (void) state;
-    LOOKUP_SUCCESS (TPM_RC_MEMORY, tpm2_get_warn_entry);
+    LOOKUP_SUCCESS (TPM2_RC_MEMORY, tpm2_get_warn_entry);
 }
 static void
 tpm2_rc_entry_warn_reference_s5 (void **state)
 {
     (void) state;
-    LOOKUP_SUCCESS (TPM_RC_REFERENCE_S5, tpm2_get_warn_entry);
+    LOOKUP_SUCCESS (TPM2_RC_REFERENCE_S5, tpm2_get_warn_entry);
 }
 static void
 tpm2_rc_entry_warn_bad (void **state)

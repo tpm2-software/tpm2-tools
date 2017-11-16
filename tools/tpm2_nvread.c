@@ -63,8 +63,8 @@ struct tpm_nvread_ctx {
 };
 
 static tpm_nvread_ctx ctx = {
-    .auth_handle = TPM_RH_PLATFORM,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .auth_handle = TPM2_RH_PLATFORM,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
@@ -84,8 +84,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
 
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    TPM_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to read NVRAM public area at index 0x%x (%d). Error:0x%x",
                 ctx.nv_index, ctx.nv_index, rval);
         return false;
@@ -124,14 +124,14 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UINT16 data_offset = 0;
     while (ctx.size_to_read) {
 
-        UINT16 bytes_to_read = ctx.size_to_read > MAX_NV_BUFFER_SIZE ?
-                        MAX_NV_BUFFER_SIZE : ctx.size_to_read;
+        UINT16 bytes_to_read = ctx.size_to_read > TPM2_MAX_NV_BUFFER_SIZE ?
+                        TPM2_MAX_NV_BUFFER_SIZE : ctx.size_to_read;
 
         TPM2B_MAX_NV_BUFFER nv_data = TPM2B_TYPE_INIT(TPM2B_MAX_NV_BUFFER, buffer);
 
         rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
                 &sessions_data, bytes_to_read, ctx.offset, &nv_data, &sessions_data_out));
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to read NVRAM area at index 0x%x (%d). Error:0x%x",
                     ctx.nv_index, ctx.nv_index, rval);
             goto out;
@@ -265,11 +265,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (ctx.flags.L) {
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-        TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
-                                        TPM_SE_POLICY, TPM_ALG_SHA256, ctx.pcr_selection,
+        TSS2_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
+                                        TPM2_SE_POLICY, TPM2_ALG_SHA256, ctx.pcr_selection,
                                         ctx.raw_pcrs_file, &pcr_digest, true,
                                         tpm2_policy_pcr_build);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Building PCR policy failed: 0x%x", rval);
             return 1;
         }
@@ -281,9 +281,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool res = nv_read(sapi_context, flags);
 
     if (ctx.policy_session) {
-        TPM_RC rval = Tss2_Sys_FlushContext(sapi_context,
+        TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
                                             ctx.policy_session->sessionHandle);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context: 0x%x", rval);
             return 1;
         }

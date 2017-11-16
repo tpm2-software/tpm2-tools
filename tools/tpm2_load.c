@@ -47,7 +47,7 @@
 #include "files.h"
 #include "tpm2_tool.h"
 
-TPM_HANDLE handle2048rsa;
+TPM2_HANDLE handle2048rsa;
 
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {
@@ -69,7 +69,7 @@ struct tpm_load_ctx {
 
 static tpm_load_ctx ctx = {
     .session_data = {
-        .sessionHandle = TPM_RS_PW,
+        .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
@@ -103,7 +103,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
                          &handle2048rsa,
                          &nameExt,
                          &sessionsDataOut));
-    if(rval != TPM_RC_SUCCESS)
+    if(rval != TPM2_RC_SUCCESS)
     {
         LOG_ERR("\nLoad Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -1;

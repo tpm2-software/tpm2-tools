@@ -106,14 +106,14 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
     // strings in print_ssl_error()
     ERR_load_crypto_strings();
 
-    if (public->type != TPM_ALG_RSA) {
+    if (public->type != TPM2_ALG_RSA) {
         LOG_ERR("Unsupported key type for requested output format. Only RSA is supported.");
         goto error;
     }
 
     UINT32 exponent = (public->parameters).rsaDetail.exponent;
     if (exponent == 0) {
-        exponent = RSA_DEFAULT_PUBLIC_EXPONENT;
+        exponent = 0x10001;
     }
 
     // OpenSSL expects this in network byte order

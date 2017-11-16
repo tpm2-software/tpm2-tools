@@ -62,7 +62,7 @@ static bool is_auth_session;
 static TPMI_SH_AUTH_SESSION auth_session_handle;
 static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag;
 static char *contextFilePath;
-static TPM_HANDLE akHandle;
+static TPM2_HANDLE akHandle;
 
 static void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -90,7 +90,7 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
     return res;
 }
 
-static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
+static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 {
     UINT32 rval;
     TPMT_SIG_SCHEME inScheme;
@@ -112,7 +112,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
     sessionsDataOut.rspAuthsCount = 1;
     sessionsData.cmdAuthsCount = 1;
 
-    sessionData.sessionHandle = TPM_RS_PW;
+    sessionData.sessionHandle = TPM2_RS_PW;
     if (is_auth_session) {
         sessionData.sessionHandle = auth_session_handle;
     }
@@ -121,7 +121,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
     *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
 
     if(!G_flag || !get_signature_scheme(sapi_context, akHandle, sig_hash_algorithm, &inScheme)) {
-        inScheme.scheme = TPM_ALG_NULL;
+        inScheme.scheme = TPM2_ALG_NULL;
     }
 
     memset( (void *)&signature, 0, sizeof(signature) );
@@ -129,7 +129,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
     rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &sessionsData,
             &qualifyingData, &inScheme, pcrSelection, &quoted,
             &signature, &sessionsDataOut));
-    if(rval != TPM_RC_SUCCESS)
+    if(rval != TPM2_RC_SUCCESS)
     {
         printf("\nQuote Failed ! ErrorCode: 0x%0x\n\n", rval);
         return -1;
@@ -180,7 +180,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(optarg);
-        if (pcrSelections.pcrSelections[0].hash == TPM_ALG_ERROR)
+        if (pcrSelections.pcrSelections[0].hash == TPM2_ALG_ERROR)
         {
             LOG_ERR("Could not convert pcr hash selection, got: \"%s\"", value);
             return false;
@@ -231,7 +231,7 @@ static bool on_option(char key, char *value) {
          break;
     case 'G':
         sig_hash_algorithm = tpm2_alg_util_from_optarg(optarg);
-        if(sig_hash_algorithm == TPM_ALG_ERROR) {
+        if(sig_hash_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
             return false;
         }

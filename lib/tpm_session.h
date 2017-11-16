@@ -25,8 +25,8 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#ifndef SRC_TPM_SESSION_H_
-#define SRC_TPM_SESSION_H_
+#ifndef SRC_TPM2_SESSION_H_
+#define SRC_TPM2_SESSION_H_
 
 #include <sapi/tpm20.h>
 
@@ -37,7 +37,7 @@ typedef struct {
     TPMI_DH_ENTITY bind;
     TPM2B_ENCRYPTED_SECRET encryptedSalt;
     TPM2B_MAX_BUFFER salt;
-    TPM_SE sessionType;
+    TPM2_SE sessionType;
     TPMT_SYM_DEF symmetric;
     TPMI_ALG_HASH authHash;
 
@@ -120,11 +120,11 @@ enum TSS2_APP_RC_CODE
  * @param algId
  * @return
  */
-TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSION **session,
+TSS2_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSION **session,
     TPMI_DH_OBJECT tpmKey, TPM2B_MAX_BUFFER *salt,
     TPMI_DH_ENTITY bind, TPM2B_AUTH *bindAuth, TPM2B_NONCE *nonceCaller,
     TPM2B_ENCRYPTED_SECRET *encryptedSalt,
-    TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId );
+    TPM2_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId );
 
 /**
  *
@@ -133,4 +133,4 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
  */
 void tpm_session_auth_end( SESSION *session);
 
-#endif /* SRC_TPM_SESSION_H_ */
+#endif /* SRC_TPM2_SESSION_H_ */

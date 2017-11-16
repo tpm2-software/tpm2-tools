@@ -51,7 +51,7 @@ Handle_ak_quote=0x81010016
 Handle_ek_quote=0x81010017
 Handle_ak_quote2=0x81010018
 
-maxdigest=$(tpm2_getcap -c properties-fixed | grep TPM_PT_MAX_DIGEST | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
+maxdigest=$(tpm2_getcap -c properties-fixed | grep TPM2_PT_MAX_DIGEST | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
 if ! [[ "$maxdigest" =~ ^(0x)*[0-9]+$ ]] ; then
  echo "error: not a number, got: \"$maxdigest\"" >&2
  exit 1

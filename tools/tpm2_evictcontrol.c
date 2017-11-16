@@ -86,9 +86,9 @@ static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
                                         &sessions_data, ctx.handle.persist,&sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("EvictControl failed, error code: 0x%x", rval);
         return false;
     }
@@ -102,9 +102,9 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'A':
         if (!strcasecmp(value, "o")) {
-            ctx.auth = TPM_RH_OWNER;
+            ctx.auth = TPM2_RH_OWNER;
         } else if (!strcasecmp(value, "p")) {
-            ctx.auth = TPM_RH_PLATFORM;
+            ctx.auth = TPM2_RH_PLATFORM;
         } else {
             LOG_ERR("Incorrect auth value, got: \"%s\", expected [o|O|p|P!",
                     value);
@@ -121,7 +121,7 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.H = 1;
 
-        if (ctx.handle.object >> HR_SHIFT == TPM_HT_PERSISTENT) {
+        if (ctx.handle.object >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
             ctx.handle.persist = ctx.handle.object;
             ctx.flags.S = 1;
         }
@@ -171,7 +171,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {NULL,          no_argument,       NULL, '\0'}
     };
 
-    ctx.session_data.sessionHandle = TPM_RS_PW;
+    ctx.session_data.sessionHandle = TPM2_RS_PW;
 
     *opts = tpm2_options_new("A:H:S:P:c:i:", ARRAY_LEN(topts), topts, on_option, NULL);
 

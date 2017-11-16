@@ -79,8 +79,8 @@ struct tpm_certify_ctx {
 
 static tpm_certify_ctx ctx = {
     .cmd_auth = {
-        TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-        TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     },
     .sig_fmt = signature_format_tss,
 };
@@ -103,9 +103,9 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
 
     TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
             &out_public, &name, &qualified_name, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_ReadPublic failed. Error Code: 0x%x", rval);
         return false;
     }
@@ -118,26 +118,26 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
 static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle,
         TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *scheme) {
 
-    TPM_ALG_ID type;
+    TPM2_ALG_ID type;
     bool result = get_key_type(sapi_context, key_handle, &type);
     if (!result) {
         return false;
     }
 
     switch (type) {
-    case TPM_ALG_RSA :
-        scheme->scheme = TPM_ALG_RSASSA;
+    case TPM2_ALG_RSA :
+        scheme->scheme = TPM2_ALG_RSASSA;
         scheme->details.rsassa.hashAlg = halg;
         break;
-    case TPM_ALG_KEYEDHASH :
-        scheme->scheme = TPM_ALG_HMAC;
+    case TPM2_ALG_KEYEDHASH :
+        scheme->scheme = TPM2_ALG_HMAC;
         scheme->details.hmac.hashAlg = halg;
         break;
-    case TPM_ALG_ECC :
-        scheme->scheme = TPM_ALG_ECDSA;
+    case TPM2_ALG_ECC :
+        scheme->scheme = TPM2_ALG_ECDSA;
         scheme->details.ecdsa.hashAlg = halg;
         break;
-    case TPM_ALG_SYMCIPHER :
+    case TPM2_ALG_SYMCIPHER :
     default:
         LOG_ERR("Unknown key type, got: 0x%x", type);
         return false;
@@ -187,10 +187,10 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMT_SIGNATURE signature;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
             ctx.handle.key, &cmd_auth_array, &qualifying_data, &scheme,
             &certify_info, &signature, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_Certify failed. Error Code: 0x%x", rval);
         return false;
     }
@@ -246,7 +246,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value);
-        if (ctx.halg == TPM_ALG_ERROR) {
+        if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not format algorithm to number, got: \"%s\"", value);
             return false;
         }

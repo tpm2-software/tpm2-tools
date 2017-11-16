@@ -116,16 +116,16 @@ static bool parse_and_save_ak_public() {
     size_t key_data_len = 1;
     TPM2B *key_data[2];
     switch (outPublic.publicArea.type) {
-    case TPM_ALG_RSA:
+    case TPM2_ALG_RSA:
         key_data[0] = (TPM2B *)&outPublic.publicArea.unique.rsa;
         break;
-    case TPM_ALG_KEYEDHASH:
+    case TPM2_ALG_KEYEDHASH:
         key_data[0] = (TPM2B *)&outPublic.publicArea.unique.keyedHash;
         break;
-    case TPM_ALG_SYMCIPHER:
+    case TPM2_ALG_SYMCIPHER:
         key_data[0] = (TPM2B *)&outPublic.publicArea.unique.sym;
         break;
-    case TPM_ALG_ECC:
+    case TPM2_ALG_ECC:
         key_data_len = 2;
         key_data[0] = (TPM2B *)&outPublic.publicArea.unique.ecc.x;
         key_data[1] = (TPM2B *)&outPublic.publicArea.unique.ecc.y;
