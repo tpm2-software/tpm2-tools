@@ -61,8 +61,8 @@ struct tpm_pcrevent_ctx {
 #define TSS2_APP_PCREVENT_RC_FAILED (0x57 + 0x100 + TSS2_APP_ERROR_LEVEL)
 
 static tpm_pcrevent_ctx ctx = {
-        .pcr = TPM_RH_NULL,
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        .pcr = TPM2_RH_NULL,
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 static inline void swap_auths(TPMS_AUTH_COMMAND **auths) {
@@ -72,10 +72,10 @@ static inline void swap_auths(TPMS_AUTH_COMMAND **auths) {
     auths[1] = tmp;
 }
 
-static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
+static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         TPML_DIGEST_VALUES *result) {
 
-    TPMS_AUTH_COMMAND empty_auth = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW);
+    TPMS_AUTH_COMMAND empty_auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
 
     TPMS_AUTH_COMMAND *all_auths[] = {
         &ctx.session_data, /* auth for the pcr handle */
@@ -121,9 +121,9 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
-    TPM_ALG_NULL, &sequence_handle, NULL));
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
+    TPM2_ALG_NULL, &sequence_handle, NULL));
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_HashSequenceStart failed: 0x%X", rval);
         return rval;
     }
@@ -158,14 +158,14 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         /* if data was read, update the sequence */
         rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
                 &cmd_auth_array, &data, NULL));
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Tss2_Sys_SequenceUpdate failed: 0x%X", rval);
             return rval;
         }
 
         if (use_left) {
             left -= bytes_read;
-            if (left <= MAX_DIGEST_BUFFER) {
+            if (left <= TPM2_MAX_DIGEST_BUFFER) {
                 done = true;
                 continue;
             }
@@ -200,8 +200,8 @@ static TPM_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
 static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPML_DIGEST_VALUES digests;
-    TPM_RC rval = tpm_pcrevent_file(sapi_context, &digests);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = tpm_pcrevent_file(sapi_context, &digests);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("tpm_pcrevent_file() failed: 0x%X", rval);
         return false;
     }
@@ -215,23 +215,23 @@ static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
         BYTE *bytes;
         size_t size;
         switch (d->hashAlg) {
-        case TPM_ALG_SHA1:
+        case TPM2_ALG_SHA1:
             bytes = d->digest.sha1;
             size = sizeof(d->digest.sha1);
             break;
-        case TPM_ALG_SHA256:
+        case TPM2_ALG_SHA256:
             bytes = d->digest.sha256;
             size = sizeof(d->digest.sha256);
             break;
-        case TPM_ALG_SHA384:
+        case TPM2_ALG_SHA384:
             bytes = d->digest.sha384;
             size = sizeof(d->digest.sha384);
             break;
-        case TPM_ALG_SHA512:
+        case TPM2_ALG_SHA512:
             bytes = d->digest.sha512;
             size = sizeof(d->digest.sha512);
             break;
-        case TPM_ALG_SM3_256:
+        case TPM2_ALG_SM3_256:
             bytes = d->digest.sm3_256;
             size = sizeof(d->digest.sm3_256);
             break;

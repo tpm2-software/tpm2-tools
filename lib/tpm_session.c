@@ -41,9 +41,9 @@
 // It performs the command, calculates the session key, and updates a
 // SESSION structure.
 //
-static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session )
+static TSS2_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session )
 {
-    TPM_RC rval;
+    TSS2_RC rval;
     TPM2B_ENCRYPTED_SECRET key;
     char label[] = "ATH";
     UINT16 bytes;
@@ -53,7 +53,7 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
 
     if( session->nonceOlder.size == 0 )
     {
-        session->nonceOlder.size = tpm2_alg_util_get_hash_size( TPM_ALG_SHA1 );
+        session->nonceOlder.size = tpm2_alg_util_get_hash_size( TPM2_ALG_SHA1 );
         for( i = 0; i < session->nonceOlder.size; i++ )
             session->nonceOlder.buffer[i] = 0;
     }
@@ -64,14 +64,14 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
             &( session->symmetric ), session->authHash, &( session->sessionHandle ),
             &( session->nonceNewer ), 0 );
 
-    if( rval == TPM_RC_SUCCESS )
+    if( rval == TPM2_RC_SUCCESS )
     {
-        if( session->tpmKey == TPM_RH_NULL )
+        if( session->tpmKey == TPM2_RH_NULL )
             session->salt.size = 0;
-        if( session->bind == TPM_RH_NULL )
+        if( session->bind == TPM2_RH_NULL )
             session->authValueBind.size = 0;
 
-        if( session->tpmKey == TPM_RH_NULL && session->bind == TPM_RH_NULL )
+        if( session->tpmKey == TPM2_RH_NULL && session->bind == TPM2_RH_NULL )
         {
             session->sessionKey.size = 0;
         }
@@ -103,7 +103,7 @@ static TPM_RC StartAuthSession(TSS2_SYS_CONTEXT *sapi_context, SESSION *session 
                         (TPM2B *)&session->nonceOlder, bytes * 8, (TPM2B_MAX_BUFFER *)&session->sessionKey);
             }
 
-            if( rval != TPM_RC_SUCCESS )
+            if( rval != TPM2_RC_SUCCESS )
             {
                 return( TSS2_APP_RC_CREATE_SESSION_KEY_FAILED );
             }
@@ -131,18 +131,18 @@ void tpm_session_auth_end(SESSION *session ) {
 // the function is called; cleaner this way, for
 // some uses.
 //
-TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSION **session,
+TSS2_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSION **session,
     TPMI_DH_OBJECT tpmKey, TPM2B_MAX_BUFFER *salt,
     TPMI_DH_ENTITY bind, TPM2B_AUTH *bindAuth, TPM2B_NONCE *nonceCaller,
     TPM2B_ENCRYPTED_SECRET *encryptedSalt,
-    TPM_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId )
+    TPM2_SE sessionType, TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH algId )
 {
-    TPM_RC rval;
+    TSS2_RC rval;
 
     *session = calloc(1, sizeof(**session));
     if (!*session) {
         LOG_ERR("oom");
-        return TPM_RC_MEMORY;
+        return TPM2_RC_MEMORY;
     }
 
     // Copy handles to session struct.
@@ -177,7 +177,7 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
     }
 
     // Calculate sessionKey
-    if( (*session)->tpmKey == TPM_RH_NULL )
+    if( (*session)->tpmKey == TPM2_RH_NULL )
     {
         (*session)->salt.size = 0;
     }
@@ -186,7 +186,7 @@ TPM_RC tpm_session_start_auth_with_params(TSS2_SYS_CONTEXT *sapi_context, SESSIO
         memcpy(&(*session)->salt, salt, sizeof(*salt));
     }
 
-    if( (*session)->bind == TPM_RH_NULL )
+    if( (*session)->bind == TPM2_RH_NULL )
         (*session)->authValueBind.size = 0;
 
     rval = StartAuthSession(sapi_context, *session );

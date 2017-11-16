@@ -62,13 +62,13 @@ struct tpm_hmac_ctx {
 };
 
 static tpm_hmac_ctx ctx = {
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-    .algorithm = TPM_ALG_SHA1,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .algorithm = TPM2_ALG_SHA1,
 };
 
 #define TSS2_APP_HMAC_RC_FAILED (0x42 + 0x100 + TSS2_APP_ERROR_LEVEL)
 
-TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
+TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
 
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -93,7 +93,7 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
     bool res = files_get_file_size(input, &file_size, NULL);
 
     /* If we can get the file size and its less than 1024, just do it in one hash invocation */
-    if (res && file_size <= MAX_DIGEST_BUFFER) {
+    if (res && file_size <= TPM2_MAX_DIGEST_BUFFER) {
 
         TPM2B_MAX_BUFFER buffer = { .size = file_size };
 
@@ -116,9 +116,9 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HMAC_Start(sapi_context, ctx.key_handle, &sessions_data,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HMAC_Start(sapi_context, ctx.key_handle, &sessions_data,
             &null_auth, ctx.algorithm, &sequence_handle, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_HMAC_Start failed: 0x%X", rval);
         return rval;
     }
@@ -146,13 +146,13 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
         /* if data was read, update the sequence */
         rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
                 &sessions_data, &data, &sessions_data_out));
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             return rval;
         }
 
         if (use_left) {
             left -= bytes_read;
-            if (left <= MAX_DIGEST_BUFFER) {
+            if (left <= TPM2_MAX_DIGEST_BUFFER) {
                 done = true;
                 continue;
             }
@@ -173,7 +173,7 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
     }
 
     return TSS2_RETRY_EXP(Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
-            &sessions_data, &data, TPM_RH_NULL, result, NULL,
+            &sessions_data, &data, TPM2_RH_NULL, result, NULL,
             &sessions_data_out));
 }
 
@@ -181,8 +181,8 @@ TPM_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
 static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST hmac_out = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPM_RC rval = tpm_hmac_file(sapi_context, &hmac_out);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = tpm_hmac_file(sapi_context, &hmac_out);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("tpm_hmac_file() failed: 0x%X", rval);
         return false;
     }
@@ -228,7 +228,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         ctx.algorithm = tpm2_alg_util_from_optarg(value);
-        if (ctx.algorithm == TPM_ALG_ERROR) {
+        if (ctx.algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert algorithm to number, got \"%s\"",
                     value);
             return false;

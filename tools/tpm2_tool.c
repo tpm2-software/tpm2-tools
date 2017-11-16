@@ -60,7 +60,7 @@ static void sapi_teardown_full (TSS2_SYS_CONTEXT *sapi_context) {
     TSS2_RC rc;
 
     rc = Tss2_Sys_GetTctiContext (sapi_context, &tcti_context);
-    if (rc != TSS2_RC_SUCCESS)
+    if (rc != TPM2_RC_SUCCESS)
         return;
     sapi_teardown (sapi_context);
     tcti_teardown (tcti_context);
@@ -84,7 +84,7 @@ static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
     }
 
     TSS2_RC rc = Tss2_Sys_Initialize(sapi_ctx, size, tcti_ctx, &abi_version);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to initialize SAPI context: 0x%x\n", rc);
         free(sapi_ctx);
         return NULL;

@@ -73,12 +73,12 @@ static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     out_sessions_data.rspAuths = &out_session_data_array[0];
     out_sessions_data.rspAuthsCount = 1;
 
-    scheme.scheme = TPM_ALG_RSAES;
+    scheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_handle, NULL,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_handle, NULL,
             &ctx.message, &scheme, &label, &out_data, &out_sessions_data));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("RSA_Encrypt failed, error code: 0x%x", rval);
         return false;
     }

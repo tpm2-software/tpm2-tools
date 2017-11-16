@@ -37,13 +37,13 @@
 static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
 
     switch(algorithm) {
-    case TPM_ALG_SHA1:
+    case TPM2_ALG_SHA1:
         return EVP_sha1();
-    case TPM_ALG_SHA256:
+    case TPM2_ALG_SHA256:
         return EVP_sha256();
-    case TPM_ALG_SHA384:
+    case TPM2_ALG_SHA384:
         return EVP_sha384();
-    case TPM_ALG_SHA512:
+    case TPM2_ALG_SHA512:
         return EVP_sha512();
     default:
         return NULL;
@@ -79,7 +79,7 @@ static void hmac_del(HMAC_CTX *ctx)
 #endif
 }
 
-TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
+TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,
         TPM2B_MAX_BUFFER  *resultKey )
 {
@@ -88,7 +88,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
     UINT8 *tpm2b_i_2Ptr = &tpm2b_i_2.buffer[0];
     TPM2B_DIGEST *bufferList[8];
     UINT32 bitsSwizzled, i_Swizzled;
-    TPM_RC rval = TPM_RC_SUCCESS;
+    TSS2_RC rval = TPM2_RC_SUCCESS;
     int i, j;
     UINT16 bytes = bits / 8;
 
@@ -115,19 +115,19 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
     const EVP_MD *md = tpm_algorithm_to_openssl_digest(hashAlg);
     if (!md) {
         LOG_ERR("Algorithm not supported for hmac: %x", hashAlg);
-        return TPM_RC_HASH;
+        return TPM2_RC_HASH;
     }
 
     HMAC_CTX *ctx = hmac_alloc();
     if (!ctx) {
         LOG_ERR("HMAC context allocation failed");
-        return TPM_RC_MEMORY;
+        return TPM2_RC_MEMORY;
     }
 
     int rc = HMAC_Init_ex(ctx, key->buffer, key->size, md, NULL);
     if (!rc) {
         LOG_ERR("HMAC Init failed: %s", ERR_error_string(rc, NULL));
-        rval = TPM_RC_MEMORY;
+        rval = TPM2_RC_MEMORY;
         goto err;
     }
 
@@ -154,7 +154,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
             int rc =  HMAC_Update(ctx, digest->buffer, digest->size);
             if (!rc) {
                 LOG_ERR("HMAC Update failed: %s", ERR_error_string(rc, NULL));
-                rval = TPM_RC_MEMORY;
+                rval = TPM2_RC_MEMORY;
                 goto err;
             }
         }
@@ -163,7 +163,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         int rc = HMAC_Final(ctx, tmpResult.buffer, &size);
         if (!rc) {
             LOG_ERR("HMAC Final failed: %s", ERR_error_string(rc, NULL));
-            rval = TPM_RC_MEMORY;
+            rval = TPM2_RC_MEMORY;
             goto err;
         }
 

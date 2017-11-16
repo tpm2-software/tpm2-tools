@@ -39,10 +39,10 @@
  * @param bufferList
  *  The list of NULL terminated buffers to perform the hmac on.
  * @param result
- *  The tpm error code, TPM_RC_SUCCESS on success.
+ *  The tpm error code, TPM2_RC_SUCCESS on success.
  * @return
  */
-TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
+TSS2_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg,
         TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result );
 
 #endif /* SRC_TPM_HMAC_H_ */

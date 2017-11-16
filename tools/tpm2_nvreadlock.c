@@ -54,8 +54,8 @@ struct tpm_nvreadlock_ctx {
 };
 
 static tpm_nvreadlock_ctx ctx = {
-    .auth_handle = TPM_RH_PLATFORM,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .auth_handle = TPM2_RH_PLATFORM,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 
 };
 
@@ -77,9 +77,9 @@ static bool nv_readlock(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
             &sessions_data, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to lock NVRAM area at index 0x%x (%d).Error:0x%x",
                 ctx.nv_index, ctx.nv_index, rval);
         return false;

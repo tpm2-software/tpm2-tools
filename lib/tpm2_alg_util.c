@@ -43,49 +43,49 @@
 typedef struct alg_pair alg_pair;
 struct alg_pair {
     const char *name;
-    TPM_ALG_ID id;
+    TPM2_ALG_ID id;
 };
 
 void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iteraror iterator, void *userdata) {
 
     static const alg_pair algs[] = {
-        { .name = "rsa", .id = TPM_ALG_RSA },
-        { .name = "sha1", .id = TPM_ALG_SHA1 },
-        { .name = "hmac", .id = TPM_ALG_HMAC },
-        { .name = "aes", .id = TPM_ALG_AES },
-        { .name = "mgf1", .id = TPM_ALG_MGF1 },
-        { .name = "keyedhash", .id = TPM_ALG_KEYEDHASH },
-        { .name = "xor", .id = TPM_ALG_XOR },
-        { .name = "sha256", .id = TPM_ALG_SHA256 },
-        { .name = "sha384", .id = TPM_ALG_SHA384 },
-        { .name = "sha512", .id = TPM_ALG_SHA512 },
-        { .name = "null", .id = TPM_ALG_NULL },
-        { .name = "sm3_256", .id = TPM_ALG_SM3_256 },
-        { .name = "sm4", .id = TPM_ALG_SM4 },
-        { .name = "rsassa", .id = TPM_ALG_RSASSA },
-        { .name = "rsaes", .id = TPM_ALG_RSAES },
-        { .name = "rsapss", .id = TPM_ALG_RSAPSS },
-        { .name = "oaep", .id = TPM_ALG_OAEP },
-        { .name = "ecdsa", .id = TPM_ALG_ECDSA },
-        { .name = "ecdh", .id = TPM_ALG_ECDH },
-        { .name = "ecdaa", .id = TPM_ALG_ECDAA },
-        { .name = "sm2", .id = TPM_ALG_SM2 },
-        { .name = "ecschnorr", .id = TPM_ALG_ECSCHNORR },
-        { .name = "ecmqv", .id = TPM_ALG_ECMQV },
-        { .name = "kdf1_sp800_56a", .id = TPM_ALG_KDF1_SP800_56A },
-        { .name = "kdf2", .id = TPM_ALG_KDF2 },
-        { .name = "kdf1_sp800_108", .id = TPM_ALG_KDF1_SP800_108 },
-        { .name = "ecc", .id = TPM_ALG_ECC },
-        { .name = "symcipher", .id = TPM_ALG_SYMCIPHER },
-        { .name = "camellia", .id = TPM_ALG_CAMELLIA },
-        { .name = "sha3_256", .id = TPM_ALG_SHA3_256 },
-        { .name = "sha3_384", .id = TPM_ALG_SHA3_384 },
-        { .name = "sha3_512", .id = TPM_ALG_SHA3_512 },
-        { .name = "ctr", .id = TPM_ALG_CTR },
-        { .name = "ofb", .id = TPM_ALG_OFB },
-        { .name = "cbc", .id = TPM_ALG_CBC },
-        { .name = "cfb", .id = TPM_ALG_CFB },
-        { .name = "ecb", .id = TPM_ALG_ECB },
+        { .name = "rsa", .id = TPM2_ALG_RSA },
+        { .name = "sha1", .id = TPM2_ALG_SHA1 },
+        { .name = "hmac", .id = TPM2_ALG_HMAC },
+        { .name = "aes", .id = TPM2_ALG_AES },
+        { .name = "mgf1", .id = TPM2_ALG_MGF1 },
+        { .name = "keyedhash", .id = TPM2_ALG_KEYEDHASH },
+        { .name = "xor", .id = TPM2_ALG_XOR },
+        { .name = "sha256", .id = TPM2_ALG_SHA256 },
+        { .name = "sha384", .id = TPM2_ALG_SHA384 },
+        { .name = "sha512", .id = TPM2_ALG_SHA512 },
+        { .name = "null", .id = TPM2_ALG_NULL },
+        { .name = "sm3_256", .id = TPM2_ALG_SM3_256 },
+        { .name = "sm4", .id = TPM2_ALG_SM4 },
+        { .name = "rsassa", .id = TPM2_ALG_RSASSA },
+        { .name = "rsaes", .id = TPM2_ALG_RSAES },
+        { .name = "rsapss", .id = TPM2_ALG_RSAPSS },
+        { .name = "oaep", .id = TPM2_ALG_OAEP },
+        { .name = "ecdsa", .id = TPM2_ALG_ECDSA },
+        { .name = "ecdh", .id = TPM2_ALG_ECDH },
+        { .name = "ecdaa", .id = TPM2_ALG_ECDAA },
+        { .name = "sm2", .id = TPM2_ALG_SM2 },
+        { .name = "ecschnorr", .id = TPM2_ALG_ECSCHNORR },
+        { .name = "ecmqv", .id = TPM2_ALG_ECMQV },
+        { .name = "kdf1_sp800_56a", .id = TPM2_ALG_KDF1_SP800_56A },
+        { .name = "kdf2", .id = TPM2_ALG_KDF2 },
+        { .name = "kdf1_sp800_108", .id = TPM2_ALG_KDF1_SP800_108 },
+        { .name = "ecc", .id = TPM2_ALG_ECC },
+        { .name = "symcipher", .id = TPM2_ALG_SYMCIPHER },
+        { .name = "camellia", .id = TPM2_ALG_CAMELLIA },
+        { .name = "sha3_256", .id = TPM2_ALG_SHA3_256 },
+        { .name = "sha3_384", .id = TPM2_ALG_SHA3_384 },
+        { .name = "sha3_512", .id = TPM2_ALG_SHA3_512 },
+        { .name = "ctr", .id = TPM2_ALG_CTR },
+        { .name = "ofb", .id = TPM2_ALG_OFB },
+        { .name = "cbc", .id = TPM2_ALG_CBC },
+        { .name = "cfb", .id = TPM2_ALG_CFB },
+        { .name = "ecb", .id = TPM2_ALG_ECB },
     };
 
     size_t i;
@@ -98,7 +98,7 @@ void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iteraror iterator, void *userd
     }
 }
 
-static bool find_match(TPM_ALG_ID id, const char *name, void *userdata) {
+static bool find_match(TPM2_ALG_ID id, const char *name, void *userdata) {
 
     alg_pair *search_data = (alg_pair *)userdata;
 
@@ -117,11 +117,11 @@ static bool find_match(TPM_ALG_ID id, const char *name, void *userdata) {
     return false;
 }
 
-TPM_ALG_ID tpm2_alg_util_strtoalg(const char *name) {
+TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name) {
 
     alg_pair userdata = {
         .name = name,
-        .id = TPM_ALG_ERROR
+        .id = TPM2_ALG_ERROR
     };
 
     if (name) {
@@ -131,7 +131,7 @@ TPM_ALG_ID tpm2_alg_util_strtoalg(const char *name) {
     return userdata.id;
 }
 
-const char *tpm2_alg_util_algtostr(TPM_ALG_ID id) {
+const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id) {
 
     alg_pair userdata = {
         .name = NULL,
@@ -143,9 +143,9 @@ const char *tpm2_alg_util_algtostr(TPM_ALG_ID id) {
     return userdata.name;
 }
 
-TPM_ALG_ID tpm2_alg_util_from_optarg(char *optarg) {
+TPM2_ALG_ID tpm2_alg_util_from_optarg(char *optarg) {
 
-    TPM_ALG_ID halg;
+    TPM2_ALG_ID halg;
     bool res = tpm2_util_string_to_uint16(optarg, &halg);
     if (!res) {
         halg = tpm2_alg_util_strtoalg(optarg);
@@ -153,18 +153,18 @@ TPM_ALG_ID tpm2_alg_util_from_optarg(char *optarg) {
     return halg;
 }
 
-bool tpm2_alg_util_is_hash_alg(TPM_ALG_ID id) {
+bool tpm2_alg_util_is_hash_alg(TPM2_ALG_ID id) {
 
     switch (id) {
-    case TPM_ALG_SHA1 :
+    case TPM2_ALG_SHA1 :
         /* fallsthrough */
-    case TPM_ALG_SHA256 :
+    case TPM2_ALG_SHA256 :
         /* fallsthrough */
-    case TPM_ALG_SHA384 :
+    case TPM2_ALG_SHA384 :
         /* fallsthrough */
-    case TPM_ALG_SHA512 :
+    case TPM2_ALG_SHA512 :
         /* fallsthrough */
-    case TPM_ALG_SM3_256 :
+    case TPM2_ALG_SM3_256 :
         return true;
         /* no default */
     }
@@ -175,16 +175,16 @@ bool tpm2_alg_util_is_hash_alg(TPM_ALG_ID id) {
 UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id) {
 
     switch (id) {
-    case TPM_ALG_SHA1 :
-        return SHA1_DIGEST_SIZE;
-    case TPM_ALG_SHA256 :
-        return SHA256_DIGEST_SIZE;
-    case TPM_ALG_SHA384 :
-        return SHA384_DIGEST_SIZE;
-    case TPM_ALG_SHA512 :
-        return SHA512_DIGEST_SIZE;
-    case TPM_ALG_SM3_256 :
-        return SM3_256_DIGEST_SIZE;
+    case TPM2_ALG_SHA1 :
+        return TPM2_SHA1_DIGEST_SIZE;
+    case TPM2_ALG_SHA256 :
+        return TPM2_SHA256_DIGEST_SIZE;
+    case TPM2_ALG_SHA384 :
+        return TPM2_SHA384_DIGEST_SIZE;
+    case TPM2_ALG_SHA512 :
+        return TPM2_SHA512_DIGEST_SIZE;
+    case TPM2_ALG_SM3_256 :
+        return TPM2_SM3_256_DIGEST_SIZE;
         /* no default */
     }
 
@@ -273,8 +273,8 @@ bool pcr_parse_digest_list(char **argv, int len,
             /*
              * Convert and validate the hash algorithm. It should be a hash algorithm
              */
-            TPM_ALG_ID alg = tpm2_alg_util_from_optarg(stralg);
-            if (alg == TPM_ALG_ERROR) {
+            TPM2_ALG_ID alg = tpm2_alg_util_from_optarg(stralg);
+            if (alg == TPM2_ALG_ERROR) {
                 LOG_ERR("Could not convert algorithm, got: \"%s\"", stralg);
                 return false;
             }
@@ -336,7 +336,7 @@ UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
     *size = 0;
 
     switch (signature->sigAlg) {
-    case TPM_ALG_RSASSA:
+    case TPM2_ALG_RSASSA:
         *size = sizeof(signature->signature.rsassa.sig.buffer);
         buffer = malloc(*size);
         if (!buffer) {
@@ -344,7 +344,7 @@ UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
         }
         memcpy(buffer, signature->signature.rsassa.sig.buffer, *size);
         break;
-    case TPM_ALG_HMAC: {
+    case TPM2_ALG_HMAC: {
         TPMU_HA *hmac_sig = &(signature->signature.hmac.digest);
         *size = tpm2_alg_util_get_hash_size(signature->signature.hmac.hashAlg);
         buffer = malloc(*size);
@@ -354,7 +354,7 @@ UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
         memcpy(buffer, &hmac_sig->na, *size);
         break;
     }
-    case TPM_ALG_ECDSA: {
+    case TPM2_ALG_ECDSA: {
         const size_t ECC_PAR_LEN = sizeof(TPM2B_ECC_PARAMETER);
         *size = ECC_PAR_LEN * 2;
         buffer = malloc(*size);
@@ -403,9 +403,9 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
 
     TPM2B_NAME qaulified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
+    TSS2_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
             &qaulified_name, &sessions_data_out);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Sys_ReadPublic failed, error code: 0x%x", rval);
         return false;
     }
@@ -417,26 +417,26 @@ bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg,
         TPMT_SIG_SCHEME *scheme) {
 
-    TPM_ALG_ID type;
+    TPM2_ALG_ID type;
     bool result = get_key_type(sapi_context, keyHandle, &type);
     if (!result) {
         return false;
     }
 
     switch (type) {
-    case TPM_ALG_RSA :
-        scheme->scheme = TPM_ALG_RSASSA;
+    case TPM2_ALG_RSA :
+        scheme->scheme = TPM2_ALG_RSASSA;
         scheme->details.rsassa.hashAlg = halg;
         break;
-    case TPM_ALG_KEYEDHASH :
-        scheme->scheme = TPM_ALG_HMAC;
+    case TPM2_ALG_KEYEDHASH :
+        scheme->scheme = TPM2_ALG_HMAC;
         scheme->details.hmac.hashAlg = halg;
         break;
-    case TPM_ALG_ECC :
-        scheme->scheme = TPM_ALG_ECDSA;
+    case TPM2_ALG_ECC :
+        scheme->scheme = TPM2_ALG_ECDSA;
         scheme->details.ecdsa.hashAlg = halg;
         break;
-    case TPM_ALG_SYMCIPHER :
+    case TPM2_ALG_SYMCIPHER :
     default:
         LOG_ERR("Unknown key type, got: 0x%x", type);
         return false;

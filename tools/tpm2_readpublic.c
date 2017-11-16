@@ -77,9 +77,9 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_out_data.rspAuths = &session_out_data_array[0];
     sessions_out_data.rspAuthsCount = ARRAY_LEN(session_out_data_array);
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, ctx.objectHandle, 0,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, ctx.objectHandle, 0,
             &public, &name, &qualified_name, &sessions_out_data));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_ReadPublic error: rval = 0x%0x", rval);
         return false;
     }

@@ -47,7 +47,7 @@
  * @return
  *  True to stop iterating, false to keep iterating.
  */
-typedef bool (*tpm2_alg_util_alg_iteraror)(TPM_ALG_ID id, const char *name, void *userdata);
+typedef bool (*tpm2_alg_util_alg_iteraror)(TPM2_ALG_ID id, const char *name, void *userdata);
 
 /**
  * Iterate over the algorithm name-value pairs calling the iterator callback for each pair.
@@ -63,9 +63,9 @@ void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iteraror iterator, void *userd
  * @param name
  *  The "nice-name" to convert.
  * @return
- *  TPM_ALG_ERROR on error, or a valid algorithm identifier.
+ *  TPM2_ALG_ERROR on error, or a valid algorithm identifier.
  */
-TPM_ALG_ID tpm2_alg_util_strtoalg(const char *name);
+TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name);
 
 /**
  * Convert an id to a nice-name.
@@ -74,7 +74,7 @@ TPM_ALG_ID tpm2_alg_util_strtoalg(const char *name);
  * @return
  *  The nice-name.
  */
-const char *tpm2_alg_util_algtostr(TPM_ALG_ID id);
+const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id);
 
 /**
  * Converts either a string from algrotithm number or algorithm nice-name to
@@ -82,9 +82,9 @@ const char *tpm2_alg_util_algtostr(TPM_ALG_ID id);
  * @param optarg
  *  The string to convert from an algorithm number or nice name.
  * @return
- *  TPM_ALG_ERROR on error or the algorithm id.
+ *  TPM2_ALG_ERROR on error or the algorithm id.
  */
-TPM_ALG_ID tpm2_alg_util_from_optarg(char *optarg);
+TPM2_ALG_ID tpm2_alg_util_from_optarg(char *optarg);
 
 /**
  * Detects if an algorithm is considered a hashing algorithm.
@@ -93,7 +93,7 @@ TPM_ALG_ID tpm2_alg_util_from_optarg(char *optarg);
  * @return
  *  True if it is a hash algorithm, False otherwise.
  */
-bool tpm2_alg_util_is_hash_alg(TPM_ALG_ID id);
+bool tpm2_alg_util_is_hash_alg(TPM2_ALG_ID id);
 
 /**
  * Contains the information from parsing an argv style vector of strings for

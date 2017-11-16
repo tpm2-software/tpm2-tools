@@ -60,7 +60,7 @@ struct tpm_rsadecrypt_ctx {
 };
 
 tpm_rsadecrypt_ctx ctx = {
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW)
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)
 };
 
 static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
@@ -82,13 +82,13 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    inScheme.scheme = TPM_ALG_RSAES;
+    inScheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_handle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_handle,
             &sessions_data, &ctx.cipher_text, &inScheme, &label, &message,
             &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("rsaDecrypt failed, error code: 0x%x", rval);
         return false;
     }

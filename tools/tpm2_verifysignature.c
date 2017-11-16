@@ -69,7 +69,7 @@ struct tpm2_verifysig_ctx {
 };
 
 tpm2_verifysig_ctx ctx = {
-        .halg = TPM_ALG_SHA1,
+        .halg = TPM2_ALG_SHA1,
         .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
 
@@ -95,7 +95,7 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_VerifySignature(sapi_context, ctx.keyHandle, NULL,
             &ctx.msgHash, &ctx.signature, &validation, &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_VerifySignature failed, error code: 0x%x", rval);
         return false;
     }
@@ -139,7 +139,7 @@ static bool generate_signature(void) {
     UINT8 *buffer;
 
     if (ctx.flags.raw) {
-        ctx.signature.sigAlg = TPM_ALG_RSASSA;
+        ctx.signature.sigAlg = TPM2_ALG_RSASSA;
         ctx.signature.signature.rsassa.hash = ctx.halg;
         ctx.signature.signature.rsassa.sig.size =
                 sizeof(ctx.signature.signature.rsassa.sig) - 2;
@@ -212,7 +212,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
             goto err;
         }
         int rc = tpm_hash_compute_data(sapi_context, ctx.halg,
-                TPM_RH_NULL, msg->buffer, msg->size, &ctx.msgHash, NULL);
+                TPM2_RH_NULL, msg->buffer, msg->size, &ctx.msgHash, NULL);
         if (rc) {
             LOG_ERR("Compute message hash failed!");
             goto err;
@@ -240,7 +240,7 @@ static bool on_option(char key, char *value) {
 		break;
 	case 'g': {
 		ctx.halg = tpm2_alg_util_from_optarg(value);
-		if (ctx.halg == TPM_ALG_ERROR) {
+		if (ctx.halg == TPM2_ALG_ERROR) {
 			LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
 			return false;
 		}

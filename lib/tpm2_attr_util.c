@@ -226,7 +226,7 @@ static bool nt(TPMA_NV *nv, char *arg) {
         return false;
     }
 
-    nv->TPM_NT = value;
+    nv->TPM2_NT = value;
     return true;
 }
 

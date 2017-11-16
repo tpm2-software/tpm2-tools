@@ -160,8 +160,8 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
             .sessionAttributes = { .val = 0 },
     };
 
-    ctx.password.sessionHandle = TPM_RS_PW;
-    ctx.endorse_password.sessionHandle = TPM_RS_PW;
+    ctx.password.sessionHandle = TPM2_RS_PW;
+    ctx.endorse_password.sessionHandle = TPM2_RS_PW;
 
     TPMS_AUTH_COMMAND *cmd_session_array_password[2] = {
         &ctx.password,
@@ -185,22 +185,22 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
 
     TPMT_SYM_DEF symmetric = {
-        .algorithm = TPM_ALG_NULL
+        .algorithm = TPM2_ALG_NULL
     };
 
     SESSION *session = NULL;
     UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session,
-            TPM_RH_NULL, 0, TPM_RH_NULL, 0, &nonceCaller, &encryptedSalt,
-            TPM_SE_POLICY, &symmetric, TPM_ALG_SHA256);
-    if (rval != TPM_RC_SUCCESS) {
+            TPM2_RH_NULL, 0, TPM2_RH_NULL, 0, &nonceCaller, &encryptedSalt,
+            TPM2_SE_POLICY, &symmetric, TPM2_ALG_SHA256);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("tpm_session_start_auth_with_params Error. TPM Error:0x%x",
                 rval);
         return false;
     }
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM_RH_ENDORSEMENT,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
             session->sessionHandle, &cmd_auth_array_endorse, 0, 0, 0, 0, 0, 0, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
         return false;
     }
@@ -212,14 +212,14 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
     rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.handle.activate,
             ctx.handle.key, &cmd_auth_array_password, &ctx.credentialBlob, &ctx.secret,
             &certInfoData, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("ActivateCredential failed. TPM Error:0x%x", rval);
         return false;
     }
 
     // Need to flush the session here.
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, session->sessionHandle));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
         return false;
     }
