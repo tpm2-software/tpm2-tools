@@ -98,14 +98,14 @@
 
 /*
  * This macro is useful as a wrapper around SAPI functions to automatically
- * retry function calls when the RC is TPM_RC_RETRY.
+ * retry function calls when the RC is TPM2_RC_RETRY.
  */
 #define TSS2_RETRY_EXP(expression)                         \
     ({                                                     \
         TSS2_RC __result = 0;                              \
         do {                                               \
             __result = (expression);                       \
-        } while ((__result & 0x0000ffff) == TPM_RC_RETRY); \
+        } while ((__result & 0x0000ffff) == TPM2_RC_RETRY); \
         __result;                                          \
     })
 

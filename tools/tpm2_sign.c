@@ -74,8 +74,8 @@ struct tpm_sign_ctx {
 
 tpm_sign_ctx ctx = {
         .msg = NULL,
-        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-        .halg = TPM_ALG_SHA1,
+        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        .halg = TPM2_ALG_SHA1,
 };
 
 static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
@@ -98,7 +98,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    int rc = tpm_hash_compute_data(sapi_context, ctx.halg, TPM_RH_NULL,
+    int rc = tpm_hash_compute_data(sapi_context, ctx.halg, TPM2_RH_NULL,
             ctx.msg, ctx.length, &digest, NULL);
     if (rc) {
         LOG_ERR("Compute message hash failed!");
@@ -110,10 +110,10 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
             &sessions_data, &digest, &in_scheme, &ctx.validation, &signature,
             &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Sys_Sign failed, error code: 0x%x", rval);
         return false;
     }
@@ -129,8 +129,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (!ctx.flags.t) {
-        ctx.validation.tag = TPM_ST_HASHCHECK;
-        ctx.validation.hierarchy = TPM_RH_NULL;
+        ctx.validation.tag = TPM2_ST_HASHCHECK;
+        ctx.validation.hierarchy = TPM2_RH_NULL;
     }
 
     /*
@@ -204,7 +204,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g': {
         ctx.halg = tpm2_alg_util_from_optarg(optarg);
-        if (ctx.halg == TPM_ALG_ERROR) {
+        if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
                     optarg);
             return false;

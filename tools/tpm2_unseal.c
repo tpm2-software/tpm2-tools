@@ -64,7 +64,7 @@ struct tpm_unseal_ctx {
 };
 
 static tpm_unseal_ctx ctx = {
-        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
@@ -86,9 +86,9 @@ bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data_out.rspAuthsCount = 1;
     sessions_data.cmdAuthsCount = 1;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.itemHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.itemHandle,
             &sessions_data, &outData, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Sys_Unseal failed. Error Code: 0x%x", rval);
         return false;
     }
@@ -120,11 +120,11 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     if (ctx.flags.L) {
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-        TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
-                                        TPM_SE_POLICY, TPM_ALG_SHA256, ctx.pcr_selection,
+        TSS2_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
+                                        TPM2_SE_POLICY, TPM2_ALG_SHA256, ctx.pcr_selection,
                                         ctx.raw_pcrs_file, &pcr_digest, true,
                                         tpm2_policy_pcr_build);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Building PCR policy failed: 0x%x", rval);
             return false;
         }
@@ -224,9 +224,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.policy_session) {
-        TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
                                             ctx.policy_session->sessionHandle));
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context: 0x%x", rval);
             return 1;
         }

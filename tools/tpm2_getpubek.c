@@ -51,8 +51,8 @@ struct getpubek_context {
         TPM2B_AUTH ek;
     } passwords;
     char *out_file_path;
-    TPM_HANDLE persistent_handle;
-    TPM_ALG_ID algorithm;
+    TPM2_HANDLE persistent_handle;
+    TPM2_ALG_ID algorithm;
     bool is_session_based_auth;
     TPMI_SH_AUTH_SESSION auth_session_handle;
 };
@@ -63,7 +63,7 @@ static getpubek_context ctx = {
         .endorse = TPM2B_EMPTY_INIT,
         .ek = TPM2B_EMPTY_INIT,
     },
-    .algorithm = TPM_ALG_RSA,
+    .algorithm = TPM2_ALG_RSA,
     .is_session_based_auth = false
 };
 
@@ -76,7 +76,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
             0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA
     };
 
-    inPublic->publicArea.nameAlg = TPM_ALG_SHA256;
+    inPublic->publicArea.nameAlg = TPM2_ALG_SHA256;
 
     // First clear attributes bit field.
     *(UINT32 *) &(inPublic->publicArea.objectAttributes) = 0;
@@ -94,44 +94,44 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
     inPublic->publicArea.type = ctx.algorithm;
 
     switch (ctx.algorithm) {
-    case TPM_ALG_RSA :
+    case TPM2_ALG_RSA :
         inPublic->publicArea.parameters.rsaDetail.symmetric.algorithm =
-                TPM_ALG_AES;
+                TPM2_ALG_AES;
         inPublic->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
         inPublic->publicArea.parameters.rsaDetail.symmetric.mode.aes =
-                TPM_ALG_CFB;
+                TPM2_ALG_CFB;
         inPublic->publicArea.parameters.rsaDetail.scheme.scheme =
-                TPM_ALG_NULL;
+                TPM2_ALG_NULL;
         inPublic->publicArea.parameters.rsaDetail.keyBits = 2048;
         inPublic->publicArea.parameters.rsaDetail.exponent = 0;
         inPublic->publicArea.unique.rsa.size = 256;
         break;
-    case TPM_ALG_KEYEDHASH :
+    case TPM2_ALG_KEYEDHASH :
         inPublic->publicArea.parameters.keyedHashDetail.scheme.scheme =
-                TPM_ALG_XOR;
+                TPM2_ALG_XOR;
         inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
-                TPM_ALG_SHA256;
+                TPM2_ALG_SHA256;
         inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf =
-                TPM_ALG_KDF1_SP800_108;
+                TPM2_ALG_KDF1_SP800_108;
         inPublic->publicArea.unique.keyedHash.size = 0;
         break;
-    case TPM_ALG_ECC :
+    case TPM2_ALG_ECC :
         inPublic->publicArea.parameters.eccDetail.symmetric.algorithm =
-                TPM_ALG_AES;
+                TPM2_ALG_AES;
         inPublic->publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
         inPublic->publicArea.parameters.eccDetail.symmetric.mode.sym =
-                TPM_ALG_CFB;
+                TPM2_ALG_CFB;
         inPublic->publicArea.parameters.eccDetail.scheme.scheme =
-                TPM_ALG_NULL;
-        inPublic->publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        inPublic->publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
+                TPM2_ALG_NULL;
+        inPublic->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
+        inPublic->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
         inPublic->publicArea.unique.ecc.x.size = 32;
         inPublic->publicArea.unique.ecc.y.size = 32;
         break;
-    case TPM_ALG_SYMCIPHER :
-        inPublic->publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
+    case TPM2_ALG_SYMCIPHER :
+        inPublic->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
         inPublic->publicArea.parameters.symDetail.sym.keyBits.aes = 128;
-        inPublic->publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
+        inPublic->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
         inPublic->publicArea.unique.sym.size = 0;
         break;
     default:
@@ -145,7 +145,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
 static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM_RS_PW,
+        .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
@@ -203,12 +203,12 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
     creationPCR.count = 0;
 
     /* Create EK and get a handle to the key */
-    TPM_HANDLE handle2048ek;
-    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT,
+    TPM2_HANDLE handle2048ek;
+    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM2_RH_ENDORSEMENT,
             &sessionsData, &inSensitive, &inPublic, &outsideInfo, &creationPCR,
             &handle2048ek, &outPublic, &creationData, &creationHash,
             &creationTicket, &name, &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_CreatePrimary Error. TPM Error:0x%x", rval);
         return false;
     }
@@ -217,9 +217,9 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     memcpy(&sessionData.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
             &sessionsData, ctx.persistent_handle, &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("EvictControl failed. Could not make EK persistent."
                 "TPM Error:0x%x", rval);
         return false;
@@ -228,7 +228,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
     LOG_INFO("EvictControl EK persistent success.");
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle2048ek));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Flush transient EK failed. TPM Error:0x%x",
                 rval);
         return false;
@@ -282,7 +282,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         ctx.algorithm = tpm2_alg_util_from_optarg(value);
-        if (ctx.algorithm == TPM_ALG_ERROR) {
+        if (ctx.algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert algorithm to value, got: %s",
                     value);
             return false;

@@ -84,7 +84,7 @@ static void test_tpm2_attr_util_nv_strtoattr_nt_good(void **state) {
     char arg[] = "nt=0x1";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true(nvattrs.TPM_NT == 0x1);
+    assert_true(nvattrs.TPM2_NT == 0x1);
 }
 
 static void test_tpm2_attr_util_nv_strtoattr_nt_bad(void **state) {
@@ -133,7 +133,7 @@ static void test_tpm2_attr_util_nv_strtoattr_multiple_good(void **state) {
     char arg[] = "authread|authwrite|nt=0x4";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true(nvattrs.TPM_NT == 0x4);
+    assert_true(nvattrs.TPM2_NT == 0x4);
     assert_true(nvattrs.TPMA_NV_AUTHREAD);
     assert_true(nvattrs.TPMA_NV_AUTHWRITE);
 }

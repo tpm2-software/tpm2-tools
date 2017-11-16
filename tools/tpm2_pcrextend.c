@@ -54,7 +54,7 @@ static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
      * TODO SUPPORT AUTH VALUES HERE
      * Bug: https://github.com/01org/tpm2-tools/issues/388
      */
-    TPMS_AUTH_COMMAND session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW);
+    TPMS_AUTH_COMMAND session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
 
     TPMS_AUTH_RESPONSE session_data_out;
     TPMS_AUTH_COMMAND *session_data_array[1];
@@ -72,9 +72,9 @@ static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
     sessions_data.cmdAuthsCount = 1;
     sessions_data_out.rspAuthsCount = 1;
 
-    TPM_RC rc = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
+    TSS2_RC rc = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
             digests, &sessions_data_out));
-    if (rc != TPM_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Could not extend pcr index: 0x%X, due to error: 0x%X",
                 pcr_index, rc);
         return false;

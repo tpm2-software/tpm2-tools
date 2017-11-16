@@ -63,7 +63,7 @@ TSS2_TCTI_CONTEXT *tpm2_tools_tcti_device_init(char *opts) {
     TSS2_TCTI_CONTEXT *tcti_ctx;
 
     rc = InitDeviceTcti(NULL, &size, 0);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to get allocation size for device tcti context: "
                  "0x%x", rc);
         return NULL;
@@ -74,7 +74,7 @@ TSS2_TCTI_CONTEXT *tpm2_tools_tcti_device_init(char *opts) {
         return NULL;
     }
     rc = InitDeviceTcti(tcti_ctx, &size, &conf);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to initialize device TCTI context: 0x%x", rc);
         free(tcti_ctx);
         return NULL;

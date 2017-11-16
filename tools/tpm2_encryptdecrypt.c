@@ -94,20 +94,20 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.cmdAuths[0] = &ctx.session_data;
 
     TPM2B_IV iv_in = {
-        .size = MAX_SYM_BLOCK_SIZE,
+        .size = TPM2_MAX_SYM_BLOCK_SIZE,
         .buffer = { 0 }
     };
 
     /* try EncryptDecrypt2 first, fallback to EncryptDecrypt if not supported */
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
-            &sessions_data, &ctx.data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &out_data,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
+            &sessions_data, &ctx.data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &out_data,
             &iv_out, &sessions_data_out));
-    if (rval == TPM_RC_COMMAND_CODE) {
+    if (rval == TPM2_RC_COMMAND_CODE) {
         rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
-                &sessions_data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &ctx.data,
+                &sessions_data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &ctx.data,
                 &out_data, &iv_out, &sessions_data_out));
     }
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("EncryptDecrypt failed, error code: 0x%x", rval);
         return false;
     }
@@ -198,7 +198,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {NULL,          no_argument,       NULL, '\0'}
     };
 
-    ctx.session_data.sessionHandle = TPM_RS_PW;
+    ctx.session_data.sessionHandle = TPM2_RS_PW;
 
     *opts = tpm2_options_new("k:P:D:I:o:c:S:", ARRAY_LEN(topts), topts, on_option, NULL);
 

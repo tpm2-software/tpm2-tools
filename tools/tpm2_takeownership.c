@@ -66,7 +66,7 @@ static takeownership_ctx ctx;
 static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM_RS_PW,
+        .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
@@ -80,8 +80,8 @@ static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     memcpy(&sessionData.hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear(sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear(sapi_context, TPM2_RH_LOCKOUT, &sessionsData, 0));
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Clearing Failed! TPM error code: 0x%0x", rval);
         return false;
     }
@@ -95,7 +95,7 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
 
     TPM2B_AUTH newAuth;
     TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM_RS_PW,
+        .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
@@ -112,7 +112,7 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
 
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_HierarchyChangeAuth(sapi_context,
             auth_handle, &sessionsData, &newAuth, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Could not change hierarchy for %s. TPM Error:0x%x",
                 desc, rval);
         return false;
@@ -127,11 +127,11 @@ static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     // change owner, endorsement and lockout auth.
     return change_auth(sapi_context, &ctx.passwords.owner,
-                "Owner", TPM_RH_OWNER)
+                "Owner", TPM2_RH_OWNER)
         && change_auth(sapi_context, &ctx.passwords.endorse,
-                "Endorsement", TPM_RH_ENDORSEMENT)
+                "Endorsement", TPM2_RH_ENDORSEMENT)
         && change_auth(sapi_context, &ctx.passwords.lockout,
-                "Lockout", TPM_RH_LOCKOUT);
+                "Lockout", TPM2_RH_LOCKOUT);
 }
 
 static bool on_option(char key, char *value) {

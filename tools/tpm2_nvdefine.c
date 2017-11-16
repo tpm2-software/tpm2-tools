@@ -57,11 +57,11 @@ struct tpm_nvdefine_ctx {
 };
 
 static tpm_nvdefine_ctx ctx = {
-    .authHandle = TPM_RH_PLATFORM,
+    .authHandle = TPM2_RH_PLATFORM,
     .nvAttribute = SESSION_ATTRIBUTES_INIT(0),
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     .nvAuth = TPM2B_EMPTY_INIT,
-    .size = MAX_NV_INDEX_SIZE,
+    .size = TPM2_MAX_NV_BUFFER_SIZE,
 };
 
 static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
@@ -89,7 +89,7 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
     public_info.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
     public_info.nvPublic.nvIndex = ctx.nvIndex;
-    public_info.nvPublic.nameAlg = TPM_ALG_SHA256;
+    public_info.nvPublic.nameAlg = TPM2_ALG_SHA256;
 
     // Now set the attributes.
     public_info.nvPublic.attributes.val = ctx.nvAttribute.val;
@@ -107,9 +107,9 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
 
     public_info.nvPublic.dataSize = ctx.size;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.authHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.authHandle,
             &sessions_data, &ctx.nvAuth, &public_info, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to define NV area at index 0x%x (%d).Error:0x%x",
                 ctx.nvIndex, ctx.nvIndex, rval);
         return false;
