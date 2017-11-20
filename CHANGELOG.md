@@ -1,6 +1,8 @@
 ## Changelog
 
 ### next
+  * tpm2_getmanufec: -O as a flag for -f has changed. -O is for existing EK public structure
+      and -f is only for generated EK public output.
   * tpm2_nvlist: output in yaml format.
   * tpm2_makecredential format changes to the -o output file.
   * tpm2-quote: -o option removed.
