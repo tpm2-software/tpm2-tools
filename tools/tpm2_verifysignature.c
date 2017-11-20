@@ -100,9 +100,7 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) &validation,
-            sizeof(validation));
+    return files_save_ticket(&validation, ctx.out_file_path);
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
