@@ -104,12 +104,9 @@ out:
 
 static bool parse_and_save_ak_public() {
 
-    TPM2B_PUBLIC outPublic;
-    UINT16 size = sizeof(outPublic);
-
-    bool result = files_load_bytes_from_path(ctx.ak_data_file_path, (UINT8 *)&outPublic, &size);
+    TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
+    bool result = files_load_public(ctx.ak_data_file_path, &outPublic);
     if (!result) {
-        /* loadDataFromFile prints error */
         return false;
     }
 
