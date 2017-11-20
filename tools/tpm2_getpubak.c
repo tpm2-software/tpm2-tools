@@ -38,6 +38,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "conversion.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
@@ -381,14 +382,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
     LOG_INFO("Flush transient AK succ.");
 
-    /* TODO fix this serialization */
-    result = files_save_bytes_to_file(ctx.output_file, (UINT8 *) &out_public, sizeof(out_public));
-    if (!result) {
-        LOG_ERR("Failed to save AK pub key into file \"%s\"", ctx.output_file);
-        return false;
-    }
-
-    return true;
+    return tpm2_convert_pubkey(&out_public, pubkey_format_tss, ctx.output_file);
 }
 
 static bool on_option(char key, char *value) {

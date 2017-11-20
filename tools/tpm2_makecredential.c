@@ -38,6 +38,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
 #include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
@@ -154,26 +155,11 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
     return write_cred_and_secret(ctx.out_file_path, &cred_blob, &secret);
 }
 
-static bool load_public(char *path,TPM2B_PUBLIC *public) {
-
-    UINT8 buffer[sizeof(*public)];
-    UINT16 size = sizeof(buffer);
-    bool res = files_load_bytes_from_path(path, buffer, &size);
-    if (!res) {
-        return false;
-    }
-
-    size_t offset = 0;
-    TSS2_RC rc = Tss2_MU_TPM2B_PUBLIC_Unmarshal(buffer, size, &offset, &ctx.public);
-
-    return rc == TPM2_RC_SUCCESS;
-}
-
 static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'e': {
-        bool res = load_public(value, &ctx.public);
+        bool res = files_load_public(value, &ctx.public);
         if (!res) {
             return false;
         }

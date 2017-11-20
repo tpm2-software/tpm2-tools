@@ -109,6 +109,28 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE 
 bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE *handle, const char *path);
 
 /**
+ * Serializes a TPM2B_PUBLIC to the file path provided.
+ * @param public
+ *  The TPM2B_PUBLIC to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_public(TPM2B_PUBLIC *public, const char *path);
+
+/**
+ * Loads a TPM2B_PUBLIC from disk that was saved with files_save_pubkey()
+ * @param path
+ *  The path to load from.
+ * @param public
+ *  The TPM2B_PUBLIC to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_public(const char *path, TPM2B_PUBLIC *public);
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.
