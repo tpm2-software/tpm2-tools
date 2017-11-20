@@ -608,3 +608,6 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
 
 SAVE_TYPE(TPM2B_PUBLIC, public)
 LOAD_TYPE(TPM2B_PUBLIC, public)
+
+SAVE_TYPE(TPMT_SIGNATURE, signature)
+LOAD_TYPE(TPMT_SIGNATURE, signature)
