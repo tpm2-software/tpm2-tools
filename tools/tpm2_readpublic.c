@@ -35,10 +35,12 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
+#include "conversion.h"
 #include "files.h"
 #include "log.h"
-#include "conversion.h"
+#include "tpm2_alg_util.h"
+#include "tpm2_attr_util.h"
+#include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -46,10 +48,8 @@ typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {
     struct {
         UINT8 H      : 1;
-        UINT8 o      : 1;
         UINT8 c      : 1;
         UINT8 f      : 1;
-        UINT8 unused : 4;
     } flags;
     TPMI_DH_OBJECT objectHandle;
     char *outFilePath;
@@ -84,20 +84,45 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    tpm2_tool_output("name:");
+    tpm2_tool_output("name: ");
     UINT16 i;
     for (i = 0; i < name.size; i++) {
         tpm2_tool_output("%02x", name.name[i]);
     }
     tpm2_tool_output("\n");
 
-    tpm2_tool_output("qualified_name:");
+    tpm2_tool_output("qualified name: ");
     for (i = 0; i < qualified_name.size; i++) {
         tpm2_tool_output("%02x", qualified_name.name[i]);
     }
     tpm2_tool_output("\n");
 
-    return tpm2_convert_pubkey(&public, ctx.format, ctx.outFilePath);
+    tpm2_tool_output("algorithm:\n");
+    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public.publicArea.nameAlg));
+    tpm2_tool_output("  raw: 0x%x\n", public.publicArea.nameAlg);
+
+    char *attrs = tpm2_attr_util_obj_attrtostr(public.publicArea.objectAttributes);
+    tpm2_tool_output("attributes:\n");
+    tpm2_tool_output("  value: %s\n", attrs);
+    tpm2_tool_output("  raw: 0x%x\n", public.publicArea.objectAttributes.val);
+
+    tpm2_tool_output("type: \n");
+    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public.publicArea.type));
+    tpm2_tool_output("  raw: 0x%x\n", public.publicArea.type);
+
+    if (public.publicArea.authPolicy.size) {
+        tpm2_tool_output("authorization policy: ");
+        UINT16 i;
+        for (i=0; i<public.publicArea.authPolicy.size; i++) {
+            tpm2_tool_output("%02x", public.publicArea.authPolicy.buffer[i] );
+        }
+        tpm2_tool_output("\n");
+    }
+
+    free(attrs);
+
+    return ctx.outFilePath ?
+            tpm2_convert_pubkey(&public, ctx.format, ctx.outFilePath) : true;
 }
 
 static bool on_option(char key, char *value) {
@@ -113,7 +138,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'o':
         ctx.outFilePath = optarg;
-        ctx.flags.o = 1;
         break;
     case 'c':
         ctx.context_file = optarg;
@@ -148,7 +172,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!((ctx.flags.H || ctx.flags.c) && ctx.flags.o)) {
+    if (!((ctx.flags.H || ctx.flags.c))) {
         return false;
     }
 

@@ -89,7 +89,16 @@ bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char 
     }
     else if (format == pubkey_format_tss) {
         // save raw as is
-        return files_save_bytes_to_file(path, (UINT8 *)public, sizeof(*public));
+
+        size_t offset = 0;
+        UINT8 buffer[sizeof(TPM2B_PUBLIC)];
+        TSS2_RC rc = Tss2_MU_TPM2B_PUBLIC_Marshal(public, buffer, sizeof(buffer), &offset);
+        if (rc != TSS2_RC_SUCCESS) {
+            LOG_ERR("Error serializing public structure: 0x%x", rc);
+            return false;
+        }
+
+        return files_save_bytes_to_file(path, buffer, offset);
     }
 
     LOG_ERR("Unsupported public key output format.");
