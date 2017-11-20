@@ -133,32 +133,6 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     return msg;
 }
 
-static bool generate_signature(void) {
-
-    UINT16 size;
-    UINT8 *buffer;
-
-    if (ctx.flags.raw) {
-        ctx.signature.sigAlg = TPM_ALG_RSASSA;
-        ctx.signature.signature.rsassa.hash = ctx.halg;
-        ctx.signature.signature.rsassa.sig.t.size =
-                sizeof(ctx.signature.signature.rsassa.sig) - 2;
-
-        buffer = ctx.signature.signature.rsassa.sig.t.buffer;
-        size = ctx.signature.signature.rsassa.sig.t.size;
-    } else {
-        size = sizeof(ctx.signature);
-        buffer = (UINT8 *) &ctx.signature;
-    }
-
-    bool result = files_load_bytes_from_path(ctx.sig_file_path, buffer, &size);
-    if (!result) {
-        LOG_ERR("Could not create %s signature from file: \"%s\"",
-                ctx.flags.raw ? "raw" : "\0", ctx.sig_file_path);
-    }
-    return result;
-}
-
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* check flags for mismatches */
@@ -187,7 +161,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.sig) {
-        bool res = generate_signature();
+        bool res =  files_load_signature(ctx.sig_file_path, &ctx.signature);
         if (!res) {
             goto err;
         }
