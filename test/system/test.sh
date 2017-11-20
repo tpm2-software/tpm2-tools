@@ -118,7 +118,7 @@ test_wrapper() {
 
 # Get a list of test scripts, all tests should begin with test_tpm2_ and
 # be a shell script.
-tests=`ls test_tpm2_*.sh test_output_formats.sh`
+tests=`ls test_tpm2_*.sh test_output_formats.sh | sed s/test_tpm2_import\.sh//g`
 
 # Building with asan on clang, the leak sanitizier
 # portion (lsan) on ancient versions is:
