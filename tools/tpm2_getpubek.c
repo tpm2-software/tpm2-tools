@@ -36,6 +36,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "conversion.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
@@ -236,15 +237,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("Flush transient EK success.");
 
-    /* TODO fix this serialization */
-    if (!files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) &outPublic,
-            sizeof(outPublic))) {
-        LOG_ERR("Failed to save EK pub key into file \"%s\"",
-                ctx.out_file_path);
-        return false;
-    }
-
-    return true;
+    return tpm2_convert_pubkey(&outPublic, pubkey_format_tss, ctx.out_file_path);
 }
 
 static bool on_option(char key, char *value) {
