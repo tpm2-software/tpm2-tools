@@ -131,6 +131,28 @@ bool files_save_public(TPM2B_PUBLIC *public, const char *path);
 bool files_load_public(const char *path, TPM2B_PUBLIC *public);
 
 /**
+ * Serializes a TPMT_SIGNATURE to the file path provided.
+ * @param signature
+ *  The TPMT_SIGNATURE to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_signature(TPMT_SIGNATURE *signature, const char *path);
+
+/**
+ * Loads a TPMT_SIGNATURE from disk that was saved with files_save_signature()
+ * @param path
+ *  The path to load from.
+ * @param signature
+ *  The TPMT_SIGNATURE to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_signature(const char *path, TPMT_SIGNATURE *signature);
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.
