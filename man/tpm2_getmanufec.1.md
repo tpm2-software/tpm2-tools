@@ -42,13 +42,13 @@ server.
     an algorithm argument.
 
   * **-f**, **--output**=_FILE_:
-    specifies the file used to save the public portion of EK.
+    Specifies the file used to save the public portion of EK.
 
   * **-N**, **--non-persistent**:
     specifies to readout the EK public without making it persistent.
 
-  * **-O**, **--offline**:
-    specifies that the file specifier from **-f** is an EK retrieved from offline
+  * **-O**, **--offline**=_FILE_:
+    Specifies the file that contains an EK retrieved from offline
     platform that needs to be provisioned.
 
   * **-E**, **--ec-cert**=_EC\_CERT\_FILE_:

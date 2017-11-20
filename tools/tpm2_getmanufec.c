@@ -68,8 +68,9 @@ struct tpm_getmanufec_ctx {
     char *ek_server_addr;
     unsigned int non_persistent_read;
     unsigned int SSL_NO_VERIFY;
-    unsigned int offline_prov;
+    char *ek_path;
     bool verbose;
+    TPM2B_PUBLIC outPublic;
 };
 
 static tpm_getmanufec_ctx ctx = {
@@ -157,7 +158,6 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
     TPM2B_CREATION_DATA creationData = TPM2B_EMPTY_INIT;
     TPM2B_DIGEST creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
@@ -186,7 +186,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT, &sessionsData,
                                   &inSensitive, &inPublic, &outsideInfo,
-                                  &creationPCR, &handle2048ek, &outPublic,
+                                  &creationPCR, &handle2048ek, &ctx.outPublic,
                                   &creationData, &creationHash, &creationTicket,
                                   &name, &sessionsDataOut));
     if (rval != TPM_RC_SUCCESS ) {
@@ -222,68 +222,49 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     LOG_INFO("Flush transient EK succ.");
 
-    /* TODO this serialization is not correct */
-    if (!files_save_bytes_to_file(ctx.output_file, (UINT8 *)&outPublic, sizeof(outPublic))) {
-        LOG_ERR("Failed to save EK pub key into file(%s)", ctx.output_file);
-        return 1;
-    }
-
-    return 0;
+    return files_save_public(&ctx.outPublic, ctx.output_file) != true;
 }
 
-unsigned char *HashEKPublicKey(void)
-{
-    unsigned char *hash = NULL;
-    FILE *fp = NULL;
+static unsigned char *HashEKPublicKey(void) {
 
-    unsigned char EKpubKey[259];
-
-    LOG_INFO("Calculating the SHA256 hash of the Endorsement Public Key");
-
-    fp = fopen(ctx.output_file, "rb");
-    if (!fp) {
-        LOG_ERR("Could not open file: \"%s\"", ctx.output_file);
+    unsigned char *hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
+    if (!hash) {
+        LOG_ERR ("OOM");
         return NULL;
     }
 
-    int rc = fseek(fp, 0x66, 0);
-    if (rc < 0) {
-        LOG_ERR("Could not perform fseek: %s", strerror(errno));
-        goto out;
-    }
 
-    size_t read = fread(EKpubKey, 1, 256, fp);
-    if (read != 256) {
-        LOG_ERR ("Could not read whole file.");
-        goto out;
-    }
-
-    hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
-    if (hash == NULL) {
-        LOG_ERR ("OOM");
-        goto out;
-    }
-
-    EKpubKey[256] = 0x01;
-    EKpubKey[257] = 0x00;
-    EKpubKey[258] = 0x01; //Exponent
     SHA256_CTX sha256;
     int is_success = SHA256_Init(&sha256);
     if (!is_success) {
         LOG_ERR ("SHA256_Init failed");
-        goto hash_out;
+        goto err;
     }
 
-    is_success = SHA256_Update(&sha256, EKpubKey, sizeof(EKpubKey));
+    is_success = SHA256_Update(&sha256, ctx.outPublic.t.publicArea.unique.rsa.t.buffer,
+            ctx.outPublic.t.publicArea.unique.rsa.t.size);
     if (!is_success) {
         LOG_ERR ("SHA256_Update failed");
-        goto hash_out;
+        goto err;
+    }
+
+    /* TODO what do these magic bytes line up to? */
+    BYTE buf[3] = {
+        0x1,
+        0x00,
+        0x01 //Exponent
+    };
+
+    is_success = SHA256_Update(&sha256, buf, sizeof(buf));
+    if (!is_success) {
+        LOG_ERR ("SHA256_Update failed");
+        goto err;
     }
 
     is_success = SHA256_Final(hash, &sha256);
     if (!is_success) {
         LOG_ERR ("SHA256_Final failed");
-        goto hash_out;
+        goto err;
     }
 
     if (ctx.verbose) {
@@ -293,14 +274,11 @@ unsigned char *HashEKPublicKey(void)
         }
         printf("\n");
     }
-    goto out;
 
-hash_out:
-    free(hash);
-    hash = NULL;
-out:
-    fclose(fp);
     return hash;
+err:
+    free(hash);
+    return NULL;
 }
 
 char *Base64Encode(const unsigned char* buffer)
@@ -508,7 +486,7 @@ static bool on_option(char key, char *value) {
         ctx.non_persistent_read = 1;
         break;
     case 'O':
-        ctx.offline_prov = 1;
+        ctx.ek_path = value;
         break;
     case 'U':
         ctx.SSL_NO_VERIFY = 1;
@@ -554,13 +532,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "alg"          , 1, NULL, 'g' },
         { "output"        , 1, NULL, 'f' },
         { "non-persistent", 0, NULL, 'N' },
-        { "offline"       , 0, NULL, 'O' },
+        { "offline"       , 1, NULL, 'O' },
         { "ec-cert"       , 1, NULL, 'E' },
         { "SSL-NO-VERIFY" , 0, NULL, 'U' },
         {"input-session-handle",1,NULL,'S'},
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:f:NOE:S:i:U", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:H:P:g:f:NO:E:S:i:U", ARRAY_LEN(topts), topts,
             on_option, on_args);
 
     return *opts != NULL;
@@ -587,8 +565,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (!ctx.offline_prov) {
+    if (!ctx.ek_path) {
         return_val = createEKHandle(sapi_context);
+    } else {
+        bool res = files_load_public(ctx.ek_path, &ctx.outPublic);
+        if (!res) {
+            LOG_ERR("Could not load exiting EK public from file");
+            return 1;
+        }
     }
 
     provisioning_return_val = TPMinitialProvisioning();
