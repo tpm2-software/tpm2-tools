@@ -111,8 +111,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
     tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
     if (ctx.out_file) {
-        /* TODO fix serialization */
-        if(!files_save_bytes_to_file(ctx.out_file, (UINT8 *)&nameExt, sizeof(nameExt))) {
+        if(!files_save_bytes_to_file(ctx.out_file, nameExt.name, nameExt.size)) {
             return -2;
         }
     }
