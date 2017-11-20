@@ -64,6 +64,16 @@ pubkey_format tpm2_parse_pubkey_format(const char *label);
 bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char *path);
 
 /**
+ * Loads a public key in the TSS format from a file.
+ * @param public
+ *  The public key to load
+ * @param format
+ * @param path
+ * @return
+ */
+bool tpm2_conversion_load_pubkey(TPM2B_PUBLIC *public, const char *path);
+
+/**
  * Parses the given command line signature format option string and returns
  * the corresponding signature_format enum value.
  *
