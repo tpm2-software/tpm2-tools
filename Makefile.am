@@ -48,7 +48,6 @@ LDADD = \
 # keep me sorted
 bin_PROGRAMS = \
     tools/tpm2_activatecredential \
-    tools/tpm2_akparse \
     tools/tpm2_certify \
     tools/tpm2_create \
     tools/tpm2_createpolicy \
@@ -162,7 +161,6 @@ tools_tpm2_quote_SOURCES = tools/tpm2_quote.c $(TOOL_SRC)
 tools_tpm2_takeownership_SOURCES = tools/tpm2_takeownership.c $(TOOL_SRC)
 tools_tpm2_getpubek_SOURCES = tools/tpm2_getpubek.c $(TOOL_SRC)
 tools_tpm2_getpubak_SOURCES = tools/tpm2_getpubak.c $(TOOL_SRC)
-tools_tpm2_akparse_SOURCES = tools/tpm2_akparse.c $(TOOL_SRC)
 tools_tpm2_hash_SOURCES = tools/tpm2_hash.c $(TOOL_SRC)
 tools_tpm2_activatecredential_SOURCES = tools/tpm2_activatecredential.c $(TOOL_SRC)
 tools_tpm2_makecredential_SOURCES = tools/tpm2_makecredential.c $(TOOL_SRC)
@@ -253,7 +251,6 @@ EXTRA_DIST = $(top_srcdir)/man
 if HAVE_PANDOC
     man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
-    man/man1/tpm2_akparse.1 \
     man/man1/tpm2_certify.1 \
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createpolicy.1 \
