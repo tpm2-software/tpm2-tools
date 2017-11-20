@@ -33,10 +33,9 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
-
 /**
  * Add definitions for algorithms that are not defined in tpm2-tss 1.x version
+ * These must go first as they are used when defining structs in the sapi.
  */
 #define  TPM_ALG_ECMQV               0x001D
 #define  TPM_ALG_KDF2                0x0021
@@ -44,6 +43,8 @@
 #define  TPM_ALG_SHA3_256            0x0027
 #define  TPM_ALG_SHA3_384            0x0028
 #define  TPM_ALG_SHA3_512            0x0029
+
+#include <sapi/tpm20.h>
 
 /**
  * Iterator callback routine for iterating over known algorithm name and value

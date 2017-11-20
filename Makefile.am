@@ -35,9 +35,12 @@ ACLOCAL_AMFLAGS = -I m4
 INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib -I$(top_srcdir)/lib/tcti
 LIB_COMMON := lib/libcommon.a
 
+LIBMARSHAL_CFLAGS = \
+    -DALG_ECMQV=1
+
 AM_CFLAGS := \
     $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(SAPI_CFLAGS) $(TCTI_SOCK_CFLAGS) \
-    $(TCTI_TABRMD_CFLAGS) $(TCTI_DEV_CFLAGS) $(CRYPTO_CFLAGS)
+    $(TCTI_TABRMD_CFLAGS) $(TCTI_DEV_CFLAGS) $(CRYPTO_CFLAGS) $(LIBMARSHAL_CFLAGS)
 
 AM_LDFLAGS   := $(EXTRA_LDFLAGS)
 
@@ -142,6 +145,18 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_options.h \
     lib/tpm_session.c \
     lib/tpm_session.h
+
+# libmarshal port
+lib_libcommon_a_SOURCES += \
+    lib/base-types.c \
+	lib/tpm2b-types.c \
+	lib/tpma-types.c \
+	lib/tpml-types.c \
+	lib/tpms-types.c \
+	lib/tpmt-types.c \
+	lib/tpmu-types.c \
+	lib/tss2_endian.h \
+	lib/tss2_mu.h
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
