@@ -97,29 +97,7 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     }
     tpm2_tool_output("\n");
 
-    tpm2_tool_output("algorithm:\n");
-    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public.publicArea.nameAlg));
-    tpm2_tool_output("  raw: 0x%x\n", public.publicArea.nameAlg);
-
-    char *attrs = tpm2_attr_util_obj_attrtostr(public.publicArea.objectAttributes);
-    tpm2_tool_output("attributes:\n");
-    tpm2_tool_output("  value: %s\n", attrs);
-    tpm2_tool_output("  raw: 0x%x\n", public.publicArea.objectAttributes.val);
-
-    tpm2_tool_output("type: \n");
-    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public.publicArea.type));
-    tpm2_tool_output("  raw: 0x%x\n", public.publicArea.type);
-
-    if (public.publicArea.authPolicy.size) {
-        tpm2_tool_output("authorization policy: ");
-        UINT16 i;
-        for (i=0; i<public.publicArea.authPolicy.size; i++) {
-            tpm2_tool_output("%02x", public.publicArea.authPolicy.buffer[i] );
-        }
-        tpm2_tool_output("\n");
-    }
-
-    free(attrs);
+    tpm2_util_public_to_yaml(&public);
 
     return ctx.outFilePath ?
             tpm2_convert_pubkey(&public, ctx.format, ctx.outFilePath) : true;
