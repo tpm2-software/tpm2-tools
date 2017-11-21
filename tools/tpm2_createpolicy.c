@@ -60,6 +60,7 @@ struct tpm2_common_policy_options {
     char *policy_file; // filepath for the policy digest
     bool policy_file_flag; // if policy file input has been given
     policy_type policy_type;
+    const char *context_file;
 };
 
 //pcr policy options
@@ -137,11 +138,6 @@ static TSS2_RC parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context
         }
     }
 
-    if (pctx.common_policy_options.extend_policy_session) {
-        tpm2_tool_output("EXTENDED_POLICY_SESSION_HANDLE: 0x%08X\n",
-            pctx.common_policy_options.policy_session->sessionHandle );
-    }
-
     return rval;
 }
 
@@ -180,6 +176,9 @@ static bool on_option(char key, char *value) {
     case 'e':
         pctx.common_policy_options.extend_policy_session = true;
         break;
+    case 'S':
+        pctx.common_policy_options.context_file = value;
+        break;
     }
 
     return true;
@@ -195,9 +194,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "policy-pcr",     no_argument,        NULL,   'P' },
         { "auth-policy-session", no_argument, NULL,     'a'},
         { "extend-policy-session", no_argument, NULL,   'e'},
+        { "save-session-context",  required_argument, NULL, 'S' },   
     };
 
-    *opts = tpm2_options_new("f:g:L:F:Pae", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("f:g:L:F:PaeS:", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }
@@ -213,5 +213,24 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return 1;
     }
 
-    return parse_policy_type_specific_command(sapi_context) != TPM2_RC_SUCCESS;
+    if (parse_policy_type_specific_command(sapi_context) != TPM2_RC_SUCCESS) {
+        return 1;
+    }
+
+    if (pctx.common_policy_options.extend_policy_session) {
+        TPM2_HANDLE handle;
+
+        handle = pctx.common_policy_options.policy_session->sessionHandle;
+
+        LOG_INFO("EXTENDED_POLICY_SESSION_HANDLE: 0x%08X\n", handle);
+
+        const char *file = pctx.common_policy_options.context_file;
+
+        if (file) {
+            return files_save_tpm_context_to_file(sapi_context,
+                                                  handle, file) != true;
+        }
+    }
+
+    return 0; 
 }
