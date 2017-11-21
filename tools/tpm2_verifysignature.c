@@ -225,8 +225,8 @@ static bool on_option(char key, char *value) {
 	}
 		break;
 	case 'D': {
-		UINT16 size = sizeof(ctx.msgHash);
-		if (!files_load_bytes_from_path(value, (UINT8 *) &ctx.msgHash, &size)) {
+	    ctx.msgHash.t.size = sizeof(ctx.msgHash.t.buffer);
+		if (!files_load_bytes_from_path(value, ctx.msgHash.t.buffer, &ctx.msgHash.t.size)) {
 			LOG_ERR("Could not load digest from file!");
 			return false;
 		}
