@@ -166,9 +166,6 @@ static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
     return tpm2_util_hexdump(buffer->buffer, buffer->size, true);
 }
 
-
-void tpm2_util_print_tpm2b(TPM2B *buffer);
-
 /**
  * Copies a tpm2b from dest to src and clears dest if src is NULL.
  * If src is NULL, it is a NOP.
