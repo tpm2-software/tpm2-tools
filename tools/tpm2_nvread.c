@@ -114,6 +114,12 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return false;
     }
 
+    UINT32 max_data_size;
+    rval = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    if (rval != TPM_RC_SUCCESS) {
+        return false;
+    }
+
     UINT8 *data_buffer = malloc(data_size);
     if (!data_buffer) {
         LOG_ERR("oom");
@@ -124,8 +130,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UINT16 data_offset = 0;
     while (ctx.size_to_read) {
 
-        UINT16 bytes_to_read = ctx.size_to_read > MAX_NV_BUFFER_SIZE ?
-                        MAX_NV_BUFFER_SIZE : ctx.size_to_read;
+        UINT16 bytes_to_read = ctx.size_to_read > max_data_size ?
+                max_data_size : ctx.size_to_read;
 
         TPM2B_MAX_NV_BUFFER nv_data = TPM2B_TYPE_INIT(TPM2B_MAX_NV_BUFFER, buffer);
 
