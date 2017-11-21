@@ -112,7 +112,7 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) out_data.buffer,
+    return files_save_bytes_to_file(ctx.out_file_path, out_data.buffer,
             out_data.size);
 }
 
