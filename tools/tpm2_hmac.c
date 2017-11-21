@@ -197,8 +197,8 @@ static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.hmac_output_file_path) {
-        return files_save_bytes_to_file(ctx.hmac_output_file_path, (UINT8 *) &hmac_out,
-            sizeof(hmac_out));
+        return files_save_bytes_to_file(ctx.hmac_output_file_path, hmac_out.buffer,
+            hmac_out.size);
     }
 
     return true;
