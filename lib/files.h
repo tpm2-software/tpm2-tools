@@ -175,6 +175,17 @@ bool files_save_ticket(TPMT_TK_VERIFIED *ticket, const char *path);
 bool files_load_ticket(const char *path, TPMT_TK_VERIFIED *ticket);
 
 /**
+ * Loads a TPM2B_SENSITIVE from disk.
+ * @param path
+ *  The path to load from.
+ * @param signature
+ *  The TPM2B_SENSITIVE to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_sensitive(const char *path, TPM2B_SENSITIVE *sensitive);
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.
