@@ -56,9 +56,10 @@ echo "T0naX0u123abc" > $hash_in_file
 # is correct. Ticket is not stable and changes run to run, don't verify it.
 tpm2_hash -H e -g sha1 -o $hash_out_file -t $ticket_file $hash_in_file 1>/dev/null
 
-sha256sum --quiet --check << HASH_CHECK_INPUT_FILE
-5bf1fc83edf7b8e00ec7d4f9e9be079eaab03b20ba6be8f5e6ee3555c8cb3a5c  hash.out
-HASH_CHECK_INPUT_FILE
+expected=`sha1sum $hash_in_file | awk '{print $1}'`
+actual=`cat $hash_out_file | xxd -p -c 20`
+
+test "$expected" == "$actual"
 
 cleanup
 
@@ -67,9 +68,10 @@ cleanup
 echo "T0naX0u123abc" > $hash_in_file
 tpm2_hash -H p -g sha256 -Q -o $hash_out_file -t $ticket_file < $hash_in_file
 
-sha256sum --quiet --check << HASH_CHECK_INPUT_FILE
-7e935893ff3ba95373127db1588f37950c70752fd8b07ee643c7f4c2acf896ea  hash.out
-HASH_CHECK_INPUT_FILE
+expected=`sha256sum $hash_in_file | awk '{print $1}'`
+actual=`cat $hash_out_file | xxd -p -c 256`
+
+test "$expected" == "$actual"
 
 cleanup
 
