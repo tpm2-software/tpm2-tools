@@ -112,11 +112,17 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
+    UINT32 max_data_size;
+    rval = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    if (rval != TPM2_RC_SUCCESS) {
+        return false;
+    }
+
     while (ctx.data_size > 0) {
 
         nv_write_data.size =
-                ctx.data_size > TPM2_MAX_NV_BUFFER_SIZE ?
-                TPM2_MAX_NV_BUFFER_SIZE : ctx.data_size;
+                ctx.data_size > max_data_size ?
+                        max_data_size : ctx.data_size;
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.size);
 
