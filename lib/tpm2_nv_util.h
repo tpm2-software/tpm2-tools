@@ -33,6 +33,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "log.h"
 #include "tpm2_util.h"
 
 /**
@@ -53,6 +54,26 @@ static inline TSS2_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
 
     return Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, NULL, nv_public,
             &nv_name, NULL);
+}
+
+static inline TSS2_RC tpm2_util_nv_max_buffer_size(TSS2_SYS_CONTEXT *sapi_context,
+        UINT32 *size) {
+
+    /* Get the maximum read block size */
+    TPMS_CAPABILITY_DATA cap_data;
+    TPMI_YES_NO more_data;
+    TSS2_RC rval = TSS2_RETRY_EXP(
+               Tss2_Sys_GetCapability (sapi_context, NULL,
+                   TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX, 1,
+                   &more_data, &cap_data, NULL));
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to query max transmission size via"
+                "Tss2_Sys_GetCapability. Error:0x%x", rval);
+    } else {
+        *size = cap_data.data.tpmProperties.tpmProperty[0].value;
+    }
+
+    return rval;
 }
 
 #endif /* LIB_TPM2_NV_UTIL_H_ */
