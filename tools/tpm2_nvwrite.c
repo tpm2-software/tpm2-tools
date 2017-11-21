@@ -110,13 +110,19 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
+    UINT32 max_data_size;
+    rval = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    if (rval != TPM_RC_SUCCESS) {
+        return false;
+    }
+
     UINT16 data_offset = 0;
     UINT16 bytes_left = ctx.nv_buffer.t.size;
     while (bytes_left > 0) {
 
         TPM2B_MAX_NV_BUFFER nv_write_data = TPM2B_INIT_SIZE(
-                bytes_left > MAX_NV_BUFFER_SIZE ?
-                MAX_NV_BUFFER_SIZE : bytes_left);
+                bytes_left > max_data_size ?
+                        max_data_size : bytes_left);
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.t.size);
 
