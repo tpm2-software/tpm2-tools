@@ -254,4 +254,11 @@ UINT64 tpm2_util_ntoh_64(UINT64 data);
  */
 UINT32 tpm2_util_pop_count(UINT32 data);
 
+/**
+ * Convert a TPM2B_PUBLIC into a yaml format and output if not quiet.
+ * @param public
+ *  The TPM2B_PUBLIC to output in YAML format.
+ */
+void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public);
+
 #endif /* STRING_BYTES_H */

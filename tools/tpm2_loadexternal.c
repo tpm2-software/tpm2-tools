@@ -50,7 +50,6 @@ struct tpm_loadexternal_ctx {
     TPM2_HANDLE rsa2048_handle;
     TPM2B_PUBLIC public_key;
     TPM2B_SENSITIVE private_key;
-    bool has_private_key;
     bool save_to_context_file;
     struct {
         UINT8 H : 1;
@@ -102,7 +101,7 @@ static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
     sessionsDataOut.rspAuthsCount = 1;
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0,
-            ctx.has_private_key ? &ctx.private_key : NULL, &ctx.public_key,
+            ctx.private_key.size ? &ctx.private_key : NULL, &ctx.public_key,
             ctx.hierarchy_value, &ctx.rsa2048_handle, &nameExt,
             &sessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
@@ -116,7 +115,6 @@ static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     bool result;
-    UINT16 size;
 
     switch(key) {
     case 'H':
@@ -127,20 +125,16 @@ static bool on_option(char key, char *value) {
         ctx.flags.H = 1;
     break;
     case 'u':
-        size = sizeof(ctx.public_key);
-        result = files_load_bytes_from_path(value, (UINT8 *)&ctx.public_key, &size);
-        if (!result) {
-            return false;
+        if(!files_load_public(optarg, &ctx.public_key)) {
+            return false;;
         }
         ctx.flags.u = 1;
         break;
     case 'r':
-        size = sizeof(ctx.private_key);
-        result = files_load_bytes_from_path(value, (UINT8 *)&ctx.private_key, &size);
+        result = files_load_sensitive(value, &ctx.private_key);
         if (!result) {
             return false;
         }
-        ctx.has_private_key = true;
         break;
     case 'C':
         ctx.context_file_path = value;

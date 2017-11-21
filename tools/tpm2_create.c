@@ -197,30 +197,30 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     if(setup_alg())
         return -1;
 
-    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.publicArea.objectAttributes.val);
-
     creationPCR.count = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.parent_handle, &sessionsData, &ctx.in_sensitive,
                            &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
                            &creationData, &creationHash, &creationTicket, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("\nCreate Object Failed ! ErrorCode: 0x%0x\n",rval);
+        LOG_ERR("Create Object Failed! ErrorCode: 0x%0x",rval);
         return -2;
     }
-    tpm2_tool_output("\nCreate Object Succeed !\n");
 
-    /*
-     * TODO These public and private serializations are not safe since its outputting size as well.
-     */
-    if(ctx.flags.o == 1) {
-        if(!files_save_bytes_to_file(ctx.opu_path, (UINT8 *)&outPublic, sizeof(outPublic)))
+    tpm2_util_public_to_yaml(&outPublic);
+
+    if (ctx.flags.o) {
+        bool res = files_save_public(&outPublic, ctx.opu_path);
+        if(!res) {
             return -3;
+        }
     }
 
-    if(ctx.flags.O == 1) {
-        if(!files_save_bytes_to_file(ctx.opr_path, (UINT8 *)&outPrivate, sizeof(outPrivate)))
+    if (ctx.flags.O) {
+        bool res = files_save_bytes_to_file(ctx.opr_path, outPrivate.buffer, outPrivate.size);
+        if (!res) {
             return -4;
+        }
     }
 
     return 0;

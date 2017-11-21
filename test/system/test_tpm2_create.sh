@@ -40,7 +40,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-  rm -f key.pub key.priv policy.bin
+  rm -f key.pub key.priv policy.bin out.pub
 
   if [ "$1" != "keep_context" ]; then
     rm -f context.out
@@ -48,6 +48,27 @@ cleanup() {
 
 }
 trap cleanup EXIT
+
+function yaml_get() {
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$2") as f:
+	try:
+		y = yaml.load(f)
+		found = "$1" in y
+		if (not found):
+			sys.stderr.write('Could not find index 0x%X\n' % ("$1"))
+		print(y["$1"])
+		sys.exit(not found)
+	except yaml.YAMLError as exc:
+		sys.exit(exc)
+pyscript
+}
 
 cleanup
 
@@ -64,12 +85,14 @@ done
 
 cleanup keep_context
 
-echo "f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988" \
-| xxd -r -p > policy.bin
+policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
+echo "$policy_orig" | xxd -r -p > policy.bin
 
-tpm2_create -Q -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv \
-  -A 'sign|fixedtpm|fixedparent|sensitivedataorigin'
+tpm2_create -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv \
+  -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' > out.pub
 
-cmp -i 14:0 -n 32 key.pub policy.bin -s
+policy_new=$(yaml_get "authorization policy" out.pub)
+
+test "$policy_orig" == "$policy_new"
 
 exit 0

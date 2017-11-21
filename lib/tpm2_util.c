@@ -33,6 +33,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "tpm2_alg_util.h"
+#include "tpm2_attr_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -266,4 +268,31 @@ UINT32 tpm2_util_pop_count(UINT32 data) {
     }
 
     return count;
+}
+
+void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
+
+    tpm2_tool_output("algorithm:\n");
+    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->publicArea.nameAlg));
+    tpm2_tool_output("  raw: 0x%x\n", public->publicArea.nameAlg);
+
+    char *attrs = tpm2_attr_util_obj_attrtostr(public->publicArea.objectAttributes);
+    tpm2_tool_output("attributes:\n");
+    tpm2_tool_output("  value: %s\n", attrs);
+    tpm2_tool_output("  raw: 0x%x\n", public->publicArea.objectAttributes);
+
+    tpm2_tool_output("type: \n");
+    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->publicArea.type));
+    tpm2_tool_output("  raw: 0x%x\n", public->publicArea.type);
+
+    if (public->publicArea.authPolicy.size) {
+        tpm2_tool_output("authorization policy: ");
+        UINT16 i;
+        for (i=0; i<public->publicArea.authPolicy.size; i++) {
+            tpm2_tool_output("%02x", public->publicArea.authPolicy.buffer[i] );
+        }
+        tpm2_tool_output("\n");
+    }
+
+    free(attrs);
 }
