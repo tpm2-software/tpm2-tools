@@ -122,7 +122,6 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     bool res;
-    UINT16 size;
 
     switch(key) {
     case 'H':
@@ -139,15 +138,14 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'u':
-        size = sizeof(ctx.in_public);
-        if(!files_load_bytes_from_path(optarg, (UINT8 *)&ctx.in_public, &size)) {
+        if(!files_load_public(optarg, &ctx.in_public)) {
             return false;;
         }
         ctx.flags.u = 1;
         break;
     case 'r':
-        size = sizeof(ctx.in_private);
-        if(!files_load_bytes_from_path(value, (UINT8 *)&ctx.in_private, &size)) {
+        ctx.in_private.t.size = sizeof(ctx.in_private.t.buffer);
+        if(!files_load_bytes_from_path(value, ctx.in_private.t.buffer, &ctx.in_private.t.size)) {
             return false;
         }
         ctx.flags.r = 1;
