@@ -217,9 +217,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.m = 1;
         break;
     case 't': {
-        UINT16 size = sizeof(ctx.validation);
-        bool result = files_load_bytes_from_path(value, (UINT8 *) &ctx.validation,
-                &size);
+        bool result = files_load_validation(value, &ctx.validation);
         if (!result) {
             return false;
         }

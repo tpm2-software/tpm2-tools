@@ -186,6 +186,28 @@ bool files_load_ticket(const char *path, TPMT_TK_VERIFIED *ticket);
 bool files_load_sensitive(const char *path, TPM2B_SENSITIVE *sensitive);
 
 /**
+ * Serializes a TPMT_TK_HASHCHECK to the file path provided.
+ * @param validation
+ *  The TPMT_TK_HASHCHECK to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_validation(TPMT_TK_HASHCHECK *validation, const char *path);
+
+/**
+ * Loads a TPMT_TK_HASHCHECK from disk.
+ * @param path
+ *  The path to load from.
+ * @param validation
+ *  The TPMT_TK_HASHCHECK to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_validation(const char *path, TPMT_TK_HASHCHECK *validation);
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.
