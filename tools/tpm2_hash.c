@@ -120,16 +120,15 @@ static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.outHashFilePath) {
-        bool result = files_save_bytes_to_file(ctx.outHashFilePath, (UINT8 *) &outHash,
-                sizeof(outHash));
+        bool result = files_save_bytes_to_file(ctx.outHashFilePath, outHash.t.buffer,
+                outHash.t.size);
         if (!result) {
             return false;
         }
     }
 
     if (ctx.outTicketFilePath) {
-        return files_save_bytes_to_file(ctx.outTicketFilePath, (UINT8 *) &validation,
-                sizeof(validation));
+        return files_save_validation(&validation, ctx.outTicketFilePath);
     }
 
     return true;
