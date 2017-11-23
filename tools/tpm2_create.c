@@ -79,18 +79,17 @@ struct tpm_create_ctx {
 
 #define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
     .publicArea = { \
-        .objectAttributes = { \
-            .val = TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM \
+        .objectAttributes = \
+                  TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM \
                   |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN| \
                    TPMA_OBJECT_USERWITHAUTH \
-        }, \
     }, \
 }
 
 static tpm_create_ctx ctx = {
     .session_data = {
         .sessionHandle = TPM2_RS_PW,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = 0,
     },
     .type = TPM2_ALG_SHA1,
     .nameAlg = TPM2_ALG_RSA,
@@ -124,15 +123,15 @@ int setup_alg()
 
     case TPM2_ALG_KEYEDHASH:
         ctx.in_public.publicArea.unique.keyedHash.size = 0;
-        ctx.in_public.publicArea.objectAttributes.decrypt = 0;
+        ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_DECRYPT;
         if (ctx.flags.I) {
             // sealing
-            ctx.in_public.publicArea.objectAttributes.sign = 0;
-            ctx.in_public.publicArea.objectAttributes.sensitiveDataOrigin = 0;
+            ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN;
+            ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
             ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
         } else {
             // hmac
-            ctx.in_public.publicArea.objectAttributes.sign = 1;
+            ctx.in_public.publicArea.objectAttributes |= TPMA_OBJECT_SIGN;
             ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
             ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = ctx.nameAlg;  //for tpm2_hmac multi alg
         }
@@ -198,7 +197,7 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     if(setup_alg())
         return -1;
 
-    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.publicArea.objectAttributes.val);
+    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.publicArea.objectAttributes);
 
     creationPCR.count = 0;
 

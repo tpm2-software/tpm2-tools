@@ -95,7 +95,7 @@ TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
 
     TPMS_AUTH_COMMAND cmdAuth = { .sessionHandle = TPM2_RS_PW, .nonce =
             TPM2B_EMPTY_INIT, .hmac = TPM2B_EMPTY_INIT, .sessionAttributes =
-            SESSION_ATTRIBUTES_INIT(0), };
+            0, };
     TPMS_AUTH_COMMAND *cmdSessionArray[1] = { &cmdAuth };
     TSS2_SYS_CMD_AUTHS cmdAuthArray = { 1, &cmdSessionArray[0] };
 

@@ -63,7 +63,7 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     tpm2_tool_output("  attributes:\n");
     tpm2_tool_output("    friendly: %s\n", attrs);
     tpm2_tool_output("    value: 0x%X\n",
-            tpm2_util_ntoh_32(nv_public->nvPublic.attributes.val));
+            tpm2_util_ntoh_32(nv_public->nvPublic.attributes));
 
     tpm2_tool_output("  size: %d\n",
                nv_public->nvPublic.dataSize);

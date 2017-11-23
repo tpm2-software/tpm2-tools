@@ -268,7 +268,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             return 1;
         }
         ctx.session_data.sessionHandle = ctx.policy_session->sessionHandle;
-        ctx.session_data.sessionAttributes.continueSession = 1;
+        ctx.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
     /* Suppress error reporting with NULL path */

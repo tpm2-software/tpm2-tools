@@ -225,7 +225,7 @@ static void fixup_sign_decrypt_attribute_encoding(va_list *ap) {
 
     TPMA_OBJECT *attrs = va_arg(*ap, TPMA_OBJECT *);
 
-    attrs->sign = 0;
+    *attrs &= ~TPMA_OBJECT_SIGN;
 }
 
 static bool errata_match(struct tpm2_errata_desc *errata) {

@@ -43,15 +43,12 @@
         \
         (void)state; \
     \
-        TPMA_NV nvattrs = { \
-            .val = 0, \
-        }; \
+        TPMA_NV nvattrs = 0; \
         /* make mutable strings for strtok_r */ \
         char arg[] = argstr; \
         bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs); \
         assert_true(res); \
-        assert_true(nvattrs.set); \
-        assert_true(nvattrs.val == TPMA_NV_##set); \
+        assert_true(nvattrs == TPMA_NV_##set); \
     }
 
 nv_single_item_test("authread", TPMA_NV_AUTHREAD);
@@ -79,18 +76,18 @@ nv_single_item_test("written", TPMA_NV_WRITTEN);
 static void test_tpm2_attr_util_nv_strtoattr_nt_good(void **state) {
     (void) state;
 
-    TPMA_NV nvattrs = { .val = 0, };
+    TPMA_NV nvattrs = 0;
 
     char arg[] = "nt=0x1";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true(nvattrs.TPM2_NT == 0x1);
+    assert_true((nvattrs & TPMA_NV_TPM2_NT) >> 4 == 0x1);
 }
 
 static void test_tpm2_attr_util_nv_strtoattr_nt_bad(void **state) {
     (void) state;
 
-    TPMA_NV nvattrs = { .val = 0, };
+    TPMA_NV nvattrs = 0;
 
     char arg[] = "nt=16";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
@@ -100,7 +97,7 @@ static void test_tpm2_attr_util_nv_strtoattr_nt_bad(void **state) {
 static void test_tpm2_attr_util_nv_strtoattr_nt_malformed(void **state) {
     (void) state;
 
-    TPMA_NV nvattrs = { .val = 0, };
+    TPMA_NV nvattrs = 0;
 
     char arg[] = "nt=";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
@@ -114,7 +111,7 @@ static void test_tpm2_attr_util_nv_strtoattr_nt_malformed(void **state) {
 static void test_tpm2_attr_util_nv_strtoattr_option_no_option(void **state) {
     (void) state;
 
-    TPMA_NV nvattrs = { .val = 0, };
+    TPMA_NV nvattrs = 0;
 
     char arg[] = "authread=";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
@@ -128,20 +125,20 @@ static void test_tpm2_attr_util_nv_strtoattr_option_no_option(void **state) {
 static void test_tpm2_attr_util_nv_strtoattr_multiple_good(void **state) {
     (void) state;
 
-    TPMA_NV nvattrs = { .val = 0, };
+    TPMA_NV nvattrs = 0;
 
     char arg[] = "authread|authwrite|nt=0x4";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true(nvattrs.TPM2_NT == 0x4);
-    assert_true(nvattrs.TPMA_NV_AUTHREAD);
-    assert_true(nvattrs.TPMA_NV_AUTHWRITE);
+    assert_true((nvattrs & TPMA_NV_TPM2_NT) >> 4 == 0x4);
+    assert_true(nvattrs & TPMA_NV_TPMA_NV_AUTHREAD);
+    assert_true(nvattrs & TPMA_NV_TPMA_NV_AUTHWRITE);
 }
 
 static void test_tpm2_attr_util_nv_strtoattr_token_unknown(void **state) {
     (void) state;
 
-    TPMA_NV nvattrs = { .val = 0, };
+    TPMA_NV nvattrs = 0;
 
     char arg[] = "authread|authfoo|nt=0x4";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
@@ -166,7 +163,7 @@ static void test_tpm2_attr_util_nv_strtoattr_token_unknown(void **state) {
     \
         (void) state; \
     \
-        TPMA_NV attrs = { .val = value }; \
+        TPMA_NV attrs = value; \
         char *str = tpm2_attr_util_nv_attrtostr(attrs); \
         assert_string_equal(str, expected); \
     \
@@ -226,7 +223,7 @@ test_nv_attrtostr(0xFFFFFFFF, NV_ALL_FIELDS);
     \
         (void) state; \
     \
-        TPMA_NV attrs = { .val = value }; \
+        TPMA_NV attrs = value; \
         char *str = tpm2_attr_util_nv_attrtostr(attrs); \
         assert_string_equal(str, expected); \
     \
@@ -246,36 +243,33 @@ test_nv_attrtostr_compound(platformcreate_owneread_nt_0x90_0x20000,
 /*
  * TPMA_OBJECT Tests
  */
-#define obj_single_item_test(argstr, index, set) \
+#define obj_single_item_test(argstr, set) \
     static void test_tpm2_attr_util_nv_strtoattr_##set(void **state) { \
         \
         (void)state; \
         \
-        TPMA_OBJECT objattrs = { \
-                .val = 0, \
-            }; \
+        TPMA_OBJECT objattrs = 0; \
         /* make mutable strings for strtok_r */ \
         char arg[] = argstr; \
         bool res = tpm2_attr_util_obj_strtoattr(arg, &objattrs); \
         assert_true(res); \
-        assert_true(objattrs.index); \
-        assert_true(objattrs.val == set); \
+        assert_true(objattrs & set); \
     }
 
 #define test_obj_strtoattr_get(set) \
     cmocka_unit_test(test_tpm2_attr_util_nv_strtoattr_##set)
 
-obj_single_item_test("fixedtpm", fixedTPM, TPMA_OBJECT_FIXEDTPM);
-obj_single_item_test("stclear", stClear, TPMA_OBJECT_STCLEAR);
-obj_single_item_test("fixedparent", fixedParent, TPMA_OBJECT_FIXEDPARENT);
-obj_single_item_test("sensitivedataorigin", sensitiveDataOrigin, TPMA_OBJECT_SENSITIVEDATAORIGIN);
-obj_single_item_test("userwithauth", userWithAuth, TPMA_OBJECT_USERWITHAUTH);
-obj_single_item_test("adminwithpolicy", adminWithPolicy, TPMA_OBJECT_ADMINWITHPOLICY);
-obj_single_item_test("noda", noDA, TPMA_OBJECT_NODA);
-obj_single_item_test("encryptedduplication", encryptedDuplication, TPMA_OBJECT_ENCRYPTEDDUPLICATION);
-obj_single_item_test("restricted", restricted, TPMA_OBJECT_RESTRICTED);
-obj_single_item_test("decrypt", decrypt, TPMA_OBJECT_DECRYPT);
-obj_single_item_test("sign", sign, TPMA_OBJECT_SIGN);
+obj_single_item_test("fixedtpm", TPMA_OBJECT_FIXEDTPM);
+obj_single_item_test("stclear", TPMA_OBJECT_STCLEAR);
+obj_single_item_test("fixedparent", TPMA_OBJECT_FIXEDPARENT);
+obj_single_item_test("sensitivedataorigin", TPMA_OBJECT_SENSITIVEDATAORIGIN);
+obj_single_item_test("userwithauth", TPMA_OBJECT_USERWITHAUTH);
+obj_single_item_test("adminwithpolicy", TPMA_OBJECT_ADMINWITHPOLICY);
+obj_single_item_test("noda", TPMA_OBJECT_NODA);
+obj_single_item_test("encryptedduplication", TPMA_OBJECT_ENCRYPTEDDUPLICATION);
+obj_single_item_test("restricted", TPMA_OBJECT_RESTRICTED);
+obj_single_item_test("decrypt", TPMA_OBJECT_DECRYPT);
+obj_single_item_test("sign", TPMA_OBJECT_SIGN);
 
 #define OBJ_ALL_FIELDS \
         "<reserved(0)>|fixedtpm|stclear|<reserved(3)>|fixedparent" \
@@ -292,7 +286,7 @@ obj_single_item_test("sign", sign, TPMA_OBJECT_SIGN);
     \
         (void) state; \
     \
-	    TPMA_OBJECT attrs = { .val = value }; \
+	    TPMA_OBJECT attrs = value; \
         char *str = tpm2_attr_util_obj_attrtostr(attrs); \
         assert_string_equal(str, expected); \
     \
@@ -330,23 +324,23 @@ test_obj_attrtostr(TPMA_OBJECT_RESERVED5, "<reserved(19)>|<reserved(20)>|" \
 static void test_tpm2_attr_util_obj_strtoattr_multiple_good(void **state) {
     (void) state;
 
-    TPMA_OBJECT objattrs = { .val = 0, };
+    TPMA_OBJECT objattrs = 0;
 
     char arg[] = "sign|adminwithpolicy|noda";
     bool res = tpm2_attr_util_obj_strtoattr(arg, &objattrs);
     assert_true(res);
-    assert_true(objattrs.adminWithPolicy);
-    assert_true(objattrs.sign);
-    assert_true(objattrs.noDA);
+    assert_true(objattrs & TPMA_OBJECT_ADMINWITHPOLICY);
+    assert_true(objattrs & TPMA_OBJECT_SIGN);
+    assert_true(objattrs & TPMA_OBJECT_NODA);
 
-    assert_int_equal(objattrs.val,
+    assert_int_equal(objattrs,
             TPMA_OBJECT_SIGN|TPMA_OBJECT_NODA|TPMA_OBJECT_ADMINWITHPOLICY);
 }
 
 static void test_tpm2_attr_util_obj_strtoattr_token_unknown(void **state) {
     (void) state;
 
-    TPMA_OBJECT objattrrs = { .val = 0, };
+    TPMA_OBJECT objattrrs = 0;
 
     char arg[] = "fixedtpm|noda|unkown";
     bool res = tpm2_attr_util_obj_strtoattr(arg, &objattrrs);
@@ -360,16 +354,16 @@ static void test_tpm2_attr_util_obj_strtoattr_token_unknown(void **state) {
 static void test_tpm2_attr_util_obj_from_optarg_good(void **state) {
     (void) state;
 
-    TPMA_OBJECT objattrs = { .val = 0, };
+    TPMA_OBJECT objattrs = 0;
     bool res = tpm2_attr_util_obj_from_optarg("0x00000002", &objattrs);
     assert_true(res);
-    assert_int_equal(0x02, objattrs.val);
+    assert_int_equal(0x02, objattrs);
 
-    objattrs.val = 0;
+    objattrs = 0;
     char buf[] = "fixedtpm";
     res = tpm2_attr_util_obj_from_optarg(buf, &objattrs);
     assert_true(res);
-    assert_int_equal(TPMA_OBJECT_FIXEDTPM, objattrs.val);
+    assert_int_equal(TPMA_OBJECT_FIXEDTPM, objattrs);
 }
 
 int main(int argc, char* argv[]) {
