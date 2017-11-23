@@ -71,23 +71,15 @@ TSS2_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *k
     TPM2B emptyBuffer;
     TPMT_TK_HASHCHECK validation;
 
-    TPMS_AUTH_COMMAND sessionData = {
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { .count = 1,
+        .auths = {{
             .sessionHandle = TPM2_RS_PW,
             .nonce = {
                     .size = 0,
             },
             .sessionAttributes = 0,
-
-
-    };
-
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-
-    TSS2_SYS_CMD_AUTHS sessionsData;
-
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
+    }}};
 
     UINT32 rval;
     TPM2_HANDLE keyHandle;
@@ -104,9 +96,6 @@ TSS2_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *k
             }
     };
 
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
-
     // Set result size to 0, in case any errors occur
     result->size = 0;
 
@@ -117,13 +106,10 @@ TSS2_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *k
     }
 
     // Init input sessions struct
-    tpm2_util_copy_tpm2b((TPM2B *)&sessionData.hmac, &keyAuth);
-    sessionsData.cmdAuthsCount = 1;
-    sessionsData.cmdAuths = &sessionDataArray[0];
+    sessionsData.count = 1;
+    tpm2_util_copy_tpm2b((TPM2B *)&sessionsData.auths[0].hmac, &keyAuth);
 
     // Init sessions out struct
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
 
     emptyBuffer.size = 0;
 

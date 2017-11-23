@@ -88,14 +88,9 @@
 		.digest = TPM2B_EMPTY_INIT \
     }
 
-#define TSS2_SYS_CMD_AUTHS_INIT(array) { \
-        .cmdAuthsCount = ARRAY_LEN(array), \
-        .cmdAuths = array, \
-    }
-
-#define TSS2_SYS_RSP_AUTHS_INIT(array) { \
-        .rspAuthsCount = ARRAY_LEN(array), \
-        .rspAuths = array, \
+#define TSS2L_SYS_AUTH_COMMAND_INIT(cnt, array) { \
+        .count = cnt, \
+        .auths = array, \
     }
 
 /*

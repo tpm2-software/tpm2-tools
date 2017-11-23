@@ -70,18 +70,8 @@ static tpm_nvread_ctx ctx = {
 static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
 
-    TPMS_AUTH_COMMAND *session_data_array[] = {
-        &ctx.session_data
-    };
-    TSS2_SYS_CMD_AUTHS sessions_data = TSS2_SYS_CMD_AUTHS_INIT(session_data_array);
-
-
-    TPMS_AUTH_RESPONSE session_data_out;
-    TPMS_AUTH_RESPONSE *session_data_out_array[] = {
-        &session_data_out
-    };
-    TSS2_SYS_RSP_AUTHS sessions_data_out = TSS2_SYS_RSP_AUTHS_INIT(session_data_out_array);
-
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
 
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
     TSS2_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);

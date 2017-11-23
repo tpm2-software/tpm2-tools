@@ -451,21 +451,10 @@ static void create_import_key_private_data(void) {
 static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context) {
 
 
-    TPMS_AUTH_COMMAND npsessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
-    TPMS_AUTH_COMMAND *npsessionDataArray[] = {
-        &npsessionData
-    };
+    TSS2L_SYS_AUTH_COMMAND npsessionsData =
+            TSS2L_SYS_AUTH_COMMAND_INIT(1, {TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)});
 
-    TSS2_SYS_CMD_AUTHS npsessionsData =
-            TSS2_SYS_CMD_AUTHS_INIT(npsessionDataArray);
-
-    TPMS_AUTH_RESPONSE npsessionDataOut;
-    TPMS_AUTH_RESPONSE *npsessionDataOutArray[] = {
-        &npsessionDataOut
-    };
-
-    TSS2_SYS_RSP_AUTHS npsessionsDataOut =
-            TSS2_SYS_RSP_AUTHS_INIT(npsessionDataOutArray);
+    TSS2L_SYS_AUTH_RESPONSE npsessionsDataOut;
 
     TPMT_SYM_DEF_OBJECT symmetricAlg = {
             .algorithm = TPM2_ALG_AES,

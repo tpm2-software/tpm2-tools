@@ -200,17 +200,14 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
 static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPML_PCR_SELECTION creation_pcr;
-    TPMS_AUTH_COMMAND session_data = {
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = {1, {
+        {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = 0,
-    };
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+    }}};
 
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
@@ -235,14 +232,6 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2_HANDLE handle_2048_rsa = ctx.persistent_handle.ek;
 
-    session_data_array[0] = &session_data;
-    session_data_out_array[0] = &session_data_out;
-
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data.cmdAuthsCount = 1;
-    sessions_data_out.rspAuthsCount = 1;
     inSensitive.sensitive.data.size = 0;
     inSensitive.size = inSensitive.sensitive.userAuth.size + 2;
     creation_pcr.count = 0;
@@ -254,7 +243,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    memcpy(&session_data.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
+    memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
     SESSION *session = NULL;
     UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session, TPM2_RH_NULL, 0, TPM2_RH_NULL, 0,
@@ -276,9 +265,9 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
-    session_data.sessionHandle = session->sessionHandle;
-    session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
-    session_data.hmac.size = 0;
+    sessions_data.auths[0].sessionHandle = session->sessionHandle;
+    sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
+    sessions_data.auths[0].hmac.size = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, handle_2048_rsa, &sessions_data,
             &inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
@@ -299,11 +288,11 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     // And remove the session from sessions table.
     tpm_session_auth_end(session);
 
-    session_data.sessionHandle = TPM2_RS_PW;
-    session_data.sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
-    session_data.hmac.size = 0;
+    sessions_data.auths[0].sessionHandle = TPM2_RS_PW;
+    sessions_data.auths[0].sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
+    sessions_data.auths[0].hmac.size = 0;
 
-    memcpy(&session_data.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
+    memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
     rval = tpm_session_start_auth_with_params(sapi_context, &session, TPM2_RH_NULL, 0, TPM2_RH_NULL, 0,
             &nonce_caller, &encrypted_salt, TPM2_SE_POLICY, &symmetric,
@@ -322,9 +311,9 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
-    session_data.sessionHandle = session->sessionHandle;
-    session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
-    session_data.hmac.size = 0;
+    sessions_data.auths[0].sessionHandle = session->sessionHandle;
+    sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
+    sessions_data.auths[0].hmac.size = 0;
 
     TPM2_HANDLE loaded_sha1_key_handle;
     rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context, handle_2048_rsa, &sessions_data, &out_private,
@@ -359,12 +348,12 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     // And remove the session from sessions table.
     tpm_session_auth_end(session);
 
-    session_data.sessionHandle = TPM2_RS_PW;
-    session_data.sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
-    session_data.hmac.size = 0;
+    sessions_data.auths[0].sessionHandle = TPM2_RS_PW;
+    sessions_data.auths[0].sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
+    sessions_data.auths[0].hmac.size = 0;
 
     // use the owner auth here.
-    memcpy(&session_data.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
+    memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, loaded_sha1_key_handle,
             &sessions_data, ctx.persistent_handle.ak, &sessions_data_out));
