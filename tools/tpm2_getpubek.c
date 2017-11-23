@@ -79,15 +79,15 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
     inPublic->publicArea.nameAlg = TPM2_ALG_SHA256;
 
     // First clear attributes bit field.
-    *(UINT32 *) &(inPublic->publicArea.objectAttributes) = 0;
-    inPublic->publicArea.objectAttributes.restricted = 1;
-    inPublic->publicArea.objectAttributes.userWithAuth = 0;
-    inPublic->publicArea.objectAttributes.adminWithPolicy = 1;
-    inPublic->publicArea.objectAttributes.sign = 0;
-    inPublic->publicArea.objectAttributes.decrypt = 1;
-    inPublic->publicArea.objectAttributes.fixedTPM = 1;
-    inPublic->publicArea.objectAttributes.fixedParent = 1;
-    inPublic->publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    inPublic->publicArea.objectAttributes = 0;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_RESTRICTED;
+    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_ADMINWITHPOLICY;
+    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDTPM;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDPARENT;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_SENSITIVEDATAORIGIN;
     inPublic->publicArea.authPolicy.size = 32;
     memcpy(inPublic->publicArea.authPolicy.buffer, auth_policy, 32);
 
@@ -148,7 +148,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = 0,
     };
 
     if (ctx.is_session_based_auth) {

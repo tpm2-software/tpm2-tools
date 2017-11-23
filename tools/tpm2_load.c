@@ -72,7 +72,7 @@ static tpm_load_ctx ctx = {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
+        .sessionAttributes = 0
     }
 };
 

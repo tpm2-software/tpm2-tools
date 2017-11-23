@@ -50,8 +50,8 @@ static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH h
     inPublic.publicArea.type = TPM2_ALG_KEYEDHASH;
     inPublic.publicArea.nameAlg = TPM2_ALG_NULL;
     *( UINT32 *)&( inPublic.publicArea.objectAttributes )= 0;
-    inPublic.publicArea.objectAttributes.sign = 1;
-    inPublic.publicArea.objectAttributes.userWithAuth = 1;
+    inPublic.publicArea.objectAttributes |= TPMA_OBJECT_SIGN;
+    inPublic.publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
     inPublic.publicArea.authPolicy.size = 0;
     inPublic.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
     inPublic.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = hashAlg;
@@ -76,7 +76,7 @@ TSS2_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *k
             .nonce = {
                     .size = 0,
             },
-            .sessionAttributes = { .val = 0 },
+            .sessionAttributes = 0,
 
 
     };

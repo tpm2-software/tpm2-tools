@@ -54,12 +54,11 @@
                 .userAuth.size = 0, \
             }, \
     }
-#define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }
 
 #define TPMS_AUTH_COMMAND_INIT(session_handle) { \
         .sessionHandle = session_handle,\
 	    .nonce = TPM2B_EMPTY_INIT, \
-	    .sessionAttributes = { .val = 0 }, \
+	    .sessionAttributes = 0, \
 	    .hmac = TPM2B_EMPTY_INIT \
     }
 

@@ -69,7 +69,7 @@ static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = 0,
     };
     TSS2_SYS_CMD_AUTHS sessionsData;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
@@ -98,7 +98,7 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = 0,
     };
     TSS2_SYS_CMD_AUTHS sessionsData;
     TPMS_AUTH_COMMAND *sessionDataArray[1];
