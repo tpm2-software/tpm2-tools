@@ -111,7 +111,7 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
     if (!attrs) {
         LOG_WARN("Could not convert objectAttributes, converting to hex output");
         char tmp[11]; /* UINT32 in hex (8) + "0x" + '\0' */
-        snprintf(tmp, sizeof(tmp), "0x%x", outPublic.publicArea.objectAttributes.val);
+        snprintf(tmp, sizeof(tmp), "0x%x", outPublic.publicArea.objectAttributes);
         attrbuf = tmp;
     }
 
