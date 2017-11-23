@@ -55,12 +55,7 @@ static tpm_nvrelease_ctx ctx = {
 
 static bool nv_space_release(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-
-    session_data_array[0] = &ctx.session_data;
-    sessions_data.cmdAuths = &session_data_array[0];
-    sessions_data.cmdAuthsCount = 1;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_UndefineSpace(sapi_context, ctx.auth_handle,
                                             ctx.nv_index, &sessions_data, 0));

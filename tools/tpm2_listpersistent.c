@@ -84,17 +84,11 @@ static bool on_option(char key, char *value) {
 
 int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
     UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
     TPM2B_NAME qualifiedName = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS)

@@ -144,11 +144,8 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
 int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 {
     UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2L_SYS_AUTH_COMMAND sessionsData;
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
     TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
@@ -164,14 +161,8 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     TPM2_HANDLE handle2048ek;
 
-    sessionDataArray[0] = &ctx.endorse_session_data;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
-
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
+    sessionsData.count = 1;
+    sessionsData.auths[0] = ctx.endorse_session_data;
 
     memcpy(&inSensitive.sensitive.userAuth, &ctx.ek_password,
            sizeof(ctx.ek_password));
@@ -202,7 +193,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
             return 1;
         }
 
-        sessionDataArray[0] = &ctx.owner_session_data;
+        sessionsData.auths[0] = ctx.owner_session_data;
 
         rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
                                      &sessionsData, ctx.persistent_handle, &sessionsDataOut));

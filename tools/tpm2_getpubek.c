@@ -145,22 +145,18 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
 
 static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND sessionData = {
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, {{
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
         .sessionAttributes = 0,
-    };
+    }}};
 
     if (ctx.is_session_based_auth) {
-        sessionData.sessionHandle = ctx.auth_session_handle;
+        sessionsData.auths[0].sessionHandle = ctx.auth_session_handle;
     }
 
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
     TPML_PCR_SELECTION creationPCR;
 
     TPM2B_SENSITIVE_CREATE inSensitive =
@@ -180,16 +176,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMT_TK_CREATION creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
-
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
-
-    memcpy(&sessionData.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
+    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
     memcpy(&ctx.passwords.ek, &inSensitive.sensitive.userAuth, sizeof(inSensitive.sensitive.userAuth));
 
@@ -216,7 +203,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("EK create success. Got handle: 0x%8.8x", handle2048ek);
 
-    memcpy(&sessionData.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
+    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
             &sessionsData, ctx.persistent_handle, &sessionsDataOut));

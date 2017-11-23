@@ -71,20 +71,11 @@ static tpm_evictcontrol_ctx ctx = {
 
 static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_ata_out_array[1];
+    TSS2L_SYS_AUTH_COMMAND sessions_data;
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
-    session_data_array[0] = &ctx.session_data;
-    session_ata_out_array[0] = &session_data_out;
-
-    sessions_data_out.rspAuths = &session_ata_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
+    sessions_data.count = 1;
+    sessions_data.auths[0] = ctx.session_data;
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
                                         &sessions_data, ctx.handle.persist,&sessions_data_out));

@@ -63,19 +63,13 @@ static tpm_readpub_ctx ctx = {
 
 static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_RESPONSE session_out_data;
-    TSS2_SYS_RSP_AUTHS sessions_out_data;
-    TPMS_AUTH_RESPONSE *session_out_data_array[1];
+    TSS2L_SYS_AUTH_RESPONSE sessions_out_data;
 
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    session_out_data_array[0] = &session_out_data;
-    sessions_out_data.rspAuths = &session_out_data_array[0];
-    sessions_out_data.rspAuthsCount = ARRAY_LEN(session_out_data_array);
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, ctx.objectHandle, 0,
             &public, &name, &qualified_name, &sessions_out_data));
