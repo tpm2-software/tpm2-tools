@@ -58,7 +58,7 @@ struct tpm_nvdefine_ctx {
 
 static tpm_nvdefine_ctx ctx = {
     .authHandle = TPM2_RH_PLATFORM,
-    .nvAttribute = SESSION_ATTRIBUTES_INIT(0),
+    .nvAttribute = 0,
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     .nvAuth = TPM2B_EMPTY_INIT,
     .size = TPM2_MAX_NV_BUFFER_SIZE,
@@ -92,7 +92,7 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
     public_info.nvPublic.nameAlg = TPM2_ALG_SHA256;
 
     // Now set the attributes.
-    public_info.nvPublic.attributes.val = ctx.nvAttribute.val;
+    public_info.nvPublic.attributes = ctx.nvAttribute;
 
     if (!ctx.size) {
         LOG_WARN("Defining an index with size 0");
@@ -167,7 +167,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 't':
-        result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute.val);
+        result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute);
         if (!result) {
             result = tpm2_attr_util_nv_strtoattr(value, &ctx.nvAttribute);
             if (!result) {

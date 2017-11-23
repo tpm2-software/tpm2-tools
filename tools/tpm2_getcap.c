@@ -196,10 +196,10 @@ get_uint32_as_chars (UINT32    value,
 void
 tpm2_tool_output_tpma_modes (TPMA_MODES    modes)
 {
-    tpm2_tool_output ("TPM2_PT_MODES: 0x%08x\n", modes.val);
-    if (modes.FIPS_140_2)
+    tpm2_tool_output ("TPM2_PT_MODES: 0x%08x\n", modes);
+    if (modes & TPMA_MODES_FIPS_140_2)
         tpm2_tool_output ("  TPMA_MODES_FIPS_140_2\n");
-    if (modes.reserved1)
+    if (modes & TPMA_MODES_RESERVED1)
         tpm2_tool_output ("  TPMA_MODES_RESERVED1 (these bits shouldn't be set)\n");
 }
 /*
@@ -209,14 +209,14 @@ void
 dump_permanent_attrs (TPMA_PERMANENT attrs)
 {
     tpm2_tool_output ("TPM2_PT_PERSISTENT:\n");
-    tpm2_tool_output ("  ownerAuthSet:              %s\n", prop_str (attrs.ownerAuthSet));
-    tpm2_tool_output ("  endorsementAuthSet:        %s\n", prop_str (attrs.endorsementAuthSet));
-    tpm2_tool_output ("  lockoutAuthSet:            %s\n", prop_str (attrs.lockoutAuthSet));
-    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs.reserved1));
-    tpm2_tool_output ("  disableClear:              %s\n", prop_str (attrs.disableClear));
-    tpm2_tool_output ("  inLockout:                 %s\n", prop_str (attrs.inLockout));
-    tpm2_tool_output ("  tpmGeneratedEPS:           %s\n", prop_str (attrs.tpmGeneratedEPS));
-    tpm2_tool_output ("  reserved2:                 %s\n", prop_str (attrs.reserved2));
+    tpm2_tool_output ("  ownerAuthSet:              %s\n", prop_str (attrs & TPMA_PERMANENT_OWNERAUTHSET));
+    tpm2_tool_output ("  endorsementAuthSet:        %s\n", prop_str (attrs & TPMA_PERMANENT_ENDORSEMENTAUTHSET));
+    tpm2_tool_output ("  lockoutAuthSet:            %s\n", prop_str (attrs & TPMA_PERMANENT_LOCKOUTAUTHSET));
+    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs & TPMA_PERMANENT_RESERVED1));
+    tpm2_tool_output ("  disableClear:              %s\n", prop_str (attrs & TPMA_PERMANENT_DISABLECLEAR));
+    tpm2_tool_output ("  inLockout:                 %s\n", prop_str (attrs & TPMA_PERMANENT_INLOCKOUT));
+    tpm2_tool_output ("  tpmGeneratedEPS:           %s\n", prop_str (attrs & TPMA_PERMANENT_TPMGENERATEDEPS));
+    tpm2_tool_output ("  reserved2:                 %s\n", prop_str (attrs & TPMA_PERMANENT_RESERVED2));
 }
 /*
  * Print string representations of the TPMA_STARTUP_CLEAR attributes.
@@ -225,12 +225,12 @@ void
 dump_startup_clear_attrs (TPMA_STARTUP_CLEAR attrs)
 {
     tpm2_tool_output ("TPM2_PT_STARTUP_CLEAR:\n");
-    tpm2_tool_output ("  phEnable:                  %s\n", prop_str (attrs.phEnable));
-    tpm2_tool_output ("  shEnable:                  %s\n", prop_str (attrs.shEnable));
-    tpm2_tool_output ("  ehEnable:                  %s\n", prop_str (attrs.ehEnable));
-    tpm2_tool_output ("  phEnableNV:                %s\n", prop_str (attrs.phEnableNV));
-    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs.reserved1));
-    tpm2_tool_output ("  orderly:                   %s\n", prop_str (attrs.orderly));
+    tpm2_tool_output ("  phEnable:                  %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_PHENABLE));
+    tpm2_tool_output ("  shEnable:                  %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_SHENABLE));
+    tpm2_tool_output ("  ehEnable:                  %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_EHENABLE));;
+    tpm2_tool_output ("  phEnableNV:                %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_PHENABLENV));
+    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_RESERVED1));
+    tpm2_tool_output ("  orderly:                   %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_ORDERLY));
 }
 /*
  * Iterate over all fixed properties, call the unique print function for each.
@@ -502,14 +502,14 @@ dump_algorithm_properties (TPM2_ALG_ID       id,
     id_name = id_name ? id_name : "unknown";
 
     tpm2_tool_output ("TPMA_ALGORITHM for ALG_ID: 0x%x - %s\n", id, id_name);
-    tpm2_tool_output ("  asymmetric: %s\n", prop_str (alg_attrs.asymmetric));
-    tpm2_tool_output ("  symmetric:  %s\n", prop_str (alg_attrs.symmetric));
-    tpm2_tool_output ("  hash:       %s\n", prop_str (alg_attrs.hash));
-    tpm2_tool_output ("  object:     %s\n", prop_str (alg_attrs.object));
-    tpm2_tool_output ("  reserved:   0x%x\n", alg_attrs.reserved1);
-    tpm2_tool_output ("  signing:    %s\n", prop_str (alg_attrs.signing));
-    tpm2_tool_output ("  encrypting: %s\n", prop_str (alg_attrs.encrypting));
-    tpm2_tool_output ("  method:     %s\n", prop_str (alg_attrs.method));
+    tpm2_tool_output ("  asymmetric: %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_ASYMMETRIC));
+    tpm2_tool_output ("  symmetric:  %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_SYMMETRIC));
+    tpm2_tool_output ("  hash:       %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_HASH));
+    tpm2_tool_output ("  object:     %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_OBJECT));
+    tpm2_tool_output ("  reserved:   0x%x\n", (alg_attrs & TPMA_ALGORITHM_RESERVED1) >> 4);
+    tpm2_tool_output ("  signing:    %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_SIGNING));
+    tpm2_tool_output ("  encrypting: %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_ENCRYPTING));
+    tpm2_tool_output ("  method:     %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_METHOD));
 }
 
 /*
@@ -660,17 +660,17 @@ static const char *cc_to_str(UINT32 cc) {
 void
 dump_command_attrs (TPMA_CC tpma_cc)
 {
-    tpm2_tool_output ("TPMA_CC: 0x%08x\n", tpma_cc.val);
-    tpm2_tool_output ("  name: %s\n", cc_to_str(tpma_cc.commandIndex));
-    tpm2_tool_output ("  commandIndex: 0x%x\n", tpma_cc.commandIndex);
-    tpm2_tool_output ("  reserved1:    0x%x\n", tpma_cc.reserved1);
-    tpm2_tool_output ("  nv:           %s\n",   prop_str (tpma_cc.nv));
-    tpm2_tool_output ("  extensive:    %s\n",   prop_str (tpma_cc.extensive));
-    tpm2_tool_output ("  flushed:      %s\n",   prop_str (tpma_cc.flushed));
-    tpm2_tool_output ("  cHandles:     0x%x\n", tpma_cc.cHandles);
-    tpm2_tool_output ("  rHandle:      %s\n",   prop_str (tpma_cc.rHandle));
-    tpm2_tool_output ("  V:            %s\n",   prop_str (tpma_cc.V));
-    tpm2_tool_output ("  Res:          0x%x\n", tpma_cc.Res);
+    tpm2_tool_output ("TPMA_CC: 0x%08x\n", tpma_cc);
+    tpm2_tool_output ("  name: %s\n", cc_to_str(tpma_cc & TPMA_CC_COMMANDINDEX));
+    tpm2_tool_output ("  commandIndex: 0x%x\n", tpma_cc & TPMA_CC_COMMANDINDEX);
+    tpm2_tool_output ("  reserved1:    0x%x\n", (tpma_cc & TPMA_CC_RESERVED1) >> 16);
+    tpm2_tool_output ("  nv:           %s\n",   prop_str (tpma_cc & TPMA_CC_NV));
+    tpm2_tool_output ("  extensive:    %s\n",   prop_str (tpma_cc & TPMA_CC_EXTENSIVE));
+    tpm2_tool_output ("  flushed:      %s\n",   prop_str (tpma_cc & TPMA_CC_FLUSHED));
+    tpm2_tool_output ("  cHandles:     0x%x\n", tpma_cc & TPMA_CC_CHANDLES >>25);
+    tpm2_tool_output ("  rHandle:      %s\n",   prop_str (tpma_cc & TPMA_CC_RHANDLE));
+    tpm2_tool_output ("  V:            %s\n",   prop_str (tpma_cc & TPMA_CC_V));
+    tpm2_tool_output ("  Res:          0x%x\n", tpma_cc  & TPMA_CC_RES >>21);
 }
 /*
  * Iterate over an array of TPM2_ECC_CURVEs and dump out a human readable

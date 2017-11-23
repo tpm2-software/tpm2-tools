@@ -70,11 +70,10 @@ struct tpm_createprimary_ctx {
 #define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
     .publicArea = { \
         .type = TPM2_ALG_RSA, \
-        .objectAttributes = { \
-            .val = TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT \
+        .objectAttributes = \
+            TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT \
             |TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT \
             |TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH \
-        }, \
     }, \
 }
 
@@ -83,7 +82,7 @@ static tpm_createprimary_ctx ctx = {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = 0,
     },
     .inSensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT,
     .in_public = PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT,
@@ -180,7 +179,7 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
 
     if(setup_alg())
         return -1;
-    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.publicArea.objectAttributes.val);
+    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.publicArea.objectAttributes);
 
     creationPCR.count = 0;
 

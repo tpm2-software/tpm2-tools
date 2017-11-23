@@ -157,7 +157,7 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
             .nonce = { .size = 0 },
             .hmac =  { .size = 0 },
             .sessionHandle = 0,
-            .sessionAttributes = { .val = 0 },
+            .sessionAttributes = 0,
     };
 
     ctx.password.sessionHandle = TPM2_RS_PW;
@@ -206,7 +206,7 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     tmp_auth.sessionHandle = session->sessionHandle;
-    tmp_auth.sessionAttributes.continueSession = 1;
+    tmp_auth.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     tmp_auth.hmac.size = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.handle.activate,

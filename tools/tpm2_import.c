@@ -274,13 +274,13 @@ static bool calc_sensitive_unique_data(void) {
 #define IMPORT_KEY_SYM_PUBLIC_AREA(X) \
     (X).publicArea.type = TPM2_ALG_SYMCIPHER; \
     (X).publicArea.nameAlg = TPM2_ALG_SHA256;\
-    (X).publicArea.objectAttributes.restricted = 0;\
-    (X).publicArea.objectAttributes.userWithAuth = 1;\
-    (X).publicArea.objectAttributes.decrypt = 1;\
-    (X).publicArea.objectAttributes.sign = 1;\
-    (X).publicArea.objectAttributes.fixedTPM = 0;\
-    (X).publicArea.objectAttributes.fixedParent = 0;\
-    (X).publicArea.objectAttributes.sensitiveDataOrigin = 0;\
+    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;\
+    (X).publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;\
+    (X).publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;\
+    (X).publicArea.objectAttributes |= TPMA_OBJECT_SIGN;\
+    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDTPM;\
+    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDPARENT;\
+    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;\
     (X).publicArea.authPolicy.size = 0;\
     (X).publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;\
     (X).publicArea.parameters.symDetail.sym.keyBits.sym = 128;\
@@ -295,11 +295,11 @@ static bool create_import_key_public_data_and_name(void) {
                       &ctx.import_key_public.publicArea.objectAttributes);
 
     if (ctx.objectAttributes) {
-        ctx.import_key_public.publicArea.objectAttributes.val = ctx.objectAttributes;
+        ctx.import_key_public.publicArea.objectAttributes = ctx.objectAttributes;
     }
 
     tpm2_tool_output("ObjectAttribute: 0x%08X\n",
-                     ctx.import_key_public.publicArea.objectAttributes.val);
+                     ctx.import_key_public.publicArea.objectAttributes);
 
     memcpy(ctx.import_key_public.publicArea.unique.sym.buffer,
             ctx.import_key_public_unique_data, TPM2_SHA256_DIGEST_SIZE);
