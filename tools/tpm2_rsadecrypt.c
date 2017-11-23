@@ -69,18 +69,8 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B_DATA label;
     TPM2B_PUBLIC_KEY_RSA message = TPM2B_TYPE_INIT(TPM2B_PUBLIC_KEY_RSA, buffer);
 
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
-
-    session_data_array[0] = &ctx.session_data;
-    sessions_data.cmdAuths = &session_data_array[0];
-    session_data_out_array[0] = &session_data_out;
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     inScheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;

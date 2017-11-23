@@ -70,20 +70,11 @@ static tpm_hmac_ctx ctx = {
 
 TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+    TSS2L_SYS_AUTH_COMMAND sessions_data;
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
-    session_data_array[0] = &ctx.session_data;
-    session_data_out_array[0] = &session_data_out;
-
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
+    sessions_data.count = 1;
+    sessions_data.auths[0] = ctx.session_data;
 
     unsigned long file_size = 0;
 

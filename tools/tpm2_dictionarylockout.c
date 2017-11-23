@@ -60,18 +60,8 @@ static dictionarylockout_ctx ctx = {
 
 bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    sessionDataArray[0] = &ctx.session_data;
-
-    TSS2_SYS_CMD_AUTHS sessionsData = { .cmdAuths = &sessionDataArray[0],
-            .cmdAuthsCount = 1 };
-
-    //Response Auths
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1], sessionDataOut;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    TSS2_SYS_RSP_AUTHS sessionsDataOut = { .rspAuths = &sessionDataOutArray[0],
-            .rspAuthsCount = 1 };
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.session_data }};
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     /*
      * If setup params and clear lockout are both required, clear lockout should

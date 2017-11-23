@@ -166,11 +166,8 @@ int setup_alg()
 int create(TSS2_SYS_CONTEXT *sapi_context)
 {
     TSS2_RC rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2L_SYS_AUTH_COMMAND sessionsData;
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION      creationPCR;
@@ -181,16 +178,8 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
-    sessionDataArray[0] = &ctx.session_data;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
-
-    sessionsDataOut.rspAuthsCount = 1;
-
-    sessionsData.cmdAuthsCount = 1;
-    sessionsData.cmdAuths[0] = &ctx.session_data;
+    sessionsData.count = 1;
+    sessionsData.auths[0] = ctx.session_data;
 
     ctx.in_sensitive.size = ctx.in_sensitive.sensitive.userAuth.size + 2;
 

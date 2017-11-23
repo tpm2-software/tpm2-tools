@@ -65,20 +65,15 @@ static takeownership_ctx ctx;
 
 static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM2_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = 0,
-    };
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { .count = 1,
+        .auths = {{
+            .sessionHandle = TPM2_RS_PW,
+            .nonce = TPM2B_EMPTY_INIT,
+            .hmac = TPM2B_EMPTY_INIT,
+           .sessionAttributes = 0,
+    }}};
 
-    sessionDataArray[0] = &sessionData;
-    sessionsData.cmdAuths = &sessionDataArray[0];
-    sessionsData.cmdAuthsCount = 1;
-
-    memcpy(&sessionData.hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
+    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear(sapi_context, TPM2_RH_LOCKOUT, &sessionsData, 0));
     if (rval != TPM2_RC_SUCCESS) {
@@ -94,21 +89,16 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_RH_HIERARCHY_AUTH auth_handle) {
 
     TPM2B_AUTH newAuth;
-    TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM2_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = 0,
-    };
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-
-    sessionDataArray[0] = &sessionData;
-    sessionsData.cmdAuths = &sessionDataArray[0];
-    sessionsData.cmdAuthsCount = 1;
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { .count = 1,
+        .auths = {{
+            .sessionHandle = TPM2_RS_PW,
+            .nonce = TPM2B_EMPTY_INIT,
+            .hmac = TPM2B_EMPTY_INIT,
+           .sessionAttributes = 0,
+    }}};
 
     memcpy(&newAuth, &pwd->new, sizeof(pwd->new));
-    memcpy(&sessionData.hmac, &pwd->old, sizeof(pwd->old));
+    memcpy(&sessionsData.auths[0].hmac, &pwd->old, sizeof(pwd->old));
 
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_HierarchyChangeAuth(sapi_context,
             auth_handle, &sessionsData, &newAuth, 0));

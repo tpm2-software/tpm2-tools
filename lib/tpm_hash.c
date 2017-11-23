@@ -67,9 +67,7 @@ TSS2_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg
         return rval;
     }
 
-    TPMS_AUTH_COMMAND cmd_auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
-    TPMS_AUTH_COMMAND *cmd_session_array[1] = { &cmd_auth };
-    TSS2_SYS_CMD_AUTHS cmd_auth_array = { 1, &cmd_session_array[0] };
+    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = { 1, {{.sessionHandle=TPM2_RS_PW}}};
     unsigned i;
     for (i = 0; i < num_buffers; i++) {
         rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
@@ -93,12 +91,9 @@ TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
     TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
     TPMI_DH_OBJECT sequenceHandle;
 
-    TPMS_AUTH_COMMAND cmdAuth = { .sessionHandle = TPM2_RS_PW, .nonce =
-            TPM2B_EMPTY_INIT, .hmac = TPM2B_EMPTY_INIT, .sessionAttributes =
-            0, };
-    TPMS_AUTH_COMMAND *cmdSessionArray[1] = { &cmdAuth };
-    TSS2_SYS_CMD_AUTHS cmdAuthArray = { 1, &cmdSessionArray[0] };
-
+    TSS2L_SYS_AUTH_COMMAND cmdAuthArray = { 1, {{.sessionHandle = TPM2_RS_PW, 
+            .nonce = TPM2B_EMPTY_INIT, .hmac = TPM2B_EMPTY_INIT,
+            .sessionAttributes = 0, }}};
     unsigned long file_size = 0;
 
     /* Suppress error reporting with NULL path */

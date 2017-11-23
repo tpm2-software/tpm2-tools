@@ -386,16 +386,7 @@ nomem:
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle,
         TPMI_ALG_PUBLIC *type) {
 
-    TPMS_AUTH_RESPONSE session_data_out;
-
-    TPMS_AUTH_RESPONSE *session_data_out_array[1] = {
-            &session_data_out
-    };
-
-    TSS2_SYS_RSP_AUTHS sessions_data_out = {
-            1,
-            &session_data_out_array[0]
-    };
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
 

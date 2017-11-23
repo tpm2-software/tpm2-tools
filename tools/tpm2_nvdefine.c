@@ -68,23 +68,8 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-
-    TPMS_AUTH_COMMAND *session_data_array[1] = {
-        &ctx.session_data
-    };
-
-    TPMS_AUTH_RESPONSE *session_data_out_array[1] = {
-        &session_data_out
-    };
-
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
 
     public_info.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);

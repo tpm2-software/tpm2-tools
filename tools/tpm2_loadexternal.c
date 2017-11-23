@@ -92,13 +92,9 @@ static bool get_hierarchy_value(const char *argument_opt,
 
 static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0,
             ctx.private_key.size ? &ctx.private_key : NULL, &ctx.public_key,
