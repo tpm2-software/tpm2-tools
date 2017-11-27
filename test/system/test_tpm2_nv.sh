@@ -108,7 +108,7 @@ dd if=foo.dat of=nv.test_w bs=1 seek=4 conv=notrunc 2>/dev/null
 # Test a pipe input
 cat foo.dat | tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle -o 4
 
-tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 13 | xxd -r > cmp.dat
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 13 > cmp.dat
 
 cmp nv.test_w cmp.dat
 
@@ -124,7 +124,7 @@ if [ $? -eq 0 ]; then
 fi
 trap onerror ERR
 
-tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 13 | xxd -r > cmp.dat
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle -s 13 > cmp.dat
 
 cmp nv.test_w cmp.dat
 
@@ -139,7 +139,7 @@ tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -L $file_policy -t "policyread
 # Write with index authorization for now, since tpm2_nvwrite does not support pcr policy.
 echo -n "policy locked" | tpm2_nvwrite -Q -x 0x1500016 -a 0x1500016 -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value
 
-str=`tpm2_nvread -x 0x1500016 -a 0x1500016 -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -s 13 | xxd -r`
+str=`tpm2_nvread -x 0x1500016 -a 0x1500016 -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -s 13`
 
 test "policy locked" == "$str"
 
@@ -164,7 +164,7 @@ base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
 # Test file input redirection
 tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle <<< $large_file_name
 
-tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle | xxd -r > $large_file_read_name
+tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle > $large_file_read_name
 
 cmp -s $large_file_read_name $large_file_name
 
