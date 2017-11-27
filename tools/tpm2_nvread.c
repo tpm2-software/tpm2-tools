@@ -114,6 +114,12 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return false;
     }
 
+    UINT32 max_data_size;
+    rval = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    if (rval != TPM2_RC_SUCCESS) {
+        return false;
+    }
+
     UINT8 *data_buffer = malloc(data_size);
     if (!data_buffer) {
         LOG_ERR("oom");
@@ -124,8 +130,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UINT16 data_offset = 0;
     while (ctx.size_to_read) {
 
-        UINT16 bytes_to_read = ctx.size_to_read > TPM2_MAX_NV_BUFFER_SIZE ?
-                        TPM2_MAX_NV_BUFFER_SIZE : ctx.size_to_read;
+        UINT16 bytes_to_read = ctx.size_to_read > max_data_size ?
+                max_data_size : ctx.size_to_read;
 
         TPM2B_MAX_NV_BUFFER nv_data = TPM2B_TYPE_INIT(TPM2B_MAX_NV_BUFFER, buffer);
 
@@ -144,13 +150,14 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         data_offset += nv_data.size;
     }
 
-    if (!flags.quiet) {
-        tpm2_util_hexdump(data_buffer, data_offset, false);
-    }
-
     /* dump data_buffer to output file, if specified */
     if (ctx.output_file) {
         if (!files_save_bytes_to_file(ctx.output_file, data_buffer, data_offset)) {
+            goto out;
+        }
+    /* else use stdout if quiet is not specified */
+    } else if (!flags.quiet) {
+        if (!files_write_bytes(stdout, data_buffer, data_offset)) {
             goto out;
         }
     }
@@ -274,7 +281,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             return 1;
         }
         ctx.session_data.sessionHandle = ctx.policy_session->sessionHandle;
-        ctx.session_data.sessionAttributes.continueSession = 1;
+        ctx.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
 

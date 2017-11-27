@@ -109,6 +109,105 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE 
 bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE *handle, const char *path);
 
 /**
+ * Serializes a TPM2B_PUBLIC to the file path provided.
+ * @param public
+ *  The TPM2B_PUBLIC to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_public(TPM2B_PUBLIC *public, const char *path);
+
+/**
+ * Loads a TPM2B_PUBLIC from disk that was saved with files_save_pubkey()
+ * @param path
+ *  The path to load from.
+ * @param public
+ *  The TPM2B_PUBLIC to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_public(const char *path, TPM2B_PUBLIC *public);
+
+/**
+ * Serializes a TPMT_SIGNATURE to the file path provided.
+ * @param signature
+ *  The TPMT_SIGNATURE to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_signature(TPMT_SIGNATURE *signature, const char *path);
+
+/**
+ * Loads a TPMT_SIGNATURE from disk that was saved with files_save_signature()
+ * @param path
+ *  The path to load from.
+ * @param signature
+ *  The TPMT_SIGNATURE to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_signature(const char *path, TPMT_SIGNATURE *signature);
+
+/**
+ * Serializes a TPMT_TK_VERIFIED to the file path provided.
+ * @param signature
+ *  The TPMT_SIGNATURE to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_ticket(TPMT_TK_VERIFIED *ticket, const char *path);
+
+/**
+ * Loads a TPMT_TK_VERIFIED from disk that was saved with files_save_ticket()
+ * @param path
+ *  The path to load from.
+ * @param signature
+ *  The TPMT_TK_VERIFIED to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_ticket(const char *path, TPMT_TK_VERIFIED *ticket);
+
+/**
+ * Loads a TPM2B_SENSITIVE from disk.
+ * @param path
+ *  The path to load from.
+ * @param signature
+ *  The TPM2B_SENSITIVE to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_sensitive(const char *path, TPM2B_SENSITIVE *sensitive);
+
+/**
+ * Serializes a TPMT_TK_HASHCHECK to the file path provided.
+ * @param validation
+ *  The TPMT_TK_HASHCHECK to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_validation(TPMT_TK_HASHCHECK *validation, const char *path);
+
+/**
+ * Loads a TPMT_TK_HASHCHECK from disk.
+ * @param path
+ *  The path to load from.
+ * @param validation
+ *  The TPMT_TK_HASHCHECK to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_validation(const char *path, TPMT_TK_HASHCHECK *validation);
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.

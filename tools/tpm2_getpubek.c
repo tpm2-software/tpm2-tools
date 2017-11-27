@@ -36,6 +36,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "conversion.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
@@ -79,15 +80,15 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
     inPublic->publicArea.nameAlg = TPM2_ALG_SHA256;
 
     // First clear attributes bit field.
-    *(UINT32 *) &(inPublic->publicArea.objectAttributes) = 0;
-    inPublic->publicArea.objectAttributes.restricted = 1;
-    inPublic->publicArea.objectAttributes.userWithAuth = 0;
-    inPublic->publicArea.objectAttributes.adminWithPolicy = 1;
-    inPublic->publicArea.objectAttributes.sign = 0;
-    inPublic->publicArea.objectAttributes.decrypt = 1;
-    inPublic->publicArea.objectAttributes.fixedTPM = 1;
-    inPublic->publicArea.objectAttributes.fixedParent = 1;
-    inPublic->publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    inPublic->publicArea.objectAttributes = 0;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_RESTRICTED;
+    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_ADMINWITHPOLICY;
+    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDTPM;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDPARENT;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_SENSITIVEDATAORIGIN;
     inPublic->publicArea.authPolicy.size = 32;
     memcpy(inPublic->publicArea.authPolicy.buffer, auth_policy, 32);
 
@@ -148,7 +149,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = 0,
     };
 
     if (ctx.is_session_based_auth) {
@@ -236,15 +237,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("Flush transient EK success.");
 
-    /* TODO fix this serialization */
-    if (!files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) &outPublic,
-            sizeof(outPublic))) {
-        LOG_ERR("Failed to save EK pub key into file \"%s\"",
-                ctx.out_file_path);
-        return false;
-    }
-
-    return true;
+    return tpm2_convert_pubkey(&outPublic, pubkey_format_tss, ctx.out_file_path);
 }
 
 static bool on_option(char key, char *value) {

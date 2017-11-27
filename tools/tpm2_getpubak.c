@@ -38,6 +38,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "conversion.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
@@ -153,14 +154,14 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
 {
     in_public->publicArea.nameAlg = TPM2_ALG_SHA256;
     // First clear attributes bit field.
-    *(UINT32 *)&(in_public->publicArea.objectAttributes) = 0;
-    in_public->publicArea.objectAttributes.restricted = 1;
-    in_public->publicArea.objectAttributes.userWithAuth = 1;
-    in_public->publicArea.objectAttributes.sign = 1;
-    in_public->publicArea.objectAttributes.decrypt = 0;
-    in_public->publicArea.objectAttributes.fixedTPM = 1;
-    in_public->publicArea.objectAttributes.fixedParent = 1;
-    in_public->publicArea.objectAttributes.sensitiveDataOrigin = 1;
+    in_public->publicArea.objectAttributes = 0;
+    in_public->publicArea.objectAttributes |= TPMA_OBJECT_RESTRICTED;
+    in_public->publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
+    in_public->publicArea.objectAttributes |= TPMA_OBJECT_SIGN;
+    in_public->publicArea.objectAttributes &= ~TPMA_OBJECT_DECRYPT;
+    in_public->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDTPM;
+    in_public->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDPARENT;
+    in_public->publicArea.objectAttributes |= TPMA_OBJECT_SENSITIVEDATAORIGIN;
     in_public->publicArea.authPolicy.size = 0;
 
     in_public->publicArea.type = ctx.algorithm_type;
@@ -203,7 +204,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+        .sessionAttributes = 0,
     };
     TPMS_AUTH_RESPONSE session_data_out;
     TSS2_SYS_CMD_AUTHS sessions_data;
@@ -276,7 +277,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
     session_data.sessionHandle = session->sessionHandle;
-    session_data.sessionAttributes.continueSession = 1;
+    session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     session_data.hmac.size = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, handle_2048_rsa, &sessions_data,
@@ -299,7 +300,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     tpm_session_auth_end(session);
 
     session_data.sessionHandle = TPM2_RS_PW;
-    session_data.sessionAttributes.continueSession = 0;
+    session_data.sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
     session_data.hmac.size = 0;
 
     memcpy(&session_data.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
@@ -322,7 +323,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
     session_data.sessionHandle = session->sessionHandle;
-    session_data.sessionAttributes.continueSession = 1;
+    session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     session_data.hmac.size = 0;
 
     TPM2_HANDLE loaded_sha1_key_handle;
@@ -359,7 +360,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     tpm_session_auth_end(session);
 
     session_data.sessionHandle = TPM2_RS_PW;
-    session_data.sessionAttributes.continueSession = 0;
+    session_data.sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
     session_data.hmac.size = 0;
 
     // use the owner auth here.
@@ -381,14 +382,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
     LOG_INFO("Flush transient AK succ.");
 
-    /* TODO fix this serialization */
-    result = files_save_bytes_to_file(ctx.output_file, (UINT8 *) &out_public, sizeof(out_public));
-    if (!result) {
-        LOG_ERR("Failed to save AK pub key into file \"%s\"", ctx.output_file);
-        return false;
-    }
-
-    return true;
+    return tpm2_convert_pubkey(&out_public, pubkey_format_tss, ctx.output_file);
 }
 
 static bool on_option(char key, char *value) {

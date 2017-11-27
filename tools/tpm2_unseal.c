@@ -130,7 +130,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         }
 
         ctx.sessionData.sessionHandle = ctx.policy_session->sessionHandle;
-        ctx.sessionData.sessionAttributes.continueSession = 1;
+        ctx.sessionData.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
     return true;

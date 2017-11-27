@@ -112,20 +112,21 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
+    UINT32 max_data_size;
+    rval = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    if (rval != TPM2_RC_SUCCESS) {
+        return false;
+    }
+
     while (ctx.data_size > 0) {
 
         nv_write_data.size =
-                ctx.data_size > TPM2_MAX_NV_BUFFER_SIZE ?
-                TPM2_MAX_NV_BUFFER_SIZE : ctx.data_size;
+                ctx.data_size > max_data_size ?
+                        max_data_size : ctx.data_size;
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.size);
 
-        UINT16 i;
-        for (i = 0; i < nv_write_data.size; i++) {
-            nv_write_data.buffer[i] = ctx.nv_buffer[data_offset + i];
-            tpm2_tool_output("%02x ", ctx.nv_buffer[data_offset + i]);
-        }
-        tpm2_tool_output("\n\n");
+        memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset], nv_write_data.size);
 
         TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
                 ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
@@ -268,7 +269,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             return 1;
         }
         ctx.session_data.sessionHandle = ctx.policy_session->sessionHandle;
-        ctx.session_data.sessionAttributes.continueSession = 1;
+        ctx.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
     /* Suppress error reporting with NULL path */

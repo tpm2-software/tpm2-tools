@@ -54,12 +54,11 @@
                 .userAuth.size = 0, \
             }, \
     }
-#define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }
 
 #define TPMS_AUTH_COMMAND_INIT(session_handle) { \
         .sessionHandle = session_handle,\
 	    .nonce = TPM2B_EMPTY_INIT, \
-	    .sessionAttributes = { .val = 0 }, \
+	    .sessionAttributes = 0, \
 	    .hmac = TPM2B_EMPTY_INIT \
     }
 
@@ -167,9 +166,6 @@ static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
     return tpm2_util_hexdump(buffer->buffer, buffer->size, true);
 }
 
-
-void tpm2_util_print_tpm2b(TPM2B *buffer);
-
 /**
  * Copies a tpm2b from dest to src and clears dest if src is NULL.
  * If src is NULL, it is a NOP.
@@ -254,5 +250,12 @@ UINT64 tpm2_util_ntoh_64(UINT64 data);
  *  The number of set bits or population count.
  */
 UINT32 tpm2_util_pop_count(UINT32 data);
+
+/**
+ * Convert a TPM2B_PUBLIC into a yaml format and output if not quiet.
+ * @param public
+ *  The TPM2B_PUBLIC to output in YAML format.
+ */
+void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public);
 
 #endif /* STRING_BYTES_H */

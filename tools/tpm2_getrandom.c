@@ -72,7 +72,7 @@ static bool get_random_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return true;
     }
 
-    return files_save_bytes_to_file(ctx.output_file, (UINT8 *) random_bytes.buffer,
+    return files_save_bytes_to_file(ctx.output_file, random_bytes.buffer,
             random_bytes.size);
 }
 

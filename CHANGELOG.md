@@ -1,6 +1,8 @@
 ## Changelog
 
 ### next
+  * tpm2_getmanufec: -O as a flag for -f has changed. -O is for existing EK public structure
+      and -f is only for generated EK public output.
   * tpm2_nvlist: output in yaml format.
   * tpm2_makecredential format changes to the -o output file.
   * tpm2-quote: -o option removed.
@@ -42,7 +44,6 @@
   * tpm2_nvlist: Support for friendly nv attributes in output.
   * Support for friendly algorithm names for algorithm identifiers.
   * tpm2_nvread: The option, -s, or size option is no longer required.
-  * tpm2_nvread: ouutput is now in xxd -r compatible format.
   * tpm2_nvwrite: fixed to write files larger than 1024 in size.
   * tpm2_nvread: fixed to read files larger than 1024 in size.
   * tpm2_nvdefine supports "nice-names" for nv space attributes.

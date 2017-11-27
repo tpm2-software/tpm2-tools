@@ -33,6 +33,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <sapi/tpm20.h>
+#include <sapi/tss2_mu.h>
+
 #include "files.h"
 #include "log.h"
 #include "tpm2_util.h"
@@ -568,3 +571,52 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
 
     return res;
 }
+
+#define SAVE_TYPE(type, name) \
+    bool files_save_##name(type *name, const char *path) { \
+    \
+        size_t offset = 0; \
+        UINT8 buffer[sizeof(*name)]; \
+        TSS2_RC rc = Tss2_MU_##type##_Marshal(name, buffer, sizeof(buffer), &offset); \
+        if (rc != TSS2_RC_SUCCESS) { \
+            LOG_ERR("Error serializing "str(name)" structure: 0x%x", rc); \
+            return false; \
+        } \
+    \
+        return files_save_bytes_to_file(path, buffer, offset); \
+    }
+
+#define LOAD_TYPE(type, name) \
+    bool files_load_##name(const char *path, type *name) { \
+    \
+        UINT8 buffer[sizeof(*name)]; \
+        UINT16 size = sizeof(buffer); \
+        bool res = files_load_bytes_from_path(path, buffer, &size); \
+        if (!res) { \
+            return false; \
+        } \
+        \
+        size_t offset = 0; \
+        TSS2_RC rc = Tss2_MU_##type##_Unmarshal(buffer, size, &offset, name); \
+        if (rc != TSS2_RC_SUCCESS) { \
+            LOG_ERR("Error serializing "str(name)" structure: 0x%x", rc); \
+            return false; \
+        } \
+        \
+        return rc == TPM2_RC_SUCCESS; \
+    }
+
+SAVE_TYPE(TPM2B_PUBLIC, public)
+LOAD_TYPE(TPM2B_PUBLIC, public)
+
+SAVE_TYPE(TPMT_SIGNATURE, signature)
+LOAD_TYPE(TPMT_SIGNATURE, signature)
+
+SAVE_TYPE(TPMT_TK_VERIFIED, ticket)
+LOAD_TYPE(TPMT_TK_VERIFIED, ticket)
+
+SAVE_TYPE(TPM2B_SENSITIVE, sensitive)
+LOAD_TYPE(TPM2B_SENSITIVE, sensitive)
+
+SAVE_TYPE(TPMT_TK_HASHCHECK, validation)
+LOAD_TYPE(TPMT_TK_HASHCHECK, validation)

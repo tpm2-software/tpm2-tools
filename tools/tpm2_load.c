@@ -72,7 +72,7 @@ static tpm_load_ctx ctx = {
         .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
+        .sessionAttributes = 0
     }
 };
 
@@ -111,8 +111,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
     tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
     if (ctx.out_file) {
-        /* TODO fix serialization */
-        if(!files_save_bytes_to_file(ctx.out_file, (UINT8 *)&nameExt, sizeof(nameExt))) {
+        if(!files_save_bytes_to_file(ctx.out_file, nameExt.name, nameExt.size)) {
             return -2;
         }
     }
@@ -123,7 +122,6 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     bool res;
-    UINT16 size;
 
     switch(key) {
     case 'H':
@@ -140,15 +138,14 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'u':
-        size = sizeof(ctx.in_public);
-        if(!files_load_bytes_from_path(optarg, (UINT8 *)&ctx.in_public, &size)) {
+        if(!files_load_public(optarg, &ctx.in_public)) {
             return false;;
         }
         ctx.flags.u = 1;
         break;
     case 'r':
-        size = sizeof(ctx.in_private);
-        if(!files_load_bytes_from_path(value, (UINT8 *)&ctx.in_private, &size)) {
+        ctx.in_private.size = sizeof(ctx.in_private.buffer);
+        if(!files_load_bytes_from_path(value, ctx.in_private.buffer, &ctx.in_private.size)) {
             return false;
         }
         ctx.flags.r = 1;

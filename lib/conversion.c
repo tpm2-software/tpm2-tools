@@ -88,8 +88,7 @@ bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char 
         return tpm2_convert_pubkey_ssl(&public->publicArea, format, path);
     }
     else if (format == pubkey_format_tss) {
-        // save raw as is
-        return files_save_bytes_to_file(path, (UINT8 *)public, sizeof(*public));
+        return files_save_public(public, path);
     }
 
     LOG_ERR("Unsupported public key output format.");
@@ -196,9 +195,7 @@ bool tpm2_convert_signature(TPMT_SIGNATURE *signature, signature_format format, 
 
     switch(format) {
     case signature_format_tss:
-        /* TODO fix serialization */
-        return files_save_bytes_to_file(path, (UINT8 *)signature,
-            sizeof(*signature));
+        return files_save_signature(signature, path);
     case signature_format_plain: {
         UINT8 *buffer;
         UINT16 size;

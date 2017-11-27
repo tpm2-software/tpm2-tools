@@ -83,9 +83,7 @@ TSS2_RC __wrap_Tss2_Sys_GetCapability(TSS2_SYS_CONTEXT *sysContext,
 
 #define TPM2B_PUBLIC_INIT(value) { \
     .publicArea = { \
-        .objectAttributes = { \
-            .val = value \
-         } \
+        .objectAttributes = value \
     } \
 }
 
@@ -98,8 +96,8 @@ static void test_tpm2_errata_no_init_and_apply(void **state) {
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
                       &in_public.publicArea.objectAttributes);
 
-    assert_int_equal(in_public.publicArea.objectAttributes.sign, 1);
-
+    assert_int_equal(in_public.publicArea.objectAttributes & TPMA_OBJECT_SIGN,
+                    TPMA_OBJECT_SIGN);
 }
 
 static void test_tpm2_errata_bad_init_and_apply(void **state) {
@@ -114,8 +112,8 @@ static void test_tpm2_errata_bad_init_and_apply(void **state) {
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
                       &in_public.publicArea.objectAttributes);
 
-    assert_int_equal(in_public.publicArea.objectAttributes.sign, 1);
-
+    assert_int_equal(in_public.publicArea.objectAttributes & TPMA_OBJECT_SIGN,
+                    TPMA_OBJECT_SIGN);
 }
 
 static void test_tpm2_errata_init_good_and_apply(void **state) {
@@ -129,7 +127,8 @@ static void test_tpm2_errata_init_good_and_apply(void **state) {
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
                       &in_public.publicArea.objectAttributes);
 
-    assert_int_equal(in_public.publicArea.objectAttributes.sign, 0);
+    assert_int_equal(in_public.publicArea.objectAttributes & TPMA_OBJECT_SIGN,
+                     0);
 }
 
 static void test_tpm2_errata_init_good_and_no_match(void **state) {
@@ -144,7 +143,8 @@ static void test_tpm2_errata_init_good_and_no_match(void **state) {
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
                       &in_public.publicArea.objectAttributes);
 
-    assert_int_equal(in_public.publicArea.objectAttributes.sign, 1);
+    assert_int_equal(in_public.publicArea.objectAttributes & TPMA_OBJECT_SIGN,
+                    TPMA_OBJECT_SIGN);
 }
 
 static void test_tpm2_errata_init_no_match_and_apply(void **state) {
@@ -160,7 +160,8 @@ static void test_tpm2_errata_init_no_match_and_apply(void **state) {
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
                       &in_public.publicArea.objectAttributes);
 
-    assert_int_equal(in_public.publicArea.objectAttributes.sign, 1);
+    assert_int_equal(in_public.publicArea.objectAttributes & TPMA_OBJECT_SIGN,
+                    TPMA_OBJECT_SIGN);
 }
 
 int main(int argc, char *argv[]) {

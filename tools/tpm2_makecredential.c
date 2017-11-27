@@ -38,6 +38,7 @@
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
 #include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
@@ -156,16 +157,14 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
 
 static bool on_option(char key, char *value) {
 
-    UINT16 size;
-
     switch (key) {
-    case 'e':
-        size = sizeof(ctx.public);
-        if (!files_load_bytes_from_path(value, (UINT8 *) &ctx.public, &size)) {
+    case 'e': {
+        bool res = files_load_public(value, &ctx.public);
+        if (!res) {
             return false;
         }
         ctx.flags.e = 1;
-        break;
+    } break;
     case 's':
         ctx.credential.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
         if (!files_load_bytes_from_path(value, ctx.credential.buffer,

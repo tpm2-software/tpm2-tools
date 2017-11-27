@@ -100,9 +100,7 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    /* TODO fix serialization */
-    return files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) &validation,
-            sizeof(validation));
+    return files_save_ticket(&validation, ctx.out_file_path);
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
@@ -133,32 +131,6 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     return msg;
 }
 
-static bool generate_signature(void) {
-
-    UINT16 size;
-    UINT8 *buffer;
-
-    if (ctx.flags.raw) {
-        ctx.signature.sigAlg = TPM2_ALG_RSASSA;
-        ctx.signature.signature.rsassa.hash = ctx.halg;
-        ctx.signature.signature.rsassa.sig.size =
-                sizeof(ctx.signature.signature.rsassa.sig) - 2;
-
-        buffer = ctx.signature.signature.rsassa.sig.buffer;
-        size = ctx.signature.signature.rsassa.sig.size;
-    } else {
-        size = sizeof(ctx.signature);
-        buffer = (UINT8 *) &ctx.signature;
-    }
-
-    bool result = files_load_bytes_from_path(ctx.sig_file_path, buffer, &size);
-    if (!result) {
-        LOG_ERR("Could not create %s signature from file: \"%s\"",
-                ctx.flags.raw ? "raw" : "\0", ctx.sig_file_path);
-    }
-    return result;
-}
-
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* check flags for mismatches */
@@ -187,7 +159,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.sig) {
-        bool res = generate_signature();
+        bool res =  files_load_signature(ctx.sig_file_path, &ctx.signature);
         if (!res) {
             goto err;
         }
@@ -253,8 +225,8 @@ static bool on_option(char key, char *value) {
 	}
 		break;
 	case 'D': {
-		UINT16 size = sizeof(ctx.msgHash);
-		if (!files_load_bytes_from_path(value, (UINT8 *) &ctx.msgHash, &size)) {
+	    ctx.msgHash.size = sizeof(ctx.msgHash.buffer);
+		if (!files_load_bytes_from_path(value, ctx.msgHash.buffer, &ctx.msgHash.size)) {
 			LOG_ERR("Could not load digest from file!");
 			return false;
 		}
