@@ -150,13 +150,14 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         data_offset += nv_data.t.size;
     }
 
-    if (!flags.quiet) {
-        tpm2_util_hexdump(data_buffer, data_offset, false);
-    }
-
     /* dump data_buffer to output file, if specified */
     if (ctx.output_file) {
         if (!files_save_bytes_to_file(ctx.output_file, data_buffer, data_offset)) {
+            goto out;
+        }
+    /* else use stdout if quiet is not specified */
+    } else if (!flags.quiet) {
+        if (!files_write_bytes(stdout, data_buffer, data_offset)) {
             goto out;
         }
     }

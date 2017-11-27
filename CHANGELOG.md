@@ -41,7 +41,6 @@
   * tpm2_nvlist: Support for friendly nv attributes in output.
   * Support for friendly algorithm names for algorithm identifiers.
   * tpm2_nvread: The option, -s, or size option is no longer required.
-  * tpm2_nvread: ouutput is now in xxd -r compatible format.
   * tpm2_nvwrite: fixed to write files larger than 1024 in size.
   * tpm2_nvread: fixed to read files larger than 1024 in size.
   * tpm2_nvdefine supports "nice-names" for nv space attributes.
