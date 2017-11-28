@@ -625,11 +625,6 @@ struct tpm2_rc_entry tpm2_tss_layer_entry [] = {
         .name        = "TSS2_TPM_ERROR_LEVEL",
         .description = "Error produced by the TPM",
     },
-    { /* 10 << 16 = 0xA0000 */
-        .id          = TSS2_TCTI_ERROR_LEVEL,
-        .name        = "TSS2_TCTI_ERROR_LEVEL",
-        .description = "Error from the TCTI"
-    },
     { /* 8 << 16 = 0x80000 */
         .id          = TSS2_SYS_ERROR_LEVEL,
         .name        = "TSS2_SYS_ERROR_LEVEL",
@@ -639,6 +634,21 @@ struct tpm2_rc_entry tpm2_tss_layer_entry [] = {
         .id          = TSS2_SYS_PART2_ERROR_LEVEL,
         .name        = "TSS2_SYS_PART2_RC_LEVEL",
         .description = "Error from the SAPI duplicating TPM error check"
+    },
+    { /* 10 << 16 = 0xA0000 */
+        .id          = TSS2_TCTI_ERROR_LEVEL,
+        .name        = "TSS2_TCTI_ERROR_LEVEL",
+        .description = "Error from the TCTI"
+    },
+    { /* 11 << 16 = 0xB0000 */
+        .id          = TSS2_RESMGRTPM_ERROR_LEVEL,
+        .name        = "TSS2_RESMGRTPM_ERROR_LEVEL",
+        .description = "Error from the Resource Manager duplicating TPM error check"
+    },
+    { /* 12 << 16 = 0xC0000 */
+        .id          = TSS2_RESMGR_ERROR_LEVEL,
+        .name        = "TSS2_RESMGR_ERROR_LEVEL",
+        .description = "Error from the Resource Manager"
     }
 };
 /* Array of TSS2 error codes from TSS System API section 6.1.2.
