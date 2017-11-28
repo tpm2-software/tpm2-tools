@@ -46,6 +46,10 @@ These options control creating the policy authorization session:
     Start a policy session of type **TPM_SE_POLICY**. Default without this option
     is **TPM_SE_TRIAL**.
 
+  * **-S**, **--save-session-context**:_CONTEXT\_FILE_:
+    An optional file used to store the session context created by either -e
+    or -a.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
