@@ -127,7 +127,7 @@ static bool on_args(int argc, char **argv) {
         return false;
     }
 
-    ctx.input_path = argv[1];
+    ctx.input_path = argv[0];
 
     return true;
 }
