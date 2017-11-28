@@ -214,9 +214,11 @@ bool print_tpm_rc(TPM_RC rc) {
     switch (rc_tmp) {
     case TSS2_SYS_ERROR_LEVEL:
     case TSS2_TCTI_ERROR_LEVEL:
+    case TSS2_RESMGR_ERROR_LEVEL:
         ret = print_tpm_rc_tss_error_code(rc);
         break;
     case TSS2_SYS_PART2_ERROR_LEVEL:
+    case TSS2_RESMGRTPM_ERROR_LEVEL:
     case TSS2_TPM_ERROR_LEVEL:
         ret = print_tpm_rc_tpm_error_code(rc);
         break;
