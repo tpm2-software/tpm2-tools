@@ -104,7 +104,7 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
     TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
             &sessions_data, &ctx.data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &out_data,
             &iv_out, &sessions_data_out));
-    if (rval == TPM_RC_COMMAND_CODE) {
+    if (TPM2_RC_GET(rval) == TPM_RC_COMMAND_CODE) {
         rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
                 &sessions_data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &ctx.data,
                 &out_data, &iv_out, &sessions_data_out));
