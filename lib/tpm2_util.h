@@ -36,6 +36,9 @@
 
 #include <sapi/tpm20.h>
 
+#define TPM2_RC_MASK 0xfff
+#define TPM2_RC_GET(code) (code & TPM2_RC_MASK)
+
 #define xstr(s) str(s)
 #define str(s) #s
 
@@ -105,7 +108,7 @@
         TSS2_RC __result = 0;                              \
         do {                                               \
             __result = (expression);                       \
-        } while ((__result & 0x0000ffff) == TPM_RC_RETRY); \
+        } while (TPM2_RC_GET(__result) == TPM_RC_RETRY); \
         __result;                                          \
     })
 
