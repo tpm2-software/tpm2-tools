@@ -66,9 +66,9 @@ tpm2_create -Q -g sha256 -G symcipher -u key.pub -r key.priv -c primary.ctx
 
 tpm2_load -Q -c primary.ctx -u key.pub -r key.priv -n key.name -C decrypt.ctx
 
-tpm2_encryptdecrypt -Q -c decrypt.ctx -D NO -I secret.dat -o encrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx  -I secret.dat -o encrypt.out
 
-tpm2_encryptdecrypt -Q -c  decrypt.ctx -D YES -I encrypt.out -o decrypt.out
+tpm2_encryptdecrypt -Q -c  decrypt.ctx -D -I encrypt.out -o decrypt.out
 
 exit 0
 
