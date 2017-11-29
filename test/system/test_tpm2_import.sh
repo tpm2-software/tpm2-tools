@@ -61,7 +61,7 @@ tpm2_load -Q -H 0x81010005 -u import_key.pub -r import_key.priv -n import_key.na
 
 echo "plaintext" > "plain.txt"
 
-tpm2_encryptdecrypt -c import_key.ctx -D NO -I plain.txt -o plain.enc
+tpm2_encryptdecrypt -c import_key.ctx  -I plain.txt -o plain.enc
 
 openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
 -aes-128-cfb
