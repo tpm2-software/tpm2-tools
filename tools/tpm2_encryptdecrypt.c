@@ -139,14 +139,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         break;
     case 'D':
-        if (!strcasecmp("YES", value)) {
-            ctx.is_decrypt = YES;
-        } else if (!strcasecmp("NO", value)) {
-            ctx.is_decrypt = NO;
-        } else {
-            LOG_ERR("Invalid operation type, got\"%s\"", value);
-            return false;
-        }
+        ctx.is_decrypt = YES;
         break;
     case 'I':
         ctx.data.size = sizeof(ctx.data) - 2;
@@ -190,7 +183,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         {"key-handle",   required_argument, NULL, 'k'},
         {"pwdk",        required_argument, NULL, 'P'},
-        {"decrypt",     required_argument, NULL, 'D'},
+        {"decrypt",      no_argument,       NULL, 'D'},
         {"in-file",      required_argument, NULL, 'I'},
         {"out-file",     required_argument, NULL, 'o'},
         {"key-context",  required_argument, NULL, 'c'},
@@ -200,7 +193,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     ctx.session_data.sessionHandle = TPM2_RS_PW;
 
-    *opts = tpm2_options_new("k:P:D:I:o:c:S:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("k:P:DI:o:c:S:", ARRAY_LEN(topts), topts, on_option, NULL);
 
     return *opts != NULL;
 }
