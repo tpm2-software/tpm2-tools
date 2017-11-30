@@ -95,19 +95,37 @@ static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
     return true;
 }
 
+static bool auth_value_from_string(const char *value, TPMI_RH_PROVISION *auth) {
+
+    switch (value[0]) {
+    case 'o':
+        *auth = TPM2_RH_OWNER;
+        break;
+    case 'p':
+        *auth = TPM2_RH_PLATFORM;
+        break;
+    default:
+        return false;
+    }
+
+    bool result = value[1] == '\0';
+
+    if (!result) {
+        LOG_ERR("Incorrect auth value, got: \"%s\", expected o|p",
+            value);
+    }
+
+    return result;
+}
+
 static bool on_option(char key, char *value) {
 
     bool result;
 
     switch (key) {
     case 'A':
-        if (!strcasecmp(value, "o")) {
-            ctx.auth = TPM2_RH_OWNER;
-        } else if (!strcasecmp(value, "p")) {
-            ctx.auth = TPM2_RH_PLATFORM;
-        } else {
-            LOG_ERR("Incorrect auth value, got: \"%s\", expected [o|O|p|P!",
-                    value);
+        result = auth_value_from_string(value, &ctx.auth);
+        if (!result) {
             return false;
         }
         ctx.flags.A = 1;
