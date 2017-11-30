@@ -200,22 +200,43 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
     return 0;
 }
 
+static bool hierarchy_value_from_string(const char *value, TPMI_RH_HIERARCHY *hierarchy) {
+
+    switch (value[0]) {
+    case 'e':
+        *hierarchy = TPM2_RH_ENDORSEMENT;
+        break;
+    case 'n':
+        *hierarchy = TPM2_RH_NULL;
+        break;
+    case 'o':
+        *hierarchy = TPM2_RH_OWNER;
+        break;
+    case 'p':
+        *hierarchy = TPM2_RH_PLATFORM;
+        break;
+    default:
+        return false;
+    }
+
+    bool result = value[1] == '\0';
+
+    if (!result) {
+        LOG_ERR("Incorrect hierarchy value, got: \"%s\", expected o|p|e|n",
+            value);
+    }
+
+    return result;
+}
+
 static bool on_option(char key, char *value) {
 
     bool res;
 
     switch(key) {
     case 'H':
-        if(strcmp(value, "o") == 0 || strcmp(value, "O") == 0)
-            ctx.hierarchy = TPM_RH_OWNER;
-        else if(strcmp(value, "p") == 0 || strcmp(value, "P") == 0)
-            ctx.hierarchy = TPM_RH_PLATFORM;
-        else if(strcmp(value, "e") == 0 || strcmp(value, "E") == 0)
-            ctx.hierarchy = TPM_RH_ENDORSEMENT;
-        else if(strcmp(value, "n") == 0 || strcmp(value, "N") == 0)
-            ctx.hierarchy = TPM_RH_NULL;
-        else {
-            LOG_ERR("Invalid hierarchy, got\"%s\"", value);
+        res = hierarchy_value_from_string(value, &ctx.hierarchy);
+        if (!res) {
             return false;
         }
         ctx.flags.A = 1;
