@@ -144,7 +144,7 @@ static bool on_option(char key, char *value) {
         ctx.is_decrypt = YES;
         break;
     case 'I':
-        ctx.data.t.size = sizeof(ctx.data) - 2;
+        ctx.data.t.size = BUFFER_SIZE(TPM2B_MAX_BUFFER, buffer);
         result = files_load_bytes_from_path(value, ctx.data.t.buffer, &ctx.data.t.size);
         if (!result) {
             return false;
