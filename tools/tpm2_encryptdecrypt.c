@@ -142,7 +142,7 @@ static bool on_option(char key, char *value) {
         ctx.is_decrypt = YES;
         break;
     case 'I':
-        ctx.data.size = sizeof(ctx.data) - 2;
+        ctx.data.size = sizeof(ctx.data.buffer);
         result = files_load_bytes_from_path(value, ctx.data.buffer, &ctx.data.size);
         if (!result) {
             return false;
