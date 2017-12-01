@@ -309,8 +309,8 @@ MARKDOWN_COMMON_DEPS = \
 	man/common/tcti.md
 
 man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
-	rm -f $@
-	mkdir -p man/man1
+	$(AM_V_GEN)rm -f $@ && \
+	mkdir -p man/man1 && \
 	sed -e '/\[common options\]/r man/common/options.md' \
 	    -e '/\[common options\]/d' \
 	    -e '/\[common tcti options\]/r man/common/tcti.md' \
