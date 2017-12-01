@@ -79,13 +79,7 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
     UINT32 rval;
     TPMT_TK_VERIFIED validation;
 
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     UINT16 i;
     for (i = 0; i < ctx.msgHash.size; i++) {

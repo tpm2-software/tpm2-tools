@@ -117,19 +117,13 @@ out:
 
 static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
 {
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_NAME name_ext = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TPM2B_ID_OBJECT cred_blob = TPM2B_TYPE_INIT(TPM2B_ID_OBJECT, credential);
 
     TPM2B_ENCRYPTED_SECRET secret = TPM2B_TYPE_INIT(TPM2B_ENCRYPTED_SECRET, secret);
-
-    session_data_out_array[0] = &session_data_out;
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data_out.rspAuthsCount = 1;
 
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0, NULL, &ctx.public,
             TPM2_RH_NULL, &ctx.rsa2048_handle, &name_ext, &sessions_data_out));

@@ -49,9 +49,9 @@ static inline void setcaps(UINT32 level, UINT32 rev, UINT32 day, UINT32 year, TS
 }
 
 TSS2_RC __wrap_Tss2_Sys_GetCapability(TSS2_SYS_CONTEXT *sysContext,
-        TSS2_SYS_CMD_AUTHS const *cmdAuthsArray, TPM2_CAP capability,
+        TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray, TPM2_CAP capability,
         UINT32 property, UINT32 propertyCount, TPMI_YES_NO *moreData,
-        TPMS_CAPABILITY_DATA *capabilityData, TSS2_SYS_RSP_AUTHS *rspAuthsArray) {
+        TPMS_CAPABILITY_DATA *capabilityData, TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray) {
 
     UNUSED(sysContext);
     UNUSED(cmdAuthsArray);

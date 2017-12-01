@@ -65,30 +65,22 @@ static tpm_pcrevent_ctx ctx = {
         .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
-static inline void swap_auths(TPMS_AUTH_COMMAND **auths) {
+static inline void swap_auths(TPMS_AUTH_COMMAND *a, TPMS_AUTH_COMMAND *b) {
 
-    TPMS_AUTH_COMMAND *tmp = auths[0];
-    auths[0] = auths[1];
-    auths[1] = tmp;
+    TPMS_AUTH_COMMAND tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
 
 static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         TPML_DIGEST_VALUES *result) {
 
-    TPMS_AUTH_COMMAND empty_auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
-
-    TPMS_AUTH_COMMAND *all_auths[] = {
-        &ctx.session_data, /* auth for the pcr handle */
-        &empty_auth,       /* auth for the sequence handle */
-
-    };
-
-    TSS2_SYS_CMD_AUTHS cmd_auth_array = TSS2_SYS_CMD_AUTHS_INIT(all_auths);
+    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {2, {ctx.session_data, {0}}};
     /*
      * All the routines up to complete only use one of the two handles,
      * so set size to 0
      */
-    cmd_auth_array.cmdAuthsCount = 1;
+    cmd_auth_array.count = 1;
 
     unsigned long file_size = 0;
 
@@ -141,7 +133,7 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
      * the sequence auth is used
      * for the update call.
      */
-    swap_auths(all_auths);
+    swap_auths(&cmd_auth_array.auths[0], &cmd_auth_array.auths[1]);
 
     bool done = false;
     while (!done) {
@@ -190,8 +182,8 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
      * and update the size to 2, as complete needs both the PCR
      * and the sequence auths.
      */
-    swap_auths(all_auths);
-    cmd_auth_array.cmdAuthsCount = 2;
+    swap_auths(&cmd_auth_array.auths[0], &cmd_auth_array.auths[1]);
+    cmd_auth_array.count = 2;
 
     return TSS2_RETRY_EXP(Tss2_Sys_EventSequenceComplete(sapi_context, ctx.pcr,
             sequence_handle, &cmd_auth_array, &data, result, NULL));

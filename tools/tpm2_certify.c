@@ -86,16 +86,7 @@ static tpm_certify_ctx ctx = {
 };
 
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_handle, TPMI_ALG_PUBLIC *type) {
-
-    TPMS_AUTH_RESPONSE session_data_out;
-    TPMS_AUTH_RESPONSE *session_data_out_array[] = {
-        &session_data_out
-    };
-
-    TSS2_SYS_RSP_AUTHS sessions_data_out = {
-            .rspAuthsCount = ARRAY_LEN(session_data_out_array),
-            .rspAuths = session_data_out_array
-    };
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
 
@@ -148,26 +139,12 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle
 
 static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND *cmd_session_array[ARRAY_LEN(ctx.cmd_auth)] = {
-        &ctx.cmd_auth[0],
-        &ctx.cmd_auth[1]
+    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
+        .count = ARRAY_LEN(ctx.cmd_auth),
+        .auths = { ctx.cmd_auth[0], ctx.cmd_auth[1]}
     };
 
-    TSS2_SYS_CMD_AUTHS cmd_auth_array = {
-        .cmdAuthsCount = ARRAY_LEN(cmd_session_array),
-        .cmdAuths = cmd_session_array
-    };
-
-    TPMS_AUTH_RESPONSE session_data_out[ARRAY_LEN(ctx.cmd_auth)];
-    TPMS_AUTH_RESPONSE *session_data_array[] = {
-        &session_data_out[0],
-        &session_data_out[1]
-    };
-
-    TSS2_SYS_RSP_AUTHS sessions_data_out = {
-        .rspAuthsCount = ARRAY_LEN(session_data_array),
-        .rspAuths = session_data_array
-    };
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_DATA qualifying_data = {
         .size = 4,

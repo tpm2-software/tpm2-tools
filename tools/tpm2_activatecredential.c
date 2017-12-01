@@ -153,31 +153,20 @@ static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
 static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST certInfoData = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMS_AUTH_COMMAND tmp_auth = {
-            .nonce = { .size = 0 },
-            .hmac =  { .size = 0 },
-            .sessionHandle = 0,
-            .sessionAttributes = 0,
-    };
 
     ctx.password.sessionHandle = TPM2_RS_PW;
     ctx.endorse_password.sessionHandle = TPM2_RS_PW;
 
-    TPMS_AUTH_COMMAND *cmd_session_array_password[2] = {
-        &ctx.password,
-        &tmp_auth
-    };
+    TSS2L_SYS_AUTH_COMMAND cmd_auth_array_password = {
+        2, {ctx.password, {
+            .nonce = { .size = 0 },
+            .hmac =  { .size = 0 },
+            .sessionHandle = 0,
+            .sessionAttributes = 0,
+    }}};
 
-    TSS2_SYS_CMD_AUTHS cmd_auth_array_password = {
-        2, &cmd_session_array_password[0]
-    };
-
-    TPMS_AUTH_COMMAND *cmd_session_array_endorse[1] = {
-        &ctx.endorse_password
-    };
-
-    TSS2_SYS_CMD_AUTHS cmd_auth_array_endorse = {
-        1, &cmd_session_array_endorse[0]
+    TSS2L_SYS_AUTH_COMMAND cmd_auth_array_endorse = {
+        1, {ctx.endorse_password}
     };
 
     TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
@@ -205,9 +194,10 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    tmp_auth.sessionHandle = session->sessionHandle;
-    tmp_auth.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
-    tmp_auth.hmac.size = 0;
+    cmd_auth_array_password.auths[1].sessionHandle = session->sessionHandle;
+    cmd_auth_array_password.auths[1].sessionAttributes |= 
+            TPMA_SESSION_CONTINUESESSION;
+    cmd_auth_array_password.auths[1].hmac.size = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.handle.activate,
             ctx.handle.key, &cmd_auth_array_password, &ctx.credentialBlob, &ctx.secret,
