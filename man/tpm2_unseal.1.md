@@ -12,16 +12,12 @@
 
 # DESCRIPTION
 
-**tpm2_unseal**(1) - performs a hash operation on _FILE_ and returns the results. If
-_FILE_ is not specified, then data is read from stdin. If the results of the
-hash will be used in a signing operation that uses a restricted signing key,
-then the ticket returned by this command can indicate that the hash is safe to
-sign.
+**tpm2_unseal**(1) - -returns the data in a loaded Sealed Data Object.
 
-**NOTE**: The **--set-list** and **--pcr-input-file** options should only be used for
-simple PCR authentication policies. For more complex policies the tools should be
-ran in an execution environment that keeps the session context alive and pass that
-session using the **--input-session-handle** option.
+**NOTE**: The **--set-list** and **--pcr-input-file** options should only be
+used for simple PCR authentication policies. For more complex policies the
+tools should be ran in an execution environment that keeps the session context
+alive and pass that session using the **--input-session-handle** option.
 
 # OPTIONS
 
