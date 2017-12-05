@@ -315,11 +315,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         case 'Z':
             flags->enable_errata = 1;
             break;
-        case ':':
-            LOG_ERR("Argument %c needs a value!", optopt);
-            goto out;
         case '?':
-            LOG_ERR("Unknown Argument: %c", optopt);
             result = false;
             goto out;
         default:
