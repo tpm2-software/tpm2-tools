@@ -249,6 +249,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
 
     tpm2_option_code rc = tpm2_option_code_err;
     bool result = false;
+    bool show_help = true;
 
     UNUSED(envp);
 
@@ -298,7 +299,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
             break;
         case 'h':
             execute_man(argv[0], envp);
-            result = false;
+            show_help = false;
             goto out;
             break;
         case 'V':
@@ -310,13 +311,13 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         case 'v':
             show_version(argv[0]);
             rc = tpm2_option_code_stop;
+            show_help = false;
             goto out;
             break;
         case 'Z':
             flags->enable_errata = 1;
             break;
         case '?':
-            result = false;
             goto out;
         default:
             /* NULL on_opt handler and unkown option specified is an error */
@@ -356,7 +357,6 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
             found = true;
             *tcti = init(tcti_opts);
             if (!*tcti) {
-                result = false;
                 goto out;
             }
         }
@@ -364,14 +364,18 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
 
     if (!found) {
         LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
-        result = false;
         goto out;
     }
 
-    rc = tpm2_option_code_continue;
+    show_help = false;
 
+    rc = tpm2_option_code_continue;
 out:
     tpm2_options_free(opts);
+
+    if (show_help) {
+        LOG_ERR("Try '%s --help' for more information.", argv[0]);
+    }
 
     return rc;
 }
