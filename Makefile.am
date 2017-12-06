@@ -47,6 +47,7 @@ LDADD = \
 
 # keep me sorted
 bin_PROGRAMS = \
+    tools/aux/tpm2_print \
     tools/tpm2_activatecredential \
     tools/tpm2_certify \
     tools/tpm2_create \
@@ -146,6 +147,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_session.h
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
+
+tools_aux_tpm2_print_SOURCES = tools/aux/tpm2_print.c
 
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
