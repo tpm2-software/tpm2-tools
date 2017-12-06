@@ -58,7 +58,7 @@ struct tpm_pcrevent_ctx {
     TPMS_AUTH_COMMAND session_data;
 };
 
-#define TSS2_APP_PCREVENT_RC_FAILED (0x57 + 0x100 + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_PCREVENT_RC_FAILED (0x57 + 0x100 + TSS2_APP_RC_LAYER)
 
 static tpm_pcrevent_ctx ctx = {
         .pcr = TPM2_RH_NULL,

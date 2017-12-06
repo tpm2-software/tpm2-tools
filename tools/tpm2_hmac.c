@@ -66,7 +66,7 @@ static tpm_hmac_ctx ctx = {
     .algorithm = TPM2_ALG_SHA1,
 };
 
-#define TSS2_APP_HMAC_RC_FAILED (0x42 + 0x100 + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_HMAC_RC_FAILED (0x42 + 0x100 + TSS2_APP_RC_LAYER)
 
 TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
 

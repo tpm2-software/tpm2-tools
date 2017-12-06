@@ -48,6 +48,8 @@
 
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->field)))
 
+#define TSS2_APP_RC_LAYER TSS2_RC_LAYER(5)
+
 #define TPM2B_TYPE_INIT(type, field) { .size = BUFFER_SIZE(type, field), }
 #define TPM2B_INIT(xsize) { .size = xsize, }
 #define TPM2B_EMPTY_INIT TPM2B_INIT(0)
