@@ -38,7 +38,7 @@
 #include "tpm_hash.h"
 #include "tpm2_util.h"
 
-#define TSS2_APP_HMAC_RC_FAILED (0x1 + 0x100 + TSS2_APP_ERROR_LEVEL)
+#define TSS2_APP_HMAC_RC_FAILED (0x1 + 0x100 + TSS2_APP_RC_LAYER)
 
 TSS2_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,

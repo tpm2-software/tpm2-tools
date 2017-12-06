@@ -618,36 +618,36 @@ tpm2_rc_entry_t tpm2_position_entry [] = {
  */
 struct tpm2_rc_entry tpm2_tss_layer_entry [] = {
     { /* 0x0
-       * The spec calls this TSS2_TPM2_RC_LEVEL and it's defined as bits
+       * The spec calls this TSS2_TPM_RC_LAYER and it's defined as bits
        * [15:12] not [23:16] like the error layer / levels.
        */
-        .id          = TSS2_TPM_ERROR_LEVEL,
-        .name        = "TSS2_TPM_ERROR_LEVEL",
+        .id          = TSS2_TPM_RC_LAYER,
+        .name        = "TSS2_TPM_RC_LAYER",
         .description = "Error produced by the TPM",
     },
     { /* 8 << 16 = 0x80000 */
-        .id          = TSS2_SYS_ERROR_LEVEL,
-        .name        = "TSS2_SYS_ERROR_LEVEL",
+        .id          = TSS2_SYS_RC_LAYER,
+        .name        = "TSS2_SYS_RC_LAYER",
         .description = "Error from the SAPI",
     },
     { /* 9 << 16 = 0x90000 */
-        .id          = TSS2_SYS_PART2_ERROR_LEVEL,
-        .name        = "TSS2_SYS_PART2_RC_LEVEL",
-        .description = "Error from the SAPI duplicating TPM error check"
+        .id          = TSS2_MU_RC_LAYER,
+        .name        = "TSS2_MU_RC_LAYER",
+        .description = "Error from the marshal / unmarshal library"
     },
     { /* 10 << 16 = 0xA0000 */
-        .id          = TSS2_TCTI_ERROR_LEVEL,
-        .name        = "TSS2_TCTI_ERROR_LEVEL",
+        .id          = TSS2_TCTI_RC_LAYER,
+        .name        = "TSS2_TCTI_RC_LAYER",
         .description = "Error from the TCTI"
     },
     { /* 11 << 16 = 0xB0000 */
-        .id          = TSS2_RESMGRTPM_ERROR_LEVEL,
-        .name        = "TSS2_RESMGRTPM_ERROR_LEVEL",
+        .id          = TSS2_RESMGRTPM_RC_LAYER,
+        .name        = "TSS2_RESMGRTPM_RC_LAYER",
         .description = "Error from the Resource Manager duplicating TPM error check"
     },
     { /* 12 << 16 = 0xC0000 */
-        .id          = TSS2_RESMGR_ERROR_LEVEL,
-        .name        = "TSS2_RESMGR_ERROR_LEVEL",
+        .id          = TSS2_RESMGR_RC_LAYER,
+        .name        = "TSS2_RESMGR_RC_LAYER",
         .description = "Error from the Resource Manager"
     }
 };

@@ -563,27 +563,27 @@ tpm2_rc_get_layer_tpm (void **state)
 {
     (void) state;
 
-    TSS2_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TPM_ERROR_LEVEL;
+    TSS2_RC rc = ~TSS2_RC_LAYER_MASK | TSS2_TPM_RC_LAYER;
 
-    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TPM_ERROR_LEVEL);
+    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TPM_RC_LAYER);
 }
 static void
 tpm2_rc_get_layer_sys (void **state)
 {
     (void) state;
 
-    TSS2_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_SYS_ERROR_LEVEL;
+    TSS2_RC rc = ~TSS2_RC_LAYER_MASK | TSS2_SYS_RC_LAYER;
 
-    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_SYS_ERROR_LEVEL);
+    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_SYS_RC_LAYER);
 }
 static void
 tpm2_rc_get_layer_tcti (void **state)
 {
     (void) state;
 
-    TSS2_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TCTI_ERROR_LEVEL;
+    TSS2_RC rc = ~TSS2_RC_LAYER_MASK | TSS2_TCTI_RC_LAYER;
 
-    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TCTI_ERROR_LEVEL);
+    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TCTI_RC_LAYER);
 }
 /* Check our ability to determine the source of the 
  */
@@ -592,7 +592,7 @@ tpm2_rc_is_from_tss_sys (void **state)
 {
     (void) state;
 
-    TSS2_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_SYS_ERROR_LEVEL;
+    TSS2_RC rc = ~TSS2_RC_LAYER_MASK | TSS2_SYS_RC_LAYER;
 
     assert_true (tpm2_rc_is_from_tss (rc));
 }
@@ -601,7 +601,7 @@ tpm2_rc_is_from_tss_tpm (void **state)
 {
     (void) state;
 
-    TSS2_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TPM_ERROR_LEVEL;
+    TSS2_RC rc = ~TSS2_RC_LAYER_MASK | TSS2_TPM_RC_LAYER;
 
     assert_false (tpm2_rc_is_from_tss (rc));
 }
@@ -610,7 +610,7 @@ tpm2_rc_is_from_tss_tcti (void **state)
 {
     (void) state;
 
-    TSS2_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TCTI_ERROR_LEVEL;
+    TSS2_RC rc = ~TSS2_RC_LAYER_MASK | TSS2_TCTI_RC_LAYER;
 
     assert_true (tpm2_rc_is_from_tss (rc));
 }
