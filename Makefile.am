@@ -201,7 +201,6 @@ tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_rc_decode_SOURCES = tools/tpm2_rc_decode.c $(TOOL_SRC)
-tools_tpm2_import_SOURCES = tools/tpm2_import.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -280,7 +279,6 @@ if HAVE_PANDOC
     man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
-    man/man1/tpm2_import.1 \
     man/man1/tpm2_listpersistent.1 \
     man/man1/tpm2_load.1 \
     man/man1/tpm2_loadexternal.1 \
