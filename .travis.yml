@@ -12,7 +12,7 @@ compiler:
 addons:
   coverity_scan:
     project:
-      name: "01org/tpm2-tools"
+      name: "01org/tpm2.0-tools"
       description: "Build submitted via Travis CI"
     notification_email: william.c.roberts@intel.com
     build_command_prepend: "./bootstrap && ./configure && make clean"
@@ -31,7 +31,7 @@ env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
    #   via the "travis encrypt" command using the project repo's public key
-   - secure: "RL61KKDlkyCIE6ZTV9HxnVIcrb5fsNQBKbq7d9vN7QqzAKbd1qedr7kzWZ+DMTi3F1e562DAzNPwNTN6KoLtXx0PxM3ETj1q/O1F5mk22gakLRpZAt0OowCEscSuzcMXdEcVxlNVB4Q3OM2OVJHgwJmh/pB05hx76xIfrrGkl+A8jc4zfjaHtUaTMFKUmeSuKwvTcMylbMVhCfuE9ALtvn6LssZ/roTQhsQ4f78X6grUKHvtQbXzQemTxjZD1mpmjGPlTAU9AnAvb8DmVmWNWyf3uNVElHeeplYLhiDkWPomm84oBH8Npxl+GRmvvmAsuCOkfE0AoC7WL4cFzvsFQ7iZcioF6MFoQH+QVZCvsRPRzxs36tJUXteNJZm4PBnpPpgnrRYx0VqMZ4CQLqZVPwlZUB0VC9amM1xYO/QRETV1XfcS7GqGH+G3hXR3ApyYPX2gLl8fy1M1RawdIGKOZXTo44pBOM1iws+Hrc2rqg5NFamfT4FIO1O9z3kHVEkh5AlTyYa7HJ5iuUb8ilyzZ7MI0Xlw4CJYNgzF/3TGk0cFMghJ/YY0Zd5CoVkBK31ENJ06k21DfuD4xyFVz4HpZJzcoJufkbXSc9HbGNKWgxAEzQrUDDQk9zaPzUe4hTVFYc3mQLKO/FPo+OQ/xxOsZIVAqYZD7xtbX+c6cBVFdks="
+   - secure: "XrDhcREuntMn39qhSFBSSKZli9ZduGKCoq5rs/b+6e5zQIDwyDklwZIvgmrx2BJV5Sh7c5HB2Uvh9I7HdUOOOqDveZ9dcvjr2me7wfrhfMChB2miK318xVfyrK+6mkRnSMfuvG1CZiIcKYVStN1tX1uou9n3CnGz1ndmt5e4QwSQHR3K3g/HEXEgNjuei0OvtvE35/UaOpdxCoDlV3oExa3pU8mXLL77eskq35ebzwGsOu2zxD3wFhE1DF0O9yH4skH+fOH9ByxqK4n++uxbxXHW2oh4I/mEqr2wyyead/wuVa5UdxMDM7traUojlXy5O/Nn2Zfeky3ngSRQjzEYhKmiU2GiQ6ZBh78tmijPmKQpNOg2+0Uop7iT0SmefhappYOzc7KSTnYtWeEbZ4BXxeXzQZ98WsJj7Tmh258Y53KE2DDrmZYwk4EJuc6/4dv/HNMDdH8ZDzAdwMBi4lcsLnf8GQG/jfWYsrvCQQECkSfP2ICuRL9k/8pUUAnbp3X/WbCEMtaETy9STz7PNVqiWsSv/m9lBDVaHwZ7K87TdqhyDhYRDmPYP8qtu/M0tlNZ/M0VGo09xUgkb8Q2nNB7ahC7XYtBeHEIoIu6nf18gW8LgknpuhskF75ZHrKhh5VeN1zoPbG/oFYEk7ehNjGZC268d7jep5p5EaJzch5ai14="
 
 before_install:
     - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
