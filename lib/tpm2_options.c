@@ -321,7 +321,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
             goto out;
         default:
             /* NULL on_opt handler and unkown option specified is an error */
-            if (!tool_opts->callbacks.on_opt) {
+            if (!tool_opts || !tool_opts->callbacks.on_opt) {
                 LOG_ERR("Unknown options found: %c", c);
                 goto out;
             }
@@ -335,17 +335,18 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     char **tool_args = &argv[optind];
     int tool_argc = argc - optind;
 
+    /* have args and no handler, error condition */
+    if (tool_argc && (!tool_opts || !tool_opts->callbacks.on_arg)) {
+        LOG_ERR("Got arguments but the tool takes no arguments");
+        goto out;
+    }
     /* have args and a handler to process */
-    if (tool_argc && tool_opts->callbacks.on_arg) {
+    else if (tool_argc && tool_opts->callbacks.on_arg) {
         result = tool_opts->callbacks.on_arg(tool_argc, tool_args);
         if (!result) {
             goto out;
         }
-    /* have args and no handler, error condition */
-    } else if (tool_argc && !tool_opts->callbacks.on_arg) {
-        LOG_ERR("Got arguments but the tool takes no arguments");
-        goto out;
-    }
+	}
 
     size_t i;
     bool found = false;
