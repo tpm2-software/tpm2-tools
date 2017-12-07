@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 3.0 - 2017-12-08
   * tpm2_getmanufec: -O as a flag for -f has changed. -O is for existing EK public structure
       and -f is only for generated EK public output.
   * tpm2_nvlist: output in yaml format.
