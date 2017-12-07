@@ -102,9 +102,14 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
     char *attrs = tpm2_attr_util_obj_attrtostr(
             outPublic.publicArea.objectAttributes);
     char *attrbuf = attrs;
+
+	/*
+	 * tmp must be declared at this scope for possible use in tpm2_tool_output when attrs
+	 * is null.
+	 */
+    char tmp[11]; /* UINT32 in hex (8) + "0x" + '\0' */
     if (!attrs) {
         LOG_WARN("Could not convert objectAttributes, converting to hex output");
-        char tmp[11]; /* UINT32 in hex (8) + "0x" + '\0' */
         snprintf(tmp, sizeof(tmp), "0x%x", outPublic.publicArea.objectAttributes);
         attrbuf = tmp;
     }
