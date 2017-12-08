@@ -249,7 +249,8 @@ test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
 endif
 
-EXTRA_DIST = $(top_srcdir)/man
+EXTRA_DIST = $(top_srcdir)/man \
+	     LICENSE
 
 if HAVE_PANDOC
     man1_MANS := \
