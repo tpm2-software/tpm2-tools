@@ -261,7 +261,14 @@ test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 endif
 
 EXTRA_DIST = $(top_srcdir)/man \
-	     LICENSE
+	     AUTHORS.md \
+	     CHANGELOG.md \
+	     CONTRIBUTING.md \
+	     INSTALL.md \
+	     LICENSE \
+	     MAINTAINERS.md \
+	     README.md \
+	     RELEASE.md
 
 if HAVE_PANDOC
     man1_MANS := \
