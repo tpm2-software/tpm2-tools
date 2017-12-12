@@ -33,6 +33,6 @@
 # see: https://github.com/travis-ci/travis-ci/issues/3088
 
 PATH=${PATH}:/usr/local/clang/bin
-(pushd ${TRAVIS_BUILD_DIR}/TPM2.0-TSS && \
+(pushd ${TRAVIS_BUILD_DIR}/tpm2-tss && \
  make install && \
  popd)
