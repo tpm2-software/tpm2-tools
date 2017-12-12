@@ -230,7 +230,8 @@ test_unit_test_tpm2_password_util_SOURCES  = test/unit/test_tpm2_password_util.c
 
 endif
 
-EXTRA_DIST = $(top_srcdir)/man
+EXTRA_DIST = $(top_srcdir)/man \
+	VERSION
 
 if HAVE_MD2MAN_ROFF
     man1_MANS := \
