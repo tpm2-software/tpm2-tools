@@ -257,7 +257,8 @@ EXTRA_DIST = $(top_srcdir)/man \
 	     LICENSE \
 	     MAINTAINERS.md \
 	     README.md \
-	     RELEASE.md
+	     RELEASE.md \
+	     test/system
 
 if HAVE_PANDOC
     man1_MANS := \
