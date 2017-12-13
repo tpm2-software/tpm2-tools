@@ -45,7 +45,7 @@ trap cleanup EXIT
 
 cleanup
 
-tpm2_takeownership -Q -c
+tpm2_changeauth -Q -c
 
 tpm2_createprimary -Q -H e -g sha256 -G rsa -C primary.ctx
 
