@@ -47,8 +47,8 @@ struct password {
     TPM2B_AUTH new;
 };
 
-typedef struct takeownership_ctx takeownership_ctx;
-struct takeownership_ctx {
+typedef struct changeauth_ctx changeauth_ctx;
+struct changeauth_ctx {
     struct {
         password owner;
         password endorse;
@@ -61,7 +61,7 @@ struct takeownership_ctx {
     };
 };
 
-static takeownership_ctx ctx;
+static changeauth_ctx ctx;
 
 static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 

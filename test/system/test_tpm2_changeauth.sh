@@ -44,12 +44,12 @@ onerror() {
 }
 trap onerror ERR
 
-tpm2_takeownership -c 
+tpm2_changeauth -c 
  
-tpm2_takeownership -o $ownerPasswd -e $endorsePasswd -l $lockPasswd
+tpm2_changeauth -o $ownerPasswd -e $endorsePasswd -l $lockPasswd
 
-tpm2_takeownership -O $ownerPasswd -E $endorsePasswd -L $lockPasswd -o $new_ownerPasswd -e $new_endorsePasswd -l $new_lockPasswd
+tpm2_changeauth -O $ownerPasswd -E $endorsePasswd -L $lockPasswd -o $new_ownerPasswd -e $new_endorsePasswd -l $new_lockPasswd
 
-tpm2_takeownership -c -L $new_lockPasswd
+tpm2_changeauth -c -L $new_lockPasswd
 
 exit 0

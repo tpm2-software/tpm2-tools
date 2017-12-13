@@ -49,6 +49,7 @@ LDADD = \
 bin_PROGRAMS = \
     tools/tpm2_activatecredential \
     tools/tpm2_certify \
+    tools/tpm2_changeauth \
     tools/tpm2_clear \
     tools/tpm2_create \
     tools/tpm2_createpolicy \
@@ -86,7 +87,6 @@ bin_PROGRAMS = \
     tools/tpm2_send \
     tools/tpm2_sign \
     tools/tpm2_startup \
-    tools/tpm2_takeownership \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
@@ -162,7 +162,7 @@ tools_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
 tools_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
 tools_tpm2_getmanufec_SOURCES = tools/tpm2_getmanufec.c $(TOOL_SRC)
 tools_tpm2_quote_SOURCES = tools/tpm2_quote.c $(TOOL_SRC)
-tools_tpm2_takeownership_SOURCES = tools/tpm2_takeownership.c $(TOOL_SRC)
+tools_tpm2_changeauth_SOURCES = tools/tpm2_changeauth.c $(TOOL_SRC)
 tools_tpm2_getpubek_SOURCES = tools/tpm2_getpubek.c $(TOOL_SRC)
 tools_tpm2_getpubak_SOURCES = tools/tpm2_getpubak.c $(TOOL_SRC)
 tools_tpm2_hash_SOURCES = tools/tpm2_hash.c $(TOOL_SRC)
@@ -266,6 +266,7 @@ if HAVE_PANDOC
     man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
+    man/man1/tpm2_changeauth.1 \
     man/man1/tpm2_clear.1 \
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createpolicy.1 \
@@ -303,7 +304,6 @@ if HAVE_PANDOC
     man/man1/tpm2_send.1 \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_startup.1 \
-    man/man1/tpm2_takeownership.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1
 endif
