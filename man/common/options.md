@@ -19,4 +19,5 @@ information that many users may expect.
 
   * **-Z**, **--enable-errata**:
     Enable the application of errata fixups. Useful if an errata fixup needs to be
-    applied to commands sent to the TPM.
+    applied to commands sent to the TPM. Defining the environment
+    TPM2TOOLS_ENABLE_ERRATA is equivalent.

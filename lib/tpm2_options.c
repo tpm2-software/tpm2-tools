@@ -75,6 +75,7 @@
 #endif
 
 #define TPM2TOOLS_ENV_TCTI_NAME      "TPM2TOOLS_TCTI_NAME"
+#define TPM2TOOLS_ENV_ENABLE_ERRATA  "TPM2TOOLS_ENABLE_ERRATA"
 
 struct tpm2_options {
     struct {
@@ -366,6 +367,10 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     if (!found) {
         LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
         goto out;
+    }
+
+    if (!flags->enable_errata) {
+        flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
     }
 
     show_help = false;
