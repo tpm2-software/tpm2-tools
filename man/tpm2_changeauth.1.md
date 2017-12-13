@@ -13,11 +13,8 @@ and lockout authorizations.
 
 # DESCRIPTION
 
-**tpm2_changeauth**(1) - performs a hash operation on _FILE_ and returns the results. If
-_FILE_ is not specified, then data is read from stdin. If the results of the
-hash will be used in a signing operation that uses a restricted signing key,
-then the ticket returned by this command can indicate that the hash is safe to
-sign.
+**tpm2_changeauth**(1) - set the various (owner, endorse, locakout)
+authorization values.
 
 # OPTIONS
 
@@ -54,11 +51,6 @@ sign.
     The old lockout authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
-  * **-c**, **--clear**:
-
-    Clears the 3 authorizations values with  lockout auth, thus one must specify
-    -L.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
@@ -66,12 +58,6 @@ sign.
 [password formatting](common/password.md)
 
 # EXAMPLES
-
-Set owner, endorsement and lockout authorizations to an empty auth value:
-
-```
-tpm2_changeauth -c -L oldlockoutpasswd
-```
 
 Set owner, endorsement and lockout authorizations to a new value:
 
