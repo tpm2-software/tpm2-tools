@@ -58,6 +58,9 @@ end=$'\e[0m'
 # Set the default to print in a prety output
 PRETTY=true
 
+# Disable errata by default
+ERRATA_ENABLED=false
+
 clear_colors() {
   red=''
   grn=''
@@ -135,6 +138,7 @@ fi
 while true; do
   case "$1" in
     -p | --plain ) PRETTY=false; shift ;;
+    -Z | --enable-errata ) ERRATA_ENABLED=true; shift ;;
     -- ) shift; break ;;
     * ) break ;;
   esac
@@ -149,6 +153,10 @@ fi
 
 if [ "$PRETTY" != true ]; then
   clear_colors
+fi
+
+if [ "$ERRATA_ENABLED" = true ]; then
+  export TPM2TOOLS_ENABLE_ERRATA=1
 fi
 
 for t in $tests; do
