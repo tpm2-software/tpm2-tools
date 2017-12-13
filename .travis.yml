@@ -43,17 +43,18 @@ install:
     - mkdir ibmtpm974 && pushd ibmtpm974 && tar axf ../ibmtpm974.tar.gz && pushd ./src && make
     - ./tpm_server &
     - popd && popd
-    - git clone https://github.com/01org/TPM2.0-TSS.git
-    - pushd TPM2.0-TSS
     - wget http://ftpmirror.gnu.org/autoconf-archive/autoconf-archive-2017.09.28.tar.xz
     - sha256sum autoconf-archive-2017.09.28.tar.xz | grep -q 5c9fb5845b38b28982a3ef12836f76b35f46799ef4a2e46b48e2bd3c6182fa01
-    - tar xJf autoconf-archive-2017.09.28.tar.xz
-    - cp autoconf-archive-2017.09.28/m4/ax_code_coverage.m4 m4/
+    - tar xJf autoconf-archive-2017.09.28.tar.xz && pushd autoconf-archive-2017.09.28
+    - ./configure --prefix=/usr && make -j$(nproc) && sudo make install
+    - popd
+    - git clone https://github.com/intel/tpm2-tss.git
+    - pushd tpm2-tss
     - ./bootstrap && ./configure && make -j$(nproc)
     - sudo ../.ci/travis-tss-install.sh
     - popd
     - sudo ldconfig /usr/local/lib
-    - git clone https://github.com/01org/tpm2-abrmd.git
+    - git clone https://github.com/intel/tpm2-abrmd.git
     - pushd tpm2-abrmd
     - git am ../.ci/patches/abrmd/* || true
     - ./bootstrap && ./configure --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
