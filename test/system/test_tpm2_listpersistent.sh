@@ -55,7 +55,7 @@ onerror() {
 }
 trap onerror ERR
 
-tpm2_takeownership -c
+tpm2_changeauth -c
 
 # Test persisting transient objects
 for idx in "${!keys[@]}"

@@ -58,7 +58,7 @@ trap onerror ERR
 
 echo "12345678" > secret.dat
 
-tpm2_takeownership -Q -c
+tpm2_changeauth -Q -c
 
 tpm2_createprimary -Q -H e -g sha1 -G rsa -C primary.ctx
 
