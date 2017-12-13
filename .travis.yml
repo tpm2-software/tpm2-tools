@@ -40,13 +40,18 @@ install:
     - mkdir ibmtpm532 && pushd ibmtpm532 && tar xzf ../ibmtpm532.tar && pushd ./src && make
     - ./tpm_server &
     - popd && popd
-    - git clone --single-branch --branch 1.x https://github.com/01org/TPM2.0-TSS.git
-    - pushd TPM2.0-TSS
+    - wget http://ftpmirror.gnu.org/autoconf-archive/autoconf-archive-2017.09.28.tar.xz
+    - sha256sum autoconf-archive-2017.09.28.tar.xz | grep -q 5c9fb5845b38b28982a3ef12836f76b35f46799ef4a2e46b48e2bd3c6182fa01
+    - tar xJf autoconf-archive-2017.09.28.tar.xz && pushd autoconf-archive-2017.09.28
+    - ./configure --prefix=/usr && make -j$(nproc) && sudo make install
+    - popd
+    - git clone --single-branch --branch 1.x https://github.com/intel/tpm2-tss.git
+    - pushd tpm2-tss
     - ./bootstrap && ./configure && make -j$(nproc)
     - sudo ../.ci/travis-tss-install.sh
     - popd
     - sudo ldconfig /usr/local/lib
-    - git clone --single-branch --branch 1.x https://github.com/01org/tpm2-abrmd
+    - git clone --single-branch --branch 1.x https://github.com/intel/tpm2-abrmd
     - pushd tpm2-abrmd
     - ./bootstrap && ./configure --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
     - sudo mkdir -p /var/lib/tpm
