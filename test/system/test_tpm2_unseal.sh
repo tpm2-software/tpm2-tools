@@ -68,7 +68,7 @@ cleanup
 
 echo $secret > $file_input_data
 
-tpm2_changeauth -c
+tpm2_clear
 
 tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 

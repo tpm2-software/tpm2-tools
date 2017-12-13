@@ -54,35 +54,9 @@ struct changeauth_ctx {
         password endorse;
         password lockout;
     } passwords;
-
-    struct {
-        UINT8 clear_auth : 1;
-        UINT8 unused     : 7;
-    };
 };
 
 static changeauth_ctx ctx;
-
-static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
-
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { .count = 1,
-        .auths = {{
-            .sessionHandle = TPM2_RS_PW,
-            .nonce = TPM2B_EMPTY_INIT,
-            .hmac = TPM2B_EMPTY_INIT,
-           .sessionAttributes = 0,
-    }}};
-
-    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear(sapi_context, TPM2_RH_LOCKOUT, &sessionsData, 0));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Clearing Failed! TPM error code: 0x%0x", rval);
-        return false;
-    }
-
-    return true;
-}
 
 static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
         struct password *pwd, const char *desc,
@@ -129,9 +103,6 @@ static bool on_option(char key, char *value) {
     bool result;
 
     switch (key) {
-    case 'c':
-        ctx.clear_auth = true;
-        break;
 
     case 'o':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.new);
@@ -184,16 +155,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
-        { "owner-passwd",      required_argument, NULL, 'o' },
-        {"endorse-passwd",     required_argument, NULL, 'e' },
-        { "lock-passwd",       required_argument, NULL, 'l' },
+        { "owner-passwd",     required_argument, NULL, 'o' },
+        { "endorse-passwd",   required_argument, NULL, 'e' },
+        { "lock-passwd",      required_argument, NULL, 'l' },
         { "oldOwnerPasswd",   required_argument, NULL, 'O' },
         { "oldEndorsePasswd", required_argument, NULL, 'E' },
         { "oldLockPasswd",    required_argument, NULL, 'L' },
-        { "clear",            no_argument,       NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("o:e:l:O:E:L:c", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:e:l:O:E:L:", ARRAY_LEN(topts), topts,
             on_option, NULL);
 
     return *opts != NULL;
@@ -203,9 +173,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = (ctx.clear_auth ? clear_hierarchy_auth(sapi_context)
-            : change_hierarchy_auth(sapi_context));
-
     /* true is success, coerce to 0 for program success */
-    return result == false;
+    return change_hierarchy_auth(sapi_context) == false;
 }

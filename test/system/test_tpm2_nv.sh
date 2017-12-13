@@ -81,7 +81,7 @@ pyscript
 
 cleanup
 
-tpm2_changeauth -c
+tpm2_clear
 
 tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite"
 

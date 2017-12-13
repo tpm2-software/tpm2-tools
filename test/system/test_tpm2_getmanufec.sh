@@ -68,7 +68,7 @@ tpm2_getmanufec -g rsa -N -U -O test_ek.pub https://ekop.intel.com/ekcertservice
 cmp ECcert.bin ECcert2.bin
 
 # Test providing endorsement password to create EK and owner password to persist.
-tpm2_changeauth -c
+tpm2_clear
 tpm2_changeauth -o $opass -e $epass
 
 tpm2_getmanufec -H $handle -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass \

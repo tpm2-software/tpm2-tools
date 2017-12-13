@@ -79,7 +79,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-tpm2_changeauth -c
+tpm2_clear
 
 tpm2_getpubek -Q -g $alg_ek -f "$file_pubek_orig" -H $handle_ek
 
