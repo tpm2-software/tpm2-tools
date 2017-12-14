@@ -26,6 +26,7 @@ addons:
     - libglib2.0-dev
     - clang-3.8
     - pandoc
+    - lcov
 
 env:
   global:
