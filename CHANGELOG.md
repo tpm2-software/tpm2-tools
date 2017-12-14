@@ -1,4 +1,7 @@
 ## Changelog
+### next
+  * configure: enable code coverage option.
+
 ### 3.0.1 - 2017-12-11
   * Makefile: add missing LICENSE and markdown files.
 ### 3.0 - 2017-12-08
