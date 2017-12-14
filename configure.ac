@@ -7,6 +7,7 @@ AM_INIT_AUTOMAKE([foreign
                   subdir-objects])
 # enable "silent-rules" option by default
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+AX_CODE_COVERAGE
 AC_CONFIG_FILES([Makefile])
 AC_CHECK_PROG([PANDOC],[pandoc],[yes])
 AS_IF(
