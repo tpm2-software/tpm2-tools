@@ -46,7 +46,7 @@ cleanup() {
 	tpm2_evictcontrol -Q -A o -H 0x8101000c 2>/dev/null || true
 
 	# clear tpm state
-	tpm2_takeownership -c
+	tpm2_clear
 }
 trap cleanup EXIT
 

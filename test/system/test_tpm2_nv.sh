@@ -81,7 +81,7 @@ pyscript
 
 cleanup
 
-tpm2_takeownership -c
+tpm2_clear
 
 tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s 32 -t "ownerread|policywrite|ownerwrite"
 
@@ -206,7 +206,7 @@ fi
 #
 trap onerror ERR
 
-tpm2_takeownership -o owner
+tpm2_changeauth -o owner
 
 tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
   -t "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \

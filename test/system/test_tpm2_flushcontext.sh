@@ -43,7 +43,7 @@ cleanup() {
 trap cleanup EXIT
 
 cleanup
-tpm2_takeownership -c
+tpm2_clear
 
 # Test for flushing the specified handle
 tpm2_createprimary -Q -H o -g sha256 -G rsa
