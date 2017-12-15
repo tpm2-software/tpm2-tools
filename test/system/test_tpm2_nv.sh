@@ -31,8 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
- nv_test_index=0x1500018
- nv_auth_handle=0x40000001
+nv_test_index=0x1500018
+nv_auth_handle=0x40000001
 
 large_file_name="nv.test_large_w"
 large_file_read_name="nv.test_large_r"
