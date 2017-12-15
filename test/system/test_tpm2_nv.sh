@@ -35,7 +35,7 @@
  nv_auth_handle=0x40000001
 
 large_file_name="nv.test_large_w"
-large_file_read_name="nv.test_large_w"
+large_file_read_name="nv.test_large_r"
 
 alg_pcr_policy=sha1
 pcr_ids="0,1,2,3"
