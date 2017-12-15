@@ -1,6 +1,7 @@
 ## Changelog
 ### next
   * configure: enable code coverage option.
+  * tpm2_takeownership: split into tpm2_clear and tpm2_changeauth
 
 ### 3.0.1 - 2017-12-11
   * Makefile: add missing LICENSE and markdown files.
