@@ -2,6 +2,7 @@
 ### next
   * configure: enable code coverage option.
   * tpm2_takeownership: split into tpm2_clear and tpm2_changeauth
+  * env: add TPM2TOOLS_ENABLE_ERRATA to control the -Z or errata option.
 
 ### 3.0.1 - 2017-12-11
   * Makefile: add missing LICENSE and markdown files.
