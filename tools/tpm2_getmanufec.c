@@ -410,15 +410,19 @@ out_memory:
 
 int TPMinitialProvisioning(void)
 {
-    char *b64 = Base64Encode(HashEKPublicKey());
+    int rc = 1;
+    unsigned char *hash = HashEKPublicKey();
+    char *b64 = Base64Encode(hash);
     if (!b64) {
         LOG_ERR("Base64Encode returned null");
-        return 1;
+        goto out;
     }
 
     LOG_INFO("%s", b64);
 
-    int rc = RetrieveEndorsementCredentials(b64);
+    rc = RetrieveEndorsementCredentials(b64);
+out:
+    free(hash);
     free(b64);
     return rc;
 }
