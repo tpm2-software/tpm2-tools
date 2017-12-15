@@ -52,6 +52,7 @@ bin_PROGRAMS = \
     tools/tpm2_certify \
     tools/tpm2_changeauth \
     tools/tpm2_clear \
+    tools/tpm2_clearlock \
     tools/tpm2_create \
     tools/tpm2_createpolicy \
     tools/tpm2_createprimary \
@@ -152,6 +153,7 @@ lib_libcommon_a_SOURCES = \
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_tpm2_clear_SOURCES = tools/tpm2_clear.c $(TOOL_SRC)
+tools_tpm2_clearlock_SOURCES = tools/tpm2_clearlock.c $(TOOL_SRC)
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
 tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
@@ -286,6 +288,7 @@ if HAVE_PANDOC
     man/man1/tpm2_certify.1 \
     man/man1/tpm2_changeauth.1 \
     man/man1/tpm2_clear.1 \
+    man/man1/tpm2_clearlock.1 \
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
