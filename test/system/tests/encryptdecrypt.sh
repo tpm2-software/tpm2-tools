@@ -31,7 +31,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-source test_helpers.sh
+source helpers.sh
 
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
