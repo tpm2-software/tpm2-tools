@@ -31,7 +31,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-source test_helpers.sh
+source helpers.sh
 
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
@@ -40,8 +40,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-
-  rm -f policy.bin obj.pub pub.out
+  rm -f key.pub key.priv policy.bin out.pub
 
   if [ "$1" != "keep_context" ]; then
     rm -f context.out
@@ -49,19 +48,6 @@ cleanup() {
 
 }
 trap cleanup EXIT
-
-cleanup
-
-# Keep the algorithm specifiers mixed to test friendly and raw
-# values.
-for gAlg in `populate_hash_algs mixed`; do
-    for GAlg in 0x01 keyedhash ecc 0x25; do
-        for Atype in o e n; do
-            tpm2_createprimary -Q -H $Atype -g $gAlg -G $GAlg -C context.out
-            cleanup keep_context
-        done
-    done
-done
 
 function yaml_get() {
 
@@ -84,17 +70,28 @@ with open("$2") as f:
 pyscript
 }
 
+cleanup
+
+tpm2_createprimary -Q -H o -g sha1 -G rsa -C context.out
+
+# Keep the algorithm specifiers mixed to test friendly and raw
+# values.
+for gAlg in `populate_hash_algs mixed`; do
+    for GAlg in rsa 0x08 ecc 0x25; do
+        tpm2_create -Q -c context.out -g $gAlg -G $GAlg -u key.pub -r key.priv
+        cleanup keep_context
+    done
+done
+
+cleanup keep_context
+
 policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
+echo "$policy_orig" | xxd -r -p > policy.bin
 
-#test for createprimary objects with policy authorization structures
-echo -n "$policy_orig" | xxd -r -p > policy.bin
+tpm2_create -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv \
+  -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' > out.pub
 
-tpm2_createprimary -Q -H o -G rsa -g sha256 -C context.out -L policy.bin \
-  -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin'
-
-tpm2_readpublic -c context.out > pub.out
-
-policy_new=$(yaml_get "authorization policy" pub.out)
+policy_new=$(yaml_get "authorization policy" out.pub)
 
 test "$policy_orig" == "$policy_new"
 
