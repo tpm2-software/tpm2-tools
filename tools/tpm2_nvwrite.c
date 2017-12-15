@@ -127,7 +127,7 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.t.size);
 
         memcpy(nv_write_data.t.buffer, &ctx.nv_buffer.t.buffer[data_offset],
-                ctx.nv_buffer.t.size);
+                nv_write_data.t.size);
 
         TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
                 ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
