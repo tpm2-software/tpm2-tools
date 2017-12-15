@@ -35,7 +35,7 @@
  nv_auth_handle=0x40000001
 
 large_file_name="nv.test_large_w"
-large_file_read_name="nv.test_large_w"
+large_file_read_name="nv.test_large_r"
 
 alg_pcr_policy=sha1
 pcr_ids="0,1,2,3"
@@ -162,9 +162,9 @@ tpm2_nvdefine -Q -x $nv_test_index -a $nv_auth_handle -s $large_file_size -t 0x2
 base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
 
 # Test file input redirection
-tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle <<< $large_file_name
+tpm2_nvwrite -Q -x $nv_test_index -a $nv_auth_handle < $large_file_name
 
-tpm2_nvread -Q -x $nv_test_index -a $nv_auth_handle > $large_file_read_name
+tpm2_nvread -x $nv_test_index -a $nv_auth_handle > $large_file_read_name
 
 cmp -s $large_file_read_name $large_file_name
 
