@@ -1,6 +1,8 @@
 ## Changelog
-### next
+### 3.0.2 - in-progress
   * configure: enable code coverage option.
+  * build: enable silent rules options.
+  * Add system tests to dist tarball.
 
 ### 3.0.1 - 2017-12-11
   * Makefile: add missing LICENSE and markdown files.
