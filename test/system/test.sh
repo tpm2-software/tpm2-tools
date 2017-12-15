@@ -73,7 +73,7 @@ clear_colors() {
 
 test_wrapper() {
 
-  ./$1 &
+  PATH=$PATH ./$1 &
   # Process Id of the previous running command
   pid=$!
   spin='-\|/'
@@ -121,7 +121,7 @@ test_wrapper() {
 
 # Get a list of test scripts, all tests should begin with test_tpm2_ and
 # be a shell script.
-tests=`ls test_tpm2_*.sh test_output_formats.sh | sed s/test_tpm2_import\.sh//g`
+tests=`find tests -maxdepth 1 -type f`
 
 # Building with asan on clang, the leak sanitizier
 # portion (lsan) on ancient versions is:
@@ -132,7 +132,7 @@ tests=`ls test_tpm2_*.sh test_output_formats.sh | sed s/test_tpm2_import\.sh//g`
 # TODO When this is fixed, remove it.
 # Bug: https://github.com/01org/tpm2-tools/issues/390
 if [ "$ASAN_ENABLED" == "true" ]; then
-  tests=`echo $tests | grep -v test_tpm2_getmanufec.sh`
+  tests=`echo $tests | grep -v getmanufec.sh`
 fi
 
 while true; do
