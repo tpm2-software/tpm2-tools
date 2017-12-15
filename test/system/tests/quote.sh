@@ -31,7 +31,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-source test_helpers.sh
+source helpers.sh
 
 alg_primary_obj=sha256
 alg_primary_key=rsa
