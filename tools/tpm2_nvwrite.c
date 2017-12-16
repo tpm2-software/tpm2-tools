@@ -109,6 +109,10 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
+    if (max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
+        max_data_size = TPM2_MAX_NV_BUFFER_SIZE;
+    }
+
     while (ctx.data_size > 0) {
 
         nv_write_data.size =
