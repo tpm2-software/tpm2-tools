@@ -110,6 +110,9 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return false;
     }
 
+    if (max_data_size > MAX_NV_BUFFER_SIZE)
+        max_data_size = MAX_NV_BUFFER_SIZE;
+
     UINT8 *data_buffer = malloc(data_size);
     if (!data_buffer) {
         LOG_ERR("oom");
