@@ -35,7 +35,7 @@ sign.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-o**, **--outfile**=_OUT\_FILE_
+  * **-o**, **--out-file**=_OUT\_FILE_
     Optional file record of the hash result. Defaults to stdout in hex form.
 
   * **-t**, **--ticket**=_TICKET\_FILE_

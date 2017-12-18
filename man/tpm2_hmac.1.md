@@ -34,7 +34,7 @@ _FILE_ is not specified, then data is read from stdin.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-o**, **--outfile**=_OUT\_FILE_
+  * **-o**, **--out-file**=_OUT\_FILE_
     Optional file record of the HMAC result. Defaults to stdout.
 
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:

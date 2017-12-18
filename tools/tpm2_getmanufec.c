@@ -525,7 +525,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "handle"       , 1, NULL, 'H' },
         { "ek-passwd"     , 1, NULL, 'P' },
         { "alg"          , 1, NULL, 'g' },
-        { "output"        , 1, NULL, 'f' },
+        { "out-file"      , 1, NULL, 'f' },
         { "non-persistent", 0, NULL, 'N' },
         { "offline"       , 1, NULL, 'O' },
         { "ec-cert"       , 1, NULL, 'E' },

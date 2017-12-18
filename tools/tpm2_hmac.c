@@ -276,7 +276,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"key-context",  required_argument, NULL, 'c'},
         {"pwdk",        required_argument, NULL, 'P'},
         {"algorithm",   required_argument, NULL, 'g'},
-        {"outfile",     required_argument, NULL, 'o'},
+        {"out-file",    required_argument, NULL, 'o'},
         {"input-session-handle",1,         NULL, 'S'},
         {NULL,          no_argument,       NULL, '\0'}
     };
