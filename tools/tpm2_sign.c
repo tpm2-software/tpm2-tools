@@ -253,7 +253,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"key-handle",            required_argument, NULL, 'k'},
       {"pwdk",                 required_argument, NULL, 'P'},
       {"halg",                 required_argument, NULL, 'g'},
-      {"msg",                  required_argument, NULL, 'm'},
+      {"message",              required_argument, NULL, 'm'},
       {"sig",                  required_argument, NULL, 's'},
       {"ticket",               required_argument, NULL, 't'},
       {"key-context",           required_argument, NULL, 'c'},

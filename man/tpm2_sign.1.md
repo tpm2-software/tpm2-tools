@@ -42,7 +42,7 @@ data and validation shall indicate that hashed data did not start with
     algorithms.
 
 
-  * **-m**, **--msg**=_MSG\_FILE_:
+  * **-m**, **--message**=_MSG\_FILE_:
 
     The message file, containing the content to be  digested.
 
