@@ -46,7 +46,7 @@ loaded-key:
   * **-k**, **--ak-handle**=_AK\_HANDLE_:
     Specifies the handle used to make AK persistent.
 
-  * **-g**, **--alg**=_ALGORITHM_:
+  * **-g**, **--algorithm**=_ALGORITHM_:
     Specifies the algorithm type of AK. Algorithms should follow the
     " formatting standards, see section "Algorithm Specifiers".
     See section "Supported Public Object Algorithms" for a list of supported

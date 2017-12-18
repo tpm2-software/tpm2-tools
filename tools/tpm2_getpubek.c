@@ -295,7 +295,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "owner-passwd"  , required_argument, NULL, 'o' },
         { "handle"       , required_argument, NULL, 'H' },
         { "ek-passwd"     , required_argument, NULL, 'P' },
-        { "alg"          , required_argument, NULL, 'g' },
+        { "algorithm"    , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
         {"input-session-handle",1,            NULL, 'S' },
         { "dbg"          , required_argument, NULL, 'd' },
