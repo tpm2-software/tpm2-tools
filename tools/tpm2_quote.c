@@ -230,7 +230,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
         { "ak-handle",             required_argument, NULL, 'k' },
         { "ak-context",            required_argument, NULL, 'c' },
-        { "ak-password",           required_argument, NULL, 'P' },
+        { "ak-passwd",             required_argument, NULL, 'P' },
         { "id-list",               required_argument, NULL, 'l' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "sel-list",              required_argument, NULL, 'L' },

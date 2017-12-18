@@ -24,7 +24,7 @@
 
     Filename for the existing AK's context.
 
-  * **-P**, **--ak-password**=_AK\_PASSWORD_:
+  * **-P**, **--ak-passwd**=_AK\_PASSWORD_:
 
     specifies the password of _AK\_HANDLE_. Passwords should follow the
     password formatting standards, see section "Password Formatting".
