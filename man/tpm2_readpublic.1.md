@@ -24,7 +24,7 @@
 
     Filename for object context.
 
-  * **-o**, **--opu**:
+  * **-o**, **--out-file**:
 
     The output file path, recording the public portion of the object.
 

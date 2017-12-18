@@ -183,7 +183,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static struct option topts[] = {
         {"hierachy", required_argument, NULL, 'H'},
         {"halg",     required_argument, NULL, 'g'},
-        {"outfile",  required_argument, NULL, 'o'},
+        {"out-file", required_argument, NULL, 'o'},
         {"ticket",   required_argument, NULL, 't'},
     };
 

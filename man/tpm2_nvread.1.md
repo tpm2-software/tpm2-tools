@@ -24,7 +24,7 @@
     * **0x40000001** for **TPM_RH_OWNER**
     * **0x4000000C** for **TPM_RH_PLATFORM**
 
-  * **-f**, **--output**=_FILE_:
+  * **-f**, **--out-file**=_FILE_:
     file to write data
 
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:

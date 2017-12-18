@@ -51,7 +51,7 @@ tpm2_evictcontrol -Q -A o -c parent.ctx -S 0x81010005
 
 dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 
-tpm2_readpublic -Q -H 0x81010005 --opu parent.pub
+tpm2_readpublic -Q -H 0x81010005 --out-file parent.pub
 
 tpm2_import -Q -k sym.key -H 0x81010005 -f parent.pub -q import_key.pub \
 -r import_key.priv

@@ -35,7 +35,7 @@ sha256 :
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-o**, **--output**=_FILE_:
+  * **-o**, **--out-file**=_FILE_:
     The output file to write the PCR values in binary format, optional.
 
   * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:

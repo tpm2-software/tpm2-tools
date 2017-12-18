@@ -17,7 +17,7 @@ generator. The _SIZE_ parameter is expected as the only argument to the tool.
 
 # OPTIONS
 
-  * **-o**, **--output**=_FILE_
+  * **-o**, **--out-file**=_FILE_
     specifies the filename to output the raw bytes to. Defaults to stdout as a hex
     string.
 

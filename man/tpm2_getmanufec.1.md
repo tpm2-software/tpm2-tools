@@ -41,7 +41,7 @@ server.
     object algorithms. See section "Algorithm Specifiers" on how to specify
     an algorithm argument.
 
-  * **-f**, **--output**=_FILE_:
+  * **-f**, **--out-file**=_FILE_:
     Specifies the file used to save the public portion of EK.
 
   * **-N**, **--non-persistent**:

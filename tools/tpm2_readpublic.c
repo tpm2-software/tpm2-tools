@@ -131,7 +131,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
         { "object",        required_argument, NULL,'H' },
-        { "opu",           required_argument, NULL,'o' },
+        { "out-file",      required_argument, NULL,'o' },
         { "context-object", required_argument, NULL,'c' },
         { "format",        required_argument, NULL,'f' }
     };

@@ -34,7 +34,7 @@ alive and pass that session using the **--input-session-handle** option.
     Specifies the password of _ITEM\_HANDLE_. Passwords should follow the
     password formatting standards, see section "Password Formatting".
 
-  * **-o**, **--outfile**=_OUT\_FILE_:
+  * **-o**, **--out-file**=_OUT\_FILE_:
 
     Output file name, containing the unsealed data. Defaults to stdout if not specified.
 
