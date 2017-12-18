@@ -157,13 +157,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "max-tries", required_argument, NULL, 'n' },
-        { "recovery-time", required_argument, NULL, 't' },
+        { "max-tries",             required_argument, NULL, 'n' },
+        { "recovery-time",         required_argument, NULL, 't' },
         { "lockout-recovery-time", required_argument, NULL, 'l' },
-        { "lockout-passwd", required_argument, NULL, 'P' },
-        { "clear-lockout", no_argument, NULL, 'c' },
-        { "setup-parameters", no_argument, NULL, 's' },
-        { "input-session-handle",required_argument,NULL,'S'},
+        { "lockout-passwd",        required_argument, NULL, 'P' },
+        { "clear-lockout",         no_argument,       NULL, 'c' },
+        { "setup-parameters",      no_argument,       NULL, 's' },
+        { "input-session-handle",  required_argument, NULL, 'S' },
     };
 
     *opts = tpm2_options_new("n:t:l:P:S:cs", ARRAY_LEN(topts), topts, on_option, NULL);

@@ -228,13 +228,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "ak-handle",             required_argument, NULL, 'k' },
-        { "ak-context",            required_argument, NULL, 'c' },
-        { "ak-passwd",             required_argument, NULL, 'P' },
-        { "id-list",               required_argument, NULL, 'l' },
+        { "ak-handle",            required_argument, NULL, 'k' },
+        { "ak-context",           required_argument, NULL, 'c' },
+        { "ak-passwd",            required_argument, NULL, 'P' },
+        { "id-list",              required_argument, NULL, 'l' },
         { "algorithm",            required_argument, NULL, 'g' },
-        { "sel-list",              required_argument, NULL, 'L' },
-        { "qualify-data",          required_argument, NULL, 'q' },
+        { "sel-list",             required_argument, NULL, 'L' },
+        { "qualify-data",         required_argument, NULL, 'q' },
         { "input-session-handle", required_argument, NULL, 'S' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
