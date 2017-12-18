@@ -190,6 +190,17 @@ bool tpm2_util_hexdump_file(FILE *fd, size_t len, bool plain) {
     return true;
 }
 
+bool tpm2_util_print_tpm2b_file(FILE *fd)
+{
+    UINT16 len;
+    bool res = files_read_16(fd, &len);
+    if(!res) {
+        LOG_ERR("File read failed");
+        return false;
+    }
+    return tpm2_util_hexdump_file(fd, len, true);
+}
+
 /* TODO OPTIMIZE ME */
 UINT16 tpm2_util_copy_tpm2b(TPM2B *dest, TPM2B *src) {
     int i;

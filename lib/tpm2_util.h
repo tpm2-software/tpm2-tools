@@ -189,6 +189,13 @@ static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
 }
 
 /**
+ * Reads a TPM2B object from FILE* and prints data in hex.
+ * @param fd
+ *  A readable open file.
+ */
+bool tpm2_util_print_tpm2b_file(FILE *fd);
+
+/**
  * Copies a tpm2b from dest to src and clears dest if src is NULL.
  * If src is NULL, it is a NOP.
  * @param dest
