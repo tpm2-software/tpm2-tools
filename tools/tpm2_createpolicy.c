@@ -89,52 +89,50 @@ static create_policy_ctx pctx = {
 };
 
 static TSS2_RC parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
+
     TSS2_RC rval = TPM2_RC_SUCCESS;
-    if (!pctx.common_policy_options.policy_type.is_policy_type_selected){
-        LOG_ERR("No Policy type chosen.");
+    if (!pctx.common_policy_options.policy_type.PolicyPCR){
         return rval;
     }
 
-    if (pctx.common_policy_options.policy_type.PolicyPCR) {
-        //PCR inputs validation
-        if (pctx.pcr_policy_options.is_set_list == false) {
-            LOG_ERR("Need the pcr list to account for in the policy.");
+    //PCR inputs validation
+    if (pctx.pcr_policy_options.is_set_list == false) {
+        LOG_ERR("Need the pcr list to account for in the policy.");
+        return TPM2_RC_NO_RESULT;
+    }
+    rval = tpm2_policy_build(sapi_context,
+                             &pctx.common_policy_options.policy_session,
+                             pctx.common_policy_options.policy_session_type,
+                             pctx.common_policy_options.policy_digest_hash_alg,
+                             pctx.pcr_policy_options.pcr_selections,
+                             pctx.pcr_policy_options.raw_pcrs_file,
+                             &pctx.common_policy_options.policy_digest,
+                             pctx.common_policy_options.extend_policy_session,
+                             tpm2_policy_pcr_build);
+    if (rval != TPM2_RC_SUCCESS) {
+        return rval;
+    }
+
+    // Display the policy digest during real policy session.
+    if (pctx.common_policy_options.policy_session_type == TPM2_SE_POLICY) {
+        tpm2_tool_output("TPM2_SE_POLICY: 0x");
+        int i;
+        for(i = 0; i < pctx.common_policy_options.policy_digest.size; i++) {
+            tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest.buffer[i]);
+        }
+        tpm2_tool_output("\n");
+    }
+
+    // Additional operations when session if a trial policy session
+    if (pctx.common_policy_options.policy_session_type == TPM2_SE_TRIAL) {
+        //save the policy buffer in a file for use later
+        bool result = files_save_bytes_to_file(pctx.common_policy_options.policy_file,
+                          (UINT8 *) &pctx.common_policy_options.policy_digest.buffer,
+                                      pctx.common_policy_options.policy_digest.size);
+        if (!result) {
+            LOG_ERR("Failed to save policy digest into file \"%s\"",
+                    pctx.common_policy_options.policy_file);
             return TPM2_RC_NO_RESULT;
-        }
-        rval = tpm2_policy_build(sapi_context,
-                                 &pctx.common_policy_options.policy_session,
-                                 pctx.common_policy_options.policy_session_type,
-                                 pctx.common_policy_options.policy_digest_hash_alg,
-                                 pctx.pcr_policy_options.pcr_selections,
-                                 pctx.pcr_policy_options.raw_pcrs_file,
-                                 &pctx.common_policy_options.policy_digest,
-                                 pctx.common_policy_options.extend_policy_session,
-                                 tpm2_policy_pcr_build);
-        if (rval != TPM2_RC_SUCCESS) {
-            return rval;
-        }
-
-        // Display the policy digest during real policy session.
-        if (pctx.common_policy_options.policy_session_type == TPM2_SE_POLICY) {
-            tpm2_tool_output("TPM2_SE_POLICY: 0x");
-            int i;
-            for(i = 0; i < pctx.common_policy_options.policy_digest.size; i++) {
-                tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest.buffer[i]);
-            }
-            tpm2_tool_output("\n");
-        }
-
-        // Additional operations when session if a trial policy session
-        if (pctx.common_policy_options.policy_session_type == TPM2_SE_TRIAL) {
-            //save the policy buffer in a file for use later
-            bool result = files_save_bytes_to_file(pctx.common_policy_options.policy_file,
-                              (UINT8 *) &pctx.common_policy_options.policy_digest.buffer,
-                                          pctx.common_policy_options.policy_digest.size);
-            if (!result) {
-                LOG_ERR("Failed to save policy digest into file \"%s\"",
-                        pctx.common_policy_options.policy_file);
-                return TPM2_RC_NO_RESULT;
-            }
         }
     }
 
@@ -167,7 +165,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'P':
         pctx.common_policy_options.policy_type.PolicyPCR = true;
-        pctx.common_policy_options.policy_type.is_policy_type_selected= true;
         break;
     case 'a':
         pctx.common_policy_options.policy_session_type = TPM2_SE_POLICY;
