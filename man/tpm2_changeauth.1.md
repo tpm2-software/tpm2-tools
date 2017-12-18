@@ -18,35 +18,35 @@ authorization values.
 
 # OPTIONS
 
-  * **-o**, **--owner-password**=_OWNER\_PASSWORD_:
+  * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_:
     The new owner authorization value.
 
     Passwords should follow the password formatting standards, see section
     "Password Formatting".
 
-  * **-e**, **--endorse-password**=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
 
     The new endorse authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
-  * **-l**, **--lockout-password**=_LOCKOUT\_PASSWORD_:
+  * **-l**, **--lockout-passwd**=_LOCKOUT\_PASSWORD_:
 
     The new lockout authorization value.
 
     The new endorse authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
-  * **-O**, **--old-ownerPassword**=_OLD\_OWNER\_PASSWORD_:
+  * **-O**, **--old-owner-passwd**=_OLD\_OWNER\_PASSWORD_:
 
     The old owner authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
-  * **-E**, **--old-endorsePassword**=_OLD\_ENDORSE\_PASSWORD_:
+  * **-E**, **--old-endorse-passwd**=_OLD\_ENDORSE\_PASSWORD_:
 
     The old endorse authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
-  * **-L**, **--old-lockoutPassword**=_OLD\_LOCKOUT\_PASSWORD_:
+  * **-L**, **--old-lockout-passwd**=_OLD\_LOCKOUT\_PASSWORD_:
 
     The old lockout authorization value. Passwords should follow the same
     formatting requirements as the -o option.

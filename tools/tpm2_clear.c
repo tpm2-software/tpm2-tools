@@ -94,7 +94,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "platform", no_argument, NULL, 'p' },
-        { "lockout-password", required_argument, NULL, 'L' },
+        { "lockout-passwd", required_argument, NULL, 'L' },
     };
 
     *opts = tpm2_options_new("pL:", ARRAY_LEN(topts), topts, on_option, NULL);

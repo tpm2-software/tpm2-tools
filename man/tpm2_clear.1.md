@@ -24,7 +24,7 @@ OPTIONS
     specifies the tool should operate on the platform hierarchy. By default
     it operates on the lockout hierarchy.
 
-  * **-L**, **--lockout-password**=_LOCKOUT\_PASSWORD_:
+  * **-L**, **--lockout-passwd**=_LOCKOUT\_PASSWORD_:
     The lockout authorization value.
 
     Passwords should follow the password formatting standards, see section

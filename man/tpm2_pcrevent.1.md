@@ -38,7 +38,7 @@ These options control extending the pcr:
     specified by _INDEX_.
     It is an error to specify **-S** without specifying a pcr index with **-i**.
 
-  * **-P**, **--password**=_PASSWORD_:
+  * **-P**, **--passwd**=_PASSWORD_:
     Use _PASSWORD_ for providing an authorization value for the pcr specified
     in _INDEX_.
     It is an error to specify **-P** without specifying a pcr index with **-i**.
