@@ -31,9 +31,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
-#include <stdio.h>
 
 #include "log.h"
+#include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_tool.h"
@@ -132,7 +132,7 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
     return 0;
 }
 
-void tpm2_util_hexdump(BYTE *data, size_t len, bool plain) {
+void tpm2_util_hexdump(const BYTE *data, size_t len, bool plain) {
 
     if (!output_enabled) {
         return;
@@ -168,6 +168,26 @@ void tpm2_util_hexdump(BYTE *data, size_t len, bool plain) {
         }
         printf("\n");
     }
+}
+
+bool tpm2_util_hexdump_file(FILE *fd, size_t len, bool plain) {
+    BYTE* buff = (BYTE*)malloc(len);
+    if (!buff) {
+        LOG_ERR("malloc() failed");
+        return false;
+    }
+
+    bool res = files_read_bytes(fd, buff, len);
+    if (!res) {
+        LOG_ERR("Failed to read file");
+        free(buff);
+        return false;
+    }
+
+    tpm2_util_hexdump(buff, len, plain);
+
+    free(buff);
+    return true;
 }
 
 /* TODO OPTIMIZE ME */

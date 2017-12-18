@@ -33,6 +33,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <sapi/tpm20.h>
 
@@ -159,7 +160,24 @@ bool tpm2_util_string_to_uint16(const char *str, uint16_t *value);
  *  true for a plain hex string false for an xxd compatable
  *  dump.
  */
-void tpm2_util_hexdump(BYTE *data, size_t len, bool plain);
+void tpm2_util_hexdump(const BYTE *data, size_t len, bool plain);
+
+/**
+ * Prints an xxd compatible hexdump to stdout if output is enabled,
+ * ie no -Q option.
+ *
+ * @param fd
+ *  A readable open file.
+ * @param len
+ *  The length of the data to read and print.
+ * @param plain
+ *  true for a plain hex string false for an xxd compatable
+ *  dump.
+ * @return
+ *  true if len bytes were successfully read and printed,
+ *  false otherwise
+ */
+bool tpm2_util_hexdump_file(FILE *fd, size_t len, bool plain);
 
 /**
  * Prints a TPM2B as a hex dump.
