@@ -181,10 +181,10 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        {"hierachy", required_argument, NULL, 'H'},
-        {"halg",     required_argument, NULL, 'g'},
-        {"out-file", required_argument, NULL, 'o'},
-        {"ticket",   required_argument, NULL, 't'},
+        {"hierarchy", required_argument, NULL, 'H'},
+        {"halg",      required_argument, NULL, 'g'},
+        {"out-file",  required_argument, NULL, 'o'},
+        {"ticket",    required_argument, NULL, 't'},
     };
 
     /* set up non-static defaults here */
