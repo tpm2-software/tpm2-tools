@@ -272,13 +272,13 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        {"key-handle",   required_argument, NULL, 'k'},
-        {"key-context",  required_argument, NULL, 'c'},
-        {"pwdk",        required_argument, NULL, 'P'},
-        {"algorithm",   required_argument, NULL, 'g'},
-        {"out-file",    required_argument, NULL, 'o'},
-        {"input-session-handle",1,         NULL, 'S'},
-        {NULL,          no_argument,       NULL, '\0'}
+        { "key-handle",           required_argument, NULL, 'k' },
+        { "key-context",          required_argument, NULL, 'c' },
+        { "pwdk",                 required_argument, NULL, 'P' },
+        { "algorithm",            required_argument, NULL, 'g' },
+        { "out-file",             required_argument, NULL, 'o' },
+        { "input-session-handle", required_argument, NULL, 'S' },
+        { NULL,                   no_argument,       NULL, '\0' }
     };
 
     ctx.input = stdin;

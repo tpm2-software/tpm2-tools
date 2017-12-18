@@ -172,14 +172,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        {"key-handle",   required_argument, NULL, 'k'},
-        {"pwdk",        required_argument, NULL, 'P'},
-        {"decrypt",      no_argument,       NULL, 'D'},
-        {"in-file",      required_argument, NULL, 'I'},
-        {"out-file",     required_argument, NULL, 'o'},
-        {"key-context",  required_argument, NULL, 'c'},
-        {"input-session-handle",1,         NULL, 'S'},
-        {NULL,          no_argument,       NULL, '\0'}
+        { "key-handle",           required_argument, NULL, 'k' },
+        { "pwdk",                 required_argument, NULL, 'P' },
+        { "decrypt",              no_argument,       NULL, 'D' },
+        { "in-file",              required_argument, NULL, 'I' },
+        { "out-file",             required_argument, NULL, 'o' },
+        { "key-context",          required_argument, NULL, 'c' },
+        { "input-session-handle", required_argument, NULL, 'S' },
+        { NULL,                   no_argument,       NULL, '\0' }
     };
 
     ctx.session_data.sessionHandle = TPM2_RS_PW;

@@ -244,15 +244,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "index"       , required_argument, NULL, 'x' },
-        { "auth-handle"  , required_argument, NULL, 'a' },
-        { "out-file"    , required_argument, NULL, 'f' },
-        { "size"        , required_argument, NULL, 's' },
-        { "offset"      , required_argument, NULL, 'o' },
-        { "handle-passwd", required_argument, NULL, 'P' },
-        { "input-session-handle",1,          NULL, 'S' },
-        {"set-list",       required_argument, NULL, 'L' },
-        {"pcr-input-file", required_argument, NULL, 'F' },
+        { "index",                required_argument, NULL, 'x' },
+        { "auth-handle",          required_argument, NULL, 'a' },
+        { "out-file",             required_argument, NULL, 'f' },
+        { "size",                 required_argument, NULL, 's' },
+        { "offset",               required_argument, NULL, 'o' },
+        { "handle-passwd",        required_argument, NULL, 'P' },
+        { "input-session-handle", required_argument, NULL, 'S' },
+        { "set-list",             required_argument, NULL, 'L' },
+        { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
     *opts = tpm2_options_new("x:a:f:s:o:P:S:L:F:", ARRAY_LEN(topts),
