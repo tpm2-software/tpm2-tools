@@ -55,9 +55,13 @@
 #define TPM2B_EMPTY_INIT TPM2B_INIT(0)
 #define TPM2B_SENSITIVE_CREATE_EMPTY_INIT { \
            .sensitive = { \
-                .data.size = 0, \
-                .userAuth.size = 0, \
-            }, \
+                .data = {   \
+                    .size = 0 \
+                }, \
+                .userAuth = {   \
+                    .size = 0 \
+                } \
+            } \
     }
 
 #define TPMS_AUTH_COMMAND_INIT(session_handle) { \
