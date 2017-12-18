@@ -333,7 +333,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
         { "pcr-index",            required_argument, NULL, 'i' },
         { "input-session-handle", required_argument, NULL, 'S' },
-        { "passwd",             required_argument, NULL, 'P' },
+        { "passwd",               required_argument, NULL, 'P' },
     };
 
     *opts = tpm2_options_new("i:S:P:", ARRAY_LEN(topts), topts,

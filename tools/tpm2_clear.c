@@ -93,7 +93,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "platform", no_argument, NULL, 'p' },
+        { "platform",       no_argument,       NULL, 'p' },
         { "lockout-passwd", required_argument, NULL, 'L' },
     };
 

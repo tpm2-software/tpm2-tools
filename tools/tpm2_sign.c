@@ -250,15 +250,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      {"key-handle",            required_argument, NULL, 'k'},
-      {"pwdk",                 required_argument, NULL, 'P'},
-      {"halg",                 required_argument, NULL, 'g'},
-      {"message",              required_argument, NULL, 'm'},
-      {"sig",                  required_argument, NULL, 's'},
-      {"ticket",               required_argument, NULL, 't'},
-      {"key-context",           required_argument, NULL, 'c'},
-      {"input-session-handle", required_argument, NULL, 'S'},
-      {"format",               required_argument, NULL, 'f'}
+      { "key-handle",           required_argument, NULL, 'k' },
+      { "pwdk",                 required_argument, NULL, 'P' },
+      { "halg",                 required_argument, NULL, 'g' },
+      { "message",              required_argument, NULL, 'm' },
+      { "sig",                  required_argument, NULL, 's' },
+      { "ticket",               required_argument, NULL, 't' },
+      { "key-context",          required_argument, NULL, 'c' },
+      { "input-session-handle", required_argument, NULL, 'S' },
+      { "format",               required_argument, NULL, 'f' }
     };
 
     *opts = tpm2_options_new("k:P:g:m:t:s:c:S:f:", ARRAY_LEN(topts), topts,
