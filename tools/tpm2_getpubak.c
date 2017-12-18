@@ -461,7 +461,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "endorse-passwd", required_argument, NULL, 'e' },
         { "ek-handle"   , required_argument, NULL, 'E' },
         { "ak-handle"   , required_argument, NULL, 'k' },
-        { "alg"        , required_argument, NULL, 'g' },
+        { "algorithm"   , required_argument, NULL, 'g' },
         { "digest-alg"  , required_argument, NULL, 'D' },
         { "sign-alg"    , required_argument, NULL, 's' },
         { "ak-passwd"   , required_argument, NULL, 'P' },

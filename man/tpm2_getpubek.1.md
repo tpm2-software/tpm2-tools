@@ -37,7 +37,7 @@ Refer to:
   * **-H**, **--handle**=_HANDLE_:
     specifies the handle used to make EK  persistent (hex).
 
-  * **-g**, **--alg**=_ALGORITHM_:
+  * **-g**, **--algorithm**=_ALGORITHM_:
     specifies the algorithm type of EK.
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms. See section "Algorithm Specifiers" on how to specify
