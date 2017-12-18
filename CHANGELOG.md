@@ -1,5 +1,5 @@
 ## Changelog
-### 3.0.2 - in-progress
+### 3.0.2 - 2017-12-18
   * configure: enable code coverage option.
   * build: enable silent rules options.
   * Add system tests to dist tarball.
