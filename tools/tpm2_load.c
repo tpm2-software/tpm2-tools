@@ -176,15 +176,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      {"parent",1,NULL,'H'},
-      {"pwdp",1,NULL,'P'},
-      {"pubfile",1,NULL,'u'},
-      {"privfile",1,NULL,'r'},
-      {"name",1,NULL,'n'},
-      {"context",1,NULL,'C'},
-      {"context-parent",1,NULL,'c'},
-      {"input-session-handle",1,NULL,'S'},
-      {0,0,0,0}
+      { "parent",               required_argument, NULL, 'H' },
+      { "pwdp",                 required_argument, NULL, 'P' },
+      { "pubfile",              required_argument, NULL, 'u' },
+      { "privfile",             required_argument, NULL, 'r' },
+      { "name",                 required_argument, NULL, 'n' },
+      { "context",              required_argument, NULL, 'C' },
+      { "context-parent",       required_argument, NULL, 'c' },
+      { "input-session-handle", required_argument, NULL, 'S' },
+      { 0, 0, 0, 0 }
     };
 
     setbuf(stdout, NULL);

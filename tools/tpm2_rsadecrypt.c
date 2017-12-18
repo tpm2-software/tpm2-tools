@@ -148,12 +148,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "key-handle",   required_argument, NULL, 'k'},
-      { "pwdk",        required_argument, NULL, 'P'},
-      { "in-file",      required_argument, NULL, 'I'},
-      { "out-file",     required_argument, NULL, 'o'},
-      { "key-context",  required_argument, NULL, 'c'},
-      { "input-session-handle",1,         NULL, 'S' },
+      { "key-handle",           required_argument, NULL, 'k' },
+      { "pwdk",                 required_argument, NULL, 'P' },
+      { "in-file",              required_argument, NULL, 'I' },
+      { "out-file",             required_argument, NULL, 'o' },
+      { "key-context",          required_argument, NULL, 'c' },
+      { "input-session-handle", required_argument, NULL, 'S' },
     };
 
     *opts = tpm2_options_new("k:P:I:o:c:S:", ARRAY_LEN(topts), topts,

@@ -520,17 +520,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
-        { "endorse-passwd", 1, NULL, 'e' },
-        { "owner-passwd"  , 1, NULL, 'o' },
-        { "handle"       , 1, NULL, 'H' },
-        { "ek-passwd"     , 1, NULL, 'P' },
-        { "algorithm"    , 1, NULL, 'g' },
-        { "out-file"      , 1, NULL, 'f' },
-        { "non-persistent", 0, NULL, 'N' },
-        { "offline"       , 1, NULL, 'O' },
-        { "ec-cert"       , 1, NULL, 'E' },
-        { "SSL-NO-VERIFY" , 0, NULL, 'U' },
-        {"input-session-handle",1,NULL,'S'},
+        { "endorse-passwd",       required_argument, NULL, 'e' },
+        { "owner-passwd",         required_argument, NULL, 'o' },
+        { "handle",               required_argument, NULL, 'H' },
+        { "ek-passwd",            required_argument, NULL, 'P' },
+        { "algorithm",            required_argument, NULL, 'g' },
+        { "out-file",             required_argument, NULL, 'f' },
+        { "non-persistent",       no_argument,       NULL, 'N' },
+        { "offline",              required_argument, NULL, 'O' },
+        { "ec-cert",              required_argument, NULL, 'E' },
+        { "SSL-NO-VERIFY",        no_argument,       NULL, 'U' },
+        { "input-session-handle", required_argument, NULL, 'S' },
     };
 
     *opts = tpm2_options_new("e:o:H:P:g:f:NO:E:S:i:U", ARRAY_LEN(topts), topts,
