@@ -37,7 +37,7 @@ symmetric key, both the public and private portions need to be loaded.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-m**, **--msg**=_MSG\_FILE_:
+  * **-m**, **--message**=_MSG\_FILE_:
 
     The message file, containing the content to be  digested.
 

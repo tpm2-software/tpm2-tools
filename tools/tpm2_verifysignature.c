@@ -258,7 +258,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
             { "key-handle",  1, NULL, 'k' },
             { "digest",     1, NULL, 'D' },
             { "halg",       1, NULL, 'g' },
-            { "msg",        1, NULL, 'm' },
+            { "message",    1, NULL, 'm' },
             { "raw",        0, NULL, 'r' },
             { "sig",        1, NULL, 's' },
             { "ticket",     1, NULL, 't' },
