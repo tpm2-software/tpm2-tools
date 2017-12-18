@@ -253,7 +253,7 @@ static bool show_pcr_values(void) {
 
         tpm2_tool_output("%s :\n", alg_name);
 
-        UINT32 pcr_id;
+        INT32 pcr_id;
         for (pcr_id = 0; pcr_id < ctx.pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
             if (!is_pcr_select_bit_set(&ctx.pcr_selections.pcrSelections[i],
                     pcr_id)) {
