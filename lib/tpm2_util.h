@@ -281,6 +281,13 @@ UINT64 tpm2_util_ntoh_64(UINT64 data);
 UINT32 tpm2_util_pop_count(UINT32 data);
 
 /**
+ * Prints whitespace indention for yaml output.
+ * @param indent_count
+ *  Number of times to indent
+ */
+void print_yaml_indent(size_t indent_count);
+
+/**
  * Convert a TPM2B_PUBLIC into a yaml format and output if not quiet.
  * @param public
  *  The TPM2B_PUBLIC to output in YAML format.

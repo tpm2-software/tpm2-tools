@@ -346,6 +346,12 @@ static void tpm2_util_public_to_keydata(TPM2B_PUBLIC *public, tpm2_util_keydata 
     return;
 }
 
+void print_yaml_indent(size_t indent_count) {
+    while (indent_count--) {
+        tpm2_tool_output("  ");
+    }
+}
+
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
 
     tpm2_tool_output("algorithm:\n");
