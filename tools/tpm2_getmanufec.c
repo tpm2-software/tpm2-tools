@@ -421,9 +421,10 @@ int TPMinitialProvisioning(void)
     LOG_INFO("%s", b64);
 
     rc = RetrieveEndorsementCredentials(b64);
+
+    free(b64);
 out:
     free(hash);
-    free(b64);
     return rc;
 }
 
