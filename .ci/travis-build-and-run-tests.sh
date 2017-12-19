@@ -120,7 +120,7 @@ if [ "$ENABLE_COVERAGE" == "true" ]; then
   make clean
 
   # Build all device TCTIs with gcov
-  ../configure --disable-hardening CFLAGS="-g -O0 --coverage"
+  ../configure --disable-hardening --enable-code-coverage
   make -j$(nproc)
   make -j$(nproc) check
 fi
