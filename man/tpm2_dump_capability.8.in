@@ -31,7 +31,7 @@
 .SH NAME
 tpm2_dump_capability \- Display TPM capabilities in a human readable form.
 .SH SYNOPSIS
-.B tpm2_dump_capability [ \fBCOMMON OPTIONS\fR ] [ \fBTCTI OPTIONS\fR ] [ -\fB\-c\fR|\fB\-\-capability\fR]=capability_type
+.B tpm2_dump_capability [ \fBCOMMON OPTIONS\fR ] [ \fBTCTI OPTIONS\fR ] [ \fB\-c\fR|\fB\-\-capability\fR]=capability_type
 .PP
 .SH DESCRIPTION
 Query the TPM for it's capabilities / properties and dump them to the console.
