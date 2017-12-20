@@ -69,11 +69,4 @@ tpm2_getpubek -e abc123 -o abc123 -P passwd -H 0x81010001 -g rsa -f ek.pub
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
-
+[footer](common/footer.md)

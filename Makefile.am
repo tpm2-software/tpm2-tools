@@ -311,6 +311,7 @@ endif
 
 MARKDOWN_COMMON_DEPS = \
 	man/common/alg.md \
+	man/common/footer.md \
 	man/common/hash.md \
 	man/common/obj-attrs.md \
 	man/common/object-alg.md \
@@ -348,6 +349,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[signature format specifiers\]/d' \
 	    -e '/\[object attribute specifiers\]/r man/common/obj-attrs.md' \
 	    -e '/\[object attribute specifiers\]/d' \
+	    -e '/\[footer\]/r man/common/footer.md' \
+	    -e '/\[footer\]/d' \
 	    < $< | pandoc -s -t man > $@
 
 CLEANFILES = $(man1_MANS)
