@@ -284,7 +284,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "obj-context",   required_argument, NULL, 'C' },
       { "key-context",   required_argument, NULL, 'c' },
       {  "format",       required_argument, NULL, 'f' },
-      { NULL,            no_argument,       NULL, '\0' }
     };
 
     *opts = tpm2_options_new("H:k:P:K:g:a:s:C:c:f:", ARRAY_LEN(topts), topts,

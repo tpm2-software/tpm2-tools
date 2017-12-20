@@ -184,7 +184,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "context",              required_argument, NULL, 'C' },
       { "context-parent",       required_argument, NULL, 'c' },
       { "input-session-handle", required_argument, NULL, 'S' },
-      { 0, 0, 0, 0 }
     };
 
     setbuf(stdout, NULL);
