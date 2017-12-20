@@ -77,16 +77,6 @@
 #define TPM2TOOLS_ENV_TCTI_NAME      "TPM2TOOLS_TCTI_NAME"
 #define TPM2TOOLS_ENV_ENABLE_ERRATA  "TPM2TOOLS_ENABLE_ERRATA"
 
-struct tpm2_options {
-    struct {
-        tpm2_option_handler on_opt;
-        tpm2_arg_handler on_arg;
-    } callbacks;
-    char *short_opts;
-    size_t len;
-    struct option long_opts[];
-};
-
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
         tpm2_arg_handler on_arg) {
