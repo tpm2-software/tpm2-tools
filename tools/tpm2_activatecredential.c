@@ -308,7 +308,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             && (!ctx.flags.k || !ctx.flags.C) && !ctx.flags.f
             && !ctx.flags.o) {
         LOG_ERR("Expected options (H or c) and (k or C) and f and o");
-        return false;
+        return 1;
     }
 
     if (ctx.file.context) {

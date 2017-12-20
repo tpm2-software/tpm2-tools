@@ -146,7 +146,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.property == (UINT32)-1) {
         LOG_ERR("Expected options H, t, l or s");
-        return false;
+        return 1;
     }
 
     TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
