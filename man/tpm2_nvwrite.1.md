@@ -64,10 +64,4 @@ tpm2_nvwrite -x 0x1500016 -a 0x40000001 nv.data
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
+[footer](common/footer.md)

@@ -85,11 +85,4 @@ tpm2_certify -H 0x81010002 -k 0x81010001 -P 0011 -K 00FF -g 0x00B -a <fileName> 
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
-
+[footer](common/footer.md)

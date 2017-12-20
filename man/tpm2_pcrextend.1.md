@@ -67,10 +67,4 @@ tpm2_pcrextend 4:sha=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15 7:sha256:b5bb9d801
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
+[footer](common/footer.md)

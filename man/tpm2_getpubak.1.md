@@ -97,11 +97,4 @@ tpm2_getpubak -e 1a1b1c -P 123abc -o 1a1b1c -E 0x81010001 -k 0x81010002 -f ./ak.
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
-
+[footer](common/footer.md)

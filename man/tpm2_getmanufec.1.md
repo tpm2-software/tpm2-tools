@@ -91,11 +91,4 @@ tpm2_getmanufec -e 1a1b1c -o 1a1b1c -P 123abc -H 0x81010001-g 0x01 -O -N -U -E E
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
-
+[footer](common/footer.md)
