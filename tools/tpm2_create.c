@@ -329,7 +329,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "privfile",             required_argument, NULL, 'r' },
       { "context-parent",       required_argument, NULL, 'c' },
       { "input-session-handle", required_argument, NULL, 'S' },
-      { 0, 0, 0, 0}
     };
 
     setbuf(stdout, NULL);

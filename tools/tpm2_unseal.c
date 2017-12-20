@@ -188,7 +188,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "input-session-handle", required_argument, NULL, 'S' },
       { "set-list",             required_argument, NULL, 'L' },
       { "pcr-input-file",       required_argument, NULL, 'F' },
-      { NULL,                   no_argument,       NULL, '\0' }
     };
 
     *opts = tpm2_options_new("H:P:o:c:S:L:F:", ARRAY_LEN(topts), topts,

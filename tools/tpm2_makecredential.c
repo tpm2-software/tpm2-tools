@@ -193,7 +193,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"sec"     ,required_argument, NULL, 's'},
       {"name"    ,required_argument, NULL, 'n'},
       {"out-file" ,required_argument, NULL, 'o'},
-      {NULL      ,no_argument      , NULL, '\0'}
     };
 
     *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts, on_option, NULL);
