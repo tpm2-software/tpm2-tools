@@ -55,11 +55,4 @@ tpm2_encryptdecrypt -k 0x81010001 -P 123abca -X -D NO -I <filePath> -o <filePath
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
-
+[footer](common/footer.md)

@@ -55,11 +55,4 @@ tpm2_dictionarylockout -s -n 5 -t 6 -l 7 -p passwd
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
-
+[footer](common/footer.md)
