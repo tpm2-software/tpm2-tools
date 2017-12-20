@@ -79,7 +79,7 @@
 
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
-        tpm2_arg_handler on_arg) {
+        tpm2_arg_handler on_arg, bool show_usage) {
 
     tpm2_options *opts = calloc(1, sizeof(*opts) + (sizeof(*long_opts) * len));
     if (!opts) {
@@ -105,6 +105,7 @@ tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
     opts->callbacks.on_opt = on_opt;
     opts->callbacks.on_arg = on_arg;
     opts->len = len;
+    opts->show_usage = show_usage;
     memcpy(opts->long_opts, long_opts, len * sizeof(*long_opts));
 
     return opts;
@@ -139,6 +140,7 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
 
     d->callbacks.on_arg = src->callbacks.on_arg;
     d->callbacks.on_opt = src->callbacks.on_opt;
+    d->show_usage = src->show_usage;
 
     memcpy(&d->long_opts[d->len], src->long_opts, src->len * sizeof(src->long_opts[0]));
 
@@ -264,7 +266,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
 
     /* handle any options */
     tpm2_options *opts = tpm2_options_new("T:hvVQZ",
-            ARRAY_LEN(long_options), long_options, NULL, NULL);
+            ARRAY_LEN(long_options), long_options, NULL, NULL, true);
     if (!opts) {
         return tpm2_option_code_err;
     }

@@ -469,7 +469,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ak-name",        required_argument, NULL, 'n' },
     };
 
-    *opts = tpm2_options_new("o:E:e:k:g:D:s:P:f:n:p:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("o:E:e:k:g:D:s:P:f:n:p:", ARRAY_LEN(topts), topts,
+                             on_option, NULL, true);
 
     return *opts != NULL;
 }

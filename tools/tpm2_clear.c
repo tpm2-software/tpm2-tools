@@ -97,7 +97,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "lockout-passwd", required_argument, NULL, 'L' },
     };
 
-    *opts = tpm2_options_new("pL:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("pL:", ARRAY_LEN(topts), topts, on_option, NULL,
+                             false);
 
     return *opts != NULL;
 }

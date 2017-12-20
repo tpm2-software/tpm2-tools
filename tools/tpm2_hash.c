@@ -190,7 +190,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     /* set up non-static defaults here */
     ctx.input_file = stdin;
 
-    *opts = tpm2_options_new("H:g:o:t:", ARRAY_LEN(topts), topts, on_option, on_args);
+    *opts = tpm2_options_new("H:g:o:t:", ARRAY_LEN(topts), topts, on_option,
+                             on_args, false);
 
     return *opts != NULL;
 }
