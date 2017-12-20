@@ -94,10 +94,4 @@ tpm2_takeownership -o newo -p newp -e newe -l newl -O oldo -P oldP -E olde -L ol
 
 0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
+[footer](common/footer.md)
