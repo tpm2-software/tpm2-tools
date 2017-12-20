@@ -30,54 +30,11 @@
  #include <openssl/err.h>
 #include <openssl/hmac.h>
 
-#include "tpm_hmac.h"
 #include "log.h"
+#include "tpm_hmac.h"
+#include "tpm_kdfa.h"
+#include "tpm2_openssl.h"
 #include "tpm2_util.h"
-
-static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
-
-    switch(algorithm) {
-    case TPM2_ALG_SHA1:
-        return EVP_sha1();
-    case TPM2_ALG_SHA256:
-        return EVP_sha256();
-    case TPM2_ALG_SHA384:
-        return EVP_sha384();
-    case TPM2_ALG_SHA512:
-        return EVP_sha512();
-    default:
-        return NULL;
-    }
-    /* no return, not possible */
-}
-
-static HMAC_CTX *hmac_alloc()
-{
-    HMAC_CTX *ctx;
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
-    ctx = malloc(sizeof(*ctx));
-#else
-    ctx = HMAC_CTX_new();
-#endif
-    if (!ctx)
-        return NULL;
-
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL
-    HMAC_CTX_init(ctx);
-#endif
-
-    return ctx;
-}
-
-static void hmac_del(HMAC_CTX *ctx)
-{
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL
-    HMAC_CTX_cleanup(ctx);
-    free(ctx);
-#else
-    HMAC_CTX_free(ctx);
-#endif
-}
 
 TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,
@@ -112,13 +69,13 @@ TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
 
     i = 1;
 
-    const EVP_MD *md = tpm_algorithm_to_openssl_digest(hashAlg);
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hashAlg);
     if (!md) {
         LOG_ERR("Algorithm not supported for hmac: %x", hashAlg);
         return TPM2_RC_HASH;
     }
 
-    HMAC_CTX *ctx = hmac_alloc();
+    HMAC_CTX *ctx = tpm2_openssl_hmac_new();
     if (!ctx) {
         LOG_ERR("HMAC context allocation failed");
         return TPM2_RC_MEMORY;
@@ -180,7 +137,7 @@ TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
     resultKey->size = bytes;
 
 err:
-    hmac_del(ctx);
+    tpm2_openssl_hmac_free(ctx);
 
     return rval;
 }
