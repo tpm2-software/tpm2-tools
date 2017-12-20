@@ -1,24 +1,21 @@
-tpm2_clear 1 "DECEMBER 2017" tpm2-tools
-==================================================
+% tpm2_clear(1) tpm2-tools | General Commands Manual
+%
+% DECEMBER 2017
 
-NAME
-----
+# NAME
 
 tpm2_clear(1) - send a clear command to the TPM.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
 `tpm2_clear` [OPTIONS]
 
-DESCRIPTION
------------
+# DESCRIPTION
 
 tpm2_clear(1) - send a clear command to the TPM, i.e. clear the 3 authorization
 values. If the lockout password option is missing, assume NULL.
 
-OPTIONS
--------
+# OPTIONS
 
   * **-p**, **--platform**:
     specifies the tool should operate on the platform hierarchy. By default
@@ -36,8 +33,7 @@ OPTIONS
 
 [password formatting](common/password.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
 Set owner, endorsement and lockout authorizations to an empty auth value:
 
@@ -51,14 +47,14 @@ Clear the authorizations values on the platform hierarchy:
 tpm2_clear -p
 ```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
-BUGS
-----
+# BUGS
+
 [Github Issues](https://github.com/01org/tpm2-tools/issues)
 
-HELP
-----
+# HELP
+
 See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
