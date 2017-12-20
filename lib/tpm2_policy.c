@@ -39,6 +39,7 @@
 #include "log.h"
 #include "tpm_hash.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_openssl.h"
 #include "tpm2_policy.h"
 #include "tpm2_session.h"
 #include "tpm2_util.h"
@@ -157,17 +158,18 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(policy_session);
 
-    TSS2_RC rval = tpm_hash_sequence(sapi_context, auth_hash, TPM2_RH_NULL,
-            pcr_values.count, pcr_values.digests, &pcr_digest, NULL);
-    if (rval != TPM2_RC_SUCCESS) {
-        return rval;
+    result = tpm2_openssl_hash_pcr_values(auth_hash,
+            &pcr_values, &pcr_digest);
+    if (!result) {
+        LOG_ERR("Could not hash pcr values");
+        return false;
     }
 
     // Call the PolicyPCR command
     TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(
             policy_session);
 
-    rval = Tss2_Sys_PolicyPCR(sapi_context, handle,
+    TSS2_RC rval = Tss2_Sys_PolicyPCR(sapi_context, handle,
     NULL, &pcr_digest, pcr_selections, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("PolicyPCR failed: 0x%x", rval);

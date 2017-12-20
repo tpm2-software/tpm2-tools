@@ -130,6 +130,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_errata.h \
     lib/tpm2_header.h \
     lib/tpm2_nv_util.h \
+    lib/tpm2_openssl.c \
+    lib/tpm2_openssl.h \
     lib/tpm2_password_util.c \
     lib/tpm2_password_util.h \
     lib/tpm2_policy.c \
