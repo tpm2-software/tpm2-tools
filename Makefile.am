@@ -209,8 +209,8 @@ check_PROGRAMS = \
     test/unit/test_pcr \
     test/unit/test_tpm2_password_util \
     test/unit/test_tpm2_errata \
-    test/unit/test_tpm2_session
-
+    test/unit/test_tpm2_session \
+    test/unit/test_tpm2_policy
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -258,6 +258,14 @@ test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession
 test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_session_SOURCES  = test/unit/test_tpm2_session.c
+
+test_unit_test_tpm2_policy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession \
+                                      -Wl,--wrap=Tss2_Sys_PolicyPCR \
+                                      -Wl,--wrap=Tss2_Sys_PCR_Read \
+                                      -Wl,--wrap=Tss2_Sys_PolicyGetDigest
+test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
+test_unit_test_tpm2_policy_SOURCES  = test/unit/test_tpm2_policy.c
 
 endif
 
