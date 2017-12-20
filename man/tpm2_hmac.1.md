@@ -64,6 +64,7 @@ tpm2_hmac -c key.context -P abc123 -g sha1 -o hash.out << data.in
 ```
 Perform a SHA256 HMAC on _stdin_ and send result and possibly ticket to stdout:
 
+```
 cat data.in | tpm2_hmac -k 0x81010002 -g sha256 -o hash.out
 ```
 

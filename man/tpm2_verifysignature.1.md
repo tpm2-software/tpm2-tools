@@ -81,7 +81,7 @@ tpm2_verifysignature -k 0x81010001 -D <filePath> -s <filePath> -t <filePath>
 tpm2_verifysignature -c key.context -g sha256 -m <filePath> -s <filePath> -t <filePath>
 ```
 
-RETURNS
+# RETURNS
 
 0 on success or 1 on failure.
 
