@@ -195,7 +195,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"out-file" ,required_argument, NULL, 'o'},
     };
 
-    *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
+                             NULL, true);
 
     return *opts != NULL;
 }

@@ -150,7 +150,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "context",  required_argument, NULL, 'C'},
     };
 
-    *opts = tpm2_options_new("H:u:r:C:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("H:u:r:C:", ARRAY_LEN(topts), topts, on_option,
+                             NULL, true);
 
     return *opts != NULL;
 }

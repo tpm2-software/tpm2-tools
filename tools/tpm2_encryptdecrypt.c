@@ -183,7 +183,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     ctx.session_data.sessionHandle = TPM2_RS_PW;
 
-    *opts = tpm2_options_new("k:P:DI:o:c:S:", ARRAY_LEN(topts), topts, on_option, NULL);
+    *opts = tpm2_options_new("k:P:DI:o:c:S:", ARRAY_LEN(topts), topts, on_option,
+                             NULL, true);
 
     return *opts != NULL;
 }

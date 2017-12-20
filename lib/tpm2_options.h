@@ -102,6 +102,7 @@ struct tpm2_options {
     } callbacks;
     char *short_opts;
     size_t len;
+    bool show_usage;
     struct option long_opts[];
 };
 
@@ -122,12 +123,14 @@ typedef struct tpm2_options tpm2_options;
  * @param on_arg
  *  An argument handling callback, which may be null if you don't wish
  *  to handle arguments.
+ * @param show_usage
+ *  Whether the tool wants a usage short summary text to be printed.
  * @return
  *  NULL on failure or an initialized tpm2_options object.
  */
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
-        tpm2_arg_handler on_arg);
+        tpm2_arg_handler on_arg, bool show_usage);
 
 /**
  * Concatenates two tpm2_options objects, with src appended on

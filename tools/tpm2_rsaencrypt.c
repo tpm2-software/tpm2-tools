@@ -135,7 +135,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("k:o:c:", ARRAY_LEN(topts), topts,
-            on_option, on_args);
+                             on_option, on_args, true);
 
     return *opts != NULL;
 }
