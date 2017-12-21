@@ -58,11 +58,11 @@ tpm2_createprimary -Q -H o -g sha256 -G rsa
 tpm2_flushcontext -Q -t
 
 # Test for flushing a loaded session
-tpm2_createpolicy -a -P -L sha256:0
+tpm2_createpolicy -Q -a -P -L sha256:0
 tpm2_flushcontext -Q -l
 
 # Test for flushing a saved session
-tpm2_createpolicy -a -P -L sha256:0 -S saved_session.ctx
+tpm2_createpolicy -Q -a -P -L sha256:0 -S saved_session.ctx
 tpm2_flushcontext -Q -s
 
 cleanup
