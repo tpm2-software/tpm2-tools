@@ -71,9 +71,9 @@ struct tpm_create_ctx {
         UINT16 A : 1;
         UINT16 I : 1;
         UINT16 L : 1;
-        UINT16 o : 1;
+        UINT16 u : 1;
         UINT16 c : 1;
-        UINT16 O : 1;
+        UINT16 r : 1;
     } flags;
 };
 
@@ -198,14 +198,14 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
 
     tpm2_util_public_to_yaml(&outPublic);
 
-    if (ctx.flags.o) {
+    if (ctx.flags.u) {
         bool res = files_save_public(&outPublic, ctx.opu_path);
         if(!res) {
             return -3;
         }
     }
 
-    if (ctx.flags.O) {
+    if (ctx.flags.r) {
         bool res = files_save_bytes_to_file(ctx.opr_path, outPrivate.buffer, outPrivate.size);
         if (!res) {
             return -4;
@@ -293,14 +293,14 @@ static bool on_option(char key, char *value) {
         if(files_does_file_exist(ctx.opu_path) != 0) {
             return false;
         }
-        ctx.flags.o = 1;
+        ctx.flags.u = 1;
         break;
     case 'r':
         ctx.opr_path = value;
         if(files_does_file_exist(ctx.opr_path) != 0) {
             return false;
         }
-        ctx.flags.O = 1;
+        ctx.flags.r = 1;
         break;
     case 'c':
         ctx.context_parent_path = value;
