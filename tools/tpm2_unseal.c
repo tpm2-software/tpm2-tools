@@ -36,11 +36,11 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_session.h"
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
 #include "tpm_hash.h"
-#include "tpm_session.h"
 #include "tpm2_password_util.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
@@ -53,7 +53,7 @@ struct tpm_unseal_ctx {
     char *outFilePath;
     char *contextItemFile;
     char *raw_pcrs_file;
-    SESSION *policy_session;
+    tpm2_session *policy_session;
     TPML_PCR_SELECTION pcr_selection;
     struct {
         UINT8 H : 1;
@@ -106,18 +106,31 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.L) {
-        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-        TSS2_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
-                                        TPM2_SE_POLICY, TPM2_ALG_SHA256, ctx.pcr_selection,
-                                        ctx.raw_pcrs_file, &pcr_digest, true,
-                                        tpm2_policy_pcr_build);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Building PCR policy failed: 0x%x", rval);
-            return false;
+        tpm2_session_data *session_data =
+                tpm2_session_data_new(TPM2_SE_POLICY);
+        if (!session_data) {
+            LOG_ERR("oom");
+            return 1;
         }
 
-        ctx.sessionData.sessionHandle = ctx.policy_session->sessionHandle;
+        ctx.policy_session = tpm2_session_new(sapi_context,
+                session_data);
+        if (!ctx.policy_session) {
+            LOG_ERR("Could not start tpm session");
+            return 1;
+        }
+
+        bool result = tpm2_policy_build_pcr(sapi_context, ctx.policy_session,
+                ctx.raw_pcrs_file,
+                &ctx.pcr_selection);
+        if (!result) {
+            LOG_ERR("Could not build a pcr policy");
+            tpm2_session_free(&ctx.policy_session);
+            return 1;
+        }
+
+        ctx.sessionData.sessionHandle = tpm2_session_get_session_handle(ctx.policy_session);
         ctx.sessionData.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
@@ -211,14 +224,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.policy_session) {
+        TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(ctx.policy_session);
+
         TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
-                                            ctx.policy_session->sessionHandle));
+                                            handle));
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context: 0x%x", rval);
             return 1;
         }
 
-        tpm_session_auth_end(ctx.policy_session);
+        tpm2_session_free(&ctx.policy_session);
     }
 
     return 0;

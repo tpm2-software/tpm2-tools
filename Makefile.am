@@ -144,8 +144,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm_kdfa.h \
     lib/tpm2_options.c \
     lib/tpm2_options.h \
-    lib/tpm_session.c \
-    lib/tpm_session.h
+    lib/tpm2_session.c \
+    lib/tpm2_session.h
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
@@ -206,7 +206,9 @@ check_PROGRAMS = \
     test/unit/test_tpm2_alg_util \
     test/unit/test_pcr \
     test/unit/test_tpm2_password_util \
-    test/unit/test_tpm2_errata
+    test/unit/test_tpm2_errata \
+    test/unit/test_tpm2_session
+
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -249,6 +251,11 @@ test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Tss2_Sys_GetCapability
 test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
+
+test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession
+test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
+test_unit_test_tpm2_session_SOURCES  = test/unit/test_tpm2_session.c
 
 endif
 

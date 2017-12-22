@@ -44,7 +44,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_util.h"
-#include "tpm_session.h"
+#include "tpm2_session.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
 
@@ -211,14 +211,8 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
-    TPM2B_NONCE nonce_caller = TPM2B_EMPTY_INIT;
     TPMT_TK_CREATION creation_ticket = TPMT_TK_CREATION_EMPTY_INIT;
     TPM2B_CREATION_DATA creation_data = TPM2B_EMPTY_INIT;
-    TPM2B_ENCRYPTED_SECRET encrypted_salt = TPM2B_EMPTY_INIT;
-
-    TPMT_SYM_DEF symmetric = {
-            .algorithm = TPM2_ALG_NULL,
-    };
 
     TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
 
@@ -245,27 +239,44 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
-    SESSION *session = NULL;
-    UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session, TPM2_RH_NULL, 0, TPM2_RH_NULL, 0,
-            &nonce_caller, &encrypted_salt, TPM2_SE_POLICY, &symmetric,
-            TPM2_ALG_SHA256);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tpm_session_start_auth_with_params Error. TPM Error:0x%x", rval);
+    tpm2_session_data *data = tpm2_session_data_new(TPM2_SE_POLICY);
+    if (!data) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    tpm2_session *session = tpm2_session_new(sapi_context, data);
+    if (!session) {
+        LOG_ERR("Could not start tpm session");
         return false;
     }
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
-            session->sessionHandle, &sessions_data, 0, 0, 0, 0, 0, 0, 0));
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(session);
+    tpm2_session_free(&session);
+
+
+    TPM2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(
+            sapi_context,
+            TPM2_RH_ENDORSEMENT,
+            handle,
+            &sessions_data,
+            NULL,
+            NULL,
+            NULL,
+            0,
+            NULL,
+            NULL,
+            NULL));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
+        LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:%d", __LINE__);
         return false;
     }
 
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
-    sessions_data.auths[0].sessionHandle = session->sessionHandle;
+    sessions_data.auths[0].sessionHandle = handle;
     sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
 
@@ -280,38 +291,44 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     LOG_INFO("TPM2_Create succ");
 
     // Need to flush the session here.
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, session->sessionHandle));
+    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_INFO("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
         return false;
     }
     // And remove the session from sessions table.
-    tpm_session_auth_end(session);
-
     sessions_data.auths[0].sessionHandle = TPM2_RS_PW;
     sessions_data.auths[0].sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
 
     memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
-    rval = tpm_session_start_auth_with_params(sapi_context, &session, TPM2_RH_NULL, 0, TPM2_RH_NULL, 0,
-            &nonce_caller, &encrypted_salt, TPM2_SE_POLICY, &symmetric,
-            TPM2_ALG_SHA256);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tpm_session_start_auth_with_params Error. TPM Error:0x%x", rval);
+    data = tpm2_session_data_new(TPM2_SE_POLICY);
+    if (!data) {
+        LOG_ERR("oom");
         return false;
     }
+
+    session = tpm2_session_new(sapi_context, data);
+    if (!session) {
+        LOG_ERR("Could not start tpm session");
+        return false;
+    }
+
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
+    handle = tpm2_session_get_session_handle(session);
+    tpm2_session_free(&session);
+
     rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
-            session->sessionHandle, &sessions_data, 0, 0, 0, 0, 0, 0, 0));
+            handle, &sessions_data, 0, 0, 0, 0, 0, 0, 0));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
         return false;
     }
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
-    sessions_data.auths[0].sessionHandle = session->sessionHandle;
+    sessions_data.auths[0].sessionHandle = handle;
     sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
 
@@ -339,15 +356,11 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     // Need to flush the session here.
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, session->sessionHandle));
+    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
         return false;
     }
-
-    // And remove the session from sessions table.
-    tpm_session_auth_end(session);
-
     sessions_data.auths[0].sessionHandle = TPM2_RS_PW;
     sessions_data.auths[0].sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
