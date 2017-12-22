@@ -46,7 +46,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_util.h"
-#include "tpm_session.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 
 typedef struct tpm_activatecred_ctx tpm_activatecred_ctx;
@@ -169,32 +169,29 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
         1, {ctx.endorse_password}
     };
 
-    TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
-
-    TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
-
-    TPMT_SYM_DEF symmetric = {
-        .algorithm = TPM2_ALG_NULL
-    };
-
-    SESSION *session = NULL;
-    UINT32 rval = tpm_session_start_auth_with_params(sapi_context, &session,
-            TPM2_RH_NULL, 0, TPM2_RH_NULL, 0, &nonceCaller, &encryptedSalt,
-            TPM2_SE_POLICY, &symmetric, TPM2_ALG_SHA256);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tpm_session_start_auth_with_params Error. TPM Error:0x%x",
-                rval);
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
+    if (!d) {
+        LOG_ERR("oom");
         return false;
     }
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
-            session->sessionHandle, &cmd_auth_array_endorse, 0, 0, 0, 0, 0, 0, 0));
+    tpm2_session *session = tpm2_session_new(sapi_context, d);
+    if (!session) {
+        LOG_ERR("Could not start tpm session");
+        return false;
+    }
+
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(session);
+
+
+    TPM2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
+            handle, &cmd_auth_array_endorse, 0, 0, 0, 0, 0, 0, 0));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
         return false;
     }
 
-    cmd_auth_array_password.auths[1].sessionHandle = session->sessionHandle;
+    cmd_auth_array_password.auths[1].sessionHandle = handle;
     cmd_auth_array_password.auths[1].sessionAttributes |= 
             TPMA_SESSION_CONTINUESESSION;
     cmd_auth_array_password.auths[1].hmac.size = 0;
@@ -208,13 +205,13 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     // Need to flush the session here.
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, session->sessionHandle));
+    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
         return false;
     }
 
-    tpm_session_auth_end(session);
+    tpm2_session_free(&session);
 
     return output_and_save(&certInfoData, ctx.file.output);
 }

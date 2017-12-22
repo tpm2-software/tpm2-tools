@@ -36,6 +36,7 @@
 #include <sapi/tpm20.h>
 
 #include "tpm2_errata.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 static inline void setcaps(UINT32 level, UINT32 rev, UINT32 day, UINT32 year, TSS2_RC rc) {
