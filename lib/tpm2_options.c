@@ -37,6 +37,9 @@
 #include <getopt.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 #include "log.h"
 #include "tpm2_options.h"
 #include "tpm2_util.h"
@@ -199,12 +202,31 @@ static char *tcti_get_opts(char *optstr) {
     return &split[1];
 }
 
-static void execute_man(char *prog_name) {
+static bool execute_man(char *prog_name) {
 
-    char *manpage = basename(prog_name);
-    execlp("man", "man", manpage, NULL);
-    LOG_ERR("Could not execute \"man %s\" error: %s", manpage,
-            strerror(errno));
+    pid_t  pid;
+    int status;
+
+    if ((pid = fork()) < 0) {
+        LOG_ERR("Could not fork process to execute man, error: %s",
+                strerror(errno));
+        return false;
+    }
+
+    if (pid == 0) {
+        char *manpage = basename(prog_name);
+        execlp("man", "man", manpage, NULL);
+    } else {
+        if ((pid = waitpid(pid, &status, 0)) == -1) {
+            LOG_ERR("Waiting for child process that executes man failed, error: %s",
+                    strerror(errno));
+            return false;
+        }
+
+        return WEXITSTATUS(status) == 0;
+    }
+
+    return true;
 }
 
 static void show_version (const char *name) {
