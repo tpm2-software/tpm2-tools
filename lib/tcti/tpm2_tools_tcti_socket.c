@@ -50,9 +50,6 @@ tpm2_tools_tcti_socket_init (char *opts)
     TCTI_SOCKET_CONF conf = {
         .hostname          = TCTI_SOCKET_DEFAULT_ADDRESS,
         .port              = TCTI_SOCKET_DEFAULT_PORT,
-        .logCallback       = NULL,
-        .logBufferCallback = NULL,
-        .logData           = NULL,
     };
 
     char *addr_env = getenv(TPM2TOOLS_ENV_SOCKET_ADDRESS);

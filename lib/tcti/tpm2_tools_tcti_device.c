@@ -45,8 +45,6 @@ TSS2_TCTI_CONTEXT *tpm2_tools_tcti_device_init(char *opts) {
 
     TCTI_DEVICE_CONF conf = {
         .device_path = TCTI_DEVICE_DEFAULT_PATH,
-        .logCallback = NULL,
-        .logData = NULL,
     };
 
     char *env_path = getenv(TPM2TOOLS_ENV_DEVICE_FILE);
