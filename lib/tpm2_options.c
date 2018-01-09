@@ -257,10 +257,10 @@ void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     unsigned int i;
 
     printf("usage: %s%s%s\n", command,
-           tool_opts->callbacks.on_opt ? " [OPTIONS]" : "",
-           tool_opts->callbacks.on_arg ? " ARGUMENTS" : "");
+           tool_opts && tool_opts->callbacks.on_opt ? " [OPTIONS]" : "",
+           tool_opts && tool_opts->callbacks.on_arg ? " ARGUMENTS" : "");
 
-    if (tool_opts->callbacks.on_opt) {
+    if (tool_opts && tool_opts->callbacks.on_opt) {
         for (i = 0; i < tool_opts->len; i++) {
             struct option *opt = &tool_opts->long_opts[i];
             printf("[ -%c | --%s%s]", opt->val, opt->name,
