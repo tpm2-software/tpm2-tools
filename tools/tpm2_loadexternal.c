@@ -121,7 +121,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.H = 1;
     break;
     case 'u':
-        if(!files_load_public(optarg, &ctx.public_key)) {
+        if(!files_load_public(value, &ctx.public_key)) {
             return false;;
         }
         ctx.flags.u = 1;

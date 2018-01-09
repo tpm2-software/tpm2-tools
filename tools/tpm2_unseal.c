@@ -144,7 +144,7 @@ static bool on_option(char key, char *value) {
         bool result = tpm2_util_string_to_uint32(value, &ctx.itemHandle);
         if (!result) {
             LOG_ERR("Could not convert item handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         ctx.flags.H = 1;
@@ -153,17 +153,17 @@ static bool on_option(char key, char *value) {
     case 'P': {
         bool result = tpm2_password_util_from_optarg(value, &ctx.sessionData.hmac);
         if (!result) {
-            LOG_ERR("Invalid item handle password, got\"%s\"", optarg);
+            LOG_ERR("Invalid item handle password, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
     }
         break;
     case 'o':
-        ctx.outFilePath = optarg;
+        ctx.outFilePath = value;
         break;
     case 'c':
-        ctx.contextItemFile = optarg;
+        ctx.contextItemFile = value;
         ctx.flags.c = 1;
         break;
     case 'S': {
@@ -171,7 +171,7 @@ static bool on_option(char key, char *value) {
             &ctx.sessionData.sessionHandle);
         if (!result) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
     }
@@ -183,7 +183,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.L = 1;
         break;
     case 'F':
-        ctx.raw_pcrs_file = optarg;
+        ctx.raw_pcrs_file = value;
         break;
         /* no default */
     }

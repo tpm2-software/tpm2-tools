@@ -443,21 +443,21 @@ static bool on_option(char key, char *value) {
     case 'e':
         return_val = tpm2_password_util_from_optarg(value, &ctx.endorse_session_data.hmac);
         if (!return_val) {
-            LOG_ERR("Invalid endorsement password, got\"%s\"", optarg);
+            LOG_ERR("Invalid endorsement password, got\"%s\"", value);
             return false;
         }
         break;
     case 'o':
         return_val = tpm2_password_util_from_optarg(value, &ctx.owner_session_data.hmac);
         if (!return_val) {
-            LOG_ERR("Invalid owner password, got\"%s\"", optarg);
+            LOG_ERR("Invalid owner password, got\"%s\"", value);
             return false;
         }
         break;
     case 'P':
         return_val = tpm2_password_util_from_optarg(value, &ctx.ek_password);
         if (!return_val) {
-            LOG_ERR("Invalid EK password, got\"%s\"", optarg);
+            LOG_ERR("Invalid EK password, got\"%s\"", value);
             return false;
         }
         break;

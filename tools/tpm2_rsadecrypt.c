@@ -94,7 +94,7 @@ static bool on_option(char key, char *value) {
         bool result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
         if (!result) {
             LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         ctx.flags.k = 1;
@@ -103,7 +103,7 @@ static bool on_option(char key, char *value) {
     case 'P': {
         bool result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!result) {
-            LOG_ERR("Invalid key password, got\"%s\"", optarg);
+            LOG_ERR("Invalid key password, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -120,22 +120,22 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'o': {
-        bool result = files_does_file_exist(optarg);
+        bool result = files_does_file_exist(value);
         if (result) {
             return false;
         }
-        ctx.output_file_path = optarg;
+        ctx.output_file_path = value;
         ctx.flags.o = 1;
     }
         break;
     case 'c':
-        ctx.context_key_file = optarg;
+        ctx.context_key_file = value;
         ctx.flags.c = 1;
         break;
     case 'S':
          if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
              LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                     optarg);
+                     value);
              return false;
          }
          break;

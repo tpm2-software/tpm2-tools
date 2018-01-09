@@ -201,7 +201,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.L = 1;
         break;
     case 'F':
-        ctx.raw_pcrs_file = optarg;
+        ctx.raw_pcrs_file = value;
         break;
     }
 
