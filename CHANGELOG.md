@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_sign: supports signing a pre-computed hash via -D
   * tpm2_clearlock: tool added
   * test: system testing scripts moved into subordiante test directory.
   * fix a buffer overflow in nvread/write tools.
