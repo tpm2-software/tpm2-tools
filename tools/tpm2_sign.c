@@ -54,6 +54,7 @@ struct tpm_sign_ctx {
     TPMS_AUTH_COMMAND sessionData;
     TPMI_DH_OBJECT keyHandle;
     TPMI_ALG_HASH halg;
+    TPM2B_DIGEST digest;
     char *outFilePath;
     BYTE *msg;
     UINT16 length;
@@ -61,14 +62,15 @@ struct tpm_sign_ctx {
     char *inMsgFileName;
     signature_format sig_format;
     struct {
-        UINT8 k : 1;
-        UINT8 P : 1;
-        UINT8 g : 1;
-        UINT8 m : 1;
-        UINT8 t : 1;
-        UINT8 s : 1;
-        UINT8 c : 1;
-        UINT8 f : 1;
+        UINT16 k : 1;
+        UINT16 P : 1;
+        UINT16 g : 1;
+        UINT16 m : 1;
+        UINT16 t : 1;
+        UINT16 s : 1;
+        UINT16 c : 1;
+        UINT16 f : 1;
+        UINT16 D : 1;
     } flags;
 };
 
@@ -76,11 +78,10 @@ tpm_sign_ctx ctx = {
         .msg = NULL,
         .sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
         .halg = TPM2_ALG_SHA1,
+        .digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
 
 static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
-
-    TPM2B_DIGEST digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
     TPMT_SIG_SCHEME in_scheme;
     TPMT_SIGNATURE signature;
@@ -88,11 +89,13 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.sessionData }};
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
-    int rc = tpm_hash_compute_data(sapi_context, ctx.halg, TPM2_RH_NULL,
-            ctx.msg, ctx.length, &digest, NULL);
-    if (rc) {
-        LOG_ERR("Compute message hash failed!");
-        return false;
+    if (!ctx.flags.D) {
+      int rc = tpm_hash_compute_data(sapi_context, ctx.halg, TPM2_RH_NULL,
+              ctx.msg, ctx.length, &ctx.digest, NULL);
+      if (rc) {
+          LOG_ERR("Compute message hash failed!");
+          return false;
+      }
     }
 
     bool result = get_signature_scheme(sapi_context, ctx.keyHandle, ctx.halg, &in_scheme);
@@ -101,7 +104,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
-            &sessions_data, &digest, &in_scheme, &ctx.validation, &signature,
+            &sessions_data, &ctx.digest, &in_scheme, &ctx.validation, &signature,
             &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Sys_Sign failed, error code: 0x%x", rval);
@@ -113,14 +116,19 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.m && ctx.flags.s)) {
-        LOG_ERR("Expected options (k or c) and m and s");
+    if (!((ctx.flags.k || ctx.flags.c) && (ctx.flags.m || ctx.flags.D) && ctx.flags.s)) {
+        LOG_ERR("Expected options (k or c) and (m or D) and s");
         return false;
     }
 
-    if (!ctx.flags.t) {
+    if (ctx.flags.D && (ctx.flags.t || ctx.flags.m)) {
+        LOG_WARN("Option D provided, options m and t are ignored.");
+    }
+
+    if (ctx.flags.D || !ctx.flags.t) {
         ctx.validation.tag = TPM2_ST_HASHCHECK;
         ctx.validation.hierarchy = TPM2_RH_NULL;
+        memset(&ctx.validation.digest, 0, sizeof(ctx.validation.digest));
     }
 
     /*
@@ -135,36 +143,38 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     /*
-     * Process the msg file
+     * Process the msg file if needed
      */
-    unsigned long file_size;
-    bool result = files_get_file_size_path(ctx.inMsgFileName, &file_size);
-    if (!result) {
-        return false;
-    }
-    if (file_size == 0) {
-        LOG_ERR("The message file \"%s\" is empty!", ctx.inMsgFileName);
-        return false;
-    }
+    if (ctx.flags.m && !ctx.flags.D) {
+      unsigned long file_size;
+      bool result = files_get_file_size_path(ctx.inMsgFileName, &file_size);
+      if (!result) {
+          return false;
+      }
+      if (file_size == 0) {
+          LOG_ERR("The message file \"%s\" is empty!", ctx.inMsgFileName);
+          return false;
+      }
 
-    if (file_size > 0xffff) {
-        LOG_ERR(
-                "The message file was longer than a 16 bit length, got: %lu, expected less than: %d!",
-                file_size, 0x10000);
-        return false;
-    }
+      if (file_size > UINT16_MAX) {
+          LOG_ERR(
+                  "The message file \"%s\" is too large, got: %lu bytes, expected less than: %u bytes!",
+                  ctx.inMsgFileName, file_size, UINT16_MAX + 1);
+          return false;
+      }
 
-    ctx.msg = (BYTE*) calloc(required_argument, file_size);
-    if (!ctx.msg) {
-        LOG_ERR("oom");
-        return false;
-    }
+      ctx.msg = (BYTE*) calloc(required_argument, file_size);
+      if (!ctx.msg) {
+          LOG_ERR("oom");
+          return false;
+      }
 
-    ctx.length = file_size;
-    result = files_load_bytes_from_path(ctx.inMsgFileName, ctx.msg, &ctx.length);
-    if (!result) {
-        free(ctx.msg);
-        return false;
+      ctx.length = file_size;
+      result = files_load_bytes_from_path(ctx.inMsgFileName, ctx.msg, &ctx.length);
+      if (!result) {
+          free(ctx.msg);
+          return false;
+      }
     }
 
     return true;
@@ -200,6 +210,15 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.g = 1;
+    }
+        break;
+    case 'D': {
+        ctx.digest.size = sizeof(ctx.digest.buffer);
+        if (!files_load_bytes_from_path(value, ctx.digest.buffer, &ctx.digest.size)) {
+            LOG_ERR("Could not load digest from file \"%s\"!", value);
+            return false;
+        }
+        ctx.flags.D = 1;
     }
         break;
     case 'm':
@@ -254,6 +273,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pwdk",                 required_argument, NULL, 'P' },
       { "halg",                 required_argument, NULL, 'g' },
       { "message",              required_argument, NULL, 'm' },
+      { "digest",               required_argument, NULL, 'D' },
       { "sig",                  required_argument, NULL, 's' },
       { "ticket",               required_argument, NULL, 't' },
       { "key-context",          required_argument, NULL, 'c' },
@@ -261,7 +281,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("k:P:g:m:t:s:c:S:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:P:g:m:D:t:s:c:S:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, true);
 
     return *opts != NULL;
