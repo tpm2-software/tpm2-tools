@@ -27,6 +27,7 @@ addons:
     - clang-3.8
     - pandoc
     - lcov
+    - liburiparser-dev
 
 env:
   global:
