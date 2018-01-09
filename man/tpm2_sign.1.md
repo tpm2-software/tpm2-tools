@@ -46,6 +46,15 @@ data and validation shall indicate that hashed data did not start with
 
     The message file, containing the content to be  digested.
 
+  * **-D**, **--digest**=_DIGEST\_FILE_:
+
+    The digest file that shall be computed using the correct hash
+    algorithm. When this option is specified, a warning is generated and
+    **both the message file (-m) and the validation ticket (-t) are
+    ignored**.
+    You cannot use this option to sign a digest against a restricted
+    signing key.
+
   * **-t**, **--ticket**=_TICKET\_FILE_:
 
     The ticket file, containning the validation structure, optional.

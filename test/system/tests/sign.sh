@@ -37,8 +37,10 @@ file_signing_key_priv=oprB1_B8
 file_signing_key_ctx=context_load_out_B1_B8
 file_signing_key_name=name.load.B1_B8
 file_input_data=secret.data
+file_input_digest=secret.digest
 file_output_data=sig.4
-
+file_output_ticket=secret.ticket
+file_output_hash=secret.hash
 
 handle_signing_key=0x81010005
 
@@ -55,7 +57,8 @@ trap onerror ERR
 cleanup() {
     rm -f $file_input_data $file_primary_key_ctx $file_signing_key_pub \
           $file_signing_key_priv $file_signing_key_ctx $file_signing_key_name \
-          $file_output_data
+          $file_output_data $file_input_digest $file_output_ticket \
+          $file_output_hash
 
     tpm2_evictcontrol -Q -Ao -H $handle_signing_key 2>/dev/null || true
 }
@@ -80,5 +83,27 @@ rm -f $file_output_data
 tpm2_evictcontrol -Q -A o -c $file_signing_key_ctx -S $handle_signing_key
 
 tpm2_sign -Q -k $handle_signing_key -g $alg_hash -m $file_input_data -s $file_output_data
+
+rm -f $file_output_data
+
+# generate hash and test validation
+
+tpm2_hash -Q -H e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
+
+tpm2_sign -Q -k $handle_signing_key -g $alg_hash -s $file_output_data -m $file_input_data -t $file_output_ticket
+
+rm -f $file_output_data
+
+# test with digest, no validation
+
+sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > $file_input_digest
+
+tpm2_sign -Q -k $handle_signing_key -g $alg_hash -D $file_input_digest -s $file_output_data
+
+rm -f $file_output_data
+
+# test with digest + message/validation (warning generated)
+
+tpm2_sign -Q -k $handle_signing_key -g $alg_hash -D $file_input_digest -s $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
 
 exit 0
