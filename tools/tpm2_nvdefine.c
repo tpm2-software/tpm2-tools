@@ -170,10 +170,10 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'L':
-        ctx.policy_file = optarg;
+        ctx.policy_file = value;
         break;
     case 'S':
-        if (!tpm2_util_string_to_uint32(optarg, &ctx.session_data.sessionHandle)) {
+        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                     value);
             return false;

@@ -107,42 +107,42 @@ static bool on_option(char key, char *value) {
     case 'o':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.new);
         if (!result) {
-            LOG_ERR("Invalid new owner password, got\"%s\"", optarg);
+            LOG_ERR("Invalid new owner password, got\"%s\"", value);
             return false;
         }
         break;
     case 'e':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.new);
         if (!result) {
-            LOG_ERR("Invalid new endorse password, got\"%s\"", optarg);
+            LOG_ERR("Invalid new endorse password, got\"%s\"", value);
             return false;
         }
         break;
     case 'l':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.new);
         if (!result) {
-            LOG_ERR("Invalid new lockout password, got\"%s\"", optarg);
+            LOG_ERR("Invalid new lockout password, got\"%s\"", value);
             return false;
         }
         break;
     case 'O':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.old);
         if (!result) {
-            LOG_ERR("Invalid current owner password, got\"%s\"", optarg);
+            LOG_ERR("Invalid current owner password, got\"%s\"", value);
             return false;
         }
         break;
     case 'E':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.old);
         if (!result) {
-            LOG_ERR("Invalid current endorse password, got\"%s\"", optarg);
+            LOG_ERR("Invalid current endorse password, got\"%s\"", value);
             return false;
         }
         break;
     case 'L':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.old);
         if (!result) {
-            LOG_ERR("Invalid current lockout password, got\"%s\"", optarg);
+            LOG_ERR("Invalid current lockout password, got\"%s\"", value);
             return false;
         }
         break;

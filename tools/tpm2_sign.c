@@ -177,7 +177,7 @@ static bool on_option(char key, char *value) {
         bool result = tpm2_util_string_to_uint32(value, &ctx.keyHandle);
         if (!result) {
             LOG_ERR("Could not format key handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         ctx.flags.k = 1;
@@ -186,24 +186,24 @@ static bool on_option(char key, char *value) {
     case 'P': {
         bool result = tpm2_password_util_from_optarg(value, &ctx.sessionData.hmac);
         if (!result) {
-            LOG_ERR("Invalid key password, got\"%s\"", optarg);
+            LOG_ERR("Invalid key password, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
     }
         break;
     case 'g': {
-        ctx.halg = tpm2_alg_util_from_optarg(optarg);
+        ctx.halg = tpm2_alg_util_from_optarg(value);
         if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         ctx.flags.g = 1;
     }
         break;
     case 'm':
-        ctx.inMsgFileName = optarg;
+        ctx.inMsgFileName = value;
         ctx.flags.m = 1;
         break;
     case 't': {
@@ -215,28 +215,28 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 's': {
-        bool result = files_does_file_exist(optarg);
+        bool result = files_does_file_exist(value);
         if (result) {
             return false;
         }
-        ctx.outFilePath = optarg;
+        ctx.outFilePath = value;
         ctx.flags.s = 1;
     }
         break;
     case 'c':
-        ctx.contextKeyFile = optarg;
+        ctx.contextKeyFile = value;
         ctx.flags.c = 1;
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.sessionData.sessionHandle)) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         break;
     case 'f':
         ctx.flags.f = 1;
-        ctx.sig_format = tpm2_parse_signature_format(optarg);
+        ctx.sig_format = tpm2_parse_signature_format(value);
 
         if (ctx.sig_format == signature_format_err) {
             return false;

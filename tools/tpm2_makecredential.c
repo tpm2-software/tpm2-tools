@@ -178,7 +178,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.n = 1;
     } break;
     case 'o':
-        ctx.out_file_path = optarg;
+        ctx.out_file_path = value;
         ctx.flags.o = 1;
         break;
     }

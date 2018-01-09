@@ -240,7 +240,7 @@ static bool on_option(char key, char *value) {
         if (files_does_file_exist(value)) {
             return false;
         }
-        ctx.file_path.sig = optarg;
+        ctx.file_path.sig = value;
         ctx.flags.s = 1;
         break;
     case 'c':
@@ -256,12 +256,12 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Multiple specifications of -C");
             return false;
         }
-        ctx.context_file = optarg;
+        ctx.context_file = value;
         ctx.flags.C = 1;
         break;
     case 'f':
         ctx.flags.f = 1;
-        ctx.sig_fmt = tpm2_parse_signature_format(optarg);
+        ctx.sig_fmt = tpm2_parse_signature_format(value);
 
         if (ctx.sig_fmt == signature_format_err) {
             return false;

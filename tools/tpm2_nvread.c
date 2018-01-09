@@ -172,7 +172,7 @@ static bool on_option(char key, char *value) {
         result = tpm2_util_string_to_uint32(value, &ctx.nv_index);
         if (!result) {
             LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
 
@@ -185,7 +185,7 @@ static bool on_option(char key, char *value) {
         result = tpm2_util_string_to_uint32(value, &ctx.auth_handle);
         if (!result) {
             LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
 
@@ -200,7 +200,7 @@ static bool on_option(char key, char *value) {
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
         if (!result) {
-            LOG_ERR("Invalid handle password, got\"%s\"", optarg);
+            LOG_ERR("Invalid handle password, got\"%s\"", value);
             return false;
         }
         break;
@@ -208,7 +208,7 @@ static bool on_option(char key, char *value) {
         result = tpm2_util_string_to_uint32(value, &ctx.size_to_read);
         if (!result) {
             LOG_ERR("Could not convert size to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         break;
@@ -216,14 +216,14 @@ static bool on_option(char key, char *value) {
         result = tpm2_util_string_to_uint32(value, &ctx.offset);
         if (!result) {
             LOG_ERR("Could not convert offset to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
         break;
@@ -234,7 +234,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.L = 1;
         break;
     case 'F':
-        ctx.raw_pcrs_file = optarg;
+        ctx.raw_pcrs_file = value;
         break;
         /* no default */
     }

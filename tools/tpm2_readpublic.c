@@ -109,14 +109,14 @@ static bool on_option(char key, char *value) {
         ctx.flags.H = 1;
         break;
     case 'o':
-        ctx.outFilePath = optarg;
+        ctx.outFilePath = value;
         break;
     case 'c':
-        ctx.context_file = optarg;
+        ctx.context_file = value;
         ctx.flags.c = 1;
         break;
     case 'f':
-        ctx.format = tpm2_parse_pubkey_format(optarg);
+        ctx.format = tpm2_parse_pubkey_format(value);
         if (ctx.format == pubkey_format_err) {
             return false;
         }

@@ -142,7 +142,7 @@ static bool on_option(char key, char *value) {
         k_flag = 1;
         break;
     case 'c':
-        contextFilePath = optarg;
+        contextFilePath = value;
         c_flag = 1;
         break;
 
@@ -162,7 +162,7 @@ static bool on_option(char key, char *value) {
         l_flag = 1;
         break;
     case 'g':
-        pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(optarg);
+        pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(value);
         if (pcrSelections.pcrSelections[0].hash == TPM2_ALG_ERROR)
         {
             LOG_ERR("Could not convert pcr hash selection, got: \"%s\"", value);
@@ -180,7 +180,7 @@ static bool on_option(char key, char *value) {
         L_flag = 1;
         break;
     case 'o':
-        outFilePath = optarg;
+        outFilePath = value;
         o_flag = 1;
         break;
     case 'q':
@@ -194,26 +194,26 @@ static bool on_option(char key, char *value) {
     case 'S':
          if (!tpm2_util_string_to_uint32(value, &auth_session_handle)) {
              LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                     optarg);
+                     value);
              return false;
          }
          is_auth_session = true;
          break;
     case 's':
-         signature_path = optarg;
+         signature_path = value;
          break;
     case 'm':
-         message_path = optarg;
+         message_path = value;
          break;
     case 'f':
-         sig_format = tpm2_parse_signature_format(optarg);
+         sig_format = tpm2_parse_signature_format(value);
 
          if (sig_format == signature_format_err) {
             return false;
          }
          break;
     case 'G':
-        sig_hash_algorithm = tpm2_alg_util_from_optarg(optarg);
+        sig_hash_algorithm = tpm2_alg_util_from_optarg(value);
         if(sig_hash_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
             return false;

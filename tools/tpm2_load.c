@@ -116,7 +116,7 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'H':
-        if (!tpm2_util_string_to_uint32(optarg, &ctx.parent_handle)) {
+        if (!tpm2_util_string_to_uint32(value, &ctx.parent_handle)) {
                 return false;
         }
         ctx.flags.H = 1;
@@ -129,7 +129,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'u':
-        if(!files_load_public(optarg, &ctx.in_public)) {
+        if(!files_load_public(value, &ctx.in_public)) {
             return false;;
         }
         ctx.flags.u = 1;

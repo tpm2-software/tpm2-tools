@@ -306,7 +306,7 @@ static bool on_option(char key, char *value) {
         if (!result) {
             LOG_ERR(
                     "Could not convert session handle to number, got: \"%s\"",
-                    optarg);
+                    value);
             return false;
         }
     }
@@ -316,7 +316,7 @@ static bool on_option(char key, char *value) {
         bool result = tpm2_password_util_from_optarg(value,
                 &ctx.session_data.hmac);
         if (!result) {
-            LOG_ERR("Invalid key handle password, got\"%s\"", optarg);
+            LOG_ERR("Invalid key handle password, got\"%s\"", value);
             return false;
         }
     }
