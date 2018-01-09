@@ -256,6 +256,10 @@ static void show_version (const char *name) {
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     unsigned int i;
 
+    if (!tool_opts || !tool_opts->show_usage) {
+        return;
+    }
+
     printf("usage: %s%s%s\n", command,
            tool_opts->callbacks.on_opt ? " [OPTIONS]" : "",
            tool_opts->callbacks.on_arg ? " ARGUMENTS" : "");
