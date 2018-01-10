@@ -53,6 +53,7 @@ struct tpm_unseal_ctx {
     char *outFilePath;
     char *contextItemFile;
     char *raw_pcrs_file;
+    char *session_file;
     tpm2_session *policy_session;
     TPML_PCR_SELECTION pcr_selection;
     struct {
@@ -60,6 +61,7 @@ struct tpm_unseal_ctx {
         UINT8 c : 1;
         UINT8 P : 1;
         UINT8 L : 1;
+        UINT8 S : 1;
     } flags;
 };
 
@@ -107,18 +109,23 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (ctx.flags.L) {
 
+        if (ctx.flags.S) {
+            LOG_ERR("Cannot specify -S with -L");
+            return false;
+        }
+
         tpm2_session_data *session_data =
                 tpm2_session_data_new(TPM2_SE_POLICY);
         if (!session_data) {
             LOG_ERR("oom");
-            return 1;
+            return false;
         }
 
         ctx.policy_session = tpm2_session_new(sapi_context,
                 session_data);
         if (!ctx.policy_session) {
             LOG_ERR("Could not start tpm session");
-            return 1;
+            return false;
         }
 
         bool result = tpm2_policy_build_pcr(sapi_context, ctx.policy_session,
@@ -127,9 +134,17 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         if (!result) {
             LOG_ERR("Could not build a pcr policy");
             tpm2_session_free(&ctx.policy_session);
-            return 1;
+            return false;
         }
+    } else if (ctx.session_file) {
+        ctx.policy_session = tpm2_session_restore(ctx.session_file);
+        if (!ctx.policy_session) {
+            return false;
+        }
+    }
 
+
+    if (ctx.policy_session) {
         ctx.sessionData.sessionHandle = tpm2_session_get_session_handle(ctx.policy_session);
         ctx.sessionData.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
@@ -167,13 +182,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.c = 1;
         break;
     case 'S': {
-        bool result = tpm2_util_string_to_uint32(value,
-            &ctx.sessionData.sessionHandle);
-        if (!result) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
+        ctx.session_file = value;
     }
         break;
     case 'L':
@@ -198,7 +207,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pwdk",                 required_argument, NULL, 'P' },
       { "out-file",             required_argument, NULL, 'o' },
       { "item-context",         required_argument, NULL, 'c' },
-      { "input-session-handle", required_argument, NULL, 'S' },
+      { "session",              required_argument, NULL, 'S' },
       { "set-list",             required_argument, NULL, 'L' },
       { "pcr-input-file",       required_argument, NULL, 'F' },
     };
