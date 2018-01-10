@@ -88,6 +88,7 @@ bin_PROGRAMS = \
     tools/tpm2_rsaencrypt \
     tools/tpm2_send \
     tools/tpm2_sign \
+    tools/tpm2_startauthsession \
     tools/tpm2_startup \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
@@ -197,6 +198,7 @@ tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_rc_decode_SOURCES = tools/tpm2_rc_decode.c $(TOOL_SRC)
 tools_tpm2_import_SOURCES = tools/tpm2_import.c $(TOOL_SRC)
 tools_tpm2_flushcontext_SOURCES = tools/tpm2_flushcontext.c $(TOOL_SRC)
+tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -324,6 +326,7 @@ if HAVE_PANDOC
     man/man1/tpm2_rsaencrypt.1 \
     man/man1/tpm2_send.1 \
     man/man1/tpm2_sign.1 \
+    man/man1/tpm2_startauthsession.1 \
     man/man1/tpm2_startup.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1

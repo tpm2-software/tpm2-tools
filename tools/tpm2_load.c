@@ -207,7 +207,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if(ctx.flags.c) {
-        returnVal = files_load_tpm_context_from_file(sapi_context,
+        returnVal = files_load_tpm_context_from_path(sapi_context,
                                                &ctx.parent_handle,
                                                ctx.context_parent_file) != true;
         if (returnVal) {
@@ -221,7 +221,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.C) {
-        returnVal = files_save_tpm_context_to_file (sapi_context,
+        returnVal = files_save_tpm_context_to_path (sapi_context,
                                                     handle2048rsa,
                                                     ctx.context_file) != true;
         if (returnVal) {

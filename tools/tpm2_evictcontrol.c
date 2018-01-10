@@ -197,7 +197,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.c) {
-        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.handle.object,
+        bool result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.object,
                                                        ctx.context_file);
         if (!result) {
             return 1;

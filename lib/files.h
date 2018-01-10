@@ -93,7 +93,21 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
  * @return
  *  True on success, False on error.
  */
-bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handle, const char *path);
+bool files_save_tpm_context_to_path(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handle, const char *path);
+
+/**
+ * Like files_save_tpm_context_to_path() but saves a tpm session to a FILE stream.
+ * @param sapi_context
+ *  The system api context
+ * @param handle
+ *  The object handle for the object to save.
+ * @param stream
+ *  The FILE stream to save too.
+ * @return
+ *  True on success, False on error.
+ */
+bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handle,
+        FILE *stream);
 
 /**
  * Loads a TPM object context from disk.
@@ -106,7 +120,21 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE 
  * @return
  *  True on Success, false on error.
  */
-bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE *handle, const char *path);
+bool files_load_tpm_context_from_path(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE *handle, const char *path);
+
+/**
+ * Like files_load_tpm_context_from_path() but loads the context from a FILE stream.
+ * @param sapi_context
+ *  The system API context
+ * @param handle
+ *  The object handle that was saved.
+ * @param stream
+ *  The FILE stream to read from.
+ * @return
+ *  True on success, False on error.
+ */
+bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
+        TPM2_HANDLE *handle, FILE *stream);
 
 /**
  * Serializes a TPM2B_PUBLIC to the file path provided.

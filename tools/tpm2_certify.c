@@ -305,7 +305,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     /* Load input files */
     if (ctx.flags.C) {
-        result = files_load_tpm_context_from_file(sapi_context, &ctx.handle.obj,
+        result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.obj,
                                                   ctx.context_file);
         if (!result) {
             return 1;
@@ -313,7 +313,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.c) {
-        result = files_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
+        result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.key,
                                                   ctx.context_key_file);
         if (!result) {
             return 1;

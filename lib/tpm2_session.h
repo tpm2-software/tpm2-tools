@@ -28,6 +28,8 @@
 #ifndef SRC_TPM2_SESSION_H_
 #define SRC_TPM2_SESSION_H_
 
+#include <stdbool.h>
+
 #include <sapi/tpm20.h>
 
 typedef struct tpm2_session_data tpm2_session_data;
@@ -145,6 +147,37 @@ TPMI_SH_AUTH_SESSION tpm2_session_get_session_handle(tpm2_session *session);
  */
 tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
         tpm2_session_data *data);
+
+/**
+ * Saves session data to disk allowing tpm2_session_from_file() to
+ * restore the session.
+ *
+ * @Note
+ * This is accomplished by calling:
+ *   - Tss2_Sys_ContextSave - marks to some RMs like tpm2-abrmd not to flush this session
+ *                            handle on client disconnection.
+ *   - Tss2_Sys_ContextLoad - restores the session so it can be used.
+ *   - Saving a custom file format at path - records the handle and algorithm.
+ * @param session
+ *  The session context to save
+ * @param sapi_context
+ *  The system api context
+ * @param path
+ *  The path to save the session context too.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
+        const char *path);
+
+/**
+ * Restores a session saved with tpm2_session_save().
+ * @param path
+ *  The path to restore from.
+ * @return
+ *  NULL on failure or a session pointer on success.
+ */
+tpm2_session *tpm2_session_restore(const char *path);
 
 /**
  * Frees a tpm2_sessio but DOES NOT FLUSH the handle. Frees the associated

@@ -98,7 +98,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.c) {
-        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.itemHandle,
+        bool result = files_load_tpm_context_from_path(sapi_context, &ctx.itemHandle,
                 ctx.contextItemFile);
         if (!result) {
             return false;

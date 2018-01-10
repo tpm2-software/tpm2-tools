@@ -160,7 +160,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.key_context) {
-        bool result = files_load_tpm_context_from_file(sapi_context, &ctx.keyHandle,
+        bool result = files_load_tpm_context_from_path(sapi_context, &ctx.keyHandle,
                 ctx.context_key_file_path);
         if (!result) {
             goto err;
