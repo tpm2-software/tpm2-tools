@@ -309,7 +309,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.file.context) {
-        bool res = files_load_tpm_context_from_file(sapi_context, &ctx.handle.activate,
+        bool res = files_load_tpm_context_from_path(sapi_context, &ctx.handle.activate,
                 ctx.file.context);
         if (!res) {
             return 1;
@@ -317,7 +317,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.file.key_context) {
-        bool res = files_load_tpm_context_from_file(sapi_context, &ctx.handle.key,
+        bool res = files_load_tpm_context_from_path(sapi_context, &ctx.handle.key,
                 ctx.file.key_context) != true;
         if (!res) {
             return 1;

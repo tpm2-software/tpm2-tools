@@ -304,7 +304,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.c) {
-        result = files_load_tpm_context_from_file(sapi_context, &ctx.key_handle,
+        result = files_load_tpm_context_from_path(sapi_context, &ctx.key_handle,
                                                   ctx.context_key_file_path);
         if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",

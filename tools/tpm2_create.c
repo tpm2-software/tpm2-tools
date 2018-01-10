@@ -375,7 +375,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     } else if(flagCnt == 3 && (ctx.flags.H == 1 || ctx.flags.c == 1) &&
               ctx.flags.g == 1 && ctx.flags.G == 1) {
         if(ctx.flags.c)
-            returnVal = files_load_tpm_context_from_file(sapi_context,
+            returnVal = files_load_tpm_context_from_path(sapi_context,
                                                          &ctx.parent_handle, ctx.context_parent_path) != true;
         if(returnVal == 0)
             returnVal = create(sapi_context);

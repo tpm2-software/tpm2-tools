@@ -259,7 +259,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if(c_flag) {
-        bool result = files_load_tpm_context_from_file(sapi_context, &akHandle, contextFilePath);
+        bool result = files_load_tpm_context_from_path(sapi_context, &akHandle, contextFilePath);
         if (!result) {
             return 1;
         }

@@ -25,16 +25,18 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include "tpm2_session.h"
-
+#include <errno.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm_kdfa.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_session.h"
 #include "tpm2_util.h"
 
 struct tpm2_session_data {
@@ -137,9 +139,11 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context,
 void tpm2_session_free(tpm2_session **session) {
 
     tpm2_session *s = *session;
-    free(s->input);
-    free(s);
-    *session = NULL;
+    if (s) {
+        free(s->input);
+        free(s);
+        *session = NULL;
+    }
 }
 
 tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
@@ -156,6 +160,10 @@ tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
 
     session->internal.nonceNewer.size = session->input->nonce_caller.size;
 
+    if (!sapi_context) {
+        return session;
+    }
+
     bool result = start_auth_session(sapi_context, session);
     if (!result) {
         tpm2_session_free(&session);
@@ -163,4 +171,161 @@ tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
     }
 
     return session;
+}
+
+#define SESSION_VERSION 1
+
+/*
+ * Checks that two types are equal in size.
+ *
+ * It works by leveraging the fact that C does not allow negative array sizes.
+ * If the sizes are equal, the boolean equality operator will return 1, thus
+ * a subtraction of 1 yields 0, which is a legal array size in C. In the false
+ * case (ie sizes not equal), 0 - 1 is -1, which will cause the compiler to
+ * complain.
+ */
+#define COMPILE_ASSERT_SIZE(a, b) \
+    typedef char WRONG_SIZE_##a[(sizeof(a) == sizeof(b)) - 1]
+
+// We check that the TSS library does not change sizes unbeknownst to us.
+COMPILE_ASSERT_SIZE(TPM2_HANDLE, UINT32);
+COMPILE_ASSERT_SIZE(TPMI_ALG_HASH, UINT16);
+COMPILE_ASSERT_SIZE(TPM2_SE, UINT8);
+
+tpm2_session *tpm2_session_restore(const char *path) {
+
+    tpm2_session *s = NULL;
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
+                path, strerror(errno));
+        return NULL;
+    }
+
+    uint32_t version;
+    bool result = files_read_header(f, &version);
+
+    TPM2_SE type;
+    result = files_read_bytes(f, &type, sizeof(type));
+    if (!result) {
+        LOG_ERR("Could not read session type");
+        goto out;
+    }
+
+    TPMI_ALG_HASH auth_hash;
+    result = files_read_16(f, &auth_hash);
+    if (!result) {
+        LOG_ERR("Could not read session digest algorithm");
+        goto out;
+    }
+
+    TPM2_HANDLE handle;
+    result = files_read_32(f, &handle);
+    if (!result) {
+        LOG_ERR("Could not read session handle");
+        goto out;
+    }
+
+    tpm2_session_data *d = tpm2_session_data_new(type);
+    if (!d) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    tpm2_session_set_authhash(d, auth_hash);
+
+    s = tpm2_session_new(NULL, d);
+    if (s) {
+        s->output.session_handle = handle;
+    }
+
+out:
+    fclose(f);
+    return s;
+}
+
+bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
+        const char *path) {
+
+    char *ptr = NULL;
+    bool result = false;
+
+    FILE *mem = NULL;
+    FILE *session_file = NULL;
+
+    /*
+     * Perform a tpm context save/load but just write the
+     * context data in memory. This will mark the session
+     * with some RMs (like abrmd) as not-to-flush on client
+     * exit.
+     */
+    size_t size = sizeof(TPMS_CONTEXT);
+    mem = open_memstream(&ptr, &size);
+    if (!mem) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    TPM2_HANDLE handle = tpm2_session_get_session_handle(session);
+    result = files_save_tpm_context_to_file(sapi_context, handle, mem);
+    if (!result) {
+        goto out;
+    }
+
+    rewind(mem);
+
+    TPM2_HANDLE dummy;
+    result = files_load_tpm_context_from_file(sapi_context, &dummy, mem);
+
+    session_file = fopen(path, "w+b");
+    if (!session_file) {
+        LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
+                path, strerror(errno));
+        goto out;
+    }
+
+    /*
+     * Now write the session_type, handle and auth hash data to disk
+     */
+    result = files_write_header(session_file, SESSION_VERSION);
+    if (!result) {
+         LOG_ERR("Could not write context file header");
+         goto out;
+     }
+
+     // UINT8 session type:
+     TPM2_SE session_type = session->input->session_type;
+     result = files_write_bytes(session_file, &session_type, sizeof(session_type));
+     if (!result) {
+         LOG_ERR("Could not write session type");
+         goto out;
+     }
+
+     // UINT16 - auth hash digest
+     result = files_write_16(session_file, tpm2_session_get_authhash(session));
+     if (!result) {
+         LOG_ERR("Could not write savedHandle");
+         goto out;
+     }
+
+     // UINT32 - Handle
+     result = files_write_32(session_file, handle);
+     if (!result) {
+         LOG_ERR("Could not write handle");
+         goto out;
+     }
+
+     /* result is set by files_write_32() */
+
+out:
+    if (mem) {
+        fclose(mem);
+    }
+    if (session_file) {
+        fclose(session_file);
+    }
+    free(ptr);
+
+    return result;
 }

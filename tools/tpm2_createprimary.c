@@ -325,7 +325,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         returnVal = create_primary(sapi_context);
 
         if (returnVal == 0 && ctx.flags.C) {
-            returnVal = files_save_tpm_context_to_file(sapi_context, ctx.handle2048rsa,
+            returnVal = files_save_tpm_context_to_path(sapi_context, ctx.handle2048rsa,
                                                        ctx.context_file) != true;
         }
 

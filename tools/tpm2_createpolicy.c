@@ -234,7 +234,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         const char *file = pctx.common_policy_options.context_file;
 
         if (file) {
-            return files_save_tpm_context_to_file(sapi_context,
+            return files_save_tpm_context_to_path(sapi_context,
                                                   handle, file) != true;
         }
     }
