@@ -61,6 +61,9 @@ PRETTY=true
 # Disable errata by default
 ERRATA_ENABLED=false
 
+# Do not run tcti specific tests by default
+TCTI_TESTS=""
+
 clear_colors() {
   red=''
   grn=''
@@ -119,9 +122,30 @@ test_wrapper() {
   fi
 }
 
+# Handle options
+while getopts "pZt:" opt; do
+  case $opt in
+    p) PRETTY=false;;
+    Z) ERRATA_ENABLED=true;;
+    t) TCTI_TESTS="$OPTARG";;
+   \?) echo "Invalid option: -$OPTARG" >&2; exit 1;;
+    :) echo "Option -$OPTARG requires an argument." >&2; exit 1;;
+  esac
+done
+shift $((OPTIND -1))
+
 # Get a list of test scripts, all tests should begin with test_tpm2_ and
 # be a shell script.
 tests=`find tests -maxdepth 1 -type f`
+
+# Add tcti tests if specified and found..
+if [ -n "$TCTI_TESTS" ]; then
+  tcti_tests=`find tests/tcti/$TCTI_TESTS -maxdepth 1 -type f`
+  if [ -z "$tcti_tests" ]; then
+    echo "WARN: Found 0 tcti tests for tcti: $TCTI_TESTS"
+  fi
+  tests="$tests $tcti_tests"
+fi
 
 # Building with asan on clang, the leak sanitizier
 # portion (lsan) on ancient versions is:
@@ -135,14 +159,6 @@ if [ "$ASAN_ENABLED" == "true" ]; then
   tests=`echo $tests | grep -v getmanufec.sh`
 fi
 
-while true; do
-  case "$1" in
-    -p | --plain ) PRETTY=false; shift ;;
-    -Z | --enable-errata ) ERRATA_ENABLED=true; shift ;;
-    -- ) shift; break ;;
-    * ) break ;;
-  esac
-done
 
 # If command line arguments are provided, assume it is
 # the test suite to execute.
