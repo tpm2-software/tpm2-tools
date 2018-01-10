@@ -38,15 +38,22 @@ alive and pass that session using the **--input-session-handle** option.
 
     Output file name, containing the unsealed data. Defaults to stdout if not specified.
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
+## Session Options
 
-    Optional Input session handle from a policy session for authorization.
+  Options used for controlling sessions and policy events.
+
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option. This session
+    is used in lieu of starting a session and using the PCR policy options. **-L** is
+    mutually exclusive of this option.
 
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
 
     The list of pcr banks and selected PCRs' ids.
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specfiers".
+    **-S** is mutually exclusive of this option.
 
   * **-F**,**--pcr-input-file=_PCR\_INPUT\_FILE_
 
