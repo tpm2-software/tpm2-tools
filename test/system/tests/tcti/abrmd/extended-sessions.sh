@@ -57,17 +57,13 @@ onerror() {
 }
 trap onerror ERR
 
-handle=""
-
 cleanup() {
   rm -f $file_input_data $file_primary_key_ctx $file_unseal_key_pub \
         $file_unseal_key_priv $file_unseal_key_ctx $file_unseal_key_name \
         $file_unseal_output_data $file_pcr_value \
         $file_policy $file_session_file
 
-  if [ -n "$handle" ]; then
-    tpm2_flushcontext -H "$handle" 2>/dev/null || true
-  fi
+  tpm2_flushcontext -S $file_session_file 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -97,12 +93,11 @@ tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_prim
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-handle=`tpm2_startauthsession -S $file_session_file | cut -d' ' -f 2-2`
+tpm2_startauthsession -Q -S $file_session_file
 
 tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 
-tpm2_flushcontext -H "$handle"
-handle=""
+tpm2_flushcontext -S $file_session_file
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx -L $file_policy \
   -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' <<< $secret

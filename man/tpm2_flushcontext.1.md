@@ -28,6 +28,11 @@
   * **-s**, **--saved-session**:
     Remove all saved sessions.
 
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Obtain handle to flush from a session file. A session file is generated
+    from **tpm2_startauthsession**(1)'s **-S** option.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
@@ -37,6 +42,12 @@
 ```
 tpm2_flushcontext -H 0x80000000
 tpm2_flushcontext --transient-object
+```
+
+Flushing a context via a session file
+```
+tpm2_startauthsession -S session.dat
+tpm2_flushcontext -S session.dat
 ```
 
 # RETURNS
