@@ -82,6 +82,7 @@ bin_PROGRAMS = \
     tools/tpm2_pcrextend \
     tools/tpm2_pcrlist \
     tools/tpm2_policypcr \
+    tools/tpm2_policyrestart \
     tools/tpm2_quote \
     tools/tpm2_rc_decode \
     tools/tpm2_readpublic \
@@ -201,6 +202,7 @@ tools_tpm2_import_SOURCES = tools/tpm2_import.c $(TOOL_SRC)
 tools_tpm2_flushcontext_SOURCES = tools/tpm2_flushcontext.c $(TOOL_SRC)
 tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
 tools_tpm2_policypcr_SOURCES = tools/tpm2_policypcr.c $(TOOL_SRC)
+tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -326,6 +328,7 @@ if HAVE_PANDOC
     man/man1/tpm2_pcrextend.1 \
     man/man1/tpm2_pcrlist.1 \
     man/man1/tpm2_policypcr.1 \
+    man/man1/tpm2_policyrestart.1 \
     man/man1/tpm2_quote.1 \
     man/man1/tpm2_rc_decode.1 \
     man/man1/tpm2_readpublic.1 \
