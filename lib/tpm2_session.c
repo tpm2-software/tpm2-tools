@@ -317,7 +317,6 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
      }
 
      /* result is set by files_write_32() */
-
 out:
     if (mem) {
         fclose(mem);

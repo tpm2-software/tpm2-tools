@@ -118,4 +118,20 @@ unsealed=`tpm2_unseal -S $file_session_file -c $file_unseal_key_ctx`
 
 test "$unsealed" == "$secret"
 
+# Test resetting the policy session causes unseal to fail.
+tpm2_policyrestart -S $file_session_file
+
+# negative test, clear the error handler
+trap - ERR
+
+tpm2_unseal -S $file_session_file -c $file_unseal_key_ctx 2>/dev/null
+rc=$?
+
+# restore the error handler
+trap onerror ERR
+if [ $rc -eq 0 ]; then
+  echo "Expected tpm2_unseal to fail after policy reset"
+  false
+fi
+
 exit 0
