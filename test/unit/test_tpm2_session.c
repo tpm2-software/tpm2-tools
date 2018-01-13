@@ -166,6 +166,25 @@ TSS2_RC __wrap_Tss2_Sys_ContextLoad(
     return TPM2_RC_SUCCESS;
 }
 
+static TSS2_RC policy_restart_return() {
+    return (TSS2_RC)mock();
+}
+
+TSS2_RC __wrap_Tss2_Sys_PolicyRestart(
+    TSS2_SYS_CONTEXT *sysContext,
+    TPMI_SH_POLICY  sessionHandle,
+    TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray,
+    TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray
+    ) {
+
+    UNUSED(sysContext);
+    UNUSED(sessionHandle);
+    UNUSED(cmdAuthsArray);
+    UNUSED(rspAuthsArray);
+
+    return policy_restart_return();
+}
+
 #define SAPI_CONTEXT   ((TSS2_SYS_CONTEXT *)0xDEADBEEF)
 #define SESSION_HANDLE 0xBADC0DE
 
@@ -304,6 +323,29 @@ static void test_tpm2_session_save(void **state) {
     assert_null(s);
 }
 
+static void test_tpm2_session_restart(void **state) {
+    UNUSED(state);
+
+    set_expected_defaults(TPM2_SE_POLICY, SESSION_HANDLE, TPM2_RC_SUCCESS);
+
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
+    assert_non_null(d);
+
+    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    assert_non_null(s);
+
+    will_return(policy_restart_return, TPM2_RC_SUCCESS);
+    bool result = tpm2_session_restart(SAPI_CONTEXT, s);
+    assert_true(result);
+
+    will_return(policy_restart_return, TPM2_RC_HANDLE);
+    result = tpm2_session_restart(SAPI_CONTEXT, s);
+    assert_false(result);
+
+    tpm2_session_free(&s);
+    assert_null(s);
+}
+
 /* link required symbol, but tpm2_tool.c declares it AND main, which
  * we have a main below for cmocka tests.
  */
@@ -324,7 +366,8 @@ int main(int argc, char *argv[]) {
     cmocka_unit_test(test_tpm2_session_setters_good),
     cmocka_unit_test(test_tpm2_session_defaults_bad),
     cmocka_unit_test_setup_teardown(test_tpm2_session_save,
-            test_session_setup, test_session_teardown)
+            test_session_setup, test_session_teardown),
+    cmocka_unit_test(test_tpm2_session_restart),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

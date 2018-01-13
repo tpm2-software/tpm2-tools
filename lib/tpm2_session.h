@@ -180,6 +180,18 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
 tpm2_session *tpm2_session_restore(const char *path);
 
 /**
+ * restarts the session to it's initial state via a call to
+ * Tss2_Sys_PolicyRestart().
+ * @param sapi_context
+ *  The system api context
+ * @param s
+ *  The session
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_session_restart(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s);
+
+/**
  * Frees a tpm2_sessio but DOES NOT FLUSH the handle. Frees the associated
  * tpm2_session_data object as well.
  * @param session

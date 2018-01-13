@@ -329,3 +329,15 @@ out:
 
     return result;
 }
+
+bool tpm2_session_restart(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s) {
+
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(s);
+
+    TSS2_RC rval = Tss2_Sys_PolicyRestart(sapi_context, handle, NULL, NULL);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("PolicyRestart: 0x%x", rval);
+    }
+
+    return rval == TPM2_RC_SUCCESS;
+}
