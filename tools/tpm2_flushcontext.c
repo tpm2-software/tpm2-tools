@@ -35,14 +35,18 @@
 
 #include "log.h"
 #include "tpm2_options.h"
+#include "tpm2_session.h"
 #include "tpm2_util.h"
 
 struct tpm_flush_context_ctx {
     UINT32 property;
     TPM2_HANDLE objectHandle;
+    struct {
+        char *path;
+    } session;
 };
 
-static struct tpm_flush_context_ctx ctx = { .property = -1, };
+static struct tpm_flush_context_ctx ctx;
 
 static const char *get_property_name(TPM2_HANDLE handle) {
 
@@ -109,7 +113,6 @@ static bool on_option(char key, char *value) {
         if (!result) {
             return false;
         }
-        ctx.property = 0;
         break;
     case 't':
         ctx.property = TPM2_TRANSIENT_FIRST;
@@ -120,6 +123,9 @@ static bool on_option(char key, char *value) {
     case 's':
         ctx.property = TPM2_ACTIVE_SESSION_FIRST;
         break;
+    case 'S':
+        ctx.session.path = value;
+    break;
     }
 
     return true;
@@ -128,13 +134,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "handle",           no_argument, NULL, 'H' },
-        { "transient-object", no_argument, NULL, 't' },
-        { "loaded-session",   no_argument, NULL, 'l' },
-        { "saved-session",    no_argument, NULL, 's' },
+        { "handle",           no_argument,        NULL, 'H' },
+        { "transient-object", no_argument,        NULL, 't' },
+        { "loaded-session",   no_argument,        NULL, 'l' },
+        { "saved-session",    no_argument,        NULL, 's' },
+        { "session",          required_argument,  NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("H:tls", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("H:tlsS:", ARRAY_LEN(topts), topts,
                              on_option, NULL, true);
 
     return *opts != NULL;
@@ -143,11 +150,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
-
-    if (ctx.property == (UINT32)-1) {
-        LOG_ERR("Expected options H, t, l or s");
-        return 1;
-    }
 
     TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
     TPML_HANDLE *handles = &capability_data.data.handles;
@@ -160,6 +162,19 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             return 1;
         }
     } else {
+
+        /* handle from a session file */
+        if (ctx.session.path) {
+            tpm2_session *s = tpm2_session_restore(ctx.session.path);
+            if (!s) {
+                return 1;
+            }
+
+            ctx.objectHandle = tpm2_session_get_session_handle(s);
+
+            tpm2_session_free(&s);
+        }
+
         handles->handle[0] = ctx.objectHandle;
         handles->count = 1;
     }
