@@ -67,7 +67,7 @@
 #define TPMS_AUTH_COMMAND_INIT(session_handle) { \
         .sessionHandle = session_handle,\
 	    .nonce = TPM2B_EMPTY_INIT, \
-	    .sessionAttributes = 0, \
+	    .sessionAttributes = TPMA_SESSION_CONTINUESESSION, \
 	    .hmac = TPM2B_EMPTY_INIT \
     }
 
