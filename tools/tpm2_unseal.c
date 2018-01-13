@@ -233,15 +233,19 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.policy_session) {
-        TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(ctx.policy_session);
+        /*
+         * Only flush sessions started internally by the tool.
+         */
+        if (ctx.flags.S) {
+            TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(ctx.policy_session);
 
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
-                                            handle));
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Failed Flush Context: 0x%x", rval);
-            return 1;
+            TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
+                                                handle));
+            if (rval != TPM2_RC_SUCCESS) {
+                LOG_ERR("Failed Flush Context: 0x%x", rval);
+                return 1;
+            }
         }
-
         tpm2_session_free(&ctx.policy_session);
     }
 
