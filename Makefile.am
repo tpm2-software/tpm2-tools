@@ -261,7 +261,9 @@ test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
 test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession
+test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession \
+                                       -Wl,--wrap=Tss2_Sys_ContextSave \
+                                       -Wl,--wrap=Tss2_Sys_ContextLoad
 test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_session_SOURCES  = test/unit/test_tpm2_session.c
 

@@ -27,8 +27,9 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-
 #include <stdio.h>
+
+#include <unistd.h>
 
 #include <setjmp.h>
 #include <cmocka.h>
@@ -113,7 +114,7 @@ TSS2_RC __wrap_Tss2_Sys_StartAuthSession(TSS2_SYS_CONTEXT *sysContext,
     UNUSED(nonceTPM);
     UNUSED(rspAuthsArray);
 
-    expected_data *e = (expected_data *) mock();
+    expected_data *e = mock_ptr_type(expected_data *);
 
     assert_int_equal(tpmKey, e->input.key);
 
@@ -136,6 +137,33 @@ TSS2_RC __wrap_Tss2_Sys_StartAuthSession(TSS2_SYS_CONTEXT *sysContext,
     TSS2_RC rc = e->output.rc;
     free(e);
     return rc;
+}
+
+TPMI_DH_CONTEXT _save_handle;
+
+TSS2_RC __wrap_Tss2_Sys_ContextSave(
+    TSS2_SYS_CONTEXT *sysContext,
+    TPMI_DH_CONTEXT saveHandle,
+    TPMS_CONTEXT *context) {
+    UNUSED(sysContext);
+    UNUSED(context);
+
+    _save_handle = saveHandle;
+
+    return TPM2_RC_SUCCESS;
+}
+
+TSS2_RC __wrap_Tss2_Sys_ContextLoad(
+    TSS2_SYS_CONTEXT *sysContext,
+    const TPMS_CONTEXT *context,
+    TPMI_DH_CONTEXT *loadedHandle) {
+
+    UNUSED(sysContext);
+    UNUSED(context);
+
+    *loadedHandle = _save_handle;
+
+    return TPM2_RC_SUCCESS;
 }
 
 #define SAPI_CONTEXT   ((TSS2_SYS_CONTEXT *)0xDEADBEEF)
@@ -235,6 +263,47 @@ static void test_tpm2_session_defaults_bad(void **state) {
     assert_null(s);
 }
 
+static int test_session_setup(void **state) {
+
+    int rc = (*state = tmpnam(NULL)) == NULL;
+    return rc;
+}
+
+static int test_session_teardown(void **state) {
+
+    int rc = unlink((char *)*state);
+    return rc;
+}
+
+static void test_tpm2_session_save(void **state) {
+
+    set_expected_defaults(TPM2_SE_POLICY, SESSION_HANDLE, TPM2_RC_SUCCESS);
+
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
+    assert_non_null(d);
+
+    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    assert_non_null(s);
+
+    TPMI_SH_AUTH_SESSION handle1 = tpm2_session_get_session_handle(s);
+
+    bool result = tpm2_session_save(SAPI_CONTEXT, s, (char *)*state);
+    assert_true(result);
+
+    tpm2_session_free(&s);
+    assert_null(s);
+
+    s = tpm2_session_restore((char *)*state);
+    assert_non_null(s);
+
+    TPMI_SH_AUTH_SESSION handle2 = tpm2_session_get_session_handle(s);
+
+    assert_int_equal(handle1, handle2);
+
+    tpm2_session_free(&s);
+    assert_null(s);
+}
+
 /* link required symbol, but tpm2_tool.c declares it AND main, which
  * we have a main below for cmocka tests.
  */
@@ -253,7 +322,10 @@ int main(int argc, char *argv[]) {
      */
     cmocka_unit_test(test_tpm2_session_defaults_good),
     cmocka_unit_test(test_tpm2_session_setters_good),
-    cmocka_unit_test(test_tpm2_session_defaults_bad), };
+    cmocka_unit_test(test_tpm2_session_defaults_bad),
+    cmocka_unit_test_setup_teardown(test_tpm2_session_save,
+            test_session_setup, test_session_teardown)
+    };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
