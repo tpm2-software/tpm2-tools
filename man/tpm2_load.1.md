@@ -39,8 +39,9 @@ into the TPM.
   * **-C**, **--context**=_CONTEXT\_FILE_:
     An optional file to save the object context to.
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
-    Optional Input session handle from a policy session for authorization.
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
 [common options](common/options.md)
 
