@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,13 +38,14 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
+#include "files.h"
+#include "log.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
-#include "tpm2_util.h"
-#include "log.h"
-#include "files.h"
-#include "tpm2_alg_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
 struct tpm_hmac_ctx {
@@ -240,13 +241,15 @@ static bool on_option(char key, char *value) {
         ctx.context_key_file_path = value;
         ctx.flags.c = 1;
         break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-        break;
+
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     }
 
     return true;
@@ -277,7 +280,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "pwdk",                 required_argument, NULL, 'P' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "out-file",             required_argument, NULL, 'o' },
-        { "input-session-handle", required_argument, NULL, 'S' },
+        { "session",              required_argument, NULL, 'S' },
     };
 
     ctx.input = stdin;

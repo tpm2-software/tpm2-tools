@@ -37,8 +37,9 @@ _FILE_ is not specified, then data is read from stdin.
   * **-o**, **--out-file**=_OUT\_FILE_
     Optional file record of the HMAC result. Defaults to stdout.
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
-    Optional Input session handle from a policy session for authorization.
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
 [common options](common/options.md)
 
