@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,15 +38,16 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
-#include "tpm2_password_util.h"
+#include "conversion.h"
 #include "files.h"
 #include "log.h"
-#include "tpm2_util.h"
 #include "tpm_hash.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_options.h"
+#include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
-#include "conversion.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
@@ -246,13 +247,15 @@ static bool on_option(char key, char *value) {
         ctx.contextKeyFile = value;
         ctx.flags.c = 1;
         break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.sessionData.sessionHandle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-        break;
+
+        ctx.sessionData.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     case 'f':
         ctx.flags.f = 1;
         ctx.sig_format = tpm2_parse_signature_format(value);
@@ -277,7 +280,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "sig",                  required_argument, NULL, 's' },
       { "ticket",               required_argument, NULL, 't' },
       { "key-context",          required_argument, NULL, 'c' },
-      { "input-session-handle", required_argument, NULL, 'S' },
+      { "session",              required_argument, NULL, 'S' },
       { "format",               required_argument, NULL, 'f' }
     };
 
