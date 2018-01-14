@@ -119,7 +119,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return rc;
     }
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(s);
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
     tpm2_tool_output("session-handle: 0x%" PRIx32 "\n", handle);
 
     if (ctx.output.path) {

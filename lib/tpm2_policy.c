@@ -166,7 +166,7 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     }
 
     // Call the PolicyPCR command
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(
             policy_session);
 
     TSS2_RC rval = Tss2_Sys_PolicyPCR(sapi_context, handle,
@@ -199,7 +199,7 @@ bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
         tpm2_session *session,
         TPM2B_DIGEST *policy_digest) {
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(session);
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
 
     TPM2_RC rval = Tss2_Sys_PolicyGetDigest(sapi_context, handle,
     NULL, policy_digest, NULL);

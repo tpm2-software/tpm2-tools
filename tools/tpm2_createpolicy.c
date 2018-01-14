@@ -227,7 +227,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (pctx.common_policy_options.extend_policy_session) {
 
-        TPM2_HANDLE handle = tpm2_session_get_session_handle(pctx.common_policy_options.policy_session);
+        TPM2_HANDLE handle = tpm2_session_get_handle(pctx.common_policy_options.policy_session);
 
         LOG_INFO("EXTENDED_POLICY_SESSION_HANDLE: 0x%08X\n", handle);
 

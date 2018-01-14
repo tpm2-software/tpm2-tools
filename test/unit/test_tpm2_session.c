@@ -199,7 +199,7 @@ static void test_tpm2_session_defaults_good(void **state) {
     tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
     assert_non_null(s);
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(s);
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
     assert_int_equal(handle, SESSION_HANDLE);
 
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(s);
@@ -261,7 +261,7 @@ static void test_tpm2_session_setters_good(void **state) {
     tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
     assert_non_null(s);
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(s);
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
     assert_int_equal(handle, SESSION_HANDLE);
 
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(s);
@@ -305,7 +305,7 @@ static void test_tpm2_session_save(void **state) {
     tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
     assert_non_null(s);
 
-    TPMI_SH_AUTH_SESSION handle1 = tpm2_session_get_session_handle(s);
+    TPMI_SH_AUTH_SESSION handle1 = tpm2_session_get_handle(s);
 
     bool result = tpm2_session_save(SAPI_CONTEXT, s, (char *)*state);
     assert_true(result);
@@ -316,7 +316,7 @@ static void test_tpm2_session_save(void **state) {
     s = tpm2_session_restore((char *)*state);
     assert_non_null(s);
 
-    TPMI_SH_AUTH_SESSION handle2 = tpm2_session_get_session_handle(s);
+    TPMI_SH_AUTH_SESSION handle2 = tpm2_session_get_handle(s);
 
     assert_int_equal(handle1, handle2);
 

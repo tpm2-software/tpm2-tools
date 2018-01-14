@@ -131,7 +131,7 @@ TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session);
  * @return
  *  The session handle.
  */
-TPMI_SH_AUTH_SESSION tpm2_session_get_session_handle(tpm2_session *session);
+TPMI_SH_AUTH_SESSION tpm2_session_get_handle(tpm2_session *session);
 
 /**
  * Retrieves the type of session, ie trial or policy session.

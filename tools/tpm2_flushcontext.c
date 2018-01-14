@@ -170,7 +170,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
                 return 1;
             }
 
-            ctx.objectHandle = tpm2_session_get_session_handle(s);
+            ctx.objectHandle = tpm2_session_get_handle(s);
 
             tpm2_session_free(&s);
         }

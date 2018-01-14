@@ -181,7 +181,7 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(session);
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
 
 
     TPM2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,

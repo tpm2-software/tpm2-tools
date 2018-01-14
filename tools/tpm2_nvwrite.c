@@ -277,7 +277,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             return 1;
         }
 
-        ctx.session_data.sessionHandle = tpm2_session_get_session_handle(ctx.policy_session);
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(ctx.policy_session);
         ctx.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
@@ -335,7 +335,7 @@ out:
 
     if (ctx.policy_session) {
 
-        TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(ctx.policy_session);
+        TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(ctx.policy_session);
 
         TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
                                             handle);
