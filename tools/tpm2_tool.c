@@ -33,6 +33,7 @@
  #include <unistd.h>
 
 #include "log.h"
+#include "tpm2_tcti_ldr.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -170,6 +171,8 @@ free_opts:
     if (tpm2_tool_onexit) {
         tpm2_tool_onexit();
     }
+
+    tpm2_tcti_ldr_unload();
 
     exit(ret);
 }

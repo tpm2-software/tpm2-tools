@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -11,10 +11,6 @@
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 // this list of conditions and the following disclaimer in the documentation
 // and/or other materials provided with the distribution.
-//
-// 3. Neither the name of Intel Corporation nor the names of its contributors
-// may be used to endorse or promote products derived from this software without
-// specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -28,54 +24,30 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-#include <inttypes.h>
-#include <stdlib.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_device.h>
 
-#include "log.h"
-#include "tpm2_tools_tcti_device.h"
-#include "tpm2_util.h"
+#ifndef LIB_TPM2_TCTI_LDR_H_
+#define LIB_TPM2_TCTI_LDR_H_
 
-#define TPM2TOOLS_ENV_DEVICE_FILE "TPM2TOOLS_DEVICE_FILE"
-#define TCTI_DEVICE_DEFAULT_PATH  "/dev/tpm0"
+/**
+ * Loads a TCTI from a friendly name, library name, or path.
+ * For example
+ *  friendly:     path = tabrmd
+ *  library name: path = libtcti-socket.so
+ *  full path:    path = /home/user/lib/libtcti-custom.so
+ * @param path
+ *  The path/library to load.
+ * @param opts
+ *  The tcti option configs.
+ * @return
+ *  A tcti context on success or NULL on failure.
+ */
+TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts);
 
-TSS2_TCTI_CONTEXT *tpm2_tools_tcti_device_init(char *opts) {
+/**
+ * Unloads the tcti loaded via tpm2_tcti_ldr_load();
+ */
+void tpm2_tcti_ldr_unload(void);
 
-    TCTI_DEVICE_CONF conf = {
-        .device_path = TCTI_DEVICE_DEFAULT_PATH,
-    };
-
-    char *env_path = getenv(TPM2TOOLS_ENV_DEVICE_FILE);
-    if (env_path) {
-        conf.device_path = env_path;
-    }
-
-    if (opts) {
-        conf.device_path = opts;
-    }
-
-    size_t size;
-    TSS2_RC rc;
-    TSS2_TCTI_CONTEXT *tcti_ctx;
-
-    rc = InitDeviceTcti(NULL, &size, 0);
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to get allocation size for device tcti context: "
-                 "0x%x", rc);
-        return NULL;
-    }
-    tcti_ctx = (TSS2_TCTI_CONTEXT*) calloc(1, size);
-    if (tcti_ctx == NULL) {
-        LOG_ERR("Allocation for device TCTI context failed: oom");
-        return NULL;
-    }
-    rc = InitDeviceTcti(tcti_ctx, &size, &conf);
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to initialize device TCTI context: 0x%x", rc);
-        free(tcti_ctx);
-        return NULL;
-    }
-    return tcti_ctx;
-}
+#endif /* LIB_TPM2_TCTI_LDR_H_ */

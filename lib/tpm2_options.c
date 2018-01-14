@@ -42,35 +42,8 @@
 
 #include "log.h"
 #include "tpm2_options.h"
+#include "tpm2_tcti_ldr.h"
 #include "tpm2_util.h"
-
-#ifdef HAVE_TCTI_DEV
-#include "tpm2_tools_tcti_device.h"
-#endif
-#ifdef HAVE_TCTI_SOCK
-#include "tpm2_tools_tcti_socket.h"
-#endif
-#ifdef HAVE_TCTI_TABRMD
-#include "tpm2_tools_tcti_abrmd.h"
-#endif
-
-/*
- * Default TCTI: this is a bit awkward since we allow users to enable /
- * disable TCTIs using ./configure --with/--without magic.
- * As simply put as possible:
- * if the tabrmd TCTI is enabled, it's the default.
- * else if the socket TCTI is enabled it's the default.
- * else if the device TCTI is enabled it's the default.
- * We do this to preserve the current default / expected behavior (use of
- * the socket TCTI).
- */
-#ifdef HAVE_TCTI_TABRMD
-  #define TCTI_DEFAULT_STR  "abrmd"
-#elif HAVE_TCTI_SOCK
-  #define TCTI_DEFAULT_STR  "socket"
-#elif  HAVE_TCTI_DEV
-  #define TCTI_DEFAULT_STR  "device"
-#endif
 
 #ifndef VERSION
   #warning "VERSION Not known at compile time, not embedding..."
@@ -161,27 +134,6 @@ void tpm2_options_free(tpm2_options *opts) {
     free(opts);
 }
 
-#define ADD_TCTI(xname, xinit) { .name = xname, .init = xinit }
-
-/*
- * map a string "nice" name of a tcti to a tcti initialization
- * routine.
- */
-struct {
-    char       *name;
-    tcti_init   init;
-} tcti_map_table[] = {
-#ifdef HAVE_TCTI_DEV
-    ADD_TCTI("device", tpm2_tools_tcti_device_init),
-#endif
-#ifdef HAVE_TCTI_SOCK
-    ADD_TCTI("socket", tpm2_tools_tcti_socket_init),
-#endif
-#ifdef HAVE_TCTI_TABRMD
-    ADD_TCTI("abrmd", tpm2_tools_tcti_abrmd_init)
-#endif
-};
-
 static char *tcti_get_opts(char *optstr) {
 
     char *split = strchr(optstr, ':');
@@ -230,27 +182,7 @@ static bool execute_man(char *prog_name) {
 }
 
 static void show_version (const char *name) {
-    #ifdef HAVE_TCTI_TABRMD
-      #define TCTI_TABRMD_CONF "tabrmd,"
-    #else
-      #define TCTI_TABRMD_CONF ""
-    #endif
-
-    #ifdef HAVE_TCTI_SOCK
-      #define TCTI_SOCK_CONF "socket,"
-    #else
-      #define TCTI_SOCK_CONF ""
-    #endif
-
-    #ifdef HAVE_TCTI_DEV
-      #define TCTI_DEV_CONF "device,"
-    #else
-      #define TCTI_DEV_CONF ""
-    #endif
-
-    static const char *tcti_conf = TCTI_TABRMD_CONF TCTI_SOCK_CONF TCTI_DEV_CONF;
-    printf("tool=\"%s\" version=\"%s\" tctis=\"%s\"\n", name, VERSION,
-            tcti_conf);
+    printf("tool=\"%s\" version=\"%s\" tctis=\"dynamic\"\n", name, VERSION);
 }
 
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
@@ -305,7 +237,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     };
 
     char *tcti_opts = NULL;
-    char *tcti_name = TCTI_DEFAULT_STR;
+    char *tcti_name = "abrmd";
     char *env_str = getenv (TPM2TOOLS_ENV_TCTI_NAME);
     tcti_name = env_str ? env_str : tcti_name;
 
@@ -392,26 +324,10 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         }
 	}
 
-    if (!(opts->flags & TPM2_OPTIONS_NO_SAPI)) {
-        size_t i;
-        bool found = false;
-        for(i=0; i < ARRAY_LEN(tcti_map_table); i++) {
-
-            char *name = tcti_map_table[i].name;
-            tcti_init init = tcti_map_table[i].init;
-            if (!strcmp(tcti_name, name)) {
-                found = true;
-                *tcti = init(tcti_opts);
-                if (!*tcti) {
-                    goto out;
-                }
-            }
-        }
-
-        if (!found) {
-            LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
-            goto out;
-        }
+    *tcti = tpm2_tcti_ldr_load(tcti_name, tcti_opts);
+    if (!*tcti) {
+        LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
+        goto out;
     }
 
     if (!flags->enable_errata) {
