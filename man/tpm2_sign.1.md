@@ -67,9 +67,9 @@ data and validation shall indicate that hashed data did not start with
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
+  * **-S**, **--session**=_SESSION\_FILE_:
 
-    Optional Input session handle from a policy session for authorization.
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
 [common options](common/options.md)
 
