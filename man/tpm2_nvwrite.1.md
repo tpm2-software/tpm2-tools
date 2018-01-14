@@ -32,8 +32,9 @@ If _FILE_ is not specified, it defaults to stdin.
     specifies the password of authHandle. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
-  * **-S**, **--input-session-handle**=_SIZE_:
-    Optional Input session handle from a policy session for authorization.
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
 
