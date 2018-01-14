@@ -151,7 +151,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.policy_session) {
-        ctx.sessionData.sessionHandle = tpm2_session_get_session_handle(ctx.policy_session);
+        ctx.sessionData.sessionHandle = tpm2_session_get_handle(ctx.policy_session);
     }
 
     return true;
@@ -242,7 +242,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
          * Only flush sessions started internally by the tool.
          */
         if (ctx.flags.S) {
-            TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(ctx.policy_session);
+            TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(ctx.policy_session);
 
             TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
                                                 handle));

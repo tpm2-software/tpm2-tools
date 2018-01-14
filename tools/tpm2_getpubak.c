@@ -253,7 +253,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(session);
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
     tpm2_session_free(&session);
 
 
@@ -317,7 +317,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    handle = tpm2_session_get_session_handle(session);
+    handle = tpm2_session_get_handle(session);
     tpm2_session_free(&session);
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,

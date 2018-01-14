@@ -110,7 +110,7 @@ TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session) {
     return session->input->authHash;
 }
 
-TPMI_SH_AUTH_SESSION tpm2_session_get_session_handle(tpm2_session *session) {
+TPMI_SH_AUTH_SESSION tpm2_session_get_handle(tpm2_session *session) {
     return session->output.session_handle;
 }
 
@@ -271,7 +271,7 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
         return false;
     }
 
-    TPM2_HANDLE handle = tpm2_session_get_session_handle(session);
+    TPM2_HANDLE handle = tpm2_session_get_handle(session);
     result = files_save_tpm_context_to_file(sapi_context, handle, mem);
     if (!result) {
         goto out;
@@ -335,7 +335,7 @@ out:
 
 bool tpm2_session_restart(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s) {
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_session_handle(s);
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
 
     TSS2_RC rval = Tss2_Sys_PolicyRestart(sapi_context, handle, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
