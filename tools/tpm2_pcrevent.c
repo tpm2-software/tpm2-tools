@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -301,17 +302,15 @@ static bool on_option(char key, char *value) {
         ctx.flags.i = 1;
         break;
     case 'S': {
-        bool result = tpm2_util_string_to_uint32(value,
-                &ctx.session_data.sessionHandle);
-        if (!result) {
-            LOG_ERR(
-                    "Could not convert session handle to number, got: \"%s\"",
-                    value);
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-    }
+
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
         ctx.flags.S = 1;
-        break;
+    } break;
     case 'P': {
         bool result = tpm2_password_util_from_optarg(value,
                 &ctx.session_data.hmac);
@@ -331,9 +330,9 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "pcr-index",            required_argument, NULL, 'i' },
-        { "input-session-handle", required_argument, NULL, 'S' },
-        { "passwd",               required_argument, NULL, 'P' },
+        { "pcr-index", required_argument, NULL, 'i' },
+        { "session",   required_argument, NULL, 'S' },
+        { "passwd",    required_argument, NULL, 'P' },
     };
 
     *opts = tpm2_options_new("i:S:P:", ARRAY_LEN(topts), topts,
