@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #include "conversion.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -58,11 +59,10 @@ static signature_format sig_format;
 static TPMI_ALG_HASH sig_hash_algorithm;
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
-static bool is_auth_session;
-static TPMI_SH_AUTH_SESSION auth_session_handle;
 static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag;
 static char *contextFilePath;
 static TPM2_HANDLE akHandle;
+static TPMS_AUTH_COMMAND session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
 
 static void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -94,14 +94,14 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
 {
     UINT32 rval;
     TPMT_SIG_SCHEME inScheme;
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, {{.sessionHandle=TPM2_RS_PW}}};
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
     TPM2B_ATTEST quoted = TPM2B_TYPE_INIT(TPM2B_ATTEST, attestationData);
     TPMT_SIGNATURE signature;
-
-    if (is_auth_session) {
-        sessionsData.auths[0].sessionHandle = auth_session_handle;
-    }
+    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
+        1, {
+            session_data,
+         },
+    };
 
     if(!G_flag || !get_signature_scheme(sapi_context, akHandle, sig_hash_algorithm, &inScheme)) {
         inScheme.scheme = TPM2_ALG_NULL;
@@ -109,7 +109,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
 
     memset( (void *)&signature, 0, sizeof(signature) );
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &sessionsData,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &cmd_auth_array,
             &qualifyingData, &inScheme, pcrSelection, &quoted,
             &signature, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS)
@@ -191,14 +191,15 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'S':
-         if (!tpm2_util_string_to_uint32(value, &auth_session_handle)) {
-             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                     value);
-             return false;
-         }
-         is_auth_session = true;
-         break;
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
+            return false;
+        }
+
+        session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     case 's':
          signature_path = value;
          break;
@@ -235,7 +236,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "algorithm",            required_argument, NULL, 'g' },
         { "sel-list",             required_argument, NULL, 'L' },
         { "qualify-data",         required_argument, NULL, 'q' },
-        { "input-session-handle", required_argument, NULL, 'S' },
+        { "session",              required_argument, NULL, 'S' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
         { "format",               required_argument, NULL, 'f' },
