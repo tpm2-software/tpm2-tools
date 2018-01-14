@@ -34,12 +34,16 @@ be evicted.
   * **-c**, **--context**=_OBJECT\_CONTEXT\_FILE_:
     Filename for object context.
 
-  * **-S**, **--persistent**=_PERSISTENT\_HANDLE_:
+  * **-p**, **--persistent**=_PERSISTENT\_HANDLE_:
     The persistent handle for the object handle specified via _HANDLE_.
 
   * **-P**, **--pwda**=_AUTH\_PASSWORD_:
     authorization password, optional. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
+
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
 [common options](common/options.md)
 

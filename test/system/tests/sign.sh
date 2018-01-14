@@ -80,7 +80,7 @@ tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -s $file_
 
 rm -f $file_output_data
 
-tpm2_evictcontrol -Q -A o -c $file_signing_key_ctx -S $handle_signing_key
+tpm2_evictcontrol -Q -A o -c $file_signing_key_ctx -p $handle_signing_key
 
 tpm2_sign -Q -k $handle_signing_key -g $alg_hash -m $file_input_data -s $file_output_data
 

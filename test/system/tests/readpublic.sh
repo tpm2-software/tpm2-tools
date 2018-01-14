@@ -70,7 +70,7 @@ tpm2_load -Q -c $file_primary_key_ctx  -u $file_readpub_key_pub  -r $file_readpu
 
 tpm2_readpublic -Q -c $file_readpub_key_ctx -o $file_readpub_output
 
-tpm2_evictcontrol -Q -A o -c $file_readpub_key_ctx -S $Handle_readpub
+tpm2_evictcontrol -Q -A o -c $file_readpub_key_ctx -p $Handle_readpub
 
 rm -f $file_readpub_output
 tpm2_readpublic -Q -H $Handle_readpub -o $file_readpub_output
