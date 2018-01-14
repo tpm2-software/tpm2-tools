@@ -39,8 +39,9 @@
   * **-o**, **--offset**=_OFFSET_:
     The offset within the NV index to start reading from.
 
-  * **-S**, **--input-session-handle**=_SIZE_:
-    Optional Input session handle from a policy session for authorization.
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
 

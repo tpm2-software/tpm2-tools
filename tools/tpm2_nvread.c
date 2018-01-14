@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,7 @@
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_policy.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -220,12 +221,15 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
+
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
         break;
     case 'L':
         if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
@@ -250,7 +254,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "size",                 required_argument, NULL, 's' },
         { "offset",               required_argument, NULL, 'o' },
         { "handle-passwd",        required_argument, NULL, 'P' },
-        { "input-session-handle", required_argument, NULL, 'S' },
+        { "session",              required_argument, NULL, 'S' },
         { "set-list",             required_argument, NULL, 'L' },
         { "pcr-input-file",       required_argument, NULL, 'F' },
     };
