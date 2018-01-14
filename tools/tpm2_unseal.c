@@ -141,8 +141,14 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         if (!ctx.policy_session) {
             return false;
         }
-    }
 
+        bool is_trial = tpm2_session_is_trial(ctx.policy_session);
+        if (is_trial) {
+            LOG_ERR("A trial session cannot be used to authenticate, "
+                    "Please use an hmac or policy session");
+            return false;
+        }
+    }
 
     if (ctx.policy_session) {
         ctx.sessionData.sessionHandle = tpm2_session_get_session_handle(ctx.policy_session);
