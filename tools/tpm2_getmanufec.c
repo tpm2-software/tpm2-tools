@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,12 +45,13 @@
 #include <openssl/sha.h>
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
-#include "log.h"
 #include "files.h"
-#include "tpm_hash.h"
+#include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm_hash.h"
+#include "tpm2_options.h"
 #include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -431,7 +432,6 @@ out:
 static bool on_option(char key, char *value) {
 
     bool return_val;
-    UINT32 handle;
 
     switch (key) {
     case 'H':
@@ -488,20 +488,18 @@ static bool on_option(char key, char *value) {
         ctx.SSL_NO_VERIFY = 1;
         LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
         break;
-    case 'S':
-        return_val = tpm2_util_string_to_uint32(value, &handle);
-        if (!return_val) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
 
         ctx.owner_session_data.sessionHandle =
-        ctx.endorse_session_data.sessionHandle = handle;
-
-        break;
+                ctx.endorse_session_data.sessionHandle =
+                        tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     }
-
     return true;
 }
 
@@ -531,7 +529,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "offline",              required_argument, NULL, 'O' },
         { "ec-cert",              required_argument, NULL, 'E' },
         { "SSL-NO-VERIFY",        no_argument,       NULL, 'U' },
-        { "input-session-handle", required_argument, NULL, 'S' },
+        { "session",              required_argument, NULL, 'S' },
     };
 
     *opts = tpm2_options_new("e:o:H:P:g:f:NO:E:S:i:U", ARRAY_LEN(topts), topts,
