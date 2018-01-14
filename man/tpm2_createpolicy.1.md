@@ -39,16 +39,9 @@ These options control creating the policy authorization session:
     Optional Path or Name of the file containing expected pcr values for the
     specified index. Default is to read the current PCRs per the set list.
 
-  * **-e**, **--extend-policy-session**:
-    Retains the policy session at the end of operation.
-
   * **-a**, **--auth-policy-session**:
     Start a policy session of type **TPM_SE_POLICY**. Default without this option
     is **TPM_SE_TRIAL**.
-
-  * **-S**, **--save-session-context**:_CONTEXT\_FILE_:
-    An optional file used to store the session context created by either -e
-    or -a.
 
 [common options](common/options.md)
 
