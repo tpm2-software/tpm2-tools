@@ -43,9 +43,9 @@ The key referenced by keyHandle is **required** to be:
 
     Output file path, record the decrypted data.
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
+  * **-S**, **--session**=_SESSION\_FILE_:
 
-    Optional Input session handle from a policy session for authorization.
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
 [common options](common/options.md)
 
