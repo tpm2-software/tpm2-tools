@@ -33,18 +33,17 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib -I$(top_srcdir)/lib/tcti
+INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS := \
-    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(SAPI_CFLAGS) $(TCTI_SOCK_CFLAGS) \
-    $(TCTI_TABRMD_CFLAGS) $(TCTI_DEV_CFLAGS) $(CRYPTO_CFLAGS) $(CODE_COVERAGE_CFLAGS)
+    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(SAPI_CFLAGS) $(CRYPTO_CFLAGS) \
+    $(CODE_COVERAGE_CFLAGS)
 
 AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
-    $(LIB_COMMON) $(SAPI_LIBS) $(TCTI_SOCK_LIBS) $(TCTI_TABRMD_LIBS) \
-    $(TCTI_DEV_LIBS) $(CRYPTO_LIBS)
+    $(LIB_COMMON) $(SAPI_LIBS) $(CRYPTO_LIBS) -ldl
 
 # keep me sorted
 bin_PROGRAMS = \
@@ -96,27 +95,8 @@ bin_PROGRAMS = \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
-tcti_src =
-if HAVE_TCTI_DEV
-tcti_src += \
-    lib/tcti/tpm2_tools_tcti_device.c \
-    lib/tcti/tpm2_tools_tcti_device.h
-endif
-if HAVE_TCTI_SOCK
-tcti_src += \
-    lib/tcti/tpm2_tools_tcti_socket.c \
-    lib/tcti/tpm2_tools_tcti_socket.h
-endif
-if HAVE_TCTI_TABRMD
-tcti_src += \
-    lib/tcti/tpm2_tools_tcti_abrmd.c \
-    lib/tcti/tpm2_tools_tcti_abrmd.h
-endif
-
-
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
-	$(tcti_src) \
     lib/conversion.c \
     lib/conversion.h \
     lib/files.c \
@@ -152,7 +132,9 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_options.c \
     lib/tpm2_options.h \
     lib/tpm2_session.c \
-    lib/tpm2_session.h
+    lib/tpm2_session.h \
+    lib/tpm2_tcti_ldr.c \
+    lib/tpm2_tcti_ldr.h
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
@@ -236,8 +218,7 @@ test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
 
 test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS) $(TCTI_SOCK_LIBS) \
-                                $(TCTI_DEV_LIBS)
+test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS)
 test_unit_test_files_SOURCES  = test/unit/test_files.c
 
 test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
