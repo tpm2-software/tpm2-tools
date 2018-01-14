@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,12 +37,13 @@
 #include <sapi/tpm20.h>
 
 #include "conversion.h"
-#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "tpm2_util.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 typedef struct getpubek_context getpubek_context;
 struct getpubek_context {
@@ -275,14 +276,15 @@ static bool on_option(char key, char *value) {
         }
         ctx.out_file_path = value;
         break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.auth_session_handle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-        ctx.is_session_based_auth = true;
-        break;
+
+        ctx.auth_session_handle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     }
 
     return true;
@@ -297,7 +299,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ek-passwd",            required_argument, NULL, 'P' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "file",                 required_argument, NULL, 'f' },
-        { "input-session-handle", required_argument, NULL, 'S' },
+        { "session",              required_argument, NULL, 'S' },
         { "dbg",                  required_argument, NULL, 'd' },
         { "help",                 no_argument,       NULL, 'h' },
     };
