@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,7 +36,6 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_session.h"
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
@@ -44,6 +43,7 @@
 #include "tpm2_password_util.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
+#include "tpm2_session.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
