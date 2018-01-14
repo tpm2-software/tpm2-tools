@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,14 +39,13 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_session.h"
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
 #include "tpm2_nv_util.h"
-#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_policy.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -180,13 +179,15 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-        break;
+
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     case 'o':
         if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {
             LOG_ERR("Could not convert starting offset, got: \"%s\"",
@@ -228,13 +229,13 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "index",                required_argument, NULL, 'x' },
-        { "auth-handle",          required_argument, NULL, 'a' },
-        { "handle-passwd",        required_argument, NULL, 'P' },
-        { "input-session-handle", required_argument, NULL, 'S' },
-        { "offset",               required_argument, NULL, 'o' },
-        { "set-list",             required_argument, NULL, 'L' },
-        { "pcr-input-file",       required_argument, NULL, 'F' },
+        { "index",          required_argument, NULL, 'x' },
+        { "auth-handle",    required_argument, NULL, 'a' },
+        { "handle-passwd",  required_argument, NULL, 'P' },
+        { "session",        required_argument, NULL, 'S' },
+        { "offset",         required_argument, NULL, 'o' },
+        { "set-list",       required_argument, NULL, 'L' },
+        { "pcr-input-file", required_argument, NULL, 'F' },
     };
 
     *opts = tpm2_options_new("x:a:P:S:o:L:F:", ARRAY_LEN(topts), topts,
@@ -278,7 +279,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
 
         ctx.session_data.sessionHandle = tpm2_session_get_handle(ctx.policy_session);
-        ctx.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
     /* Suppress error reporting with NULL path */
