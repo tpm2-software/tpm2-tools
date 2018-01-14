@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,11 +40,12 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
+#include "tpm2_options.h"
+#include "tpm2_password_util.h"
 #include "tpm2_tool.h"
+#include "tpm2_session.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
@@ -135,7 +136,7 @@ static bool on_option(char key, char *value) {
             ctx.flags.S = 1;
         }
         break;
-    case 'S':
+    case 'p':
         result = tpm2_util_string_to_uint32(value, &ctx.handle.persist);
         if (!result) {
             LOG_ERR("Could not convert persistent handle to a number, got: \"%s\"",
@@ -156,7 +157,7 @@ static bool on_option(char key, char *value) {
         ctx.context_file = value;
         ctx.flags.c = 1;
         break;
-    case 'i':
+    case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
             LOG_ERR("Could not convert session handle to number, got: \"%s\"",
                     value);
@@ -173,15 +174,15 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
       { "auth",                 required_argument, NULL, 'A' },
       { "handle",               required_argument, NULL, 'H' },
-      { "persistent",           required_argument, NULL, 'S' },
+      { "persistent",           required_argument, NULL, 'p' },
       { "pwda",                 required_argument, NULL, 'P' },
       { "context",              required_argument, NULL, 'c' },
-      { "input-session-handle", required_argument, NULL, 'i' },
+      { "session",              required_argument, NULL, 'S' },
     };
 
     ctx.session_data.sessionHandle = TPM2_RS_PW;
 
-    *opts = tpm2_options_new("A:H:S:P:c:i:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("A:H:p:P:c:S:", ARRAY_LEN(topts), topts, on_option,
                              NULL, true);
 
     return *opts != NULL;

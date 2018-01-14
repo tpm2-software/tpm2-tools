@@ -53,8 +53,8 @@ tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv  -c primary.ctx
 
 tpm2_load -Q -c primary.ctx  -u key.pub  -r key.priv -n key.name -C key.ctx
 
-tpm2_evictcontrol -Q -A o -c key.ctx  -S 0x81010003
+tpm2_evictcontrol -Q -A o -c key.ctx -p 0x81010003
 
-tpm2_evictcontrol -Q -A o -H 0x81010003   -S 0x81010003
+tpm2_evictcontrol -Q -A o -H 0x81010003 -p 0x81010003
 
 exit 0

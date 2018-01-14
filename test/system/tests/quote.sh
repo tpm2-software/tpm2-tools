@@ -91,7 +91,7 @@ tpm2_quote -Q -c $file_quote_key_ctx  -g $alg_quote -l 16,17,18 -q $nonce
 tpm2_quote -Q -c $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
 #####handle testing
-tpm2_evictcontrol -Q -A o -c $file_quote_key_ctx -S $Handle_ak_quote
+tpm2_evictcontrol -Q -A o -c $file_quote_key_ctx -p $Handle_ak_quote
 
 tpm2_quote -Q -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -q $nonce
 
