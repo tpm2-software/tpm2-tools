@@ -42,10 +42,6 @@ The key referenced by keyHandle is **required** to be:
     xxd compatible hexdump to stdout. If a file is specified, raw binary
     output is performed.
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
-
-    Optional Input session handle from a policy session for authorization.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
