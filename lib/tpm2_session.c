@@ -114,6 +114,10 @@ TPMI_SH_AUTH_SESSION tpm2_session_get_session_handle(tpm2_session *session) {
     return session->output.session_handle;
 }
 
+TPM2_SE tpm2_session_get_type(tpm2_session *session) {
+    return session->input->session_type;
+}
+
 //
 // This is a wrapper function around the TPM2_StartAuthSession command.
 // It performs the command, calculates the session key, and updates a

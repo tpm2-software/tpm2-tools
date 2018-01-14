@@ -134,6 +134,26 @@ TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session);
 TPMI_SH_AUTH_SESSION tpm2_session_get_session_handle(tpm2_session *session);
 
 /**
+ * Retrieves the type of session, ie trial or policy session.
+ * @param session
+ * @return
+ *  The type of the session, either TPM2_SE_HMAC, TPM2_SE_POLICY or
+ *  TPM2_SE_TRIAL.
+ */
+TPM2_SE tpm2_session_get_type(tpm2_session *session);
+
+/**
+ * True if a session is of type TPM2_SE_TRIAL
+ * @param session
+ *  The session to check the type of.
+ * @return
+ *  True if a session is of type TPM2_SE_TRIAL, false otherwise.
+ */
+static inline bool tpm2_session_is_trial(tpm2_session *session) {
+    return tpm2_session_get_type(session) == TPM2_SE_TRIAL;
+}
+
+/**
  * Starts a session with the tpm via Tss2_Sys_StartAuthSession().
  * @param sapi_context
  *  The system api context.
