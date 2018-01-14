@@ -215,6 +215,7 @@ static void test_tpm2_session_setters_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_TRIAL);
     assert_non_null(d);
 
+
     tpm2_session_set_authhash(d, TPM2_ALG_SHA512);
 
     TPMT_SYM_DEF symmetric = {
@@ -346,6 +347,26 @@ static void test_tpm2_session_restart(void **state) {
     assert_null(s);
 }
 
+static void test_tpm2_session_is_trial_test(void **state) {
+    UNUSED(state);
+
+    set_expected_defaults(TPM2_SE_TRIAL, SESSION_HANDLE, TPM2_RC_SUCCESS);
+
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_TRIAL);
+    assert_non_null(d);
+
+    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    assert_non_null(s);
+
+    TPM2_SE type = tpm2_session_get_type(s);
+    assert_int_equal(type, TPM2_SE_TRIAL);
+
+    bool is_trial = tpm2_session_is_trial(s);
+    assert_true(is_trial);
+
+    tpm2_session_free(&s);
+}
+
 /* link required symbol, but tpm2_tool.c declares it AND main, which
  * we have a main below for cmocka tests.
  */
@@ -368,6 +389,7 @@ int main(int argc, char *argv[]) {
     cmocka_unit_test_setup_teardown(test_tpm2_session_save,
             test_session_setup, test_session_teardown),
     cmocka_unit_test(test_tpm2_session_restart),
+    cmocka_unit_test(test_tpm2_session_is_trial_test)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
