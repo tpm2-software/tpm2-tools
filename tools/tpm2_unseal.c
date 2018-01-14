@@ -152,7 +152,6 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (ctx.policy_session) {
         ctx.sessionData.sessionHandle = tpm2_session_get_session_handle(ctx.policy_session);
-        ctx.sessionData.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
     return true;
