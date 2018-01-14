@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,11 +37,12 @@
 
 #include <sapi/tpm20.h>
 
+#include "files.h"
+#include "log.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
-#include "files.h"
-#include "log.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -172,13 +173,15 @@ static bool on_option(char key, char *value) {
     case 'L':
         ctx.policy_file = value;
         break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-        break;
+
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     }
 
     return true;
@@ -188,14 +191,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index",                  required_argument,  NULL,   'x' },
-        { "auth-handle",             required_argument,  NULL,   'a' },
+        { "auth-handle",            required_argument,  NULL,   'a' },
         { "size",                   required_argument,  NULL,   's' },
         { "attribute",              required_argument,  NULL,   't' },
-        { "handle-passwd",           required_argument,  NULL,   'P' },
-        { "index-passwd",            required_argument,  NULL,   'I' },
+        { "handle-passwd",          required_argument,  NULL,   'P' },
+        { "index-passwd",           required_argument,  NULL,   'I' },
         { "passwdInHex",            no_argument,        NULL,   'X' },
         { "policy-file",            required_argument,  NULL,   'L' },
-        { "input-session-handle",   required_argument,  NULL,   'S' },
+        { "session",                required_argument,  NULL,   'S' },
     };
 
     *opts = tpm2_options_new("x:a:s:t:P:I:rwdL:S:X", ARRAY_LEN(topts), topts,
