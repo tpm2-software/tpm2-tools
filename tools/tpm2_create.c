@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,6 +47,7 @@
 #include "tpm2_errata.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -281,13 +282,15 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.L = 1;
         break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-        break;
+
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     case 'u':
         ctx.opu_path = value;
         if(files_does_file_exist(ctx.opu_path) != 0) {
@@ -328,7 +331,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pubfile",              required_argument, NULL, 'u' },
       { "privfile",             required_argument, NULL, 'r' },
       { "context-parent",       required_argument, NULL, 'c' },
-      { "input-session-handle", required_argument, NULL, 'S' },
+      { "session",              required_argument, NULL, 'S' },
     };
 
     setbuf(stdout, NULL);
