@@ -34,8 +34,10 @@ specified symmetric key.
   * **-I**, **--in-file**=_INPUT\_FILE_:
     Input file path containing data for decrypt or encrypt operation.
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
-    Optional Input session handle from a policy session for authorization.
+  * **-S**, **--session**=_SESSION\_FILE_:
+
+    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option. This session
+    is used in lieu of starting a session and using the PCR policy options.
 
 [common options](common/options.md)
 

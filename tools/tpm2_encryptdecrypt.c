@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -39,11 +39,12 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
 #include "rc-decode.h"
+#include "tpm2_options.h"
+#include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -156,14 +157,15 @@ static bool on_option(char key, char *value) {
         ctx.context_key_file = value;
         ctx.flags.c = 1;
         break;
-    case 'S':
-        result = tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle);
-        if (!result) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
+    case 'S': {
+        tpm2_session *s = tpm2_session_restore(value);
+        if (!s) {
             return false;
         }
-        break;
+
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
+        tpm2_session_free(&s);
+    } break;
     }
 
     return true;
@@ -178,7 +180,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "in-file",              required_argument, NULL, 'I' },
         { "out-file",             required_argument, NULL, 'o' },
         { "key-context",          required_argument, NULL, 'c' },
-        { "input-session-handle", required_argument, NULL, 'S' },
+        { "session",              required_argument, NULL, 'S' },
     };
 
     ctx.session_data.sessionHandle = TPM2_RS_PW;
