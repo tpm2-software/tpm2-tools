@@ -33,8 +33,9 @@ These options control extending the pcr:
     Not only compute the hash digests on _FILE_, also extend the pcr given by
     _INDEX_ for all supported hash algorithms.
 
-  * **-S**, **--input-session-handle**=_SESSION_HANDLE_:
-    Use _SESSION_HANDLE_ for providing an authorization session for the pcr
+    * **-S**, **--session**=_SESSION\_FILE_:
+    A session file from **tpm2_startauthsession**(1)'s **-S** option.
+    Use _SESSION\_FILE_ for providing an authorization session for the PCR
     specified by _INDEX_.
     It is an error to specify **-S** without specifying a pcr index with **-i**.
 
