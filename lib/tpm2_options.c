@@ -82,7 +82,7 @@
 
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
-        tpm2_arg_handler on_arg, bool show_usage) {
+        tpm2_arg_handler on_arg, UINT32 flags) {
 
     tpm2_options *opts = calloc(1, sizeof(*opts) + (sizeof(*long_opts) * len));
     if (!opts) {
@@ -108,7 +108,7 @@ tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
     opts->callbacks.on_opt = on_opt;
     opts->callbacks.on_arg = on_arg;
     opts->len = len;
-    opts->show_usage = show_usage;
+    opts->flags = flags;
     memcpy(opts->long_opts, long_opts, len * sizeof(*long_opts));
 
     return opts;
@@ -143,7 +143,7 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
 
     d->callbacks.on_arg = src->callbacks.on_arg;
     d->callbacks.on_opt = src->callbacks.on_opt;
-    d->show_usage = src->show_usage;
+    d->flags = src->flags;
 
     memcpy(&d->long_opts[d->len], src->long_opts, src->len * sizeof(src->long_opts[0]));
 
@@ -256,7 +256,7 @@ static void show_version (const char *name) {
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     unsigned int i;
 
-    if (!tool_opts || !tool_opts->show_usage) {
+    if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_SHOW_USAGE)) {
         return;
     }
 

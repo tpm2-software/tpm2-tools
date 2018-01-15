@@ -584,7 +584,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
     *opts = tpm2_options_new("k:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, true);
+                             NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

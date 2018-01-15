@@ -73,7 +73,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("S:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, false);
+                             NULL, 0);
 
     return *opts != NULL;
 }
