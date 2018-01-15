@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2016-2018, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,12 +41,19 @@
 
 typedef struct tpm2_options tpm2_options;
 
+#define tpm2_option_flags_init(x) { .all = x };
+
 typedef union tpm2_option_flags tpm2_option_flags;
 union tpm2_option_flags {
     struct {
+#define TPM2_OPTION_FLAG_VERBOSE       (1 << 0)
         UINT8 verbose : 1;
+#define TPM2_OPTION_FLAG_QUIET         (1 << 1)
         UINT8 quiet   : 1;
+#define TPM2_OPTION_FLAG_ENABLE_ERRATA (1 << 2)
         UINT8 enable_errata  : 1;
+#define TPM2_OPTION_NO_SAPI            (1 << 3)
+        UINT8 no_sapi : 1;
     };
     UINT8 all;
 };
@@ -112,12 +119,17 @@ typedef bool (*tpm2_arg_handler)(int argc, char **argv);
  * @param on_arg
  *  An argument handling callback, which may be null if you don't wish
  *  to handle arguments.
+ * @flags
+ *  Flags for changing behavior, notably TPM2_OPTION_NO_SAPI is
+ *  respected.
  * @return
  *  NULL on failure or an initialized tpm2_options object.
  */
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
-        tpm2_arg_handler on_arg);
+        tpm2_arg_handler on_arg, tpm2_option_flags flags);
+
+tpm2_option_flags *tpm2_options_get_flags(tpm2_options *opts);
 
 /**
  * Concatenates two tpm2_options objects, with src appended on

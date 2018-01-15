@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2016-2018, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,14 +81,19 @@ struct tpm2_options {
         tpm2_option_handler on_opt;
         tpm2_arg_handler on_arg;
     } callbacks;
+    tpm2_option_flags flags;
     char *short_opts;
     size_t len;
     struct option long_opts[];
 };
 
+tpm2_option_flags *tpm2_options_get_flags(tpm2_options *opts) {
+    return &opts->flags;
+}
+
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
-        tpm2_arg_handler on_arg) {
+        tpm2_arg_handler on_arg, tpm2_option_flags flags) {
 
     tpm2_options *opts = calloc(1, sizeof(*opts) + (sizeof(*long_opts) * len));
     if (!opts) {
@@ -111,6 +116,7 @@ tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         return NULL;
     }
 
+    opts->flags = flags;
     opts->callbacks.on_opt = on_opt;
     opts->callbacks.on_arg = on_arg;
     opts->len = len;
@@ -130,6 +136,8 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
         LOG_ERR("oom");
         return false;
     }
+
+    d->flags.all |= src->flags.all;
 
     strcat(tmp_short, src->short_opts);
 
@@ -270,9 +278,9 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     char *env_str = getenv (TPM2TOOLS_ENV_TCTI_NAME);
     tcti_name = env_str ? env_str : tcti_name;
 
-    /* handle any options */
+    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     tpm2_options *opts = tpm2_options_new("T:hvVQZ",
-            ARRAY_LEN(long_options), long_options, NULL, NULL);
+            ARRAY_LEN(long_options), long_options, NULL, NULL, empty_flags);
     if (!opts) {
         return tpm2_option_code_err;
     }
@@ -351,26 +359,29 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         }
 	}
 
-    size_t i;
-    bool found = false;
-    for(i=0; i < ARRAY_LEN(tcti_map_table); i++) {
+    if (!(flags && flags->no_sapi)) {
 
-        char *name = tcti_map_table[i].name;
-        tcti_init init = tcti_map_table[i].init;
-        if (!strcmp(tcti_name, name)) {
-            found = true;
-            *tcti = init(tcti_opts);
-            if (!*tcti) {
-                result = false;
-                goto out;
+        size_t i;
+        bool found = false;
+        for(i=0; i < ARRAY_LEN(tcti_map_table); i++) {
+
+            char *name = tcti_map_table[i].name;
+            tcti_init init = tcti_map_table[i].init;
+            if (!strcmp(tcti_name, name)) {
+                found = true;
+                *tcti = init(tcti_opts);
+                if (!*tcti) {
+                    result = false;
+                    goto out;
+                }
             }
         }
-    }
 
-    if (!found) {
-        LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
-        result = false;
-        goto out;
+        if (!found) {
+            LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
+            result = false;
+            goto out;
+        }
     }
 
     rc = tpm2_option_code_continue;

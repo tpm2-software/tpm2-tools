@@ -303,8 +303,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"passwdInHex",   no_argument,       NULL, 'X'},
     };
 
+    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("H:c:k:C:P:e:f:o:X", ARRAY_LEN(topts), topts,
-            on_option, NULL);
+            on_option, NULL, empty_flags);
 
     return *opts != NULL;
 }

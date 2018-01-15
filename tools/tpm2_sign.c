@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -271,8 +271,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"format",               required_argument, NULL, 'f'}
     };
 
+    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("k:P:g:m:t:s:c:S:f:", ARRAY_LEN(topts), topts,
-            on_option, NULL);
+            on_option, NULL, empty_flags);
 
     return *opts != NULL;
 }
