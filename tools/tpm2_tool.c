@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2016-2018, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -109,17 +109,25 @@ int main(int argc, char *argv[], char *envp[]) {
             LOG_ERR("retrieving tool options");
             return 1;
         }
+    } else {
+        tpm2_option_flags ftmp = tpm2_option_flags_init(0);
+        tool_opts = tpm2_options_new(NULL, 0,
+                NULL, NULL, NULL, ftmp);
+        if (!tool_opts) {
+            return 1;
+        }
     }
 
-    tpm2_option_flags flags = { .all = 0 };
+    tpm2_option_flags *flags = tpm2_options_get_flags(tool_opts);
     TSS2_TCTI_CONTEXT *tcti;
-    tpm2_option_code rc = tpm2_handle_options(argc, argv, envp, tool_opts, &flags, &tcti);
+    tpm2_option_code rc = tpm2_handle_options(argc, argv, envp, tool_opts,
+            flags, &tcti);
     if (rc != tpm2_option_code_continue) {
         ret = rc == tpm2_option_code_err ? 1 : 0;
         goto free_opts;
     }
 
-    if (flags.verbose) {
+    if (flags->verbose) {
         log_set_level(log_level_verbose);
     }
 
@@ -130,16 +138,14 @@ int main(int argc, char *argv[], char *envp[]) {
      * option and argument life-cycle. Thus TOOL_OUTPUT is only guaranteed
      * to respect quiet from here on out (onrun and onexit).
      */
-    if (flags.quiet) {
+    if (flags->quiet) {
         output_enabled = false;
     }
 
-    /* figure out the tcti */
+    TSS2_SYS_CONTEXT *sapi_context = !flags->no_sapi ?
+            sapi_ctx_init(tcti) : NULL;
 
-    /* TODO SAPI INIT */
-    TSS2_SYS_CONTEXT *sapi_context = sapi_ctx_init(tcti);
-
-    if (flags.enable_errata) {
+    if (flags->enable_errata) {
         tpm2_errata_init(sapi_context);
     }
 
@@ -147,12 +153,14 @@ int main(int argc, char *argv[], char *envp[]) {
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = tpm2_tool_onrun(sapi_context, flags) ? 1 : 0;
+    ret = tpm2_tool_onrun(sapi_context, *flags) ? 1 : 0;
     /*
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
      */
-    sapi_teardown_full(sapi_context);
+    if (sapi_context) {
+        sapi_teardown_full(sapi_context);
+    }
 
 free_opts:
     if (tool_opts) {

@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -259,8 +259,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
+    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("k:c:P:l:g:L:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
-            on_option, NULL);
+            on_option, NULL, empty_flags);
 
     return *opts != NULL;
 }

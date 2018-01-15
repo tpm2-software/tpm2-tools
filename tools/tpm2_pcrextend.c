@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2017, Intel Corporation
+// Copyright (c) 2017-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -120,8 +120,9 @@ static bool on_arg(int argc, char **argv) {
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
+    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new(NULL, 0, NULL,
-            NULL, on_arg);
+            NULL, on_arg, empty_flags);
 
     return *opts != NULL;
 }

@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -265,8 +265,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"pcr-input-file", required_argument, NULL, 'F' },
     };
 
+    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("x:a:f:s:o:P:S:L:F:", ARRAY_LEN(topts),
-            topts, on_option, NULL);
+            topts, on_option, NULL, empty_flags);
 
     return *opts != NULL;
 }

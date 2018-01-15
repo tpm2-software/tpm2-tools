@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2016, Intel Corporation
+// Copyright (c) 2016-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -244,8 +244,9 @@ static bool on_arg(int argc, char **argv) {
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
+    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_NO_SAPI);
     *opts = tpm2_options_new(NULL, 0, NULL,
-            NULL, on_arg);
+            NULL, on_arg, flags);
 
     return *opts != NULL;
 }
