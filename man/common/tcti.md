@@ -10,8 +10,10 @@ The variables respected depend on how the software was configured.
 
   * _TPM2TOOLS\_TCTI\_NAME_:
 	Select the TCTI used for communication with the next component down the TSS
-	stack. In most configurations this will be the TPM but it could be a simulator
-	or proxy. The current known TCTIs are:
+	stack. In most configurations this will be the Resource Manager called tabrms,
+	but it could be a TPM simulator or TPM device itself.
+
+  The current known TCTIs are:
 
 	* tabrmd - The new resource manager, called
 	           [tabrmd](https://github.com/01org/tpm2-abrmd).
@@ -19,21 +21,13 @@ The variables respected depend on how the software was configured.
 	           a simulator.
 	* device - Used when talking directly to a TPM device file.
 
-  * _TPM2TOOLS\_DEVICE\_FILE_:
-	When using the device TCTI, specify the TPM device file. The default is
-	"/dev/tpm0".
+One can pass TCTI specific options to a TCTI via the _TPM2TOOLS\_TCTI\_NAME_ environment
+variable by appending the options after the name with a : (colon) seperator. These TCTI
+option config strings are TCTI specific. Specifying **-h** on the tool command line will
+show help output for the TCTIs. The section **TCTI OPTIONS** has examples for known TCTIs.
 
-	Note: Using the tpm directly requires the users to ensure that concurrent
-	access does not occur and that they manage the tpm resources. These tasks are
-	usually managed by a resource manager. Linux 4.12 and greater supports an in
-	kernel resource manager at "/dev/tpmrm**<num>**",	typically "/dev/tpmrm0".
-
-  * _TPM2TOOLS\_SOCKET\_ADDRESS_:
-    When using the socket TCTI, specify the domain name or IP address used. The
-    default is 127.0.0.1.
-
-  * _TPM2TOOLS\_SOCKET\_PORT_:
-	When using the socket TCTI, specify the port number used. The default is 2321.
+Formally, the format is:
+```<tcti-name>:<tcti-options>```
 
 # TCTI OPTIONS
 
@@ -49,10 +43,10 @@ available. They override any environment variables.
 
     * For the device TCTI, the TPM device file for use by the device TCTI can be specified.
       The default is /dev/tpm0.
-      Example: **-T device:/dev/tpm0**
+      Example: **-T device:/dev/tpm0** or **export _TPM2TOOLS\_TCTI\_NAME_="device:/dev/tpm0"**
 
     * For the socket TCTI, the domain name or IP address and port number used by the socket
       can be specified. The default are 127.0.0.1 and 2321.
-      Example: **-T socket:127.0.0.1:2321**
+      Example: **-T socket:tcp://127.0.0.1:2321** or **export _TPM2TOOLS\_TCTI\_NAME_="socket:tcp://127.0.0.1:2321"**
 
-    * For the abrmd TCTI, it takes no options. Example: **-T abrmd**
+    * For the abrmd TCTI, it takes no options. Example: **-T abrmd** or **export _TPM2TOOLS\_TCTI\_NAME_="abrmd"**

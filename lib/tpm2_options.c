@@ -342,6 +342,11 @@ out:
         if (!did_manpager) {
             tpm2_print_usage(argv[0], tool_opts);
         }
+
+        const TSS2_TCTI_INFO *info = tpm2_tcti_ldr_getinfo();
+        if (info) {
+            printf("\ntcti-help: %s\n", info->config_help);
+        }
         rc = tpm2_option_code_stop;
     }
 
