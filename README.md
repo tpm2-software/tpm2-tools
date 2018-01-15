@@ -8,7 +8,7 @@
 **This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on tpm2-tss**
 
 ## News
-* Release [3.0.2](https://github.com/01org/tpm2-tools/releases/tag/3.0.2) is now available.
+* Release [3.0.3](https://github.com/01org/tpm2-tools/releases/tag/3.0.3) is now available.
 * A mailing list now exists for support: https://lists.01.org/mailman/listinfo/tpm2
 * CVE-2017-7524 - Where an HMAC authorization uses the tpm to perform the hmac calculation. This results in a disclosure of the password to
 the tpm where the user would not expect it. It appears likely unreachable in the current code base. This has been fixed on releases greater than version 1.1.1.
