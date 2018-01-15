@@ -46,6 +46,15 @@
 TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts);
 
 /**
+ * Returns the loaded TCTIs information structure,
+ * which contains the initialization routine, description
+ * and help string amongst other things.
+ * @return
+ *  NULL if no TCTI is loaded, else the info structure pointer.
+ */
+const TSS2_TCTI_INFO *tpm2_tcti_ldr_getinfo(void);
+
+/**
  * Unloads the tcti loaded via tpm2_tcti_ldr_load();
  */
 void tpm2_tcti_ldr_unload(void);

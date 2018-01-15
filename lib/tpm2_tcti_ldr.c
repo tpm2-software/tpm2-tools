@@ -36,11 +36,18 @@
 #include "tpm2_tcti_ldr.h"
 
 static void *handle;
+static const TSS2_TCTI_INFO *info;
 
 void tpm2_tcti_ldr_unload(void) {
     if (handle) {
         dlclose(handle);
+        handle = NULL;
+        info = NULL;
     }
+}
+
+const TSS2_TCTI_INFO *tpm2_tcti_ldr_getinfo(void) {
+    return info;
 }
 
 TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts) {
@@ -86,7 +93,7 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts) {
         goto err;
     }
 
-    const TSS2_TCTI_INFO *info = infofn();
+    info = infofn();
 
     TSS2_TCTI_INIT_FUNC init = info->init;
 
