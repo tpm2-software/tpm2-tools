@@ -117,7 +117,7 @@ int main(int argc, char *argv[], char *envp[]) {
     }
 
     tpm2_option_flags flags = { .all = 0 };
-    TSS2_TCTI_CONTEXT *tcti;
+    TSS2_TCTI_CONTEXT *tcti = NULL;
     tpm2_option_code rc = tpm2_handle_options(argc, argv, envp, tool_opts, &flags, &tcti);
     if (rc != tpm2_option_code_continue) {
         ret = rc == tpm2_option_code_err ? 1 : 0;
@@ -142,7 +142,10 @@ int main(int argc, char *argv[], char *envp[]) {
     /* figure out the tcti */
 
     /* TODO SAPI INIT */
-    TSS2_SYS_CONTEXT *sapi_context = sapi_ctx_init(tcti);
+    TSS2_SYS_CONTEXT *sapi_context = NULL;
+    if (tcti) {
+        sapi_context = sapi_ctx_init(tcti);
+    }
 
     if (flags.enable_errata) {
         tpm2_errata_init(sapi_context);

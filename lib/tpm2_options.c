@@ -310,7 +310,11 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     tcti_name = env_str ? env_str : tcti_name;
 
     /* handle any options */
-    tpm2_options *opts = tpm2_options_new("T:hvVQZ",
+    const char* common_short_opts = "T:hvVQZ";
+    if (tool_opts && (tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
+        common_short_opts = "hvVQZ";
+    }
+    tpm2_options *opts = tpm2_options_new(common_short_opts,
             ARRAY_LEN(long_options), long_options, NULL, NULL, true);
     if (!opts) {
         return tpm2_option_code_err;
@@ -388,24 +392,26 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         }
 	}
 
-    size_t i;
-    bool found = false;
-    for(i=0; i < ARRAY_LEN(tcti_map_table); i++) {
+    if (!(opts->flags & TPM2_OPTIONS_NO_SAPI)) {
+        size_t i;
+        bool found = false;
+        for(i=0; i < ARRAY_LEN(tcti_map_table); i++) {
 
-        char *name = tcti_map_table[i].name;
-        tcti_init init = tcti_map_table[i].init;
-        if (!strcmp(tcti_name, name)) {
-            found = true;
-            *tcti = init(tcti_opts);
-            if (!*tcti) {
-                goto out;
+            char *name = tcti_map_table[i].name;
+            tcti_init init = tcti_map_table[i].init;
+            if (!strcmp(tcti_name, name)) {
+                found = true;
+                *tcti = init(tcti_opts);
+                if (!*tcti) {
+                    goto out;
+                }
             }
         }
-    }
 
-    if (!found) {
-        LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
-        goto out;
+        if (!found) {
+            LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
+            goto out;
+        }
     }
 
     if (!flags->enable_errata) {
