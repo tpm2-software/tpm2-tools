@@ -46,17 +46,18 @@ typedef struct tpm2_options tpm2_options;
 typedef union tpm2_option_flags tpm2_option_flags;
 union tpm2_option_flags {
     struct {
-#define TPM2_OPTION_FLAG_VERBOSE       (1 << 0)
-        UINT8 verbose : 1;
-#define TPM2_OPTION_FLAG_QUIET         (1 << 1)
-        UINT8 quiet   : 1;
-#define TPM2_OPTION_FLAG_ENABLE_ERRATA (1 << 2)
+        UINT8 verbose        : 1;
+        UINT8 quiet          : 1;
         UINT8 enable_errata  : 1;
-#define TPM2_OPTION_NO_SAPI            (1 << 3)
-        UINT8 no_sapi : 1;
+        UINT8 no_sapi        : 1;
     };
     UINT8 all;
 };
+
+#define TPM2_OPTION_FLAG_VERBOSE       (1 << 0)
+#define TPM2_OPTION_FLAG_QUIET         (1 << 1)
+#define TPM2_OPTION_FLAG_ENABLE_ERRATA (1 << 2)
+#define TPM2_OPTION_NO_SAPI            (1 << 3)
 
 /**
  * This function pointer defines the interface for tcti initialization.
