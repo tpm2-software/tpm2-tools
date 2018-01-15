@@ -136,6 +136,10 @@ void tpm2_options_free(tpm2_options *opts) {
 
 static char *tcti_get_opts(char *optstr) {
 
+    if (!optstr) {
+        return NULL;
+    }
+
     char *split = strchr(optstr, ':');
     if (!split) {
         return NULL;
@@ -219,7 +223,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
 
     tpm2_option_code rc = tpm2_option_code_err;
     bool result = false;
-    bool show_help = true;
+    bool show_help = false;
 
     UNUSED(envp);
 
@@ -269,15 +273,10 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         case 'T':
             /* only attempt to get options from tcti option string */
             tcti_name = optarg;
-            tcti_opts = tcti_get_opts(optarg);
             break;
         case 'h':
-            if (!execute_man(argv[0])) {
-                tpm2_print_usage(argv[0], tool_opts);
-            }
-            show_help = false;
-            goto out;
-            break;
+            show_help = true;
+        break;
         case 'V':
             flags->verbose = 1;
             break;
@@ -287,7 +286,6 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         case 'v':
             show_version(argv[0]);
             rc = tpm2_option_code_stop;
-            show_help = false;
             goto out;
             break;
         case 'Z':
@@ -324,6 +322,8 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         }
 	}
 
+    tcti_opts = tcti_get_opts(optarg);
+
     *tcti = tpm2_tcti_ldr_load(tcti_name, tcti_opts);
     if (!*tcti) {
         LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
@@ -334,15 +334,18 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
     }
 
-    show_help = false;
-
     rc = tpm2_option_code_continue;
 out:
-    tpm2_options_free(opts);
 
     if (show_help) {
-        LOG_ERR("Try '%s --help' for more information.", argv[0]);
+        bool did_manpager = execute_man(argv[0]);
+        if (!did_manpager) {
+            tpm2_print_usage(argv[0], tool_opts);
+        }
+        rc = tpm2_option_code_stop;
     }
+
+    tpm2_options_free(opts);
 
     return rc;
 }
