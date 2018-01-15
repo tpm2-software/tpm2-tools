@@ -336,7 +336,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("i:S:P:", ARRAY_LEN(topts), topts,
-                             on_option, on_arg, false);
+                             on_option, on_arg, 0);
 
     return *opts != NULL;
 }

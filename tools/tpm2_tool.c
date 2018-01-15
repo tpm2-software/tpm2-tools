@@ -111,7 +111,7 @@ int main(int argc, char *argv[], char *envp[]) {
         }
     }
 
-    if (argc == 1 && tool_opts && tool_opts->show_usage) {
+    if (argc == 1 && tool_opts && (tool_opts->flags & TPM2_OPTIONS_SHOW_USAGE)) {
         tpm2_print_usage(argv[0], tool_opts);
         return ret;
     }

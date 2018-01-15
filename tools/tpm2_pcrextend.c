@@ -105,7 +105,7 @@ static bool on_arg(int argc, char **argv) {
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, false);
+    *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, 0);
 
     return *opts != NULL;
 }

@@ -95,6 +95,14 @@ typedef bool (*tpm2_option_handler)(char key, char *value);
  */
 typedef bool (*tpm2_arg_handler)(int argc, char **argv);
 
+/**
+ * TPM2_OPTIONS_* flags change default behavior of the argument parser
+ *
+ * TPM2_OPTIONS_SHOW_USAGE:
+ *  Enable printing a short usage summary (I.e. help)
+ */
+#define TPM2_OPTIONS_SHOW_USAGE 0x1
+
 struct tpm2_options {
     struct {
         tpm2_option_handler on_opt;
@@ -102,7 +110,7 @@ struct tpm2_options {
     } callbacks;
     char *short_opts;
     size_t len;
-    bool show_usage;
+    UINT32 flags;
     struct option long_opts[];
 };
 
@@ -123,14 +131,14 @@ typedef struct tpm2_options tpm2_options;
  * @param on_arg
  *  An argument handling callback, which may be null if you don't wish
  *  to handle arguments.
- * @param show_usage
- *  Whether the tool wants a usage short summary text to be printed.
+ * @param flags
+ *  TPM2_OPTIONS_* bit flags
  * @return
  *  NULL on failure or an initialized tpm2_options object.
  */
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
-        tpm2_arg_handler on_arg, bool show_usage);
+        tpm2_arg_handler on_arg, UINT32 flags);
 
 /**
  * Concatenates two tpm2_options objects, with src appended on
