@@ -1,4 +1,8 @@
 ## Changelog
+### 3.0.3 - 2017-15-18
+  * Tools that don't need a TPM to work no longer request
+    a TPM connection. Namely, tpm2_rc_decode
+  * Fix undefined references in libmarshal port.
 ### 3.0.2 - 2017-12-18
   * configure: enable code coverage option.
   * build: enable silent rules options.
