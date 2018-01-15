@@ -359,7 +359,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         }
 	}
 
-    if (!(flags && flags->no_sapi)) {
+    if (!flags->no_sapi) {
 
         size_t i;
         bool found = false;
