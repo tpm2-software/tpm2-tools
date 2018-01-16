@@ -33,7 +33,8 @@
 
 # We Assume that the tests are run from the system/test location.
 SRC_DIR=`realpath ../../tools/`
-PATH=$SRC_DIR:$PATH
+AUX_SRC_DIR=`realpath ../../tools/aux/`
+PATH=$SRC_DIR:$AUX_SRC_DIR:$PATH
 
 # Some test helpers are in the test directory
 # and might be needed on PATH

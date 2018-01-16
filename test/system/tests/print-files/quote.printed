@@ -1,0 +1,20 @@
+magic: ff544347
+type: 8018
+qualifiedSigner: 000b2630c73d893596f62453eadb1d39d553fdc6cc77f486dd5274a341d59771f33e
+extraData: 12457863
+clockInfo:
+  clock: 1069865461
+  resetCount: 75
+  restartCount: 0
+  safe: 1
+firmwareVersion: 0047000444a00e13
+attested:
+  quote:
+    pcrSelect:
+      count: 1
+      pcrSelections:
+        0:
+          hash: 11 (sha256)
+          sizeofSelect: 3
+          pcrSelect: 150e00
+    pcrDigest: 5d67b322bd22799b4dd21c011851426b3b22e67ca9dba5bc27e8fa9b911c21d6
