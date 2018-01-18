@@ -31,6 +31,19 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+# Building with asan on clang, the leak sanitizier
+# portion (lsan) on ancient versions is:
+# 1. Detecting a leak that (maybe) doesn't exist.
+#    OpenSSL is hard...
+# 2. The suppression option via ASAN_OPTIONS doesn't
+#    exist for 3.6.
+# TODO When this is fixed, remove it.
+# Bug: https://github.com/01org/tpm2-tools/issues/390
+if [ "$ASAN_ENABLED" == "true" ]; then
+  echo "Skipping ASAN_ENABLED is true"
+  exit 0
+fi
+
 handle=0x81000000
 opass=abc123
 epass=abc123

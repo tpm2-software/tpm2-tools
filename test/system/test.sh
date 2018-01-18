@@ -147,19 +147,6 @@ if [ -n "$TCTI_TESTS" ]; then
   tests="$tests $tcti_tests"
 fi
 
-# Building with asan on clang, the leak sanitizier
-# portion (lsan) on ancient versions is:
-# 1. Detecting a leak that (maybe) doesn't exist.
-#    OpenSSL is hard...
-# 2. The suppression option via ASAN_OPTIONS doesn't
-#    exist for 3.6.
-# TODO When this is fixed, remove it.
-# Bug: https://github.com/01org/tpm2-tools/issues/390
-if [ "$ASAN_ENABLED" == "true" ]; then
-  tests=`echo $tests | grep -v getmanufec.sh`
-fi
-
-
 # If command line arguments are provided, assume it is
 # the test suite to execute.
 # IE: test_tpm2_getrandom.sh
