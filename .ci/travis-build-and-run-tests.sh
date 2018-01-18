@@ -72,6 +72,7 @@ if [[ "$CC" == clang* ]]; then
 else #GCC
   export ENABLE_COVERAGE=true
   echo "Exported ENABLE_COVERAGE=true"
+  config_flags="--disable-hardening --enable-code-coverage"
 fi
 
 # Bootstrap in the tpm2.0-tss tools directory
@@ -91,42 +92,10 @@ fi
 mkdir ./build
 pushd ./build
 
-# Test building without tcti tabrmd
-../configure --enable-unit --without-tcti-tabrmd $config_flags
-
-make -j$(nproc)
-make -j$(nproc) check
-make -j$(nproc) clean
-
-# Test building without tcti socket
-../configure --enable-unit --without-tcti-socket $config_flags
-make -j$(nproc)
-make -j$(nproc) check
-make -j$(nproc) clean
-
-# Test building wihtout tcti device
-../configure --enable-unit --without-tcti-device $config_flags
-make -j$(nproc)
-make -j$(nproc) check
-make -j$(nproc) clean
-
-# Build all device TCTIs
 ../configure --enable-unit $config_flags
 make -j$(nproc)
 make -j$(nproc) check
 
-if [ "$ENABLE_COVERAGE" == "true" ]; then
-  # clean before build with coverage
-  make clean
-
-  # Build all device TCTIs with gcov
-  ../configure --disable-hardening --enable-code-coverage
-  make -j$(nproc)
-  make -j$(nproc) check
-fi
-# no clean here, keep artifacts for system testing
-
-# Move out of build back to the tpm2-tools directory
 popd
 
 # Switch over to the test directory
