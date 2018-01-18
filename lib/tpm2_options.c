@@ -186,7 +186,12 @@ static bool execute_man(char *prog_name) {
 }
 
 static void show_version (const char *name) {
+#ifndef DISABLE_DLCLOSE
     printf("tool=\"%s\" version=\"%s\" tctis=\"dynamic\"\n", name, VERSION);
+#else
+    printf("tool=\"%s\" version=\"%s\" tctis=\"dynamic\" dlclose=disabled\n",
+            name, VERSION);
+#endif
 }
 
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {

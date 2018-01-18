@@ -40,7 +40,9 @@ static const TSS2_TCTI_INFO *info;
 
 void tpm2_tcti_ldr_unload(void) {
     if (handle) {
+#ifndef DISABLE_DLCLOSE
         dlclose(handle);
+#endif
         handle = NULL;
         info = NULL;
     }

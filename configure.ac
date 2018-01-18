@@ -31,6 +31,13 @@ AS_IF([test "x$enable_unit" != xno],
                                     [1])])])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
 
+AC_ARG_ENABLE([dlclose],
+  [AS_HELP_STRING([--disable-dlclose],
+                            [Some versions of libc cause a sigsegv on exit, this disables the dlclose and works around that bug])],
+  []
+  [AC_DEFINE([DISABLE_DLCLOSE], [1])]
+ )
+
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--enable-hardening],
     [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
