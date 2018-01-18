@@ -75,6 +75,17 @@ else #GCC
   config_flags="--disable-hardening --enable-code-coverage"
 fi
 
+# Travis is using some EGLIBC version of libc
+# which appears to have some atexit() handling
+# issues when dlclose is used. Just disable it
+# for gcc builds, as clang DOES NOT run the
+# the system tests.
+# I cannot reproduce this on:
+#  OS: Ubuntu 16.04.3 LTS
+#   C: ldd (Ubuntu GLIBC 2.23-0ubuntu10) 2.23
+config_flags="--disable-dlclose $config_flags"
+echo "Enabling configure flag --disable-dlclose"
+
 # Bootstrap in the tpm2.0-tss tools directory
 ./bootstrap
 
