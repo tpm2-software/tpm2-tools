@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * Dynamic TCTIS. Support for pluggable TCTI modules via the -T or --tcti options.
   * tpm2_sign: supports signing a pre-computed hash via -D
   * tpm2_clearlock: tool added
   * test: system testing scripts moved into subordiante test directory.
