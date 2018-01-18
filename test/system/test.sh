@@ -32,12 +32,12 @@
 #;**********************************************************************;
 
 # We Assume that the tests are run from the system/test location.
-SRC_DIR=`realpath ../../tools/`
+SRC_DIR=`readlink -f ../../tools/`
 PATH=$SRC_DIR:$PATH
 
 # Some test helpers are in the test directory
 # and might be needed on PATH
-TEST_DIR=`realpath .`
+TEST_DIR=`readlink -f .`
 PATH=$TEST_DIR:$PATH
 
 # Keep track of failures and successes for reporting
