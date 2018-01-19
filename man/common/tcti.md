@@ -58,6 +58,8 @@ available. They override any environment variables.
          'session' and 'system'.
 
       * Examples:
+      ```
         -T"abrmd:bus_name=com.example.FooBar"
         -T"abrmd:bus_type=session"
         -T"abrmd:bus_type=system,bus_name=com.example.BarFoo".
+      ```
