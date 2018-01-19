@@ -49,4 +49,15 @@ available. They override any environment variables.
       can be specified. The default are 127.0.0.1 and 2321.
       Example: **-T socket:tcp://127.0.0.1:2321** or **export _TPM2TOOLS\_TCTI\_NAME_="socket:tcp://127.0.0.1:2321"**
 
-    * For the abrmd TCTI, it takes no options. Example: **-T abrmd** or **export _TPM2TOOLS\_TCTI\_NAME_="abrmd"**
+    * For the abrmd TCTI, the configuration string format is a series of simple key value pairs
+      separated by a ',' character. Each key and value string are separated by a '=' character.
+
+      * TCTI abrmd supports two keys:
+      1. 'bus_name' : The name of the tabrmd service on the bus (a string).
+      2. 'bus_type' : The type of the dbus instance (a string) limited to
+         'session' and 'system'.
+
+      * Examples:
+        -T"abrmd:bus_name=com.example.FooBar"
+        -T"abrmd:bus_type=session"
+        -T"abrmd:bus_type=system,bus_name=com.example.BarFoo".
