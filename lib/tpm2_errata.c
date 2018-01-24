@@ -165,9 +165,6 @@ void tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
         LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
                 "TSS2_RC: 0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED, rc);
         return;
-    } else if (more_data == YES) {
-        LOG_WARN("More data to be queried: capability: 0x%x, property: "
-                 "0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED);
     }
 
     /* Distinguish current spec level 0 */
