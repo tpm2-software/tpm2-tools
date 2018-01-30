@@ -63,6 +63,11 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
             total_indices_for_this_alg += tpm2_util_pop_count(group_val);
         }
 
+        if(pcr_values->count + total_indices_for_this_alg > ARRAY_LEN(pcr_values->digests)) {
+            LOG_ERR("Number of PCR is limited to %zu", ARRAY_LEN(pcr_values->digests));
+            return false;
+        }
+
         //digest size returned per the hashAlg type
         unsigned dgst_size = tpm2_alg_util_get_hash_size(
                 pcr_selections->pcrSelections[i].hash);
