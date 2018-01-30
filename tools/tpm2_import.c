@@ -97,7 +97,7 @@ static tpm_import_ctx ctx = {
     .import_key_private = TPM2B_EMPTY_INIT,
 };
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
 static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 
     if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
