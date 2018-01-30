@@ -132,7 +132,7 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
         goto error;
     }
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
     ssl_rsa_key->e = e;
     ssl_rsa_key->n = n;
 #else

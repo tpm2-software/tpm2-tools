@@ -108,7 +108,7 @@ out:
 
 HMAC_CTX *tpm2_openssl_hmac_new() {
     HMAC_CTX *ctx;
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
     ctx = malloc(sizeof(*ctx));
 #else
     ctx = HMAC_CTX_new();
@@ -116,7 +116,7 @@ HMAC_CTX *tpm2_openssl_hmac_new() {
     if (!ctx)
         return NULL;
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
     HMAC_CTX_init(ctx);
 #endif
 
@@ -124,7 +124,7 @@ HMAC_CTX *tpm2_openssl_hmac_new() {
 }
 
 void tpm2_openssl_hmac_free(HMAC_CTX *ctx) {
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
     HMAC_CTX_cleanup(ctx);
     free(ctx);
 #else
