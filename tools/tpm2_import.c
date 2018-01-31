@@ -57,6 +57,9 @@
 #define SYM_KEY_SIZE 16
 #define max_buffer_size  1024
 
+#define RSA_2K_MODULUS_SIZE_IN_BYTES 256
+#define RSA_2K_PUBLIC_MODULUS_OFFSET 28
+
 typedef struct tpm_import_ctx tpm_import_ctx;
 struct tpm_import_ctx {
     char *input_key_file;
@@ -77,7 +80,7 @@ struct tpm_import_ctx {
     TPM2B_PRIVATE import_key_private;
     //Protection Seed and keys
     uint8_t protection_seed_data[TPM2_SHA256_DIGEST_SIZE]; //max tpm digest
-    uint8_t encrypted_protection_seed_data[TPM2_MAX_RSA_KEY_BYTES];
+    uint8_t encrypted_protection_seed_data[RSA_2K_MODULUS_SIZE_IN_BYTES];
     uint8_t protection_hmac_key[TPM2_SHA256_DIGEST_SIZE];
     uint8_t protection_enc_key[SYM_KEY_SIZE];
     uint8_t import_key_public_unique_data[TPM2_SHA256_DIGEST_SIZE];
@@ -91,7 +94,7 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .input_key_file = NULL, 
     .parent_key_handle = 0,
-    .parent_public_key = TPM2B_INIT(TPM2_MAX_RSA_KEY_BYTES),
+    .parent_public_key = TPM2B_INIT(RSA_2K_MODULUS_SIZE_IN_BYTES),
     .import_key_public = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea),
     .import_key_public_name = TPM2B_TYPE_INIT(TPM2B_NAME, name),
     .import_key_private = TPM2B_EMPTY_INIT,
@@ -132,24 +135,24 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         LOG_ERR("Failed accessing parent key public file.");
         return false;
     }
-    if (fseek(fp, 102, SEEK_SET) != 0) {
+    if (fseek(fp, RSA_2K_PUBLIC_MODULUS_OFFSET, SEEK_SET) != 0) {
         LOG_ERR("Expected parent key public data file size failure");
         fclose(fp);
         return false;
     }
-    unsigned char pub_modulus[TPM2_MAX_RSA_KEY_BYTES] = { 0 };
-    int ret = fread(pub_modulus, 1, TPM2_MAX_RSA_KEY_BYTES, fp);
-    if (ret != TPM2_MAX_RSA_KEY_BYTES) {
+    unsigned char pub_modulus[RSA_2K_MODULUS_SIZE_IN_BYTES] = { 0 };
+    int ret = fread(pub_modulus, 1, RSA_2K_MODULUS_SIZE_IN_BYTES, fp);
+    if (ret != RSA_2K_MODULUS_SIZE_IN_BYTES) {
         LOG_ERR("Failed reading public modulus from parent key public file");
         fclose(fp);
         return false;
     }
     fclose(fp);
     RSA *rsa = NULL;
-    unsigned char encoded[TPM2_MAX_RSA_KEY_BYTES];
+    unsigned char encoded[RSA_2K_MODULUS_SIZE_IN_BYTES];
     unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
     int return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded,
-            TPM2_MAX_RSA_KEY_BYTES, ctx.protection_seed_data, 32, label, 10,
+            RSA_2K_MODULUS_SIZE_IN_BYTES, ctx.protection_seed_data, 32, label, 10,
             EVP_sha256(), NULL);
     if (return_code != 1) {
         LOG_ERR("Failed RSA_padding_add_PKCS1_OAEP_mgf1\n");
@@ -178,7 +181,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         LOG_ERR("RSA_generate_key_ex failed\n");
         goto error;
     }
-    BIGNUM *n = BN_bin2bn(pub_modulus, TPM2_MAX_RSA_KEY_BYTES, NULL);
+    BIGNUM *n = BN_bin2bn(pub_modulus, RSA_2K_MODULUS_SIZE_IN_BYTES, NULL);
     if (n == NULL) {
         LOG_ERR("BN_bin2bn failed\n");
         goto error;
@@ -189,7 +192,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
         goto error;
     }
     // Encrypting
-    return_code = RSA_public_encrypt(TPM2_MAX_RSA_KEY_BYTES, encoded,
+    return_code = RSA_public_encrypt(RSA_2K_MODULUS_SIZE_IN_BYTES, encoded,
             ctx.encrypted_protection_seed_data, rsa, RSA_NO_PADDING);
     if (return_code < 0) {
         LOG_ERR("Failed RSA_public_encrypt\n");
@@ -463,10 +466,10 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     };
 
     TPM2B_PRIVATE importPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
-    TPM2B_ENCRYPTED_SECRET enc_inp_seed = TPM2B_INIT(TPM2_MAX_RSA_KEY_BYTES);
+    TPM2B_ENCRYPTED_SECRET enc_inp_seed = TPM2B_INIT(RSA_2K_MODULUS_SIZE_IN_BYTES);
 
     memcpy(enc_inp_seed.secret, ctx.encrypted_protection_seed_data,
-            TPM2_MAX_RSA_KEY_BYTES);
+            RSA_2K_MODULUS_SIZE_IN_BYTES);
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_key_handle,
             &npsessionsData, &ctx.enc_sensitive_key, &ctx.import_key_public,
@@ -477,14 +480,14 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
         return false;
     }
 
-    if (!files_save_bytes_to_file(ctx.import_key_public_file,
-            (UINT8 *) &ctx.import_key_public,
-            sizeof(ctx.import_key_public))) {
+    bool res = files_save_public(&ctx.import_key_public, ctx.import_key_public_file);
+    if(!res) {
         return false;
     }
 
-    if (!files_save_bytes_to_file(ctx.import_key_private_file,
-            (UINT8 *) &importPrivate, sizeof(importPrivate))) {
+    res = files_save_bytes_to_file(ctx.import_key_private_file, importPrivate.buffer, 
+        importPrivate.size);
+    if (!res) {
         return false;
     }
 
@@ -520,7 +523,6 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
         LOG_ERR("Failed Seed Encryption\n");
         return false;
     }
-
     res = import_external_key_and_save_public_private_data(sapi_context);
     if (!res) {
         return false;
