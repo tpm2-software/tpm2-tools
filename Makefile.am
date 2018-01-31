@@ -114,6 +114,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_errata.c \
     lib/tpm2_errata.h \
     lib/tpm2_header.h \
+    lib/tpm2_hierarchy.c \
+    lib/tpm2_hierarchy.h \
     lib/tpm2_nv_util.h \
     lib/tpm2_openssl.c \
     lib/tpm2_openssl.h \
@@ -203,7 +205,8 @@ check_PROGRAMS = \
     test/unit/test_tpm2_password_util \
     test/unit/test_tpm2_errata \
     test/unit/test_tpm2_session \
-    test/unit/test_tpm2_policy
+    test/unit/test_tpm2_policy \
+    test/unit/test_tpm2_hierarchy
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -262,6 +265,10 @@ test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession \
                                       -Wl,--wrap=Tss2_Sys_PolicyGetDigest
 test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_policy_SOURCES  = test/unit/test_tpm2_policy.c
+
+test_unit_test_tpm2_hierarchy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_hierarchy_SOURCES  = test/unit/test_tpm2_hierarchy.c
 
 endif
 
