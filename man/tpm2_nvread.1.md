@@ -19,10 +19,12 @@
   * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to define the space at.
 
-  * **-a**, **--auth-handle**=_SECRET\_DATA\_FILE_:
-    specifies the handle used to authorize:
-    * **0x40000001** for **TPM_RH_OWNER**
-    * **0x4000000C** for **TPM_RH_PLATFORM**
+  * **-a**, **--auth-handle**=_AUTH_:
+    specifies the handle used to authorize.
+    Supported options are:
+      * **o** for **TPM_RH_OWNER**
+      * **p** for **TPM_RH_PLATFORM**
+      * **`<num>`** where a raw number can be used.
 
   * **-f**, **--out-file**=_FILE_:
     file to write data

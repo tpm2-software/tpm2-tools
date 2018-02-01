@@ -42,6 +42,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_tool.h"
@@ -87,36 +88,14 @@ static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
     return true;
 }
 
-static bool auth_value_from_string(const char *value, TPMI_RH_PROVISION *auth) {
-
-    switch (value[0]) {
-    case 'o':
-        *auth = TPM2_RH_OWNER;
-        break;
-    case 'p':
-        *auth = TPM2_RH_PLATFORM;
-        break;
-    default:
-        return false;
-    }
-
-    bool result = value[1] == '\0';
-
-    if (!result) {
-        LOG_ERR("Incorrect auth value, got: \"%s\", expected o|p",
-            value);
-    }
-
-    return result;
-}
-
 static bool on_option(char key, char *value) {
 
     bool result;
 
     switch (key) {
     case 'A':
-        result = auth_value_from_string(value, &ctx.auth);
+        result = tpm2_hierarchy_from_optarg(value, &ctx.auth,
+                TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
             return false;
         }

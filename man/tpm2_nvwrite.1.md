@@ -23,10 +23,12 @@ If _FILE_ is not specified, it defaults to stdin.
   * **-o**, **--offset**=_OFFSET_:
     The offset within the NV index to start writing at.
 
-  * **-a**, **--auth-handle**=_SECRET\_DATA\_FILE_:
-    specifies the handle used to authorize:
-    * **0x40000001** for **TPM_RH_OWNER**
-    * **0x4000000C** for **TPM_RH_PLATFORM**
+  * **-a**, **--auth-handle**=_AUTH_:
+    specifies the handle used to authorize.
+    Supported options are:
+      * **o** for **TPM_RH_OWNER**
+      * **p** for **TPM_RH_PLATFORM**
+      * **`<num>`** where a raw number can be used.
 
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the

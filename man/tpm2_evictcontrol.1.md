@@ -18,9 +18,11 @@ be evicted.
 # OPTIONS
 
   * **-A**, **--auth**=_AUTH_:
-    The authorization used to authorize the commands. Valid choices are:
-    *  **o** for **TPM_RH_OWNER**
-    *  **p** for **TPM_RH_PLATFORM**
+    The authorization used to authorize the commands.
+    Supported options are:
+      * **o** for **TPM_RH_OWNER**
+      * **p** for **TPM_RH_PLATFORM**
+      * **`<num>`** where a raw number can be used.
 
   * **-H**, **--handle**=_HANDLE_:
     The handle of a loaded transient or a persistent object.

@@ -39,6 +39,7 @@
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
+#include "tpm2_hierarchy.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -50,7 +51,7 @@
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
 struct tpm_nvread_ctx {
     UINT32 nv_index;
-    UINT32 auth_handle;
+    TPMI_RH_PROVISION auth_handle;
     UINT32 size_to_read;
     UINT32 offset;
     TPMS_AUTH_COMMAND session_data;
@@ -183,15 +184,9 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_util_string_to_uint32(value, &ctx.auth_handle);
+        result = tpm2_hierarchy_from_optarg(value, &ctx.auth_handle,
+                TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
-            LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-
-        if (ctx.auth_handle == 0) {
-            LOG_ERR("Auth handle cannot be 0");
             return false;
         }
         break;

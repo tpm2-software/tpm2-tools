@@ -39,7 +39,8 @@ static void test_tpm2_hierarchy_from_optarg_NULL(void **state) {
     UNUSED(state);
 
     TPMI_RH_PROVISION h;
-    bool result = tpm2_hierarchy_from_optarg(NULL, &h);
+    bool result = tpm2_hierarchy_from_optarg(NULL, &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_false(result);
 }
 
@@ -47,7 +48,8 @@ static void test_tpm2_hierarchy_from_optarg_empty(void **state) {
     UNUSED(state);
 
     TPMI_RH_PROVISION h;
-    bool result = tpm2_hierarchy_from_optarg("", &h);
+    bool result = tpm2_hierarchy_from_optarg("", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_false(result);
 }
 
@@ -55,7 +57,8 @@ static void test_tpm2_hierarchy_from_optarg_invalid_id(void **state) {
     UNUSED(state);
 
     TPMI_RH_PROVISION h;
-    bool result = tpm2_hierarchy_from_optarg("q", &h);
+    bool result = tpm2_hierarchy_from_optarg("q", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_false(result);
 }
 
@@ -63,7 +66,8 @@ static void test_tpm2_hierarchy_from_optarg_invalid_str(void **state) {
     UNUSED(state);
 
     TPMI_RH_PROVISION h;
-    bool result = tpm2_hierarchy_from_optarg("nope", &h);
+    bool result = tpm2_hierarchy_from_optarg("nope", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_false(result);
 }
 
@@ -71,23 +75,84 @@ static void test_tpm2_hierarchy_from_optarg_valid_ids(void **state) {
     UNUSED(state);
 
     TPMI_RH_PROVISION h;
-    bool result = tpm2_hierarchy_from_optarg("o", &h);
+    bool result = tpm2_hierarchy_from_optarg("o", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_OWNER);
 
-    result = tpm2_hierarchy_from_optarg("p", &h);
+    result = tpm2_hierarchy_from_optarg("p", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_PLATFORM);
 
-    result = tpm2_hierarchy_from_optarg("e", &h);
+    result = tpm2_hierarchy_from_optarg("e", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_ENDORSEMENT);
 
-    result = tpm2_hierarchy_from_optarg("n", &h);
+    result = tpm2_hierarchy_from_optarg("n", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_NULL);
 
-    result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h);
+    result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
+    assert_true(result);
+    assert_int_equal(h, 0xBADC0DE);
+}
+
+static void test_tpm2_hierarchy_from_optarg_valid_ids_disabled(void **state) {
+    UNUSED(state);
+
+    TPMI_RH_PROVISION h;
+    bool result = tpm2_hierarchy_from_optarg("o", &h,
+            TPM2_HIERARCHY_FLAGS_N);
+    assert_false(result);
+
+    result = tpm2_hierarchy_from_optarg("p", &h,
+            TPM2_HIERARCHY_FLAGS_O);
+    assert_false(result);
+
+    result = tpm2_hierarchy_from_optarg("e", &h,
+            TPM2_HIERARCHY_FLAGS_P);
+    assert_false(result);
+
+    result = tpm2_hierarchy_from_optarg("n", &h,
+            TPM2_HIERARCHY_FLAGS_E);
+    assert_false(result);
+
+    result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h,
+            TPM2_HIERARCHY_FLAGS_NONE);
+    assert_true(result);
+    assert_int_equal(h, 0xBADC0DE);
+}
+
+static void test_tpm2_hierarchy_from_optarg_valid_ids_enabled(void **state) {
+    UNUSED(state);
+
+    TPMI_RH_PROVISION h;
+    bool result = tpm2_hierarchy_from_optarg("o", &h,
+            TPM2_HIERARCHY_FLAGS_O);
+    assert_true(result);
+    assert_int_equal(h, TPM2_RH_OWNER);
+
+    result = tpm2_hierarchy_from_optarg("p", &h,
+            TPM2_HIERARCHY_FLAGS_P);
+    assert_true(result);
+    assert_int_equal(h, TPM2_RH_PLATFORM);
+
+    result = tpm2_hierarchy_from_optarg("e", &h,
+            TPM2_HIERARCHY_FLAGS_E);
+    assert_true(result);
+    assert_int_equal(h, TPM2_RH_ENDORSEMENT);
+
+    result = tpm2_hierarchy_from_optarg("n", &h,
+            TPM2_HIERARCHY_FLAGS_N);
+    assert_true(result);
+    assert_int_equal(h, TPM2_RH_NULL);
+
+    result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h,
+            TPM2_HIERARCHY_FLAGS_ALL);
     assert_true(result);
     assert_int_equal(h, 0xBADC0DE);
 }
@@ -102,6 +167,8 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_tpm2_hierarchy_from_optarg_invalid_id),
         cmocka_unit_test(test_tpm2_hierarchy_from_optarg_invalid_str),
         cmocka_unit_test(test_tpm2_hierarchy_from_optarg_valid_ids),
+        cmocka_unit_test(test_tpm2_hierarchy_from_optarg_valid_ids_disabled),
+        cmocka_unit_test(test_tpm2_hierarchy_from_optarg_valid_ids_enabled),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
