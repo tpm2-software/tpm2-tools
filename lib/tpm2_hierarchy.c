@@ -34,10 +34,28 @@
 #include <sapi/tpm20.h>
 
 #include "log.h"
+#include "tpm2_hierarchy.h"
 #include "tpm2_util.h"
 
+/**
+ * Parses a hierarchy value from an option argument.
+ * @param value
+ *  The string to parse, which can be a numerical string as
+ *  understood by strtoul() with a base of 0, or an:
+ *    - o - Owner hierarchy
+ *    - p - Platform hierarchy
+ *    - e - Endorsement hierarchy
+ *    - n - Null hierarchy
+ * @param hierarchy
+ *  The parsed hierarchy as output.
+ * @param flags
+ *  What hierarchies should be supported by
+ *  the parsing.
+ * @return
+ *  True on success, False otherwise.
+ */
 bool tpm2_hierarchy_from_optarg(const char *value,
-        TPMI_RH_PROVISION *hierarchy) {
+        TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags) {
 
     if (!value) {
         return false;
@@ -45,24 +63,40 @@ bool tpm2_hierarchy_from_optarg(const char *value,
 
     bool is_o = !strcmp(value, "o");
     if (is_o) {
+        if (!(flags & TPM2_HIERARCHY_FLAGS_O)) {
+            LOG_ERR("Owner hierarchy not supported by this command.");
+            return false;
+        }
         *hierarchy = TPM2_RH_OWNER;
         return true;
     }
 
     bool is_p = !strcmp(value, "p");
     if (is_p) {
+        if (!(flags & TPM2_HIERARCHY_FLAGS_P)) {
+            LOG_ERR("Platform hierarchy not supported by this command.");
+            return false;
+        }
         *hierarchy = TPM2_RH_PLATFORM;
         return true;
     }
 
     bool is_e = !strcmp(value, "e");
     if (is_e) {
+        if (!(flags & TPM2_HIERARCHY_FLAGS_E)) {
+            LOG_ERR("Endorsement hierarchy not supported by this command.");
+            return false;
+        }
         *hierarchy = TPM2_RH_ENDORSEMENT;
         return true;
     }
 
     bool is_n = !strcmp(value, "n");
     if (is_n) {
+        if (!(flags & TPM2_HIERARCHY_FLAGS_N)) {
+            LOG_ERR("NULL hierarchy not supported by this command.");
+            return false;
+        }
         *hierarchy = TPM2_RH_NULL;
         return true;
     }

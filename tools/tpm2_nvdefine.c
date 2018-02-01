@@ -40,6 +40,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_session.h"
@@ -49,7 +50,7 @@
 typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
 struct tpm_nvdefine_ctx {
     UINT32 nvIndex;
-    UINT32 authHandle;
+    TPMI_RH_PROVISION auth;
     UINT16 size;
     TPMA_NV nvAttribute;
     TPM2B_AUTH nvAuth;
@@ -58,7 +59,7 @@ struct tpm_nvdefine_ctx {
 };
 
 static tpm_nvdefine_ctx ctx = {
-    .authHandle = TPM2_RH_PLATFORM,
+    .auth = TPM2_RH_PLATFORM,
     .nvAttribute = 0,
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     .nvAuth = TPM2B_EMPTY_INIT,
@@ -93,7 +94,7 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
 
     public_info.nvPublic.dataSize = ctx.size;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.authHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.auth,
             &sessions_data, &ctx.nvAuth, &public_info, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to define NV area at index 0x%x (%d).Error:0x%x",
@@ -125,15 +126,10 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_util_string_to_uint32(value, &ctx.authHandle);
+        result = tpm2_hierarchy_from_optarg(value, &ctx.auth,
+                TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
-            LOG_ERR("Could not convert auth handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-
-        if (ctx.authHandle == 0) {
-            LOG_ERR("Auth handle cannot be 0");
+            LOG_ERR("get h failed");
             return false;
         }
         break;

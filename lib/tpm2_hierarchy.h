@@ -36,7 +36,18 @@
 
 #include <sapi/tpm20.h>
 
+typedef enum tpm2_hierarchy_flags tpm2_hierarchy_flags;
+
+enum tpm2_hierarchy_flags {
+    TPM2_HIERARCHY_FLAGS_NONE = 0,
+    TPM2_HIERARCHY_FLAGS_O    = 1 << 0,
+    TPM2_HIERARCHY_FLAGS_P    = 1 << 1,
+    TPM2_HIERARCHY_FLAGS_E    = 1 << 2,
+    TPM2_HIERARCHY_FLAGS_N    = 1 << 3,
+    TPM2_HIERARCHY_FLAGS_ALL  = 0x0F
+};
+
 bool tpm2_hierarchy_from_optarg(const char *value,
-        TPMI_RH_PROVISION *hierarchy);
+        TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags);
 
 #endif /* TOOLS_TPM2_HIERARCHY_H_ */

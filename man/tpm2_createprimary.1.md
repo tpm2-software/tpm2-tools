@@ -27,6 +27,7 @@ will create and load a Primary Object. The sensitive area is not returned.
       * **p** for **TPM_RH_PLATFORM**
       * **e** for **TPM_RH_ENDORSEMENT**
       * **n** for **TPM_RH_NULL**
+      * **`<num>`** where a raw number can be used.
 
   * **-P**, **--pwdp**=_PARENT\_KEY\_PASSWORD_:
     Optional authorization string if authorization is required to create object under the specified hierarchy.

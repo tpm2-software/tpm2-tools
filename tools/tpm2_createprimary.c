@@ -43,6 +43,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_hierarchy.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_options.h"
@@ -189,42 +190,14 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
     return 0;
 }
 
-static bool hierarchy_value_from_string(const char *value, TPMI_RH_HIERARCHY *hierarchy) {
-
-    switch (value[0]) {
-    case 'e':
-        *hierarchy = TPM2_RH_ENDORSEMENT;
-        break;
-    case 'n':
-        *hierarchy = TPM2_RH_NULL;
-        break;
-    case 'o':
-        *hierarchy = TPM2_RH_OWNER;
-        break;
-    case 'p':
-        *hierarchy = TPM2_RH_PLATFORM;
-        break;
-    default:
-        return false;
-    }
-
-    bool result = value[1] == '\0';
-
-    if (!result) {
-        LOG_ERR("Incorrect hierarchy value, got: \"%s\", expected o|p|e|n",
-            value);
-    }
-
-    return result;
-}
-
 static bool on_option(char key, char *value) {
 
     bool res;
 
     switch(key) {
     case 'H':
-        res = hierarchy_value_from_string(value, &ctx.hierarchy);
+        res = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
+                TPM2_HIERARCHY_FLAGS_ALL);
         if (!res) {
             return false;
         }
