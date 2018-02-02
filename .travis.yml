@@ -50,13 +50,13 @@ install:
     - tar xJf autoconf-archive-2017.09.28.tar.xz && pushd autoconf-archive-2017.09.28
     - ./configure --prefix=/usr && make -j$(nproc) && sudo make install
     - popd
-    - git clone https://github.com/intel/tpm2-tss.git
+    - git clone https://github.com/tpm2-software/tpm2-tss.git
     - pushd tpm2-tss
     - ./bootstrap && ./configure && make -j$(nproc)
     - sudo ../.ci/travis-tss-install.sh
     - popd
     - sudo ldconfig /usr/local/lib
-    - git clone https://github.com/intel/tpm2-abrmd.git
+    - git clone https://github.com/tpm2-software/tpm2-abrmd.git
     - pushd tpm2-abrmd
     - git am ../.ci/patches/abrmd/* || true
     - ./bootstrap && ./configure --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
