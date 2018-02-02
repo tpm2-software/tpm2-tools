@@ -44,7 +44,7 @@ cleanup() {
         tpm2_evictcontrol -Q -A "$auth" -H "$handle" -p "$handle"
     done
 
-    rm -f primary.context
+    rm -f primary.context out.yaml
 }
 
 trap cleanup EXIT
@@ -54,6 +54,24 @@ onerror() {
     exit 1
 }
 trap onerror ERR
+
+
+function yaml_get() {
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$1") as f:
+	try:
+		y = yaml.load(f)
+		print(len(y))
+	except yaml.YAMLError as exc:
+		sys.exit(exc)
+pyscript
+}
 
 tpm2_clear
 
@@ -65,7 +83,9 @@ do
     tpm2_evictcontrol -Q -A "$auth" -p "$handle" -c primary.context
 done
 
-handle_cnt=$(tpm2_listpersistent | wc -l)
+tpm2_listpersistent > out.yaml
+
+handle_cnt=$(yaml_get out.yaml)
 
 if [ "$handle_cnt" -ne "${#keys[@]}" ]; then
     echo "Only $handle_cnt of ${#keys[@]} persistent objects were listed"
