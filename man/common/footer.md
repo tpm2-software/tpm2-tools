@@ -1,6 +1,6 @@
 # BUGS
 
-[Github Issues](https://github.com/intel/tpm2-tools/issues)
+[Github Issues](https://github.com/tpm2-software/tpm2-tools/issues)
 
 # HELP
 
