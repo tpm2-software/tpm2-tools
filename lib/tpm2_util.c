@@ -352,16 +352,22 @@ void print_yaml_indent(size_t indent_count) {
     }
 }
 
+void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj) {
+
+    char *attrs = tpm2_attr_util_obj_attrtostr(obj);
+    tpm2_tool_output("attributes:\n");
+    tpm2_tool_output("  value: %s\n", attrs);
+    tpm2_tool_output("  raw: 0x%x\n", obj);
+    free(attrs);
+}
+
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
 
     tpm2_tool_output("algorithm:\n");
     tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->publicArea.nameAlg));
     tpm2_tool_output("  raw: 0x%x\n", public->publicArea.nameAlg);
 
-    char *attrs = tpm2_attr_util_obj_attrtostr(public->publicArea.objectAttributes);
-    tpm2_tool_output("attributes:\n");
-    tpm2_tool_output("  value: %s\n", attrs);
-    tpm2_tool_output("  raw: 0x%x\n", public->publicArea.objectAttributes);
+    tpm2_util_tpma_object_to_yaml(public->publicArea.objectAttributes);
 
     tpm2_tool_output("type: \n");
     tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->publicArea.type));
@@ -384,6 +390,4 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
                 public->publicArea.authPolicy.size, true);
         tpm2_tool_output("\n");
     }
-
-    free(attrs);
 }
