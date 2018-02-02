@@ -75,8 +75,8 @@ tpm2_clear
 
 #
 # Test an extended policy session beyond client connections. This is ONLY supported by abrmd
-# since version: https://github.com/intel/tpm2-abrmd/releases/tag/1.2.0
-# However, bug: https://github.com/intel/tpm2-abrmd/issues/285 applies
+# since version: https://github.com/tpm2-software/tpm2-abrmd/releases/tag/1.2.0
+# However, bug: https://github.com/tpm2-software/tpm2-abrmd/issues/285 applies
 #
 # The test works by:
 # Step 1: Creating a trial session and updating it with a policyPCR event to generate
