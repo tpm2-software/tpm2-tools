@@ -298,8 +298,7 @@ static bool create_import_key_public_data_and_name(void) {
         ctx.import_key_public.publicArea.objectAttributes = ctx.objectAttributes;
     }
 
-    tpm2_tool_output("ObjectAttribute: 0x%08X\n",
-                     ctx.import_key_public.publicArea.objectAttributes);
+    tpm2_util_tpma_object_to_yaml(ctx.import_key_public.publicArea.objectAttributes);
 
     memcpy(ctx.import_key_public.publicArea.unique.sym.buffer,
             ctx.import_key_public_unique_data, TPM2_SHA256_DIGEST_SIZE);
