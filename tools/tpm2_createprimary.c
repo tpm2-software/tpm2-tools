@@ -172,7 +172,8 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
 
     if(setup_alg())
         return -1;
-    tpm2_tool_output("ObjectAttribute: 0x%08X\n", ctx.in_public.publicArea.objectAttributes);
+
+    tpm2_util_tpma_object_to_yaml(ctx.in_public.publicArea.objectAttributes);
 
     creationPCR.count = 0;
 
@@ -185,7 +186,7 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
         return -2;
     }
 
-    tpm2_tool_output("\nCreatePrimary Succeed ! Handle: 0x%8.8x\n\n", ctx.handle2048rsa);
+    tpm2_tool_output("handle: 0x%X", ctx.handle2048rsa);
 
     return 0;
 }
