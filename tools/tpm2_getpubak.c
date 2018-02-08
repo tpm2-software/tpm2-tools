@@ -270,7 +270,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
             NULL,
             NULL));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:%d", __LINE__);
+        LOG_PERR(Tss2_Sys_PolicySecret, rval);
         return false;
     }
 
@@ -285,7 +285,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
             &out_public, &creation_data, &creation_hash, &creation_ticket,
             &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("TPM2_Create Error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_Create, rval);
         return false;
     }
     LOG_INFO("TPM2_Create succ");
@@ -293,7 +293,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     // Need to flush the session here.
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_INFO("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_FlushContext, rval);
         return false;
     }
     // And remove the session from sessions table.
@@ -323,7 +323,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
             handle, &sessions_data, 0, 0, 0, 0, 0, 0, 0));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_PolicySecret Error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_PolicySecret, rval);
         return false;
     }
     LOG_INFO("Tss2_Sys_PolicySecret succ");
@@ -336,7 +336,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context, handle_2048_rsa, &sessions_data, &out_private,
             &out_public, &loaded_sha1_key_handle, &name, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("TPM2_Load Error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_Load, rval);
         return false;
     }
 
@@ -358,7 +358,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     // Need to flush the session here.
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("TPM2_Sys_FlushContext Error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_FlushContext, rval);
         return false;
     }
     sessions_data.auths[0].sessionHandle = TPM2_RS_PW;
@@ -371,15 +371,14 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, loaded_sha1_key_handle,
             &sessions_data, ctx.persistent_handle.ak, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("\n......TPM2_EvictControl Error. TPM Error:0x%x......",
-                rval);
+        LOG_PERR(Tss2_Sys_EvictControl, rval);
         return false;
     }
     LOG_INFO("EvictControl: Make AK persistent succ.");
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, loaded_sha1_key_handle));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Flush transient AK error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_FlushContext, rval);
         return false;
     }
     LOG_INFO("Flush transient AK succ.");
