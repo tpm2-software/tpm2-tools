@@ -67,9 +67,7 @@ static tpm_hmac_ctx ctx = {
     .algorithm = TPM2_ALG_SHA1,
 };
 
-#define TSS2_APP_HMAC_RC_FAILED (0x42 + 0x100 + TSS2_APP_RC_LAYER)
-
-TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
+static bool tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
 
     TSS2L_SYS_AUTH_COMMAND sessions_data;
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
@@ -92,12 +90,18 @@ TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
         res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
-            return TSS2_APP_HMAC_RC_FAILED;
+            return false;
         }
 
-        return TSS2_RETRY_EXP(Tss2_Sys_HMAC(sapi_context, ctx.key_handle,
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HMAC(sapi_context, ctx.key_handle,
                 &sessions_data, &buffer, ctx.algorithm, result,
                 &sessions_data_out));
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(TSS2_RC_SUCCESS, rval);
+            return false;
+        }
+
+        return true;
     }
 
     TPM2B_AUTH null_auth = { .size = 0 };
@@ -111,8 +115,8 @@ TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HMAC_Start(sapi_context, ctx.key_handle, &sessions_data,
             &null_auth, ctx.algorithm, &sequence_handle, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_HMAC_Start failed: 0x%X", rval);
-        return rval;
+        LOG_PERR(Tss2_Sys_HMAC_Start, rval);
+        return false;
     }
 
     /* If we know the file size, we decrement the amount read and terminate the loop
@@ -130,7 +134,7 @@ TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
-            return TSS2_APP_HMAC_RC_FAILED;
+            return false;
         }
 
         data.size = bytes_read;
@@ -138,7 +142,8 @@ TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
         /* if data was read, update the sequence */
         rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
                 &sessions_data, &data, &sessions_data_out));
-        if (rval != TPM2_RC_SUCCESS) {
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
             return rval;
         }
 
@@ -158,24 +163,29 @@ TSS2_RC tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
         bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
-            return TSS2_APP_HMAC_RC_FAILED;
+            return false;
         }
     } else {
         data.size = 0;
     }
 
-    return TSS2_RETRY_EXP(Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
             &sessions_data, &data, TPM2_RH_NULL, result, NULL,
             &sessions_data_out));
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_SequenceComplete, rval);
+        return false;
+    }
+
+    return true;
 }
 
 
 static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST hmac_out = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TSS2_RC rval = tpm_hmac_file(sapi_context, &hmac_out);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tpm_hmac_file() failed: 0x%X", rval);
+    bool res = tpm_hmac_file(sapi_context, &hmac_out);
+    if (!res) {
         return false;
     }
 
