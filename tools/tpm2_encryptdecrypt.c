@@ -90,17 +90,26 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
         .buffer = { 0 }
     };
 
-    /* try EncryptDecrypt2 first, fallback to EncryptDecrypt if not supported */
+    /*
+     * try EncryptDecrypt2 first, and if the command is not supported by the TPM, fallback to
+     * EncryptDecrypt. Keep track of which version you ran, for error reporting.
+     */
+    unsigned version = 2;
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
             &sessions_data, &ctx.data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &out_data,
             &iv_out, &sessions_data_out));
     if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
+        version = 1;
         rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
                 &sessions_data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &ctx.data,
                 &out_data, &iv_out, &sessions_data_out));
     }
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("EncryptDecrypt failed, error code: 0x%x", rval);
+        if (version == 2) {
+            LOG_PERR(Tss2_Sys_EncryptDecrypt2, rval);
+        } else {
+            LOG_PERR(Tss2_Sys_EncryptDecrypt, rval);
+        }
         return false;
     }
 
