@@ -113,6 +113,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_attr_util.h \
     lib/tpm2_errata.c \
     lib/tpm2_errata.h \
+    lib/tpm2_error.c \
+    lib/tpm2_error.h \
     lib/tpm2_header.h \
     lib/tpm2_hierarchy.c \
     lib/tpm2_hierarchy.h \
@@ -206,7 +208,8 @@ check_PROGRAMS = \
     test/unit/test_tpm2_errata \
     test/unit/test_tpm2_session \
     test/unit/test_tpm2_policy \
-    test/unit/test_tpm2_hierarchy
+    test/unit/test_tpm2_hierarchy \
+    test/unit/test_tpm2_error
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
@@ -269,6 +272,10 @@ test_unit_test_tpm2_policy_SOURCES  = test/unit/test_tpm2_policy.c
 test_unit_test_tpm2_hierarchy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
 test_unit_test_tpm2_hierarchy_SOURCES  = test/unit/test_tpm2_hierarchy.c
+
+test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_error_SOURCES  = test/unit/test_tpm2_error.c
 
 endif
 
