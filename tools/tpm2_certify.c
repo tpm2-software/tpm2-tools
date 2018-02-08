@@ -97,7 +97,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
             &out_public, &name, &qualified_name, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("TPM2_ReadPublic failed. Error Code: 0x%x", rval);
+        LOG_PERR(Tss2_Sys_ReadPublic, rval);
         return false;
     }
 
@@ -168,7 +168,7 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
             ctx.handle.key, &cmd_auth_array, &qualifying_data, &scheme,
             &certify_info, &signature, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("TPM2_Certify failed. Error Code: 0x%x", rval);
+        LOG_PERR(Tss2_Sys_Certify, rval);
         return false;
     }
 
