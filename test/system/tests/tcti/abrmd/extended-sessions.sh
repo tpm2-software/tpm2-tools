@@ -53,7 +53,7 @@ secret="12345678"
 
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
-    exit 1
+    exit 0
 }
 trap onerror ERR
 
