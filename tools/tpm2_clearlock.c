@@ -63,15 +63,14 @@ static bool clearlock(TSS2_SYS_CONTEXT *sapi_context) {
 
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
-    TSS2_RC rc = TSS2_RETRY_EXP(Tss2_Sys_ClearControl (sapi_context,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ClearControl (sapi_context,
             rh, &sessionsData, disable, &sessionsDataOut));
-
-    if (rc != TPM2_RC_SUCCESS && rc != TPM2_RC_INITIALIZE) {
-        LOG_ERR ("Tss2_Sys_ClearControl failed: 0x%x", rc);
+    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
+        LOG_PERR(Tss2_Sys_ClearControl, rval);
         return false;
     }
 
-    LOG_INFO ("Success. TSS2_RC: 0x%x", rc);
+    LOG_INFO ("Success. TSS2_RC: 0x%x", rval);
     return true;
 }
 
