@@ -59,11 +59,11 @@ install:
     - git clone https://github.com/tpm2-software/tpm2-abrmd.git
     - pushd tpm2-abrmd
     - git am ../.ci/patches/abrmd/* || true
-    - ./bootstrap && ./configure --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
+    - ./bootstrap && ./configure --disable-dlclose --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
     - sudo mkdir -p /var/lib/tpm
     - sudo groupadd tss && sudo useradd -M -d /var/lib/tpm -s /bin/false -g tss tss
     - sudo pkill -HUP dbus-daemon
-    - sudo -u tss tpm2-abrmd --tcti=socket &
+    - sudo -u tss tpm2-abrmd --tcti=libtcti-socket.so &
     - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.0.1-2_amd64.deb
     - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka0_1.0.1-2_amd64.deb
     - sha256sum libcmocka-dev_1.0.1-2_amd64.deb | grep -q edb0dcfa14893b0a03375c4fe3b852043ce8fca8f2397cde340562554f6d50eb
