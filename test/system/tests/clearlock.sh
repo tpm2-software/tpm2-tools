@@ -44,10 +44,6 @@ trap cleanup EXIT
 
 tpm2_clearlock
 
-tpm2_err=$(tpm2_clear 2>&1 | sed 's/.*: //')
-tpm2_errname=$( [ -z "${tpm2_err}" ] && echo TPM2_RC_SUCCESS || { tpm2_rc_decode ${tpm2_err} | awk '/name/ { print $2 }' ; } )
-test "$tpm2_errname" = "TPM2_RC_DISABLED"
-
 tpm2_clearlock -c -p
 
 tpm2_clear
