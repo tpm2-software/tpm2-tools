@@ -37,14 +37,13 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_error.h"
+
 #if defined (__GNUC__)
 #define COMPILER_ATTR(...) __attribute__((__VA_ARGS__))
 #else
 #define COMPILER_ATTR(...)
 #endif
-
-#define TPM2_RC_MASK 0xfff
-#define TPM2_RC_GET(code) (code & TPM2_RC_MASK)
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -115,7 +114,7 @@
         TSS2_RC __result = 0;                              \
         do {                                               \
             __result = (expression);                       \
-        } while (TPM2_RC_GET(__result) == TPM2_RC_RETRY); \
+        } while (tpm2_error_get(__result) == TPM2_RC_RETRY); \
         __result;                                          \
     })
 
