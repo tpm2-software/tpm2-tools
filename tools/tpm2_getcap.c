@@ -746,10 +746,10 @@ dump_handles (TPM2_HANDLE     handles[],
 TSS2_RC
 get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
                         TPMS_CAPABILITY_DATA  *capability_data) {
-    TSS2_RC                rc;
+
     TPMI_YES_NO            more_data;
 
-    rc = TSS2_RETRY_EXP(Tss2_Sys_GetCapability (sapi_ctx,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability (sapi_ctx,
                                  NULL,
                                  options.capability,
                                  options.property,
@@ -757,15 +757,16 @@ get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
                                  &more_data,
                                  capability_data,
                                  NULL));
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                 "TSS2_RC: 0x%x\n", options.capability, options.property, rc);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
+                 options.capability, options.property);
+        LOG_PERR(Tss2_Sys_GetCapability, rval);
     } else if (more_data == YES) {
         LOG_WARN("More data to be queried: capability: 0x%x, property: "
                  "0x%x\n", options.capability, options.property);
     }
 
-    return rc;
+    return rval;
 }
 
 /*
