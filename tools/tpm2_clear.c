@@ -58,15 +58,14 @@ static bool clear(TSS2_SYS_CONTEXT *sapi_context) {
     if (ctx.platform)
         rh = TPM2_RH_PLATFORM;
 
-    TSS2_RC rc = TSS2_RETRY_EXP(Tss2_Sys_Clear (sapi_context,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear (sapi_context,
             rh, &sessionsData, &sessionsDataOut));
-
-    if (rc != TPM2_RC_SUCCESS && rc != TPM2_RC_INITIALIZE) {
-        LOG_ERR ("Tss2_Sys_Clear failed: 0x%x", rc);
+    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
+        LOG_PERR(Tss2_Sys_Clear, rval);
         return false;
     }
 
-    LOG_INFO ("Success. TSS2_RC: 0x%x", rc);
+    LOG_INFO ("Success. TSS2_RC: 0x%x", rval);
     return true;
 }
 
