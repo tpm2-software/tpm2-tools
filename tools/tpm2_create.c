@@ -193,7 +193,7 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
                            &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
                            &creationData, &creationHash, &creationTicket, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Create Object Failed! ErrorCode: 0x%0x",rval);
+        LOG_PERR(Tss2_Sys_Create, rval);
         return -2;
     }
 
