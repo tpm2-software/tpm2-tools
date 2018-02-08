@@ -89,6 +89,12 @@ $ git push origin [signed-tag-name]
 ```
 **NOTE**: this assumes origin is the tpm2-tools official repo.
 
+## Testing
+The tools code **MUST** pass the travis CI testing and have a clean
+coverity scan result performed on every release. The CI testing not
+only tests for valid outputs, but also runs tests uses clang's asan
+feature to detect memory corruption issues.
+
 ### Making a GitHub release.
 
 1. Create a release using the signed release tag.
