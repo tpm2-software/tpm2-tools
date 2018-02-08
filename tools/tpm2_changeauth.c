@@ -77,8 +77,7 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_HierarchyChangeAuth(sapi_context,
             auth_handle, &sessionsData, &newAuth, 0));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Could not change hierarchy for %s. TPM Error:0x%x",
-                desc, rval);
+        LOG_PERR(Tss2_Sys_HierarchyChangeAuth, rval);
         return false;
     }
 
