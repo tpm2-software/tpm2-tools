@@ -37,6 +37,12 @@
 
 #include <sapi/tpm20.h>
 
+#if defined (__GNUC__)
+#define COMPILER_ATTR(...) __attribute__((__VA_ARGS__))
+#else
+#define COMPILER_ATTR(...)
+#endif
+
 #define TPM2_RC_MASK 0xfff
 #define TPM2_RC_GET(code) (code & TPM2_RC_MASK)
 
