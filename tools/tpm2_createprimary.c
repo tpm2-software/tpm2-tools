@@ -182,7 +182,7 @@ int create_primary(TSS2_SYS_CONTEXT *sapi_context) {
                                   &ctx.handle2048rsa, &outPublic, &creationData, &creationHash,
                                   &creationTicket, &name, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("\nCreatePrimary Failed ! ErrorCode: 0x%0x\n", rval);
+        LOG_PERR(Tss2_Sys_CreatePrimary, rval);
         return -2;
     }
 
