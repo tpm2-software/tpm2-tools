@@ -66,22 +66,20 @@ static TSS2_RC
 get_capability_handles(TSS2_SYS_CONTEXT *sapi_ctx, UINT32 property,
                        TPMS_CAPABILITY_DATA *capability_data) {
 
-    TSS2_RC rc;
     TPMI_YES_NO more_data;
 
-    rc = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM2_CAP_HANDLES, property,
+    TSS2_RC rval = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM2_CAP_HANDLES, property,
                                 TPM2_MAX_CAP_HANDLES, &more_data,
                                 capability_data,
                                 NULL);
-    if (rc != TSS2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                "TSS2_RC: 0x%x", TPM2_CAP_HANDLES, property, rc);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_GetCapability, rval);
     } else if (more_data == YES) {
         LOG_WARN("More data to be queried: capability: 0x%x, property: "
                  "0x%x", TPM2_CAP_HANDLES, property);
     }
 
-    return rc;
+    return rval;
 }
 
 static bool flush_contexts(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handles[],
@@ -90,12 +88,12 @@ static bool flush_contexts(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handles[]
     UINT32 i;
 
     for (i = 0; i < count; ++i) {
-        TPM2_RC rc;
 
-        rc = Tss2_Sys_FlushContext(sapi_context, handles[i]);
-        if (rc != TPM2_RC_SUCCESS) {
-            LOG_ERR("Failed Flush Context for %s handle 0x%x, TSS2_RC: 0x%x",
-                    get_property_name(handles[i]), handles[i], rc);
+        TPM2_RC rval = Tss2_Sys_FlushContext(sapi_context, handles[i]);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_ERR("Failed Flush Context for %s handle 0x%x",
+                    get_property_name(handles[i]), handles[i]);
+            LOG_PERR(Tss2_Sys_FlushContext, rval);
             return false;
         }
     }
