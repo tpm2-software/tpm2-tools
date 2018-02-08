@@ -34,7 +34,20 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include <sapi/tpm20.h>
+
+#include "tpm2_error.h"
+#include "tpm2_util.h"
+
 typedef enum log_level log_level;
+enum log_level {
+    log_level_error,
+    log_level_warning,
+    log_level_verbose
+};
+
+void _log (log_level level, const char *file, unsigned lineno, const char *fmt, ...)
+    COMPILER_ATTR(format (printf, 4, 5));
 
 /*
  * Prints an error message. The fmt and variadic arguments mirror printf.
@@ -42,6 +55,31 @@ typedef enum log_level log_level;
  * Use this to log all error conditions.
  */
 #define LOG_ERR(fmt, ...) _log(log_level_error, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
+
+/**
+ * Prints an error message for a TSS2_Sys call to the TPM.
+ * The format is <function-name>(0x<rc>) - <error string>
+ * @param func
+ *  The function that caused the error
+ * @param rc
+ *  The return code to print.
+ */
+#define LOG_PERR(func, rc) _LOG_PERR(xstr(func), rc)
+
+/**
+ * Internal use only.
+ *
+ * Handles the expanded LOG_PERR call checking argument values
+ * and handing them off to LOG_ERR.
+ * @param func
+ *  The function name.
+ * @param rc
+ *  The rc to decode.
+ */
+static inline void _LOG_PERR(const char *func, TSS2_RC rc) {
+
+    LOG_ERR("%s(0x%X) - %s", func, rc, tpm2_error_str(rc));
+}
 
 /*
  * Prints an warning message. The fmt and variadic arguments mirror printf.
@@ -59,20 +97,11 @@ typedef enum log_level log_level;
  */
 #define LOG_INFO(fmt, ...) _log(log_level_verbose, __FILE__, __LINE__, fmt, ##__VA_ARGS__)
 
-enum log_level
-{
-    log_level_error, log_level_warning, log_level_verbose
-};
-
 /**
  * Sets the log level so only messages <= to it print.
  * @param level
  *  The logging level to set.
  */
-void
-log_set_level (log_level level);
-
-void
-_log (log_level level, const char *file, unsigned lineno, const char *fmt, ...) __attribute__ ((format (printf, 4, 5)));
+void log_set_level (log_level level);
 
 #endif /* SRC_LOG_H_ */

@@ -34,12 +34,6 @@
 #include "tpm2_error.h"
 #include "tpm2_util.h"
 
-#if defined (__GNUC__)
-#define COMPILER_ATTR(...) __attribute__((__VA_ARGS__))
-#else
-#define COMPILER_ATTR(...)
-#endif
-
 /**
  * The maximum size of a layer name.
  */
