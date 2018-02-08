@@ -74,7 +74,7 @@ bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context
         UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_DictionaryAttackLockReset(sapi_context,
                 TPM2_RH_LOCKOUT, &sessionsData, &sessionsDataOut));
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("0x%X Error clearing dictionary lockout.", rval);
+            LOG_PERR(Tss2_Sys_DictionaryAttackLockReset, rval);
             return false;
         }
     }
@@ -86,9 +86,7 @@ bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context
                 ctx.recovery_time, ctx.lockout_recovery_time,
                 &sessionsDataOut));
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR(
-                    "0x%X Failed setting up dictionary_attack_lockout_reset params",
-                    rval);
+            LOG_PERR(Tss2_Sys_DictionaryAttackParameters, rval);
             return false;
         }
     }
