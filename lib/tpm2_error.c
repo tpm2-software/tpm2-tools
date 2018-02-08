@@ -45,11 +45,6 @@
 #define TSS2_ERR_LAYER_ERROR_STR_MAX  512
 
 /**
- * Mask for the error bits of tpm2 compliant return code.
- */
-#define TSS2_RC_ERROR_MASK 0xFFFF
-
-/**
  * Concatenates (safely) onto a static buffer given a format and varaidic
  * arguments similar to sprintf.
  * @param b
@@ -101,18 +96,6 @@ _catbuf(char *buf, size_t len, const char *fmt, ...) {
  */
 static inline UINT8 tss2_rc_layer_number_get(TSS2_RC rc) {
     return ((rc & TSS2_RC_LAYER_MASK) >> TSS2_RC_LAYER_SHIFT);
-}
-
-/**
- * Retrieves the error bits from a TSS2_RC. The error bits are
- * contained in the first 2 octets.
- * @param rc
- *  The rc to query for the error bits.
- * @return
- *  The error bits.
- */
-static inline UINT16 tss2_rc_layer_error_get(TSS2_RC rc) {
-    return ((rc & TSS2_RC_ERROR_MASK));
 }
 
 /**
@@ -790,7 +773,7 @@ static const char *unkown_layer_handler(TSS2_RC rc) {
     static char buf[32];
 
     clearbuf(buf);
-    catbuf(buf, "0x%X", tss2_rc_layer_error_get(rc));
+    catbuf(buf, "0x%X", tpm2_error_get(rc));
 
     return buf;
 }
@@ -863,7 +846,7 @@ const char * tpm2_error_str(TSS2_RC rc) {
     // Handlers only need the error bits. This way they don't
     // need to concern themselves with masking off the layer
     // bits or anything else.
-    UINT16 err_bits = tss2_rc_layer_error_get(rc);
+    UINT16 err_bits = tpm2_error_get(rc);
     const char *e = err_bits ? handler(err_bits) : "success";
     if (e) {
         catbuf(buf, "%s", e);

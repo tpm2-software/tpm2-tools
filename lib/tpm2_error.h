@@ -38,6 +38,23 @@
 #define TPM2_ERROR_TSS2_RC_LAYER_COUNT (TSS2_RC_LAYER_MASK >> TSS2_RC_LAYER_SHIFT)
 
 /**
+ * Mask for the error bits of tpm2 compliant return code.
+ */
+#define TPM2_ERROR_TSS2_RC_ERROR_MASK 0xFFFF
+
+/**
+ * Retrieves the error bits from a TSS2_RC. The error bits are
+ * contained in the first 2 octets.
+ * @param rc
+ *  The rc to query for the error bits.
+ * @return
+ *  The error bits.
+ */
+static inline UINT16 tpm2_error_get(TSS2_RC rc) {
+    return ((rc & TPM2_ERROR_TSS2_RC_ERROR_MASK));
+}
+
+/**
  * A custom error handler prototype.
  * @param rc
  *  The rc to decode with only the error bits set, ie no need to mask the
