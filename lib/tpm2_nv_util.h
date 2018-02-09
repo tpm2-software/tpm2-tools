@@ -36,6 +36,11 @@
 #include "log.h"
 #include "tpm2_util.h"
 
+/*
+ * The default buffer size when one cannot be determined via get capability.
+ */
+#define NV_DEFAULT_BUFFER_SIZE 512
+
 /**
  * Reads the public portion of a Non-Volatile (nv) index.
  * @param sapi_context
