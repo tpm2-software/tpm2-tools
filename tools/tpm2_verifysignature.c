@@ -90,7 +90,7 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
     rval = TSS2_RETRY_EXP(Tss2_Sys_VerifySignature(sapi_context, ctx.keyHandle, NULL,
             &ctx.msgHash, &ctx.signature, &validation, &sessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_VerifySignature failed, error code: 0x%x", rval);
+        LOG_PERR(Tss2_Sys_VerifySignature, rval);
         return false;
     }
 
