@@ -45,18 +45,34 @@
  * @param nv_public
  *  The public data structure to store the results in.
  * @return
- *  The error code from the TPM. TPM2_RC_SUCCESS on success.
+ *  True on success, false otherwise.
  */
-static inline TSS2_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+static inline bool tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
 
     TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    return Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, NULL, nv_public,
-            &nv_name, NULL);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, NULL, nv_public,
+            &nv_name, NULL));
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_NV_ReadPublic, rval);
+        return false;
+    }
+
+    return true;
 }
 
-static inline TSS2_RC tpm2_util_nv_max_buffer_size(TSS2_SYS_CONTEXT *sapi_context,
+/**
+ * Retrives the maximum transmission size for an NV buffer by
+ * querying the capabilities for TPM2_PT_NV_BUFFER_MAX.
+ * @param sapi_context
+ *  The system api context
+ * @param size
+ *  The size of the buffer.
+ * @return
+ *  True on success, false otherwise.
+ */
+static inline bool tpm2_util_nv_max_buffer_size(TSS2_SYS_CONTEXT *sapi_context,
         UINT32 *size) {
 
     /* Get the maximum read block size */
@@ -67,13 +83,13 @@ static inline TSS2_RC tpm2_util_nv_max_buffer_size(TSS2_SYS_CONTEXT *sapi_contex
                    TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX, 1,
                    &more_data, &cap_data, NULL));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to query max transmission size via"
-                "Tss2_Sys_GetCapability. Error:0x%x", rval);
-    } else {
-        *size = cap_data.data.tpmProperties.tpmProperty[0].value;
+        LOG_PERR(Tss2_Sys_NV_ReadPublic, rval);
+        return false;
     }
 
-    return rval;
+    *size = cap_data.data.tpmProperties.tpmProperty[0].value;
+
+    return true;
 }
 
 #endif /* LIB_TPM2_NV_UTIL_H_ */

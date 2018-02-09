@@ -90,9 +90,10 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
      * from being partially written to the index.
      */
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    TSS2_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Reading the public part of the nv index failed with: 0x%x", rval);
+    bool res = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
+    if (!res) {
+        LOG_ERR("Failed to write NVRAM public area at index 0x%X",
+                ctx.nv_index);
         return false;
     }
 
@@ -104,8 +105,8 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     UINT32 max_data_size;
-    rval = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
-    if (rval != TPM2_RC_SUCCESS) {
+    res = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    if (!res) {
         return false;
     }
 

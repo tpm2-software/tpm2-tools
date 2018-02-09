@@ -100,9 +100,9 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
         tpm2_tool_output("0x%x:\n", index);
 
         TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-        rval = tpm2_util_nv_read_public(sapi_context, index, &nv_public);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Reading the public part of the nv index failed with: 0x%x", rval);
+        bool res = tpm2_util_nv_read_public(sapi_context, index, &nv_public);
+        if (!res) {
+            LOG_ERR("Failed to read the public part of NV index 0x%X", index);
             return false;
         }
         print_nv_public(&nv_public);
