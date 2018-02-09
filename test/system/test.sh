@@ -33,7 +33,7 @@
 
 # We Assume that the tests are run from the system/test location.
 SRC_DIR=`readlink -f ../../tools/`
-PATH=$SRC_DIR:$PATH
+PATH=$SRC_DIR:$SRC_DIR/aux:$PATH
 
 # Some test helpers are in the test directory
 # and might be needed on PATH
