@@ -39,7 +39,7 @@
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
-#include "tpm_hash.h"
+#include "tpm2_hash.h"
 #include "tpm2_password_util.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"

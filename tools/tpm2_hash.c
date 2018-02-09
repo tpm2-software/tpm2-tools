@@ -41,7 +41,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
-#include "tpm_hash.h"
+#include "tpm2_hash.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -95,7 +95,7 @@ static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
-    bool res = tpm_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
+    bool res = tpm2_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
     if (!res) {
         return false;
     }

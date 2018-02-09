@@ -48,7 +48,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
-#include "tpm_hash.h"
+#include "tpm2_hash.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_session.h"

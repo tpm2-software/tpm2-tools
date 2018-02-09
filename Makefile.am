@@ -115,6 +115,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_errata.h \
     lib/tpm2_error.c \
     lib/tpm2_error.h \
+    lib/tpm2_hash.c \
+    lib/tpm2_hash.h \
     lib/tpm2_header.h \
     lib/tpm2_hierarchy.c \
     lib/tpm2_hierarchy.h \
@@ -127,8 +129,6 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_policy.h \
     lib/tpm2_util.c \
     lib/tpm2_util.h \
-    lib/tpm_hash.c \
-    lib/tpm_hash.h \
     lib/tpm_hmac.c \
     lib/tpm_hmac.h \
     lib/tpm_kdfa.c \
