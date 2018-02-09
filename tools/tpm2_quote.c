@@ -114,7 +114,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
             &signature, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS)
     {
-        printf("\nQuote Failed ! ErrorCode: 0x%0x\n\n", rval);
+        LOG_PERR(Tss2_Sys_Quote, rval);
         return -1;
     }
 
