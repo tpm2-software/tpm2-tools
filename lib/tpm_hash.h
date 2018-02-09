@@ -34,30 +34,6 @@
 #include <sapi/tpm20.h>
 
 /**
- * Hashes a list of TPM2B_DIGEST buffers via the tpm.
- * @param sapi_context
- *  The system api context.
- * @param hash_alg
- *  The hashing algorithm to use.
- * @param hierarchy
- *  The hierarchy.
- * @param num_buffers
- *  The number of buffers to hash in the list.
- * @param buffer_list
- *  The buffer list.
- * @param result
- *  The digest result.
- * @param validation
- *  The validation ticket. Note that some hierarchies don't produce a
- *  validation ticket and thus size will be 0.
- * @return
- *  TPM2_RC_SUCCESS on success, or other TSS2_RCs on error.
- */
-TSS2_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
-        TPMI_RH_HIERARCHY hierarchy, size_t num_buffers, TPM2B_DIGEST *buffer_list,
-        TPM2B_DIGEST *result, TPMT_TK_HASHCHECK *validation);
-
-/**
  * Hashes a BYTE array via the tpm.
  * @param sapi_context
  *  The system api context.
