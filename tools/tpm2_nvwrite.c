@@ -119,6 +119,9 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     if (max_data_size > MAX_NV_BUFFER_SIZE) {
         max_data_size = MAX_NV_BUFFER_SIZE;
     }
+    if (max_data_size == 0) {
+        max_data_size = MAX_NV_BUFFER_SIZE;
+    }
 
     UINT16 data_offset = 0;
     UINT16 bytes_left = ctx.nv_buffer.t.size;
