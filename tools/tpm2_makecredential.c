@@ -128,7 +128,7 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0, NULL, &ctx.public,
             TPM2_RH_NULL, &ctx.rsa2048_handle, &name_ext, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("LoadExternal failed. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_LoadExternal, rval);
         return false;
     }
 
@@ -136,13 +136,13 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
             &ctx.credential, &ctx.object_name, &cred_blob, &secret,
             &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("MakeCredential failed. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_MakeCredential, rval);
         return false;
     }
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, ctx.rsa2048_handle));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Flush loaded key failed. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_FlushContext, rval);
         return false;
     }
 
