@@ -151,10 +151,10 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
         UINT32 pcr_update_counter;
         TPML_PCR_SELECTION pcr_selection_out;
         // Read PCRs
-        TSS2_RC rval = Tss2_Sys_PCR_Read(sapi_context, 0, pcr_selections,
-                &pcr_update_counter, &pcr_selection_out, &pcr_values, 0);
+        TSS2_RC rval = Tss2_Sys_PCR_Read(sapi_context, NULL, pcr_selections,
+                &pcr_update_counter, &pcr_selection_out, &pcr_values, NULL);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("PCR_Read failed: 0x%x", rval);
+            LOG_PERR(Tss2_Sys_PCR_Read, rval);
             return false;
         }
     }
@@ -177,7 +177,7 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     TSS2_RC rval = Tss2_Sys_PolicyPCR(sapi_context, handle,
     NULL, &pcr_digest, pcr_selections, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("PolicyPCR failed: 0x%x", rval);
+        LOG_PERR(Tss2_Sys_PolicyPCR, rval);
         return false;
     }
 
@@ -209,7 +209,7 @@ bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
     TPM2_RC rval = Tss2_Sys_PolicyGetDigest(sapi_context, handle,
     NULL, policy_digest, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed Policy Get Digest");
+        LOG_PERR(Tss2_Sys_PolicyGetDigest, rval);
         return false;
     }
     return true;
