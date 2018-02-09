@@ -475,7 +475,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
             &ctx.import_key_private, &enc_inp_seed, &symmetricAlg,
             &importPrivate, &npsessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed Key Import %08X", rval);
+        LOG_PERR(Tss2_Sys_Import, rval);
         return false;
     }
 
