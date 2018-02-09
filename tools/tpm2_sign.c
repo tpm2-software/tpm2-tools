@@ -108,7 +108,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
             &sessions_data, &ctx.digest, &in_scheme, &ctx.validation, &signature,
             &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Sys_Sign failed, error code: 0x%x", rval);
+        LOG_PERR(Tss2_Sys_Sign, rval);
         return false;
     }
 
