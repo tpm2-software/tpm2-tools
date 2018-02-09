@@ -76,10 +76,10 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
 
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    TSS2_RC rval = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to read NVRAM public area at index 0x%x (%d). Error:0x%x",
-                ctx.nv_index, ctx.nv_index, rval);
+    bool res = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
+    if (!res) {
+        LOG_ERR("Failed to read NVRAM public area at index 0x%X",
+                ctx.nv_index);
         return false;
     }
 
@@ -107,8 +107,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     UINT32 max_data_size;
-    rval = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
-    if (rval != TPM2_RC_SUCCESS) {
+    res = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    if (!res) {
         return false;
     }
 
@@ -131,7 +131,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
         TPM2B_MAX_NV_BUFFER nv_data = TPM2B_TYPE_INIT(TPM2B_MAX_NV_BUFFER, buffer);
 
-        rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
                 &sessions_data, bytes_to_read, ctx.offset, &nv_data, &sessions_data_out));
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to read NVRAM area at index 0x%X", ctx.nv_index);
