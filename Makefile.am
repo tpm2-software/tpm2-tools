@@ -105,8 +105,6 @@ lib_libcommon_a_SOURCES = \
     lib/log.h \
     lib/pcr.c \
     lib/pcr.h \
-    lib/rc-decode.c \
-    lib/rc-decode.h \
     lib/tpm2_alg_util.c \
     lib/tpm2_alg_util.h \
     lib/tpm2_attr_util.c \
@@ -194,8 +192,6 @@ tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 if UNIT
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = \
-    test/unit/tpm2-rc-decode_unit \
-    test/unit/tpm2-rc-entry_unit \
     test/unit/test_string_bytes \
     test/unit/test_files \
     test/unit/test_tpm2_header \
@@ -208,14 +204,6 @@ check_PROGRAMS = \
     test/unit/test_tpm2_policy \
     test/unit/test_tpm2_hierarchy \
     test/unit/test_tpm2_error
-
-test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
-test_unit_tpm2_rc_decode_unit_SOURCES = test/unit/tpm2-rc-decode_unit.c
-
-test_unit_tpm2_rc_entry_unit_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
-test_unit_tpm2_rc_entry_unit_SOURCES  = test/unit/tpm2-rc-entry_unit.c
 
 test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
