@@ -62,10 +62,9 @@ struct tpm_createprimary_ctx {
     char *context_file;
     TPM2_HANDLE handle2048rsa;
     struct {
-        UINT8 A : 1;
+        UINT8 H : 1;
         UINT8 g : 1;
         UINT8 G : 1;
-        UINT8 C : 1;
     } flags;
 };
 
@@ -202,7 +201,7 @@ static bool on_option(char key, char *value) {
         if (!res) {
             return false;
         }
-        ctx.flags.A = 1;
+        ctx.flags.H = 1;
         break;
     case 'P':
         res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
@@ -239,7 +238,6 @@ static bool on_option(char key, char *value) {
         if(ctx.context_file == NULL || ctx.context_file[0] == '\0') {
             return false;
         }
-        ctx.flags.C = 1;
         break;
     case 'L':
         ctx.in_public.publicArea.authPolicy.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
@@ -293,24 +291,26 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
+static inline bool valid_ctx(struct tpm_createprimary_ctx ctx) {
+	return (ctx.flags.H && ctx.flags.g && ctx.flags.G);
+}
+
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
-
     UNUSED(flags);
-    int returnVal = 0;
+    int returnVal;
 
-    if(ctx.flags.A == 1 && ctx.flags.g == 1 && ctx.flags.G == 1) {
-        returnVal = create_primary(sapi_context);
-
-        if (returnVal == 0 && ctx.flags.C) {
-            returnVal = files_save_tpm_context_to_path(sapi_context, ctx.handle2048rsa,
-                                                       ctx.context_file) != true;
-        }
-
-        if(returnVal) {
-            return 1;
-        }
-    } else {
+    if (!valid_ctx(ctx)) {
         return 1;
+    }
+
+    returnVal = create_primary(sapi_context);
+    if (returnVal != 0 || ctx.context_file == NULL) {
+        return returnVal;
+    }
+
+    if (!files_save_tpm_context_to_path(sapi_context, ctx.handle2048rsa,
+                                       ctx.context_file)) {
+            return 1;
     }
 
     return 0;
