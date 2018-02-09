@@ -129,8 +129,6 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_policy.h \
     lib/tpm2_util.c \
     lib/tpm2_util.h \
-    lib/tpm_hmac.c \
-    lib/tpm_hmac.h \
     lib/tpm_kdfa.c \
     lib/tpm_kdfa.h \
     lib/tpm2_options.c \

@@ -31,7 +31,6 @@
 #include <openssl/hmac.h>
 
 #include "log.h"
-#include "tpm_hmac.h"
 #include "tpm_kdfa.h"
 #include "tpm2_openssl.h"
 #include "tpm2_util.h"
