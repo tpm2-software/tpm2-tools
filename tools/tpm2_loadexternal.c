@@ -101,7 +101,7 @@ static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
             ctx.hierarchy_value, &ctx.rsa2048_handle, &nameExt,
             &sessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("LoadExternal Failed ! ErrorCode: 0x%0x", rval);
+        LOG_PERR(Tss2_Sys_LoadExternal, rval);
         return false;
     }
 
