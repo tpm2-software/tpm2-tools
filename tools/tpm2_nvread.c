@@ -134,8 +134,8 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Read(sapi_context, ctx.auth_handle, ctx.nv_index,
                 &sessions_data, bytes_to_read, ctx.offset, &nv_data, &sessions_data_out));
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Failed to read NVRAM area at index 0x%x (%d). Error:0x%x",
-                    ctx.nv_index, ctx.nv_index, rval);
+            LOG_ERR("Failed to read NVRAM area at index 0x%X", ctx.nv_index);
+            LOG_PERR(Tss2_Sys_NV_Read, rval);
             goto out;
         }
 
@@ -301,7 +301,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
                 handle);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Failed Flush Context: 0x%x", rval);
+            LOG_PERR(Tss2_Sys_FlushContext, rval);
             return 1;
         }
 
