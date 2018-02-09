@@ -54,36 +54,6 @@ TSS2_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg
     return tpm_hash_file(sapi_context, halg, hierarchy, mem, result, validation);
 }
 
-TSS2_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
-        TPMI_RH_HIERARCHY hierarchy, size_t num_buffers,
-        TPM2B_DIGEST *buffer_list, TPM2B_DIGEST *result,
-        TPMT_TK_HASHCHECK *validation) {
-
-    TPM2B_AUTH null_auth = { .size = 0 };
-    TPMI_DH_OBJECT sequence_handle;
-    UINT32 rval = Tss2_Sys_HashSequenceStart(sapi_context, 0, &null_auth,
-            hash_alg, &sequence_handle, 0);
-    if (rval != TPM2_RC_SUCCESS) {
-        return rval;
-    }
-
-    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = { 1, {{.sessionHandle=TPM2_RS_PW}}};
-    unsigned i;
-    for (i = 0; i < num_buffers; i++) {
-        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
-                &cmd_auth_array, (TPM2B_MAX_BUFFER *) &buffer_list[i], 0);
-
-        if (rval != TPM2_RC_SUCCESS) {
-            return rval;
-        }
-    }
-
-    TPM2B_MAX_BUFFER empty_buffer = TPM2B_EMPTY_INIT;
-    return Tss2_Sys_SequenceComplete(sapi_context, sequence_handle,
-            &cmd_auth_array, &empty_buffer, hierarchy,
-            result, validation, NULL);
-}
-
 TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST *result,
         TPMT_TK_HASHCHECK *validation) {
