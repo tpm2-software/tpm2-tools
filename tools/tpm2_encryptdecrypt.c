@@ -41,7 +41,6 @@
 
 #include "files.h"
 #include "log.h"
-#include "rc-decode.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_session.h"
