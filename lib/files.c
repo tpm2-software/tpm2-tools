@@ -160,9 +160,7 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM2_HANDLE ha
 
     TSS2_RC rval = Tss2_Sys_ContextSave(sysContext, handle, &context);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR(
-                "Tss2_Sys_ContextSave: Saving handle 0x%x context failed. TPM Error:0x%x",
-                handle, rval);
+        LOG_PERR(Tss2_Sys_ContextSave, rval);
         return false;
     }
 
@@ -317,7 +315,7 @@ bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
 load_to_tpm:
     rval = Tss2_Sys_ContextLoad(sapi_context, &context, handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("ContextLoad Error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_ContextLoad, rval);
         result = false;
         goto out;
     }
