@@ -127,9 +127,8 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
                 ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
                 &sessions_data_out));
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR(
-                    "Failed to write NV area at index 0x%x (%d) offset 0x%x. Error:0x%x",
-                    ctx.nv_index, ctx.nv_index, data_offset, rval);
+            LOG_ERR("Failed to write NV area at index 0x%X", ctx.nv_index);
+            LOG_PERR(Tss2_Sys_NV_Write, rval);
             return false;
         }
 
@@ -335,7 +334,7 @@ out:
         TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
                                             handle);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Failed Flush Context: 0x%x", rval);
+            LOG_PERR(Tss2_Sys_FlushContext, rval);
             return 1;
         }
 
