@@ -38,9 +38,7 @@
 #include "tpm_hash.h"
 #include "tpm2_util.h"
 
-#define TSS2_APP_HMAC_RC_FAILED (0x1 + 0x100 + TSS2_APP_RC_LAYER)
-
-TSS2_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+bool tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
         TPM2B_DIGEST *result, TPMT_TK_HASHCHECK *validation) {
 
@@ -48,13 +46,13 @@ TSS2_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg
     if (!mem) {
         LOG_ERR("Error converting buffer to memory stream: %s",
                 strerror(errno));
-        return TSS2_APP_HMAC_RC_FAILED;
+        return false;
     }
 
     return tpm_hash_file(sapi_context, halg, hierarchy, mem, result, validation);
 }
 
-TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+bool tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST *result,
         TPMT_TK_HASHCHECK *validation) {
 
@@ -77,11 +75,17 @@ TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         res = files_read_bytes(input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
-            return TSS2_APP_HMAC_RC_FAILED;
+            return false;
         }
 
-        return Tss2_Sys_Hash(sapi_context, NULL, &buffer, halg,
-            hierarchy, result, validation, NULL);
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Hash(sapi_context, NULL, &buffer, halg,
+            hierarchy, result, validation, NULL));
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_Hash, rval);
+            return false;
+        }
+
+        return true;
     }
 
     /*
@@ -89,10 +93,10 @@ TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TSS2_RC rval = Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
-            halg, &sequenceHandle, NULL);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
+            halg, &sequenceHandle, NULL));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_HashSequenceStart failed: 0x%X", rval);
+        LOG_PERR(Tss2_Sys_HashSequenceStart, rval);
         return rval;
     }
 
@@ -111,16 +115,17 @@ TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
-            return TSS2_APP_HMAC_RC_FAILED;
+            return false;
         }
 
         data.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Tss2_Sys_SequenceUpdate(sapi_context, sequenceHandle,
-                &cmdAuthArray, &data, NULL);
+        rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequenceHandle,
+                &cmdAuthArray, &data, NULL));
         if (rval != TPM2_RC_SUCCESS) {
-            return rval;
+            LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
+            return false;
         }
 
         if (use_left) {
@@ -139,13 +144,19 @@ TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
-            return TSS2_APP_HMAC_RC_FAILED;
+            return false;
         }
     } else {
         data.size = 0;
     }
 
-    return Tss2_Sys_SequenceComplete(sapi_context, sequenceHandle,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceComplete(sapi_context, sequenceHandle,
             &cmdAuthArray, &data, hierarchy, result, validation,
-            NULL);
+            NULL));
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_SequenceComplete, rval);
+        return false;
+    }
+
+    return true;
 }
