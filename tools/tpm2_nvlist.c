@@ -89,7 +89,7 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM2_CAP_HANDLES,
             property, TPM2_PT_NV_INDEX_MAX, &moreData, &capabilityData, 0));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("GetCapability:Get NV Index list Error. TPM Error:0x%x", rval);
+        LOG_PERR(Tss2_Sys_GetCapability, rval);
         return false;
     }
 
