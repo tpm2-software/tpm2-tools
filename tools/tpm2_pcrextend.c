@@ -57,11 +57,11 @@ static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
     TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, {{ .sessionHandle=TPM2_RS_PW }}};
 
-    TSS2_RC rc = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
             digests, &sessions_data_out));
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Could not extend pcr index: 0x%X, due to error: 0x%X",
-                pcr_index, rc);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Could not extend pcr index: 0x%X", pcr_index);
+        LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
         return false;
     }
 
