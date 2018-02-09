@@ -97,8 +97,8 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.auth,
             &sessions_data, &ctx.nvAuth, &public_info, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to define NV area at index 0x%x (%d).Error:0x%x",
-                ctx.nvIndex, ctx.nvIndex, rval);
+        LOG_ERR("Failed to define NV area at index 0x%X", ctx.nvIndex);
+        LOG_PERR(Tss2_Sys_NV_DefineSpace, rval);
         return false;
     }
 
