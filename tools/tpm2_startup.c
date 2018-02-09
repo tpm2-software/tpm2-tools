@@ -85,13 +85,12 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     LOG_INFO ("Sending TPM_Startup command with type: %s",
             ctx.clear ? "TPM2_SU_CLEAR" : "TPM2_SU_STATE");
 
-    TSS2_RC rc = TSS2_RETRY_EXP(Tss2_Sys_Startup (sapi_context, startup_type));
-    if (rc != TPM2_RC_SUCCESS && rc != TPM2_RC_INITIALIZE) {
-        LOG_ERR ("Tss2_Sys_Startup failed: 0x%x",
-                 rc);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Startup (sapi_context, startup_type));
+    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
+        LOG_PERR(Tss2_Sys_Startup, rval);
         return 1;
     }
 
-    LOG_INFO ("Success. TSS2_RC: 0x%x", rc);
+    LOG_INFO ("Success. TSS2_RC: 0x%x", rval);
     return 0;
 }
