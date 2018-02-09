@@ -95,7 +95,7 @@ static int read_public(TSS2_SYS_CONTEXT *sapi_context,
                        &name, &qualifiedName, &sessionsDataOut)
            );
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("TPM2_ReadPublic error: rval = 0x%X", rval);
+        LOG_PERR(Tss2_Sys_ReadPublic, rval);
         return -1;
     }
 
@@ -129,8 +129,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
                         property, TPM2_PT_TPM2_HR_PERSISTENT, &moreData,
                         &capabilityData, NULL));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("GetCapability: Get persistent object list Error."
-                " TPM Error:0x%x......", rval);
+        LOG_PERR(Tss2_Sys_GetCapability, rval);
         return 1;
     }
 
