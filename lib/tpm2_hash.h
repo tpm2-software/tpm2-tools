@@ -55,7 +55,7 @@
  * @return
  *  True on success, false otherwise.
  */
-bool tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+bool tpm2_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
         TPM2B_DIGEST *result, TPMT_TK_HASHCHECK *validation);
 
@@ -77,7 +77,7 @@ bool tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
  * @return
  *  True on success, false otherwise.
  */
-bool tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+bool tpm2_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST *result,
         TPMT_TK_HASHCHECK *validation);
 
