@@ -177,9 +177,9 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
             LOG_ERR("No digest set and no message file to compute from, cannot compute message hash!");
             goto err;
         }
-        int rc = tpm_hash_compute_data(sapi_context, ctx.halg,
+        bool res = tpm_hash_compute_data(sapi_context, ctx.halg,
                 TPM2_RH_NULL, msg->buffer, msg->size, &ctx.msgHash, NULL);
-        if (rc) {
+        if (!res) {
             LOG_ERR("Compute message hash failed!");
             goto err;
         }

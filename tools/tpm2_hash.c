@@ -95,9 +95,8 @@ static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
-    TSS2_RC rval = tpm_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tpm_hash_files() failed with error: 0x%X", rval);
+    bool res = tpm_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
+    if (!res) {
         return false;
     }
 
