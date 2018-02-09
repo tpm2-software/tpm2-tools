@@ -173,24 +173,3 @@ bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
 
     return true;
 }
-
-TSS2_RC get_max_supported_pcrs(TSS2_SYS_CONTEXT *sapi_context, UINT32 *max_pcrs) {
-    TPMI_YES_NO moreData;
-    TPMS_CAPABILITY_DATA capabilityData;
-    TSS2_RC rval = Tss2_Sys_GetCapability( sapi_context, 0, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_PCR_COUNT, 1, &moreData, &capabilityData, 0 );
-    if (rval != TPM2_RC_SUCCESS) {
-        return rval;
-    }
-    *max_pcrs = capabilityData.data.tpmProperties.tpmProperty[0].value;
-    
-    /*
-    *  The following check is temporary.
-    *  It is compensating until TSS reads IMPLEMENTATION_PCR dynamically
-    */
-    if (*max_pcrs > TPM2_MAX_PCRS) {
-        LOG_ERR("Number of supported PCRs in TPM exceed the number supported in TSS");
-        *max_pcrs = 0;
-    }
-
-    return TPM2_RC_SUCCESS;
-}
