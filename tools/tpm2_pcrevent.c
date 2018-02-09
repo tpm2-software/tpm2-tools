@@ -59,8 +59,6 @@ struct tpm_pcrevent_ctx {
     TPMS_AUTH_COMMAND session_data;
 };
 
-#define TSS2_APP_PCREVENT_RC_FAILED (0x57 + 0x100 + TSS2_APP_RC_LAYER)
-
 static tpm_pcrevent_ctx ctx = {
         .pcr = TPM2_RH_NULL,
         .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
@@ -73,7 +71,7 @@ static inline void swap_auths(TPMS_AUTH_COMMAND *a, TPMS_AUTH_COMMAND *b) {
     *b = tmp;
 }
 
-static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
+static bool tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         TPML_DIGEST_VALUES *result) {
 
     /*
@@ -102,12 +100,18 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
-            return TSS2_APP_PCREVENT_RC_FAILED;
+            return false;
         }
 
-        return TSS2_RETRY_EXP(Tss2_Sys_PCR_Event(sapi_context, ctx.pcr, &cmd_auth_array,
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Event(sapi_context, ctx.pcr, &cmd_auth_array,
                 &buffer, result,
                 NULL));
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_PCR_Event, rval);
+            return false;
+        }
+
+        return true;
     }
 
     TPMI_DH_OBJECT sequence_handle;
@@ -121,8 +125,8 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
     TPM2_ALG_NULL, &sequence_handle, NULL));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Tss2_Sys_HashSequenceStart failed: 0x%X", rval);
-        return rval;
+        LOG_PERR(Tss2_Sys_HashSequenceStart, rval);
+        return false;
     }
 
     /* If we know the file size, we decrement the amount read and terminate the loop
@@ -147,7 +151,7 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
-            return TSS2_APP_PCREVENT_RC_FAILED;
+            return false;
         }
 
         data.size = bytes_read;
@@ -156,8 +160,8 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
                 &cmd_auth_array, &data, NULL));
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Tss2_Sys_SequenceUpdate failed: 0x%X", rval);
-            return rval;
+            LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
+            return false;
         }
 
         if (use_left) {
@@ -176,7 +180,7 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
-            return TSS2_APP_PCREVENT_RC_FAILED;
+            return false;
         }
     } else {
         data.size = 0;
@@ -190,16 +194,21 @@ static TSS2_RC tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
     swap_auths(&cmd_auth_array.auths[0], &cmd_auth_array.auths[1]);
     cmd_auth_array.count = 2;
 
-    return TSS2_RETRY_EXP(Tss2_Sys_EventSequenceComplete(sapi_context, ctx.pcr,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_EventSequenceComplete(sapi_context, ctx.pcr,
             sequence_handle, &cmd_auth_array, &data, result, NULL));
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_EventSequenceComplete, rval);
+        return false;
+    }
+
+    return true;
 }
 
 static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPML_DIGEST_VALUES digests;
-    TSS2_RC rval = tpm_pcrevent_file(sapi_context, &digests);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("tpm_pcrevent_file() failed: 0x%X", rval);
+    bool res = tpm_pcrevent_file(sapi_context, &digests);
+    if (!res) {
         return false;
     }
 
