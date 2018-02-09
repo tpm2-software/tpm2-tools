@@ -79,7 +79,7 @@ bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.itemHandle,
             &sessions_data, &outData, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Sys_Unseal failed. Error Code: 0x%x", rval);
+        LOG_PERR(Tss2_Sys_Unseal, rval);
         return false;
     }
 
@@ -247,7 +247,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
                                                 handle));
             if (rval != TPM2_RC_SUCCESS) {
-                LOG_ERR("Failed Flush Context: 0x%x", rval);
+                LOG_PERR(Tss2_Sys_FlushContext, rval);
                 return 1;
             }
         }
