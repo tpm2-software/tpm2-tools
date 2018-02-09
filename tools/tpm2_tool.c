@@ -84,9 +84,9 @@ static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
         return NULL;
     }
 
-    TSS2_RC rc = Tss2_Sys_Initialize(sapi_ctx, size, tcti_ctx, &abi_version);
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to initialize SAPI context: 0x%x\n", rc);
+    TSS2_RC rval = Tss2_Sys_Initialize(sapi_ctx, size, tcti_ctx, &abi_version);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_Initialize, rval);
         free(sapi_ctx);
         return NULL;
     }
