@@ -157,6 +157,10 @@ int main(int argc, char *argv[], char *envp[]) {
      * 'main'.
      */
     ret = tpm2_tool_onrun(sapi_context, flags) ? 1 : 0;
+    if (ret != 0) {
+        LOG_ERR("Unable to run %s", argv[0]);
+    }
+
     /*
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
