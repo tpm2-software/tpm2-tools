@@ -97,7 +97,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
                          &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS)
     {
-        LOG_ERR("\nLoad Object Failed ! ErrorCode: 0x%0x\n",rval);
+        LOG_PERR(Tss2_Sys_Load, rval);
         return -1;
     }
     tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
