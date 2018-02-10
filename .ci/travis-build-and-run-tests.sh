@@ -113,7 +113,9 @@ popd
 pushd ./test/system
 
 # Run the tests on ALL device TCTIs configuration
-PATH=$(pwd)/../../build/tools:${PATH} ./test.sh -p -t abrmd
+
+TOOLS="$(pwd)/../../build/tools"
+PATH=$TOOLS:$TOOLS/aux:$PATH ./test.sh -p -t abrmd
 
 # done go back to tpm2-tools directory
 popd
