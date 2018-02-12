@@ -327,16 +327,19 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         }
 	}
 
-    tcti_opts = tcti_get_opts(optarg);
+    /* Only init a TCTI if the tool needs it */
+    if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
+        tcti_opts = tcti_get_opts(optarg);
 
-    *tcti = tpm2_tcti_ldr_load(tcti_name, tcti_opts);
-    if (!*tcti) {
-        LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
-        goto out;
-    }
+        *tcti = tpm2_tcti_ldr_load(tcti_name, tcti_opts);
+        if (!*tcti) {
+            LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
+            goto out;
+        }
 
-    if (!flags->enable_errata) {
-        flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
+        if (!flags->enable_errata) {
+            flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
+        }
     }
 
     rc = tpm2_option_code_continue;
