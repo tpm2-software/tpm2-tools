@@ -74,7 +74,7 @@ static bool on_arg(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg,
-            TPM2_OPTIONS_SHOW_USAGE);
+            TPM2_OPTIONS_SHOW_USAGE|TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
 }
