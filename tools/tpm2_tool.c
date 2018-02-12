@@ -146,6 +146,9 @@ int main(int argc, char *argv[], char *envp[]) {
     TSS2_SYS_CONTEXT *sapi_context = NULL;
     if (tcti) {
         sapi_context = sapi_ctx_init(tcti);
+        if (!sapi_context) {
+            goto free_opts;
+        }
     }
 
     if (flags.enable_errata) {
