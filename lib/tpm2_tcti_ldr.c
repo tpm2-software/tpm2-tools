@@ -115,7 +115,7 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts) {
     rc = init(tcti_ctx, &size, opts);
     if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("tcti init routine for final initialization failed for library:"
-                " \"%s\"", path);
+                " \"%s\" with option: \"%s\"", path, opts);
         goto err;
     }
 
