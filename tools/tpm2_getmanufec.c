@@ -260,11 +260,13 @@ static unsigned char *HashEKPublicKey(void) {
     }
 
     if (ctx.verbose) {
+        tpm2_tool_output("public-key-hash:\n");
+        tpm2_tool_output("  sha256: ");
         unsigned i;
         for (i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-            printf("%02X", hash[i]);
+            tpm2_tool_output("%02X", hash[i]);
         }
-        printf("\n");
+        tpm2_tool_output("\n");
     }
 
     return hash;
