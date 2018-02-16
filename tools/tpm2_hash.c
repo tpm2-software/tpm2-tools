@@ -102,7 +102,7 @@ static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (outHash.size) {
         UINT16 i;
-        tpm2_tool_output("hash(%s):", tpm2_alg_util_algtostr(ctx.halg));
+        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(ctx.halg));
         for (i = 0; i < outHash.size; i++) {
             tpm2_tool_output("%02x", outHash.buffer[i]);
         }
