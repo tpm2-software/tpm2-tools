@@ -251,7 +251,7 @@ static bool show_pcr_values(void) {
         const char *alg_name = tpm2_alg_util_algtostr(
                 ctx.pcr_selections.pcrSelections[i].hash);
 
-        tpm2_tool_output("%s :\n", alg_name);
+        tpm2_tool_output("%s:\n", alg_name);
 
         UINT8 pcr_id;
         for (pcr_id = 0; pcr_id < ctx.pcr_selections.pcrSelections[i].sizeofSelect * 8; pcr_id++) {
@@ -264,11 +264,11 @@ static bool show_pcr_values(void) {
                 return false;
             }
 
-            tpm2_tool_output("  %-2d : ", pcr_id);
+            tpm2_tool_output("  %-2d: 0x", pcr_id);
 
             int k;
             for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].size; k++) {
-                tpm2_tool_output("%02x", ctx.pcrs.pcr_values[vi].digests[di].buffer[k]);
+                tpm2_tool_output("%02X", ctx.pcrs.pcr_values[vi].digests[di].buffer[k]);
             }
             tpm2_tool_output("\n");
 
