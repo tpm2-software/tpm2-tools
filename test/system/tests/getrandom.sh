@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -49,5 +51,7 @@ tpm2_getrandom -o random.out 32
 
 #test stdout
 tpm2_getrandom 4 > random.out
+
+yaml_verify random.out
 
 exit 0
