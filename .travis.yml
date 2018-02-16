@@ -23,6 +23,7 @@ addons:
     - autoconf-archive
     - libcurl4-openssl-dev
     - libdbus-1-dev
+    - libgcrypt-dev
     - libglib2.0-dev
     - clang-3.8
     - pandoc
