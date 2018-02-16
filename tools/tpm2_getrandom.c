@@ -66,9 +66,9 @@ static bool get_random_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     if (!ctx.output_file_specified) {
         UINT16 i;
         for (i = 0; i < random_bytes.size; i++) {
-            printf("%s0x%2.2X", i ? " " : "", random_bytes.buffer[i]);
+            tpm2_tool_output("%s0x%2.2X", i ? " " : "", random_bytes.buffer[i]);
         }
-        printf("\n");
+        tpm2_tool_output("\n");
         return true;
     }
 
