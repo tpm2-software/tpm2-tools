@@ -52,7 +52,7 @@ install:
     - popd
     - git clone https://github.com/tpm2-software/tpm2-tss.git
     - pushd tpm2-tss
-    - ./bootstrap && ./configure && make -j$(nproc)
+    - ./bootstrap && ./configure --disable-esapi && make -j$(nproc)
     - sudo ../.ci/travis-tss-install.sh
     - popd
     - sudo ldconfig /usr/local/lib
