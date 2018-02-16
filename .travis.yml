@@ -21,9 +21,7 @@ addons:
   apt:
     packages:
     - autoconf-archive
-    - libcurl4-openssl-dev
     - libdbus-1-dev
-    - libgcrypt-dev
     - libglib2.0-dev
     - clang-3.8
     - pandoc
@@ -39,6 +37,8 @@ env:
 before_install:
     - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
     - pip install --user cpp-coveralls pyyaml
+    - sudo apt-get remove libgcrypt-dev
+    - sudo apt-get install librtmp-dev libgcrypt20-dev libcurl4-openssl-dev
 
 install: 
     - wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm974.tar.gz
