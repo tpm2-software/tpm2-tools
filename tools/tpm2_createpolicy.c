@@ -123,7 +123,7 @@ static bool parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
 
     // Display the policy digest during real policy session.
     if (pctx.common_policy_options.policy_session_type == TPM2_SE_POLICY) {
-        tpm2_tool_output("TPM2_SE_POLICY: 0x");
+        tpm2_tool_output("policy-digest: 0x");
         int i;
         for(i = 0; i < pctx.common_policy_options.policy_digest.size; i++) {
             tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest.buffer[i]);
