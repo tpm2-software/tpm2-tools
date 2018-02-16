@@ -64,16 +64,6 @@ static char *contextFilePath;
 static TPM2_HANDLE akHandle;
 static TPMS_AUTH_COMMAND session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
 
-static void PrintBuffer( UINT8 *buffer, UINT32 size )
-{
-    UINT32 i;
-    for( i = 0; i < size; i++ )
-    {
-        tpm2_tool_output("%2.2x", buffer[i]);
-    }
-    tpm2_tool_output("\n");
-}
-
 static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
 
     bool res = true;
@@ -107,8 +97,6 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
         inScheme.scheme = TPM2_ALG_NULL;
     }
 
-    memset( (void *)&signature, 0, sizeof(signature) );
-
     rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &cmd_auth_array,
             &qualifyingData, &inScheme, pcrSelection, &quoted,
             &signature, &sessionsDataOut));
@@ -118,12 +106,17 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
         return -1;
     }
 
-    tpm2_tool_output( "\nquoted:\n " );
-    tpm2_util_print_tpm2b( (TPM2B *)&quoted );
-    //PrintTPM2B_ATTEST(&quoted);
-    tpm2_tool_output( "\nsignature:\n " );
-    PrintBuffer( (UINT8 *)&signature, sizeof(signature) );
-    //PrintTPMT_SIGNATURE(&signature);
+    tpm2_tool_output( "quoted: " );
+    tpm2_util_print_tpm2b((TPM2B *)&quoted);
+    tpm2_tool_output("\nsignature:\n" );
+    tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature.sigAlg));
+
+    UINT16 size;
+    BYTE *sig = tpm2_extract_plain_signature(&size, &signature);
+    tpm2_tool_output("  sig: ");
+    tpm2_util_hexdump(sig, size, true);
+    tpm2_tool_output("\n");
+    free(sig);
 
     bool res = write_output_files(&quoted, &signature);
     return res == true ? 0 : 1;
