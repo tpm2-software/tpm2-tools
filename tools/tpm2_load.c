@@ -100,7 +100,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
         LOG_PERR(Tss2_Sys_Load, rval);
         return -1;
     }
-    tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
+    tpm2_tool_output("handle: 0x%08x\n", handle2048rsa);
 
     if (ctx.out_file) {
         if(!files_save_bytes_to_file(ctx.out_file, nameExt.name, nameExt.size)) {
