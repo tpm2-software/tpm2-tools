@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -44,7 +46,8 @@ trap cleanup EXIT
 
 cleanup
 
-tpm2_pcrlist -Q
+tpm2_pcrlist > pcrs.out
+yaml_verify pcrs.out
 
 tpm2_pcrlist -Q -g 0x04
 
