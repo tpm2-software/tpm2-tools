@@ -33,6 +33,8 @@
 
 #this script is for hash case testing
 
+source helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -80,22 +82,24 @@ tpm2_pcrevent -Q < $hash_in_file
 # Test that fifo stdin works
 cat $hash_in_file | tpm2_pcrevent > $hash_out_file
 
-# Verify output as expected.
-for l in `cat $hash_out_file`; do
-  alg=`echo -n $l | cut -d\: -f 1-1`
+yaml_verify $hash_out_file
 
+# Verify output as expected.
+while IFS='' read -r l || [[ -n "$l" ]]; do
+
+  alg=`echo -n $l | cut -d\: -f 1-1`
   if ! which "$alg"sum >/dev/null 2>&1; then
       echo "Ignore checking $alg algorithm due to unavailable \"${alg}sum\" program"
       continue
   fi
 
-  hash=`echo -n $l | cut -d\: -f 2-2`
+  hash=`echo -n $l | awk {'print $2'}`
   check=`"$alg"sum $hash_in_file | cut -d' ' -f 1-1`
   if [ "$check" != "$hash" ]; then
     echo "Hash check failed, got \"$hash\", expected \"$check\""
     exit 1
   fi
-done;
+done < $hash_out_file
 
 tpm2_pcrlist -L sha1:9 > $yaml_out_file
 old_pcr_value=`yaml_get $yaml_out_file sha1 9`
