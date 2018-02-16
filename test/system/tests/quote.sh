@@ -90,7 +90,9 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_quote_key_pub -r $
 
 tpm2_load -Q -c $file_primary_key_ctx  -u $file_quote_key_pub  -r $file_quote_key_priv -n $file_quote_key_name -C $file_quote_key_ctx
 
-tpm2_quote -Q -c $file_quote_key_ctx  -g $alg_quote -l 16,17,18 -q $nonce
+tpm2_quote -c $file_quote_key_ctx  -g $alg_quote -l 16,17,18 -q $nonce > $out
+
+yaml_verify $out
 
 tpm2_quote -Q -c $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
