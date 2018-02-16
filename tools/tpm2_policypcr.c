@@ -139,7 +139,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    tpm2_tool_output("policy_digest: 0x");
+    tpm2_tool_output("policy-digest: 0x");
     UINT16 i;
     for(i = 0; i < policy_digest.size; i++) {
         tpm2_tool_output("%02X", policy_digest.buffer[i]);
