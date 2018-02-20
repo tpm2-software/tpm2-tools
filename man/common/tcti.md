@@ -10,28 +10,32 @@ The variables respected depend on how the software was configured.
 
   * _TPM2TOOLS\_TCTI\_NAME_:
 	Select the TCTI used for communication with the next component down the TSS
-	stack. In most configurations this will be the Resource Manager called tabrms,
+	stack. In most configurations this will be the Resource Manager called tabrmd,
 	but it could be a TPM simulator or TPM device itself.
 
   The current known TCTIs are:
 
 	* tabrmd - The new resource manager, called
 	           [tabrmd](https://github.com/01org/tpm2-abrmd).
-	* socket - Typically used with the old resource manager, or talking directly to
-	           a simulator.
+	           Note that tabrmd and abrmd as a tcti name are synonymous.
+	* socket - Typically used with the old resource manager, or for communicating to
+	           the TPM software simulator.
 	* device - Used when talking directly to a TPM device file.
 
 One can pass TCTI specific options to a TCTI via the _TPM2TOOLS\_TCTI\_NAME_ environment
-variable by appending the options after the name with a : (colon) seperator. These TCTI
+variable by appending the option string after the name with a : (colon) separator. These TCTI
 option config strings are TCTI specific. Specifying **-h** on the tool command line will
 show help output for the TCTIs. The section **TCTI OPTIONS** has examples for known TCTIs.
 
 Formally, the format is:
-```<tcti-name>:<tcti-options>```
+```<tcti-name>:<tcti-option-config>```
+
+Specifying an empty string for either the ```<tcti-name>``` or ```<tcti-option-config>```
+results in the default being used for that portion respectively.
 
 # TCTI OPTIONS
 
-This collection of options are used to configure the varous TCTI modules
+This collection of options are used to configure the various TCTI modules
 available. They override any environment variables.
 
   * **-T**, **--tcti**=_TCTI\_NAME_**[**:_TCTI\_OPTIONS_**]**:
@@ -57,9 +61,22 @@ available. They override any environment variables.
       2. 'bus_type' : The type of the dbus instance (a string) limited to
          'session' and 'system'.
 
-      * Examples:
-      ```
-        -T"abrmd:bus_name=com.example.FooBar"
-        -T"abrmd:bus_type=session"
-        -T"abrmd:bus_type=system,bus_name=com.example.BarFoo".
-      ```
+## TCTI Option Examples:
+Specify the tabrmd tcti name and a config string of ```bus_name=com.example.FooBar```:
+```
+--tcti=tabrmd:bus_name=com.example.FooBar
+```
+
+Specify the default (abrmd) tcti and a config string of ```bus_type=session```:
+```
+--tcti:bus_type=session
+```
+
+Specify the device tcti and use the default config:
+```
+--tcti=device
+```
+or
+```
+--tcti=device:
+```

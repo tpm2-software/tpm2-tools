@@ -52,9 +52,7 @@ const TSS2_TCTI_INFO *tpm2_tcti_ldr_getinfo(void) {
     return info;
 }
 
-TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts) {
-
-    static const char tabrmd[7] = { 't', 'a', 'b', 'r', 'm', 'd', '\0' };
+TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
 
     TSS2_TCTI_CONTEXT *tcti_ctx = NULL;
 
@@ -69,9 +67,6 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts) {
      */
     handle = dlopen (path, RTLD_LAZY);
     if (!handle) {
-
-        //fixup users of abrmd as the tcti specifier
-        path = !strcmp(path, "abrmd") ? tabrmd : path;
 
         char buf[PATH_MAX];
         size_t size = snprintf(buf, sizeof(buf), "libtcti-%s.so", path);
@@ -102,7 +97,8 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts) {
     size_t size;
     TSS2_RC rc = init(NULL, &size, opts);
     if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("tcti init routine for getting size failed for library: \"%s\"", path);
+        LOG_ERR("tcti init setup routine failed for library: \"%s\""
+                " options: \"%s\"", path, opts);
         goto err;
     }
 
@@ -114,8 +110,8 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts) {
 
     rc = init(tcti_ctx, &size, opts);
     if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("tcti init routine for final initialization failed for library:"
-                " \"%s\" with option: \"%s\"", path, opts);
+        LOG_ERR("tcti init allocation routine failed for library: \"%s\""
+                " options: \"%s\"", path, opts);
         goto err;
     }
 

@@ -133,29 +133,71 @@ void tpm2_options_free(tpm2_options *opts) {
     free(opts->short_opts);
     free(opts);
 }
+typedef struct tcti_conf tcti_conf;
+struct tcti_conf {
+    const char *name;
+    const char *opts;
+};
 
-static char *tcti_get_opts(char *optstr) {
+static inline const char *fixup_name(const char *name) {
 
+    return !strcmp(name, "abrmd") ? "tabrmd" : name;
+}
+
+static tcti_conf tcti_get_config(const char *optstr) {
+
+    /* set up the default configuration */
+    tcti_conf conf = {
+        .name = "tabrmd"
+    };
+
+    /* no tcti config supplied, get it from env */
     if (!optstr) {
-        return NULL;
+        optstr = getenv (TPM2TOOLS_ENV_TCTI_NAME);
+        if (!optstr) {
+            /* nothing user supplied, use default */
+            return conf;
+        }
     }
 
     char *split = strchr(optstr, ':');
     if (!split) {
-        return NULL;
+        /* --tcti=device */
+        conf.name = fixup_name(optstr);
+        return conf;
     }
+
+    /*
+     * If it has a ":", it could be either one of the following:
+     * case A: --tcti=:               --> default name and default (null) config
+     * case B: --tcti=:/dev/foo       --> default name, custom config
+     * case C: --tcti=device:         --> custom name, default (null) config
+     * case D: --tcti=device:/dev/foo --> custom name, custom config
+     */
 
     split[0] = '\0';
 
-    /*
-     * make it so downstream consumers don't need to deal with the empty
-     * string, ie "". They can just check NULL.
-     */
-    if (!split[1]) {
-        return NULL;
+    /* Case A */
+    if (!optstr[0] && !split[1]) {
+        return conf;
     }
 
-    return &split[1];
+    /* Case B */
+    if (!optstr[0]) {
+        conf.opts = &split[1];
+        return conf;
+    }
+
+    /* Case C */
+    if (!split[1]) {
+        conf.name = fixup_name(optstr);
+        return conf;
+    }
+
+    /* Case D */
+    conf.name = fixup_name(optstr);
+    conf.opts = &split[1];
+    return conf;
 }
 
 static bool execute_man(char *prog_name) {
@@ -245,10 +287,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         { "enable-errata", no_argument,       NULL, 'Z' },
     };
 
-    char *tcti_opts = NULL;
-    char *tcti_name = "abrmd";
-    char *env_str = getenv (TPM2TOOLS_ENV_TCTI_NAME);
-    tcti_name = env_str ? env_str : tcti_name;
+    const char *tcti_conf_option = NULL;
 
     /* handle any options */
     const char* common_short_opts = "T:hvVQZ";
@@ -277,7 +316,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         switch (c) {
         case 'T':
             /* only attempt to get options from tcti option string */
-            tcti_name = optarg;
+            tcti_conf_option = optarg;
             break;
         case 'h':
             show_help = true;
@@ -329,11 +368,11 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
 
     /* Only init a TCTI if the tool needs it */
     if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
-        tcti_opts = tcti_get_opts(tcti_name);
+        tcti_conf conf = tcti_get_config(tcti_conf_option);
 
-        *tcti = tpm2_tcti_ldr_load(tcti_name, tcti_opts);
+        *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
         if (!*tcti) {
-            LOG_ERR("Unknown tcti, got: \"%s\"", tcti_name);
+            LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
             goto out;
         }
 

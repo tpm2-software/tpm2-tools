@@ -43,7 +43,7 @@
  * @return
  *  A tcti context on success or NULL on failure.
  */
-TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, char *opts);
+TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts);
 
 /**
  * Returns the loaded TCTIs information structure,
