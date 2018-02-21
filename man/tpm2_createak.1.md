@@ -1,21 +1,24 @@
-% tpm2_getpubak(1) tpm2-tools | General Commands Manual
+% tpm2_createak(1) tpm2-tools | General Commands Manual
 %
 % SEPTEMBER 2017
 
 # NAME
 
-**tpm2_getpubak**(1) - Generate attestation key with given algorithm under the
+**tpm2_createak**(1) - Generate attestation key with given algorithm under the
 endorsement hierarchy.
 
 # SYNOPSIS
 
-**tpm2_getpubak** [*OPTIONS*]
+**tpm2_createak** [*OPTIONS*]
 
 # DESCRIPTION
 
-**tpm2_getpubak**(1) - Generate attestation key with given algorithm under
-endorsement hierarchy, make it persistent with given ak handle, and
-return pub AK and AK name. If any passwd option is missing, assume NULL.
+**tpm2_createak**(1) - Generate an attestation key (AK) with the given
+algorithm under the endorsement hierarchy. It also makes it persistent
+with given AK handle supplied via **-H**. If **-p** is specified, the
+tool outputs the public key to the path supplied as the option argument.
+
+If any passwd option is missing, assume NULL.
 
 The tool outputs to stdout a YAML representation of the loaded key handle
 as well as it's name, for example:
@@ -56,13 +59,16 @@ loaded-key:
     Like -g, but specifies the algorithm of sign.
     See section "Supported Signing Algorithms" for details.
 
-  * **-f**, **--file**=_FILE_:
+  * **-p**, **--file**=_FILE_:
     Specifies the file used to save the public portion of AK. This will be a
     binary data structure corresponding to the TPM2B_PUBLIC struct in the
-    specification.
+    specification. One can control the output to other formats via the
+    **--format** option.
 
   * **-n**, **--ak-name**=_NAME_:
     Specifies the file used to save the ak name, optional.
+
+[pubkey options](common/pubkey.md)
 
 [common options](common/options.md)
 
@@ -79,8 +85,8 @@ loaded-key:
 # EXAMPLES
 
 ```
-tpm2_getpubak -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
-tpm2_getpubak -e 1a1b1c -P 123abc -o 1a1b1c -X -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+tpm2_createak -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+tpm2_createak -e 1a1b1c -P 123abc -o 1a1b1c -X -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
 ```
 
 # RETURNS

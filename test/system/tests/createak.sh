@@ -54,6 +54,6 @@ cleanup
 
 tpm2_createek -Q -H 0x8101000b -g rsa -p ek.pub
 
-tpm2_getpubak -Q -E 0x8101000b  -k 0x8101000c -g rsa -D sha256 -s rsassa -f ak.pub  -n ak.name
+tpm2_createak -Q -E 0x8101000b  -k 0x8101000c -g rsa -D sha256 -s rsassa -p ak.pub  -n ak.name
 
 exit 0

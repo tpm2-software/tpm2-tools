@@ -48,8 +48,8 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
 
-typedef struct getpubak_context getpubak_context;
-struct getpubak_context {
+typedef struct createak_context createak_context;
+struct createak_context {
     struct {
         TPM2_HANDLE ek;
         TPM2_HANDLE ak;
@@ -64,9 +64,13 @@ struct getpubak_context {
     TPM2_ALG_ID algorithm_type;
     TPM2_ALG_ID digest_alg;
     TPM2_ALG_ID sign_alg;
+    tpm2_convert_pubkey_fmt format;
+    struct {
+        bool f;
+    } flags;
 };
 
-static getpubak_context ctx = {
+static createak_context ctx = {
     .algorithm_type = TPM2_ALG_RSA,
     .digest_alg = TPM2_ALG_SHA256,
     .sign_alg = TPM2_ALG_NULL,
@@ -75,6 +79,7 @@ static getpubak_context ctx = {
         .ak      = TPM2B_EMPTY_INIT,
         .owner   = TPM2B_EMPTY_INIT,
     },
+    .format = pubkey_format_tss
 };
 
 /*
@@ -383,7 +388,12 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
     LOG_INFO("Flush transient AK succ.");
 
-    return tpm2_convert_pubkey_save(&out_public, pubkey_format_tss, ctx.output_file);
+    if (ctx.output_file) {
+        return tpm2_convert_pubkey_save(&out_public, ctx.format,
+                ctx.output_file);
+    }
+
+    return true;
 }
 
 static bool on_option(char key, char *value) {
@@ -447,11 +457,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'f':
-        if (!value) {
-            LOG_ERR("Please specify the output file used to save the pub ek.");
-            return false;
-        }
+    case 'p':
         ctx.output_file = value;
         break;
     case 'n':
@@ -461,6 +467,12 @@ static bool on_option(char key, char *value) {
         }
         ctx.akname_file = value;
         break;
+    case 'f':
+        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
+        if (ctx.format == pubkey_format_err) {
+            return false;
+        }
+        ctx.flags.f = true;
     }
 
     return true;
@@ -477,8 +489,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "digest-alg",     required_argument, NULL, 'D' },
         { "sign-alg",       required_argument, NULL, 's' },
         { "ak-passwd",      required_argument, NULL, 'P' },
-        { "file",           required_argument, NULL, 'f' },
+        { "file",           required_argument, NULL, 'p' },
         { "ak-name",        required_argument, NULL, 'n' },
+        { "format",         required_argument, NULL, 'f' },
     };
 
     *opts = tpm2_options_new("o:E:e:k:g:D:s:P:f:n:p:", ARRAY_LEN(topts), topts,
@@ -490,6 +503,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
+    if (ctx.flags.f && !ctx.output_file) {
+        LOG_ERR("Please specify an output file name when specifying a format");
+        return 1;
+    }
 
     return !create_ak(sapi_context);
 }
