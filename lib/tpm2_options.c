@@ -279,13 +279,19 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
      * grep -rn case\ \'[a-zA-Z]\' | awk '{print $3}' | sed s/\'//g | sed s/\://g | sort | uniq | less
      */
     struct option long_options [] = {
-        { "tcti",          required_argument, NULL, 'T' },
         { "help",          no_argument,       NULL, 'h' },
         { "verbose",       no_argument,       NULL, 'v' },
         { "quiet",         no_argument,       NULL, 'Q' },
         { "version",       no_argument,       NULL, 'V' },
         { "enable-errata", no_argument,       NULL, 'Z' },
+        /*
+         * tcti must be last, because when a tool requests that
+         * a sapi is not provided, we subtract 1 from the size
+         * of the array length so --tcti is not valid.
+         */
+        { "tcti",          required_argument, NULL, 'T' },
     };
+    size_t long_options_len =  ARRAY_LEN(long_options);
 
     const char *tcti_conf_option = NULL;
 
@@ -293,9 +299,10 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     const char* common_short_opts = "T:hvVQZ";
     if (tool_opts && (tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
         common_short_opts = "hvVQZ";
+        long_options_len--;
     }
     tpm2_options *opts = tpm2_options_new(common_short_opts,
-            ARRAY_LEN(long_options), long_options, NULL, NULL, true);
+           long_options_len, long_options, NULL, NULL, true);
     if (!opts) {
         return tpm2_option_code_err;
     }
