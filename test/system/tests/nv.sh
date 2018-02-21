@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source helpers.sh
+
 nv_test_index=0x1500018
 
 large_file_name="nv.test_large_w"
@@ -47,7 +49,7 @@ cleanup() {
   tpm2_nvrelease -Q -x 0x1500015 -a 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
-        nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out
+        nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out cap.out
 }
 
 trap cleanup EXIT
@@ -57,26 +59,6 @@ onerror() {
     exit 1
 }
 trap onerror ERR
-
-function yaml_get() {
-
-python << pyscript
-from __future__ import print_function
-
-import sys
-import yaml
-
-with open("$2") as f:
-	try:
-		y = yaml.load(f)
-		found = $1 in y
-		if (not found):
-			sys.stderr.write('Could not find index 0x%X\n' % ($1))
-		sys.exit(not found)
-	except yaml.YAMLError as exc:
-		sys.exit(exc)
-pyscript
-}
 
 cleanup
 
@@ -91,7 +73,7 @@ tpm2_nvwrite -Q -x $nv_test_index -a o nv.test_w
 tpm2_nvread -Q -x $nv_test_index -a o -s 32 -o 0
 
 tpm2_nvlist > nv.out
-yaml_get $nv_test_index nv.out
+yaml_get_kv nv.out $nv_test_index > /dev/null
 
 
 # Test writing to and reading from an offset by:
@@ -152,7 +134,9 @@ tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 #
 # Test large writes
 #
-large_file_size=$(tpm2_getcap -c properties-fixed | grep TPM2_PT_NV_INDEX_MAX | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
+
+tpm2_getcap -c properties-fixed > cap.out
+large_file_size=`yaml_get_kv cap.out \"TPM2_PT_NV_INDEX_MAX\" \"value\"`
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
@@ -168,7 +152,7 @@ tpm2_nvread -x $nv_test_index -a o > $large_file_read_name
 cmp -s $large_file_read_name $large_file_name
 
 tpm2_nvlist > nv.out
-yaml_get $nv_test_index nv.out
+yaml_get_kv nv.out $nv_test_index > /dev/null
 
 tpm2_nvrelease -Q -x $nv_test_index -a o
 

@@ -32,6 +32,15 @@
 #;**********************************************************************;
 ###this script use for test the implementation tpm2_dictionarylockout 
 
+source helpers.sh
+
+out=out.yaml
+
+cleanup() {
+    rm -f $out
+}
+trap cleanup EXIT
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -40,17 +49,23 @@ trap onerror ERR
 
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7
 
-if [ "$(tpm2_getcap -c properties-variable | grep TPM2_PT_MAX_AUTH_FAIL | sed -e 's/TPM2_PT_MAX_AUTH_FAIL: \+//')" != "0x00000005" ];then
- echo "Failure: setting up the number of allowed tries in the lockout parameters"
- exit 1
+tpm2_getcap -c properties-variable > $out
+v=$(yaml_get_kv "$out" \"TPM2_PT_MAX_AUTH_FAIL\")
+if [ $v -ne 5 ];then
+  echo "Failure: setting up the number of allowed tries in the lockout parameters"
+  exit 1
 fi
 
-if [ "$(tpm2_getcap -c properties-variable | grep TPM2_PT_LOCKOUT_INTERVAL | sed -e 's/TPM2_PT_LOCKOUT_INTERVAL: \+//')" != "0x00000006" ];then
- echo "Failure: setting up the lockout period in the lockout parameters"
+v=$(yaml_get_kv "$out" \"TPM2_PT_LOCKOUT_INTERVAL\")
+if [ $v -ne 6 ];then
+  echo "Failure: setting up the lockout period in the lockout parameters"
+  exit 1
 fi
 
-if [ "$(tpm2_getcap -c properties-variable | grep TPM2_PT_LOCKOUT_RECOVERY | sed -e 's/TPM2_PT_LOCKOUT_RECOVERY: \+//')" != "0x00000007" ];then
- echo "Failure: setting up the lockout recovery period in the lockout parameters"
+v=$(yaml_get_kv "$out" \"TPM2_PT_LOCKOUT_RECOVERY\")
+if [ $v -ne 7 ];then
+  echo "Failure: setting up the lockout recovery period in the lockout parameters"
+  exit 1
 fi
 
 exit 0

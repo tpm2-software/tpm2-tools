@@ -28,6 +28,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
+#include <assert.h>
+#include <ctype.h>
 #include <stdio.h>
 
 #include <sapi/tpm20.h>
@@ -38,8 +40,8 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-/* convenience macro to convert flags into "set" / "clear" strings */
-#define prop_str(val) val ? "set" : "clear"
+/* convenience macro to convert flags into "1" / "0" strings */
+#define prop_str(val) val ? "1" : "0"
 /* number of eleents in the capability_map array */
 #define CAPABILITY_MAP_COUNT \
     (sizeof (capability_map) / sizeof (capability_map_entry_t))
@@ -51,7 +53,7 @@ typedef struct capability_map_entry {
     UINT32    count;
 } capability_map_entry_t;
 /*
- * Array of structurs for use as a lookup table to map string representation
+ * Array of structures for use as a lookup table to map string representation
  * of a capability to the proper TPM2_CAP / TPM2_PT pair.
  */
 capability_map_entry_t capability_map[] = {
@@ -136,6 +138,7 @@ typedef struct capability_opts {
     TPM2_CAP          capability;
     UINT32           property;
     UINT32           count;
+    bool             list;
 } capability_opts_t;
 
 static capability_opts_t options;
@@ -175,36 +178,72 @@ int sanity_check_capability_opts (void) {
     return 2;
 }
 
+static void print_cap_map() {
+
+    size_t i;
+    for (i = 0; i < CAPABILITY_MAP_COUNT; ++i) {
+        const char *capstr = capability_map[i].capability_string;
+        tpm2_tool_output("- %s\n", capstr);
+    }
+}
+
 /*
  * There are a number of fixed TPM properties (tagged properties) that are
- * characters (8bit chars) packed into 32bit integers.
+ * characters (8bit chars) packed into 32bit integers, trim leading and trailing spaces
  */
-void
-get_uint32_as_chars (UINT32    value,
-                     char     *buf)
+static char *
+get_uint32_as_chars (UINT32    value)
 {
-    sprintf (buf, "%c%c%c%c",
-             ((UINT8*)&value)[3],
-             ((UINT8*)&value)[2],
-             ((UINT8*)&value)[1],
-             ((UINT8*)&value)[0]);
+    static char buf[5];
+
+    value = tpm2_util_ntoh_32(value);
+    UINT8 *bytes = (UINT8 *)&value;
+
+    /*
+     * move the start of the string to the beginning
+     * first non space character
+     * Record the number of skips in i.
+     */
+    unsigned i;
+    for(i=0; i < sizeof(value); i++) {
+        UINT8 b = *bytes;
+        if (!isspace(b)) {
+            break;
+        }
+        bytes++;
+    }
+
+    /* record the number of trailing spaces in j */
+    unsigned j;
+    for(j=sizeof(value) - i; j > i; j--) {
+        UINT8 b = bytes[j - 1];
+        /* NULL bytes count as space */
+        if (b && !isspace(b)) {
+            break;
+        }
+    }
+
+    memcpy(buf, bytes, j);
+    buf[j] = '\0';
+    return buf;
 }
 /*
  * Print string representations of the TPMA_MODES.
  */
-void
+static void
 tpm2_tool_output_tpma_modes (TPMA_MODES    modes)
 {
-    tpm2_tool_output ("TPM2_PT_MODES: 0x%08x\n", modes);
+    tpm2_tool_output ("TPM2_PT_MODES:\n"
+            "  raw: 0x%X\n", modes);
     if (modes & TPMA_MODES_FIPS_140_2)
-        tpm2_tool_output ("  TPMA_MODES_FIPS_140_2\n");
+        tpm2_tool_output ("  value: TPMA_MODES_FIPS_140_2\n");
     if (modes & TPMA_MODES_RESERVED1)
-        tpm2_tool_output ("  TPMA_MODES_RESERVED1 (these bits shouldn't be set)\n");
+        tpm2_tool_output ("  value: TPMA_MODES_RESERVED1 (these bits shouldn't be set)\n");
 }
 /*
  * Print string representation of the TPMA_PERMANENT attributes.
  */
-void
+static void
 dump_permanent_attrs (TPMA_PERMANENT attrs)
 {
     tpm2_tool_output ("TPM2_PT_PERSISTENT:\n");
@@ -220,7 +259,7 @@ dump_permanent_attrs (TPMA_PERMANENT attrs)
 /*
  * Print string representations of the TPMA_STARTUP_CLEAR attributes.
  */
-void
+static void
 dump_startup_clear_attrs (TPMA_STARTUP_CLEAR attrs)
 {
     tpm2_tool_output ("TPM2_PT_STARTUP_CLEAR:\n");
@@ -234,173 +273,212 @@ dump_startup_clear_attrs (TPMA_STARTUP_CLEAR attrs)
 /*
  * Iterate over all fixed properties, call the unique print function for each.
  */
-void
+static void
 dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
                            size_t               count)
 {
     size_t i;
-    char buf[5] = { 0, };
+    char *buf;
 
     for (i = 0; i < count; ++i) {
         TPM2_PT property = properties[i].property;
         UINT32 value    = properties[i].value;
         switch (property) {
         case TPM2_PT_FAMILY_INDICATOR:
-            get_uint32_as_chars (value, buf);
+            buf = get_uint32_as_chars (value);
             tpm2_tool_output ("TPM2_PT_FAMILY_INDICATOR:\n"
-                    "  as UINT32:                0x08%x\n"
-                    "  as string:                \"%s\"\n",
+                    "  raw: 0x08%x\n"
+                    "  value: \"%s\"\n",
                     value,
                     buf);
             break;
         case TPM2_PT_LEVEL:
-            tpm2_tool_output ("TPM2_PT_LEVEL:               %d\n", value);
+            tpm2_tool_output ("TPM2_PT_LEVEL:\n"
+                    "  value: %d\n", value);
             break;
         case TPM2_PT_REVISION:
-            tpm2_tool_output ("TPM2_PT_REVISION:            %.2f\n", (float)value / 100);
+            tpm2_tool_output ("TPM2_PT_REVISION:\n"
+                    "  value: %.2f\n", (float)value / 100);
             break;
         case TPM2_PT_DAY_OF_YEAR:
-            tpm2_tool_output ("TPM2_PT_DAY_OF_YEAR:         0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_DAY_OF_YEAR:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_YEAR:
-            tpm2_tool_output ("TPM2_PT_YEAR:                0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_YEAR:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MANUFACTURER:
-            tpm2_tool_output ("TPM2_PT_MANUFACTURER:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MANUFACTURER:\n"
+                    " value        0x%X\n", value);
             break;
         case TPM2_PT_VENDOR_STRING_1:
-            get_uint32_as_chars (value, buf);
+            buf = get_uint32_as_chars (value);
             tpm2_tool_output ("TPM2_PT_VENDOR_STRING_1:\n"
-                    "  as UINT32:                0x%08x\n"
-                    "  as string:                \"%s\"\n",
+                    "  raw: 0x%X\n"
+                    "  value: \"%s\"\n",
                     value,
                     buf);
             break;
         case TPM2_PT_VENDOR_STRING_2:
-            get_uint32_as_chars (value, buf);
+            buf = get_uint32_as_chars (value);
             tpm2_tool_output ("TPM2_PT_VENDOR_STRING_2:\n"
-                    "  as UINT32:                0x%08x\n"
-                    "  as string:                \"%s\"\n",
+                    "  raw: 0x%X\n"
+                    "  value: \"%s\"\n",
                     value,
                     buf);
             break;
         case TPM2_PT_VENDOR_STRING_3:
-            get_uint32_as_chars (value, buf);
+            buf = get_uint32_as_chars (value);
             tpm2_tool_output ("TPM2_PT_VENDOR_STRING_3:\n"
-                    "  as UINT32:                0x%08x\n"
-                    "  as string:                \"%s\"\n",
+                    "  raw: 0x%X\n"
+                    "  value: \"%s\"\n",
                     value,
                     buf);
             break;
         case TPM2_PT_VENDOR_STRING_4:
-            get_uint32_as_chars (value, buf);
+            buf = get_uint32_as_chars (value);
             tpm2_tool_output ("TPM2_PT_VENDOR_STRING_4:\n"
-                    "  as UINT32:                0x%08x\n"
-                    "  as string:                \"%s\"\n",
+                    "  raw: 0x%X\n"
+                    "  value: \"%s\"\n",
                     value,
                     buf);
             break;
         case TPM2_PT_VENDOR_TPM_TYPE:
-            tpm2_tool_output ("TPM2_PT_VENDOR_TPM_TYPE:     0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_VENDOR_TPM_TYPE:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_FIRMWARE_VERSION_1:
-            tpm2_tool_output ("TPM2_PT_FIRMWARE_VERSION_1:  0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_FIRMWARE_VERSION_1:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_FIRMWARE_VERSION_2:
-            tpm2_tool_output ("TPM2_PT_FIRMWARE_VERSION_2:  0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_FIRMWARE_VERSION_2:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_INPUT_BUFFER:
-            tpm2_tool_output ("TPM2_PT_INPUT_BUFFER:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_INPUT_BUFFER:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_TPM2_HR_TRANSIENT_MIN:
-            tpm2_tool_output ("TPM2_PT_TPM2_HR_TRANSIENT_MIN:    0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_TPM2_HR_TRANSIENT_MIN:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_TPM2_HR_PERSISTENT_MIN:
-            tpm2_tool_output ("TPM2_PT_TPM2_HR_PERSISTENT_MIN:   0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_TPM2_HR_PERSISTENT_MIN:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_HR_LOADED_MIN:
-            tpm2_tool_output ("TPM2_PT_HR_LOADED_MIN:       0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_HR_LOADED_MIN:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_ACTIVE_SESSIONS_MAX:
-            tpm2_tool_output ("TPM2_PT_ACTIVE_SESSIONS_MAX: 0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_ACTIVE_SESSIONS_MAX:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_PCR_COUNT:
-            tpm2_tool_output ("TPM2_PT_PCR_COUNT:           0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_PCR_COUNT:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_PCR_SELECT_MIN:
-            tpm2_tool_output ("TPM2_PT_PCR_SELECT_MIN:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_PCR_SELECT_MIN:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_GAP_MAX:
-            tpm2_tool_output ("TPM2_PT_CONTEXT_GAP_MAX:     0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_CONTEXT_GAP_MAX:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_NV_COUNTERS_MAX:
-            tpm2_tool_output ("TPM2_PT_NV_COUNTERS_MAX:     0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_NV_COUNTERS_MAX:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_NV_INDEX_MAX:
-            tpm2_tool_output ("TPM2_PT_NV_INDEX_MAX:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_NV_INDEX_MAX:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MEMORY:
-            tpm2_tool_output ("TPM2_PT_MEMORY:              0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MEMORY:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_CLOCK_UPDATE:
-            tpm2_tool_output ("TPM2_PT_CLOCK_UPDATE:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_CLOCK_UPDATE:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_HASH: /* this may be a TPM2_ALG_ID type */
-            tpm2_tool_output ("TPM2_PT_CONTEXT_HASH:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_CONTEXT_HASH:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_SYM: /* this is a TPM2_ALG_ID type */
-            tpm2_tool_output ("TPM2_PT_CONTEXT_SYM:         0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_CONTEXT_SYM:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_SYM_SIZE:
-            tpm2_tool_output ("TPM2_PT_CONTEXT_SYM_SIZE:    0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_CONTEXT_SYM_SIZE:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_ORDERLY_COUNT:
-            tpm2_tool_output ("TPM2_PT_ORDERLY_COUNT:       0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_ORDERLY_COUNT:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_COMMAND_SIZE:
-            tpm2_tool_output ("TPM2_PT_MAX_COMMAND_SIZE:    0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MAX_COMMAND_SIZE:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_RESPONSE_SIZE:
-            tpm2_tool_output ("TPM2_PT_MAX_RESPONSE_SIZE:   0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MAX_RESPONSE_SIZE:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_DIGEST:
-            tpm2_tool_output ("TPM2_PT_MAX_DIGEST:          0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MAX_DIGEST:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_OBJECT_CONTEXT:
-            tpm2_tool_output ("TPM2_PT_MAX_OBJECT_CONTEXT:  0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MAX_OBJECT_CONTEXT:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_SESSION_CONTEXT:
-            tpm2_tool_output ("TPM2_PT_MAX_SESSION_CONTEXT: 0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MAX_SESSION_CONTEXT:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_PS_FAMILY_INDICATOR:
-            tpm2_tool_output ("TPM2_PT_PS_FAMILY_INDICATOR: 0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_PS_FAMILY_INDICATOR:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_PS_LEVEL:
-            tpm2_tool_output ("TPM2_PT_PS_LEVEL:            0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_PS_LEVEL:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_PS_REVISION:
-            tpm2_tool_output ("TPM2_PT_PS_REVISION:         0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_PS_REVISION:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_PS_DAY_OF_YEAR:
-            tpm2_tool_output ("TPM2_PT_PS_DAY_OF_YEAR:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_PS_DAY_OF_YEAR:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_PS_YEAR:
-            tpm2_tool_output ("TPM2_PT_PS_YEAR:             0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_PS_YEAR:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_SPLIT_MAX:
-            tpm2_tool_output ("TPM2_PT_SPLIT_MAX:           0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_SPLIT_MAX:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_TOTAL_COMMANDS:
-            tpm2_tool_output ("TPM2_PT_TOTAL_COMMANDS:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_TOTAL_COMMANDS:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_LIBRARY_COMMANDS:
-            tpm2_tool_output ("TPM2_PT_LIBRARY_COMMANDS:    0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_LIBRARY_COMMANDS:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_VENDOR_COMMANDS:
-            tpm2_tool_output ("TPM2_PT_VENDOR_COMMANDS:     0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_VENDOR_COMMANDS:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_NV_BUFFER_MAX:
-            tpm2_tool_output ("TPM2_PT_NV_BUFFER_MAX:       0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_NV_BUFFER_MAX:\n"
+                    "  value: 0x%X\n", value);
             break;
         case TPM2_PT_MODES:
             tpm2_tool_output_tpma_modes ((TPMA_MODES)value);
@@ -411,7 +489,7 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
 /*
  * Iterate over all variable properties, call the unique print function for each.
  */
-void
+static void
 dump_tpm_properties_var (TPMS_TAGGED_PROPERTY properties[],
                          size_t               count)
 {
@@ -428,64 +506,64 @@ dump_tpm_properties_var (TPMS_TAGGED_PROPERTY properties[],
             dump_startup_clear_attrs ((TPMA_STARTUP_CLEAR)value);
             break;
         case TPM2_PT_TPM2_HR_NV_INDEX:
-            tpm2_tool_output ("TPM2_PT_TPM2_HR_NV_INDEX:          0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_TPM2_HR_NV_INDEX: 0x%X\n", value);
             break;
         case TPM2_PT_HR_LOADED:
-            tpm2_tool_output ("TPM2_PT_HR_LOADED:            0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_HR_LOADED: 0x%X\n", value);
             break;
         case TPM2_PT_HR_LOADED_AVAIL:
-            tpm2_tool_output ("TPM2_PT_HR_LOADED_AVAIL:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_HR_LOADED_AVAIL: 0x%X\n", value);
             break;
         case TPM2_PT_HR_ACTIVE:
-            tpm2_tool_output ("TPM2_PT_HR_ACTIVE:            0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_HR_ACTIVE: 0x%X\n", value);
             break;
         case TPM2_PT_HR_ACTIVE_AVAIL:
-            tpm2_tool_output ("TPM2_PT_HR_ACTIVE_AVAIL:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_HR_ACTIVE_AVAIL: 0x%X\n", value);
             break;
         case TPM2_PT_TPM2_HR_TRANSIENT_AVAIL:
-            tpm2_tool_output ("TPM2_PT_TPM2_HR_TRANSIENT_AVAIL:   0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_TPM2_HR_TRANSIENT_AVAIL: 0x%X\n", value);
             break;
         case TPM2_PT_TPM2_HR_PERSISTENT:
-            tpm2_tool_output ("TPM2_PT_TPM2_HR_PERSISTENT:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_TPM2_HR_PERSISTENT: 0x%X\n", value);
             break;
         case TPM2_PT_TPM2_HR_PERSISTENT_AVAIL:
-            tpm2_tool_output ("TPM2_PT_TPM2_HR_PERSISTENT_AVAIL:  0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_TPM2_HR_PERSISTENT_AVAIL: 0x%X\n", value);
             break;
         case TPM2_PT_NV_COUNTERS:
-            tpm2_tool_output ("TPM2_PT_NV_COUNTERS:          0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_NV_COUNTERS: 0x%X\n", value);
             break;
         case TPM2_PT_NV_COUNTERS_AVAIL:
-            tpm2_tool_output ("TPM2_PT_NV_COUNTERS_AVAIL:    0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_NV_COUNTERS_AVAIL: 0x%X\n", value);
             break;
         case TPM2_PT_ALGORITHM_SET:
-            tpm2_tool_output ("TPM2_PT_ALGORITHM_SET:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_ALGORITHM_SET: 0x%X\n", value);
             break;
         case TPM2_PT_LOADED_CURVES:
-            tpm2_tool_output ("TPM2_PT_LOADED_CURVES:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_LOADED_CURVES: 0x%X\n", value);
             break;
         case TPM2_PT_LOCKOUT_COUNTER:
-            tpm2_tool_output ("TPM2_PT_LOCKOUT_COUNTER:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_LOCKOUT_COUNTER: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_AUTH_FAIL:
-            tpm2_tool_output ("TPM2_PT_MAX_AUTH_FAIL:        0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_MAX_AUTH_FAIL: 0x%X\n", value);
             break;
         case TPM2_PT_LOCKOUT_INTERVAL:
-            tpm2_tool_output ("TPM2_PT_LOCKOUT_INTERVAL:     0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_LOCKOUT_INTERVAL: 0x%X\n", value);
             break;
         case TPM2_PT_LOCKOUT_RECOVERY:
-            tpm2_tool_output ("TPM2_PT_LOCKOUT_RECOVERY:     0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_LOCKOUT_RECOVERY: 0x%X\n", value);
             break;
         case TPM2_PT_NV_WRITE_RECOVERY:
-            tpm2_tool_output ("TPM2_PT_NV_WRITE_RECOVERY:    0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_NV_WRITE_RECOVERY: 0x%X\n", value);
             break;
         case TPM2_PT_AUDIT_COUNTER_0:
-            tpm2_tool_output ("TPM2_PT_AUDIT_COUNTER_0:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_AUDIT_COUNTER_0: 0x%X\n", value);
             break;
         case TPM2_PT_AUDIT_COUNTER_1:
-            tpm2_tool_output ("TPM2_PT_AUDIT_COUNTER_1:      0x%08x\n", value);
+            tpm2_tool_output ("TPM2_PT_AUDIT_COUNTER_1: 0x%X\n", value);
             break;
         default:
-            LOG_ERR("Unknown property:   0x%08x\n", properties[i].property);
+            tpm2_tool_output ("unknown%X: 0x%X\n", value, value);
             break;
         }
     }
@@ -493,19 +571,30 @@ dump_tpm_properties_var (TPMS_TAGGED_PROPERTY properties[],
 /*
  * Print data about TPM2_ALG_ID in human readable form.
  */
-void
+static void
 dump_algorithm_properties (TPM2_ALG_ID       id,
                            TPMA_ALGORITHM   alg_attrs)
 {
     const char *id_name = tpm2_alg_util_algtostr(id);
+    bool is_unknown = id_name == NULL;
     id_name = id_name ? id_name : "unknown";
 
-    tpm2_tool_output ("TPMA_ALGORITHM for ALG_ID: 0x%x - %s\n", id, id_name);
+    if (!is_unknown) {
+        tpm2_tool_output ("%s:\n", id_name);
+    } else {
+        /* If it's unknown, we don't want N unknowns in the map, so
+         * make them unknown42, unknown<alg id> since that's unique.
+         * We do it this way, as most folks will want to just look up
+         * if a given alg via "friendly" name like rsa is supported.
+         */
+        tpm2_tool_output ("%s%x:\n", id_name, id);
+    }
+    tpm2_tool_output ("  value:      0x%X\n", id);
     tpm2_tool_output ("  asymmetric: %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_ASYMMETRIC));
     tpm2_tool_output ("  symmetric:  %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_SYMMETRIC));
     tpm2_tool_output ("  hash:       %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_HASH));
     tpm2_tool_output ("  object:     %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_OBJECT));
-    tpm2_tool_output ("  reserved:   0x%x\n", (alg_attrs & TPMA_ALGORITHM_RESERVED1) >> 4);
+    tpm2_tool_output ("  reserved:   0x%X\n", (alg_attrs & TPMA_ALGORITHM_RESERVED1) >> 4);
     tpm2_tool_output ("  signing:    %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_SIGNING));
     tpm2_tool_output ("  encrypting: %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_ENCRYPTING));
     tpm2_tool_output ("  method:     %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_METHOD));
@@ -515,7 +604,7 @@ dump_algorithm_properties (TPM2_ALG_ID       id,
  * Iterate over the count TPMS_ALG_PROPERTY entries and dump the
  * TPMA_ALGORITHM attributes for each.
  */
-void
+static void
 dump_algorithms (TPMS_ALG_PROPERTY   alg_properties[],
                  size_t              count)
 {
@@ -525,6 +614,14 @@ dump_algorithms (TPMS_ALG_PROPERTY   alg_properties[],
         dump_algorithm_properties (alg_properties[i].alg,
                                    alg_properties[i].algProperties);
 }
+
+/*
+ * TODO: delet me. work around to TSS bug:
+ *  - https://github.com/tpm2-software/tpm2-tss/issues/682
+ */
+#ifndef TPM2_CC_PolicyAuthorizeNV
+#define TPM2_CC_PolicyAuthorizeNV 0x192
+#endif
 
 static const char *cc_to_str(UINT32 cc) {
 
@@ -566,6 +663,8 @@ static const char *cc_to_str(UINT32 cc) {
         { TPM2_CC_SetAlgorithmSet, "setalgorithmset" },
         { TPM2_CC_SetCommandCodeAuditStatus, "setcommandcodeauditstatus" },
         { TPM2_CC_FieldUpgradeData, "fieldupgradedata" },
+        { TPM2_CC_IncrementalSelfTest, "incrementalselftest" },
+        { TPM2_CC_SelfTest, "selftest" },
         { TPM2_CC_Startup, "startup" },
         { TPM2_CC_Shutdown, "shutdown" },
         { TPM2_CC_StirRandom, "stirrandom" },
@@ -618,6 +717,7 @@ static const char *cc_to_str(UINT32 cc) {
         { TPM2_CC_FirmwareRead, "firmwareread" },
         { TPM2_CC_GetCapability, "getcapability" },
         { TPM2_CC_GetRandom, "getrandom" },
+        { TPM2_CC_GetTestResult, "gettestresult" },
         { TPM2_CC_Hash, "hash" },
         { TPM2_CC_PCR_Read, "pcr" },
         { TPM2_CC_PolicyPCR, "policypcr" },
@@ -631,15 +731,25 @@ static const char *cc_to_str(UINT32 cc) {
         { TPM2_CC_PolicyPhysicalPresence, "policyphysicalpresence" },
         { TPM2_CC_PolicyDuplicationSelect, "policyduplicationselect" },
         { TPM2_CC_PolicyGetDigest, "policygetdigest" },
+        { TPM2_CC_TestParms, "testparms" },
         { TPM2_CC_Commit, "commit" },
         { TPM2_CC_PolicyPassword, "policypassword" },
         { TPM2_CC_ZGen_2Phase, "zgen" },
         { TPM2_CC_EC_Ephemeral, "ec" },
-        { TPM2_CC_PolicyNvWritten, "policynvwritten" }
+        { TPM2_CC_PolicyNvWritten, "policynvwritten" },
+        { TPM2_CC_PolicyTemplate, "policytemplate" },
+        { TPM2_CC_CreateLoaded, "createloaded" },
+        { TPM2_CC_PolicyAuthorizeNV, "policyauthorizenv" },
+        { TPM2_CC_EncryptDecrypt2, "encryptdecrypt2" },
+        { TPM2_CC_AC_GetCapability, "getcapability" },
+        { TPM2_CC_AC_Send, "acsend" },
+        { TPM2_CC_Policy_AC_SendSelect, "policyacsendselect" },
     };
 
     if (cc < TPM2_CC_FIRST || cc > TPM2_CC_LAST) {
-        return "Unknown";
+        static char buf[256];
+        snprintf(buf, sizeof(buf), "unknown%X", cc);
+        return buf;
     }
 
     size_t i;
@@ -650,17 +760,21 @@ static const char *cc_to_str(UINT32 cc) {
     }
 
     /* Impossible condition*/
-    return "Impossible";
+    return NULL;
 }
 
 /*
  * Pretty print the bit fields from the TPMA_CC (UINT32)
  */
-void
+static bool
 dump_command_attrs (TPMA_CC tpma_cc)
 {
-    tpm2_tool_output ("TPMA_CC: 0x%08x\n", tpma_cc);
-    tpm2_tool_output ("  name: %s\n", cc_to_str(tpma_cc & TPMA_CC_COMMANDINDEX));
+    const char *value = cc_to_str(tpma_cc & TPMA_CC_COMMANDINDEX);
+    if (!value) {
+        return false;
+    }
+    tpm2_tool_output ("%s:\n", value);
+    tpm2_tool_output ("  value: 0x%X\n", tpma_cc);
     tpm2_tool_output ("  commandIndex: 0x%x\n", tpma_cc & TPMA_CC_COMMANDINDEX);
     tpm2_tool_output ("  reserved1:    0x%x\n", (tpma_cc & TPMA_CC_RESERVED1) >> 16);
     tpm2_tool_output ("  nv:           %s\n",   prop_str (tpma_cc & TPMA_CC_NV));
@@ -670,12 +784,13 @@ dump_command_attrs (TPMA_CC tpma_cc)
     tpm2_tool_output ("  rHandle:      %s\n",   prop_str (tpma_cc & TPMA_CC_RHANDLE));
     tpm2_tool_output ("  V:            %s\n",   prop_str (tpma_cc & TPMA_CC_V));
     tpm2_tool_output ("  Res:          0x%x\n", tpma_cc  & TPMA_CC_RES >>21);
+    return true;
 }
 /*
  * Iterate over an array of TPM2_ECC_CURVEs and dump out a human readable
  * representation of each array member.
  */
-void
+static void
 dump_ecc_curves (TPM2_ECC_CURVE     curve[],
                  UINT32            count)
 {
@@ -684,31 +799,31 @@ dump_ecc_curves (TPM2_ECC_CURVE     curve[],
     for (i = 0; i < count; ++i) {
         switch(curve[i]) {
             case TPM2_ECC_NIST_P192:
-                tpm2_tool_output ("TPM2_ECC_NIST_P192 (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_NIST_P192: 0x%X\n", curve[i]);
 		break;
             case TPM2_ECC_NIST_P224:
-                tpm2_tool_output ("TPM2_ECC_NIST_P224 (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_NIST_P224: 0x%X\n", curve[i]);
 		break;
             case TPM2_ECC_NIST_P256:
-                tpm2_tool_output ("TPM2_ECC_NIST_P256 (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_NIST_P256: 0x%X\n", curve[i]);
 		break;
             case TPM2_ECC_NIST_P384:
-                tpm2_tool_output ("TPM2_ECC_NIST_P384 (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_NIST_P384: 0x%X\n", curve[i]);
 		break;
             case TPM2_ECC_NIST_P521:
-                tpm2_tool_output ("TPM2_ECC_NIST_P521 (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_NIST_P521: 0x%X\n", curve[i]);
 		break;
             case TPM2_ECC_BN_P256:
-                tpm2_tool_output ("TPM2_ECC_BN_P256   (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_BN_P256: 0x%X\n", curve[i]);
 		break;
             case TPM2_ECC_BN_P638:
-                tpm2_tool_output ("TPM2_ECC_BN_P638   (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_BN_P638: 0x%X\n", curve[i]);
 		break;
             case TPM2_ECC_SM2_P256:
-                tpm2_tool_output ("TPM2_ECC_SM2_P256 (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("TPM2_ECC_SM2_P256: 0x%X\n", curve[i]);
 		break;
             default:
-                tpm2_tool_output ("UNKNOWN          (0x%04x)\n", curve[i]);
+                tpm2_tool_output ("unkown%X: 0x%X\n", curve[i], curve[i]);
 		break;
         }
     }
@@ -717,32 +832,34 @@ dump_ecc_curves (TPM2_ECC_CURVE     curve[],
  * Iterate over an array of TPMA_CCs and dump out a human readable
  * representation of each array member.
  */
-void
+static bool
 dump_command_attr_array (TPMA_CC     command_attributes[],
                          UINT32      count)
 {
     size_t i;
-
+    bool result = true;
     for (i = 0; i < count; ++i)
-        dump_command_attrs (command_attributes [i]);
+        result &= dump_command_attrs (command_attributes [i]);
+
+    return result;
 }
 /*
  * Iterate over an array of TPML_HANDLEs and dump out the handle
  * values.
  */
-void
+static void
 dump_handles (TPM2_HANDLE     handles[],
               UINT32         count)
 {
     UINT32 i;
     
     for (i = 0; i < count; ++i)
-         tpm2_tool_output ("0x%08x\n", handles[i]);
+         tpm2_tool_output ("- 0x%X\n", handles[i]);
 }
 /*
  * Query the TPM for TPM capabilities.
  */
-TSS2_RC
+static TSS2_RC
 get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
                         TPMS_CAPABILITY_DATA  *capability_data) {
 
@@ -772,19 +889,20 @@ get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
  * This function is a glorified switch statement. It uses the 'capability'
  * and 'property' fields from the capability_opts structure to find the right
  * print function for the capabilities in the 'capabilities' parameter.
- * On success it will return 0, if it failes (is unable to find an
+ * On success it will return true, if it fails (is unable to find an
  * appropriate print function for the provided 'capability' / 'property'
- * pair) then it will return 1.
+ * pair or the print routine fails)  then it will return false.
  */
-static int dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
+static bool dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
 
+    bool result = true;
     switch (options.capability) {
     case TPM2_CAP_ALGS:
         dump_algorithms (capabilities->algorithms.algProperties,
                          capabilities->algorithms.count);
         break;
     case TPM2_CAP_COMMANDS:
-        dump_command_attr_array (capabilities->command.commandAttributes,
+        result = dump_command_attr_array (capabilities->command.commandAttributes,
                                  capabilities->command.count);
         break;
     case TPM2_CAP_TPM_PROPERTIES:
@@ -818,20 +936,24 @@ static int dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
                           capabilities->handles.count);
             break;
         default:
-            return 1;
+            return false;
         }
         break;
     default:
-        return 1;
+        return false;
     }
-    return 0;
+    return result;
 }
 
 static bool on_option(char key, char *value) {
 
-    UNUSED(key);
-
-    options.capability_string = value;
+    switch(key) {
+    case 'c':
+        options.capability_string = value;
+        break;
+    case 'l':
+        options.list = true;
+    }
 
     return true;
 }
@@ -840,9 +962,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "capability", required_argument, NULL, 'c' },
+        { "list",       no_argument,       NULL, 'l' },
+
     };
 
-    *opts = tpm2_options_new("c:", ARRAY_LEN(topts), topts, on_option, NULL,
+    *opts = tpm2_options_new("c:l", ARRAY_LEN(topts), topts, on_option, NULL,
                              TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -851,6 +975,20 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
+    if (options.list && options.capability_string) {
+        LOG_ERR("Cannot specify -l with -c");
+        return 1;
+    }
+
+    /* list known capabilities, ie -l option */
+    if (options.list) {
+        print_cap_map();
+        return 0;
+    }
+
+    /* List a capability, ie -c <arg> option */
+
     TSS2_RC rc;
     TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
     int ret;
@@ -868,6 +1006,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (rc != TPM2_RC_SUCCESS)
         return 1;
 
-    dump_tpm_capability(&capability_data.data);
-    return 0;
+    bool result = dump_tpm_capability(&capability_data.data);
+    return !result;
 }

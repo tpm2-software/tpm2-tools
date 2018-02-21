@@ -31,19 +31,47 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source helpers.sh
+
+out=out.yaml
+
+cleanup() {
+    rm -f $out
+}
+
+trap cleanup EXIT
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
 }
 trap onerror ERR
 
-tpm2_getcap -Q --capability="properties-fixed"
+function yaml_to_list() {
 
-tpm2_getcap -Q --capability="properties-variable"
+python << pyscript
+from __future__ import print_function
 
-tpm2_getcap -Q --capability="algorithms"
+import sys
+import yaml
 
-tpm2_getcap -Q --capability="commands"
+with open("$1") as f:
+	try:
+		y = yaml.load(f)
+		print(' '.join(y))
+	except yaml.YAMLError as exc:
+		sys.exit(exc)
+pyscript
+}
+
+tpm2_getcap -l > $out
+
+caplist=$(yaml_to_list $out)
+
+for c in $caplist; do
+	tpm2_getcap --capability="$c" > $out
+	yaml_verify $out
+done;
 
 # negative tests
 trap - ERR
