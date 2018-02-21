@@ -81,7 +81,7 @@ trap cleanup EXIT
 
 tpm2_clear
 
-tpm2_getpubek -Q -g $alg_ek -f "$file_pubek_orig" -H $handle_ek
+tpm2_createek -Q -g $alg_ek -p "$file_pubek_orig" -H $handle_ek
 
 for fmt in tss pem der; do
 

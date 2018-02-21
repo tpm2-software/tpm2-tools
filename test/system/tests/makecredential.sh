@@ -62,7 +62,7 @@ cleanup
 
 echo "12345678" > $file_input_data
 
-tpm2_getpubek -Q -H $handle_ek -g $ek_alg -f $output_ek_pub
+tpm2_createek -Q -H $handle_ek -g $ek_alg -p $output_ek_pub
 
 tpm2_getpubak -Q -E $handle_ek  -k $handle_ak -g $ak_alg -D $digestAlg -s $signAlg -f $output_ak_pub -n $output_ak_pub_name
 

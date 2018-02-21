@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_getpubek renamed to tpm2_createek, -f becomes -p and -f is used for format of public key
+    output.
   * Libre SSL builds fixed.
   * Dynamic TCTIS. Support for pluggable TCTI modules via the -T or --tcti options.
   * tpm2_sign: supports signing a pre-computed hash via -D
