@@ -35,7 +35,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "conversion.h"
+#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
@@ -54,7 +54,7 @@ struct tpm_readpub_ctx {
     TPMI_DH_OBJECT objectHandle;
     char *outFilePath;
     char *context_file;
-    pubkey_format format;
+    tpm2_convert_pubkey_fmt format;
 };
 
 static tpm_readpub_ctx ctx = {
@@ -94,7 +94,7 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     tpm2_util_public_to_yaml(&public);
 
     return ctx.outFilePath ?
-            tpm2_convert_pubkey(&public, ctx.format, ctx.outFilePath) : true;
+            tpm2_convert_pubkey_save(&public, ctx.format, ctx.outFilePath) : true;
 }
 
 static bool on_option(char key, char *value) {
@@ -116,7 +116,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.c = 1;
         break;
     case 'f':
-        ctx.format = tpm2_parse_pubkey_format(value);
+        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
         if (ctx.format == pubkey_format_err) {
             return false;
         }

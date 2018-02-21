@@ -36,10 +36,10 @@
 
 #include <sapi/tpm20.h>
 
+#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
-#include "conversion.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_password_util.h"
 #include "tpm2_session.h"
@@ -55,7 +55,7 @@ static TPMS_AUTH_COMMAND sessionData;
 static char *outFilePath;
 static char *signature_path;
 static char *message_path;
-static signature_format sig_format;
+static tpm2_convert_sig_fmt sig_format;
 static TPMI_ALG_HASH sig_hash_algorithm;
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
@@ -68,7 +68,7 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
 
     bool res = true;
     if (signature_path) {
-        res &= tpm2_convert_signature(signature, sig_format, signature_path);
+        res &= tpm2_convert_sig(signature, sig_format, signature_path);
     }
 
     if (message_path) {
@@ -200,7 +200,7 @@ static bool on_option(char key, char *value) {
          message_path = value;
          break;
     case 'f':
-         sig_format = tpm2_parse_signature_format(value);
+         sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
          if (sig_format == signature_format_err) {
             return false;

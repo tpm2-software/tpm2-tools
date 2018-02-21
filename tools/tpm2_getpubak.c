@@ -38,7 +38,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "conversion.h"
+#include "tpm2_convert.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
@@ -383,7 +383,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
     LOG_INFO("Flush transient AK succ.");
 
-    return tpm2_convert_pubkey(&out_public, pubkey_format_tss, ctx.output_file);
+    return tpm2_convert_pubkey_save(&out_public, pubkey_format_tss, ctx.output_file);
 }
 
 static bool on_option(char key, char *value) {

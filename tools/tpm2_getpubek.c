@@ -36,7 +36,7 @@
 
 #include <sapi/tpm20.h>
 
-#include "conversion.h"
+#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
@@ -223,7 +223,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("Flush transient EK success.");
 
-    return tpm2_convert_pubkey(&outPublic, pubkey_format_tss, ctx.out_file_path);
+    return tpm2_convert_pubkey_save(&outPublic, pubkey_format_tss, ctx.out_file_path);
 }
 
 static bool on_option(char key, char *value) {

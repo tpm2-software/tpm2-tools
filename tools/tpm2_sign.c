@@ -38,7 +38,7 @@
 #include <getopt.h>
 #include <sapi/tpm20.h>
 
-#include "conversion.h"
+#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_hash.h"
@@ -61,7 +61,7 @@ struct tpm_sign_ctx {
     UINT16 length;
     char *contextKeyFile;
     char *inMsgFileName;
-    signature_format sig_format;
+    tpm2_convert_sig_fmt sig_format;
     struct {
         UINT16 k : 1;
         UINT16 P : 1;
@@ -112,7 +112,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return tpm2_convert_signature(&signature, ctx.sig_format, ctx.outFilePath);
+    return tpm2_convert_sig(&signature, ctx.sig_format, ctx.outFilePath);
 }
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
@@ -258,7 +258,7 @@ static bool on_option(char key, char *value) {
     } break;
     case 'f':
         ctx.flags.f = 1;
-        ctx.sig_format = tpm2_parse_signature_format(value);
+        ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
         if (ctx.sig_format == signature_format_err) {
             return false;

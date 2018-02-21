@@ -37,15 +37,15 @@
 #include <openssl/bn.h>
 #include <openssl/err.h>
 
-#include "conversion.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_util.h"
 
-static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, const char *path);
+static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path);
 
-pubkey_format tpm2_parse_pubkey_format(const char *label) {
+tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label) {
     if (strcasecmp(label, "der") == 0) {
         return pubkey_format_der;
     }
@@ -61,7 +61,7 @@ pubkey_format tpm2_parse_pubkey_format(const char *label) {
     return pubkey_format_err;
 }
 
-signature_format tpm2_parse_signature_format(const char *label) {
+tpm2_convert_sig_fmt tpm2_convert_sig_fmt_from_optarg(const char *label) {
     if (strcasecmp(label, "tss") == 0) {
         return signature_format_tss;
     }
@@ -82,7 +82,7 @@ static void print_ssl_error(const char *failed_action) {
     LOG_ERR("%s: %s", failed_action, errstr);
 }
 
-bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char *path) {
+bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path) {
 
     if (format == pubkey_format_der || format == pubkey_format_pem) {
         return tpm2_convert_pubkey_ssl(&public->publicArea, format, path);
@@ -95,7 +95,7 @@ bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char 
     return false;
 }
 
-static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, const char *path) {
+static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path) {
     bool ret = false;
     FILE *fp = NULL;
     RSA *ssl_rsa_key = NULL;
@@ -191,7 +191,7 @@ error:
     return ret;
 }
 
-bool tpm2_convert_signature(TPMT_SIGNATURE *signature, signature_format format, const char *path) {
+bool tpm2_convert_sig(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, const char *path) {
 
     switch(format) {
     case signature_format_tss:

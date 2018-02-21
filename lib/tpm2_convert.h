@@ -32,16 +32,19 @@
 
 #include <sapi/tpm20.h>
 
-typedef enum pubkey_format pubkey_format;
-
-enum pubkey_format {
-    pubkey_format_tss, pubkey_format_pem, pubkey_format_der, pubkey_format_err
+typedef enum tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt;
+enum tpm2_convert_pubkey_fmt {
+    pubkey_format_tss,
+    pubkey_format_pem,
+    pubkey_format_der,
+    pubkey_format_err
 };
 
-typedef enum signature_format signature_format;
-
-enum signature_format {
-    signature_format_tss, signature_format_plain, signature_format_err
+typedef enum tpm2_convert_sig_fmt tpm2_convert_sig_fmt;
+enum tpm2_convert_sig_fmt {
+    signature_format_tss,
+    signature_format_plain,
+    signature_format_err
 };
 
 /**
@@ -53,7 +56,7 @@ enum signature_format {
  * @return
  *   On error pubkey_format_err is returned.
  */
-pubkey_format tpm2_parse_pubkey_format(const char *label);
+tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label);
 
 /**
  * Converts the given public key structure into the requested target format
@@ -61,7 +64,7 @@ pubkey_format tpm2_parse_pubkey_format(const char *label);
  *
  * LOG_ERR is used to communicate errors.
  */
-bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char *path);
+bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path);
 
 /**
  * Loads a public key in the TSS format from a file.
@@ -71,7 +74,7 @@ bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char 
  * @param path
  * @return
  */
-bool tpm2_conversion_load_pubkey(TPM2B_PUBLIC *public, const char *path);
+bool tpm2_convert_pubkey_load(TPM2B_PUBLIC *public, const char *path);
 
 /**
  * Parses the given command line signature format option string and returns
@@ -82,7 +85,7 @@ bool tpm2_conversion_load_pubkey(TPM2B_PUBLIC *public, const char *path);
  * @return
  *   On error signature_format_err is returned.
  */
-signature_format tpm2_parse_signature_format(const char *label);
+tpm2_convert_sig_fmt tpm2_convert_sig_fmt_from_optarg(const char *label);
 
 /**
  * Converts the given signature data into the requested target format and
@@ -90,6 +93,7 @@ signature_format tpm2_parse_signature_format(const char *label);
  *
  * LOG_ERR is used to communicate errors.
  */
-bool tpm2_convert_signature(TPMT_SIGNATURE *signature, signature_format format, const char *path);
+bool tpm2_convert_sig(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format,
+        const char *path);
 
 #endif /* CONVERSION_H */
