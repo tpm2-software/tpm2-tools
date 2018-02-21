@@ -45,4 +45,14 @@ tpm2_getcap -Q --capability="algorithms"
 
 tpm2_getcap -Q --capability="commands"
 
+# negative tests
+trap - ERR
+
+# Regression test, ensure that getcap -c never accepts prefix matches
+tpm2_getcap -Q --capability="comma" 2>/dev/null
+if [ $? -eq 0 ]; then
+  echo "Expected \"tpm2_getcap -Q --capability=\"comma\"\" to fail."
+  exit 1
+fi
+
 exit 0
