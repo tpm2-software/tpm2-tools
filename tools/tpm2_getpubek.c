@@ -299,10 +299,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "file",                 required_argument, NULL, 'f' },
         { "session",              required_argument, NULL, 'S' },
         { "dbg",                  required_argument, NULL, 'd' },
-        { "help",                 no_argument,       NULL, 'h' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:f:p:S:d:hv", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:H:P:g:f:p:S:d:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
