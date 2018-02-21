@@ -55,8 +55,7 @@ struct createek_context {
     char *out_file_path;
     TPM2_HANDLE persistent_handle;
     TPM2_ALG_ID algorithm;
-    bool is_session_based_auth;
-    TPMI_SH_AUTH_SESSION auth_session_handle;
+    TPMS_AUTH_COMMAND session_data;
     tpm2_convert_pubkey_fmt format;
     struct {
         bool f;
@@ -70,8 +69,8 @@ static createek_context ctx = {
         .ek = TPM2B_EMPTY_INIT,
     },
     .algorithm = TPM2_ALG_RSA,
-    .is_session_based_auth = false,
-    .format = pubkey_format_tss
+    .format = pubkey_format_tss,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
@@ -152,18 +151,10 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
 static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, {{
-        .sessionHandle = TPM2_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = 0,
-    }}};
 
-    if (ctx.is_session_based_auth) {
-        sessionsData.auths[0].sessionHandle = ctx.auth_session_handle;
-    }
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.session_data }};
 
-    TPML_PCR_SELECTION creationPCR;
+    TPML_PCR_SELECTION creationPCR = { .count = 0 };
 
     TPM2B_SENSITIVE_CREATE inSensitive =
             TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
@@ -184,17 +175,10 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
-    memcpy(&ctx.passwords.ek, &inSensitive.sensitive.userAuth, sizeof(inSensitive.sensitive.userAuth));
-
-    inSensitive.sensitive.data.size = 0;
-    inSensitive.size = inSensitive.sensitive.userAuth.size + 2;
-
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
         return false;
     }
-
-    creationPCR.count = 0;
 
     /* Create EK and get a handle to the key */
     TPM2_HANDLE handle2048ek;
@@ -288,8 +272,7 @@ static bool on_option(char key, char *value) {
         if (!s) {
             return false;
         }
-
-        ctx.auth_session_handle = tpm2_session_get_handle(s);
+        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
         tpm2_session_free(&s);
     } break;
     case 'f':
