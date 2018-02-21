@@ -49,27 +49,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-function yaml_get() {
-
-python << pyscript
-from __future__ import print_function
-
-import sys
-import yaml
-
-with open("$2") as f:
-	try:
-		y = yaml.load(f)
-		found = "$1" in y
-		if (not found):
-			sys.stderr.write('Could not find index 0x%X\n' % ("$1"))
-		print(y["$1"])
-		sys.exit(not found)
-	except yaml.YAMLError as exc:
-		sys.exit(exc)
-pyscript
-}
-
 cleanup
 
 tpm2_createprimary -Q -H o -g sha1 -G rsa -C context.out
@@ -91,7 +70,7 @@ echo "$policy_orig" | xxd -r -p > policy.bin
 tpm2_create -c context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv \
   -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' > out.pub
 
-policy_new=$(yaml_get "authorization policy" out.pub)
+policy_new=$(yaml_get_kv out.pub \"authorization\ policy\")
 
 test "$policy_orig" == "$policy_new"
 

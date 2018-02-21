@@ -99,3 +99,53 @@ hash_alg_supported() {
         fi
     done
 }
+
+#
+# Verifies that the contexts of a file path provided
+# as the first argument loads as a YAML file.
+#
+function yaml_verify() {
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$1") as f:
+	try:
+		y = yaml.load(f)
+	except yaml.YAMLError as exc:
+		sys.exit(exc)
+pyscript
+}
+
+#
+# Given a file as argument 1, prints the value of the key
+# provided as argument 2 and optionally argument 3 (for nested maps).
+# Note that if key is a string, pass the quotes. This allows lookups
+# on string or numerical keys.
+#
+function yaml_get_kv() {
+
+third_arg=\"\"
+if [ $# -eq 3 ]; then
+  third_arg=$3
+fi
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$1") as f:
+	try:
+		y = yaml.load(f)
+		if $# == 3:
+			print(y[$2][$third_arg])
+		else:
+			print(y[$2])
+	except yaml.YAMLError as exc:
+		sys.exit(exc)
+pyscript
+}
