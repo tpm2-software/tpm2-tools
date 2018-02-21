@@ -53,6 +53,7 @@ struct createek_context {
         TPM2B_AUTH ek;
     } passwords;
     char *out_file_path;
+    char *context_file;
     TPM2_HANDLE persistent_handle;
     TPM2_ALG_ID algorithm;
     TPMS_AUTH_COMMAND session_data;
@@ -193,24 +194,34 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("EK create success. Got handle: 0x%8.8x", handle2048ek);
 
-    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
+    if (ctx.persistent_handle) {
+        memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
-            &sessionsData, ctx.persistent_handle, &sessionsDataOut));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_EvictControl, rval);
-        return false;
+        rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
+                &sessionsData, ctx.persistent_handle, &sessionsDataOut));
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_EvictControl, rval);
+            return false;
+        }
+
+        LOG_INFO("EvictControl EK persistent success.");
+
+        rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle2048ek));
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_FlushContext, rval);
+            return false;
+        }
+
+        LOG_INFO("Flush transient EK success.");
+
+    } else if (ctx.context_file) {
+        bool result = files_save_tpm_context_to_path(sapi_context, handle2048ek,
+                ctx.context_file);
+        if (!result) {
+            LOG_ERR("Error saving tpm context for handle");
+            return false;
+        }
     }
-
-    LOG_INFO("EvictControl EK persistent success.");
-
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle2048ek));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_FlushContext, rval);
-        return false;
-    }
-
-    LOG_INFO("Flush transient EK success.");
 
     if (ctx.out_file_path) {
         return tpm2_convert_pubkey_save(&outPublic, ctx.format, ctx.out_file_path);
@@ -281,6 +292,10 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.f = true;
+        break;
+    case 'c':
+        ctx.context_file = value;
+        break;
     }
 
     return true;
@@ -298,9 +313,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "session",              required_argument, NULL, 'S' },
         { "dbg",                  required_argument, NULL, 'd' },
         { "format",               required_argument, NULL, 'f' },
+        { "context",              required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:p:S:d:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:H:P:g:p:S:d:f:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -312,6 +328,12 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.f && !ctx.out_file_path) {
         LOG_ERR("Please specify an output file name when specifying a format");
+        return 1;
+    }
+
+    if (ctx.context_file && ctx.persistent_handle) {
+        LOG_ERR("Specify either a handle to make it persistent or a file to"
+                " save the context to, not both!");
         return 1;
     }
 

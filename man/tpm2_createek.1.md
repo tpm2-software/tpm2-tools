@@ -13,9 +13,7 @@
 # DESCRIPTION
 
 **tpm2_createek**(1) - Generate TCG profile compliant endorsement key (EK), which is the primary object
-of the endorsement hierarchy. Make the EK persistent with the EK handle specified by the **-H** option,
-and (optionally) return the public portion of the EK, if any password option is missing, assume NULL for
-the password.
+of the endorsement hierarchy. If any password option is missing, assume NULL for the password.
 
 Refer to:
 <http://www.trustedcomputinggroup.org/files/static_page_files/7CAA5687-1A4B-B294-D04080D058E86C5F>
@@ -36,7 +34,12 @@ Refer to:
     Same formatting as the endorse password value or -e option.
 
   * **-H**, **--handle**=_HANDLE_:
-    specifies the handle used to make EK  persistent (hex).
+    Optional, specifies the handle used to make EK  persistent (hex).
+
+  * **-c**, **--context**=_PATH_:
+    Optional, specifies a path to save the context of the EK handle. If one saves
+    the context file via this option and the public key via the **-p** option, the
+    EK can be restored via a call to tpm2_loadexternal(1).
 
   * **-g**, **--algorithm**=_ALGORITHM_:
     specifies the algorithm type of EK.
@@ -65,9 +68,50 @@ Refer to:
 [algorithm specifiers](common/alg.md)
 
 # EXAMPLES
+## With a Resource Manager (RM)
 
+Resource managers will flush the TPM context when a tool exits, thus
+when using an RM, moving the created EK to persistent memory is
+required.
+
+Create an Endorsement Key and make it persistent:
 ```
 tpm2_createek -e abc123 -o abc123 -P passwd -H 0x81010001 -g rsa -f ek.pub
+```
+
+## Without a Resource Manager (RM)
+
+The following examples will not work when an RM is in use, as the RM will
+flush the TPM context when the tool exits. In these scenarios, the created
+EK is in transient memory and thus will be flushed.
+
+Create an Endorsement Key and make it transient:
+```
+tpm2_createek -g rsa
+```
+
+Create a transient Endorsement Key, flush it, and reload it.
+```
+tpm2_createek -g rsa -p ek.pub -c ek.ctx
+
+# Check that it is loaded in transient memory
+tpm2_getcap -c handles-transient
+- 0x80000000
+
+# Flush the handle
+tpm2_flushcontext -H 0x80000000
+
+# Note that it is flushed
+tpm2_getcap -c handles-transient
+<null output>
+
+# Reload it via loadexternal
+tpm2_loadexternal -H o -u ek.pub -C ek.ctx
+
+# Check that it is re-loaded in transient memory
+tpm2_getcap -c handles-transient
+- 0x80000000
+
 ```
 
 # RETURNS

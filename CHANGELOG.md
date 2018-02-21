@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_createek: support for non-persistent EK generation.
   * tpm2_getpubak renamed to tpm2_createak, -f becomes -p and -f is used for format of public key
     output.
   * tpm2_getpubek renamed to tpm2_createek, -f becomes -p and -f is used for format of public key
