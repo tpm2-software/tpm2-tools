@@ -97,8 +97,6 @@ bin_PROGRAMS = \
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = \
-    lib/conversion.c \
-    lib/conversion.h \
     lib/files.c \
     lib/files.h \
     lib/log.c \
@@ -134,7 +132,9 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_session.c \
     lib/tpm2_session.h \
     lib/tpm2_tcti_ldr.c \
-    lib/tpm2_tcti_ldr.h
+    lib/tpm2_tcti_ldr.h \
+    lib/tpm2_convert.c \
+    lib/tpm2_convert.h
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 

@@ -37,7 +37,7 @@
 #include <limits.h>
 #include <sapi/tpm20.h>
 
-#include "conversion.h"
+#include "tpm2_convert.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "tpm2_util.h"
@@ -74,7 +74,7 @@ struct tpm_certify_ctx {
     } flags;
     char *context_file;
     char *context_key_file;
-    signature_format sig_fmt;
+    tpm2_convert_sig_fmt sig_fmt;
 };
 
 static tpm_certify_ctx ctx = {
@@ -179,7 +179,7 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return tpm2_convert_signature(&signature, ctx.sig_fmt, ctx.file_path.sig);
+    return tpm2_convert_sig(&signature, ctx.sig_fmt, ctx.file_path.sig);
 }
 
 static bool on_option(char key, char *value) {
@@ -261,7 +261,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'f':
         ctx.flags.f = 1;
-        ctx.sig_fmt = tpm2_parse_signature_format(value);
+        ctx.sig_fmt = tpm2_convert_sig_fmt_from_optarg(value);
 
         if (ctx.sig_fmt == signature_format_err) {
             return false;
