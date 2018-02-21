@@ -159,9 +159,8 @@ int sanity_check_capability_opts (void) {
 
     size_t i;
     for (i = 0; i < CAPABILITY_MAP_COUNT; ++i) {
-        int cmp = strncmp(capability_map [i].capability_string,
-                          options.capability_string,
-                          strlen(capability_map [i].capability_string));
+        int cmp = strcmp(capability_map[i].capability_string,
+                          options.capability_string);
         if (cmp == 0) {
             options.capability = capability_map[i].capability;
             options.property   = capability_map[i].property;
