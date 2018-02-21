@@ -55,6 +55,7 @@ bin_PROGRAMS = \
     tools/tpm2_clear \
     tools/tpm2_clearlock \
     tools/tpm2_create \
+    tools/tpm2_createak \
     tools/tpm2_createek \
     tools/tpm2_createpolicy \
     tools/tpm2_createprimary \
@@ -64,7 +65,6 @@ bin_PROGRAMS = \
     tools/tpm2_evictcontrol \
     tools/tpm2_flushcontext \
     tools/tpm2_getmanufec \
-    tools/tpm2_getpubak \
     tools/tpm2_getrandom \
     tools/tpm2_hash \
     tools/tpm2_hmac \
@@ -158,7 +158,7 @@ tools_tpm2_getmanufec_SOURCES = tools/tpm2_getmanufec.c $(TOOL_SRC)
 tools_tpm2_quote_SOURCES = tools/tpm2_quote.c $(TOOL_SRC)
 tools_tpm2_changeauth_SOURCES = tools/tpm2_changeauth.c $(TOOL_SRC)
 tools_tpm2_createek_SOURCES = tools/tpm2_createek.c $(TOOL_SRC)
-tools_tpm2_getpubak_SOURCES = tools/tpm2_getpubak.c $(TOOL_SRC)
+tools_tpm2_createak_SOURCES = tools/tpm2_createak.c $(TOOL_SRC)
 tools_tpm2_hash_SOURCES = tools/tpm2_hash.c $(TOOL_SRC)
 tools_tpm2_activatecredential_SOURCES = tools/tpm2_activatecredential.c $(TOOL_SRC)
 tools_tpm2_makecredential_SOURCES = tools/tpm2_makecredential.c $(TOOL_SRC)
@@ -284,6 +284,7 @@ if HAVE_PANDOC
     man/man1/tpm2_clear.1 \
     man/man1/tpm2_clearlock.1 \
     man/man1/tpm2_create.1 \
+    man/man1/tpm2_createak.1 \
     man/man1/tpm2_createek.1 \
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
@@ -293,7 +294,6 @@ if HAVE_PANDOC
     man/man1/tpm2_evictcontrol.1 \
     man/man1/tpm2_flushcontext.1 \
     man/man1/tpm2_getmanufec.1 \
-    man/man1/tpm2_getpubak.1 \
     man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
