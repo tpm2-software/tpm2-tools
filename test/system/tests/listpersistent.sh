@@ -56,7 +56,7 @@ onerror() {
 trap onerror ERR
 
 
-function yaml_get() {
+function yaml_get_len() {
 
 python << pyscript
 from __future__ import print_function
@@ -85,7 +85,7 @@ done
 
 tpm2_listpersistent > out.yaml
 
-handle_cnt=$(yaml_get out.yaml)
+handle_cnt=$(yaml_get_len out.yaml)
 
 if [ "$handle_cnt" -ne "${#keys[@]}" ]; then
     echo "Only $handle_cnt of ${#keys[@]} persistent objects were listed"
