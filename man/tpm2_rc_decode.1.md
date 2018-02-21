@@ -21,8 +21,6 @@ This tool takes no tool specific options.
 
 [common options](common/options.md)
 
-[common tcti options](common/tcti.md)
-
 # EXAMPLES
 
 ```
