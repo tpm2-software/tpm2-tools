@@ -36,17 +36,17 @@
 
 #include <sapi/tpm20.h>
 
-#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct getpubek_context getpubek_context;
-struct getpubek_context {
+typedef struct createek_context createek_context;
+struct createek_context {
     struct {
         TPM2B_AUTH owner;
         TPM2B_AUTH endorse;
@@ -57,16 +57,21 @@ struct getpubek_context {
     TPM2_ALG_ID algorithm;
     bool is_session_based_auth;
     TPMI_SH_AUTH_SESSION auth_session_handle;
+    tpm2_convert_pubkey_fmt format;
+    struct {
+        bool f;
+    } flags;
 };
 
-static getpubek_context ctx = {
+static createek_context ctx = {
     .passwords = {
         .owner = TPM2B_EMPTY_INIT,
         .endorse = TPM2B_EMPTY_INIT,
         .ek = TPM2B_EMPTY_INIT,
     },
     .algorithm = TPM2_ALG_RSA,
-    .is_session_based_auth = false
+    .is_session_based_auth = false,
+    .format = pubkey_format_tss
 };
 
 static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
@@ -223,7 +228,11 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("Flush transient EK success.");
 
-    return tpm2_convert_pubkey_save(&outPublic, pubkey_format_tss, ctx.out_file_path);
+    if (ctx.out_file_path) {
+        return tpm2_convert_pubkey_save(&outPublic, ctx.format, ctx.out_file_path);
+    }
+
+    return true;
 }
 
 static bool on_option(char key, char *value) {
@@ -267,7 +276,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'f':
+    case 'p':
         if (!value) {
             LOG_ERR("Please specify an output file to save the pub ek to.");
             return false;
@@ -283,6 +292,12 @@ static bool on_option(char key, char *value) {
         ctx.auth_session_handle = tpm2_session_get_handle(s);
         tpm2_session_free(&s);
     } break;
+    case 'f':
+        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
+        if (ctx.format == pubkey_format_err) {
+            return false;
+        }
+        ctx.flags.f = true;
     }
 
     return true;
@@ -296,12 +311,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "handle",               required_argument, NULL, 'H' },
         { "ek-passwd",            required_argument, NULL, 'P' },
         { "algorithm",            required_argument, NULL, 'g' },
-        { "file",                 required_argument, NULL, 'f' },
+        { "file",                 required_argument, NULL, 'p' },
         { "session",              required_argument, NULL, 'S' },
         { "dbg",                  required_argument, NULL, 'd' },
+        { "format",               required_argument, NULL, 'f' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:f:p:S:d:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:H:P:g:p:S:d:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -310,6 +326,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
+    if (ctx.flags.f && !ctx.out_file_path) {
+        LOG_ERR("Please specify an output file name when specifying a format");
+        return 1;
+    }
 
     /* normalize 0 success 1 failure */
     return create_ek_handle(sapi_context) != true;

@@ -104,7 +104,7 @@ tpm2_quote -Q -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -q $nonce
 tpm2_quote -Q -k $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
 #####AK
-tpm2_getpubek -Q -H  $Handle_ek_quote -g 0x01 -f ek.pub2
+tpm2_createek -Q -H  $Handle_ek_quote -g 0x01 -p ek.pub2
 
 tpm2_getpubak -Q -E  $Handle_ek_quote -k  $Handle_ak_quote2 -f ak.pub2 -n ak.name_2
 
