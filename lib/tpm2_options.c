@@ -291,9 +291,6 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
 
     /* handle any options */
     const char* common_short_opts = "T:hvVQZ";
-    if (tool_opts && (tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
-        common_short_opts = "hvVQZ";
-    }
     tpm2_options *opts = tpm2_options_new(common_short_opts,
             ARRAY_LEN(long_options), long_options, NULL, NULL, true);
     if (!opts) {
@@ -315,6 +312,10 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
     {
         switch (c) {
         case 'T':
+            if (opts->flags & TPM2_OPTIONS_NO_SAPI) {
+                LOG_ERR("%s: tool doesn't support the TCTI option", argv[0]);
+                goto out;
+            }
             /* only attempt to get options from tcti option string */
             tcti_conf_option = optarg;
             break;
