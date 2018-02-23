@@ -29,7 +29,6 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,6 +41,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_ctx_mgmt.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -55,38 +55,21 @@ struct tpm_evictcontrol_ctx {
     TPMI_RH_PROVISION auth;
     struct {
         TPMI_DH_OBJECT object;
-        TPMI_DH_OBJECT persist;
+        TPMI_DH_PERSISTENT persist;
     } handle;
     char *context_file;
     struct {
-        UINT8 A : 1;
         UINT8 H : 1;
-        UINT8 S : 1;
+        UINT8 p : 1;
         UINT8 c : 1;
         UINT8 P : 1;
     } flags;
 };
 
 static tpm_evictcontrol_ctx ctx = {
-    .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .auth = TPM2_RH_OWNER,
 };
-
-static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
-
-    TSS2L_SYS_AUTH_COMMAND sessions_data;
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-
-    sessions_data.count = 1;
-    sessions_data.auths[0] = ctx.session_data;
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
-                                        &sessions_data, ctx.handle.persist,&sessions_data_out));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_EvictControl, rval);
-        return false;
-    }
-    return true;
-}
 
 static bool on_option(char key, char *value) {
 
@@ -99,7 +82,6 @@ static bool on_option(char key, char *value) {
         if (!result) {
             return false;
         }
-        ctx.flags.A = 1;
         break;
     case 'H':
         result = tpm2_util_string_to_uint32(value, &ctx.handle.object);
@@ -112,7 +94,7 @@ static bool on_option(char key, char *value) {
 
         if (ctx.handle.object >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
             ctx.handle.persist = ctx.handle.object;
-            ctx.flags.S = 1;
+            ctx.flags.p = 1;
         }
         break;
     case 'p':
@@ -122,7 +104,7 @@ static bool on_option(char key, char *value) {
                     value);
             return false;
         }
-        ctx.flags.S = 1;
+        ctx.flags.p = 1;
         break;
     case 'P':
         result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
@@ -171,8 +153,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (!(ctx.flags.A && (ctx.flags.H || ctx.flags.c) && ctx.flags.S)) {
-        LOG_ERR("Invalid arguments");
+    if (!((ctx.flags.H || ctx.flags.c) && ctx.flags.p)) {
+        LOG_ERR("Invalid arguments, expect (-H or -c) and -p");
         return 1;
     }
 
@@ -186,5 +168,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     tpm2_tool_output("persistentHandle: 0x%x\n", ctx.handle.persist);
 
-    return evict_control(sapi_context) != true;
+    return !tpm2_ctx_mgmt_evictcontrol(sapi_context,
+            ctx.auth,
+            &ctx.session_data,
+            ctx.handle.object,
+            ctx.handle.persist);
 }
