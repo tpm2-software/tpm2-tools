@@ -458,13 +458,25 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
         NULL,
         // 0x19 - TPM2_RC_HMAC
         "not currently used",
+        // 0x1A - EMPTY
+        NULL,
+        // 0x1B - EMPTY
+        NULL,
+        // 0x1C - EMPTY
+        NULL,
+        // 0x1D - EMPTY
+        NULL,
+        // 0x1E - EMPTY
+        NULL,
+        // 0x1F - EMPTY
+        NULL,
         // 0x20 - TPM2_RC_DISABLED
         "the command is disabled",
         // 0x21 - TPM2_RC_EXCLUSIVE
         "command failed because audit sequence required exclusivity",
         // 0x22 - EMPTY
         NULL,
-        // 0x32 - EMPTY,
+        // 0x23 - EMPTY,
         NULL,
         // 0x24 - TPM2_RC_AUTH_TYPE
         "authorization handle is not correct for command",
