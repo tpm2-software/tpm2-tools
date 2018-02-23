@@ -246,6 +246,28 @@ bool files_save_validation(TPMT_TK_HASHCHECK *validation, const char *path);
 bool files_load_validation(const char *path, TPMT_TK_HASHCHECK *validation);
 
 /**
+ * Serializes a TPM2B_PRIVATE to the file path provided.
+ * @param private
+ *  The TPM2B_PRIVATE to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_private(TPM2B_PRIVATE *private, const char *path);
+
+/**
+ * Loads a TPM2B_PRIVATE from disk.
+ * @param private
+ *  The path to load from.
+ * @param validation
+ *  The TPM2B_PRIVATE to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_private(const char *path, TPM2B_PRIVATE *private);
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.

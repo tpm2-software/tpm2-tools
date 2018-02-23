@@ -69,6 +69,7 @@ struct createak_context {
         bool f;
     } flags;
     const char *context_file;
+    const char *priv_file;
 };
 
 static createak_context ctx = {
@@ -400,8 +401,18 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.output_file) {
-        return tpm2_convert_pubkey_save(&out_public, ctx.format,
+        result = tpm2_convert_pubkey_save(&out_public, ctx.format,
                 ctx.output_file);
+        if (!result) {
+            return false;
+        }
+    }
+
+    if (ctx.priv_file) {
+        result = files_save_private(&out_private, ctx.priv_file);
+        if (!result) {
+            return false;
+        }
     }
 
     return true;
@@ -488,6 +499,9 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_file = value;
         break;
+    case 'r':
+        ctx.priv_file = value;
+        break;
     }
 
     return true;
@@ -508,9 +522,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ak-name",        required_argument, NULL, 'n' },
         { "format",         required_argument, NULL, 'f' },
         { "context",        required_argument, NULL, 'c' },
+        { "privfile",       required_argument, NULL, 'r'},
     };
 
-    *opts = tpm2_options_new("o:E:e:k:g:D:s:P:f:n:p:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:E:e:k:g:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;

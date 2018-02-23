@@ -73,6 +73,10 @@ loaded-key:
   * **-n**, **--ak-name**=_NAME_:
     Specifies the file used to save the ak name, optional.
 
+  * **-r**, **--privfile**=_OUTPUT\_PRIVATE\_FILE_:
+    The output file which contains the sensitive portion of the object, optional.
+    If the object is an asymmetric key-pair, then this is the private key.
+
 [pubkey options](common/pubkey.md)
 
 [common options](common/options.md)

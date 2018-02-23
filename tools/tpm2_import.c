@@ -484,8 +484,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
         return false;
     }
 
-    res = files_save_bytes_to_file(ctx.import_key_private_file, importPrivate.buffer, 
-        importPrivate.size);
+    res = files_save_private(&importPrivate, ctx.import_key_private_file);
     if (!res) {
         return false;
     }
