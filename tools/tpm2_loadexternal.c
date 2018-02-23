@@ -47,7 +47,7 @@ typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {
     char *context_file_path;
     TPMI_RH_HIERARCHY hierarchy_value;
-    TPM2_HANDLE rsa2048_handle;
+    TPM2_HANDLE handle;
     TPM2B_PUBLIC public_key;
     TPM2B_SENSITIVE private_key;
     bool save_to_context_file;
@@ -98,7 +98,7 @@ static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0,
             ctx.private_key.size ? &ctx.private_key : NULL, &ctx.public_key,
-            ctx.hierarchy_value, &ctx.rsa2048_handle, &nameExt,
+            ctx.hierarchy_value, &ctx.handle, &nameExt,
             &sessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_LoadExternal, rval);
@@ -170,8 +170,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return 1;
     }
 
+    tpm2_tool_output("0x%X\n", ctx.handle);
+
     if(ctx.save_to_context_file) {
-            return files_save_tpm_context_to_path(sapi_context, ctx.rsa2048_handle,
+            return files_save_tpm_context_to_path(sapi_context, ctx.handle,
                     ctx.context_file_path) != true;
     }
 

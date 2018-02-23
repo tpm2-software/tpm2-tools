@@ -17,6 +17,10 @@ TPM.
 TPM. The command allows loading of a public area or both a public and a
 sensitive area.
 
+# Output
+The tool outputs the handle of the loaded object in hex. It is the form of a YAML
+scalar.
+
 # OPTIONS
 
   * **-H**, **--hierarchy**=_HIERARCHY_:
