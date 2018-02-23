@@ -49,6 +49,11 @@ loaded-key:
   * **-k**, **--ak-handle**=_AK\_HANDLE_:
     Specifies the handle used to make AK persistent.
 
+  * **-c**, **--context**=_PATH_:
+    Optional, specifies a path to save the context of the AK handle. If one saves
+    the context file via this option and the public key via the **-p** option, the
+    AK can be restored via a call to tpm2_loadexternal(1).
+
   * **-g**, **--algorithm**=_ALGORITHM_:
     Specifies the algorithm type of AK. Algorithms should follow the
     " formatting standards, see section "Algorithm Specifiers".
@@ -83,10 +88,61 @@ loaded-key:
 [algorithm specifiers](common/alg.md)
 
 # EXAMPLES
+## With a Resource Manager (RM)
 
+Resource managers will flush the TPM context when a tool exits, thus
+when using an RM, moving the created EK to persistent memory is
+required.
+
+Create an Attestation Key and make it persistent:
 ```
-tpm2_createak -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
-tpm2_createak -e 1a1b1c -P 123abc -o 1a1b1c -X -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+# create an Endorsement Key (EK)
+tpm2_createek -H 0x81010001 -g rsa -f ek.pub
+# create an Attestation Key (AK) passing the EK handle
+tpm2_createak -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+```
+
+## Without a Resource Manager (RM)
+
+The following examples will not work when an RM is in use, as the RM will
+flush the TPM context when the tool exits. In these scenarios, the created
+AK is in transient memory and thus will be flushed.
+
+Create a transient Attestation Key, evict it, and reload it:
+```
+# AK needs an Endorsement Key (primary object)
+tpm2_createek
+0x80000000
+
+# Now create a transient AK
+tpm2_createak -E 0x80000000 -c ak.ctx -p ak.pub -n ak.name
+loaded-key:
+  handle: 0x80000001
+  name: 000b8052c63861b1855c91edd63bca2eb3ea3ad304bb9798a9445ada12d5b5bb36e0
+
+tpm2_createek -g rsa -p ek.pub -c ek.ctx
+
+# Check that the AK is loaded in transient memory
+# Note the AK is at handle 0x80000001
+tpm2_getcap -c handles-transient
+- 0x80000000
+- 0x80000001
+
+# Flush the AK handle
+tpm2_flushcontext -H 0x80000000
+
+# Note that it is flushed
+tpm2_getcap -c handles-transient
+- 0x80000000
+
+# Reload it via loadexternal
+tpm2_loadexternal -H o -u ak.pub -C ak.ctx
+
+# Check that it is re-loaded in transient memory
+$ tpm2_getcap -c handles-transient
+- 0x80000000
+- 0x80000001
+
 ```
 
 # RETURNS
