@@ -51,37 +51,56 @@
 typedef struct createak_context createak_context;
 struct createak_context {
     struct {
-        TPM2_HANDLE ek;
-        TPM2_HANDLE ak;
-    } persistent_handle;
+        TPM2_HANDLE handle;
+        const char *ctx_file;
+        TPM2B_AUTH auth;
+    } ek;
     struct {
-        TPM2B_AUTH endorse;
-        TPM2B_AUTH ak;
-        TPM2B_AUTH owner;
-    } passwords;
-    char *output_file;
-    char *akname_file;
-    TPM2_ALG_ID algorithm_type;
-    TPM2_ALG_ID digest_alg;
-    TPM2_ALG_ID sign_alg;
-    tpm2_convert_pubkey_fmt format;
+        struct {
+            TPM2B_AUTH auth;
+            TPM2_HANDLE handle;
+            struct {
+                TPM2_ALG_ID type;
+                TPM2_ALG_ID digest;
+                TPM2_ALG_ID sign;
+            } alg;
+        } in;
+        struct {
+            const char *ctx_file;
+            tpm2_convert_pubkey_fmt pub_fmt;
+            const char *pub_file;
+            const char *name_file;
+            const char *priv_file;
+        } out;
+    } ak;
+    struct {
+        TPM2B_AUTH auth;
+    } owner;
     struct {
         bool f;
     } flags;
-    const char *context_file;
-    const char *priv_file;
 };
 
 static createak_context ctx = {
-    .algorithm_type = TPM2_ALG_RSA,
-    .digest_alg = TPM2_ALG_SHA256,
-    .sign_alg = TPM2_ALG_NULL,
-    .passwords = {
-        .endorse = TPM2B_EMPTY_INIT,
-        .ak      = TPM2B_EMPTY_INIT,
-        .owner   = TPM2B_EMPTY_INIT,
+    .ak = {
+        .in = {
+            .auth = TPM2B_EMPTY_INIT,
+            .alg = {
+                .type = TPM2_ALG_RSA,
+                .digest = TPM2_ALG_SHA256,
+                .sign = TPM2_ALG_NULL
+            },
+        },
+        .out = {
+            .pub_fmt = pubkey_format_tss
+        },
     },
-    .format = pubkey_format_tss
+    .ek = {
+        .auth = TPM2B_EMPTY_INIT
+    },
+    .owner = {
+        .auth = TPM2B_EMPTY_INIT
+    },
 };
 
 /*
@@ -171,9 +190,9 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
     in_public->publicArea.objectAttributes |= TPMA_OBJECT_SENSITIVEDATAORIGIN;
     in_public->publicArea.authPolicy.size = 0;
 
-    in_public->publicArea.type = ctx.algorithm_type;
+    in_public->publicArea.type = ctx.ak.in.alg.type;
 
-    switch(ctx.algorithm_type)
+    switch(ctx.ak.in.alg.type)
     {
     case TPM2_ALG_RSA:
         in_public->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;
@@ -182,7 +201,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
         in_public->publicArea.parameters.rsaDetail.keyBits = 2048;
         in_public->publicArea.parameters.rsaDetail.exponent = 0;
         in_public->publicArea.unique.rsa.size = 0;
-        return set_rsa_signing_algorithm(ctx.sign_alg, ctx.digest_alg, in_public);
+        return set_rsa_signing_algorithm(ctx.ak.in.alg.sign, ctx.ak.in.alg.digest, in_public);
     case TPM2_ALG_ECC:
         in_public->publicArea.parameters.eccDetail.symmetric.algorithm = TPM2_ALG_NULL;
         in_public->publicArea.parameters.eccDetail.symmetric.mode.sym = TPM2_ALG_NULL;
@@ -191,13 +210,13 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
         in_public->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
         in_public->publicArea.unique.ecc.x.size = 0;
         in_public->publicArea.unique.ecc.y.size = 0;
-        return set_ecc_signing_algorithm(ctx.sign_alg, ctx.digest_alg, in_public);
+        return set_ecc_signing_algorithm(ctx.ak.in.alg.sign, ctx.ak.in.alg.digest, in_public);
     case TPM2_ALG_KEYEDHASH:
         in_public->publicArea.unique.keyedHash.size = 0;
-        return set_keyed_hash_signing_algorithm(ctx.sign_alg, ctx.digest_alg, in_public);
+        return set_keyed_hash_signing_algorithm(ctx.ak.in.alg.sign, ctx.ak.in.alg.digest, in_public);
     case TPM2_ALG_SYMCIPHER:
     default:
-        LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.algorithm_type);
+        LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.ak.in.alg.type);
         return false;
     }
 
@@ -231,20 +250,18 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST creation_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    TPM2_HANDLE handle_2048_rsa = ctx.persistent_handle.ek;
-
     inSensitive.sensitive.data.size = 0;
     inSensitive.size = inSensitive.sensitive.userAuth.size + 2;
     creation_pcr.count = 0;
 
-    memcpy(&inSensitive.sensitive.userAuth, &ctx.passwords.ak, sizeof(ctx.passwords.ak));
+    memcpy(&inSensitive.sensitive.userAuth, &ctx.ak.in.auth, sizeof(ctx.ak.in.auth));
 
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
         return false;
     }
 
-    memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
+    memcpy(&sessions_data.auths[0].hmac, &ctx.ek.auth, sizeof(ctx.ek.auth));
 
     tpm2_session_data *data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
@@ -287,7 +304,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, handle_2048_rsa, &sessions_data,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.ek.handle, &sessions_data,
             &inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
             &out_public, &creation_data, &creation_hash, &creation_ticket,
             &sessions_data_out));
@@ -308,7 +325,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.auths[0].sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
 
-    memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
+    memcpy(&sessions_data.auths[0].hmac, &ctx.ek.auth, sizeof(ctx.ek.auth));
 
     data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
@@ -340,7 +357,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.auths[0].hmac.size = 0;
 
     TPM2_HANDLE loaded_sha1_key_handle;
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context, handle_2048_rsa, &sessions_data, &out_private,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context, ctx.ek.handle, &sessions_data, &out_private,
             &out_public, &loaded_sha1_key_handle, &name, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_Load, rval);
@@ -354,10 +371,10 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     tpm2_tool_output("\n");
 
     // write name to ak.name file
-    if (ctx.akname_file) {
-        result = files_save_bytes_to_file(ctx.akname_file, &name.name[0], name.size);
+    if (ctx.ak.out.name_file) {
+        result = files_save_bytes_to_file(ctx.ak.out.name_file, &name.name[0], name.size);
         if (!result) {
-            LOG_ERR("Failed to save AK name into file \"%s\"", ctx.akname_file);
+            LOG_ERR("Failed to save AK name into file \"%s\"", ctx.ak.out.name_file);
             return false;
         }
     }
@@ -373,12 +390,12 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     sessions_data.auths[0].hmac.size = 0;
 
     // use the owner auth here.
-    memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
+    memcpy(&sessions_data.auths[0].hmac, &ctx.owner.auth, sizeof(ctx.owner.auth));
 
-    if (ctx.persistent_handle.ak) {
+    if (ctx.ak.in.handle) {
 
         rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, loaded_sha1_key_handle,
-                &sessions_data, ctx.persistent_handle.ak, &sessions_data_out));
+                &sessions_data, ctx.ak.in.handle, &sessions_data_out));
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_EvictControl, rval);
             return false;
@@ -391,25 +408,25 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
             return false;
         }
         LOG_INFO("Flush transient AK succ.");
-    } else if (ctx.context_file) {
+    } else if (ctx.ak.out.ctx_file) {
         bool result = files_save_tpm_context_to_path(sapi_context,
-                loaded_sha1_key_handle, ctx.context_file);
+                loaded_sha1_key_handle, ctx.ak.out.ctx_file);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
             return false;
         }
     }
 
-    if (ctx.output_file) {
-        result = tpm2_convert_pubkey_save(&out_public, ctx.format,
-                ctx.output_file);
+    if (ctx.ak.out.pub_file) {
+        result = tpm2_convert_pubkey_save(&out_public, ctx.ak.out.pub_fmt,
+                ctx.ak.out.pub_file);
         if (!result) {
             return false;
         }
     }
 
-    if (ctx.priv_file) {
-        result = files_save_private(&out_private, ctx.priv_file);
+    if (ctx.ak.out.priv_file) {
+        result = files_save_private(&out_private, ctx.ak.out.priv_file);
         if (!result) {
             return false;
         }
@@ -424,83 +441,82 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'E':
-        result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle.ek);
+        result = tpm2_util_string_to_uint32(value, &ctx.ek.handle);
         if (!result) {
             LOG_ERR("Could not convert persistent EK handle.");
             return false;
         }
         break;
     case 'k':
-        result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle.ak);
+        result = tpm2_util_string_to_uint32(value, &ctx.ak.in.handle);
         if (!result) {
             LOG_ERR("Could not convert persistent AK handle.");
             return false;
         }
         break;
     case 'g':
-        ctx.algorithm_type = tpm2_alg_util_from_optarg(value);
-        if (ctx.algorithm_type == TPM2_ALG_ERROR) {
+        ctx.ak.in.alg.type = tpm2_alg_util_from_optarg(value);
+        if (ctx.ak.in.alg.type == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert algorithm. got: \"%s\".", value);
             return false;
         }
         break;
     case 'D':
-        ctx.digest_alg = tpm2_alg_util_from_optarg(value);
-        if (ctx.digest_alg == TPM2_ALG_ERROR) {
+        ctx.ak.in.alg.digest = tpm2_alg_util_from_optarg(value);
+        if (ctx.ak.in.alg.digest == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert digest algorithm.");
             return false;
         }
         break;
     case 's':
-        ctx.sign_alg = tpm2_alg_util_from_optarg(value);
-        if (ctx.sign_alg == TPM2_ALG_ERROR) {
+        ctx.ak.in.alg.sign = tpm2_alg_util_from_optarg(value);
+        if (ctx.ak.in.alg.sign == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signing algorithm.");
             return false;
         }
         break;
     case 'o':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner);
+        result = tpm2_password_util_from_optarg(value, &ctx.owner.auth);
         if (!result) {
             LOG_ERR("Invalid owner password, got\"%s\"", value);
             return false;
         }
         break;
     case 'e':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse);
+        result = tpm2_password_util_from_optarg(value, &ctx.ek.auth);
         if (!result) {
             LOG_ERR("Invalid endorse password, got\"%s\"", value);
             return false;
         }
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.ak);
+        result = tpm2_password_util_from_optarg(value, &ctx.ak.in.auth);
         if (!result) {
             LOG_ERR("Invalid AK password, got\"%s\"", value);
             return false;
         }
         break;
     case 'p':
-        ctx.output_file = value;
+        ctx.ak.out.pub_file = value;
         break;
     case 'n':
-        if (!value) {
-            LOG_ERR("Please specify the output file used to save the ak name.");
-            return false;
-        }
-        ctx.akname_file = value;
+        ctx.ak.out.name_file = value;
         break;
     case 'f':
-        ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
-        if (ctx.format == pubkey_format_err) {
+        ctx.ak.out.pub_fmt = tpm2_convert_pubkey_fmt_from_optarg(value);
+        if (ctx.ak.out.pub_fmt == pubkey_format_err) {
             return false;
         }
         ctx.flags.f = true;
         break;
     case 'c':
-        ctx.context_file = value;
+        ctx.ak.out.ctx_file = value;
         break;
     case 'r':
-        ctx.priv_file = value;
+        ctx.ak.out.priv_file = value;
+        break;
+    case 'C':
+        ctx.ek.ctx_file = value;
         break;
     }
 
@@ -535,15 +551,21 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (ctx.flags.f && !ctx.output_file) {
+    if (ctx.flags.f && !ctx.ak.out.pub_file) {
         LOG_ERR("Please specify an output file name when specifying a format");
         return 1;
     }
 
-    if (ctx.context_file && ctx.persistent_handle.ak) {
-        LOG_ERR("Specify either a handle to make it persistent or a file to"
-                " save the context to, not both!");
-        return 1;
+    if (ctx.ek.handle && ctx.ek.ctx_file) {
+        LOG_ERR("Either specify the EK handle or an EK context file, not both!");
+    }
+
+    if (ctx.ek.ctx_file) {
+        bool res = files_load_tpm_context_from_path(sapi_context, &ctx.ek.handle, ctx.ek.ctx_file);
+        if (!res) {
+            LOG_ERR("Could not load EK context from file: \"%s\"", ctx.ek.ctx_file);
+            return 1;
+        }
     }
 
     return !create_ak(sapi_context);
