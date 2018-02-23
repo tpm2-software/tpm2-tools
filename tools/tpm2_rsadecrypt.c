@@ -80,7 +80,7 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
             &sessions_data, &ctx.cipher_text, &inScheme, &label, &message,
             &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("rsaDecrypt failed, error code: 0x%x", rval);
+        LOG_PERR(Tss2_Sys_RSA_Decrypt, rval);
         return false;
     }
 
