@@ -207,7 +207,7 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     }
 
     if (ctx.flags.r) {
-        bool res = files_save_bytes_to_file(ctx.opr_path, outPrivate.buffer, outPrivate.size);
+        bool res = files_save_private(&outPrivate, ctx.opr_path);
         if (!res) {
             return -4;
         }

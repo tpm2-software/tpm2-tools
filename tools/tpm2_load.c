@@ -48,7 +48,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-TPM2_HANDLE handle2048rsa;
+TPM2_HANDLE handle;
 
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {
@@ -92,7 +92,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
                          &sessionsData,
                          &ctx.in_private,
                          &ctx.in_public,
-                         &handle2048rsa,
+                         &handle,
                          &nameExt,
                          &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS)
@@ -100,7 +100,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
         LOG_PERR(Tss2_Sys_Load, rval);
         return -1;
     }
-    tpm2_tool_output("handle: 0x%08x\n", handle2048rsa);
+    tpm2_tool_output("handle: 0x%08x\n", handle);
 
     if (ctx.out_file) {
         if(!files_save_bytes_to_file(ctx.out_file, nameExt.name, nameExt.size)) {
@@ -136,8 +136,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.u = 1;
         break;
     case 'r':
-        ctx.in_private.size = sizeof(ctx.in_private.buffer);
-        if(!files_load_bytes_from_path(value, ctx.in_private.buffer, &ctx.in_private.size)) {
+        res = files_load_private(value, &ctx.in_private);
+        if(!res) {
             return false;
         }
         ctx.flags.r = 1;
@@ -225,7 +225,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.C) {
         returnVal = files_save_tpm_context_to_path (sapi_context,
-                                                    handle2048rsa,
+                                                    handle,
                                                     ctx.context_file) != true;
         if (returnVal) {
             return 1;
