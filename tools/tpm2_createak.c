@@ -68,6 +68,7 @@ struct createak_context {
     struct {
         bool f;
     } flags;
+    const char *context_file;
 };
 
 static createak_context ctx = {
@@ -373,20 +374,30 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     // use the owner auth here.
     memcpy(&sessions_data.auths[0].hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, loaded_sha1_key_handle,
-            &sessions_data, ctx.persistent_handle.ak, &sessions_data_out));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_EvictControl, rval);
-        return false;
-    }
-    LOG_INFO("EvictControl: Make AK persistent succ.");
+    if (ctx.persistent_handle.ak) {
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, loaded_sha1_key_handle));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_FlushContext, rval);
-        return false;
+        rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, loaded_sha1_key_handle,
+                &sessions_data, ctx.persistent_handle.ak, &sessions_data_out));
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_EvictControl, rval);
+            return false;
+        }
+        LOG_INFO("EvictControl: Make AK persistent succ.");
+
+        rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, loaded_sha1_key_handle));
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_FlushContext, rval);
+            return false;
+        }
+        LOG_INFO("Flush transient AK succ.");
+    } else if (ctx.context_file) {
+        bool result = files_save_tpm_context_to_path(sapi_context,
+                loaded_sha1_key_handle, ctx.context_file);
+        if (!result) {
+            LOG_ERR("Error saving tpm context for handle");
+            return false;
+        }
     }
-    LOG_INFO("Flush transient AK succ.");
 
     if (ctx.output_file) {
         return tpm2_convert_pubkey_save(&out_public, ctx.format,
@@ -473,6 +484,10 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.f = true;
+        break;
+    case 'c':
+        ctx.context_file = value;
+        break;
     }
 
     return true;
@@ -492,9 +507,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "file",           required_argument, NULL, 'p' },
         { "ak-name",        required_argument, NULL, 'n' },
         { "format",         required_argument, NULL, 'f' },
+        { "context",        required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("o:E:e:k:g:D:s:P:f:n:p:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:E:e:k:g:D:s:P:f:n:p:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -506,6 +522,12 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.f && !ctx.output_file) {
         LOG_ERR("Please specify an output file name when specifying a format");
+        return 1;
+    }
+
+    if (ctx.context_file && ctx.persistent_handle.ak) {
+        LOG_ERR("Specify either a handle to make it persistent or a file to"
+                " save the context to, not both!");
         return 1;
     }
 
