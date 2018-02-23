@@ -342,7 +342,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* Output in YAML format */
     tpm2_tool_output("loaded-key:\n");
-    tpm2_tool_output("  handle: %8.8x\n  name: ", loaded_sha1_key_handle);
+    tpm2_tool_output("  handle: 0x%X\n  name: ", loaded_sha1_key_handle);
     tpm2_util_print_tpm2b((TPM2B *)&name);
     tpm2_tool_output("\n");
 
