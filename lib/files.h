@@ -214,6 +214,16 @@ bool files_load_ticket(const char *path, TPMT_TK_VERIFIED *ticket);
 bool files_load_sensitive(const char *path, TPM2B_SENSITIVE *sensitive);
 
 /**
+ * Serializes a TPM2B_SENSITIVE to the file path provided.
+ * @param sensitive
+ *  The TPM2B_SENSITIVE to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_sensitive(TPM2B_SENSITIVE *sensitive, const char *path);
+/**
  * Serializes a TPMT_TK_HASHCHECK to the file path provided.
  * @param validation
  *  The TPMT_TK_HASHCHECK to save to disk.
