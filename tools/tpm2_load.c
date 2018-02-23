@@ -118,6 +118,7 @@ static bool on_option(char key, char *value) {
     switch(key) {
     case 'H':
         if (!tpm2_util_string_to_uint32(value, &ctx.parent_handle)) {
+            LOG_ERR("Invalid parent key handle, got\"%s\"", value);
                 return false;
         }
         ctx.flags.H = 1;
