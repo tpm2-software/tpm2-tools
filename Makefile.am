@@ -107,6 +107,8 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_alg_util.h \
     lib/tpm2_attr_util.c \
     lib/tpm2_attr_util.h \
+    lib/tpm2_ctx_mgmt.c \
+    lib/tpm2_ctx_mgmt.h \
     lib/tpm2_errata.c \
     lib/tpm2_errata.h \
     lib/tpm2_error.c \
