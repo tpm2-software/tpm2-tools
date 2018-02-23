@@ -110,3 +110,27 @@ bool tpm2_hierarchy_from_optarg(const char *value,
 
     return result;
 }
+
+bool tpm2_hierarrchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
+        TPMS_AUTH_COMMAND *sdata,
+        tpm2_hierearchy_pdata *objdata) {
+
+    TSS2L_SYS_AUTH_COMMAND sessionsData =
+            TSS2L_SYS_AUTH_COMMAND_INIT(1, {*sdata});
+
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TSS2_RC rval = TSS2_RETRY_EXP(
+            Tss2_Sys_CreatePrimary(sapi_context, objdata->in.hierarchy,
+                &sessionsData, &objdata->in.sensitive, &objdata->in.public,
+                &objdata->in.outside_info, &objdata->in.creation_pcr,
+                &objdata->out.handle, &objdata->out.public,
+                &objdata->out.creation.data, &objdata->out.hash,
+                &objdata->out.creation.ticket, &objdata->out.name,
+                &sessionsDataOut));
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_CreatePrimary, rval);
+        return false;
+    }
+
+    return true;
+}

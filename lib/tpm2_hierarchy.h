@@ -50,4 +50,75 @@ enum tpm2_hierarchy_flags {
 bool tpm2_hierarchy_from_optarg(const char *value,
         TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags);
 
+typedef struct tpm2_hierearchy_pdata tpm2_hierearchy_pdata;
+struct tpm2_hierearchy_pdata {
+    struct {
+        TPMI_RH_HIERARCHY hierarchy;
+        TPM2B_SENSITIVE_CREATE sensitive;
+        TPM2B_PUBLIC public;
+        TPM2B_DATA outside_info;
+        TPML_PCR_SELECTION creation_pcr;
+        TPM2_HANDLE object_handle;
+    } in;
+    struct {
+        TPM2_HANDLE handle;
+        TPM2B_PUBLIC public;
+        TPM2B_DIGEST hash;
+        struct {
+            TPM2B_CREATION_DATA data;
+            TPMT_TK_CREATION ticket;
+        } creation;
+        TPM2B_NAME name;
+    } out;
+};
+
+#define _PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
+    .publicArea = { \
+        .nameAlg = TPM2_ALG_SHA256, \
+        .type = TPM2_ALG_RSA, \
+        .objectAttributes = \
+            TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT \
+            |TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT \
+            |TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH, \
+        .parameters = { \
+            .rsaDetail = { \
+                .exponent = 0, \
+                .symmetric = { \
+                    .algorithm = TPM2_ALG_AES, \
+                    .keyBits = { .aes = 128 }, \
+                    .mode = { .aes = TPM2_ALG_CFB }, \
+                 }, \
+            .scheme = { .scheme = TPM2_ALG_NULL }, \
+            .keyBits = 2048 \
+            }, \
+        }, \
+            .unique = { .rsa = { .size = 0 } } \
+    }, \
+}
+
+#define TPM2_HIERARCHY_DATA_INIT { \
+    .in = { \
+        .public = _PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT, \
+        .sensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT, \
+        .hierarchy = TPM2_RH_NULL \
+    }, \
+}
+
+/**
+ * Creates a primary object.
+ * @param sapi_context
+ *  The system api context
+ * @param sdata
+ *  The authorization data for the hierarchy the primary object
+ *  is associated with.
+ * @param objdata
+ *  The objects data configuration.
+ * @return
+ *  True on success, False on error.
+ *  Logs errors via LOG_ERR().
+ */
+bool tpm2_hierarrchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
+        TPMS_AUTH_COMMAND *sdata,
+        tpm2_hierearchy_pdata *objdata);
+
 #endif /* TOOLS_TPM2_HIERARCHY_H_ */
