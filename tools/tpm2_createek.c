@@ -162,6 +162,11 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
         }
     }
 
+    /* If it wasn't persistent, output the transient handle */
+    if (!ctx.persistent_handle) {
+        tpm2_tool_output("0x%X\n", ctx.objdata.out.handle);
+    }
+
     if (ctx.out_file_path) {
         return tpm2_convert_pubkey_save(&ctx.objdata.out.public,
                 ctx.format, ctx.out_file_path);
