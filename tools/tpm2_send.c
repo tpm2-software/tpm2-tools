@@ -194,7 +194,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    rval = tss2_tcti_transmit(tcti_context, size, command->bytes);
+    rval = Tss2_Tcti_Transmit(tcti_context, size, command->bytes);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_transmit failed: 0x%x", rval);
         goto out;
@@ -202,7 +202,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     size_t rsize = TPM2_MAX_SIZE;
     UINT8 rbuf[TPM2_MAX_SIZE];
-    rval = tss2_tcti_receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
+    rval = Tss2_Tcti_Receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_receive failed: 0x%x", rval);
         goto out;

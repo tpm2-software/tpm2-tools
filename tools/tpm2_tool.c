@@ -43,7 +43,7 @@ bool output_enabled = true;
 
 static void tcti_teardown (TSS2_TCTI_CONTEXT *tcti_context) {
 
-    tss2_tcti_finalize (tcti_context);
+    Tss2_Tcti_Finalize (tcti_context);
     free (tcti_context);
 }
 
