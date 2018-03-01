@@ -52,7 +52,7 @@ static clearlock_ctx ctx = {
 static bool clearlock(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMI_RH_CLEAR rh = ctx.platform ? TPM2_RH_PLATFORM : TPM2_RH_LOCKOUT;
-    TPMI_YES_NO disable = ctx.clear ? NO : YES;
+    TPMI_YES_NO disable = ctx.clear ? 0 : 1;
 
     LOG_INFO ("Sending TPM2_ClearControl(%s) command on %s",
             ctx.clear ? "CLEAR" : "SET",

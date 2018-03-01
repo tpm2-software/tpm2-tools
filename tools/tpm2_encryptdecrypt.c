@@ -68,7 +68,6 @@ struct tpm_encrypt_decrypt_ctx {
 
 static tpm_encrypt_decrypt_ctx ctx = {
     .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
-    .is_decrypt = NO,
     .data = TPM2B_EMPTY_INIT,
 };
 
@@ -139,7 +138,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         break;
     case 'D':
-        ctx.is_decrypt = YES;
+        ctx.is_decrypt = 1;
         break;
     case 'I':
         ctx.data.size = sizeof(ctx.data.buffer);
