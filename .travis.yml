@@ -1,10 +1,37 @@
-sudo: false
-dist: trusty
+sudo: required
 
 language: c
+
+services:
+  - docker
+
 compiler:
   - gcc
-  - clang-3.8
+  - clang
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "XrDhcREuntMn39qhSFBSSKZli9ZduGKCoq5rs/b+6e5zQIDwyDklwZIvgmrx2BJV5Sh7c5HB2Uvh9I7HdUOOOqDveZ9dcvjr2me7wfrhfMChB2miK318xVfyrK+6mkRnSMfuvG1CZiIcKYVStN1tX1uou9n3CnGz1ndmt5e4QwSQHR3K3g/HEXEgNjuei0OvtvE35/UaOpdxCoDlV3oExa3pU8mXLL77eskq35ebzwGsOu2zxD3wFhE1DF0O9yH4skH+fOH9ByxqK4n++uxbxXHW2oh4I/mEqr2wyyead/wuVa5UdxMDM7traUojlXy5O/Nn2Zfeky3ngSRQjzEYhKmiU2GiQ6ZBh78tmijPmKQpNOg2+0Uop7iT0SmefhappYOzc7KSTnYtWeEbZ4BXxeXzQZ98WsJj7Tmh258Y53KE2DDrmZYwk4EJuc6/4dv/HNMDdH8ZDzAdwMBi4lcsLnf8GQG/jfWYsrvCQQECkSfP2ICuRL9k/8pUUAnbp3X/WbCEMtaETy9STz7PNVqiWsSv/m9lBDVaHwZ7K87TdqhyDhYRDmPYP8qtu/M0tlNZ/M0VGo09xUgkb8Q2nNB7ahC7XYtBeHEIoIu6nf18gW8LgknpuhskF75ZHrKhh5VeN1zoPbG/oFYEk7ehNjGZC268d7jep5p5EaJzch5ai14="
+
+before_install:
+- docker pull tpm2software/tpm2-tss
+
+script:
+#
+# Docker starts you in a cloned repo of your project with the PR checkout out.
+# We want those changes IN the docker image, so use the -v option to mount the
+# project repo in the docker image.
+#
+# Also, pass in any env variables required for the build via .ci/docker.env file
+#
+# Execute the build and test procedure by running .ci/docker.run
+#
+- >
+  docker run --env-file .ci/docker.env \
+    -v `pwd`:/workspace/tpm2-tools tpm2software/tpm2-tss \
+    /bin/bash -c '/workspace/tpm2-tools/.ci/docker.run'
 
 addons:
   coverity_scan:
@@ -15,68 +42,3 @@ addons:
     build_command_prepend: "./bootstrap && ./configure && make clean"
     build_command:   "make -j4"
     branch_pattern: coverity_scan
-  apt:
-    packages:
-    - autoconf-archive
-    - libcurl4-openssl-dev
-    - libdbus-1-dev
-    - libglib2.0-dev
-    - clang-3.8
-    - pandoc
-    - lcov
-    - liburiparser-dev
-
-env:
-  global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "XrDhcREuntMn39qhSFBSSKZli9ZduGKCoq5rs/b+6e5zQIDwyDklwZIvgmrx2BJV5Sh7c5HB2Uvh9I7HdUOOOqDveZ9dcvjr2me7wfrhfMChB2miK318xVfyrK+6mkRnSMfuvG1CZiIcKYVStN1tX1uou9n3CnGz1ndmt5e4QwSQHR3K3g/HEXEgNjuei0OvtvE35/UaOpdxCoDlV3oExa3pU8mXLL77eskq35ebzwGsOu2zxD3wFhE1DF0O9yH4skH+fOH9ByxqK4n++uxbxXHW2oh4I/mEqr2wyyead/wuVa5UdxMDM7traUojlXy5O/Nn2Zfeky3ngSRQjzEYhKmiU2GiQ6ZBh78tmijPmKQpNOg2+0Uop7iT0SmefhappYOzc7KSTnYtWeEbZ4BXxeXzQZ98WsJj7Tmh258Y53KE2DDrmZYwk4EJuc6/4dv/HNMDdH8ZDzAdwMBi4lcsLnf8GQG/jfWYsrvCQQECkSfP2ICuRL9k/8pUUAnbp3X/WbCEMtaETy9STz7PNVqiWsSv/m9lBDVaHwZ7K87TdqhyDhYRDmPYP8qtu/M0tlNZ/M0VGo09xUgkb8Q2nNB7ahC7XYtBeHEIoIu6nf18gW8LgknpuhskF75ZHrKhh5VeN1zoPbG/oFYEk7ehNjGZC268d7jep5p5EaJzch5ai14="
-
-before_install:
-    - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
-    - pip install --user cpp-coveralls pyyaml
-
-install: 
-    - wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm974.tar.gz
-    - sha256sum ibmtpm974.tar.gz | grep -q 8e45d86129a0adb95fee4cee51f4b1e5b2d81ed3e55af875df53f98f39eb7ad7
-    - mkdir ibmtpm974 && pushd ibmtpm974 && tar axf ../ibmtpm974.tar.gz && pushd ./src && make
-    - ./tpm_server &
-    - popd && popd
-    - wget http://ftpmirror.gnu.org/autoconf-archive/autoconf-archive-2017.09.28.tar.xz
-    - sha256sum autoconf-archive-2017.09.28.tar.xz | grep -q 5c9fb5845b38b28982a3ef12836f76b35f46799ef4a2e46b48e2bd3c6182fa01
-    - tar xJf autoconf-archive-2017.09.28.tar.xz && pushd autoconf-archive-2017.09.28
-    - ./configure --prefix=/usr && make -j$(nproc) && sudo make install
-    - popd
-    - git clone https://github.com/tpm2-software/tpm2-tss.git
-    - pushd tpm2-tss
-    - ./bootstrap && ./configure --disable-esapi && make -j$(nproc)
-    - sudo ../.ci/travis-tss-install.sh
-    - popd
-    - sudo ldconfig /usr/local/lib
-    - git clone https://github.com/tpm2-software/tpm2-abrmd.git
-    - pushd tpm2-abrmd
-    - git am ../.ci/patches/abrmd/* || true
-    - ./bootstrap && ./configure --disable-dlclose --with-dbuspolicydir=/etc/dbus-1/system.d && make -j$(nproc) && sudo make install && popd
-    - sudo mkdir -p /var/lib/tpm
-    - sudo groupadd tss && sudo useradd -M -d /var/lib/tpm -s /bin/false -g tss tss
-    - sudo pkill -HUP dbus-daemon
-    - sudo -u tss tpm2-abrmd --tcti=libtcti-socket.so &
-    - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka-dev_1.0.1-2_amd64.deb
-    - wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cmocka/libcmocka0_1.0.1-2_amd64.deb
-    - sha256sum libcmocka-dev_1.0.1-2_amd64.deb | grep -q edb0dcfa14893b0a03375c4fe3b852043ce8fca8f2397cde340562554f6d50eb
-    - sha256sum libcmocka0_1.0.1-2_amd64.deb | grep -q 797155b45a8288a860c4ed9dd3f161420f09ebf362de30166d9f6b98bfc27dd0
-    - sudo dpkg -i libcmocka0_1.0.1-2_amd64.deb
-    - sudo dpkg -i libcmocka-dev_1.0.1-2_amd64.deb
-    # openssl 1.0.2g
-    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.0.0_1.0.2g-1ubuntu4.10_amd64.deb
-    - wget http://security.ubuntu.com/ubuntu/pool/main/o/openssl/libssl-dev_1.0.2g-1ubuntu4.10_amd64.deb
-    - sha256sum libssl1.0.0_1.0.2g-1ubuntu4.10_amd64.deb | grep -q 99f550db61b0054715095fc77901280e81235900435f90b7db34af406f053832
-    - sha256sum libssl-dev_1.0.2g-1ubuntu4.10_amd64.deb | grep -q e44b09b81717a9ae86ff17adae1729682cb00b5285710e991f7b61c8a351c744
-    - sudo dpkg -i libssl1.0.0_1.0.2g-1ubuntu4.10_amd64.deb
-    - sudo dpkg -i libssl-dev_1.0.2g-1ubuntu4.10_amd64.deb
-
-script:
-    - ./.ci/travis-build-and-run-tests.sh
-
-after_failure:
-   - cat build/test-suite.log

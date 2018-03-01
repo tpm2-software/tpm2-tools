@@ -1,5 +1,6 @@
-#!/bin/bash
-
+#!/usr/bin/env bash
+#;**********************************************************************;
+#
 # Copyright (c) 2017, Intel Corporation
 # All rights reserved.
 #
@@ -13,6 +14,10 @@
 # this list of conditions and the following disclaimer in the documentation
 # and/or other materials provided with the distribution.
 #
+# 3. Neither the name of Intel Corporation nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -24,15 +29,33 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
+#;**********************************************************************;
 
-# This script is a wrapper around the the 'make install' command for the
-# TSS source code. This is a workaround for a travis-ci quirk that causes
-# any command run under 'sudo' to be unable to run clang. This script fixes
-# up the borked PATH, moves to the directory where we built the TSS and then
-# runs 'make install'
-# see: https://github.com/travis-ci/travis-ci/issues/3088
+function get_deps() {
 
-PATH=${PATH}:/usr/local/clang/bin
-(pushd ${TRAVIS_BUILD_DIR}/tpm2-tss && \
- make install && \
- popd)
+	echo "pwd starting: `pwd`"
+	pushd "$1"
+	echo "pwd clone tss: `pwd`"
+	git clone https://github.com/tpm2-software/tpm2-tss.git
+	pushd tpm2-tss
+	echo "pwd build tss: `pwd`"
+	./bootstrap
+	./configure
+	make -j4
+	make install
+	popd
+	echo "pwd done tss: `pwd`"
+
+	echo "pwd clone abrmd: `pwd`"
+	git clone https://github.com/tpm2-software/tpm2-abrmd.git
+	pushd tpm2-abrmd
+	echo "pwd build abrmd: `pwd`"
+	./bootstrap
+	./configure
+	make -j4
+	make install
+	popd
+	echo "pwd done abrmd: `pwd`"
+	popd
+	echo "pwd done: `pwd`"
+}

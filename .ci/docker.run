@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #;**********************************************************************;
 #
 # Copyright (c) 2017, Intel Corporation
@@ -29,10 +30,51 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
-#!/usr/bin/env bash
 
 # all command failures are fatal
 set -e
+
+WORKSPACE=`dirname $TRAVIS_BUILD_DIR`
+
+echo "Workspace: $WORKSPACE"
+
+source $TRAVIS_BUILD_DIR/.ci/download-deps.sh
+
+get_deps "$WORKSPACE"
+
+export LD_LIBRARY_PATH=/usr/local/lib/
+
+echo "echo changing to $TRAVIS_BUILD_DIR"
+# Change to the the travis build dir
+cd $TRAVIS_BUILD_DIR
+
+echo "starting dbus"
+mkdir -p /var/run/dbus
+if [ -e /var/run/dbus/pid ]; then
+  rm /var/run/dbus/pid
+fi
+
+# start dbus
+dbus-daemon --fork --system
+echo "dbus started"
+
+# let dbus have time to start up
+sleep 5
+
+echo "starting tpm server"
+# start the tpm server
+/ibmtpm974/src/tpm_server &
+echo "tpm server started"
+
+# start tpm2-abrmd
+
+# let the tpm simulator have time to start up before abrmd
+# tries to connect.
+sleep 5
+
+echo "starting abrmd server"
+tpm2-abrmd --allow-root --tcti=socket &
+echo "started abrmd server"
 
 if [ -d build ]; then
   rm -rf build
@@ -74,17 +116,6 @@ else #GCC
   echo "Exported ENABLE_COVERAGE=true"
   config_flags="--disable-hardening --enable-code-coverage"
 fi
-
-# Travis is using some EGLIBC version of libc
-# which appears to have some atexit() handling
-# issues when dlclose is used. Just disable it
-# for gcc builds, as clang DOES NOT run the
-# the system tests.
-# I cannot reproduce this on:
-#  OS: Ubuntu 16.04.3 LTS
-#   C: ldd (Ubuntu GLIBC 2.23-0ubuntu10) 2.23
-config_flags="--disable-dlclose $config_flags"
-echo "Enabling configure flag --disable-dlclose"
 
 # Bootstrap in the tpm2.0-tss tools directory
 ./bootstrap
