@@ -52,7 +52,7 @@ loaded-key:
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms.
 
-  * **-g**, **--alg**=_ALGORITHM_:
+  * **-D**, **--digest-alg**=_ALGORITHM_:
     Like -g, but specifies the algorithm of sign.
     See section "Supported Signing Algorithms" for details.
 
