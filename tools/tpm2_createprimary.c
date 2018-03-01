@@ -267,7 +267,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     tpm2_util_tpma_object_to_yaml(ctx.objdata.in.public.publicArea.objectAttributes);
-    tpm2_tool_output("handle: 0x%X", ctx.objdata.out.handle);
+    tpm2_tool_output("handle: 0x%X\n", ctx.objdata.out.handle);
 
     if (!ctx.context_file) {
         return 0;
