@@ -74,7 +74,7 @@ get_capability_handles(TSS2_SYS_CONTEXT *sapi_ctx, UINT32 property,
                                 NULL);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_GetCapability, rval);
-    } else if (more_data == YES) {
+    } else if (more_data) {
         LOG_WARN("More data to be queried: capability: 0x%x, property: "
                  "0x%x", TPM2_CAP_HANDLES, property);
     }
