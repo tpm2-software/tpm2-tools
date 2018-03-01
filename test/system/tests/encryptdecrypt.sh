@@ -40,14 +40,22 @@ onerror() {
 
 cleanup() {
   rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat &>/dev/null
+        encrypt.out secret.dat commands.cap
 }
 trap cleanup EXIT
 
 cleanup
 
+# set the error handler for checking tpm2_getcap call
+trap onerror ERR
+
 # Check for encryptdecrypt command code 0x164
-tpm2_getcap -c commands | grep -q 0x164
+tpm2_getcap -c commands > commands.cap
+
+# clear the handler for the grep check
+trap - ERR
+
+grep -q 0x164 commands.cap
 if [ $? != 0 ];then
     echo "WARN: Command EncryptDecrypt is not supported by your device, skipping..."
     exit 0
