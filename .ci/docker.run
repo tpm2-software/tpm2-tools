@@ -43,6 +43,7 @@ source $TRAVIS_BUILD_DIR/.ci/download-deps.sh
 get_deps "$WORKSPACE"
 
 export LD_LIBRARY_PATH=/usr/local/lib/
+export PATH=$PATH:/root/.local/bin/
 
 echo "echo changing to $TRAVIS_BUILD_DIR"
 # Change to the the travis build dir
