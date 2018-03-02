@@ -114,7 +114,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
     UINT16 size;
     BYTE *sig = tpm2_extract_plain_signature(&size, &signature);
     tpm2_tool_output("  sig: ");
-    tpm2_util_hexdump(sig, size, true);
+    tpm2_util_hexdump(sig, size);
     tpm2_tool_output("\n");
     free(sig);
 

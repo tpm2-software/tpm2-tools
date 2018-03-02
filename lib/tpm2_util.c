@@ -132,45 +132,19 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
     return 0;
 }
 
-void tpm2_util_hexdump(const BYTE *data, size_t len, bool plain) {
+void tpm2_util_hexdump(const BYTE *data, size_t len) {
 
     if (!output_enabled) {
         return;
     }
 
-    if (plain) {
-        size_t i;
-        for (i=0; i < len; i++) {
-            printf("%02x", data[i]);
-        }
-        return;
-    }
-
     size_t i;
-    size_t j;
-    for (i = 0; i < len; i += 16) {
-        printf("%06zx: ", i);
-
-        for (j = 0; j < 16; j++) {
-            if (i + j < len) {
-                printf("%02x ", data[i + j]);
-            } else {
-                printf("   ");
-            }
-        }
-
-        printf(" ");
-
-        for (j = 0; j < 16; j++) {
-            if (i + j < len) {
-                printf("%c", isprint(data[i + j]) ? data[i + j] : '.');
-            }
-        }
-        printf("\n");
+    for (i=0; i < len; i++) {
+        printf("%02x", data[i]);
     }
 }
 
-bool tpm2_util_hexdump_file(FILE *fd, size_t len, bool plain) {
+bool tpm2_util_hexdump_file(FILE *fd, size_t len) {
     BYTE* buff = (BYTE*)malloc(len);
     if (!buff) {
         LOG_ERR("malloc() failed");
@@ -184,7 +158,7 @@ bool tpm2_util_hexdump_file(FILE *fd, size_t len, bool plain) {
         return false;
     }
 
-    tpm2_util_hexdump(buff, len, plain);
+    tpm2_util_hexdump(buff, len);
 
     free(buff);
     return true;
@@ -198,7 +172,7 @@ bool tpm2_util_print_tpm2b_file(FILE *fd)
         LOG_ERR("File read failed");
         return false;
     }
-    return tpm2_util_hexdump_file(fd, len, true);
+    return tpm2_util_hexdump_file(fd, len);
 }
 
 /* TODO OPTIMIZE ME */
@@ -387,7 +361,7 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
     if (public->publicArea.authPolicy.size) {
         tpm2_tool_output("authorization policy: ");
         tpm2_util_hexdump(public->publicArea.authPolicy.buffer,
-                public->publicArea.authPolicy.size, true);
+                public->publicArea.authPolicy.size);
         tpm2_tool_output("\n");
     }
 }
