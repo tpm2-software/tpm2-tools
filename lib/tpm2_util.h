@@ -196,18 +196,6 @@ static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
 bool tpm2_util_print_tpm2b_file(FILE *fd);
 
 /**
- * Copies a tpm2b from dest to src and clears dest if src is NULL.
- * If src is NULL, it is a NOP.
- * @param dest
- *  The destination TPM2B
- * @param src
- *  The source TPM2B
- * @return
- *  The number of bytes copied.
- */
-UINT16 tpm2_util_copy_tpm2b(TPM2B *dest, TPM2B *src);
-
-/**
  * Checks if the host is big endian
  * @return
  *  True of the host is big endian false otherwise.
