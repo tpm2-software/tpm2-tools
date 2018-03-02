@@ -47,6 +47,8 @@ onerror() {
 }
 trap onerror ERR
 
+tpm2_dictionarylockout -Q -V -c &>/dev/null
+
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7
 
 tpm2_getcap -c properties-variable > $out
