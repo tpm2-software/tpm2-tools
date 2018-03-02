@@ -142,7 +142,7 @@ static bool print_TPMS_QUOTE_INFO(FILE* fd, size_t indent_count) {
         // print PCR selection in hex
         print_yaml_indent(indent_count + 3);
         tpm2_tool_output("pcrSelect: ");
-        res = tpm2_util_hexdump_file(fd, sizeofSelect, true);
+        res = tpm2_util_hexdump_file(fd, sizeofSelect);
         tpm2_tool_output("\n");
         if (!res) {
             goto read_error;
@@ -174,7 +174,7 @@ static bool print_TPMS_ATTEST_yaml(FILE* fd) {
         goto read_error;
     }
     tpm2_tool_output("magic: ");
-    tpm2_util_hexdump((const UINT8*)&magic, sizeof(UINT32), true);
+    tpm2_util_hexdump((const UINT8*)&magic, sizeof(UINT32));
     tpm2_tool_output("\n");
     magic = tpm2_util_ntoh_32(magic); // finally, convert endianness
 
@@ -190,7 +190,7 @@ static bool print_TPMS_ATTEST_yaml(FILE* fd) {
         goto read_error;
     }
     tpm2_tool_output("type: ");
-    tpm2_util_hexdump((const UINT8*)&type, sizeof(UINT16), true);
+    tpm2_util_hexdump((const UINT8*)&type, sizeof(UINT16));
     tpm2_tool_output("\n");
     type = tpm2_util_ntoh_16(type); // finally, convert endianness
 
@@ -215,7 +215,7 @@ static bool print_TPMS_ATTEST_yaml(FILE* fd) {
     }
 
     tpm2_tool_output("firmwareVersion: ");
-    res = tpm2_util_hexdump_file(fd, sizeof(UINT64), true);
+    res = tpm2_util_hexdump_file(fd, sizeof(UINT64));
     tpm2_tool_output("\n");
     if (!res) {
         goto read_error;
