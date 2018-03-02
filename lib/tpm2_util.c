@@ -175,28 +175,6 @@ bool tpm2_util_print_tpm2b_file(FILE *fd)
     return tpm2_util_hexdump_file(fd, len);
 }
 
-/* TODO OPTIMIZE ME */
-UINT16 tpm2_util_copy_tpm2b(TPM2B *dest, TPM2B *src) {
-    int i;
-    UINT16 rval = 0;
-
-    if (dest != 0) {
-        if (src == 0) {
-            dest->size = 0;
-            rval = 0;
-        } else {
-            dest->size = src->size;
-            for (i = 0; i < src->size; i++)
-                dest->buffer[i] = src->buffer[i];
-            rval = (sizeof(UINT16) + src->size);
-        }
-    } else {
-        rval = 0;
-    }
-
-    return rval;
-}
-
 bool tpm2_util_is_big_endian(void) {
 
     uint32_t test_word;
