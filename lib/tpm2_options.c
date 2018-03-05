@@ -76,17 +76,6 @@
 
 #define TPM2TOOLS_ENV_TCTI_NAME      "TPM2TOOLS_TCTI_NAME"
 
-struct tpm2_options {
-    struct {
-        tpm2_option_handler on_opt;
-        tpm2_arg_handler on_arg;
-    } callbacks;
-    tpm2_option_flags flags;
-    char *short_opts;
-    size_t len;
-    struct option long_opts[];
-};
-
 tpm2_option_flags *tpm2_options_get_flags(tpm2_options *opts) {
     return &opts->flags;
 }
