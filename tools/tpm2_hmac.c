@@ -310,7 +310,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
      */
     if (!(ctx.flags.k || ctx.flags.c)) {
         LOG_ERR("Must specify options k or c");
-        return false;
+        return rc;
     }
 
     if (ctx.flags.c) {
@@ -319,7 +319,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         if (!result) {
             LOG_ERR("Loading tpm context from file \"%s\" failed.",
                     ctx.context_key_file_path);
-            return false;
+            return rc;
         }
     }
 

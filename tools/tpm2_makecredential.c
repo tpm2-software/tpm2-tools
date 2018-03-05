@@ -229,7 +229,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (!ctx.flags.e || !ctx.flags.n || !ctx.flags.o || !ctx.flags.s) {
         LOG_ERR("Expected options e, n, o and s");
-        return false;
+        return 1;
     }
 
     return make_credential_and_save(sapi_context) != true;

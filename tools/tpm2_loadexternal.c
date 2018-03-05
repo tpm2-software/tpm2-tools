@@ -167,7 +167,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (!(ctx.flags.H && ctx.flags.u)) {
         LOG_ERR("Expected H and u options");
-        return false;
+        return 1;
     }
 
     bool result = load_external(sapi_context);
