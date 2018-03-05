@@ -22,10 +22,6 @@ program to decode and display the response in a human readable form.
 
 # OPTIONS
 
-  * **-i**, **--input**=_INPUT\FILE_:
-
-    Input file to read a command buffer from. Defaults to stdin.
-
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
     Output file to send response buffer to. Defaults to stdout.

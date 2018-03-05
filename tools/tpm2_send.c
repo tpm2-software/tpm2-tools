@@ -154,11 +154,11 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "--output", required_argument, NULL, 'o' },
+        { "out-file", required_argument, NULL, 'o' },
     };
 
     tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
-    *opts = tpm2_options_new("i:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts,
             on_option, on_args, empty_flags);
 
     ctx.input = stdin;
