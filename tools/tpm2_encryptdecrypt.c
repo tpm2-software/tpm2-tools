@@ -194,9 +194,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     ctx.session_data.sessionHandle = TPM_RS_PW;
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
+    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("k:P:DI:o:c:S:", ARRAY_LEN(topts), topts,
-            on_option, NULL, empty_flags);
+            on_option, NULL, flags);
 
     return *opts != NULL;
 }
