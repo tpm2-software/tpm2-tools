@@ -200,7 +200,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"input-session-handle", required_argument, NULL, 'S'},
       {"set-list",             required_argument, NULL, 'L' },
       {"pcr-input-file",       required_argument, NULL, 'F' },
-      {NULL,                   no_argument,       NULL, '\0'}
     };
 
     tpm2_option_flags empty_flags = tpm2_option_flags_init(0);

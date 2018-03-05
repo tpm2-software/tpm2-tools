@@ -311,7 +311,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"obj-context",   required_argument, NULL, 'C'},
       {"key-context",   required_argument, NULL, 'c'},
       { "format",      required_argument, NULL, 'f' },
-      {NULL,           no_argument,       NULL, '\0'}
     };
 
     tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
