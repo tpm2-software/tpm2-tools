@@ -199,4 +199,14 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         tpm2_options *tool_opts, tpm2_option_flags *flags,
         TSS2_TCTI_CONTEXT **tcti);
 
+/**
+ * Print usage summary for a given tpm2 tool.
+ *
+ * @param command
+ *  The command to print its usage summary text.
+ * @param tool_opts
+ *  The tpm2_options array that contains the tool options to print as a summary.
+ */
+void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts);
+
 #endif /* OPTIONS_H */

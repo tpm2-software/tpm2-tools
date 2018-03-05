@@ -257,6 +257,30 @@ static void show_version (const char *name) {
             tcti_conf);
 }
 
+void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
+    unsigned int i;
+
+    printf("usage: %s%s%s\n", command,
+           tool_opts->callbacks.on_opt ? " [OPTIONS]" : "",
+           tool_opts->callbacks.on_arg ? " ARGUMENTS" : "");
+
+    if (tool_opts->callbacks.on_opt) {
+        for (i = 0; i < tool_opts->len; i++) {
+            struct option *opt = &tool_opts->long_opts[i];
+            printf("[ -%c | --%s%s]", opt->val, opt->name,
+                   opt->has_arg ? "=VALUE" : "");
+            if ((i + 1) % 4 == 0) {
+                printf("\n");
+            } else {
+                printf(" ");
+            }
+        }
+        if (i % 4 != 0) {
+            printf("\n");
+        }
+    }
+}
+
 tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
         tpm2_options *tool_opts, tpm2_option_flags *flags,
         TSS2_TCTI_CONTEXT **tcti) {
@@ -311,7 +335,9 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
             tcti_opts = tcti_get_opts(optarg);
             break;
         case 'h':
-            execute_man(argv[0]);
+            if (!execute_man(argv[0]) && flags->show_usage) {
+                tpm2_print_usage(argv[0], tool_opts);
+            }
             result = false;
             goto out;
             break;
