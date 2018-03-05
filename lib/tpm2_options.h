@@ -48,6 +48,7 @@ union tpm2_option_flags {
         UINT8 quiet          : 1;
         UINT8 enable_errata  : 1;
         UINT8 no_sapi        : 1;
+	UINT8 show_usage     : 1;
     };
     UINT8 all;
 };
@@ -56,6 +57,7 @@ union tpm2_option_flags {
 #define TPM2_OPTION_FLAG_QUIET         (1 << 1)
 #define TPM2_OPTION_FLAG_ENABLE_ERRATA (1 << 2)
 #define TPM2_OPTION_NO_SAPI            (1 << 3)
+#define TPM2_OPTION_SHOW_USAGE         (1 << 4)
 
 /**
  * This function pointer defines the interface for tcti initialization.

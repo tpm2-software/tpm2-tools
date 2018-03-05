@@ -140,9 +140,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"key-context", required_argument, NULL, 'c'},
     };
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
+    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("k:o:c:", ARRAY_LEN(topts), topts,
-            on_option, on_args, empty_flags);
+            on_option, on_args, flags);
 
     return *opts != NULL;
 }

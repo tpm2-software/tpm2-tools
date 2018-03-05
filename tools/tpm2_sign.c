@@ -271,9 +271,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"format",               required_argument, NULL, 'f'}
     };
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
+    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("k:P:g:m:t:s:c:S:f:", ARRAY_LEN(topts), topts,
-            on_option, NULL, empty_flags);
+            on_option, NULL, flags);
 
     return *opts != NULL;
 }
