@@ -317,7 +317,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"policy-file",1,NULL,'L'},
       {"object-attributes", required_argument, NULL, 'A'},
       {"input-session-handle",1,NULL,'S'},
-      {0,0,0,0}
     };
 
     setbuf(stdout, NULL);
