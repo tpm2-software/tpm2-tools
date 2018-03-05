@@ -203,15 +203,10 @@ static char *tcti_get_opts(char *optstr) {
     return &split[1];
 }
 
-static void execute_man (char *prog_name, char *envp[]) {
+static void execute_man(char *prog_name) {
 
     char *manpage = basename(prog_name);
-    char *argv[] = {
-        "/man", // ARGv[0] needs to be something.
-        manpage,
-        NULL
-    };
-    execvpe ("man", argv, envp);
+    execlp("man", "man", manpage, NULL);
     LOG_ERR("Could not execute \"man %s\" error: %s", manpage,
             strerror(errno));
 }
@@ -294,7 +289,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
             tcti_opts = tcti_get_opts(optarg);
             break;
         case 'h':
-            execute_man(argv[0], envp);
+            execute_man(argv[0]);
             result = false;
             goto out;
             break;
