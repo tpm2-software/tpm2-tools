@@ -93,30 +93,6 @@ static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
     return sapi_ctx;
 }
 
-void print_usage(const char *command, struct tpm2_options *tool_opts) {
-    unsigned int i;
-
-    tpm2_tool_output("usage: %s%s%s\n", command,
-                     tool_opts->callbacks.on_opt ? " [OPTIONS]" : "",
-                     tool_opts->callbacks.on_arg ? " ARGUMENTS" : "");
-
-    if (tool_opts->callbacks.on_opt) {
-        for (i = 0; i < tool_opts->len; i++) {
-            struct option *opt = &tool_opts->long_opts[i];
-            tpm2_tool_output("[ -%c | --%s%s]", opt->val, opt->name,
-                             opt->has_arg ? "=VALUE" : "");
-            if ((i + 1) % 4 == 0) {
-                tpm2_tool_output("\n");
-            } else {
-                tpm2_tool_output(" ");
-            }
-        }
-        if (i % 4 != 0) {
-            tpm2_tool_output("\n");
-        }
-    }
-}
-
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
  * nothing more than parsing command line options that allow the caller to
@@ -145,7 +121,7 @@ int main(int argc, char *argv[], char *envp[]) {
     tpm2_option_flags *flags = tpm2_options_get_flags(tool_opts);
 
     if (argc == 1 && flags->show_usage) {
-        print_usage(argv[0], tool_opts);
+        tpm2_print_usage(argv[0], tool_opts);
         return ret;
     }
 
