@@ -23,7 +23,7 @@ To build and install the tpm2-tools software the following software is required:
   * Curl library and header files
 
 #### Optional Dependencies:
-  * To build the man pages you need [md2man-roff](https://github.com/sunaku/md2man)
+  * To build the man pages you need [pandoc](https://github.com/jgm/pandoc)
   * To enable the new userspace resource manager, one must get tpm2-tabrmd
     (**recommended**).
 
