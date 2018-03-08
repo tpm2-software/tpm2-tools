@@ -66,147 +66,147 @@ struct dispatch_table {
 static bool authread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_AUTHREAD;
+    *nv |= TPMA_NV_AUTHREAD;
     return true;
 }
 
 static bool authwrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_AUTHWRITE;
+    *nv |= TPMA_NV_AUTHWRITE;
     return true;
 }
 
 static bool clear_stclear(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_CLEAR_STCLEAR;
+    *nv |= TPMA_NV_CLEAR_STCLEAR;
     return true;
 }
 
 static bool globallock(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_GLOBALLOCK;
+    *nv |= TPMA_NV_GLOBALLOCK;
     return true;
 }
 
 static bool no_da(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_NO_DA;
+    *nv |= TPMA_NV_NO_DA;
     return true;
 }
 
 static bool orderly(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_ORDERLY;
+    *nv |= TPMA_NV_ORDERLY;
     return true;
 }
 
 static bool ownerread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_OWNERREAD;
+    *nv |= TPMA_NV_OWNERREAD;
     return true;
 }
 
 static bool ownerwrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_OWNERWRITE;
+    *nv |= TPMA_NV_OWNERWRITE;
     return true;
 }
 
 static bool platformcreate(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_PLATFORMCREATE;
+    *nv |= TPMA_NV_PLATFORMCREATE;
     return true;
 }
 
 static bool policyread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_POLICYREAD;
+    *nv |= TPMA_NV_POLICYREAD;
     return true;
 }
 
 static bool policywrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_POLICYWRITE;
+    *nv |= TPMA_NV_POLICYWRITE;
     return true;
 }
 
 static bool policydelete(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_POLICY_DELETE;
+    *nv |= TPMA_NV_POLICY_DELETE;
     return true;
 }
 
 static bool ppread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_PPREAD;
+    *nv |= TPMA_NV_PPREAD;
     return true;
 }
 
 static bool ppwrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_PPWRITE;
+    *nv |= TPMA_NV_PPWRITE;
     return true;
 }
 
 static bool readlocked(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_READLOCKED;
+    *nv |= TPMA_NV_READLOCKED;
     return true;
 }
 
 static bool read_stclear(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_READ_STCLEAR;
+    *nv |= TPMA_NV_READ_STCLEAR;
     return true;
 }
 
 static bool writeall(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_WRITEALL;
+    *nv |= TPMA_NV_WRITEALL;
     return true;
 }
 
 static bool writedefine(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_WRITEDEFINE;
+    *nv |= TPMA_NV_WRITEDEFINE;
     return true;
 }
 
 static bool writelocked(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_WRITELOCKED;
+    *nv |= TPMA_NV_WRITELOCKED;
     return true;
 }
 
 static bool write_stclear(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_WRITE_STCLEAR;
+    *nv |= TPMA_NV_WRITE_STCLEAR;
     return true;
 }
 
 static bool written(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    *nv |= TPMA_NV_TPMA_NV_WRITTEN;
+    *nv |= TPMA_NV_WRITTEN;
     return true;
 }
 
@@ -226,7 +226,7 @@ static bool nt(TPMA_NV *nv, char *arg) {
         return false;
     }
 
-    *nv &= ~TPMA_NV_TPM2_NT;
+    *nv &= ~TPMA_NV_TPM2_NT_MASK;
     *nv |= value << 4;
     return true;
 }

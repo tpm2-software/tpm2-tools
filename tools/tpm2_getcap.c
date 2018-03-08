@@ -237,7 +237,7 @@ tpm2_tool_output_tpma_modes (TPMA_MODES    modes)
             "  raw: 0x%X\n", modes);
     if (modes & TPMA_MODES_FIPS_140_2)
         tpm2_tool_output ("  value: TPMA_MODES_FIPS_140_2\n");
-    if (modes & TPMA_MODES_RESERVED1)
+    if (modes & TPMA_MODES_RESERVED1_MASK)
         tpm2_tool_output ("  value: TPMA_MODES_RESERVED1 (these bits shouldn't be set)\n");
 }
 /*
@@ -250,11 +250,11 @@ dump_permanent_attrs (TPMA_PERMANENT attrs)
     tpm2_tool_output ("  ownerAuthSet:              %s\n", prop_str (attrs & TPMA_PERMANENT_OWNERAUTHSET));
     tpm2_tool_output ("  endorsementAuthSet:        %s\n", prop_str (attrs & TPMA_PERMANENT_ENDORSEMENTAUTHSET));
     tpm2_tool_output ("  lockoutAuthSet:            %s\n", prop_str (attrs & TPMA_PERMANENT_LOCKOUTAUTHSET));
-    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs & TPMA_PERMANENT_RESERVED1));
+    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs & TPMA_PERMANENT_RESERVED1_MASK));
     tpm2_tool_output ("  disableClear:              %s\n", prop_str (attrs & TPMA_PERMANENT_DISABLECLEAR));
     tpm2_tool_output ("  inLockout:                 %s\n", prop_str (attrs & TPMA_PERMANENT_INLOCKOUT));
     tpm2_tool_output ("  tpmGeneratedEPS:           %s\n", prop_str (attrs & TPMA_PERMANENT_TPMGENERATEDEPS));
-    tpm2_tool_output ("  reserved2:                 %s\n", prop_str (attrs & TPMA_PERMANENT_RESERVED2));
+    tpm2_tool_output ("  reserved2:                 %s\n", prop_str (attrs & TPMA_PERMANENT_RESERVED2_MASK));
 }
 /*
  * Print string representations of the TPMA_STARTUP_CLEAR attributes.
@@ -267,7 +267,7 @@ dump_startup_clear_attrs (TPMA_STARTUP_CLEAR attrs)
     tpm2_tool_output ("  shEnable:                  %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_SHENABLE));
     tpm2_tool_output ("  ehEnable:                  %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_EHENABLE));;
     tpm2_tool_output ("  phEnableNV:                %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_PHENABLENV));
-    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_RESERVED1));
+    tpm2_tool_output ("  reserved1:                 %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_RESERVED1_MASK));
     tpm2_tool_output ("  orderly:                   %s\n", prop_str (attrs & TPMA_STARTUP_CLEAR_ORDERLY));
 }
 /*
@@ -594,7 +594,7 @@ dump_algorithm_properties (TPM2_ALG_ID       id,
     tpm2_tool_output ("  symmetric:  %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_SYMMETRIC));
     tpm2_tool_output ("  hash:       %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_HASH));
     tpm2_tool_output ("  object:     %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_OBJECT));
-    tpm2_tool_output ("  reserved:   0x%X\n", (alg_attrs & TPMA_ALGORITHM_RESERVED1) >> 4);
+    tpm2_tool_output ("  reserved:   0x%X\n", (alg_attrs & TPMA_ALGORITHM_RESERVED1_MASK) >> 4);
     tpm2_tool_output ("  signing:    %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_SIGNING));
     tpm2_tool_output ("  encrypting: %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_ENCRYPTING));
     tpm2_tool_output ("  method:     %s\n", prop_str (alg_attrs & TPMA_ALGORITHM_METHOD));
@@ -769,21 +769,21 @@ static const char *cc_to_str(UINT32 cc) {
 static bool
 dump_command_attrs (TPMA_CC tpma_cc)
 {
-    const char *value = cc_to_str(tpma_cc & TPMA_CC_COMMANDINDEX);
+    const char *value = cc_to_str(tpma_cc & TPMA_CC_COMMANDINDEX_MASK);
     if (!value) {
         return false;
     }
     tpm2_tool_output ("%s:\n", value);
     tpm2_tool_output ("  value: 0x%X\n", tpma_cc);
-    tpm2_tool_output ("  commandIndex: 0x%x\n", tpma_cc & TPMA_CC_COMMANDINDEX);
-    tpm2_tool_output ("  reserved1:    0x%x\n", (tpma_cc & TPMA_CC_RESERVED1) >> 16);
+    tpm2_tool_output ("  commandIndex: 0x%x\n", tpma_cc & TPMA_CC_COMMANDINDEX_MASK);
+    tpm2_tool_output ("  reserved1:    0x%x\n", (tpma_cc & TPMA_CC_RESERVED1_MASK) >> 16);
     tpm2_tool_output ("  nv:           %s\n",   prop_str (tpma_cc & TPMA_CC_NV));
     tpm2_tool_output ("  extensive:    %s\n",   prop_str (tpma_cc & TPMA_CC_EXTENSIVE));
     tpm2_tool_output ("  flushed:      %s\n",   prop_str (tpma_cc & TPMA_CC_FLUSHED));
-    tpm2_tool_output ("  cHandles:     0x%x\n", tpma_cc & TPMA_CC_CHANDLES >>25);
+    tpm2_tool_output ("  cHandles:     0x%x\n", tpma_cc & TPMA_CC_CHANDLES_MASK >> TPMA_CC_CHANDLES_SHIFT);
     tpm2_tool_output ("  rHandle:      %s\n",   prop_str (tpma_cc & TPMA_CC_RHANDLE));
     tpm2_tool_output ("  V:            %s\n",   prop_str (tpma_cc & TPMA_CC_V));
-    tpm2_tool_output ("  Res:          0x%x\n", tpma_cc  & TPMA_CC_RES >>21);
+    tpm2_tool_output ("  Res:          0x%x\n", tpma_cc  & TPMA_CC_RES_MASK >> TPMA_CC_RES_SHIFT);
     return true;
 }
 /*
