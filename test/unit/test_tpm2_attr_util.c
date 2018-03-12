@@ -48,7 +48,7 @@
         char arg[] = argstr; \
         bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs); \
         assert_true(res); \
-        assert_true(nvattrs == TPMA_NV_##set); \
+        assert_true(nvattrs == set); \
     }
 
 nv_single_item_test("authread", TPMA_NV_AUTHREAD);
@@ -81,7 +81,7 @@ static void test_tpm2_attr_util_nv_strtoattr_nt_good(void **state) {
     char arg[] = "nt=0x1";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true((nvattrs & TPMA_NV_TPM2_NT) >> 4 == 0x1);
+    assert_true((nvattrs & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT == 0x1);
 }
 
 static void test_tpm2_attr_util_nv_strtoattr_nt_bad(void **state) {
@@ -130,9 +130,9 @@ static void test_tpm2_attr_util_nv_strtoattr_multiple_good(void **state) {
     char arg[] = "authread|authwrite|nt=0x4";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true((nvattrs & TPMA_NV_TPM2_NT) >> 4 == 0x4);
-    assert_true(nvattrs & TPMA_NV_TPMA_NV_AUTHREAD);
-    assert_true(nvattrs & TPMA_NV_TPMA_NV_AUTHWRITE);
+    assert_true((nvattrs & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT == 0x4);
+    assert_true(nvattrs & TPMA_NV_AUTHREAD);
+    assert_true(nvattrs & TPMA_NV_AUTHWRITE);
 }
 
 static void test_tpm2_attr_util_nv_strtoattr_token_unknown(void **state) {
@@ -174,27 +174,27 @@ static void test_tpm2_attr_util_nv_strtoattr_token_unknown(void **state) {
 		cmocka_unit_test(test_tpm2_nv_util_attrtostr_##value)
 
 test_nv_attrtostr(0, "<none>");
-test_nv_attrtostr(TPMA_NV_TPMA_NV_PPWRITE, "ppwrite")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_OWNERWRITE, "ownerwrite")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_AUTHWRITE, "authwrite")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_POLICYWRITE, "policywrite")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_POLICY_DELETE, "policydelete")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_WRITELOCKED, "writelocked")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_WRITEALL, "writeall")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_WRITEDEFINE, "writedefine")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_WRITE_STCLEAR, "write_stclear")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_GLOBALLOCK, "globallock")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_PPREAD, "ppread")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_OWNERREAD, "ownerread")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_AUTHREAD, "authread")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_POLICYREAD, "policyread")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_NO_DA, "no_da")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_ORDERLY, "orderly")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_CLEAR_STCLEAR, "clear_stclear")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_READLOCKED, "readlocked")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_WRITTEN, "written")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_PLATFORMCREATE, "platformcreate")
-test_nv_attrtostr(TPMA_NV_TPMA_NV_READ_STCLEAR, "read_stclear")
+test_nv_attrtostr(TPMA_NV_PPWRITE, "ppwrite")
+test_nv_attrtostr(TPMA_NV_OWNERWRITE, "ownerwrite")
+test_nv_attrtostr(TPMA_NV_AUTHWRITE, "authwrite")
+test_nv_attrtostr(TPMA_NV_POLICYWRITE, "policywrite")
+test_nv_attrtostr(TPMA_NV_POLICY_DELETE, "policydelete")
+test_nv_attrtostr(TPMA_NV_WRITELOCKED, "writelocked")
+test_nv_attrtostr(TPMA_NV_WRITEALL, "writeall")
+test_nv_attrtostr(TPMA_NV_WRITEDEFINE, "writedefine")
+test_nv_attrtostr(TPMA_NV_WRITE_STCLEAR, "write_stclear")
+test_nv_attrtostr(TPMA_NV_GLOBALLOCK, "globallock")
+test_nv_attrtostr(TPMA_NV_PPREAD, "ppread")
+test_nv_attrtostr(TPMA_NV_OWNERREAD, "ownerread")
+test_nv_attrtostr(TPMA_NV_AUTHREAD, "authread")
+test_nv_attrtostr(TPMA_NV_POLICYREAD, "policyread")
+test_nv_attrtostr(TPMA_NV_NO_DA, "no_da")
+test_nv_attrtostr(TPMA_NV_ORDERLY, "orderly")
+test_nv_attrtostr(TPMA_NV_CLEAR_STCLEAR, "clear_stclear")
+test_nv_attrtostr(TPMA_NV_READLOCKED, "readlocked")
+test_nv_attrtostr(TPMA_NV_WRITTEN, "written")
+test_nv_attrtostr(TPMA_NV_PLATFORMCREATE, "platformcreate")
+test_nv_attrtostr(TPMA_NV_READ_STCLEAR, "read_stclear")
 
 test_nv_attrtostr(0x100, "<reserved(8)>") //bit 8 - reserved
 test_nv_attrtostr(0x200, "<reserved(9)>") //bit 9 - reserved
@@ -231,13 +231,13 @@ test_nv_attrtostr(0xFFFFFFFF, NV_ALL_FIELDS);
     }
 
 test_nv_attrtostr_compound(stclear_ppwrite,
-        TPMA_NV_TPMA_NV_WRITE_STCLEAR|TPMA_NV_TPMA_NV_PPWRITE,
+        TPMA_NV_WRITE_STCLEAR|TPMA_NV_PPWRITE,
         "ppwrite|write_stclear")
 test_nv_attrtostr_compound(stclear_ppwrite_0x30,
-        TPMA_NV_TPMA_NV_WRITE_STCLEAR|TPMA_NV_TPMA_NV_PPWRITE|0x30,
+        TPMA_NV_WRITE_STCLEAR|TPMA_NV_PPWRITE|0x30,
         "ppwrite|nt=0x3|write_stclear")
 test_nv_attrtostr_compound(platformcreate_owneread_nt_0x90_0x20000,
-        TPMA_NV_TPMA_NV_PLATFORMCREATE|TPMA_NV_TPMA_NV_AUTHWRITE|0x90|0x200000,
+        TPMA_NV_PLATFORMCREATE|TPMA_NV_AUTHWRITE|0x90|0x200000,
         "authwrite|nt=0x9|<reserved(21)>|platformcreate")
 
 /*
@@ -311,12 +311,12 @@ test_obj_attrtostr(TPMA_OBJECT_RESTRICTED, "restricted");
 test_obj_attrtostr(TPMA_OBJECT_DECRYPT, "decrypt");
 test_obj_attrtostr(TPMA_OBJECT_SIGN, "sign");
 
-test_obj_attrtostr(TPMA_OBJECT_RESERVED1, "<reserved(0)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED2, "<reserved(3)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED3, "<reserved(8)>|<reserved(9)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED4, "<reserved(12)>|<reserved(13)>|" \
+test_obj_attrtostr(TPMA_OBJECT_RESERVED1_MASK, "<reserved(0)>");
+test_obj_attrtostr(TPMA_OBJECT_RESERVED2_MASK, "<reserved(3)>");
+test_obj_attrtostr(TPMA_OBJECT_RESERVED3_MASK, "<reserved(8)>|<reserved(9)>");
+test_obj_attrtostr(TPMA_OBJECT_RESERVED4_MASK, "<reserved(12)>|<reserved(13)>|" \
         "<reserved(14)>|<reserved(15)>");
-test_obj_attrtostr(TPMA_OBJECT_RESERVED5, "<reserved(19)>|<reserved(20)>|" \
+test_obj_attrtostr(TPMA_OBJECT_RESERVED5_MASK, "<reserved(19)>|<reserved(20)>|" \
         "<reserved(21)>|<reserved(22)>|<reserved(23)>|<reserved(24)>|" \
         "<reserved(25)>|<reserved(26)>|<reserved(27)>|<reserved(28)>|" \
         "<reserved(29)>|<reserved(30)>|<reserved(31)>");
@@ -399,27 +399,27 @@ int main(int argc, char* argv[]) {
             cmocka_unit_test(test_tpm2_attr_util_nv_strtoattr_multiple_good),
             cmocka_unit_test(test_tpm2_attr_util_nv_strtoattr_option_no_option),
             cmocka_unit_test(test_tpm2_attr_util_nv_strtoattr_token_unknown),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_PPWRITE),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_OWNERWRITE),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_AUTHWRITE),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_POLICYWRITE),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_POLICY_DELETE),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_WRITELOCKED),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_WRITEALL),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_WRITEDEFINE),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_WRITE_STCLEAR),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_GLOBALLOCK),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_PPREAD),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_OWNERREAD),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_AUTHREAD),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_POLICYREAD),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_NO_DA),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_ORDERLY),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_CLEAR_STCLEAR),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_READLOCKED),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_WRITTEN),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_PLATFORMCREATE),
-            test_nv_attrtostr_get(TPMA_NV_TPMA_NV_READ_STCLEAR),
+            test_nv_attrtostr_get(TPMA_NV_PPWRITE),
+            test_nv_attrtostr_get(TPMA_NV_OWNERWRITE),
+            test_nv_attrtostr_get(TPMA_NV_AUTHWRITE),
+            test_nv_attrtostr_get(TPMA_NV_POLICYWRITE),
+            test_nv_attrtostr_get(TPMA_NV_POLICY_DELETE),
+            test_nv_attrtostr_get(TPMA_NV_WRITELOCKED),
+            test_nv_attrtostr_get(TPMA_NV_WRITEALL),
+            test_nv_attrtostr_get(TPMA_NV_WRITEDEFINE),
+            test_nv_attrtostr_get(TPMA_NV_WRITE_STCLEAR),
+            test_nv_attrtostr_get(TPMA_NV_GLOBALLOCK),
+            test_nv_attrtostr_get(TPMA_NV_PPREAD),
+            test_nv_attrtostr_get(TPMA_NV_OWNERREAD),
+            test_nv_attrtostr_get(TPMA_NV_AUTHREAD),
+            test_nv_attrtostr_get(TPMA_NV_POLICYREAD),
+            test_nv_attrtostr_get(TPMA_NV_NO_DA),
+            test_nv_attrtostr_get(TPMA_NV_ORDERLY),
+            test_nv_attrtostr_get(TPMA_NV_CLEAR_STCLEAR),
+            test_nv_attrtostr_get(TPMA_NV_READLOCKED),
+            test_nv_attrtostr_get(TPMA_NV_WRITTEN),
+            test_nv_attrtostr_get(TPMA_NV_PLATFORMCREATE),
+            test_nv_attrtostr_get(TPMA_NV_READ_STCLEAR),
             test_nv_attrtostr_get(0),
             test_nv_attrtostr_get(0xFFFFFFFF),
             test_nv_attrtostr_get(0x100),     // bit 8 - reserved
@@ -463,11 +463,11 @@ int main(int argc, char* argv[]) {
             test_obj_attrtostr_get(TPMA_OBJECT_RESTRICTED),
             test_obj_attrtostr_get(TPMA_OBJECT_DECRYPT),
             test_obj_attrtostr_get(TPMA_OBJECT_SIGN),
-            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED1),
-            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED2),
-            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED3),
-            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED4),
-            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED5),
+            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED1_MASK),
+            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED2_MASK),
+            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED3_MASK),
+            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED4_MASK),
+            test_obj_attrtostr_get(TPMA_OBJECT_RESERVED5_MASK),
 
             /* compound good */
             cmocka_unit_test(test_tpm2_attr_util_obj_strtoattr_multiple_good),
