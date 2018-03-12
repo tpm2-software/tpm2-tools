@@ -74,7 +74,7 @@ echo "tpm server started"
 sleep 5
 
 echo "starting abrmd server"
-tpm2-abrmd --allow-root --tcti="mssim:tcp://127.0.0.1:2321/" &
+tpm2-abrmd --allow-root --tcti=mssim &
 echo "started abrmd server"
 
 if [ -d build ]; then
