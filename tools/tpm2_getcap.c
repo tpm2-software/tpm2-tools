@@ -33,7 +33,6 @@
 #include <stdio.h>
 
 #include <sapi/tpm20.h>
-#include <tcti/tcti_socket.h>
 
 #include "log.h"
 #include "tpm2_alg_util.h"
