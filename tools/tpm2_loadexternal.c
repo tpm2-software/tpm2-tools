@@ -144,7 +144,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "Hierachy", required_argument, NULL, 'H'},
+      { "hierarchy", required_argument, NULL, 'H'},
       { "pubfile",  required_argument, NULL, 'u'},
       { "privfile", required_argument, NULL, 'r'},
       { "context",  required_argument, NULL, 'C'},
