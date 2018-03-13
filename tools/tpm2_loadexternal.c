@@ -57,7 +57,9 @@ struct tpm_loadexternal_ctx {
     } flags;
 };
 
-static tpm_loadexternal_ctx ctx;
+static tpm_loadexternal_ctx ctx = {
+    .hierarchy_value = TPM2_RH_OWNER,
+};
 
 static bool get_hierarchy_value(const char *argument_opt,
         TPMI_RH_HIERARCHY *hierarchy_value) {
