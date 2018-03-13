@@ -24,7 +24,7 @@ scalar.
 # OPTIONS
 
   * **-H**, **--hierarchy**=_HIERARCHY_:
-    hierarchy to use for the ticket.
+    hierarchy to use for the ticket, optional. Defaults to **o**, **TPM_RH_OWNER**.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
