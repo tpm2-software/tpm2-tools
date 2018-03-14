@@ -100,7 +100,7 @@ struct tpm2_hierearchy_pdata {
     .in = { \
         .public = _PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT, \
         .sensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT, \
-        .hierarchy = TPM2_RH_NULL \
+        .hierarchy = TPM2_RH_OWNER \
     }, \
 }
 
