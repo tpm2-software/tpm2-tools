@@ -22,6 +22,7 @@ will create and load a Primary Object. The sensitive area is not returned.
 
   * **-H**, **--hierarchy**=_HIERARCHY_:
     Specify the hierarchy under which the object is created. This will also dictate which authorization secret (if any) must be supplied.
+    Defaults to **o**, **TPM_RH_OWNER**, when no value specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
