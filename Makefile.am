@@ -314,6 +314,15 @@ if HAVE_PANDOC
     man/man1/tpm2_takeownership.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1
+
+# If pandoc is enabled, we want to generate the manpages for the dist tarball
+EXTRA_DIST += $(man1_MANS)
+else
+# If pandoc is not enabled, we want to complain that you need pandoc for make dist,
+# so hook the target and complain.
+dist-hook:
+	@(>&2 echo "You do not have pandoc, a requirement for the distribution of manpages")
+	@exit 1
 endif
 
 MARKDOWN_COMMON_DEPS = \
