@@ -57,7 +57,7 @@ struct tpm_hash_ctx {
 };
 
 static tpm_hash_ctx ctx = {
-    .hierarchyValue = TPM2_RH_NULL,
+    .hierarchyValue = TPM2_RH_OWNER,
     .halg = TPM2_ALG_SHA1,
 };
 
