@@ -1,4 +1,7 @@
 ## Changelog
+### next
+  * Print usage summary if tools are executed with no options or man page can't be displayed.
+
 ### 3.0.3 - 2017-15-18
   * Tools that don't need a TPM to work no longer request
     a TPM connection. Namely, tpm2_rc_decode
