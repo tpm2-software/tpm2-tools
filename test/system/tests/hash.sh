@@ -80,7 +80,7 @@ cleanup
 
 # Test stdout output as well as no options.
 # Validate that hash outputs are as expected.
-tpm_hash_val=`echo 1234 | tpm2_hash | tee $out | grep sha1 | cut -d\: -f 2-2 | tr -d '[:space:]'`
+tpm_hash_val=`echo 1234 | tpm2_hash -H n | tee $out | grep sha1 | cut -d\: -f 2-2 | tr -d '[:space:]'`
 sha1sum_val=`echo 1234 | sha1sum  | cut -d\  -f 1-2 | tr -d '[:space:]'`
 if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
   echo "Expected tpm and sha1sum to produce same hashes."
