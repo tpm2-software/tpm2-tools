@@ -28,7 +28,7 @@
 #ifndef SRC_TPM_KDFA_H_
 #define SRC_TPM_KDFA_H_
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 /* TODO DOCUMENT ME */
 /**

@@ -31,7 +31,7 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "log.h"
 #include "tpm2_hierarchy.h"

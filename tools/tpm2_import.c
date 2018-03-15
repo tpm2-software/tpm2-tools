@@ -43,8 +43,8 @@
 #include <openssl/rsa.h>
 
 #include <limits.h>
-#include <sapi/tpm20.h>
-#include <sapi/tss2_mu.h>
+#include <tss2/tpm20.h>
+#include <tss2/tss2_mu.h>
 
 #include "log.h"
 #include "files.h"

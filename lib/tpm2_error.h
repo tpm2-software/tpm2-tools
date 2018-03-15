@@ -30,7 +30,7 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 /**
  * Number of error layers

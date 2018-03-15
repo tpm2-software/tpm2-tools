@@ -34,7 +34,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "tpm2_error.h"
 #include "tpm2_util.h"

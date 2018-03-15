@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include <limits.h>
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "tpm2_convert.h"
 #include "tpm2_options.h"

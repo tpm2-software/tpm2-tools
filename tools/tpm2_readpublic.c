@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "tpm2_convert.h"
 #include "files.h"

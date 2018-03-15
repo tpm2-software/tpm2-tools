@@ -29,7 +29,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "log.h"
 #include "tpm2_error.h"

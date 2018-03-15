@@ -33,7 +33,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "tpm2_errata.h"
 #include "tpm2_tool.h"

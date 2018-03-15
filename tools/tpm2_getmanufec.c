@@ -43,7 +43,7 @@
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "files.h"
 #include "log.h"
