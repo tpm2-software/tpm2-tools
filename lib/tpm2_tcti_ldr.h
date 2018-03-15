@@ -34,8 +34,8 @@
  * Loads a TCTI from a friendly name, library name, or path.
  * For example
  *  friendly:     path = tabrmd
- *  library name: path = libtcti-socket.so
- *  full path:    path = /home/user/lib/libtcti-custom.so
+ *  library name: path = libtss2-tcti-socket.so
+ *  full path:    path = /home/user/lib/libtss2-tcti-custom.so
  * @param path
  *  The path/library to load.
  * @param opts

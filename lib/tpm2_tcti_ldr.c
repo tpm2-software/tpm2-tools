@@ -63,13 +63,13 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
 
     /*
      * Try what they gave us, if it doesn't load up, try
-     * libtcti-xxx.so replacing xxx with what they gave us.
+     * libtss2-tcti-xxx.so replacing xxx with what they gave us.
      */
     handle = dlopen (path, RTLD_LAZY);
     if (!handle) {
 
         char buf[PATH_MAX];
-        size_t size = snprintf(buf, sizeof(buf), "libtcti-%s.so", path);
+        size_t size = snprintf(buf, sizeof(buf), "libtss2-tcti-%s.so", path);
         if (size >= sizeof(buf)) {
             LOG_ERR("Truncated friendly name conversion, got: \"%s\", made: \"%s\"",
                     path, buf);
