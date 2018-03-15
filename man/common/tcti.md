@@ -18,8 +18,7 @@ The variables respected depend on how the software was configured.
 	* tabrmd - The new resource manager, called
 	           [tabrmd](https://github.com/tpm2-software/tpm2-abrmd).
 	           Note that tabrmd and abrmd as a tcti name are synonymous.
-	* socket - Typically used with the old resource manager, or for communicating to
-	           the TPM software simulator.
+	* mssim  - Typically used for communicating to the TPM software simulator.
 	* device - Used when talking directly to a TPM device file.
 
 One can pass TCTI specific options to a TCTI via the _TPM2TOOLS\_TCTI\_NAME_ environment
@@ -49,9 +48,9 @@ available. They override any environment variables.
       The default is /dev/tpm0.
       Example: **-T device:/dev/tpm0** or **export _TPM2TOOLS\_TCTI\_NAME_="device:/dev/tpm0"**
 
-    * For the socket TCTI, the domain name or IP address and port number used by the socket
+    * For the mssim TCTI, the domain name or IP address and port number used by the simulator
       can be specified. The default are 127.0.0.1 and 2321.
-      Example: **-T socket:tcp://127.0.0.1:2321** or **export _TPM2TOOLS\_TCTI\_NAME_="socket:tcp://127.0.0.1:2321"**
+      Example: **-T mssim:tcp://127.0.0.1:2321** or **export _TPM2TOOLS\_TCTI\_NAME_="mssim:tcp://127.0.0.1:2321"**
 
     * For the abrmd TCTI, the configuration string format is a series of simple key value pairs
       separated by a ',' character. Each key and value string are separated by a '=' character.
