@@ -99,7 +99,7 @@ static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
  * nothing more than parsing command line options that allow the caller to
  * specify which TCTI to use for the test.
  */
-int main(int argc, char *argv[], char *envp[]) {
+int main(int argc, char *argv[]) {
 
     int ret = 1;
 
@@ -119,7 +119,7 @@ int main(int argc, char *argv[], char *envp[]) {
 
     tpm2_option_flags flags = { .all = 0 };
     TSS2_TCTI_CONTEXT *tcti = NULL;
-    tpm2_option_code rc = tpm2_handle_options(argc, argv, envp, tool_opts, &flags, &tcti);
+    tpm2_option_code rc = tpm2_handle_options(argc, argv, tool_opts, &flags, &tcti);
     if (rc != tpm2_option_code_continue) {
         ret = rc == tpm2_option_code_err ? 1 : 0;
         goto free_opts;

@@ -178,8 +178,6 @@ enum tpm2_option_code {
  *  The argc from main.
  * @param argv
  *  The argv from main.
- * @param envp
- *  The envp from main.
  * @param tool_opts
  *  The tool options gathered during onstart() lifecycle call.
  * @param flags
@@ -193,7 +191,7 @@ enum tpm2_option_code {
  *  Used by tpm2_tool, and likely should only be used there.
  *
  */
-tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
+tpm2_option_code tpm2_handle_options (int argc, char **argv,
         tpm2_options *tool_opts, tpm2_option_flags *flags,
         TSS2_TCTI_CONTEXT **tcti);
 
