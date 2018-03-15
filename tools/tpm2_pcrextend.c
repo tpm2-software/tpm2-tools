@@ -49,11 +49,6 @@ static tpm_pcr_extend_ctx ctx;
 
 static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_DH_PCR pcr_index, TPML_DIGEST_VALUES *digests) {
-
-    /*
-     * TODO SUPPORT AUTH VALUES HERE
-     * Bug: https://github.com/tpm2-software/tpm2-tools/issues/388
-     */
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
     TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, {{ .sessionHandle=TPM2_RS_PW }}};
 
