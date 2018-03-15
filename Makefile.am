@@ -136,7 +136,9 @@ lib_libcommon_a_SOURCES = \
     lib/tpm2_tcti_ldr.c \
     lib/tpm2_tcti_ldr.h \
     lib/tpm2_convert.c \
-    lib/tpm2_convert.h
+    lib/tpm2_convert.h \
+    lib/tpm2_capability.c \
+    lib/tpm2_capability.h
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
