@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 #include <stdbool.h>
 
 #include "pcr.h"

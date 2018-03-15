@@ -31,7 +31,7 @@
 #ifndef SRC_PASSWORD_UTIL_H_
 #define SRC_PASSWORD_UTIL_H_
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 /**
  * Convert a password argument to a valid TPM2B_AUTH structure. Passwords can

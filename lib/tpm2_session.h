@@ -30,7 +30,7 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 typedef struct tpm2_session_data tpm2_session_data;
 typedef struct tpm2_session tpm2_session;

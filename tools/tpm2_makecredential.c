@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "files.h"
 #include "tpm2_options.h"

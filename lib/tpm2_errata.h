@@ -31,7 +31,7 @@
 #ifndef TPM2_ERRATA_H
 #define TPM2_ERRATA_H
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 #include <stdbool.h>
 
 /*

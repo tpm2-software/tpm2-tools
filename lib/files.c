@@ -33,8 +33,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include <sapi/tpm20.h>
-#include <sapi/tss2_mu.h>
+#include <tss2/tpm20.h>
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"

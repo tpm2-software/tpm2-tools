@@ -25,7 +25,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************
 
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include <openssl/err.h>
 #include <openssl/hmac.h>

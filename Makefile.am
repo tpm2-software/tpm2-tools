@@ -37,13 +37,13 @@ INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS := \
-    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(SAPI_CFLAGS) $(CRYPTO_CFLAGS) \
+    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_SYS_CFLAGS) $(CRYPTO_CFLAGS) \
     $(CODE_COVERAGE_CFLAGS)
 
 AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
-    $(LIB_COMMON) $(SAPI_LIBS) $(CRYPTO_LIBS) -ldl
+    $(LIB_COMMON) $(TSS2_SYS_LIBS) $(CRYPTO_LIBS) -ldl
 
 # keep me sorted
 bin_PROGRAMS = \

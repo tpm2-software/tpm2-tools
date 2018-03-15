@@ -15,7 +15,7 @@ AS_IF(
     [],
     [AC_MSG_WARN([Required executable pandoc not found, man pages will not be built])])
 AM_CONDITIONAL([HAVE_PANDOC],[test "x${PANDOC}" = "xyes"])
-PKG_CHECK_MODULES([SAPI],[sapi])
+PKG_CHECK_MODULES([TSS2_SYS],[tss2-sys])
 PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
 PKG_CHECK_MODULES([CURL],[libcurl])
 

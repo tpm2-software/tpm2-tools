@@ -32,7 +32,7 @@
 #include <setjmp.h>
 
 #include <cmocka.h>
-#include <sapi/tpm20.h>
+#include <tss2/tpm20.h>
 
 #include "tpm2_util.h"
 #include "tpm2_password_util.h"
