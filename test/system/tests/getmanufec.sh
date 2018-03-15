@@ -38,7 +38,7 @@
 # 2. The suppression option via ASAN_OPTIONS doesn't
 #    exist for 3.6.
 # TODO When this is fixed, remove it.
-# Bug: https://github.com/01org/tpm2-tools/issues/390
+# Bug: https://github.com/tpm2-software/tpm2-tools/issues/390
 if [ "$ASAN_ENABLED" == "true" ]; then
   echo "Skipping ASAN_ENABLED is true"
   exit 0

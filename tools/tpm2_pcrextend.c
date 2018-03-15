@@ -52,7 +52,7 @@ static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
 
     /*
      * TODO SUPPORT AUTH VALUES HERE
-     * Bug: https://github.com/01org/tpm2-tools/issues/388
+     * Bug: https://github.com/tpm2-software/tpm2-tools/issues/388
      */
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
     TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, {{ .sessionHandle=TPM2_RS_PW }}};

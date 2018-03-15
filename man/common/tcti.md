@@ -16,7 +16,7 @@ The variables respected depend on how the software was configured.
   The current known TCTIs are:
 
 	* tabrmd - The new resource manager, called
-	           [tabrmd](https://github.com/01org/tpm2-abrmd).
+	           [tabrmd](https://github.com/tpm2-software/tpm2-abrmd).
 	           Note that tabrmd and abrmd as a tcti name are synonymous.
 	* socket - Typically used with the old resource manager, or for communicating to
 	           the TPM software simulator.
@@ -41,7 +41,7 @@ available. They override any environment variables.
   * **-T**, **--tcti**=_TCTI\_NAME_**[**:_TCTI\_OPTIONS_**]**:
 	Select the TCTI used for communication with the next component down the TSS
 	stack. In most configurations this will be the resource manager:
-	[tabrmd](https://github.com/01org/tpm2-abrmd)
+	[tabrmd](https://github.com/tpm2-software/tpm2-abrmd)
 	Optionally, tcti specific options can appended to _TCTI\_NAME_ by appending
 	a **:** to _TCTI\_NAME_.
 
