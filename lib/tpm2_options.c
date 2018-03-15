@@ -264,15 +264,13 @@ void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     }
 }
 
-tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
+tpm2_option_code tpm2_handle_options (int argc, char **argv,
         tpm2_options *tool_opts, tpm2_option_flags *flags,
         TSS2_TCTI_CONTEXT **tcti) {
 
     tpm2_option_code rc = tpm2_option_code_err;
     bool result = false;
     bool show_help = false;
-
-    UNUSED(envp);
 
     /*
      * Handy way to *try* and find all used options:
