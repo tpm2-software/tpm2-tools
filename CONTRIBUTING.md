@@ -2,7 +2,7 @@
 
 All non security bugs can be filed on the Issues tracker:
 
-<https://github.com/01org/tpm2-tools/issues>
+<https://github.com/tpm2-software/tpm2-tools/issues>
 
 Security sensitive bugs should be emailed to a maintainer or to Intel
 via the guidelines here:

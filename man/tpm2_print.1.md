@@ -44,7 +44,7 @@ cat /path/to/tpm/quote | tpm2_print --type=TPMS_ATTEST
 
 # BUGS
 
-[Github Issues](https://github.com/01org/tpm2-tools/issues)
+[Github Issues](https://github.com/tpm2-software/tpm2-tools/issues)
 
 # HELP
 

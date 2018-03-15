@@ -85,7 +85,7 @@
 
 ### v2.0 - 2017-03-29
 
-  * Tracked on the milestone: https://github.com/01org/tpm2-tools/milestone/2
+  * Tracked on the milestone: https://github.com/tpm2-software/tpm2-tools/milestone/2
   * Reworked all the tools to support configurable TCTIs, based on build time
     configuration, one can specify the tcti via the --tcti (-T) option to all
     tools.

@@ -39,7 +39,7 @@ trap onerror ERR
 
 #
 # codes was generated from the TPM2_RC constants in:
-# https://github.com/01org/tpm2-tss/blob/master/include/sapi/tss2_tpm2_types.h#L68
+# https://github.com/tpm2-software/tpm2-tss/blob/master/include/sapi/tss2_tpm2_types.h#L68
 # Some of these may not be used correctly, which is OK, as tpm2_rc_decode never
 # fails and should attempt to decode it or print some unkown status. This gives
 # us coverage for both known and unkown/malformed inputs.

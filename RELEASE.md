@@ -8,7 +8,7 @@ rc series. Releases shall be pushed to branch coverity_scan, to inititiate a sca
 
 An example can be found here:
 
-<https://github.com/01org/tpm2-tools/releases/tag/2.1.0-rc0>
+<https://github.com/tpm2-software/tpm2-tools/releases/tag/2.1.0-rc0>
 
 Release candidates will also be announced on the
 [mailing list](https://lists.01.org/mailman/listinfo/tpm2). When a rc has gone 1
