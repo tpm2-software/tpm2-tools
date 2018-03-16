@@ -280,7 +280,7 @@ static bool calc_sensitive_unique_data(void) {
     (X).publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;\
     (X).publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;\
     (X).publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;\
-    (X).publicArea.objectAttributes |= TPMA_OBJECT_SIGN;\
+    (X).publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;\
     (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDTPM;\
     (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDPARENT;\
     (X).publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;\

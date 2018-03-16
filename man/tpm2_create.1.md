@@ -49,7 +49,7 @@ These options for creating the tpm entity:
     The object attributes, optional. Object attribytes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
 
-    `TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
+    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
 
   * **-I**, **--in-file**=_FILE_:
     The data file to be sealed, optional. If file is -, read from stdin.

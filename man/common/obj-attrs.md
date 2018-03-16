@@ -12,7 +12,7 @@ prefix **TPMA_OBJECT_** and lowercasing the result. Thus, **TPMA_OBJECT_FIXEDTPM
 fixedtpm. Nice names can be joined using the bitwise or "|" symbol.
 
 For instance, to set The fields **TPMA_OBJECT_FIXEDTPM**,
-**TPMA_OBJECT_NODA**, and **TPMA_OBJECT_SIGN**, the argument
+**TPMA_OBJECT_NODA**, and **TPMA_OBJECT_SIGN_ENCRYPT**, the argument
 would be:
 
 **fixedtpm|noda|sign**
