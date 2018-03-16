@@ -39,7 +39,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"

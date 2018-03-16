@@ -34,7 +34,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 /**
  * Reads a series of bytes from a file as a byte array. This is similar to files_read_bytes(),

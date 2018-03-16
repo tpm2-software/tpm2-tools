@@ -28,7 +28,7 @@
 #ifndef LIB_TPM2_OPENSSL_H_
 #define LIB_TPM2_OPENSSL_H_
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include <openssl/err.h>
 #include <openssl/hmac.h>

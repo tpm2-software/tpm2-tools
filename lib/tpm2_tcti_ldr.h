@@ -25,7 +25,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #ifndef LIB_TPM2_TCTI_LDR_H_
 #define LIB_TPM2_TCTI_LDR_H_

@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdio.h>
+#include <string.h>
 
 #include "files.h"
 #include "log.h"

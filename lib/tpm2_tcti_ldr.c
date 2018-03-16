@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <dlfcn.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_tcti_ldr.h"

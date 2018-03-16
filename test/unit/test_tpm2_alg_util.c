@@ -31,7 +31,7 @@
 #include <stdio.h>
 
 #include <cmocka.h>
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"

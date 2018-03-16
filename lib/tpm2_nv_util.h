@@ -31,7 +31,7 @@
 #ifndef LIB_TPM2_NV_UTIL_H_
 #define LIB_TPM2_NV_UTIL_H_
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_util.h"

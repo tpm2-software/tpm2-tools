@@ -33,7 +33,7 @@
 
 #include <stdbool.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels);
 bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel);

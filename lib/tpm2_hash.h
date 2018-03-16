@@ -33,7 +33,7 @@
 
 #include <stdbool.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 /**
  * Hashes a BYTE array via the tpm.
