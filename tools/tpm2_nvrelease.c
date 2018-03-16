@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_hierarchy.h"

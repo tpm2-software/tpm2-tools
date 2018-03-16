@@ -43,7 +43,7 @@
 #include <openssl/rsa.h>
 
 #include <limits.h>
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 #include <tss2/tss2_mu.h>
 
 #include "log.h"

@@ -28,7 +28,7 @@
 #ifndef SRC_TPM_KDFA_H_
 #define SRC_TPM_KDFA_H_
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 /* TODO DOCUMENT ME */
 /**

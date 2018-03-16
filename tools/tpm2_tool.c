@@ -29,8 +29,9 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdbool.h>
+#include <stdlib.h>
 
- #include <unistd.h>
+#include <unistd.h>
 
 #include "log.h"
 #include "tpm2_tcti_ldr.h"

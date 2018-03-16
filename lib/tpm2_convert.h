@@ -30,7 +30,7 @@
 
 #include <stdbool.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 typedef enum tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt;
 enum tpm2_convert_pubkey_fmt {

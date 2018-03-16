@@ -34,7 +34,7 @@
 
 #include <stdbool.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 typedef enum tpm2_hierarchy_flags tpm2_hierarchy_flags;
 

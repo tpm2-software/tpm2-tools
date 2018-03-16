@@ -32,8 +32,9 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 #include <tss2/tss2_mu.h>
 
 #include "files.h"

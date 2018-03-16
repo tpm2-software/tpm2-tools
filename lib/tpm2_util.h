@@ -35,7 +35,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_error.h"
 
@@ -117,6 +117,11 @@
         } while (tpm2_error_get(__result) == TPM2_RC_RETRY); \
         __result;                                          \
     })
+
+typedef struct {
+    UINT16 size;
+    BYTE buffer[0];
+} TPM2B;
 
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 

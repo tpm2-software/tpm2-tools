@@ -37,7 +37,7 @@
 
 #include <getopt.h>
 
-#include <tss2/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 typedef union tpm2_option_flags tpm2_option_flags;
 union tpm2_option_flags {
