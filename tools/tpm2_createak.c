@@ -183,7 +183,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
     in_public->publicArea.objectAttributes = 0;
     in_public->publicArea.objectAttributes |= TPMA_OBJECT_RESTRICTED;
     in_public->publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
-    in_public->publicArea.objectAttributes |= TPMA_OBJECT_SIGN;
+    in_public->publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;
     in_public->publicArea.objectAttributes &= ~TPMA_OBJECT_DECRYPT;
     in_public->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDTPM;
     in_public->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDPARENT;

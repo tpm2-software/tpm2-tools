@@ -269,7 +269,7 @@ obj_single_item_test("noda", TPMA_OBJECT_NODA);
 obj_single_item_test("encryptedduplication", TPMA_OBJECT_ENCRYPTEDDUPLICATION);
 obj_single_item_test("restricted", TPMA_OBJECT_RESTRICTED);
 obj_single_item_test("decrypt", TPMA_OBJECT_DECRYPT);
-obj_single_item_test("sign", TPMA_OBJECT_SIGN);
+obj_single_item_test("sign", TPMA_OBJECT_SIGN_ENCRYPT);
 
 #define OBJ_ALL_FIELDS \
         "<reserved(0)>|fixedtpm|stclear|<reserved(3)>|fixedparent" \
@@ -309,7 +309,7 @@ test_obj_attrtostr(TPMA_OBJECT_NODA, "noda");
 test_obj_attrtostr(TPMA_OBJECT_ENCRYPTEDDUPLICATION, "encryptedduplication");
 test_obj_attrtostr(TPMA_OBJECT_RESTRICTED, "restricted");
 test_obj_attrtostr(TPMA_OBJECT_DECRYPT, "decrypt");
-test_obj_attrtostr(TPMA_OBJECT_SIGN, "sign");
+test_obj_attrtostr(TPMA_OBJECT_SIGN_ENCRYPT, "sign");
 
 test_obj_attrtostr(TPMA_OBJECT_RESERVED1_MASK, "<reserved(0)>");
 test_obj_attrtostr(TPMA_OBJECT_RESERVED2_MASK, "<reserved(3)>");
@@ -330,11 +330,11 @@ static void test_tpm2_attr_util_obj_strtoattr_multiple_good(void **state) {
     bool res = tpm2_attr_util_obj_strtoattr(arg, &objattrs);
     assert_true(res);
     assert_true(objattrs & TPMA_OBJECT_ADMINWITHPOLICY);
-    assert_true(objattrs & TPMA_OBJECT_SIGN);
+    assert_true(objattrs & TPMA_OBJECT_SIGN_ENCRYPT);
     assert_true(objattrs & TPMA_OBJECT_NODA);
 
     assert_int_equal(objattrs,
-            TPMA_OBJECT_SIGN|TPMA_OBJECT_NODA|TPMA_OBJECT_ADMINWITHPOLICY);
+            TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_NODA|TPMA_OBJECT_ADMINWITHPOLICY);
 }
 
 static void test_tpm2_attr_util_obj_strtoattr_token_unknown(void **state) {
@@ -448,7 +448,7 @@ int main(int argc, char* argv[]) {
             test_obj_strtoattr_get(TPMA_OBJECT_RESTRICTED),
             test_obj_strtoattr_get(TPMA_OBJECT_DECRYPT),
             test_obj_strtoattr_get(TPMA_OBJECT_ADMINWITHPOLICY),
-            test_obj_strtoattr_get(TPMA_OBJECT_SIGN),
+            test_obj_strtoattr_get(TPMA_OBJECT_SIGN_ENCRYPT),
 
             /* From attribute to string value */
             test_obj_attrtostr_get(0xFFFFFFFF),
@@ -462,7 +462,7 @@ int main(int argc, char* argv[]) {
             test_obj_attrtostr_get(TPMA_OBJECT_ENCRYPTEDDUPLICATION),
             test_obj_attrtostr_get(TPMA_OBJECT_RESTRICTED),
             test_obj_attrtostr_get(TPMA_OBJECT_DECRYPT),
-            test_obj_attrtostr_get(TPMA_OBJECT_SIGN),
+            test_obj_attrtostr_get(TPMA_OBJECT_SIGN_ENCRYPT),
             test_obj_attrtostr_get(TPMA_OBJECT_RESERVED1_MASK),
             test_obj_attrtostr_get(TPMA_OBJECT_RESERVED2_MASK),
             test_obj_attrtostr_get(TPMA_OBJECT_RESERVED3_MASK),

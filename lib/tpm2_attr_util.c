@@ -348,7 +348,7 @@ static bool decrypt(TPMA_OBJECT *obj, char *arg) {
 static bool sign(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    *obj |= TPMA_OBJECT_SIGN;
+    *obj |= TPMA_OBJECT_SIGN_ENCRYPT;
     return true;
 }
 

@@ -81,7 +81,7 @@ struct tpm_create_ctx {
 #define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
     .publicArea = { \
         .objectAttributes = \
-                  TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN|TPMA_OBJECT_FIXEDTPM \
+                  TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM \
                   |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN| \
                    TPMA_OBJECT_USERWITHAUTH \
     }, \
@@ -127,12 +127,12 @@ int setup_alg()
         ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_DECRYPT;
         if (ctx.flags.I) {
             // sealing
-            ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN;
+            ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN_ENCRYPT;
             ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
             ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
         } else {
             // hmac
-            ctx.in_public.publicArea.objectAttributes |= TPMA_OBJECT_SIGN;
+            ctx.in_public.publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;
             ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
             ctx.in_public.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = ctx.nameAlg;  //for tpm2_hmac multi alg
         }

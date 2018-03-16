@@ -92,7 +92,7 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
     inPublic->publicArea.objectAttributes |= TPMA_OBJECT_RESTRICTED;
     inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
     inPublic->publicArea.objectAttributes |= TPMA_OBJECT_ADMINWITHPOLICY;
-    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN;
+    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN_ENCRYPT;
     inPublic->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
     inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDTPM;
     inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDPARENT;
