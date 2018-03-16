@@ -68,14 +68,17 @@ static void sapi_teardown_full (TSS2_SYS_CONTEXT *sapi_context) {
     tcti_teardown (tcti_context);
 }
 
+#define SUPPORTED_ABI_VERSION \
+{ \
+    .tssCreator = 1, \
+    .tssFamily = 2, \
+    .tssLevel = 1, \
+    .tssVersion = 108, \
+}
+
 static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 
-    TSS2_ABI_VERSION abi_version = {
-            .tssCreator = TSSWG_INTEROP,
-            .tssFamily = TSS_SAPI_FIRST_FAMILY,
-            .tssLevel = TSS_SAPI_FIRST_LEVEL,
-            .tssVersion = TSS_SAPI_FIRST_VERSION,
-    };
+    TSS2_ABI_VERSION abi_version = SUPPORTED_ABI_VERSION;
 
     size_t size = Tss2_Sys_GetContextSize(0);
     TSS2_SYS_CONTEXT *sapi_ctx = (TSS2_SYS_CONTEXT*) calloc(1, size);
