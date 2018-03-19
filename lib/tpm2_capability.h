@@ -56,4 +56,16 @@ bool tpm2_capability_get (TSS2_SYS_CONTEXT *sapi_ctx,
         UINT32 count,
         TPMS_CAPABILITY_DATA *capability_data);
 
+/**
+ * Attempts to find a vacant handle in the persistent handle namespace.
+ * @param sapi_ctx
+ *  system api context
+ * @param vacant
+ *  the vacant handle found by the function if True returned
+ * @return
+ *  True if a vacant handle was found succesfully, False otherwise.
+ */
+bool tpm2_capability_find_vacant_persistent_handle (TSS2_SYS_CONTEXT *sapi_ctx,
+        UINT32 *vacant);
+
 #endif /* LIB_TPM2_CAPABILITY_H_ */

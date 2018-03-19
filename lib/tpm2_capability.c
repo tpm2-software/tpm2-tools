@@ -34,6 +34,7 @@
 #include <tss2/tss2_sys.h>
 
 #include "log.h"
+#include "tpm2_util.h"
 
 #include "tpm2_capability.h"
 
@@ -66,4 +67,51 @@ bool tpm2_capability_get (TSS2_SYS_CONTEXT *sapi_ctx,
     }
 
     return true;
+}
+
+bool tpm2_capability_find_vacant_persistent_handle (TSS2_SYS_CONTEXT *sapi_ctx,
+        UINT32 *vacant) {
+
+    TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
+    bool ret = tpm2_capability_get(sapi_ctx, TPM2_CAP_HANDLES,
+                    TPM2_PERSISTENT_FIRST, TPM2_MAX_CAP_HANDLES,
+                    &capability_data);
+    if (!ret) {
+        return false;
+    }
+
+    bool handle_found = false;
+    UINT32 count = capability_data.data.handles.count;
+    if (count == 0) {
+        /* There aren't any persistent handles, so use the first */
+        *vacant = TPM2_PERSISTENT_FIRST;
+        handle_found = true;
+    } else if (count == TPM2_MAX_CAP_HANDLES) {
+        /* All persistent handles are already in use */
+        return false;
+    } else if (count < TPM2_MAX_CAP_HANDLES) {
+        /* iterate over used handles to ensure we're selecting
+            the next available handle. */
+        UINT32 i;
+        for (i = TPM2_PERSISTENT_FIRST;
+            i <= (UINT32)TPM2_PERSISTENT_LAST;
+            ++i) {
+            bool inuse = false;
+            UINT32 c;
+            for (c = 0; c < count; ++c) {
+                if (capability_data.data.handles.handle[c] == i) {
+                    inuse = true;
+                    break;
+                }
+            }
+
+            if (!inuse) {
+                *vacant = i;
+                handle_found = true;
+                break;
+            }
+        }
+    }
+
+    return handle_found;
 }
