@@ -29,8 +29,9 @@ be evicted.
 
     The handle of a loaded transient or a persistent object.
 
-    If the handle is for a transient object, then a handle that will be assigned to the persisted
-    object must also be specified with the **-p** option.
+    If the handle is for a transient object it will be persisted, either to the
+    handle specified by the **-p** option, or to the first available vacant
+    persistent handle.
 
     If the handle is for a persistent object, then the **-p** does not need to be provided since the
     handle must be the same for both options.
