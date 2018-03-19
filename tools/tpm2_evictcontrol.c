@@ -48,6 +48,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_session.h"
 #include "tpm2_util.h"
+#include "tpm2_capability.h"
 
 typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
 struct tpm_evictcontrol_ctx {
@@ -153,9 +154,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (!((ctx.flags.H || ctx.flags.c) && ctx.flags.p)) {
-        LOG_ERR("Invalid arguments, expect (-H or -c) and -p");
-        return 1;
+    /* If we've been given a handle or context object to persist and not an explicit persistent handle
+     * to use, find an available vacant handle in the persistent namespace and use that.
+     */
+    if ((ctx.flags.H || ctx.flags.c) && !ctx.flags.p) {
+        bool ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+                &ctx.handle.persist);
+        if (!ret) {
+            tpm2_tool_output("Unable to find a vacant persistent handle.\n");
+            return 1;
+        }
     }
 
     if (ctx.flags.c) {
