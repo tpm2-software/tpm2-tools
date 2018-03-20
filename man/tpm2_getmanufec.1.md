@@ -34,6 +34,8 @@ server.
 
   * **-H**, **--handle**=_HANDLE_:
     specifies the handle used to make EK  persistent (hex).
+    If a value of **-** is passed the tool will find a vacant persistent handle
+    to use and print out the automatically selected handle.
 
   * **-g**, **--algorithm**=_ALGORITHM_:
     specifies the algorithm type of EK.

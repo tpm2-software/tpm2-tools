@@ -54,6 +54,7 @@
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "tpm2_capability.h"
 
 typedef struct tpm_getmanufec_ctx tpm_getmanufec_ctx;
 struct tpm_getmanufec_ctx {
@@ -72,12 +73,14 @@ struct tpm_getmanufec_ctx {
     char *ek_path;
     bool verbose;
     TPM2B_PUBLIC outPublic;
+    bool find_persistent_handle;
 };
 
 static tpm_getmanufec_ctx ctx = {
     .algorithm_type = TPM2_ALG_RSA,
     .endorse_session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     .owner_session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .find_persistent_handle = false
 };
 
 BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8,
@@ -437,7 +440,9 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'H':
-        if (!tpm2_util_string_to_uint32(value, &ctx.persistent_handle)) {
+        if (!strcmp(value, "-")) {
+            ctx.find_persistent_handle = true;
+        } else if (!tpm2_util_string_to_uint32(value, &ctx.persistent_handle)) {
             LOG_ERR("Please input the handle used to make EK persistent(hex) in correct format.");
             return false;
         }
@@ -552,6 +557,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     ctx.verbose = flags.verbose;
+
+    if (ctx.find_persistent_handle) {
+        bool ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+                        &ctx.persistent_handle);
+        if (!ret) {
+            LOG_ERR("handle/H passed with a value of '-' but unable to find a"
+                    " vacant persistent handle!");
+            return 1;
+        }
+        tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persistent_handle);
+    }
 
     if (ctx.ec_cert_path) {
         ctx.ec_cert_file = fopen(ctx.ec_cert_path, "wb");
