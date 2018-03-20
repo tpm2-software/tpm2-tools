@@ -44,10 +44,12 @@ loaded-key:
     Same formatting as the endorse password value or -e option.
 
   * **-E**, **--ek-handle**=_EK\_HANDLE_:
-    Specifies the handle used to make EK persistent.
+    Specifies the persistent handle of the EK.
 
   * **-k**, **--ak-handle**=_AK\_HANDLE_:
     Specifies the handle used to make AK persistent.
+    If a value of **-** is passed the tool will find a vacant persistent handle
+    to use and print out the automatically selected handle.
 
   * **-c**, **--context**=_PATH_:
     Optional, specifies a path to save the context of the AK handle. If one saves
