@@ -101,9 +101,9 @@ required.
 Create an Attestation Key and make it persistent:
 ```
 # create an Endorsement Key (EK)
-tpm2_createek -H 0x81010001 -g rsa -f ek.pub
+tpm2_createek -H 0x81010001 -g rsa -p ek.pub
 # create an Attestation Key (AK) passing the EK handle
-tpm2_createak -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+tpm2_createak -E 0x81010001 -k 0x81010002 -p ./ak.pub -n ./ak.name
 ```
 
 ## Without a Resource Manager (RM)
