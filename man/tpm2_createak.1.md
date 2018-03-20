@@ -15,7 +15,7 @@ endorsement hierarchy.
 
 **tpm2_createak**(1) - Generate an attestation key (AK) with the given
 algorithm under the endorsement hierarchy. It also makes it persistent
-with given AK handle supplied via **-H**. If **-p** is specified, the
+with given AK handle supplied via **-k**. If **-p** is specified, the
 tool outputs the public key to the path supplied as the option argument.
 
 If any passwd option is missing, assume NULL.
