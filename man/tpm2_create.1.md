@@ -20,7 +20,7 @@ The object will need to be loaded before it may be used.
 
 These options for creating the tpm entity:
 
-  * **-H**, **--pparent**=_PARENT\_HANDLE_:
+  * **-H**, **--parent**=_PARENT\_HANDLE_:
     The handle of the parent object to create this object under.
 
   * **-c**, **--context-parent**=_PARENT\_CONTEXT\_FILE_:
