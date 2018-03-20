@@ -22,7 +22,7 @@ Refer to:
 
   * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
     Specifies current endorsement password, defaults to NULL.
-    Passwords should follow the "password formatting standards, see section
+    Passwords should follow the "password formatting standards", see section
     "Password Formatting".
 
   * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_
