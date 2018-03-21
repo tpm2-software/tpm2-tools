@@ -18,7 +18,7 @@ be evicted.
 # OPTIONS
 
   * **-A**, **--auth**=_AUTH_:
-    The authorization used to authorize the commands. Defaults to the "owner" hierarchy.
+    The authorization hierarchy used to authorize the commands. Defaults to the "owner" hierarchy.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
