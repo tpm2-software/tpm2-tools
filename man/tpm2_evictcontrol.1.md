@@ -18,6 +18,7 @@ be evicted.
 # OPTIONS
 
   * **-A**, **--auth**=_AUTH_:
+
     The authorization hierarchy used to authorize the commands. Defaults to the "owner" hierarchy.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
@@ -25,6 +26,7 @@ be evicted.
       * **`<num>`** where a raw number can be used.
 
   * **-H**, **--handle**=_HANDLE_:
+
     The handle of a loaded transient or a persistent object.
 
     If the handle is for a transient object, then a handle that will be assigned to the persisted
@@ -34,13 +36,16 @@ be evicted.
     handle must be the same for both options.
 
   * **-c**, **--context**=_OBJECT\_CONTEXT\_FILE_:
+
     Filename for object context.
 
   * **-p**, **--persistent**=_PERSISTENT\_HANDLE_:
+
     The persistent handle for the object handle specified via _HANDLE_.
 
   * **-P**, **--pwda**=_AUTH\_PASSWORD_:
-    authorization password, optional. Passwords should follow the
+
+    Optional authorization password. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
   * **-S**, **--session**=_SESSION\_FILE_:
