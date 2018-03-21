@@ -53,8 +53,12 @@ tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv  -c primary.ctx
 
 tpm2_load -Q -c primary.ctx  -u key.pub  -r key.priv -n key.name -C key.ctx
 
+# Load the context into a specific handle, delete it
+tpm2_evictcontrol -Q -c key.ctx -p 0x81010003
+tpm2_evictcontrol -Q -H 0x81010003 -p 0x81010003
+# Load the context into a specific handle, delete it without an explicit -p
 tpm2_evictcontrol -Q -A o -c key.ctx -p 0x81010003
 
-tpm2_evictcontrol -Q -A o -H 0x81010003 -p 0x81010003
+tpm2_evictcontrol -Q -A o -H 0x81010003
 
 exit 0
