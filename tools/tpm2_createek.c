@@ -46,6 +46,7 @@
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "tpm2_capability.h"
 
 typedef struct createek_context createek_context;
 struct createek_context {
@@ -62,6 +63,7 @@ struct createek_context {
     struct {
         bool f;
     } flags;
+    bool find_persistent_handle;
 };
 
 static createek_context ctx = {
@@ -71,7 +73,8 @@ static createek_context ctx = {
         .ek = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     },
     .format = pubkey_format_tss,
-    .objdata = TPM2_HIERARCHY_DATA_INIT
+    .objdata = TPM2_HIERARCHY_DATA_INIT,
+    .find_persistent_handle = false
 };
 
 static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
@@ -181,10 +184,17 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'H':
-        result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle);
-        if (!result) {
-            LOG_ERR("Could not convert EK persistent from hex format.");
-            return false;
+        /* If user passes a handle of '-' we try and find a vacant slot for
+         * to use and tell them what it is.
+         */
+        if (!strcmp(value, "-")) {
+            ctx.find_persistent_handle = true;
+        } else {
+            result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle);
+            if (!result) {
+                LOG_ERR("Could not convert EK persistent from hex format.");
+                return false;
+            }
         }
         break;
     case 'e':
@@ -301,6 +311,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (ctx.flags.f && !ctx.out_file_path) {
         LOG_ERR("Please specify an output file name when specifying a format");
         return 1;
+    }
+
+    if (ctx.find_persistent_handle) {
+        bool ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+                        &ctx.persistent_handle);
+        if (!ret) {
+            LOG_ERR("handle/-H passed with a value '-' but unable to find a"
+                    " vacant persistent handle!");
+            return 1;
+        }
+        tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persistent_handle);
     }
 
     if (ctx.context_file && ctx.persistent_handle) {

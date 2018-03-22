@@ -38,6 +38,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "tpm2_capability.h"
 
 /* convenience macro to convert flags into "1" / "0" strings */
 #define prop_str(val) val ? "1" : "0"
@@ -47,7 +48,7 @@
 /* Structure to map a string to the appropriate TPM2_CAP / TPM2_PT pair */
 typedef struct capability_map_entry {
     char     *capability_string;
-    TPM2_CAP   capability;
+    TPM2_CAP  capability;
     UINT32    property;
     UINT32    count;
 } capability_map_entry_t;
@@ -134,7 +135,7 @@ capability_map_entry_t capability_map[] = {
  */
 typedef struct capability_opts {
     char            *capability_string;
-    TPM2_CAP          capability;
+    TPM2_CAP         capability;
     UINT32           property;
     UINT32           count;
     bool             list;
@@ -143,14 +144,13 @@ typedef struct capability_opts {
 static capability_opts_t options;
 
 /*
- * This function uses the 'param' field in the capabilities_opts structure to
- * locate the same string in the capability_map array and then populates the
- * 'capability' and 'property' fields of the capability_opts_t structure with
- * the appropriate values from the capability_map.
+ * This function uses the 'capability_string' field in the capabilities_opts
+ * structure to locate the same string in the capability_map array and then
+ * populates the 'capability' and 'property' fields of the capability_opts_t
+ * structure with the appropriate values from the capability_map.
  * Return values:
  * 0 - the function executed normally.
- * 1 - the parameter 'param' in the capability_opts_t structure is NULL.
- * 2 - no matching entry found in capability_map.
+ * 1 - no matching entry found in capability_map.
  */
 int sanity_check_capability_opts (void) {
 
@@ -174,7 +174,7 @@ int sanity_check_capability_opts (void) {
     LOG_ERR("invalid capability string: %s, see --help",
             options.capability_string);
 
-    return 2;
+    return 1;
 }
 
 static void print_cap_map() {
@@ -861,27 +861,8 @@ dump_handles (TPM2_HANDLE     handles[],
 static TSS2_RC
 get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
                         TPMS_CAPABILITY_DATA  *capability_data) {
-
-    TPMI_YES_NO            more_data;
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability (sapi_ctx,
-                                 NULL,
-                                 options.capability,
-                                 options.property,
-                                 options.count,
-                                 &more_data,
-                                 capability_data,
-                                 NULL));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
-                 options.capability, options.property);
-        LOG_PERR(Tss2_Sys_GetCapability, rval);
-    } else if (more_data) {
-        LOG_WARN("More data to be queried: capability: 0x%x, property: "
-                 "0x%x\n", options.capability, options.property);
-    }
-
-    return rval;
+    return tpm2_capability_get(sapi_ctx, options.capability, options.property,
+                            options.count, capability_data);
 }
 
 /*
@@ -987,22 +968,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     /* List a capability, ie -c <arg> option */
-
-    TSS2_RC rc;
     TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
     int ret;
 
     ret = sanity_check_capability_opts();
     if (ret == 1) {
-        LOG_ERR("Missing capability string. See --help.\n");
-        return 1;
-    } else if (ret == 2) {
         LOG_ERR("Invalid capability string. See --help.\n");
         return 1;
     }
     /* get requested capability from TPM, dump it to stdout */
-    rc = get_tpm_capability_all(sapi_context, &capability_data);
-    if (rc != TPM2_RC_SUCCESS)
+    if (!get_tpm_capability_all(sapi_context, &capability_data))
         return 1;
 
     bool result = dump_tpm_capability(&capability_data.data);

@@ -21,7 +21,8 @@ sign.
 # OPTIONS
 
   * **-H**, **--hierarchy**=_HIERARCHY_:
-    hierarchy to use for the ticket.
+    hierarchy to use for the ticket. Defaults to **o**, **TPM_RH_OWNER**, when
+    no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**

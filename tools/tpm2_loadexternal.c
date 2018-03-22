@@ -42,6 +42,7 @@
 #include "log.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "tpm2_hierarchy.h"
 
 typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {
@@ -57,38 +58,9 @@ struct tpm_loadexternal_ctx {
     } flags;
 };
 
-static tpm_loadexternal_ctx ctx;
-
-static bool get_hierarchy_value(const char *argument_opt,
-        TPMI_RH_HIERARCHY *hierarchy_value) {
-
-    if (strlen(argument_opt) != 1) {
-        LOG_ERR("Wrong Hierarchy Value, got: \"%s\", expected one of e,o,p,n",
-                argument_opt);
-        return false;
-    }
-
-    switch (argument_opt[0]) {
-    case 'e':
-        *hierarchy_value = TPM2_RH_ENDORSEMENT;
-        break;
-    case 'o':
-        *hierarchy_value = TPM2_RH_OWNER;
-        break;
-    case 'p':
-        *hierarchy_value = TPM2_RH_PLATFORM;
-        break;
-    case 'n':
-        *hierarchy_value = TPM2_RH_NULL;
-        break;
-    default:
-        LOG_ERR("Wrong Hierarchy Value, got: \"%s\", expected one of e,o,p,n",
-                argument_opt);
-        return false;
-    }
-
-    return true;
-}
+static tpm_loadexternal_ctx ctx = {
+    .hierarchy_value = TPM2_RH_OWNER,
+};
 
 static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
 
@@ -114,12 +86,13 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'H':
-        result = get_hierarchy_value(value, &ctx.hierarchy_value);
+        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy_value,
+                   TPM2_HIERARCHY_FLAGS_ALL);
         if (!result) {
             return false;
         }
         ctx.flags.H = 1;
-    break;
+        break;
     case 'u':
         if(!files_load_public(value, &ctx.public_key)) {
             return false;;
@@ -144,7 +117,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "Hierachy", required_argument, NULL, 'H'},
+      { "hierarchy", required_argument, NULL, 'H'},
       { "pubfile",  required_argument, NULL, 'u'},
       { "privfile", required_argument, NULL, 'r'},
       { "context",  required_argument, NULL, 'C'},

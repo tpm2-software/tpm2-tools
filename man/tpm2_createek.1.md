@@ -34,7 +34,9 @@ Refer to:
     Same formatting as the endorse password value or -e option.
 
   * **-H**, **--handle**=_HANDLE_:
-    Optional, specifies the handle used to make EK  persistent (hex).
+    Optional, specifies the handle used to make EK persistent (hex).
+    If a value of **-** is passed the tool will find a vacant persistent handle
+    to use and print out the automatically selected handle.
 
   * **-c**, **--context**=_PATH_:
     Optional, specifies a path to save the context of the EK handle. If one saves

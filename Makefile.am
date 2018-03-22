@@ -98,6 +98,7 @@ bin_PROGRAMS = \
     tools/tpm2_verifysignature
 
 noinst_LIBRARIES = $(LIB_COMMON)
+
 lib_libcommon_a_SOURCES = $(LIB_SRC)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 

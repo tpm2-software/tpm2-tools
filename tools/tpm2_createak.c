@@ -47,6 +47,7 @@
 #include "tpm2_session.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
+#include "tpm2_capability.h"
 
 typedef struct createak_context createak_context;
 struct createak_context {
@@ -79,6 +80,7 @@ struct createak_context {
     struct {
         bool f;
     } flags;
+    bool find_persistent_ak;
 };
 
 static createak_context ctx = {
@@ -101,6 +103,7 @@ static createak_context ctx = {
     .owner = {
         .auth = TPM2B_EMPTY_INIT
     },
+    .find_persistent_ak = false
 };
 
 /*
@@ -448,10 +451,14 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'k':
-        result = tpm2_util_string_to_uint32(value, &ctx.ak.in.handle);
-        if (!result) {
-            LOG_ERR("Could not convert persistent AK handle.");
-            return false;
+        if (!strcmp(value, "-")) {
+            ctx.find_persistent_ak = true;
+        } else {
+            result = tpm2_util_string_to_uint32(value, &ctx.ak.in.handle);
+            if (!result) {
+                LOG_ERR("Could not convert persistent AK handle.");
+                return false;
+            }
         }
         break;
     case 'g':
@@ -554,6 +561,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (ctx.flags.f && !ctx.ak.out.pub_file) {
         LOG_ERR("Please specify an output file name when specifying a format");
         return 1;
+    }
+
+    if (ctx.find_persistent_ak) {
+        bool ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+                        &ctx.ak.in.handle);
+        if (!ret) {
+            LOG_ERR("ak-handle/k passed with a value of '-' but unable to find"
+                    " a vacant persistent handle!");
+            return 1;
+        }
+        tpm2_tool_output("ak-persistent-handle: 0x%x\n", ctx.ak.in.handle);
     }
 
     if (ctx.ek.handle && ctx.ek.ctx_file) {
