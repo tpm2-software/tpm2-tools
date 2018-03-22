@@ -1,6 +1,6 @@
 #;**********************************************************************;
 #
-# Copyright (c) 2015, Intel Corporation
+# Copyright (c) 2015-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 @CODE_COVERAGE_RULES@
+
+include src_vars.mk
 
 ACLOCAL_AMFLAGS = -I m4
 
@@ -96,50 +98,8 @@ bin_PROGRAMS = \
     tools/tpm2_verifysignature
 
 noinst_LIBRARIES = $(LIB_COMMON)
-lib_libcommon_a_SOURCES = \
-    lib/files.c \
-    lib/files.h \
-    lib/log.c \
-    lib/log.h \
-    lib/pcr.c \
-    lib/pcr.h \
-    lib/tpm2_alg_util.c \
-    lib/tpm2_alg_util.h \
-    lib/tpm2_attr_util.c \
-    lib/tpm2_attr_util.h \
-    lib/tpm2_ctx_mgmt.c \
-    lib/tpm2_ctx_mgmt.h \
-    lib/tpm2_errata.c \
-    lib/tpm2_errata.h \
-    lib/tpm2_error.c \
-    lib/tpm2_error.h \
-    lib/tpm2_hash.c \
-    lib/tpm2_hash.h \
-    lib/tpm2_header.h \
-    lib/tpm2_hierarchy.c \
-    lib/tpm2_hierarchy.h \
-    lib/tpm2_nv_util.h \
-    lib/tpm2_openssl.c \
-    lib/tpm2_openssl.h \
-    lib/tpm2_password_util.c \
-    lib/tpm2_password_util.h \
-    lib/tpm2_policy.c \
-    lib/tpm2_policy.h \
-    lib/tpm2_util.c \
-    lib/tpm2_util.h \
-    lib/tpm_kdfa.c \
-    lib/tpm_kdfa.h \
-    lib/tpm2_options.c \
-    lib/tpm2_options.h \
-    lib/tpm2_session.c \
-    lib/tpm2_session.h \
-    lib/tpm2_tcti_ldr.c \
-    lib/tpm2_tcti_ldr.h \
-    lib/tpm2_convert.c \
-    lib/tpm2_convert.h \
-    lib/tpm2_capability.c \
-    lib/tpm2_capability.h
 
+lib_libcommon_a_SOURCES = $(LIB_SRC)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_aux_tpm2_print_SOURCES = tools/aux/tpm2_print.c $(TOOL_SRC)
