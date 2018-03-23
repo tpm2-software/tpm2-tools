@@ -145,11 +145,31 @@ static inline const char *fixup_name(const char *name) {
     return !strcmp(name, "abrmd") ? "tabrmd" : name;
 }
 
+static const char *find_default_tcti(void) {
+
+    const char *defaults[] = {
+        "tabrmd",
+        "device",
+        "mssim"
+    };
+
+    size_t i;
+    for(i=0; i < ARRAY_LEN(defaults); i++) {
+        const char *name = defaults[i];
+        bool is_present = tpm2_tcti_ldr_is_tcti_present(name);
+        if (is_present) {
+            return name;
+        }
+    }
+
+    return NULL;
+}
+
 static tcti_conf tcti_get_config(const char *optstr) {
 
     /* set up the default configuration */
     tcti_conf conf = {
-        .name = "tabrmd"
+        .name = find_default_tcti()
     };
 
     /* no tcti config supplied, get it from env */
@@ -229,12 +249,20 @@ static bool execute_man(char *prog_name) {
 }
 
 static void show_version (const char *name) {
-#ifndef DISABLE_DLCLOSE
-    printf("tool=\"%s\" version=\"%s\" tctis=\"dynamic\"\n", name, VERSION);
+
+#ifdef DISABLE_DLCLOSE
+    char *dlconfig="disabled";
 #else
-    printf("tool=\"%s\" version=\"%s\" tctis=\"dynamic\" dlclose=disabled\n",
-            name, VERSION);
+    char *dlconfig="enabled";
 #endif
+
+    const char *tcti_default = find_default_tcti();
+    if (!tcti_default) {
+        tcti_default = "none";
+    }
+
+    printf("tool=\"%s\" version=\"%s\" tctis=\"dynamic\" tcti-default=%s dlclose=%s\n",
+            name, VERSION, tcti_default, dlconfig);
 }
 
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
