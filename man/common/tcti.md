@@ -27,9 +27,10 @@ option config strings are TCTI specific. Specifying **-h** on the tool command l
 show help output for the TCTIs. The section **TCTI OPTIONS** has examples for known TCTIs.
 
 Formally, the format is:
-```<tcti-name>:<tcti-option-config>```
+`<tcti-name>:<tcti-option-config>`
 
-Specifying an empty string for either the ```<tcti-name>``` or ```<tcti-option-config>```
+
+Specifying an empty string for either the `<tcti-name>` or `<tcti-option-config>`
 results in the default being used for that portion respectively.
 
 # TCTI OPTIONS
@@ -37,45 +38,53 @@ results in the default being used for that portion respectively.
 This collection of options are used to configure the various TCTI modules
 available. They override any environment variables.
 
-  * **-T**, **--tcti**=_TCTI\_NAME_**[**:_TCTI\_OPTIONS_**]**:
-	Select the TCTI used for communication with the next component down the TSS
-	stack. In most configurations this will be the resource manager:
-	[tabrmd](https://github.com/tpm2-software/tpm2-abrmd)
-	Optionally, tcti specific options can appended to _TCTI\_NAME_ by appending
-	a **:** to _TCTI\_NAME_.
+  * **-T**, **--tcti**=_TCTI\_NAME_[:_TCTI\_OPTIONS_]:
+	Select the TCTI used for communication with the TPM. This is a two part option, with
+	_TCTI\_NAME_ being the name of the TCTI to be used. This can be a friendly name (-T mssim), a
+	library name (libtss2-tcti-mssim.so) or a path (/foo/bar/libtss2-tcti-mssim.so).
+	Optionally, tcti specific options can appended to _TCTI\_NAME_ by appending 	a **:** to
+	_TCTI\_NAME_. There are 3 known TCTIs, and their name and options are defined below:
 
-    * For the device TCTI, the TPM device file for use by the device TCTI can be specified.
-      The default is /dev/tpm0.
+    * **device**: For the device TCTI, the TPM character device file for use by the device TCTI
+      can be specified. The default is /dev/tpm0.
       Example: **-T device:/dev/tpm0** or **export _TPM2TOOLS\_TCTI\_NAME_="device:/dev/tpm0"**
 
-    * For the mssim TCTI, the domain name or IP address and port number used by the simulator
+    * **mssim**: For the mssim TCTI, the domain name or IP address and port number used by the simulator
       can be specified. The default are 127.0.0.1 and 2321.
       Example: **-T mssim:tcp://127.0.0.1:2321** or **export _TPM2TOOLS\_TCTI\_NAME_="mssim:tcp://127.0.0.1:2321"**
 
-    * For the abrmd TCTI, the configuration string format is a series of simple key value pairs
+    * **abrmd**: For the abrmd TCTI, the configuration string format is a series of simple key value pairs
       separated by a ',' character. Each key and value string are separated by a '=' character.
 
-      * TCTI abrmd supports two keys:
-      1. 'bus_name' : The name of the tabrmd service on the bus (a string).
-      2. 'bus_type' : The type of the dbus instance (a string) limited to
-         'session' and 'system'.
+        * TCTI abrmd supports two keys:
+            1. 'bus_name' : The name of the tabrmd service on the bus (a string).
+            2. 'bus_type' : The type of the dbus instance (a string) limited to
+               'session' and 'system'.
 
-## TCTI Option Examples:
-Specify the tabrmd tcti name and a config string of ```bus_name=com.example.FooBar```:
-```
---tcti=tabrmd:bus_name=com.example.FooBar
-```
+        Specify the tabrmd tcti name and a config string of ```bus_name=com.example.FooBar```:
+        ```
+        --tcti=tabrmd:bus_name=com.example.FooBar
+        ```
 
-Specify the default (abrmd) tcti and a config string of ```bus_type=session```:
-```
---tcti:bus_type=session
-```
+        Specify the default (abrmd) tcti and a config string of ```bus_type=session```:
+        ```
+        --tcti:bus_type=session
+        ```
 
-Specify the device tcti and use the default config:
-```
---tcti=device
-```
-or
-```
---tcti=device:
-```
+        Specify the device tcti and use the default config:
+        ```
+        --tcti=device
+        ```
+        or
+        ```
+        --tcti=device:
+        ```
+
+        **NOTE**: abrmd and tabrmd are synonymous.
+
+## TCTI Defaults
+When a TCTI is not specified, the default TCTI is searched for using dlopen(3) semantics.
+The tools will search for *tabrmd*, *device* and *mssim* TCTIs **IN THAT ORDER** and
+**USE THE FIRST ONE FOUND**. You can query what TCTI will be chosen as the default by
+using the `-v` option to print the version information. The "default-tcti" key-value pair
+will indicate which of the aforementioned TCTIs is the default.

@@ -55,6 +55,16 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts);
 const TSS2_TCTI_INFO *tpm2_tcti_ldr_getinfo(void);
 
 /**
+ * Given a tcti name, like mssim, tells you if the
+ * library is present using dlopen(3).
+ * @param name
+ *   The friendly name of the tcti.
+ * @return
+ *  True if present, false otherwise.
+ */
+bool tpm2_tcti_ldr_is_tcti_present(const char *name);
+
+/**
  * Unloads the tcti loaded via tpm2_tcti_ldr_load();
  */
 void tpm2_tcti_ldr_unload(void);
