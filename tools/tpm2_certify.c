@@ -98,6 +98,7 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
             &out_public, &name, &qualified_name, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_ReadPublic, rval);
+        *type = TPM2_ALG_ERROR;
         return false;
     }
 
