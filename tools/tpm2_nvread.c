@@ -65,7 +65,7 @@ struct tpm_nvread_ctx {
 };
 
 static tpm_nvread_ctx ctx = {
-    .auth_handle = TPM2_RH_PLATFORM,
+    .auth_handle = TPM2_RH_OWNER,
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
