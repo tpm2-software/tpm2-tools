@@ -20,7 +20,8 @@
     Specifies the index to define the space at.
 
   * **-a**, **--auth-handle**=_AUTH_:
-    specifies the handle used to authorize.
+    specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
+    when no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
