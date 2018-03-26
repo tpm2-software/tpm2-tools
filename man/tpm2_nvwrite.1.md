@@ -24,7 +24,8 @@ If _FILE_ is not specified, it defaults to stdin.
     The offset within the NV index to start writing at.
 
   * **-a**, **--auth-handle**=_AUTH_:
-    specifies the handle used to authorize.
+    specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
+    when no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
