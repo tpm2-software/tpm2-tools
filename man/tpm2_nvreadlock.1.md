@@ -24,6 +24,8 @@ is released on subsequent restart of the machine.
     specifies the handle used to authorize:
     * **0x40000001** for **TPM_RH_OWNER**
     * **0x4000000C** for **TPM_RH_PLATFORM**
+    Defaults to **0x40000001**, **TPM_RH_OWNER**, when no value has been
+    specified.
 
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
