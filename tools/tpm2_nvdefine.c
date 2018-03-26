@@ -59,7 +59,7 @@ struct tpm_nvdefine_ctx {
 };
 
 static tpm_nvdefine_ctx ctx = {
-    .auth = TPM2_RH_PLATFORM,
+    .auth = TPM2_RH_OWNER,
     .nvAttribute = 0,
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     .nvAuth = TPM2B_EMPTY_INIT,
