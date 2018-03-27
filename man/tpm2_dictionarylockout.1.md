@@ -17,7 +17,7 @@ dictionary-attack-lockout state, if any passwd option is missing, assume NULL.
 
 # OPTIONS
 
-  * **-s**, **--setup-parameters**=_SETUP\_PARAMETERS_:
+  * **-s**, **--setup-parameters**:
     specifies the tool should operate to setup dictionary-attack-lockout
     parameters.
 
