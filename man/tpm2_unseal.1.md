@@ -51,7 +51,7 @@ alive and pass that session using the **--input-session-handle** option.
     pcr bank specifiers standards, see section "PCR Bank Specfiers".
     **-S** is mutually exclusive of this option.
 
-  * **-F**,**--pcr-input-file=_PCR\_INPUT\_FILE_
+  * **-F**,**--pcr-input-file**=_PCR\_INPUT\_FILE_
 
     Optional Path or Name of the file containing expected pcr values for the specified index.
     Default is to read the current PCRs per the set list.
