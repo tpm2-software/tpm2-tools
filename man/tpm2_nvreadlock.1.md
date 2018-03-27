@@ -22,9 +22,9 @@ is released on subsequent restart of the machine.
 
   * **-a**, **--auth-handle**=_SECRET\_DATA\_FILE_:
     specifies the handle used to authorize:
-    * **0x40000001** for **TPM_RH_OWNER**
-    * **0x4000000C** for **TPM_RH_PLATFORM**
-    Defaults to **0x40000001**, **TPM_RH_OWNER**, when no value has been
+    * **o** for **TPM_RH_OWNER**
+    * **p** for **TPM_RH_PLATFORM**
+    Defaults to **o**, **TPM_RH_OWNER**, when no value has been
     specified.
 
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
