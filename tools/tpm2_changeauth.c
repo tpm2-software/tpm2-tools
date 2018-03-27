@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -36,46 +36,60 @@
 #include <tss2/tss2_sys.h>
 
 #include "log.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct password password;
-struct password {
-    TPM2B_AUTH old;
-    TPM2B_AUTH new;
+typedef struct auth auth;
+struct auth {
+    struct {
+        TPMS_AUTH_COMMAND auth;
+        tpm2_session *session;
+    } old;
+    struct {
+        TPMS_AUTH_COMMAND auth;
+    } new;
 };
 
 typedef struct changeauth_ctx changeauth_ctx;
 struct changeauth_ctx {
     struct {
-        password owner;
-        password endorse;
-        password lockout;
-    } passwords;
+        auth owner;
+        auth endorse;
+        auth lockout;
+    } auths;
 };
 
-static changeauth_ctx ctx;
+static changeauth_ctx ctx = {
+    .auths = {
+        .owner = {
+            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+        },
+        .endorse = {
+            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+        },
+        .lockout = {
+            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
+        },
+    }
+};
 
 static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
-        struct password *pwd, const char *desc,
+        struct auth *pwd, const char *desc,
         TPMI_RH_HIERARCHY_AUTH auth_handle) {
 
-    TPM2B_AUTH newAuth;
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { .count = 1,
-        .auths = {{
-            .sessionHandle = TPM2_RS_PW,
-            .nonce = TPM2B_EMPTY_INIT,
-            .hmac = TPM2B_EMPTY_INIT,
-           .sessionAttributes = 0,
-    }}};
-
-    memcpy(&newAuth, &pwd->new, sizeof(pwd->new));
-    memcpy(&sessionsData.auths[0].hmac, &pwd->old, sizeof(pwd->old));
+    TSS2L_SYS_AUTH_COMMAND sessionsData = {
+        .count = 1,
+        .auths = { pwd->old.auth }
+    };
 
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_HierarchyChangeAuth(sapi_context,
-            auth_handle, &sessionsData, &newAuth, 0));
+            auth_handle, &sessionsData, &pwd->new.auth.hmac, NULL));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_HierarchyChangeAuth, rval);
         return false;
@@ -89,11 +103,11 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
 static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     // change owner, endorsement and lockout auth.
-    return change_auth(sapi_context, &ctx.passwords.owner,
+    return change_auth(sapi_context, &ctx.auths.owner,
                 "Owner", TPM2_RH_OWNER)
-        && change_auth(sapi_context, &ctx.passwords.endorse,
+        && change_auth(sapi_context, &ctx.auths.endorse,
                 "Endorsement", TPM2_RH_ENDORSEMENT)
-        && change_auth(sapi_context, &ctx.passwords.lockout,
+        && change_auth(sapi_context, &ctx.auths.lockout,
                 "Lockout", TPM2_RH_LOCKOUT);
 }
 
@@ -104,44 +118,47 @@ static bool on_option(char key, char *value) {
     switch (key) {
 
     case 'o':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.new);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auths.owner.new.auth, NULL);
         if (!result) {
-            LOG_ERR("Invalid new owner password, got\"%s\"", value);
+            LOG_ERR("Invalid new owner authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'e':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.new);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auths.endorse.new.auth, NULL);
         if (!result) {
-            LOG_ERR("Invalid new endorse password, got\"%s\"", value);
+            LOG_ERR("Invalid new endorse authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'l':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.new);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auths.lockout.new.auth, NULL);
         if (!result) {
-            LOG_ERR("Invalid new lockout password, got\"%s\"", value);
+            LOG_ERR("Invalid new lockout authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'O':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.old);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auths.owner.old.auth,
+                &ctx.auths.owner.old.session);
         if (!result) {
-            LOG_ERR("Invalid current owner password, got\"%s\"", value);
+            LOG_ERR("Invalid current owner authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'E':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.old);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auths.endorse.old.auth,
+                &ctx.auths.endorse.old.session);
         if (!result) {
-            LOG_ERR("Invalid current endorse password, got\"%s\"", value);
+            LOG_ERR("Invalid current endorse authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'L':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.old);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auths.lockout.old.auth,
+                &ctx.auths.lockout.old.session);
         if (!result) {
-            LOG_ERR("Invalid current lockout password, got\"%s\"", value);
+            LOG_ERR("Invalid current lockout authorization, got\"%s\"", value);
             return false;
         }
         break;
@@ -157,9 +174,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "owner-passwd",       required_argument, NULL, 'o' },
         { "endorse-passwd",     required_argument, NULL, 'e' },
         { "lockout-passwd",     required_argument, NULL, 'l' },
-        { "old-owner-passwd",   required_argument, NULL, 'O' },
-        { "old-endorse-passwd", required_argument, NULL, 'E' },
-        { "old-ockout-passwd",  required_argument, NULL, 'L' },
+        { "old-auth-owner",     required_argument, NULL, 'O' },
+        { "old-auth-endorse",   required_argument, NULL, 'E' },
+        { "old-auth-lockout",   required_argument, NULL, 'L' },
     };
 
     *opts = tpm2_options_new("o:e:l:O:E:L:", ARRAY_LEN(topts), topts,
@@ -172,6 +189,20 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
+
+    bool result = change_hierarchy_auth(sapi_context);
+
+    result &= tpm2_session_save(sapi_context, ctx.auths.endorse.old.session, NULL);
+    result &= tpm2_session_save(sapi_context, ctx.auths.owner.old.session, NULL);
+    result &= tpm2_session_save(sapi_context, ctx.auths.lockout.old.session, NULL);
+
     /* true is success, coerce to 0 for program success */
-    return change_hierarchy_auth(sapi_context) == false;
+    return result == false;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auths.endorse.old.session);
+    tpm2_session_free(&ctx.auths.owner.old.session);
+    tpm2_session_free(&ctx.auths.lockout.old.session);
 }

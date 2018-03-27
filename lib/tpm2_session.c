@@ -61,6 +61,7 @@ struct tpm2_session {
 
     struct {
         TPM2B_NONCE nonceNewer;
+        const char *path;
     } internal;
 };
 
@@ -245,6 +246,8 @@ tpm2_session *tpm2_session_restore(const char *path) {
         s->output.session_handle = handle;
     }
 
+    s->internal.path = path;
+
 out:
     fclose(f);
     return s;
@@ -253,11 +256,23 @@ out:
 bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
         const char *path) {
 
+    if (!session) {
+        return true;
+    }
+
     char *ptr = NULL;
     bool result = false;
 
     FILE *mem = NULL;
     FILE *session_file = NULL;
+
+    if (!path) {
+        path = session->internal.path;
+        if (!path) {
+            LOG_ERR("Unknown path to save to");
+            return false;
+        }
+    }
 
     /*
      * Perform a tpm context save/load but just write the

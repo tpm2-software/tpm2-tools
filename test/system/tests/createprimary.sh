@@ -57,7 +57,7 @@ cleanup
 for gAlg in `populate_hash_algs mixed`; do
     for GAlg in 0x01 keyedhash ecc 0x25; do
         for Atype in o e n; do
-            tpm2_createprimary -Q -H $Atype -g $gAlg -G $GAlg -C context.out
+            tpm2_createprimary -Q -a $Atype -g $gAlg -G $GAlg -C context.out
             cleanup keep_context
         done
     done
@@ -68,7 +68,7 @@ policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
 #test for createprimary objects with policy authorization structures
 echo -n "$policy_orig" | xxd -r -p > policy.bin
 
-tpm2_createprimary -Q -H o -G rsa -g sha256 -C context.out -L policy.bin \
+tpm2_createprimary -Q -a o -G rsa -g sha256 -C context.out -L policy.bin \
   -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin'
 
 tpm2_readpublic -c context.out > pub.out

@@ -39,9 +39,9 @@
 #include <tss2/tss2_sys.h>
 
 #include "log.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -49,25 +49,30 @@
 typedef struct tpm_nvreadlock_ctx tpm_nvreadlock_ctx;
 struct tpm_nvreadlock_ctx {
     UINT32 nv_index;
-    TPMI_RH_PROVISION auth_handle;
     UINT32 size_to_read;
     UINT32 offset;
-    TPMS_AUTH_COMMAND session_data;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+        TPMI_RH_PROVISION hierarchy;
+    } auth;
 };
 
 static tpm_nvreadlock_ctx ctx = {
-    .auth_handle = TPM2_RH_OWNER,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-
+    .auth = {
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        .hierarchy = TPM2_RH_OWNER
+    }
 };
 
 static bool nv_readlock(TSS2_SYS_CONTEXT *sapi_context) {
 
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
-            &sessions_data, &sessions_data_out));
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadLock(sapi_context,
+            ctx.auth.hierarchy, ctx.nv_index, &sessions_data,
+            &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to lock NVRAM area at index 0x%X" , ctx.nv_index);
         LOG_PERR(Tss2_Sys_NV_ReadLock, rval);
@@ -96,28 +101,20 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.auth_handle,
+        result = tpm2_hierarchy_from_optarg(value, &ctx.auth.hierarchy,
                 TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
             return false;
         }
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
+                &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid handle password, got\"%s\"", value);
+            LOG_ERR("Invalid handle authorization, got\"%s\"", value);
                 return false;
         }
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    } break;
     }
 
     return true;
@@ -127,13 +124,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index",                required_argument, NULL, 'x' },
-        { "auth-handle",          required_argument, NULL, 'a' },
+        { "hierarchy",       required_argument, NULL, 'a' },
         { "handle-passwd",        required_argument, NULL, 'P' },
         { "passwdInHex",          no_argument,       NULL, 'X' },
-        { "session",              required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("x:a:P:Xp:d:S:hv", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:P:X", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -143,5 +139,26 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return nv_readlock(sapi_context) != true;
+    int rc = 1;
+    bool result;
+
+    result = nv_readlock(sapi_context);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }

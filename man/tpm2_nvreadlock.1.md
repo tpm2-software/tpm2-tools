@@ -29,7 +29,7 @@ is released on subsequent restart of the machine.
 
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+    "authorization formatting standards, see section "Authorization Formatting".
 
   * **-S**, **--input-session-handle**=_SIZE_:
     Optional Input session handle from a policy session for authorization.
@@ -38,7 +38,7 @@ is released on subsequent restart of the machine.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

@@ -39,10 +39,10 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_ctx_mgmt.h"
 #include "tpm2_hierarchy.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -51,10 +51,19 @@
 typedef struct createek_context createek_context;
 struct createek_context {
     struct {
-        TPMS_AUTH_COMMAND owner;
-        TPMS_AUTH_COMMAND endorse;
-        TPMS_AUTH_COMMAND ek;
-    } passwords;
+        struct {
+            TPMS_AUTH_COMMAND session_data;
+            tpm2_session *session;
+        } owner;
+        struct {
+            TPMS_AUTH_COMMAND session_data;
+            tpm2_session *session;
+        } endorse;
+        struct {
+            TPMS_AUTH_COMMAND session_data;
+            tpm2_session *session;
+        } ek;
+    } auth;
     tpm2_hierearchy_pdata objdata;
     char *out_file_path;
     char *context_file;
@@ -67,10 +76,10 @@ struct createek_context {
 };
 
 static createek_context ctx = {
-    .passwords = {
-        .owner = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .endorse = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .ek = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .auth = {
+        .owner =   { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+        .endorse = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+        .ek =      { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     },
     .format = pubkey_format_tss,
     .objdata = TPM2_HIERARCHY_DATA_INIT,
@@ -136,7 +145,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    result = tpm2_hierarrchy_create_primary(sapi_context, &ctx.passwords.endorse,
+    result = tpm2_hierarrchy_create_primary(sapi_context, &ctx.auth.endorse.session_data,
             &ctx.objdata);
     if (!result) {
         return false;
@@ -145,7 +154,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
     if (ctx.persistent_handle) {
 
         result = tpm2_ctx_mgmt_evictcontrol(sapi_context, TPM2_RH_OWNER,
-                &ctx.passwords.owner, ctx.objdata.out.handle,
+                &ctx.auth.owner.session_data, ctx.objdata.out.handle,
                 ctx.persistent_handle);
         if (!result) {
             return false;
@@ -198,23 +207,26 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'e':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.endorse.session_data,
+                &ctx.auth.endorse.session);
         if (!result) {
-            LOG_ERR("Invalid endorse password, got\"%s\"", value);
+            LOG_ERR("Invalid endorse authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'o':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.owner.session_data,
+                &ctx.auth.owner.session);
         if (!result) {
-            LOG_ERR("Invalid owner password, got\"%s\"", value);
+            LOG_ERR("Invalid owner authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.passwords.ek.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.ek.session_data,
+                &ctx.auth.ek.session);
         if (!result) {
-            LOG_ERR("Invalid EK password, got\"%s\"", value);
+            LOG_ERR("Invalid EK authorization, got\"%s\"", value);
             return false;
         }
         break;
@@ -233,15 +245,6 @@ static bool on_option(char key, char *value) {
         }
         ctx.out_file_path = value;
         break;
-    case 'S': {
-// TODO: restore and fix broken session handling
-//        tpm2_session *s = tpm2_session_restore(value);
-//        if (!s) {
-//            return false;
-//        }
-//        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
-//        tpm2_session_free(&s);
-    } break;
     case 'f':
         ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
         if (ctx.format == pubkey_format_err) {
@@ -260,18 +263,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "endorse-passwd",       required_argument, NULL, 'e' },
-        { "owner-passwd",         required_argument, NULL, 'o' },
+        { "auth-endorse",         required_argument, NULL, 'e' },
+        { "auth-owner",           required_argument, NULL, 'o' },
+        { "auth-ek",              required_argument, NULL, 'P' },
         { "handle",               required_argument, NULL, 'H' },
-        { "ek-passwd",            required_argument, NULL, 'P' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "file",                 required_argument, NULL, 'p' },
-        { "session",              required_argument, NULL, 'S' },
         { "format",               required_argument, NULL, 'f' },
         { "context",              required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:p:S:f:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:H:P:g:p:f:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -308,9 +310,18 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
+    size_t i;
+    int rc = 1;
+
+    tpm2_session **sessions[] = {
+       &ctx.auth.ek.session,
+       &ctx.auth.endorse.session,
+       &ctx.auth.owner.session,
+    };
+
     if (ctx.flags.f && !ctx.out_file_path) {
         LOG_ERR("Please specify an output file name when specifying a format");
-        return 1;
+        goto out;
     }
 
     if (ctx.find_persistent_handle) {
@@ -327,7 +338,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (ctx.context_file && ctx.persistent_handle) {
         LOG_ERR("Specify either a handle to make it persistent or a file to"
                 " save the context to, not both!");
-        return 1;
+        goto out;
     }
 
     /* override the default attrs */
@@ -340,5 +351,37 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     set_default_hierarchy();
 
     /* normalize 0 success 1 failure */
-    return create_ek_handle(sapi_context) != true;
+    bool result = create_ek_handle(sapi_context);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+
+    for(i=0; i < ARRAY_LEN(sessions); i++) {
+        tpm2_session *s = *sessions[i];
+        result = tpm2_session_save (sapi_context, s, NULL);
+        if (!result) {
+            rc = 1;
+        }
+    }
+
+    return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session **sessions[] = {
+       &ctx.auth.ek.session,
+       &ctx.auth.endorse.session,
+       &ctx.auth.owner.session,
+    };
+
+    size_t i;
+    for(i=0; i < ARRAY_LEN(sessions); i++) {
+        tpm2_session **s = sessions[i];
+        tpm2_session_free(s);
+    }
 }

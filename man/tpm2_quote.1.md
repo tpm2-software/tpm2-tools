@@ -24,10 +24,10 @@
 
     Filename for the existing AK's context.
 
-  * **-P**, **--ak-passwd**=_AK\_PASSWORD_:
-
-    specifies the password of _AK\_HANDLE_. Passwords should follow the
-    password formatting standards, see section "Password Formatting".
+  * **-P**, **--auth-ak**=_AK\_AUTH_:
+    Specifies the authorization value for AK specified by option **-k**.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
   * **-l**, **--id-list**=_PCR\_ID\_LIST_
 
@@ -70,7 +70,7 @@
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [pcr bank specifiers](common/password.md)
 

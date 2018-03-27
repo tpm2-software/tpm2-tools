@@ -62,11 +62,11 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -H e -g $alg_hash -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -a e -g $alg_hash -G $alg_primary_key -C $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -c $file_primary_key_ctx
 
-tpm2_loadexternal -Q -H n   -u $file_rsaencrypt_key_pub  -C $file_rsaencrypt_key_ctx
+tpm2_loadexternal -Q -a n   -u $file_rsaencrypt_key_pub  -C $file_rsaencrypt_key_ctx
 
 #./tpm2_rsaencrypt -c context_loadexternal_out6.out -I secret.data -o rsa_en.out
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data $file_input_data

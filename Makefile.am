@@ -161,7 +161,7 @@ check_PROGRAMS = \
     test/unit/test_tpm2_attr_util \
     test/unit/test_tpm2_alg_util \
     test/unit/test_pcr \
-    test/unit/test_tpm2_password_util \
+    test/unit/test_tpm2_auth_util \
     test/unit/test_tpm2_errata \
     test/unit/test_tpm2_session \
     test/unit/test_tpm2_policy \
@@ -169,36 +169,36 @@ check_PROGRAMS = \
     test/unit/test_tpm2_error
 
 test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
 
 test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS)
+test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_files_SOURCES  = test/unit/test_files.c
 
 test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_header_SOURCES  = test/unit/test_tpm2_header.c
 
 test_unit_test_tpm2_attr_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_attr_util_SOURCES  = test/unit/test_tpm2_attr_util.c
 
 test_unit_test_tpm2_alg_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_alg_util_SOURCES  = test/unit/test_tpm2_alg_util.c
 
 test_unit_test_pcr_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
 
-test_unit_test_tpm2_password_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_password_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
-test_unit_test_tpm2_password_util_SOURCES  = test/unit/test_tpm2_password_util.c
+test_unit_test_tpm2_auth_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
+test_unit_test_tpm2_auth_util_SOURCES  = test/unit/test_tpm2_auth_util.c
 
 test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Tss2_Sys_GetCapability
-test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
 test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
@@ -219,11 +219,11 @@ test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_policy_SOURCES  = test/unit/test_tpm2_policy.c
 
 test_unit_test_tpm2_hierarchy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_hierarchy_SOURCES  = test/unit/test_tpm2_hierarchy.c
 
 test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_error_SOURCES  = test/unit/test_tpm2_error.c
 
 endif
@@ -300,12 +300,12 @@ endif
 
 MARKDOWN_COMMON_DEPS = \
 	man/common/alg.md \
+	man/common/authorizations.md \
 	man/common/footer.md \
 	man/common/hash.md \
 	man/common/obj-attrs.md \
 	man/common/object-alg.md \
 	man/common/options.md \
-	man/common/password.md \
 	man/common/pubkey.md \
 	man/common/sign-alg.md \
 	man/common/signature.md \
@@ -318,8 +318,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[common options\]/d' \
 	    -e '/\[common tcti options\]/r man/common/tcti.md' \
 	    -e '/\[common tcti options\]/d' \
-	    -e '/\[password formatting\]/r man/common/password.md' \
-	    -e '/\[password formatting\]/d' \
+	    -e '/\[authorization formatting\]/r man/common/authorizations.md' \
+	    -e '/\[authorization formatting\]/d' \
 	    -e '/\[supported hash algorithms\]/r man/common/hash.md' \
 	    -e '/\[supported hash algorithms\]/d' \
 	    -e '/\[algorithm specifiers\]/r man/common/alg.md' \

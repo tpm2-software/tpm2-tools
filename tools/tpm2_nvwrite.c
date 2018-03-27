@@ -42,9 +42,9 @@
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_nv_util.h"
-#include "tpm2_password_util.h"
 #include "tpm2_policy.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
@@ -53,10 +53,13 @@
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
 struct tpm_nvwrite_ctx {
     UINT32 nv_index;
-    TPMI_RH_PROVISION auth_handle;
     UINT16 data_size;
     UINT8 nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
-    TPMS_AUTH_COMMAND session_data;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+        TPMI_RH_PROVISION hierarchy;
+    } auth;
     FILE *input_file;
     UINT16 offset;
     char *raw_pcrs_file;
@@ -68,8 +71,10 @@ struct tpm_nvwrite_ctx {
 };
 
 static tpm_nvwrite_ctx ctx = {
-    .auth_handle = TPM2_RH_OWNER,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .auth = {
+            .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+            .hierarchy = TPM2_RH_OWNER
+    }
 };
 
 static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
@@ -77,7 +82,7 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B_MAX_NV_BUFFER nv_write_data;
 
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
 
     UINT16 data_offset = 0;
 
@@ -124,9 +129,9 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
 
         memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset], nv_write_data.size);
 
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context, ctx.auth_handle,
-                ctx.nv_index, &sessions_data, &nv_write_data, ctx.offset + data_offset,
-                &sessions_data_out));
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context,
+                ctx.auth.hierarchy, ctx.nv_index, &sessions_data, &nv_write_data,
+                ctx.offset + data_offset, &sessions_data_out));
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to write NV area at index 0x%X", ctx.nv_index);
             LOG_PERR(Tss2_Sys_NV_Write, rval);
@@ -161,28 +166,20 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.auth_handle,
+        result = tpm2_hierarchy_from_optarg(value, &ctx.auth.hierarchy,
                 TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
             return false;
         }
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
+                &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid handle password, got\"%s\"", value);
+            LOG_ERR("Invalid handle authorization, got\"%s\"", value);
             return false;
         }
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    } break;
     case 'o':
         if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {
             LOG_ERR("Could not convert starting offset, got: \"%s\"",
@@ -224,16 +221,15 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "index",          required_argument, NULL, 'x' },
-        { "auth-handle",    required_argument, NULL, 'a' },
-        { "handle-passwd",  required_argument, NULL, 'P' },
-        { "session",        required_argument, NULL, 'S' },
-        { "offset",         required_argument, NULL, 'o' },
-        { "set-list",       required_argument, NULL, 'L' },
-        { "pcr-input-file", required_argument, NULL, 'F' },
+        { "index",                required_argument, NULL, 'x' },
+        { "hierarchy",       required_argument, NULL, 'a' },
+        { "auth-hierarchy", required_argument, NULL, 'P' },
+        { "offset",               required_argument, NULL, 'o' },
+        { "set-list",             required_argument, NULL, 'L' },
+        { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("x:a:P:S:o:L:F:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:P:o:L:F:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     ctx.input_file = stdin;
@@ -241,59 +237,75 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
+static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
+
+    tpm2_session_data *session_data =
+            tpm2_session_data_new(TPM2_SE_POLICY);
+    if (!session_data) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    ctx.auth.session = tpm2_session_new(sapi_context,
+            session_data);
+    if (!ctx.auth.session) {
+        LOG_ERR("Could not start tpm session");
+        return false;
+    }
+
+    bool result = tpm2_policy_build_pcr(sapi_context, ctx.auth.session,
+            ctx.raw_pcrs_file,
+            &ctx.pcr_selection);
+    if (!result) {
+        LOG_ERR("Could not build a pcr policy");
+        return false;
+    }
+
+    ctx.auth.session_data.sessionHandle = tpm2_session_get_handle(ctx.auth.session);
+    ctx.auth.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
+
+    return true;
+}
+
+
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     int rc = 1;
+    bool result;
 
-    /* set up PCR policy if specified */
+    if (ctx.flags.L && ctx.auth.session) {
+        LOG_ERR("Can only use either existing session or a new session,"
+                " not both!");
+        goto out;
+    }
+
     if (ctx.flags.L) {
-
-        tpm2_session_data *session_data =
-                tpm2_session_data_new(TPM2_SE_POLICY);
-        if (!session_data) {
-            LOG_ERR("oom");
-            return 1;
-        }
-
-        ctx.policy_session = tpm2_session_new(sapi_context,
-                session_data);
-        if (!ctx.policy_session) {
-            LOG_ERR("Could not start tpm session");
-            return 1;
-        }
-
-        bool result = tpm2_policy_build_pcr(sapi_context, ctx.policy_session,
-                ctx.raw_pcrs_file,
-                &ctx.pcr_selection);
+        result = start_auth_session(sapi_context);
         if (!result) {
-            LOG_ERR("Could not build a pcr policy");
-            tpm2_session_free(&ctx.policy_session);
-            return 1;
+            goto out;
         }
-
-        ctx.session_data.sessionHandle = tpm2_session_get_handle(ctx.policy_session);
     }
 
     /* Suppress error reporting with NULL path */
     unsigned long file_size;
-    bool res = files_get_file_size(ctx.input_file, &file_size, NULL);
+    result = files_get_file_size(ctx.input_file, &file_size, NULL);
 
-    if (res && file_size > TPM2_MAX_NV_BUFFER_SIZE) {
+    if (result && file_size > TPM2_MAX_NV_BUFFER_SIZE) {
         LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE, got %lu expected %u", file_size,
                 TPM2_MAX_NV_BUFFER_SIZE);
         goto out;
     }
 
-    if (res) {
+    if (result) {
         /*
          * We know the size upfront, read it. Note that the size was already
          * bounded by TPM2_MAX_NV_BUFFER_SIZE
          */
         ctx.data_size = (UINT16) file_size;
-        res = files_read_bytes(ctx.input_file, ctx.nv_buffer, ctx.data_size);
-        if (!res)  {
+        result = files_read_bytes(ctx.input_file, ctx.nv_buffer, ctx.data_size);
+        if (!result)  {
             LOG_ERR("could not read input file");
             goto out;
         }
@@ -316,31 +328,33 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         ctx.data_size = (UINT16)bytes;
     }
 
-    res = nv_write(sapi_context);
-    if (!res) {
+    result = nv_write(sapi_context);
+    if (!result) {
         goto out;
     }
 
     rc = 0;
 
 out:
-    if (ctx.input_file) {
-        fclose(ctx.input_file);
-    }
 
-    if (ctx.policy_session) {
-
-        TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(ctx.policy_session);
-
+    if (ctx.flags.L) {
         TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
-                                            handle);
+                ctx.auth.session_data.sessionHandle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_FlushContext, rval);
-            return 1;
+            rc = 1;
         }
-
-        tpm2_session_free(&ctx.policy_session);
+    } else {
+        result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+        if (!result) {
+            rc = 1;
+        }
     }
 
     return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }

@@ -32,7 +32,7 @@ defined with tpm2_nvdefine(1).
 
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+    "authorization formatting standards, see section "Authorization Formatting".
 
   * **-S**, **--session**=_SESSION\_FILE_:
 
@@ -42,7 +42,7 @@ defined with tpm2_nvdefine(1).
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

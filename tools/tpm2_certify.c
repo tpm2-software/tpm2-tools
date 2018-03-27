@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -29,26 +29,28 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <limits.h>
 #include <tss2/tss2_sys.h>
 
+#include "files.h"
+#include "log.h"
+#include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
-#include "tpm2_util.h"
-#include "log.h"
-#include "files.h"
-#include "tpm2_alg_util.h"
+#include "tpm2_session.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
 struct tpm_certify_ctx {
     TPMS_AUTH_COMMAND cmd_auth[2];
+    tpm2_session *session[2];
     TPMI_ALG_HASH  halg;
     struct  {
         TPMI_DH_OBJECT key;
@@ -207,17 +209,19 @@ static bool on_option(char key, char *value) {
         ctx.flags.k = 1;
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.cmd_auth[0].hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.cmd_auth[0],
+                &ctx.session[0]);
         if (!result) {
-            LOG_ERR("Invalid object key password, got\"%s\"", value);
+            LOG_ERR("Invalid object key authorization, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
         break;
     case 'K':
-        result = tpm2_password_util_from_optarg(value, &ctx.cmd_auth[1].hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.cmd_auth[1],
+                &ctx.session[1]);
         if (!result) {
-            LOG_ERR("Invalid key handle password, got\"%s\"", value);
+            LOG_ERR("Invalid key handle authorization, got\"%s\"", value);
             return false;
         }
         ctx.flags.K = 1;
@@ -277,8 +281,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
       { "object-handle", required_argument, NULL, 'H' },
       { "key-handle",    required_argument, NULL, 'k' },
-      { "pwdo",          required_argument, NULL, 'P' },
-      { "pwdk",          required_argument, NULL, 'K' },
+      { "auth-object",   required_argument, NULL, 'P' },
+      { "auth-key",      required_argument, NULL, 'K' },
       { "halg",          required_argument, NULL, 'g' },
       { "attest-file",   required_argument, NULL, 'a' },
       { "sig-file",      required_argument, NULL, 's' },
@@ -295,13 +299,15 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
+    size_t i;
+    int rc = 1;
     bool result;
 
     UNUSED(flags);
 
     if (!(ctx.flags.H || ctx.flags.C) && (ctx.flags.k || ctx.flags.c) && (ctx.flags.g) && (ctx.flags.a)
         && (ctx.flags.s)) {
-        return 1;
+        goto out;
     }
 
     /* Load input files */
@@ -309,7 +315,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.obj,
                                                   ctx.context_file);
         if (!result) {
-            return 1;
+            goto out;
         }
     }
 
@@ -317,9 +323,32 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.key,
                                                   ctx.context_key_file);
         if (!result) {
-            return 1;
+            goto out;
         }
     }
 
-    return certify_and_save_data(sapi_context) != true;
+    result = certify_and_save_data(sapi_context);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+out:
+
+    for (i=0; i < ARRAY_LEN(ctx.session); i++) {
+        result = tpm2_session_save(sapi_context, ctx.session[i], NULL);
+        if (!result) {
+            rc = 1;
+        }
+    }
+
+    return rc;
+}
+
+void tpm2_onexit(void) {
+
+    size_t i;
+    for (i=0; i < ARRAY_LEN(ctx.session); i++) {
+        tpm2_session_free(&ctx.session[i]);
+    }
 }

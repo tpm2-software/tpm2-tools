@@ -41,19 +41,22 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_auth_util.h"
+#include "tpm2_capability.h"
 #include "tpm2_ctx_mgmt.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_session.h"
 #include "tpm2_util.h"
-#include "tpm2_capability.h"
 
 typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
 struct tpm_evictcontrol_ctx {
-    TPMS_AUTH_COMMAND session_data;
-    TPMI_RH_PROVISION auth;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
+    TPMI_RH_PROVISION hierarchy;
     struct {
         TPMI_DH_OBJECT object;
         TPMI_DH_PERSISTENT persist;
@@ -68,8 +71,8 @@ struct tpm_evictcontrol_ctx {
 };
 
 static tpm_evictcontrol_ctx ctx = {
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-    .auth = TPM2_RH_OWNER,
+    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+    .hierarchy = TPM2_RH_OWNER,
 };
 
 static bool on_option(char key, char *value) {
@@ -77,8 +80,8 @@ static bool on_option(char key, char *value) {
     bool result;
 
     switch (key) {
-    case 'A':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.auth,
+    case 'a':
+        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
                 TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
             return false;
@@ -108,9 +111,10 @@ static bool on_option(char key, char *value) {
         ctx.flags.p = 1;
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
+                &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid authorization password, got\"%s\"", value);
+            LOG_ERR("Invalid authorization authorization, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -118,13 +122,6 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_file = value;
         ctx.flags.c = 1;
-        break;
-    case 'S':
-        if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
-            LOG_ERR("Could not convert session handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
         break;
     }
 
@@ -134,17 +131,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "auth",                 required_argument, NULL, 'A' },
+      { "hierarchy",       required_argument, NULL, 'a' },
       { "handle",               required_argument, NULL, 'H' },
       { "persistent",           required_argument, NULL, 'p' },
-      { "pwda",                 required_argument, NULL, 'P' },
+      { "auth-hierarchy", required_argument, NULL, 'P' },
       { "context",              required_argument, NULL, 'c' },
-      { "session",              required_argument, NULL, 'S' },
     };
 
-    ctx.session_data.sessionHandle = TPM2_RS_PW;
-
-    *opts = tpm2_options_new("A:H:p:P:c:S:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("a:H:p:P:c:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -154,31 +148,52 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
+    int rc = 1;
+    bool result;
+
     /* If we've been given a handle or context object to persist and not an explicit persistent handle
      * to use, find an available vacant handle in the persistent namespace and use that.
      */
     if ((ctx.flags.H || ctx.flags.c) && !ctx.flags.p) {
-        bool ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+        result = tpm2_capability_find_vacant_persistent_handle(sapi_context,
                 &ctx.handle.persist);
-        if (!ret) {
+        if (!result) {
             tpm2_tool_output("Unable to find a vacant persistent handle.\n");
-            return 1;
+            goto out;
         }
     }
 
     if (ctx.flags.c) {
-        bool result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.object,
+        result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.object,
                                                        ctx.context_file);
         if (!result) {
-            return 1;
+            goto out;
         }
     }
 
     tpm2_tool_output("persistentHandle: 0x%x\n", ctx.handle.persist);
 
-    return !tpm2_ctx_mgmt_evictcontrol(sapi_context,
-            ctx.auth,
-            &ctx.session_data,
+    result = tpm2_ctx_mgmt_evictcontrol(sapi_context,
+            ctx.hierarchy,
+            &ctx.auth.session_data,
             ctx.handle.object,
             ctx.handle.persist);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }

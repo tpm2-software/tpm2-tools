@@ -20,7 +20,7 @@ will create and load a Primary Object. The sensitive area is not returned.
 
 # OPTIONS
 
-  * **-H**, **--hierarchy**=_HIERARCHY_:
+  * **-a**, **--hierarchy**=_HIERARCHY_:
     Specify the hierarchy under which the object is created. This will also dictate which authorization secret (if any) must be supplied.
     Defaults to **o**, **TPM_RH_OWNER**, when no value specified.
     Supported options are:
@@ -30,13 +30,16 @@ will create and load a Primary Object. The sensitive area is not returned.
       * **n** for **TPM_RH_NULL**
       * **`<num>`** where a raw number can be used.
 
-  * **-P**, **--pwdp**=_PARENT\_KEY\_PASSWORD_:
-    Optional authorization string if authorization is required to create object under the specified hierarchy.
-    Passwords should follow the "password formatting standards, see section "Password Formatting".
+  * **-P**, **--auth-hierarchy**=_HIERARCHY\_\_AUTH\_VALUE_:
+    Optional authorization value when authorization is required to create object
+    under the specified hierarchy given via the **-a** option. Authorization
+    values should follow the authorization formatting standards, see section
+    "Authorization Formatting".
 
-  * **-K**, **--pwdk**=_KEY\_PASSWORD_:
-    Optional authorization string for the newly created object. Follows the same password formating guidelines
-    as the parent authorization string under the -P option.
+  * **-K**, **--auth-object**=_OBJECT\_AUTH_:
+    Optional authorization password for the newly created object. Password
+    values should follow the authorization formatting standards, see section
+    "Authorization Formatting".
 
   * **-g**, **--halg**=_ALGORITHM_:
     The hash algorithm to use. Algorithms should follow the
@@ -69,7 +72,7 @@ will create and load a Primary Object. The sensitive area is not returned.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
 

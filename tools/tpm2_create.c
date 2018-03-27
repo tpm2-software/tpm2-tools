@@ -44,16 +44,19 @@
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_errata.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_create_ctx tpm_create_ctx;
 struct tpm_create_ctx {
-    TPMS_AUTH_COMMAND session_data;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
     TPM2B_SENSITIVE_CREATE in_sensitive;
     TPM2B_PUBLIC in_public;
     TPMI_ALG_PUBLIC type;
@@ -88,9 +91,8 @@ struct tpm_create_ctx {
 }
 
 static tpm_create_ctx ctx = {
-    .session_data = {
-        .sessionHandle = TPM2_RS_PW,
-        .sessionAttributes = 0,
+    .auth = {
+            .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     },
     .type = TPM2_ALG_SHA1,
     .nameAlg = TPM2_ALG_RSA,
@@ -164,10 +166,10 @@ int setup_alg()
     return 0;
 }
 
-int create(TSS2_SYS_CONTEXT *sapi_context)
-{
+static bool create(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2_RC rval;
-    TSS2L_SYS_AUTH_COMMAND sessionsData;
+    TSS2L_SYS_AUTH_COMMAND sessionsData =
+            TSS2L_SYS_AUTH_COMMAND_INIT(1, { ctx.auth.session_data });
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
@@ -179,13 +181,12 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
-    sessionsData.count = 1;
-    sessionsData.auths[0] = ctx.session_data;
 
     ctx.in_sensitive.size = ctx.in_sensitive.sensitive.userAuth.size + 2;
 
-    if(setup_alg())
-        return -1;
+    if(setup_alg()) {
+        return false;
+    }
 
     creationPCR.count = 0;
 
@@ -194,7 +195,7 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
                            &creationData, &creationHash, &creationTicket, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_Create, rval);
-        return -2;
+        return false;
     }
 
     tpm2_util_public_to_yaml(&outPublic);
@@ -202,18 +203,18 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     if (ctx.flags.u) {
         bool res = files_save_public(&outPublic, ctx.opu_path);
         if(!res) {
-            return -3;
+            return false;
         }
     }
 
     if (ctx.flags.r) {
         bool res = files_save_private(&outPrivate, ctx.opr_path);
         if (!res) {
-            return -4;
+            return false;
         }
     }
 
-    return 0;
+    return true;
 }
 
 static bool on_option(char key, char *value) {
@@ -229,21 +230,23 @@ static bool on_option(char key, char *value) {
         ctx.flags.H = 1;
         break;
     case 'P':
-        res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        res = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
         if (!res) {
-            LOG_ERR("Invalid parent key password, got\"%s\"", value);
+            LOG_ERR("Invalid parent key authorization, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
         break;
-    case 'K':
-        res = tpm2_password_util_from_optarg(value, &ctx.in_sensitive.sensitive.userAuth);
+    case 'K': {
+        TPMS_AUTH_COMMAND tmp;
+        res = tpm2_auth_util_from_optarg(value, &tmp, NULL);
         if (!res) {
-            LOG_ERR("Invalid key password, got\"%s\"", value);
+            LOG_ERR("Invalid key authorization, got\"%s\"", value);
             return false;
         }
+        ctx.in_sensitive.sensitive.userAuth = tmp.hmac;
         ctx.flags.K = 1;
-        break;
+    } break;
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
         if(ctx.nameAlg == TPM2_ALG_ERROR) {
@@ -282,15 +285,6 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.L = 1;
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    } break;
     case 'u':
         ctx.opu_path = value;
         if(files_does_file_exist(ctx.opu_path) != 0) {
@@ -321,8 +315,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "parent",               required_argument, NULL, 'H' },
-      { "pwdp",                 required_argument, NULL, 'P' },
-      { "pwdk",                 required_argument, NULL, 'K' },
+      { "auth-parent",          required_argument, NULL, 'P' },
+      { "auth-key",             required_argument, NULL, 'K' },
       { "halg",                 required_argument, NULL, 'g' },
       { "kalg",                 required_argument, NULL, 'G' },
       { "object-attributes",    required_argument, NULL, 'A' },
@@ -331,13 +325,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pubfile",              required_argument, NULL, 'u' },
       { "privfile",             required_argument, NULL, 'r' },
       { "context-parent",       required_argument, NULL, 'c' },
-      { "session",              required_argument, NULL, 'S' },
     };
 
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
-    *opts = tpm2_options_new("H:P:K:g:G:A:I:L:u:r:c:S:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("H:P:K:g:G:A:I:L:u:r:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -354,40 +344,51 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int returnVal = 0;
-    int flagCnt = 0;
-
-    if(ctx.flags.P == 0)
-        ctx.session_data.hmac.size = 0;
+    int rc = 1;
+    bool result;
 
     if (ctx.flags.I) {
         bool res = load_sensitive();
         if (!res) {
-            return 1;
+            goto out;
         }
     }
 
     if (ctx.flags.I && ctx.in_public.publicArea.type != TPM2_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM2_ALG_KEYEDHASH algorithm is allowed when sealing data");
-        return 1;
+        goto out;
     }
 
-    flagCnt = ctx.flags.H + ctx.flags.g + ctx.flags.G + ctx.flags.c;
-    if(flagCnt == 1) {
-        return 1;
-    } else if(flagCnt == 3 && (ctx.flags.H == 1 || ctx.flags.c == 1) &&
-              ctx.flags.g == 1 && ctx.flags.G == 1) {
-        if(ctx.flags.c)
-            returnVal = files_load_tpm_context_from_path(sapi_context,
-                                                         &ctx.parent_handle, ctx.context_parent_path) != true;
-        if(returnVal == 0)
-            returnVal = create(sapi_context);
-
-        if(returnVal)
-            return 1;
-    } else {
-        return 1;
+    if(!((ctx.flags.H || ctx.flags.c) && ctx.flags.g && ctx.flags.G)) {
+        LOG_ERR("Invalid options");
+        goto out;
     }
 
-    return 0;
+    if(ctx.flags.c) {
+        result = files_load_tpm_context_from_path(sapi_context,
+                             &ctx.parent_handle, ctx.context_parent_path);
+        if (!result) {
+            goto out;
+        }
+    }
+
+    result = create(sapi_context);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+    result = tpm2_session_save (sapi_context, ctx.auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }

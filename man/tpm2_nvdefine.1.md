@@ -36,20 +36,19 @@
     entitiy. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
-  * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
-    specifies the password of authHandle. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+  * **-P**, **--auth-hierarchy**=_HANDLE\_PASSWORD_:
+    Specifies the authorization value for the hierarchy. Authorization values
+    should follow the authorization formatting standards, see section
+    "Authorization Formatting".
 
-  * **-I**, **--index-passwd**=_INDEX\_PASSWORD_:
-    specifies the password of NV Index when created. Follows the same formatting
-    guidelines as the handle password or -P option.
+  * **-I**, **--auth-index**=_INDEX\_PASSWORD_:
+    Specifies the password of NV Index when created.
+    HMAC and Password authorization values should follow
+    the authorization formatting standards, see section
+    "Authorization Formatting".
 
   * **-L**, **--policy-file**=_POLICY\_FILE_:
     Specifies the policy digest file for policy based authorizations.
-
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
 [common options](common/options.md)
 
@@ -57,7 +56,7 @@
 
 [nv attributes](common/nv-attrs.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

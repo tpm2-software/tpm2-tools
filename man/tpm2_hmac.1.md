@@ -23,9 +23,11 @@ _FILE_ is not specified, then data is read from stdin.
   * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
     The filename of the key context used for the operation.
 
-  * **-P**, **--pwdk**=_KEY\_PASSWORD_:
-    The password for key, optional. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+  * **-P**, **--auth-key**=_KEY\_AUTH_:
+
+    Optional authorization value to use the key specified by **-k**.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
     The hash algorithm to use.
@@ -45,7 +47,7 @@ _FILE_ is not specified, then data is read from stdin.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
 

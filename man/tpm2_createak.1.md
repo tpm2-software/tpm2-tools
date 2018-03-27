@@ -30,18 +30,18 @@ loaded-key:
 
 # OPTIONS
 
-  * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
-    Specifies current endorsement password, defaults to NULL.
-    Passwords should follow the "password formatting standards, see section
-    "Password Formatting".
+  * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
+    Specifies current endorsement authorization.
+    authorizations should follow the "authorization formatting standards, see section
+    "Authorization Formatting".
 
-  * **-P**, **--ak-passwd**=_AK\_PASSWORD_
-    Specifies the AK password when created, defaults to NULL.
-    Same formatting as the endorse password value or -e option.
+  * **-P**, **--auth-ak**=_AK\_AUTH_
+    Specifies the AK authorization when created.
+    Same formatting as the endorse authorization value or **-e** option.
 
-  * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_
-    Specifies the current owner password, defaults to NULL.
-    Same formatting as the endorse password value or -e option.
+  * **-o**, **--auth-owner**=_OWNER\_AUTH_
+    Specifies the current owner authorization.
+    Same formatting as the endorse password value or **-e** option.
 
   * **-E**, **--ek-handle**=_EK\_HANDLE_:
     Specifies the persistent handle of the EK.
@@ -85,7 +85,7 @@ loaded-key:
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [supported signing algorithms](common/sign-alg.md)
 

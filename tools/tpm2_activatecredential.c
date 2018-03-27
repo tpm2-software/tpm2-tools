@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -43,9 +43,9 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_error.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
@@ -71,8 +71,11 @@ struct tpm_activatecred_ctx {
     TPM2B_ID_OBJECT credentialBlob;
     TPM2B_ENCRYPTED_SECRET secret;
 
-    TPMS_AUTH_COMMAND password;
-    TPMS_AUTH_COMMAND endorse_password;
+    TPMS_AUTH_COMMAND auth;
+    tpm2_session *auth_session;
+
+    TPMS_AUTH_COMMAND endorse_auth;
+    tpm2_session *endorse_session;
 
     struct {
         char *output;
@@ -81,7 +84,10 @@ struct tpm_activatecred_ctx {
     } file ;
 };
 
-static tpm_activatecred_ctx ctx;
+static tpm_activatecred_ctx ctx = {
+        .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        .endorse_auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)
+};
 
 static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *cred,
         TPM2B_ENCRYPTED_SECRET *secret) {
@@ -155,19 +161,17 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST certInfoData = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    ctx.password.sessionHandle = TPM2_RS_PW;
-    ctx.endorse_password.sessionHandle = TPM2_RS_PW;
-
     TSS2L_SYS_AUTH_COMMAND cmd_auth_array_password = {
-        2, {ctx.password, {
-            .nonce = { .size = 0 },
-            .hmac =  { .size = 0 },
-            .sessionHandle = 0,
-            .sessionAttributes = 0,
-    }}};
+        2, {
+            ctx.auth,
+            TPMS_AUTH_COMMAND_INIT(0),
+        }
+    };
 
     TSS2L_SYS_AUTH_COMMAND cmd_auth_array_endorse = {
-        1, {ctx.endorse_password}
+        1, {
+            ctx.endorse_auth
+        }
     };
 
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
@@ -246,16 +250,18 @@ static bool on_option(char key, char *value) {
         ctx.flags.C = 1;
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.password.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth,
+                &ctx.auth_session);
         if (!result) {
-            LOG_ERR("Invalid handle password, got\"%s\"", value);
+            LOG_ERR("Invalid handle authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'e':
-        result = tpm2_password_util_from_optarg(value, &ctx.endorse_password.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.endorse_auth,
+                &ctx.endorse_session);
         if (!result) {
-            LOG_ERR("Invalid endorse password, got\"%s\"", value);
+            LOG_ERR("Invalid endorse authorization, got\"%s\"", value);
             return false;
         }
         break;
@@ -280,15 +286,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-         {"handle",        required_argument, NULL, 'H'},
-         {"context",       required_argument, NULL, 'c'},
+         {"handle",         required_argument, NULL, 'H'},
+         {"context",        required_argument, NULL, 'c'},
          {"key-handle",     required_argument, NULL, 'k'},
          {"key-context",    required_argument, NULL, 'C'},
-         {"Password",      required_argument, NULL, 'P'},
+         {"Password",       required_argument, NULL, 'P'},
          {"endorse-passwd", required_argument, NULL, 'e'},
          {"in-file",        required_argument, NULL, 'f'},
          {"out-file",       required_argument, NULL, 'o'},
-         {"passwdInHex",   no_argument,       NULL, 'X'},
+         {"passwdInHex",    no_argument,       NULL, 'X'},
     };
 
     *opts = tpm2_options_new("H:c:k:C:P:e:f:o:X", ARRAY_LEN(topts), topts,
@@ -325,5 +331,32 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    return activate_credential_and_output(sapi_context) != true;
+    int rc = 0;
+    bool res = activate_credential_and_output(sapi_context);
+    if (!res) {
+        rc = 1;
+        goto out;
+    }
+
+out:
+
+    if (ctx.auth_session) {
+        res = tpm2_session_save(sapi_context, ctx.auth_session, NULL);
+        if (!res) {
+            rc = 1;
+        }
+
+        tpm2_session_free(&ctx.auth_session);
+    }
+
+    if (ctx.endorse_session) {
+        res = tpm2_session_save(sapi_context, ctx.endorse_session, NULL);
+        if (!res) {
+            rc = 1;
+        }
+
+        tpm2_session_free(&ctx.endorse_session);
+    }
+
+    return rc;
 }

@@ -64,9 +64,9 @@ cleanup() {
     $file_quote_key_name $file_quote_key_ctx ek.pub2 ak.pub2 ak.name_2 \
     $out
 
-    tpm2_evictcontrol -Q -Ao -H $Handle_ek_quote 2>/dev/null || true
-    tpm2_evictcontrol -Q -Ao -H $Handle_ak_quote 2>/dev/null || true
-    tpm2_evictcontrol -Q -Ao -H $Handle_ak_quote2 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -H $Handle_ek_quote 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -H $Handle_ak_quote 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -H $Handle_ak_quote2 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -84,7 +84,7 @@ cleanup
 
 tpm2_clear
 
-tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_quote_key_pub -r $file_quote_key_priv  -c $file_primary_key_ctx
 
@@ -97,7 +97,7 @@ yaml_verify $out
 tpm2_quote -Q -c $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
 #####handle testing
-tpm2_evictcontrol -Q -A o -c $file_quote_key_ctx -p $Handle_ak_quote
+tpm2_evictcontrol -Q -a o -c $file_quote_key_ctx -p $Handle_ak_quote
 
 tpm2_quote -Q -k $Handle_ak_quote  -g $alg_quote -l 16,17,18 -q $nonce
 

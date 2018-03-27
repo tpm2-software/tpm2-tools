@@ -48,22 +48,29 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
+#include "tpm2_capability.h"
 #include "tpm2_hash.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
-#include "tpm2_capability.h"
 
 typedef struct tpm_getmanufec_ctx tpm_getmanufec_ctx;
 struct tpm_getmanufec_ctx {
     char *output_file;
-    TPMS_AUTH_COMMAND endorse_session_data;
-    TPMS_AUTH_COMMAND owner_session_data;
-    TPM2B_AUTH ek_password;
+    struct {
+        struct {
+            TPMS_AUTH_COMMAND session_data;
+            tpm2_session *session;
+        } endorse;
+        struct {
+            TPMS_AUTH_COMMAND session_data;
+            tpm2_session *session;
+        } owner;
+    } auth;
+    TPM2B_SENSITIVE_CREATE inSensitive;
     char *ec_cert_path;
-    bool hex_passwd;
     TPM2_HANDLE persistent_handle;
     UINT32 algorithm_type;
     FILE *ec_cert_file;
@@ -78,8 +85,10 @@ struct tpm_getmanufec_ctx {
 
 static tpm_getmanufec_ctx ctx = {
     .algorithm_type = TPM2_ALG_RSA,
-    .endorse_session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-    .owner_session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .auth = {
+        .endorse = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+        .owner   = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
+    },
     .find_persistent_handle = false
 };
 
@@ -148,10 +157,9 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
 int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 {
     UINT32 rval;
-    TSS2L_SYS_AUTH_COMMAND sessionsData;
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.auth.endorse.session_data }};
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
-    TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
     TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
 
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
@@ -165,22 +173,13 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
 
     TPM2_HANDLE handle2048ek;
 
-    sessionsData.count = 1;
-    sessionsData.auths[0] = ctx.endorse_session_data;
-
-    memcpy(&inSensitive.sensitive.userAuth, &ctx.ek_password,
-           sizeof(ctx.ek_password));
-
-    inSensitive.sensitive.data.size = 0;
-    inSensitive.size = inSensitive.sensitive.userAuth.size + 2;
-
     if (set_key_algorithm(&inPublic) )
           return 1;
 
     creationPCR.count = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM2_RH_ENDORSEMENT, &sessionsData,
-                                  &inSensitive, &inPublic, &outsideInfo,
+                                  &ctx.inSensitive, &inPublic, &outsideInfo,
                                   &creationPCR, &handle2048ek, &ctx.outPublic,
                                   &creationData, &creationHash, &creationTicket,
                                   &name, &sessionsDataOut));
@@ -197,7 +196,7 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
             return 1;
         }
 
-        sessionsData.auths[0] = ctx.owner_session_data;
+        sessionsData.auths[0] = ctx.auth.owner.session_data;
 
         rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
                                      &sessionsData, ctx.persistent_handle, &sessionsDataOut));
@@ -448,26 +447,30 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'e':
-        return_val = tpm2_password_util_from_optarg(value, &ctx.endorse_session_data.hmac);
+        return_val = tpm2_auth_util_from_optarg(value, &ctx.auth.endorse.session_data,
+                &ctx.auth.endorse.session);
         if (!return_val) {
-            LOG_ERR("Invalid endorsement password, got\"%s\"", value);
+            LOG_ERR("Invalid endorsement authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'o':
-        return_val = tpm2_password_util_from_optarg(value, &ctx.owner_session_data.hmac);
+        return_val = tpm2_auth_util_from_optarg(value, &ctx.auth.owner.session_data,
+                &ctx.auth.endorse.session);
         if (!return_val) {
-            LOG_ERR("Invalid owner password, got\"%s\"", value);
+            LOG_ERR("Invalid owner authorization, got\"%s\"", value);
             return false;
         }
         break;
-    case 'P':
-        return_val = tpm2_password_util_from_optarg(value, &ctx.ek_password);
+    case 'P': {
+        TPMS_AUTH_COMMAND tmp;
+        return_val = tpm2_auth_util_from_optarg(value, &tmp, NULL);
         if (!return_val) {
-            LOG_ERR("Invalid EK password, got\"%s\"", value);
+            LOG_ERR("Invalid EK authorization, got\"%s\"", value);
             return false;
         }
-        break;
+        ctx.inSensitive.sensitive.userAuth = tmp.hmac;
+    }   break;
     case 'g':
         ctx.algorithm_type = tpm2_alg_util_from_optarg(value);
         if (ctx.algorithm_type == TPM2_ALG_ERROR) {
@@ -495,17 +498,6 @@ static bool on_option(char key, char *value) {
         ctx.SSL_NO_VERIFY = 1;
         LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.owner_session_data.sessionHandle =
-                ctx.endorse_session_data.sessionHandle =
-                        tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    } break;
     }
     return true;
 }
@@ -528,18 +520,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     {
         { "endorse-passwd",       required_argument, NULL, 'e' },
         { "owner-passwd",         required_argument, NULL, 'o' },
-        { "handle",               required_argument, NULL, 'H' },
         { "ek-passwd",            required_argument, NULL, 'P' },
+        { "handle",               required_argument, NULL, 'H' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "out-file",             required_argument, NULL, 'f' },
         { "non-persistent",       no_argument,       NULL, 'N' },
         { "offline",              required_argument, NULL, 'O' },
         { "ec-cert",              required_argument, NULL, 'E' },
         { "SSL-NO-VERIFY",        no_argument,       NULL, 'U' },
-        { "session",              required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:f:NO:E:S:i:U", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:H:P:g:f:NO:E:i:U", ARRAY_LEN(topts), topts,
                              on_option, on_args, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -547,13 +538,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
-    UNUSED(flags);
-    int return_val = 1;
-    int provisioning_return_val = 0;
+    int rc = 1;
+    bool result;
 
     if (!ctx.ek_server_addr) {
         LOG_ERR("Must specify a remote server url!");
-        return 1;
+        goto out;
     }
 
     ctx.verbose = flags.verbose;
@@ -564,7 +554,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         if (!ret) {
             LOG_ERR("handle/H passed with a value of '-' but unable to find a"
                     " vacant persistent handle!");
-            return 1;
+            goto out;
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persistent_handle);
     }
@@ -573,32 +563,47 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         ctx.ec_cert_file = fopen(ctx.ec_cert_path, "wb");
         if (!ctx.ec_cert_file) {
             LOG_ERR("Could not open file for writing: \"%s\"", ctx.ec_cert_path);
-            return 1;
+            goto out;
         }
     }
 
     if (!ctx.ek_path) {
-        return_val = createEKHandle(sapi_context);
+        int tmp_rc = createEKHandle(sapi_context);
+        if (tmp_rc) {
+            goto out;
+        }
     } else {
         bool res = files_load_public(ctx.ek_path, &ctx.outPublic);
         if (!res) {
             LOG_ERR("Could not load exiting EK public from file");
-            return 1;
+            goto out;
         }
     }
 
-    provisioning_return_val = TPMinitialProvisioning();
-
-    if (return_val && provisioning_return_val) {
-        goto err;
+    int tmp_rc = TPMinitialProvisioning();
+    if (tmp_rc) {
+        goto out;
     }
 
-    return_val = 0;
+    rc = 0;
 
-err:
+out:
     if (ctx.ec_cert_file) {
         fclose(ctx.ec_cert_file);
     }
 
-    return return_val;
+    result = tpm2_session_save(sapi_context, ctx.auth.owner.session, NULL);
+    result &= tpm2_session_save(sapi_context, ctx.auth.endorse.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.owner.session);
+    tpm2_session_free(&ctx.auth.endorse.session);
 }
