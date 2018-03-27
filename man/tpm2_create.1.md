@@ -26,13 +26,15 @@ These options for creating the tpm entity:
   * **-c**, **--context-parent**=_PARENT\_CONTEXT\_FILE_:
     The filename for parent context.
 
-  * **-P**, **--pwdp**=_PARENT\_KEY\_PASSWORD_:
-    The password for parent key, optional. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+  * **-P**, **--auth-parent**=_PARENT\_KEY\_AUTH_:
+    The authorization value for using the parent key, optional.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
-  * **-K**, **--pwdk**=_KEY\_PASSWORD_:
-    The password for key, optional. Follows the password formatting of the
-    "password for parent key" option: -P.
+  * **-K**, **--auth-key**=_KEY\_AUTH_:
+    The authorization value for the key, optional.
+    Follows the authorization formatting of the
+    "password for parent key" option: **-P**.
 
   * **-g**, **--halg**=_ALGORITHM_:
     The hash algorithm to use. Algorithms should follow the
@@ -73,7 +75,7 @@ These options for creating the tpm entity:
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
 

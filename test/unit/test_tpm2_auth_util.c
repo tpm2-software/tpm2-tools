@@ -25,119 +25,121 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 #include <errno.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
 #include <setjmp.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include <cmocka.h>
 #include <tss2/tss2_sys.h>
 
 #include "tpm2_util.h"
-#include "tpm2_password_util.h"
+#include "tpm2_auth_util.h"
 
 static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest;
-    bool res = tpm2_password_util_from_optarg("abcd", &dest);
+    TPMS_AUTH_COMMAND dest;
+    bool res = tpm2_auth_util_from_optarg("abcd", &dest, NULL);
     assert_true(res);
-    assert_int_equal(dest.size, 4);
-    assert_memory_equal(dest.buffer, "abcd", 4);
+    assert_int_equal(dest.hmac.size, 4);
+    assert_memory_equal(dest.hmac.buffer, "abcd", 4);
 }
 
 static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest;
-    bool res = tpm2_password_util_from_optarg("str:abcd", &dest);
+    TPMS_AUTH_COMMAND dest;
+    bool res = tpm2_auth_util_from_optarg("str:abcd", &dest, NULL);
     assert_true(res);
-    assert_int_equal(dest.size, 4);
-    assert_memory_equal(dest.buffer, "abcd", 4);
+    assert_int_equal(dest.hmac.size, 4);
+    assert_memory_equal(dest.hmac.buffer, "abcd", 4);
 }
 
 static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest;
+    TPMS_AUTH_COMMAND dest;
     BYTE expected[] = {
             0x12, 0x34, 0xab, 0xcd
     };
 
-    bool res = tpm2_password_util_from_optarg("hex:1234abcd", &dest);
+    bool res = tpm2_auth_util_from_optarg("hex:1234abcd", &dest, NULL);
     assert_true(res);
-    assert_int_equal(dest.size, sizeof(expected));
-    assert_memory_equal(dest.buffer, expected, sizeof(expected));
+    assert_int_equal(dest.hmac.size, sizeof(expected));
+    assert_memory_equal(dest.hmac.buffer, expected, sizeof(expected));
 }
 
 static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest;
+    TPMS_AUTH_COMMAND dest;
 
-    bool res = tpm2_password_util_from_optarg("str:hex:1234abcd", &dest);
+    bool res = tpm2_auth_util_from_optarg("str:hex:1234abcd", &dest, NULL);
     assert_true(res);
-    assert_int_equal(dest.size, 12);
-    assert_memory_equal(dest.buffer, "hex:1234abcd", 12);
+    assert_int_equal(dest.hmac.size, 12);
+    assert_memory_equal(dest.hmac.buffer, "hex:1234abcd", 12);
 }
 
 static void test_tpm2_password_util_from_optarg_raw_overlength(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest;
+    TPMS_AUTH_COMMAND dest;
     char *overlength = "this_password_is_over_64_characters_in_length_and_should_fail_XXX";
-    bool res = tpm2_password_util_from_optarg(overlength, &dest);
+    bool res = tpm2_auth_util_from_optarg(overlength, &dest, NULL);
     assert_false(res);
 }
 
 static void test_tpm2_password_util_from_optarg_hex_overlength(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest;
+    TPMS_AUTH_COMMAND dest;
     /* 65 hex chars generated via: echo \"`xxd -p -c256 -l65 /dev/urandom`\"\; */
     char *overlength =
         "ae6f6fa01589aa7b227bb6a34c7a8e0c273adbcf14195ce12391a5cc12a5c271f62088"
         "dbfcf1914fdf120da183ec3ad6cc78a2ffd91db40a560169961e3a6d26bf";
-    bool res = tpm2_password_util_from_optarg(overlength, &dest);
+    bool res = tpm2_auth_util_from_optarg(overlength, &dest, NULL);
     assert_false(res);
 }
 
 static void test_tpm2_password_util_from_optarg_empty_str(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest = {
-        .size = 42
+    TPMS_AUTH_COMMAND dest = {
+        .hmac = { .size = 42 }
     };
 
-    bool res = tpm2_password_util_from_optarg("", &dest);
+    bool res = tpm2_auth_util_from_optarg("", &dest, NULL);
     assert_true(res);
-    assert_int_equal(dest.size, 0);
+    assert_int_equal(dest.hmac.size, 0);
 }
 
 static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest = {
-        .size = 42
+    TPMS_AUTH_COMMAND dest = {
+        .hmac = { .size = 42 }
     };
 
-    bool res = tpm2_password_util_from_optarg("str:", &dest);
+    bool res = tpm2_auth_util_from_optarg("str:", &dest, NULL);
     assert_true(res);
-    assert_int_equal(dest.size, 0);
+    assert_int_equal(dest.hmac.size, 0);
 }
 
 
 static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(void **state) {
     (void)state;
 
-    TPM2B_AUTH dest = {
-        .size = 42
+    TPMS_AUTH_COMMAND dest = {
+        .hmac = { .size = 42 }
     };
 
-    bool res = tpm2_password_util_from_optarg("hex:", &dest);
+    bool res = tpm2_auth_util_from_optarg("hex:", &dest, NULL);
     assert_true(res);
-    assert_int_equal(dest.size, 0);
+    assert_int_equal(dest.hmac.size, 0);
 }
 
 int main(int argc, char* argv[]) {

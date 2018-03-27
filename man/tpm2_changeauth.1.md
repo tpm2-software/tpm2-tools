@@ -21,41 +21,42 @@ authorization values.
   * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_:
     The new owner authorization value.
 
-    Passwords should follow the password formatting standards, see section
-    "Password Formatting".
+    Passwords should follow the password authorization formatting standards,
+    see section "Authorization Formatting".
 
   * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
 
     The new endorse authorization value. Passwords should follow the same
-    formatting requirements as the -o option.
+    formatting requirements as the **-o** option.
 
   * **-l**, **--lockout-passwd**=_LOCKOUT\_PASSWORD_:
 
     The new lockout authorization value.
 
     The new endorse authorization value. Passwords should follow the same
-    formatting requirements as the -o option.
+    formatting requirements as the **-o** option.
 
-  * **-O**, **--old-owner-passwd**=_OLD\_OWNER\_PASSWORD_:
+  * **-O**, **--old-auth-owner**=_OLD\_OWNER\_AUTH_:
 
-    The old owner authorization value. Passwords should follow the same
-    formatting requirements as the -o option.
+    The old owner authorization value.
+    Authorization values should follow the password authorization formatting
+    standards, see section "Authorization Formatting".
 
-  * **-E**, **--old-endorse-passwd**=_OLD\_ENDORSE\_PASSWORD_:
+  * **-E**, **--old-auth-endorse**=_OLD\_ENDORSE\_AUTH_:
 
-    The old endorse authorization value. Passwords should follow the same
-    formatting requirements as the -o option.
+    The old endorse authorization value. Authorizations should follow the same
+    formatting requirements as the **-O** option.
 
-  * **-L**, **--old-lockout-passwd**=_OLD\_LOCKOUT\_PASSWORD_:
+  * **-L**, **--old-auth-lockout**=_OLD\_LOCKOUT\_AUTH_:
 
-    The old lockout authorization value. Passwords should follow the same
-    formatting requirements as the -o option.
+    The old lockout authorization value. Authorizations should follow the same
+    formatting requirements as the **-O** option.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

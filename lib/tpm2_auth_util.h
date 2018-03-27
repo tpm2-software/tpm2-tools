@@ -33,6 +33,8 @@
 
 #include <tss2/tss2_sys.h>
 
+#include "tpm2_session.h"
+
 /**
  * Convert a password argument to a valid TPM2B_AUTH structure. Passwords can
  * be specified in two forms: string and hex-string and are identified by a
@@ -58,9 +60,12 @@
  *  The optarg containing the password string.
  * @param dest
  *  The TPM2B_AUTH structure to copy the string into.
+ * @param session
+ *  If a session is used, returns the session data.
  * @return
  *  true on success, false on failure.
  */
-bool tpm2_password_util_from_optarg(const char *password, TPM2B_AUTH *dest);
+bool tpm2_auth_util_from_optarg(const char *password, TPMS_AUTH_COMMAND *auth,
+        tpm2_session **session);
 
 #endif /* SRC_PASSWORD_UTIL_H_ */

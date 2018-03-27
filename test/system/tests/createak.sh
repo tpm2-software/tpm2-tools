@@ -42,8 +42,8 @@ cleanup() {
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
-	tpm2_evictcontrol -Q -A o -H 0x8101000b 2>/dev/null || true
-	tpm2_evictcontrol -Q -A o -H 0x8101000c 2>/dev/null || true
+	tpm2_evictcontrol -Q -a o -H 0x8101000b 2>/dev/null || true
+	tpm2_evictcontrol -Q -a o -H 0x8101000c 2>/dev/null || true
 
 	# clear tpm state
 	tpm2_clear

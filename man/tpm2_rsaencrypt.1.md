@@ -34,7 +34,7 @@ The key referenced by keyHandle is **required** to be:
   * **-P**, **--pwdk**=_KEY\_PASSWORD_:
 
     specifies the password of _KEY\_HANDLE_. Passwords should follow the
-    password formatting standards, see section "Password Formatting".
+    authorization formatting standards, see section "Authorization Formatting".
 
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
@@ -46,7 +46,7 @@ The key referenced by keyHandle is **required** to be:
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

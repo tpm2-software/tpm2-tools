@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, Emmanuel Deloget <logout@free.fr>
+ * Copyright (c) 2018, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +33,7 @@
 #include <stdlib.h>
 
 #include "log.h"
-#include "tpm2_password_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -86,9 +87,10 @@ static bool on_option(char key, char *value) {
         ctx.platform = true;
         break;
     case 'L':
-        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.session_data,
+                NULL);
         if (!result) {
-            LOG_ERR("Invalid lockout password, got\"%s\"", value);
+            LOG_ERR("Invalid lockout authorization, got\"%s\"", value);
             return false;
         }
         break;
@@ -101,7 +103,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "clear",          no_argument,       NULL, 'c' },
-        { "lockout-passwd", required_argument, NULL, 'L' },
+        { "auth-lockout",   required_argument, NULL, 'L' },
         { "platform",       no_argument,       NULL, 'p' },
     };
 

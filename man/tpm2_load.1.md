@@ -23,9 +23,10 @@ into the TPM.
   * **-c**, **--context-parent**=_PARENT\_CONTEXT\_FILE_:
     The filename for parent context.
 
-  * **-P**, **--pwdp**=_PARENT\_KEY\_PASSWORD_:
-    The password for parent key, optional. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+  * **-P**, **--auth-parent**=_KEY\_AUTH_:
+    Optional authorization value to use the parent object specified by **-H**.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
   * **-u**, **--pubfile**=_PUBLIC\_OBJECT\_DATA\_FILE_:
     A file containing the public portion of the object.
@@ -47,7 +48,7 @@ into the TPM.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 
 # EXAMPLES

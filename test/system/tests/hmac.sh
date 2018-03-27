@@ -72,7 +72,7 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
 
@@ -89,7 +89,7 @@ tpm2_hmac -Q -c $file_hmac_key_ctx -g $halg -o $file_hmac_output $file_input_dat
 ####handle test
 rm -f $file_hmac_output  
 
-tpm2_evictcontrol -A o -c $file_hmac_key_ctx -p $handle_hmac_key > evict.log
+tpm2_evictcontrol -a o -c $file_hmac_key_ctx -p $handle_hmac_key > evict.log
 grep -q "persistentHandle: "$handle_hmac_key"" evict.log
 
 echo "12345678" > $file_input_data
@@ -102,7 +102,7 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
 tpm2_create -Q -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
 

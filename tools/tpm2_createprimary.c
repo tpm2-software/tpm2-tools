@@ -42,28 +42,31 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_createprimary_ctx tpm_createprimary_ctx;
 struct tpm_createprimary_ctx {
-    TPMS_AUTH_COMMAND session_data;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
     tpm2_hierearchy_pdata objdata;
     char *context_file;
     struct {
-        UINT8 H :1;
+        UINT8 a :1;
         UINT8 g :1;
         UINT8 G :1;
     } flags;
 };
 
 static tpm_createprimary_ctx ctx = {
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     .objdata = TPM2_HIERARCHY_DATA_INIT
 };
 
@@ -145,29 +148,30 @@ static bool on_option(char key, char *value) {
     bool res;
 
     switch (key) {
-    case 'H':
+    case 'a':
         res = tpm2_hierarchy_from_optarg(value, &ctx.objdata.in.hierarchy,
                 TPM2_HIERARCHY_FLAGS_ALL);
         if (!res) {
             return false;
         }
-        ctx.flags.H = 1;
+        ctx.flags.a = 1;
         break;
     case 'P':
-        res = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        res = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
         if (!res) {
-            LOG_ERR("Invalid parent key password, got\"%s\"", value);
+            LOG_ERR("Invalid parent key authorization, got\"%s\"", value);
             return false;
         }
         break;
-    case 'K':
-        res = tpm2_password_util_from_optarg(value,
-                &ctx.objdata.in.sensitive.sensitive.userAuth);
+    case 'K': {
+        TPMS_AUTH_COMMAND tmp;
+        res = tpm2_auth_util_from_optarg(value, &tmp, NULL);
         if (!res) {
-            LOG_ERR("Invalid new key password, got\"%s\"", value);
+            LOG_ERR("Invalid new key authorization, got\"%s\"", value);
             return false;
         }
-        break;
+        ctx.objdata.in.sensitive.sensitive.userAuth = tmp.hmac;
+    } break;
     case 'g': {
         TPMI_ALG_HASH halg = tpm2_alg_util_from_optarg(value);
         if (halg == TPM2_ALG_ERROR) {
@@ -216,15 +220,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
     }   break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    }   break;
     }
 
     return true;
@@ -233,49 +228,63 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "hierarchy",            required_argument, NULL, 'H' },
-        { "pwdp",                 required_argument, NULL, 'P' },
-        { "pwdk",                 required_argument, NULL, 'K' },
+        { "hierarchy",            required_argument, NULL, 'a' },
+        { "auth-hierarchy",       required_argument, NULL, 'P' },
+        { "auth-object",          required_argument, NULL, 'K' },
         { "halg",                 required_argument, NULL, 'g' },
         { "kalg",                 required_argument, NULL, 'G' },
         { "context",              required_argument, NULL, 'C' },
         { "policy-file",          required_argument, NULL, 'L' },
         { "object-attributes",    required_argument, NULL, 'A' },
-        { "input-session-handle", required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("A:P:K:g:G:C:L:S:H:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("A:P:K:g:G:C:L:a:", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }
 
 static inline bool valid_ctx(void) {
-    return (ctx.flags.H && ctx.flags.g && ctx.flags.G);
+    return (ctx.flags.a && ctx.flags.g && ctx.flags.G);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
+    int rc = 1;
+
     if (!valid_ctx()) {
-        return 1;
+        goto out;
     }
 
-    bool result = tpm2_hierarrchy_create_primary(sapi_context, &ctx.session_data, &ctx.objdata);
+    bool result = tpm2_hierarrchy_create_primary(sapi_context, &ctx.auth.session_data, &ctx.objdata);
     if (!result) {
-        return 1;
+        goto out;
     }
 
     tpm2_util_tpma_object_to_yaml(ctx.objdata.in.public.publicArea.objectAttributes);
     tpm2_tool_output("handle: 0x%X\n", ctx.objdata.out.handle);
 
-    if (!ctx.context_file) {
-        return 0;
+    if (ctx.context_file) {
+        result = files_save_tpm_context_to_path(sapi_context, ctx.objdata.out.handle,
+            ctx.context_file);
+        if (!result) {
+            goto out;
+        }
     }
 
-    result = files_save_tpm_context_to_path(sapi_context, ctx.objdata.out.handle,
-            ctx.context_file);
+    rc = 0;
 
-    /* 0 on success, 1 otherwise */
-    return !result;
+out:
+    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }

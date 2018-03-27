@@ -50,7 +50,7 @@ cleanup() {
          $file_loadexternal_output
 
   if [ "$1" != "keep_handle" ]; then
-    tpm2_evictcontrol -Q -Ao -H $Handle_parent 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -H $Handle_parent 2>/dev/null || true
   fi
 }
 trap cleanup EXIT
@@ -65,19 +65,19 @@ cleanup
 
 tpm2_clear
 
-tpm2_createprimary -Q -H e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -c $file_primary_key_ctx
 
-tpm2_loadexternal -Q -H n   -u $file_loadexternal_key_pub   -C $file_loadexternal_key_ctx
+tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -C $file_loadexternal_key_ctx
 
-tpm2_evictcontrol -Q -A o -c $file_primary_key_ctx -p $Handle_parent
+tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
 
 # Test with Handle
 cleanup keep_handle
 
 tpm2_create -Q -H $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
 
-tpm2_loadexternal -Q -H n   -u $file_loadexternal_key_pub
+tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub
 
 exit 0

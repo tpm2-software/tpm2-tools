@@ -41,7 +41,7 @@
 #include "log.h"
 #include "pcr.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_password_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -51,7 +51,12 @@ typedef struct {
     UINT32 id[24];
 } PCR_LIST;
 
-static TPMS_AUTH_COMMAND sessionData;
+static struct {
+    TPMS_AUTH_COMMAND session_data;
+    tpm2_session *session;
+} auth = {
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)
+};
 static char *outFilePath;
 static char *signature_path;
 static char *message_path;
@@ -62,7 +67,6 @@ static TPML_PCR_SELECTION  pcrSelections;
 static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag;
 static char *contextFilePath;
 static TPM2_HANDLE akHandle;
-static TPMS_AUTH_COMMAND session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
 
 static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
 
@@ -89,7 +93,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
     TPMT_SIGNATURE signature;
     TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
         1, {
-            session_data,
+            auth.session_data,
          },
     };
 
@@ -140,9 +144,10 @@ static bool on_option(char key, char *value) {
         break;
 
     case 'P': {
-        bool res = tpm2_password_util_from_optarg(value, &sessionData.hmac);
+        bool res = tpm2_auth_util_from_optarg(value, &auth.session_data,
+                &auth.session);
         if (!res) {
-            LOG_ERR("Invalid AK password, got\"%s\"", value);
+            LOG_ERR("Invalid AK authorization, got\"%s\"", value);
             return false;
         }
     } break;
@@ -184,15 +189,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        session_data.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    } break;
     case 's':
          signature_path = value;
          break;
@@ -224,19 +220,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
         { "ak-handle",            required_argument, NULL, 'k' },
         { "ak-context",           required_argument, NULL, 'c' },
-        { "ak-passwd",            required_argument, NULL, 'P' },
+        { "auth-ak",              required_argument, NULL, 'P' },
         { "id-list",              required_argument, NULL, 'l' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "sel-list",             required_argument, NULL, 'L' },
         { "qualify-data",         required_argument, NULL, 'q' },
-        { "session",              required_argument, NULL, 'S' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
         { "format",               required_argument, NULL, 'f' },
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:o:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:c:P:l:g:L:q:s:m:f:G:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -246,18 +241,40 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
+    int rc = 1;
+    bool result;
+
     /* TODO this whole file needs to be re-done, especially the option validation */
     if (!l_flag && !L_flag) {
         LOG_ERR("Expected either -l or -L to be specified");
-        return 1;
+        goto out;
     }
 
     if(c_flag) {
-        bool result = files_load_tpm_context_from_path(sapi_context, &akHandle, contextFilePath);
+        result = files_load_tpm_context_from_path(sapi_context, &akHandle, contextFilePath);
         if (!result) {
-            return 1;
+            goto out;
         }
     }
 
-    return quote(sapi_context, akHandle, &pcrSelections);
+    int tmp_rc = quote(sapi_context, akHandle, &pcrSelections);
+    if (tmp_rc) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+
+    result = tpm2_session_save(sapi_context, auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+void tpm2_tool_onexit(void) {
+
+    tpm2_session_free(&auth.session);
 }

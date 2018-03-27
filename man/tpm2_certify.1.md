@@ -36,16 +36,16 @@ These options control the ceritifcation:
   * **-c**, **--key-context**=_KEY\_CONTEXT_:
     Filename of the key context used to sign the  attestation structure.
 
-  * **-P**, **--pwdo**=_OBJECT\_PASSWORD_:
-    Use _OBJECT\_PASSWORD_ for providing an authorization value for the object specified
+  * **-P**, **--auth-object**=_OBJECT\_AUTH_:
+    Use _OBJECT\_AUTH_ for providing an authorization value for the object specified
     in _OBJECT\_HANDLE_.
-    Passwords should follow the "password formatting standards, see section
-    "Password Formatting".
+    Authorization values should follow the "authorization formatting standards,
+    see section "Authorization Formatting".
 
-  * **-K**, **--pwdk**=_KEY\_PASSWORD_:
-    Use _KEY_PASSWORD_ for providing an authorization value for the key specified
+  * **-K**, **--auth-key**=_KEY\_AUTH_:
+    Use _KEY\_AUTH_ for providing an authorization value for the key specified
     in _KEY\_HANDLE_.
-    Follows the same formatting guidelines as the object handle password or
+    Follows the same formatting guidelines as the object handle authorization or
     -P option.
 
   * **-a**, **--attest-file**=_ATTEST\_FILE_:
@@ -62,7 +62,7 @@ These options control the ceritifcation:
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [signature format specifiers](common/signature.md)
 

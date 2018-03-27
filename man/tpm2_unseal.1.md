@@ -29,10 +29,11 @@ alive and pass that session using the **--input-session-handle** option.
 
     Filename of the item context.
 
-  * **-P**, **--pwdk**=_KEY\_PASSWORD_:
+  * **-P**, **--auth-key**=_KEY\_AUTH_:
 
-    Specifies the password of _ITEM\_HANDLE_. Passwords should follow the
-    password formatting standards, see section "Password Formatting".
+    Optional authorization value to use the key specified by **-k**.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
   * **-o**, **--out-file**=_OUT\_FILE_:
 
@@ -40,13 +41,8 @@ alive and pass that session using the **--input-session-handle** option.
 
 ## Session Options
 
-  Options used for controlling sessions and policy events.
-
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option. This session
-    is used in lieu of starting a session and using the PCR policy options. **-L** is
-    mutually exclusive of this option.
+  Options used for internally controlling sessions and policy events. These
+  are exclusive of **-P**.
 
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
 
@@ -64,7 +60,7 @@ alive and pass that session using the **--input-session-handle** option.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [pcr bank specifiers](common/password.md)
 

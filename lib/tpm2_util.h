@@ -70,11 +70,14 @@
             } \
     }
 
-#define TPMS_AUTH_COMMAND_INIT(session_handle) { \
+#define TPMS_AUTH_COMMAND_INIT(session_handle) \
+        TPMS_AUTH_COMMAND_INIT_ATTRS(session_handle, TPMA_SESSION_CONTINUESESSION)
+
+#define TPMS_AUTH_COMMAND_INIT_ATTRS(session_handle, attrs) { \
         .sessionHandle = session_handle,\
-	    .nonce = TPM2B_EMPTY_INIT, \
-	    .sessionAttributes = TPMA_SESSION_CONTINUESESSION, \
-	    .hmac = TPM2B_EMPTY_INIT \
+        .nonce = TPM2B_EMPTY_INIT, \
+        .sessionAttributes = attrs, \
+        .hmac = TPM2B_EMPTY_INIT \
     }
 
 #define TPMS_AUTH_COMMAND_EMPTY_INIT TPMS_AUTH_COMMAND_INIT(0)

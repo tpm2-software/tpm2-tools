@@ -28,10 +28,11 @@ data and validation shall indicate that hashed data did not start with
 
     Filename of the key context used for the operation.
 
-  * **-P**, **--pwdk**=_KEY\_PASSWORD_:
+  * **-P**, **--auth-key**=_KEY\_AUTH_:
 
-    Specifies the password of _KEY\_HANDLE_. Passwords should follow the
-    password formatting standards, see section "Password Formatting".
+    Optional authorization value to use the key specified by **-k**.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
 
@@ -67,15 +68,11 @@ data and validation shall indicate that hashed data did not start with
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
 

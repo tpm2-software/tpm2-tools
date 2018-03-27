@@ -33,7 +33,8 @@ These options control the object verification:
 
   * **-P**, **--password**=_PASSWORD_:
     Use _PASSWORD_ for providing an authorization value for the _KEY\_HANDLE_.
-    Passwords should follow the "password formatting standards, see section "Password Formatting".
+    Passwords should follow the authorization formatting standards, see section
+    "Authorization Formatting".
 
   * **-e**, **--endorse-password**=_ENDORSE\_PASSWORD_:
     The endorsement password, optional. Follows the same formating guidelines as the handle password option -P.
@@ -49,7 +50,7 @@ These options control the object verification:
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

@@ -40,8 +40,8 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -50,18 +50,19 @@ typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
     struct {
         UINT8 i : 1;
-        UINT8 S : 1;
         UINT8 P : 1;
-        UINT8 unused : 5;
     } flags;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
     TPMI_DH_PCR pcr;
     FILE *input;
-    TPMS_AUTH_COMMAND session_data;
 };
 
 static tpm_pcrevent_ctx ctx = {
         .pcr = TPM2_RH_NULL,
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
 };
 
 static inline void swap_auths(TPMS_AUTH_COMMAND *a, TPMS_AUTH_COMMAND *b) {
@@ -80,7 +81,7 @@ static bool tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
      */
     TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
         1, {
-            ctx.session_data,
+            ctx.auth.session_data,
             TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)
          },
     };
@@ -267,12 +268,7 @@ static bool init(void) {
 
     ctx.input = ctx.input ? ctx.input : stdin;
 
-    if (ctx.flags.S && ctx.flags.P) {
-        LOG_ERR("Cannot specify both -P and -S options.");
-        return false;
-    }
-
-    if ((ctx.flags.S || ctx.flags.P) && !ctx.flags.i) {
+    if ((ctx.auth.session || ctx.flags.P) && !ctx.flags.i) {
         LOG_ERR("Must specify a PCR index via -i with the -%c option.",
                 ctx.flags.P ? 'P' : 'S');
         return false;
@@ -310,21 +306,11 @@ static bool on_option(char key, char *value) {
     }
         ctx.flags.i = 1;
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-        ctx.flags.S = 1;
-    } break;
     case 'P': {
-        bool result = tpm2_password_util_from_optarg(value,
-                &ctx.session_data.hmac);
+        bool result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
+                &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid key handle password, got\"%s\"", value);
+            LOG_ERR("Invalid key handle authorization, got\"%s\"", value);
             return false;
         }
     }
@@ -340,11 +326,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
         { "pcr-index", required_argument, NULL, 'i' },
-        { "session",   required_argument, NULL, 'S' },
-        { "passwd",    required_argument, NULL, 'P' },
+        { "auth-pcr",  required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("i:S:P:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("i:P:", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
 
     return *opts != NULL;
@@ -354,12 +339,27 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
+    int rc = 1;
     bool result = init();
     if (!result) {
-        return 1;
+        goto out;
     }
 
-    return do_hmac_and_output(sapi_context) != true;
+    result = do_hmac_and_output(sapi_context);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+
+out:
+
+    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
 }
 
 void tpm2_tool_onexit(void) {
@@ -367,4 +367,6 @@ void tpm2_tool_onexit(void) {
     if (ctx.input && ctx.input != stdin) {
         fclose(ctx.input);
     }
+
+    tpm2_session_free(&ctx.auth.session);
 }

@@ -30,10 +30,11 @@ The key referenced by keyHandle is **required** to be:
 
     filename of the key context used for the operation.
 
-  * **-P**, **--pwdk**=_KEY\_PASSWORD_:
+  * **-P**, **--auth-key**=_KEY\_AUTH_:
 
-    specifies the password of _KEY\_HANDLE_. Passwords should follow the
-    password formatting standards, see section "Password Formatting".
+    Optional authorization value to use the key specified by **-k**.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
   * **-I**, **--in-file**=_INPUT\FILE_:
 
@@ -51,7 +52,7 @@ The key referenced by keyHandle is **required** to be:
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

@@ -38,13 +38,13 @@
 #include <getopt.h>
 #include <tss2/tss2_sys.h>
 
-#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
+#include "tpm2_auth_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_hash.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -52,7 +52,10 @@
 typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
     TPMT_TK_HASHCHECK validation;
-    TPMS_AUTH_COMMAND sessionData;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
     TPMI_DH_OBJECT keyHandle;
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST digest;
@@ -76,8 +79,7 @@ struct tpm_sign_ctx {
 };
 
 tpm_sign_ctx ctx = {
-        .msg = NULL,
-        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         .halg = TPM2_ALG_SHA1,
         .digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
@@ -87,7 +89,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TPMT_SIG_SCHEME in_scheme;
     TPMT_SIGNATURE signature;
 
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.sessionData }};
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     if (!ctx.flags.D) {
@@ -195,9 +197,10 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'P': {
-        bool result = tpm2_password_util_from_optarg(value, &ctx.sessionData.hmac);
+        bool result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
+                &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid key password, got\"%s\"", value);
+            LOG_ERR("Invalid key authorization, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -247,15 +250,6 @@ static bool on_option(char key, char *value) {
         ctx.contextKeyFile = value;
         ctx.flags.c = 1;
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.sessionData.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    } break;
     case 'f':
         ctx.flags.f = 1;
         ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
@@ -273,18 +267,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
       { "key-handle",           required_argument, NULL, 'k' },
-      { "pwdk",                 required_argument, NULL, 'P' },
+      { "auth-key",             required_argument, NULL, 'P' },
       { "halg",                 required_argument, NULL, 'g' },
       { "message",              required_argument, NULL, 'm' },
       { "digest",               required_argument, NULL, 'D' },
       { "sig",                  required_argument, NULL, 's' },
       { "ticket",               required_argument, NULL, 't' },
       { "key-context",          required_argument, NULL, 'c' },
-      { "session",              required_argument, NULL, 'S' },
       { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("k:P:g:m:D:t:s:c:S:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:P:g:m:D:t:s:c:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -294,14 +287,30 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
+    int rc = 1;
     bool result = init(sapi_context);
     if (!result) {
-        return 1;
+        goto out;
     }
 
     result = sign_and_save(sapi_context);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+out:
+
+    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+void tpm2_tool_onexit(void) {
 
     free(ctx.msg);
-
-    return result != true;
+    tpm2_session_free(&ctx.auth.session);
 }

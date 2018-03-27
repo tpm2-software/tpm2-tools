@@ -17,7 +17,7 @@ be evicted.
 
 # OPTIONS
 
-  * **-A**, **--auth**=_AUTH_:
+  * **-a**, **--auth-heirarchy**=_AUTH\_HIERARCHY\_:
 
     The authorization hierarchy used to authorize the commands. Defaults to the "owner" hierarchy.
     Supported options are:
@@ -44,10 +44,10 @@ be evicted.
 
     The persistent handle for the object handle specified via _HANDLE_.
 
-  * **-P**, **--pwda**=_AUTH\_PASSWORD_:
+  * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY_\VALUE_:
 
-    Optional authorization password. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+    Optional authorization value. Authorization values should follow the
+    authorization formatting standards, see section "Authorization Formatting".
 
   * **-S**, **--session**=_SESSION\_FILE_:
 
@@ -57,7 +57,7 @@ be evicted.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

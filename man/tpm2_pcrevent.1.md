@@ -33,20 +33,16 @@ These options control extending the pcr:
     Not only compute the hash digests on _FILE_, also extend the pcr given by
     _INDEX_ for all supported hash algorithms.
 
-    * **-S**, **--session**=_SESSION\_FILE_:
-    A session file from **tpm2_startauthsession**(1)'s **-S** option.
-    Use _SESSION\_FILE_ for providing an authorization session for the PCR
-    specified by _INDEX_.
-    It is an error to specify **-S** without specifying a pcr index with **-i**.
-
-  * **-P**, **--passwd**=_PASSWORD_:
-    Use _PASSWORD_ for providing an authorization value for the pcr specified
-    in _INDEX_.
-    It is an error to specify **-P** without specifying a pcr index with **-i**.
+  * **-P**, **--auth-pcr**=_PCR\_AUTH_:
+    Specifies the authorization value for PCR. Authorization values
+    should follow the authorization formatting standards, see section
+    "Authorization Formatting".
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
+
+[authorization formatting](common/authorizations.md)
 
 # EXAMPLES
 

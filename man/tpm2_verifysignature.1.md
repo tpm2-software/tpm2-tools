@@ -67,7 +67,7 @@ symmetric key, both the public and private portions need to be loaded.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
 

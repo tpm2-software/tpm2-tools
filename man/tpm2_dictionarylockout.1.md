@@ -37,9 +37,11 @@ dictionary-attack-lockout state, if any passwd option is missing, assume NULL.
     specifies the maximum number of allowed authentication attempts on
     DA-protected-object; after which DA is activated.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
+  * **-P**, **--auth-lockout**=_LOCKOUT\_AUTH_:
+    The lockout authorization value.
 
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
 
 [common options](common/options.md)
 

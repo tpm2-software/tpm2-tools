@@ -41,15 +41,18 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_encrypt_decrypt_ctx tpm_encrypt_decrypt_ctx;
 struct tpm_encrypt_decrypt_ctx {
-    TPMS_AUTH_COMMAND session_data;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
     TPMI_YES_NO is_decrypt;
     TPMI_DH_OBJECT key_handle;
     TPM2B_MAX_BUFFER data;
@@ -67,8 +70,7 @@ struct tpm_encrypt_decrypt_ctx {
 };
 
 static tpm_encrypt_decrypt_ctx ctx = {
-    .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
-    .data = TPM2B_EMPTY_INIT,
+    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
 };
 
 static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
@@ -77,11 +79,8 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_IV iv_out = TPM2B_TYPE_INIT(TPM2B_IV, buffer);
 
-    TSS2L_SYS_AUTH_COMMAND sessions_data;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-
-    sessions_data.count = 1;
-    sessions_data.auths[0] = ctx.session_data;
 
     TPM2B_IV iv_in = {
         .size = TPM2_MAX_SYM_BLOCK_SIZE,
@@ -130,9 +129,10 @@ static bool on_option(char key, char *value) {
         ctx.flags.k = 1;
         break;
     case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
+                &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid object key password, got\"%s\"", value);
+            LOG_ERR("Invalid object key authorization, got\"%s\"", value);
             return false;
         }
         ctx.flags.P = 1;
@@ -164,15 +164,6 @@ static bool on_option(char key, char *value) {
         ctx.context_key_file = value;
         ctx.flags.c = 1;
         break;
-    case 'S': {
-        tpm2_session *s = tpm2_session_restore(value);
-        if (!s) {
-            return false;
-        }
-
-        ctx.session_data.sessionHandle = tpm2_session_get_handle(s);
-        tpm2_session_free(&s);
-    } break;
     }
 
     return true;
@@ -182,17 +173,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "key-handle",           required_argument, NULL, 'k' },
-        { "pwdk",                 required_argument, NULL, 'P' },
+        { "auth-key",             required_argument, NULL, 'P' },
         { "decrypt",              no_argument,       NULL, 'D' },
         { "in-file",              required_argument, NULL, 'I' },
         { "out-file",             required_argument, NULL, 'o' },
         { "key-context",          required_argument, NULL, 'c' },
-        { "session",              required_argument, NULL, 'S' },
     };
 
-    ctx.session_data.sessionHandle = TPM2_RS_PW;
-
-    *opts = tpm2_options_new("k:P:DI:o:c:S:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("k:P:DI:o:c:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -201,20 +189,39 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
     bool result;
+    int rc = 1;
 
     if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I && ctx.flags.o)) {
         LOG_ERR("Invalid arguments");
-        return 1;
+        goto out;
     }
 
     if (ctx.flags.c) {
         result = files_load_tpm_context_from_path(sapi_context, &ctx.key_handle,
                                                   ctx.context_key_file);
         if (!result) {
-            return 1;
+            goto out;
         }
     }
 
-    return encrypt_decrypt(sapi_context) != true;
+    result = encrypt_decrypt(sapi_context);
+    if (!result) {
+        goto out;
+    }
+
+    rc = 0;
+out:
+    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }

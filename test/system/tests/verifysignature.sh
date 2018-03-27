@@ -68,7 +68,7 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -H e -g $alg_hash -G $alg_primary_key -C $file_primary_key_ctx
+tpm2_createprimary -Q -a e -g $alg_hash -G $alg_primary_key -C $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv  -c $file_primary_key_ctx
 
@@ -78,13 +78,13 @@ tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -s $file_
 
 tpm2_verifysignature -Q -c $file_signing_key_ctx  -g $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
 
-tpm2_hash -Q -H n -g $alg_hash -o $file_input_data_hash -t $file_input_data_hash_tk $file_input_data
+tpm2_hash -Q -a n -g $alg_hash -o $file_input_data_hash -t $file_input_data_hash_tk $file_input_data
 
 rm -f $file_verify_tk_data
 tpm2_verifysignature -Q -c  $file_signing_key_ctx  -D  $file_input_data_hash -s $file_output_data  -t $file_verify_tk_data
 
 rm -f $file_verify_tk_data $file_signing_key_ctx  -rf
-tpm2_loadexternal -Q -H n -u $file_signing_key_pub -C  $file_signing_key_ctx
+tpm2_loadexternal -Q -a n -u $file_signing_key_pub -C  $file_signing_key_ctx
 
 tpm2_verifysignature -Q -c  $file_signing_key_ctx  -g $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Intel Corporation
+ * Copyright (c) 2017-2018, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,23 +33,29 @@
 
 #include "log.h"
 #include "tpm2_tool.h"
+#include "tpm2_auth_util.h"
+#include "tpm2_session.h"
 #include "tpm2_util.h"
-#include "tpm2_password_util.h"
 
 typedef struct clear_ctx clear_ctx;
 struct clear_ctx {
     bool platform;
-    TPMS_AUTH_COMMAND session_data;
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
 };
 
 static clear_ctx ctx = {
     .platform = false,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    .auth = {
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    },
 };
 
 static bool clear(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.session_data }};
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.auth.session_data }};
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
     TPMI_RH_CLEAR rh = TPM2_RH_LOCKOUT;
 
@@ -78,9 +84,9 @@ static bool on_option(char key, char *value) {
         ctx.platform = true;
         break;
     case 'L':
-        result = tpm2_password_util_from_optarg(value, &ctx.session_data.hmac);
+        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid lockout password, got\"%s\"", value);
+            LOG_ERR("Invalid lockout authorization, got\"%s\"", value);
             return false;
         }
         break;
@@ -92,8 +98,8 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "platform",       no_argument,       NULL, 'p' },
-        { "lockout-passwd", required_argument, NULL, 'L' },
+        { "platform",     no_argument,       NULL, 'p' },
+        { "auth-lockout", required_argument, NULL, 'L' },
     };
 
     *opts = tpm2_options_new("pL:", ARRAY_LEN(topts), topts, on_option, NULL,
@@ -106,5 +112,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return clear(sapi_context) != true;
+    bool result = clear(sapi_context);
+
+    result &= tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+
+    return result == false;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }

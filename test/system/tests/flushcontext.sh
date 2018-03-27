@@ -46,7 +46,7 @@ cleanup
 tpm2_clear
 
 # Test for flushing the specified handle
-tpm2_createprimary -Q -H o -g sha256 -G rsa
+tpm2_createprimary -Q -a o -g sha256 -G rsa
 # tpm2-abrmd may save the transient object and restore it when using
 res=`tpm2_getcap -c handles-transient` 
 if [ -n "$res" ]; then
@@ -54,7 +54,7 @@ if [ -n "$res" ]; then
 fi
 
 # Test for flushing a transient object
-tpm2_createprimary -Q -H o -g sha256 -G rsa
+tpm2_createprimary -Q -a o -g sha256 -G rsa
 tpm2_flushcontext -Q -t
 
 # Test for flushing a loaded session

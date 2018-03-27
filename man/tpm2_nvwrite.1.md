@@ -31,13 +31,14 @@ If _FILE_ is not specified, it defaults to stdin.
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-  * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
-    specifies the password of authHandle. Passwords should follow the
-    "password formatting standards, see section "Password Formatting".
+    **NOTE**: To authorize against the index, specify the index handle as
+    the argument to option **-a**. The index auth value is set via the
+    **-I** option to tpm2_nvdefine(1).
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
+  * **-P**, **--auth-hierarchy**=_HIERARCHY\_AUTH_:
+    Specifies the authorization value for the hierarchy. Authorization values
+    should follow the authorization formatting standards, see section
+    "Authorization Formatting".
 
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
 
@@ -54,7 +55,7 @@ If _FILE_ is not specified, it defaults to stdin.
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 # EXAMPLES
 

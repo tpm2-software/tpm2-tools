@@ -94,24 +94,10 @@ if [ "$new_pcr_value" == "$old_pcr_value" ]; then
   exit 1;
 fi
 
-# verify that specifying -S or -P without -i fails
+# verify that specifying -P without -i fails
 trap - ERR
 
 cmd="tpm2_pcrevent -Q -P foo $hash_in_file 2> /dev/null"
-eval "$cmd"
-if [ $? -eq 0 ]; then
-  echo "Expected $cmd to fail, passed."
-  exit 1;
-fi
-
-cmd="tpm2_pcrevent -Q -S 1234 $hash_in_file 2> /dev/null"
-eval "$cmd"
-if [ $? -eq 0 ]; then
-  echo "Expected $cmd to fail, passed."
-  exit 1;
-fi
-
-cmd="tpm2_pcrevent -Q -i 9 -P foo -S 1234 $hash_in_file 2> /dev/null"
 eval "$cmd"
 if [ $? -eq 0 ]; then
   echo "Expected $cmd to fail, passed."

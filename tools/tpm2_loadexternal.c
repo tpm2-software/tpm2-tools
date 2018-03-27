@@ -85,7 +85,7 @@ static bool on_option(char key, char *value) {
     bool result;
 
     switch(key) {
-    case 'H':
+    case 'a':
         result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy_value,
                    TPM2_HIERARCHY_FLAGS_ALL);
         if (!result) {
@@ -117,13 +117,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "hierarchy", required_argument, NULL, 'H'},
-      { "pubfile",  required_argument, NULL, 'u'},
-      { "privfile", required_argument, NULL, 'r'},
-      { "context",  required_argument, NULL, 'C'},
+      { "hierarchy", required_argument, NULL, 'a'},
+      { "pubfile",   required_argument, NULL, 'u'},
+      { "privfile",  required_argument, NULL, 'r'},
+      { "context",   required_argument, NULL, 'C'},
     };
 
-    *opts = tpm2_options_new("H:u:r:C:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("a:u:r:C:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;

@@ -57,7 +57,7 @@ echo "T0naX0u123abc" > $hash_in_file
 
 # Test with ticket and hash output files and verify that the output hash
 # is correct. Ticket is not stable and changes run to run, don't verify it.
-tpm2_hash -H e -g sha1 -o $hash_out_file -t $ticket_file $hash_in_file 1>/dev/null
+tpm2_hash -a e -g sha1 -o $hash_out_file -t $ticket_file $hash_in_file 1>/dev/null
 
 expected=`sha1sum $hash_in_file | awk '{print $1}'`
 actual=`cat $hash_out_file | xxd -p -c 20`
@@ -69,7 +69,7 @@ cleanup
 # Test platform hierarchy with multiple files and verify output against sha256sum
 # Test a file redirection as well.
 echo "T0naX0u123abc" > $hash_in_file
-tpm2_hash -H p -g sha256 -Q -o $hash_out_file -t $ticket_file < $hash_in_file
+tpm2_hash -a p -g sha256 -Q -o $hash_out_file -t $ticket_file < $hash_in_file
 
 expected=`sha256sum $hash_in_file | awk '{print $1}'`
 actual=`cat $hash_out_file | xxd -p -c 256`
@@ -80,7 +80,7 @@ cleanup
 
 # Test stdout output as well as no options.
 # Validate that hash outputs are as expected.
-tpm_hash_val=`echo 1234 | tpm2_hash -H n | tee $out | grep sha1 | cut -d\: -f 2-2 | tr -d '[:space:]'`
+tpm_hash_val=`echo 1234 | tpm2_hash -a n | tee $out | grep sha1 | cut -d\: -f 2-2 | tr -d '[:space:]'`
 sha1sum_val=`echo 1234 | sha1sum  | cut -d\  -f 1-2 | tr -d '[:space:]'`
 if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
   echo "Expected tpm and sha1sum to produce same hashes."

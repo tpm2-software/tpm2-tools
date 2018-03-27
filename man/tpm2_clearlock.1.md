@@ -26,17 +26,18 @@ is missing, assume NULL.
     specifies the tool should operate on the platform hierarchy. By default
     it operates on the lockout hierarchy.
 
-  * **-L**, **--lockout-passwd**=_LOCKOUT\_PASSWORD_:
+  * **-L**, **--auth-lockout**=_LOCKOUT\_PASSWORD_:
     The lockout authorization value.
 
-    Passwords should follow the password formatting standards, see section
-    "Password Formatting".
+    Authorization values should follow the authorization formatting standards,
+    see section "Authorization Formatting".
+    This tool only respects the *Password* and *HMAC* options.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-[password formatting](common/password.md)
+[authorization formatting](common/password.md)
 
 # EXAMPLES
 

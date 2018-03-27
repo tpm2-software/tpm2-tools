@@ -41,7 +41,7 @@ cleanup() {
     for idx in "${!keys[@]}"
     do
         handle=$(printf "0x%X\n" $(($handle_base + $idx)))
-        tpm2_evictcontrol -Q -A "$auth" -H "$handle" -p "$handle"
+        tpm2_evictcontrol -Q -a "$auth" -H "$handle" -p "$handle"
     done
 
     rm -f primary.context out.yaml
@@ -78,9 +78,9 @@ tpm2_clear
 # Test persisting transient objects
 for idx in "${!keys[@]}"
 do
-    tpm2_createprimary -Q -H "$auth" -g "${hashes[$idx]}" -G "${keys[$idx]}" -C primary.context
+    tpm2_createprimary -Q -a "$auth" -g "${hashes[$idx]}" -G "${keys[$idx]}" -C primary.context
     handle=$(printf "0x%X\n" $(($handle_base + $idx)))
-    tpm2_evictcontrol -Q -A "$auth" -p "$handle" -c primary.context
+    tpm2_evictcontrol -Q -a "$auth" -p "$handle" -c primary.context
 done
 
 tpm2_listpersistent > out.yaml

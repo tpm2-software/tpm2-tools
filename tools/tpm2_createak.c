@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 
 #include "tpm2_convert.h"
 #include "tpm2_options.h"
-#include "tpm2_password_util.h"
+#include "tpm2_auth_util.h"
 #include "files.h"
 #include "log.h"
 #include "tpm2_util.h"
@@ -54,11 +54,14 @@ struct createak_context {
     struct {
         TPM2_HANDLE handle;
         const char *ctx_file;
-        TPM2B_AUTH auth;
+        struct {
+            TPMS_AUTH_COMMAND session_data;
+            tpm2_session *session;
+        } auth2;
     } ek;
     struct {
         struct {
-            TPM2B_AUTH auth;
+            TPM2B_SENSITIVE_CREATE inSensitive;
             TPM2_HANDLE handle;
             struct {
                 TPM2_ALG_ID type;
@@ -75,7 +78,10 @@ struct createak_context {
         } out;
     } ak;
     struct {
-        TPM2B_AUTH auth;
+        struct {
+            TPMS_AUTH_COMMAND session_data;
+            tpm2_session *session;
+        } auth2;
     } owner;
     struct {
         bool f;
@@ -86,7 +92,6 @@ struct createak_context {
 static createak_context ctx = {
     .ak = {
         .in = {
-            .auth = TPM2B_EMPTY_INIT,
             .alg = {
                 .type = TPM2_ALG_RSA,
                 .digest = TPM2_ALG_SHA256,
@@ -98,10 +103,10 @@ static createak_context ctx = {
         },
     },
     .ek = {
-        .auth = TPM2B_EMPTY_INIT
+        .auth2 = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     },
     .owner = {
-        .auth = TPM2B_EMPTY_INIT
+        .auth2 = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     },
     .find_persistent_ak = false
 };
@@ -228,7 +233,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
 
 static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPML_PCR_SELECTION creation_pcr;
+    TPML_PCR_SELECTION creation_pcr = { .count = 0 };
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
     TSS2L_SYS_AUTH_COMMAND sessions_data = {1, {
         {
@@ -243,8 +248,6 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     TPMT_TK_CREATION creation_ticket = TPMT_TK_CREATION_EMPTY_INIT;
     TPM2B_CREATION_DATA creation_data = TPM2B_EMPTY_INIT;
 
-    TPM2B_SENSITIVE_CREATE inSensitive = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_CREATE, sensitive);
-
     TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
@@ -253,18 +256,12 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST creation_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    inSensitive.sensitive.data.size = 0;
-    inSensitive.size = inSensitive.sensitive.userAuth.size + 2;
-    creation_pcr.count = 0;
-
-    memcpy(&inSensitive.sensitive.userAuth, &ctx.ak.in.auth, sizeof(ctx.ak.in.auth));
-
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
         return false;
     }
 
-    memcpy(&sessions_data.auths[0].hmac, &ctx.ek.auth, sizeof(ctx.ek.auth));
+    sessions_data.auths[0] = ctx.ek.auth2.session_data;
 
     tpm2_session_data *data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
@@ -303,12 +300,13 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
+    // Set up the session data for the handle used in PolicySecret.
     sessions_data.auths[0].sessionHandle = handle;
     sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.ek.handle, &sessions_data,
-            &inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
+            &ctx.ak.in.inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
             &out_public, &creation_data, &creation_hash, &creation_ticket,
             &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
@@ -323,12 +321,8 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
         LOG_PERR(Tss2_Sys_FlushContext, rval);
         return false;
     }
-    // And remove the session from sessions table.
-    sessions_data.auths[0].sessionHandle = TPM2_RS_PW;
-    sessions_data.auths[0].sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
-    sessions_data.auths[0].hmac.size = 0;
 
-    memcpy(&sessions_data.auths[0].hmac, &ctx.ek.auth, sizeof(ctx.ek.auth));
+    sessions_data.auths[0] = ctx.ek.auth2.session_data;
 
     data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
@@ -355,6 +349,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
     }
     LOG_INFO("Tss2_Sys_PolicySecret succ");
 
+    // Set up the session data for the handle used in PolicySecret.
     sessions_data.auths[0].sessionHandle = handle;
     sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     sessions_data.auths[0].hmac.size = 0;
@@ -388,12 +383,9 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
         LOG_PERR(Tss2_Sys_FlushContext, rval);
         return false;
     }
-    sessions_data.auths[0].sessionHandle = TPM2_RS_PW;
-    sessions_data.auths[0].sessionAttributes &= ~TPMA_SESSION_CONTINUESESSION;
-    sessions_data.auths[0].hmac.size = 0;
 
     // use the owner auth here.
-    memcpy(&sessions_data.auths[0].hmac, &ctx.owner.auth, sizeof(ctx.owner.auth));
+    sessions_data.auths[0] = ctx.owner.auth2.session_data;
 
     if (ctx.ak.in.handle) {
 
@@ -483,26 +475,30 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'o':
-        result = tpm2_password_util_from_optarg(value, &ctx.owner.auth);
+        result = tpm2_auth_util_from_optarg(value,
+                &ctx.owner.auth2.session_data, &ctx.owner.auth2.session);
         if (!result) {
-            LOG_ERR("Invalid owner password, got\"%s\"", value);
+            LOG_ERR("Invalid owner authorization, got\"%s\"", value);
             return false;
         }
         break;
     case 'e':
-        result = tpm2_password_util_from_optarg(value, &ctx.ek.auth);
+        result = tpm2_auth_util_from_optarg(value, &ctx.ek.auth2.session_data,
+                &ctx.ek.auth2.session);
         if (!result) {
-            LOG_ERR("Invalid endorse password, got\"%s\"", value);
+            LOG_ERR("Invalid endorse authorization, got\"%s\"", value);
             return false;
         }
         break;
-    case 'P':
-        result = tpm2_password_util_from_optarg(value, &ctx.ak.in.auth);
+    case 'P': {
+        TPMS_AUTH_COMMAND tmp;
+        result = tpm2_auth_util_from_optarg(value, &tmp, NULL);
         if (!result) {
-            LOG_ERR("Invalid AK password, got\"%s\"", value);
+            LOG_ERR("Invalid AK authorization, got\"%s\"", value);
             return false;
         }
-        break;
+        ctx.ak.in.inSensitive.sensitive.userAuth = tmp.hmac;
+    } break;
     case 'p':
         ctx.ak.out.pub_file = value;
         break;
@@ -533,14 +529,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "owner-passwd",   required_argument, NULL, 'o' },
-        { "endorse-passwd", required_argument, NULL, 'e' },
+        { "auth-owner",     required_argument, NULL, 'o' },
+        { "auth-endorse",   required_argument, NULL, 'e' },
+        { "auth-ak",        required_argument, NULL, 'P' },
         { "ek-handle",      required_argument, NULL, 'E' },
         { "ak-handle",      required_argument, NULL, 'k' },
         { "algorithm",      required_argument, NULL, 'g' },
         { "digest-alg",     required_argument, NULL, 'D' },
         { "sign-alg",       required_argument, NULL, 's' },
-        { "ak-passwd",      required_argument, NULL, 'P' },
         { "file",           required_argument, NULL, 'p' },
         { "ak-name",        required_argument, NULL, 'n' },
         { "format",         required_argument, NULL, 'f' },
