@@ -48,13 +48,21 @@ loaded-key:
 
   * **-g**, **--alg**=_ALGORITHM_:
     Specifies the algorithm type of AK. Algorithms should follow the
-    " formatting standards, see section "Algorithm Specifiers".
+    "formatting standards", see section "Algorithm Specifiers".
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms.
 
-  * **-D**, **--digest-alg**=_ALGORITHM_:
-    Like -g, but specifies the algorithm of sign.
-    See section "Supported Signing Algorithms" for details.
+  * **-D**, **--digest-alg**=_HASH\_ALGORITHM_:
+    Like -g, but specifies the digest algorithm. Algorithms should follow the
+    "formatting standards", see section "Algorithm Specifiers".
+    See section "Supported Hash Algorithms" for a list of supported hash
+    algorithms.
+
+  * **-s**, **--sign-alg**=_SIGN\_ALGORITHM_:
+    Like -g but specifies signing algorithm. Algorithms should follow the
+    "formatting standards", see section "Algorithm Specifiers".
+    See section "Supported Signing Algorithms" for a list of supported
+    signing algorithms.
 
   * **-f**, **--file**=_FILE_:
     Specifies the file used to save the public portion of AK. This will be a
@@ -73,6 +81,8 @@ loaded-key:
 [supported signing algorithms](common/sign-alg.md)
 
 [supported public object algorithms](common/object-alg.md)
+
+[supported hash algorithms](common/hash.md)
 
 [algorithm specifiers](common/alg.md)
 
