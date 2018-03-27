@@ -46,7 +46,7 @@ If _FILE_ is not specified, it defaults to stdin.
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specfiers".
 
-  * **-F**,**--pcr-input-file=_PCR\_INPUT\_FILE_
+  * **-F**,**--pcr-input-file**=_PCR\_INPUT\_FILE_
 
     Optional Path or Name of the file containing expected pcr values for the specified index.
     Default is to read the current PCRs per the set list.
