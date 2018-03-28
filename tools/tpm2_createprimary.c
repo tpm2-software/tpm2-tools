@@ -59,7 +59,6 @@ struct tpm_createprimary_ctx {
     tpm2_hierarchy_pdata objdata;
     char *context_file;
     struct {
-        UINT8 a :1;
         UINT8 g :1;
         UINT8 G :1;
     } flags;
@@ -154,7 +153,6 @@ static bool on_option(char key, char *value) {
         if (!res) {
             return false;
         }
-        ctx.flags.a = 1;
         break;
     case 'P':
         res = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
@@ -245,7 +243,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 }
 
 static inline bool valid_ctx(void) {
-    return (ctx.flags.a && ctx.flags.g && ctx.flags.G);
+    return (ctx.flags.g && ctx.flags.G);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
