@@ -56,6 +56,8 @@ cleanup
 # values.
 for gAlg in `populate_hash_algs mixed`; do
     for GAlg in 0x01 keyedhash ecc 0x25; do
+        tpm2_createprimary -Q -g $gAlg -G $GAlg -C context.out
+        cleanup keep_context
         for Atype in o e n; do
             tpm2_createprimary -Q -a $Atype -g $gAlg -G $GAlg -C context.out
             cleanup keep_context
