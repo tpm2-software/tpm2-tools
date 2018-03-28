@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source helpers.sh
+
 # Building with asan on clang, the leak sanitizer
 # portion (lsan) on ancient versions is:
 # 1. Detecting a leak that (maybe) doesn't exist.
@@ -49,7 +51,7 @@ opass=abc123
 epass=abc123
 
 cleanup() {
-    rm -f test_ek.pub ECcert.bin ECcert2.bin test_ek.pub
+    rm -f test_ek.pub ECcert.bin ECcert2.bin test_ek.pub man.log
 }
 
 trap cleanup EXIT
@@ -95,5 +97,12 @@ if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91f
  echo "Failed: retrieving endorsement certificate"
  exit 1
 fi
+
+# Test with automatic persistent handle
+tpm2_getmanufec -H - -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass \
+                https://ekop.intel.com/ekcertservice/ > man.log
+phandle=`yaml_get_kv man.log \"persistent\-handle\"`
+
+tpm2_evictcontrol -Q -H $phandle -a o -P $opass
 
 exit 0
