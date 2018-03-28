@@ -67,8 +67,6 @@ struct tpm_import_ctx {
     char *import_key_private_file;
     char *parent_key_public_file;
     uint8_t input_key_buffer[SYM_KEY_SIZE];
-    //Parent public key for seed encryption
-    TPM2B_PUBLIC_KEY_RSA parent_public_key;
     TPM2_HANDLE parent_key_handle;
     //External key public
     TPM2B_PUBLIC import_key_public;
@@ -94,7 +92,6 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .input_key_file = NULL, 
     .parent_key_handle = 0,
-    .parent_public_key = TPM2B_INIT(RSA_2K_MODULUS_SIZE_IN_BYTES),
     .import_key_public = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea),
     .import_key_public_name = TPM2B_TYPE_INIT(TPM2B_NAME, name),
     .import_key_private = TPM2B_EMPTY_INIT,
