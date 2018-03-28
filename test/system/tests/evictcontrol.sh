@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -67,5 +69,7 @@ tpm2_evictcontrol -Q -a o -H 0x81010003
 tpm2_evictcontrol -a o -c key.ctx > evict.log
 phandle=`grep "persistentHandle: " evict.log | awk '{print $2}'`
 tpm2_evictcontrol -Q -a o -H $phandle
+
+yaml_verify evict.log
 
 exit 0
