@@ -58,7 +58,6 @@
 #define max_buffer_size  1024
 
 #define RSA_2K_MODULUS_SIZE_IN_BYTES 256
-#define RSA_2K_PUBLIC_MODULUS_OFFSET 28
 
 typedef struct tpm_import_ctx tpm_import_ctx;
 struct tpm_import_ctx {
@@ -126,25 +125,24 @@ static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     bool rval = false;
 
-    //Public Modulus
-    FILE *fp = fopen(ctx.parent_key_public_file, "rb");
-    if (fp == NULL) {
-        LOG_ERR("Failed accessing parent key public file.");
+    TPM2B_PUBLIC pub_key = TPM2B_EMPTY_INIT;
+    bool res = files_load_public(ctx.parent_key_public_file, &pub_key);
+    if (!res) {
+        LOG_ERR("Failed loading parent key public file.");
         return false;
     }
-    if (fseek(fp, RSA_2K_PUBLIC_MODULUS_OFFSET, SEEK_SET) != 0) {
-        LOG_ERR("Expected parent key public data file size failure");
-        fclose(fp);
+
+    // Public modulus
+    TPMI_RSA_KEY_BITS mod_size_bits = pub_key.publicArea.parameters.rsaDetail.keyBits;
+    UINT16 mod_size = mod_size_bits / 8;
+    TPM2B *pub_key_val = (TPM2B *)&pub_key.publicArea.unique.rsa;
+    unsigned char *pub_modulus = malloc(mod_size);
+    if (pub_modulus == NULL) {
+        LOG_ERR("Failed to allocate memory to store public key's modulus.");
         return false;
     }
-    unsigned char pub_modulus[RSA_2K_MODULUS_SIZE_IN_BYTES] = { 0 };
-    int ret = fread(pub_modulus, 1, RSA_2K_MODULUS_SIZE_IN_BYTES, fp);
-    if (ret != RSA_2K_MODULUS_SIZE_IN_BYTES) {
-        LOG_ERR("Failed reading public modulus from parent key public file");
-        fclose(fp);
-        return false;
-    }
-    fclose(fp);
+    memcpy(pub_modulus, pub_key_val->buffer, mod_size);
+
     RSA *rsa = NULL;
     unsigned char encoded[RSA_2K_MODULUS_SIZE_IN_BYTES];
     unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
@@ -199,6 +197,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     rval = true;
 
 error:
+    free(pub_modulus);
     RSA_free(rsa);
     return rval;
 }
