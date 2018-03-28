@@ -31,6 +31,8 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+source helpers.sh
+
 onerror() {
     echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
     exit 1
@@ -38,7 +40,7 @@ onerror() {
 trap onerror ERR
 
 cleanup() {
-    rm -f ek.pub
+    rm -f ek.pub ek.log
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -49,5 +51,11 @@ trap cleanup EXIT
 cleanup
 
 tpm2_createek -H 0x81010005 -g rsa -p ek.pub
+
+cleanup
+
+tpm2_createek -H - -g rsa -p ek.pub > ek.log
+phandle=`yaml_get_kv ek.log \"persistent\-handle\"`
+tpm2_evictcontrol -Q -a o -H $phandle
 
 exit 0
