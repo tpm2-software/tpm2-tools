@@ -80,4 +80,11 @@ tpm2_create -Q -H $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $fi
 
 tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub
 
+# Test with default hierarchy (and handle)
+cleanup keep_handle
+
+tpm2_create -Q -H $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
+
+tpm2_loadexternal -Q -u $file_loadexternal_key_pub
+
 exit 0
