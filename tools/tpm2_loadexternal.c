@@ -53,7 +53,6 @@ struct tpm_loadexternal_ctx {
     TPM2B_SENSITIVE private_key;
     bool save_to_context_file;
     struct {
-        UINT8 H : 1;
         UINT8 u : 1;
     } flags;
 };
@@ -91,7 +90,6 @@ static bool on_option(char key, char *value) {
         if (!result) {
             return false;
         }
-        ctx.flags.H = 1;
         break;
     case 'u':
         if(!files_load_public(value, &ctx.public_key)) {
@@ -133,8 +131,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (!(ctx.flags.H && ctx.flags.u)) {
-        LOG_ERR("Expected H and u options");
+    if (!ctx.flags.u) {
+        LOG_ERR("Expected u option");
         return 1;
     }
 
