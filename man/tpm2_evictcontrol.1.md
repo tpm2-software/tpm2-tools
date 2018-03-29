@@ -17,7 +17,7 @@ be evicted.
 
 # OPTIONS
 
-  * **-a**, **--auth-heirarchy**=_AUTH\_HIERARCHY\_:
+  * **-a**, **--hierarchy**=_AUTH\_HIERARCHY\_:
 
     The authorization hierarchy used to authorize the commands. Defaults to the "owner" hierarchy.
     Supported options are:
