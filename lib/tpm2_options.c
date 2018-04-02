@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Intel Corporation
+ * Copyright (c) 2016-2018, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -308,9 +308,9 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
     struct option long_options [] = {
         { "tcti",          required_argument, NULL, 'T' },
         { "help",          no_argument,       NULL, 'h' },
-        { "verbose",       no_argument,       NULL, 'v' },
+        { "verbose",       no_argument,       NULL, 'V' },
         { "quiet",         no_argument,       NULL, 'Q' },
-        { "version",       no_argument,       NULL, 'V' },
+        { "version",       no_argument,       NULL, 'v' },
         { "enable-errata", no_argument,       NULL, 'Z' },
     };
 
