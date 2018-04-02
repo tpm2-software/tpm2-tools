@@ -295,12 +295,12 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv, char **envp,
      * grep -rn case\ \'[a-zA-Z]\' | awk '{print $3}' | sed s/\'//g | sed s/\://g | sort | uniq | less
      */
     struct option long_options [] = {
-        { "tcti",           required_argument, NULL, 'T' },
-        { "help",           no_argument,       NULL, 'h' },
-        { "verbose",        no_argument,       NULL, 'v' },
-        { "quiet",          no_argument,       NULL, 'Q' },
-        { "version",        no_argument,       NULL, 'V' },
-        { "enable-errata", no_argument,        NULL, 'Z' },
+        { "tcti",          required_argument, NULL, 'T' },
+        { "help",          no_argument,       NULL, 'h' },
+        { "verbose",       no_argument,       NULL, 'V' },
+        { "quiet",         no_argument,       NULL, 'Q' },
+        { "version",       no_argument,       NULL, 'v' },
+        { "enable-errata", no_argument,       NULL, 'Z' },
     };
 
     char *tcti_opts = NULL;
