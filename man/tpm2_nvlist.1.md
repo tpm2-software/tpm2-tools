@@ -58,7 +58,7 @@ This tool takes no tool specific options.
 
 # EXAMPLES
 
-To list the defined NV indeces to stdout:
+To list the defined NV indices to stdout:
 
 ```
 tpm2_nvlist

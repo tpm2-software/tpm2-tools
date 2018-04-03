@@ -63,7 +63,7 @@ static inline bool tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
 }
 
 /**
- * Retrives the maximum transmission size for an NV buffer by
+ * Retrieves the maximum transmission size for an NV buffer by
  * querying the capabilities for TPM2_PT_NV_BUFFER_MAX.
  * @param sapi_context
  *  The system api context

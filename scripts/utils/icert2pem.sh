@@ -57,7 +57,7 @@ while getopts ":h" opt; do
 done
 
 if [ "$#" -ne 1 ]; then
-    (>&2 echo "Error: expected 1 certificate file paramater, got: $#")
+    (>&2 echo "Error: expected 1 certificate file parameter, got: $#")
     exit 1
 fi
 

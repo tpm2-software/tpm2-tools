@@ -153,7 +153,7 @@ static void test_tpm2_attr_util_nv_strtoattr_token_unknown(void **state) {
     res = tpm2_attr_util_nv_strtoattr(arg2, &nvattrs);
     assert_false(res);
 
-    /* should be interprested as the whole thing, no = */
+    /* should be interpreted as the whole thing, no = */
     char arg3[] = "nt:0x4";
     res = tpm2_attr_util_nv_strtoattr(arg3, &nvattrs);
     assert_false(res);
@@ -237,7 +237,7 @@ test_nv_attrtostr_compound(stclear_ppwrite,
 test_nv_attrtostr_compound(stclear_ppwrite_0x30,
         TPMA_NV_WRITE_STCLEAR|TPMA_NV_PPWRITE|0x30,
         "ppwrite|nt=0x3|write_stclear")
-test_nv_attrtostr_compound(platformcreate_owneread_nt_0x90_0x20000,
+test_nv_attrtostr_compound(platformcreate_ownerread_nt_0x90_0x20000,
         TPMA_NV_PLATFORMCREATE|TPMA_NV_AUTHWRITE|0x90|0x200000,
         "authwrite|nt=0x9|<reserved(21)>|platformcreate")
 
@@ -341,14 +341,14 @@ static void test_tpm2_attr_util_obj_strtoattr_multiple_good(void **state) {
 static void test_tpm2_attr_util_obj_strtoattr_token_unknown(void **state) {
     (void) state;
 
-    TPMA_OBJECT objattrrs = 0;
+    TPMA_OBJECT objattrs = 0;
 
-    char arg[] = "fixedtpm|noda|unkown";
-    bool res = tpm2_attr_util_obj_strtoattr(arg, &objattrrs);
+    char arg[] = "fixedtpm|noda|unknown";
+    bool res = tpm2_attr_util_obj_strtoattr(arg, &objattrs);
     assert_false(res);
 
     char arg1[] = "foo";
-    res = tpm2_attr_util_obj_strtoattr(arg1, &objattrrs);
+    res = tpm2_attr_util_obj_strtoattr(arg1, &objattrs);
     assert_false(res);
 }
 
@@ -434,7 +434,7 @@ int main(int argc, char* argv[]) {
             test_nv_attrtostr_get(0x90), //nt=0x9
             test_nv_attrtostr_get(stclear_ppwrite),
             test_nv_attrtostr_get(stclear_ppwrite_0x30),
-            test_nv_attrtostr_get(platformcreate_owneread_nt_0x90_0x20000),
+            test_nv_attrtostr_get(platformcreate_ownerread_nt_0x90_0x20000),
             /* TPMA_OBJECT Tests */
 
             /* From String to Attribute value */

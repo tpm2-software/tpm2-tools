@@ -126,7 +126,7 @@ typedef struct {
     BYTE buffer[0];
 } TPM2B;
 
-int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
+int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer);
 
 /**
  * Appends a TPM2B buffer to a MAX buffer.

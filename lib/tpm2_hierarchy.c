@@ -112,9 +112,9 @@ bool tpm2_hierarchy_from_optarg(const char *value,
     return result;
 }
 
-bool tpm2_hierarrchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_hierarchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
         TPMS_AUTH_COMMAND *sdata,
-        tpm2_hierearchy_pdata *objdata) {
+        tpm2_hierarchy_pdata *objdata) {
 
     TSS2L_SYS_AUTH_COMMAND sessionsData =
             TSS2L_SYS_AUTH_COMMAND_INIT(1, {*sdata});

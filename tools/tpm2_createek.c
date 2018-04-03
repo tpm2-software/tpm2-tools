@@ -64,7 +64,7 @@ struct createek_context {
             tpm2_session *session;
         } ek;
     } auth;
-    tpm2_hierearchy_pdata objdata;
+    tpm2_hierarchy_pdata objdata;
     char *out_file_path;
     char *context_file;
     TPMI_DH_PERSISTENT persistent_handle;
@@ -145,7 +145,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    result = tpm2_hierarrchy_create_primary(sapi_context, &ctx.auth.endorse.session_data,
+    result = tpm2_hierarchy_create_primary(sapi_context, &ctx.auth.endorse.session_data,
             &ctx.objdata);
     if (!result) {
         return false;

@@ -101,7 +101,7 @@ bool tpm2_error_set_handler(UINT8 layer, const char *name,
  * error that occurred or the error code if it couldn't look it up.
  *
  * Known layer specific substrings:
- * TPM - The tpm layer produces 2 distinct format codes that allign with:
+ * TPM - The tpm layer produces 2 distinct format codes that align with:
  *   - Section 6.6 of: https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
  *   - Section 39.4 of: https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-1-Architecture-01.38.pdf
  *

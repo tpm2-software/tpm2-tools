@@ -4,7 +4,7 @@ The general release process will be to fork a branch at each major release follo
 For example, the major version 2 branches will be 2.X. Release candidates (rc), will be tagged
 using a -rc suffix (starting with rc0), signed, pushed to github, and marked under releases as
 "pre-release". The release notes on github will contain the CHANGELOG contents for the running
-rc series. Releases shall be pushed to branch coverity_scan, to inititiate a scan.
+rc series. Releases shall be pushed to branch coverity_scan, to initiate a scan.
 
 An example can be found here:
 

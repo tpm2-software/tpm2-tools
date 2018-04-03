@@ -31,7 +31,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-# Building with asan on clang, the leak sanitizier
+# Building with asan on clang, the leak sanitizer
 # portion (lsan) on ancient versions is:
 # 1. Detecting a leak that (maybe) doesn't exist.
 #    OpenSSL is hard...

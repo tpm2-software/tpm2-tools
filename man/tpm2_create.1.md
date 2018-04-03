@@ -48,7 +48,7 @@ These options for creating the tpm entity:
     of supported object algorithms.
 
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
-    The object attributes, optional. Object attribytes follow the specifications
+    The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
 
     `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`

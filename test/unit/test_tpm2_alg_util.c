@@ -108,7 +108,7 @@ struct find_unk_data {
     size_t len;
 };
 
-static bool find_unkown(TPM2_ALG_ID id, const char *name, void *userdata) {
+static bool find_unknown(TPM2_ALG_ID id, const char *name, void *userdata) {
 
     (void) name;
 
@@ -207,7 +207,7 @@ static void test_tpm2_alg_util_everything_is_tested(void **state) {
      * Tests that are removed will fail the single_item tests
      * above since there will not be a match.
      */
-    tpm2_alg_util_for_each_alg(find_unkown, &userdata);
+    tpm2_alg_util_for_each_alg(find_unknown, &userdata);
 
     size_t i;
     for (i = 0; i < ARRAY_LEN(known_algs); i++) {

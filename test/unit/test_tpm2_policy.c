@@ -60,7 +60,7 @@ struct test_file {
 #define PCR_SEL_SPEC "sha256:0,1,2,3"
 
 /*
- * Dummy value for the session handle read by teh wrapped version of:
+ * Dummy value for the session handle read by the wrapped version of:
  *   Tss2_Sys_StartAuthSession
  */
 #define SESSION_HANDLE 0xDEADBEEF

@@ -168,7 +168,7 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM2_HANDLE ha
     /*
      * Saving the TPMS_CONTEXT structure to disk, format:
      * TPM2.0-TOOLS HEADER
-     * U32 hiearchy
+     * U32 hierarchy
      * U32 savedHandle
      * U64 sequence
      * U16 contextBlobLength
@@ -243,7 +243,7 @@ bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
     /*
      * Reading the TPMS_CONTEXT structure to disk, format:
      * TPM2.0-TOOLS HEADER
-     * U32 hiearchy
+     * U32 hierarchy
      * U32 savedHandle
      * U64 sequence
      * U16 contextBlobLength

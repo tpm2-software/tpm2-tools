@@ -420,7 +420,7 @@ static dispatch_error handle_dispatch(dispatch_table *d, char *token,
     }
 
     /*
-     * If it has an argument, match should have found the seperator.
+     * If it has an argument, match should have found the separator.
      */
     char *arg = NULL;
     if (has_arg) {
@@ -451,7 +451,7 @@ static bool common_strtoattr(char *attribute_list, void *attrs, dispatch_table *
     char *save;
 
     /*
-     * This check is soley to prevent GCC from complaining on:
+     * This check is solely to prevent GCC from complaining on:
      * error: ‘attribute_list’ may be used uninitialized in this function [-Werror=maybe-uninitialized]
      * Might as well check nvattrs as well.
      */
