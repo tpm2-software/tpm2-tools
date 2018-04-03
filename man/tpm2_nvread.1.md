@@ -34,7 +34,7 @@
   * **-f**, **--out-file**=_FILE_:
     file to write data
 
-  * **-P**, **--auth-hierarchy**=_HIERARCHY\_AUTH_:
+  * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE__:
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the authorization formatting standards, see section
     "Authorization Formatting".

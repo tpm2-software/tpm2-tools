@@ -20,11 +20,11 @@
   * and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
     and `--auth-ek` respectively.
   * tpm2_evictcontrol: Option group `-A` and `--auth` changes to `-a` and `--hierarchy`
-    Option `--pwda` changes to `--auth-hierarchy-value`
+    Option `--pwda` changes to `--auth-hierarchy`
   * tpm2_encryptdecrypt: Option `--pwdk` changes to `--auth-key`.
   * tpm2_dictionarylockout: Option `--lockout-passwd` changes to `--auth-lockout`
   * tpm2_createprimary: Options `--pwdp` and `--pwdk` change to
-    `----auth-hierarchy-value` and `--auth-object` respectively.
+    `--auth-hierarchy` and `--auth-object` respectively.
   * tpm2_createek: Options `--owner-passwd`, `--endorse-passwd`
   * and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
     and `--auth-ek` respectively.
