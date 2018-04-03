@@ -47,7 +47,7 @@
  * @param capability_data
  *  capability data structure to populate
  * @return
- *  True if the capability_data structure is succesfully filled, False if the
+ *  True if the capability_data structure is successfully filled, False if the
  *  call to the TPM fails.
  */
 bool tpm2_capability_get (TSS2_SYS_CONTEXT *sapi_ctx,
@@ -63,7 +63,7 @@ bool tpm2_capability_get (TSS2_SYS_CONTEXT *sapi_ctx,
  * @param vacant
  *  the vacant handle found by the function if True returned
  * @return
- *  True if a vacant handle was found succesfully, False otherwise.
+ *  True if a vacant handle was found successfully, False otherwise.
  */
 bool tpm2_capability_find_vacant_persistent_handle (TSS2_SYS_CONTEXT *sapi_ctx,
         UINT32 *vacant);

@@ -47,7 +47,7 @@
  * @return
  *  True to stop iterating, false to keep iterating.
  */
-typedef bool (*tpm2_alg_util_alg_iteraror)(TPM2_ALG_ID id, const char *name, void *userdata);
+typedef bool (*tpm2_alg_util_alg_iterator)(TPM2_ALG_ID id, const char *name, void *userdata);
 
 /**
  * Iterate over the algorithm name-value pairs calling the iterator callback for each pair.
@@ -56,7 +56,7 @@ typedef bool (*tpm2_alg_util_alg_iteraror)(TPM2_ALG_ID id, const char *name, voi
  * @param userdata
  *  A pointer to user supplied data, this is passed to the iterator for each call.
  */
-void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iteraror iterator, void *userdata);
+void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iterator iterator, void *userdata);
 
 /**
  * Convert a "nice-name" string to an algorithm id.
@@ -77,7 +77,7 @@ TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name);
 const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id);
 
 /**
- * Converts either a string from algrotithm number or algorithm nice-name to
+ * Converts either a string from algorithm number or algorithm nice-name to
  * an algorithm id.
  * @param optarg
  *  The string to convert from an algorithm number or nice name.
@@ -175,14 +175,14 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
 UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature);
 
 /**
- * Retrieves an approproate signature scheme (scheme) signable by
+ * Retrieves an appropriate signature scheme (scheme) signable by
  * specified key (keyHandle) and hash algorithm (halg).
  * @param sapi_context
  *  System API context for tpm
  * @param keyHandle
  *  Handle to key used in signing operation
  * @param halg
- *  Hash algoritm for message
+ *  Hash algorithm for message
  * @param scheme
  *  Signature scheme output
  * @return

@@ -89,7 +89,7 @@ bool tpm2_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
     }
 
     /*
-     * Size is either unkown because the FILE * is a fifo, or it's too big
+     * Size is either unknown because the FILE * is a fifo, or it's too big
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */

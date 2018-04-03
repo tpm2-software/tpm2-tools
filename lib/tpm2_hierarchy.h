@@ -50,8 +50,8 @@ enum tpm2_hierarchy_flags {
 bool tpm2_hierarchy_from_optarg(const char *value,
         TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags);
 
-typedef struct tpm2_hierearchy_pdata tpm2_hierearchy_pdata;
-struct tpm2_hierearchy_pdata {
+typedef struct tpm2_hierarchy_pdata tpm2_hierarchy_pdata;
+struct tpm2_hierarchy_pdata {
     struct {
         TPMI_RH_HIERARCHY hierarchy;
         TPM2B_SENSITIVE_CREATE sensitive;
@@ -117,8 +117,8 @@ struct tpm2_hierearchy_pdata {
  *  True on success, False on error.
  *  Logs errors via LOG_ERR().
  */
-bool tpm2_hierarrchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_hierarchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
         TPMS_AUTH_COMMAND *sdata,
-        tpm2_hierearchy_pdata *objdata);
+        tpm2_hierarchy_pdata *objdata);
 
 #endif /* TOOLS_TPM2_HIERARCHY_H_ */

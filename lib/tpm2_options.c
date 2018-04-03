@@ -104,7 +104,7 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
 
     d->short_opts = tmp_short;
 
-    /* now move the eclosing structure */
+    /* now move the enclosing structure */
     size_t long_opts_len = d->len + src->len;
     /* +1 for a terminating NULL at the end of options array for getopt_long */
     tpm2_options *tmp = realloc(d, sizeof(*d) + ((long_opts_len + 1) * sizeof(d->long_opts[0])));
@@ -121,7 +121,7 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
 
     memcpy(&d->long_opts[d->len], src->long_opts, src->len * sizeof(src->long_opts[0]));
 
-    /* length must be updated post memcpy as we need d->len to be the original offest */
+    /* length must be updated post memcpy as we need d->len to be the original offset */
     d->len = long_opts_len;
 
     /* NULL term for getopt_long */
@@ -366,7 +366,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         case '?':
             goto out;
         default:
-            /* NULL on_opt handler and unkown option specified is an error */
+            /* NULL on_opt handler and unknown option specified is an error */
             if (!tool_opts || !tool_opts->callbacks.on_opt) {
                 LOG_ERR("Unknown options found: %c", c);
                 goto out;

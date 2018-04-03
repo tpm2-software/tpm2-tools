@@ -56,7 +56,7 @@ struct tpm_createprimary_ctx {
         TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
     } auth;
-    tpm2_hierearchy_pdata objdata;
+    tpm2_hierarchy_pdata objdata;
     char *context_file;
     struct {
         UINT8 a :1;
@@ -257,7 +257,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    bool result = tpm2_hierarrchy_create_primary(sapi_context, &ctx.auth.session_data, &ctx.objdata);
+    bool result = tpm2_hierarchy_create_primary(sapi_context, &ctx.auth.session_data, &ctx.objdata);
     if (!result) {
         goto out;
     }

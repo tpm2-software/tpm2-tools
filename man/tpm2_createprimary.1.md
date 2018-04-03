@@ -59,7 +59,7 @@ will create and load a Primary Object. The sensitive area is not returned.
     An optional file input that contains the policy digest for policy based authorization of the object.
 
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
-    The object attributes, optional. Object attribytes follow the specifications
+    The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
 
     `TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`

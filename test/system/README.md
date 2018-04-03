@@ -14,6 +14,6 @@ argument of the test file name(s) to run, for example:
 ./test.sh test_tpm2_hmac.sh test_tpm2_hash.sh
 ```
 
-**NOTE: That the tools must be avialble on *PATH* **
+**NOTE: That the tools must be available on *PATH* **
 
 **NOTE: That the test script should be run against the tpm simulator with a resource manager**

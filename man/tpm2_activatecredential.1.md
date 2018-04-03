@@ -37,7 +37,7 @@ These options control the object verification:
     "Authorization Formatting".
 
   * **-e**, **--endorse-password**=_ENDORSE\_PASSWORD_:
-    The endorsement password, optional. Follows the same formating guidelines as the handle password option -P.
+    The endorsement password, optional. Follows the same formatting guidelines as the handle password option -P.
 
   * **-f**, **--in-file**=_INPUT\_FILE_:
     Input file path, containing the two structures needed by tpm2_activatecredential function. This is created

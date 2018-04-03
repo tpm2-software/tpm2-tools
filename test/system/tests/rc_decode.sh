@@ -41,8 +41,8 @@ trap onerror ERR
 # codes was generated from the TPM2_RC constants in:
 # https://github.com/tpm2-software/tpm2-tss/blob/master/include/sapi/tss2_tpm2_types.h#L68
 # Some of these may not be used correctly, which is OK, as tpm2_rc_decode never
-# fails and should attempt to decode it or print some unkown status. This gives
-# us coverage for both known and unkown/malformed inputs.
+# fails and should attempt to decode it or print some unknown status. This gives
+# us coverage for both known and unknown/malformed inputs.
 #
 # Details on error code encoding can be found at:
 # Section 6.6.2 of t "Trusted Platform Module Library Part 2: Structures Family “2.0” Level 00 Revision 01.38"

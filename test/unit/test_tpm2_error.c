@@ -94,7 +94,7 @@ static void test_tpm_format_0_version2_0_warn(void **state) {
                     " transient object or session that is not loaded");
 }
 
-static void test_tpm2_format_0_unkown(void **state) {
+static void test_tpm2_format_0_unknown(void **state) {
     (void) state;
 
     const char *m = tpm2_error_str(TPM2_RC_NOT_USED + 0x80);
@@ -133,7 +133,7 @@ static void test_tpm_format_1_5_handle(void **state) {
             "tpm:handle(5):hash algorithm not supported or not appropriate");
 }
 
-static void test_tpm2_format_1_unkown(void **state) {
+static void test_tpm2_format_1_unknown(void **state) {
     (void) state;
 
     const char *m = tpm2_error_str(TPM2_RC_NOT_USED + 0x80);
@@ -267,12 +267,12 @@ int main(int argc, char* argv[]) {
             cmocka_unit_test(test_layers),
             cmocka_unit_test(test_tpm_format_0_version2_0_error),
             cmocka_unit_test(test_tpm_format_0_version2_0_warn),
-            cmocka_unit_test(test_tpm2_format_0_unkown),
+            cmocka_unit_test(test_tpm2_format_0_unknown),
             cmocka_unit_test(test_tpm_format_1_unk_handle),
             cmocka_unit_test(test_tpm_format_1_unk_parameter),
             cmocka_unit_test(test_tpm_format_1_unk_session),
             cmocka_unit_test(test_tpm_format_1_5_handle),
-            cmocka_unit_test(test_tpm2_format_1_unkown),
+            cmocka_unit_test(test_tpm2_format_1_unknown),
             cmocka_unit_test(test_tpm2_format_1_success),
             cmocka_unit_test(test_custom_handler),
             cmocka_unit_test(test_zero_length_name),

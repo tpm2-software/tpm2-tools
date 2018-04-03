@@ -280,7 +280,7 @@ bool files_does_file_exist(const char *path);
 /**
  * Retrieves a files size given a file path.
  * @param path
- *  The path of the file to retreive the size of.
+ *  The path of the file to retrieve the size of.
  * @param file_size
  *  A pointer to an unsigned long to return the file size. The
  *  pointed to value is valid only on a true return.

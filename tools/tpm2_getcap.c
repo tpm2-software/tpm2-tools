@@ -42,7 +42,7 @@
 
 /* convenience macro to convert flags into "1" / "0" strings */
 #define prop_str(val) val ? "1" : "0"
-/* number of eleents in the capability_map array */
+/* number of elements in the capability_map array */
 #define CAPABILITY_MAP_COUNT \
     (sizeof (capability_map) / sizeof (capability_map_entry_t))
 /* Structure to map a string to the appropriate TPM2_CAP / TPM2_PT pair */
@@ -822,7 +822,7 @@ dump_ecc_curves (TPM2_ECC_CURVE     curve[],
                 tpm2_tool_output ("TPM2_ECC_SM2_P256: 0x%X\n", curve[i]);
 		break;
             default:
-                tpm2_tool_output ("unkown%X: 0x%X\n", curve[i], curve[i]);
+                tpm2_tool_output ("unknown%X: 0x%X\n", curve[i], curve[i]);
 		break;
         }
     }

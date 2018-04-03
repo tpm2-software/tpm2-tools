@@ -33,7 +33,7 @@
 
   * **-t**, **--attributes**=_ATTRIBUTES_
     Specifies the attribute values for the nv region used when creating the
-    entitiy. Either the raw bitfield mask or "nice-names" may be used. See
+    entity. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
   * **-P**, **--auth-hierarchy**=_HANDLE\_PASSWORD_:

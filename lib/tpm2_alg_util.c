@@ -46,7 +46,7 @@ struct alg_pair {
     TPM2_ALG_ID id;
 };
 
-void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iteraror iterator, void *userdata) {
+void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iterator iterator, void *userdata) {
 
     static const alg_pair algs[] = {
         { .name = "rsa", .id = TPM2_ALG_RSA },
@@ -392,10 +392,10 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHa
 
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM2B_NAME qaulified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
     TSS2_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
-            &qaulified_name, &sessions_data_out);
+            &qualified_name, &sessions_data_out);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Sys_ReadPublic failed, error code: 0x%x", rval);
         return false;

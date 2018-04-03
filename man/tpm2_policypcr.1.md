@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_policypcr**(1) generates a policy PCR event with the TPM. It is similair
+**tpm2_policypcr**(1) generates a policy PCR event with the TPM. It is similar
 to **tpm2_createpolicy**(1), however, it expects a session to be already
 established via **tpm2_startauthsession**(1).
 
@@ -72,7 +72,7 @@ tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv -c primary.ctx -L p
 
 tpm2_load -Q -c primary.ctx -u key.pub -r key.priv -n unseal.key.name -C unseal.key.ctx
 
-# Now that an object is created and a policy is required to access it, satisy the policy on
+# Now that an object is created and a policy is required to access it, satisfy the policy on
 # a session and use it to unseal the data stored in the object.
 
 handle=`tpm2_startauthsession -a -S session.dat | cut -d' ' -f 2-2`

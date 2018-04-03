@@ -58,7 +58,7 @@ data and validation shall indicate that hashed data did not start with
 
   * **-t**, **--ticket**=_TICKET\_FILE_:
 
-    The ticket file, containning the validation structure, optional.
+    The ticket file, containing the validation structure, optional.
 
   * **-s**, **--sig**=_TICKET\_FILE_:
 

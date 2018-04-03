@@ -22,7 +22,7 @@ An object that only has its public area loaded cannot be certified.
 
 # OPTIONS
 
-These options control the ceritifcation:
+These options control the certification:
 
   * **-H**, **--obj-handle**=_OBJECT\_HANDLE_:
     The handle of the object to be certified.

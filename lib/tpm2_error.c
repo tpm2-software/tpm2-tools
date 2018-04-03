@@ -665,7 +665,7 @@ static const char *tpm2_ehandler(TSS2_RC rc) {
 
 /**
  * The default system code handler. This handles codes
- * from the RM (itself and simlated tpm responses), the marshaling
+ * from the RM (itself and simulated tpm responses), the marshaling
  * library (mu), and the tcti layers.
  * @param rc
  *  The rc to decode.
@@ -780,7 +780,7 @@ static bool is_reserved_layer(UINT8 layer) {
  * @return
  *  The string.
  */
-static const char *unkown_layer_handler(TSS2_RC rc) {
+static const char *unknown_layer_handler(TSS2_RC rc) {
     UNUSED(rc);
 
     static char buf[32];
@@ -854,7 +854,7 @@ const char * tpm2_error_str(TSS2_RC rc) {
         catbuf(buf, "%u:", layer);
     }
 
-    handler = !handler ? unkown_layer_handler : handler;
+    handler = !handler ? unknown_layer_handler : handler;
 
     // Handlers only need the error bits. This way they don't
     // need to concern themselves with masking off the layer

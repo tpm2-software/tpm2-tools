@@ -6,11 +6,11 @@
   * tpm2_quote: Option `--ak-passwd` changes to `--auth-ak`
   * tpm2_pcrevent: Option `--passwd` changes to `--auth-pcr`
   * tpm2_nvwrite: Options `--authhandle` and `--handle-passwd`
-    changes to `--auth-hiearchy` and `--auth-hiearchy-value` respectively.
+    changes to `--auth-hierarchy` and `--auth-hierarchy-value` respectively.
   * tpm2_nvread: Options `--authhandle` and `--handle-passwd`
-    changes to `--auth-hiearchy` and `--auth-hiearchy-value` respectively.
+    changes to `--auth-hierarchy` and `--auth-hierarchy-value` respectively.
   * tpm2_nvdefine: Options `--authhandle`, `--handle-passwd` and `--index-passwd`
-    changes to `--auth-hiearchy`, `--auth-hiearchy-value` and `--auth-index`
+    changes to `--auth-hierarchy`, `--auth-hierarchy-value` and `--auth-index`
     respectively.
   * tpm2_loadexternal: `-H` changes to `-a` for specifying hierarchy.
   * tpm2_load: Option `--pwdp` changes to `--auth-parent`.
@@ -51,7 +51,7 @@
   * Dynamic TCTIS. Support for pluggable TCTI modules via the -T or --tcti options.
   * tpm2_sign: supports signing a pre-computed hash via -D
   * tpm2_clearlock: tool added
-  * test: system testing scripts moved into subordiante test directory.
+  * test: system testing scripts moved into subordinate test directory.
   * fix a buffer overflow in nvread/write tools.
   * configure: enable code coverage option.
   * tpm2_takeownership: split into tpm2_clear and tpm2_changeauth
@@ -176,7 +176,7 @@
   **Removed**
 
   * Windows related code
-  * depenedency on the TPM2.0-TSS repo source code
+  * dependency on the TPM2.0-TSS repo source code
 
 ### v1.0 - 2015-10-19
 
