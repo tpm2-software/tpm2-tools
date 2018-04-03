@@ -19,7 +19,7 @@
   * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to define the space at.
 
-  * **-a**, **--auth-handle**=_AUTH_:
+  * **-a**, **--hierarchy**=_AUTH\_HIERARCHY_:
     specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
     Supported options are:
@@ -36,7 +36,7 @@
     entity. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
-  * **-P**, **--auth-hierarchy**=_HANDLE\_PASSWORD_:
+  * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the authorization formatting standards, see section
     "Authorization Formatting".

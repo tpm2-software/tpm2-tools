@@ -188,7 +188,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "hierarchy",              required_argument,  NULL,   'a' },
         { "size",                   required_argument,  NULL,   's' },
         { "attribute",              required_argument,  NULL,   't' },
-        { "auth-hierarchy-value",   required_argument,  NULL,   'P' },
+        { "auth-hierarchy",         required_argument,  NULL,   'P' },
         { "auth-index",             required_argument,  NULL,   'I' },
         { "passwdInHex",            no_argument,        NULL,   'X' },
         { "policy-file",            required_argument,  NULL,   'L' },
