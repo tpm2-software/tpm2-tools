@@ -44,6 +44,7 @@
 #include "pcr.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
+#include "tpm2_hmac_auth.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_policy.h"
 #include "tpm2_session.h"
@@ -55,26 +56,28 @@ struct tpm_nvwrite_ctx {
     UINT32 nv_index;
     UINT16 data_size;
     UINT8 nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
-    struct {
-        TPMS_AUTH_COMMAND session_data;
-        tpm2_session *session;
-        TPMI_RH_PROVISION hierarchy;
-    } auth;
     FILE *input_file;
     UINT16 offset;
     char *raw_pcrs_file;
-    tpm2_session *policy_session;
     TPML_PCR_SELECTION pcr_selection;
     struct {
         UINT8 L : 1;
     } flags;
+    struct {
+        bool is_hmac_auth; //Required since TPM2_SE_HMAC is same as session type
+                           //when creating new session object
+        tpm2_session_data *session_data[MAX_AUTH_SESSIONS];
+        tpm2_session *session[MAX_AUTH_SESSIONS];
+        TPMI_RH_PROVISION hierarchy;
+        TSS2L_SYS_AUTH_COMMAND auth_list;
+    } auth;
 };
 
 static tpm_nvwrite_ctx ctx = {
     .auth = {
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-            .hierarchy = TPM2_RH_OWNER
-    }
+        .is_hmac_auth = false,
+        .hierarchy = TPM2_RH_OWNER,
+    },
 };
 
 static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
@@ -82,7 +85,6 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B_MAX_NV_BUFFER nv_write_data;
 
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
 
     UINT16 data_offset = 0;
 
@@ -96,7 +98,7 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
      */
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
     TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-    bool res = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public, 
+    bool res = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public,
                 &nv_name);
     if (!res) {
         LOG_ERR("Failed to write NVRAM public area at index 0x%X",
@@ -131,9 +133,45 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
 
         memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset], nv_write_data.size);
 
+        if (ctx.auth.is_hmac_auth) {
+             TPM2B_NAME entity_1_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+            if (!tpm2_hmac_auth_get_entity_name(sapi_context, ctx.auth.hierarchy,
+                                 &entity_1_name)) {
+                LOG_ERR("Entity name calculation error.");
+                return false;
+            }
+        
+            TPM2B_NAME entity_2_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+            if (!tpm2_hmac_auth_get_entity_name(sapi_context, ctx.nv_index,
+                    &entity_2_name)) {
+                LOG_ERR("Entity name calculation error.");
+                return false;
+            }
+
+            TSS2_RC rval = TSS2_RETRY_EXP( Tss2_Sys_NV_Write_Prepare(sapi_context,
+                            ctx.auth.hierarchy, ctx.nv_index, &nv_write_data,
+                            ctx.offset + data_offset));
+            if (rval != TPM2_RC_SUCCESS) {
+                LOG_ERR("Failed to prepare write NV area at index 0x%X", ctx.nv_index);
+                LOG_PERR(Tss2_Sys_NV_Write, rval);
+                return false;
+            }
+    
+            uint8_t hmac_session_cnt = 0;
+            int i=0;
+            for (i = 0; i < ctx.auth.auth_list.count; i++) {
+                if (TPM2_SE_HMAC==tpm2_session_get_type(ctx.auth.session[i])
+                    && hmac_session_cnt < 2) {
+                    tpm2_hmac_auth_get_command_buffer_hmac(sapi_context, ctx.auth.hierarchy,
+                        ctx.auth.session[hmac_session_cnt], &ctx.auth.auth_list.auths[i], 
+                        entity_1_name, entity_2_name);
+                }
+            }
+        }
+
         TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context,
-                ctx.auth.hierarchy, ctx.nv_index, &sessions_data, &nv_write_data,
-                ctx.offset + data_offset, &sessions_data_out));
+            ctx.auth.hierarchy, ctx.nv_index, &ctx.auth.auth_list,
+            &nv_write_data, ctx.offset + data_offset, &sessions_data_out));
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to write NV area at index 0x%X", ctx.nv_index);
             LOG_PERR(Tss2_Sys_NV_Write, rval);
@@ -175,8 +213,9 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'P':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                &ctx.auth.session);
+        result = tpm2_auth_util_from_optarg_new(value, &ctx.auth.auth_list,
+            ctx.auth.session_data[ctx.auth.auth_list.count],
+            &ctx.auth.session[ctx.auth.auth_list.count], &ctx.auth.is_hmac_auth);
         if (!result) {
             LOG_ERR("Invalid handle authorization, got\"%s\"", value);
             return false;
@@ -194,6 +233,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.L = 1;
+        tpm2_session_set_type_in_session_data(ctx.auth.session_data[ctx.auth.auth_list.count],
+            TPM2_SE_POLICY);
+        ctx.auth.auth_list.count += 1;
         break;
     case 'F':
         ctx.raw_pcrs_file = value;
@@ -223,12 +265,12 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "index",                required_argument, NULL, 'x' },
-        { "hierarchy",       required_argument, NULL, 'a' },
+        { "index",          required_argument, NULL, 'x' },
+        { "hierarchy",      required_argument, NULL, 'a' },
         { "auth-hierarchy", required_argument, NULL, 'P' },
-        { "offset",               required_argument, NULL, 'o' },
-        { "set-list",             required_argument, NULL, 'L' },
-        { "pcr-input-file",       required_argument, NULL, 'F' },
+        { "offset",         required_argument, NULL, 'o' },
+        { "set-list",       required_argument, NULL, 'L' },
+        { "pcr-input-file", required_argument, NULL, 'F' },
     };
 
     *opts = tpm2_options_new("x:a:P:o:L:F:", ARRAY_LEN(topts), topts,
@@ -236,35 +278,63 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     ctx.input_file = stdin;
 
+    int i=0;
+    for (i = 0; i < 3; i++) {
+        ctx.auth.session_data[i] = tpm2_session_data_new(0);
+    }
+
     return *opts != NULL;
 }
 
+#define INVALID_SESSION_TYPE 0xFF
 static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
 
-    tpm2_session_data *session_data =
-            tpm2_session_data_new(TPM2_SE_POLICY);
-    if (!session_data) {
-        LOG_ERR("oom");
-        return false;
-    }
+    TPM2_SE type =  INVALID_SESSION_TYPE;
+    uint8_t hmac_session_cnt = 0;
+    int i=0;
+    for (i = 0; i < ctx.auth.auth_list.count; i++) {
 
-    ctx.auth.session = tpm2_session_new(sapi_context,
-            session_data);
-    if (!ctx.auth.session) {
-        LOG_ERR("Could not start tpm session");
-        return false;
-    }
+        type = tpm2_session_get_type_from_session_data(ctx.auth.session_data[i]);
+        bool result = false;
+        switch(type) {
+            case TPM2_SE_POLICY:
+                ctx.auth.session[i] = tpm2_session_new(sapi_context,
+                    ctx.auth.session_data[i]);
+                if (!ctx.auth.session[i]) {
+                    LOG_ERR("Could not start tpm session");
+                    return false;
+                }
+                result = tpm2_policy_build_pcr(sapi_context,
+                    ctx.auth.session[i], ctx.raw_pcrs_file,
+                    &ctx.pcr_selection);
+                if (!result) {
+                    LOG_ERR("Could not build a pcr policy");
+                    return false;
+                }
+                break;
+            case TPM2_SE_HMAC:
+                if (ctx.auth.is_hmac_auth &&
+                    hmac_session_cnt >= 2) {
+                    LOG_ERR("Max HMAC auth sessions reached");
+                    return false;
+                }
+                hmac_session_cnt++;
+                ctx.auth.session[i] = tpm2_session_new(sapi_context,
+                    ctx.auth.session_data[i]);
+                if (!ctx.auth.session[i]) {
+                    LOG_ERR("Could not start tpm session");
+                    return false;
+                }
+                break;
+            default:
+                LOG_ERR("Invalid/ Unsupported session type %08X", type);
+                return false;
+        }
 
-    bool result = tpm2_policy_build_pcr(sapi_context, ctx.auth.session,
-            ctx.raw_pcrs_file,
-            &ctx.pcr_selection);
-    if (!result) {
-        LOG_ERR("Could not build a pcr policy");
-        return false;
+        ctx.auth.auth_list.auths[i].sessionHandle = 
+                tpm2_session_get_handle(ctx.auth.session[i]);
+        ctx.auth.auth_list.auths[i].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
-
-    ctx.auth.session_data.sessionHandle = tpm2_session_get_handle(ctx.auth.session);
-    ctx.auth.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
 
     return true;
 }
@@ -277,17 +347,46 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
-    if (ctx.flags.L && ctx.auth.session) {
+    uint8_t policy_session_count = 0;
+    uint8_t hmac_session_count = 0;
+    TPM2_SE type = INVALID_SESSION_TYPE;
+    int i=0;
+    for (i = 0; i < ctx.auth.auth_list.count; i++) {
+        type = tpm2_session_get_type_from_session_data(ctx.auth.session_data[i]);
+        switch(type) {
+            case TPM2_SE_HMAC:
+                hmac_session_count++;
+                break;
+            case TPM2_SE_POLICY:
+                policy_session_count++;
+                break;
+            default:
+                LOG_ERR("Invalid/ Unsupported session type %08X", type);
+                goto out;
+        }
+    }
+
+    if (policy_session_count > 1) {
         LOG_ERR("Can only use either existing session or a new session,"
                 " not both!");
         goto out;
     }
 
-    if (ctx.flags.L) {
+    if (hmac_session_count > 1) {
+        LOG_ERR("Can only use one HMAC authentication for this tool");
+        goto out;
+    }
+
+    if (ctx.flags.L || ctx.auth.is_hmac_auth) {
         result = start_auth_session(sapi_context);
         if (!result) {
             goto out;
         }
+    }
+
+    if (!ctx.auth.auth_list.count) {
+        ctx.auth.auth_list.auths[ctx.auth.auth_list.count++].sessionHandle =
+            TPM2_RS_PW;
     }
 
     /* Suppress error reporting with NULL path */
@@ -338,18 +437,23 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-
-    if (ctx.flags.L) {
-        TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
-                ctx.auth.session_data.sessionHandle);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_FlushContext, rval);
-            rc = 1;
-        }
-    } else {
-        result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
-        if (!result) {
-            rc = 1;
+    for (i = 0; i < ctx.auth.auth_list.count; i++) {
+        if(TPM2_SE_POLICY ==
+            tpm2_session_get_type_from_session_data(ctx.auth.session_data[i])) {
+            if (ctx.flags.L) {
+                TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
+                        ctx.auth.auth_list.auths[i].sessionHandle);
+                if (rval != TPM2_RC_SUCCESS) {
+                    LOG_PERR(Tss2_Sys_FlushContext, rval);
+                    rc = 1;
+                }
+            } else {
+                result = tpm2_session_save(sapi_context,
+                    ctx.auth.session[i], NULL);
+                if (!result) {
+                    rc = 1;
+                }
+            }
         }
     }
 
@@ -357,6 +461,11 @@ out:
 }
 
 void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.auth.session);
+    int i=0;
+    for (i = 0; i < ctx.auth.auth_list.count; i++) {
+        if(TPM2_SE_POLICY ==
+            tpm2_session_get_type_from_session_data(ctx.auth.session_data[i])) {
+            tpm2_session_free(&ctx.auth.session[i]);
+        }
+    }
 }
