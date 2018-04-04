@@ -76,7 +76,7 @@ tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_prim
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I $file_input_data -c $file_primary_key_ctx
 
-tpm2_load -Q -c $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -C $file_unseal_key_ctx
+tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
 tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
@@ -88,7 +88,7 @@ rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
 
 cat $file_input_data | tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx
 
-tpm2_load -Q -c $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -C $file_unseal_key_ctx
+tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
 tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
@@ -105,7 +105,7 @@ tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $f
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx -L $file_policy \
   -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' <<< $secret
 
-tpm2_load -Q -c $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -C $file_unseal_key_ctx
+tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
 unsealed=`tpm2_unseal -c $file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value`
 

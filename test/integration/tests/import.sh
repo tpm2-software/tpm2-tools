@@ -62,8 +62,8 @@ tpm2_readpublic -Q -c 0x81010005 --out-file parent.pub
 tpm2_import -Q -G aes -k sym.key -H 0x81010005 -K parent.pub -q import_key.pub \
 -r import_key.priv
 
-tpm2_load -Q -H 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
--C import_key.ctx
+tpm2_load -Q -C 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
+-o import_key.ctx
 
 echo "plaintext" > "plain.txt"
 
@@ -82,8 +82,8 @@ openssl rsa -in private.pem -pubout > public.pem
 tpm2_import -Q -G rsa -k private.pem -H 0x81010005 \
 -q import_rsa_key.pub -r import_rsa_key.priv
 
-tpm2_load -Q -H 0x81010005 -u import_rsa_key.pub -r import_rsa_key.priv \
--n import_rsa_key.name -C import_rsa_key.ctx
+tpm2_load -Q -C 0x81010005 -u import_rsa_key.pub -r import_rsa_key.priv \
+-n import_rsa_key.name -o import_rsa_key.ctx
 
 openssl rsa -in private.pem -out public.pem -outform PEM -pubout
 openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc

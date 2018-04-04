@@ -107,7 +107,7 @@ tpm2_flushcontext -S $file_session_file
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -c $file_primary_key_ctx -L $file_policy \
   -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' <<< $secret
 
-tpm2_load -Q -c $file_primary_key_ctx -u $file_unseal_key_pub -r $file_unseal_key_priv -n $file_unseal_key_name -C $file_unseal_key_ctx
+tpm2_load -Q -C file:$file_primary_key_ctx -u $file_unseal_key_pub -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
 # Start a REAL policy session (-a option) and perform a pcr policy event
 handle=`tpm2_startauthsession -a -S $file_session_file | cut -d' ' -f 2-2`

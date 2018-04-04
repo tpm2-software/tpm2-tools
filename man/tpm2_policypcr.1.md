@@ -70,7 +70,7 @@ tpm2_flushcontext -H "$handle"
 tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv -c primary.ctx -L policy.dat \
   -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' -I- <<< "12345678"
 
-tpm2_load -Q -c primary.ctx -u key.pub -r key.priv -n unseal.key.name -C unseal.key.ctx
+tpm2_load -Q -C file:primary.ctx -u key.pub -r key.priv -n unseal.key.name -o unseal.key.ctx
 
 # Now that an object is created and a policy is required to access it, satisfy the policy on
 # a session and use it to unseal the data stored in the object.

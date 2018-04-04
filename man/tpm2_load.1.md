@@ -17,11 +17,9 @@ into the TPM.
 
 # OPTIONS
 
-  * **-H**, **--parent**=_PARENT\_HANDLE_:
-    The handle of the parent object. Either this option or **-c** must be used.
-
-  * **-c**, **--context-parent**=_PARENT\_CONTEXT\_FILE_:
-    The filename for parent context.
+  * **-C**, **--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
+    Context object loaded object's parent. Either a file or a handle number.
+    See section "Context Object Format".
 
   * **-P**, **--auth-parent**=_KEY\_AUTH_:
     Optional authorization value to use the parent object specified by **-H**.
@@ -37,7 +35,7 @@ into the TPM.
   * **-n**, **--name**=_NAME\_DATA\_FILE_:
     An optional file to save the name structure of the object.
 
-  * **-C**, **--context**=_CONTEXT\_FILE_:
+  * **-o**, **--context**=_CONTEXT\_FILE_:
     An optional file to save the object context to.
 
   * **-S**, **--session**=_SESSION\_FILE_:
@@ -48,15 +46,17 @@ into the TPM.
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 
 # EXAMPLES
 
 ```
-tpm2_load  -H 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
-tpm2_load  -c parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -C object.context
-tpm2_load  -H 0x80000000 -P "hex:123abc" -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
+tpm2_load  -C 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
+tpm2_load  -C file:parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -o object.context
+tpm2_load  -C 0x80000000 -P "hex:123abc" -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
 
 ```
 
