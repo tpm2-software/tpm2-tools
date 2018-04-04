@@ -46,38 +46,49 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct {
-    int size;
-    UINT32 id[24];
-} PCR_LIST;
-
-static struct {
-    TPMS_AUTH_COMMAND session_data;
-    tpm2_session *session;
-} auth = {
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)
+typedef struct tpm_quote_ctx tpm_quote_ctx;
+struct tpm_quote_ctx {
+    struct {
+        TPMS_AUTH_COMMAND session_data;
+        tpm2_session *session;
+    } auth;
+    char *outFilePath;
+    char *signature_path;
+    char *message_path;
+    tpm2_convert_sig_fmt sig_format;
+    TPMI_ALG_HASH sig_hash_algorithm;
+    TPM2B_DATA qualifyingData;
+    TPML_PCR_SELECTION pcrSelections;
+    char *contextFilePath;
+    TPM2_HANDLE akHandle;
+    char *ak_auth_str;
+    struct {
+        UINT16 k : 1;
+        UINT16 c : 1;
+        UINT16 l : 1;
+        UINT16 L : 1;
+        UINT16 o : 1;
+        UINT16 G : 1;
+        UINT16 P : 1;
+    } flags;
 };
-static char *outFilePath;
-static char *signature_path;
-static char *message_path;
-static tpm2_convert_sig_fmt sig_format;
-static TPMI_ALG_HASH sig_hash_algorithm;
-static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
-static TPML_PCR_SELECTION  pcrSelections;
-static int k_flag, c_flag, l_flag, L_flag, o_flag, G_flag, P_flag;
-static char *ak_auth_str;
-static char *contextFilePath;
-static TPM2_HANDLE akHandle;
+
+static tpm_quote_ctx ctx = {
+    .auth = {
+        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+    },
+    .qualifyingData = TPM2B_EMPTY_INIT,
+};
 
 static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
 
     bool res = true;
-    if (signature_path) {
-        res &= tpm2_convert_sig(signature, sig_format, signature_path);
+    if (ctx.signature_path) {
+        res &= tpm2_convert_sig(signature, ctx.sig_format, ctx.signature_path);
     }
 
-    if (message_path) {
-        res &= files_save_bytes_to_file(message_path,
+    if (ctx.message_path) {
+        res &= files_save_bytes_to_file(ctx.message_path,
                 (UINT8*)quoted->attestationData,
                 quoted->size);
     }
@@ -94,16 +105,16 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
     TPMT_SIGNATURE signature;
     TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
         1, {
-            auth.session_data,
+            ctx.auth.session_data,
          },
     };
 
-    if(!G_flag || !get_signature_scheme(sapi_context, akHandle, sig_hash_algorithm, &inScheme)) {
+    if(!ctx.flags.G || !get_signature_scheme(sapi_context, akHandle, ctx.sig_hash_algorithm, &inScheme)) {
         inScheme.scheme = TPM2_ALG_NULL;
     }
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &cmd_auth_array,
-            &qualifyingData, &inScheme, pcrSelection, &quoted,
+            &ctx.qualifyingData, &inScheme, pcrSelection, &quoted,
             &signature, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS)
     {
@@ -132,70 +143,70 @@ static bool on_option(char key, char *value) {
     switch(key)
     {
     case 'k':
-        if(!tpm2_util_string_to_uint32(value, &akHandle))
+        if(!tpm2_util_string_to_uint32(value, &ctx.akHandle))
         {
             LOG_ERR("Invalid AK handle, got\"%s\"", value);
             return false;
         }
-        k_flag = 1;
+        ctx.flags.k = 1;
         break;
     case 'c':
-        contextFilePath = value;
-        c_flag = 1;
+        ctx.contextFilePath = value;
+        ctx.flags.c = 1;
         break;
 
     case 'P':
-        P_flag = 1;
-        ak_auth_str = value;
+        ctx.flags.P = 1;
+        ctx.ak_auth_str = value;
         break;
     case 'l':
-        if(!pcr_parse_list(value, strlen(value), &pcrSelections.pcrSelections[0]))
+        if(!pcr_parse_list(value, strlen(value), &ctx.pcrSelections.pcrSelections[0]))
         {
             LOG_ERR("Could not parse pcr list, got: \"%s\"", value);
             return false;
         }
-        l_flag = 1;
+        ctx.flags.l = 1;
         break;
     case 'L':
-        if(!pcr_parse_selections(value, &pcrSelections))
+        if(!pcr_parse_selections(value, &ctx.pcrSelections))
         {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
             return false;
         }
-        L_flag = 1;
+        ctx.flags.L = 1;
         break;
     case 'o':
-        outFilePath = value;
-        o_flag = 1;
+        ctx.outFilePath = value;
+        ctx.flags.o = 1;
         break;
     case 'q':
-        qualifyingData.size = sizeof(qualifyingData) - 2;
-        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.size,qualifyingData.buffer) != 0)
+        ctx.qualifyingData.size = sizeof(ctx.qualifyingData) - 2;
+        if(tpm2_util_hex_to_byte_structure(value, &ctx.qualifyingData.size, ctx.qualifyingData.buffer) != 0)
         {
             LOG_ERR("Could not convert \"%s\" from a hex string to byte array!", value);
             return false;
         }
         break;
     case 's':
-         signature_path = value;
+         ctx.signature_path = value;
          break;
     case 'm':
-         message_path = value;
+         ctx.message_path = value;
          break;
     case 'f':
-         sig_format = tpm2_convert_sig_fmt_from_optarg(value);
+         ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
-         if (sig_format == signature_format_err) {
+         if (ctx.sig_format == signature_format_err) {
             return false;
          }
          break;
     case 'G':
-        sig_hash_algorithm = tpm2_alg_util_from_optarg(value);
-        if(sig_hash_algorithm == TPM2_ALG_ERROR) {
+        ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value);
+        if(ctx.sig_hash_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
             return false;
         }
-        G_flag = 1;
+        ctx.flags.G = 1;
         break;
     }
 
@@ -231,28 +242,28 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result;
 
     /* TODO this whole file needs to be re-done, especially the option validation */
-    if (!l_flag && !L_flag) {
+    if (!ctx.flags.l && !ctx.flags.L) {
         LOG_ERR("Expected either -l or -L to be specified");
         goto out;
     }
 
-    if (P_flag) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ak_auth_str,
-                &auth.session_data, &auth.session);
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.ak_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid AK authorization, got\"%s\"", ak_auth_str);
+            LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak_auth_str);
             goto out;
         }
     }
 
-    if(c_flag) {
-        result = files_load_tpm_context_from_path(sapi_context, &akHandle, contextFilePath);
+    if(ctx.flags.c) {
+        result = files_load_tpm_context_from_path(sapi_context, &ctx.akHandle, ctx.contextFilePath);
         if (!result) {
             goto out;
         }
     }
 
-    int tmp_rc = quote(sapi_context, akHandle, &pcrSelections);
+    int tmp_rc = quote(sapi_context, ctx.akHandle, &ctx.pcrSelections);
     if (tmp_rc) {
         goto out;
     }
@@ -261,7 +272,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
 out:
 
-    result = tpm2_session_save(sapi_context, auth.session, NULL);
+    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -271,5 +282,5 @@ out:
 
 void tpm2_tool_onexit(void) {
 
-    tpm2_session_free(&auth.session);
+    tpm2_session_free(&ctx.auth.session);
 }
