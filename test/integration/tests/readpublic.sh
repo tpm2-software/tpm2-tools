@@ -69,7 +69,7 @@ tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_prim
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_readpub_key_pub -r $file_readpub_key_priv  -c $file_primary_key_ctx
 
-tpm2_load -Q -c $file_primary_key_ctx  -u $file_readpub_key_pub  -r $file_readpub_key_priv -n $file_readpub_key_name -C $file_readpub_key_ctx
+tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_readpub_key_pub  -r $file_readpub_key_priv -n $file_readpub_key_name -o $file_readpub_key_ctx
 
 tpm2_readpublic -Q -c file:$file_readpub_key_ctx -o $file_readpub_output
 
