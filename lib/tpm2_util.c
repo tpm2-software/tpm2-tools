@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2017, Intel Corporation
+// Copyright (c) 2017-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,6 +40,9 @@
 #include "tpm2_attr_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+
+#define FILE_PREFIX "file:"
+#define FILE_PREFIX_LEN (sizeof(FILE_PREFIX) - 1)
 
 bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
 
@@ -344,4 +347,38 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
                 public->publicArea.authPolicy.size);
         tpm2_tool_output("\n");
     }
+}
+
+bool tpm2_util_object_load(TSS2_SYS_CONTEXT *sapi_ctx,
+        const char *objectstr, tpm2_loaded_object *outobject) {
+
+    bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
+    bool result;
+
+    if (starts_with_file) {
+        outobject->path = objectstr += FILE_PREFIX_LEN;
+    } else {
+        result = tpm2_util_string_to_uint32(objectstr, &outobject->handle);
+        if (result) {
+            // have a handle, done
+            return true;
+        }
+        // assume this is a file path
+        outobject->path = objectstr;
+    }
+
+    result = files_load_tpm_context_from_path(sapi_ctx, &outobject->handle,
+                outobject->path);
+
+    return result;
+}
+
+bool tpm2_util_object_save(TSS2_SYS_CONTEXT *sapi_ctx,
+        tpm2_loaded_object inobject) {
+
+    if (inobject.path) {
+        return files_save_tpm_context_to_path(sapi_ctx, inobject.handle,
+                inobject.path);
+    }
+    return false;
 }
