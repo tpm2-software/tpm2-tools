@@ -115,7 +115,7 @@ done
 
 for fmt in tss plain; do
     this_sig="${file_quote_sig_base}.${fmt}"
-    tpm2_quote -Q -k $handle_ak -l 0 -g "$alg_hash" -f $fmt -m "$file_quote_msg" -s "$this_sig"
+    tpm2_quote -Q -C $handle_ak -l 0 -g "$alg_hash" -f $fmt -m "$file_quote_msg" -s "$this_sig"
 
     if [ "$fmt" = plain ]; then
         openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} -signature "$this_sig" "$file_quote_msg" > /dev/null

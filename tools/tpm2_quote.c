@@ -59,12 +59,10 @@ struct tpm_quote_ctx {
     TPMI_ALG_HASH sig_hash_algorithm;
     TPM2B_DATA qualifyingData;
     TPML_PCR_SELECTION pcrSelections;
-    char *contextFilePath;
-    TPM2_HANDLE akHandle;
     char *ak_auth_str;
+    const char *context_arg;
+    tpm2_loaded_object context_object;
     struct {
-        UINT16 k : 1;
-        UINT16 c : 1;
         UINT16 l : 1;
         UINT16 L : 1;
         UINT16 o : 1;
@@ -142,19 +140,9 @@ static bool on_option(char key, char *value) {
 
     switch(key)
     {
-    case 'k':
-        if(!tpm2_util_string_to_uint32(value, &ctx.akHandle))
-        {
-            LOG_ERR("Invalid AK handle, got\"%s\"", value);
-            return false;
-        }
-        ctx.flags.k = 1;
+    case 'C':
+        ctx.context_arg = value;
         break;
-    case 'c':
-        ctx.contextFilePath = value;
-        ctx.flags.c = 1;
-        break;
-
     case 'P':
         ctx.flags.P = 1;
         ctx.ak_auth_str = value;
@@ -216,8 +204,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "ak-handle",            required_argument, NULL, 'k' },
-        { "ak-context",           required_argument, NULL, 'c' },
+        { "ak-context",           required_argument, NULL, 'C' },
         { "auth-ak",              required_argument, NULL, 'P' },
         { "id-list",              required_argument, NULL, 'l' },
         { "sel-list",             required_argument, NULL, 'L' },
@@ -228,7 +215,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:q:s:m:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:l:g:L:q:s:m:f:G:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -256,14 +243,15 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if(ctx.flags.c) {
-        result = files_load_tpm_context_from_path(sapi_context, &ctx.akHandle, ctx.contextFilePath);
-        if (!result) {
-            goto out;
-        }
+    result = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.context_object);
+    if (!result) {
+        tpm2_tool_output(
+                "Failed to load context object (handle: 0x%x, path: %s).\n",
+                ctx.context_object.handle, ctx.context_object.path);
+        goto out;
     }
 
-    int tmp_rc = quote(sapi_context, ctx.akHandle, &ctx.pcrSelections);
+    int tmp_rc = quote(sapi_context, ctx.context_object.handle, &ctx.pcrSelections);
     if (tmp_rc) {
         goto out;
     }
