@@ -88,7 +88,7 @@ for fmt in tss pem der; do
 
     this_key="${file_pubek_base}.${fmt}"
 
-    tpm2_readpublic -Q -H $handle_ek -f "$fmt" -o "$this_key"
+    tpm2_readpublic -Q -c $handle_ek -f "$fmt" -o "$this_key"
 
     if [ "$fmt" = tss ]; then
         diff "$file_pubek_orig" "$this_key" > /dev/null
@@ -100,7 +100,7 @@ done
 
 tpm2_createak -Q -g $alg_ak -E $handle_ek -k $handle_ak -p "$file_pubak_tss" -n "$file_pubak_name"
 
-tpm2_readpublic -Q -H $handle_ak -f "pem" -o "$file_pubak_pem"
+tpm2_readpublic -Q -c $handle_ak -f "pem" -o "$file_pubak_pem"
 
 tpm2_hash -Q -a e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$file_hash_input"
 

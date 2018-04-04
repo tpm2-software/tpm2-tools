@@ -71,11 +71,11 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_readpub_key_pub -r
 
 tpm2_load -Q -c $file_primary_key_ctx  -u $file_readpub_key_pub  -r $file_readpub_key_priv -n $file_readpub_key_name -C $file_readpub_key_ctx
 
-tpm2_readpublic -Q -c $file_readpub_key_ctx -o $file_readpub_output
+tpm2_readpublic -Q -c file:$file_readpub_key_ctx -o $file_readpub_output
 
 tpm2_evictcontrol -Q -a o -c $file_readpub_key_ctx -p $Handle_readpub
 
 rm -f $file_readpub_output
-tpm2_readpublic -Q -H $Handle_readpub -o $file_readpub_output
+tpm2_readpublic -Q -c $Handle_readpub -o $file_readpub_output
 
 exit 0

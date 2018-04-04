@@ -16,17 +16,16 @@
 
 # OPTIONS
 
-  * **-H**, **--object**=_HANDLE_:
+  * **-c**, **--context-object**=_OBJECT\_CONTEXT_:
 
-    The loaded object handle to read the public data of.
+    Context object for the object to read. Either a file or a handle number.
+    See section "Context Object Format".
 
-  * **-c**, **--ak-context**=_OBJECT\_CONTEXT\_FILE_:
-
-    Filename for object context.
-
-  * **-o**, **--out-file**:
+  * **-o**, **--out-file**=_OUT\_FILE_:
 
     The output file path, recording the public portion of the object.
+
+[context object format](commmon/ctxobj.md)
 
 [pubkey options](common/pubkey.md)
 
@@ -37,7 +36,7 @@
 # EXAMPLES
 
 ```
-tpm2_readpublic -H 0x81010002 --opu output.dat
+tpm2_readpublic -c 0x81010002 -o output.dat
 ```
 
 # RETURNS

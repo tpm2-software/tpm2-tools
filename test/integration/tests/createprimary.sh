@@ -74,7 +74,7 @@ echo -n "$policy_orig" | xxd -r -p > policy.bin
 tpm2_createprimary -Q -a o -G rsa -g sha256 -C context.out -L policy.bin \
   -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin'
 
-tpm2_readpublic -c context.out > pub.out
+tpm2_readpublic -c file:context.out > pub.out
 
 policy_new=$(yaml_get_kv pub.out \"authorization\ policy\")
 
