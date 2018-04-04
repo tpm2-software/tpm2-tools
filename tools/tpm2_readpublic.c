@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,18 +47,16 @@
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {
     struct {
-        UINT8 H      : 1;
-        UINT8 c      : 1;
         UINT8 f      : 1;
     } flags;
-    TPMI_DH_OBJECT objectHandle;
     char *outFilePath;
-    char *context_file;
     tpm2_convert_pubkey_fmt format;
+    tpm2_loaded_object context_object;
+    const char *context_arg;
 };
 
 static tpm_readpub_ctx ctx = {
-    .format = pubkey_format_tss
+    .format = pubkey_format_tss,
 };
 
 static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
@@ -71,7 +69,7 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, ctx.objectHandle, 0,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, ctx.context_object.handle, 0,
             &public, &name, &qualified_name, &sessions_out_data));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_ReadPublic, rval);
@@ -99,21 +97,12 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool on_option(char key, char *value) {
 
-    bool result;
     switch (key) {
-    case 'H':
-        result = tpm2_util_string_to_uint32(value, &ctx.objectHandle);
-        if (!result) {
-            return false;
-        }
-        ctx.flags.H = 1;
+    case 'c':
+        ctx.context_arg = value;
         break;
     case 'o':
         ctx.outFilePath = value;
-        break;
-    case 'c':
-        ctx.context_file = value;
-        ctx.flags.c = 1;
         break;
     case 'f':
         ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
@@ -130,13 +119,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "object",         required_argument, NULL, 'H' },
-        { "out-file",       required_argument, NULL, 'o' },
-        { "context-object", required_argument, NULL, 'c' },
-        { "format",         required_argument, NULL, 'f' }
+        { "out-file",   required_argument, NULL, 'o' },
+        { "context",    required_argument, NULL, 'c' },
+        { "format",     required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("H:o:c:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:c:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -144,16 +132,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!((ctx.flags.H || ctx.flags.c))) {
+    bool result = tpm2_util_object_load(sapi_context,
+            ctx.context_arg, &ctx.context_object);
+    if (!result) {
+        tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
+                ctx.context_object.handle, ctx.context_object.path);
         return false;
-    }
-
-    if (ctx.flags.c) {
-        bool result = files_load_tpm_context_from_path(sapi_context, &ctx.objectHandle,
-                ctx.context_file);
-        if (!result) {
-            return false;
-        }
     }
 
     return true;
