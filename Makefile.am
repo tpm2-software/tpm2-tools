@@ -320,6 +320,7 @@ endif
 MARKDOWN_COMMON_DEPS = \
 	man/common/alg.md \
 	man/common/authorizations.md \
+	man/common/ctxobj.md \
 	man/common/footer.md \
 	man/common/hash.md \
 	man/common/obj-attrs.md \
@@ -340,6 +341,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[common tcti options\]/d' \
 	    -e '/\[authorization formatting\]/r man/common/authorizations.md' \
 	    -e '/\[authorization formatting\]/d' \
+	    -e '/\[context object format\]/r man/common/ctxobj.md' \
+	    -e '/\[context object format\]/d' \
 	    -e '/\[supported hash algorithms\]/r man/common/hash.md' \
 	    -e '/\[supported hash algorithms\]/d' \
 	    -e '/\[algorithm specifiers\]/r man/common/alg.md' \
