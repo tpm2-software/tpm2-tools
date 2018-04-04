@@ -86,6 +86,10 @@ void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce) 
     data->nonce_caller = *nonce;
 }
 
+TPM2B_NONCE * tpm2_session_get_nonce_tpm(tpm2_session *session) {
+    return &session->internal.nonceNewer;
+}
+
 void tpm2_session_set_bind(tpm2_session_data *data, TPMI_DH_ENTITY bind) {
     data->bind = bind;
 }

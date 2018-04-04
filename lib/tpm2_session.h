@@ -77,6 +77,16 @@ void tpm2_session_set_key(tpm2_session_data *data, TPMI_DH_OBJECT key);
 void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce);
 
 /**
+ * Retrieves the session nonce when an auth session is started.
+ * The session nonce is used in calculating the session HMAC for authentication
+ * @param data
+ *  The session object to modify.
+ * @return
+ *  The TPM2B_NONCE nonce value.
+ */
+TPM2B_NONCE *tpm2_session_get_nonce_tpm(tpm2_session *session);
+
+/**
  * Sets the bind parameter.
  * @param data
  *  The session data object to modify.
