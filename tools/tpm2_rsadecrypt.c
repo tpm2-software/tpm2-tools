@@ -46,22 +46,20 @@
 typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;
 struct tpm_rsadecrypt_ctx {
     struct {
-        UINT8 k : 1;
         UINT8 P : 1;
         UINT8 I : 1;
-        UINT8 c : 1;
         UINT8 o : 1;
         UINT8 unused : 3;
     } flags;
-    TPMI_DH_OBJECT key_handle;
     struct {
         TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
     } auth;
     TPM2B_PUBLIC_KEY_RSA cipher_text;
     char *output_file_path;
-    char *context_key_file;
     char *key_auth_str;
+    const char *context_arg;
+    tpm2_loaded_object key_context_object;
 };
 
 tpm_rsadecrypt_ctx ctx = {
@@ -80,7 +78,7 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     inScheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_handle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_context_object.handle,
             &sessions_data, &ctx.cipher_text, &inScheme, &label, &message,
             &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
@@ -95,15 +93,8 @@ static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'k': {
-        bool result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
-        if (!result) {
-            LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.k = 1;
-    }
+    case 'c':
+        ctx.context_arg = value;
         break;
     case 'P':
         ctx.flags.P = 1;
@@ -126,28 +117,22 @@ static bool on_option(char key, char *value) {
         }
         ctx.output_file_path = value;
         ctx.flags.o = 1;
-    }
-        break;
-    case 'c':
-        ctx.context_key_file = value;
-        ctx.flags.c = 1;
         break;
     }
-
+    }
     return true;
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "key-handle",   required_argument, NULL, 'k' },
       { "auth-key",     required_argument, NULL, 'P' },
       { "in-file",      required_argument, NULL, 'I' },
       { "out-file",     required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("k:P:I:o:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:I:o:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -156,17 +141,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
 
-    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I && ctx.flags.o)) {
-        LOG_ERR("Expected arguments I and o and (k or c)");
+    if (!(ctx.context_arg && ctx.flags.I && ctx.flags.o)) {
+        LOG_ERR("Expected arguments I, o and C");
         return false;
     }
 
-    if (ctx.flags.c) {
-        bool result = files_load_tpm_context_from_path(sapi_context,
-                &ctx.key_handle, ctx.context_key_file);
-        if (!result) {
-            return false;
-        }
+    bool result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+            &ctx.key_context_object);
+    if (!result) {
+        tpm2_tool_output(
+                "Failed to load contest object for key (handle: 0x%x, path: %s).\n",
+                ctx.key_context_object.handle, ctx.key_context_object.path);
+        return false;
     }
 
    return true;

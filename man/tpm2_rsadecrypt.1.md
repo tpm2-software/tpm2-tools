@@ -15,20 +15,18 @@
 **tpm2_rsadecrypt**(1) performs RSA decryption using the indicated padding scheme according to
 IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be **TPM_ALG_NULL**.
 
-The key referenced by keyHandle is **required** to be:
+The key referenced by key-context is **required** to be:
 
 1. an RSA key
 2. Have the attribute *decrypt* **SET** in it's attributes.
 
 # OPTIONS
 
-  * **-k**, **--key-handle**=_KEY\_HANDLE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
-    the public portion of RSA key to use for decryption.
-
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
-
-    filename of the key context used for the operation.
+    Context object pointing to the the public portion of RSA key to use for
+    decryption. Either a file or a handle number.
+    See section "Context Object Format".
 
   * **-P**, **--auth-key**=_KEY\_AUTH_:
 
@@ -52,12 +50,14 @@ The key referenced by keyHandle is **required** to be:
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 # EXAMPLES
 
 ```
-tpm2_rsadecrypt -k 0x81010001 -I encrypted.in -o plain.out
+tpm2_rsadecrypt -C 0x81010001 -I encrypted.in -o plain.out
 ```
 
 # RETURNS
