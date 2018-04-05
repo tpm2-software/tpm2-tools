@@ -20,13 +20,10 @@ data and validation shall indicate that hashed data did not start with
 
 # OPTIONS
 
-  * **-k**, **--key-handle**=_KEY\_HANDLE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
-    Handle of key that will perform signing.
-
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
-
-    Filename of the key context used for the operation.
+    Context object pointing to the the key used for signing. Either a file or a
+    handle number. See section "Context Object Format".
 
   * **-P**, **--auth-key**=_KEY\_AUTH_:
 
@@ -72,6 +69,8 @@ data and validation shall indicate that hashed data did not start with
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
@@ -84,8 +83,8 @@ data and validation shall indicate that hashed data did not start with
 
 
 ```
-tpm2_sign -k 0x81010001 -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
-tpm2_sign -c key.context -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_sign -C 0x81010001 -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_sign -C file:key.context -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
 ```
 
 # RETURNS
