@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,18 +44,14 @@
 
 typedef struct tpm_rsaencrypt_ctx tpm_rsaencrypt_ctx;
 struct tpm_rsaencrypt_ctx {
-    struct {
-        UINT8 k : 1;
-        UINT8 c : 1;
-    } flags;
-    char *context_key_file;
-    TPMI_DH_OBJECT key_handle;
+    const char *context_arg;
+    tpm2_loaded_object key_context;
     TPM2B_PUBLIC_KEY_RSA message;
     char *output_path;
     char *input_path;
 };
 
-static tpm_rsaencrypt_ctx ctx;
+static tpm_rsaencrypt_ctx ctx = {};
 
 static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
@@ -70,7 +66,7 @@ static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     scheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_handle, NULL,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_context.handle, NULL,
             &ctx.message, &scheme, &label, &out_data, &out_sessions_data));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_RSA_Encrypt, rval);
@@ -90,27 +86,13 @@ static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'k': {
-        bool result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
-        if (!result) {
-            LOG_ERR("Could not convert key handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.k = 1;
-    }
-        break;
-    case 'o': {
-        ctx.output_path = value;
-    }
-        break;
     case 'c':
-        ctx.context_key_file = value;
-        ctx.flags.c = 1;
+        ctx.context_arg = value;
         break;
-        /* no default */
+    case 'o':
+        ctx.output_path = value;
+        break;
     }
-
     return true;
 }
 
@@ -129,12 +111,11 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      {"key-handle",  required_argument, NULL, 'k'},
       {"out-file",    required_argument, NULL, 'o'},
       {"key-context", required_argument, NULL, 'c'},
     };
 
-    *opts = tpm2_options_new("k:o:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:c:", ARRAY_LEN(topts), topts,
                              on_option, on_args, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -142,17 +123,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!(ctx.flags.k || ctx.flags.c)) {
-        LOG_ERR("Expected options k or c");
+    if (!ctx.context_arg) {
+        LOG_ERR("Expected option C");
         return false;
     }
 
-    if (ctx.flags.c) {
-        bool result = files_load_tpm_context_from_path(sapi_context, &ctx.key_handle,
-                ctx.context_key_file);
-        if (!result) {
-            return false;
-        }
+    bool result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+            &ctx.key_context);
+    if (!result) {
+        tpm2_tool_output(
+                "Failed to load contest object for key (handle: 0x%x, path: %s).\n",
+                ctx.key_context.handle, ctx.key_context.path);
+        return false;
     }
 
     ctx.message.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);

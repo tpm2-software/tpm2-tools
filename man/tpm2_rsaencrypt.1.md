@@ -16,20 +16,18 @@
 (defaulting to stdin) using the indicated padding scheme according to
 IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be **TPM_ALG_NULL**.
 
-The key referenced by keyHandle is **required** to be:
+The key referenced by key-context is **required** to be:
 
 1. an RSA key
 2. Have the attribute *decrypt* **SET** in it's attributes.
 
 # OPTIONS
 
-  * **-k**, **--key-handle**=_KEY\_HANDLE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
-    the public portion of RSA key to use for encryption.
-
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
-
-    filename of the key context used for the operation.
+    Context object pointing to the the public portion of RSA key to use for
+    encryption. Either a file or a handle number.
+    See section "Context Object Format".
 
   * **-P**, **--pwdk**=_KEY\_PASSWORD_:
 
@@ -46,12 +44,14 @@ The key referenced by keyHandle is **required** to be:
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 # EXAMPLES
 
 ```
-tpm2_rsaencrypt -k 0x81010001 -I plain.in -o encrypted.out
+tpm2_rsaencrypt -C 0x81010001 -I plain.in -o encrypted.out
 ```
 
 # RETURNS
