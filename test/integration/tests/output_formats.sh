@@ -106,7 +106,7 @@ tpm2_hash -Q -a e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$f
 
 for fmt in tss plain; do
     this_sig="${file_sig_base}.${fmt}"
-    tpm2_sign -Q -k $handle_ak -g $alg_hash -m "${file_hash_input}" -f $fmt -s "${this_sig}" -t "${file_hash_ticket}"
+    tpm2_sign -Q -c $handle_ak -g $alg_hash -m "${file_hash_input}" -f $fmt -s "${this_sig}" -t "${file_hash_ticket}"
 
     if [ "$fmt" = plain ]; then
         openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} -signature "$this_sig" "$file_hash_input" > /dev/null

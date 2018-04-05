@@ -78,13 +78,13 @@ tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $fil
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_signing_key_pub  -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
 
-tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -s $file_output_data
+tpm2_sign -Q -c file:$file_signing_key_ctx -g $alg_hash -m $file_input_data -s $file_output_data
 
 rm -f $file_output_data
 
 tpm2_evictcontrol -Q -a o -c $file_signing_key_ctx -p $handle_signing_key
 
-tpm2_sign -Q -k $handle_signing_key -g $alg_hash -m $file_input_data -s $file_output_data
+tpm2_sign -Q -c $handle_signing_key -g $alg_hash -m $file_input_data -s $file_output_data
 
 rm -f $file_output_data
 
@@ -92,7 +92,7 @@ rm -f $file_output_data
 
 tpm2_hash -Q -a e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
 
-tpm2_sign -Q -k $handle_signing_key -g $alg_hash -s $file_output_data -m $file_input_data -t $file_output_ticket
+tpm2_sign -Q -c $handle_signing_key -g $alg_hash -s $file_output_data -m $file_input_data -t $file_output_ticket
 
 rm -f $file_output_data
 
@@ -100,12 +100,12 @@ rm -f $file_output_data
 
 sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > $file_input_digest
 
-tpm2_sign -Q -k $handle_signing_key -g $alg_hash -D $file_input_digest -s $file_output_data
+tpm2_sign -Q -c $handle_signing_key -g $alg_hash -D $file_input_digest -s $file_output_data
 
 rm -f $file_output_data
 
 # test with digest + message/validation (warning generated)
 
-tpm2_sign -Q -k $handle_signing_key -g $alg_hash -D $file_input_digest -s $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
+tpm2_sign -Q -c $handle_signing_key -g $alg_hash -D $file_input_digest -s $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
 
 exit 0
