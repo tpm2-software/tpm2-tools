@@ -33,15 +33,16 @@ Refer to:
     Specifies the current owner authorization.
     Same formatting as the endorse password value or **-e** option.
 
-  * **-H**, **--handle**=_HANDLE_:
-    Optional, specifies the handle used to make EK persistent (hex).
+  * **-c**, **--context**=_CONTEXT\_OBJECT_:
+    Optional, specifies a context object used to store the EK, either a path to
+    save the context of the EK or a handle used to persist EK in the TPM.
+    See section "Context Object Format".
+
     If a value of **-** is passed the tool will find a vacant persistent handle
     to use and print out the automatically selected handle.
 
-  * **-c**, **--context**=_PATH_:
-    Optional, specifies a path to save the context of the EK handle. If one saves
-    the context file via this option and the public key via the **-p** option, the
-    EK can be restored via a call to tpm2_loadexternal(1).
+    If one saves the context file via this option and the public key via the
+    **-p** option, the EK can be restored via a call to tpm2_loadexternal(1).
 
   * **-g**, **--algorithm**=_ALGORITHM_:
     specifies the algorithm type of EK.
@@ -64,6 +65,8 @@ Refer to:
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
+
+[context object format](commmon/ctxobj.md)
 
 [supported public object algorithms](common/object-alg.md)
 
@@ -94,7 +97,7 @@ tpm2_createek -g rsa
 
 Create a transient Endorsement Key, flush it, and reload it.
 ```
-tpm2_createek -g rsa -p ek.pub -c ek.ctx
+tpm2_createek -g rsa -p ek.pub -c file:ek.ctx
 
 # Check that it is loaded in transient memory
 tpm2_getcap -c handles-transient

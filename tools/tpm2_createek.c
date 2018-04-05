@@ -66,8 +66,6 @@ struct createek_context {
     } auth;
     tpm2_hierarchy_pdata objdata;
     char *out_file_path;
-    char *context_file;
-    TPMI_DH_PERSISTENT persistent_handle;
     tpm2_convert_pubkey_fmt format;
     struct {
         UINT8 f : 1;
@@ -80,6 +78,8 @@ struct createek_context {
     char *owner_auth_str;
     char *ek_auth_str;
     bool find_persistent_handle;
+    const char *context_arg;
+    tpm2_loaded_object ctx_obj;
 };
 
 static createek_context ctx = {
@@ -159,11 +159,11 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    if (ctx.persistent_handle) {
+    if (ctx.ctx_obj.handle) {
 
         result = tpm2_ctx_mgmt_evictcontrol(sapi_context, TPM2_RH_OWNER,
                 &ctx.auth.owner.session_data, ctx.objdata.out.handle,
-                ctx.persistent_handle);
+                ctx.ctx_obj.handle);
         if (!result) {
             return false;
         }
@@ -173,9 +173,9 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
             LOG_PERR(Tss2_Sys_FlushContext, rval);
             return false;
         }
-    } else if (ctx.context_file) {
+    } else if (ctx.ctx_obj.path) {
         bool result = files_save_tpm_context_to_path(sapi_context,
-                ctx.objdata.out.handle, ctx.context_file);
+                ctx.objdata.out.handle, ctx.ctx_obj.path);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
             return false;
@@ -183,7 +183,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     /* If it wasn't persistent, output the transient handle */
-    if (!ctx.persistent_handle) {
+    if (!ctx.ctx_obj.handle) {
         tpm2_tool_output("0x%X\n", ctx.objdata.out.handle);
     }
 
@@ -197,23 +197,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool on_option(char key, char *value) {
 
-    bool result;
-
     switch (key) {
-    case 'H':
-        /* If user passes a handle of '-' we try and find a vacant slot for
-         * to use and tell them what it is.
-         */
-        if (!strcmp(value, "-")) {
-            ctx.find_persistent_handle = true;
-        } else {
-            result = tpm2_util_string_to_uint32(value, &ctx.persistent_handle);
-            if (!result) {
-                LOG_ERR("Could not convert EK persistent from hex format.");
-                return false;
-            }
-        }
-        break;
     case 'e':
         ctx.flags.e = 1;
         ctx.endorse_auth_str = value;
@@ -249,7 +233,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.f = true;
         break;
     case 'c':
-        ctx.context_file = value;
+        ctx.context_arg = value;
         break;
     }
 
@@ -262,14 +246,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth-endorse",         required_argument, NULL, 'e' },
         { "auth-owner",           required_argument, NULL, 'o' },
         { "auth-ek",              required_argument, NULL, 'P' },
-        { "handle",               required_argument, NULL, 'H' },
         { "algorithm",            required_argument, NULL, 'g' },
         { "file",                 required_argument, NULL, 'p' },
         { "format",               required_argument, NULL, 'f' },
         { "context",              required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:p:f:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:P:g:p:f:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -320,21 +303,26 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.find_persistent_handle) {
-        bool ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
-                        &ctx.persistent_handle);
+    bool ret;
+    if (!strcmp(ctx.context_arg, "-")) {
+        /* If user passes a handle of '-' we try and find a vacant slot for
+         * to use and tell them what it is.
+         */
+        ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+                        &ctx.ctx_obj.handle);
         if (!ret) {
             LOG_ERR("handle/-H passed with a value '-' but unable to find a"
                     " vacant persistent handle!");
-            return 1;
+            goto out;
         }
-        tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persistent_handle);
-    }
-
-    if (ctx.context_file && ctx.persistent_handle) {
-        LOG_ERR("Specify either a handle to make it persistent or a file to"
-                " save the context to, not both!");
-        goto out;
+        tpm2_tool_output("persistent-handle: 0x%x\n", ctx.ctx_obj.handle);
+    } else {
+        ret = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.ctx_obj);
+        if (!ret) {
+            tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
+                            ctx.ctx_obj.handle, ctx.ctx_obj.path);
+            goto out;
+        }
     }
 
     if (ctx.flags.e) {

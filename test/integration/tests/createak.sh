@@ -54,7 +54,7 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_createek -Q -H 0x8101000b -g rsa -p ek.pub
+tpm2_createek -Q -c 0x8101000b -g rsa -p ek.pub
 
 tpm2_createak -Q -E 0x8101000b -k 0x8101000c -g rsa -D sha256 -s rsassa -p ak.pub -n ak.name
 

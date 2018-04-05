@@ -65,7 +65,7 @@ cleanup "no-shut-down"
 
 echo "12345678" > $file_input_data
 
-tpm2_createek -Q -H $handle_ek -g $ek_alg -p $output_ek_pub
+tpm2_createek -Q -c $handle_ek -g $ek_alg -p $output_ek_pub
 
 tpm2_createak -Q -E $handle_ek  -k $handle_ak -g $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub -n $output_ak_pub_name
 
