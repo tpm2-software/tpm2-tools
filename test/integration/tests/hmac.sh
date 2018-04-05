@@ -80,13 +80,13 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $f
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
-cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx  -g $halg -o $file_hmac_output
+cat $file_input_data | tpm2_hmac -Q -C file:$file_hmac_key_ctx  -g $halg -o $file_hmac_output
 
 cleanup "keep-context" "no-shut-down"
 
 # Test large file, ie sequence hmac'ing.
 dd if=/dev/urandom of=$file_input_data bs=2093 count=1 2>/dev/null
-tpm2_hmac -Q -c $file_hmac_key_ctx -g $halg -o $file_hmac_output $file_input_data
+tpm2_hmac -Q -C file:$file_hmac_key_ctx -g $halg -o $file_hmac_output $file_input_data
 
 ####handle test
 rm -f $file_hmac_output
@@ -95,7 +95,7 @@ tpm2_evictcontrol -a o -c $file_hmac_key_ctx -p $handle_hmac_key > evict.log
 grep -q "persistentHandle: "$handle_hmac_key"" evict.log
 
 echo "12345678" > $file_input_data
-tpm2_hmac -Q -k $handle_hmac_key  -g $halg -o $file_hmac_output $file_input_data
+tpm2_hmac -Q -C $handle_hmac_key  -g $halg -o $file_hmac_output $file_input_data
 
 cleanup "no-shut-down"
 
@@ -110,16 +110,16 @@ tpm2_create -Q -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_ke
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
-cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx -o $file_hmac_output
+cat $file_input_data | tpm2_hmac -Q -C file:$file_hmac_key_ctx -o $file_hmac_output
 
 # test no output file
-cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx 1>/dev/null
+cat $file_input_data | tpm2_hmac -C file:$file_hmac_key_ctx 1>/dev/null
 
 # test no output file with halg
-cat $file_input_data | tpm2_hmac -g sha1 -c $file_hmac_key_ctx 1>/dev/null
+cat $file_input_data | tpm2_hmac -g sha1 -C file:$file_hmac_key_ctx 1>/dev/null
 
 # verify that silent is indeed silent
-stdout=`cat $file_input_data | tpm2_hmac -Q -g sha1 -c $file_hmac_key_ctx`
+stdout=`cat $file_input_data | tpm2_hmac -Q -g sha1 -C file:$file_hmac_key_ctx`
 if [ -n "$stdout" ]; then
     echo "Expected no output when run in quiet mode, got\"$stdout\""
     exit 1
