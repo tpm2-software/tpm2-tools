@@ -17,11 +17,9 @@ _FILE_ is not specified, then data is read from stdin.
 
 # OPTIONS
 
- * **-k**, **--key-handle**=_KEY\_CONTEXT\_FILE_:
-    The key handle for the symmetric signing key providing the HMAC key.
-
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
-    The filename of the key context used for the operation.
+ * **-C**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+    The context object of the symmetric signing key providing the HMAC key.
+    Either a file or a handle number. See section "Context Object Format".
 
   * **-P**, **--auth-key**=_KEY\_AUTH_:
 
@@ -47,6 +45,8 @@ _FILE_ is not specified, then data is read from stdin.
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
@@ -58,17 +58,17 @@ _FILE_ is not specified, then data is read from stdin.
 Perform a SHA1 HMAC on data.in and send output and possibly ticket to stdout:
 
 ```
-tpm2_hmac -k 0x81010002 -P abc123 -g sha1 data.in
+tpm2_hmac -C 0x81010002 -P abc123 -g sha1 data.in
 ```
 
 Perform a SHA1 HMAC on data.in read as a file to stdin and send output to a file:
 ```
-tpm2_hmac -c key.context -P abc123 -g sha1 -o hash.out << data.in
+tpm2_hmac -C file:key.context -P abc123 -g sha1 -o hash.out << data.in
 ```
 Perform a SHA256 HMAC on _stdin_ and send result and possibly ticket to stdout:
 
 ```
-cat data.in | tpm2_hmac -k 0x81010002 -g sha256 -o hash.out
+cat data.in | tpm2_hmac -C 0x81010002 -g sha256 -o hash.out
 ```
 
 # RETURNS
