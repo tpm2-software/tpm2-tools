@@ -21,13 +21,10 @@ symmetric key, both the public and private portions need to be loaded.
 
 # OPTIONS
 
-  * **-k**, **--key-handle**=_KEY\_HANDLE_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
-    Handle of key that will used in the validation.
-
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
-
-    Filename of the key context used for the operation.
+    Context object for the key context used for the operation. Either a file
+    or a handle number. See section "Context Object Format".
 
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
 
@@ -74,6 +71,8 @@ symmetric key, both the public and private portions need to be loaded.
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
@@ -85,9 +84,9 @@ symmetric key, both the public and private portions need to be loaded.
 # EXAMPLES
 
 ```
-tpm2_verifysignature -k 0x81010001 -g sha256 -m <filePath> -s <filePath> -t <filePath>
-tpm2_verifysignature -k 0x81010001 -D <filePath> -s <filePath> -t <filePath>
-tpm2_verifysignature -c key.context -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_verifysignature -C 0x81010001 -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_verifysignature -C 0x81010001 -D <filePath> -s <filePath> -t <filePath>
+tpm2_verifysignature -C file:key.context -g sha256 -m <filePath> -s <filePath> -t <filePath>
 ```
 
 # RETURNS
