@@ -73,6 +73,6 @@ test "$loaded_key_name_yaml" == "$loaded_key_name"
 
 tpm2_makecredential -Q -e ek.pub  -s secret.data -n $loaded_key_name -o mkcred.out
 
-tpm2_activatecredential -Q -H 0x8101000a -k 0x81010009 -f mkcred.out -o actcred.out
+tpm2_activatecredential -Q -c 0x8101000a -C 0x81010009 -f mkcred.out -o actcred.out
 
 exit 0

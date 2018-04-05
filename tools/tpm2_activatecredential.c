@@ -54,10 +54,6 @@ typedef struct tpm_activatecred_ctx tpm_activatecred_ctx;
 struct tpm_activatecred_ctx {
 
     struct {
-        UINT8 H : 1;
-        UINT8 c : 1;
-        UINT8 k : 1;
-        UINT8 C : 1;
         UINT8 f : 1;
         UINT8 o : 1;
         UINT8 P : 1;
@@ -66,11 +62,6 @@ struct tpm_activatecred_ctx {
 
     char *passwd_auth_str;
     char *endorse_auth_str;
-
-    struct {
-        TPMI_DH_OBJECT activate;
-        TPMI_DH_OBJECT key;
-    } handle;
 
     TPM2B_ID_OBJECT credentialBlob;
     TPM2B_ENCRYPTED_SECRET secret;
@@ -81,16 +72,16 @@ struct tpm_activatecred_ctx {
     TPMS_AUTH_COMMAND endorse_auth;
     tpm2_session *endorse_session;
 
-    struct {
-        char *output;
-        char *context;
-        char *key_context;
-    } file ;
+    const char *output_file;
+    const char *ctx_arg;
+    const char *key_ctx_arg;
+    tpm2_loaded_object ctx_obj;
+    tpm2_loaded_object key_ctx_obj;
 };
 
 static tpm_activatecred_ctx ctx = {
         .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .endorse_auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)
+        .endorse_auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *cred,
@@ -205,8 +196,8 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
             TPMA_SESSION_CONTINUESESSION;
     cmd_auth_array_password.auths[1].hmac.size = 0;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.handle.activate,
-            ctx.handle.key, &cmd_auth_array_password, &ctx.credentialBlob, &ctx.secret,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.ctx_obj.handle,
+            ctx.key_ctx_obj.handle, &cmd_auth_array_password, &ctx.credentialBlob, &ctx.secret,
             &certInfoData, 0));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_ActivateCredential, rval);
@@ -222,36 +213,19 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     tpm2_session_free(&session);
 
-    return output_and_save(&certInfoData, ctx.file.output);
+    return output_and_save(&certInfoData, ctx.output_file);
 }
 
 static bool on_option(char key, char *value) {
 
     bool result;
+
     switch (key) {
-    case 'H':
-        result = tpm2_util_string_to_uint32(value, &ctx.handle.activate);
-        if (!result) {
-            LOG_ERR("Could not convert -H argument to a number, "
-                    "got \"%s\"!", value);
-            return false;
-        }
-        ctx.flags.H = 1;
-        break;
     case 'c':
-        ctx.file.context = value;
-        ctx.flags.c = 1;
-        break;
-    case 'k':
-        result = tpm2_util_string_to_uint32(value, &ctx.handle.key);
-        if (!result) {
-            return false;
-        }
-        ctx.flags.k = 1;
+        ctx.ctx_arg = value;
         break;
     case 'C':
-        ctx.file.key_context = value;
-        ctx.flags.C = 1;
+        ctx.key_ctx_arg = value;
         break;
     case 'P':
         ctx.flags.P = 1;
@@ -271,7 +245,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.f = 1;
         break;
     case 'o':
-        ctx.file.output = value;
+        ctx.output_file = value;
         ctx.flags.o = 1;
         break;
     }
@@ -282,9 +256,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-         {"handle",         required_argument, NULL, 'H'},
-         {"context",        required_argument, NULL, 'c'},
-         {"key-handle",     required_argument, NULL, 'k'},
+         {"object",        required_argument, NULL, 'c'},
          {"key-context",    required_argument, NULL, 'C'},
          {"auth-key",       required_argument, NULL, 'P'},
          {"endorse-passwd", required_argument, NULL, 'e'},
@@ -292,7 +264,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"out-file",       required_argument, NULL, 'o'},
     };
 
-    *opts = tpm2_options_new("H:c:k:C:P:e:f:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:C:P:e:f:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -303,27 +275,26 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     /* opts is unused, avoid compiler warning */
     UNUSED(flags);
 
-    if ((!ctx.flags.H && !ctx.flags.c)
-            && (!ctx.flags.k || !ctx.flags.C) && !ctx.flags.f
-            && !ctx.flags.o) {
-        LOG_ERR("Expected options (H or c) and (k or C) and f and o");
+    if ((!ctx.ctx_arg)
+            && (!ctx.key_ctx_arg)
+            && !ctx.flags.f && !ctx.flags.o) {
+        LOG_ERR("Expected options c and C and f and o");
         return 1;
     }
 
-    if (ctx.file.context) {
-        bool res = files_load_tpm_context_from_path(sapi_context, &ctx.handle.activate,
-                ctx.file.context);
-        if (!res) {
-            return 1;
-        }
+    bool res = tpm2_util_object_load(sapi_context, ctx.ctx_arg, &ctx.ctx_obj);
+    if (!res) {
+        tpm2_tool_output(
+                "Failed to load context object (handle: 0x%x, path: %s).\n",
+                ctx.ctx_obj.handle, ctx.ctx_obj.path);
+        return 1;
     }
 
-    if (ctx.file.key_context) {
-        bool res = files_load_tpm_context_from_path(sapi_context, &ctx.handle.key,
-                ctx.file.key_context) != true;
-        if (!res) {
-            return 1;
-        }
+    res = tpm2_util_object_load(sapi_context, ctx.key_ctx_arg, &ctx.key_ctx_obj);
+    if (!res) {
+        tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
+                ctx.key_ctx_obj.handle, ctx.key_ctx_obj.path);
+        return 1;
     }
 
     if (ctx.flags.P) {
@@ -345,7 +316,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     int rc = 0;
-    bool res = activate_credential_and_output(sapi_context);
+    res = activate_credential_and_output(sapi_context);
     if (!res) {
         rc = 1;
         goto out;
