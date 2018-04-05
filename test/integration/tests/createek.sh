@@ -50,11 +50,11 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_createek -H 0x81010005 -g rsa -p ek.pub
+tpm2_createek -c 0x81010005 -g rsa -p ek.pub
 
 cleanup "no-shut-down"
 
-tpm2_createek -H - -g rsa -p ek.pub > ek.log
+tpm2_createek -c - -g rsa -p ek.pub > ek.log
 phandle=`yaml_get_kv ek.log \"persistent\-handle\"`
 tpm2_evictcontrol -Q -a o -H $phandle
 
