@@ -74,7 +74,7 @@ tpm2_create -Q -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -
 
 tpm2_loadexternal -Q -a n   -u $file_rsaencrypt_key_pub  -C $file_rsaencrypt_key_ctx
 
-tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data < $file_input_data
+tpm2_rsaencrypt -Q -c file:$file_rsaencrypt_key_ctx -o $file_rsa_en_output_data < $file_input_data
 
 tpm2_load -Q -C file:$file_primary_key_ctx -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -n $file_rsaencrypt_key_name  -o $file_rsadecrypt_key_ctx
 
