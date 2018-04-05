@@ -76,7 +76,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
+tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C file:$file_primary_key_ctx
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
@@ -106,7 +106,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -Q -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -c $file_primary_key_ctx
+tpm2_create -Q -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C file:$file_primary_key_ctx
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 

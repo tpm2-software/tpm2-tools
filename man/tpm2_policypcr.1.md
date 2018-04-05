@@ -67,7 +67,7 @@ tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -f policy.dat
 
 tpm2_flushcontext -H "$handle"
 
-tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv -c primary.ctx -L policy.dat \
+tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv -C file:primary.ctx -L policy.dat \
   -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' -I- <<< "12345678"
 
 tpm2_load -Q -C file:primary.ctx -u key.pub -r key.priv -n unseal.key.name -o unseal.key.ctx
