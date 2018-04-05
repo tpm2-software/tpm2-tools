@@ -54,17 +54,15 @@ struct tpm_encrypt_decrypt_ctx {
         tpm2_session *session;
     } auth;
     TPMI_YES_NO is_decrypt;
-    TPMI_DH_OBJECT key_handle;
     TPM2B_MAX_BUFFER data;
     char *out_file_path;
-    char *context_key_file;
+    const char *context_arg;
+    tpm2_loaded_object key_context_object;
     struct {
-        UINT8 k : 1;
         UINT8 P : 1;
         UINT8 D : 1;
         UINT8 I : 1;
         UINT8 o : 1;
-        UINT8 c : 1;
         UINT8 X : 1;
     } flags;
     char *key_auth_str;
@@ -93,14 +91,16 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
      * EncryptDecrypt. Keep track of which version you ran, for error reporting.
      */
     unsigned version = 2;
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
-            &sessions_data, &ctx.data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &out_data,
-            &iv_out, &sessions_data_out));
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context,
+            ctx.key_context_object.handle, &sessions_data, &ctx.data,
+            ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &out_data, &iv_out,
+            &sessions_data_out));
     if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
         version = 1;
-        rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
-                &sessions_data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &ctx.data,
-                &out_data, &iv_out, &sessions_data_out));
+        rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context,
+                ctx.key_context_object.handle, &sessions_data, ctx.is_decrypt,
+                TPM2_ALG_NULL, &iv_in, &ctx.data, &out_data, &iv_out,
+                &sessions_data_out));
     }
     if (rval != TPM2_RC_SUCCESS) {
         if (version == 2) {
@@ -120,14 +120,8 @@ static bool on_option(char key, char *value) {
     bool result;
 
     switch (key) {
-    case 'k':
-        result = tpm2_util_string_to_uint32(value, &ctx.key_handle);
-        if (!result) {
-            LOG_ERR("Could not convert keyhandle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.k = 1;
+    case 'c':
+        ctx.context_arg = value;
         break;
     case 'P':
         ctx.flags.P = 1;
@@ -152,14 +146,6 @@ static bool on_option(char key, char *value) {
         ctx.out_file_path = value;
         ctx.flags.o = 1;
         break;
-    case 'c':
-        if (ctx.context_key_file) {
-            LOG_ERR("Multiple specifications of -c");
-            return false;
-        }
-        ctx.context_key_file = value;
-        ctx.flags.c = 1;
-        break;
     }
 
     return true;
@@ -168,7 +154,6 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "key-handle",           required_argument, NULL, 'k' },
         { "auth-key",             required_argument, NULL, 'P' },
         { "decrypt",              no_argument,       NULL, 'D' },
         { "in-file",              required_argument, NULL, 'I' },
@@ -176,7 +161,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-context",          required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("k:P:DI:o:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:DI:o:c:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -189,17 +174,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result;
     int rc = 1;
 
-    if (!((ctx.flags.k || ctx.flags.c) && ctx.flags.I && ctx.flags.o)) {
+    if (!((ctx.context_arg) && ctx.flags.I && ctx.flags.o)) {
         LOG_ERR("Invalid arguments");
         goto out;
     }
 
-    if (ctx.flags.c) {
-        result = files_load_tpm_context_from_path(sapi_context, &ctx.key_handle,
-                                                  ctx.context_key_file);
-        if (!result) {
-            goto out;
-        }
+    result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+            &ctx.key_context_object);
+    if (!result) {
+        tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
+                ctx.key_context_object.handle, ctx.key_context_object.path);
+        goto out;
     }
 
     if (ctx.flags.P) {

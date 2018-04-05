@@ -17,40 +17,48 @@ specified symmetric key.
 
 # OPTIONS
 
-  * **-k**, **--key-handle**=_KEY\_HANDLE_:
-    the symmetric key used for the operation (encryption/decryption).
+  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_FILE_:
-    filename of the key context used for the  operation.
+    Name of the key context object to be used for the  operation. Either a file
+    or a handle number. See section "Context Object Format".
 
   * **-P**, **--auth-key**=_KEY\_AUTH_:
+
     Optional authorization value to use the key specified by **-k**.
     Authorization values should follow the authorization formatting standards,
     see section "Authorization Formatting".
 
   * **-D**, **--decrypt**:
+
     Perform a decrypt operation. Default is encryption.
 
   * **-I**, **--in-file**=_INPUT\_FILE_:
+
     Input file path containing data for decrypt or encrypt operation.
 
   * **-S**, **--session**=_SESSION\_FILE_:
 
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option. This session
+    Optional, a session file from **tpm2_startauthsession**(1)'s **-S** option. This session
     is used in lieu of starting a session and using the PCR policy options.
+
+  * **-o**, **--out-file**=_OUT\_FILE_:
+
+    Output file path to store the data output by the decrypt or encrypt operation.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
+
+[context object format](commmon/ctxobj.md)
 
 [authorization formatting](common/password.md)
 
 # EXAMPLES
 
 ```
-tpm2_encryptdecrypt -k 0x81010001 -P abc123 -I <filePath> -o <filePath>
-tpm2_encryptdecrypt -c key.context -P abc123 -I <filePath> -o <filePath>
-tpm2_encryptdecrypt -k 0x81010001 -P 123abca -X -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -C 0x81010001 -P abc123 -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -C key.dat -P abc123 -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -C 0x81010001 -P 123abca -X -I <filePath> -o <filePath>
 ```
 
 # RETURNS
