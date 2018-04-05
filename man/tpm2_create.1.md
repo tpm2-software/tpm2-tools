@@ -20,11 +20,9 @@ The object will need to be loaded before it may be used.
 
 These options for creating the tpm entity:
 
-  * **-H**, **--parent**=_PARENT\_HANDLE_:
-    The handle of the parent object to create this object under.
-
-  * **-c**, **--context-parent**=_PARENT\_CONTEXT\_FILE_:
-    The filename for parent context.
+  * **-C**, **--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
+    Context object for the created object's parent. Either a file or a handle
+    number. See section "Context Object Format".
 
   * **-P**, **--auth-parent**=_PARENT\_KEY\_AUTH_:
     The authorization value for using the parent key, optional.
@@ -75,6 +73,8 @@ These options for creating the tpm entity:
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
@@ -88,9 +88,9 @@ These options for creating the tpm entity:
 # EXAMPLES
 
 ```
-tpm2_create -H 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File -o opu.File
-tpm2_create -c parent.context -P abc123 -K def456 -g sha256 -G keyedhash -I data.File -o opu.File
-tpm2_create -H 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File -o opu.File
+tpm2_create -C 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File -o opu.File
+tpm2_create -C file:parent.context -P abc123 -K def456 -g sha256 -G keyedhash -I data.File -o opu.File
+tpm2_create -C 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File -o opu.File
 ```
 
 # RETURNS

@@ -73,7 +73,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_hash -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv  -c $file_primary_key_ctx
+tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv  -C file:$file_primary_key_ctx
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_signing_key_pub  -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
 

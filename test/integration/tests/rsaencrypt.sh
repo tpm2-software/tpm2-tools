@@ -67,7 +67,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_hash -G $alg_primary_key -C $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -c $file_primary_key_ctx
+tpm2_create -Q -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -C file:$file_primary_key_ctx
 
 tpm2_loadexternal -Q -a n   -u $file_rsaencrypt_key_pub  -C $file_rsaencrypt_key_ctx
 

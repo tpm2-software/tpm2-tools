@@ -61,15 +61,14 @@ struct tpm_create_ctx {
     TPM2B_PUBLIC in_public;
     TPMI_ALG_PUBLIC type;
     TPMI_ALG_HASH nameAlg;
-    TPMI_DH_OBJECT parent_handle;
     char *input;
     char *opu_path;
     char *opr_path;
-    char *context_parent_path;
     char *key_auth_str;
     char *parent_auth_str;
+    const char *context_arg;
+    tpm2_loaded_object context_object;
     struct {
-        UINT16 H : 1;
         UINT16 P : 1;
         UINT16 K : 1;
         UINT16 g : 1;
@@ -78,7 +77,6 @@ struct tpm_create_ctx {
         UINT16 I : 1;
         UINT16 L : 1;
         UINT16 u : 1;
-        UINT16 c : 1;
         UINT16 r : 1;
     } flags;
 };
@@ -98,7 +96,7 @@ static tpm_create_ctx ctx = {
     },
     .type = TPM2_ALG_SHA1,
     .nameAlg = TPM2_ALG_RSA,
-    .in_public = PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT
+    .in_public = PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT,
 };
 
 int setup_alg()
@@ -192,7 +190,7 @@ static bool create(TSS2_SYS_CONTEXT *sapi_context) {
 
     creationPCR.count = 0;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.parent_handle, &sessionsData, &ctx.in_sensitive,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.context_object.handle, &sessionsData, &ctx.in_sensitive,
                            &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
                            &creationData, &creationHash, &creationTicket, &sessionsDataOut));
     if(rval != TPM2_RC_SUCCESS) {
@@ -222,13 +220,6 @@ static bool create(TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     switch(key) {
-    case 'H':
-        if(!tpm2_util_string_to_uint32(value, &ctx.parent_handle)) {
-            LOG_ERR("Invalid parent handle, got\"%s\"", value);
-            return false;
-        }
-        ctx.flags.H = 1;
-        break;
     case 'P':
         /*
          * since the auth for the parent key may be a session, we need to
@@ -294,12 +285,8 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.r = 1;
         break;
-    case 'c':
-        ctx.context_parent_path = value;
-        if(ctx.context_parent_path == NULL || ctx.context_parent_path[0] == '\0') {
-            return false;
-        }
-        ctx.flags.c = 1;
+    case 'C':
+        ctx.context_arg = value;
         break;
     };
 
@@ -309,7 +296,6 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "parent",               required_argument, NULL, 'H' },
       { "auth-parent",          required_argument, NULL, 'P' },
       { "auth-key",             required_argument, NULL, 'K' },
       { "halg",                 required_argument, NULL, 'g' },
@@ -319,10 +305,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "policy-file",          required_argument, NULL, 'L' },
       { "pubfile",              required_argument, NULL, 'u' },
       { "privfile",             required_argument, NULL, 'r' },
-      { "context-parent",       required_argument, NULL, 'c' },
+      { "context-parent",       required_argument, NULL, 'C' },
     };
 
-    *opts = tpm2_options_new("H:P:K:g:G:A:I:L:u:r:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:K:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -354,17 +340,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if(!((ctx.flags.H || ctx.flags.c) && ctx.flags.g && ctx.flags.G)) {
+    if(!((ctx.context_arg) && ctx.flags.g && ctx.flags.G)) {
         LOG_ERR("Invalid options");
         goto out;
     }
 
-    if(ctx.flags.c) {
-        result = files_load_tpm_context_from_path(sapi_context,
-                             &ctx.parent_handle, ctx.context_parent_path);
-        if (!result) {
-            goto out;
-        }
+    result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+            &ctx.context_object);
+    if (!result) {
+        tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
+                ctx.context_object.handle, ctx.context_object.path);
+        goto out;
     }
 
     if (ctx.flags.K) {
