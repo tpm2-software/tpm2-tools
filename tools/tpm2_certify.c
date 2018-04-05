@@ -52,32 +52,25 @@ struct tpm_certify_ctx {
     TPMS_AUTH_COMMAND cmd_auth[2];
     tpm2_session *session[2];
     TPMI_ALG_HASH  halg;
-    struct  {
-        TPMI_DH_OBJECT key;
-        TPMI_DH_OBJECT obj;
-    } handle;
-
     struct {
         char *attest;
         char *sig;
     } file_path;
     struct {
-        UINT16 H : 1;
-        UINT16 k : 1;
         UINT16 P : 1;
         UINT16 K : 1;
         UINT16 g : 1;
         UINT16 a : 1;
         UINT16 s : 1;
-        UINT16 C : 1;
-        UINT16 c : 1;
         UINT16 f : 1;
         UINT16 unused : 6;
     } flags;
-    char *context_file;
-    char *context_key_file;
     char *object_auth_str;
     char *key_auth_str;
+    const char *key_context_arg;
+    tpm2_loaded_object key_context_object;
+    const char *context_arg;
+    tpm2_loaded_object context_object;
     tpm2_convert_sig_fmt sig_fmt;
 };
 
@@ -157,7 +150,7 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
     };
 
     TPMT_SIG_SCHEME scheme;
-    bool result = set_scheme(sapi_context, ctx.handle.key, ctx.halg, &scheme);
+    bool result = set_scheme(sapi_context, ctx.key_context_object.handle, ctx.halg, &scheme);
     if (!result) {
         LOG_ERR("No suitable signing scheme!");
         return false;
@@ -169,8 +162,8 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMT_SIGNATURE signature;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
-            ctx.handle.key, &cmd_auth_array, &qualifying_data, &scheme,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.context_object.handle,
+            ctx.key_context_object.handle, &cmd_auth_array, &qualifying_data, &scheme,
             &certify_info, &signature, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_Certify, rval);
@@ -189,26 +182,12 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool on_option(char key, char *value) {
 
-    bool result;
-
     switch (key) {
-    case 'H':
-        result = tpm2_util_string_to_uint32(value, &ctx.handle.obj);
-        if (!result) {
-            LOG_ERR("Could not format object handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.H = 1;
+    case 'c':
+        ctx.context_arg = value;
         break;
-    case 'k':
-        result = tpm2_util_string_to_uint32(value, &ctx.handle.key);
-        if (!result) {
-            LOG_ERR("Could not format key handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.k = 1;
+    case 'C':
+        ctx.key_context_arg = value;
         break;
     case 'P':
         ctx.flags.P = 1;
@@ -240,22 +219,6 @@ static bool on_option(char key, char *value) {
         ctx.file_path.sig = value;
         ctx.flags.s = 1;
         break;
-    case 'c':
-        if (ctx.context_key_file) {
-            LOG_ERR("Multiple specifications of -c");
-            return false;
-        }
-        ctx.context_key_file = value;
-        ctx.flags.c = 1;
-        break;
-    case 'C':
-        if (ctx.context_file) {
-            LOG_ERR("Multiple specifications of -C");
-            return false;
-        }
-        ctx.context_file = value;
-        ctx.flags.C = 1;
-        break;
     case 'f':
         ctx.flags.f = 1;
         ctx.sig_fmt = tpm2_convert_sig_fmt_from_optarg(value);
@@ -271,19 +234,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "object-handle", required_argument, NULL, 'H' },
-      { "key-handle",    required_argument, NULL, 'k' },
       { "auth-object",   required_argument, NULL, 'P' },
       { "auth-key",      required_argument, NULL, 'K' },
       { "halg",          required_argument, NULL, 'g' },
       { "attest-file",   required_argument, NULL, 'a' },
       { "sig-file",      required_argument, NULL, 's' },
-      { "obj-context",   required_argument, NULL, 'C' },
-      { "key-context",   required_argument, NULL, 'c' },
+      { "obj-context",   required_argument, NULL, 'c' },
+      { "key-context",   required_argument, NULL, 'C' },
       {  "format",       required_argument, NULL, 'f' },
     };
 
-    *opts = tpm2_options_new("H:k:P:K:g:a:s:C:c:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:K:g:a:s:c:C:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -297,26 +258,28 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if (!(ctx.flags.H || ctx.flags.C) && (ctx.flags.k || ctx.flags.c) && (ctx.flags.g) && (ctx.flags.a)
+    if ((!ctx.context_arg)
+        && (!ctx.key_context_arg)
+        && (ctx.flags.g) && (ctx.flags.a)
         && (ctx.flags.s)) {
         goto out;
     }
 
     /* Load input files */
-    if (ctx.flags.C) {
-        result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.obj,
-                                                  ctx.context_file);
-        if (!result) {
-            goto out;
-        }
+    result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+            &ctx.context_object);
+    if (!result) {
+        tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
+                ctx.context_object.handle, ctx.context_object.path);
+        goto out;
     }
 
-    if (ctx.flags.c) {
-        result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.key,
-                                                  ctx.context_key_file);
-        if (!result) {
-            goto out;
-        }
+    result = tpm2_util_object_load(sapi_context, ctx.key_context_arg,
+            &ctx.key_context_object);
+    if (!result) {
+        tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
+                ctx.key_context_object.handle, ctx.key_context_object.path);
+        goto out;
     }
 
     if (ctx.flags.P) {
