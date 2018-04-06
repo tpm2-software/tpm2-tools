@@ -25,20 +25,17 @@ be evicted.
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-  * **-H**, **--handle**=_HANDLE_:
+  * **-c**, **--context**=_OBJECT_CONTEXT_:
 
-    The handle of a loaded transient or a persistent object.
+    A context object specifier of a transient or persistent object.
+    Either a file path of a handle id. See section "Context Object Format".
 
-    If the handle is for a transient object it will be persisted, either to the
-    handle specified by the **-p** option, or to the first available vacant
+    If _OBJECT\_CONTEXT_ is for a transient object it will be persisted, either
+    to the handle specified by the **-p** option, or to the first available vacant
     persistent handle.
 
-    If the handle is for a persistent object, then the **-p** does not need to be provided since the
-    handle must be the same for both options.
-
-  * **-c**, **--context**=_OBJECT\_CONTEXT\_FILE_:
-
-    Filename for object context.
+    If the handle is for a persistent object, then the **-p** does not need to
+    be provided since the handle must be the same for both options.
 
   * **-p**, **--persistent**=_PERSISTENT\_HANDLE_:
 
@@ -57,14 +54,17 @@ be evicted.
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 [authorization formatting](common/password.md)
 
 # EXAMPLES
 
 ```
-tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
-tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P abc123
-tpm2_evictcontrol -A o -H 0x81010002 -S 0x81010002 -P 123abc
+tpm2_evictcontrol -A o -c file:object.context -S 0x81010002 -P abc123
+tpm2_evictcontrol -A o -c objectctx.dat -S 0x81010002 -P abc123
+tpm2_evictcontrol -A o -c 0x81010002 -S 0x81010002 -P abc123
+tpm2_evictcontrol -A o -c 0x81010002 -S 0x81010002 -P 123abc
 ```
 
 # RETURNS

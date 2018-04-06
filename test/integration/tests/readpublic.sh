@@ -51,7 +51,7 @@ cleanup() {
     rm -f $file_primary_key_ctx $file_readpub_key_pub $file_readpub_key_priv \
     $file_readpub_key_name $file_readpub_key_ctx $file_readpub_output
 
-    tpm2_evictcontrol -Q -a o -H $Handle_readpub 2>/dev/null || true
+    tpm2_evictcontrol -Q -a o -c $Handle_readpub 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
        shut_down
@@ -73,7 +73,7 @@ tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_readpub_key_pub  -r $file_r
 
 tpm2_readpublic -Q -c file:$file_readpub_key_ctx -o $file_readpub_output
 
-tpm2_evictcontrol -Q -a o -c $file_readpub_key_ctx -p $Handle_readpub
+tpm2_evictcontrol -Q -a o -c file:$file_readpub_key_ctx -p $Handle_readpub
 
 rm -f $file_readpub_output
 tpm2_readpublic -Q -c $Handle_readpub -o $file_readpub_output

@@ -35,7 +35,7 @@ source helpers.sh
 
 cleanup() {
   rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat key.ctx evict.log
+        encrypt.out secret.dat key.dat evict.log
 
   if [ "$1" != "no-shut-down" ]; then
       shut_down
@@ -53,22 +53,22 @@ tpm2_createprimary -Q -a e -g sha256 -G rsa -C primary.ctx
 
 tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv  -C file:primary.ctx
 
-tpm2_load -Q -C file:primary.ctx  -u key.pub  -r key.priv -n key.name -o key.ctx
+tpm2_load -Q -C file:primary.ctx  -u key.pub  -r key.priv -n key.name -o key.dat
 
 # Load the context into a specific handle, delete it
-tpm2_evictcontrol -Q -c key.ctx -p 0x81010003
+tpm2_evictcontrol -Q -c key.dat -p 0x81010003
 
-tpm2_evictcontrol -Q -H 0x81010003 -p 0x81010003
+tpm2_evictcontrol -Q -c 0x81010003 -p 0x81010003
 
 # Load the context into a specific handle, delete it without an explicit -p
-tpm2_evictcontrol -Q -a o -c key.ctx -p 0x81010003
+tpm2_evictcontrol -Q -a o -c key.dat -p 0x81010003
 
-tpm2_evictcontrol -Q -a o -H 0x81010003
+tpm2_evictcontrol -Q -a o -c 0x81010003
 
 # Load the context into an available handle, delete it
-tpm2_evictcontrol -a o -c key.ctx > evict.log
+tpm2_evictcontrol -a o -c key.dat > evict.log
 phandle=`grep "persistentHandle: " evict.log | awk '{print $2}'`
-tpm2_evictcontrol -Q -a o -H $phandle
+tpm2_evictcontrol -Q -a o -c $phandle
 
 yaml_verify evict.log
 

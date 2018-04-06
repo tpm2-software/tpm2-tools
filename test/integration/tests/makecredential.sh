@@ -50,8 +50,8 @@ cleanup() {
     rm -f $output_ek_pub $output_ak_pub $output_ak_pub_name $output_mkcredential \
           $file_input_data output_ak grep.txt
 
-    tpm2_evictcontrol -Q -ao -H $handle_ek 2>/dev/null || true
-    tpm2_evictcontrol -Q -ao -H $handle_ak 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -c $handle_ek 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -c $handle_ak 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
