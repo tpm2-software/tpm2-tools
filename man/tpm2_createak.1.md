@@ -18,7 +18,7 @@ algorithm under the endorsement hierarchy. It also makes it persistent
 with given AK handle supplied via **-k**. If **-p** is specified, the
 tool outputs the public key to the path supplied as the option argument.
 
-If any passwd option is missing, assume NULL.
+If any password option is missing, assume NULL.
 
 The tool outputs to stdout a YAML representation of the loaded key handle
 as well as it's name, for example:
@@ -43,8 +43,9 @@ loaded-key:
     Specifies the current owner authorization.
     Same formatting as the endorse password value or **-e** option.
 
-  * **-E**, **--ek-handle**=_EK\_HANDLE_:
-    Specifies the persistent handle of the EK.
+  * **-C**, **--ek-context**=_EK\_CONTEXT\_OBJECT_:
+    Specifies the object context of the EK. Either a file or a handle number.
+    See section "Context Object Format".
 
   * **-k**, **--ak-handle**=_AK\_HANDLE_:
     Specifies the handle used to make AK persistent.
@@ -95,6 +96,8 @@ loaded-key:
 
 [authorization formatting](common/authorizations.md)
 
+[context object format](commmon/ctxobj.md)
+
 [supported signing algorithms](common/sign-alg.md)
 
 [supported public object algorithms](common/object-alg.md)
@@ -113,9 +116,9 @@ required.
 Create an Attestation Key and make it persistent:
 ```
 # create an Endorsement Key (EK)
-tpm2_createek -H 0x81010001 -g rsa -p ek.pub
+tpm2_createek -c 0x81010001 -g rsa -p ek.pub
 # create an Attestation Key (AK) passing the EK handle
-tpm2_createak -E 0x81010001 -k 0x81010002 -p ./ak.pub -n ./ak.name
+tpm2_createak -C 0x81010001 -k 0x81010002 -p ./ak.pub -n ./ak.name
 ```
 
 ## Without a Resource Manager (RM)
@@ -131,12 +134,12 @@ tpm2_createek
 0x80000000
 
 # Now create a transient AK
-tpm2_createak -E 0x80000000 -c ak.ctx -p ak.pub -n ak.name
+tpm2_createak -C 0x80000000 -o ak.ctx -p ak.pub -n ak.name
 loaded-key:
   handle: 0x80000001
   name: 000b8052c63861b1855c91edd63bca2eb3ea3ad304bb9798a9445ada12d5b5bb36e0
 
-tpm2_createek -g rsa -p ek.pub -c ek.ctx
+tpm2_createek -g rsa -p ek.pub -c file:ek.ctx
 
 # Check that the AK is loaded in transient memory
 # Note the AK is at handle 0x80000001
@@ -152,7 +155,7 @@ tpm2_getcap -c handles-transient
 - 0x80000000
 
 # Reload it via loadexternal
-tpm2_loadexternal -H o -u ak.pub -C ak.ctx
+tpm2_loadexternal -H o -u ak.pub -C file:ak.ctx
 
 # Check that it is re-loaded in transient memory
 $ tpm2_getcap -c handles-transient

@@ -106,7 +106,7 @@ tpm2_quote -Q -C $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -
 #####AK
 tpm2_createek -Q -c $Handle_ek_quote -g 0x01 -p ek.pub2
 
-tpm2_createak -Q -E  $Handle_ek_quote -k  $Handle_ak_quote2 -p ak.pub2 -n ak.name_2
+tpm2_createak -Q -C $Handle_ek_quote -k  $Handle_ak_quote2 -p ak.pub2 -n ak.name_2
 
 tpm2_quote -Q -C $Handle_ak_quote -g $alg_quote -l 16,17,18 -q $nonce
 
