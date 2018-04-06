@@ -98,7 +98,7 @@ for fmt in tss pem der; do
 
 done
 
-tpm2_createak -Q -g $alg_ak -E $handle_ek -k $handle_ak -p "$file_pubak_tss" -n "$file_pubak_name"
+tpm2_createak -Q -g $alg_ak -C $handle_ek -k $handle_ak -p "$file_pubak_tss" -n "$file_pubak_name"
 
 tpm2_readpublic -Q -c $handle_ak -f "pem" -o "$file_pubak_pem"
 
