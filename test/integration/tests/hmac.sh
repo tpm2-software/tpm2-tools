@@ -91,7 +91,7 @@ tpm2_hmac -Q -C file:$file_hmac_key_ctx -g $halg -o $file_hmac_output $file_inpu
 ####handle test
 rm -f $file_hmac_output
 
-tpm2_evictcontrol -a o -c $file_hmac_key_ctx -p $handle_hmac_key > evict.log
+tpm2_evictcontrol -a o -c file:$file_hmac_key_ctx -p $handle_hmac_key > evict.log
 grep -q "persistentHandle: "$handle_hmac_key"" evict.log
 
 echo "12345678" > $file_input_data

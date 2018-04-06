@@ -34,7 +34,7 @@
 source helpers.sh
 
 cleanup() {
-    tpm2_evictcontrol -Q -a o -H 0x81010005 -p 0x81010005 2>/dev/null
+    tpm2_evictcontrol -Q -a o -c 0x81010005 2>/dev/null
     rm -f import_key.ctx  import_key.name  import_key.priv  import_key.pub \
           parent.ctx parent.pub  plain.dec.ssl  plain.enc  plain.txt  sym.key \
           import_rsa_key.pub import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name \
@@ -52,7 +52,7 @@ start_up
 cleanup "no-shut-down"
 
 tpm2_createprimary -Q -G 1 -g 0xb -a o -C parent.ctx
-tpm2_evictcontrol -Q -a o -c parent.ctx -p 0x81010005
+tpm2_evictcontrol -Q -a o -c file:parent.ctx -p 0x81010005
 
 dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 

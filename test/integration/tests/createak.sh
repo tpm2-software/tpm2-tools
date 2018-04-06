@@ -38,8 +38,8 @@ cleanup() {
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
-    tpm2_evictcontrol -Q -a o -H 0x8101000b 2>/dev/null || true
-    tpm2_evictcontrol -Q -a o -H 0x8101000c 2>/dev/null || true
+    tpm2_evictcontrol -Q -a o -c 0x8101000b 2>/dev/null || true
+    tpm2_evictcontrol -Q -a o -c 0x8101000c 2>/dev/null || true
 
     # clear tpm state
     tpm2_clear
@@ -61,6 +61,6 @@ tpm2_createak -Q -C 0x8101000b -k 0x8101000c -g rsa -D sha256 -s rsassa -p ak.pu
 # Find a vacant persistent handle
 tpm2_createak -C 0x8101000b -k - -g rsa -D sha256 -s rsassa -p ak.pub -n ak.name > ak.log
 phandle=`yaml_get_kv ak.log \"ak\-persistent\-handle\"`
-tpm2_evictcontrol -Q -a o -H $phandle
+tpm2_evictcontrol -Q -a o -c $phandle
 
 exit 0

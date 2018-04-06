@@ -44,7 +44,7 @@ cleanup() {
     for idx in "${!keys[@]}"
     do
         handle=$(printf "0x%X\n" $(($handle_base + $idx)))
-        tpm2_evictcontrol -Q -a "$auth" -H "$handle" -p "$handle"
+        tpm2_evictcontrol -Q -a "$auth" -c "$handle"
     done
 
     rm -f primary.context out.yaml
@@ -79,7 +79,7 @@ for idx in "${!keys[@]}"
 do
     tpm2_createprimary -Q -a "$auth" -g "${hashes[$idx]}" -G "${keys[$idx]}" -C primary.context
     handle=$(printf "0x%X\n" $(($handle_base + $idx)))
-    tpm2_evictcontrol -Q -a "$auth" -p "$handle" -c primary.context
+    tpm2_evictcontrol -Q -a "$auth" -p "$handle" -c file:primary.context
 done
 
 tpm2_listpersistent > out.yaml

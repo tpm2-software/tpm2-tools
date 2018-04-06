@@ -54,7 +54,7 @@ cleanup() {
 
   ina "$@" "keep_handle"
   if [ $? -ne 0 ]; then
-    tpm2_evictcontrol -Q -ao -H $Handle_parent 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -c $Handle_parent 2>/dev/null || true
   fi
 
   ina "$@" "no-shut-down"
@@ -76,7 +76,7 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_p
 
 tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -C $file_loadexternal_key_ctx
 
-tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
+tpm2_evictcontrol -Q -a o -c file:$file_primary_key_ctx -p $Handle_parent
 
 # Test with Handle
 cleanup "keep_handle" "no-shut-down"

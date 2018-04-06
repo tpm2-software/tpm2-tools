@@ -57,16 +57,13 @@ struct tpm_evictcontrol_ctx {
         tpm2_session *session;
     } auth;
     TPMI_RH_PROVISION hierarchy;
+    TPMI_DH_PERSISTENT persist_handle;
+    tpm2_loaded_object context_object;
+    const char *context_arg;
     struct {
-        TPMI_DH_OBJECT object;
-        TPMI_DH_PERSISTENT persist;
-    } handle;
-    char *context_file;
-    struct {
-        UINT8 H : 1;
         UINT8 p : 1;
-        UINT8 c : 1;
         UINT8 P : 1;
+        UINT8 c : 1;
     } flags;
     char *hierarchy_auth_str;
 };
@@ -88,22 +85,8 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'H':
-        result = tpm2_util_string_to_uint32(value, &ctx.handle.object);
-        if (!result) {
-            LOG_ERR("Could not convert object handle to a number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.H = 1;
-
-        if (ctx.handle.object >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
-            ctx.handle.persist = ctx.handle.object;
-            ctx.flags.p = 1;
-        }
-        break;
     case 'p':
-        result = tpm2_util_string_to_uint32(value, &ctx.handle.persist);
+        result = tpm2_util_string_to_uint32(value, &ctx.persist_handle);
         if (!result) {
             LOG_ERR("Could not convert persistent handle to a number, got: \"%s\"",
                     value);
@@ -116,25 +99,24 @@ static bool on_option(char key, char *value) {
         ctx.hierarchy_auth_str = value;
         break;
     case 'c':
-        ctx.context_file = value;
+        ctx.context_arg = value;
         ctx.flags.c = 1;
         break;
     }
 
-    return  true;
+    return true;
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "hierarchy",       required_argument, NULL, 'a' },
-      { "handle",               required_argument, NULL, 'H' },
-      { "persistent",           required_argument, NULL, 'p' },
+      { "hierarchy",      required_argument, NULL, 'a' },
+      { "persistent",     required_argument, NULL, 'p' },
       { "auth-hierarchy", required_argument, NULL, 'P' },
-      { "context",              required_argument, NULL, 'c' },
+      { "context",        required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("a:H:p:P:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("a:p:P:c:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -147,12 +129,25 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
+    result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+            &ctx.context_object);
+    if (!result) {
+        tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
+                ctx.context_object.handle, ctx.context_object.path);
+        goto out;
+    }
+
+    if (ctx.context_object.handle >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
+        ctx.persist_handle = ctx.context_object.handle;
+        ctx.flags.p = 1;
+    }
+
     /* If we've been given a handle or context object to persist and not an explicit persistent handle
      * to use, find an available vacant handle in the persistent namespace and use that.
      */
-    if ((ctx.flags.H || ctx.flags.c) && !ctx.flags.p) {
+    if (ctx.flags.c && !ctx.flags.p) {
         result = tpm2_capability_find_vacant_persistent_handle(sapi_context,
-                &ctx.handle.persist);
+                &ctx.persist_handle);
         if (!result) {
             tpm2_tool_output("Unable to find a vacant persistent handle.\n");
             goto out;
@@ -169,21 +164,13 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.c) {
-        result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.object,
-                                                       ctx.context_file);
-        if (!result) {
-            goto out;
-        }
-    }
-
-    tpm2_tool_output("persistentHandle: 0x%x\n", ctx.handle.persist);
+    tpm2_tool_output("persistentHandle: 0x%x\n", ctx.persist_handle);
 
     result = tpm2_ctx_mgmt_evictcontrol(sapi_context,
             ctx.hierarchy,
             &ctx.auth.session_data,
-            ctx.handle.object,
-            ctx.handle.persist);
+            ctx.context_object.handle,
+            ctx.persist_handle);
     if (!result) {
         goto out;
     }

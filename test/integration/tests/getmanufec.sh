@@ -88,7 +88,7 @@ tpm2_getmanufec -H $handle -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass 
 
 tpm2_listpersistent | grep -q $handle
 
-tpm2_evictcontrol -Q -H $handle -a o -P $opass
+tpm2_evictcontrol -Q -c $handle -a o -P $opass
 
 if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91ff5" ]; then
  echo "Failed: retrieving endorsement certificate"
@@ -100,6 +100,6 @@ tpm2_getmanufec -H - -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass \
                 https://ekop.intel.com/ekcertservice/ > man.log
 phandle=`yaml_get_kv man.log \"persistent\-handle\"`
 
-tpm2_evictcontrol -Q -H $phandle -a o -P $opass
+tpm2_evictcontrol -Q -c $phandle -a o -P $opass
 
 exit 0

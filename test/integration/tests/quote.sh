@@ -58,9 +58,9 @@ cleanup() {
     $file_quote_key_name $file_quote_key_ctx ek.pub2 ak.pub2 ak.name_2 \
     $out
 
-    tpm2_evictcontrol -Q -ao -H $Handle_ek_quote 2>/dev/null || true
-    tpm2_evictcontrol -Q -ao -H $Handle_ak_quote 2>/dev/null || true
-    tpm2_evictcontrol -Q -ao -H $Handle_ak_quote2 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -c $Handle_ek_quote 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -c $Handle_ak_quote 2>/dev/null || true
+    tpm2_evictcontrol -Q -ao -c $Handle_ak_quote2 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
        shut_down
@@ -97,7 +97,7 @@ yaml_verify $out
 tpm2_quote -Q -C file:$file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
 #####handle testing
-tpm2_evictcontrol -Q -a o -c $file_quote_key_ctx -p $Handle_ak_quote
+tpm2_evictcontrol -Q -a o -c file:$file_quote_key_ctx -p $Handle_ak_quote
 
 tpm2_quote -Q -C $Handle_ak_quote  -g $alg_quote -l 16,17,18 -q $nonce
 
