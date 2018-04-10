@@ -27,6 +27,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #include <stdio.h>
 
@@ -41,29 +42,30 @@
 
 static inline void setcaps(UINT32 level, UINT32 rev, UINT32 day, UINT32 year, TSS2_RC rc) {
 
-    will_return(__wrap_Tss2_Sys_GetCapability, level);
-    will_return(__wrap_Tss2_Sys_GetCapability, rev);
-    will_return(__wrap_Tss2_Sys_GetCapability, day);
-    will_return(__wrap_Tss2_Sys_GetCapability, year);
-    will_return(__wrap_Tss2_Sys_GetCapability, rc);
+    will_return(__wrap_Esys_GetCapability, level);
+    will_return(__wrap_Esys_GetCapability, rev);
+    will_return(__wrap_Esys_GetCapability, day);
+    will_return(__wrap_Esys_GetCapability, year);
+    will_return(__wrap_Esys_GetCapability, rc);
 
 }
 
-TSS2_RC __wrap_Tss2_Sys_GetCapability(TSS2_SYS_CONTEXT *sysContext,
-        TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray, TPM2_CAP capability,
-        UINT32 property, UINT32 propertyCount, TPMI_YES_NO *moreData,
-        TPMS_CAPABILITY_DATA *capabilityData, TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray) {
+TSS2_RC __wrap_Esys_GetCapability(ESYS_CONTEXT *context,
+        ESYS_TR session1, ESYS_TR session2, ESYS_TR session3,
+        TPM2_CAP capability, UINT32 property, UINT32 propertyCount,
+        TPMI_YES_NO *moreData, TPMS_CAPABILITY_DATA **capabilityData) {
 
-    UNUSED(sysContext);
-    UNUSED(cmdAuthsArray);
+    UNUSED(context);
+    UNUSED(session1);
+    UNUSED(session2);
+    UNUSED(session3);
     UNUSED(capability);
     UNUSED(property);
     UNUSED(propertyCount);
     UNUSED(moreData);
-    UNUSED(capabilityData);
-    UNUSED(rspAuthsArray);
 
-    TPML_TAGGED_TPM_PROPERTY *properties = &capabilityData->data.tpmProperties;
+    *capabilityData = calloc(1, sizeof(**capabilityData));
+    TPML_TAGGED_TPM_PROPERTY *properties = &(*capabilityData)->data.tpmProperties;
 
     properties->count = 4;
 
@@ -79,7 +81,10 @@ TSS2_RC __wrap_Tss2_Sys_GetCapability(TSS2_SYS_CONTEXT *sysContext,
     properties->tpmProperty[3].property = TPM2_PT_YEAR;
     properties->tpmProperty[3].value    = (UINT32) mock();
 
-    return (int) mock(); /* dequeue second value */
+    TSS2_RC rc = (int) mock(); /* dequeue second value */
+    if (rc != TSS2_RC_SUCCESS)
+        free(*capabilityData);
+    return rc;
 }
 
 #define TPM2B_PUBLIC_INIT(value) { \
@@ -105,7 +110,7 @@ static void test_tpm2_errata_bad_init_and_apply(void **state) {
     UNUSED(state);
 
     setcaps(00, 116, 303, 2014, TPM2_RC_FAILURE);
-    tpm2_errata_init((TSS2_SYS_CONTEXT *) 0xDEADBEEF);
+    tpm2_errata_init((ESYS_CONTEXT *) 0xDEADBEEF);
 
 
     TPM2B_PUBLIC in_public = TPM2B_PUBLIC_INIT(TPMA_OBJECT_SIGN_ENCRYPT);
@@ -121,7 +126,7 @@ static void test_tpm2_errata_init_good_and_apply(void **state) {
     UNUSED(state);
 
     setcaps(00, 116, 303, 2014, TPM2_RC_SUCCESS);
-    tpm2_errata_init((TSS2_SYS_CONTEXT *) 0xDEADBEEF);
+    tpm2_errata_init((ESYS_CONTEXT *) 0xDEADBEEF);
 
     TPM2B_PUBLIC in_public = TPM2B_PUBLIC_INIT(TPMA_OBJECT_SIGN_ENCRYPT);
 
@@ -137,7 +142,7 @@ static void test_tpm2_errata_init_good_and_no_match(void **state) {
 
     setcaps(00, 116, 4, 2015, TPM2_RC_SUCCESS);
     //Tss2_Sys_GetCapability
-    tpm2_errata_init((TSS2_SYS_CONTEXT *) 0xDEADBEEF);
+    tpm2_errata_init((ESYS_CONTEXT *) 0xDEADBEEF);
 
     TPM2B_PUBLIC in_public = TPM2B_PUBLIC_INIT(TPMA_OBJECT_SIGN_ENCRYPT);
 
@@ -154,7 +159,7 @@ static void test_tpm2_errata_init_no_match_and_apply(void **state) {
     /* This will never match */
     setcaps(00, 00, 00, 00, TPM2_RC_SUCCESS);
     //Tss2_Sys_GetCapability
-    tpm2_errata_init((TSS2_SYS_CONTEXT *) 0xDEADBEEF);
+    tpm2_errata_init((ESYS_CONTEXT *) 0xDEADBEEF);
 
     TPM2B_PUBLIC in_public = TPM2B_PUBLIC_INIT(TPMA_OBJECT_SIGN_ENCRYPT);
 

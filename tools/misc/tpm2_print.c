@@ -381,7 +381,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(THE_CONTEXT() *sapi_context, tpm2_option_flags flags) {
     UNUSED(sapi_context);
     UNUSED(flags);
 

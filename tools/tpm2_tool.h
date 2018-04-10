@@ -31,7 +31,14 @@
 #ifndef MAIN_H
 #define MAIN_H
 
+#ifdef SAPI
+#define THE_CONTEXT() TSS2_SYS_CONTEXT
 #include <tss2/tss2_sys.h>
+#else
+#define THE_CONTEXT() ESYS_CONTEXT
+#include <tss2/tss2_esys.h>
+#endif
+
 #include <stdbool.h>
 
 #include "tpm2_options.h"
@@ -52,10 +59,10 @@ extern bool output_enabled;
 bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
 
 /**
- * This is the main interface for tools, after tcti and sapi initialization
+ * This is the main interface for tools, after tcti and sapi/esapi initialization
  * are performed.
- * @param sapi_context
- *  The system api context.
+ * @param context
+ *  The system/esapi api context.
  * @param flags
  *  Flags that tools may wish to respect.
  * @return
@@ -63,7 +70,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
  *  1 on failure
  * -1 to show usage
  */
-int tpm2_tool_onrun (TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) __attribute__((weak));
+int tpm2_tool_onrun (THE_CONTEXT() *context, tpm2_option_flags flags) __attribute__((weak));
 
 /**
  * Called when the tool is exiting, useful for cleanup.
