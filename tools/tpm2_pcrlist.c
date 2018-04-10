@@ -1,5 +1,6 @@
 //**********************************************************************;
 // Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2018, Fraunhofer SIT
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -35,14 +36,14 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_options.h"
 #include "log.h"
 #include "pcr.h"
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_tool.h"
+#include "main.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {
@@ -125,10 +126,10 @@ static bool unset_pcr_sections(TPML_PCR_SELECTION *s) {
     return true;
 }
 
-static bool read_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
+static bool read_pcr_values(ESYS_CONTEXT *esys_context) {
 
     TPML_PCR_SELECTION pcr_selection_tmp;
-    TPML_PCR_SELECTION pcr_selection_out;
+    TPML_PCR_SELECTION *pcr_selection_out;
     UINT32 pcr_update_counter;
 
     //1. prepare pcrSelectionIn with g_pcrSelections
@@ -137,20 +138,27 @@ static bool read_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
     //2. call pcr_read
     ctx.pcrs.count = 0;
     do {
-        UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Read(sapi_context, no_argument, &pcr_selection_tmp,
-                &pcr_update_counter, &pcr_selection_out,
-                &ctx.pcrs.pcr_values[ctx.pcrs.count], 0));
+        TPML_DIGEST *v;
+        UINT32 rval = Esys_PCR_Read(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+                ESYS_TR_NONE, &pcr_selection_tmp,
+                &pcr_update_counter, &pcr_selection_out, &v);
 
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_PCR_Read, rval);
+            LOG_PERR(Esys_PCR_Read, rval);
             return -1;
         }
 
+        ctx.pcrs.pcr_values[ctx.pcrs.count] = *v;
+
+        free(v);
+
         //3. unmask pcrSelectionOut bits from pcrSelectionIn
-        update_pcr_selections(&pcr_selection_tmp, &pcr_selection_out);
+        update_pcr_selections(&pcr_selection_tmp, pcr_selection_out);
 
         //4. goto step 2 if pcrSelctionIn still has bits set
     } while (++ctx.pcrs.count < 24 && !unset_pcr_sections(&pcr_selection_tmp));
+
+    free(pcr_selection_out);
 
     if (ctx.pcrs.count >= 24 && !unset_pcr_sections(&pcr_selection_tmp)) {
         LOG_ERR("too much pcrs to get! try to split into multiple calls...");
@@ -294,12 +302,12 @@ static bool show_pcr_values(void) {
     return true;
 }
 
-static bool show_selected_pcr_values(TSS2_SYS_CONTEXT *sapi_context, bool check) {
+static bool show_selected_pcr_values(ESYS_CONTEXT *esys_context, bool check) {
 
     if (check && !check_pcr_selection())
         return false;
 
-    if (!read_pcr_values(sapi_context))
+    if (!read_pcr_values(esys_context))
         return false;
 
     if (!show_pcr_values())
@@ -308,34 +316,38 @@ static bool show_selected_pcr_values(TSS2_SYS_CONTEXT *sapi_context, bool check)
     return true;
 }
 
-static bool show_all_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
+static bool show_all_pcr_values(ESYS_CONTEXT *esys_context) {
 
     if (!init_pcr_selection())
         return false;
 
-    return show_selected_pcr_values(sapi_context, false);
+    return show_selected_pcr_values(esys_context, false);
 }
 
-static bool show_alg_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
+static bool show_alg_pcr_values(ESYS_CONTEXT *esys_context) {
 
     if (!init_pcr_selection())
         return false;
 
-    return show_selected_pcr_values(sapi_context, false);
+    return show_selected_pcr_values(esys_context, false);
 }
 
-static bool get_banks(TSS2_SYS_CONTEXT *sapi_context) {
+static bool get_banks(ESYS_CONTEXT *esys_context) {
 
     TPMI_YES_NO more_data;
-    TPMS_CAPABILITY_DATA *capability_data = &ctx.cap_data;
+    TPMS_CAPABILITY_DATA *capability_data;
     UINT32 rval;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, no_argument, TPM2_CAP_PCRS, no_argument, required_argument,
-            &more_data, capability_data, 0));
+    rval = Esys_GetCapability(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, TPM2_CAP_PCRS, no_argument, required_argument,
+            &more_data, &capability_data);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_GetCapability, rval);
+        LOG_PERR(Esys_GetCapability, rval);
         return false;
     }
+
+    ctx.cap_data = *capability_data;
+    free(capability_data);
 
     unsigned i;
     for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
@@ -405,7 +417,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -430,7 +442,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    success = get_banks(sapi_context);
+    success = get_banks(esys_context);
     if (!success) {
         goto error;
     }
@@ -438,11 +450,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (ctx.flags.s) {
         show_banks(&ctx.algs);
     } else if (ctx.flags.g) {
-        success = show_alg_pcr_values(sapi_context);
+        success = show_alg_pcr_values(esys_context);
     } else if (ctx.flags.L) {
-        success = show_selected_pcr_values(sapi_context, true);
+        success = show_selected_pcr_values(esys_context, true);
     } else {
-        success = show_all_pcr_values(sapi_context);
+        success = show_all_pcr_values(esys_context);
     }
 
 error:
