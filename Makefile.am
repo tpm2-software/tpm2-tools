@@ -39,13 +39,13 @@ INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS := \
-    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_SYS_CFLAGS) $(CRYPTO_CFLAGS) \
-    $(CODE_COVERAGE_CFLAGS)
+    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_ESYS_CFLAGS) $(TSS2_SYS_CFLAGS) \
+    $(CRYPTO_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 
 AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
-    $(LIB_COMMON) $(TSS2_SYS_LIBS) $(CRYPTO_LIBS) -ldl
+    $(LIB_COMMON) $(TSS2_ESYS_LIBS) $(TSS2_SYS_LIBS) $(CRYPTO_LIBS) -ldl
 
 # keep me sorted
 bin_PROGRAMS = \
@@ -100,6 +100,7 @@ bin_PROGRAMS = \
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
+ETOOL_SRC := tools/main.c tools/main.h
 
 tools_aux_tpm2_print_SOURCES = tools/aux/tpm2_print.c $(TOOL_SRC)
 tools_aux_tpm2_rc_decode_SOURCES = tools/aux/tpm2_rc_decode.c $(TOOL_SRC)
@@ -109,7 +110,7 @@ tools_tpm2_clearlock_SOURCES = tools/tpm2_clearlock.c $(TOOL_SRC)
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
 tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
-tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c $(TOOL_SRC)
+tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c $(ETOOL_SRC)
 tools_tpm2_listpersistent_SOURCES = tools/tpm2_listpersistent.c $(TOOL_SRC)
 tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
 tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
