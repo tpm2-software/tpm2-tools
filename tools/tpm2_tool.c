@@ -43,6 +43,14 @@
 #include "tpm2_util.h"
 #include "tpm2_errata.h"
 
+#define SUPPORTED_ABI_VERSION \
+{ \
+    .tssCreator = 1, \
+    .tssFamily = 2, \
+    .tssLevel = 1, \
+    .tssVersion = 108, \
+}
+
 bool output_enabled = true;
 
 static void tcti_teardown (TSS2_TCTI_CONTEXT *tcti_context) {
@@ -50,6 +58,8 @@ static void tcti_teardown (TSS2_TCTI_CONTEXT *tcti_context) {
     Tss2_Tcti_Finalize (tcti_context);
     free (tcti_context);
 }
+
+#ifdef SAPI
 
 static void sapi_teardown (TSS2_SYS_CONTEXT *sapi_context) {
 
@@ -59,7 +69,7 @@ static void sapi_teardown (TSS2_SYS_CONTEXT *sapi_context) {
     free (sapi_context);
 }
 
-static void sapi_teardown_full (TSS2_SYS_CONTEXT *sapi_context) {
+static void teardown_full (TSS2_SYS_CONTEXT *sapi_context) {
 
     TSS2_TCTI_CONTEXT *tcti_context = NULL;
     TSS2_RC rc;
@@ -71,15 +81,7 @@ static void sapi_teardown_full (TSS2_SYS_CONTEXT *sapi_context) {
     tcti_teardown (tcti_context);
 }
 
-#define SUPPORTED_ABI_VERSION \
-{ \
-    .tssCreator = 1, \
-    .tssFamily = 2, \
-    .tssLevel = 1, \
-    .tssVersion = 108, \
-}
-
-static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
+static TSS2_SYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 
     TSS2_ABI_VERSION abi_version = SUPPORTED_ABI_VERSION;
 
@@ -100,6 +102,45 @@ static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 
     return sapi_ctx;
 }
+
+#else
+
+static void esys_teardown (ESYS_CONTEXT **esys_context) {
+
+    if (esys_context == NULL)
+        return;
+    if (*esys_context == NULL)
+        return;
+    Esys_Finalize (esys_context);
+}
+
+static void teardown_full (ESYS_CONTEXT **esys_context) {
+
+    TSS2_TCTI_CONTEXT *tcti_context = NULL;
+    TSS2_RC rc;
+
+    rc = Esys_GetTcti(*esys_context, &tcti_context);
+    if (rc != TPM2_RC_SUCCESS)
+        return;
+    esys_teardown (esys_context);
+    tcti_teardown (tcti_context);
+}
+
+static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
+
+    TSS2_ABI_VERSION abi_version = SUPPORTED_ABI_VERSION;
+    ESYS_CONTEXT *esys_ctx;
+
+    TSS2_RC rval = Esys_Initialize(&esys_ctx, tcti_ctx, &abi_version);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Initialize, rval);
+        return NULL;
+    }
+
+    return esys_ctx;
+}
+#endif
+
 
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
@@ -142,19 +183,20 @@ int main(int argc, char *argv[]) {
         output_enabled = false;
     }
 
-    /* figure out the tcti */
-
-    /* TODO SAPI INIT */
-    TSS2_SYS_CONTEXT *sapi_context = NULL;
+    THE_CONTEXT() *context = NULL;
     if (tcti) {
-        sapi_context = sapi_ctx_init(tcti);
-        if (!sapi_context) {
+        context = ctx_init(tcti);
+        if (!context) {
             goto free_opts;
         }
     }
 
     if (flags.enable_errata) {
-        tpm2_errata_init(sapi_context);
+#ifdef SAPI
+        tpm2_errata_init_sapi(context);
+#else
+        tpm2_errata_init(context);
+#endif
     }
 
     /*
@@ -172,7 +214,7 @@ int main(int argc, char *argv[]) {
      * rc 0 = success
      * rc -1 = show usage
      */
-    ret = tpm2_tool_onrun(sapi_context, flags);
+    ret = tpm2_tool_onrun(context, flags);
     if (ret > 0) {
         LOG_ERR("Unable to run %s", argv[0]);
     } else if (ret < 0) {
@@ -184,7 +226,11 @@ int main(int argc, char *argv[]) {
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
      */
-    sapi_teardown_full(sapi_context);
+#ifdef SAPI
+    teardown_full(context);
+#else
+    teardown_full(&context);
+#endif
 
 free_opts:
     if (tool_opts) {
