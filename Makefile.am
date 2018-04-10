@@ -39,13 +39,13 @@ INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib
 LIB_COMMON := lib/libcommon.a
 
 AM_CFLAGS := \
-    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_SYS_CFLAGS) $(CRYPTO_CFLAGS) \
-    $(CODE_COVERAGE_CFLAGS)
+    $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_ESYS_CFLAGS) $(TSS2_SYS_CFLAGS) \
+    $(CRYPTO_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 
 AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
-    $(LIB_COMMON) $(TSS2_SYS_LIBS) $(CRYPTO_LIBS) -ldl
+    $(LIB_COMMON) $(TSS2_ESYS_LIBS) $(TSS2_SYS_LIBS) $(CRYPTO_LIBS) -ldl
 
 # keep me sorted
 bin_PROGRAMS = \
@@ -99,10 +99,13 @@ bin_PROGRAMS = \
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
+lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS) -DSAPI
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_aux_tpm2_print_SOURCES = tools/aux/tpm2_print.c $(TOOL_SRC)
 tools_aux_tpm2_rc_decode_SOURCES = tools/aux/tpm2_rc_decode.c $(TOOL_SRC)
+tools_aux_tpm2_print_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_aux_tpm2_rc_decode_CFLAGS = $(AM_CFLAGS) -DSAPI
 
 tools_tpm2_clear_SOURCES = tools/tpm2_clear.c $(TOOL_SRC)
 tools_tpm2_clearlock_SOURCES = tools/tpm2_clearlock.c $(TOOL_SRC)
@@ -115,7 +118,7 @@ tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
 tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
 tools_tpm2_startup_SOURCES = tools/tpm2_startup.c $(TOOL_SRC)
 tools_tpm2_verifysignature_SOURCES = tools/tpm2_verifysignature.c $(TOOL_SRC)
-tools_tpm2_getmanufec_CFLAG = $(AM_CFLAGS) $(CURL_CFLAGS)
+tools_tpm2_getmanufec_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS)
 tools_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
 tools_tpm2_getmanufec_SOURCES = tools/tpm2_getmanufec.c $(TOOL_SRC)
 tools_tpm2_quote_SOURCES = tools/tpm2_quote.c $(TOOL_SRC)
@@ -151,6 +154,51 @@ tools_tpm2_flushcontext_SOURCES = tools/tpm2_flushcontext.c $(TOOL_SRC)
 tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
 tools_tpm2_policypcr_SOURCES = tools/tpm2_policypcr.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
+
+tools_tpm2_clear_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_clearlock_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_create_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_createprimary_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_getcap_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_listpersistent_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_load_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_send_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_startup_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_verifysignature_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_getmanufec_CFLAGS += -DSAPI
+tools_tpm2_quote_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_changeauth_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_createek_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_createak_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_hash_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_activatecredential_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_makecredential_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_nvlist_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_nvread_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_nvreadlock_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_nvwrite_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_nvdefine_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_nvrelease_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_hmac_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_certify_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_readpublic_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_getrandom_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_encryptdecrypt_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_evictcontrol_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_loadexternal_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_rsadecrypt_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_rsaencrypt_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_sign_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_unseal_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_dictionarylockout_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_createpolicy_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_pcrextend_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_pcrevent_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_import_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_flushcontext_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_startauthsession_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_policypcr_CFLAGS = $(AM_CFLAGS) -DSAPI
+tools_tpm2_policyrestart_CFLAGS = $(AM_CFLAGS) -DSAPI
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -199,7 +247,7 @@ test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_auth_util_SOURCES  = test/unit/test_tpm2_auth_util.c
 
 test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Tss2_Sys_GetCapability
+test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Esys_GetCapability
 test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
