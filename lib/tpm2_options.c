@@ -51,7 +51,7 @@
   #define VERSION "UNKNOWN"
 #endif
 
-#define TPM2TOOLS_ENV_TCTI_NAME      "TPM2TOOLS_TCTI_NAME"
+#define TPM2TOOLS_ENV_TCTI      "TPM2TOOLS_TCTI"
 #define TPM2TOOLS_ENV_ENABLE_ERRATA  "TPM2TOOLS_ENABLE_ERRATA"
 
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
@@ -174,7 +174,7 @@ static tcti_conf tcti_get_config(const char *optstr) {
 
     /* no tcti config supplied, get it from env */
     if (!optstr) {
-        optstr = getenv (TPM2TOOLS_ENV_TCTI_NAME);
+        optstr = getenv (TPM2TOOLS_ENV_TCTI);
         if (!optstr) {
             /* nothing user supplied, use default */
             return conf;
