@@ -7,7 +7,7 @@ mediums.
 To control the TCTI, the tools respect:
 
   1. The command line option **-T** or **--tcti**
-  2. The environment variable: _TPM2TOOLS\_TCTI\_NAME_.
+  2. The environment variable: _TPM2TOOLS\_TCTI_.
 
 **Note:** The command line option always overrides the environment variable.
 
@@ -57,14 +57,14 @@ available:
     the device TCTI can be specified. The default is */dev/tpm0*.
 
     Example: **-T device:/dev/tpm0** or
-    **export _TPM2TOOLS\_TCTI\_NAME_="device:/dev/tpm0"**
+    **export _TPM2TOOLS\_TCTI_="device:/dev/tpm0"**
 
   * **mssim**:
   * For the mssim TCTI, the domain name or IP address and port number used by
     the simulator can be specified. The default are 127.0.0.1 and 2321.
 
     Example: **-T mssim:tcp://127.0.0.1:2321** or
-    **export _TPM2TOOLS\_TCTI\_NAME_="mssim:tcp://127.0.0.1:2321"**
+    **export _TPM2TOOLS\_TCTI_="mssim:tcp://127.0.0.1:2321"**
 
   * **abrmd**:
     For the abrmd TCTI, the configuration string format is a series of simple
