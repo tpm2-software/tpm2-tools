@@ -170,7 +170,6 @@ tools_tpm2_quote_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_changeauth_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_createek_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_createak_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_hash_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_activatecredential_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_makecredential_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_nvlist_CFLAGS = $(AM_CFLAGS) -DSAPI
