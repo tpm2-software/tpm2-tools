@@ -76,7 +76,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -85,9 +85,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     LOG_INFO ("Sending TPM_Startup command with type: %s",
             ctx.clear ? "TPM2_SU_CLEAR" : "TPM2_SU_STATE");
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Startup (sapi_context, startup_type));
+    TSS2_RC rval = Esys_Startup (context, startup_type);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
-        LOG_PERR(Tss2_Sys_Startup, rval);
+        LOG_PERR(Esys_Startup, rval);
         return 1;
     }
 
