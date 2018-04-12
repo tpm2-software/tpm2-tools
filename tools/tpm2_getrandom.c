@@ -52,28 +52,38 @@ struct tpm_random_ctx {
 
 static tpm_random_ctx ctx;
 
-static bool get_random_and_save(TSS2_SYS_CONTEXT *sapi_context) {
+static bool get_random_and_save(ESYS_CONTEXT *context) {
 
-    TPM2B_DIGEST random_bytes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+    TPM2B_DIGEST *random_bytes;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetRandom(sapi_context, NULL, ctx.num_of_bytes,
-            &random_bytes, NULL));
+    TSS2_RC rval = Esys_GetRandom(context,
+                                  ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                                  ctx.num_of_bytes, &random_bytes);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_GetRandom, rval);
+        LOG_PERR(Esys_GetRandom, rval);
         return false;
     }
 
     if (!ctx.output_file_specified) {
         UINT16 i;
-        for (i = 0; i < random_bytes.size; i++) {
-            tpm2_tool_output("%s0x%2.2X", i ? " " : "", random_bytes.buffer[i]);
+        for (i = 0; i < random_bytes->size; i++) {
+            tpm2_tool_output("%s0x%2.2X", i ? " " : "", random_bytes->buffer[i]);
         }
         tpm2_tool_output("\n");
+        free(random_bytes);
         return true;
     }
 
-    return files_save_bytes_to_file(ctx.output_file, random_bytes.buffer,
-            random_bytes.size);
+    rval = files_save_bytes_to_file(ctx.output_file, random_bytes->buffer,
+            random_bytes->size);
+    if (!rval) {
+        LOG_ERR("Failed to save bytes into file \"%s\"", ctx.output_file);
+        free(random_bytes);
+        return false;
+    }
+
+    free(random_bytes);
+    return true;
 }
 
 static bool on_option(char key, char *value) {
@@ -115,7 +125,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
