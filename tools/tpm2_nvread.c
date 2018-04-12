@@ -83,7 +83,7 @@ static bool nv_read(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
 
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    bool res = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
+    bool res = tpm2_util_nv_read_public_sapi(sapi_context, ctx.nv_index, &nv_public);
     if (!res) {
         LOG_ERR("Failed to read NVRAM public area at index 0x%X",
                 ctx.nv_index);

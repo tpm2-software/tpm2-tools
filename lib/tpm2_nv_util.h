@@ -31,6 +31,7 @@
 #ifndef LIB_TPM2_NV_UTIL_H_
 #define LIB_TPM2_NV_UTIL_H_
 
+#include <tss2/tss2_esys.h>
 #include <tss2/tss2_sys.h>
 
 #include "log.h"
@@ -43,8 +44,8 @@
 
 /**
  * Reads the public portion of a Non-Volatile (nv) index.
- * @param sapi_context
- *  The system API context.
+ * @param context
+ *  The ESAPI context.
  * @param nv_index
  *  The index to read.
  * @param nv_public
@@ -52,7 +53,38 @@
  * @return
  *  True on success, false otherwise.
  */
-static inline bool tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+static inline bool tpm2_util_nv_read_public(ESYS_CONTEXT *context,
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC **nv_public) {
+
+    TSS2_RC rval;
+    ESYS_TR tr_object;
+
+    rval = Esys_TR_FromTPMPublic(context, nv_index,
+                                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                                 &tr_object);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return false;
+    }
+
+    rval = Esys_NV_ReadPublic(context, tr_object,
+                              ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, 
+                              nv_public, NULL);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_NV_ReadPublic, rval);
+        return false;
+    }
+
+    rval = Esys_TR_Close(context, &tr_object);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_NV_ReadPublic, rval);
+        return false;
+    }
+
+    return true;
+}
+
+static inline bool tpm2_util_nv_read_public_sapi(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
 
     TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
