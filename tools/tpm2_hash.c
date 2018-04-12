@@ -61,45 +61,54 @@ static tpm_hash_ctx ctx = {
     .halg = TPM2_ALG_SHA1,
 };
 
-static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
+static bool hash_and_save(ESYS_CONTEXT *context) {
 
-    TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMT_TK_HASHCHECK validation;
+    TPM2B_DIGEST *outHash;
+    TPMT_TK_HASHCHECK *validation;
 
-    bool res = tpm2_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
+    bool res = tpm2_hash_file(context, ctx.halg, ctx.hierarchyValue,
+                              ctx.input_file, &outHash, &validation);
     if (!res) {
         return false;
     }
 
-    if (outHash.size) {
+    if (outHash->size) {
         UINT16 i;
-        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(ctx.halg, tpm2_alg_util_flags_hash));
-        for (i = 0; i < outHash.size; i++) {
-            tpm2_tool_output("%02x", outHash.buffer[i]);
+        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(ctx.halg,
+                tpm2_alg_util_flags_hash));
+        for (i = 0; i < outHash->size; i++) {
+            tpm2_tool_output("%02x", outHash->buffer[i]);
         }
         tpm2_tool_output("\n");
     }
 
-    if (validation.digest.size) {
+    if (validation->digest.size) {
         UINT16 i;
         tpm2_tool_output("ticket:");
-        for (i = 0; i < validation.digest.size; i++) {
-            tpm2_tool_output("%02x", validation.digest.buffer[i]);
+        for (i = 0; i < validation->digest.size; i++) {
+            tpm2_tool_output("%02x", validation->digest.buffer[i]);
         }
         tpm2_tool_output("\n");
     }
 
     if (ctx.outHashFilePath) {
-        bool result = files_save_bytes_to_file(ctx.outHashFilePath, outHash.buffer,
-                outHash.size);
+        bool result = files_save_bytes_to_file(ctx.outHashFilePath,
+                                               &outHash->buffer[0],
+                                               outHash->size);
         if (!result) {
             return false;
         }
     }
 
     if (ctx.outTicketFilePath) {
-        return files_save_validation(&validation, ctx.outTicketFilePath);
+        bool result = files_save_validation(validation, ctx.outTicketFilePath);
+        if (!result) {
+            return false;
+        }
     }
+
+    free(outHash);
+    free(validation);
 
     return true;
 }
@@ -167,13 +176,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     int rc = 1;
 
-    bool res = hash_and_save(sapi_context);
+    bool res = hash_and_save(context);
     if (!res) {
         goto out;
     }

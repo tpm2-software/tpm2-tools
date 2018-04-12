@@ -29,7 +29,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
 #include "tpm2_error.h"
@@ -79,7 +79,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
     UNUSED(sapi_context);
