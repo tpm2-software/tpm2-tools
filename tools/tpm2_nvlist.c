@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
@@ -81,40 +81,45 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     free(attrs);
 }
 
-static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
+static bool nv_list(ESYS_CONTEXT *context) {
 
-    TPMI_YES_NO moreData;
-    TPMS_CAPABILITY_DATA capabilityData;
+    TPMS_CAPABILITY_DATA *capabilityData;
     UINT32 property = tpm2_util_hton_32(TPM2_HT_NV_INDEX);
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM2_CAP_HANDLES,
-            property, TPM2_PT_NV_INDEX_MAX, &moreData, &capabilityData, 0));
+    TSS2_RC rval = Esys_GetCapability(context, 
+                                      ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                                      TPM2_CAP_HANDLES, property,
+                                      TPM2_PT_NV_INDEX_MAX,
+                                      NULL, &capabilityData);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_GetCapability, rval);
+        LOG_PERR(Esys_GetCapability, rval);
         return false;
     }
 
     UINT32 i;
-    for (i = 0; i < capabilityData.data.handles.count; i++) {
-        TPMI_RH_NV_INDEX index = capabilityData.data.handles.handle[i];
+    for (i = 0; i < capabilityData->data.handles.count; i++) {
+        TPMI_RH_NV_INDEX index = capabilityData->data.handles.handle[i];
 
         tpm2_tool_output("0x%x:\n", index);
 
-        TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-        bool res = tpm2_util_nv_read_public(sapi_context, index, &nv_public);
+        TPM2B_NV_PUBLIC *nv_public;
+        bool res = tpm2_util_nv_read_public(context, index, &nv_public);
         if (!res) {
             LOG_ERR("Failed to read the public part of NV index 0x%X", index);
+            free(capabilityData);
             return false;
         }
-        print_nv_public(&nv_public);
+        print_nv_public(nv_public);
+        free(nv_public);
         tpm2_tool_output("\n");
     }
 
+    free(capabilityData);
     return true;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return !nv_list(sapi_context);
+    return !nv_list(context);
 }
