@@ -92,7 +92,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     if (!ctx.flags.D) {
-      bool res = tpm2_hash_compute_data(sapi_context, ctx.halg, TPM2_RH_NULL,
+      bool res = tpm2_hash_compute_data_sapi(sapi_context, ctx.halg, TPM2_RH_NULL,
               ctx.msg, ctx.length, &ctx.digest, NULL);
       if (!res) {
           LOG_ERR("Compute message hash failed!");

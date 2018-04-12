@@ -31,28 +31,32 @@
 #include <errno.h>
 #include <string.h>
 
-#include <tss2/tss2_esys.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "files.h"
 #include "tpm2_hash.h"
 #include "tpm2_util.h"
 
-static bool tpm2_hash_common(   ESYS_CONTEXT        *ectx,
+static bool tpm2_hash_common(   TSS2_SYS_CONTEXT    *sapi_context,
                                 TPMI_ALG_HASH       halg,
                                 TPMI_RH_HIERARCHY   hierarchy,
                                 FILE                *infilep,
                                 BYTE                *inbuffer,
                                 UINT16              inbuffer_len,
-                                TPM2B_DIGEST        **result,
-                                TPMT_TK_HASHCHECK   **validation)
+                                TPM2B_DIGEST        *result,
+                                TPMT_TK_HASHCHECK   *validation)
 {
     bool res, use_left, done;
-    unsigned long left;
-    size_t bytes_read;
+    size_t left, bytes_read;
     TSS2_RC rval;
     TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
+
     TPMI_DH_OBJECT sequenceHandle;
+    TSS2L_SYS_AUTH_COMMAND cmdAuthArray = { 1, { {  .sessionHandle = TPM2_RS_PW,
+                                                    .nonce = TPM2B_EMPTY_INIT,
+                                                    .hmac = TPM2B_EMPTY_INIT,
+                                                    .sessionAttributes = 0, }}};
     TPM2B_MAX_BUFFER buffer;
 
     /*  if we're using infilep, get file size */
@@ -80,10 +84,16 @@ static bool tpm2_hash_common(   ESYS_CONTEXT        *ectx,
         }
 
         if (res) {
-            rval = Esys_Hash(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &buffer, halg, hierarchy, result, validation);
+            rval = TSS2_RETRY_EXP( Tss2_Sys_Hash(   sapi_context,
+                                                    NULL,
+                                                    &buffer,
+                                                    halg,
+                                                    hierarchy,
+                                                    result,
+                                                    validation,
+                                                    NULL));
             if (rval != TSS2_RC_SUCCESS) {
-                LOG_PERR(Esys_Hash, rval);
+                LOG_PERR(Tss2_Sys_Hash, rval);
                 res = false;
             } else {
                 res = true;
@@ -96,20 +106,17 @@ static bool tpm2_hash_common(   ESYS_CONTEXT        *ectx,
          * chunks to loop over, if possible. This way we can call Complete with
          * data.
          */
-        rval = Esys_HashSequenceStart(ectx,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &nullAuth, halg, &sequenceHandle);
+        rval = TSS2_RETRY_EXP( Tss2_Sys_HashSequenceStart( sapi_context,
+                                                            NULL,
+                                                            &nullAuth,
+                                                            halg,
+                                                            &sequenceHandle,
+                                                            NULL) );
         if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_HashSequenceStart, rval);
+            LOG_PERR(Tss2_Sys_HashSequenceStart, rval);
             res = false;
         } else {
             res = true;
-        }
-
-        rval = Esys_TR_SetAuth(ectx, sequenceHandle, &nullAuth);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_TR_SetAuth, rval);
-            res = false;
         }
 
         /* If we know the file size, we decrement the amount read and terminate
@@ -136,11 +143,13 @@ static bool tpm2_hash_common(   ESYS_CONTEXT        *ectx,
             }
 
             if (res) {
-                rval = Esys_SequenceUpdate(ectx, sequenceHandle,
-                            ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-                            &buffer);
+                rval = TSS2_RETRY_EXP( Tss2_Sys_SequenceUpdate( sapi_context,
+                                                                sequenceHandle,
+                                                                &cmdAuthArray,
+                                                                &buffer,
+                                                                NULL) );
                 if (rval != TPM2_RC_SUCCESS) {
-                    LOG_PERR(Esys_SequenceUpdate, rval);
+                    LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
                     res = false;
                 } else {
                     if (use_left) {
@@ -173,11 +182,16 @@ static bool tpm2_hash_common(   ESYS_CONTEXT        *ectx,
         }
 
         if (res) {
-            rval = Esys_SequenceComplete(ectx, sequenceHandle,
-                        ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &buffer, hierarchy, result, validation);
+            rval = TSS2_RETRY_EXP( Tss2_Sys_SequenceComplete( sapi_context,
+                                                                sequenceHandle,
+                                                                &cmdAuthArray,
+                                                                &buffer,
+                                                                hierarchy,
+                                                                result,
+                                                                validation,
+                                                                NULL) );
             if (rval != TSS2_RC_SUCCESS) {
-                LOG_PERR(Eys_SequenceComplete, rval);
+                LOG_PERR(Tss2_Sys_SequenceComplete, rval);
                 res = false;
             }
         }
@@ -185,15 +199,15 @@ static bool tpm2_hash_common(   ESYS_CONTEXT        *ectx,
     return res;
 }
 
-bool tpm2_hash_compute_data(ESYS_CONTEXT        *ectx,
-                            TPMI_ALG_HASH       halg,
-                            TPMI_RH_HIERARCHY   hierarchy,
-                            BYTE                *buffer,
-                            UINT16              length,
-                            TPM2B_DIGEST        **result,
-                            TPMT_TK_HASHCHECK   **validation)
+bool tpm2_hash_compute_data_sapi(TSS2_SYS_CONTEXT    *sapi_context,
+                                 TPMI_ALG_HASH       halg,
+                                 TPMI_RH_HIERARCHY   hierarchy,
+                                 BYTE                *buffer,
+                                 UINT16              length,
+                                 TPM2B_DIGEST        *result,
+                                 TPMT_TK_HASHCHECK   *validation)
 {
-    return (!!buffer) && tpm2_hash_common( ectx,
+    return (!!buffer) && tpm2_hash_common( sapi_context,
                                             halg,
                                             hierarchy,
                                             NULL,
@@ -203,14 +217,14 @@ bool tpm2_hash_compute_data(ESYS_CONTEXT        *ectx,
                                             validation);
 }
 
-bool tpm2_hash_file(ESYS_CONTEXT        *ectx,
-                    TPMI_ALG_HASH       halg,
-                    TPMI_RH_HIERARCHY   hierarchy,
-                    FILE                *input,
-                    TPM2B_DIGEST        **result,
-                    TPMT_TK_HASHCHECK   **validation)
+bool tpm2_hash_file_sapi(TSS2_SYS_CONTEXT    *sapi_context,
+                         TPMI_ALG_HASH       halg,
+                         TPMI_RH_HIERARCHY   hierarchy,
+                         FILE                *input,
+                         TPM2B_DIGEST        *result,
+                         TPMT_TK_HASHCHECK   *validation)
 {
-    return (!!input) && tpm2_hash_common( ectx,
+    return (!!input) && tpm2_hash_common( sapi_context,
                                             halg,
                                             hierarchy,
                                             input,
