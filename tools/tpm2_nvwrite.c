@@ -98,7 +98,7 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
      * from being partially written to the index.
      */
     TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    bool res = tpm2_util_nv_read_public(sapi_context, ctx.nv_index, &nv_public);
+    bool res = tpm2_util_nv_read_public_sapi(sapi_context, ctx.nv_index, &nv_public);
     if (!res) {
         LOG_ERR("Failed to write NVRAM public area at index 0x%X",
                 ctx.nv_index);
