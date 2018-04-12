@@ -172,7 +172,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
  * in network byte order (big-endian). We output the response in the same
  * form.
  */
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -187,9 +187,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     TSS2_TCTI_CONTEXT *tcti_context;
-    TSS2_RC rval = Tss2_Sys_GetTctiContext(sapi_context, &tcti_context);
+    TSS2_RC rval = Esys_GetTcti(context, &tcti_context);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_GetTctiContext, rval);
+        LOG_PERR(Esys_GetTctiContext, rval);
         goto out;
     }
 
