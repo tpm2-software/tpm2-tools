@@ -162,7 +162,6 @@ tools_tpm2_createprimary_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_getcap_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_listpersistent_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_load_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_startup_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_verifysignature_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_getmanufec_CFLAGS += -DSAPI
 tools_tpm2_quote_CFLAGS = $(AM_CFLAGS) -DSAPI
