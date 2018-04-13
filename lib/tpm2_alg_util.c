@@ -347,6 +347,11 @@ UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
     case TPM2_ALG_HMAC: {
         TPMU_HA *hmac_sig = &(signature->signature.hmac.digest);
         *size = tpm2_alg_util_get_hash_size(signature->signature.hmac.hashAlg);
+        if (*size == 0) {
+            LOG_ERR("Hash algorithm %d has 0 size",
+                signature->signature.hmac.hashAlg);
+            goto nomem;
+        }
         buffer = malloc(*size);
         if (!buffer) {
             goto nomem;
