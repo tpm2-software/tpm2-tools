@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,23 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+start_up
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
-}
+ownerPasswd=abc123
+endorsePasswd=abc123
+lockPasswd=abc123
+new_ownerPasswd=newpswd
+new_endorsePasswd=newpswd
+new_lockPasswd=newpswd
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+tpm2_clear
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+tpm2_changeauth -o $ownerPasswd -e $endorsePasswd -l $lockPasswd
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_changeauth -O $ownerPasswd -E $endorsePasswd -L $lockPasswd -o $new_ownerPasswd -e $new_endorsePasswd -l $new_lockPasswd
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+tpm2_clear -L $new_lockPasswd
+
+exit 0

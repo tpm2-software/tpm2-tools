@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,51 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+alg_primary_obj=0x000B
+alg_primary_key=0x0001
+alg_create_obj=0x000B
+alg_create_key=0x0008
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+file_primary_key_ctx=context.p_"$alg_primary_obj"_"$alg_primary_key"
+file_readpub_key_pub=opu_"$alg_create_obj"_"$alg_create_key"
+file_readpub_key_priv=opr_"$alg_create_obj"_"$alg_create_key"
+file_readpub_key_name=name.load_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
+file_readpub_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
+file_readpub_output=readpub_"$file_readpub_key_ctx"
+
+Handle_readpub=0x81010014
+
+cleanup() {
+    rm -f $file_primary_key_ctx $file_readpub_key_pub $file_readpub_key_priv \
+    $file_readpub_key_name $file_readpub_key_ctx $file_readpub_output
+
+    tpm2_evictcontrol -Q -a o -H $Handle_readpub 2>/dev/null || true
+
+    if [ "$1" != "no-shut-down" ]; then
+       shut_down
+    fi
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+start_up
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+cleanup "no-shut-down"
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_clear
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -C $file_primary_key_ctx
+
+tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_readpub_key_pub -r $file_readpub_key_priv  -c $file_primary_key_ctx
+
+tpm2_load -Q -c $file_primary_key_ctx  -u $file_readpub_key_pub  -r $file_readpub_key_priv -n $file_readpub_key_name -C $file_readpub_key_ctx
+
+tpm2_readpublic -Q -c $file_readpub_key_ctx -o $file_readpub_output
+
+tpm2_evictcontrol -Q -a o -c $file_readpub_key_ctx -p $Handle_readpub
+
+rm -f $file_readpub_output
+tpm2_readpublic -Q -H $Handle_readpub -o $file_readpub_output
+
+exit 0

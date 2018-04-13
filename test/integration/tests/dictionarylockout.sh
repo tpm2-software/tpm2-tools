@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -30,33 +30,41 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
+###this script use for test the implementation tpm2_dictionarylockout
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+out=out.yaml
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+cleanup() {
+    rm -f $out
+    shut_down
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+start_up
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+tpm2_dictionarylockout -Q -V -c &>/dev/null
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_dictionarylockout -s -n 5 -t 6 -l 7
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+tpm2_getcap -c properties-variable > $out
+v=$(yaml_get_kv "$out" \"TPM2_PT_MAX_AUTH_FAIL\")
+if [ $v -ne 5 ];then
+  echo "Failure: setting up the number of allowed tries in the lockout parameters"
+  exit 1
+fi
+
+v=$(yaml_get_kv "$out" \"TPM2_PT_LOCKOUT_INTERVAL\")
+if [ $v -ne 6 ];then
+  echo "Failure: setting up the lockout period in the lockout parameters"
+  exit 1
+fi
+
+v=$(yaml_get_kv "$out" \"TPM2_PT_LOCKOUT_RECOVERY\")
+if [ $v -ne 7 ];then
+  echo "Failure: setting up the lockout recovery period in the lockout parameters"
+  exit 1
+fi
+
+exit 0

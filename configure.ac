@@ -24,12 +24,31 @@ AC_ARG_ENABLE([unit],
                             [build cmocka unit tests (default is no)])],
             [enable_unit=$enableval],
             [enable_unit=no])
-AS_IF([test "x$enable_unit" != xno],
-      [PKG_CHECK_MODULES([CMOCKA],
-                         [cmocka],
-                         [AC_DEFINE([HAVE_CMOCKA],
-                                    [1])])])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
+
+AC_DEFUN([unit_test_checks],[
+
+    PKG_CHECK_MODULES([CMOCKA],[cmocka],
+        [AC_DEFINE([HAVE_CMOCKA],[1])])
+
+    AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd],
+        [yes], [no])
+
+    AC_CHECK_PROG([tpm_server], [tpm_server],
+        [yes], [no])
+
+    AS_IF([test "$tpm2_abrmd" != "yes"],
+           [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])],
+        [])
+
+    AS_IF([test "$tpm_server" != "yes"],
+        [AC_MSG_ERROR([Required executable tpm2_server not found, try setting PATH])],
+        [])
+])
+
+AS_IF([test "$unit" != "no"],
+       [unit_test_checks],
+       [])
 
 AC_ARG_ENABLE([dlclose],
   [AS_HELP_STRING([--disable-dlclose],
@@ -143,5 +162,6 @@ AC_PYTHON_MODULE([yaml])
 
 AC_SUBST([EXTRA_CFLAGS])
 AC_SUBST([EXTRA_LDFLAGS])
+AC_SUBST([PATH])
 
 AC_OUTPUT

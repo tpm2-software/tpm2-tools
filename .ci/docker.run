@@ -43,7 +43,7 @@ source $TRAVIS_BUILD_DIR/.ci/download-deps.sh
 get_deps "$WORKSPACE"
 
 export LD_LIBRARY_PATH=/usr/local/lib/
-export PATH=$PATH:/root/.local/bin/
+export PATH=/root/.local/bin:/ibmtpm974/src:$PATH
 
 echo "echo changing to $TRAVIS_BUILD_DIR"
 # Change to the the travis build dir
@@ -61,21 +61,6 @@ echo "dbus started"
 
 # let dbus have time to start up
 sleep 5
-
-echo "starting tpm server"
-# start the tpm server
-/ibmtpm974/src/tpm_server &
-echo "tpm server started"
-
-# start tpm2-abrmd
-
-# let the tpm simulator have time to start up before abrmd
-# tries to connect.
-sleep 5
-
-echo "starting abrmd server"
-tpm2-abrmd --allow-root --tcti=mssim &
-echo "started abrmd server"
 
 if [ -d build ]; then
   rm -rf build
@@ -137,24 +122,13 @@ pushd ./build
 
 ../configure --enable-unit $config_flags
 make -j$(nproc)
-make -j$(nproc) check
+dbus-launch make -j$(nproc) check
 
 if [ -f test-suit.log ]; then
     echo "test-suit.log:"
     cat test-suit-log
 fi
 
-popd
-
-# Switch over to the test directory
-pushd ./test/system
-
-# Run the tests on ALL device TCTIs configuration
-
-TOOLS="$(pwd)/../../build/tools"
-PATH=$TOOLS:$TOOLS/aux:$PATH ./test.sh -p -t abrmd
-
-# done go back to tpm2-tools directory
 popd
 
 # upload coveralls results

@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,53 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+start_up
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+out=out.yaml
+
+cleanup() {
+    rm -f $out
+
+    shut_down
+}
+trap cleanup EXIT
+
+function yaml_to_list() {
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$1") as f:
+    try:
+        y = yaml.load(f)
+        print(' '.join(y))
+    except yaml.YAMLError as exc:
+        sys.exit(exc)
+pyscript
 }
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+tpm2_getcap -l > $out
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+caplist=$(yaml_to_list $out)
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+for c in $caplist; do
+    tpm2_getcap --capability="$c" > $out
+    yaml_verify $out
+done;
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+# negative tests
+trap - ERR
+
+# Regression test, ensure that getcap -c never accepts prefix matches
+tpm2_getcap -Q --capability="comma" 2>/dev/null
+if [ $? -eq 0 ]; then
+  echo "Expected \"tpm2_getcap -Q --capability=\"comma\"\" to fail."
+  exit 1
+fi
+
+exit 0

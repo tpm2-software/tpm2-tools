@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,44 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+###this script use for test the implementation tpm2_createpolicy
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+cleanup() {
+    rm -f pcr.in policy.out
+
+    if [ "$1" != "no-shut-down" ]; then
+      shut_down
+    fi
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+start_up
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+declare -A digestlengths=(["sha1"]=20 ["sha256"]=32)
+declare -A expected_policy_digest=(["sha1"]="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
+                                   ["sha256"]="33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8")
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_pcrlist -V -g "sha1"
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+for halg in ${!digestlengths[@]}
+do
+    cleanup "no-shut-down"
+
+    # Create file containing expected PCR value
+    head -c $((${digestlengths[$halg]} - 1)) /dev/zero > pcr.in
+    echo -n -e '\x03' >> pcr.in
+
+    tpm2_createpolicy -P -L $halg:0 -F pcr.in -f policy.out
+
+    # Test the policy creation hashes against expected
+    if [ $(xxd -p policy.out | tr -d '\n' ) != "${expected_policy_digest[${halg}]}" ]; then
+        echo "Failure: Creating Policy Digest with PCR policy for index 0 and ${halg} pcr index hash"
+        echo "Got: $(xxd -p policy.out | tr -d '\n')"
+        echo "Expected: ${expected_policy_digest[${halg}]}"
+        exit 1
+    fi
+done
+
+exit 0

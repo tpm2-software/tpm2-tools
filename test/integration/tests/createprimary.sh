@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,53 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+start_up
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+cleanup() {
+
+  rm -f policy.bin obj.pub pub.out
+
+  ina "$@" "keep-context"
+  if [ $? -ne 0 ]; then
+    rm -f context.out
+  fi
+
+  ina "$@" "no-shut-down"
+  if [ $? -ne 0 ]; then
+    shut_down
+  fi
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+cleanup "no-shut-down"
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+# Keep the algorithm specifiers mixed to test friendly and raw
+# values.
+for gAlg in `populate_hash_algs mixed`; do
+    for GAlg in 0x01 keyedhash ecc 0x25; do
+        tpm2_createprimary -Q -g $gAlg -G $GAlg -C context.out
+        cleanup "no-shut-down" "keep-context"
+        for Atype in o e n; do
+            tpm2_createprimary -Q -a $Atype -g $gAlg -G $GAlg -C context.out
+            cleanup "no-shut-down" "keep-context"
+        done
+    done
+done
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+#test for createprimary objects with policy authorization structures
+echo -n "$policy_orig" | xxd -r -p > policy.bin
+
+tpm2_createprimary -Q -a o -G rsa -g sha256 -C context.out -L policy.bin \
+  -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin'
+
+tpm2_readpublic -c context.out > pub.out
+
+policy_new=$(yaml_get_kv pub.out \"authorization\ policy\")
+
+test "$policy_orig" == "$policy_new"
+
+exit 0

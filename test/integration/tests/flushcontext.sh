@@ -1,6 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
+# Copyright (c) 2017, Alibaba Group
 # Copyright (c) 2018, Intel Corporation
 # All rights reserved.
 #
@@ -31,32 +32,38 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+start_up
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+cleanup() {
+    rm -f saved_session.ctx
+
+    if [ "$1" != "no-shut-down" ]; then
+          shut_down
+    fi
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+cleanup "no-shut-down"
+tpm2_clear
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+# Test for flushing the specified handle
+tpm2_createprimary -Q -a o -g sha256 -G rsa
+# tpm2-abrmd may save the transient object and restore it when using
+res=`tpm2_getcap -c handles-transient`
+if [ -n "$res" ]; then
+    tpm2_flushcontext -Q -H 0x80000000
+fi
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+# Test for flushing a transient object
+tpm2_createprimary -Q -a o -g sha256 -G rsa
+tpm2_flushcontext -Q -t
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+# Test for flushing a loaded session
+tpm2_createpolicy -Q -a -P -L sha256:0
+tpm2_flushcontext -Q -l
+
+cleanup "no-shut-down"
+
+exit 0
