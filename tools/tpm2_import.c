@@ -124,9 +124,10 @@ static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 
 static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     bool rval = false;
-
+    RSA *rsa = NULL;
     TPM2B_PUBLIC pub_key = TPM2B_EMPTY_INIT;
     bool res = files_load_public(ctx.parent_key_public_file, &pub_key);
+
     if (!res) {
         LOG_ERR("Failed loading parent key public file.");
         return false;
@@ -143,7 +144,6 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
     }
     memcpy(pub_modulus, pub_key_val->buffer, mod_size);
 
-    RSA *rsa = NULL;
     unsigned char encoded[RSA_2K_MODULUS_SIZE_IN_BYTES];
     unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
     int return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded,
@@ -151,24 +151,24 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
             EVP_sha256(), NULL);
     if (return_code != 1) {
         LOG_ERR("Failed RSA_padding_add_PKCS1_OAEP_mgf1\n");
-        return false;
+        goto error;
     }
     BIGNUM* bne = BN_new();
     if (!bne) {
         LOG_ERR("BN_new for bne failed\n");
-        return false;
+        goto error;
     }
     return_code = BN_set_word(bne, RSA_F4);
     if (return_code != 1) {
         LOG_ERR("BN_set_word failed\n");
         BN_free(bne);
-        return false;
+        goto error;
     }
     rsa = RSA_new();
     if (!rsa) {
         LOG_ERR("RSA_new failed\n");
         BN_free(bne);
-        return false;
+        goto error;
     }
     return_code = RSA_generate_key_ex(rsa, 2048, bne, NULL);
     BN_free(bne);
@@ -208,7 +208,9 @@ static void aes_128_cfb_encrypt_buffers(uint8_t *buffer1, uint16_t buffer1_size,
     //AES encryption
     uint8_t to_encrypt_buffer[max_buffer_size];
     memcpy(to_encrypt_buffer, buffer1, buffer1_size);
-    memcpy(to_encrypt_buffer + buffer1_size, buffer2, buffer2_size);
+    if (buffer2 != NULL) {
+        memcpy(to_encrypt_buffer + buffer1_size, buffer2, buffer2_size);
+    }
 
     uint8_t iv_in[SYM_KEY_SIZE] = { 0 };
     AES_KEY aes;
