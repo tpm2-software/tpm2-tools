@@ -139,6 +139,11 @@ pushd ./build
 make -j$(nproc)
 make -j$(nproc) check
 
+if [ -f test-suit.log ]; then
+    echo "test-suit.log:"
+    cat test-suit-log
+fi
+
 popd
 
 # Switch over to the test directory
