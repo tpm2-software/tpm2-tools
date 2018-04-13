@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2017-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,47 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+cleanup() {
+    tpm2_evictcontrol -Q -a o -H 0x81010005 -p 0x81010005 2>/dev/null
+    rm -f import_key.ctx  import_key.name  import_key.priv  import_key.pub \
+          parent.ctx parent.pub  plain.dec.ssl  plain.enc  plain.txt  sym.key
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+    if [ "$1" != "no-shut-down" ]; then
+          shut_down
+    fi
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+start_up
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+cleanup "no-shut-down"
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_createprimary -Q -G 1 -g 0xb -a o -C parent.ctx
+tpm2_evictcontrol -Q -a o -c parent.ctx -p 0x81010005
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
+
+tpm2_readpublic -Q -H 0x81010005 --out-file parent.pub
+
+tpm2_import -Q -k sym.key -H 0x81010005 -f parent.pub -q import_key.pub \
+-r import_key.priv
+
+tpm2_load -Q -H 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
+-C import_key.ctx
+
+echo "plaintext" > "plain.txt"
+
+tpm2_encryptdecrypt -c import_key.ctx  -I plain.txt -o plain.enc
+
+openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
+-aes-128-cfb
+
+diff plain.txt plain.dec.ssl
+if [ $? != 0 ];then
+echo "TEST: tpm2_import failed"
+exit 1
+fi
+
+exit 0

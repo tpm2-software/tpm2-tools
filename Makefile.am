@@ -1,6 +1,6 @@
 #;**********************************************************************;
 #
-# Copyright (c) 2015, Intel Corporation
+# Copyright (c) 2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -168,6 +168,8 @@ check_PROGRAMS = \
     test/unit/test_tpm2_hierarchy \
     test/unit/test_tpm2_error
 
+TESTS += $(ALL_SYSTEM_TESTS)
+
 test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
@@ -226,7 +228,23 @@ test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_error_SOURCES  = test/unit/test_tpm2_error.c
 
+#
+# We need absolute paths to the builddir and srcdir locations so we can
+# find the binaries to test with and the scripts/artifacts needed.
+#
+# abs_top_dir is defined, but the build dir is not, so create it.
+#
+abs_build_dir=$(abspath $(builddir))
+
+AM_TESTS_ENVIRONMENT =	\
+	TPM2_ABRMD="tpm2-abrmd" \
+	TPM2_SIM="tpm_server" \
+	PATH=$(abs_build_dir)/tools:$(abs_build_dir)/tools/aux:$(abs_top_srcdir)/test/integration:$(PATH) \
+	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures
 endif
+
+check-hook:
+	rm -rf .lock_file
 
 EXTRA_DIST = $(top_srcdir)/man \
 	     AUTHORS.md \
@@ -237,7 +255,7 @@ EXTRA_DIST = $(top_srcdir)/man \
 	     MAINTAINERS.md \
 	     README.md \
 	     RELEASE.md \
-	     test/system
+	     test/integration
 
 if HAVE_PANDOC
     man1_MANS := \

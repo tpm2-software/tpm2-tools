@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,45 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+cleanup() {
+  rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
+        encrypt.out secret.dat key.ctx evict.log
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+  if [ "$1" != "no-shut-down" ]; then
+      shut_down
+  fi
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+start_up
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+cleanup "no-shut-down"
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_clear -Q
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+tpm2_createprimary -Q -a e -g sha256 -G rsa -C primary.ctx
+
+tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv  -c primary.ctx
+
+tpm2_load -Q -c primary.ctx  -u key.pub  -r key.priv -n key.name -C key.ctx
+
+# Load the context into a specific handle, delete it
+tpm2_evictcontrol -Q -c key.ctx -p 0x81010003
+
+tpm2_evictcontrol -Q -H 0x81010003 -p 0x81010003
+
+# Load the context into a specific handle, delete it without an explicit -p
+tpm2_evictcontrol -Q -a o -c key.ctx -p 0x81010003
+
+tpm2_evictcontrol -Q -a o -H 0x81010003
+
+# Load the context into an available handle, delete it
+tpm2_evictcontrol -a o -c key.ctx > evict.log
+phandle=`grep "persistentHandle: " evict.log | awk '{print $2}'`
+tpm2_evictcontrol -Q -a o -H $phandle
+
+yaml_verify evict.log
+
+exit 0

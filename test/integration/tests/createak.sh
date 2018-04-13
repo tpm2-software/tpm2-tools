@@ -1,7 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
-# Copyright (c) 2018, Intel Corporation
+# Copyright (c) 2016-2018, Intel Corporation
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,32 +31,36 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+cleanup() {
+    rm -f ek.pub ak.pub ak.name ak.name ak.log
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+    # Evict persistent handles, we want them to always succeed and never trip
+    # the onerror trap.
+    tpm2_evictcontrol -Q -a o -H 0x8101000b 2>/dev/null || true
+    tpm2_evictcontrol -Q -a o -H 0x8101000c 2>/dev/null || true
+
+    # clear tpm state
+    tpm2_clear
+
+    if [ "$1" != "no-shut-down" ]; then
+      shut_down
+    fi
 }
+trap cleanup EXIT
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+start_up
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+cleanup "no-shut-down"
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_createek -Q -H 0x8101000b -g rsa -p ek.pub
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+tpm2_createak -Q -E 0x8101000b -k 0x8101000c -g rsa -D sha256 -s rsassa -p ak.pub -n ak.name
+
+# Find a vacant persistent handle
+tpm2_createak -E 0x8101000b -k - -g rsa -D sha256 -s rsassa -p ak.pub -n ak.name > ak.log
+phandle=`yaml_get_kv ak.log \"ak\-persistent\-handle\"`
+tpm2_evictcontrol -Q -a o -H $phandle
+
+exit 0

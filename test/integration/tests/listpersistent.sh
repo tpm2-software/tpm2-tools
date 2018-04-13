@@ -1,6 +1,7 @@
-#! /bin/sh
+#!/bin/bash
 #;**********************************************************************;
 #
+# Copyright (c) 2017, Red Hat, Inc.
 # Copyright (c) 2018, Intel Corporation
 # All rights reserved.
 #
@@ -31,32 +32,79 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-set -e
+source helpers.sh
 
-# generate list of source files for use in Makefile.am
-# if you add new source files, you must run ./bootstrap again
-src_listvar () {
-    basedir=$1
-    suffix=$2
-    var=$3
+handle_base=0x81000000
+auth=o
 
-    find "${basedir}" -name "${suffix}" | LC_ALL=C sort | tr '\n' ' ' | (printf "${var} = " && cat)
-    echo ""
+declare -a hashes=("sha1" "sha256")
+declare -a keys=("ecc" "keyedhash")
+
+cleanup() {
+    for idx in "${!keys[@]}"
+    do
+        handle=$(printf "0x%X\n" $(($handle_base + $idx)))
+        tpm2_evictcontrol -Q -a "$auth" -H "$handle" -p "$handle"
+    done
+
+    rm -f primary.context out.yaml
+
+    shut_down
+}
+trap cleanup EXIT
+
+start_up
+
+function yaml_get_len() {
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$1") as f:
+    try:
+        y = yaml.load(f)
+        print(len(y))
+    except yaml.YAMLError as exc:
+        sys.exit(exc)
+pyscript
 }
 
-VARS_FILE=src_vars.mk
-AUTORECONF=${AUTORECONF:-autoreconf}
+tpm2_clear
 
-echo "Generating file lists: ${VARS_FILE}"
-(
-  src_listvar "lib" "*.c" "LIB_C"
-  src_listvar "lib" "*.h" "LIB_H"
-  printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
+# Test persisting transient objects
+for idx in "${!keys[@]}"
+do
+    tpm2_createprimary -Q -a "$auth" -g "${hashes[$idx]}" -G "${keys[$idx]}" -C primary.context
+    handle=$(printf "0x%X\n" $(($handle_base + $idx)))
+    tpm2_evictcontrol -Q -a "$auth" -p "$handle" -c primary.context
+done
 
-  src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
-) > ${VARS_FILE}
+tpm2_listpersistent > out.yaml
 
-mkdir -p m4
-${AUTORECONF} --install --sym
+handle_cnt=$(yaml_get_len out.yaml)
+
+if [ "$handle_cnt" -ne "${#keys[@]}" ]; then
+    echo "Only $handle_cnt of ${#keys[@]} persistent objects were listed"
+    exit 1
+fi
+
+# Test filtering by key algorithm
+for alg in "${keys[@]}"
+do
+    tpm2_listpersistent -G "$alg" | grep -q "$alg"
+done
+
+# Test filtering by hash algorithm
+for hash in "${hashes[@]}"
+do
+    tpm2_listpersistent -g "$hash" | grep -q "$hash"
+done
+
+# Test filtering by both hash and key algorithms
+tpm2_listpersistent -g "${hashes[0]}" -G "${keys[0]}" | grep -q "${hashes[0]}"
+tpm2_listpersistent -g "${hashes[0]}" -G "${keys[0]}" | grep -q "${keys[0]}"
+
+exit 0
