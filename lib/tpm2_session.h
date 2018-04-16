@@ -153,6 +153,26 @@ TPMI_SH_AUTH_SESSION tpm2_session_get_handle(tpm2_session *session);
 TPM2_SE tpm2_session_get_type(tpm2_session *session);
 
 /**
+ * Retrieves the type of session ie trial/policy/hmac from session data
+ * @param data
+ *  The session data used to create the session
+ * @return
+ *  The type of session ie trial/policy/hmac
+ */
+TPM2_SE tpm2_session_get_type_from_session_data(tpm2_session_data *data);
+
+/**
+ * Sets the intended session type in the session data. This is done prior
+ * to creating the session.
+ *
+ * @param data
+ *  The session data
+ * @param[in] type
+ *  The session type
+ */
+void tpm2_session_set_type_in_session_data(tpm2_session_data *data, TPM2_SE type);
+
+/**
  * True if a session is of type TPM2_SE_TRIAL
  * @param session
  *  The session to check the type of.

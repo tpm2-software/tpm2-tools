@@ -99,8 +99,12 @@ void tpm2_session_set_encryptedsalt(tpm2_session_data *data,
     data->encrypted_salt = *encsalt;
 }
 
-void tpm2_session_set_type(tpm2_session_data *data, TPM2_SE type) {
+void tpm2_session_set_type_in_session_data(tpm2_session_data *data, TPM2_SE type) {
     data->session_type = type;
+}
+
+TPM2_SE tpm2_session_get_type_from_session_data(tpm2_session_data *data) {
+    return data->session_type;
 }
 
 void tpm2_session_set_symmetric(tpm2_session_data *data,
