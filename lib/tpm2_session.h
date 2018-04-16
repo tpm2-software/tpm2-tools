@@ -32,6 +32,9 @@
 
 #include <tss2/tss2_sys.h>
 
+#define MAX_AUTH_SESSIONS 3
+#define MAX_HMAC_AUTH_SESSIONS 2
+
 typedef struct tpm2_session_data tpm2_session_data;
 typedef struct tpm2_session tpm2_session;
 

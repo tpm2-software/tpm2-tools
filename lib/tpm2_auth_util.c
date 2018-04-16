@@ -47,6 +47,9 @@
 #define SESSION_PREFIX "session:"
 #define SESSION_PREFIX_LEN sizeof(SESSION_PREFIX) - 1
 
+#define HMAC_SESSION_PREFIX "hmac:"
+#define HMAC_SESSION_PREFIX_LEN sizeof(HMAC_SESSION_PREFIX) - 1
+
 static bool handle_hex(const char *password, TPMS_AUTH_COMMAND *auth) {
 
     /* if it is hex, then skip the prefix */
@@ -94,6 +97,12 @@ static bool handle_str(const char *password, TPMS_AUTH_COMMAND *auth) {
         password += STR_PREFIX_LEN;
     }
 
+    bool is_hmac_prefix = !strncmp(password, HMAC_SESSION_PREFIX,
+        HMAC_SESSION_PREFIX_LEN);
+    if (is_hmac_prefix) {
+        password += HMAC_SESSION_PREFIX_LEN;
+    }
+
     /*
      * Per the man page:
      * "a return value of size or more means that the output was truncated."
@@ -128,4 +137,45 @@ bool tpm2_auth_util_from_optarg(const char *password, TPMS_AUTH_COMMAND *auth,
 
     /* must be string, handle it */
     return handle_str(password, auth);
+}
+
+bool tpm2_auth_util_from_optarg_new(const char *password,
+    TSS2L_SYS_AUTH_COMMAND *auth_list, tpm2_session_data *session_data,
+    tpm2_session **session, bool *is_hmac_auth) {
+
+    if (!auth_list) {
+        LOG_ERR("Authentication list cannot be NULL.");
+        return false;
+    }
+
+    if (auth_list->count >= MAX_AUTH_SESSIONS) {
+        LOG_ERR("Max Authentications limit reached.");
+        return false;
+    }
+
+    bool is_hmac_session_str = !strncmp(password, HMAC_SESSION_PREFIX,
+        HMAC_SESSION_PREFIX_LEN);
+    if (is_hmac_session_str) {
+        tpm2_session_set_type_in_session_data(session_data, TPM2_SE_HMAC);
+        *is_hmac_auth = true;
+        return handle_str(password, &auth_list->auths[auth_list->count++]);
+    }
+
+    bool is_hex = !strncmp(password, HEX_PREFIX, HEX_PREFIX_LEN);
+    if (is_hex) {
+        return handle_hex(password, &auth_list->auths[auth_list->count++]);
+    }
+
+    bool is_session = !strncmp(password, SESSION_PREFIX, SESSION_PREFIX_LEN);
+    if (is_session) {
+        if (!session) {
+            LOG_ERR("Tool does not support sessions for this auth value");
+            return false;
+        }
+        return handle_session(password, &auth_list->auths[auth_list->count++], session);
+    }
+
+    /* must be string, handle it */
+    auth_list->auths[auth_list->count].sessionHandle = TPM2_RS_PW;
+    return handle_str(password, &auth_list->auths[auth_list->count++]);
 }

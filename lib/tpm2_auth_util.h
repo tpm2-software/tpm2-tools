@@ -68,4 +68,8 @@
 bool tpm2_auth_util_from_optarg(const char *password, TPMS_AUTH_COMMAND *auth,
         tpm2_session **session);
 
+bool tpm2_auth_util_from_optarg_new(const char *password,
+	TSS2L_SYS_AUTH_COMMAND *auth_list, tpm2_session_data *session_data,
+	tpm2_session **session, bool *is_hmac_auth);
+
 #endif /* SRC_PASSWORD_UTIL_H_ */
