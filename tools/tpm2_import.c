@@ -305,21 +305,22 @@ static bool create_import_key_public_data_and_name(void) {
             ctx.import_key_public_unique_data, TPM2_SHA256_DIGEST_SIZE);
 
     size_t public_area_marshalled_offset = 0;
-    uint8_t *marshalled_bytes = malloc(sizeof(ctx.import_key_public));
+    TPM2B_PUBLIC *marshalled_bytes = malloc(sizeof(ctx.import_key_public));
     if (!marshalled_bytes) {
         LOG_ERR("oom");
         return false;
     }
 
-    Tss2_MU_TPM2B_PUBLIC_Marshal(&ctx.import_key_public, marshalled_bytes,
-            sizeof(ctx.import_key_public), &public_area_marshalled_offset);
+    Tss2_MU_TPM2B_PUBLIC_Marshal(&ctx.import_key_public,
+        (uint8_t *)marshalled_bytes, sizeof(ctx.import_key_public),
+        &public_area_marshalled_offset);
 
     ctx.import_key_public_name.size = TPM2_SHA256_DIGEST_SIZE;
     size_t name_digest_alg_offset = 0;
     Tss2_MU_UINT16_Marshal(TPM2_ALG_SHA256, ctx.import_key_public_name.name,
             sizeof(TPM2_ALG_ID), &name_digest_alg_offset);
     ctx.import_key_public_name.size += name_digest_alg_offset;
-    SHA256(marshalled_bytes + sizeof(uint16_t),
+    SHA256((uint8_t *)marshalled_bytes + sizeof(uint16_t),
             public_area_marshalled_offset - sizeof(uint16_t),
             ctx.import_key_public_name.name + sizeof(TPM2_ALG_ID));
     free(marshalled_bytes);
