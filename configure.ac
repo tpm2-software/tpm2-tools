@@ -42,7 +42,7 @@ AC_DEFUN([unit_test_checks],[
         [])
 
     AS_IF([test "$tpm_server" != "yes"],
-        [AC_MSG_ERROR([Required executable tpm2_server not found, try setting PATH])],
+        [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])],
         [])
 ])
 
