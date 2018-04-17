@@ -10,11 +10,11 @@
   * tpm2_quote: Option `--ak-passwd` changes to `--auth-ak`
   * tpm2_pcrevent: Option `--passwd` changes to `--auth-pcr`
   * tpm2_nvwrite: Options `--authhandle` and `--handle-passwd`
-    changes to `--auth-hierarchy` and `--auth-hierarchy-value` respectively.
+    changes to `--hierarchy` and `--auth-hierarchy` respectively.
   * tpm2_nvread: Options `--authhandle` and `--handle-passwd`
-    changes to `--auth-hierarchy` and `--auth-hierarchy-value` respectively.
+    changes to `--hierarchy` and `--auth-hierarchy` respectively.
   * tpm2_nvdefine: Options `--authhandle`, `--handle-passwd` and `--index-passwd`
-    changes to `--auth-hierarchy`, `--auth-hierarchy-value` and `--auth-index`
+    changes to `--hierarchy`, `--auth-hierarchy` and `--auth-index`
     respectively.
   * tpm2_loadexternal: `-H` changes to `-a` for specifying hierarchy.
   * tpm2_load: Option `--pwdp` changes to `--auth-parent`.
