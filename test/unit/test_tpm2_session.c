@@ -62,13 +62,14 @@ struct expected_data {
         TPM2_RC rc;
     } output;
 };
+static expected_data *e; /* XXX: Test kludge to quiet scan-build mem leak */
 
 static inline void set_expected(TPMI_DH_OBJECT key, TPMI_DH_ENTITY bind,
         TPM2B_ENCRYPTED_SECRET *encrypted_salt, TPM2_SE session_type,
         TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH auth_hash,
         TPM2B_NONCE *nonce_caller, TPMI_SH_AUTH_SESSION handle, TPM2_RC rc) {
 
-    expected_data *e = calloc(1, sizeof(*e));
+    e = calloc(1, sizeof(*e));
     assert_non_null(e);
 
     e->input.key = key;

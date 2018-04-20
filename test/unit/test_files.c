@@ -136,6 +136,7 @@ static void test_file_read_write_bytes(void **state) {
 
     UINT8 found[1024] = { 0 };
     res = files_read_bytes(f, found, sizeof(found));
+    assert_true(res);
 
     assert_memory_equal(expected, found, sizeof(found));
 }
