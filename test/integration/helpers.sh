@@ -198,7 +198,7 @@ function start_sim() {
         kill -0 "$tpm2_sim_pid"
         if [ $? -eq 0 ]; then
             local name="com.intel.tss2.Tabrmd${tpm2_sim_port}"
-                        tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:tcp://127.0.0.1:$tpm2_sim_port"
+                        tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$tpm2_sim_port"
             echo "tpm2_tabrmd_opts: $tpm2_tabrmd_opts"
 
             tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
@@ -267,11 +267,11 @@ function start_up() {
         echo "export TPM2TOOLS_TCTI=\"$tpm2_tcti_opts\""
         export TPM2TOOLS_TCTI="$tpm2_tcti_opts"
     else
-        export TPM2TOOLS_TCTI="socket:tcp://127.0.0.1:$tpm2_sim_port"
+        export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
         echo "Not starting tpm2-abrmd"
         echo "Setting TCTI to use mssim"
-        echo "export TPM2TOOLS_TCTI=\"socket:tcp://127.0.0.1:$tpm2_sim_port\""
-        export TPM2TOOLS_TCTI="socket:tcp://127.0.0.1:$tpm2_sim_port"
+        echo "export TPM2TOOLS_TCTI=\"socket:port=$tpm2_sim_port\""
+        export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
     fi
 
     echo "Running tpm2_clear"
