@@ -63,8 +63,8 @@ available:
   * For the mssim TCTI, the domain name or IP address and port number used by
     the simulator can be specified. The default are 127.0.0.1 and 2321.
 
-    Example: **-T mssim:tcp://127.0.0.1:2321** or
-    **export _TPM2TOOLS\_TCTI_="mssim:tcp://127.0.0.1:2321"**
+    Example: **-T mssim:host=localhost,port=2321** or
+    **export _TPM2TOOLS\_TCTI_="mssim:host=localhost,port=2321"**
 
   * **abrmd**:
     For the abrmd TCTI, the configuration string format is a series of simple
