@@ -46,7 +46,7 @@ AC_DEFUN([unit_test_checks],[
         [])
 ])
 
-AS_IF([test "$unit" != "no"],
+AS_IF([test "x$enable_unit" != xno],
        [unit_test_checks],
        [])
 
