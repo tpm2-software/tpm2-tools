@@ -120,8 +120,8 @@ fi
 mkdir ./build
 pushd ./build
 
-scan-build ../configure --enable-unit $config_flags
-scan-build --status-bugs make -j$(nproc)
+../configure --enable-unit $config_flags
+make -j$(nproc)
 dbus-launch make -j$(nproc) check
 
 if [ -f test-suit.log ]; then
