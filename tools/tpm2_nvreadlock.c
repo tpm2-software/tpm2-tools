@@ -124,11 +124,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "index"       , required_argument, NULL, 'x' },
         { "auth-handle"  , required_argument, NULL, 'a' },
         { "handle-passwd", required_argument, NULL, 'P' },
-        { "passwdInHex" , no_argument,       NULL, 'X' },
         { "input-session-handle",1,          NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("x:a:P:Xp:d:S:hv", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:P:p:d:S:hv", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
