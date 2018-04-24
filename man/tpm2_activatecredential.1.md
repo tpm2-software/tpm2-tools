@@ -31,8 +31,8 @@ These options control the object verification:
   * **-C**, **--key-context**=_KEY\_CONTEXT\_FILE_:
     _KEY\_CONTEXT\_FILE_ is the path to a context file.
 
-  * **-P**, **--password**=_PASSWORD_:
-    Use _PASSWORD_ for providing an authorization value for the _KEY\_HANDLE_.
+  * **-P**, **--auth-key**=_AUTH\_VALUE_:
+    Use _AUTH\_VALUE_ for providing an authorization value for the _KEY\_HANDLE_.
     Passwords should follow the authorization formatting standards, see section
     "Authorization Formatting".
 
