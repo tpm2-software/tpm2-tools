@@ -120,6 +120,16 @@ fi
 mkdir ./build
 pushd ./build
 
+# Run scan-build for gcc only.
+# Scan-build does not work with clang because of asan linking errors.
+if [[ "$CC" == gcc* ]]; then
+    scan-build ../configure --enable-unit $config_flags
+    scan-build --status-bugs make -j$(nproc)
+
+    # scan-build causes test_tpm2_session to fail, so
+    # rebuild after running scan-build.
+fi
+
 ../configure --enable-unit $config_flags
 make -j$(nproc)
 dbus-launch make -j$(nproc) check
