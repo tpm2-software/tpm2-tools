@@ -64,11 +64,6 @@ source, building and installing them. They can be located here:
   * ABRMD (**recommended but optional**) - Which is the userspace resource
     manager: <https://github.com/tpm2-software/tpm2-abrmd>
 
-**Other Dependencies**
-
-To get md2man-roff, see there page at: <https://github.com/sunaku/md2man>
-
-
 ### tpm2-tools SAPI and ABRMD Dependency Version Chart
 
 | tpm2-tools version | tpm2-tss version | tpm2-abrmd version|
