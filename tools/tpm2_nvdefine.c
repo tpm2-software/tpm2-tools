@@ -188,12 +188,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "attribute",              required_argument,  NULL,   't' },
         { "auth-hierarchy",         required_argument,  NULL,   'P' },
         { "auth-index",             required_argument,  NULL,   'I' },
-        { "passwdInHex",            no_argument,        NULL,   'X' },
         { "policy-file",            required_argument,  NULL,   'L' },
         { "session",                required_argument,  NULL,   'S' },
     };
 
-    *opts = tpm2_options_new("x:a:s:t:P:I:XL:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:s:t:P:I:L:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
