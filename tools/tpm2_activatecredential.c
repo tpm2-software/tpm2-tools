@@ -290,10 +290,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"endorse-passwd", required_argument, NULL, 'e'},
          {"in-file",        required_argument, NULL, 'f'},
          {"out-file",       required_argument, NULL, 'o'},
-         {"passwdInHex",    no_argument,       NULL, 'X'},
     };
 
-    *opts = tpm2_options_new("H:c:k:C:P:e:f:o:X", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("H:c:k:C:P:e:f:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
