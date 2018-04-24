@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_activatecredential: Option `--Password` changes to `--auth-key`.
   * system tests are now run with make check when --enable-unit is used in configure.
   * tpm2_unseal: Option `--pwdk` changes to `--auth-key`.
   * tpm2_sign: Option `--pwdk` changes to `--auth-key`.
