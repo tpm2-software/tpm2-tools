@@ -159,7 +159,7 @@ class ToolConflictor(object):
                 ],
                 "tools": [],
                 "conflict": None,
-                "ignore": set()
+                "ignore": set(['a', 'hierarchy', 'x', 'index', 'S', 'session', 't', 'attributes'])
             },
             {
                 "gname": "capability",
