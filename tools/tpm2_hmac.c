@@ -276,7 +276,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-handle",           required_argument, NULL, 'k' },
         { "key-context",          required_argument, NULL, 'c' },
         { "auth-key",             required_argument, NULL, 'P' },
-        { "algorithm",            required_argument, NULL, 'g' },
+        { "halg",                 required_argument, NULL, 'g' },
         { "out-file",             required_argument, NULL, 'o' },
     };
 
