@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_verifysignature: Option `-r` and `--raw` have been removed. This were unused within the tool.
   * tpm2_hmac: Option `--algorithm` changes to `--halg`, which is in line with the manpage.
   * tpm2_makecredential: Option `--sec` changes to `--secret`.
   * tpm2_activatecredential: Option `--Password` changes to `--auth-key`.

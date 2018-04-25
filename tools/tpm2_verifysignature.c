@@ -51,7 +51,6 @@ struct tpm2_verifysig_ctx {
             UINT8 digest :1;
             UINT8 halg :1;
             UINT8 msg :1;
-            UINT8 raw :1;
             UINT8 sig :1;
             UINT8 ticket :1;
             UINT8 key_context :1;
@@ -227,9 +226,6 @@ static bool on_option(char key, char *value) {
 		ctx.flags.digest = 1;
 	}
 		break;
-	case 'r':
-		ctx.flags.raw = 1;
-		break;
 	case 's':
 		ctx.sig_file_path = value;
 		ctx.flags.sig = 1;
@@ -259,14 +255,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
             { "digest",      required_argument, NULL, 'D' },
             { "halg",        required_argument, NULL, 'g' },
             { "message",     required_argument, NULL, 'm' },
-            { "raw",         no_argument,       NULL, 'r' },
             { "sig",         required_argument, NULL, 's' },
             { "ticket",      required_argument, NULL, 't' },
             { "key-context", required_argument, NULL, 'c' },
     };
 
 
-    *opts = tpm2_options_new("k:g:m:D:rs:t:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:g:m:D:s:t:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
