@@ -70,17 +70,15 @@
 
 [common tcti options](common/tcti.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
-[pcr bank specifiers](common/password.md)
+[pcr bank specifiers](common/pcr.md)
 
 [signature format specifiers](common/signature.md)
 
 # EXAMPLES
 
 ```
-tpm2_quote -k 0x81010002 -P abc123 -g sha1 -l 16,17,18
-tpm2_quote -c ak.context -P "str:abc123" -g sha1 -l 16,17,18
 tpm2_quote -k 0x81010002 -g sha1 -l 16,17,18
 tpm2_quote -c ak.context -g sha1 -l 16,17,18
 tpm2_quote -k 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -q 11aa22bb
