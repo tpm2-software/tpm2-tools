@@ -615,6 +615,7 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
         TSS2_RC rc = Tss2_MU_##type##_Unmarshal(buffer, size, &offset, name); \
         if (rc != TSS2_RC_SUCCESS) { \
             LOG_ERR("Error serializing "str(name)" structure: 0x%x", rc); \
+            LOG_ERR("The input file needs to be a valid "xstr(type)" data structure"); \
             return false; \
         } \
         \
