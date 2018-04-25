@@ -60,9 +60,9 @@ alive and pass that session using the **--input-session-handle** option.
 
 [common tcti options](common/tcti.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
-[pcr bank specifiers](common/password.md)
+[pcr bank specifiers](common/pcr.md)
 
 # EXAMPLES
 
