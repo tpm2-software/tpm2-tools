@@ -149,7 +149,7 @@ class ToolConflictor(object):
                 "tools-in-group": ["tpm2_flushcontext", "tpm2_evictcontrol"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set()
+                "ignore": set(['S', 'session', 'p', 'persistent', 'a', 'hierarchy'])
             },
             {
                 "gname": "nv",
