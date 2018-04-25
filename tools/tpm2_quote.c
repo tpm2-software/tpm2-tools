@@ -64,7 +64,7 @@ static tpm2_convert_sig_fmt sig_format;
 static TPMI_ALG_HASH sig_hash_algorithm;
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
-static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag, P_flag;
+static int k_flag, c_flag, l_flag, L_flag, o_flag, G_flag, P_flag;
 static char *ak_auth_str;
 static char *contextFilePath;
 static TPM2_HANDLE akHandle;
@@ -156,16 +156,6 @@ static bool on_option(char key, char *value) {
         }
         l_flag = 1;
         break;
-    case 'g':
-        pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(value);
-        if (pcrSelections.pcrSelections[0].hash == TPM2_ALG_ERROR)
-        {
-            LOG_ERR("Could not convert pcr hash selection, got: \"%s\"", value);
-            return false;
-        }
-        pcrSelections.count = 1;
-        g_flag = 1;
-        break;
     case 'L':
         if(!pcr_parse_selections(value, &pcrSelections))
         {
@@ -219,7 +209,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ak-context",           required_argument, NULL, 'c' },
         { "auth-ak",              required_argument, NULL, 'P' },
         { "id-list",              required_argument, NULL, 'l' },
-        { "algorithm",            required_argument, NULL, 'g' },
         { "sel-list",             required_argument, NULL, 'L' },
         { "qualify-data",         required_argument, NULL, 'q' },
         { "signature",            required_argument, NULL, 's' },
