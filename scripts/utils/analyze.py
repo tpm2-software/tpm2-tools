@@ -135,7 +135,7 @@ class ToolConflictor(object):
                 "tools-in-group": ["tpm2_policypcr", "tpm2_createpolicy"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set()
+                "ignore": set(['S', 'session'])
             },
             {
                 "gname": "hierarchy",
