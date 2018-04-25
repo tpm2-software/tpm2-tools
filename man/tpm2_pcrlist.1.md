@@ -29,7 +29,7 @@ sha256 :
 
 # OPTIONS
 
-  * **-g**, **--algorithm**=_HASH\_ALGORITHM_:
+  * **-g**, **--halg**=_HASH\_ALGORITHM_:
     Only output PCR banks with the given algorithm.
     Algorithms should follow the "formatting standards, see section
     "Algorithm Specifiers".
