@@ -113,7 +113,7 @@ class ToolConflictor(object):
                 "tools-in-group": ["tpm2_certify", "tpm2_quote"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set()
+                "ignore": set(['g', 'halg', 'm', 'message', 's', 'signature'])
             },
             {
                 "gname": "signing",
