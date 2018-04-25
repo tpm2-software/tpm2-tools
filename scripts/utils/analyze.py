@@ -128,7 +128,7 @@ class ToolConflictor(object):
                 ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set()
+                "ignore": set(['g', 'halg', 'f', 'format', 's', 'algs'])
             },
             {
                 "gname": "ea",

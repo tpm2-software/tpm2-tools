@@ -3,6 +3,7 @@
   * tpm2_verifysignature - Option `-r` changes to `-f` and supports signature format "rsa".
   * tpm2_import - Parent public data option, `-K` is optional.
   * tpm2_import - Supports importing external RSA 2048 keys via pem files.
+  * tpm2_pcrlist: Option `--algorithm` changes to `--halg`, which is in line with other tools.
   * tpm2_verifysignature: Option `-r` and `--raw` have been removed. This were unused within the tool.
   * tpm2_hmac: Option `--algorithm` changes to `--halg`, which is in line with the manpage.
   * tpm2_makecredential: Option `--sec` changes to `--secret`.
