@@ -606,6 +606,9 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
         return rc == TPM_RC_SUCCESS; \
     }
 
+SAVE_TYPE(TPM2B_PRIVATE, private)
+LOAD_TYPE(TPM2B_PRIVATE, private)
+
 SAVE_TYPE(TPM2B_PUBLIC, public)
 LOAD_TYPE(TPM2B_PUBLIC, public)
 
