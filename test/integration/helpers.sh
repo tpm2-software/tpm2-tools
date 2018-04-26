@@ -270,8 +270,11 @@ function start_up() {
         export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
         echo "Not starting tpm2-abrmd"
         echo "Setting TCTI to use mssim"
-        echo "export TPM2TOOLS_TCTI=\"socket:port=$tpm2_sim_port\""
-        export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
+        echo "export TPM2TOOLS_TCTI=\"mssim:port=$tpm2_sim_port\""
+        export TPM2TOOLS_TCTI="mssim:port=$tpm2_sim_port"
+
+        echo "Running tpm2_startup -c"
+        tpm2_startup -c
     fi
 
     echo "Running tpm2_clear"
