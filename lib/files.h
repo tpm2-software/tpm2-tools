@@ -109,6 +109,28 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE h
 bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE *handle, const char *path);
 
 /**
+ * Serializes a TPM2B_PPRIVATE to the file path provided.
+ * @param private
+ *  The TPM2B_PRIVATE to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_private(TPM2B_PRIVATE *private, const char *path);
+
+/**
+ * Loads a TPM2B_PRIVATE from disk that was saved with files_save_private()
+ * @param path
+ *  The path to load from.
+ * @param private
+ *  The TPM2B_PRIVATE to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_private(const char *path, TPM2B_PRIVATE *private);
+
+/**
  * Serializes a TPM2B_PUBLIC to the file path provided.
  * @param public
  *  The TPM2B_PUBLIC to save to disk.
