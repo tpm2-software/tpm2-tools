@@ -48,6 +48,7 @@
 
 #include "log.h"
 #include "files.h"
+#include "tpm2_alg_util.h"
 #include "tpm_kdfa.h"
 #include "tpm2_errata.h"
 #include "tpm2_options.h"
@@ -65,7 +66,10 @@ struct tpm_import_ctx {
     char *import_key_public_file;
     char *import_key_private_file;
     char *parent_key_public_file;
-    uint8_t input_key_buffer[SYM_KEY_SIZE];
+    uint8_t *input_key_buffer;
+    uint16_t input_key_buffer_length;
+    TPMI_ALG_PUBLIC key_type;
+    //TPM2 Parent key to host the imported key
     TPM2_HANDLE parent_key_handle;
     //External key public
     TPM2B_PUBLIC import_key_public;
@@ -89,6 +93,7 @@ struct tpm_import_ctx {
 };
 
 static tpm_import_ctx ctx = { 
+    .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL, 
     .parent_key_handle = 0,
     .import_key_public = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea),
@@ -253,7 +258,7 @@ static void create_random_seed_and_sensitive_enc_key(void) {
 static bool calc_sensitive_unique_data(void) {
 
     uint8_t *concatenated_seed_unique = malloc(
-            TPM2_SHA256_DIGEST_SIZE + SYM_KEY_SIZE);
+            TPM2_SHA256_DIGEST_SIZE + ctx.input_key_buffer_length);
     if (!concatenated_seed_unique) {
         LOG_ERR("oom");
         return false;
@@ -262,9 +267,10 @@ static bool calc_sensitive_unique_data(void) {
     memcpy(concatenated_seed_unique, ctx.protection_seed_data,
             TPM2_SHA256_DIGEST_SIZE);
     memcpy(concatenated_seed_unique + TPM2_SHA256_DIGEST_SIZE, ctx.input_key_buffer,
-            SYM_KEY_SIZE);
+            ctx.input_key_buffer_length);
 
-    SHA256(concatenated_seed_unique, TPM2_SHA256_DIGEST_SIZE + SYM_KEY_SIZE,
+    SHA256(concatenated_seed_unique,
+    TPM2_SHA256_DIGEST_SIZE + ctx.input_key_buffer_length,
             ctx.import_key_public_unique_data);
 
     free(concatenated_seed_unique);
@@ -290,7 +296,9 @@ static bool calc_sensitive_unique_data(void) {
 
 static bool create_import_key_public_data_and_name(void) {
 
-    IMPORT_KEY_SYM_PUBLIC_AREA(ctx.import_key_public)
+    if (ctx.key_type == TPM2_ALG_AES) {
+        IMPORT_KEY_SYM_PUBLIC_AREA(ctx.import_key_public)
+    }
 
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
                       &ctx.import_key_public.publicArea.objectAttributes);
@@ -301,9 +309,11 @@ static bool create_import_key_public_data_and_name(void) {
 
     tpm2_util_tpma_object_to_yaml(ctx.import_key_public.publicArea.objectAttributes);
 
-    memcpy(ctx.import_key_public.publicArea.unique.sym.buffer,
+    if (ctx.key_type == TPM2_ALG_AES) {
+        memcpy(ctx.import_key_public.publicArea.unique.sym.buffer,
             ctx.import_key_public_unique_data, TPM2_SHA256_DIGEST_SIZE);
-
+    }
+    
     size_t public_area_marshalled_offset = 0;
     TPM2B_PUBLIC *marshalled_bytes = malloc(sizeof(ctx.import_key_public));
     if (!marshalled_bytes) {
@@ -336,13 +346,17 @@ static bool create_import_key_public_data_and_name(void) {
 
 static void create_import_key_sensitive_data(void) {
 
-    IMPORT_KEY_SYM_SENSITIVE_AREA(ctx.import_key_sensitive);
+    if (ctx.key_type == TPM2_ALG_AES) {
+        IMPORT_KEY_SYM_SENSITIVE_AREA(ctx.import_key_sensitive)
+    }
 
     memcpy(ctx.import_key_sensitive.sensitiveArea.seedValue.buffer,
             ctx.protection_seed_data, TPM2_SHA256_DIGEST_SIZE); //max digest size
 
-    memcpy(ctx.import_key_sensitive.sensitiveArea.sensitive.sym.buffer,
-            ctx.input_key_buffer, SYM_KEY_SIZE);
+    if (ctx.key_type == TPM2_ALG_AES) {
+        memcpy(ctx.import_key_sensitive.sensitiveArea.sensitive.sym.buffer,
+            ctx.input_key_buffer, ctx.input_key_buffer_length);
+    }
 }
 
 #define PARENT_NAME_ALG TPM2_ALG_SHA256
@@ -495,14 +509,15 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
 
     create_random_seed_and_sensitive_enc_key();
 
-    bool res = calc_sensitive_unique_data();
+    bool res = true;
+    res = calc_sensitive_unique_data();
     if (!res) {
-        return false;
+        goto key_import_out;
     }
 
     res = create_import_key_public_data_and_name();
     if (!res) {
-        return false;
+        goto key_import_out;
     }
 
     create_import_key_sensitive_data();
@@ -518,26 +533,34 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
     res = encrypt_seed_with_tpm2_rsa_public_key();
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");
-        return false;
+        goto key_import_out;
     }
     res = import_external_key_and_save_public_private_data(sapi_context);
     if (!res) {
-        return false;
+        goto key_import_out;
     }
 
-    return true;
+key_import_out:
+    free(ctx.input_key_buffer);
+    return res;
 }
 
 static bool on_option(char key, char *value) {
 
     switch(key) {
+    case 'G':
+        ctx.key_type = tpm2_alg_util_from_optarg(value);
+        switch(ctx.key_type) {
+            case TPM2_ALG_AES:
+                ctx.input_key_buffer_length = SYM_KEY_SIZE;
+                break;
+            default:
+                LOG_ERR("Invalid/ unsupported key algorithm for import, got\"%s\"",
+                    value);
+                return false;
+        }
     case 'k':
         ctx.input_key_file = value;
-        uint16_t input_key_buffer_length = SYM_KEY_SIZE;
-        if (!files_load_bytes_from_path(ctx.input_key_file,
-                ctx.input_key_buffer, &input_key_buffer_length)) {
-            return false;
-        }
         break;
     case 'H':
         if (!tpm2_util_string_to_uint32(value, &ctx.parent_key_handle)) {
@@ -571,6 +594,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
+      { "import-key-alg",     required_argument, NULL, 'G'},
       { "input-key-file",     required_argument, NULL, 'k'},
       { "parent-key-handle",  required_argument, NULL, 'H'},
       { "parent-key-public",  required_argument, NULL, 'f'},
@@ -582,7 +606,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    *opts = tpm2_options_new("k:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("G:k:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -594,10 +618,21 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (!ctx.input_key_file || !ctx.parent_key_handle
             || !ctx.parent_key_public_file || !ctx.import_key_public_file
-            || !ctx.import_key_private_file) {
+            || !ctx.import_key_private_file || !ctx.key_type) {
         LOG_ERR("tpm2_import tool missing arguments: %s\n %08X\n %s\n %s\n %s\n",
              ctx.input_key_file, ctx.parent_key_handle, ctx.parent_key_public_file,
              ctx.import_key_public_file,ctx.import_key_private_file );
+        return 1;
+    }
+
+    ctx.input_key_buffer = malloc(ctx.input_key_buffer_length);
+    if (!ctx.input_key_buffer) {
+        LOG_ERR("oom");
+        return false;
+    }
+    if (!files_load_bytes_from_path(ctx.input_key_file,
+            ctx.input_key_buffer, &ctx.input_key_buffer_length)) {
+        LOG_ERR("Input key file load failed");
         return 1;
     }
 
