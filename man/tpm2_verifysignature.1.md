@@ -51,10 +51,6 @@ symmetric key, both the public and private portions need to be loaded.
 
     The input signature file of the signature to be validated.
 
-  * **-r**, **--raw**:
-
-    Set the input signature file to raw type. The default is TPMT_SIGNATURE.
-
   * **-t**, **--ticket**=_TICKET\_FILE_:
 
     The ticket file to record the validation structure.

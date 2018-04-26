@@ -21,7 +21,7 @@ to encrypt the AK certififcate.
   * **-e**, **--enckey**=_PUBLIC\_FILE_:
     A tpm Public Key which was used to wrap the seed.
 
-  * **-s**, **--sec**=_SECRET\_DATA\_FILE_:
+  * **-s**, **--secret**=_SECRET\_DATA\_FILE_:
     The secret which will be protected by the key derived from the random seed.
 
   * **-n**, **--name**=_NAME_

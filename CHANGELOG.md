@@ -1,5 +1,10 @@
 ## Changelog
 ### next
+  * tpm2_pcrlist: Option `--algorithm` changes to `--halg`, which is in line with other tools.
+  * tpm2_verifysignature: Option `-r` and `--raw` have been removed. This were unused within the tool.
+  * tpm2_hmac: Option `--algorithm` changes to `--halg`, which is in line with the manpage.
+  * tpm2_makecredential: Option `--sec` changes to `--secret`.
+  * tpm2_activatecredential: Option `--Password` changes to `--auth-key`.
   * system tests are now run with make check when --enable-unit is used in configure.
   * tpm2_unseal: Option `--pwdk` changes to `--auth-key`.
   * tpm2_sign: Option `--pwdk` changes to `--auth-key`.
