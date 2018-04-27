@@ -213,14 +213,14 @@ int create(TSS2_SYS_CONTEXT *sapi_context)
     tpm2_util_public_to_yaml(&outPublic);
 
     if (ctx.flags.o) {
-        bool res = files_save_public(&outPublic, ctx.opu_path);
+        bool res = files_save_private(&outPrivate, ctx.opr_path);
         if(!res) {
             return -3;
         }
     }
 
     if (ctx.flags.O) {
-        bool res = files_save_bytes_to_file(ctx.opr_path, outPrivate.t.buffer, outPrivate.t.size);
+        bool res = files_save_private(ctx.opr_path, &outPrivate);
         if (!res) {
             return -4;
         }

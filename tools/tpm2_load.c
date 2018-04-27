@@ -144,8 +144,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.u = 1;
         break;
     case 'r':
-        ctx.in_private.t.size = sizeof(ctx.in_private.t.buffer);
-        if(!files_load_bytes_from_path(value, ctx.in_private.t.buffer, &ctx.in_private.t.size)) {
+        if(!files_load_private(value, &ctx.in_private)) {
             return false;
         }
         ctx.flags.r = 1;
