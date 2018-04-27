@@ -30,6 +30,7 @@
 //**********************************************************************;
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "log.h"
 #include "tpm2_errata.h"
@@ -152,21 +153,7 @@ void tpm2_errata_fixup(tpm2_errata_index_t index, ...) {
     LOG_INFO("Errata %s applied", errata->name);
 }
 
-void tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
-
-    TPMS_CAPABILITY_DATA capability_data;
-    TPMI_YES_NO more_data;
-    TSS2_RC rc;
-
-    rc = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM2_CAP_TPM_PROPERTIES,
-                                TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, &more_data,
-                                &capability_data, NULL);
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                "TSS2_RC: 0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED, rc);
-        return;
-    }
-
+static void process(TPMS_CAPABILITY_DATA capability_data) {
     /* Distinguish current spec level 0 */
     UINT32 spec_level = -1;
     UINT32 spec_rev = 0;
@@ -216,6 +203,42 @@ void tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
     LOG_INFO("Unknown TPM_SPEC. spec_level: %d, spec_rev: 0x%x, "
             "year: %d, day_of_year: %d", spec_level, spec_rev,
             year, day_of_year);
+}
+
+void tpm2_errata_init_sapi(TSS2_SYS_CONTEXT *sapi_ctx) {
+
+    TPMS_CAPABILITY_DATA capability_data;
+    TSS2_RC rc;
+
+    rc = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM2_CAP_TPM_PROPERTIES,
+                                TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, NULL,
+                                &capability_data, NULL);
+    if (rc != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
+                "TSS2_RC: 0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED, rc);
+        return;
+    }
+
+    process(capability_data);
+}
+
+void tpm2_errata_init(ESYS_CONTEXT *ctx) {
+
+    TPMS_CAPABILITY_DATA *capability_data;
+    TSS2_RC rc;
+
+    rc = Esys_GetCapability(ctx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                            TPM2_CAP_TPM_PROPERTIES,
+                            TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, NULL,
+                            &capability_data);
+    if (rc != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
+                "TSS2_RC: 0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED, rc);
+        return;
+    }
+
+    process(*capability_data);
+    free(capability_data);
 }
 
 static void fixup_sign_decrypt_attribute_encoding(va_list *ap) {

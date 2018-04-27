@@ -38,9 +38,9 @@
 #include "tpm2_hash.h"
 #include "tpm2_util.h"
 
-bool tpm2_hash_compute_data(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
+bool tpm2_hash_compute_data_sapi(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
-        TPM2B_DIGEST **result, TPMT_TK_HASHCHECK **validation) {
+        TPM2B_DIGEST *result, TPMT_TK_HASHCHECK *validation) {
 
     FILE *mem = fmemopen(buffer, length, "rb");
     if (!mem) {
@@ -49,17 +49,19 @@ bool tpm2_hash_compute_data(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
         return false;
     }
 
-    return tpm2_hash_file(context, halg, hierarchy, mem, result, validation);
+    return tpm2_hash_file_sapi(sapi_context, halg, hierarchy, mem, result, validation);
 }
 
-bool tpm2_hash_file(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
-        TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST **result,
-        TPMT_TK_HASHCHECK **validation) {
+bool tpm2_hash_file_sapi(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+        TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST *result,
+        TPMT_TK_HASHCHECK *validation) {
 
     TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
-
     TPMI_DH_OBJECT sequenceHandle;
 
+    TSS2L_SYS_AUTH_COMMAND cmdAuthArray = { 1, {{.sessionHandle = TPM2_RS_PW, 
+            .nonce = TPM2B_EMPTY_INIT, .hmac = TPM2B_EMPTY_INIT,
+            .sessionAttributes = 0, }}};
     unsigned long file_size = 0;
 
     /* Suppress error reporting with NULL path */
@@ -76,11 +78,10 @@ bool tpm2_hash_file(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
             return false;
         }
 
-        TSS2_RC rval = Esys_Hash(context,
-                                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                                 &buffer, halg, hierarchy, result, validation);
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Hash(sapi_context, NULL, &buffer, halg,
+            hierarchy, result, validation, NULL));
         if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_Hash, rval);
+            LOG_PERR(Tss2_Sys_Hash, rval);
             return false;
         }
 
@@ -92,17 +93,10 @@ bool tpm2_hash_file(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TSS2_RC rval = Esys_HashSequenceStart(context,
-                                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                                 &nullAuth, halg, &sequenceHandle);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
+            halg, &sequenceHandle, NULL));
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_HashSequenceStart, rval);
-        return rval;
-    }
-
-    rval = Esys_TR_SetAuth(context, sequenceHandle, &nullAuth);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_SetAuth, rval);
+        LOG_PERR(Tss2_Sys_HashSequenceStart, rval);
         return rval;
     }
 
@@ -127,11 +121,10 @@ bool tpm2_hash_file(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
         data.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Esys_SequenceUpdate(context, sequenceHandle,
-                                   ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-                                   &data);
+        rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequenceHandle,
+                &cmdAuthArray, &data, NULL));
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_SequenceUpdate, rval);
+            LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
             return false;
         }
 
@@ -157,11 +150,11 @@ bool tpm2_hash_file(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
         data.size = 0;
     }
 
-    rval = Esys_SequenceComplete(context, sequenceHandle,
-                                 ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-                                 &data, hierarchy, result, validation);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceComplete(sapi_context, sequenceHandle,
+            &cmdAuthArray, &data, hierarchy, result, validation,
+            NULL));
     if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_SequenceComplete, rval);
+        LOG_PERR(Tss2_Sys_SequenceComplete, rval);
         return false;
     }
 

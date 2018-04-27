@@ -34,11 +34,12 @@
 #include <stdbool.h>
 
 #include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 /**
  * Hashes a BYTE array via the tpm.
- * @param sapi_context
- *  The system api context.
+ * @param context
+ *  The esapi context.
  * @param hash_alg
  *  The hashing algorithm to use.
  * @param hierarchy
@@ -55,14 +56,18 @@
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+bool tpm2_hash_compute_data(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
+        TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
+        TPM2B_DIGEST **result, TPMT_TK_HASHCHECK **validation);
+
+bool tpm2_hash_compute_data_sapi(TSS2_SYS_CONTEXT *context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
         TPM2B_DIGEST *result, TPMT_TK_HASHCHECK *validation);
 
 /**
  * Hashes a FILE * object via the tpm.
- * @param sapi_context
- *  The system api context.
+ * @param context
+ *  The esapi context.
  * @param hash_alg
  *  The hashing algorithm to use.
  * @param hierarchy
@@ -77,7 +82,11 @@ bool tpm2_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+bool tpm2_hash_file(ESYS_CONTEXT *context, TPMI_ALG_HASH halg,
+        TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST **result,
+        TPMT_TK_HASHCHECK **validation);
+
+bool tpm2_hash_file_sapi(TSS2_SYS_CONTEXT *context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST *result,
         TPMT_TK_HASHCHECK *validation);
 
