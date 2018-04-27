@@ -586,7 +586,8 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
         return files_save_bytes_to_file(path, buffer, offset); \
     }
 
-#define LOAD_TYPE(type, name) \
+#define LOAD_TYPE(type, name) LOAD_TYPE_FAIL(type, name, on_load_fail_default)
+#define LOAD_TYPE_FAIL(type, name, fail) \
     bool files_load_##name(const char *path, type *name) { \
     \
         UINT8 buffer[sizeof(*name)]; \
@@ -599,12 +600,45 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
         size_t offset = 0; \
         TSS2_RC rc = Tss2_MU_##type##_Unmarshal(buffer, size, &offset, name); \
         if (rc != TSS2_RC_SUCCESS) { \
+            LOG_WARN("type "xstr(type)" in file \"%s\", not properly saved to disk," \
+                "attempting coercion. Note that this file will be updated on next" \
+                "explicit save.", path); \
+            res = fail(buffer, size, name); \
+            if (res) { \
+                return true; \
+            } \
             LOG_ERR("Error serializing "str(name)" structure: 0x%x", rc); \
             return false; \
         } \
         \
         return rc == TPM_RC_SUCCESS; \
     }
+
+static bool on_load_fail_default(UINT8 *buffer, UINT16 size, void *data) {
+    UNUSED(buffer);
+    UNUSED(size);
+    UNUSED(data);
+    LOG_WARN("No coercion function registered, cannot do anything"
+            "to correct this!");
+    return false;
+}
+
+static bool on_load_fail_private(UINT8 *buffer, UINT16 size, TPM2B_PRIVATE *private) {
+
+    if (size > sizeof(private->t.buffer)) {
+        LOG_ERR("Size is too big. Got: %u expected less than %lu.",
+                size, sizeof(private->t.buffer));
+        return false;
+    }
+
+    private->t.size = size;
+    memcpy(private->t.buffer, buffer, size);
+
+    return true;
+}
+
+SAVE_TYPE(TPM2B_PRIVATE, private)
+LOAD_TYPE_FAIL(TPM2B_PRIVATE, private, on_load_fail_private)
 
 SAVE_TYPE(TPM2B_PUBLIC, public)
 LOAD_TYPE(TPM2B_PUBLIC, public)
