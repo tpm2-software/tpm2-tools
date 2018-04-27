@@ -30,6 +30,9 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
+
+source helpers.sh
+
 alg_primary_obj=sha256
 alg_primary_key=ecc
 alg_create_obj=sha256
@@ -66,6 +69,8 @@ cleanup() {
   tpm2_flushcontext -S $file_session_file 2>/dev/null || true
 }
 trap cleanup EXIT
+
+start_up
 
 cleanup
 
