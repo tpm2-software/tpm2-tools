@@ -1,5 +1,9 @@
 ## Changelog
-### next
+### 3.0.4 - 2018-05-30
+  * Fix save and load for TPM2B_PRIVATE object.
+  * Use a default buffer size for tpm2_nv{read,write} if the TPM reports a 0 size.
+  * Fix --verbose and --version options crossover.
+  * Generate man pages from markdown and include them in the distribution tarball.
   * Print usage summary if tools are executed with no options or man page can't be displayed.
 
 ### 3.0.3 - 2017-15-18
