@@ -34,6 +34,34 @@
 # all command failures are fatal
 set -e
 
+onerror() {
+
+    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
+
+	echo "onerror CWD: `pwd`"
+
+    if [ ! -f test-suite.log ]; then
+        echo "no test-suite.log found, exiting:"
+        exit 1
+    else
+        echo "test-suite.log found, outputting test results"
+    fi
+
+    cat test-suite.log
+    for LOG in $(ls -1 test/unit/*.log); do
+        echo "${LOG}"
+        cat ${LOG}
+    done
+    for LOG in $(ls -1 test/integration/tests/*.log); do
+        echo "${LOG}"
+        cat ${LOG}
+    done
+
+	exit 1
+}
+
+trap onerror ERR
+
 WORKSPACE=`dirname $TRAVIS_BUILD_DIR`
 
 echo "Workspace: $WORKSPACE"
@@ -133,11 +161,6 @@ fi
 ../configure --enable-unit $config_flags
 make -j$(nproc)
 dbus-launch make -j$(nproc) check
-
-if [ -f test-suit.log ]; then
-    echo "test-suit.log:"
-    cat test-suit-log
-fi
 
 popd
 
