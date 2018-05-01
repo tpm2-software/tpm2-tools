@@ -38,7 +38,8 @@ cleanup() {
     rm -f import_key.ctx  import_key.name  import_key.priv  import_key.pub \
           parent.ctx parent.pub  plain.dec.ssl  plain.enc  plain.txt  sym.key \
           import_rsa_key.pub import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name \
-          private.pem public.pem priv.bin pub.bin plain.rsa.enc plain.rsa.dec
+          private.pem public.pem priv.bin pub.bin plain.rsa.enc plain.rsa.dec \
+          public.pem data.in.raw data.in.digest data.out.signed
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -75,6 +76,7 @@ diff plain.txt plain.dec.ssl
 
 #Asymmetric Key Import Test
 openssl genrsa -out private.pem 2048
+openssl rsa -in private.pem -pubout > public.pem
 
 # The private key P value, which is the pair of unique primes generated aka P, is always the 5th offset
 # in the file till the end.
@@ -97,5 +99,14 @@ openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.en
 tpm2_rsadecrypt -c import_rsa_key.ctx -I plain.rsa.enc -o plain.rsa.dec
 
 diff plain.txt plain.rsa.dec
+
+# test verifying a sigature with the imported key, ie sign in tpm and verify with openssl
+echo "data to sign" > data.in.raw
+
+sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+
+tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -D data.in.digest -f plain -s data.out.signed
+
+openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
 exit 0
