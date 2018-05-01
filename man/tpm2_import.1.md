@@ -36,8 +36,9 @@ These options control the key importation process:
     Specifies the persistent parent key handle.
 
   * `-K`, `--parent-key-public`=_FILE_:
-    Specifies the parent key public data file input. This can be read with
-    tpm2_readpublic tool.
+    Optional. Specifies the parent key public data file input. This can be read with
+    tpm2_readpublic tool. If not specified, the tool invokes a tpm2_readpublic on the parent
+    object.
 
   * `-r`, `--import-key-private`=_FILE_:
     Specifies the file path required to save the encrypted private portion of
