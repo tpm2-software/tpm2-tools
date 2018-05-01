@@ -29,18 +29,21 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <openssl/rand.h>
+#include <openssl/aes.h>
 #include <openssl/bn.h>
 #include <openssl/evp.h>
-#include <openssl/sha.h>
+#include <openssl/err.h>
 #include <openssl/hmac.h>
-#include <openssl/aes.h>
+#include <openssl/pem.h>
+#include <openssl/rand.h>
 #include <openssl/rsa.h>
+#include <openssl/sha.h>
 
 #include <limits.h>
 #include <tss2/tss2_sys.h>
@@ -61,7 +64,6 @@
 typedef struct tpm_import_ctx tpm_import_ctx;
 struct tpm_import_ctx {
     char *input_key_file;
-    char *input_public_key_file;
     char *import_key_public_file;
     char *import_key_private_file;
     char *parent_key_public_file;
@@ -544,14 +546,14 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
     bool res = true;
     if (ctx.key_type == TPM2_ALG_AES) {
         res = calc_sensitive_unique_data();
-    }
-    if (!res) {
-        goto key_import_out;
+        if (!res) {
+            return false;
+        }
     }
 
     res = create_import_key_public_data_and_name();
     if (!res) {
-        goto key_import_out;
+        return false;
     }
 
     create_import_key_sensitive_data();
@@ -567,19 +569,10 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
     res = encrypt_seed_with_tpm2_rsa_public_key();
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");
-        goto key_import_out;
-    }
-    res = import_external_key_and_save_public_private_data(sapi_context);
-    if (!res) {
-        goto key_import_out;
+        return false;
     }
 
-key_import_out:
-    free(ctx.input_key_buffer);
-    if (ctx.input_pub_key_buffer) {
-        free(ctx.input_pub_key_buffer);
-    }
-    return res;
+    return import_external_key_and_save_public_private_data(sapi_context);
 }
 
 static bool on_option(char key, char *value) {
@@ -599,11 +592,7 @@ static bool on_option(char key, char *value) {
                     value);
                 return false;
         }
-        break;
-    case 'K':
-        ctx.input_public_key_file = value;
-        ctx.input_pub_key_buffer_length = RSA_2K_MODULUS_SIZE_IN_BYTES;
-        break;
+        return true;
     case 'k':
         ctx.input_key_file = value;
         break;
@@ -641,7 +630,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
       { "import-key-alg",     required_argument, NULL, 'G'},
       { "input-key-file",     required_argument, NULL, 'k'},
-      { "input-public-key-file",required_argument, NULL, 'K'},
       { "parent-key-handle",  required_argument, NULL, 'H'},
       { "parent-key-public",  required_argument, NULL, 'f'},
       { "import-key-private", required_argument, NULL, 'r'},
@@ -652,15 +640,112 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    *opts = tpm2_options_new("G:k:K:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("G:k:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }
 
+static bool load_rsa_key(void) {
+
+    RSA *k = NULL;
+    bool res = false;
+
+    FILE *fk = fopen(ctx.input_key_file, "r");
+    if (!fk) {
+        LOG_ERR("Could not open file \"%s\", error: %s",
+                ctx.input_key_file, strerror(errno));
+        return 1;
+    }
+
+    k = PEM_read_RSAPrivateKey(fk, NULL,
+            NULL, NULL);
+    fclose(fk);
+    if (!k) {
+        ERR_print_errors_fp (stderr);
+        LOG_ERR("Reading PEM file \"%s\" failed", ctx.input_key_file);
+        return 1;
+    }
+
+    int priv_bytes = BN_num_bytes(k->p);
+    if (priv_bytes > ctx.input_key_buffer_length) {
+        LOG_ERR("Expected prime \"p\" to be less than or equal to %u,"
+                " got: %d", ctx.input_key_buffer_length, priv_bytes);
+        goto out;
+    }
+
+    int success = BN_bn2bin(k->p, ctx.input_key_buffer);
+    if (!success) {
+        ERR_print_errors_fp (stderr);
+        LOG_ERR("Could not convert prime \"p\"");
+        goto out;
+    }
+
+    int pub_bytes = BN_num_bytes(k->n);
+    if (pub_bytes > RSA_2K_MODULUS_SIZE_IN_BYTES) {
+        LOG_ERR("Expected modulus \"n\" to be less than or equal to %u,"
+                " got: %d", RSA_2K_MODULUS_SIZE_IN_BYTES, pub_bytes);
+        goto out;
+    }
+
+    ctx.input_pub_key_buffer_length = pub_bytes;
+    ctx.input_pub_key_buffer = malloc(pub_bytes);
+    if (!ctx.input_pub_key_buffer) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    success = BN_bn2bin(k->n, ctx.input_pub_key_buffer);
+    if (!success) {
+        ERR_print_errors_fp (stderr);
+        LOG_ERR("Could not convert modulus \"n\"");
+        goto out;
+    }
+
+    res = true;
+
+out:
+    RSA_free(k);
+
+    return res;
+}
+
+static void free_key(void) {
+    free(ctx.input_key_buffer);
+    free(ctx.input_pub_key_buffer);
+}
+
+static bool load_key(void) {
+
+    ctx.input_key_buffer = malloc(ctx.input_key_buffer_length);
+    if (!ctx.input_key_buffer) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    if (ctx.key_type == TPM2_ALG_RSA) {
+        return load_rsa_key();
+    }
+
+    bool res = files_load_bytes_from_path(ctx.input_key_file,
+        ctx.input_key_buffer, &ctx.input_key_buffer_length);
+    if (!res) {
+        LOG_ERR("Input key file load failed");
+        return false;
+    }
+
+    return true;
+}
+
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
+    int rc = 1;
+
+    OpenSSL_add_all_algorithms();
+    OpenSSL_add_all_ciphers();
+    ERR_load_crypto_strings();
 
     if (!ctx.input_key_file || !ctx.parent_key_handle
             || !ctx.parent_key_public_file || !ctx.import_key_public_file
@@ -671,33 +756,18 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return 1;
     }
 
-    ctx.input_key_buffer = malloc(ctx.input_key_buffer_length);
-    if (!ctx.input_key_buffer) {
-        LOG_ERR("oom");
-        return 1;
-    }
-    if (!files_load_bytes_from_path(ctx.input_key_file,
-            ctx.input_key_buffer, &ctx.input_key_buffer_length)) {
-        LOG_ERR("Input key file load failed");
-        return 1;
+    bool result = load_key();
+    if (!result) {
+        goto out;
     }
 
-    if (ctx.key_type == TPM2_ALG_RSA) {
-        if (!ctx.input_public_key_file) {
-            LOG_ERR("tpm2_import tool missing arguments.");
-            return 1;
-        }
-        ctx.input_pub_key_buffer = malloc(ctx.input_pub_key_buffer_length);
-        if (!ctx.input_pub_key_buffer) {
-            LOG_ERR("oom");
-            return 1;
-        }
-        if (!files_load_bytes_from_path(ctx.input_public_key_file,
-            ctx.input_pub_key_buffer, &ctx.input_pub_key_buffer_length)) {
-        LOG_ERR("Input key file load failed");
-        return 1;
-        }
+    result = key_import(sapi_context);
+    if (!result) {
+        goto out;
     }
 
-    return !key_import(sapi_context);
+    rc = 0;
+out:
+    free_key();
+    return rc;
 }
