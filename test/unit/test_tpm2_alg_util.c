@@ -430,6 +430,28 @@ static void test_tpm2_alg_util_get_hash_size(void **state) {
     assert_int_equal(hsize, 0);
 }
 
+static void test_tpm2_alg_util_is_signing_scheme(void **state) {
+    UNUSED(state);
+
+    TPM2_ALG_ID good_algs[] = {
+        TPM2_ALG_RSASSA,
+        TPM2_ALG_RSAES,
+        TPM2_ALG_RSAPSS,
+        TPM2_ALG_OAEP,
+        TPM2_ALG_HMAC,
+    };
+
+    size_t i;
+    for(i=0; i < ARRAY_LEN(good_algs); i++) {
+        TPM2_ALG_ID id = good_algs[i];
+        bool res = tpm2_alg_util_is_signing_scheme(id);
+        assert_true(res);
+    }
+
+    bool res = tpm2_alg_util_is_signing_scheme(TPM2_ALG_AES);
+    assert_false(res);
+}
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
@@ -481,7 +503,8 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_pcr_parse_digest_list_compound),
         cmocka_unit_test(test_pcr_parse_digest_list_bad),
         cmocka_unit_test(test_pcr_parse_digest_list_bad_alg),
-        cmocka_unit_test(test_tpm2_alg_util_get_hash_size)
+        cmocka_unit_test(test_tpm2_alg_util_get_hash_size),
+        cmocka_unit_test(test_tpm2_alg_util_is_signing_scheme)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

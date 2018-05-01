@@ -327,6 +327,7 @@ MARKDOWN_COMMON_DEPS = \
 	man/common/pubkey.md \
 	man/common/sign-alg.md \
 	man/common/signature.md \
+	man/common/signschemes.md \
 	man/common/tcti.md
 
 man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
@@ -356,6 +357,8 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[signature format specifiers\]/d' \
 	    -e '/\[object attribute specifiers\]/r man/common/obj-attrs.md' \
 	    -e '/\[object attribute specifiers\]/d' \
+	    -e '/\[supported signing schemes\]/r man/common/signschemes.md' \
+	    -e '/\[supported signing schemes\]/d' \
 	    -e '/\[footer\]/r man/common/footer.md' \
 	    -e '/\[footer\]/d' \
 	    < $< | pandoc -s -t man > $@

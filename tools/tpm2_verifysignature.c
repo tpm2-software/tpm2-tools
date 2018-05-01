@@ -52,13 +52,14 @@ struct tpm2_verifysig_ctx {
             UINT8 digest :1;
             UINT8 halg :1;
             UINT8 msg :1;
-            UINT8 raw :1;
             UINT8 sig :1;
             UINT8 ticket :1;
             UINT8 key_context :1;
+            UINT8 fmt;
         };
         UINT8 all;
     } flags;
+    TPMI_ALG_SIG_SCHEME format;
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST msgHash;
     TPMI_DH_OBJECT keyHandle;
@@ -70,6 +71,7 @@ struct tpm2_verifysig_ctx {
 };
 
 tpm2_verifysig_ctx ctx = {
+        .format = TPM2_ALG_ERROR,
         .halg = TPM2_ALG_SHA1,
         .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
@@ -155,9 +157,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (ctx.flags.sig) {
 
-        TPMI_ALG_SIG_SCHEME sig_alg = ctx.flags.raw ? TPM2_ALG_RSASSA : TPM2_ALG_ERROR;
-        tpm2_convert_sig_fmt fmt = ctx.flags.raw ? signature_format_plain : signature_format_tss;
-        bool res = tpm2_convert_sig_load(ctx.sig_file_path, fmt, sig_alg, ctx.halg, &ctx.signature);
+        tpm2_convert_sig_fmt fmt = ctx.flags.fmt ? signature_format_plain : signature_format_tss;
+        bool res = tpm2_convert_sig_load(ctx.sig_file_path, fmt, ctx.format, ctx.halg, &ctx.signature);
         if (!res) {
             goto err;
         }
@@ -231,9 +232,20 @@ static bool on_option(char key, char *value) {
 		ctx.flags.digest = 1;
 	}
 		break;
-	case 'r':
-		ctx.flags.raw = 1;
-		break;
+	case 'f': {
+		ctx.format = tpm2_alg_util_from_optarg(value);
+		if (ctx.format == TPM2_ALG_ERROR) {
+		    LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
+		    return false;
+		}
+
+		bool result = tpm2_alg_util_is_signing_scheme(ctx.format);
+		if (!result) {
+		    LOG_ERR("Algorithm is NOT a signing scheme, got: \"%s\"", value);
+		    return false;
+		}
+		ctx.flags.fmt = 1;
+	} break;
 	case 's':
 		ctx.sig_file_path = value;
 		ctx.flags.sig = 1;
@@ -263,14 +275,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
             { "digest",      required_argument, NULL, 'D' },
             { "halg",        required_argument, NULL, 'g' },
             { "message",     required_argument, NULL, 'm' },
-            { "raw",         no_argument,       NULL, 'r' },
+            { "format",      required_argument, NULL, 'f' },
             { "sig",         required_argument, NULL, 's' },
             { "ticket",      required_argument, NULL, 't' },
             { "key-context", required_argument, NULL, 'c' },
     };
 
 
-    *opts = tpm2_options_new("k:g:m:D:rs:t:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:g:m:D:f:s:t:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
