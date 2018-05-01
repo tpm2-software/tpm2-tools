@@ -637,9 +637,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "object-attributes",  required_argument, NULL, 'A' },
     };
 
-    setbuf(stdout, NULL);
-    setvbuf (stdout, NULL, _IONBF, BUFSIZ);
-
     *opts = tpm2_options_new("G:k:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
