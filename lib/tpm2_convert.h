@@ -68,16 +68,6 @@ tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label);
 bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path);
 
 /**
- * Loads a public key in the TSS format from a file.
- * @param public
- *  The public key to load
- * @param format
- * @param path
- * @return
- */
-bool tpm2_convert_pubkey_load(TPM2B_PUBLIC *public, const char *path);
-
-/**
  * Parses the given command line signature format option string and returns
  * the corresponding signature_format enum value.
  *
