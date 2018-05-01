@@ -1,5 +1,6 @@
 //**********************************************************************;
 // Copyright (c) 2017, SUSE Linux GmbH
+// Copyright (c) 2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -211,6 +212,39 @@ bool tpm2_convert_sig(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, co
     }
     default:
         LOG_ERR("Unsupported signature output format.");
+        return false;
+    }
+}
+
+static bool sig_load(const char *path, TPMI_ALG_SIG_SCHEME sig_alg,
+        TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature) {
+
+    signature->sigAlg = sig_alg;
+
+    switch (sig_alg) {
+        case TPM2_ALG_RSASSA:
+            signature->signature.rsassa.hash = halg;
+            signature->signature.rsassa.sig.size = sizeof(signature->signature.rsassa.sig.buffer);
+            bool res = files_load_bytes_from_path(path,
+                    signature->signature.rsassa.sig.buffer,
+                    &signature->signature.rsassa.sig.size);
+            return res;
+        default:
+            LOG_ERR("Unsupported signature input format.");
+            return false;
+    }
+}
+
+bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format, TPMI_ALG_SIG_SCHEME sig_alg,
+        TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature) {
+
+    switch(format) {
+    case signature_format_tss:
+        return files_load_signature(path, signature);
+    case signature_format_plain:
+        return sig_load(path, sig_alg, halg, signature);
+    default:
+        LOG_ERR("Unsupported signature input format.");
         return false;
     }
 }

@@ -38,6 +38,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_hash.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
@@ -153,7 +154,10 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.sig) {
-        bool res =  files_load_signature(ctx.sig_file_path, &ctx.signature);
+
+        TPMI_ALG_SIG_SCHEME sig_alg = ctx.flags.raw ? TPM2_ALG_RSASSA : TPM2_ALG_ERROR;
+        tpm2_convert_sig_fmt fmt = ctx.flags.raw ? signature_format_plain : signature_format_tss;
+        bool res = tpm2_convert_sig_load(ctx.sig_file_path, fmt, sig_alg, ctx.halg, &ctx.signature);
         if (!res) {
             goto err;
         }
