@@ -78,7 +78,8 @@ diff plain.txt plain.dec.ssl
 openssl genrsa -out private.pem 2048
 openssl rsa -in private.pem -pubout > public.pem
 
-tpm2_import -Q -G rsa -k private.pem -H 0x81010005 -K parent.pub \
+# Test an import without the parent public info data to force a readpublic
+tpm2_import -Q -G rsa -k private.pem -H 0x81010005 \
 -q import_rsa_key.pub -r import_rsa_key.priv
 
 tpm2_load -Q -H 0x81010005 -u import_rsa_key.pub -r import_rsa_key.priv \

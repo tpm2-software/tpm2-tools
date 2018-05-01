@@ -130,14 +130,31 @@ static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 }
 #endif
 
-static bool encrypt_seed_with_tpm2_rsa_public_key(void) {
+static bool tpm2_readpublic(TSS2_SYS_CONTEXT *sapi, TPMI_DH_OBJECT handle, TPM2B_PUBLIC *public) {
+
+    TSS2L_SYS_AUTH_RESPONSE sessions_out_data;
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi, handle, NULL,
+            public, &name, &qualified_name, &sessions_out_data));
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_ReadPublic, rval);
+        return false;
+    }
+
+    return true;
+}
+
+static bool encrypt_seed_with_tpm2_rsa_public_key(TSS2_SYS_CONTEXT *sapi) {
     bool rval = false;
     RSA *rsa = NULL;
     TPM2B_PUBLIC pub_key = TPM2B_EMPTY_INIT;
-    bool res = files_load_public(ctx.parent_key_public_file, &pub_key);
-
+    bool res = ctx.parent_key_public_file ?
+            files_load_public(ctx.parent_key_public_file, &pub_key) :
+            tpm2_readpublic(sapi, ctx.parent_key_handle, &pub_key);
     if (!res) {
-        LOG_ERR("Failed loading parent key public file.");
+        LOG_ERR("Failed loading parent key public.");
         return false;
     }
 
@@ -566,7 +583,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
 
     create_import_key_private_data();
 
-    res = encrypt_seed_with_tpm2_rsa_public_key();
+    res = encrypt_seed_with_tpm2_rsa_public_key(sapi_context);
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");
         return false;
@@ -652,16 +669,16 @@ static bool load_rsa_key(void) {
     if (!fk) {
         LOG_ERR("Could not open file \"%s\", error: %s",
                 ctx.input_key_file, strerror(errno));
-        return 1;
+        return false;
     }
 
     k = PEM_read_RSAPrivateKey(fk, NULL,
-            NULL, NULL);
+        NULL, NULL);
     fclose(fk);
     if (!k) {
-        ERR_print_errors_fp (stderr);
-        LOG_ERR("Reading PEM file \"%s\" failed", ctx.input_key_file);
-        return 1;
+         ERR_print_errors_fp (stderr);
+         LOG_ERR("Reading PEM file \"%s\" failed", ctx.input_key_file);
+         return false;
     }
 
     int priv_bytes = BN_num_bytes(k->p);
@@ -745,11 +762,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     ERR_load_crypto_strings();
 
     if (!ctx.input_key_file || !ctx.parent_key_handle
-            || !ctx.parent_key_public_file || !ctx.import_key_public_file
-            || !ctx.import_key_private_file || !ctx.key_type) {
-        LOG_ERR("tpm2_import tool missing arguments: %s\n %08X\n %s\n %s\n %s\n",
-             ctx.input_key_file, ctx.parent_key_handle, ctx.parent_key_public_file,
-             ctx.import_key_public_file,ctx.import_key_private_file );
+            || !ctx.import_key_public_file || !ctx.import_key_private_file
+            || !ctx.key_type) {
+        LOG_ERR("tpm2_import tool missing arguments: %s\n %08X\n %s\n %s",
+             ctx.input_key_file, ctx.parent_key_handle, ctx.import_key_public_file,
+             ctx.import_key_private_file);
         return 1;
     }
 
