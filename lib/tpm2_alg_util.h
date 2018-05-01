@@ -96,6 +96,15 @@ TPM2_ALG_ID tpm2_alg_util_from_optarg(char *optarg);
 bool tpm2_alg_util_is_hash_alg(TPM2_ALG_ID id);
 
 /**
+ * Detects if an algorithm is considered a signing scheme.
+ * @param id
+ *  The algorithm id to check.
+ * @return
+ *  True if it is a signing scheme, False otherwise.
+ */
+bool tpm2_alg_util_is_signing_scheme(TPM2_ALG_ID id);
+
+/**
  * Contains the information from parsing an argv style vector of strings for
  * pcr digest language specifications.
  */

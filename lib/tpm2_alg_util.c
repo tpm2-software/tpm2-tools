@@ -172,6 +172,26 @@ bool tpm2_alg_util_is_hash_alg(TPM2_ALG_ID id) {
     return false;
 }
 
+bool tpm2_alg_util_is_signing_scheme(TPM2_ALG_ID id) {
+
+    switch (id) {
+    case TPM2_ALG_RSASSA:
+        /* fallsthrough */
+    case TPM2_ALG_RSAES:
+        /* fallsthrough */
+    case TPM2_ALG_RSAPSS:
+        /* fallsthrough */
+    case TPM2_ALG_OAEP:
+        /* fallsthrough */
+    case TPM2_ALG_HMAC:
+        /* fallsthrough */
+        return true;
+        /* no default */
+    }
+
+    return false;
+}
+
 UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id) {
 
     switch (id) {

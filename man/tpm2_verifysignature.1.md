@@ -51,9 +51,16 @@ symmetric key, both the public and private portions need to be loaded.
 
     The input signature file of the signature to be validated.
 
-  * **-r**, **--raw**:
+  * **-f**, **--format**:
 
-    Set the input signature file to raw type. The default is TPMT_SIGNATURE.
+    Set the input signature file to a specified format. The default is the tpm2.0 TPMT_SIGNATURE
+    data format, however different schemes can be selected if the data came from an external
+    source like OpenSSL. The tool currently only supports rsassa.
+
+    Algorithms should follow the "formatting standards, see section
+    "Algorithm Specifiers".
+    Also, see section "Supported Signing Schemes" for a list of supported hash
+    algorithms.
 
   * **-t**, **--ticket**=_TICKET\_FILE_:
 
@@ -70,6 +77,8 @@ symmetric key, both the public and private portions need to be loaded.
 [authorization formatting](common/password.md)
 
 [supported hash algorithms](common/hash.md)
+
+[supported signing schemes](common/signschemes.md)
 
 [algorithm specifiers](common/alg.md)
 
