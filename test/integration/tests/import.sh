@@ -109,4 +109,7 @@ tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -D data.in.digest -f plain -s data.
 
 openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
+# Sign with openssl and verify with TPM
+openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
+
 exit 0
