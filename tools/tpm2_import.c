@@ -602,7 +602,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'f':
+    case 'K':
         ctx.parent_key_public_file = value;
         break;
     case 'q':
@@ -631,13 +631,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "import-key-alg",     required_argument, NULL, 'G'},
       { "input-key-file",     required_argument, NULL, 'k'},
       { "parent-key-handle",  required_argument, NULL, 'H'},
-      { "parent-key-public",  required_argument, NULL, 'f'},
+      { "parent-key-public",  required_argument, NULL, 'K'},
       { "import-key-private", required_argument, NULL, 'r'},
       { "import-key-public",  required_argument, NULL, 'q'},
       { "object-attributes",  required_argument, NULL, 'A' },
     };
 
-    *opts = tpm2_options_new("G:k:H:f:q:r:A:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("G:k:H:K:q:r:A:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;

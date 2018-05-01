@@ -35,7 +35,7 @@ These options control the key importation process:
   * `-H`, `--parent-key-handle`=_HANDLE_:
     Specifies the persistent parent key handle.
 
-  * `-f`, `--parent-key-public`=_FILE_:
+  * `-K`, `--parent-key-public`=_FILE_:
     Specifies the parent key public data file input. This can be read with
     tpm2_readpublic tool.
 
