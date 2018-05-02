@@ -198,7 +198,7 @@ COMPILE_ASSERT_SIZE(TPM2_HANDLE, UINT32);
 COMPILE_ASSERT_SIZE(TPMI_ALG_HASH, UINT16);
 COMPILE_ASSERT_SIZE(TPM2_SE, UINT8);
 
-tpm2_session *tpm2_session_restore(const char *path) {
+tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path) {
 
     tpm2_session *s = NULL;
 
@@ -233,6 +233,16 @@ tpm2_session *tpm2_session_restore(const char *path) {
         goto out;
     }
 
+    TPM2_HANDLE handle_from_context;
+    result = files_load_tpm_context_from_file (sys_ctx, &handle_from_context, f);
+    if (!result) {
+        LOG_ERR("Could not load session context");
+        goto out;
+    }
+    if (handle != handle_from_context) {
+        LOG_WARN("Handle from tpm2_session disagrees with session context");
+    }
+
     tpm2_session_data *d = tpm2_session_data_new(type);
     if (!d) {
         LOG_ERR("oom");
@@ -260,10 +270,7 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
         return true;
     }
 
-    char *ptr = NULL;
     bool result = false;
-
-    FILE *mem = NULL;
     FILE *session_file = NULL;
 
     if (!path) {
@@ -273,30 +280,6 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
             return false;
         }
     }
-
-    /*
-     * Perform a tpm context save/load but just write the
-     * context data in memory. This will mark the session
-     * with some RMs (like abrmd) as not-to-flush on client
-     * exit.
-     */
-    size_t size = sizeof(TPMS_CONTEXT);
-    mem = open_memstream(&ptr, &size);
-    if (!mem) {
-        LOG_ERR("oom");
-        return false;
-    }
-
-    TPM2_HANDLE handle = tpm2_session_get_handle(session);
-    result = files_save_tpm_context_to_file(sapi_context, handle, mem);
-    if (!result) {
-        goto out;
-    }
-
-    rewind(mem);
-
-    TPM2_HANDLE dummy;
-    result = files_load_tpm_context_from_file(sapi_context, &dummy, mem);
 
     session_file = fopen(path, "w+b");
     if (!session_file) {
@@ -330,21 +313,26 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
      }
 
      // UINT32 - Handle
+    TPM2_HANDLE handle = tpm2_session_get_handle(session);
      result = files_write_32(session_file, handle);
      if (!result) {
          LOG_ERR("Could not write handle");
          goto out;
      }
 
-     /* result is set by files_write_32() */
-out:
-    if (mem) {
-        fclose(mem);
+    /*
+     * Save session context at end of tpm2_session. With tabrmd support it
+     * can be reloaded under certain circumstances.
+     */
+    result = files_save_tpm_context_to_file(sapi_context, handle, session_file);
+    if (!result) {
+        LOG_ERR("Could not write session context");
     }
+
+out:
     if (session_file) {
         fclose(session_file);
     }
-    free(ptr);
 
     return result;
 }

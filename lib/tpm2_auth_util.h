@@ -65,7 +65,8 @@
  * @return
  *  true on success, false on failure.
  */
-bool tpm2_auth_util_from_optarg(const char *password, TPMS_AUTH_COMMAND *auth,
+bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx,
+        const char *password, TPMS_AUTH_COMMAND *auth,
         tpm2_session **session);
 
 #endif /* SRC_PASSWORD_UTIL_H_ */

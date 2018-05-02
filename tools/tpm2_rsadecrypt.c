@@ -61,6 +61,7 @@ struct tpm_rsadecrypt_ctx {
     TPM2B_PUBLIC_KEY_RSA cipher_text;
     char *output_file_path;
     char *context_key_file;
+    char *key_auth_str;
 };
 
 tpm_rsadecrypt_ctx ctx = {
@@ -104,15 +105,9 @@ static bool on_option(char key, char *value) {
         ctx.flags.k = 1;
     }
         break;
-    case 'P': {
-        bool result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid key authorization, got\"%s\"", value);
-            return false;
-        }
+    case 'P':
         ctx.flags.P = 1;
-    }
+        ctx.key_auth_str = value;
         break;
     case 'I': {
         ctx.cipher_text.size = sizeof(ctx.cipher_text) - 2;
@@ -185,6 +180,15 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result = init(sapi_context);
     if (!result) {
         goto out;
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
+            goto out;
+        }
     }
 
     result = rsa_decrypt_and_save(sapi_context);

@@ -40,6 +40,11 @@
 typedef struct clear_ctx clear_ctx;
 struct clear_ctx {
     bool platform;
+    char *lockout_auth_str;
+    struct {
+        UINT8 L : 1;
+        UINT8 unused : 7;
+    } flags;
     struct {
         TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
@@ -77,18 +82,13 @@ static bool clear(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool on_option(char key, char *value) {
 
-    bool result;
-
     switch (key) {
     case 'p':
         ctx.platform = true;
         break;
     case 'L':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid lockout authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.L = 1;
+        ctx.lockout_auth_str = value;
         break;
     }
 
@@ -111,8 +111,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
+    bool result = false;;
 
-    bool result = clear(sapi_context);
+    if (ctx.flags.L) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.lockout_auth_str);
+            return false;
+        }
+    }
+
+    result = clear(sapi_context);
 
     result &= tpm2_session_save(sapi_context, ctx.auth.session, NULL);
 

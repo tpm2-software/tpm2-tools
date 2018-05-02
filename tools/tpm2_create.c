@@ -66,6 +66,8 @@ struct tpm_create_ctx {
     char *opu_path;
     char *opr_path;
     char *context_parent_path;
+    char *key_auth_str;
+    char *parent_auth_str;
     struct {
         UINT16 H : 1;
         UINT16 P : 1;
@@ -219,8 +221,6 @@ static bool create(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool on_option(char key, char *value) {
 
-    bool res;
-
     switch(key) {
     case 'H':
         if(!tpm2_util_string_to_uint32(value, &ctx.parent_handle)) {
@@ -230,22 +230,17 @@ static bool on_option(char key, char *value) {
         ctx.flags.H = 1;
         break;
     case 'P':
-        res = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
-        if (!res) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", value);
-            return false;
-        }
+        /*
+         * since the auth for the parent key may be a session, we need to
+         * move this call to tpm2_auth_util_from_optarg to the
+         * tpm2_tool_onrun function.
+         */
         ctx.flags.P = 1;
+        ctx.parent_auth_str = value;
         break;
     case 'K': {
-        TPMS_AUTH_COMMAND tmp;
-        res = tpm2_auth_util_from_optarg(value, &tmp, NULL);
-        if (!res) {
-            LOG_ERR("Invalid key authorization, got\"%s\"", value);
-            return false;
-        }
-        ctx.in_sensitive.sensitive.userAuth = tmp.hmac;
         ctx.flags.K = 1;
+        ctx.key_auth_str = value;
     } break;
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
@@ -368,6 +363,25 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         result = files_load_tpm_context_from_path(sapi_context,
                              &ctx.parent_handle, ctx.context_parent_path);
         if (!result) {
+            goto out;
+        }
+    }
+
+    if (ctx.flags.K) {
+        TPMS_AUTH_COMMAND tmp;
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
+        if (!result) {
+            LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
+            goto out;
+        }
+        ctx.in_sensitive.sensitive.userAuth = tmp.hmac;
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str,
+            &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
             goto out;
         }
     }

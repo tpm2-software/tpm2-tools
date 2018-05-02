@@ -59,6 +59,13 @@ struct tpm_nvdefine_ctx {
         tpm2_session *session;
     } auth;
     char *policy_file;
+    struct {
+        UINT8 P : 1;
+        UINT8 I : 1;
+        UINT8 unused : 6;
+    } flags;
+    char *hierarchy_auth_str;
+    char *index_auth_str;
 };
 
 static tpm_nvdefine_ctx ctx = {
@@ -138,12 +145,8 @@ static bool on_option(char key, char *value) {
             }
         break;
         case 'P':
-            result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                    &ctx.auth.session);
-            if (!result) {
-                LOG_ERR("Invalid handle authorization, got\"%s\"", value);
-                return false;
-            }
+            ctx.flags.P = 1;
+            ctx.hierarchy_auth_str = value;
         break;
         case 's':
             result = tpm2_util_string_to_uint16(value, &ctx.size);
@@ -164,15 +167,10 @@ static bool on_option(char key, char *value) {
                 }
             }
             break;
-        case 'I': {
-            TPMS_AUTH_COMMAND tmp;
-            result = tpm2_auth_util_from_optarg(value, &tmp, NULL);
-            if (!result) {
-                LOG_ERR("Invalid index authorization, got\"%s\"", value);
-                return false;
-            }
-            ctx.nvAuth = tmp.hmac;
-        } break;
+        case 'I':
+            ctx.flags.I = 1;
+            ctx.index_auth_str = value;
+            break;
         case 'L':
             ctx.policy_file = value;
             break;
@@ -205,9 +203,30 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
+    bool result;
     int rc = 1;
 
-    bool result = nv_space_define(sapi_context);
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.hierarchy_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.hierarchy_auth_str);
+            goto out;
+        }
+    }
+
+    if (ctx.flags.I) {
+        TPMS_AUTH_COMMAND tmp;
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.index_auth_str,
+                &tmp, NULL);
+        if (!result) {
+            LOG_ERR("Invalid index authorization, got\"%s\"", ctx.index_auth_str);
+            goto out;
+        }
+        ctx.nvAuth = tmp.hmac;
+    }
+
+    result = nv_space_define(sapi_context);
     if (!result) {
         goto out;
     }

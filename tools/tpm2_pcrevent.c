@@ -58,6 +58,7 @@ struct tpm_pcrevent_ctx {
     } auth;
     TPMI_DH_PCR pcr;
     FILE *input;
+    char *pcr_auth_str;
 };
 
 static tpm_pcrevent_ctx ctx = {
@@ -306,15 +307,9 @@ static bool on_option(char key, char *value) {
     }
         ctx.flags.i = 1;
         break;
-    case 'P': {
-        bool result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid key handle authorization, got\"%s\"", value);
-            return false;
-        }
-    }
+    case 'P':
         ctx.flags.P = 1;
+        ctx.pcr_auth_str = value;
         break;
         /* no default */
     }
@@ -343,6 +338,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result = init();
     if (!result) {
         goto out;
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.pcr_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid key handle authorization, got\"%s\"",
+                ctx.pcr_auth_str);
+            goto out;
+        }
     }
 
     result = do_hmac_and_output(sapi_context);

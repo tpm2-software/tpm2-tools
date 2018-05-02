@@ -197,7 +197,7 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
  * @return
  *  NULL on failure or a session pointer on success.
  */
-tpm2_session *tpm2_session_restore(const char *path);
+tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path);
 
 /**
  * restarts the session to it's initial state via a call to

@@ -83,7 +83,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int rc = 1;
-    tpm2_session *s = tpm2_session_restore(ctx.session.path);
+    tpm2_session *s = tpm2_session_restore(sapi_context, ctx.session.path);
     if (!s) {
         return rc;
     }

@@ -62,13 +62,13 @@ static bool handle_hex(const char *password, TPMS_AUTH_COMMAND *auth) {
     return true;
 }
 
-static bool handle_session(const char *path, TPMS_AUTH_COMMAND *auth,
+static bool handle_session(TSS2_SYS_CONTEXT *sys_ctx, const char *path, TPMS_AUTH_COMMAND *auth,
         tpm2_session **session) {
 
     /* if it is session, then skip the prefix */
     path += SESSION_PREFIX_LEN;
 
-    *session = tpm2_session_restore(path);
+    *session = tpm2_session_restore(sys_ctx, path);
     if (!*session) {
         return false;
     }
@@ -109,7 +109,7 @@ static bool handle_str(const char *password, TPMS_AUTH_COMMAND *auth) {
     return true;
 }
 
-bool tpm2_auth_util_from_optarg(const char *password, TPMS_AUTH_COMMAND *auth,
+bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx, const char *password, TPMS_AUTH_COMMAND *auth,
         tpm2_session **session) {
 
     bool is_hex = !strncmp(password, HEX_PREFIX, HEX_PREFIX_LEN);
@@ -123,7 +123,7 @@ bool tpm2_auth_util_from_optarg(const char *password, TPMS_AUTH_COMMAND *auth,
             LOG_ERR("Tool does not support sessions for this auth value");
             return false;
         }
-        return handle_session(password, auth, session);
+        return handle_session(sys_ctx, password, auth, session);
     }
 
     /* must be string, handle it */

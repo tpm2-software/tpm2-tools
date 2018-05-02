@@ -84,8 +84,15 @@ struct createak_context {
         } auth2;
     } owner;
     struct {
-        bool f;
+        UINT8 f : 1;
+        UINT8 o : 1;
+        UINT8 e : 1;
+        UINT8 P : 1;
+        UINT8 unused : 4;
     } flags;
+    char *owner_auth_str;
+    char *endorse_auth_str;
+    char *ak_auth_str;
     bool find_persistent_ak;
 };
 
@@ -108,6 +115,7 @@ static createak_context ctx = {
     .owner = {
         .auth2 = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     },
+    .flags = { 0 },
     .find_persistent_ak = false
 };
 
@@ -475,30 +483,17 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'o':
-        result = tpm2_auth_util_from_optarg(value,
-                &ctx.owner.auth2.session_data, &ctx.owner.auth2.session);
-        if (!result) {
-            LOG_ERR("Invalid owner authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.o = 1;
+        ctx.owner_auth_str = value;
         break;
     case 'e':
-        result = tpm2_auth_util_from_optarg(value, &ctx.ek.auth2.session_data,
-                &ctx.ek.auth2.session);
-        if (!result) {
-            LOG_ERR("Invalid endorse authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.e = 1;
+        ctx.endorse_auth_str = value;
         break;
-    case 'P': {
-        TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(value, &tmp, NULL);
-        if (!result) {
-            LOG_ERR("Invalid AK authorization, got\"%s\"", value);
-            return false;
-        }
-        ctx.ak.in.inSensitive.sensitive.userAuth = tmp.hmac;
-    } break;
+    case 'P': 
+        ctx.flags.P = 1;
+        ctx.ak_auth_str = value;
+        break;
     case 'p':
         ctx.ak.out.pub_file = value;
         break;
@@ -582,5 +577,33 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
+    if (ctx.flags.o) {
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
+                &ctx.owner.auth2.session_data, &ctx.owner.auth2.session);
+        if (!res) {
+            LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner_auth_str);
+            return 1;
+        }
+    }
+
+    if (ctx.flags.e) {
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+                &ctx.ek.auth2.session_data, &ctx.ek.auth2.session);
+        if (!res) {
+            LOG_ERR("Invalid endorse authorization, got\"%s\"",
+                ctx.endorse_auth_str);
+            return 1;
+        }
+    }
+    if (ctx.flags.P) {
+        TPMS_AUTH_COMMAND tmp;
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.ak_auth_str,
+                &tmp, NULL);
+        if (!res) {
+            LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak_auth_str);
+            return 1;
+        }
+        ctx.ak.in.inSensitive.sensitive.userAuth = tmp.hmac;
+    } 
     return !create_ak(sapi_context);
 }

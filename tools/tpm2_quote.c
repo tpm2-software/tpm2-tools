@@ -64,7 +64,8 @@ static tpm2_convert_sig_fmt sig_format;
 static TPMI_ALG_HASH sig_hash_algorithm;
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
-static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag;
+static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag, P_flag;
+static char *ak_auth_str;
 static char *contextFilePath;
 static TPM2_HANDLE akHandle;
 
@@ -143,14 +144,10 @@ static bool on_option(char key, char *value) {
         c_flag = 1;
         break;
 
-    case 'P': {
-        bool res = tpm2_auth_util_from_optarg(value, &auth.session_data,
-                &auth.session);
-        if (!res) {
-            LOG_ERR("Invalid AK authorization, got\"%s\"", value);
-            return false;
-        }
-    } break;
+    case 'P':
+        P_flag = 1;
+        ak_auth_str = value;
+        break;
     case 'l':
         if(!pcr_parse_list(value, strlen(value), &pcrSelections.pcrSelections[0]))
         {
@@ -248,6 +245,15 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (!l_flag && !L_flag) {
         LOG_ERR("Expected either -l or -L to be specified");
         goto out;
+    }
+
+    if (P_flag) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ak_auth_str,
+                &auth.session_data, &auth.session);
+        if (!result) {
+            LOG_ERR("Invalid AK authorization, got\"%s\"", ak_auth_str);
+            goto out;
+        }
     }
 
     if(c_flag) {
