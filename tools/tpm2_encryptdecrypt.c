@@ -67,6 +67,7 @@ struct tpm_encrypt_decrypt_ctx {
         UINT8 c : 1;
         UINT8 X : 1;
     } flags;
+    char *key_auth_str;
 };
 
 static tpm_encrypt_decrypt_ctx ctx = {
@@ -129,13 +130,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.k = 1;
         break;
     case 'P':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid object key authorization, got\"%s\"", value);
-            return false;
-        }
         ctx.flags.P = 1;
+        ctx.key_auth_str = value;
         break;
     case 'D':
         ctx.is_decrypt = 1;
@@ -202,6 +198,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         result = files_load_tpm_context_from_path(sapi_context, &ctx.key_handle,
                                                   ctx.context_key_file);
         if (!result) {
+            goto out;
+        }
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid object key authorization, got\"%s\"",
+                ctx.key_auth_str);
             goto out;
         }
     }

@@ -54,10 +54,16 @@ struct dictionarylockout_ctx {
         TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
     } auth;
+    struct {
+        UINT8 P : 1;
+        UINT8 unused : 7;
+    } flags;
+    char *lockout_auth_str;
 };
 
 static dictionarylockout_ctx ctx = {
     .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+    .flags = { 0 },
 };
 
 bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context) {
@@ -107,11 +113,8 @@ static bool on_option(char key, char *value) {
         ctx.setup_parameters = true;
         break;
     case 'P':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid lockout authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.P = 1;
+        ctx.lockout_auth_str = value;
         break;
     case 'n':
         result = tpm2_util_string_to_uint32(value, &ctx.max_tries);
@@ -173,6 +176,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if (!ctx.clear_lockout && !ctx.setup_parameters) {
         LOG_ERR( "Invalid operational input: Neither Setup nor Clear lockout requested.");
         goto out;
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid lockout authorization, got\"%s\"",
+                ctx.lockout_auth_str);
+            return 1;
+        }
     }
 
     result = dictionary_lockout_reset_and_parameter_setup(sapi_context);

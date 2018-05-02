@@ -61,7 +61,11 @@ struct tpm_createprimary_ctx {
     struct {
         UINT8 g :1;
         UINT8 G :1;
+        UINT8 P :1;
+        UINT8 K :1;
     } flags;
+    char *parent_auth_str;
+    char *key_auth_str;
 };
 
 static tpm_createprimary_ctx ctx = {
@@ -155,20 +159,12 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'P':
-        res = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data, &ctx.auth.session);
-        if (!res) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.P = 1;
+        ctx.parent_auth_str = value;
         break;
     case 'K': {
-        TPMS_AUTH_COMMAND tmp;
-        res = tpm2_auth_util_from_optarg(value, &tmp, NULL);
-        if (!res) {
-            LOG_ERR("Invalid new key authorization, got\"%s\"", value);
-            return false;
-        }
-        ctx.objdata.in.sensitive.sensitive.userAuth = tmp.hmac;
+        ctx.flags.K = 1;
+        ctx.key_auth_str = value;
     } break;
     case 'g': {
         TPMI_ALG_HASH halg = tpm2_alg_util_from_optarg(value);
@@ -249,13 +245,32 @@ static inline bool valid_ctx(void) {
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
+    bool result;
     int rc = 1;
 
     if (!valid_ctx()) {
         goto out;
     }
 
-    bool result = tpm2_hierarchy_create_primary(sapi_context, &ctx.auth.session_data, &ctx.objdata);
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str, &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
+            goto out;
+        }
+    }
+
+    if (ctx.flags.K) {
+        TPMS_AUTH_COMMAND tmp;
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
+        if (!result) {
+            LOG_ERR("Invalid new key authorization, got\"%s\"", ctx.key_auth_str);
+            goto out;
+        }
+        ctx.objdata.in.sensitive.sensitive.userAuth = tmp.hmac;
+    }
+
+    result = tpm2_hierarchy_create_primary(sapi_context, &ctx.auth.session_data, &ctx.objdata);
     if (!result) {
         goto out;
     }

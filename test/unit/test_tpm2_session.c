@@ -318,7 +318,7 @@ static void test_tpm2_session_save(void **state) {
     tpm2_session_free(&s);
     assert_null(s);
 
-    s = tpm2_session_restore((char *)*state);
+    s = tpm2_session_restore(NULL, (char *)*state);
     assert_non_null(s);
 
     TPMI_SH_AUTH_SESSION handle2 = tpm2_session_get_handle(s);

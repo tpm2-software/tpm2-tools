@@ -70,8 +70,15 @@ struct createek_context {
     TPMI_DH_PERSISTENT persistent_handle;
     tpm2_convert_pubkey_fmt format;
     struct {
-        bool f;
+        UINT8 f : 1;
+        UINT8 e : 1;
+        UINT8 o : 1;
+        UINT8 P : 1;
+        UINT8 unused : 4;
     } flags;
+    char *endorse_auth_str;
+    char *owner_auth_str;
+    char *ek_auth_str;
     bool find_persistent_handle;
 };
 
@@ -83,6 +90,7 @@ static createek_context ctx = {
     },
     .format = pubkey_format_tss,
     .objdata = TPM2_HIERARCHY_DATA_INIT,
+    .flags = { 0 },
     .find_persistent_handle = false
 };
 
@@ -207,28 +215,16 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'e':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.endorse.session_data,
-                &ctx.auth.endorse.session);
-        if (!result) {
-            LOG_ERR("Invalid endorse authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.e = 1;
+        ctx.endorse_auth_str = value;
         break;
     case 'o':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.owner.session_data,
-                &ctx.auth.owner.session);
-        if (!result) {
-            LOG_ERR("Invalid owner authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.o = 1;
+        ctx.owner_auth_str = value;
         break;
     case 'P':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.ek.session_data,
-                &ctx.auth.ek.session);
-        if (!result) {
-            LOG_ERR("Invalid EK authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.P = 1;
+        ctx.ek_auth_str = value;
         break;
     case 'g': {
         TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value);
@@ -339,6 +335,32 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         LOG_ERR("Specify either a handle to make it persistent or a file to"
                 " save the context to, not both!");
         goto out;
+    }
+
+    if (ctx.flags.e) {
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+                &ctx.auth.endorse.session_data, &ctx.auth.endorse.session);
+        if (!res) {
+            LOG_ERR("Invalid endorse authorization, got\"%s\"",
+                ctx.endorse_auth_str);
+            return 1;
+        }
+    }
+    if (ctx.flags.o) {
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
+                &ctx.auth.owner.session_data, &ctx.auth.owner.session);
+        if (!res) {
+            LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner_auth_str);
+            return 1;
+        }
+    }
+    if (ctx.flags.P) {
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.ek_auth_str,
+                &ctx.auth.ek.session_data, &ctx.auth.ek.session);
+        if (!res) {
+            LOG_ERR("Invalid EK authorization, got\"%s\"", ctx.ek_auth_str);
+            return 1;
+        }
     }
 
     /* override the default attrs */

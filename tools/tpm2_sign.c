@@ -76,6 +76,7 @@ struct tpm_sign_ctx {
         UINT16 f : 1;
         UINT16 D : 1;
     } flags;
+    char *key_auth_str;
 };
 
 tpm_sign_ctx ctx = {
@@ -196,15 +197,9 @@ static bool on_option(char key, char *value) {
         ctx.flags.k = 1;
     }
         break;
-    case 'P': {
-        bool result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid key authorization, got\"%s\"", value);
-            return false;
-        }
+    case 'P':
         ctx.flags.P = 1;
-    }
+        ctx.key_auth_str = value;
         break;
     case 'g': {
         ctx.halg = tpm2_alg_util_from_optarg(value);
@@ -291,6 +286,15 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result = init(sapi_context);
     if (!result) {
         goto out;
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
+            goto out;
+        }
     }
 
     result = sign_and_save(sapi_context);

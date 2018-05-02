@@ -68,6 +68,7 @@ struct tpm_evictcontrol_ctx {
         UINT8 c : 1;
         UINT8 P : 1;
     } flags;
+    char *hierarchy_auth_str;
 };
 
 static tpm_evictcontrol_ctx ctx = {
@@ -111,13 +112,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.p = 1;
         break;
     case 'P':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid authorization authorization, got\"%s\"", value);
-            return false;
-        }
         ctx.flags.P = 1;
+        ctx.hierarchy_auth_str = value;
         break;
     case 'c':
         ctx.context_file = value;
@@ -159,6 +155,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
                 &ctx.handle.persist);
         if (!result) {
             tpm2_tool_output("Unable to find a vacant persistent handle.\n");
+            goto out;
+        }
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.hierarchy_auth_str,
+               &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid authorization authorization, got\"%s\"",
+                ctx.hierarchy_auth_str);
             goto out;
         }
     }

@@ -62,12 +62,14 @@ struct tpm_load_ctx {
     char *out_file;
     char *context_file;
     char *context_parent_file;
+    char *parent_auth_str;
     struct {
         UINT8 H : 1;
         UINT8 u : 1;
         UINT8 r : 1;
         UINT8 c : 1;
         UINT8 C : 1;
+        UINT8 P : 1;
     } flags;
 };
 
@@ -119,12 +121,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.H = 1;
         break;
     case 'P':
-        res = tpm2_auth_util_from_optarg(value, &ctx.auth.session_data,
-                &ctx.auth.session);
-        if (!res) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.P = 1;
+        ctx.parent_auth_str = value;
         break;
     case 'u':
         if(!files_load_public(value, &ctx.in_public)) {
@@ -194,6 +192,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
+    if(ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str,
+                &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
+            goto out;
+        }
+    }
     if(ctx.flags.c) {
         result = files_load_tpm_context_from_path(sapi_context,
                     &ctx.parent_handle,

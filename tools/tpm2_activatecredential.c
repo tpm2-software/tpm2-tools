@@ -60,8 +60,12 @@ struct tpm_activatecred_ctx {
         UINT8 C : 1;
         UINT8 f : 1;
         UINT8 o : 1;
-        UINT8 unused : 2;
+        UINT8 P : 1;
+        UINT8 e : 1;
     } flags;
+
+    char *passwd_auth_str;
+    char *endorse_auth_str;
 
     struct {
         TPMI_DH_OBJECT activate;
@@ -250,20 +254,12 @@ static bool on_option(char key, char *value) {
         ctx.flags.C = 1;
         break;
     case 'P':
-        result = tpm2_auth_util_from_optarg(value, &ctx.auth,
-                &ctx.auth_session);
-        if (!result) {
-            LOG_ERR("Invalid handle authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.P = 1;
+        ctx.passwd_auth_str = value;
         break;
     case 'e':
-        result = tpm2_auth_util_from_optarg(value, &ctx.endorse_auth,
-                &ctx.endorse_session);
-        if (!result) {
-            LOG_ERR("Invalid endorse authorization, got\"%s\"", value);
-            return false;
-        }
+        ctx.flags.e = 1;
+        ctx.endorse_auth_str = value;
         break;
     case 'f':
         /* logs errors */
@@ -327,6 +323,24 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         bool res = files_load_tpm_context_from_path(sapi_context, &ctx.handle.key,
                 ctx.file.key_context) != true;
         if (!res) {
+            return 1;
+        }
+    }
+
+    if (ctx.flags.P) {
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.passwd_auth_str,
+                &ctx.auth, &ctx.auth_session);
+        if (!res) {
+            LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.passwd_auth_str);
+            return 1;
+        }
+    }
+
+    if (ctx.flags.e) {
+        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+                &ctx.endorse_auth, &ctx.endorse_session);
+        if (!res) {
+            LOG_ERR("Invalid endorse authorization, got\"%s\"", ctx.endorse_auth_str);
             return 1;
         }
     }

@@ -76,6 +76,8 @@ struct tpm_certify_ctx {
     } flags;
     char *context_file;
     char *context_key_file;
+    char *object_auth_str;
+    char *key_auth_str;
     tpm2_convert_sig_fmt sig_fmt;
 };
 
@@ -209,22 +211,12 @@ static bool on_option(char key, char *value) {
         ctx.flags.k = 1;
         break;
     case 'P':
-        result = tpm2_auth_util_from_optarg(value, &ctx.cmd_auth[0],
-                &ctx.session[0]);
-        if (!result) {
-            LOG_ERR("Invalid object key authorization, got\"%s\"", value);
-            return false;
-        }
         ctx.flags.P = 1;
+        ctx.object_auth_str = value;
         break;
     case 'K':
-        result = tpm2_auth_util_from_optarg(value, &ctx.cmd_auth[1],
-                &ctx.session[1]);
-        if (!result) {
-            LOG_ERR("Invalid key handle authorization, got\"%s\"", value);
-            return false;
-        }
         ctx.flags.K = 1;
+        ctx.key_auth_str = value;
         break;
     case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value);
@@ -323,6 +315,24 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         result = files_load_tpm_context_from_path(sapi_context, &ctx.handle.key,
                                                   ctx.context_key_file);
         if (!result) {
+            goto out;
+        }
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.object_auth_str,
+                &ctx.cmd_auth[0], &ctx.session[0]);
+        if (!result) {
+            LOG_ERR("Invalid object key authorization, got\"%s\"", ctx.object_auth_str);
+            goto out;
+        }
+    }
+
+    if (ctx.flags.K) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+                &ctx.cmd_auth[1], &ctx.session[1]);
+        if (!result) {
+            LOG_ERR("Invalid key handle authorization, got\"%s\"", ctx.key_auth_str);
             goto out;
         }
     }
