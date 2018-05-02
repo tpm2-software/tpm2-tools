@@ -599,6 +599,7 @@ static bool on_option(char key, char *value) {
                     value);
                 return false;
         }
+        break;
     case 'K':
         ctx.input_public_key_file = value;
         ctx.input_pub_key_buffer_length = RSA_2K_MODULUS_SIZE_IN_BYTES;
