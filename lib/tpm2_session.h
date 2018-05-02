@@ -32,6 +32,9 @@
 
 #include <tss2/tss2_sys.h>
 
+#define MAX_AUTH_SESSIONS 3
+#define MAX_HMAC_AUTH_SESSIONS 2
+
 typedef struct tpm2_session_data tpm2_session_data;
 typedef struct tpm2_session tpm2_session;
 
@@ -75,6 +78,16 @@ void tpm2_session_set_key(tpm2_session_data *data, TPMI_DH_OBJECT key);
  *  The nonce parameter value itself.
  */
 void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce);
+
+/**
+ * Retrieves the session nonce when an auth session is started.
+ * The session nonce is used in calculating the session HMAC for authentication
+ * @param data
+ *  The session object to modify.
+ * @return
+ *  The TPM2B_NONCE nonce value.
+ */
+TPM2B_NONCE *tpm2_session_get_nonce_tpm(tpm2_session *session);
 
 /**
  * Sets the bind parameter.
@@ -141,6 +154,26 @@ TPMI_SH_AUTH_SESSION tpm2_session_get_handle(tpm2_session *session);
  *  TPM2_SE_TRIAL.
  */
 TPM2_SE tpm2_session_get_type(tpm2_session *session);
+
+/**
+ * Retrieves the type of session ie trial/policy/hmac from session data
+ * @param data
+ *  The session data used to create the session
+ * @return
+ *  The type of session ie trial/policy/hmac
+ */
+TPM2_SE tpm2_session_get_type_from_session_data(tpm2_session_data *data);
+
+/**
+ * Sets the intended session type in the session data. This is done prior
+ * to creating the session.
+ *
+ * @param data
+ *  The session data
+ * @param[in] type
+ *  The session type
+ */
+void tpm2_session_set_type_in_session_data(tpm2_session_data *data, TPM2_SE type);
 
 /**
  * True if a session is of type TPM2_SE_TRIAL

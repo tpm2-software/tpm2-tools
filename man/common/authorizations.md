@@ -19,6 +19,9 @@ with special prefix values, they are:
 
   * str: - Used to indicate it is a raw string. Useful for escaping a password that starts
          with the "hex:" prefix.
+  * hmac:- Use to indicate, the subsequent string specified be used in calculating
+           the command buffer HMAC to prevent presenting clear text passwords on
+           the TPM interfaces. See CVE-2017-7524 for details.
   * hex: - Used when specifying a password in hex string format.
 
 ## HMAC
