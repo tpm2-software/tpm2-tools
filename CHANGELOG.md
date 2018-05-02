@@ -1,6 +1,8 @@
 ## Changelog
 ### next
-  * tpm2_import - Supports importing external RSA 2048 keys.
+  * tpm2_verifysignature - Option `-r` changes to `-f` and supports signature format "rsa".
+  * tpm2_import - Parent public data option, `-K` is optional.
+  * tpm2_import - Supports importing external RSA 2048 keys via pem files.
   * system tests are now run with make check when --enable-unit is used in configure.
   * tpm2_unseal: Option `--pwdk` changes to `--auth-key`.
   * tpm2_sign: Option `--pwdk` changes to `--auth-key`.
