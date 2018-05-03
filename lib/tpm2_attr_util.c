@@ -495,6 +495,7 @@ static bool common_strtoattr(char *attribute_list, void *attrs, dispatch_table *
 
 bool tpm2_attr_util_nv_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
 
+    memset(nvattrs, 0, sizeof(*nvattrs));
     return common_strtoattr(attribute_list, nvattrs, nv_attr_table, ARRAY_LEN(nv_attr_table));
 }
 
