@@ -662,8 +662,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool load_rsa_key(void) {
 
-    RSA *k = NULL;
     bool res = false;
+    RSA *k = NULL;
+    const BIGNUM *p, *n;
 
     FILE *fk = fopen(ctx.input_key_file, "r");
     if (!fk) {
@@ -681,21 +682,29 @@ static bool load_rsa_key(void) {
          return false;
     }
 
-    int priv_bytes = BN_num_bytes(k->p);
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+    p = k->p;
+    n = k->n;
+#else
+    RSA_get0_factors(k, &p, NULL);
+    RSA_get0_key(k, &n, NULL, NULL);
+#endif
+
+    int priv_bytes = BN_num_bytes(p);
     if (priv_bytes > ctx.input_key_buffer_length) {
         LOG_ERR("Expected prime \"p\" to be less than or equal to %u,"
                 " got: %d", ctx.input_key_buffer_length, priv_bytes);
         goto out;
     }
 
-    int success = BN_bn2bin(k->p, ctx.input_key_buffer);
+    int success = BN_bn2bin(p, ctx.input_key_buffer);
     if (!success) {
         ERR_print_errors_fp (stderr);
         LOG_ERR("Could not convert prime \"p\"");
         goto out;
     }
 
-    int pub_bytes = BN_num_bytes(k->n);
+    int pub_bytes = BN_num_bytes(n);
     if (pub_bytes > RSA_2K_MODULUS_SIZE_IN_BYTES) {
         LOG_ERR("Expected modulus \"n\" to be less than or equal to %u,"
                 " got: %d", RSA_2K_MODULUS_SIZE_IN_BYTES, pub_bytes);
@@ -709,7 +718,7 @@ static bool load_rsa_key(void) {
         goto out;
     }
 
-    success = BN_bn2bin(k->n, ctx.input_pub_key_buffer);
+    success = BN_bn2bin(n, ctx.input_pub_key_buffer);
     if (!success) {
         ERR_print_errors_fp (stderr);
         LOG_ERR("Could not convert modulus \"n\"");
