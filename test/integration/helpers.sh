@@ -226,9 +226,20 @@ function start_sim() {
 
 function start_abrmd() {
 
-	if [ $UID -eq 0 ]; then
-		tpm2_tabrmd_opts="--allow-root $tpm2_tabrmd_opts"
+    if [ -z "$TPM2_SIM" ]; then
+	local tcti="device"
+	if [ -n "$TPM2_DEVICE" ]; then
+	    tcti="device:$TPM2_DEVICE"
 	fi
+
+	local name="com.intel.tss2.Tabrmd.device"
+	tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=$tcti"
+	tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
+    fi
+
+    if [ $UID -eq 0 ]; then
+	tpm2_tabrmd_opts="--allow-root $tpm2_tabrmd_opts"
+    fi
 
     echo "tpm2-abrmd command: $TPM2_ABRMD $tpm2_tabrmd_opts"
     $TPM2_ABRMD $tpm2_tabrmd_opts &
@@ -250,15 +261,17 @@ function start_up() {
 
     switch_to_test_dir
 
-    # Start the simulator
-    echo "Starting the simulator"
-    start_sim
-    if [ $? -ne 0 ]; then
-        exit 1;
+    if [ -n "$TPM2_SIM" ]; then
+	# Start the simulator
+	echo "Starting the simulator"
+	start_sim
+	if [ $? -ne 0 ]; then
+            exit 1;
+	fi
+	echo "Started the simulator"
     fi
-    echo "Started the simulator"
 
-    if [ "$1" != "no-abrmd" ]; then
+    if [ -n "$TPM2_ABRMD" ]; then
         echo "Starting tpm2-abrmd"
         # Start tpm2-abrmd
         start_abrmd
@@ -266,15 +279,22 @@ function start_up() {
         echo "Setting TCTI to use abrmd"
         echo "export TPM2TOOLS_TCTI=\"$tpm2_tcti_opts\""
         export TPM2TOOLS_TCTI="$tpm2_tcti_opts"
-    else
-        export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
-        echo "Not starting tpm2-abrmd"
-        echo "Setting TCTI to use mssim"
-        echo "export TPM2TOOLS_TCTI=\"mssim:port=$tpm2_sim_port\""
-        export TPM2TOOLS_TCTI="mssim:port=$tpm2_sim_port"
+    else if [ -n "$TPM2_SIM" ]; then
+             export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
+             echo "Not starting tpm2-abrmd"
+             echo "Setting TCTI to use mssim"
+             echo "export TPM2TOOLS_TCTI=\"mssim:port=$tpm2_sim_port\""
+             export TPM2TOOLS_TCTI="mssim:port=$tpm2_sim_port"
 
-        echo "Running tpm2_startup -c"
-        tpm2_startup -c
+             echo "Running tpm2_startup -c"
+             tpm2_startup -c
+	 else
+	     if [ -n "$TPM2_DEVICE" ]; then
+		 export TPM2TOOLS_TCTI="device:$TPM2_DEVICE"
+	     else
+		 export TPM2TOOLS_TCTI="device"
+	     fi
+	 fi
     fi
 
     echo "Running tpm2_clear"
