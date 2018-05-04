@@ -62,6 +62,11 @@ struct tpm_createprimary_ctx {
         UINT8 g :1;
         UINT8 G :1;
     } flags;
+
+    struct {
+        char *attrs;
+        char *alg;
+    } optargs;
 };
 
 static tpm_createprimary_ctx ctx = {
@@ -91,17 +96,20 @@ static bool set_name_alg(TPMI_ALG_HASH halg, TPM2B_PUBLIC *public) {
 
 static bool set_alg(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public) {
 
-
     switch(type) {
     case TPM2_ALG_RSA: {
         TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
-       r->symmetric.algorithm = TPM2_ALG_AES;
-       r->symmetric.keyBits.aes = 128;
-       r->symmetric.mode.aes = TPM2_ALG_CFB;
-       r->scheme.scheme = TPM2_ALG_NULL;
-       r->keyBits = 2048;
-       r->exponent = 0;
-       public->publicArea.unique.rsa.size = 0;
+        if (public->publicArea.objectAttributes & TPMA_OBJECT_SIGN_ENCRYPT) {
+            r->symmetric.algorithm = TPM2_ALG_NULL;
+        } else {
+           r->symmetric.algorithm = TPM2_ALG_AES;
+           r->symmetric.keyBits.aes = 128;
+           r->symmetric.mode.aes = TPM2_ALG_CFB;
+           r->scheme.scheme = TPM2_ALG_NULL;
+           r->keyBits = 2048;
+           r->exponent = 0;
+           public->publicArea.unique.rsa.size = 0;
+        }
     } break;
     case TPM2_ALG_KEYEDHASH: {
         TPMT_KEYEDHASH_SCHEME *s = &public->publicArea.parameters.keyedHashDetail.scheme;
@@ -139,8 +147,6 @@ static bool set_alg(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public) {
 
     return true;
 }
-
-
 
 static bool on_option(char key, char *value) {
 
@@ -184,16 +190,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.g = 1;
     }   break;
     case 'G': {
-        TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value);
-        if (type == TPM2_ALG_ERROR) {
-            LOG_ERR("Invalid key algorithm, got\"%s\"", value);
-            return false;
-        }
-
-        res = set_alg(type, &ctx.objdata.in.public);
-        if (!res) {
-            return false;
-        }
+        ctx.optargs.alg = value;
         ctx.flags.G = 1;
     }   break;
     case 'C':
@@ -210,14 +207,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
     }   break;
-    case 'A': {
-        bool res = tpm2_attr_util_obj_from_optarg(value,
-                &ctx.objdata.in.public.publicArea.objectAttributes);
-        if (!res) {
-            LOG_ERR("Invalid object attribute, got\"%s\"", value);
-            return false;
-        }
-    }   break;
+    case 'A':
+        ctx.optargs.attrs = value;
+        break;
     }
 
     return true;
@@ -253,6 +245,28 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (!valid_ctx()) {
         goto out;
+    }
+
+    if (ctx.optargs.attrs) {
+        bool res = tpm2_attr_util_obj_from_optarg(ctx.optargs.attrs,
+                &ctx.objdata.in.public.publicArea.objectAttributes);
+        if (!res) {
+            LOG_ERR("Invalid object attribute, got\"%s\"", ctx.optargs.attrs);
+            return false;
+        }
+    }
+
+    if (ctx.flags.G) {
+        TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(ctx.optargs.alg);
+        if (type == TPM2_ALG_ERROR) {
+            LOG_ERR("Invalid key algorithm, got\"%s\"", ctx.optargs.alg);
+            return false;
+        }
+
+        bool res = set_alg(type, &ctx.objdata.in.public);
+        if (!res) {
+            return false;
+        }
     }
 
     bool result = tpm2_hierarchy_create_primary(sapi_context, &ctx.auth.session_data, &ctx.objdata);
