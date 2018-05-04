@@ -241,8 +241,7 @@ EXTRA_DIST = $(top_srcdir)/man \
 	     README.md \
 	     RELEASE.md \
 	     test/system
-
-if HAVE_PANDOC
+if HAVE_MAN_PAGES
     man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
@@ -283,7 +282,9 @@ if HAVE_PANDOC
     man/man1/tpm2_takeownership.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1
+endif
 
+if HAVE_PANDOC
 # If pandoc is enabled, we want to generate the manpages for the dist tarball
 EXTRA_DIST += $(man1_MANS)
 else
