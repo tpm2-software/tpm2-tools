@@ -267,24 +267,35 @@ static void show_version (const char *name) {
 
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     unsigned int i;
+    bool indent = true;
+    char *command_copy;
 
     if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_SHOW_USAGE)) {
         return;
     }
 
-    printf("usage: %s%s%s\n", command,
-           tool_opts->callbacks.on_opt ? " [OPTIONS]" : "",
-           tool_opts->callbacks.on_arg ? " ARGUMENTS" : "");
+    command_copy = strdup(command);
+    printf("Usage: %s%s%s\n", basename(command_copy),
+           tool_opts->callbacks.on_opt ? " [<options>]" : "",
+           tool_opts->callbacks.on_arg ? " <arguments>" : "");
+    free(command_copy);
 
     if (tool_opts->callbacks.on_opt) {
+        printf("Where <options> are:\n");
         for (i = 0; i < tool_opts->len; i++) {
             struct option *opt = &tool_opts->long_opts[i];
-            printf("[ -%c | --%s%s]", opt->val, opt->name,
-                   opt->has_arg ? "=VALUE" : "");
-            if ((i + 1) % 4 == 0) {
-                printf("\n");
+
+            if (indent) {
+                printf("    ");
+                indent = false;
             } else {
                 printf(" ");
+            }
+            printf("[ -%c | --%s%s]", opt->val, opt->name,
+                   opt->has_arg ? "=<value>" : "");
+            if ((i + 1) % 4 == 0) {
+                printf("\n");
+                indent = true;
             }
         }
         if (i % 4 != 0) {
