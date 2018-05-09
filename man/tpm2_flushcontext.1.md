@@ -16,8 +16,9 @@
 
 # OPTIONS
 
-  * **-H**, **--handle**=_HANDLE_:
-    The handle of a object, loaded session or saved session to be removed.
+  * **-c**, **--context**=_CONTEXT\_OBJECT_:
+    The handle or session file of an object, loaded session or saved session to be removed.
+    See section "Context Object Format".
 
   * **-t**, **--transient-object**:
     Remove all transient objects.
@@ -37,10 +38,12 @@
 
 [common tcti options](common/tcti.md)
 
+[context object format](commmon/ctxobj.md)
+
 # EXAMPLES
 
 ```
-tpm2_flushcontext -H 0x80000000
+tpm2_flushcontext -c 0x80000000
 tpm2_flushcontext --transient-object
 ```
 

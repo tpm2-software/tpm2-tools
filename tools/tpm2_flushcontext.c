@@ -38,13 +38,15 @@
 #include "tpm2_options.h"
 #include "tpm2_session.h"
 #include "tpm2_util.h"
+#include "tpm2_tool.h"
 
 struct tpm_flush_context_ctx {
     UINT32 property;
-    TPM2_HANDLE objectHandle;
     struct {
         char *path;
     } session;
+    tpm2_loaded_object context_object;
+    char *context_arg;
 };
 
 static struct tpm_flush_context_ctx ctx;
@@ -104,14 +106,10 @@ static bool flush_contexts(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handles[]
 
 static bool on_option(char key, char *value) {
 
-    bool result;
 
     switch (key) {
-    case 'H':
-        result = tpm2_util_string_to_uint32(value, &ctx.objectHandle);
-        if (!result) {
-            return false;
-        }
+    case 'c':
+        ctx.context_arg = value;
         break;
     case 't':
         ctx.property = TPM2_TRANSIENT_FIRST;
@@ -124,7 +122,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'S':
         ctx.session.path = value;
-    break;
+        break;
     }
 
     return true;
@@ -133,14 +131,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "handle",           no_argument,        NULL, 'H' },
+        { "context",          required_argument,  NULL, 'c' },
         { "transient-object", no_argument,        NULL, 't' },
         { "loaded-session",   no_argument,        NULL, 'l' },
         { "saved-session",    no_argument,        NULL, 's' },
         { "session",          required_argument,  NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("H:tlsS:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:tlsS:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -152,7 +150,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
     TPML_HANDLE *handles = &capability_data.data.handles;
-    
+
     if (ctx.property) {
         TSS2_RC rc;
 
@@ -169,12 +167,22 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
                 return 1;
             }
 
-            ctx.objectHandle = tpm2_session_get_handle(s);
+            ctx.context_object.handle = tpm2_session_get_handle(s);
 
             tpm2_session_free(&s);
+        } else {
+            bool result;
+
+            result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+                    &ctx.context_object);
+            if (!result) {
+                tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
+                        ctx.context_object.handle, ctx.context_object.path);
+                return 1;
+            }
         }
 
-        handles->handle[0] = ctx.objectHandle;
+        handles->handle[0] = ctx.context_object.handle;
         LOG_INFO("got session handle 0x%" PRIx32, handles->handle[0]);
         handles->count = 1;
     }
