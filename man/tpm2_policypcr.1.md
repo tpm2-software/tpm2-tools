@@ -79,7 +79,7 @@ handle=`tpm2_startauthsession -a -S session.dat | cut -d' ' -f 2-2`
 
 tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -f policy.dat
 
-unsealed=`tpm2_unseal -S session.dat -c unseal.key.ctx`
+unsealed=`tpm2_unseal -S session.dat -c file:unseal.key.ctx`
 
 echo "$unsealed"
 
