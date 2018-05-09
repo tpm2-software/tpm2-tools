@@ -52,16 +52,14 @@ struct tpm_unseal_ctx {
         TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
     } auth;
-    TPMI_DH_OBJECT itemHandle;
     char *outFilePath;
-    char *contextItemFile;
     char *raw_pcrs_file;
     char *session_file;
     char *parent_auth_str;
     TPML_PCR_SELECTION pcr_selection;
+    const char *context_arg;
+    tpm2_loaded_object context_object;
     struct {
-        UINT8 H : 1;
-        UINT8 c : 1;
         UINT8 P : 1;
         UINT8 L : 1;
     } flags;
@@ -78,7 +76,7 @@ bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_SENSITIVE_DATA outData = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_DATA, buffer);
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.itemHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.context_object.handle,
             &sessions_data, &outData, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_Unseal, rval);
@@ -126,17 +124,17 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!(ctx.flags.H || ctx.flags.c)) {
-        LOG_ERR("Expected options H or c");
+    if (!ctx.context_arg) {
+        LOG_ERR("Expected option C");
         return false;
     }
 
-    if (ctx.flags.c) {
-        bool result = files_load_tpm_context_from_path(sapi_context, &ctx.itemHandle,
-                ctx.contextItemFile);
-        if (!result) {
-            return false;
-        }
+    bool retval = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.context_object);
+    if (!retval) {
+        tpm2_tool_output(
+                "Failed to load contest object for key (handle: 0x%x, path: %s).\n",
+                ctx.context_object.handle, ctx.context_object.path);
+        return false;
     }
 
     if (ctx.flags.L) {
@@ -152,15 +150,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'H': {
-        bool result = tpm2_util_string_to_uint32(value, &ctx.itemHandle);
-        if (!result) {
-            LOG_ERR("Could not convert item handle to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.H = 1;
-    }
+    case 'c':
+        ctx.context_arg = value;
         break;
     case 'P': {
         ctx.flags.P = 1;
@@ -169,10 +160,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'o':
         ctx.outFilePath = value;
-        break;
-    case 'c':
-        ctx.contextItemFile = value;
-        ctx.flags.c = 1;
         break;
     case 'L':
         if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
@@ -192,7 +179,6 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "item",                 required_argument, NULL, 'H' },
       { "auth-key",             required_argument, NULL, 'P' },
       { "out-file",             required_argument, NULL, 'o' },
       { "item-context",         required_argument, NULL, 'c' },
@@ -200,7 +186,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("H:P:o:c:L:F:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:o:c:L:F:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;

@@ -78,7 +78,7 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r 
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
-tpm2_unseal -Q -C file:$file_unseal_key_ctx -o $file_unseal_output_data
+tpm2_unseal -Q -c file:$file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
@@ -90,7 +90,7 @@ cat $file_input_data | tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
-tpm2_unseal -Q -C file:$file_unseal_key_ctx -o $file_unseal_output_data
+tpm2_unseal -Q -c file:$file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
@@ -107,7 +107,7 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r 
 
 tpm2_load -Q -C file:$file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
-unsealed=`tpm2_unseal -C file:$file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value`
+unsealed=`tpm2_unseal -c file:$file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value`
 
 test "$unsealed" == "$secret"
 

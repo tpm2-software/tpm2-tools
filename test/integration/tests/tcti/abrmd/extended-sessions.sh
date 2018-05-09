@@ -114,7 +114,7 @@ handle=`tpm2_startauthsession -a -S $file_session_file | cut -d' ' -f 2-2`
 
 tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 
-unsealed=`tpm2_unseal -P"session:$file_session_file" -C file:$file_unseal_key_ctx`
+unsealed=`tpm2_unseal -P"session:$file_session_file" -c file:$file_unseal_key_ctx`
 
 test "$unsealed" == "$secret"
 
@@ -124,7 +124,7 @@ tpm2_policyrestart -S $file_session_file
 # negative test, clear the error handler
 trap - ERR
 
-tpm2_unseal -P"session:$file_session_file" -C file:$file_unseal_key_ctx 2>/dev/null
+tpm2_unseal -P"session:$file_session_file" -c file:$file_unseal_key_ctx 2>/dev/null
 rc=$?
 
 # restore the error handler
