@@ -53,7 +53,7 @@ tpm2_createprimary -Q -a o -g sha256 -G rsa
 # tpm2-abrmd may save the transient object and restore it when using
 res=`tpm2_getcap -c handles-transient`
 if [ -n "$res" ]; then
-    tpm2_flushcontext -Q -H 0x80000000
+    tpm2_flushcontext -Q -c 0x80000000
 fi
 
 # Test for flushing a transient object
