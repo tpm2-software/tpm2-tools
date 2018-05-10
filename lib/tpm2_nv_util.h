@@ -52,19 +52,23 @@
  * @return
  *  True on success, false otherwise.
  */
-static inline bool tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
-
-    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+static inline bool tpm2_util_nv_read_public2(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public, TPM2B_NAME *nv_name) {
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, NULL, nv_public,
-            &nv_name, NULL));
+            nv_name, NULL));
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_NV_ReadPublic, rval);
         return false;
     }
 
     return true;
+}
+
+static inline bool tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
+    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    return tpm2_util_nv_read_public2(sapi_context, nv_index, nv_public, &nv_name);
 }
 
 /**
