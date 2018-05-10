@@ -1,4 +1,4 @@
-# Algorithm Specfiers
+# Algorithm Specifiers
 
 Options that take algorithms support "nice-names". Nice names, like sha1 can be
 used in place of the raw hex for sha1: 0x4. The nice names are converted by

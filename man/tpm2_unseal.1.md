@@ -48,7 +48,7 @@ alive and pass that session using the **--input-session-handle** option.
 
     The list of pcr banks and selected PCRs' ids.
     _PCR\_SELECTION\_LIST_ values should follow the
-    pcr bank specifiers standards, see section "PCR Bank Specfiers".
+    pcr bank specifiers standards, see section "PCR Bank Specifiers".
     **-S** is mutually exclusive of this option.
 
   * **-F**,**--pcr-input-file**=_PCR\_INPUT\_FILE_
