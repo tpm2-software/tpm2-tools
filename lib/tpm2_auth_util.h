@@ -33,7 +33,55 @@
 
 #include <tss2/tss2_sys.h>
 
+#include "tpm2_auth_util.h"
+#include "tpm2_util.h"
 #include "tpm2_session.h"
+
+typedef struct tpm2_auth_cb tpm2_auth_cb;
+struct tpm2_auth_cb {
+    struct {
+        bool (*init)(tpm2_session_data *d);
+        bool (*update)(TSS2_SYS_CONTEXT *sapi, void *udata);
+    } hmac;
+    // Others can go here if need them...
+};
+
+typedef struct tpm2_auth tpm2_auth;
+struct tpm2_auth {
+    unsigned cnt;
+    const char *optargs[3];
+    tpm2_session *sessions[3];
+    UINT8 hmac_indexes;
+    tpm2_auth_cb cb;
+    TSS2L_SYS_AUTH_COMMAND auth_list;
+    TSS2L_SYS_AUTH_RESPONSE resp_list;
+};
+
+#define TPM2_AUTH_INIT  { \
+    .cnt = 0, \
+    .optargs = { NULL, NULL, NULL }, \
+    .sessions = { NULL, NULL, NULL }, \
+    .hmac_indexes = 0, \
+    .cb = { .hmac = { .init = NULL, .update = NULL } }, \
+    .auth_list = { \
+        .count = 0, \
+        .auths = { TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }, \
+    }, \
+}
+
+static inline bool tpm2_auth_util_set_opt(const char *optarg, tpm2_auth *auth) {
+
+    if (auth->cnt > 3) {
+        return false;
+    }
+
+    auth->optargs[auth->cnt++] = optarg;
+    return true;
+}
+
+bool tpm2_auth_util_from_options(TSS2_SYS_CONTEXT *sapi, tpm2_auth *auth, tpm2_auth_cb *cb, bool support_sessions);
+bool tpm2b_auth_update(TSS2_SYS_CONTEXT *sapi, tpm2_auth *auth, void *udata);
+bool tpm2_auth_util_free(TSS2_SYS_CONTEXT *sapi, tpm2_auth *auth);
 
 /**
  * Convert a password argument to a valid TPM2B_AUTH structure. Passwords can
