@@ -156,7 +156,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pubfile",              required_argument, NULL, 'u' },
       { "privfile",             required_argument, NULL, 'r' },
       { "name",                 required_argument, NULL, 'n' },
-      { "context",              required_argument, NULL, 'o' },
+      { "out-context",          required_argument, NULL, 'o' },
       { "context-parent",       required_argument, NULL, 'C' },
     };
 
