@@ -47,6 +47,7 @@ cleanup() {
   tpm2_nvrelease -Q -x $nv_test_index -a o 2>/dev/null || true
   tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001 2>/dev/null || true
   tpm2_nvrelease -Q -x 0x1500015 -a 0x40000001 -P owner 2>/dev/null || true
+  tpm2_nvrelease -Q -x 0x1500018 -a 0x40000001 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
         nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out cap.out
@@ -209,5 +210,17 @@ if [ $? -eq 0 ];then
  echo "nvwrite with bad password should fail!"
  exit 1
 fi
+
+tpm2_clear
+trap onerror ERR
+
+# Use of HMAC authentication in place of plaintext/ password only authentication
+base64 /dev/urandom | head -c 2048 > test.nv
+
+tpm2_nvdefine -x 0x1500018 -a 0x40000001 -s 2048 -t "ownerwrite|authwrite|ownerread|no_da" -I "hmacpass"
+
+# Now use the hmac version so it doesn't get sent again.
+# Write with NV Index HMAC password
+tpm2_nvwrite -x 0x1500018 -a 0x1500018 -P "hmac:hmacpass" test.nv
 
 exit 0
