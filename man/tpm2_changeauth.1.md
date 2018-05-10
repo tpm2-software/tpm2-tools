@@ -13,7 +13,7 @@ and lockout authorizations.
 
 # DESCRIPTION
 
-**tpm2_changeauth**(1) - set the various (owner, endorse, locakout)
+**tpm2_changeauth**(1) - set the various (owner, endorse, lockout)
 authorization values.
 
 # OPTIONS

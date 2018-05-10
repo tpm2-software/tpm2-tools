@@ -37,7 +37,7 @@
 
     The list of pcr banks and selected PCRs' ids for each bank.
     _PCR\_SELECTION\_LIST_ values should follow the
-    pcr bank specifiers standards, see section "PCR Bank Specfiers".
+    pcr bank specifiers standards, see section "PCR Bank Specifiers".
 
   * **-m**, **--message**:
 
