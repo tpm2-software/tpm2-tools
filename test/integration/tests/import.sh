@@ -51,7 +51,7 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_createprimary -Q -G 1 -g 0xb -a o -C parent.ctx
+tpm2_createprimary -Q -G 1 -g 0xb -a o -o parent.ctx
 tpm2_evictcontrol -Q -a o -c file:parent.ctx -p 0x81010005
 
 dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null

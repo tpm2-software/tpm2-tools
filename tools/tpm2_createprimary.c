@@ -192,7 +192,7 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.G = 1;
     }   break;
-    case 'C':
+    case 'o':
         ctx.context_file = value;
         if (ctx.context_file == NULL || ctx.context_file[0] == '\0') {
             return false;
@@ -227,12 +227,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth-object",          required_argument, NULL, 'K' },
         { "halg",                 required_argument, NULL, 'g' },
         { "kalg",                 required_argument, NULL, 'G' },
-        { "context",              required_argument, NULL, 'C' },
+        { "out-context",          required_argument, NULL, 'o' },
         { "policy-file",          required_argument, NULL, 'L' },
         { "object-attributes",    required_argument, NULL, 'A' },
     };
 
-    *opts = tpm2_options_new("A:P:K:g:G:C:L:a:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("A:P:K:g:G:o:L:a:", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;

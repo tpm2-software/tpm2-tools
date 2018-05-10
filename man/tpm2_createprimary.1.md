@@ -52,7 +52,7 @@ will create and load a Primary Object. The sensitive area is not returned.
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms.
 
-  * **-C**, **--context**=_CONTEXT\_FILE_:
+  * **-o**, **--out-context**=_CONTEXT\_FILE_:
     An optional file used to store the object context returned.
 
   * **-L**, **--policy-file**=_POLICY\_FILE_:
@@ -85,7 +85,7 @@ will create and load a Primary Object. The sensitive area is not returned.
 # EXAMPLES
 
 ```
-tpm2_createprimary -H o -g sha256 -G ecc -C context.out
+tpm2_createprimary -H o -g sha256 -G ecc -o context.out
 ```
 
 # RETURNS

@@ -57,7 +57,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
 # Step 4: Using the actual policy session from step 3 in tpm2_unseal to unseal the object.
 #
 
-tpm2_createprimary -H e -g sha256 -G ecc -C primary.ctx
+tpm2_createprimary -H e -g sha256 -G ecc -o primary.ctx
 
 tpm2_pcrlist -Q -L "sha1:0,1,2,3 -o pcr.dat
 
