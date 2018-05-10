@@ -48,6 +48,7 @@ struct tpm2_session_data {
     TPMT_SYM_DEF symmetric;
     TPMI_ALG_HASH authHash;
     TPM2B_NONCE nonce_caller;
+    TPM2_HANDLE auth_handles[2];
 };
 
 struct tpm2_session {
@@ -56,12 +57,14 @@ struct tpm2_session {
 
     struct {
         TPMI_SH_AUTH_SESSION session_handle;
-        TPM2B_NONCE nonceTPM;
+        TPM2B_NONCE nonceOlder;
     } output;
 
     struct {
         TPM2B_NONCE nonceNewer;
         const char *path;
+        bool started_session;
+        bool is_closed;
     } internal;
 };
 
@@ -78,12 +81,36 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
     return d;
 }
 
+void tpm2_session_data_free(tpm2_session_data **d) {
+
+    if (d && *d) {
+        free(*d);
+        *d = NULL;
+    }
+}
+
+void tpm2_session_set_auth_handles(tpm2_session_data *data, TPM2_HANDLE auth_handles[2]) {
+    memcpy(data->auth_handles, auth_handles, sizeof(data->auth_handles));
+}
+
+const TPM2_HANDLE* tpm2_session_get_auth_handles(tpm2_session *s) {
+    return s->input->auth_handles;
+}
+
+
 void tpm2_session_set_key(tpm2_session_data *data, TPMI_DH_OBJECT key) {
     data->key = key;
 }
 
 void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce) {
     data->nonce_caller = *nonce;
+}
+
+void tpm2_session_update_nonce_older(tpm2_session *session,
+    TPM2B_NONCE *nonce_in_response) {
+    memcpy(&session->output.nonceOlder, &session->internal.nonceNewer,
+        sizeof(TPM2B_NONCE));
+    memcpy(&session->internal.nonceNewer, nonce_in_response, sizeof(TPM2B_NONCE));
 }
 
 void tpm2_session_set_bind(tpm2_session_data *data, TPMI_DH_ENTITY bind) {
@@ -120,6 +147,11 @@ TPM2_SE tpm2_session_get_type(tpm2_session *session) {
     return session->input->session_type;
 }
 
+const TPM2B_NONCE *tpm2_session_get_nonce_tpm(tpm2_session *session) {
+    return &session->internal.nonceNewer;
+}
+
+
 //
 // This is a wrapper function around the TPM2_StartAuthSession command.
 // It performs the command, calculates the session key, and updates a
@@ -137,16 +169,19 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context,
             NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_StartAuthSession, rval);
+        return false;
     }
 
-    return rval == TPM2_RC_SUCCESS;
+    session->internal.started_session = true;
+
+    return true;
 }
 
 void tpm2_session_free(tpm2_session **session) {
 
     tpm2_session *s = *session;
     if (s) {
-        free(s->input);
+        tpm2_session_data_free(&s->input);
         free(s);
         *session = NULL;
     }
@@ -359,4 +394,23 @@ bool tpm2_session_restart(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s) {
     }
 
     return rval == TPM2_RC_SUCCESS;
+}
+
+bool tpm2_session_close(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s) {
+
+    if (s->internal.is_closed) {
+        LOG_WARN("Double closing a session");
+        return true;
+    }
+
+    if (s->internal.started_session) {
+        TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
+                s->output.session_handle);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_FlushContext, rval);
+        }
+        return rval == TSS2_RC_SUCCESS;
+    }
+
+    return tpm2_session_save(sapi_context, s, NULL);
 }

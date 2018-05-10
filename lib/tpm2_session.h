@@ -57,6 +57,14 @@ typedef struct tpm2_session tpm2_session;
  *  A tpm2_session_data object on success, NULL on failure.
  */
 tpm2_session_data *tpm2_session_data_new(TPM2_SE type);
+void tpm2_session_data_free(tpm2_session_data **d);
+
+// TODO get the sizes known in here.
+void tpm2_session_set_auth_handles(tpm2_session_data *data, TPM2_HANDLE auth_handles[2]);
+const TPM2_HANDLE* tpm2_session_get_auth_handles(tpm2_session *session);
+
+void tpm2_session_update_nonce_older(tpm2_session *session,
+	TPM2B_NONCE *nonce_in_response);
 
 /**
  * Sets the tpmKey parameter.
@@ -143,6 +151,16 @@ TPMI_SH_AUTH_SESSION tpm2_session_get_handle(tpm2_session *session);
 TPM2_SE tpm2_session_get_type(tpm2_session *session);
 
 /**
+ * Retrieves the session nonce when an auth session is started.
+ * The session nonce is used in calculating the session HMAC for authentication
+ * @param data
+ *  The session object to modify.
+ * @return
+ *  The TPM2B_NONCE nonce value.
+ */
+const TPM2B_NONCE *tpm2_session_get_nonce_tpm(tpm2_session *session);
+
+/**
  * True if a session is of type TPM2_SE_TRIAL
  * @param session
  *  The session to check the type of.
@@ -210,6 +228,19 @@ tpm2_session *tpm2_session_restore(const char *path);
  *  true on success, false otherwise.
  */
 bool tpm2_session_restart(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s);
+
+/**
+ * Closes a session. If the session was started, it is flushed, if the session
+ * was restored from a session context file, it is saved back to that session
+ * context file.
+ * @param sapi_context
+ *  The system apiu context
+ * @param s
+ *  The session to close.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_session_close(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s);
 
 /**
  * Frees a tpm2_sessio but DOES NOT FLUSH the handle. Frees the associated
