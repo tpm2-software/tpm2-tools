@@ -22,7 +22,7 @@ the keyHandle.
 
 These options control the object verification:
 
-  * **-c**, **--object**=_OBJ\_CTX\_OR\_HANDLE_:
+  * **-c**, **--context**=_OBJ\_CTX\_OR\_HANDLE_:
     _CONTEXT\_OBJECT_ of the content object associated with the created
     certificate by CA.
     Either a file or a handle number. See section "Context Object Format".
