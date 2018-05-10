@@ -87,7 +87,7 @@ rm -f $file_verify_tk_data
 tpm2_verifysignature -Q -c file:$file_signing_key_ctx  -D  $file_input_data_hash -s $file_output_data  -t $file_verify_tk_data
 
 rm -f $file_verify_tk_data $file_signing_key_ctx  -rf
-tpm2_loadexternal -Q -a n -u $file_signing_key_pub -C  $file_signing_key_ctx
+tpm2_loadexternal -Q -a n -u $file_signing_key_pub -o  $file_signing_key_ctx
 
 tpm2_verifysignature -Q -c file:$file_signing_key_ctx  -g $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
 

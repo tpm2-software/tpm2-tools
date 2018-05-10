@@ -111,7 +111,7 @@ tpm2_getcap -c handles-transient
 <null output>
 
 # Reload it via loadexternal
-tpm2_loadexternal -H o -u ek.pub -C ek.ctx
+tpm2_loadexternal -H o -u ek.pub -o ek.ctx
 
 # Check that it is re-loaded in transient memory
 tpm2_getcap -c handles-transient
