@@ -34,7 +34,7 @@ server.
     Same formatting as the endorse password value or **-e** option.
 
   * **-H**, **--handle**=_HANDLE_:
-    specifies the handle used to make EK  persistent (hex).
+    specifies the handle used to make EK  persistent.
     If a value of **-** is passed the tool will find a vacant persistent handle
     to use and print out the automatically selected handle.
 
