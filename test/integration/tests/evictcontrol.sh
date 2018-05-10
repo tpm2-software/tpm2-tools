@@ -49,7 +49,7 @@ cleanup "no-shut-down"
 
 tpm2_clear -Q
 
-tpm2_createprimary -Q -a e -g sha256 -G rsa -C primary.ctx
+tpm2_createprimary -Q -a e -g sha256 -G rsa -o primary.ctx
 
 tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv  -C file:primary.ctx
 
