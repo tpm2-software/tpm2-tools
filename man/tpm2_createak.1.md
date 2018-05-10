@@ -155,7 +155,7 @@ tpm2_getcap -c handles-transient
 - 0x80000000
 
 # Reload it via loadexternal
-tpm2_loadexternal -H o -u ak.pub -C file:ak.ctx
+tpm2_loadexternal -H o -u ak.pub -o file:ak.ctx
 
 # Check that it is re-loaded in transient memory
 $ tpm2_getcap -c handles-transient

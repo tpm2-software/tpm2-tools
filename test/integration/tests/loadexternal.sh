@@ -74,7 +74,7 @@ tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_prim
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -C file:$file_primary_key_ctx
 
-tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -C $file_loadexternal_key_ctx
+tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
 
 tpm2_evictcontrol -Q -a o -c file:$file_primary_key_ctx -p $Handle_parent
 
