@@ -42,13 +42,15 @@ will create and load a Primary Object. The sensitive area is not returned.
     "Authorization Formatting".
 
   * **-g**, **--halg**=_ALGORITHM_:
-    The hash algorithm to use. Algorithms should follow the
-    " formatting standards, see section "Algorithm Specifiers".
-    Also, see section "Supported Hash Algorithms" for a list of supported
-    hash algorithms.
+    The hash algorithm to use for generating the objects name.
+    If not specified, the default name algorithm is SHA256.
+    Algorithms should follow the "formatting standards, see section
+    "Algorithm Specifiers". Also, see section
+    "Supported Hash Algorithms" for a list of supported hash algorithms.
 
   * **-G**, **--kalg**=_KEY\_ALGORITHM_:
     Algorithm type for generated key. It supports friendly names like the -g option.
+    If not specified, the default key algorithm is RSA.
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms.
 
