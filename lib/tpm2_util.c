@@ -352,6 +352,10 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
 bool tpm2_util_object_load(TSS2_SYS_CONTEXT *sapi_ctx,
         const char *objectstr, tpm2_loaded_object *outobject) {
 
+    if (!objectstr) {
+        return false;
+    }
+
     bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
     bool result;
 
