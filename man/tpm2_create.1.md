@@ -35,14 +35,17 @@ These options for creating the tpm entity:
     "password for parent key" option: **-P**.
 
   * **-g**, **--halg**=_ALGORITHM_:
-    The hash algorithm to use. Algorithms should follow the
+    The hash algorithm for generating the objects name. This is optional
+    and defaults to sha256 when not specified. Algorithms should follow the
     " formatting standards, see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
   * **-G**, **--kalg**=_KEY\_ALGORITHM_:
-    The algorithm associated with this object. It accepts friendly names just
-    like -g option. See section "Supported Public Object Algorithms" for a list
+    The key algorithm associated with this object. It defaults to RSA if not
+    specified.
+    It accepts friendly names just like -g option.
+    See section "Supported Public Object Algorithms" for a list
     of supported object algorithms.
 
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
