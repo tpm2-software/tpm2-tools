@@ -59,8 +59,6 @@ struct tpm_createprimary_ctx {
     tpm2_hierarchy_pdata objdata;
     char *context_file;
     struct {
-        UINT8 g :1;
-        UINT8 G :1;
         UINT8 P :1;
         UINT8 K :1;
     } flags;
@@ -177,7 +175,6 @@ static bool on_option(char key, char *value) {
         if (!res) {
             return false;
         }
-        ctx.flags.g = 1;
     }   break;
     case 'G': {
         TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value);
@@ -190,7 +187,6 @@ static bool on_option(char key, char *value) {
         if (!res) {
             return false;
         }
-        ctx.flags.G = 1;
     }   break;
     case 'o':
         ctx.context_file = value;
@@ -238,19 +234,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static inline bool valid_ctx(void) {
-    return (ctx.flags.g && ctx.flags.G);
-}
-
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     bool result;
     int rc = 1;
-
-    if (!valid_ctx()) {
-        goto out;
-    }
 
     if (ctx.flags.P) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str, &ctx.auth.session_data, &ctx.auth.session);

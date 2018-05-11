@@ -80,4 +80,7 @@ policy_new=$(yaml_get_kv pub.out \"authorization\ policy\")
 
 test "$policy_orig" == "$policy_new"
 
+# Test that -g/-G do not need to be specified.
+tpm2_createprimary -Q -o context.out
+
 exit 0

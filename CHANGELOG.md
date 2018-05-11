@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_createprimary: -g/-G become optional options.
   * tpm2_verifysignature - Option `-r` changes to `-f` and supports signature format "rsa".
   * tpm2_import - Parent public data option, `-K` is optional.
   * tpm2_import - Supports importing external RSA 2048 keys via pem files.
