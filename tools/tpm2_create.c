@@ -273,16 +273,10 @@ static bool on_option(char key, char *value) {
         break;
     case 'u':
         ctx.opu_path = value;
-        if(files_does_file_exist(ctx.opu_path) != 0) {
-            return false;
-        }
         ctx.flags.u = 1;
         break;
     case 'r':
         ctx.opr_path = value;
-        if(files_does_file_exist(ctx.opr_path) != 0) {
-            return false;
-        }
         ctx.flags.r = 1;
         break;
     case 'C':
