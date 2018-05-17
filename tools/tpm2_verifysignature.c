@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
@@ -69,33 +69,27 @@ struct tpm2_verifysig_ctx {
 };
 
 tpm2_verifysig_ctx ctx = {
-        .halg = TPM_ALG_SHA1,
+        .halg = TPM2_ALG_SHA1,
         .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
 };
 
 static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
 
 
-    UINT32 rval;
+    TSS2_RC rval;
     TPMT_TK_VERIFIED validation;
 
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     UINT16 i;
-    for (i = 0; i < ctx.msgHash.t.size; i++) {
-        tpm2_tool_output("%02x ", ctx.msgHash.t.buffer[i]);
+    for (i = 0; i < ctx.msgHash.size; i++) {
+        tpm2_tool_output("%02x ", ctx.msgHash.buffer[i]);
     }
     tpm2_tool_output("\n");
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_VerifySignature(sapi_context, ctx.keyHandle, NULL,
             &ctx.msgHash, &ctx.signature, &validation, &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Tss2_Sys_VerifySignature failed, error code: 0x%x", rval);
         return false;
     }
@@ -184,7 +178,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
             goto err;
         }
         int rc = tpm_hash_compute_data(sapi_context, ctx.halg,
-                TPM_RH_NULL, msg->buffer, msg->size, &ctx.msgHash, NULL);
+                TPM2_RH_NULL, msg->buffer, msg->size, &ctx.msgHash, NULL);
         if (rc) {
             LOG_ERR("Compute message hash failed!");
             goto err;
@@ -212,7 +206,7 @@ static bool on_option(char key, char *value) {
 		break;
 	case 'g': {
 		ctx.halg = tpm2_alg_util_from_optarg(value);
-		if (ctx.halg == TPM_ALG_ERROR) {
+		if (ctx.halg == TPM2_ALG_ERROR) {
 			LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
 			return false;
 		}
@@ -225,8 +219,8 @@ static bool on_option(char key, char *value) {
 	}
 		break;
 	case 'D': {
-	    ctx.msgHash.t.size = sizeof(ctx.msgHash.t.buffer);
-		if (!files_load_bytes_from_path(value, ctx.msgHash.t.buffer, &ctx.msgHash.t.size)) {
+	    ctx.msgHash.size = sizeof(ctx.msgHash.buffer);
+		if (!files_load_bytes_from_path(value, ctx.msgHash.buffer, &ctx.msgHash.size)) {
 			LOG_ERR("Could not load digest from file!");
 			return false;
 		}
@@ -271,9 +265,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
             { "key-context", 1, NULL, 'c' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("k:g:m:D:rs:t:c:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

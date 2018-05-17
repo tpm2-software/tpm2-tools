@@ -29,7 +29,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "rc-decode.h"
@@ -37,34 +37,34 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-#define TPM_RC_MAX 0xffffffff
+#define TPM2_RC_MAX 0xffffffff
 
-static bool str_to_tpm_rc(const char *rc_str, TPM_RC *rc) {
+static bool str_to_tpm_rc(const char *rc_str, TSS2_RC *rc) {
     uintmax_t rc_read = 0;
     char *end_ptr = NULL;
 
     rc_read = strtoumax(rc_str, &end_ptr, 0);
-    if (rc_read > TPM_RC_MAX) {
-        LOG_ERR("invalid TPM_RC");
+    if (rc_read > TPM2_RC_MAX) {
+        LOG_ERR("invalid TSS2_RC");
         return false;
     }
 
-    /* apply the TPM_RC_MAX mask to the possibly larger uintmax_t */
-    *rc = rc_read & TPM_RC_MAX;
+    /* apply the TPM2_RC_MAX mask to the possibly larger uintmax_t */
+    *rc = rc_read & TPM2_RC_MAX;
 
     return true;
 }
 
 /* Dump the hex, identifier and description for the format zero / VER1 error
- * provided in TPM_RC parameter.
+ * provided in TSS2_RC parameter.
  */
-static int print_tpm_rc_format_zero(TPM_RC rc) {
-    TPM_RC rc_tmp;
+static int print_tpm_rc_format_zero(TSS2_RC rc) {
+    TSS2_RC rc_tmp;
     tpm2_rc_entry_t *entry;
 
     rc_tmp = tpm2_rc_get_code_7bit(rc);
     if (tpm2_rc_is_vendor_defined(rc)) {
-        LOG_ERR("vendor defined TPM_RCs are not supported");
+        LOG_ERR("vendor defined TSS2_RCs are not supported");
         return -1;
     } else if (tpm2_rc_is_warning_code(rc)) {
         entry = tpm2_get_warn_entry(rc_tmp);
@@ -73,7 +73,7 @@ static int print_tpm_rc_format_zero(TPM_RC rc) {
                     "description: %s\n", rc_tmp, entry->name,
                     entry->description);
         else
-            tpm2_tool_output("failed to decode TPM_RC warning: 0x%x\n", rc_tmp);
+            tpm2_tool_output("failed to decode TSS2_RC warning: 0x%x\n", rc_tmp);
     } else if (tpm2_rc_is_error_code(rc)) {
         entry = tpm2_get_fmt0_entry(rc_tmp);
         if (entry)
@@ -81,12 +81,12 @@ static int print_tpm_rc_format_zero(TPM_RC rc) {
                     "description: %s\n", rc_tmp, entry->name,
                     entry->description);
         else
-            tpm2_tool_output("failed to decode TPM_RC error: 0x%02x\n", rc_tmp);
+            tpm2_tool_output("failed to decode TSS2_RC error: 0x%02x\n", rc_tmp);
     } else if (tpm2_rc_is_tpm12(rc_tmp)) {
-        LOG_ERR("version 1.2 TPM_RCs are not supported");
+        LOG_ERR("version 1.2 TSS2_RCs are not supported");
         return -1;
     } else {
-        LOG_ERR("Unknown TPM_RC format");
+        LOG_ERR("Unknown TSS2_RC format");
         return -1;
     }
     /* decode warning / error code */
@@ -95,8 +95,8 @@ static int print_tpm_rc_format_zero(TPM_RC rc) {
 /* Dump the hex, identifier and description for the format one / FMT1 error
  * as well as the parameter, handle or session data.
  */
-static int print_tpm_rc_format_one(TPM_RC rc) {
-    TPM_RC rc_tmp;
+static int print_tpm_rc_format_one(TSS2_RC rc) {
+    TSS2_RC rc_tmp;
     tpm2_rc_entry_t *entry;
 
     tpm2_tool_output("format 1 error code\n");
@@ -105,7 +105,7 @@ static int print_tpm_rc_format_one(TPM_RC rc) {
     /* decode error message */
     entry = tpm2_get_fmt1_entry(rc_tmp);
     if (!entry) {
-        tpm2_tool_output("Unknown TPM_RC\n");
+        tpm2_tool_output("Unknown TSS2_RC\n");
         return -1;
     }
     tpm2_tool_output("  identifier: %s\n  description: %s\n", entry->name,
@@ -115,7 +115,7 @@ static int print_tpm_rc_format_one(TPM_RC rc) {
         rc_tmp = tpm2_rc_get_parameter_number(rc);
         entry = tpm2_get_parameter_entry(rc_tmp);
         if (!entry) {
-            tpm2_tool_output("Unknown TPM_RC parameter number: 0x%03x\n", rc_tmp);
+            tpm2_tool_output("Unknown TSS2_RC parameter number: 0x%03x\n", rc_tmp);
             return -1;
         }
         tpm2_tool_output("parameter\n  hex: 0x%03x\n  identifier:  %s\n  "
@@ -124,7 +124,7 @@ static int print_tpm_rc_format_one(TPM_RC rc) {
         rc_tmp = tpm2_rc_get_handle_number(rc);
         entry = tpm2_get_handle_entry(rc_tmp);
         if (!entry) {
-            tpm2_tool_output("Unkonwn TPM_RC handle number: 0x%03x\n", rc_tmp);
+            tpm2_tool_output("Unkonwn TSS2_RC handle number: 0x%03x\n", rc_tmp);
             return -1;
         }
         tpm2_tool_output("handle\n  hex:0x%03x\n  identifier:  %s\n  "
@@ -133,7 +133,7 @@ static int print_tpm_rc_format_one(TPM_RC rc) {
         rc_tmp = tpm2_rc_get_session_number(rc);
         entry = tpm2_get_session_entry(rc_tmp);
         if (!entry) {
-            tpm2_tool_output("Unknown TPM_RC session number: 0x%03x\n", rc_tmp);
+            tpm2_tool_output("Unknown TSS2_RC session number: 0x%03x\n", rc_tmp);
             return -1;
         }
         tpm2_tool_output("session\n  hex: 0x%03x\n  identifier: %s\n  "
@@ -143,10 +143,10 @@ static int print_tpm_rc_format_one(TPM_RC rc) {
     return 0;
 }
 /* Dump the hex, identifier and description for the TSS defined layer
- * indicator in the provided TPM_RC.
+ * indicator in the provided TSS2_RC.
  */
-static int print_tpm_rc_tss_layer(TPM_RC rc) {
-    TPM_RC rc_tmp;
+static int print_tpm_rc_tss_layer(TSS2_RC rc) {
+    TSS2_RC rc_tmp;
     tpm2_rc_entry_t *entry;
     int ret;
 
@@ -159,17 +159,17 @@ static int print_tpm_rc_tss_layer(TPM_RC rc) {
                 entry->description);
         ret = 0;
     } else {
-        tpm2_tool_output("failed to decode TPM_RC layer: 0x%x\n", rc_tmp);
+        tpm2_tool_output("failed to decode TSS2_RC layer: 0x%x\n", rc_tmp);
         ret = -1;
     }
 
     return ret;
 }
 /* Dump the hex, identifier string and description for the TSS defined
- * base error code in the provided TPM_RC.
+ * base error code in the provided TSS2_RC.
  */
-static int print_tpm_rc_tss_error_code(TPM_RC rc) {
-    TPM_RC rc_tmp;
+static int print_tpm_rc_tss_error_code(TSS2_RC rc) {
+    TSS2_RC rc_tmp;
     tpm2_rc_entry_t *entry;
     int ret;
 
@@ -180,46 +180,46 @@ static int print_tpm_rc_tss_error_code(TPM_RC rc) {
         ret = 0;
     } else {
         rc_tmp = tpm2_rc_get_tss_err_code(rc);
-        tpm2_tool_output("failed to decode TPM_RC error code: 0x%x\n", rc_tmp);
+        tpm2_tool_output("failed to decode TSS2_RC error code: 0x%x\n", rc_tmp);
         ret = -1;
     }
 
     return ret;
 }
-/* Top level function to dump human readable data about TPM_RCs as defined
+/* Top level function to dump human readable data about TSS2_RCs as defined
  * in the TPM2 Part 2: Structures, Table 17..
  */
-static int print_tpm_rc_tpm_error_code(TPM_RC rc) {
+static int print_tpm_rc_tpm_error_code(TSS2_RC rc) {
     if (tpm2_rc_is_format_zero(rc))
         print_tpm_rc_format_zero(rc);
     else if (tpm2_rc_is_format_one(rc))
         print_tpm_rc_format_one(rc);
     else {
-        LOG_ERR("Unknown TPM_RC format");
+        LOG_ERR("Unknown TSS2_RC format");
         return -1;
     }
     return 0;
 }
-/* Top level function to dump human readable data about TPM_RCs.
+/* Top level function to dump human readable data about TSS2_RCs.
  */
-bool print_tpm_rc(TPM_RC rc) {
+bool print_tpm_rc(TSS2_RC rc) {
 
     /* Determine which layer in the stack produced the error */
-    TPM_RC rc_tmp = tpm2_rc_get_layer(rc);
+    TSS2_RC rc_tmp = tpm2_rc_get_layer(rc);
     int ret = print_tpm_rc_tss_layer(rc);
     if (ret) {
         return false;
     }
 
     switch (rc_tmp) {
-    case TSS2_SYS_ERROR_LEVEL:
-    case TSS2_TCTI_ERROR_LEVEL:
-    case TSS2_RESMGR_ERROR_LEVEL:
+    case TSS2_SYS_RC_LAYER:
+    case TSS2_TCTI_RC_LAYER:
+    case TSS2_RESMGR_RC_LAYER:
         ret = print_tpm_rc_tss_error_code(rc);
         break;
-    case TSS2_SYS_PART2_ERROR_LEVEL:
-    case TSS2_RESMGRTPM_ERROR_LEVEL:
-    case TSS2_TPM_ERROR_LEVEL:
+    case TSS2_MU_RC_LAYER:
+    case TSS2_RESMGR_TPM_RC_LAYER:
+    case TSS2_TPM_RC_LAYER:
         ret = print_tpm_rc_tpm_error_code(rc);
         break;
     default:
@@ -244,10 +244,8 @@ static bool on_arg(int argc, char **argv) {
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_NO_SAPI |
-                                                     TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new(NULL, 0, NULL,
-            NULL, on_arg, flags);
+            NULL, on_arg, TPM2_OPTIONS_SHOW_USAGE|TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
 }
@@ -257,7 +255,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
     UNUSED(sapi_context);
 
-    TPM_RC rc;
+    TSS2_RC rc;
 
     if (!rc_str) {
         LOG_ERR("Expected a single rc value argument, got none.");

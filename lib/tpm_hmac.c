@@ -27,11 +27,11 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_util.h"
 
-static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH hashAlg, TPM2B *key, TPM_HANDLE *keyHandle, TPM2B_NAME *keyName )
+static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH hashAlg, TPM2B *key, TPM2_HANDLE *keyHandle, TPM2B_NAME *keyName )
 {
     TPM2B keyAuth = {
             .size = 0,
@@ -41,97 +41,78 @@ static UINT32 LoadExternalHMACKey(TSS2_SYS_CONTEXT *sapi_contex, TPMI_ALG_HASH h
     TPM2B_PUBLIC inPublic;
 
 
-    inPrivate.t.sensitiveArea.sensitiveType = TPM_ALG_KEYEDHASH;
-    inPrivate.t.size = tpm2_util_copy_tpm2b( &(inPrivate.t.sensitiveArea.authValue.b), &keyAuth);
-    inPrivate.t.sensitiveArea.seedValue.b.size = 0;
-    inPrivate.t.size += tpm2_util_copy_tpm2b( &inPrivate.t.sensitiveArea.sensitive.bits.b, key);
-    inPrivate.t.size += 2 * sizeof( UINT16 );
+    inPrivate.sensitiveArea.sensitiveType = TPM2_ALG_KEYEDHASH;
+    inPrivate.size = tpm2_util_copy_tpm2b((TPM2B *)&inPrivate.sensitiveArea.authValue, &keyAuth);
+    inPrivate.sensitiveArea.seedValue.size = 0;
+    inPrivate.size += tpm2_util_copy_tpm2b((TPM2B *)&inPrivate.sensitiveArea.sensitive.bits, key);
+    inPrivate.size += 2 * sizeof( UINT16 );
 
-    inPublic.t.publicArea.type = TPM_ALG_KEYEDHASH;
-    inPublic.t.publicArea.nameAlg = TPM_ALG_NULL;
-    *( UINT32 *)&( inPublic.t.publicArea.objectAttributes )= 0;
-    inPublic.t.publicArea.objectAttributes.sign = 1;
-    inPublic.t.publicArea.objectAttributes.userWithAuth = 1;
-    inPublic.t.publicArea.authPolicy.t.size = 0;
-    inPublic.t.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM_ALG_HMAC;
-    inPublic.t.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = hashAlg;
-    inPublic.t.publicArea.unique.keyedHash.t.size = 0;
+    inPublic.publicArea.type = TPM2_ALG_KEYEDHASH;
+    inPublic.publicArea.nameAlg = TPM2_ALG_NULL;
+    *( UINT32 *)&( inPublic.publicArea.objectAttributes )= 0;
+    inPublic.publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;
+    inPublic.publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
+    inPublic.publicArea.authPolicy.size = 0;
+    inPublic.publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
+    inPublic.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = hashAlg;
+    inPublic.publicArea.unique.keyedHash.size = 0;
 
-    keyName->t.size = sizeof( TPM2B_NAME ) - 2;
-    return Tss2_Sys_LoadExternal(sapi_contex, 0, &inPrivate, &inPublic, TPM_RH_NULL, keyHandle, keyName, 0 );
+    keyName->size = sizeof( TPM2B_NAME ) - 2;
+    return Tss2_Sys_LoadExternal(sapi_contex, 0, &inPrivate, &inPublic, TPM2_RH_NULL, keyHandle, keyName, 0 );
 }
 
 
 //
 // This function does an HMAC on a null-terminated list of input buffers.
 //
-TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result )
+TSS2_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *key, TPM2B **bufferList, TPM2B_DIGEST *result )
 {
     TPMI_DH_OBJECT sequenceHandle;
     TPM2B emptyBuffer;
     TPMT_TK_HASHCHECK validation;
 
-    TPMS_AUTH_COMMAND sessionData = {
-            .sessionHandle = TPM_RS_PW,
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { .count = 1,
+        .auths = {{
+            .sessionHandle = TPM2_RS_PW,
             .nonce = {
-                    .t = { .size = 0 },
+                    .size = 0,
             },
-            .sessionAttributes = { .val = 0 },
-
-
-    };
-
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-
-    TSS2_SYS_CMD_AUTHS sessionsData;
-
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
+            .sessionAttributes = 0,
+    }}};
 
     UINT32 rval;
-    TPM_HANDLE keyHandle;
+    TPM2_HANDLE keyHandle;
     TPM2B_NAME keyName;
 
     TPM2B_AUTH nullAuth = {
-        .t = {
-                .size = 0
-        },
+                .size = 0,
     };
 
     TPM2B keyAuth = {
             .size = 0,
-            .buffer = {
-                    0
-            }
     };
 
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
-
     // Set result size to 0, in case any errors occur
-    result->b.size = 0;
+    result->size = 0;
 
     rval = LoadExternalHMACKey(sapi_context, hashAlg, key, &keyHandle, &keyName );
-    if( rval != TPM_RC_SUCCESS )
+    if( rval != TPM2_RC_SUCCESS )
     {
         return( rval );
     }
 
     // Init input sessions struct
-    tpm2_util_copy_tpm2b( &sessionData.hmac.b, &keyAuth );
-    sessionsData.cmdAuthsCount = 1;
-    sessionsData.cmdAuths = &sessionDataArray[0];
+    sessionsData.count = 1;
+    tpm2_util_copy_tpm2b((TPM2B *)&sessionsData.auths[0].hmac, &keyAuth);
 
     // Init sessions out struct
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
 
     emptyBuffer.size = 0;
 
     rval = Tss2_Sys_HMAC_Start( sapi_context, keyHandle, &sessionsData, &nullAuth, hashAlg, &sequenceHandle, 0 );
 
-    if( rval != TPM_RC_SUCCESS )
+    if( rval != TPM2_RC_SUCCESS )
         return( rval );
 
     unsigned i;
@@ -139,15 +120,15 @@ TPM_RC tpm_hmac(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hashAlg, TPM2B *ke
     {
         rval = Tss2_Sys_SequenceUpdate ( sapi_context, sequenceHandle, &sessionsData, (TPM2B_MAX_BUFFER *)( bufferList[i] ), &sessionsDataOut );
 
-        if( rval != TPM_RC_SUCCESS )
+        if( rval != TPM2_RC_SUCCESS )
             return( rval );
     }
 
-    result->t.size = sizeof( TPM2B_DIGEST ) - 2;
+    result->size = sizeof( TPM2B_DIGEST ) - 2;
     rval = Tss2_Sys_SequenceComplete ( sapi_context, sequenceHandle, &sessionsData, ( TPM2B_MAX_BUFFER *)&emptyBuffer,
-            TPM_RH_PLATFORM, result, &validation, &sessionsDataOut );
+            TPM2_RH_PLATFORM, result, &validation, &sessionsDataOut );
 
-    if( rval != TPM_RC_SUCCESS )
+    if( rval != TPM2_RC_SUCCESS )
         return( rval );
 
     rval = Tss2_Sys_FlushContext( sapi_context, keyHandle );

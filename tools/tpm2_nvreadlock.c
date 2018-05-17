@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -54,32 +54,19 @@ struct tpm_nvreadlock_ctx {
 };
 
 static tpm_nvreadlock_ctx ctx = {
-    .auth_handle = TPM_RH_PLATFORM,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .auth_handle = TPM2_RH_PLATFORM,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 
 };
 
 static bool nv_readlock(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
 
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-
-    session_data_array[0] = &ctx.session_data;
-    sessionDataOutArray[0] = &session_data_out;
-
-    sessions_data_out.rspAuths = &sessionDataOutArray[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
-
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadLock(sapi_context, ctx.auth_handle, ctx.nv_index,
             &sessions_data, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to lock NVRAM area at index 0x%x (%d).Error:0x%x",
                 ctx.nv_index, ctx.nv_index, rval);
         return false;
@@ -148,9 +135,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "input-session-handle",1,          NULL, 'S' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("x:a:P:Xp:d:S:hv", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

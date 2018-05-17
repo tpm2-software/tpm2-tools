@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
@@ -64,41 +64,29 @@ struct tpm_unseal_ctx {
 };
 
 static tpm_unseal_ctx ctx = {
-        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.sessionData }};
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_SENSITIVE_DATA outData = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_DATA, buffer);
 
-    session_data_array[0] = &ctx.sessionData;
-    session_data_out_array[0] = &session_data_out;
-
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
-
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.itemHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.itemHandle,
             &sessions_data, &outData, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Sys_Unseal failed. Error Code: 0x%x", rval);
         return false;
     }
 
     if (ctx.outFilePath) {
         return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
-                                        outData.t.buffer, outData.t.size);
+                                        outData.buffer, outData.size);
     } else {
-        return files_write_bytes(stdout, (UINT8 *) outData.t.buffer,
-                                 outData.t.size);
+        return files_write_bytes(stdout, (UINT8 *) outData.buffer,
+                                 outData.size);
     }
 }
 
@@ -120,17 +108,17 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     if (ctx.flags.L) {
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-        TPM_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
-                                        TPM_SE_POLICY, TPM_ALG_SHA256, ctx.pcr_selection,
+        TSS2_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
+                                        TPM2_SE_POLICY, TPM2_ALG_SHA256, ctx.pcr_selection,
                                         ctx.raw_pcrs_file, &pcr_digest, true,
                                         tpm2_policy_pcr_build);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Building PCR policy failed: 0x%x", rval);
             return false;
         }
 
         ctx.sessionData.sessionHandle = ctx.policy_session->sessionHandle;
-        ctx.sessionData.sessionAttributes.continueSession = 1;
+        ctx.sessionData.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
     }
 
     return true;
@@ -202,9 +190,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("H:P:o:c:S:L:F:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }
@@ -224,9 +211,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.policy_session) {
-        TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
                                             ctx.policy_session->sessionHandle));
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context: 0x%x", rval);
             return 1;
         }

@@ -36,7 +36,7 @@
 #include <string.h>
 
 #include <getopt.h>
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -74,8 +74,8 @@ struct tpm_sign_ctx {
 
 tpm_sign_ctx ctx = {
         .msg = NULL,
-        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-        .halg = TPM_ALG_SHA1,
+        .sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        .halg = TPM2_ALG_SHA1,
 };
 
 static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
@@ -85,20 +85,10 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TPMT_SIG_SCHEME in_scheme;
     TPMT_SIGNATURE signature;
 
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.sessionData }};
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
-    session_data_array[0] = &ctx.sessionData;
-    sessions_data.cmdAuths = &session_data_array[0];
-    session_data_out_array[0] = &session_data_out;
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
-
-    int rc = tpm_hash_compute_data(sapi_context, ctx.halg, TPM_RH_NULL,
+    int rc = tpm_hash_compute_data(sapi_context, ctx.halg, TPM2_RH_NULL,
             ctx.msg, ctx.length, &digest, NULL);
     if (rc) {
         LOG_ERR("Compute message hash failed!");
@@ -110,10 +100,10 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Sign(sapi_context, ctx.keyHandle,
             &sessions_data, &digest, &in_scheme, &ctx.validation, &signature,
             &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Sys_Sign failed, error code: 0x%x", rval);
         return false;
     }
@@ -129,8 +119,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (!ctx.flags.t) {
-        ctx.validation.tag = TPM_ST_HASHCHECK;
-        ctx.validation.hierarchy = TPM_RH_NULL;
+        ctx.validation.tag = TPM2_ST_HASHCHECK;
+        ctx.validation.hierarchy = TPM2_RH_NULL;
     }
 
     /*
@@ -204,7 +194,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g': {
         ctx.halg = tpm2_alg_util_from_optarg(optarg);
-        if (ctx.halg == TPM_ALG_ERROR) {
+        if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
                     optarg);
             return false;
@@ -271,9 +261,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"format",               required_argument, NULL, 'f'}
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("k:P:g:m:t:s:c:S:f:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

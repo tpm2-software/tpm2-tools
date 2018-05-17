@@ -46,7 +46,7 @@ struct tpm2_errata_desc {
 /*
  * Published spec and errata information.
  *
- * Note that TPM_PT_YEAR and TPM_PT_DAY_OF_YEAR retrieved
+ * Note that TPM2_PT_YEAR and TPM2_PT_DAY_OF_YEAR retrieved
  * from capability query only have the values of the
  * release date of the specification if the TPM does not
  * implement an errata. So the spec info are also given.
@@ -158,16 +158,16 @@ void tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
     TPMI_YES_NO more_data;
     TSS2_RC rc;
 
-    rc = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM_CAP_TPM_PROPERTIES,
-                                PT_FIXED, MAX_TPM_PROPERTIES, &more_data,
+    rc = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM2_CAP_TPM_PROPERTIES,
+                                TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, &more_data,
                                 &capability_data, NULL);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                "TSS2_RC: 0x%x", TPM_CAP_TPM_PROPERTIES, PT_FIXED, rc);
+                "TSS2_RC: 0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED, rc);
         return;
-    } else if (more_data == YES) {
+    } else if (more_data) {
         LOG_WARN("More data to be queried: capability: 0x%x, property: "
-                 "0x%x", TPM_CAP_TPM_PROPERTIES, PT_FIXED);
+                 "0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED);
     }
 
     /* Distinguish current spec level 0 */
@@ -180,17 +180,17 @@ void tpm2_errata_init(TSS2_SYS_CONTEXT *sapi_ctx) {
     for (i = 0; i < properties->count; ++i) {
         TPMS_TAGGED_PROPERTY *property = properties->tpmProperty + i;
 
-        if (property->property == TPM_PT_LEVEL) {
+        if (property->property == TPM2_PT_LEVEL) {
             spec_level = property->value;
-        } else if (property->property == TPM_PT_REVISION) {
+        } else if (property->property == TPM2_PT_REVISION) {
             spec_rev = property->value;
-        } else if (property->property == TPM_PT_DAY_OF_YEAR) {
+        } else if (property->property == TPM2_PT_DAY_OF_YEAR) {
             day_of_year = property->value;
-        } else if (property->property == TPM_PT_YEAR) {
+        } else if (property->property == TPM2_PT_YEAR) {
             year = property->value;
             /* Short circuit because this is the last item we need */
             break;
-        } else if (property->property > TPM_PT_YEAR) {
+        } else if (property->property > TPM2_PT_YEAR) {
             break;
         }
     }
@@ -225,7 +225,7 @@ static void fixup_sign_decrypt_attribute_encoding(va_list *ap) {
 
     TPMA_OBJECT *attrs = va_arg(*ap, TPMA_OBJECT *);
 
-    attrs->sign = 0;
+    *attrs = 0;
 }
 
 static bool errata_match(struct tpm2_errata_desc *errata) {

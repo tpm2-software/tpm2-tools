@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015-2018, Intel Corporation
+// Copyright (c) 2015, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
@@ -65,30 +65,24 @@ static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     // Outputs
     TPM2B_PUBLIC_KEY_RSA out_data = TPM2B_TYPE_INIT(TPM2B_PUBLIC_KEY_RSA, buffer);
 
-    TPMS_AUTH_RESPONSE out_session_data;
-    TSS2_SYS_RSP_AUTHS out_sessions_data;
-    TPMS_AUTH_RESPONSE *out_session_data_array[1];
+    TSS2L_SYS_AUTH_RESPONSE out_sessions_data;
 
-    out_session_data_array[0] = &out_session_data;
-    out_sessions_data.rspAuths = &out_session_data_array[0];
-    out_sessions_data.rspAuthsCount = 1;
+    scheme.scheme = TPM2_ALG_RSAES;
+    label.size = 0;
 
-    scheme.scheme = TPM_ALG_RSAES;
-    label.t.size = 0;
-
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_handle, NULL,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_handle, NULL,
             &ctx.message, &scheme, &label, &out_data, &out_sessions_data));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("RSA_Encrypt failed, error code: 0x%x", rval);
         return false;
     }
 
     if (ctx.output_path) {
-        return files_save_bytes_to_file(ctx.output_path, out_data.t.buffer,
-            out_data.t.size);
+        return files_save_bytes_to_file(ctx.output_path, out_data.buffer,
+            out_data.size);
     }
 
-    tpm2_util_print_tpm2b(&out_data.b);
+    tpm2_util_print_tpm2b((TPM2B *)&out_data);
 
     return true;
 }
@@ -140,9 +134,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"key-context", required_argument, NULL, 'c'},
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
-    *opts = tpm2_options_new("k:o:c:", ARRAY_LEN(topts), topts,
-            on_option, on_args, flags);
+         *opts = tpm2_options_new("k:o:c:", ARRAY_LEN(topts), topts,
+            on_option, on_args, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }
@@ -162,8 +155,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         }
     }
 
-    ctx.message.t.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
-    return files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.message.t.size, ctx.message.t.buffer);
+    ctx.message.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
+    return files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.message.size, ctx.message.buffer);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {

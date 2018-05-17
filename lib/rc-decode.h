@@ -28,10 +28,10 @@
 #ifndef RC_DECODE_H
 #define RC_DECODE_H
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 #include <stdbool.h>
 
-/* struct / type used to map TPM_RC error code parts to string representations of
+/* struct / type used to map TSS2_RC error code parts to string representations of
  * their identifier and description.
  */
 typedef struct tpm2_rc_entry {
@@ -40,7 +40,7 @@ typedef struct tpm2_rc_entry {
     char     *description;
 } tpm2_rc_entry_t;
 
-/* To understand the TPM_RC you need to read a 2 different parts of the
+/* To understand the TSS2_RC you need to read a 2 different parts of the
  * spec:
  * Section 39.4 of TPM 2.0 Part 1: Architecture
  * Section 6.6  of TPM 2.0 Part 2: Structures
@@ -57,14 +57,16 @@ typedef struct tpm2_rc_entry {
 
 /* useful masks not defined in the spec */
 /* bits [06:00] */
-#define TPM_RC_7BIT_ERROR_MASK  0x7f
+#define TPM2_RC_7BIT_ERROR_MASK  0x7f
 /* bits [05:00] */
-#define TPM_RC_6BIT_ERROR_MASK  0x3f
+#define TPM2_RC_6BIT_ERROR_MASK  0x3f
 /* bits [11:08] */
-#define TPM_RC_PARAMETER_MASK  0xf00
+#define TPM2_RC_PARAMETER_MASK  0xf00
 /* bits [10:08] */
-#define TPM_RC_HANDLE_MASK     0x700
-#define TPM_RC_SESSION_MASK    0x700
+#define TPM2_RC_HANDLE_MASK     0x700
+#define TPM2_RC_SESSION_MASK    0x700
+
+#define TSS2_ERROR_LEVEL_MASK 0xFFFF
 
 /* "Format Zero" response codes have bit 7 clear.
  * Format zero RCs could be in a number of formats:
@@ -74,7 +76,7 @@ typedef struct tpm2_rc_entry {
  * - A 6 bit error code
  */
 static inline bool
-tpm2_rc_is_format_zero (TPM_RC response_code)
+tpm2_rc_is_format_zero (TSS2_RC response_code)
 {
     if (IS_BIT_CLEAR (response_code, 7))
         return true;
@@ -88,38 +90,38 @@ tpm2_rc_is_format_zero (TPM_RC response_code)
  *   identifier in bits [10:08]
  */
 static inline int
-tpm2_rc_is_format_one (TPM_RC response_code)
+tpm2_rc_is_format_one (TSS2_RC response_code)
 {
     if (IS_BIT_SET (response_code, 7))
         return true;
     else
         return false;
 }
-/* Determine whether or not a response code (TPM_RC) is in the 1.2 format or
+/* Determine whether or not a response code (TSS2_RC) is in the 1.2 format or
  * the 2.0 format.
  */
 static inline bool
-tpm2_rc_is_tpm2 (TPM_RC response_code)
+tpm2_rc_is_tpm2 (TSS2_RC response_code)
 {
-    /* if bit 7 & 8 are both 0, TPM_RC is 1.2 format */
+    /* if bit 7 & 8 are both 0, TSS2_RC is 1.2 format */
     if (IS_BIT_CLEAR (response_code, 7) && IS_BIT_CLEAR (response_code, 8))
         return false;
     else
         return true;
 }
 static inline bool
-tpm2_rc_is_tpm12 (TPM_RC response_code)
+tpm2_rc_is_tpm12 (TSS2_RC response_code)
 {
     if (!tpm2_rc_is_tpm2 (response_code))
         return true;
     else
         return false;
 }
-/* Determine whether or not a response code (TPM_RC) is a vendor defined code.
+/* Determine whether or not a response code (TSS2_RC) is a vendor defined code.
  * Vendor defined TPM2 response codes have bit 8 and 10 set, and bit 7 clear.
  */
 static inline bool
-tpm2_rc_is_vendor_defined (TPM_RC response_code)
+tpm2_rc_is_vendor_defined (TSS2_RC response_code)
 {
     if (IS_BIT_CLEAR (response_code,  7) &&
         IS_BIT_SET   (response_code,  8) &&
@@ -134,7 +136,7 @@ tpm2_rc_is_vendor_defined (TPM_RC response_code)
  * Warning codes have bit 8 and 11 set, and bits 7 and 10 clear.
  */
 static inline bool
-tpm2_rc_is_warning_code (TPM_RC response_code)
+tpm2_rc_is_warning_code (TSS2_RC response_code)
 {
     if (IS_BIT_CLEAR (response_code,  7) &&
         IS_BIT_SET   (response_code,  8) &&
@@ -150,7 +152,7 @@ tpm2_rc_is_warning_code (TPM_RC response_code)
  * Error codes have bit 8 set, and bits 7, 10 and 11 clear.
  */
 static inline bool
-tpm2_rc_is_error_code (TPM_RC response_code)
+tpm2_rc_is_error_code (TSS2_RC response_code)
 {
     if (IS_BIT_CLEAR (response_code,  7) &&
         IS_BIT_SET   (response_code,  8) &&
@@ -167,7 +169,7 @@ tpm2_rc_is_error_code (TPM_RC response_code)
  * Bit 6 and 7 are set.
  */
 static inline bool
-tpm2_rc_is_error_code_with_parameter (TPM_RC response_code)
+tpm2_rc_is_error_code_with_parameter (TSS2_RC response_code)
 {
     if (IS_BIT_SET (response_code, 6) && IS_BIT_SET (response_code, 7))
         return true;
@@ -179,7 +181,7 @@ tpm2_rc_is_error_code_with_parameter (TPM_RC response_code)
  * Bit 7 set, bits 6 and 11 clear.
  */
 static inline bool
-tpm2_rc_is_error_code_with_handle (TPM_RC response_code)
+tpm2_rc_is_error_code_with_handle (TSS2_RC response_code)
 {
     if (IS_BIT_CLEAR (response_code,  6) &&
         IS_BIT_SET   (response_code,  7) &&
@@ -195,7 +197,7 @@ tpm2_rc_is_error_code_with_handle (TPM_RC response_code)
  * Bit 6 clear, bits 7 and 11 set.
  */
 static inline bool
-tpm2_rc_is_error_code_with_session (TPM_RC response_code)
+tpm2_rc_is_error_code_with_session (TSS2_RC response_code)
 {
     if (IS_BIT_CLEAR (response_code,  6) &&
         IS_BIT_SET   (response_code,  7) &&
@@ -206,58 +208,58 @@ tpm2_rc_is_error_code_with_session (TPM_RC response_code)
         return false;
     }
 }
-/* Isolate bits [06:00] of the TPM_RC.
+/* Isolate bits [06:00] of the TSS2_RC.
  * The 7bit warning or error code is only valid if the RC is a "format zero"
  * RC.
  */
 static inline UINT32
-tpm2_rc_get_code_7bit (TPM_RC response_code)
+tpm2_rc_get_code_7bit (TSS2_RC response_code)
 {
-    return TPM_RC_7BIT_ERROR_MASK & response_code;
+    return TPM2_RC_7BIT_ERROR_MASK & response_code;
 }
-/* Isolate bits [05:00] of the TPM_RC.
+/* Isolate bits [05:00] of the TSS2_RC.
  * The 6bit error code is only valid if the RC is a "format one" RC.
  */
 static inline UINT32
-tpm2_rc_get_code_6bit (TPM_RC response_code)
+tpm2_rc_get_code_6bit (TSS2_RC response_code)
 {
-    return TPM_RC_6BIT_ERROR_MASK & response_code;
+    return TPM2_RC_6BIT_ERROR_MASK & response_code;
 }
-/* Isolate bits [11:08] of the TPM_RC.
+/* Isolate bits [11:08] of the TSS2_RC.
  * The 4 it parameter code is only valid if the RC is a "format one" RC
  * with bit 6 set. Test for this with the
  * tpm2_rc_is_error_code_with_parameters function.
  */
 static inline UINT32
-tpm2_rc_get_parameter_number (TPM_RC response_code)
+tpm2_rc_get_parameter_number (TSS2_RC response_code)
 {
-    return TPM_RC_PARAMETER_MASK & response_code;
+    return TPM2_RC_PARAMETER_MASK & response_code;
 }
-/* Isolate bits [10:08] of the TPM_RC.
+/* Isolate bits [10:08] of the TSS2_RC.
  * The 3 bit handle / session code is only valid if the RC is a "format one"
  * RC with bits 6 clear.
  */
 static inline UINT32
-tpm2_rc_get_handle_number (TPM_RC response_code)
+tpm2_rc_get_handle_number (TSS2_RC response_code)
 {
-    return TPM_RC_HANDLE_MASK & response_code;
+    return TPM2_RC_HANDLE_MASK & response_code;
 }
 static inline UINT32
-tpm2_rc_get_session_number (TPM_RC response_code)
+tpm2_rc_get_session_number (TSS2_RC response_code)
 {
-    return TPM_RC_SESSION_MASK & response_code;
+    return TPM2_RC_SESSION_MASK & response_code;
 }
-/* Isolate the error level component of the TPM_RC in bits [23:16] */
+/* Isolate the error level component of the TSS2_RC in bits [23:16] */
 static inline UINT32
-tpm2_rc_get_layer (TPM_RC response_code)
+tpm2_rc_get_layer (TSS2_RC response_code)
 {
-    return TSS2_ERROR_LEVEL_MASK & response_code;
+    return TSS2_RC_LAYER_MASK & response_code;
 }
 /* This function returns true if the error code indicates that it came from a
  * TSS component. False otherwise (which indicates it came from the TPM).
  */
 static inline bool
-tpm2_rc_is_from_tss (TPM_RC response_code)
+tpm2_rc_is_from_tss (TSS2_RC response_code)
 {
     if (tpm2_rc_get_layer (response_code))
         return true;
@@ -272,19 +274,19 @@ tpm2_rc_is_from_tss (TPM_RC response_code)
  * So I'm masking [31:24] as well as the ayer indicator.
  */
 static inline UINT32
-tpm2_rc_get_tss_err_code (TPM_RC response_code)
+tpm2_rc_get_tss_err_code (TSS2_RC response_code)
 {
     return 0X0000ffff & response_code;
 }
 /* Functions to retrieve tpm2_rc_entry with strings for RC decoding.
  */
-tpm2_rc_entry_t* tpm2_get_tss_base_rc_entry (TPM_RC rc);
-tpm2_rc_entry_t* tpm2_get_parameter_entry   (TPM_RC rc);
-tpm2_rc_entry_t* tpm2_get_handle_entry      (TPM_RC rc);
-tpm2_rc_entry_t* tpm2_get_session_entry     (TPM_RC rc);
-tpm2_rc_entry_t* tpm2_get_layer_entry       (TPM_RC rc);
-tpm2_rc_entry_t* tpm2_get_fmt0_entry        (TPM_RC rc);
-tpm2_rc_entry_t* tpm2_get_fmt1_entry        (TPM_RC rc);
-tpm2_rc_entry_t* tpm2_get_warn_entry        (TPM_RC rc);
+tpm2_rc_entry_t* tpm2_get_tss_base_rc_entry (TSS2_RC rc);
+tpm2_rc_entry_t* tpm2_get_parameter_entry   (TSS2_RC rc);
+tpm2_rc_entry_t* tpm2_get_handle_entry      (TSS2_RC rc);
+tpm2_rc_entry_t* tpm2_get_session_entry     (TSS2_RC rc);
+tpm2_rc_entry_t* tpm2_get_layer_entry       (TSS2_RC rc);
+tpm2_rc_entry_t* tpm2_get_fmt0_entry        (TSS2_RC rc);
+tpm2_rc_entry_t* tpm2_get_fmt1_entry        (TSS2_RC rc);
+tpm2_rc_entry_t* tpm2_get_warn_entry        (TSS2_RC rc);
 
 #endif /* RC_DECODE_H */

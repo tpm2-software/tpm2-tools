@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015-2018, Intel Corporation
+// Copyright (c) 2015, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -71,51 +71,19 @@ static tpm_evictcontrol_ctx ctx = {
 
 static int evict_control(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_ata_out_array[1];
+    TSS2L_SYS_AUTH_COMMAND sessions_data;
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
-    session_data_array[0] = &ctx.session_data;
-    session_ata_out_array[0] = &session_data_out;
+    sessions_data.count = 1;
+    sessions_data.auths[0] = ctx.session_data;
 
-    sessions_data_out.rspAuths = &session_ata_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
-
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, ctx.auth, ctx.handle.object,
                                         &sessions_data, ctx.handle.persist,&sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("EvictControl failed, error code: 0x%x", rval);
         return false;
     }
     return true;
-}
-
-static bool auth_value_from_string(const char *value, TPMI_RH_PROVISION *auth) {
-
-    switch (value[0]) {
-    case 'o':
-        *auth = TPM_RH_OWNER;
-        break;
-    case 'p':
-        *auth = TPM_RH_PLATFORM;
-        break;
-    default:
-        return false;
-    }
-
-    bool result = value[1] == '\0';
-
-    if (!result) {
-        LOG_ERR("Incorrect auth value, got: \"%s\", expected o|p",
-            value);
-    }
-
-    return result;
 }
 
 static bool on_option(char key, char *value) {
@@ -124,8 +92,13 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'A':
-        result = auth_value_from_string(value, &ctx.auth);
-        if (!result) {
+        if (!strcasecmp(value, "o")) {
+            ctx.auth = TPM2_RH_OWNER;
+        } else if (!strcasecmp(value, "p")) {
+            ctx.auth = TPM2_RH_PLATFORM;
+        } else {
+            LOG_ERR("Incorrect auth value, got: \"%s\", expected [o|O|p|P!",
+                    value);
             return false;
         }
         ctx.flags.A = 1;
@@ -139,7 +112,7 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.H = 1;
 
-        if (ctx.handle.object >> HR_SHIFT == TPM_HT_PERSISTENT) {
+        if (ctx.handle.object >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
             ctx.handle.persist = ctx.handle.object;
             ctx.flags.S = 1;
         }
@@ -186,13 +159,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"pwda",        required_argument, NULL, 'P'},
       {"context",     required_argument, NULL, 'c'},
       {"input-session-handle",1,         NULL, 'i'},
+      {NULL,          no_argument,       NULL, '\0'}
     };
 
-    ctx.session_data.sessionHandle = TPM_RS_PW;
+    ctx.session_data.sessionHandle = TPM2_RS_PW;
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("A:H:S:P:c:i:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

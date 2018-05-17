@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018, Intel Corporation
+ * Copyright (c) 2016, Intel Corporation
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,10 +29,12 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include <stdbool.h>
+#include <stdlib.h>
 
- #include <unistd.h>
+#include <unistd.h>
 
 #include "log.h"
+#include "tpm2_tcti_ldr.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -42,7 +44,7 @@ bool output_enabled = true;
 
 static void tcti_teardown (TSS2_TCTI_CONTEXT *tcti_context) {
 
-    tss2_tcti_finalize (tcti_context);
+    Tss2_Tcti_Finalize (tcti_context);
     free (tcti_context);
 }
 
@@ -60,20 +62,23 @@ static void sapi_teardown_full (TSS2_SYS_CONTEXT *sapi_context) {
     TSS2_RC rc;
 
     rc = Tss2_Sys_GetTctiContext (sapi_context, &tcti_context);
-    if (rc != TSS2_RC_SUCCESS)
+    if (rc != TPM2_RC_SUCCESS)
         return;
     sapi_teardown (sapi_context);
     tcti_teardown (tcti_context);
 }
 
+#define SUPPORTED_ABI_VERSION \
+{ \
+    .tssCreator = 1, \
+    .tssFamily = 2, \
+    .tssLevel = 1, \
+    .tssVersion = 108, \
+}
+
 static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 
-    TSS2_ABI_VERSION abi_version = {
-            .tssCreator = TSSWG_INTEROP,
-            .tssFamily = TSS_SAPI_FIRST_FAMILY,
-            .tssLevel = TSS_SAPI_FIRST_LEVEL,
-            .tssVersion = TSS_SAPI_FIRST_VERSION,
-    };
+    TSS2_ABI_VERSION abi_version = SUPPORTED_ABI_VERSION;
 
     size_t size = Tss2_Sys_GetContextSize(0);
     TSS2_SYS_CONTEXT *sapi_ctx = (TSS2_SYS_CONTEXT*) calloc(1, size);
@@ -83,9 +88,9 @@ static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
         return NULL;
     }
 
-    TSS2_RC rc = Tss2_Sys_Initialize(sapi_ctx, size, tcti_ctx, &abi_version);
-    if (rc != TSS2_RC_SUCCESS) {
-        LOG_ERR("Failed to initialize SAPI context: 0x%x\n", rc);
+    TSS2_RC rval = Tss2_Sys_Initialize(sapi_ctx, size, tcti_ctx, &abi_version);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Tss2_Sys_Initialize: 0x%X", rval);
         free(sapi_ctx);
         return NULL;
     }
@@ -98,7 +103,7 @@ static TSS2_SYS_CONTEXT* sapi_ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
  * nothing more than parsing command line options that allow the caller to
  * specify which TCTI to use for the test.
  */
-int main(int argc, char *argv[], char *envp[]) {
+int main(int argc, char *argv[]) {
 
     int ret = 1;
 
@@ -109,31 +114,22 @@ int main(int argc, char *argv[], char *envp[]) {
             LOG_ERR("retrieving tool options");
             return 1;
         }
-    } else {
-        tpm2_option_flags ftmp = tpm2_option_flags_init(0);
-        tool_opts = tpm2_options_new(NULL, 0,
-                NULL, NULL, NULL, ftmp);
-        if (!tool_opts) {
-            return 1;
-        }
     }
 
-    tpm2_option_flags *flags = tpm2_options_get_flags(tool_opts);
-
-    if (argc == 1 && flags->show_usage) {
+    if (argc == 1 && tool_opts && (tool_opts->flags & TPM2_OPTIONS_SHOW_USAGE)) {
         tpm2_print_usage(argv[0], tool_opts);
         return ret;
     }
 
-    TSS2_TCTI_CONTEXT *tcti;
-    tpm2_option_code rc = tpm2_handle_options(argc, argv, envp, tool_opts,
-            flags, &tcti);
+    tpm2_option_flags flags = { .all = 0 };
+    TSS2_TCTI_CONTEXT *tcti = NULL;
+    tpm2_option_code rc = tpm2_handle_options(argc, argv, tool_opts, &flags, &tcti);
     if (rc != tpm2_option_code_continue) {
         ret = rc == tpm2_option_code_err ? 1 : 0;
         goto free_opts;
     }
 
-    if (flags->verbose) {
+    if (flags.verbose) {
         log_set_level(log_level_verbose);
     }
 
@@ -144,14 +140,22 @@ int main(int argc, char *argv[], char *envp[]) {
      * option and argument life-cycle. Thus TOOL_OUTPUT is only guaranteed
      * to respect quiet from here on out (onrun and onexit).
      */
-    if (flags->quiet) {
+    if (flags.quiet) {
         output_enabled = false;
     }
 
-    TSS2_SYS_CONTEXT *sapi_context = !flags->no_sapi ?
-            sapi_ctx_init(tcti) : NULL;
+    /* figure out the tcti */
 
-    if (flags->enable_errata) {
+    /* TODO SAPI INIT */
+    TSS2_SYS_CONTEXT *sapi_context = NULL;
+    if (tcti) {
+        sapi_context = sapi_ctx_init(tcti);
+        if (!sapi_context) {
+            goto free_opts;
+        }
+    }
+
+    if (flags.enable_errata) {
         tpm2_errata_init(sapi_context);
     }
 
@@ -159,14 +163,16 @@ int main(int argc, char *argv[], char *envp[]) {
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
      */
-    ret = tpm2_tool_onrun(sapi_context, *flags) ? 1 : 0;
+    ret = tpm2_tool_onrun(sapi_context, flags) ? 1 : 0;
+    if (ret != 0) {
+        LOG_ERR("Unable to run %s", argv[0]);
+    }
+
     /*
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
      */
-    if (sapi_context) {
-        sapi_teardown_full(sapi_context);
-    }
+    sapi_teardown_full(sapi_context);
 
 free_opts:
     if (tool_opts) {
@@ -176,6 +182,8 @@ free_opts:
     if (tpm2_tool_onexit) {
         tpm2_tool_onexit();
     }
+
+    tpm2_tcti_ldr_unload();
 
     exit(ret);
 }

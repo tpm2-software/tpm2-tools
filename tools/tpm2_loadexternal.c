@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "files.h"
@@ -47,7 +47,7 @@ typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {
     char *context_file_path;
     TPMI_RH_HIERARCHY hierarchy_value;
-    TPM_HANDLE rsa2048_handle;
+    TPM2_HANDLE rsa2048_handle;
     TPM2B_PUBLIC public_key;
     TPM2B_SENSITIVE private_key;
     bool save_to_context_file;
@@ -70,16 +70,16 @@ static bool get_hierarchy_value(const char *argument_opt,
 
     switch (argument_opt[0]) {
     case 'e':
-        *hierarchy_value = TPM_RH_ENDORSEMENT;
+        *hierarchy_value = TPM2_RH_ENDORSEMENT;
         break;
     case 'o':
-        *hierarchy_value = TPM_RH_OWNER;
+        *hierarchy_value = TPM2_RH_OWNER;
         break;
     case 'p':
-        *hierarchy_value = TPM_RH_PLATFORM;
+        *hierarchy_value = TPM2_RH_PLATFORM;
         break;
     case 'n':
-        *hierarchy_value = TPM_RH_NULL;
+        *hierarchy_value = TPM2_RH_NULL;
         break;
     default:
         LOG_ERR("Wrong Hierarchy Value, got: \"%s\", expected one of e,o,p,n",
@@ -92,19 +92,15 @@ static bool get_hierarchy_value(const char *argument_opt,
 
 static bool load_external(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
-
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0,
-            ctx.private_key.t.size ? &ctx.private_key : NULL, &ctx.public_key,
+            ctx.private_key.size ? &ctx.private_key : NULL, &ctx.public_key,
             ctx.hierarchy_value, &ctx.rsa2048_handle, &nameExt,
             &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("LoadExternal Failed ! ErrorCode: 0x%0x", rval);
         return false;
     }
@@ -154,9 +150,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "context",  required_argument, NULL, 'C'},
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("H:u:r:C:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

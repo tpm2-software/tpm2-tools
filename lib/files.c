@@ -32,9 +32,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 
-#include <sapi/tpm20.h>
-#include "tss2_mu.h"
+#include <tss2/tss2_sys.h>
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -153,13 +154,13 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
  */
 #define CONTEXT_VERSION 1
 
-bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE handle,
+bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM2_HANDLE handle,
         const char *path) {
 
     TPMS_CONTEXT context;
 
-    TPM_RC rval = Tss2_Sys_ContextSave(sysContext, handle, &context);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = Tss2_Sys_ContextSave(sysContext, handle, &context);
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR(
                 "Tss2_Sys_ContextSave: Saving handle 0x%x context failed. TPM Error:0x%x",
                 handle, rval);
@@ -209,15 +210,15 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sysContext, TPM_HANDLE han
     }
 
     // U16 LENGTH
-    result = files_write_16(f, context.contextBlob.t.size);
+    result = files_write_16(f, context.contextBlob.size);
     if (!result) {
         LOG_ERR("Could not write contextBob size file: \"%s\"", path);
         goto out;
     }
 
     // BYTE[] contextBlob
-    result = files_write_bytes(f, context.contextBlob.t.buffer,
-            context.contextBlob.t.size);
+    result = files_write_bytes(f, context.contextBlob.buffer,
+            context.contextBlob.size);
     if (!result) {
         LOG_ERR("Could not write contextBlob buffer for file: \"%s\"", path);
     }
@@ -229,9 +230,9 @@ out:
 }
 
 bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
-        TPM_HANDLE *handle, const char *path) {
+        TPM2_HANDLE *handle, const char *path) {
 
-    TPM_RC rval;
+    TSS2_RC rval;
 
     FILE *f = fopen(path, "rb");
     if (!f) {
@@ -291,23 +292,23 @@ bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
         goto out;
     }
 
-    result = files_read_16(f, &context.contextBlob.t.size);
+    result = files_read_16(f, &context.contextBlob.size);
     if (!result) {
         LOG_ERR("Error reading contextBlob.size!");
         goto out;
     }
 
-    if (context.contextBlob.t.size > sizeof(context.contextBlob.t.buffer)) {
+    if (context.contextBlob.size > sizeof(context.contextBlob.buffer)) {
         LOG_ERR(
                 "Size mismatch found on contextBlob, got %"PRIu16" expected less than or equal to %zu",
-                context.contextBlob.t.size,
-                sizeof(context.contextBlob.t.buffer));
+                context.contextBlob.size,
+                sizeof(context.contextBlob.buffer));
         result = false;
         goto out;
     }
 
-    result = files_read_bytes(f, context.contextBlob.t.buffer,
-            context.contextBlob.t.size);
+    result = files_read_bytes(f, context.contextBlob.buffer,
+            context.contextBlob.size);
     if (!result) {
         LOG_ERR("Error reading contextBlob.size!");
         goto out;
@@ -315,7 +316,7 @@ bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
 
 load_to_tpm:
     rval = Tss2_Sys_ContextLoad(sapi_context, &context, handle);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("ContextLoad Error. TPM Error:0x%x", rval);
         result = false;
         goto out;
@@ -603,7 +604,7 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
             return false; \
         } \
         \
-        return rc == TPM_RC_SUCCESS; \
+        return rc == TSS2_RC_SUCCESS; \
     }
 
 SAVE_TYPE(TPM2B_PRIVATE, private)

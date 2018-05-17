@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "log.h"
 #include "tpm2_alg_util.h"
@@ -45,16 +47,16 @@ bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
         return false;
     }
 
-    if ((result->t.size + append->size) < result->t.size) {
+    if ((result->size + append->size) < result->size) {
         return false;
     }
 
-    if ((result->t.size + append->size) > MAX_DIGEST_BUFFER) {
+    if ((result->size + append->size) > TPM2_MAX_DIGEST_BUFFER) {
         return false;
     }
 
-    memcpy(&result->t.buffer[result->t.size], append->buffer, append->size);
-    result->t.size += append->size;
+    memcpy(&result->buffer[result->size], append->buffer, append->size);
+    result->size += append->size;
 
     return true;
 }
@@ -284,32 +286,32 @@ struct tpm2_util_keydata {
 
 static void tpm2_util_public_to_keydata(TPM2B_PUBLIC *public, tpm2_util_keydata *keydata) {
 
-    switch (public->t.publicArea.type) {
-    case TPM_ALG_RSA:
+    switch (public->publicArea.type) {
+    case TPM2_ALG_RSA:
         keydata->len = 1;
-        keydata->entries[0].name = tpm2_alg_util_algtostr(public->t.publicArea.type);
-        keydata->entries[0].value = (TPM2B *)&public->t.publicArea.unique.rsa;
+        keydata->entries[0].name = tpm2_alg_util_algtostr(public->publicArea.type);
+        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.rsa;
         return;
-    case TPM_ALG_KEYEDHASH:
+    case TPM2_ALG_KEYEDHASH:
         keydata->len = 1;
-        keydata->entries[0].name = tpm2_alg_util_algtostr(public->t.publicArea.type);
-        keydata->entries[0].value = (TPM2B *)&public->t.publicArea.unique.keyedHash;
+        keydata->entries[0].name = tpm2_alg_util_algtostr(public->publicArea.type);
+        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.keyedHash;
         return;
-    case TPM_ALG_SYMCIPHER:
+    case TPM2_ALG_SYMCIPHER:
         keydata->len = 1;
-        keydata->entries[0].name = tpm2_alg_util_algtostr(public->t.publicArea.type);
-        keydata->entries[0].value = (TPM2B *)&public->t.publicArea.unique.sym;
+        keydata->entries[0].name = tpm2_alg_util_algtostr(public->publicArea.type);
+        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.sym;
         return;
-    case TPM_ALG_ECC:
+    case TPM2_ALG_ECC:
         keydata->len = 2;
         keydata->entries[0].name = "x";
-        keydata->entries[0].value = (TPM2B *)&public->t.publicArea.unique.ecc.x;
+        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.ecc.x;
         keydata->entries[1].name = "y";
-        keydata->entries[1].value = (TPM2B *)&public->t.publicArea.unique.ecc.y;
+        keydata->entries[1].value = (TPM2B *)&public->publicArea.unique.ecc.y;
         return;
     default:
         LOG_WARN("The algorithm type(0x%4.4x) is not supported",
-                public->t.publicArea.type);
+                public->publicArea.type);
     }
 
     return;
@@ -318,17 +320,17 @@ static void tpm2_util_public_to_keydata(TPM2B_PUBLIC *public, tpm2_util_keydata 
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
 
     tpm2_tool_output("algorithm:\n");
-    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->t.publicArea.nameAlg));
-    tpm2_tool_output("  raw: 0x%x\n", public->t.publicArea.nameAlg);
+    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->publicArea.nameAlg));
+    tpm2_tool_output("  raw: 0x%x\n", public->publicArea.nameAlg);
 
-    char *attrs = tpm2_attr_util_obj_attrtostr(public->t.publicArea.objectAttributes);
+    char *attrs = tpm2_attr_util_obj_attrtostr(public->publicArea.objectAttributes);
     tpm2_tool_output("attributes:\n");
     tpm2_tool_output("  value: %s\n", attrs);
-    tpm2_tool_output("  raw: 0x%x\n", public->t.publicArea.objectAttributes.val);
+    tpm2_tool_output("  raw: 0x%x\n", public->publicArea.objectAttributes);
 
     tpm2_tool_output("type: \n");
-    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->t.publicArea.type));
-    tpm2_tool_output("  raw: 0x%x\n", public->t.publicArea.type);
+    tpm2_tool_output("  value: %s\n", tpm2_alg_util_algtostr(public->publicArea.type));
+    tpm2_tool_output("  raw: 0x%x\n", public->publicArea.type);
 
     tpm2_util_keydata keydata = TPM2_UTIL_KEYDATA_INIT;
     tpm2_util_public_to_keydata(public, &keydata);
@@ -341,10 +343,10 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public) {
         tpm2_tool_output("\n");
     }
 
-    if (public->t.publicArea.authPolicy.t.size) {
+    if (public->publicArea.authPolicy.size) {
         tpm2_tool_output("authorization policy: ");
-        tpm2_util_hexdump(public->t.publicArea.authPolicy.t.buffer,
-                public->t.publicArea.authPolicy.t.size, true);
+        tpm2_util_hexdump(public->publicArea.authPolicy.buffer,
+                public->publicArea.authPolicy.size, true);
         tpm2_tool_output("\n");
     }
 

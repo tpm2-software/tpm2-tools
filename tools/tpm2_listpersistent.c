@@ -36,7 +36,7 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 
 #include "files.h"
@@ -55,8 +55,8 @@ struct tpm_listpersistent_context {
 };
 
 static tpm_listpersistent_context ctx = {
-    .nameAlg = TPM_ALG_NULL,
-    .type = TPM_ALG_NULL,
+    .nameAlg = TPM2_ALG_NULL,
+    .type = TPM2_ALG_NULL,
 };
 
 static bool on_option(char key, char *value) {
@@ -64,7 +64,7 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
-        if(ctx.nameAlg == TPM_ALG_ERROR ||
+        if(ctx.nameAlg == TPM2_ALG_ERROR ||
            !tpm2_alg_util_is_hash_alg(ctx.nameAlg)) {
             LOG_ERR("Invalid hash algorithm, got \"%s\"", value);
             return false;
@@ -72,7 +72,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'G':
         ctx.type = tpm2_alg_util_from_optarg(value);
-        if(ctx.type == TPM_ALG_ERROR ||
+        if(ctx.type == TPM2_ALG_ERROR ||
            tpm2_alg_util_is_hash_alg(ctx.type)) {
             LOG_ERR("Invalid key algorithm, got \"%s\"", value);
             return false;
@@ -84,29 +84,23 @@ static bool on_option(char key, char *value) {
 
 int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
     UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
     TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
     TPM2B_NAME qualifiedName = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    sessionDataOutArray[0] = &sessionDataOut;
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsDataOut.rspAuthsCount = 1;
-
     rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &outPublic, &name, &qualifiedName, &sessionsDataOut));
-    if(rval != TPM_RC_SUCCESS)
+    if(rval != TPM2_RC_SUCCESS)
     {
         LOG_ERR("\nTPM2_ReadPublic error: rval = 0x%0x\n",rval);
         return -1;
     }
 
-    TPMI_ALG_PUBLIC type = outPublic.t.publicArea.type;
-    TPMI_ALG_HASH nameAlg = outPublic.t.publicArea.nameAlg;
+    TPMI_ALG_PUBLIC type = outPublic.publicArea.type;
+    TPMI_ALG_HASH nameAlg = outPublic.publicArea.nameAlg;
     char *attrs = tpm2_attr_util_obj_attrtostr(
-            outPublic.t.publicArea.objectAttributes);
+            outPublic.publicArea.objectAttributes);
     char *attrbuf = attrs;
 
 	/*
@@ -116,12 +110,12 @@ int readPublic(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle) {
     char tmp[11]; /* UINT32 in hex (8) + "0x" + '\0' */
     if (!attrs) {
         LOG_WARN("Could not convert objectAttributes, converting to hex output");
-        snprintf(tmp, sizeof(tmp), "0x%x", outPublic.t.publicArea.objectAttributes.val);
+        snprintf(tmp, sizeof(tmp), "0x%x", outPublic.publicArea.objectAttributes);
         attrbuf = tmp;
     }
 
-    if ((ctx.type != TPM_ALG_NULL && ctx.type != type) ||
-        (ctx.nameAlg != TPM_ALG_NULL && ctx.nameAlg != nameAlg)) {
+    if ((ctx.type != TPM2_ALG_NULL && ctx.type != type) ||
+        (ctx.nameAlg != TPM2_ALG_NULL && ctx.nameAlg != nameAlg)) {
         goto out;
     }
 
@@ -142,9 +136,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"kalg", required_argument, NULL, 'G'},
     };
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("g:G:", ARRAY_LEN(topts), topts,
-            on_option, NULL, empty_flags);
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -157,11 +150,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     TPMS_CAPABILITY_DATA capabilityData;
     UINT32 rval;
 
-    UINT32 property = tpm2_util_endian_swap_32(TPM_HT_PERSISTENT);
-    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM_CAP_HANDLES,
-                                   property, TPM_PT_HR_PERSISTENT, &moreData,
+    UINT32 property = tpm2_util_endian_swap_32(TPM2_HT_PERSISTENT);
+    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM2_CAP_HANDLES,
+                                   property, TPM2_PT_TPM2_HR_PERSISTENT, &moreData,
                                    &capabilityData, 0));
-    if(rval != TPM_RC_SUCCESS)
+    if(rval != TPM2_RC_SUCCESS)
     {
         LOG_ERR("\n......GetCapability: Get persistent object list Error."
                " TPM Error:0x%x......", rval);

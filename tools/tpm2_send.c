@@ -31,6 +31,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -157,9 +158,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "out-file", required_argument, NULL, 'o' },
     };
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts,
-            on_option, on_args, empty_flags);
+            on_option, on_args, 0);
 
     ctx.input = stdin;
     ctx.output = stdout;
@@ -190,21 +190,21 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     TSS2_TCTI_CONTEXT *tcti_context;
     TSS2_RC rc = Tss2_Sys_GetTctiContext(sapi_context, &tcti_context);
-    if (rc != TSS2_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to get TCTI context from SAPI context: 0x%x", rc);
         goto out;
     }
 
-    rc = tss2_tcti_transmit(tcti_context, size, command->bytes);
-    if (rc != TSS2_RC_SUCCESS) {
+    rc = Tss2_Tcti_Transmit(tcti_context, size, command->bytes);
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_transmit failed: 0x%x", rc);
         goto out;
     }
 
     size_t rsize = TPM2_MAX_SIZE;
     UINT8 rbuf[TPM2_MAX_SIZE];
-    rc = tss2_tcti_receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
-    if (rc != TSS2_RC_SUCCESS) {
+    rc = Tss2_Tcti_Receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_receive failed: 0x%x", rc);
         goto out;
     }

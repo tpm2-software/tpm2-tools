@@ -25,7 +25,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
  #include <openssl/err.h>
 #include <openssl/hmac.h>
@@ -37,13 +37,13 @@
 static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
 
     switch(algorithm) {
-    case TPM_ALG_SHA1:
+    case TPM2_ALG_SHA1:
         return EVP_sha1();
-    case TPM_ALG_SHA256:
+    case TPM2_ALG_SHA256:
         return EVP_sha256();
-    case TPM_ALG_SHA384:
+    case TPM2_ALG_SHA384:
         return EVP_sha384();
-    case TPM_ALG_SHA512:
+    case TPM2_ALG_SHA512:
         return EVP_sha512();
     default:
         return NULL;
@@ -79,60 +79,60 @@ static void hmac_del(HMAC_CTX *ctx)
 #endif
 }
 
-TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
+TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,
         TPM2B_MAX_BUFFER  *resultKey )
 {
     TPM2B_DIGEST tpm2bLabel, tpm2bBits, tpm2b_i_2;
-    UINT8 *tpm2bBitsPtr = &tpm2bBits.t.buffer[0];
-    UINT8 *tpm2b_i_2Ptr = &tpm2b_i_2.t.buffer[0];
+    UINT8 *tpm2bBitsPtr = &tpm2bBits.buffer[0];
+    UINT8 *tpm2b_i_2Ptr = &tpm2b_i_2.buffer[0];
     TPM2B_DIGEST *bufferList[8];
     UINT32 bitsSwizzled, i_Swizzled;
-    TPM_RC rval = TPM_RC_SUCCESS;
+    TSS2_RC rval = TPM2_RC_SUCCESS;
     int i, j;
     UINT16 bytes = bits / 8;
 
-    resultKey->t .size = 0;
+    resultKey->size = 0;
 
-    tpm2b_i_2.t.size = 4;
+    tpm2b_i_2.size = 4;
 
-    tpm2bBits.t.size = 4;
+    tpm2bBits.size = 4;
     bitsSwizzled = tpm2_util_endian_swap_32( bits );
     *(UINT32 *)tpm2bBitsPtr = bitsSwizzled;
 
     for(i = 0; label[i] != 0 ;i++ );
 
-    tpm2bLabel.t.size = i+1;
-    for( i = 0; i < tpm2bLabel.t.size; i++ )
+    tpm2bLabel.size = i+1;
+    for( i = 0; i < tpm2bLabel.size; i++ )
     {
-        tpm2bLabel.t.buffer[i] = label[i];
+        tpm2bLabel.buffer[i] = label[i];
     }
 
-    resultKey->t.size = 0;
+    resultKey->size = 0;
 
     i = 1;
 
     const EVP_MD *md = tpm_algorithm_to_openssl_digest(hashAlg);
     if (!md) {
         LOG_ERR("Algorithm not supported for hmac: %x", hashAlg);
-        return TPM_RC_HASH;
+        return TPM2_RC_HASH;
     }
 
     HMAC_CTX *ctx = hmac_alloc();
     if (!ctx) {
         LOG_ERR("HMAC context allocation failed");
-        return TPM_RC_MEMORY;
+        return TPM2_RC_MEMORY;
     }
 
     int rc = HMAC_Init_ex(ctx, key->buffer, key->size, md, NULL);
     if (!rc) {
         LOG_ERR("HMAC Init failed: %s", ERR_error_string(rc, NULL));
-        rval = TPM_RC_MEMORY;
+        rval = TPM2_RC_MEMORY;
         goto err;
     }
 
     // TODO Why is this a loop? It appears to only execute once.
-    while( resultKey->t.size < bytes )
+    while( resultKey->size < bytes )
     {
         TPM2B_DIGEST tmpResult;
         // Inner loop
@@ -141,35 +141,35 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         *(UINT32 *)tpm2b_i_2Ptr = i_Swizzled;
 
         j = 0;
-        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2b_i_2.b);
-        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2bLabel.b);
+        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2b_i_2);
+        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2bLabel);
         bufferList[j++] = (TPM2B_DIGEST *)contextU;
         bufferList[j++] = (TPM2B_DIGEST *)contextV;
-        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2bBits.b);
+        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2bBits);
         bufferList[j] = (TPM2B_DIGEST *)0;
 
         int c;
         for(c=0; c < j; c++) {
             TPM2B_DIGEST *digest = bufferList[c];
-            int rc =  HMAC_Update(ctx, digest->b.buffer, digest->b.size);
+            int rc =  HMAC_Update(ctx, digest->buffer, digest->size);
             if (!rc) {
                 LOG_ERR("HMAC Update failed: %s", ERR_error_string(rc, NULL));
-                rval = TPM_RC_MEMORY;
+                rval = TPM2_RC_MEMORY;
                 goto err;
             }
         }
 
-        unsigned size = sizeof(tmpResult.t.buffer);
-        int rc = HMAC_Final(ctx, tmpResult.t.buffer, &size);
+        unsigned size = sizeof(tmpResult.buffer);
+        int rc = HMAC_Final(ctx, tmpResult.buffer, &size);
         if (!rc) {
             LOG_ERR("HMAC Final failed: %s", ERR_error_string(rc, NULL));
-            rval = TPM_RC_MEMORY;
+            rval = TPM2_RC_MEMORY;
             goto err;
         }
 
-        tmpResult.t.size = size;
+        tmpResult.size = size;
 
-        bool res = tpm2_util_concat_buffer(resultKey, &(tmpResult.b));
+        bool res = tpm2_util_concat_buffer(resultKey, (TPM2B *)&tmpResult);
         if (!res) {
             rval = TSS2_SYS_RC_BAD_VALUE;
             goto err;
@@ -177,7 +177,7 @@ TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
     }
 
     // Truncate the result to the desired size.
-    resultKey->t.size = bytes;
+    resultKey->size = bytes;
 
 err:
     hmac_del(ctx);

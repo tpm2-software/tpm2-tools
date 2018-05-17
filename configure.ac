@@ -15,69 +15,8 @@ AS_IF(
     [],
     [AC_MSG_WARN([Required executable pandoc not found, man pages will not be built])])
 AM_CONDITIONAL([HAVE_PANDOC],[test "x${PANDOC}" = "xyes"])
-PKG_CHECK_MODULES([SAPI],[sapi >= 1.3.0 sapi < 2.0.0])
-# disable libtcti-device selectively (enabled by default)
-AC_ARG_WITH(
-    [tcti-device],
-    [AS_HELP_STRING([--with-tcti-device],
-        [Build tools with support for the device TCTI.])],
-    [],
-    [with_tcti_device=check])
-AS_IF(
-    [test "x$with_tcti_device" != "xno"],
-    [PKG_CHECK_MODULES(
-        [TCTI_DEV],
-        [tcti-device],
-        [AC_DEFINE([HAVE_TCTI_DEV],[1])
-         with_tcti_device=yes],
-        [if test "x$with_tcti_device" = "xyes"; then
-             AC_MSG_FAILURE([--with-tcti-device option provided but libtcti-device not detected.])
-         fi])])
-AM_CONDITIONAL([HAVE_TCTI_DEV],[test "x$with_tcti_device" = "xyes"])
-# disable libtcti-socket selectively (enabled by default)
-AC_ARG_WITH(
-    [tcti-socket],
-    [AS_HELP_STRING([--with-tcti-socket],
-        [Build tools with support for the socket TCTI.])],
-    [],
-    [with_tcti_socket=check])
-AS_IF(
-    [test "x$with_tcti_socket" != "xno"],
-    [PKG_CHECK_MODULES(
-        [TCTI_SOCK],
-        [tcti-socket],
-        [AC_DEFINE([HAVE_TCTI_SOCK],[1])
-         with_tcti_socket=yes],
-        [if test "x$with_tcti_socket" = "xyes"; then
-             AC_MSG_FAILURE([--with-tcti-socket option provided but libtcti-socket not detected.])
-         fi])])
-AM_CONDITIONAL([HAVE_TCTI_SOCK],[test "x$with_tcti_socket" = "xyes"])
-# selectively disable libtcti-tabrmd
-AC_ARG_WITH(
-    [tcti-tabrmd],
-    [AS_HELP_STRING([--with-tcti-tabrmd],
-        [Build tools with support for the tabrmd TCTI.])],
-    [],
-    [with_tcti_tabrmd=check])
-AS_IF(
-    [test "x$with_tcti_tabrmd" != "xno"],
-    [PKG_CHECK_MODULES(
-        [TCTI_TABRMD],
-        [tcti-tabrmd],
-        [AC_DEFINE([HAVE_TCTI_TABRMD], [1])
-         with_tcti_tabrmd=yes],
-        [if test "x$with_tcti_tabrmd" = "xyes"; then
-             AC_MSG_FAILURE([--with-tcti-tabrmd option provided but libtcti-tabrmd not detected.])
-         fi])])
-AM_CONDITIONAL([HAVE_TCTI_TABRMD],[test "x$with_tcti_tabrmd" = "xyes"])
-# ensure we have at least one TCTI enabled, can't do much without one
-AS_IF(
-    [test "x$with_tcti_device" != "xyes" -a \
-          "x$with_tcti_socket" != "xyes" -a \
-          "x$with_tcti_tabrmd" != "xyes"],
-    [AC_MSG_ERROR(
-        [no TCTIs: at least one TCTI library must be enabled],
-        [1])])
+PKG_CHECK_MODULES([SAPI],[tss2-sys >= 2.0 tss2-sys < 3.0])
+PKG_CHECK_MODULES([SAPI],[tss2-mu >= 2.0 tss2-sys < 3.0])
 PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
 PKG_CHECK_MODULES([CURL],[libcurl])
 AC_ARG_ENABLE([unit],

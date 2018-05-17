@@ -34,7 +34,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 /**
  * Reads a series of bytes from a file as a byte array. This is similar to files_read_bytes(),
@@ -93,7 +93,7 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
  * @return
  *  True on success, False on error.
  */
-bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE handle, const char *path);
+bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handle, const char *path);
 
 /**
  * Loads a TPM object context from disk.
@@ -106,7 +106,7 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE h
  * @return
  *  True on Success, false on error.
  */
-bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE *handle, const char *path);
+bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE *handle, const char *path);
 
 /**
  * Serializes a TPM2B_PPRIVATE to the file path provided.

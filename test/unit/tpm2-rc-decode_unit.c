@@ -31,10 +31,10 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 #include "rc-decode.h"
 
-#define TPM_RC_ALL_1 0xffffffff
+#define TPM2_RC_ALL_1 0xffffffff
 
 /* Check our ability to determine RC format. The spec is massively (IMHO)
  * confusing on this point. See section 6.6.3 from part 2 for some clarity.
@@ -45,7 +45,7 @@ tpm2_rc_is_format_zero_true (void **state)
 {
     (void) state;
 
-    TPM_RC rc = 0xffffff7f;
+    TSS2_RC rc = 0xffffff7f;
 
     assert_true (tpm2_rc_is_format_zero (rc));
 }
@@ -54,7 +54,7 @@ tpm2_rc_is_format_zero_false (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_false (tpm2_rc_is_format_zero (rc));
 }
@@ -63,7 +63,7 @@ tpm2_rc_is_format_one_true (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_true (tpm2_rc_is_format_one (rc));
 }
@@ -72,11 +72,11 @@ tpm2_rc_is_format_one_false (void **state)
 {
     (void) state;
 
-    TPM_RC rc = 0xffffff7f;
+    TSS2_RC rc = 0xffffff7f;
 
     assert_false (tpm2_rc_is_format_one (rc));
 }
-/* Bits 7 and 8 in the TPM_RC are set to 0 for TPM1.2 return codes.
+/* Bits 7 and 8 in the TSS2_RC are set to 0 for TPM1.2 return codes.
  * Here we test to be sure the is_tpm2_rc function identifies this RC as such.
  * All other bits in the RC are set to 1 since the comparison is done using a
  * logical AND operation.
@@ -87,7 +87,7 @@ tpm2_rc_is_tpm12_true (void **state)
     (void) state;
 
     /* bits 7 & 8 clear */
-    TPM_RC rc = 0xfffffe7f;
+    TSS2_RC rc = 0xfffffe7f;
 
     assert_true (tpm2_rc_is_tpm12 (rc));
 }
@@ -96,7 +96,7 @@ tpm2_rc_is_tpm12_false (void **state)
 {
     (void) state;
 
-    TPM_RC rc = 0xfffffe7f;
+    TSS2_RC rc = 0xfffffe7f;
 
     assert_false (tpm2_rc_is_tpm2 (rc));
 }
@@ -110,7 +110,7 @@ tpm2_rc_is_tpm2_01 (void **state)
     (void) state;
 
     /* bit 7 set, bit 8 clear */
-    TPM_RC rc = 0xfffffeff;
+    TSS2_RC rc = 0xfffffeff;
 
     assert_true (tpm2_rc_is_tpm2 (rc));
 }
@@ -120,7 +120,7 @@ tpm2_rc_is_tpm2_10 (void **state)
     (void) state;
 
     /* bit 7 clear, bit 8 set */
-    TPM_RC rc = 0xffffff7f;
+    TSS2_RC rc = 0xffffff7f;
 
     assert_true (tpm2_rc_is_tpm2 (rc));
 }
@@ -130,7 +130,7 @@ tpm2_rc_is_tpm2_11 (void **state)
     (void) state;
 
     /* bit 7 and 8 set */
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_true (tpm2_rc_is_tpm2 (rc));
 }
@@ -142,7 +142,7 @@ tpm2_rc_is_vendor_defined_code_all_but_7 (void **state)
     (void) state;
 
     /* bit 7 clear, bit 8 and 10 set */
-    TPM_RC rc = 0xffffff7f;
+    TSS2_RC rc = 0xffffff7f;
 
     assert_true (tpm2_rc_is_vendor_defined (rc));
 }
@@ -153,7 +153,7 @@ tpm2_rc_is_vendor_defined_code_7_set (void **state)
     (void) state;
 
     /* bit 7, 8 and 10 set */
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_false (tpm2_rc_is_vendor_defined (rc));
 }
@@ -164,7 +164,7 @@ tpm2_rc_is_vendor_defined_code_8_unset (void **state)
     (void) state;
 
     /* bit 7 and 8 clear, bit 10 set */
-    TPM_RC rc = 0xfffffe7f;
+    TSS2_RC rc = 0xfffffe7f;
 
     assert_false (tpm2_rc_is_vendor_defined (rc));
 }
@@ -175,7 +175,7 @@ tpm2_rc_is_vendor_defined_code_10_unset (void **state)
     (void) state;
 
     /* bit 7 and 10 clear, bit 8 set */
-    TPM_RC rc = 0xfffffb7f;
+    TSS2_RC rc = 0xfffffb7f;
 
     assert_false (tpm2_rc_is_vendor_defined (rc));
 }
@@ -186,7 +186,7 @@ tpm2_rc_is_vendor_defined_code_no_9 (void **state)
     (void) state;
 
     /* bit 7 and 9 clear, bit 8 and 10 set */
-    TPM_RC rc = 0xfffffd7f;
+    TSS2_RC rc = 0xfffffd7f;
 
     assert_true (tpm2_rc_is_vendor_defined (rc));
 }
@@ -198,7 +198,7 @@ tpm2_rc_is_warning_code_success (void **state)
     (void) state;
 
     /* bit 7 and 10 clear, bit 8 and 11 set */
-    TPM_RC rc = 0xfffff97f;
+    TSS2_RC rc = 0xfffff97f;
 
     assert_true (tpm2_rc_is_warning_code (rc));
 }
@@ -209,7 +209,7 @@ tpm2_rc_is_warning_code_8_unset (void **state)
     (void) state;
 
     /* bit 7, 8 and 10 clear, bit 11 set */
-    TPM_RC rc = 0xfffffa7f;
+    TSS2_RC rc = 0xfffffa7f;
 
     assert_false (tpm2_rc_is_warning_code (rc));
 }
@@ -220,7 +220,7 @@ tpm2_rc_is_warning_code_7_set (void **state)
     (void) state;
 
     /* bit 7, 8 and 11 set, bit 10 clear */
-    TPM_RC rc = 0xfffff9ff;
+    TSS2_RC rc = 0xfffff9ff;
 
     assert_false (tpm2_rc_is_warning_code (rc));
 }
@@ -231,7 +231,7 @@ tpm2_rc_is_warning_code_10_set (void **state)
     (void) state;
 
     /* bit 8, 10 and 11 set, bit 7 clear */
-    TPM_RC rc = 0xfffff7f;
+    TSS2_RC rc = 0xfffff7f;
 
     assert_false (tpm2_rc_is_warning_code (rc));
 }
@@ -243,7 +243,7 @@ tpm2_rc_is_warning_code_11_unset (void **state)
     (void) state;
 
     /* bit 8 set, bits 7, 10 and 11 clear */
-    TPM_RC rc = 0xfffff37f;
+    TSS2_RC rc = 0xfffff37f;
 
     assert_false (tpm2_rc_is_warning_code (rc));
 }
@@ -254,7 +254,7 @@ tpm2_rc_is_error_code_success (void **state)
 {
     (void) state;
 
-    TPM_RC rc = 0xfffff37f;
+    TSS2_RC rc = 0xfffff37f;
 
     assert_true (tpm2_rc_is_error_code (rc));
 }
@@ -265,7 +265,7 @@ tpm2_rc_is_error_code_8_unset (void **state)
     (void) state;
 
     /* bit 7, 8, 10 and 11 clear */
-    TPM_RC rc = 0xfffff27f;
+    TSS2_RC rc = 0xfffff27f;
 
     assert_false (tpm2_rc_is_error_code (rc));
 }
@@ -276,7 +276,7 @@ tpm2_rc_is_error_code_7_set (void **state)
     (void) state;
 
     /* bit 7 and 8 set, bit 10 and 11 clear*/
-    TPM_RC rc = 0xfffff3ff;
+    TSS2_RC rc = 0xfffff3ff;
 
     assert_false (tpm2_rc_is_error_code (rc));
 }
@@ -287,7 +287,7 @@ tpm2_rc_is_error_code_10_set (void **state)
     (void) state;
 
     /* bit 8 and 10 set, bit 7 and 11 clear */
-    TPM_RC rc = 0xfffff77f;
+    TSS2_RC rc = 0xfffff77f;
 
     assert_false (tpm2_rc_is_error_code (rc));
 }
@@ -298,7 +298,7 @@ tpm2_rc_is_error_code_11_set (void **state)
     (void) state;
 
     /* bit 8 and 11 set, bit 7 and 10 clear*/
-    TPM_RC rc = 0xfffffb7f;
+    TSS2_RC rc = 0xfffffb7f;
 
     assert_false (tpm2_rc_is_error_code (rc));
 }
@@ -310,7 +310,7 @@ tpm2_rc_is_error_code_with_parameter_success (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_true (tpm2_rc_is_error_code_with_parameter (rc));
 }
@@ -321,7 +321,7 @@ tpm2_rc_is_error_code_with_parameter_6_unset (void **state)
     (void) state;
 
     /* bit 6 clear, bit 7 set */
-    TPM_RC rc = 0xffffffbf;
+    TSS2_RC rc = 0xffffffbf;
 
     assert_false (tpm2_rc_is_error_code_with_parameter (rc));
 }
@@ -332,7 +332,7 @@ tpm2_rc_is_error_code_with_parameter_7_unset (void **state)
     (void) state;
 
     /* bit 6 set, bit 7 clear */
-    TPM_RC rc = 0xffffff7f;
+    TSS2_RC rc = 0xffffff7f;
 
     assert_false (tpm2_rc_is_error_code_with_parameter (rc));
 }
@@ -344,7 +344,7 @@ tpm2_rc_is_error_code_with_handle_success (void **state)
 {
     (void) state;
 
-    TPM_RC rc = 0xfffff7bf;
+    TSS2_RC rc = 0xfffff7bf;
 
     assert_true (tpm2_rc_is_error_code_with_handle (rc));
 }
@@ -355,7 +355,7 @@ tpm2_rc_is_error_code_with_handle_6_set (void **state)
     (void) state;
 
     /* bit 6 and 7 set, bit 11 clear*/
-    TPM_RC rc = 0xfffff7ff;
+    TSS2_RC rc = 0xfffff7ff;
 
     assert_false (tpm2_rc_is_error_code_with_handle (rc));
 }
@@ -366,7 +366,7 @@ tpm2_rc_is_error_code_with_handle_7_unset (void **state)
     (void) state;
 
     /* bit 6, 7 and 11 clear */
-    TPM_RC rc = 0xfffff73f;
+    TSS2_RC rc = 0xfffff73f;
 
     assert_false (tpm2_rc_is_error_code_with_handle (rc));
 }
@@ -377,7 +377,7 @@ tpm2_rc_is_error_code_with_handle_11_set (void **state)
     (void) state;
 
     /* bit 6 clear, bit 7 and 11 clear */
-    TPM_RC rc = 0xffffffbf;
+    TSS2_RC rc = 0xffffffbf;
 
     assert_false (tpm2_rc_is_error_code_with_handle (rc));
 }
@@ -390,7 +390,7 @@ tpm2_rc_is_error_code_with_session_success (void **state)
     (void) state;
 
     /* bit 6 clear, bits 7 & 11 set */
-    TPM_RC rc = 0xffffffbf;
+    TSS2_RC rc = 0xffffffbf;
 
     assert_true (tpm2_rc_is_error_code_with_session (rc));
 }
@@ -401,7 +401,7 @@ tpm2_rc_is_error_code_with_session_6_set (void **state)
     (void) state;
 
     /* bits 6, 7 & 11 set */
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_false (tpm2_rc_is_error_code_with_session (rc));
 }
@@ -412,7 +412,7 @@ tpm2_rc_is_error_code_with_session_7_unset (void **state)
     (void) state;
 
     /* bits 6 & 7 clear, bit 11 set */
-    TPM_RC rc = 0xffffff3f;
+    TSS2_RC rc = 0xffffff3f;
 
     assert_false (tpm2_rc_is_error_code_with_session (rc));
 }
@@ -423,11 +423,11 @@ tpm2_rc_is_error_code_with_session_11_unset (void **state)
     (void) state;
 
     /* bits 6 & 11 clear, bit 7 set */
-    TPM_RC rc = 0xfffff7bf;
+    TSS2_RC rc = 0xfffff7bf;
 
     assert_false (tpm2_rc_is_error_code_with_session (rc));
 }
-/* Isolate bits [06:00] of the TPM_RC.
+/* Isolate bits [06:00] of the TSS2_RC.
  * The first of these tests ensures that when all bits are set that we only
  * get back an int with the bits [06:00] set.
  */
@@ -436,7 +436,7 @@ tpm2_rc_get_code_7bit_all (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), 0x0000003f);
 }
@@ -445,11 +445,11 @@ tpm2_rc_get_code_7bit_general_failure (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_6BIT_ERROR_MASK | TSS2_BASE_RC_GENERAL_FAILURE;
+    TSS2_RC rc = ~TPM2_RC_6BIT_ERROR_MASK | TSS2_BASE_RC_GENERAL_FAILURE;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), TSS2_BASE_RC_GENERAL_FAILURE);
 }
-/* Isolate bits [05:00] of the TPM_RC.
+/* Isolate bits [05:00] of the TSS2_RC.
  * This test ensures that the tpm2_rc_get_code_6bit returns only bits [05:00]
  * unmodified.
  */
@@ -458,7 +458,7 @@ tpm2_rc_get_code_6bit_all (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TPM_RC_ALL_1;
+    TSS2_RC rc = TPM2_RC_ALL_1;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), 0x0000003f);
 }
@@ -467,40 +467,40 @@ tpm2_rc_get_code_6bit_general_failure (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_6BIT_ERROR_MASK | TSS2_BASE_RC_GENERAL_FAILURE;
+    TSS2_RC rc = ~TPM2_RC_6BIT_ERROR_MASK | TSS2_BASE_RC_GENERAL_FAILURE;
 
     assert_int_equal (tpm2_rc_get_code_6bit (rc), TSS2_BASE_RC_GENERAL_FAILURE);
 }
-/* Isolate bits [11:08] from the TPM_RC.
+/* Isolate bits [11:08] from the TSS2_RC.
  */
 static void
 tpm2_rc_get_parameter_number_f (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_PARAMETER_MASK | TPM_RC_F;
+    TSS2_RC rc = ~TPM2_RC_PARAMETER_MASK | TPM2_RC_F;
 
-    assert_int_equal (tpm2_rc_get_parameter_number (rc), TPM_RC_F);
+    assert_int_equal (tpm2_rc_get_parameter_number (rc), TPM2_RC_F);
 }
 static void
 tpm2_rc_get_parameter_number_9 (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_PARAMETER_MASK | TPM_RC_9;
+    TSS2_RC rc = ~TPM2_RC_PARAMETER_MASK | TPM2_RC_9;
 
-    assert_int_equal (tpm2_rc_get_parameter_number (rc), TPM_RC_9);
+    assert_int_equal (tpm2_rc_get_parameter_number (rc), TPM2_RC_9);
 }
-/* Isolate bits [10:08] from the TPM_RC.
+/* Isolate bits [10:08] from the TSS2_RC.
  */
 static void
 tpm2_rc_get_handle_number_1 (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_HANDLE_MASK | TPM_RC_1;
+    TSS2_RC rc = ~TPM2_RC_HANDLE_MASK | TPM2_RC_1;
 
-    assert_int_equal (tpm2_rc_get_handle_number (rc), TPM_RC_1);
+    assert_int_equal (tpm2_rc_get_handle_number (rc), TPM2_RC_1);
 }
 /* The largest handle number possible */
 static void
@@ -508,9 +508,9 @@ tpm2_rc_get_handle_number_7 (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_HANDLE_MASK | TPM_RC_7;
+    TSS2_RC rc = ~TPM2_RC_HANDLE_MASK | TPM2_RC_7;
 
-    assert_int_equal (tpm2_rc_get_handle_number (rc), TPM_RC_7);
+    assert_int_equal (tpm2_rc_get_handle_number (rc), TPM2_RC_7);
 }
 /* A negative case to test for handle numbers beyond what's possible */
 static void
@@ -518,11 +518,11 @@ tpm2_rc_get_handle_number_f (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_HANDLE_MASK | TPM_RC_F;
+    TSS2_RC rc = ~TPM2_RC_HANDLE_MASK | TPM2_RC_F;
 
-    assert_int_not_equal (tpm2_rc_get_handle_number (rc), TPM_RC_F);
+    assert_int_not_equal (tpm2_rc_get_handle_number (rc), TPM2_RC_F);
 }
-/* Isolate bits [10:08] from the TPM_RC. This is redundant but it tests
+/* Isolate bits [10:08] from the TSS2_RC. This is redundant but it tests
  * the functions that expose functionality which are themselves redundant.
  */
 static void
@@ -530,27 +530,27 @@ tpm2_rc_get_session_number_1 (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_SESSION_MASK | TPM_RC_1;
+    TSS2_RC rc = ~TPM2_RC_SESSION_MASK | TPM2_RC_1;
 
-    assert_int_equal (tpm2_rc_get_session_number (rc), TPM_RC_1);
+    assert_int_equal (tpm2_rc_get_session_number (rc), TPM2_RC_1);
 }
 static void
 tpm2_rc_get_session_number_7 (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_SESSION_MASK | TPM_RC_7;
+    TSS2_RC rc = ~TPM2_RC_SESSION_MASK | TPM2_RC_7;
 
-    assert_int_equal (tpm2_rc_get_session_number (rc), TPM_RC_7);
+    assert_int_equal (tpm2_rc_get_session_number (rc), TPM2_RC_7);
 }
 static void
 tpm2_rc_get_session_number_f (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TPM_RC_SESSION_MASK | TPM_RC_F;
+    TSS2_RC rc = ~TPM2_RC_SESSION_MASK | TPM2_RC_F;
 
-    assert_int_not_equal (tpm2_rc_get_session_number (rc), TPM_RC_F);
+    assert_int_not_equal (tpm2_rc_get_session_number (rc), TPM2_RC_F);
 }
 /* Isolate the various error layers. To test this we set every bit in the RC
  * and then selectively disable bits using a logical AND to make the error
@@ -563,27 +563,27 @@ tpm2_rc_get_layer_tpm (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TPM_ERROR_LEVEL;
+    TSS2_RC rc = TSS2_TPM_RC_LAYER;
 
-    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TPM_ERROR_LEVEL);
+    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TPM_RC_LAYER);
 }
 static void
 tpm2_rc_get_layer_sys (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_SYS_ERROR_LEVEL;
+    TSS2_RC rc = TSS2_SYS_RC_LAYER;
 
-    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_SYS_ERROR_LEVEL);
+    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_SYS_RC_LAYER);
 }
 static void
 tpm2_rc_get_layer_tcti (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TCTI_ERROR_LEVEL;
+    TSS2_RC rc = TSS2_TCTI_RC_LAYER;
 
-    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TCTI_ERROR_LEVEL);
+    assert_int_equal (tpm2_rc_get_layer (rc), TSS2_TCTI_RC_LAYER);
 }
 /* Check our ability to determine the source of the 
  */
@@ -592,7 +592,7 @@ tpm2_rc_is_from_tss_sys (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_SYS_ERROR_LEVEL;
+    TSS2_RC rc = TSS2_SYS_RC_LAYER;
 
     assert_true (tpm2_rc_is_from_tss (rc));
 }
@@ -601,7 +601,7 @@ tpm2_rc_is_from_tss_tpm (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TPM_ERROR_LEVEL;
+    TSS2_RC rc = TSS2_TPM_RC_LAYER;
 
     assert_false (tpm2_rc_is_from_tss (rc));
 }
@@ -610,7 +610,7 @@ tpm2_rc_is_from_tss_tcti (void **state)
 {
     (void) state;
 
-    TPM_RC rc = ~TSS2_ERROR_LEVEL_MASK | TSS2_TCTI_ERROR_LEVEL;
+    TSS2_RC rc = TSS2_TCTI_RC_LAYER;
 
     assert_true (tpm2_rc_is_from_tss (rc));
 }
@@ -621,7 +621,7 @@ tpm2_rc_get_tss_err_code_general_from_tcti (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TSS2_TCTI_RC_GENERAL_FAILURE;
+    TSS2_RC rc = TSS2_TCTI_RC_GENERAL_FAILURE;
 
     assert_int_equal (TSS2_BASE_RC_GENERAL_FAILURE,
                       tpm2_rc_get_tss_err_code (rc));
@@ -631,7 +631,7 @@ tpm2_rc_get_tss_err_code_try_again_from_tcti (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TSS2_TCTI_RC_TRY_AGAIN;
+    TSS2_RC rc = TSS2_TCTI_RC_TRY_AGAIN;
 
     assert_int_equal (TSS2_BASE_RC_TRY_AGAIN,
                       tpm2_rc_get_tss_err_code (rc));
@@ -641,7 +641,7 @@ tpm2_rc_get_tss_err_code_abi_mismatch_from_sys (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TSS2_SYS_RC_ABI_MISMATCH;
+    TSS2_RC rc = TSS2_SYS_RC_ABI_MISMATCH;
 
     assert_int_equal (TSS2_BASE_RC_ABI_MISMATCH,
                       tpm2_rc_get_tss_err_code (rc));
@@ -651,7 +651,7 @@ tpm2_rc_get_tss_err_code_bad_size_from_sys (void **state)
 {
     (void) state;
 
-    TPM_RC rc = TSS2_SYS_RC_BAD_SIZE;
+    TSS2_RC rc = TSS2_SYS_RC_BAD_SIZE;
 
     assert_int_equal (TSS2_BASE_RC_BAD_SIZE,
                       tpm2_rc_get_tss_err_code (rc));

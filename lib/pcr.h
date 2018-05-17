@@ -33,10 +33,10 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels);
 bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel);
-TPM_RC get_max_supported_pcrs(TSS2_SYS_CONTEXT *sapi_context, UINT32 *max_pcrs);
+TSS2_RC get_max_supported_pcrs(TSS2_SYS_CONTEXT *sapi_context, UINT32 *max_pcrs);
 
 #endif /* SRC_PCR_H_ */

@@ -29,8 +29,9 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 #include <stdbool.h>
+#include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_password_util.h"
@@ -57,13 +58,13 @@ bool tpm2_password_util_from_optarg(const char *password, TPM2B_AUTH *dest) {
          * Per the man page:
          * "a return value of size or more means that the output was  truncated."
          */
-        size_t wrote = snprintf((char *)&dest->t.buffer, BUFFER_SIZE(typeof(*dest), buffer), "%s", password);
+        size_t wrote = snprintf((char *)&dest->buffer, BUFFER_SIZE(typeof(*dest), buffer), "%s", password);
         if (wrote >= BUFFER_SIZE(typeof(*dest), buffer)) {
-            dest->t.size = 0;
+            dest->size = 0;
             return false;
         }
 
-        dest->t.size = wrote;
+        dest->size = wrote;
 
         return true;
     }
@@ -71,10 +72,10 @@ bool tpm2_password_util_from_optarg(const char *password, TPM2B_AUTH *dest) {
     /* if it is hex, then skip the prefix */
     password += HEX_PREFIX_LEN;
 
-    dest->t.size = BUFFER_SIZE(typeof(*dest), buffer);
-    int rc = tpm2_util_hex_to_byte_structure(password, &dest->t.size, dest->t.buffer);
+    dest->size = BUFFER_SIZE(typeof(*dest), buffer);
+    int rc = tpm2_util_hex_to_byte_structure(password, &dest->size, dest->buffer);
     if (rc) {
-        dest->t.size = 0;
+        dest->size = 0;
         return false;
     }
 

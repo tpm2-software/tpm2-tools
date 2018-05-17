@@ -31,7 +31,7 @@
 #ifndef LIB_TPM2_NV_UTIL_H_
 #define LIB_TPM2_NV_UTIL_H_
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_util.h"
@@ -50,9 +50,9 @@
  * @param nv_public
  *  The public data structure to store the results in.
  * @return
- *  The error code from the TPM. TPM_RC_SUCCESS on success.
+ *  The error code from the TPM. TPM2_RC_SUCCESS on success.
  */
-static inline TPM_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
+static inline TSS2_RC tpm2_util_nv_read_public(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
 
     TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
@@ -69,9 +69,9 @@ static inline TSS2_RC tpm2_util_nv_max_buffer_size(TSS2_SYS_CONTEXT *sapi_contex
     TPMI_YES_NO more_data;
     TSS2_RC rval = TSS2_RETRY_EXP(
                Tss2_Sys_GetCapability (sapi_context, NULL,
-                   TPM_CAP_TPM_PROPERTIES, TPM_PT_NV_BUFFER_MAX, 1,
+                   TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX, 1,
                    &more_data, &cap_data, NULL));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Failed to query max transmission size via"
                 "Tss2_Sys_GetCapability. Error:0x%x", rval);
     } else {

@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015-2018, Intel Corporation
+// Copyright (c) 2015, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -68,7 +68,6 @@ struct tpm_encrypt_decrypt_ctx {
 
 static tpm_encrypt_decrypt_ctx ctx = {
     .session_data = TPMS_AUTH_COMMAND_EMPTY_INIT,
-    .is_decrypt = NO,
     .data = TPM2B_EMPTY_INIT,
 };
 
@@ -78,44 +77,33 @@ static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_IV iv_out = TPM2B_TYPE_INIT(TPM2B_IV, buffer);
 
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+    TSS2L_SYS_AUTH_COMMAND sessions_data;
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
-    session_data_array[0] = &ctx.session_data;
-    sessions_data.cmdAuths = &session_data_array[0];
-    session_data_out_array[0] = &session_data_out;
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data_out.rspAuthsCount = 1;
-
-    sessions_data.cmdAuthsCount = 1;
-    sessions_data.cmdAuths[0] = &ctx.session_data;
+    sessions_data.count = 1;
+    sessions_data.auths[0] = ctx.session_data;
 
     TPM2B_IV iv_in = {
-        .t = {
-            .size = MAX_SYM_BLOCK_SIZE,
-            .buffer = { 0 }
-        },
+        .size = TPM2_MAX_SYM_BLOCK_SIZE,
+        .buffer = { 0 }
     };
 
     /* try EncryptDecrypt2 first, fallback to EncryptDecrypt if not supported */
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
-            &sessions_data, &ctx.data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &out_data,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context, ctx.key_handle,
+            &sessions_data, &ctx.data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &out_data,
             &iv_out, &sessions_data_out));
-    if (TPM2_RC_GET(rval) == TPM_RC_COMMAND_CODE) {
+    if (rval == TPM2_RC_COMMAND_CODE) {
         rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context, ctx.key_handle,
-                &sessions_data, ctx.is_decrypt, TPM_ALG_NULL, &iv_in, &ctx.data,
+                &sessions_data, ctx.is_decrypt, TPM2_ALG_NULL, &iv_in, &ctx.data,
                 &out_data, &iv_out, &sessions_data_out));
     }
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("EncryptDecrypt failed, error code: 0x%x", rval);
         return false;
     }
 
-    return files_save_bytes_to_file(ctx.out_file_path, out_data.t.buffer,
-            out_data.t.size);
+    return files_save_bytes_to_file(ctx.out_file_path, (UINT8 *) out_data.buffer,
+            out_data.size);
 }
 
 static bool on_option(char key, char *value) {
@@ -141,11 +129,11 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         break;
     case 'D':
-        ctx.is_decrypt = YES;
+        ctx.is_decrypt = 1;
         break;
     case 'I':
-        ctx.data.t.size = BUFFER_SIZE(TPM2B_MAX_BUFFER, buffer);
-        result = files_load_bytes_from_path(value, ctx.data.t.buffer, &ctx.data.t.size);
+        ctx.data.size = BUFFER_SIZE(TPM2B_MAX_BUFFER, buffer);
+        result = files_load_bytes_from_path(value, ctx.data.buffer, &ctx.data.size);
         if (!result) {
             return false;
         }
@@ -192,11 +180,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"input-session-handle",1,         NULL, 'S'},
     };
 
-    ctx.session_data.sessionHandle = TPM_RS_PW;
+    ctx.session_data.sessionHandle = TPM2_RS_PW;
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("k:P:DI:o:c:S:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

@@ -30,7 +30,7 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 typedef enum pubkey_format pubkey_format;
 

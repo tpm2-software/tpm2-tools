@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2017, Intel Corporation
+// Copyright (c) 2018, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -11,10 +11,6 @@
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 // this list of conditions and the following disclaimer in the documentation
 // and/or other materials provided with the distribution.
-//
-// 3. Neither the name of Intel Corporation nor the names of its contributors
-// may be used to endorse or promote products derived from this software without
-// specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -28,20 +24,49 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-#ifndef LIB_TCTI_TPM2_TOOLS_TCTI_DEVICE_H_
-#define LIB_TCTI_TPM2_TOOLS_TCTI_DEVICE_H_
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
+
+#ifndef LIB_TPM2_TCTI_LDR_H_
+#define LIB_TPM2_TCTI_LDR_H_
 
 /**
- * Initializes a device tcti from opts. opts can be a filepath
- * to a tpm device file or NULL. On NULL, it uses the environment
- * value or, if not set, the default path.
+ * Loads a TCTI from a friendly name, library name, or path.
+ * For example
+ *  friendly:     path = tabrmd
+ *  library name: path = libtss2-tcti-mssim.so
+ *  full path:    path = /home/user/lib/libtss2-tcti-custom.so
+ * @param path
+ *  The path/library to load.
  * @param opts
- *  The option string, which can be a file path or NULL.
+ *  The tcti option configs.
  * @return
- *  NULL on error or an initialized device tcti.
+ *  A tcti context on success or NULL on failure.
  */
-TSS2_TCTI_CONTEXT *tpm2_tools_tcti_device_init(char *opts);
+TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts);
 
-#endif /* LIB_TCTI_TPM2_TOOLS_TCTI_DEVICE_H_ */
+/**
+ * Returns the loaded TCTIs information structure,
+ * which contains the initialization routine, description
+ * and help string amongst other things.
+ * @return
+ *  NULL if no TCTI is loaded, else the info structure pointer.
+ */
+const TSS2_TCTI_INFO *tpm2_tcti_ldr_getinfo(void);
+
+/**
+ * Given a tcti name, like mssim, tells you if the
+ * library is present using dlopen(3).
+ * @param name
+ *   The friendly name of the tcti.
+ * @return
+ *  True if present, false otherwise.
+ */
+bool tpm2_tcti_ldr_is_tcti_present(const char *name);
+
+/**
+ * Unloads the tcti loaded via tpm2_tcti_ldr_load();
+ */
+void tpm2_tcti_ldr_unload(void);
+
+#endif /* LIB_TPM2_TCTI_LDR_H_ */

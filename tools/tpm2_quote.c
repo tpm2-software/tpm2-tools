@@ -34,7 +34,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
@@ -62,7 +62,7 @@ static bool is_auth_session;
 static TPMI_SH_AUTH_SESSION auth_session_handle;
 static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag;
 static char *contextFilePath;
-static TPM_HANDLE akHandle;
+static TPM2_HANDLE akHandle;
 
 static void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -83,45 +83,28 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
 
     if (message_path) {
         res &= files_save_bytes_to_file(message_path,
-                (UINT8*)(quoted->b).buffer,
-                (quoted->b).size);
+                (UINT8*)quoted->attestationData,
+                quoted->size);
     }
 
     return res;
 }
 
-static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
+static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
 {
     UINT32 rval;
     TPMT_SIG_SCHEME inScheme;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, {{.sessionHandle=TPM2_RS_PW}}};
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
     TPM2B_ATTEST quoted = TPM2B_TYPE_INIT(TPM2B_ATTEST, attestationData);
     TPMT_SIGNATURE signature;
 
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
-
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
-
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
-
-    sessionData.sessionHandle = TPM_RS_PW;
     if (is_auth_session) {
-        sessionData.sessionHandle = auth_session_handle;
+        sessionsData.auths[0].sessionHandle = auth_session_handle;
     }
 
-    sessionData.nonce.t.size = 0;
-    *( (UINT8 *)((void *)&sessionData.sessionAttributes ) ) = 0;
-
     if(!G_flag || !get_signature_scheme(sapi_context, akHandle, sig_hash_algorithm, &inScheme)) {
-        inScheme.scheme = TPM_ALG_NULL;
+        inScheme.scheme = TPM2_ALG_NULL;
     }
 
     memset( (void *)&signature, 0, sizeof(signature) );
@@ -129,7 +112,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM_HANDLE akHandle, TPML_PCR_S
     rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &sessionsData,
             &qualifyingData, &inScheme, pcrSelection, &quoted,
             &signature, &sessionsDataOut));
-    if(rval != TPM_RC_SUCCESS)
+    if(rval != TPM2_RC_SUCCESS)
     {
         printf("\nQuote Failed ! ErrorCode: 0x%0x\n\n", rval);
         return -1;
@@ -180,7 +163,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         pcrSelections.pcrSelections[0].hash = tpm2_alg_util_from_optarg(optarg);
-        if (pcrSelections.pcrSelections[0].hash == TPM_ALG_ERROR)
+        if (pcrSelections.pcrSelections[0].hash == TPM2_ALG_ERROR)
         {
             LOG_ERR("Could not convert pcr hash selection, got: \"%s\"", value);
             return false;
@@ -201,8 +184,8 @@ static bool on_option(char key, char *value) {
         o_flag = 1;
         break;
     case 'q':
-        qualifyingData.t.size = sizeof(qualifyingData) - 2;
-        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.t.size,qualifyingData.t.buffer) != 0)
+        qualifyingData.size = sizeof(qualifyingData) - 2;
+        if(tpm2_util_hex_to_byte_structure(value,&qualifyingData.size,qualifyingData.buffer) != 0)
         {
             LOG_ERR("Could not convert \"%s\" from a hex string to byte array!", value);
             return false;
@@ -231,7 +214,7 @@ static bool on_option(char key, char *value) {
          break;
     case 'G':
         sig_hash_algorithm = tpm2_alg_util_from_optarg(optarg);
-        if(sig_hash_algorithm == TPM_ALG_ERROR) {
+        if(sig_hash_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
             return false;
         }
@@ -259,9 +242,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("k:c:P:l:g:L:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }
