@@ -36,7 +36,7 @@ function get_deps() {
 	echo "pwd starting: `pwd`"
 	pushd "$1"
 	echo "pwd clone tss: `pwd`"
-	git clone -b 1.x https://github.com/tpm2-software/tpm2-tss.git
+	git clone -b 2.0.0_rc1 https://github.com/tpm2-software/tpm2-tss.git
 	pushd tpm2-tss
 	echo "pwd build tss: `pwd`"
 	./bootstrap
@@ -47,7 +47,7 @@ function get_deps() {
 	echo "pwd done tss: `pwd`"
 
 	echo "pwd clone abrmd: `pwd`"
-	git clone -b 1.x https://github.com/tpm2-software/tpm2-abrmd.git
+	git clone -b master https://github.com/tpm2-software/tpm2-abrmd.git
 	pushd tpm2-abrmd
 	echo "pwd build abrmd: `pwd`"
 	./bootstrap
