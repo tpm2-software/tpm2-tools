@@ -32,6 +32,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include <tss2/tss2_mu.h>
+
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bn.h>
@@ -42,7 +44,6 @@
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_util.h"
-#include "tss2_mu.h"
 
 static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, const char *path);
 
@@ -86,7 +87,7 @@ static void print_ssl_error(const char *failed_action) {
 bool tpm2_convert_pubkey(TPM2B_PUBLIC *public, pubkey_format format, const char *path) {
 
     if (format == pubkey_format_der || format == pubkey_format_pem) {
-        return tpm2_convert_pubkey_ssl(&public->t.publicArea, format, path);
+        return tpm2_convert_pubkey_ssl(&public->publicArea, format, path);
     }
     else if (format == pubkey_format_tss) {
         return files_save_public(public, path);
@@ -106,14 +107,14 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
     // strings in print_ssl_error()
     ERR_load_crypto_strings();
 
-    if (public->type != TPM_ALG_RSA) {
+    if (public->type != TPM2_ALG_RSA) {
         LOG_ERR("Unsupported key type for requested output format. Only RSA is supported.");
         goto error;
     }
 
     UINT32 exponent = (public->parameters).rsaDetail.exponent;
     if (exponent == 0) {
-        exponent = RSA_DEFAULT_PUBLIC_EXPONENT;
+        exponent = 0x10001;
     }
 
     // OpenSSL expects this in network byte order
@@ -125,7 +126,7 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, pubkey_format format, c
     }
 
     e = BN_bin2bn((void*)&exponent, sizeof(exponent), NULL);
-    n = BN_bin2bn(public->unique.rsa.t.buffer, public->unique.rsa.t.size,
+    n = BN_bin2bn(public->unique.rsa.buffer, public->unique.rsa.size,
                   NULL);
 
     if (!n || !e) {

@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include <limits.h>
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "conversion.h"
 #include "tpm2_options.h"
@@ -79,23 +79,14 @@ struct tpm_certify_ctx {
 
 static tpm_certify_ctx ctx = {
     .cmd_auth = {
-        TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
-        TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+        TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+        TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     },
     .sig_fmt = signature_format_tss,
 };
 
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_handle, TPMI_ALG_PUBLIC *type) {
-
-    TPMS_AUTH_RESPONSE session_data_out;
-    TPMS_AUTH_RESPONSE *session_data_out_array[] = {
-        &session_data_out
-    };
-
-    TSS2_SYS_RSP_AUTHS sessions_data_out = {
-            .rspAuthsCount = ARRAY_LEN(session_data_out_array),
-            .rspAuths = session_data_out_array
-    };
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
 
@@ -103,14 +94,14 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
 
     TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
             &out_public, &name, &qualified_name, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_ReadPublic failed. Error Code: 0x%x", rval);
         return false;
     }
 
-    *type = out_public.t.publicArea.type;
+    *type = out_public.publicArea.type;
 
     return true;
 }
@@ -118,26 +109,26 @@ static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_h
 static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle,
         TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *scheme) {
 
-    TPM_ALG_ID type;
+    TPM2_ALG_ID type;
     bool result = get_key_type(sapi_context, key_handle, &type);
     if (!result) {
         return false;
     }
 
     switch (type) {
-    case TPM_ALG_RSA :
-        scheme->scheme = TPM_ALG_RSASSA;
+    case TPM2_ALG_RSA :
+        scheme->scheme = TPM2_ALG_RSASSA;
         scheme->details.rsassa.hashAlg = halg;
         break;
-    case TPM_ALG_KEYEDHASH :
-        scheme->scheme = TPM_ALG_HMAC;
+    case TPM2_ALG_KEYEDHASH :
+        scheme->scheme = TPM2_ALG_HMAC;
         scheme->details.hmac.hashAlg = halg;
         break;
-    case TPM_ALG_ECC :
-        scheme->scheme = TPM_ALG_ECDSA;
+    case TPM2_ALG_ECC :
+        scheme->scheme = TPM2_ALG_ECDSA;
         scheme->details.ecdsa.hashAlg = halg;
         break;
-    case TPM_ALG_SYMCIPHER :
+    case TPM2_ALG_SYMCIPHER :
     default:
         LOG_ERR("Unknown key type, got: 0x%x", type);
         return false;
@@ -148,32 +139,16 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle
 
 static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND *cmd_session_array[ARRAY_LEN(ctx.cmd_auth)] = {
-        &ctx.cmd_auth[0],
-        &ctx.cmd_auth[1]
+    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
+        .count = ARRAY_LEN(ctx.cmd_auth),
+        .auths = { ctx.cmd_auth[0], ctx.cmd_auth[1]}
     };
 
-    TSS2_SYS_CMD_AUTHS cmd_auth_array = {
-        .cmdAuthsCount = ARRAY_LEN(cmd_session_array),
-        .cmdAuths = cmd_session_array
-    };
-
-    TPMS_AUTH_RESPONSE session_data_out[ARRAY_LEN(ctx.cmd_auth)];
-    TPMS_AUTH_RESPONSE *session_data_array[] = {
-        &session_data_out[0],
-        &session_data_out[1]
-    };
-
-    TSS2_SYS_RSP_AUTHS sessions_data_out = {
-        .rspAuthsCount = ARRAY_LEN(session_data_array),
-        .rspAuths = session_data_array
-    };
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_DATA qualifying_data = {
-        .t = {
-            .size = 4,
-            .buffer = { 0x00, 0xff, 0x55,0xaa }
-        }
+        .size = 4,
+        .buffer = { 0x00, 0xff, 0x55,0xaa }
     };
 
     TPMT_SIG_SCHEME scheme;
@@ -184,24 +159,22 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     TPM2B_ATTEST certify_info = {
-        .t = {
-            .size = sizeof(certify_info)-2
-        }
+        .size = sizeof(certify_info)-2
     };
 
     TPMT_SIGNATURE signature;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.handle.obj,
             ctx.handle.key, &cmd_auth_array, &qualifying_data, &scheme,
             &certify_info, &signature, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_Certify failed. Error Code: 0x%x", rval);
         return false;
     }
 
     /* serialization is safe here, since it's just a byte array */
     result = files_save_bytes_to_file(ctx.file_path.attest,
-            certify_info.t.attestationData, certify_info.t.size);
+            certify_info.attestationData, certify_info.size);
     if (!result) {
         return false;
     }
@@ -250,7 +223,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value);
-        if (ctx.halg == TPM_ALG_ERROR) {
+        if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not format algorithm to number, got: \"%s\"", value);
             return false;
         }
@@ -313,9 +286,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",      required_argument, NULL, 'f' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("H:k:P:K:g:a:s:C:c:f:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

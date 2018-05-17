@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -55,23 +55,13 @@ struct dictionarylockout_ctx {
 
 static dictionarylockout_ctx ctx = {
     .use_passwd = true,
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    sessionDataArray[0] = &ctx.session_data;
-
-    TSS2_SYS_CMD_AUTHS sessionsData = { .cmdAuths = &sessionDataArray[0],
-            .cmdAuthsCount = 1 };
-
-    //Response Auths
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1], sessionDataOut;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    TSS2_SYS_RSP_AUTHS sessionsDataOut = { .rspAuths = &sessionDataOutArray[0],
-            .rspAuthsCount = 1 };
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.session_data }};
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     /*
      * If setup params and clear lockout are both required, clear lockout should
@@ -81,8 +71,8 @@ bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context
 
         LOG_INFO("Resetting dictionary lockout state.");
         UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_DictionaryAttackLockReset(sapi_context,
-                TPM_RH_LOCKOUT, &sessionsData, &sessionsDataOut));
-        if (rval != TPM_RC_SUCCESS) {
+                TPM2_RH_LOCKOUT, &sessionsData, &sessionsDataOut));
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("0x%X Error clearing dictionary lockout.", rval);
             return false;
         }
@@ -91,10 +81,10 @@ bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context
     if (ctx.setup_parameters) {
         LOG_INFO("Setting up Dictionary Lockout parameters.");
         UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_DictionaryAttackParameters(sapi_context,
-                TPM_RH_LOCKOUT, &sessionsData, ctx.max_tries,
+                TPM2_RH_LOCKOUT, &sessionsData, ctx.max_tries,
                 ctx.recovery_time, ctx.lockout_recovery_time,
                 &sessionsDataOut));
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR(
                     "0x%X Failed setting up dictionary_attack_lockout_reset params",
                     rval);
@@ -176,9 +166,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "input-session-handle",required_argument,NULL,'S'},
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("n:t:l:P:S:cs", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

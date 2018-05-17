@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015-2018, Intel Corporation
+// Copyright (c) 2015, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "conversion.h"
 #include "tpm2_password_util.h"
@@ -52,8 +52,8 @@ struct getpubek_context {
         TPM2B_AUTH ek;
     } passwords;
     char *out_file_path;
-    TPM_HANDLE persistent_handle;
-    TPM_ALG_ID algorithm;
+    TPM2_HANDLE persistent_handle;
+    TPM2_ALG_ID algorithm;
     bool is_session_based_auth;
     TPMI_SH_AUTH_SESSION auth_session_handle;
 };
@@ -64,7 +64,7 @@ static getpubek_context ctx = {
         .endorse = TPM2B_EMPTY_INIT,
         .ek = TPM2B_EMPTY_INIT,
     },
-    .algorithm = TPM_ALG_RSA,
+    .algorithm = TPM2_ALG_RSA,
     .is_session_based_auth = false
 };
 
@@ -77,63 +77,63 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
             0x0B, 0x64, 0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA
     };
 
-    inPublic->t.publicArea.nameAlg = TPM_ALG_SHA256;
+    inPublic->publicArea.nameAlg = TPM2_ALG_SHA256;
 
     // First clear attributes bit field.
-    *(UINT32 *) &(inPublic->t.publicArea.objectAttributes) = 0;
-    inPublic->t.publicArea.objectAttributes.restricted = 1;
-    inPublic->t.publicArea.objectAttributes.userWithAuth = 0;
-    inPublic->t.publicArea.objectAttributes.adminWithPolicy = 1;
-    inPublic->t.publicArea.objectAttributes.sign = 0;
-    inPublic->t.publicArea.objectAttributes.decrypt = 1;
-    inPublic->t.publicArea.objectAttributes.fixedTPM = 1;
-    inPublic->t.publicArea.objectAttributes.fixedParent = 1;
-    inPublic->t.publicArea.objectAttributes.sensitiveDataOrigin = 1;
-    inPublic->t.publicArea.authPolicy.t.size = 32;
-    memcpy(inPublic->t.publicArea.authPolicy.t.buffer, auth_policy, 32);
+    inPublic->publicArea.objectAttributes = 0;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_RESTRICTED;
+    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_ADMINWITHPOLICY;
+    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN_ENCRYPT;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDTPM;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDPARENT;
+    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_SENSITIVEDATAORIGIN;
+    inPublic->publicArea.authPolicy.size = 32;
+    memcpy(inPublic->publicArea.authPolicy.buffer, auth_policy, 32);
 
-    inPublic->t.publicArea.type = ctx.algorithm;
+    inPublic->publicArea.type = ctx.algorithm;
 
     switch (ctx.algorithm) {
-    case TPM_ALG_RSA :
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.algorithm =
-                TPM_ALG_AES;
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        inPublic->t.publicArea.parameters.rsaDetail.symmetric.mode.aes =
-                TPM_ALG_CFB;
-        inPublic->t.publicArea.parameters.rsaDetail.scheme.scheme =
-                TPM_ALG_NULL;
-        inPublic->t.publicArea.parameters.rsaDetail.keyBits = 2048;
-        inPublic->t.publicArea.parameters.rsaDetail.exponent = 0;
-        inPublic->t.publicArea.unique.rsa.t.size = 256;
+    case TPM2_ALG_RSA :
+        inPublic->publicArea.parameters.rsaDetail.symmetric.algorithm =
+                TPM2_ALG_AES;
+        inPublic->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        inPublic->publicArea.parameters.rsaDetail.symmetric.mode.aes =
+                TPM2_ALG_CFB;
+        inPublic->publicArea.parameters.rsaDetail.scheme.scheme =
+                TPM2_ALG_NULL;
+        inPublic->publicArea.parameters.rsaDetail.keyBits = 2048;
+        inPublic->publicArea.parameters.rsaDetail.exponent = 0;
+        inPublic->publicArea.unique.rsa.size = 256;
         break;
-    case TPM_ALG_KEYEDHASH :
-        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.scheme =
-                TPM_ALG_XOR;
-        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
-                TPM_ALG_SHA256;
-        inPublic->t.publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf =
-                TPM_ALG_KDF1_SP800_108;
-        inPublic->t.publicArea.unique.keyedHash.t.size = 0;
+    case TPM2_ALG_KEYEDHASH :
+        inPublic->publicArea.parameters.keyedHashDetail.scheme.scheme =
+                TPM2_ALG_XOR;
+        inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
+                TPM2_ALG_SHA256;
+        inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf =
+                TPM2_ALG_KDF1_SP800_108;
+        inPublic->publicArea.unique.keyedHash.size = 0;
         break;
-    case TPM_ALG_ECC :
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.algorithm =
-                TPM_ALG_AES;
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
-        inPublic->t.publicArea.parameters.eccDetail.symmetric.mode.sym =
-                TPM_ALG_CFB;
-        inPublic->t.publicArea.parameters.eccDetail.scheme.scheme =
-                TPM_ALG_NULL;
-        inPublic->t.publicArea.parameters.eccDetail.curveID = TPM_ECC_NIST_P256;
-        inPublic->t.publicArea.parameters.eccDetail.kdf.scheme = TPM_ALG_NULL;
-        inPublic->t.publicArea.unique.ecc.x.t.size = 32;
-        inPublic->t.publicArea.unique.ecc.y.t.size = 32;
+    case TPM2_ALG_ECC :
+        inPublic->publicArea.parameters.eccDetail.symmetric.algorithm =
+                TPM2_ALG_AES;
+        inPublic->publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
+        inPublic->publicArea.parameters.eccDetail.symmetric.mode.sym =
+                TPM2_ALG_CFB;
+        inPublic->publicArea.parameters.eccDetail.scheme.scheme =
+                TPM2_ALG_NULL;
+        inPublic->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
+        inPublic->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
+        inPublic->publicArea.unique.ecc.x.size = 32;
+        inPublic->publicArea.unique.ecc.y.size = 32;
         break;
-    case TPM_ALG_SYMCIPHER :
-        inPublic->t.publicArea.parameters.symDetail.sym.algorithm = TPM_ALG_AES;
-        inPublic->t.publicArea.parameters.symDetail.sym.keyBits.aes = 128;
-        inPublic->t.publicArea.parameters.symDetail.sym.mode.sym = TPM_ALG_CFB;
-        inPublic->t.publicArea.unique.sym.t.size = 0;
+    case TPM2_ALG_SYMCIPHER :
+        inPublic->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
+        inPublic->publicArea.parameters.symDetail.sym.keyBits.aes = 128;
+        inPublic->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
+        inPublic->publicArea.unique.sym.size = 0;
         break;
     default:
         LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.algorithm);
@@ -145,22 +145,18 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
 
 static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM_RS_PW,
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, {{
+        .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
-    };
+        .sessionAttributes = 0,
+    }}};
 
     if (ctx.is_session_based_auth) {
-        sessionData.sessionHandle = ctx.auth_session_handle;
+        sessionsData.auths[0].sessionHandle = ctx.auth_session_handle;
     }
 
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
     TPML_PCR_SELECTION creationPCR;
 
     TPM2B_SENSITIVE_CREATE inSensitive =
@@ -180,21 +176,12 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMT_TK_CREATION creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
 
-    sessionDataArray[0] = &sessionData;
-    sessionDataOutArray[0] = &sessionDataOut;
+    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
 
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
+    memcpy(&ctx.passwords.ek, &inSensitive.sensitive.userAuth, sizeof(inSensitive.sensitive.userAuth));
 
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
-
-    memcpy(&sessionData.hmac, &ctx.passwords.endorse, sizeof(ctx.passwords.endorse));
-
-    memcpy(&ctx.passwords.ek, &inSensitive.t.sensitive.userAuth, sizeof(inSensitive.t.sensitive.userAuth));
-
-    inSensitive.t.sensitive.data.t.size = 0;
-    inSensitive.t.size = inSensitive.t.sensitive.userAuth.b.size + 2;
+    inSensitive.sensitive.data.size = 0;
+    inSensitive.size = inSensitive.sensitive.userAuth.size + 2;
 
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
@@ -204,23 +191,23 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
     creationPCR.count = 0;
 
     /* Create EK and get a handle to the key */
-    TPM_HANDLE handle2048ek;
-    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM_RH_ENDORSEMENT,
+    TPM2_HANDLE handle2048ek;
+    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM2_RH_ENDORSEMENT,
             &sessionsData, &inSensitive, &inPublic, &outsideInfo, &creationPCR,
             &handle2048ek, &outPublic, &creationData, &creationHash,
             &creationTicket, &name, &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_CreatePrimary Error. TPM Error:0x%x", rval);
         return false;
     }
 
     LOG_INFO("EK create success. Got handle: 0x%8.8x", handle2048ek);
 
-    memcpy(&sessionData.hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
+    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.owner, sizeof(ctx.passwords.owner));
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM_RH_OWNER, handle2048ek,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
             &sessionsData, ctx.persistent_handle, &sessionsDataOut));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("EvictControl failed. Could not make EK persistent."
                 "TPM Error:0x%x", rval);
         return false;
@@ -229,7 +216,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
     LOG_INFO("EvictControl EK persistent success.");
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle2048ek));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Flush transient EK failed. TPM Error:0x%x",
                 rval);
         return false;
@@ -275,7 +262,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         ctx.algorithm = tpm2_alg_util_from_optarg(value);
-        if (ctx.algorithm == TPM_ALG_ERROR) {
+        if (ctx.algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert algorithm to value, got: %s",
                     value);
             return false;
@@ -315,9 +302,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "help"         , no_argument,       NULL, 'h' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("e:o:H:P:g:f:p:S:d:hv", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

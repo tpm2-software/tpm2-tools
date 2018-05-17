@@ -34,178 +34,178 @@
  */
 struct tpm2_rc_entry tpm2_ver1_entry [] = {
     { /* 0x000 */
-        .id          = TPM_RC_INITIALIZE,
-        .name        = "TPM_RC_INITIALIZE",
+        .id          = TPM2_RC_INITIALIZE,
+        .name        = "TPM2_RC_INITIALIZE",
         .description = "TPM not initialized",
     },
     { /* 0x001 */
-        .id          = TPM_RC_FAILURE,
-        .name        = "TPM_RC_FAILURE",
+        .id          = TPM2_RC_FAILURE,
+        .name        = "TPM2_RC_FAILURE",
         .description = "commands not being accepted because of a TPM failure",
     },
     { /* 0x003 */
-        .id          = TPM_RC_SEQUENCE,
-        .name        = "TPM_RC_SEQUENCE",
+        .id          = TPM2_RC_SEQUENCE,
+        .name        = "TPM2_RC_SEQUENCE",
         .description = "improper use of a sequence handle",
     },
     { /* 0x00B */
-        .id          = TPM_RC_PRIVATE,
-        .name        = "TPM_RC_PRIVATE",
+        .id          = TPM2_RC_PRIVATE,
+        .name        = "TPM2_RC_PRIVATE",
         .description = NULL,
     },
     { /* 0x019 */
-        .id          = TPM_RC_HMAC,
-        .name        = "TPM_RC_HMAC",
+        .id          = TPM2_RC_HMAC,
+        .name        = "TPM2_RC_HMAC",
         .description = NULL,
     },
     { /* 0x020 */
-        .id          = TPM_RC_DISABLED,
-        .name        = "TPM_RC_DISABLED",
+        .id          = TPM2_RC_DISABLED,
+        .name        = "TPM2_RC_DISABLED",
         .description = NULL,
     },
     { /* 0x021 */
-        .id          = TPM_RC_EXCLUSIVE,
-        .name        = "TPM_RC_EXCLUSIVE",
+        .id          = TPM2_RC_EXCLUSIVE,
+        .name        = "TPM2_RC_EXCLUSIVE",
         .description = "command failed because audit sequence required exclusivity",
     },
     { /* 0x024 */
-        .id          = TPM_RC_AUTH_TYPE,
-        .name        = "TPM_RC_AUTH_TYPE",
+        .id          = TPM2_RC_AUTH_TYPE,
+        .name        = "TPM2_RC_AUTH_TYPE",
         .description = "authorization handle is not correct for command",
     },
     { /* 0x025 */
-        .id          = TPM_RC_AUTH_MISSING,
-        .name        = "TPM_RC_AUTH_MISSING",
+        .id          = TPM2_RC_AUTH_MISSING,
+        .name        = "TPM2_RC_AUTH_MISSING",
         .description = "command requires an authorization session for handle and it is not present.",
     },
     { /* 0x026 */
-        .id          = TPM_RC_POLICY,
-        .name        = "TPM_RC_POLICY",
+        .id          = TPM2_RC_POLICY,
+        .name        = "TPM2_RC_POLICY",
         .description = "policy Failure In Math Operation or an invalid authPolicy value",
     },
     { /* 0x027 */
-        .id          = TPM_RC_PCR,
-        .name        = "TPM_RC_PCR",
+        .id          = TPM2_RC_PCR,
+        .name        = "TPM2_RC_PCR",
         .description = "PCR check fail",
     },
     { /* 0x028 */
-        .id          = TPM_RC_PCR_CHANGED,
-        .name        = "TPM_RC_PCR_CHANGED",
+        .id          = TPM2_RC_PCR_CHANGED,
+        .name        = "TPM2_RC_PCR_CHANGED",
         .description = "PCR have changed since checked.",
     },
     { /* 0x02D */
-        .id          = TPM_RC_UPGRADE,
-        .name        = "TPM_RC_UPGRADE",
+        .id          = TPM2_RC_UPGRADE,
+        .name        = "TPM2_RC_UPGRADE",
         .description = "for all commands other than TPM2_FieldUpgradeData(), this code indicates that the TPM is in field upgrade mode; for TPM2_FieldUpgradeData(), this code indicates that the TPM is not in field upgrade mode",
     },
     { /* 0x02E */
-        .id          = TPM_RC_TOO_MANY_CONTEXTS,
-        .name        = "TPM_RC_TOO_MANY_CONTEXTS",
+        .id          = TPM2_RC_TOO_MANY_CONTEXTS,
+        .name        = "TPM2_RC_TOO_MANY_CONTEXTS",
         .description = "context ID counter is at maximum.",
     },
     { /* 0x02F */
-        .id          = TPM_RC_AUTH_UNAVAILABLE,
-        .name        = "TPM_RC_AUTH_UNAVAILABLE",
+        .id          = TPM2_RC_AUTH_UNAVAILABLE,
+        .name        = "TPM2_RC_AUTH_UNAVAILABLE",
         .description = "authValue or authPolicy is not available for selected entity.",
     },
     { /* 0x030 */
-        .id          = TPM_RC_REBOOT,
-        .name        = "TPM_RC_REBOOT",
+        .id          = TPM2_RC_REBOOT,
+        .name        = "TPM2_RC_REBOOT",
         .description = "a _TPM_Init and Startup(CLEAR) is required before the TPM can resume operation.",
     },
     { /* 0x0x031 */
-        .id          = TPM_RC_UNBALANCED,
-        .name        = "TPM_RC_UNBALANCED",
+        .id          = TPM2_RC_UNBALANCED,
+        .name        = "TPM2_RC_UNBALANCED",
         .description = "the protection algorithms (hash and symmetric) are not reasonably balanced. The digest size of the hash must be larger than the key size of the symmetric algorithm.",
     },
     { /* 0x042 */
-        .id          = TPM_RC_COMMAND_SIZE,
-        .name        = "TPM_RC_COMMAND_SIZE",
+        .id          = TPM2_RC_COMMAND_SIZE,
+        .name        = "TPM2_RC_COMMAND_SIZE",
         .description = "command commandSize value is inconsistent with contents of the command buffer; either the size is not the same as the octets loaded by the hardware interface layer or the value is not large enough to hold a command header",
     },
     { /* 0x043 */
-        .id          = TPM_RC_COMMAND_CODE,
-        .name        = "TPM_RC_COMMAND_CODE",
+        .id          = TPM2_RC_COMMAND_CODE,
+        .name        = "TPM2_RC_COMMAND_CODE",
         .description = "command code not supported",
     },
     { /* 0x044 */
-        .id          = TPM_RC_AUTHSIZE,
-        .name        = "TPM_RC_AUTHSIZE",
+        .id          = TPM2_RC_AUTHSIZE,
+        .name        = "TPM2_RC_AUTHSIZE",
         .description = "the value of authorizationSize is out of range or the number of octets in the Authorization Area is greater than required",
     },
     { /* 0x045 */
-        .id          = TPM_RC_AUTH_CONTEXT,
-        .name        = "TPM_RC_AUTH_CONTEXT",
+        .id          = TPM2_RC_AUTH_CONTEXT,
+        .name        = "TPM2_RC_AUTH_CONTEXT",
         .description = "use of an authorization session with a context command or another command that cannot have an authorization session.",
     },
     { /* 0x046 */
-        .id          = TPM_RC_NV_RANGE,
-        .name        = "TPM_RC_NV_RANGE",
+        .id          = TPM2_RC_NV_RANGE,
+        .name        = "TPM2_RC_NV_RANGE",
         .description = "NV offset+size is out of range.",
     },
     { /* 0x047 */
-        .id          = TPM_RC_NV_SIZE,
-        .name        = "TPM_RC_NV_SIZE",
+        .id          = TPM2_RC_NV_SIZE,
+        .name        = "TPM2_RC_NV_SIZE",
         .description = "Requested allocation size is larger than allowed.",
     },
     { /* 0x048 */
-        .id          = TPM_RC_NV_LOCKED,
-        .name        = "TPM_RC_NV_LOCKED",
+        .id          = TPM2_RC_NV_LOCKED,
+        .name        = "TPM2_RC_NV_LOCKED",
         .description = "NV access locked.",
     },
     { /* 0x049 */
-        .id          = TPM_RC_NV_AUTHORIZATION,
-        .name        = "TPM_RC_NV_AUTHORIZATION",
+        .id          = TPM2_RC_NV_AUTHORIZATION,
+        .name        = "TPM2_RC_NV_AUTHORIZATION",
         .description = "NV access authorization fails in command actions (this failure does not affect lockout.action)",
     },
     { /* 0x04A */
-        .id          = TPM_RC_NV_UNINITIALIZED,
-        .name        = "TPM_RC_NV_UNINITIALIZED",
+        .id          = TPM2_RC_NV_UNINITIALIZED,
+        .name        = "TPM2_RC_NV_UNINITIALIZED",
         .description = "an NV Index is used before being initialized or the state saved by TPM2_Shutdown(STATE) could not be restored",
     },
     { /* 0x04B */
-        .id          = TPM_RC_NV_SPACE,
-        .name        = "TPM_RC_NV_SPACE",
+        .id          = TPM2_RC_NV_SPACE,
+        .name        = "TPM2_RC_NV_SPACE",
         .description = "insufficient space for NV allocation",
     },
     { /* 0x04C */
-        .id          = TPM_RC_NV_DEFINED,
-        .name        = "TPM_RC_NV_DEFINED",
+        .id          = TPM2_RC_NV_DEFINED,
+        .name        = "TPM2_RC_NV_DEFINED",
         .description = "NV Index or persistend object already defined",
     },
     { /* 0x050 */
-        .id          = TPM_RC_BAD_CONTEXT,
-        .name        = "TPM_RC_BAD_CONTEXT",
+        .id          = TPM2_RC_BAD_CONTEXT,
+        .name        = "TPM2_RC_BAD_CONTEXT",
         .description = "context in TPM2_ContextLoad() is not valid",
     },
     { /* 0x051 */
-        .id          = TPM_RC_CPHASH,
-        .name        = "TPM_RC_CPHASH",
+        .id          = TPM2_RC_CPHASH,
+        .name        = "TPM2_RC_CPHASH",
         .description = "cpHash value already set or not correct for use",
     },
     { /* 0x052 */
-        .id          = TPM_RC_PARENT,
-        .name        = "TPM_RC_PARENT",
+        .id          = TPM2_RC_PARENT,
+        .name        = "TPM2_RC_PARENT",
         .description = "handle for parent is not a valid parent",
     },
     { /* 0x053 */
-        .id          = TPM_RC_NEEDS_TEST,
-        .name        = "TPM_RC_NEEDS_TEST",
+        .id          = TPM2_RC_NEEDS_TEST,
+        .name        = "TPM2_RC_NEEDS_TEST",
         .description = "some function needs testing.",
     },
     { /* 0x054 */
-        .id          = TPM_RC_NO_RESULT,
-        .name        = "TPM_RC_NO_RESULT",
+        .id          = TPM2_RC_NO_RESULT,
+        .name        = "TPM2_RC_NO_RESULT",
         .description = "returned when an internal function cannot process a request due to an unspecified problem. This code is usually related to invalid parameters that are not properly filtered by the input unmarshaling code.",
     },
     { /* 0x055 */
-        .id          = TPM_RC_SENSITIVE,
-        .name        = "TPM_RC_SENSITIVE",
+        .id          = TPM2_RC_SENSITIVE,
+        .name        = "TPM2_RC_SENSITIVE",
         .description = "the sensitive area did not unmarshal correctly after decryption – this code is used in lieu of the other unmarshaling errors so that an attacker cannot determine where the unmarshaling error occurred",
     },
     { /* 0x07F */
-        .id          = RC_MAX_FM0,
-        .name        = "RC_MAX_FM0",
+        .id          = TPM2_RC_MAX_FM0,
+        .name        = "TPM2_RC_MAX_FM0",
         .description = "largest version 1 code that is not a warning",
     }
 };
@@ -216,168 +216,168 @@ struct tpm2_rc_entry tpm2_ver1_entry [] = {
  */
 struct tpm2_rc_entry tpm2_fmt1_entry [] = {
     { /* 0x001 */
-        .id          = TPM_RC_ASYMMETRIC,
-        .name        = "TPM_RC_ASYMMETRIC",
+        .id          = TPM2_RC_ASYMMETRIC,
+        .name        = "TPM2_RC_ASYMMETRIC",
         .description = "asymmetric algorithm not supported or not correct",
     },
     { /* 0x002 */
-        .id          = TPM_RC_ATTRIBUTES,
-        .name        = "TPM_RC_ATTRIBUTES",
+        .id          = TPM2_RC_ATTRIBUTES,
+        .name        = "TPM2_RC_ATTRIBUTES",
         .description = "inconsistent attributes",
     },
     { /* 0x003 */
-        .id          = TPM_RC_HASH,
-        .name        = "TPM_RC_HASH",
+        .id          = TPM2_RC_HASH,
+        .name        = "TPM2_RC_HASH",
         .description = "hash algorithm not supported or not appropriate",
     },
     { /* 0x004 */
-        .id          = TPM_RC_VALUE,
-        .name        = "TPM_RC_VALUE",
+        .id          = TPM2_RC_VALUE,
+        .name        = "TPM2_RC_VALUE",
         .description = "value is out of range or is not correct for the context",
     },
     { /* 0x005 */
-        .id          = TPM_RC_HIERARCHY,
-        .name        = "TPM_RC_HIERARCHY",
+        .id          = TPM2_RC_HIERARCHY,
+        .name        = "TPM2_RC_HIERARCHY",
         .description = "hierarchy is not enabled or is not correct for the use",
     },
     { /* 0x007 */
-        .id          = TPM_RC_KEY_SIZE,
-        .name        = "TPM_RC_KEY_SIZE",
+        .id          = TPM2_RC_KEY_SIZE,
+        .name        = "TPM2_RC_KEY_SIZE",
         .description = "key size is not supported",
     },
     { /* 0x008 */
-        .id          = TPM_RC_MGF,
-        .name        = "TPM_RC_MGF",
+        .id          = TPM2_RC_MGF,
+        .name        = "TPM2_RC_MGF",
         .description = "mask generation function not supported",
     },
     { /* 0x009 */
-        .id          = TPM_RC_MODE,
-        .name        = "TPM_RC_MODE",
+        .id          = TPM2_RC_MODE,
+        .name        = "TPM2_RC_MODE",
         .description = "mode of operation not supported",
     },
     { /* 0x00A */
-        .id          = TPM_RC_TYPE,
-        .name        = "TPM_RC_TYPE",
+        .id          = TPM2_RC_TYPE,
+        .name        = "TPM2_RC_TYPE",
         .description = "the type of the value is not appropriate for the use",
     },
     { /* 0x00B */
-        .id          = TPM_RC_HANDLE,
-        .name        = "TPM_RC_HANDLE",
+        .id          = TPM2_RC_HANDLE,
+        .name        = "TPM2_RC_HANDLE",
         .description = "the handle is not correct for the use",
     },
     { /* 0x00C */
-        .id          = TPM_RC_KDF,
-        .name        = "TPM_RC_KDF",
+        .id          = TPM2_RC_KDF,
+        .name        = "TPM2_RC_KDF",
         .description = "unsupported key derivation function or function not appropriate for use",
     },
     { /* 0x00D */
-        .id          = TPM_RC_RANGE,
-        .name        = "TPM_RC_RANGE",
+        .id          = TPM2_RC_RANGE,
+        .name        = "TPM2_RC_RANGE",
         .description = "value was out of allowed range.",
     },
     { /* 0x00E */
-        .id          = TPM_RC_AUTH_FAIL,
-        .name        = "TPM_RC_AUTH_FAIL",
+        .id          = TPM2_RC_AUTH_FAIL,
+        .name        = "TPM2_RC_AUTH_FAIL",
         .description = "the authorization HMAC check failed and DA counter incremented",
     },
     { /* 0x00F */
-        .id          = TPM_RC_NONCE,
-        .name        = "TPM_RC_NONCE",
+        .id          = TPM2_RC_NONCE,
+        .name        = "TPM2_RC_NONCE",
         .description = "invalid nonce size",
     },
     { /* 0x010 */
-        .id          = TPM_RC_PP,
-        .name        = "TPM_RC_PP",
+        .id          = TPM2_RC_PP,
+        .name        = "TPM2_RC_PP",
         .description = "authorization requires assertion of PP",
     },
     { /* 0x012 */
-        .id          = TPM_RC_SCHEME,
-        .name        = "TPM_RC_SCHEME",
+        .id          = TPM2_RC_SCHEME,
+        .name        = "TPM2_RC_SCHEME",
         .description = "unsupported or incompatible scheme",
     },
     { /* 0x015 */
-        .id          = TPM_RC_SIZE,
-        .name        = "TPM_RC_SIZE",
+        .id          = TPM2_RC_SIZE,
+        .name        = "TPM2_RC_SIZE",
         .description = "structure is the wrong size",
     },
     { /* 0x016 */
-        .id          = TPM_RC_SYMMETRIC,
-        .name        = "TPM_RC_SYMMETRIC",
+        .id          = TPM2_RC_SYMMETRIC,
+        .name        = "TPM2_RC_SYMMETRIC",
         .description = "unsupported symmetric algorithm or key size, or not appropriate for instance",
     },
     { /* 0x017 */
-        .id          = TPM_RC_TAG,
-        .name        = "TPM_RC_TAG",
+        .id          = TPM2_RC_TAG,
+        .name        = "TPM2_RC_TAG",
         .description = "incorrect structure tag",
     },
     { /* 0x018 */
-        .id          = TPM_RC_SELECTOR,
-        .name        = "TPM_RC_SELECTOR",
+        .id          = TPM2_RC_SELECTOR,
+        .name        = "TPM2_RC_SELECTOR",
         .description = "union selector is incorrect",
     },
     { /* 0x01A */
-        .id          = TPM_RC_INSUFFICIENT,
-        .name        = "TPM_RC_INSUFFICIENT",
+        .id          = TPM2_RC_INSUFFICIENT,
+        .name        = "TPM2_RC_INSUFFICIENT",
         .description = "the TPM was unable to unmarshal a value because there were not enough octets in the input buffer",
     },
     { /* 0x01B */
-        .id          = TPM_RC_SIGNATURE,
-        .name        = "TPM_RC_SIGNATURE",
+        .id          = TPM2_RC_SIGNATURE,
+        .name        = "TPM2_RC_SIGNATURE",
         .description = "the signature is not valid",
     },
     { /* 0x01C */
-        .id          = TPM_RC_KEY,
-        .name        = "TPM_RC_KEY",
+        .id          = TPM2_RC_KEY,
+        .name        = "TPM2_RC_KEY",
         .description = "key fields are not compatible with the selected use",
     },
     { /* 0x0x01D */
-        .id          = TPM_RC_POLICY_FAIL,
-        .name        = "TPM_RC_POLICY_FAIL",
+        .id          = TPM2_RC_POLICY_FAIL,
+        .name        = "TPM2_RC_POLICY_FAIL",
         .description = "a policy check failed",
     },
     { /* 0x01F */
-        .id          = TPM_RC_INTEGRITY,
-        .name        = "TPM_RC_INTEGRITY",
+        .id          = TPM2_RC_INTEGRITY,
+        .name        = "TPM2_RC_INTEGRITY",
         .description = "integrity check failed",
     },
     { /* 0x020 */
-        .id          = TPM_RC_TICKET,
-        .name        = "TPM_RC_TICKET",
+        .id          = TPM2_RC_TICKET,
+        .name        = "TPM2_RC_TICKET",
         .description = "invalid ticket",
     },
     { /* 0x021 */
-        .id          = TPM_RC_RESERVED_BITS,
-        .name        = "TPM_RC_RESERVED_BITS",
+        .id          = TPM2_RC_RESERVED_BITS,
+        .name        = "TPM2_RC_RESERVED_BITS",
         .description = "reserved bits not set to zero as required",
     },
     { /* 0x022 */
-        .id          = TPM_RC_BAD_AUTH,
-        .name        = "TPM_RC_BAD_AUTH",
+        .id          = TPM2_RC_BAD_AUTH,
+        .name        = "TPM2_RC_BAD_AUTH",
         .description = "authorization failure without DA implications",
     },
     { /* 0x023 */
-        .id          = TPM_RC_EXPIRED,
-        .name        = "TPM_RC_EXPIRED",
+        .id          = TPM2_RC_EXPIRED,
+        .name        = "TPM2_RC_EXPIRED",
         .description = "the policy has expired",
     },
     { /* 0x024 */
-        .id          = TPM_RC_POLICY_CC,
-        .name        = "TPM_RC_POLICY_CC",
+        .id          = TPM2_RC_POLICY_CC,
+        .name        = "TPM2_RC_POLICY_CC",
         .description = "the commandCode in the policy is not the commandCode of the command or the command code in a policy command references a command that is not implemented",
     },
     { /* 0x025 */
-        .id          = TPM_RC_BINDING,
-        .name        = "TPM_RC_BINDING",
+        .id          = TPM2_RC_BINDING,
+        .name        = "TPM2_RC_BINDING",
         .description = "public and sensitive portions of an object are not cryptographically bound",
     },
     { /* 0x026 */
-        .id          = TPM_RC_CURVE,
-        .name        = "TPM_RC_CURVE",
+        .id          = TPM2_RC_CURVE,
+        .name        = "TPM2_RC_CURVE",
         .description = "curve not supported",
     },
     { /* 0x027 */
-        .id          = TPM_RC_ECC_POINT,
-        .name        = "TPM_RC_ECC_POINT",
+        .id          = TPM2_RC_ECC_POINT,
+        .name        = "TPM2_RC_ECC_POINT",
         .description = "point is not on the required curve.",
     }
 };
@@ -389,148 +389,148 @@ struct tpm2_rc_entry tpm2_fmt1_entry [] = {
  */
 struct tpm2_rc_entry tpm2_warn_entry [] = {
     { /* 0x001 */
-        .id          = TPM_RC_CONTEXT_GAP,
-        .name        = "TPM_RC_CONTEXT_GAP",
+        .id          = TPM2_RC_CONTEXT_GAP,
+        .name        = "TPM2_RC_CONTEXT_GAP",
         .description = "gap for context ID is too large",
     },
     { /* 0x002 */
-        .id          = TPM_RC_OBJECT_MEMORY,
-        .name        = "TPM_RC_OBJECT_MEMORY",
+        .id          = TPM2_RC_OBJECT_MEMORY,
+        .name        = "TPM2_RC_OBJECT_MEMORY",
         .description = "out of memory for object contexts",
     },
     { /* 0x003 */
-        .id          = TPM_RC_SESSION_MEMORY,
-        .name        = "TPM_RC_SESSION_MEMORY",
+        .id          = TPM2_RC_SESSION_MEMORY,
+        .name        = "TPM2_RC_SESSION_MEMORY",
         .description = "out of memory for session contexts",
     },
     { /* 0x004 */
-        .id          = TPM_RC_MEMORY,
-        .name        = "TPM_RC_MEMORY",
+        .id          = TPM2_RC_MEMORY,
+        .name        = "TPM2_RC_MEMORY",
         .description = "out of shared object/session memory or need space for internal operations",
     },
     { /* 0x005 */
-        .id          = TPM_RC_SESSION_HANDLES,
-        .name        = "TPM_RC_SESSION_HANDLES",
+        .id          = TPM2_RC_SESSION_HANDLES,
+        .name        = "TPM2_RC_SESSION_HANDLES",
         .description = "out of session handles – a session must be flushed before a new session may be created",
     },
     { /* 0x006 */
-        .id          = TPM_RC_OBJECT_HANDLES,
-        .name        = "TPM_RC_OBJECT_HANDLES",
+        .id          = TPM2_RC_OBJECT_HANDLES,
+        .name        = "TPM2_RC_OBJECT_HANDLES",
         .description = "out of object handles – the handle space for objects is depleted and a reboot is required NOTE: This cannot occur on the reference implementation. NOTE: There is no reason why an implementation would implement a design that would deplete handle space. Platform specifications are encouraged to forbid it.",
     },
     { /* 0x007 */
-        .id          = TPM_RC_LOCALITY,
-        .name        = "TPM_RC_LOCALITY",
+        .id          = TPM2_RC_LOCALITY,
+        .name        = "TPM2_RC_LOCALITY",
         .description = "bad locality",
     },
     { /* 0x008 */
-        .id          = TPM_RC_YIELDED,
-        .name        = "TPM_RC_YIELDED",
+        .id          = TPM2_RC_YIELDED,
+        .name        = "TPM2_RC_YIELDED",
         .description = "the TPM has suspended operation on the command; forward progress was made and the command may be retried. See TPM 2.0 Part 1, “Multi-tasking.” NOTE: This cannot occur on the reference implementation.",
     },
     { /* 0x009 */
-        .id          = TPM_RC_CANCELED,
-        .name        = "TPM_RC_CANCELED",
+        .id          = TPM2_RC_CANCELED,
+        .name        = "TPM2_RC_CANCELED",
         .description = "the command was canceled",
     },
     { /* 0x00A */
-        .id          = TPM_RC_TESTING,
-        .name        = "TPM_RC_TESTING",
+        .id          = TPM2_RC_TESTING,
+        .name        = "TPM2_RC_TESTING",
         .description = "TPM is performing self-tests",
     },
     { /* 0x010 */
-        .id          = TPM_RC_REFERENCE_H0,
-        .name        = "TPM_RC_REFERENCE_H0",
+        .id          = TPM2_RC_REFERENCE_H0,
+        .name        = "TPM2_RC_REFERENCE_H0",
         .description = "the 1st handle in the handle area references a transient object or session that is not loaded",
     },
     { /* 0x011 */
-        .id          = TPM_RC_REFERENCE_H1,
-        .name        = "TPM_RC_REFERENCE_H1",
+        .id          = TPM2_RC_REFERENCE_H1,
+        .name        = "TPM2_RC_REFERENCE_H1",
         .description = "the 2nd handle in the handle area references a transient object or session that is not loaded",
     },
     { /* 0x012 */
-        .id          = TPM_RC_REFERENCE_H2,
-        .name        = "TPM_RC_REFERENCE_H2",
+        .id          = TPM2_RC_REFERENCE_H2,
+        .name        = "TPM2_RC_REFERENCE_H2",
         .description = "the 3rd handle in the handle area references a transient object or session that is not loaded",
     },
     { /* 0x013 */
-        .id          = TPM_RC_REFERENCE_H3,
-        .name        = "TPM_RC_REFERENCE_H3",
+        .id          = TPM2_RC_REFERENCE_H3,
+        .name        = "TPM2_RC_REFERENCE_H3",
         .description = "the 4th handle in the handle area references a transient object or session that is not loaded",
     },
     { /* 0x014 */
-        .id          = TPM_RC_REFERENCE_H4,
-        .name        = "TPM_RC_REFERENCE_H4",
+        .id          = TPM2_RC_REFERENCE_H4,
+        .name        = "TPM2_RC_REFERENCE_H4",
         .description = "the 5th handle in the handle area references a transient object or session that is not loaded",
     },
     { /* 0x015 */
-        .id          = TPM_RC_REFERENCE_H5,
-        .name        = "TPM_RC_REFERENCE_H5",
+        .id          = TPM2_RC_REFERENCE_H5,
+        .name        = "TPM2_RC_REFERENCE_H5",
         .description = "the 6th handle in the handle area references a transient object or session that is not loaded",
     },
     { /* 0x016 */
-        .id          = TPM_RC_REFERENCE_H6,
-        .name        = "TPM_RC_REFERENCE_H6",
+        .id          = TPM2_RC_REFERENCE_H6,
+        .name        = "TPM2_RC_REFERENCE_H6",
         .description = "the 7th handle in the handle area references a transient object or session that is not loaded",
     },
     { /* 0x018 */
-        .id          = TPM_RC_REFERENCE_S0,
-        .name        = "TPM_RC_REFERENCE_S0",
+        .id          = TPM2_RC_REFERENCE_S0,
+        .name        = "TPM2_RC_REFERENCE_S0",
         .description = "the 1st authorization session handle references a session that is not loaded",
     },
     { /* 0x019 */
-        .id          = TPM_RC_REFERENCE_S1,
-        .name        = "TPM_RC_REFERENCE_S1",
+        .id          = TPM2_RC_REFERENCE_S1,
+        .name        = "TPM2_RC_REFERENCE_S1",
         .description = "the 2nd authorization session handle references a session that is not loaded",
     },
     { /* 0x01A */
-        .id          = TPM_RC_REFERENCE_S2,
-        .name        = "TPM_RC_REFERENCE_S2",
+        .id          = TPM2_RC_REFERENCE_S2,
+        .name        = "TPM2_RC_REFERENCE_S2",
         .description = "the 3rd authorization session handle references a session that is not loaded",
     },
     { /* 0x01B */
-        .id          = TPM_RC_REFERENCE_S3,
-        .name        = "TPM_RC_REFERENCE_S3",
+        .id          = TPM2_RC_REFERENCE_S3,
+        .name        = "TPM2_RC_REFERENCE_S3",
         .description = "the 4th authorization session handle references a session that is not loaded",
     },
     { /* 0x01C */
-        .id          = TPM_RC_REFERENCE_S4,
-        .name        = "TPM_RC_REFERENCE_S4",
+        .id          = TPM2_RC_REFERENCE_S4,
+        .name        = "TPM2_RC_REFERENCE_S4",
         .description = "the 5th session handle references a session that is not loaded",
     },
     { /* 0x01D */
-        .id          = TPM_RC_REFERENCE_S5,
-        .name        = "TPM_RC_REFERENCE_S5",
+        .id          = TPM2_RC_REFERENCE_S5,
+        .name        = "TPM2_RC_REFERENCE_S5",
         .description = "the 6th session handle references a session that is not loaded",
     },
     { /* 0x01E */
-        .id          = TPM_RC_REFERENCE_S6,
-        .name        = "TPM_RC_REFERENCE_S6",
+        .id          = TPM2_RC_REFERENCE_S6,
+        .name        = "TPM2_RC_REFERENCE_S6",
         .description = "the 7th authorization session handle references a session that is not loaded",
     },
     { /* 0x020 */
-        .id          = TPM_RC_NV_RATE,
-        .name        = "TPM_RC_NV_RATE",
+        .id          = TPM2_RC_NV_RATE,
+        .name        = "TPM2_RC_NV_RATE",
         .description = "the TPM is rate-limiting accesses to prevent wearout of NV",
     },
     { /* 0x021 */
-        .id          = TPM_RC_LOCKOUT,
-        .name        = "TPM_RC_LOCKOUT",
+        .id          = TPM2_RC_LOCKOUT,
+        .name        = "TPM2_RC_LOCKOUT",
         .description = "authorizations for objects subject to DA protection are not allowed at this time because the TPM is in DA lockout mode",
     },
     { /* 0x022 */
-        .id          = TPM_RC_RETRY,
-        .name        = "TPM_RC_RETRY",
+        .id          = TPM2_RC_RETRY,
+        .name        = "TPM2_RC_RETRY",
         .description = "the TPM was not able to start the command",
     },
     { /* 0x023 */
-        .id          = TPM_RC_NV_UNAVAILABLE,
-        .name        = "TPM_RC_NV_UNAVAILABLE",
+        .id          = TPM2_RC_NV_UNAVAILABLE,
+        .name        = "TPM2_RC_NV_UNAVAILABLE",
         .description = "the command may require writing of NV and NV is not current accessible",
     },
     { /* 0x7F */
-        .id          = TPM_RC_NOT_USED,
-        .name        = "TPM_RC_NOT_USED",
+        .id          = TPM2_RC_NOT_USED,
+        .name        = "TPM2_RC_NOT_USED",
         .description = "this value is reserved and shall not be returned by the TPM",
     }
 };
@@ -539,78 +539,78 @@ struct tpm2_rc_entry tpm2_warn_entry [] = {
  */
 tpm2_rc_entry_t tpm2_position_entry [] = {
     { /* 0x100 */
-        .id          = TPM_RC_1,
-        .name        = "TPM_RC_1",
+        .id          = TPM2_RC_1,
+        .name        = "TPM2_RC_1",
         .description = NULL,
     },
     { /* 0x200 */
-        .id          = TPM_RC_2,
-        .name        = "TPM_RC_2",
+        .id          = TPM2_RC_2,
+        .name        = "TPM2_RC_2",
         .description = NULL,
     },
     { /* 0x300 */
-        .id          = TPM_RC_3,
-        .name        = "TPM_RC_3",
+        .id          = TPM2_RC_3,
+        .name        = "TPM2_RC_3",
         .description = NULL,
     },
     { /* 0x400 */
-        .id          = TPM_RC_4,
-        .name        = "TPM_RC_4",
+        .id          = TPM2_RC_4,
+        .name        = "TPM2_RC_4",
         .description = NULL,
     },
     { /* 0x500 */
-        .id          = TPM_RC_5,
-        .name        = "TPM_RC_5",
+        .id          = TPM2_RC_5,
+        .name        = "TPM2_RC_5",
         .description = NULL,
     },
     { /* 0x600 */
-        .id          = TPM_RC_6,
-        .name        = "TPM_RC_6",
+        .id          = TPM2_RC_6,
+        .name        = "TPM2_RC_6",
         .description = NULL,
     },
     { /* 0x700 */
-        .id          = TPM_RC_7,
-        .name        = "TPM_RC_7",
+        .id          = TPM2_RC_7,
+        .name        = "TPM2_RC_7",
         .description = NULL,
     },
     { /* 0x800 */
-        .id          = TPM_RC_8,
-        .name        = "TPM_RC_8",
+        .id          = TPM2_RC_8,
+        .name        = "TPM2_RC_8",
         .description = NULL,
     },
     { /* 0x900 */
-        .id          = TPM_RC_9,
-        .name        = "TPM_RC_9",
+        .id          = TPM2_RC_9,
+        .name        = "TPM2_RC_9",
         .description = NULL,
     },
     { /* 0xA00 */
-        .id          = TPM_RC_A,
-        .name        = "TPM_RC_A",
+        .id          = TPM2_RC_A,
+        .name        = "TPM2_RC_A",
         .description = NULL,
     },
     { /* 0xB00 */
-        .id          = TPM_RC_B,
-        .name        = "TPM_RC_B",
+        .id          = TPM2_RC_B,
+        .name        = "TPM2_RC_B",
         .description = NULL,
     },
     { /* 0xC00 */
-        .id          = TPM_RC_C,
-        .name        = "TPM_RC_C",
+        .id          = TPM2_RC_C,
+        .name        = "TPM2_RC_C",
         .description = NULL,
     },
     { /* 0xD00 */
-        .id          = TPM_RC_D,
-        .name        = "TPM_RC_D",
+        .id          = TPM2_RC_D,
+        .name        = "TPM2_RC_D",
         .description = NULL,
     },
     { /* 0xE00 */
-        .id          = TPM_RC_E,
-        .name        = "TPM_RC_E",
+        .id          = TPM2_RC_E,
+        .name        = "TPM2_RC_E",
         .description = NULL,
     },
     { /* 0xF00 */
-        .id          = TPM_RC_F,
-        .name        = "TPM_RC_F",
+        .id          = TPM2_RC_F,
+        .name        = "TPM2_RC_F",
         .description = NULL,
     }
 };
@@ -618,35 +618,35 @@ tpm2_rc_entry_t tpm2_position_entry [] = {
  */
 struct tpm2_rc_entry tpm2_tss_layer_entry [] = {
     { /* 0x0
-       * The spec calls this TSS2_TPM_RC_LEVEL and it's defined as bits
+       * The spec calls this TSS2_TPM2_RC_LEVEL and it's defined as bits
        * [15:12] not [23:16] like the error layer / levels.
        */
-        .id          = TSS2_TPM_ERROR_LEVEL,
-        .name        = "TSS2_TPM_ERROR_LEVEL",
+        .id          = TSS2_TPM_RC_LAYER,
+        .name        = "TSS2_TPM_RC_LAYER",
         .description = "Error produced by the TPM",
     },
     { /* 8 << 16 = 0x80000 */
-        .id          = TSS2_SYS_ERROR_LEVEL,
-        .name        = "TSS2_SYS_ERROR_LEVEL",
+        .id          = TSS2_SYS_RC_LAYER,
+        .name        = "TSS2_SYS_RC_LAYER",
         .description = "Error from the SAPI",
     },
     { /* 9 << 16 = 0x90000 */
-        .id          = TSS2_SYS_PART2_ERROR_LEVEL,
-        .name        = "TSS2_SYS_PART2_RC_LEVEL",
+        .id          = TSS2_MU_RC_LAYER,
+        .name        = "TSS2_MU_RC_LAYER",
         .description = "Error from the SAPI duplicating TPM error check"
     },
     { /* 10 << 16 = 0xA0000 */
-        .id          = TSS2_TCTI_ERROR_LEVEL,
-        .name        = "TSS2_TCTI_ERROR_LEVEL",
+        .id          = TSS2_TCTI_RC_LAYER,
+        .name        = "TSS2_TCTI_RC_LAYER",
         .description = "Error from the TCTI"
     },
     { /* 11 << 16 = 0xB0000 */
-        .id          = TSS2_RESMGRTPM_ERROR_LEVEL,
-        .name        = "TSS2_RESMGRTPM_ERROR_LEVEL",
+        .id          = TSS2_RESMGR_TPM_RC_LAYER,
+        .name        = "TSS2_RESMGRTPM_RC_LAYER",
         .description = "Error from the Resource Manager duplicating TPM error check"
     },
     { /* 12 << 16 = 0xC0000 */
-        .id          = TSS2_RESMGR_ERROR_LEVEL,
+        .id          = TSS2_RESMGR_RC_LAYER,
         .name        = "TSS2_RESMGR_ERROR_LEVEL",
         .description = "Error from the Resource Manager"
     }
@@ -769,7 +769,7 @@ struct tpm2_rc_entry tpm2_tss_base_rc_entry [] = {
 };
 /*
 char*
-tpm2_strrc (TPM_RC  rc,
+tpm2_strrc (TSS2_RC  rc,
             char   *out_str,
             size_t  out_str_size)
 {
@@ -782,7 +782,7 @@ tpm2_strrc (TPM_RC  rc,
 }
  */
 /* Functions to lookup / retrieve entries from the arrays of tpm2_rc_entry_t's
- * None of these functions check the format of the TPM_RC before doing the
+ * None of these functions check the format of the TSS2_RC before doing the
  * lookup. They just mask out the irrelevant bits and do the lookup doing the
  * remainder. "irrelevant bits" is determined by the 'select_func' parameter.
  * This is a function to mask out "irrelevant bits". The same function is
@@ -797,42 +797,42 @@ tpm2_strrc (TPM_RC  rc,
     return NULL;
 
 tpm2_rc_entry_t*
-tpm2_get_tss_base_rc_entry (TPM_RC rc)
+tpm2_get_tss_base_rc_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_tss_base_rc_entry, tpm2_rc_get_tss_err_code);
 }
 tpm2_rc_entry_t*
-tpm2_get_parameter_entry (TPM_RC rc)
+tpm2_get_parameter_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_position_entry, tpm2_rc_get_parameter_number);
 }
 tpm2_rc_entry_t*
-tpm2_get_handle_entry (TPM_RC rc)
+tpm2_get_handle_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_position_entry, tpm2_rc_get_handle_number);
 }
 tpm2_rc_entry_t*
-tpm2_get_session_entry (TPM_RC rc)
+tpm2_get_session_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_position_entry, tpm2_rc_get_session_number);
 }
 tpm2_rc_entry_t*
-tpm2_get_layer_entry (TPM_RC rc)
+tpm2_get_layer_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_tss_layer_entry, tpm2_rc_get_layer);
 }
 tpm2_rc_entry_t*
-tpm2_get_fmt0_entry (TPM_RC rc)
+tpm2_get_fmt0_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_ver1_entry, tpm2_rc_get_code_7bit);
 }
 tpm2_rc_entry_t*
-tpm2_get_fmt1_entry (TPM_RC rc)
+tpm2_get_fmt1_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_fmt1_entry, tpm2_rc_get_code_6bit);
 }
 tpm2_rc_entry_t*
-tpm2_get_warn_entry (TPM_RC rc)
+tpm2_get_warn_entry (TSS2_RC rc)
 {
     STR_ENTRY_ARRAY_LOOKUP (rc, tpm2_warn_entry, tpm2_rc_get_code_6bit);
 }

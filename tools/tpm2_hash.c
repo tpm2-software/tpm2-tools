@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
@@ -56,8 +56,8 @@ struct tpm_hash_ctx {
 };
 
 static tpm_hash_ctx ctx = {
-    .hierarchyValue = TPM_RH_NULL,
-    .halg = TPM_ALG_SHA1,
+    .hierarchyValue = TPM2_RH_NULL,
+    .halg = TPM2_ALG_SHA1,
 };
 
 static bool get_hierarchy_value(const char *hiearchy_code,
@@ -72,16 +72,16 @@ static bool get_hierarchy_value(const char *hiearchy_code,
 
     switch (hiearchy_code[0]) {
     case 'e':
-        *hierarchy_value = TPM_RH_ENDORSEMENT;
+        *hierarchy_value = TPM2_RH_ENDORSEMENT;
         break;
     case 'o':
-        *hierarchy_value = TPM_RH_OWNER;
+        *hierarchy_value = TPM2_RH_OWNER;
         break;
     case 'p':
-        *hierarchy_value = TPM_RH_PLATFORM;
+        *hierarchy_value = TPM2_RH_PLATFORM;
         break;
     case 'n':
-        *hierarchy_value = TPM_RH_NULL;
+        *hierarchy_value = TPM2_RH_NULL;
         break;
     default:
         LOG_ERR("Unknown hierarchy value: %s", hiearchy_code);
@@ -95,33 +95,33 @@ static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B_DIGEST outHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_HASHCHECK validation;
 
-    TPM_RC rval = tpm_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = tpm_hash_file(sapi_context, ctx.halg, ctx.hierarchyValue, ctx.input_file, &outHash, &validation);
+    if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("tpm_hash_files() failed with error: 0x%X", rval);
         return false;
     }
 
-    if (outHash.t.size) {
+    if (outHash.size) {
         UINT16 i;
         tpm2_tool_output("hash(%s):", tpm2_alg_util_algtostr(ctx.halg));
-        for (i = 0; i < outHash.t.size; i++) {
-            tpm2_tool_output("%02x", outHash.t.buffer[i]);
+        for (i = 0; i < outHash.size; i++) {
+            tpm2_tool_output("%02x", outHash.buffer[i]);
         }
         tpm2_tool_output("\n");
     }
 
-    if (validation.digest.t.size) {
+    if (validation.digest.size) {
         UINT16 i;
         tpm2_tool_output("ticket:");
-        for (i = 0; i < validation.digest.t.size; i++) {
-            tpm2_tool_output("%02x", validation.digest.t.buffer[i]);
+        for (i = 0; i < validation.digest.size; i++) {
+            tpm2_tool_output("%02x", validation.digest.buffer[i]);
         }
         tpm2_tool_output("\n");
     }
 
     if (ctx.outHashFilePath) {
-        bool result = files_save_bytes_to_file(ctx.outHashFilePath, outHash.t.buffer,
-                outHash.t.size);
+        bool result = files_save_bytes_to_file(ctx.outHashFilePath, outHash.buffer,
+                outHash.size);
         if (!result) {
             return false;
         }
@@ -163,7 +163,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value);
-        if (ctx.halg == TPM_ALG_ERROR) {
+        if (ctx.halg == TPM2_ALG_ERROR) {
             return false;
         }
         break;
@@ -190,9 +190,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     /* set up non-static defaults here */
     ctx.input_file = stdin;
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("H:g:o:t:", ARRAY_LEN(topts), topts,
-            on_option, on_args, empty_flags);
+            on_option, on_args, 0);
 
     return *opts != NULL;
 }

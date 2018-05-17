@@ -36,18 +36,20 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
+#include <tss2/tss2_mu.h>
 
+#include "files.h"
+#include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
-#include "tss2_mu.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
-    TPM_HANDLE rsa2048_handle;
+    TPM2_HANDLE rsa2048_handle;
     TPM2B_NAME object_name;
     char *out_file_path;
     TPM2B_PUBLIC public;
@@ -84,25 +86,25 @@ static bool write_cred_and_secret(const char *path, TPM2B_ID_OBJECT *cred,
         goto out;
     }
 
-    result = files_write_16(fp, cred->t.size);
+    result = files_write_16(fp, cred->size);
     if (!result) {
         LOG_ERR("Could not write credential size");
         goto out;
     }
 
-    result = files_write_bytes(fp, cred->t.credential, cred->t.size);
+    result = files_write_bytes(fp, cred->credential, cred->size);
     if (!result) {
         LOG_ERR("Could not write credential data");
         goto out;
     }
 
-    result = files_write_16(fp, secret->t.size);
+    result = files_write_16(fp, secret->size);
     if (!result) {
         LOG_ERR("Could not write secret size");
         goto out;
     }
 
-    result = files_write_bytes(fp, secret->t.secret, secret->t.size);
+    result = files_write_bytes(fp, secret->secret, secret->size);
     if (!result) {
         LOG_ERR("Could not write secret data");
         goto out;
@@ -117,9 +119,7 @@ out:
 
 static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
 {
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
 
     TPM2B_NAME name_ext = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
@@ -127,13 +127,9 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
 
     TPM2B_ENCRYPTED_SECRET secret = TPM2B_TYPE_INIT(TPM2B_ENCRYPTED_SECRET, secret);
 
-    session_data_out_array[0] = &session_data_out;
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data_out.rspAuthsCount = 1;
-
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0, NULL, &ctx.public,
-            TPM_RH_NULL, &ctx.rsa2048_handle, &name_ext, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+            TPM2_RH_NULL, &ctx.rsa2048_handle, &name_ext, &sessions_data_out));
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("LoadExternal failed. TPM Error:0x%x", rval);
         return false;
     }
@@ -141,13 +137,13 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
     rval = TSS2_RETRY_EXP(Tss2_Sys_MakeCredential(sapi_context, ctx.rsa2048_handle, 0,
             &ctx.credential, &ctx.object_name, &cred_blob, &secret,
             &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("MakeCredential failed. TPM Error:0x%x", rval);
         return false;
     }
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, ctx.rsa2048_handle));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Flush loaded key failed. TPM Error:0x%x", rval);
         return false;
     }
@@ -155,49 +151,34 @@ static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
     return write_cred_and_secret(ctx.out_file_path, &cred_blob, &secret);
 }
 
-static bool load_public(char *path,TPM2B_PUBLIC *public) {
-
-    UINT8 buffer[sizeof(*public)];
-    UINT16 size = sizeof(buffer);
-    bool res = files_load_bytes_from_path(path, buffer, &size);
-    if (!res) {
-        return false;
-    }
-
-    size_t offset = 0;
-    TSS2_RC rc = Tss2_MU_TPM2B_PUBLIC_Unmarshal(buffer, size, &offset, &ctx.public);
-
-    return rc == TPM_RC_SUCCESS;
-}
-
 static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'e': {
-        bool res = load_public(value, &ctx.public);
+        bool res = files_load_public(value, &ctx.public);
         if (!res) {
             return false;
         }
         ctx.flags.e = 1;
     } break;
     case 's':
-        ctx.credential.t.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-        if (!files_load_bytes_from_path(value, ctx.credential.t.buffer,
-                                        &ctx.credential.t.size)) {
+        ctx.credential.size = BUFFER_SIZE(TPM2B_DIGEST, buffer);
+        if (!files_load_bytes_from_path(value, ctx.credential.buffer,
+                                        &ctx.credential.size)) {
             return false;
         }
         ctx.flags.s = 1;
         break;
-    case 'n':
-        ctx.object_name.t.size = BUFFER_SIZE(TPM2B_NAME, name);
+    case 'n': {
+        ctx.object_name.size = BUFFER_SIZE(TPM2B_NAME, name);
         int q;
-        if ((q = tpm2_util_hex_to_byte_structure(value, &ctx.object_name.t.size,
-                                            ctx.object_name.t.name)) != 0) {
+        if ((q = tpm2_util_hex_to_byte_structure(value, &ctx.object_name.size,
+                                            ctx.object_name.name)) != 0) {
             LOG_ERR("FAILED: %d", q);
             return false;
         }
         ctx.flags.n = 1;
-        break;
+    } break;
     case 'o':
         ctx.out_file_path = optarg;
         ctx.flags.o = 1;
@@ -216,9 +197,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"out-file" ,required_argument, NULL, 'o'},
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }
@@ -229,7 +209,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (!ctx.flags.e || !ctx.flags.n || !ctx.flags.o || !ctx.flags.s) {
         LOG_ERR("Expected options e, n, o and s");
-        return 1;
+        return false;
     }
 
     return make_credential_and_save(sapi_context) != true;

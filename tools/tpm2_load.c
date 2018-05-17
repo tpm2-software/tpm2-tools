@@ -38,7 +38,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -47,7 +47,7 @@
 #include "files.h"
 #include "tpm2_tool.h"
 
-TPM_HANDLE handle2048rsa;
+TPM2_HANDLE handle2048rsa;
 
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {
@@ -69,31 +69,22 @@ struct tpm_load_ctx {
 
 static tpm_load_ctx ctx = {
     .session_data = {
-        .sessionHandle = TPM_RS_PW,
+        .sessionHandle = TPM2_RS_PW,
         .nonce = TPM2B_EMPTY_INIT,
         .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0)
+        .sessionAttributes = 0
     }
 };
 
 int load (TSS2_SYS_CONTEXT *sapi_context) {
     UINT32 rval;
-    TPMS_AUTH_RESPONSE sessionDataOut;
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TSS2_SYS_RSP_AUTHS sessionsDataOut;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
-    TPMS_AUTH_RESPONSE *sessionDataOutArray[1];
+    TSS2L_SYS_AUTH_COMMAND sessionsData;
+    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
 
-    sessionDataArray[0] = &ctx.session_data;
-    sessionDataOutArray[0] = &sessionDataOut;
-
-    sessionsDataOut.rspAuths = &sessionDataOutArray[0];
-    sessionsData.cmdAuths = &sessionDataArray[0];
-
-    sessionsDataOut.rspAuthsCount = 1;
-    sessionsData.cmdAuthsCount = 1;
+    sessionsData.count = 1;
+    sessionsData.auths[0] = ctx.session_data;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context,
                          ctx.parent_handle,
@@ -103,7 +94,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
                          &handle2048rsa,
                          &nameExt,
                          &sessionsDataOut));
-    if(rval != TPM_RC_SUCCESS)
+    if(rval != TPM2_RC_SUCCESS)
     {
         LOG_ERR("\nLoad Object Failed ! ErrorCode: 0x%0x\n",rval);
         return -1;
@@ -111,7 +102,7 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
     tpm2_tool_output("\nLoad succ.\nLoadedHandle: 0x%08x\n\n",handle2048rsa);
 
     if (ctx.out_file) {
-        if(!files_save_bytes_to_file(ctx.out_file, nameExt.t.name, nameExt.t.size)) {
+        if(!files_save_bytes_to_file(ctx.out_file, nameExt.name, nameExt.size)) {
             return -2;
         }
     }
@@ -197,9 +188,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     setbuf(stdout, NULL);
     setvbuf (stdout, NULL, _IONBF, BUFSIZ);
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("H:P:u:r:n:C:c:S:", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

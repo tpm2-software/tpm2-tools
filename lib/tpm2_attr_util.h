@@ -33,7 +33,7 @@
 
 #include <stdbool.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 /**
  * Converts a list of | (pipe) separated attributes as defined in tavle 204

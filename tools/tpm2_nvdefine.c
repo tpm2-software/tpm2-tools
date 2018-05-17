@@ -35,7 +35,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_attr_util.h"
 #include "tpm2_options.h"
@@ -45,8 +45,8 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
-struct tpm_nvdefine_ctx {
+typedef struct TPM2_nvdefine_ctx TPM2_nvdefine_ctx;
+struct TPM2_nvdefine_ctx {
     UINT32 nvIndex;
     UINT32 authHandle;
     UINT16 size;
@@ -56,60 +56,45 @@ struct tpm_nvdefine_ctx {
     char *policy_file;
 };
 
-static tpm_nvdefine_ctx ctx = {
-    .authHandle = TPM_RH_PLATFORM,
-    .nvAttribute = SESSION_ATTRIBUTES_INIT(0),
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW),
+static TPM2_nvdefine_ctx ctx = {
+    .authHandle = TPM2_RH_PLATFORM,
+    .nvAttribute = 0,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     .nvAuth = TPM2B_EMPTY_INIT,
-    .size = MAX_NV_INDEX_SIZE,
+    .size = TPM2_MAX_NV_BUFFER_SIZE,
 };
 
 static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TSS2_SYS_CMD_AUTHS sessions_data;
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.session_data }};
 
-    TPMS_AUTH_COMMAND *session_data_array[1] = {
-        &ctx.session_data
-    };
-
-    TPMS_AUTH_RESPONSE *session_data_out_array[1] = {
-        &session_data_out
-    };
-
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data_out.rspAuthsCount = 1;
-    sessions_data.cmdAuthsCount = 1;
-
-    public_info.t.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
+    public_info.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
-    public_info.t.nvPublic.nvIndex = ctx.nvIndex;
-    public_info.t.nvPublic.nameAlg = TPM_ALG_SHA256;
+    public_info.nvPublic.nvIndex = ctx.nvIndex;
+    public_info.nvPublic.nameAlg = TPM2_ALG_SHA256;
 
     // Now set the attributes.
-    public_info.t.nvPublic.attributes.val = ctx.nvAttribute.val;
+    public_info.nvPublic.attributes = ctx.nvAttribute;
 
     if (!ctx.size) {
         LOG_WARN("Defining an index with size 0");
     }
 
     if (ctx.policy_file) {
-        public_info.t.nvPublic.authPolicy.t.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
-        if(!files_load_bytes_from_path(ctx.policy_file, public_info.t.nvPublic.authPolicy.t.buffer, &public_info.t.nvPublic.authPolicy.t.size )) {
+        public_info.nvPublic.authPolicy.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
+        if(!files_load_bytes_from_path(ctx.policy_file, public_info.nvPublic.authPolicy.buffer, &public_info.nvPublic.authPolicy.size )) {
             return false;
         }
     } 
 
-    public_info.t.nvPublic.dataSize = ctx.size;
+    public_info.nvPublic.dataSize = ctx.size;
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.authHandle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.authHandle,
             &sessions_data, &ctx.nvAuth, &public_info, &sessions_data_out));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Failed to define NV area at index 0x%x (%d).Error:0x%x",
                 ctx.nvIndex, ctx.nvIndex, rval);
         return false;
@@ -167,7 +152,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 't':
-        result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute.val);
+        result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute);
         if (!result) {
             result = tpm2_attr_util_nv_strtoattr(value, &ctx.nvAttribute);
             if (!result) {
@@ -213,9 +198,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "input-session-handle",   required_argument,  NULL,   'S' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("x:a:s:t:P:I:rwdL:S:X", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

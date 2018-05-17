@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "log.h"
@@ -78,9 +78,9 @@ static listpcr_context ctx = {
     .algs = {
         .count = 3,
         .alg = {
-            TPM_ALG_SHA1,
-            TPM_ALG_SHA256,
-            TPM_ALG_SHA384
+            TPM2_ALG_SHA1,
+            TPM2_ALG_SHA256,
+            TPM2_ALG_SHA384
         }
     },
 };
@@ -141,7 +141,7 @@ static bool read_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
                 &pcr_update_counter, &pcr_selection_out,
                 &ctx.pcrs.pcr_values[ctx.pcrs.count], 0));
 
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("read pcr failed. tpm error 0x%0x", rval);
             return -1;
         }
@@ -267,14 +267,14 @@ static bool show_pcr_values(void) {
             tpm2_tool_output("  %-2d : ", pcr_id);
 
             int k;
-            for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].t.size; k++) {
-                tpm2_tool_output("%02x", ctx.pcrs.pcr_values[vi].digests[di].t.buffer[k]);
+            for (k = 0; k < ctx.pcrs.pcr_values[vi].digests[di].size; k++) {
+                tpm2_tool_output("%02x", ctx.pcrs.pcr_values[vi].digests[di].buffer[k]);
             }
             tpm2_tool_output("\n");
 
             if (ctx.output_file != NULL
-                    && fwrite(ctx.pcrs.pcr_values[vi].digests[di].t.buffer,
-                            ctx.pcrs.pcr_values[vi].digests[di].t.size, required_argument,
+                    && fwrite(ctx.pcrs.pcr_values[vi].digests[di].buffer,
+                            ctx.pcrs.pcr_values[vi].digests[di].size, required_argument,
                             ctx.output_file) != 1) {
                 LOG_ERR("write to output file failed: %s", strerror(errno));
                 return false;
@@ -330,9 +330,9 @@ static bool get_banks(TSS2_SYS_CONTEXT *sapi_context) {
     TPMS_CAPABILITY_DATA *capability_data = &ctx.cap_data;
     UINT32 rval;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, no_argument, TPM_CAP_PCRS, no_argument, required_argument,
+    rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, no_argument, TPM2_CAP_PCRS, no_argument, required_argument,
             &more_data, capability_data, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR(
                 "GetCapability: Get PCR allocation status Error. TPM Error:0x%x......",
                 rval);
@@ -365,7 +365,7 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'g':
         ctx.selected_algorithm = tpm2_alg_util_from_optarg(value);
-        if (ctx.selected_algorithm == TPM_ALG_ERROR) {
+        if (ctx.selected_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid algorithm, got: \"%s\"", value);
             return false;
         }
@@ -401,9 +401,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          { "format",    required_argument, NULL, 'f' },
      };
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new("g:o:L:s", ARRAY_LEN(topts), topts,
-            on_option, NULL, empty_flags);
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }

@@ -31,7 +31,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 #include <stdbool.h>
 
 #include "tpm2_options.h"

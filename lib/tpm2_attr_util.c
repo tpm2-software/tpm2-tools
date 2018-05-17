@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_attr_util.h"
@@ -66,147 +66,147 @@ struct dispatch_table {
 static bool authread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_AUTHREAD = 1;
+    *nv |= TPMA_NV_AUTHREAD;
     return true;
 }
 
 static bool authwrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_AUTHWRITE = 1;
+    *nv |= TPMA_NV_AUTHWRITE;
     return true;
 }
 
 static bool clear_stclear(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_CLEAR_STCLEAR = 1;
+    *nv |= TPMA_NV_CLEAR_STCLEAR;
     return true;
 }
 
 static bool globallock(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_GLOBALLOCK = 1;
+    *nv |= TPMA_NV_GLOBALLOCK;
     return true;
 }
 
 static bool no_da(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_NO_DA = 1;
+    *nv |= TPMA_NV_NO_DA;
     return true;
 }
 
 static bool orderly(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_ORDERLY = 1;
+    *nv |= TPMA_NV_ORDERLY;
     return true;
 }
 
 static bool ownerread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_OWNERREAD = 1;
+    *nv |= TPMA_NV_OWNERREAD;
     return true;
 }
 
 static bool ownerwrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_OWNERWRITE = 1;
+    *nv |= TPMA_NV_OWNERWRITE;
     return true;
 }
 
 static bool platformcreate(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_PLATFORMCREATE = 1;
+    *nv |= TPMA_NV_PLATFORMCREATE;
     return true;
 }
 
 static bool policyread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_POLICYREAD = 1;
+    *nv |= TPMA_NV_POLICYREAD;
     return true;
 }
 
 static bool policywrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_POLICYWRITE = 1;
+    *nv |= TPMA_NV_POLICYWRITE;
     return true;
 }
 
 static bool policydelete(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_POLICY_DELETE = 1;
+    *nv |= TPMA_NV_POLICY_DELETE;
     return true;
 }
 
 static bool ppread(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_PPREAD = 1;
+    *nv |= TPMA_NV_PPREAD;
     return true;
 }
 
 static bool ppwrite(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_PPWRITE = 1;
+    *nv |= TPMA_NV_PPWRITE;
     return true;
 }
 
 static bool readlocked(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_READLOCKED = 1;
+    *nv |= TPMA_NV_READLOCKED;
     return true;
 }
 
 static bool read_stclear(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_READ_STCLEAR = 1;
+    *nv |= TPMA_NV_READ_STCLEAR;
     return true;
 }
 
 static bool writeall(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_WRITEALL = 1;
+    *nv |= TPMA_NV_WRITEALL;
     return true;
 }
 
 static bool writedefine(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_WRITEDEFINE = 1;
+    *nv |= TPMA_NV_WRITEDEFINE;
     return true;
 }
 
 static bool writelocked(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_WRITELOCKED = 1;
+    *nv |= TPMA_NV_WRITELOCKED;
     return true;
 }
 
 static bool write_stclear(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_WRITE_STCLEAR = 1;
+    *nv |= TPMA_NV_WRITE_STCLEAR;
     return true;
 }
 
 static bool written(TPMA_NV *nv, char *arg) {
 
     UNUSED(arg);
-    nv->TPMA_NV_WRITTEN = 1;
+    *nv |= TPMA_NV_WRITTEN;
     return true;
 }
 
@@ -226,7 +226,8 @@ static bool nt(TPMA_NV *nv, char *arg) {
         return false;
     }
 
-    nv->TPM_NT = value;
+    *nv &= ~TPMA_NV_TPM2_NT_MASK;
+    *nv |= value << 4;
     return true;
 }
 
@@ -277,77 +278,77 @@ static dispatch_table nv_attr_table[] = { // Bit Index
 static bool fixedtpm(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->fixedTPM = 1;
+    *obj |= TPMA_OBJECT_FIXEDTPM;
     return true;
 }
 
 static bool stclear(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->stClear = 1;
+    *obj |= TPMA_OBJECT_STCLEAR;
     return true;
 }
 
 static bool fixedparent(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->fixedParent = 1;
+    *obj |= TPMA_OBJECT_FIXEDPARENT;
     return true;
 }
 
 static bool sensitivedataorigin(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->sensitiveDataOrigin = 1;
+    *obj |= TPMA_OBJECT_SENSITIVEDATAORIGIN;
     return true;
 }
 
 static bool userwithauth(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->userWithAuth = 1;
+    *obj |= TPMA_OBJECT_USERWITHAUTH;
     return true;
 }
 
 static bool adminwithpolicy(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->adminWithPolicy = 1;
+    *obj |= TPMA_OBJECT_ADMINWITHPOLICY;
     return true;
 }
 
 static bool noda(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->noDA = 1;
+    *obj |= TPMA_OBJECT_NODA;
     return true;
 }
 
 static bool encryptedduplication(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->encryptedDuplication = 1;
+    *obj |= TPMA_OBJECT_ENCRYPTEDDUPLICATION;
     return true;
 }
 
 static bool restricted(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->restricted = 1;
+    *obj |= TPMA_OBJECT_RESTRICTED;
     return true;
 }
 
 static bool decrypt(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->decrypt = 1;
+    *obj |= TPMA_OBJECT_DECRYPT;
     return true;
 }
 
 static bool sign(TPMA_OBJECT *obj, char *arg) {
 
     UNUSED(arg);
-    obj->sign = 1;
+    *obj |= TPMA_OBJECT_SIGN_ENCRYPT;
     return true;
 }
 
@@ -626,16 +627,16 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
 }
 
 char *tpm2_attr_util_nv_attrtostr(TPMA_NV nvattrs) {
-    return tpm2_attr_util_common_attrtostr(nvattrs.val, nv_attr_table, ARRAY_LEN(nv_attr_table));
+    return tpm2_attr_util_common_attrtostr(nvattrs, nv_attr_table, ARRAY_LEN(nv_attr_table));
 }
 
 char *tpm2_attr_util_obj_attrtostr(TPMA_OBJECT objattrs) {
-    return tpm2_attr_util_common_attrtostr(objattrs.val, obj_attr_table, ARRAY_LEN(obj_attr_table));
+    return tpm2_attr_util_common_attrtostr(objattrs, obj_attr_table, ARRAY_LEN(obj_attr_table));
 }
 
 bool tpm2_attr_util_obj_from_optarg(char *argvalue, TPMA_OBJECT *objattrs) {
 
-    bool res = tpm2_util_string_to_uint32(argvalue, &objattrs->val);
+    bool res = tpm2_util_string_to_uint32(argvalue, objattrs);
     if (!res) {
         res = tpm2_attr_util_obj_strtoattr(argvalue, objattrs);
     }

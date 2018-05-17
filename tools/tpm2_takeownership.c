@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_options.h"
@@ -65,23 +65,15 @@ static takeownership_ctx ctx;
 
 static bool clear_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
-    TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    TSS2L_SYS_AUTH_COMMAND sessionsData = {
+        .count = 1,
+        .auths = { TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)}
     };
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
 
-    sessionDataArray[0] = &sessionData;
-    sessionsData.cmdAuths = &sessionDataArray[0];
-    sessionsData.cmdAuthsCount = 1;
+    memcpy(&sessionsData.auths[0].hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
 
-    memcpy(&sessionData.hmac, &ctx.passwords.lockout.old, sizeof(ctx.passwords.lockout.old));
-
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear(sapi_context, TPM_RH_LOCKOUT, &sessionsData, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear(sapi_context, TPM2_RH_LOCKOUT, &sessionsData, 0));
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Clearing Failed! TPM error code: 0x%0x", rval);
         return false;
     }
@@ -94,25 +86,18 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_RH_HIERARCHY_AUTH auth_handle) {
 
     TPM2B_AUTH newAuth;
-    TPMS_AUTH_COMMAND sessionData = {
-        .sessionHandle = TPM_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = SESSION_ATTRIBUTES_INIT(0),
+    TSS2L_SYS_AUTH_COMMAND sessionsData = {
+        .count = 1,
+        .auths = { TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)}
     };
-    TSS2_SYS_CMD_AUTHS sessionsData;
-    TPMS_AUTH_COMMAND *sessionDataArray[1];
 
-    sessionDataArray[0] = &sessionData;
-    sessionsData.cmdAuths = &sessionDataArray[0];
-    sessionsData.cmdAuthsCount = 1;
 
     memcpy(&newAuth, &pwd->new, sizeof(pwd->new));
-    memcpy(&sessionData.hmac, &pwd->old, sizeof(pwd->old));
+    memcpy(&sessionsData.auths[0].hmac, &pwd->old, sizeof(pwd->old));
 
     UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_HierarchyChangeAuth(sapi_context,
             auth_handle, &sessionsData, &newAuth, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Could not change hierarchy for %s. TPM Error:0x%x",
                 desc, rval);
         return false;
@@ -127,11 +112,11 @@ static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     // change owner, endorsement and lockout auth.
     return change_auth(sapi_context, &ctx.passwords.owner,
-                "Owner", TPM_RH_OWNER)
+                "Owner", TPM2_RH_OWNER)
         && change_auth(sapi_context, &ctx.passwords.endorse,
-                "Endorsement", TPM_RH_ENDORSEMENT)
+                "Endorsement", TPM2_RH_ENDORSEMENT)
         && change_auth(sapi_context, &ctx.passwords.lockout,
-                "Lockout", TPM_RH_LOCKOUT);
+                "Lockout", TPM2_RH_LOCKOUT);
 }
 
 static bool on_option(char key, char *value) {
@@ -203,9 +188,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "clear",            no_argument,       NULL, 'c' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("o:e:l:O:E:L:c", ARRAY_LEN(topts), topts,
-            on_option, NULL, flags);
+            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

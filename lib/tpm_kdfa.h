@@ -28,7 +28,9 @@
 #ifndef SRC_TPM_KDFA_H_
 #define SRC_TPM_KDFA_H_
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
+
+#include "tpm2_util.h"
 
 /* TODO DOCUMENT ME */
 /**
@@ -42,7 +44,7 @@
  * @param resultKey
  * @return
  */
-TPM_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
+TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV,
         UINT16 bits, TPM2B_MAX_BUFFER *resultKey );
 

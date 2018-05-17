@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include <limits.h>
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "log.h"
@@ -56,24 +56,24 @@ static bool get_random_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPM2B_DIGEST random_bytes = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetRandom(sapi_context, NULL, ctx.num_of_bytes,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetRandom(sapi_context, NULL, ctx.num_of_bytes,
             &random_bytes, NULL));
-    if (rval != TSS2_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("TPM2_GetRandom Error. TPM Error:0x%x", rval);
         return false;
     }
 
     if (!ctx.output_file_specified) {
         UINT16 i;
-        for (i = 0; i < random_bytes.t.size; i++) {
-            printf("%s0x%2.2X", i ? " " : "", random_bytes.t.buffer[i]);
+        for (i = 0; i < random_bytes.size; i++) {
+            printf("%s0x%2.2X", i ? " " : "", random_bytes.buffer[i]);
         }
         printf("\n");
         return true;
     }
 
-    return files_save_bytes_to_file(ctx.output_file, random_bytes.t.buffer,
-            random_bytes.t.size);
+    return files_save_bytes_to_file(ctx.output_file, random_bytes.buffer,
+            random_bytes.size);
 }
 
 static bool on_option(char key, char *value) {
@@ -109,9 +109,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "output",   required_argument, NULL, 'o' },
     };
 
-    tpm2_option_flags flags = tpm2_option_flags_init(TPM2_OPTION_SHOW_USAGE);
     *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts,
-            on_option, on_args, flags);
+            on_option, on_args, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
 }

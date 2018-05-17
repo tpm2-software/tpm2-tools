@@ -31,7 +31,7 @@
 
 #include <stdlib.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm2_alg_util.h"
@@ -54,27 +54,12 @@ static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
      * TODO SUPPORT AUTH VALUES HERE
      * Bug: https://github.com/01org/tpm2-tools/issues/388
      */
-    TPMS_AUTH_COMMAND session_data = TPMS_AUTH_COMMAND_INIT(TPM_RS_PW);
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, {{ .sessionHandle=TPM2_RS_PW }}};
 
-    TPMS_AUTH_RESPONSE session_data_out;
-    TPMS_AUTH_COMMAND *session_data_array[1];
-    TPMS_AUTH_RESPONSE *session_data_out_array[1];
-    TSS2_SYS_RSP_AUTHS sessions_data_out;
-
-    TSS2_SYS_CMD_AUTHS sessions_data;
-
-    session_data_array[0] = &session_data;
-    session_data_out_array[0] = &session_data_out;
-
-    sessions_data_out.rspAuths = &session_data_out_array[0];
-    sessions_data.cmdAuths = &session_data_array[0];
-
-    sessions_data.cmdAuthsCount = 1;
-    sessions_data_out.rspAuthsCount = 1;
-
-    TPM_RC rc = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
+    TSS2_RC rc = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
             digests, &sessions_data_out));
-    if (rc != TPM_RC_SUCCESS) {
+    if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("Could not extend pcr index: 0x%X, due to error: 0x%X",
                 pcr_index, rc);
         return false;
@@ -120,9 +105,8 @@ static bool on_arg(int argc, char **argv) {
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    tpm2_option_flags empty_flags = tpm2_option_flags_init(0);
     *opts = tpm2_options_new(NULL, 0, NULL,
-            NULL, on_arg, empty_flags);
+            NULL, on_arg, 0);
 
     return *opts != NULL;
 }

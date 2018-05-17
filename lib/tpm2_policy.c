@@ -74,7 +74,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
          * Once iterated through all banks, creates an file offsets map for all pcr indices
          */
         for (k=0; k < total_indices_for_this_alg; k++) {
-            pcr_values->digests[dgst_cnt+k].t.size = dgst_size;
+            pcr_values->digests[dgst_cnt+k].size = dgst_size;
         }
         dgst_cnt++;
 
@@ -98,12 +98,12 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
     return true;
 }
 
-TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
+TSS2_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
                              SESSION *policy_session,
                              TPML_PCR_SELECTION pcr_selections,
                              char *raw_pcrs_file) {
     // Calculate digest( with authhash alg) of pcrvalues in variable pcr_digest
-    TPM_RC rval=0;
+    TSS2_RC rval=0;
     TPML_DIGEST pcr_values = {
         .count = 0
     };
@@ -111,7 +111,7 @@ TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     bool result = evaluate_populate_pcr_digests(pcr_selections, raw_pcrs_file,
                                                 &pcr_values);
     if (!result) {
-        return TPM_RC_NO_RESULT;
+        return TPM2_RC_NO_RESULT;
     }
 
     //If PCR input for policy is from raw pcrs file
@@ -119,19 +119,19 @@ TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
         FILE *fp = fopen (raw_pcrs_file, "rb");
         if (fp == NULL) {
             LOG_ERR("Cannot open pcr-input-file %s", raw_pcrs_file);
-            return TPM_RC_NO_RESULT;
+            return TPM2_RC_NO_RESULT;
         }
        // Bank hashAlg values dictates the order of the list of digests
         unsigned i;
         for(i=0; i<pcr_values.count; i++) {
-            size_t sz = fread(&pcr_values.digests[i].t.buffer, 1, pcr_values.digests[i].t.size, fp);
-            if (sz != pcr_values.digests[i].t.size) {
+            size_t sz = fread(&pcr_values.digests[i].buffer, 1, pcr_values.digests[i].size, fp);
+            if (sz != pcr_values.digests[i].size) {
                 const char *msg = ferror(fp) ? strerror(errno) :
                         "end of file reached";
                 LOG_ERR("Reading from file \"%s\" failed: %s",
                         raw_pcrs_file, msg);
                 fclose(fp);
-                return TPM_RC_NO_RESULT;
+                return TPM2_RC_NO_RESULT;
             }
         }
         fclose(fp);
@@ -145,7 +145,7 @@ TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
         rval = Tss2_Sys_PCR_Read(sapi_context, 0,
             &pcr_selections,
             &pcr_update_counter, &pcr_selection_out, &pcr_values, 0);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             return rval;
         }
     }
@@ -153,9 +153,9 @@ TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     // Calculate hashes
     TPM2B_DIGEST pcr_digest =  TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     rval = tpm_hash_sequence(sapi_context,
-        policy_session->authHash, TPM_RH_NULL, pcr_values.count,
+        policy_session->authHash, TPM2_RH_NULL, pcr_values.count,
         pcr_values.digests, &pcr_digest, NULL);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         return rval;
     }
 
@@ -164,55 +164,55 @@ TPM_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
                               0, &pcr_digest, &pcr_selections, 0);
 }
 
-static TPM_RC start_policy_session (TSS2_SYS_CONTEXT *sapi_context,
+static TSS2_RC start_policy_session (TSS2_SYS_CONTEXT *sapi_context,
                                     SESSION **policy_session,
-                                    TPM_SE policy_session_type,
+                                    TPM2_SE policy_session_type,
                                     TPMI_ALG_HASH policy_digest_hash_alg) {
     TPM2B_ENCRYPTED_SECRET encryptedSalt = TPM2B_EMPTY_INIT;
     TPMT_SYM_DEF symmetric = {
-        .algorithm = TPM_ALG_NULL,
+        .algorithm = TPM2_ALG_NULL,
     };
     TPM2B_NONCE nonceCaller = TPM2B_EMPTY_INIT;
     // Start policy session.
-    TPM_RC rval = tpm_session_start_auth_with_params(sapi_context,
+    TSS2_RC rval = tpm_session_start_auth_with_params(sapi_context,
                                                      policy_session,
-                                                     TPM_RH_NULL, 0,
-                                                     TPM_RH_NULL, 0,
+                                                     TPM2_RH_NULL, 0,
+                                                     TPM2_RH_NULL, 0,
                                                      &nonceCaller,
                                                      &encryptedSalt,
                                                      policy_session_type,
                                                      &symmetric,
                                                      policy_digest_hash_alg);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed tpm session start auth with params");
     }
     return rval;
 }
 
-TPM_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
+TSS2_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
                          SESSION **policy_session,
-                         TPM_SE policy_session_type,
+                         TPM2_SE policy_session_type,
                          TPMI_ALG_HASH policy_digest_hash_alg,
                          TPML_PCR_SELECTION pcr_selections,
                          char *raw_pcrs_file,
                          TPM2B_DIGEST *policy_digest,
                          bool extend_policy_session,
-        TPM_RC (*build_policy_function)(TSS2_SYS_CONTEXT *sapi_context,
+        TSS2_RC (*build_policy_function)(TSS2_SYS_CONTEXT *sapi_context,
                                         SESSION *policy_session,
                                         TPML_PCR_SELECTION pcr_selections,
                                         char *raw_pcrs_file)) {
     //Start policy session
-    TPM_RC rval = start_policy_session(sapi_context, policy_session,
+    TSS2_RC rval = start_policy_session(sapi_context, policy_session,
                                        policy_session_type,
                                        policy_digest_hash_alg);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Error starting the policy session.");
         return rval;
     }
     // Issue policy command.
     rval = (*build_policy_function)(sapi_context, *policy_session,
                                     pcr_selections, raw_pcrs_file);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed parse_policy_type_and_send_command");
         return rval;
     }
@@ -220,7 +220,7 @@ TPM_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
     rval = Tss2_Sys_PolicyGetDigest(sapi_context,
                                     (*policy_session)->sessionHandle,
                                     0, policy_digest, 0);
-    if (rval != TPM_RC_SUCCESS) {
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed Policy Get Digest");
         return rval;
     }
@@ -229,7 +229,7 @@ TPM_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
     if (!extend_policy_session) {
         rval = Tss2_Sys_FlushContext(sapi_context,
                                      (*policy_session)->sessionHandle);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context");
             return rval;
         }

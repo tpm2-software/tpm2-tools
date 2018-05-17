@@ -31,7 +31,7 @@
 #ifndef SRC_TPM_HASH_H_
 #define SRC_TPM_HASH_H_
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 /**
  * Hashes a list of TPM2B_DIGEST buffers via the tpm.
@@ -51,9 +51,9 @@
  *  The validation ticket. Note that some hierarchies don't produce a
  *  validation ticket and thus size will be 0.
  * @return
- *  TPM_RC_SUCCESS on success, or other TPM_RCs on error.
+ *  TPM2_RC_SUCCESS on success, or other TSS2_RCs on error.
  */
-TPM_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
+TSS2_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
         TPMI_RH_HIERARCHY hierarchy, size_t num_buffers, TPM2B_DIGEST *buffer_list,
         TPM2B_DIGEST *result, TPMT_TK_HASHCHECK *validation);
 
@@ -75,9 +75,9 @@ TPM_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
  *  The validation ticket. Note that some hierarchies don't produce a
  *  validation ticket and thus size will be 0.
  * @return
- *  TPM_RC_SUCCESS on success, or other TPM_RCs on error.
+ *  TPM2_RC_SUCCESS on success, or other TSS2_RCs on error.
  */
-TPM_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+TSS2_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
         TPM2B_DIGEST *result, TPMT_TK_HASHCHECK *validation);
 
@@ -97,9 +97,9 @@ TPM_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
  *  The validation ticket. Note that some hierarchies don't produce a
  *  validation ticket and thus size will be 0.
  * @return
- *  TPM_RC_SUCCESS on success, or other TPM_RCs on error.
+ *  TPM2_RC_SUCCESS on success, or other TSS2_RCs on error.
  */
-TPM_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
+TSS2_RC tpm_hash_file(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST *result,
         TPMT_TK_HASHCHECK *validation);
 

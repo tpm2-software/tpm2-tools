@@ -34,10 +34,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <sapi/tpm20.h>
+typedef struct TPM2B TPM2B;
+struct TPM2B {
+    UINT16 size;
+    BYTE buffer[];
+};
 
-#define TPM2_RC_MASK 0xfff
-#define TPM2_RC_GET(code) (code & TPM2_RC_MASK)
+#include <tss2/tss2_sys.h>
 
 #define xstr(s) str(s)
 #define str(s) #s
@@ -46,23 +49,22 @@
 
 #define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
 
-#define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->t.field)))
+#define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->field)))
 
-#define TPM2B_TYPE_INIT(type, field) { .t = { .size = BUFFER_SIZE(type, field), }, }
-#define TPM2B_INIT_SIZE(xsize) { .t = { .size = xsize, }, }
-#define TPM2B_EMPTY_INIT TPM2B_INIT_SIZE(0)
+#define TPM2B_TYPE_INIT(type, field) { .size = BUFFER_SIZE(type, field), }
+#define TPM2B_INIT(xsize) { .size = xsize, }
+#define TPM2B_EMPTY_INIT TPM2B_INIT(0)
 #define TPM2B_SENSITIVE_CREATE_EMPTY_INIT { \
-           .t.sensitive = { \
-                .data.t.size = 0, \
-                .userAuth.b.size = 0, \
+           .sensitive = { \
+                .data.size = 0, \
+                .userAuth.size = 0, \
             }, \
     }
-#define SESSION_ATTRIBUTES_INIT(mask) { .val = mask }
 
 #define TPMS_AUTH_COMMAND_INIT(session_handle) { \
         .sessionHandle = session_handle,\
 	    .nonce = TPM2B_EMPTY_INIT, \
-	    .sessionAttributes = { .val = 0 }, \
+	    .sessionAttributes = 0, \
 	    .hmac = TPM2B_EMPTY_INIT \
     }
 
@@ -89,33 +91,28 @@
 		.digest = TPM2B_EMPTY_INIT \
     }
 
-#define TSS2_SYS_CMD_AUTHS_INIT(array) { \
-        .cmdAuthsCount = ARRAY_LEN(array), \
-        .cmdAuths = array, \
-    }
-
-#define TSS2_SYS_RSP_AUTHS_INIT(array) { \
-        .rspAuthsCount = ARRAY_LEN(array), \
-        .rspAuths = array, \
+#define TSS2L_SYS_AUTH_COMMAND_INIT(cnt, array) { \
+        .count = cnt, \
+        .auths = array, \
     }
 
 /*
  * This macro is useful as a wrapper around SAPI functions to automatically
- * retry function calls when the RC is TPM_RC_RETRY.
+ * retry function calls when the RC is TPM2_RC_RETRY.
  */
 #define TSS2_RETRY_EXP(expression)                         \
     ({                                                     \
         TSS2_RC __result = 0;                              \
         do {                                               \
             __result = (expression);                       \
-        } while (TPM2_RC_GET(__result) == TPM_RC_RETRY); \
+        } while ((__result & 0x0000ffff) == TPM2_RC_RETRY); \
         __result;                                          \
     })
 
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLenth, BYTE *byteBuffer);
 
 /**
- * Appends a TPM2B buffer to a MAX buffer.
+ * Appends a TPM2B_DIGEST buffer to a TPM2B_MAX buffer.
  * @param result
  *  The MAX buffer to append to
  * @param append
@@ -169,6 +166,9 @@ static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
 
     return tpm2_util_hexdump(buffer->buffer, buffer->size, true);
 }
+
+
+void tpm2_util_print_tpm2b(TPM2B *buffer);
 
 /**
  * Copies a tpm2b from dest to src and clears dest if src is NULL.
@@ -261,5 +261,6 @@ UINT32 tpm2_util_pop_count(UINT32 data);
  *  The TPM2B_PUBLIC to output in YAML format.
  */
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public);
+
 
 #endif /* STRING_BYTES_H */

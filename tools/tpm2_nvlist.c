@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <sapi/tpm20.h>
+#include <tss2/tss2_sys.h>
 
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
@@ -45,12 +45,12 @@
 
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
-    char *attrs = tpm2_attr_util_nv_attrtostr(nv_public->t.nvPublic.attributes);
+    char *attrs = tpm2_attr_util_nv_attrtostr(nv_public->nvPublic.attributes);
     if (!attrs) {
         LOG_ERR("Could not convert attributes to string form");
     }
 
-    const char *alg = tpm2_alg_util_algtostr(nv_public->t.nvPublic.nameAlg);
+    const char *alg = tpm2_alg_util_algtostr(nv_public->nvPublic.nameAlg);
     if (!alg) {
         LOG_ERR("Could not convert algorithm to string form");
     }
@@ -58,22 +58,22 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     tpm2_tool_output("  hash algorithm:\n");
     tpm2_tool_output("    friendly: %s\n", alg);
     tpm2_tool_output("    value: 0x%X\n",
-            nv_public->t.nvPublic.nameAlg);
+            nv_public->nvPublic.nameAlg);
 
     tpm2_tool_output("  attributes:\n");
     tpm2_tool_output("    friendly: %s\n", attrs);
     tpm2_tool_output("    value: 0x%X\n",
-            tpm2_util_ntoh_32(nv_public->t.nvPublic.attributes.val));
+            tpm2_util_ntoh_32(nv_public->nvPublic.attributes));
 
     tpm2_tool_output("  size: %d\n",
-               nv_public->t.nvPublic.dataSize);
+               nv_public->nvPublic.dataSize);
 
-    if (nv_public->t.nvPublic.authPolicy.t.size) {
+    if (nv_public->nvPublic.authPolicy.size) {
         tpm2_tool_output("  authorization policy: ");
 
         UINT16 i;
-        for (i=0; i<nv_public->t.nvPublic.authPolicy.t.size; i++) {
-            tpm2_tool_output("%02X", nv_public->t.nvPublic.authPolicy.t.buffer[i] );
+        for (i=0; i<nv_public->nvPublic.authPolicy.size; i++) {
+            tpm2_tool_output("%02X", nv_public->nvPublic.authPolicy.buffer[i] );
         }
         tpm2_tool_output("\n");
     }
@@ -85,10 +85,10 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
 
     TPMI_YES_NO moreData;
     TPMS_CAPABILITY_DATA capabilityData;
-    UINT32 property = tpm2_util_hton_32(TPM_HT_NV_INDEX);
-    TPM_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM_CAP_HANDLES,
-            property, TPM_PT_NV_INDEX_MAX, &moreData, &capabilityData, 0));
-    if (rval != TPM_RC_SUCCESS) {
+    UINT32 property = tpm2_util_hton_32(TPM2_HT_NV_INDEX);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM2_CAP_HANDLES,
+            property, TPM2_PT_NV_INDEX_MAX, &moreData, &capabilityData, 0));
+    if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("GetCapability:Get NV Index list Error. TPM Error:0x%x", rval);
         return false;
     }
@@ -101,7 +101,7 @@ static bool nv_list(TSS2_SYS_CONTEXT *sapi_context) {
 
         TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
         rval = tpm2_util_nv_read_public(sapi_context, index, &nv_public);
-        if (rval != TPM_RC_SUCCESS) {
+        if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Reading the public part of the nv index failed with: 0x%x", rval);
             return false;
         }
