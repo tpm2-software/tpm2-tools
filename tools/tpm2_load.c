@@ -58,7 +58,7 @@ struct tpm_load_ctx {
     } auth;
     TPM2B_PUBLIC  in_public;
     TPM2B_PRIVATE in_private;
-    char *out_file;
+    char *out_name_file;
     char *context_file;
     char *parent_auth_str;
     const char *context_arg;
@@ -97,8 +97,8 @@ int load (TSS2_SYS_CONTEXT *sapi_context) {
     }
     tpm2_tool_output("handle: 0x%08x\n", handle);
 
-    if (ctx.out_file) {
-        if(!files_save_bytes_to_file(ctx.out_file, nameExt.name, nameExt.size)) {
+    if (ctx.out_name_file) {
+        if(!files_save_bytes_to_file(ctx.out_name_file, nameExt.name, nameExt.size)) {
             return -2;
         }
     }
@@ -129,8 +129,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.r = 1;
         break;
     case 'n':
-        ctx.out_file = value;
-        if(files_does_file_exist(ctx.out_file)) {
+        ctx.out_name_file = value;
+        if(files_does_file_exist(ctx.out_name_file)) {
             return false;
         }
         break;
