@@ -130,9 +130,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'n':
         ctx.out_name_file = value;
-        if(files_does_file_exist(ctx.out_name_file)) {
-            return false;
-        }
         break;
     case 'C':
         ctx.context_arg = value;
