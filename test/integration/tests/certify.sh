@@ -51,10 +51,10 @@ tpm2_clear -Q
 
 tpm2_createprimary -Q -a e -g sha256 -G rsa -o primary.ctx
 
-tpm2_create -Q -g sha256 -G rsa -u certify.pub -r certify.priv  -C file:primary.ctx
+tpm2_create -Q -g sha256 -G rsa -u certify.pub -r certify.priv  -C primary.ctx
 
-tpm2_load -Q -C file:primary.ctx -u certify.pub -r certify.priv -n certify.name -o certify.ctx
+tpm2_load -Q -C primary.ctx -u certify.pub -r certify.priv -n certify.name -o certify.ctx
 
-tpm2_certify -Q -c file:primary.ctx -C file:certify.ctx -g sha256 -a attest.out -s sig.out
+tpm2_certify -Q -c primary.ctx -C certify.ctx -g sha256 -a attest.out -s sig.out
 
 exit 0

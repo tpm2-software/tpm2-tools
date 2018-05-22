@@ -79,7 +79,7 @@ for idx in "${!keys[@]}"
 do
     tpm2_createprimary -Q -a "$auth" -g "${hashes[$idx]}" -G "${keys[$idx]}" -o primary.context
     handle=$(printf "0x%X\n" $(($handle_base + $idx)))
-    tpm2_evictcontrol -Q -a "$auth" -p "$handle" -c file:primary.context
+    tpm2_evictcontrol -Q -a "$auth" -p "$handle" -c primary.context
 done
 
 tpm2_listpersistent > out.yaml
