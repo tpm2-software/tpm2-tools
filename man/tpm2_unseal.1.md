@@ -67,9 +67,9 @@ alive and pass that session using the **--input-session-handle** option.
 
 ```
 tpm2_unseal -H 0x81010001 -P abc123 -o out.dat
-tpm2_unseal -c file:item.context -P abc123 -o out.dat
+tpm2_unseal -c item.context -P abc123 -o out.dat
 tpm2_unseal -c 0x81010001 -P "hex:123abc" -o out.dat
-tpm2_unseal -c file:item.context -L sha1:0,1,2 -F out.dat
+tpm2_unseal -c item.context -L sha1:0,1,2 -F out.dat
 ```
 
 # RETURNS

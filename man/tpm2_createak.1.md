@@ -139,7 +139,7 @@ loaded-key:
   handle: 0x80000001
   name: 000b8052c63861b1855c91edd63bca2eb3ea3ad304bb9798a9445ada12d5b5bb36e0
 
-tpm2_createek -g rsa -p ek.pub -c file:ek.ctx
+tpm2_createek -g rsa -p ek.pub -c ek.ctx
 
 # Check that the AK is loaded in transient memory
 # Note the AK is at handle 0x80000001
@@ -155,7 +155,7 @@ tpm2_getcap -c handles-transient
 - 0x80000000
 
 # Reload it via loadexternal
-tpm2_loadexternal -H o -u ak.pub -o file:ak.ctx
+tpm2_loadexternal -H o -u ak.pub -o ak.ctx
 
 # Check that it is re-loaded in transient memory
 $ tpm2_getcap -c handles-transient

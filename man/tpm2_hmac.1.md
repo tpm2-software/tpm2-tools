@@ -63,7 +63,7 @@ tpm2_hmac -C 0x81010002 -P abc123 -g sha1 data.in
 
 Perform a SHA1 HMAC on data.in read as a file to stdin and send output to a file:
 ```
-tpm2_hmac -C file:key.context -P abc123 -g sha1 -o hash.out << data.in
+tpm2_hmac -C key.context -P abc123 -g sha1 -o hash.out << data.in
 ```
 Perform a SHA256 HMAC on _stdin_ and send result and possibly ticket to stdout:
 

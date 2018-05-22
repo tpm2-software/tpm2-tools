@@ -55,7 +55,7 @@ into the TPM.
 
 ```
 tpm2_load  -C 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
-tpm2_load  -C file:parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -o object.context
+tpm2_load  -C parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -o object.context
 tpm2_load  -C 0x80000000 -P "hex:123abc" -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
 
 ```

@@ -79,7 +79,7 @@
 
 ```
 tpm2_quote -C 0x81010002 -P abc123 -L sha1 -l 16,17,18
-tpm2_quote -C file:ak.context -P "str:abc123" -L sha1 -l 16,17,18
+tpm2_quote -C ak.context -P "str:abc123" -L sha1 -l 16,17,18
 tpm2_quote -C 0x81010002 -L sha1 -l 16,17,18
 tpm2_quote -C ak.dat -L sha1 -l 16,17,18
 tpm2_quote -C 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -q 11aa22bb

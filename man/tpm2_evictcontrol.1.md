@@ -61,10 +61,8 @@ be evicted.
 # EXAMPLES
 
 ```
-tpm2_evictcontrol -A o -c file:object.context -S 0x81010002 -P abc123
-tpm2_evictcontrol -A o -c objectctx.dat -S 0x81010002 -P abc123
+tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
 tpm2_evictcontrol -A o -c 0x81010002 -S 0x81010002 -P abc123
-tpm2_evictcontrol -A o -c 0x81010002 -S 0x81010002 -P 123abc
 ```
 
 # RETURNS

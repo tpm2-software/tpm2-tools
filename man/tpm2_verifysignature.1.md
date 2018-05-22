@@ -86,7 +86,7 @@ symmetric key, both the public and private portions need to be loaded.
 ```
 tpm2_verifysignature -C 0x81010001 -g sha256 -m <filePath> -s <filePath> -t <filePath>
 tpm2_verifysignature -C 0x81010001 -D <filePath> -s <filePath> -t <filePath>
-tpm2_verifysignature -C file:key.context -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_verifysignature -C key.context -g sha256 -m <filePath> -s <filePath> -t <filePath>
 ```
 
 # RETURNS

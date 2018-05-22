@@ -97,7 +97,7 @@ tpm2_createek -g rsa
 
 Create a transient Endorsement Key, flush it, and reload it.
 ```
-tpm2_createek -g rsa -p ek.pub -c file:ek.ctx
+tpm2_createek -g rsa -p ek.pub -c ek.ctx
 
 # Check that it is loaded in transient memory
 tpm2_getcap -c handles-transient
