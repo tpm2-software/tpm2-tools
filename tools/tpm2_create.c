@@ -109,25 +109,6 @@ static tpm_create_ctx ctx = {
     .alg = TPM2_ALG_RSA
 };
 
-static bool set_name_alg(TPMI_ALG_HASH halg, TPM2B_PUBLIC *public) {
-
-    switch(halg) {
-    case TPM2_ALG_SHA1:
-    case TPM2_ALG_SHA256:
-    case TPM2_ALG_SHA384:
-    case TPM2_ALG_SHA512:
-    case TPM2_ALG_SM3_256:
-    case TPM2_ALG_NULL:
-        public->publicArea.nameAlg = halg;
-        return true;
-    }
-
-    LOG_ERR("name algorithm \"%s\" not supported!",
-            tpm2_alg_util_algtostr(halg));
-
-    return false;
-}
-
 static bool create(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2_RC rval;
     TSS2L_SYS_AUTH_COMMAND sessionsData =
@@ -198,7 +179,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
 
-        bool res = set_name_alg(halg, &ctx.in_public);
+        bool res = tpm2_alg_util_set_name(halg, &ctx.in_public);
         if (!res) {
             return false;
         }
