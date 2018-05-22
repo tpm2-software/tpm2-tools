@@ -84,7 +84,7 @@ data and validation shall indicate that hashed data did not start with
 
 ```
 tpm2_sign -C 0x81010001 -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
-tpm2_sign -C file:key.context -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_sign -C key.context -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
 ```
 
 # RETURNS
