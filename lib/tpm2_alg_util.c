@@ -36,6 +36,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_errata.h"
 #include "tpm2_hash.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_util.h"
@@ -457,6 +458,113 @@ bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
         LOG_ERR("Unknown key type, got: 0x%x", type);
         return false;
     }
+
+    return true;
+}
+
+bool tpm2_alg_util_set_leaf_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public, bool is_sealing) {
+
+    switch(type) {
+    case TPM2_ALG_RSA:
+        public->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;
+        public->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
+        public->publicArea.parameters.rsaDetail.keyBits = 2048;
+        public->publicArea.parameters.rsaDetail.exponent = 0;
+        public->publicArea.unique.rsa.size = 0;
+        break;
+
+    case TPM2_ALG_KEYEDHASH:
+        public->publicArea.unique.keyedHash.size = 0;
+        public->publicArea.objectAttributes &= ~TPMA_OBJECT_DECRYPT;
+        if (is_sealing) {
+            // sealing
+            public->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN_ENCRYPT;
+            public->publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
+            public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
+        } else {
+            // hmac
+            public->publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;
+            public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
+            public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = public->publicArea.nameAlg;  //for tpm2_hmac multi alg
+        }
+        break;
+
+    case TPM2_ALG_ECC:
+        public->publicArea.parameters.eccDetail.symmetric.algorithm = TPM2_ALG_NULL;
+        public->publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
+        public->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
+        public->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
+        public->publicArea.unique.ecc.x.size = 0;
+        public->publicArea.unique.ecc.y.size = 0;
+        break;
+
+    case TPM2_ALG_SYMCIPHER:
+        tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+                          &public->publicArea.objectAttributes);
+
+        public->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
+        public->publicArea.parameters.symDetail.sym.keyBits.sym = 128;
+        public->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
+        public->publicArea.unique.sym.size = 0;
+        break;
+
+    default:
+        LOG_ERR("type algorithm: 0x%0x not supported!", public->publicArea.type);
+        return false;
+    }
+
+    public->publicArea.type = type;
+
+    return true;
+}
+
+
+bool tpm2_alg_util_set_parent_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public) {
+
+    switch(type) {
+    case TPM2_ALG_RSA: {
+        TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
+       r->symmetric.algorithm = TPM2_ALG_AES;
+       r->symmetric.keyBits.aes = 128;
+       r->symmetric.mode.aes = TPM2_ALG_CFB;
+       r->scheme.scheme = TPM2_ALG_NULL;
+       r->keyBits = 2048;
+       r->exponent = 0;
+       public->publicArea.unique.rsa.size = 0;
+    } break;
+    case TPM2_ALG_KEYEDHASH: {
+        TPMT_KEYEDHASH_SCHEME *s = &public->publicArea.parameters.keyedHashDetail.scheme;
+       s->scheme = TPM2_ALG_XOR;
+       s->details.exclusiveOr.hashAlg = TPM2_ALG_SHA256;
+       s->details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
+       public->publicArea.unique.keyedHash.size = 0;
+    } break;
+    case TPM2_ALG_ECC: {
+        TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
+       e->symmetric.algorithm = TPM2_ALG_AES;
+       e->symmetric.keyBits.aes = 128;
+       e->symmetric.mode.sym = TPM2_ALG_CFB;
+       e->scheme.scheme = TPM2_ALG_NULL;
+       e->curveID = TPM2_ECC_NIST_P256;
+       e->kdf.scheme = TPM2_ALG_NULL;
+       public->publicArea.unique.ecc.x.size = 0;
+       public->publicArea.unique.ecc.y.size = 0;
+    } break;
+    case TPM2_ALG_SYMCIPHER: {
+        TPMS_SYMCIPHER_PARMS *s = &public->publicArea.parameters.symDetail;
+       s->sym.algorithm = TPM2_ALG_AES;
+       s->sym.keyBits.sym = 128;
+       s->sym.mode.sym = TPM2_ALG_CFB;
+       public->publicArea.unique.sym.size = 0;
+    } break;
+    default:
+        LOG_ERR("type algorithm \"%s\" not supported!",
+                tpm2_alg_util_algtostr(public->publicArea.type));
+
+        return false;
+    }
+
+    public->publicArea.type = type;
 
     return true;
 }
