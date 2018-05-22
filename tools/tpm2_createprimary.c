@@ -91,58 +91,6 @@ static bool set_name_alg(TPMI_ALG_HASH halg, TPM2B_PUBLIC *public) {
     return false;
 }
 
-static bool set_alg(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public) {
-
-
-    switch(type) {
-    case TPM2_ALG_RSA: {
-        TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
-       r->symmetric.algorithm = TPM2_ALG_AES;
-       r->symmetric.keyBits.aes = 128;
-       r->symmetric.mode.aes = TPM2_ALG_CFB;
-       r->scheme.scheme = TPM2_ALG_NULL;
-       r->keyBits = 2048;
-       r->exponent = 0;
-       public->publicArea.unique.rsa.size = 0;
-    } break;
-    case TPM2_ALG_KEYEDHASH: {
-        TPMT_KEYEDHASH_SCHEME *s = &public->publicArea.parameters.keyedHashDetail.scheme;
-       s->scheme = TPM2_ALG_XOR;
-       s->details.exclusiveOr.hashAlg = TPM2_ALG_SHA256;
-       s->details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
-       public->publicArea.unique.keyedHash.size = 0;
-    } break;
-    case TPM2_ALG_ECC: {
-        TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
-       e->symmetric.algorithm = TPM2_ALG_AES;
-       e->symmetric.keyBits.aes = 128;
-       e->symmetric.mode.sym = TPM2_ALG_CFB;
-       e->scheme.scheme = TPM2_ALG_NULL;
-       e->curveID = TPM2_ECC_NIST_P256;
-       e->kdf.scheme = TPM2_ALG_NULL;
-       public->publicArea.unique.ecc.x.size = 0;
-       public->publicArea.unique.ecc.y.size = 0;
-    } break;
-    case TPM2_ALG_SYMCIPHER: {
-        TPMS_SYMCIPHER_PARMS *s = &public->publicArea.parameters.symDetail;
-       s->sym.algorithm = TPM2_ALG_AES;
-       s->sym.keyBits.sym = 128;
-       s->sym.mode.sym = TPM2_ALG_CFB;
-       public->publicArea.unique.sym.size = 0;
-    } break;
-    default:
-        LOG_ERR("type algorithm \"%s\" not supported!",
-                tpm2_alg_util_algtostr(public->publicArea.type));
-
-        return false;
-    }
-
-    public->publicArea.type = type;
-
-    return true;
-}
-
-
 
 static bool on_option(char key, char *value) {
 
@@ -183,7 +131,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
 
-        res = set_alg(type, &ctx.objdata.in.public);
+        res = tpm2_alg_util_set_parent_pub_params(type, &ctx.objdata.in.public);
         if (!res) {
             return false;
         }

@@ -202,4 +202,38 @@ bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
         TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg,
         TPMT_SIG_SCHEME *scheme);
 
+/**
+ * Given the object algorithm type, generate settings for TPMU_PUBLIC_PARMS values for a leaf object
+ * and modify conflicting object attributes if present.
+ *
+ * XXX This likely isn't the best interface for this, eventually we will probably want to
+ * clean up the public structure value settings.
+ *
+ * @param type
+ *  The algorithm type of the object.
+ * @param public
+ *  The public structure to set the TPMU_PUBLIC_PARMS values for.
+ * @param is_sealing
+ *  Whether or not the object is being used to seal data.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_alg_util_set_leaf_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public, bool is_sealing);
+
+/**
+ * Given the object algorithm type, generate settings for TPMU_PUBLIC_PARMS values for a parent object
+ * and modify conflicting object attributes if present.
+ *
+ * XXX This likely isn't the best interface for this, eventually we will probably want to
+ * clean up the public structure value settings.
+ *
+ * @param type
+ *  The algorithm type of the object.
+ * @param public
+ *  The public structure to set the TPMU_PUBLIC_PARMS values for.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_alg_util_set_parent_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
