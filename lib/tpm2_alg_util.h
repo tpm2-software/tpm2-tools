@@ -236,4 +236,15 @@ bool tpm2_alg_util_set_leaf_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *publi
  */
 bool tpm2_alg_util_set_parent_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public);
 
+/**
+ * Sets the name algorithm in the public structure checking for validity.
+ * @param halg
+ *  The hahsing algorithm to use for name generation.
+ * @param public
+ *  The public structure to set the name hashing algorithm on.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_alg_util_set_name(TPMI_ALG_HASH halg, TPM2B_PUBLIC *public);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */

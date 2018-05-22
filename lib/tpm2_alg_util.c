@@ -568,3 +568,22 @@ bool tpm2_alg_util_set_parent_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *pub
 
     return true;
 }
+
+bool tpm2_alg_util_set_name(TPMI_ALG_HASH halg, TPM2B_PUBLIC *public) {
+
+    switch(halg) {
+    case TPM2_ALG_SHA1:
+    case TPM2_ALG_SHA256:
+    case TPM2_ALG_SHA384:
+    case TPM2_ALG_SHA512:
+    case TPM2_ALG_SM3_256:
+    case TPM2_ALG_NULL:
+        public->publicArea.nameAlg = halg;
+        return true;
+    }
+
+    LOG_ERR("name algorithm \"%s\" not supported!",
+            tpm2_alg_util_algtostr(halg));
+
+    return false;
+}
