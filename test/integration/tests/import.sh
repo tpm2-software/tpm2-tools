@@ -52,7 +52,7 @@ start_up
 cleanup "no-shut-down"
 
 tpm2_createprimary -Q -G 1 -g 0xb -a o -o parent.ctx
-tpm2_evictcontrol -Q -a o -c file:parent.ctx -p 0x81010005
+tpm2_evictcontrol -Q -a o -c parent.ctx -p 0x81010005
 
 dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 
@@ -67,7 +67,7 @@ tpm2_load -Q -C 0x81010005 -u import_key.pub -r import_key.priv -n import_key.na
 
 echo "plaintext" > "plain.txt"
 
-tpm2_encryptdecrypt -c file:import_key.ctx  -I plain.txt -o plain.enc
+tpm2_encryptdecrypt -c import_key.ctx  -I plain.txt -o plain.enc
 
 openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
 -aes-128-cfb
