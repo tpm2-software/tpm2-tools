@@ -55,7 +55,7 @@ const TSS2_TCTI_INFO *tpm2_tcti_ldr_getinfo(void) {
 bool tpm2_tcti_ldr_is_tcti_present(const char *name) {
 
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "libtss2-tcti-%s.so", name);
+    snprintf(path, sizeof(path), "libtss2-tcti-%s.so.0", name);
 
     void *handle = dlopen (path, RTLD_LAZY);
     if (handle) {
