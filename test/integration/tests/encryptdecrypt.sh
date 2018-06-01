@@ -35,7 +35,7 @@ source helpers.sh
 
 cleanup() {
   rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat commands.cap
+        encrypt.out secret.dat commands.cap secret2.dat
 
   if [ "$1" != "no-shut-down" ]; then
       shut_down
@@ -78,5 +78,10 @@ tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -o decrypt.ctx
 tpm2_encryptdecrypt -Q -c decrypt.ctx  -I secret.dat -o encrypt.out
 
 tpm2_encryptdecrypt -Q -c decrypt.ctx -D -I encrypt.out -o decrypt.out
+
+# Test using stdin/stdout
+cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx | tpm2_encryptdecrypt -c decrypt.ctx -D > secret2.dat
+
+cmp secret.dat secret2.dat
 
 exit 0

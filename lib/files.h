@@ -68,7 +68,8 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
 
 /**
  * Similar to files_write_bytes(), in that it writes an array of bytes to disk,
- * but this routine opens and closes the file on the callers behalf.
+ * but this routine opens and closes the file on the callers behalf. If the path
+ * is NULL and silent output has not been enabled, then stdout is used.
  * @param path
  *  The path to the file to write the data to.
  * @param buf

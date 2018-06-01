@@ -55,6 +55,7 @@ struct tpm_encrypt_decrypt_ctx {
     } auth;
     TPMI_YES_NO is_decrypt;
     TPM2B_MAX_BUFFER data;
+    char *input_path;
     char *out_file_path;
     const char *context_arg;
     tpm2_loaded_object key_context_object;
@@ -62,7 +63,6 @@ struct tpm_encrypt_decrypt_ctx {
         UINT8 P : 1;
         UINT8 D : 1;
         UINT8 I : 1;
-        UINT8 o : 1;
         UINT8 X : 1;
     } flags;
     char *key_auth_str;
@@ -131,11 +131,7 @@ static bool on_option(char key, char *value) {
         ctx.is_decrypt = 1;
         break;
     case 'I':
-        ctx.data.size = sizeof(ctx.data.buffer);
-        result = files_load_bytes_from_path(value, ctx.data.buffer, &ctx.data.size);
-        if (!result) {
-            return false;
-        }
+        ctx.input_path = value;
         ctx.flags.I = 1;
         break;
     case 'o':
@@ -144,7 +140,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.out_file_path = value;
-        ctx.flags.o = 1;
         break;
     }
 
@@ -174,9 +169,15 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result;
     int rc = 1;
 
-    if (!((ctx.context_arg) && ctx.flags.I && ctx.flags.o)) {
-        LOG_ERR("Invalid arguments");
+    if (!ctx.context_arg) {
+        LOG_ERR("Expected a context file or handle, got none");
         goto out;
+    }
+
+    ctx.data.size = sizeof(ctx.data.buffer);
+    result = files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.data.size, ctx.data.buffer);
+    if (!result) {
+        return false;
     }
 
     result = tpm2_util_object_load(sapi_context, ctx.context_arg,
