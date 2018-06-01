@@ -39,6 +39,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
@@ -131,11 +132,15 @@ bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size) {
 
 bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
 
-    if (!path || !buf) {
+    if (!buf) {
         return false;
     }
 
-    FILE *fp = fopen(path, "wb+");
+    if (!path && !output_enabled) {
+        return true;
+    }
+
+    FILE *fp = path ? fopen(path, "wb+") : stdout;
     if (!fp) {
         LOG_ERR("Could not open file \"%s\", error: %s", path, strerror(errno));
         return false;
@@ -145,7 +150,11 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size) {
     if (!result) {
         LOG_ERR("Could not write data to file \"%s\"", path);
     }
-    fclose(fp);
+
+    if (fp != stdout) {
+        fclose(fp);
+    }
+
     return result;
 }
 

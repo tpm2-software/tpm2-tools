@@ -34,7 +34,8 @@ specified symmetric key.
 
   * **-I**, **--in-file**=_INPUT\_FILE_:
 
-    Input file path containing data for decrypt or encrypt operation.
+    Optional. Specifies the input file path for either the encrypted or decrypted
+    data, depending on option **-D**. If not specified, defaults to **stdin**.
 
   * **-S**, **--session**=_SESSION\_FILE_:
 
@@ -43,7 +44,8 @@ specified symmetric key.
 
   * **-o**, **--out-file**=_OUT\_FILE_:
 
-    Output file path to store the data output by the decrypt or encrypt operation.
+    Optional. Specifies the output file path for either the encrypted or decrypted
+    data, depending on option **-D**. If not specified, defaults to **stdout**.
 
 [common options](common/options.md)
 
