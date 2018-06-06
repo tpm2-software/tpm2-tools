@@ -1,44 +1,15 @@
 sudo: required
-
 language: c
-
 services:
-  - docker
-
+- docker
 compiler:
-  - gcc
-  - clang
-
+- gcc
+- clang
 env:
+  matrix:
+  - coverity_scan_run_condition='"$CC" = gcc'
   global:
-   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
-   #   via the "travis encrypt" command using the project repo's public key
-   - secure: "XrDhcREuntMn39qhSFBSSKZli9ZduGKCoq5rs/b+6e5zQIDwyDklwZIvgmrx2BJV5Sh7c5HB2Uvh9I7HdUOOOqDveZ9dcvjr2me7wfrhfMChB2miK318xVfyrK+6mkRnSMfuvG1CZiIcKYVStN1tX1uou9n3CnGz1ndmt5e4QwSQHR3K3g/HEXEgNjuei0OvtvE35/UaOpdxCoDlV3oExa3pU8mXLL77eskq35ebzwGsOu2zxD3wFhE1DF0O9yH4skH+fOH9ByxqK4n++uxbxXHW2oh4I/mEqr2wyyead/wuVa5UdxMDM7traUojlXy5O/Nn2Zfeky3ngSRQjzEYhKmiU2GiQ6ZBh78tmijPmKQpNOg2+0Uop7iT0SmefhappYOzc7KSTnYtWeEbZ4BXxeXzQZ98WsJj7Tmh258Y53KE2DDrmZYwk4EJuc6/4dv/HNMDdH8ZDzAdwMBi4lcsLnf8GQG/jfWYsrvCQQECkSfP2ICuRL9k/8pUUAnbp3X/WbCEMtaETy9STz7PNVqiWsSv/m9lBDVaHwZ7K87TdqhyDhYRDmPYP8qtu/M0tlNZ/M0VGo09xUgkb8Q2nNB7ahC7XYtBeHEIoIu6nf18gW8LgknpuhskF75ZHrKhh5VeN1zoPbG/oFYEk7ehNjGZC268d7jep5p5EaJzch5ai14="
-
-before_install:
-- docker pull tpm2software/tpm2-tss
-
+  # COVERITY_SCAN_TOKEN
+  - secure: gTif84rZ6XT6ouay6FxO8GY2RSpjVIXOf38G2OH1RFhzrvLa3r4tnE6QRSv7/af2BgM+rhXHUZA5eua6LiS4zIK/UGoBNmeCpdsQYIBqUptYt4sIlYbl1Hwimcd5FqUD19/mokP2snAmnB+s2Z9zC4Y668dV28OAdPf6pOKjW1ivseosy7WKisHnm+NwRvJ5gbEBspwFxd05vDs6dcsx8TRakhQxhJ+XWPoljLH9GHEaRdEuLCWcEAf8q0CfOP15I+PmQqxQ6NGKJJy2dFuIObT8ojOFt7ybngJhY3cPSa/tpmSQDZFaLVHtoYAuUKLk0F5mut9Oog6W3IBEGMAjKYGy2r/WcsKEl2lsQpbtWIRA9qyJT63kpft1yPpuz1AyqebQHW+rbZfnGlclP860ip5d2pTk9l+VLLvXRptawInyH5c3y74h7BgrWJao4xq5iHi49/SegOVT7bT5bsfuUwTMronD0HSZeZJMwPVLg+F3ipk8e/9CMLr6zC9R9X/vuKJF2mya5SOVonLqExE+a0wIGFR2uWWdxHAVZLen8MEJade2ssnaamHis/ADJFjTqg6aKhqAsQGlzRT0F+4wQFht5quP3vWB4B8S1dNP6240a1A9YCG6T2HM3sCNbF8RNqWzcWSesYTl8mg/VU8GYF3BglCxGAxrMW9OFpuHCkQ=
 script:
-#
-# Docker starts you in a cloned repo of your project with the PR checkout out.
-# We want those changes IN the docker image, so use the -v option to mount the
-# project repo in the docker image.
-#
-# Also, pass in any env variables required for the build via .ci/docker.env file
-#
-# Execute the build and test procedure by running .ci/docker.run
-#
-- >
-  docker run --env-file .ci/docker.env \
-    -v `pwd`:/workspace/tpm2-tools tpm2software/tpm2-tss \
-    /bin/bash -c '/workspace/tpm2-tools/.ci/docker.run'
-
-addons:
-  coverity_scan:
-    project:
-      name: "tpm2-software/tpm2.0-tools"
-      description: "Build submitted via Travis CI"
-    notification_email: william.c.roberts@intel.com
-    build_command_prepend: "./bootstrap && ./configure && make clean"
-    build_command:   "make -j4"
-    branch_pattern: coverity_scan
+  - ./.ci/travis.run

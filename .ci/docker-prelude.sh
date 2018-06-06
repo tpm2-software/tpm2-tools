@@ -31,31 +31,20 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-function get_deps() {
+# all command failures are fatal
+set -e
 
-	echo "pwd starting: `pwd`"
-	pushd "$1"
-	echo "pwd clone tss: `pwd`"
-	git clone -b 2.0.0_rc1 https://github.com/tpm2-software/tpm2-tss.git
-	pushd tpm2-tss
-	echo "pwd build tss: `pwd`"
-	./bootstrap
-	./configure
-	make -j$(nproc)
-	make install
-	popd
-	echo "pwd done tss: `pwd`"
+WORKSPACE=`dirname $TRAVIS_BUILD_DIR`
 
-	echo "pwd clone abrmd: `pwd`"
-	git clone -b master https://github.com/tpm2-software/tpm2-abrmd.git
-	pushd tpm2-abrmd
-	echo "pwd build abrmd: `pwd`"
-	./bootstrap
-	./configure
-	make -j$(nproc)
-	make install
-	popd
-	echo "pwd done abrmd: `pwd`"
-	popd
-	echo "pwd done: `pwd`"
-}
+echo "Workspace: $WORKSPACE"
+
+source $TRAVIS_BUILD_DIR/.ci/download-deps.sh
+
+get_deps "$WORKSPACE"
+
+export LD_LIBRARY_PATH=/usr/local/lib/
+export PATH=$PATH:/root/.local/bin/
+
+echo "echo changing to $TRAVIS_BUILD_DIR"
+# Change to the the travis build dir
+cd $TRAVIS_BUILD_DIR
