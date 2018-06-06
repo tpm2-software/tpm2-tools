@@ -31,23 +31,7 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-# all command failures are fatal
-set -e
-
-WORKSPACE=`dirname $TRAVIS_BUILD_DIR`
-
-echo "Workspace: $WORKSPACE"
-
-source $TRAVIS_BUILD_DIR/.ci/download-deps.sh
-
-get_deps "$WORKSPACE"
-
-export LD_LIBRARY_PATH=/usr/local/lib/
-export PATH=$PATH:/root/.local/bin/
-
-echo "echo changing to $TRAVIS_BUILD_DIR"
-# Change to the the travis build dir
-cd $TRAVIS_BUILD_DIR
+source $TRAVIS_BUILD_DIR/.ci/docker-prelude.sh
 
 echo "starting dbus"
 mkdir -p /var/run/dbus

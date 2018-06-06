@@ -31,31 +31,35 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
-function get_deps() {
+source $TRAVIS_BUILD_DIR/.ci/docker-prelude.sh
 
-	echo "pwd starting: `pwd`"
-	pushd "$1"
-	echo "pwd clone tss: `pwd`"
-	git clone -b 2.0.0_rc1 https://github.com/tpm2-software/tpm2-tss.git
-	pushd tpm2-tss
-	echo "pwd build tss: `pwd`"
-	./bootstrap
-	./configure
-	make -j$(nproc)
-	make install
-	popd
-	echo "pwd done tss: `pwd`"
+export PATH=$PATH:$TRAVIS_BUILD_DIR/cov-analysis/bin
 
-	echo "pwd clone abrmd: `pwd`"
-	git clone -b master https://github.com/tpm2-software/tpm2-abrmd.git
-	pushd tpm2-abrmd
-	echo "pwd build abrmd: `pwd`"
-	./bootstrap
-	./configure
-	make -j$(nproc)
-	make install
-	popd
-	echo "pwd done abrmd: `pwd`"
-	popd
-	echo "pwd done: `pwd`"
-}
+if [[ "$CC" == clang* ]]; then
+  echo "Coverity scan branch detected, not running with clang...exiting!"
+  exit 0
+fi
+
+if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
+  echo "coverity.run invoked for non-coverity branch $TRAVIS_BRANCH...exiting!"
+  exit 1
+fi
+
+echo "Performing build with Coverity Scan"
+rm -fr $TRAVIS_BUILD_DIR/cov-int
+./bootstrap && ./configure && make clean
+cov-build --dir $TRAVIS_BUILD_DIR/cov-int make -j $(nproc)
+
+echo "Collecting Coverity data for submission"
+rm -fr README
+export AUTHOR="$(git log -1 $TRAVIS_COMMIT --pretty="%aN")"
+echo "Name: $AUTHOR" >> README
+echo "Email: joshua.g.lock@intel.com" >> README
+echo "Project: 01org/tpm2.0-tools" >> README
+echo "Build-Version: $TRAVIS_COMMIT" >> README
+echo "Description: $TRAVIS_REPO_SLUG $TRAVIS_BRANCH" >> README
+echo "Submitted-by: tpm2-tools CI" >> README
+rm -fr tpm2-tools-scan.tgz
+tar -czf $TRAVIS_BUILD_DIR/tpm2-tools-scan.tgz README cov-int
+
+rm -fr README cov-int
