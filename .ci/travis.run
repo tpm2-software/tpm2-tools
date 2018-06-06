@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
+
+  docker pull tpm2software/tpm2-tss
+  #
+  # Docker starts you in a cloned repo of your project with the PR checkout out.
+  # We want those changes IN the docker image, so use the -v option to mount the
+  # project repo in the docker image.
+  #
+  # Also, pass in any env variables required for the build via .ci/docker.env file
+  #
+  # Execute the build and test procedure by running .ci/docker.run
+  #
+  docker run --env-file .ci/docker.env \
+    -v `pwd`:/workspace/tpm2-tools tpm2software/tpm2-tss \
+    /bin/bash -c '/workspace/tpm2-tools/.ci/docker.run'
+
+else
+
+  if [[ "$CC" == clang* ]]; then
+    echo "No clang work to do on the coverity_scan branch...exiting!"
+    exit 0
+  else
+    # ensure coverity_scan tool is available to the container
+    if [ ! -f `pwd`/coverity-analysis/bin/cov-build ]; then
+      wget https://scan.coverity.com/download/linux64 --quiet --post-data "token=$COVERITY_SCAN_TOKEN&project=01org%2Ftpm2.0-tools" -O coverity_tool.tgz
+      wget https://scan.coverity.com/download/linux64 --quiet --post-data "token=$COVERITY_SCAN_TOKEN&project=01org%2Ftpm2.0-tools&md5=1" -O coverity_tool.md5
+      echo `cat coverity_tool.md5` coverity_tool.tgz | md5sum -c
+      if [ $? != 0 ]; then
+        echo "coverity-tool md5 mismatch...exiting!"
+        exit 1
+      fi
+      echo "unpacking cov-analysis"
+      tar -xf coverity_tool.tgz
+      mv cov-analysis-* cov-analysis
+    fi
+
+    docker pull tpm2software/tpm2-tss
+
+    # perform the scan
+    docker run --env-file .ci/docker.env \
+      -v `pwd`:/workspace/tpm2-tools tpm2software/tpm2-tss \
+      /bin/bash -c '/workspace/tpm2-tools/.ci/coverity.run'
+
+    # upload the results
+    if [ -f `pwd`/tpm2-tools-scan.tgz ]; then
+      echo "Submitting data to Coverity"
+      curl --form token=$COVERITY_SCAN_TOKEN \
+        --form email=joshua.g.lock@intel.com \
+        --form project=01org/tpm2.0-tools \
+        --form file=@`pwd`/tpm2-tools-scan.tgz \
+        --form version="$TRAVIS_COMMIT" \
+        --form description="$TRAVIS_REPO_SLUG $TRAVIS_BRANCH" \
+        https://scan.coverity.com/builds?project=01org%2Ftpm2.0-tools
+
+      rm -fr tpm2-tools-scan.tgz
+    else
+      echo "No scan output, scan failed!"
+      exit 1
+    fi
+  fi
+fi
