@@ -37,7 +37,7 @@ function get_deps() {
 	pushd "$1"
 	echo "pwd clone tss: `pwd`"
 	if [ ! -d tpm2-tss ]; then
-		git clone --depth=1 https://github.com/tpm2-software/tpm2-tss.git
+		git clone --depth=1 https://github.com/tpm2-software/tpm2-tss.git -b 2.0.0_rc3
 		pushd tpm2-tss
 		echo "pwd build tss: `pwd`"
 		./bootstrap
@@ -52,7 +52,7 @@ function get_deps() {
 
 	if [ ! -d tpm2-abrmd ]; then
 		echo "pwd clone abrmd: `pwd`"
-		git clone --depth=1 https://github.com/tpm2-software/tpm2-abrmd.git
+		git clone --depth=1 https://github.com/tpm2-software/tpm2-abrmd.git -b 2.0.0_rc0
 		pushd tpm2-abrmd
 		echo "pwd build abrmd: `pwd`"
 		./bootstrap
