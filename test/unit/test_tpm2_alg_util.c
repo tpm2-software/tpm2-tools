@@ -333,7 +333,7 @@ static void test_pcr_parse_digest_list_compound(void **state) {
     assert_int_equal(3, dspec->digests.count);
 
     size_t i;
-    for (i=0; i < dspec->digests.count; i++) {
+    for (i=0; i < dspec->digests.count && i < TPM2_NUM_PCR_BANKS; i++) {
         TPMT_HA *digest = &dspec->digests.digests[i];
 
         switch (i) {
