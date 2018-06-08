@@ -1,4 +1,10 @@
 ## Changelog
+### 3.1 - TBD
+  * Update to use TSS version 2.0
+  * When user supplies nv attributes use those exclusively, not in addition to the defaults
+  * When user supplies object attributes use those exclusively, not in addition to the defaults
+  * Load TCTI's by SONAME, not raw .so file
+
 ### 3.0.4 - 2018-05-30
   * Fix save and load for TPM2B_PRIVATE object.
   * Use a default buffer size for tpm2_nv{read,write} if the TPM reports a 0 size.
