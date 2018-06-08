@@ -39,7 +39,7 @@
 #include "tpm2_policy.h"
 #include "tpm2_alg_util.h"
 
-static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
+static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
                                           char *raw_pcrs_file,
                                           TPML_DIGEST *pcr_values) {
     //octet value of a pcr selection group
@@ -52,15 +52,15 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
     unsigned i, j, k, dgst_cnt=0;
 
     //Iterating the number of pcr banks selected
-    for (i=0; i < pcr_selections.count; i++) {
+    for (i=0; i < pcr_selections->count; i++) {
         //Looping to check total pcr select bits in the pcr-select-octets for a bank
-        for (j=0; j < pcr_selections.pcrSelections[i].sizeofSelect; j++) {
-            group_val = pcr_selections.pcrSelections[i].pcrSelect[j];
+        for (j=0; j < pcr_selections->pcrSelections[i].sizeofSelect; j++) {
+            group_val = pcr_selections->pcrSelections[i].pcrSelect[j];
             total_indices_for_this_alg += tpm2_util_pop_count(group_val);
         }
 
         //digest size returned per the hashAlg type
-        unsigned dgst_size = tpm2_alg_util_get_hash_size(pcr_selections.pcrSelections[i].hash);
+        unsigned dgst_size = tpm2_alg_util_get_hash_size(pcr_selections->pcrSelections[i].hash);
         if (!dgst_size) {
             return false;
         }
@@ -100,7 +100,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION pcr_selections,
 
 TSS2_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
                              SESSION *policy_session,
-                             TPML_PCR_SELECTION pcr_selections,
+                             TPML_PCR_SELECTION *pcr_selections,
                              char *raw_pcrs_file) {
     // Calculate digest( with authhash alg) of pcrvalues in variable pcr_digest
     TSS2_RC rval=0;
@@ -143,7 +143,7 @@ TSS2_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
         TPML_PCR_SELECTION pcr_selection_out;
         // Read PCRs
         rval = Tss2_Sys_PCR_Read(sapi_context, 0,
-            &pcr_selections,
+            pcr_selections,
             &pcr_update_counter, &pcr_selection_out, &pcr_values, 0);
         if (rval != TPM2_RC_SUCCESS) {
             return rval;
@@ -161,7 +161,7 @@ TSS2_RC tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
 
     // Call the PolicyPCR command
     return Tss2_Sys_PolicyPCR(sapi_context, policy_session->sessionHandle,
-                              0, &pcr_digest, &pcr_selections, 0);
+                              0, &pcr_digest, pcr_selections, 0);
 }
 
 static TSS2_RC start_policy_session (TSS2_SYS_CONTEXT *sapi_context,
@@ -193,13 +193,13 @@ TSS2_RC tpm2_policy_build(TSS2_SYS_CONTEXT *sapi_context,
                          SESSION **policy_session,
                          TPM2_SE policy_session_type,
                          TPMI_ALG_HASH policy_digest_hash_alg,
-                         TPML_PCR_SELECTION pcr_selections,
+                         TPML_PCR_SELECTION *pcr_selections,
                          char *raw_pcrs_file,
                          TPM2B_DIGEST *policy_digest,
                          bool extend_policy_session,
         TSS2_RC (*build_policy_function)(TSS2_SYS_CONTEXT *sapi_context,
                                         SESSION *policy_session,
-                                        TPML_PCR_SELECTION pcr_selections,
+                                        TPML_PCR_SELECTION *pcr_selections,
                                         char *raw_pcrs_file)) {
     //Start policy session
     TSS2_RC rval = start_policy_session(sapi_context, policy_session,
