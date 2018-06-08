@@ -35,6 +35,8 @@
 #include "log.h"
 #include "tpm2_tcti_ldr.h"
 
+#define TSS2_TCTI_SO_FORMAT "libtss2-tcti-%s.so.0"
+
 static void *handle;
 static const TSS2_TCTI_INFO *info;
 
@@ -52,12 +54,22 @@ const TSS2_TCTI_INFO *tpm2_tcti_ldr_getinfo(void) {
     return info;
 }
 
-bool tpm2_tcti_ldr_is_tcti_present(const char *name) {
+static void* tpm2_tcti_ldr_dlopen(const char *name) {
 
     char path[PATH_MAX];
-    snprintf(path, sizeof(path), "libtss2-tcti-%s.so", name);
+    size_t size = snprintf(path, sizeof(path), TSS2_TCTI_SO_FORMAT, name);
+    if (size >= sizeof(path)) {
+        LOG_ERR("Truncated TCTI friendly name conversion, got: \"%s\", made: \"%s\"",
+                name, path);
+        return NULL;
+    }
 
-    void *handle = dlopen (path, RTLD_LAZY);
+    return dlopen(path, RTLD_LAZY);
+}
+
+bool tpm2_tcti_ldr_is_tcti_present(const char *name) {
+
+    void *handle = tpm2_tcti_ldr_dlopen(name);
     if (handle) {
         dlclose(handle);
     }
@@ -81,17 +93,9 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
     handle = dlopen (path, RTLD_LAZY);
     if (!handle) {
 
-        char buf[PATH_MAX];
-        size_t size = snprintf(buf, sizeof(buf), "libtss2-tcti-%s.so", path);
-        if (size >= sizeof(buf)) {
-            LOG_ERR("Truncated friendly name conversion, got: \"%s\", made: \"%s\"",
-                    path, buf);
-            return NULL;
-        }
-
-        handle = dlopen (buf, RTLD_LAZY);
+        handle = tpm2_tcti_ldr_dlopen(path);
         if (!handle) {
-            LOG_ERR("Could not dlopen library: \"%s\"", buf);
+            LOG_ERR("Could not dlopen library: \"%s\"", path);
             return NULL;
         }
     }
