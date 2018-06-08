@@ -104,7 +104,7 @@ static TSS2_RC parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context
                                  &pctx.common_policy_options.policy_session,
                                  pctx.common_policy_options.policy_session_type,
                                  pctx.common_policy_options.policy_digest_hash_alg,
-                                 pctx.pcr_policy_options.pcr_selections,
+                                 &pctx.pcr_policy_options.pcr_selections,
                                  pctx.pcr_policy_options.raw_pcrs_file,
                                  &pctx.common_policy_options.policy_digest,
                                  pctx.common_policy_options.extend_policy_session,

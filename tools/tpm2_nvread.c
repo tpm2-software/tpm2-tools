@@ -272,7 +272,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
 
         TSS2_RC rval = tpm2_policy_build(sapi_context, &ctx.policy_session,
-                                        TPM2_SE_POLICY, TPM2_ALG_SHA256, ctx.pcr_selection,
+                                        TPM2_SE_POLICY, TPM2_ALG_SHA256, &ctx.pcr_selection,
                                         ctx.raw_pcrs_file, &pcr_digest, true,
                                         tpm2_policy_pcr_build);
         if (rval != TSS2_RC_SUCCESS) {
