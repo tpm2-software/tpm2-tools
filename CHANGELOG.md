@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_nvwrite and tpm2_nvread: when -P is "index" -a is optional and defaults to
+    the NV_INDEX value passed to -x.
+  * Load TCTI's by SONAME, not raw .so file
   * tpm2_encryptdecrypt: supports input and output to stdin and stdout respectively.
   * tpm2_create: -g/-G become optional options.
   * tpm2_createprimary: -g/-G become optional options.
