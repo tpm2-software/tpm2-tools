@@ -31,8 +31,8 @@ If _FILE_ is not specified, it defaults to stdin.
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-    **NOTE**: To authorize against the index, specify the index handle as
-    the argument to option **-a**. The index auth value is set via the
+    When **-a** isn't explicitly passed the index handle will be used to
+    authorize against the index. The index auth value is set via the
     **-I** option to tpm2_nvdefine(1).
 
   * **-P**, **--auth-hierarchy**=_HIERARCHY\_AUTH_:
@@ -62,7 +62,7 @@ If _FILE_ is not specified, it defaults to stdin.
 To write the file nv.data to index 0x150016:
 
 ```
-tpm2_nvwrite -x 0x1500016 -a 0x40000001 -f nv.data
+tpm2_nvwrite -x 0x1500016 -P "index" -f nv.data
 ```
 
 # RETURNS
