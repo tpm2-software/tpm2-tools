@@ -68,6 +68,7 @@ struct tpm_nvwrite_ctx {
     struct {
         UINT8 L : 1;
         UINT8 P : 1;
+        UINT8 a : 1;
     } flags;
     char *hierarchy_auth_str;
 };
@@ -176,6 +177,7 @@ static bool on_option(char key, char *value) {
         if (!result) {
             return false;
         }
+        ctx.flags.a = 1;
         break;
     case 'P':
         ctx.flags.P = 1;
@@ -223,8 +225,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index",                required_argument, NULL, 'x' },
-        { "hierarchy",       required_argument, NULL, 'a' },
-        { "auth-hierarchy", required_argument, NULL, 'P' },
+        { "hierarchy",            required_argument, NULL, 'a' },
+        { "auth-hierarchy",       required_argument, NULL, 'P' },
         { "offset",               required_argument, NULL, 'o' },
         { "set-list",             required_argument, NULL, 'L' },
         { "pcr-input-file",       required_argument, NULL, 'F' },
@@ -286,6 +288,20 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         result = start_auth_session(sapi_context);
         if (!result) {
             goto out;
+        }
+    }
+
+    /* If the users specifies "index" for auth-hierarchy and doesn't explicitly
+     * pass a value to -a use the index passed to -x/--index for the
+     * authorisation index.
+     */
+    if (!ctx.flags.a && ctx.flags.P) {
+        // we don't have an auth hierarchy set, use the index
+        if (!strcmp(ctx.hierarchy_auth_str, "index")) {
+            ctx.auth.hierarchy = ctx.nv_index;
+        } else {
+            LOG_ERR("Invalid auth options, use either an explicit -a or a -P"
+                    " value of \"index\".");
         }
     }
 
