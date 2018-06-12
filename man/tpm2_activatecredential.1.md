@@ -32,7 +32,8 @@ These options control the object verification:
     Either a file or a handle number. See section "Context Object Format".
 
   * **-P**, **--auth-key**=_AUTH\_VALUE_:
-    Use _AUTH\_VALUE_ for providing an authorization value for the _KEY\_HANDLE_.
+    Use _AUTH\_VALUE_ for providing an authorization value for the
+    _KEY\_CONTEXT\_OBJECT_.
     Passwords should follow the authorization formatting standards, see section
     "Authorization Formatting".
 
