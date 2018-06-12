@@ -196,7 +196,7 @@ tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
 
 # Use index password write/read
 tpm2_nvwrite -Q -x 0x1500015 -P "index" nv.test_w
-tpm2_nvread -Q -x 0x1500015 -a 0x1500015 -P "index"
+tpm2_nvread -Q -x 0x1500015 -P "index"
 
 # use owner password
 tpm2_nvwrite -Q -x 0x1500015 -a 0x40000001 -P "owner" nv.test_w

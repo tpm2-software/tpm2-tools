@@ -64,6 +64,7 @@ struct tpm_nvread_ctx {
     struct {
         UINT8 L : 1;
         UINT8 P : 1;
+        UINT8 a : 1;
     } flags;
     char *hierarchy_auth_str;
 };
@@ -199,6 +200,7 @@ static bool on_option(char key, char *value) {
         if (!result) {
             return false;
         }
+        ctx.flags.a = 1;
         break;
     case 'f':
         ctx.output_file = value;
@@ -305,6 +307,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             goto out;
         }
     }
+
     if (ctx.flags.P) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.hierarchy_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
@@ -313,6 +316,13 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
                 ctx.hierarchy_auth_str);
             return false;
         }
+    }
+
+    /* If the users doesn't specify an auth-hierarchy use the index passed to
+     * -x/--index for the authorisation index.
+     */
+    if (!ctx.flags.a) {
+        ctx.auth.hierarchy = ctx.nv_index;
     }
 
     result = nv_read(sapi_context, flags);
