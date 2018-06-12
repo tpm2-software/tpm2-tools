@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_createprimary: -K becomes -k
   * tpm2_encryptdecrypt: supports input and output to stdin and stdout respectively.
   * tpm2_create: -g/-G become optional options.
   * tpm2_createprimary: -g/-G become optional options.
