@@ -1,6 +1,7 @@
 ## Changelog
 ### next
   * tpm2_activatecredential: -e becomes -E
+  * tpm2_activatecredential: -e becomes -E
   * tpm2_certify: -c and -C are swapped, -k becomes -K
   * tpm2_createprimary: -K becomes -k
   * tpm2_encryptdecrypt: supports input and output to stdin and stdout respectively.
