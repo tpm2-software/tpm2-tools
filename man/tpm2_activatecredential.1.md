@@ -37,15 +37,17 @@ These options control the object verification:
     Passwords should follow the authorization formatting standards, see section
     "Authorization Formatting".
 
-  * **-e**, **--endorse-password**=_ENDORSE\_PASSWORD_:
-    The endorsement password, optional. Follows the same formatting guidelines as the handle password option -P.
+  * **-E**, **--endorse-password**=_ENDORSE\_PASSWORD_:
+    The endorsement password, optional. Follows the same formatting guidelines
+    as the handle password option -P.
 
   * **-f**, **--in-file**=_INPUT\_FILE_:
-    Input file path, containing the two structures needed by tpm2_activatecredential function. This is created
-    via the tpm2_makecredential(1) command.
+    Input file path, containing the two structures needed by
+    tpm2_activatecredential function. This is created via the
+    tpm2_makecredential(1) command.
 
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
-    Output file path, record the secret to decrypt  the certificate.
+    Output file path, record the secret to decrypt the certificate.
 
 [common options](common/options.md)
 
@@ -58,9 +60,9 @@ These options control the object verification:
 # EXAMPLES
 
 ```
-tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P abc123 -e abc123 -f <filePath> -o <filePath>
-tpm2_activatecredential -c ak.dat -C ek.dat -P abc123 -e abc123 -f <filePath> -o <filePath>
-tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P 123abc -e 1a1b1c -X -f <filePath> -o <filePath>
+tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P abc123 -E abc123 -f <filePath> -o <filePath>
+tpm2_activatecredential -c ak.dat -C ek.dat -P abc123 -E abc123 -f <filePath> -o <filePath>
+tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P 123abc -E 1a1b1c -X -f <filePath> -o <filePath>
 ```
 
 # RETURNS

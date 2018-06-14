@@ -57,7 +57,7 @@ struct tpm_activatecred_ctx {
         UINT8 f : 1;
         UINT8 o : 1;
         UINT8 P : 1;
-        UINT8 e : 1;
+        UINT8 E : 1;
     } flags;
 
     char *passwd_auth_str;
@@ -231,8 +231,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.passwd_auth_str = value;
         break;
-    case 'e':
-        ctx.flags.e = 1;
+    case 'E':
+        ctx.flags.E = 1;
         ctx.endorse_auth_str = value;
         break;
     case 'f':
@@ -259,12 +259,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"context",        required_argument, NULL, 'c'},
          {"key-context",    required_argument, NULL, 'C'},
          {"auth-key",       required_argument, NULL, 'P'},
-         {"endorse-passwd", required_argument, NULL, 'e'},
+         {"endorse-passwd", required_argument, NULL, 'E'},
          {"in-file",        required_argument, NULL, 'f'},
          {"out-file",       required_argument, NULL, 'o'},
     };
 
-    *opts = tpm2_options_new("c:C:P:e:f:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:C:P:E:f:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -306,7 +306,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.e) {
+    if (ctx.flags.E) {
         bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
                 &ctx.endorse_auth, &ctx.endorse_session);
         if (!res) {
