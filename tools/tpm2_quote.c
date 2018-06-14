@@ -215,7 +215,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("C:P:l:g:L:q:s:m:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:l:L:q:s:m:f:G:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
