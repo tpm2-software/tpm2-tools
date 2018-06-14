@@ -58,7 +58,7 @@ struct tpm_certify_ctx {
     } file_path;
     struct {
         UINT16 P : 1;
-        UINT16 K : 1;
+        UINT16 k : 1;
         UINT16 g : 1;
         UINT16 a : 1;
         UINT16 s : 1;
@@ -183,18 +183,18 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'c':
+    case 'C':
         ctx.context_arg = value;
         break;
-    case 'C':
+    case 'c':
         ctx.key_context_arg = value;
         break;
     case 'P':
         ctx.flags.P = 1;
         ctx.object_auth_str = value;
         break;
-    case 'K':
-        ctx.flags.K = 1;
+    case 'k':
+        ctx.flags.k = 1;
         ctx.key_auth_str = value;
         break;
     case 'g':
@@ -235,16 +235,16 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
       { "auth-object",   required_argument, NULL, 'P' },
-      { "auth-key",      required_argument, NULL, 'K' },
+      { "auth-key",      required_argument, NULL, 'k' },
       { "halg",          required_argument, NULL, 'g' },
       { "attest-file",   required_argument, NULL, 'a' },
       { "sig-file",      required_argument, NULL, 's' },
-      { "obj-context",   required_argument, NULL, 'c' },
-      { "key-context",   required_argument, NULL, 'C' },
+      { "obj-context",   required_argument, NULL, 'C' },
+      { "key-context",   required_argument, NULL, 'c' },
       {  "format",       required_argument, NULL, 'f' },
     };
 
-    *opts = tpm2_options_new("P:K:g:a:s:c:C:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:k:g:a:s:c:C:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -291,7 +291,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.K) {
+    if (ctx.flags.k) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
                 &ctx.cmd_auth[1], &ctx.session[1]);
         if (!result) {

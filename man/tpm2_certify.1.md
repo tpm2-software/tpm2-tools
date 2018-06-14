@@ -24,23 +24,23 @@ An object that only has its public area loaded cannot be certified.
 
 These options control the certification:
 
-  * **-c**, **--obj-context**=_CONTEXT\_OBJECT_:
+  * **-C**, **--obj-context**=_CONTEXT\_OBJECT_:
     Context object for the object to be certified. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-C**, **--key-context**=_KEY\_CONTEXT_:
+  * **-c**, **--key-context**=_KEY\_CONTEXT_:
     Context object for the key used to sign the attestation structure.
     See section "Context Object Format".
 
   * **-P**, **--auth-object**=_OBJECT\_AUTH_:
     Use _OBJECT\_AUTH_ for providing an authorization value for the object specified
-    in _OBJECT\_HANDLE_.
+    in _CONTEXT\_OBJECT_.
     Authorization values should follow the "authorization formatting standards,
     see section "Authorization Formatting".
 
-  * **-K**, **--auth-key**=_KEY\_AUTH_:
+  * **-k**, **--auth-key**=_KEY\_AUTH_:
     Use _KEY\_AUTH_ for providing an authorization value for the key specified
-    in _KEY\_HANDLE_.
+    in _KEY\_CONTEXT_.
     Follows the same formatting guidelines as the object handle authorization or
     -P option.
 
@@ -67,9 +67,9 @@ These options control the certification:
 # EXAMPLES
 
 ```
-tpm2_certify -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
-tpm2_certify -C obj.context -c key.context -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
-tpm2_certify -H 0x81010002 -k 0x81010001 -P 0011 -K 00FF -X -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -H 0x81010002 -P 0x0011 -k 0x00FF -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -C obj.context -c key.context -P 0x0011 -k 0x00FF -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -H 0x81010002 -P 0011 -k 00FF -X -g 0x00B -a <fileName> -s <fileName>
 ```
 
 # RETURNS
