@@ -86,7 +86,7 @@ struct createak_context {
     struct {
         UINT8 f : 1;
         UINT8 o : 1;
-        UINT8 e : 1;
+        UINT8 E : 1;
         UINT8 P : 1;
         UINT8 unused : 4;
     } flags;
@@ -482,8 +482,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.o = 1;
         ctx.owner_auth_str = value;
         break;
-    case 'e':
-        ctx.flags.e = 1;
+    case 'E':
+        ctx.flags.E = 1;
         ctx.endorse_auth_str = value;
         break;
     case 'P': 
@@ -518,7 +518,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "auth-owner",     required_argument, NULL, 'o' },
-        { "auth-endorse",   required_argument, NULL, 'e' },
+        { "auth-endorse",   required_argument, NULL, 'E' },
         { "auth-ak",        required_argument, NULL, 'P' },
         { "ek-context",     required_argument, NULL, 'C' },
         { "ak-handle",      required_argument, NULL, 'k' },
@@ -532,7 +532,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "privfile",       required_argument, NULL, 'r'},
     };
 
-    *opts = tpm2_options_new("o:C:e:k:g:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:C:E:k:g:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -574,7 +574,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.e) {
+    if (ctx.flags.E) {
         bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
                 &ctx.ek.auth2.session_data, &ctx.ek.auth2.session);
         if (!res) {

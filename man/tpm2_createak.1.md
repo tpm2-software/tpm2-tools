@@ -30,9 +30,9 @@ loaded-key:
 
 # OPTIONS
 
-  * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-E**, **--auth-endorse**=_ENDORSE\_AUTH_:
     Specifies current endorsement authorization.
-    authorizations should follow the "authorization formatting standards, see section
+    Authorizations should follow the "authorization formatting standards, see section
     "Authorization Formatting".
 
   * **-P**, **--auth-ak**=_AK\_AUTH_
