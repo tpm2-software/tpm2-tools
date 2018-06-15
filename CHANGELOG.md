@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_nvwrite and tpm2_nvread: when -P is "index" -a is optional and defaults to
+    the NV_INDEX value passed to -x.
+  * Load TCTI's by SONAME, not raw .so file
   * tpm2_activatecredential: -e becomes -E
   * tpm2_activatecredential: -e becomes -E
   * tpm2_certify: -c and -C are swapped, -k becomes -K

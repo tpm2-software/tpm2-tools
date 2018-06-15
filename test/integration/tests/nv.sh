@@ -194,7 +194,11 @@ tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
   -t "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
   -I "index" -P "owner"
 
-# Use index password write/read
+# Use index password write/read, implicit -a
+tpm2_nvwrite -Q -x 0x1500015 -P "index" nv.test_w
+tpm2_nvread -Q -x 0x1500015 -P "index"
+
+# Use index password write/read, explicit -a
 tpm2_nvwrite -Q -x 0x1500015 -a 0x1500015 -P "index" nv.test_w
 tpm2_nvread -Q -x 0x1500015 -a 0x1500015 -P "index"
 
