@@ -166,7 +166,8 @@ check_PROGRAMS = \
     test/unit/test_tpm2_session \
     test/unit/test_tpm2_policy \
     test/unit/test_tpm2_hierarchy \
-    test/unit/test_tpm2_error
+    test/unit/test_tpm2_error \
+    test/unit/test_tpm2_util
 
 TESTS += $(ALL_SYSTEM_TESTS)
 
@@ -227,6 +228,9 @@ test_unit_test_tpm2_hierarchy_SOURCES  = test/unit/test_tpm2_hierarchy.c
 test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_error_SOURCES  = test/unit/test_tpm2_error.c
+test_unit_test_tpm2_util_CFLAGS	   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_util_LDADD     = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
+test_unit_test_tpm2_util_SOURCES   = test/unit/test_tpm2_util.c
 
 #
 # We need absolute paths to the builddir and srcdir locations so we can
