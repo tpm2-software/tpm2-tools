@@ -29,7 +29,7 @@ symmetric key, both the public and private portions need to be loaded.
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
-    Algorithms should follow the "formatting standards, see section
+    Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
@@ -54,7 +54,7 @@ symmetric key, both the public and private portions need to be loaded.
     data format, however different schemes can be selected if the data came from an external
     source like OpenSSL. The tool currently only supports rsassa.
 
-    Algorithms should follow the "formatting standards, see section
+    Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers".
     Also, see section "Supported Signing Schemes" for a list of supported hash
     algorithms.

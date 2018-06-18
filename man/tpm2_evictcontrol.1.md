@@ -44,7 +44,7 @@ be evicted.
   * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY_\VALUE_:
 
     Optional authorization value. Authorization values should follow the
-    authorization formatting standards, see section "Authorization Formatting".
+    "authorization formatting standards", see section "Authorization Formatting".
 
   * **-S**, **--session**=_SESSION\_FILE_:
 

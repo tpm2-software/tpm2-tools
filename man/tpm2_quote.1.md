@@ -22,8 +22,9 @@
     See section "Context Object Format".
 
   * **-P**, **--auth-ak**=_AK\_AUTH_:
+
     Specifies the authorization value for AK specified by option **-C**.
-    Authorization values should follow the authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-l**, **--id-list**=_PCR\_ID\_LIST_

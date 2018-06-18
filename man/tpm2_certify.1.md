@@ -35,7 +35,7 @@ These options control the certification:
   * **-P**, **--auth-object**=_OBJECT\_AUTH_:
     Use _OBJECT\_AUTH_ for providing an authorization value for the object specified
     in _CONTEXT\_OBJECT_.
-    Authorization values should follow the "authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-k**, **--auth-key**=_KEY\_AUTH_:

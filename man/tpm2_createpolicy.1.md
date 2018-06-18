@@ -28,7 +28,7 @@ These options control creating the policy authorization session:
 
   * **-g**, **--policy-digest-alg**=_HASH\_ALGORITHM_:
     The hash algorithm used in computation of the policy digest. Algorithms
-    should follow the "formatting standards, see section "Algorithm Specifiers".
+    should follow the "formatting standards", see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 

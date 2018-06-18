@@ -38,14 +38,13 @@
 
   * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
     Specifies the authorization value for the hierarchy. Authorization values
-    should follow the authorization formatting standards, see section
+    should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-I**, **--auth-index**=_INDEX\_PASSWORD_:
     Specifies the password of NV Index when created.
-    HMAC and Password authorization values should follow
-    the authorization formatting standards, see section
-    "Authorization Formatting".
+    HMAC and Password authorization values should follow the "authorization
+    formatting standards", see section "Authorization Formatting".
 
   * **-L**, **--policy-file**=_POLICY\_FILE_:
     Specifies the policy digest file for policy based authorizations.

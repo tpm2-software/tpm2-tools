@@ -23,7 +23,7 @@ into the TPM.
 
   * **-P**, **--auth-parent**=_KEY\_AUTH_:
     Optional authorization value to use the parent object specified by **-H**.
-    Authorization values should follow the authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-u**, **--pubfile**=_PUBLIC\_OBJECT\_DATA\_FILE_:

@@ -26,7 +26,7 @@ These options for creating the tpm entity:
 
   * **-P**, **--auth-parent**=_PARENT\_KEY\_AUTH_:
     The authorization value for using the parent key, optional.
-    Authorization values should follow the authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-K**, **--auth-key**=_KEY\_AUTH_:
@@ -37,7 +37,7 @@ These options for creating the tpm entity:
   * **-g**, **--halg**=_ALGORITHM_:
     The hash algorithm for generating the objects name. This is optional
     and defaults to sha256 when not specified. Algorithms should follow the
-    " formatting standards, see section "Algorithm Specifiers".
+    "formatting standards", see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 

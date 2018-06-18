@@ -22,8 +22,8 @@ server.
 
   * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
     Specifies current endorsement authorization.
-    authorizations should follow the "authorization formatting standards, see section
-    "Authorization Formatting".
+    Authorizations should follow the "authorization formatting standards", see
+    section "Authorization Formatting".
 
   * **-P**, **--auth-ek**=_EK\_AUTH_
     Specifies the EK authorization when created.

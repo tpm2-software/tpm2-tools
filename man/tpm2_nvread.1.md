@@ -36,7 +36,7 @@
 
   * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE__:
     Specifies the authorization value for the hierarchy. Authorization values
-    should follow the authorization formatting standards, see section
+    should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-s**, **--size**=_SIZE_:
