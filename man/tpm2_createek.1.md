@@ -22,7 +22,7 @@ Refer to:
 
   * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
     Specifies current endorsement authorization.
-    authorizations should follow the "authorization formatting standards, see section
+    authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-P**, **--auth-ek**=_EK\_AUTH_

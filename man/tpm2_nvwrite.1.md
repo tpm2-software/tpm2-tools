@@ -37,7 +37,7 @@ If _FILE_ is not specified, it defaults to stdin.
 
   * **-P**, **--auth-hierarchy**=_HIERARCHY\_AUTH_:
     Specifies the authorization value for the hierarchy. Authorization values
-    should follow the authorization formatting standards, see section
+    should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:

@@ -24,7 +24,7 @@ values. If the lockout password option is missing, assume NULL.
   * **-L**, **--auth-lockout**=_LOCKOUT\_AUTH_:
     The lockout authorization value.
 
-    Authorization values should follow the authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
 [common options](common/options.md)

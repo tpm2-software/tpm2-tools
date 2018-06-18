@@ -21,7 +21,7 @@ authorization values.
   * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_:
     The new owner authorization value.
 
-    Passwords should follow the password authorization formatting standards,
+    Passwords should follow the "password authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:

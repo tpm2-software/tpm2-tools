@@ -29,7 +29,7 @@ is released on subsequent restart of the machine.
 
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
-    "authorization formatting standards, see section "Authorization Formatting".
+    "authorization formatting standards", see section "Authorization Formatting".
 
   * **-S**, **--input-session-handle**=_SESSION\_FILE_:
     Optional, a session file from **tpm2_startauthsession**(1)'s **-S** option.

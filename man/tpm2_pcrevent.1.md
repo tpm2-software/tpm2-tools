@@ -35,7 +35,7 @@ These options control extending the pcr:
 
   * **-P**, **--auth-pcr**=_PCR\_AUTH_:
     Specifies the authorization value for PCR. Authorization values
-    should follow the authorization formatting standards, see section
+    should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
 [common options](common/options.md)

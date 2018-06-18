@@ -21,8 +21,9 @@ will create and load a Primary Object. The sensitive area is not returned.
 # OPTIONS
 
   * **-a**, **--hierarchy**=_HIERARCHY_:
-    Specify the hierarchy under which the object is created. This will also dictate which authorization secret (if any) must be supplied.
-    Defaults to **o**, **TPM_RH_OWNER**, when no value specified.
+    Specify the hierarchy under which the object is created. This will also
+    dictate which authorization secret (if any) must be supplied. Defaults to
+    **o**, **TPM_RH_OWNER**, when no value specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
@@ -33,18 +34,18 @@ will create and load a Primary Object. The sensitive area is not returned.
   * **-P**, **--auth-hierarchy**=_HIERARCHY\_\_AUTH\_VALUE_:
     Optional authorization value when authorization is required to create object
     under the specified hierarchy given via the **-a** option. Authorization
-    values should follow the authorization formatting standards, see section
+    values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-k**, **--auth-object**=_OBJECT\_AUTH_:
     Optional authorization password for the newly created object. Password
-    values should follow the authorization formatting standards, see section
+    values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-g**, **--halg**=_ALGORITHM_:
     The hash algorithm to use for generating the objects name.
     If not specified, the default name algorithm is SHA256.
-    Algorithms should follow the "formatting standards, see section
+    Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers". Also, see section
     "Supported Hash Algorithms" for a list of supported hash algorithms.
 

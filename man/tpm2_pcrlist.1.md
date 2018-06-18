@@ -31,7 +31,7 @@ sha256 :
 
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
     Only output PCR banks with the given algorithm.
-    Algorithms should follow the "formatting standards, see section
+    Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.

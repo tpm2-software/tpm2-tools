@@ -29,7 +29,7 @@ alive and pass that session using the **--input-session-handle** option.
   * **-P**, **--auth-key**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-k**.
-    Authorization values should follow the authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-o**, **--out-file**=_OUT\_FILE_:

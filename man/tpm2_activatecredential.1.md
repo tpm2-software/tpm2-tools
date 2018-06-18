@@ -34,8 +34,8 @@ These options control the object verification:
   * **-P**, **--auth-key**=_AUTH\_VALUE_:
     Use _AUTH\_VALUE_ for providing an authorization value for the
     _KEY\_CONTEXT\_OBJECT_.
-    Passwords should follow the authorization formatting standards, see section
-    "Authorization Formatting".
+    Passwords should follow the "authorization formatting standards", see
+    section "Authorization Formatting".
 
   * **-E**, **--endorse-password**=_ENDORSE\_PASSWORD_:
     The endorsement password, optional. Follows the same formatting guidelines

@@ -31,8 +31,8 @@ The key referenced by key-context is **required** to be:
 
   * **-P**, **--pwdk**=_KEY\_PASSWORD_:
 
-    specifies the password of _KEY\_HANDLE_. Passwords should follow the
-    authorization formatting standards, see section "Authorization Formatting".
+    Specifies the password of _KEY\_HANDLE_. Passwords should follow the
+    "authorization formatting standards", see section "Authorization Formatting".
 
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 

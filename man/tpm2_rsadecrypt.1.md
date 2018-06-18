@@ -31,7 +31,7 @@ The key referenced by key-context is **required** to be:
   * **-P**, **--auth-key**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-k**.
-    Authorization values should follow the authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-I**, **--in-file**=_INPUT\FILE_:

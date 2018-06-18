@@ -29,7 +29,7 @@ is missing, assume NULL.
   * **-L**, **--auth-lockout**=_LOCKOUT\_PASSWORD_:
     The lockout authorization value.
 
-    Authorization values should follow the authorization formatting standards,
+    Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
     This tool only respects the *Password* and *HMAC* options.
 

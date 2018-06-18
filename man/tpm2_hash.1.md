@@ -31,7 +31,7 @@ sign.
 
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
     The hash algorithm to use.
-    Algorithms should follow the "formatting standards, see section
+    Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
