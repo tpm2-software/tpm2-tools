@@ -73,7 +73,8 @@ struct tpm_import_ctx {
     uint16_t input_pub_key_buffer_length;
     TPMI_ALG_PUBLIC key_type;
     //TPM2 Parent key to host the imported key
-    TPM2_HANDLE parent_key_handle;
+    tpm2_loaded_object parent_ctx;
+    const char *parent_ctx_arg;
     //External key public
     TPM2B_PUBLIC import_key_public;
     //External key name
@@ -97,8 +98,7 @@ struct tpm_import_ctx {
 
 static tpm_import_ctx ctx = { 
     .key_type = TPM2_ALG_ERROR,
-    .input_key_file = NULL, 
-    .parent_key_handle = 0,
+    .input_key_file = NULL,
     .import_key_public = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea),
     .import_key_public_name = TPM2B_TYPE_INIT(TPM2B_NAME, name),
     .import_key_private = TPM2B_EMPTY_INIT,
@@ -152,7 +152,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(TSS2_SYS_CONTEXT *sapi) {
     TPM2B_PUBLIC pub_key = TPM2B_EMPTY_INIT;
     bool res = ctx.parent_key_public_file ?
             files_load_public(ctx.parent_key_public_file, &pub_key) :
-            tpm2_readpublic(sapi, ctx.parent_key_handle, &pub_key);
+            tpm2_readpublic(sapi, ctx.parent_ctx.handle, &pub_key);
     if (!res) {
         LOG_ERR("Failed loading parent key public.");
         return false;
@@ -534,7 +534,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     memcpy(enc_inp_seed.secret, ctx.encrypted_protection_seed_data,
             RSA_2K_MODULUS_SIZE_IN_BYTES);
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_key_handle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_ctx.handle,
             &npsessionsData, &ctx.enc_sensitive_key, &ctx.import_key_public,
             &ctx.import_key_private, &enc_inp_seed, &symmetricAlg,
             &importPrivate, &npsessionsDataOut));
@@ -613,11 +613,8 @@ static bool on_option(char key, char *value) {
     case 'k':
         ctx.input_key_file = value;
         break;
-    case 'H':
-        if (!tpm2_util_string_to_uint32(value, &ctx.parent_key_handle)) {
-            LOG_ERR("Failed retrieving parent-key-handle value");
-            return false;
-        }
+    case 'C':
+        ctx.parent_ctx_arg = value;
         break;
     case 'K':
         ctx.parent_key_public_file = value;
@@ -647,14 +644,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
       { "import-key-alg",     required_argument, NULL, 'G'},
       { "input-key-file",     required_argument, NULL, 'k'},
-      { "parent-key-handle",  required_argument, NULL, 'H'},
+      { "parent-key",         required_argument, NULL, 'C'},
       { "parent-key-public",  required_argument, NULL, 'K'},
       { "import-key-private", required_argument, NULL, 'r'},
       { "import-key-public",  required_argument, NULL, 'q'},
       { "object-attributes",  required_argument, NULL, 'A' },
     };
 
-    *opts = tpm2_options_new("G:k:H:K:q:r:A:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("G:k:C:K:q:r:A:", ARRAY_LEN(topts), topts, on_option,
                              NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -765,21 +762,31 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int rc = 1;
+    bool result;
 
     OpenSSL_add_all_algorithms();
     OpenSSL_add_all_ciphers();
     ERR_load_crypto_strings();
 
-    if (!ctx.input_key_file || !ctx.parent_key_handle
+    result = tpm2_util_object_load(sapi_context, ctx.parent_ctx_arg,
+                    &ctx.parent_ctx);
+    if (!result) {
+        tpm2_tool_output(
+            "Failed to load context object (handle: 0x%x, path: %s).\n",
+            ctx.parent_ctx.handle, ctx.parent_ctx.path);
+      goto out;
+    }
+
+    if (!ctx.input_key_file || !ctx.parent_ctx.handle
             || !ctx.import_key_public_file || !ctx.import_key_private_file
             || !ctx.key_type) {
         LOG_ERR("tpm2_import tool missing arguments: %s\n %08X\n %s\n %s",
-             ctx.input_key_file, ctx.parent_key_handle, ctx.import_key_public_file,
-             ctx.import_key_private_file);
+             ctx.input_key_file, ctx.parent_ctx.handle,
+             ctx.import_key_public_file, ctx.import_key_private_file);
         return 1;
     }
 
-    bool result = load_key();
+    result = load_key();
     if (!result) {
         goto out;
     }

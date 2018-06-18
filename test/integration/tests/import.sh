@@ -59,7 +59,7 @@ dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 tpm2_readpublic -Q -c 0x81010005 --out-file parent.pub
 
 #Symmetric Key Import Test
-tpm2_import -Q -G aes -k sym.key -H 0x81010005 -K parent.pub -q import_key.pub \
+tpm2_import -Q -G aes -k sym.key -C 0x81010005 -K parent.pub -q import_key.pub \
 -r import_key.priv
 
 tpm2_load -Q -C 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
@@ -79,7 +79,7 @@ openssl genrsa -out private.pem 2048
 openssl rsa -in private.pem -pubout > public.pem
 
 # Test an import without the parent public info data to force a readpublic
-tpm2_import -Q -G rsa -k private.pem -H 0x81010005 \
+tpm2_import -Q -G rsa -k private.pem -C 0x81010005 \
 -q import_rsa_key.pub -r import_rsa_key.priv
 
 tpm2_load -Q -C 0x81010005 -u import_rsa_key.pub -r import_rsa_key.priv \
