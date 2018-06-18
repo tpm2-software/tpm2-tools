@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "files.h"
 #include "log.h"
@@ -40,7 +41,8 @@
 
 typedef enum {
     file_type_unknown = 0,
-    file_type_TPMS_ATTEST
+    file_type_TPMS_ATTEST,
+    file_type_TPMS_CONTEXT,
 } file_type_id;
 
 typedef struct tpm2_print_ctx tpm2_print_ctx;
@@ -246,14 +248,116 @@ error:
     return false;
 }
 
+static bool print_TPMS_CONTEXT_yaml(FILE *fstream) {
+
+    /*
+     * Reading the TPMS_CONTEXT structure to disk, format:
+     * TPM2.0-TOOLS HEADER
+     * U32 hierarchy
+     * U32 savedHandle
+     * U64 sequence
+     * U16 contextBlobLength
+     * BYTE[] contextBlob
+     */
+    UINT32 version;
+    TPMS_CONTEXT context;
+    bool result = files_read_header(fstream, &version);
+    if (!result) {
+        LOG_WARN(
+            "The loaded tpm context does not appear to be in the proper format,"
+            "assuming old format.");
+        rewind(fstream);
+        result = files_read_bytes(fstream, (UINT8 *) &context, sizeof(context));
+        if (!result) {
+            LOG_ERR("Could not load tpm context file");
+            goto out;
+        } else {
+            goto print_context;
+        }
+    }
+
+    result = files_read_32(fstream, &context.hierarchy);
+    if (!result) {
+        LOG_ERR("Error reading hierarchy!");
+        goto out;
+    }
+
+    result = files_read_32(fstream, &context.savedHandle);
+    if (!result) {
+        LOG_ERR("Error reading savedHandle!");
+        goto out;
+    }
+
+    result = files_read_64(fstream, &context.sequence);
+    if (!result) {
+        LOG_ERR("Error reading sequence!");
+        goto out;
+    }
+
+    result = files_read_16(fstream, &context.contextBlob.size);
+    if (!result) {
+        LOG_ERR("Error reading contextBlob.size!");
+        goto out;
+    }
+
+    if (context.contextBlob.size > sizeof(context.contextBlob.buffer)) {
+        LOG_ERR(
+                "Size mismatch found on contextBlob, got %"PRIu16" expected less than or equal to %zu",
+                context.contextBlob.size,
+                sizeof(context.contextBlob.buffer));
+        result = false;
+        goto out;
+    }
+
+    result = files_read_bytes(fstream, context.contextBlob.buffer,
+            context.contextBlob.size);
+    if (!result) {
+        LOG_ERR("Error reading contextBlob.size!");
+        goto out;
+    }
+
+print_context:
+    tpm2_tool_output("version: %d\n", version);
+    const char *hierarchy;
+    switch (context.hierarchy) {
+    case TPM2_RH_OWNER:
+        hierarchy = "owner";
+        break;
+    case TPM2_RH_PLATFORM:
+        hierarchy = "platform";
+        break;
+    case TPM2_RH_ENDORSEMENT:
+        hierarchy = "endorsement";
+        break;
+    case TPM2_RH_NULL:
+    default:
+        hierarchy = "null";
+        break;
+    }
+    tpm2_tool_output("hierarchy: %s\n", hierarchy);
+    tpm2_tool_output("handle: 0x%X (%u)\n", context.savedHandle, context.savedHandle);
+    tpm2_tool_output("sequence: %"PRIu64"\n", context.sequence);
+    tpm2_tool_output("contextBlob: \n");
+    tpm2_tool_output("\tsize: %d\n", context.contextBlob.size);
+    result = true;
+
+out:
+    return result;
+}
+
 static bool on_option(char key, char *value) {
     switch (key) {
     case 't':
-        if (strcmp(value, "TPMS_ATTEST") != 0) {
-            LOG_ERR("Invalid type specified. Only TPMS_ATTEST is presently supported.");
+        if (strcmp(value, "TPMS_ATTEST") == 0) {
+            ctx.file.type = file_type_TPMS_ATTEST;
+
+        } else if (strcmp(value, "TPMS_CONTEXT") == 0) {
+            ctx.file.type = file_type_TPMS_CONTEXT;
+        } else {
+            LOG_ERR("Invalid type specified. Only TPMS_ATTEST and TPMS_CONTEXT "
+                    "are presently supported.");
             return false;
         }
-        ctx.file.type = file_type_TPMS_ATTEST;
         break;
     case 'f':
         ctx.file.path = value;
@@ -287,6 +391,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     switch (ctx.file.type) {
     case file_type_TPMS_ATTEST:
         print_fn = print_TPMS_ATTEST_yaml;
+        break;
+    case file_type_TPMS_CONTEXT:
+        print_fn = print_TPMS_CONTEXT_yaml;
         break;
     default:
         LOG_ERR("Must specify a file type with -t option");

@@ -19,8 +19,8 @@ elements to stdout as YAML.
 
   * **-t**, **--type**:
 
-    Required. Type of data structure. Only TPMS_ATTEST is presently
-    supported.
+    Required. Type of data structure. Only TPMS\_ATTEST and TPMS\_CONTEXT are
+    presently supported.
 
   * **-f**, **--file**:
 
