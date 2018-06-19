@@ -365,6 +365,7 @@ bool tpm2_util_object_load(TSS2_SYS_CONTEXT *sapi_ctx,
         result = tpm2_util_string_to_uint32(objectstr, &outobject->handle);
         if (result) {
             // have a handle, done
+            outobject->path = NULL;
             return true;
         }
         // assume this is a file path
