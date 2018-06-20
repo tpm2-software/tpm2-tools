@@ -89,7 +89,7 @@ static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
     }
     tpm2_tool_output("\n");
 
-    tpm2_util_public_to_yaml(&public);
+    tpm2_util_public_to_yaml(&public, NULL);
 
     return ctx.outFilePath ?
             tpm2_convert_pubkey_save(&public, ctx.format, ctx.outFilePath) : true;

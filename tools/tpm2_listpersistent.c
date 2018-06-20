@@ -51,6 +51,7 @@ typedef struct tpm_listpersistent_context tpm_listpersistent_context;
 struct tpm_listpersistent_context {
     TPMI_ALG_HASH nameAlg;
     TPMI_ALG_PUBLIC type;
+    TPMI_ALG_KEYEDHASH_SCHEME scheme;
 };
 
 static tpm_listpersistent_context ctx = {
@@ -62,19 +63,31 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'g':
-        ctx.nameAlg = tpm2_alg_util_from_optarg(value);
-        if(ctx.nameAlg == TPM2_ALG_ERROR ||
-           !tpm2_alg_util_is_hash_alg(ctx.nameAlg)) {
+        ctx.nameAlg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
+        if (ctx.nameAlg == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid hash algorithm, got \"%s\"", value);
             return false;
         }
         break;
     case 'G':
-        ctx.type = tpm2_alg_util_from_optarg(value);
-        if(ctx.type == TPM2_ALG_ERROR ||
-           tpm2_alg_util_is_hash_alg(ctx.type)) {
+        ctx.type = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_symmetric
+                |tpm2_alg_util_flags_asymmetric
+                |tpm2_alg_util_flags_keyedhash);
+        if (ctx.type == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid key algorithm, got \"%s\"", value);
             return false;
+        }
+
+        tpm2_alg_util_flags flags = tpm2_alg_util_algtoflags(ctx.type);
+        if (flags & tpm2_alg_util_flags_keyedhash) {
+            ctx.scheme = ctx.type;
+            ctx.type = TPM2_ALG_KEYEDHASH;
+        }
+
+        if (flags & tpm2_alg_util_flags_symmetric) {
+            ctx.scheme = ctx.type;
+            ctx.type = TPM2_ALG_SYMCIPHER;
         }
     }
 
@@ -141,36 +154,21 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             return 2;
         }
 
+        TPMI_ALG_KEYEDHASH_SCHEME kh_scheme = outPublic.publicArea.parameters.keyedHashDetail.scheme.scheme;
+        TPMI_ALG_KEYEDHASH_SCHEME sym_scheme = outPublic.publicArea.parameters.symDetail.sym.algorithm;
         TPMI_ALG_PUBLIC type = outPublic.publicArea.type;
         TPMI_ALG_HASH nameAlg = outPublic.publicArea.nameAlg;
         if ((ctx.type != TPM2_ALG_NULL && ctx.type != type)
-                || (ctx.nameAlg != TPM2_ALG_NULL && ctx.nameAlg != nameAlg)) {
+                || (ctx.nameAlg != TPM2_ALG_NULL && ctx.nameAlg != nameAlg)
+                || (ctx.type == TPM2_ALG_KEYEDHASH && kh_scheme != ctx.scheme)
+                || (ctx.type == TPM2_ALG_SYMCIPHER && sym_scheme != ctx.scheme)) {
             /* Skip, filter me out */
             continue;
         }
 
-        char *attrs = tpm2_attr_util_obj_attrtostr(
-                outPublic.publicArea.objectAttributes);
-        char *attrbuf = attrs;
-
-        /*
-         * tmp must be declared at this scope for possible use in tpm2_tool_output when attrs
-         * is null.
-         */
-        char tmp[11]; /* UINT32 in hex (8) + "0x" + '\0' */
-        if (!attrs) {
-            LOG_WARN(
-                    "Could not convert objectAttributes, converting to hex output");
-            snprintf(tmp, sizeof(tmp), "0x%X",
-                    outPublic.publicArea.objectAttributes);
-            attrbuf = tmp;
-        }
-
-        tpm2_tool_output(
-                "- { persistent-handle: 0x%X, key-alg: %s, hash-alg: %s, object-attr: %s }\n",
-                objectHandle, tpm2_alg_util_algtostr(type),
-                tpm2_alg_util_algtostr(nameAlg), attrbuf);
-        free(attrs);
+        tpm2_tool_output("- handle: 0x%x\n", objectHandle);
+        tpm2_util_public_to_yaml(&outPublic, "  ");
+        tpm2_tool_output("\n");
     }
 
     return 0;

@@ -71,10 +71,10 @@ bc3e1d4084e835c7c8906a1c05b4d2d30fdbebc1dbad950fa6b165bd4b6a
 79a8f32938dd8197e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859
 525118bd4470b18180eef78ae4267bcd" | xxd -r -p > test_ek.pub
 
-tpm2_getmanufec -g rsa -O test_ek.pub -N -U -E ECcert.bin https://ekop.intel.com/ekcertservice/
+tpm2_getmanufec -G rsa -O test_ek.pub -N -U -E ECcert.bin https://ekop.intel.com/ekcertservice/
 
 # Test that stdoutput is the same
-tpm2_getmanufec -g rsa -N -U -O test_ek.pub https://ekop.intel.com/ekcertservice/ > ECcert2.bin
+tpm2_getmanufec -G rsa -N -U -O test_ek.pub https://ekop.intel.com/ekcertservice/ > ECcert2.bin
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin

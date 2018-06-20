@@ -50,10 +50,9 @@ will create and load a Primary Object. The sensitive area is not returned.
     "Supported Hash Algorithms" for a list of supported hash algorithms.
 
   * **-G**, **--kalg**=_KEY\_ALGORITHM_:
-    Algorithm type for generated key. It supports friendly names like the -g option.
-    If not specified, the default key algorithm is RSA.
-    See section "Supported Public Object Algorithms" for a list of supported
-    object algorithms.
+    Algorithm type for generated key. If not specified, the default key
+    algorithm is RSA. See section "Supported Public Object Algorithms"
+    for a list of supported object algorithms.
 
   * **-o**, **--out-context**=_CONTEXT\_FILE_:
     An optional file used to store the object context returned.

@@ -36,7 +36,6 @@ source helpers.sh
 alg_primary_obj=sha256
 alg_primary_key=ecc
 alg_create_obj=sha256
-alg_create_key=keyedhash
 alg_pcr_policy=sha1
 
 pcr_ids="0,1,2,3"
@@ -45,10 +44,10 @@ file_pcr_value=pcr.bin
 file_input_data=secret.data
 file_policy=policy.data
 file_primary_key_ctx=context.p_"$alg_primary_obj"_"$alg_primary_key"
-file_unseal_key_pub=opu_"$alg_create_obj"_"$alg_create_key"
-file_unseal_key_priv=opr_"$alg_create_obj"_"$alg_create_key"
-file_unseal_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
-file_unseal_key_name=name.load_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
+file_unseal_key_pub=opu_"$alg_create_obj"
+file_unseal_key_priv=opr_"$alg_create_obj"
+file_unseal_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"
+file_unseal_key_name=name.load_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"
 file_unseal_output_data=usl_"$file_unseal_key_ctx"
 
 secret="12345678"
@@ -74,7 +73,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I $file_input_data -C $file_primary_key_ctx
+tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I $file_input_data -C $file_primary_key_ctx
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
@@ -86,7 +85,7 @@ cmp -s $file_unseal_output_data $file_input_data
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
 
-cat $file_input_data | tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx
+cat $file_input_data | tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
@@ -102,8 +101,8 @@ tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 
-tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx -L $file_policy \
-  -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' <<< $secret
+tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx -L $file_policy \
+  -A 'fixedtpm|fixedparent' <<< $secret
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 

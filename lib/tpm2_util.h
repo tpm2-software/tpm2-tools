@@ -293,16 +293,20 @@ void print_yaml_indent(size_t indent_count);
  * Convert a TPM2B_PUBLIC into a yaml format and output if not quiet.
  * @param public
  *  The TPM2B_PUBLIC to output in YAML format.
+ * @param indent
+ *  The level of indentation, can be NULL
  */
-void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public);
+void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent);
 
 
 /**
  * Convert a TPMA_OBJECT to a yaml format and output if not quiet.
  * @param obj
  *  The TPMA_OBJECT attributes to print.
+ * @param indent
+ *  The level of indentation, can be NULL
  */
-void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj);
+void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent);
 
 /**
  * Parses a string representation of a context object, either a file or handle,

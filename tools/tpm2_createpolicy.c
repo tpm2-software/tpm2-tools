@@ -159,7 +159,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'g':
         pctx.common_policy_options.policy_digest_hash_alg
-            = tpm2_alg_util_from_optarg(value);
+            = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if(pctx.common_policy_options.policy_digest_hash_alg == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid choice for policy digest hash algorithm");
             return false;

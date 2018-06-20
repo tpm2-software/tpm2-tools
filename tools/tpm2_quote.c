@@ -123,7 +123,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
     tpm2_tool_output( "quoted: " );
     tpm2_util_print_tpm2b((TPM2B *)&quoted);
     tpm2_tool_output("\nsignature:\n" );
-    tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature.sigAlg));
+    tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature.sigAlg, tpm2_alg_util_flags_sig));
 
     UINT16 size;
     BYTE *sig = tpm2_extract_plain_signature(&size, &signature);
@@ -189,7 +189,7 @@ static bool on_option(char key, char *value) {
          }
          break;
     case 'G':
-        ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value);
+        ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
         if(ctx.sig_hash_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
             return false;

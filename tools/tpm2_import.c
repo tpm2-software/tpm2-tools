@@ -356,7 +356,7 @@ static bool create_import_key_public_data_and_name(void) {
         ctx.import_key_public.publicArea.objectAttributes = ctx.objectAttributes;
     }
 
-    tpm2_util_tpma_object_to_yaml(ctx.import_key_public.publicArea.objectAttributes);
+    tpm2_util_tpma_object_to_yaml(ctx.import_key_public.publicArea.objectAttributes, NULL);
 
     size_t public_area_marshalled_offset = 0;
     TPM2B_PUBLIC *marshalled_bytes = malloc(sizeof(ctx.import_key_public));
@@ -596,7 +596,9 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'G':
-        ctx.key_type = tpm2_alg_util_from_optarg(value);
+        ctx.key_type = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_asymmetric
+                |tpm2_alg_util_flags_symmetric);
         switch(ctx.key_type) {
             case TPM2_ALG_AES:
                 ctx.input_key_buffer_length = TPM2_MAX_SYM_BLOCK_SIZE;

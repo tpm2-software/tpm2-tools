@@ -22,9 +22,9 @@ OPTIONS
 These options control the key importation process:
 
   * **-G**, **--import-key-alg**=_ALGORITHM_:
-    The algorithm used by the key to be imported, AES and RSA keys are supported.
-    Algorithms should follow the "formatting standards", see section
-    "Algorithm Specifiers".
+    The algorithm used by the key to be imported. Supports:
+    * aes - AES 128 key.
+    * rsa - RSA 2048 key.
 
   * **-k**, **--input-key-file**=_FILE_:
     Specifies the filename of symmetric key (128 bit data) to be imported. OR,

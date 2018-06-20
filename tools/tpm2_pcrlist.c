@@ -229,7 +229,7 @@ static bool check_pcr_selection(void) {
         }
 
         if (j >= cap_data->data.assignedPCR.count) {
-            const char *alg_name = tpm2_alg_util_algtostr(pcr_sel->pcrSelections[i].hash);
+            const char *alg_name = tpm2_alg_util_algtostr(pcr_sel->pcrSelections[i].hash, tpm2_alg_util_flags_hash);
             LOG_WARN("Ignore unsupported bank/algorithm: %s(0x%04x)", alg_name, pcr_sel->pcrSelections[i].hash);
             pcr_sel->pcrSelections[i].hash = 0; //mark it as to be removed
         }
@@ -249,7 +249,8 @@ static bool show_pcr_values(void) {
 
     for (i = 0; i < ctx.pcr_selections.count; i++) {
         const char *alg_name = tpm2_alg_util_algtostr(
-                ctx.pcr_selections.pcrSelections[i].hash);
+                ctx.pcr_selections.pcrSelections[i].hash,
+                tpm2_alg_util_flags_hash);
 
         tpm2_tool_output("%s:\n", alg_name);
 
@@ -352,7 +353,7 @@ static void show_banks(tpm2_algorithm *g_banks) {
     tpm2_tool_output("Supported Bank/Algorithm:");
     int i;
     for (i = 0; i < g_banks->count; i++) {
-        const char *alg_name = tpm2_alg_util_algtostr(g_banks->alg[i]);
+        const char *alg_name = tpm2_alg_util_algtostr(g_banks->alg[i], tpm2_alg_util_flags_hash);
         tpm2_tool_output(" %s(0x%04x)", alg_name, g_banks->alg[i]);
     }
     tpm2_tool_output("\n");
@@ -362,7 +363,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'g':
-        ctx.selected_algorithm = tpm2_alg_util_from_optarg(value);
+        ctx.selected_algorithm = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.selected_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid algorithm, got: \"%s\"", value);
             return false;

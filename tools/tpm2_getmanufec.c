@@ -465,8 +465,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.ek_auth_str = value;
     }   break;
-    case 'g':
-        ctx.algorithm_type = tpm2_alg_util_from_optarg(value);
+    case 'G':
+        ctx.algorithm_type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
         if (ctx.algorithm_type == TPM2_ALG_ERROR) {
              LOG_ERR("Please input the algorithm type in correct format.");
             return false;
@@ -516,7 +516,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "owner-passwd",         required_argument, NULL, 'o' },
         { "ek-passwd",            required_argument, NULL, 'P' },
         { "handle",               required_argument, NULL, 'H' },
-        { "algorithm",            required_argument, NULL, 'g' },
+        { "algorithm",            required_argument, NULL, 'G' },
         { "out-file",             required_argument, NULL, 'f' },
         { "non-persistent",       no_argument,       NULL, 'N' },
         { "offline",              required_argument, NULL, 'O' },
@@ -524,7 +524,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "SSL-NO-VERIFY",        no_argument,       NULL, 'U' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:g:f:NO:E:i:U", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:H:P:G:f:NO:E:i:U", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;

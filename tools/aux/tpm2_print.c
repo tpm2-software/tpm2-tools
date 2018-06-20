@@ -125,12 +125,11 @@ static bool print_TPMS_QUOTE_INFO(FILE* fd, size_t indent_count) {
         if (!res) {
             goto read_error;
         }
-        res = tpm2_alg_util_is_hash_alg(hash_type);
-        if (!res) {
+        const char* const hash_name = tpm2_alg_util_algtostr(hash_type, tpm2_alg_util_flags_hash);
+        if (!hash_name) {
             LOG_ERR("Invalid hash type in quote");
             goto error;
         }
-        const char* const hash_name = tpm2_alg_util_algtostr(hash_type);
         print_yaml_indent(indent_count + 3);
         tpm2_tool_output("hash: %u (%s)\n", (unsigned int)hash_type, hash_name);
 

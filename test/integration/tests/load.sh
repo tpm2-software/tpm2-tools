@@ -35,12 +35,12 @@ source helpers.sh
 
 start_up
 
-alg_primary_obj=0x000B
-alg_primary_key=0x0001
-alg_create_obj=0x000B
-alg_create_key=0x0008
+alg_primary_obj=sha256
+alg_primary_key=rsa
+alg_create_obj=sha256
+alg_create_key=hmac
 
-alg_load=0x0004
+alg_load=sha1
 
 file_primary_key_ctx=context.p_"$alg_primary_obj"_"$alg_primary_key"
 file_load_key_pub=opu_"$alg_create_obj"_"$alg_create_key"

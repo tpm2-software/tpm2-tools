@@ -218,7 +218,7 @@ static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
     for (i = 0; i < digests.count; i++) {
         TPMT_HA *d = &digests.digests[i];
 
-        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(d->hashAlg));
+        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(d->hashAlg, tpm2_alg_util_flags_hash));
 
         BYTE *bytes;
         size_t size;

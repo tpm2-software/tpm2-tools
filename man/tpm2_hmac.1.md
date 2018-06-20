@@ -27,13 +27,6 @@ _FILE_ is not specified, then data is read from stdin.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
-    The hash algorithm to use.
-    Algorithms should follow the "formatting standards, see section
-    "Algorithm Specifiers".
-    Also, see section "Supported Hash Algorithms" for a list of supported hash
-    algorithms.
-
   * **-o**, **--out-file**=_OUT\_FILE_
     Optional file record of the HMAC result. Defaults to stdout.
 
@@ -55,20 +48,20 @@ _FILE_ is not specified, then data is read from stdin.
 
 # EXAMPLES
 
-Perform a SHA1 HMAC on data.in and send output and possibly ticket to stdout:
+Perform an HMAC on data.in and send output and possibly ticket to stdout:
 
 ```
-tpm2_hmac -C 0x81010002 -P abc123 -g sha1 data.in
+tpm2_hmac -C 0x81010002 -P abc123 data.in
 ```
 
-Perform a SHA1 HMAC on data.in read as a file to stdin and send output to a file:
+Perform an HMAC on data.in read as a file to stdin and send output to a file:
 ```
-tpm2_hmac -C key.context -P abc123 -g sha1 -o hash.out << data.in
+tpm2_hmac -C key.context -P abc123 -o hash.out << data.in
 ```
-Perform a SHA256 HMAC on _stdin_ and send result and possibly ticket to stdout:
+Perform an HMAC on _stdin_ and send result and possibly ticket to stdout:
 
 ```
-cat data.in | tpm2_hmac -C 0x81010002 -g sha256 -o hash.out
+cat data.in | tpm2_hmac -C 0x81010002 -o hash.out
 ```
 
 # RETURNS

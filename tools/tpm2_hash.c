@@ -73,7 +73,7 @@ static bool hash_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (outHash.size) {
         UINT16 i;
-        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(ctx.halg));
+        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(ctx.halg, tpm2_alg_util_flags_hash));
         for (i = 0; i < outHash.size; i++) {
             tpm2_tool_output("%02x", outHash.buffer[i]);
         }
@@ -133,7 +133,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'g':
-        ctx.halg = tpm2_alg_util_from_optarg(value);
+        ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.halg == TPM2_ALG_ERROR) {
             return false;
         }

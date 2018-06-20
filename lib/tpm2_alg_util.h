@@ -35,28 +35,22 @@
 
 #include <tss2/tss2_sys.h>
 
-/**
- * Iterator callback routine for iterating over known algorithm name and value
- * pairs.
- * @param id
- *  The algorithm id.
- * @param name
- *  The associated "nice-name".
- * @param userdata
- *  A user supplied data pointer.
- * @return
- *  True to stop iterating, false to keep iterating.
- */
-typedef bool (*tpm2_alg_util_alg_iterator)(TPM2_ALG_ID id, const char *name, void *userdata);
-
-/**
- * Iterate over the algorithm name-value pairs calling the iterator callback for each pair.
- * @param iterator
- *  The iterator callback function.
- * @param userdata
- *  A pointer to user supplied data, this is passed to the iterator for each call.
- */
-void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iterator iterator, void *userdata);
+typedef enum tpm2_alg_util_flags tpm2_alg_util_flags;
+enum tpm2_alg_util_flags {
+    tpm2_alg_util_flags_none        = 0,
+    tpm2_alg_util_flags_hash        = 1 << 0,
+    tpm2_alg_util_flags_keyedhash   = 1 << 0,
+    tpm2_alg_util_flags_symmetric   = 1 << 2,
+    tpm2_alg_util_flags_asymmetric  = 1 << 3,
+    tpm2_alg_util_flags_kdf         = 1 << 4,
+    tpm2_alg_util_flags_mgf         = 1 << 5,
+    tpm2_alg_util_flags_sig         = 1 << 6,
+    tpm2_alg_util_flags_mode        = 1 << 7,
+    tpm2_alg_util_flags_base        = 1 << 8,
+    tpm2_alg_util_flags_misc        = 1 << 9,
+    tpm2_alg_util_flags_enc_scheme  = 1 << 10,
+    tpm2_alg_util_flags_any         = ~0
+};
 
 /**
  * Convert a "nice-name" string to an algorithm id.
@@ -65,7 +59,7 @@ void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iterator iterator, void *userd
  * @return
  *  TPM2_ALG_ERROR on error, or a valid algorithm identifier.
  */
-TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name);
+TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name, tpm2_alg_util_flags flags);
 
 /**
  * Convert an id to a nice-name.
@@ -74,7 +68,14 @@ TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name);
  * @return
  *  The nice-name.
  */
-const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id);
+const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id, tpm2_alg_util_flags flags);
+
+/**
+ * XXX DOC AND TESTME
+ * @param id
+ * @return
+ */
+tpm2_alg_util_flags tpm2_alg_util_algtoflags(TPM2_ALG_ID id);
 
 /**
  * Converts either a string from algorithm number or algorithm nice-name to
@@ -84,25 +85,7 @@ const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id);
  * @return
  *  TPM2_ALG_ERROR on error or the algorithm id.
  */
-TPM2_ALG_ID tpm2_alg_util_from_optarg(char *optarg);
-
-/**
- * Detects if an algorithm is considered a hashing algorithm.
- * @param id
- *  The algorithm id to check.
- * @return
- *  True if it is a hash algorithm, False otherwise.
- */
-bool tpm2_alg_util_is_hash_alg(TPM2_ALG_ID id);
-
-/**
- * Detects if an algorithm is considered a signing scheme.
- * @param id
- *  The algorithm id to check.
- * @return
- *  True if it is a signing scheme, False otherwise.
- */
-bool tpm2_alg_util_is_signing_scheme(TPM2_ALG_ID id);
+TPM2_ALG_ID tpm2_alg_util_from_optarg(const char *optarg, tpm2_alg_util_flags flags);
 
 /**
  * Contains the information from parsing an argv style vector of strings for
@@ -203,48 +186,17 @@ bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
         TPMT_SIG_SCHEME *scheme);
 
 /**
- * Given the object algorithm type, generate settings for TPMU_PUBLIC_PARMS values for a leaf object
- * and modify conflicting object attributes if present.
  *
- * XXX This likely isn't the best interface for this, eventually we will probably want to
- * clean up the public structure value settings.
- *
- * @param type
- *  The algorithm type of the object.
- * @param public
- *  The public structure to set the TPMU_PUBLIC_PARMS values for.
+ * @param alg_details
+ * @param name_halg
+ * @param attrs
+ * @param auth_policy
+ * @param def_attrs
  * @param is_sealing
- *  Whether or not the object is being used to seal data.
- * @return
- *  true on success, false otherwise.
- */
-bool tpm2_alg_util_set_leaf_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public, bool is_sealing);
-
-/**
- * Given the object algorithm type, generate settings for TPMU_PUBLIC_PARMS values for a parent object
- * and modify conflicting object attributes if present.
- *
- * XXX This likely isn't the best interface for this, eventually we will probably want to
- * clean up the public structure value settings.
- *
- * @param type
- *  The algorithm type of the object.
  * @param public
- *  The public structure to set the TPMU_PUBLIC_PARMS values for.
  * @return
- *  true on success, false otherwise.
  */
-bool tpm2_alg_util_set_parent_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public);
-
-/**
- * Sets the name algorithm in the public structure checking for validity.
- * @param halg
- *  The hahsing algorithm to use for name generation.
- * @param public
- *  The public structure to set the name hashing algorithm on.
- * @return
- *  true on success, false otherwise.
- */
-bool tpm2_alg_util_set_name(TPMI_ALG_HASH halg, TPM2B_PUBLIC *public);
+bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, TPMA_OBJECT def_attrs,
+       TPM2B_PUBLIC *public);
 
 #endif /* LIB_TPM2_ALG_UTIL_H_ */

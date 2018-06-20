@@ -43,15 +43,15 @@
 #define single_item_test_get(friendly) \
     cmocka_unit_test(test_tpm2_alg_util_convert_##friendly)
 
-#define nv_single_item_test(friendly, value) \
+#define nv_single_item_test2(friendly, value, flags) \
     static void test_tpm2_alg_util_convert_##friendly(void **state) { \
     \
         (void)state; \
     \
-        TPM2_ALG_ID found_id = tpm2_alg_util_strtoalg(str(friendly)); \
-        const char *found_str = tpm2_alg_util_algtostr(value); \
-        TPM2_ALG_ID from_hex_str = tpm2_alg_util_from_optarg(str(value));    \
-        TPM2_ALG_ID from_nice_str = tpm2_alg_util_from_optarg(str(friendly));    \
+        TPM2_ALG_ID found_id = tpm2_alg_util_strtoalg(str(friendly), flags); \
+        const char *found_str = tpm2_alg_util_algtostr(value, flags); \
+        TPM2_ALG_ID from_hex_str = tpm2_alg_util_from_optarg(str(value), flags);    \
+        TPM2_ALG_ID from_nice_str = tpm2_alg_util_from_optarg(str(friendly), flags);    \
         \
         assert_ptr_not_equal(found_id, NULL); \
         assert_string_equal(str(friendly), found_str); \
@@ -59,6 +59,9 @@
         assert_int_equal(value, from_hex_str); \
         assert_int_equal(value, from_nice_str); \
     }
+
+#define nv_single_item_test(friendly, value) nv_single_item_test2(friendly, value, tpm2_alg_util_flags_any)
+
 
 nv_single_item_test(rsa, TPM2_ALG_RSA)
 /*
@@ -108,35 +111,19 @@ struct find_unk_data {
     size_t len;
 };
 
-static bool find_unknown(TPM2_ALG_ID id, const char *name, void *userdata) {
-
-    (void) name;
-
-    find_unk_data *d = (find_unk_data *) userdata;
-
-    size_t i = 0;
-    for (i = 0; i < d->len; i++) {
-        if (d->ids[i] == id) {
-            d->ids[i] = TPM2_ALG_ERROR;
-        }
-    }
-
-    return false;
-}
-
 static void test_tpm2_alg_util_sha1_test(void **state) {
 
     (void) state;
 
-    TPM2_ALG_ID sha1_found_id = tpm2_alg_util_strtoalg("sha1");
-    const char *sha1_found_str = tpm2_alg_util_algtostr(TPM2_ALG_SHA1);
+    TPM2_ALG_ID sha1_found_id = tpm2_alg_util_strtoalg("sha1", tpm2_alg_util_flags_hash);
+    const char *sha1_found_str = tpm2_alg_util_algtostr(TPM2_ALG_SHA1, tpm2_alg_util_flags_hash);
 
     char buf[256];
 
-    TPM2_ALG_ID sha1_from_hex_str = tpm2_alg_util_from_optarg("sha1");
+    TPM2_ALG_ID sha1_from_hex_str = tpm2_alg_util_from_optarg("sha1", tpm2_alg_util_flags_hash);
 
     snprintf(buf, sizeof(buf), "0x%X", TPM2_ALG_SHA1);
-    TPM2_ALG_ID sha1_from_nice_str = tpm2_alg_util_from_optarg(buf);
+    TPM2_ALG_ID sha1_from_nice_str = tpm2_alg_util_from_optarg(buf, tpm2_alg_util_flags_hash);
 
     assert_int_equal(TPM2_ALG_SHA1, sha1_found_id);
     assert_int_equal(TPM2_ALG_SHA1, sha1_from_hex_str);
@@ -147,75 +134,7 @@ static void test_tpm2_alg_util_sha1_test(void **state) {
     assert_true(sha1_pass);
 }
 
-/* make sure no one adds an algorithm to the map that isn't tested */
-static void test_tpm2_alg_util_everything_is_tested(void **state) {
-
-    (void) state;
-
-    TPM2_ALG_ID known_algs[] = {
-    TPM2_ALG_RSA,
-    TPM2_ALG_SHA1,
-    TPM2_ALG_HMAC,
-    TPM2_ALG_AES,
-    TPM2_ALG_MGF1,
-    TPM2_ALG_KEYEDHASH,
-    TPM2_ALG_XOR,
-    TPM2_ALG_SHA256,
-    TPM2_ALG_SHA384,
-    TPM2_ALG_SHA512,
-    TPM2_ALG_NULL,
-    TPM2_ALG_SM3_256,
-    TPM2_ALG_SM4,
-    TPM2_ALG_RSASSA,
-    TPM2_ALG_RSAES,
-    TPM2_ALG_RSAPSS,
-    TPM2_ALG_OAEP,
-    TPM2_ALG_ECDSA,
-    TPM2_ALG_ECDH,
-    TPM2_ALG_ECDAA,
-    TPM2_ALG_SM2,
-    TPM2_ALG_ECSCHNORR,
-    TPM2_ALG_ECMQV,
-    TPM2_ALG_KDF1_SP800_56A,
-    TPM2_ALG_KDF2,
-    TPM2_ALG_KDF1_SP800_108,
-    TPM2_ALG_ECC,
-    TPM2_ALG_SYMCIPHER,
-    TPM2_ALG_CAMELLIA,
-    TPM2_ALG_SHA3_256,
-    TPM2_ALG_SHA3_384,
-    TPM2_ALG_SHA3_512,
-    TPM2_ALG_CTR,
-    TPM2_ALG_OFB,
-    TPM2_ALG_CBC,
-    TPM2_ALG_CFB,
-    TPM2_ALG_ECB };
-
-    find_unk_data userdata = {
-        .ids = known_algs,
-        .len = ARRAY_LEN(known_algs)
-    };
-
-    /*
-     * Go through each element in the list, and check it against
-     * the known algorithm list, if it's present, set the element
-     * in the known list to TPM2_ALG_ERROR. At the end, the list
-     * should only contain TPM2_ALG_ERROR entries. Anything else
-     * indicates that the map of known algorithms was added to,
-     * but a test was not added.
-     *
-     * Tests that are removed will fail the single_item tests
-     * above since there will not be a match.
-     */
-    tpm2_alg_util_for_each_alg(find_unknown, &userdata);
-
-    size_t i;
-    for (i = 0; i < ARRAY_LEN(known_algs); i++) {
-        assert_int_equal(known_algs[i], TPM2_ALG_ERROR);
-    }
-}
-
-/* Test the digest specification langauge */
+/* Test the digest specification language */
 
 #define HASH_SHA1    "f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
 #define HASH_SHA256 "c324d5e9514f00b1a42052666721fb0911090ca197bf831f6568e735bc8522c3"
@@ -430,29 +349,49 @@ static void test_tpm2_alg_util_get_hash_size(void **state) {
     assert_int_equal(hsize, 0);
 }
 
-static void test_tpm2_alg_util_is_signing_scheme(void **state) {
+static void test_tpm2_alg_util_flags_sig(void **state) {
     UNUSED(state);
 
     TPM2_ALG_ID good_algs[] = {
         TPM2_ALG_RSASSA,
-        TPM2_ALG_RSAES,
         TPM2_ALG_RSAPSS,
-        TPM2_ALG_OAEP,
         TPM2_ALG_HMAC,
     };
 
     size_t i;
     for(i=0; i < ARRAY_LEN(good_algs); i++) {
         TPM2_ALG_ID id = good_algs[i];
-        bool res = tpm2_alg_util_is_signing_scheme(id);
-        assert_true(res);
+        const char *name = tpm2_alg_util_algtostr(id, tpm2_alg_util_flags_sig);
+        assert_non_null(name);
     }
 
-    bool res = tpm2_alg_util_is_signing_scheme(TPM2_ALG_AES);
-    assert_false(res);
+    const char *name = tpm2_alg_util_algtostr(TPM2_ALG_AES, tpm2_alg_util_flags_sig);
+    assert_null(name);
 }
 
-static void test_tpm2_alg_util_is_hash_alg(void **state) {
+static void test_tpm2_alg_util_flags_enc_scheme(void **state) {
+    UNUSED(state);
+
+    TPM2_ALG_ID good_algs[] = {
+        TPM2_ALG_RSAES,
+        TPM2_ALG_OAEP,
+    };
+
+    size_t i;
+    for(i=0; i < ARRAY_LEN(good_algs); i++) {
+        TPM2_ALG_ID id = good_algs[i];
+        const char *name = tpm2_alg_util_algtostr(id,
+                tpm2_alg_util_flags_enc_scheme);
+        assert_non_null(name);
+    }
+
+    const char *name = tpm2_alg_util_algtostr(TPM2_ALG_AES,
+            tpm2_alg_util_flags_enc_scheme);
+    assert_null(name);
+}
+
+
+static void test_tpm2_alg_util_flags_hash(void **state) {
     UNUSED(state);
 
     TPM2_ALG_ID good_algs[] = {
@@ -466,12 +405,12 @@ static void test_tpm2_alg_util_is_hash_alg(void **state) {
     size_t i;
     for(i=0; i < ARRAY_LEN(good_algs); i++) {
         TPM2_ALG_ID id = good_algs[i];
-        bool res = tpm2_alg_util_is_hash_alg(id);
-        assert_true(res);
+        const char *name = tpm2_alg_util_algtostr(id, tpm2_alg_util_flags_hash);
+        assert_non_null(name);
     }
 
-    bool res = tpm2_alg_util_is_hash_alg(TPM2_ALG_AES);
-    assert_false(res);
+    const char *name = tpm2_alg_util_algtostr(TPM2_ALG_AES, tpm2_alg_util_flags_hash);
+    assert_null(name);
 }
 
 int main(int argc, char* argv[]) {
@@ -516,7 +455,6 @@ int main(int argc, char* argv[]) {
         single_item_test_get(cbc),
         single_item_test_get(cfb),
         single_item_test_get(ecb),
-        cmocka_unit_test(test_tpm2_alg_util_everything_is_tested),
         get_single_digest_pcr_parse_test(sha1),
         get_single_digest_pcr_parse_test(sha256),
         get_single_digest_pcr_parse_test(sha384),
@@ -526,8 +464,9 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_pcr_parse_digest_list_bad),
         cmocka_unit_test(test_pcr_parse_digest_list_bad_alg),
         cmocka_unit_test(test_tpm2_alg_util_get_hash_size),
-        cmocka_unit_test(test_tpm2_alg_util_is_signing_scheme),
-        cmocka_unit_test(test_tpm2_alg_util_is_hash_alg)
+        cmocka_unit_test(test_tpm2_alg_util_flags_sig),
+        cmocka_unit_test(test_tpm2_alg_util_flags_enc_scheme),
+        cmocka_unit_test(test_tpm2_alg_util_flags_hash)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

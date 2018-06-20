@@ -35,10 +35,10 @@ source helpers.sh
 
 handle_ek=0x81010007
 handle_ak=0x81010008
-ek_alg=0x001
-ak_alg=0x0001
-digestAlg=0x000B
-signAlg=0x0014
+ek_alg=rsa
+ak_alg=rsa
+digestAlg=sha256
+signAlg=rsassa
 
 file_input_data=secret.data
 output_ek_pub=ek_pub.out
@@ -65,9 +65,9 @@ cleanup "no-shut-down"
 
 echo "12345678" > $file_input_data
 
-tpm2_createek -Q -c $handle_ek -g $ek_alg -p $output_ek_pub
+tpm2_createek -Q -c $handle_ek -G $ek_alg -p $output_ek_pub
 
-tpm2_createak -Q -C $handle_ek  -k $handle_ak -g $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub -n $output_ak_pub_name
+tpm2_createak -Q -C $handle_ek  -k $handle_ak -G $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub -n $output_ak_pub_name
 
 # Use -c in xxd so there is no line wrapping
 file_size=`stat --printf="%s" $output_ak_pub_name`

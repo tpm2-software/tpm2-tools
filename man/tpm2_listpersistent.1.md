@@ -25,8 +25,8 @@ These options for listing the persistent objects:
     hash algorithms.
 
   * **-G**, **--kalg**=_KEY\_ALGORITHM_:
-    Only display persistent objects using this key algorithm. It accepts friendly
-    names just like **-g** option. See section "Supported Public Object Algorithms"
+    Only display persistent objects using this key algorithm.
+    See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
 
 [common options](common/options.md)
