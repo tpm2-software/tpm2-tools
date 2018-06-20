@@ -35,7 +35,7 @@ source helpers.sh
 
 cleanup() {
   rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat commands.cap secret2.dat
+        encrypt.out secret.dat commands.cap secret2.dat iv.dat iv2.dat
 
   if [ "$1" != "no-shut-down" ]; then
       shut_down
@@ -81,6 +81,10 @@ tpm2_encryptdecrypt -Q -c decrypt.ctx -D -I encrypt.out -o decrypt.out
 
 # Test using stdin/stdout
 cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx | tpm2_encryptdecrypt -c decrypt.ctx -D > secret2.dat
+
+# test using IVs
+dd if=/dev/urandom of=iv.dat bs=16 count=1
+cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat:iv2.dat -D > secret2.dat
 
 cmp secret.dat secret2.dat
 
