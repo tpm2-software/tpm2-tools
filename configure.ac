@@ -18,9 +18,9 @@ AM_CONDITIONAL([HAVE_PANDOC],[test "x${PANDOC}" = "xyes"])
 AM_CONDITIONAL(
     [HAVE_MAN_PAGES],
     [test -d "${srcdir}/man/man1" -o "x${PANDOC}" = "xyes"])
-PKG_CHECK_MODULES([TSS2_SYS],[tss2-sys])
+PKG_CHECK_MODULES([TSS2_SYS], [tss2-sys >= 2.0.0])
 PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
-PKG_CHECK_MODULES([CURL],[libcurl])
+PKG_CHECK_MODULES([CURL], [libcurl])
 
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
