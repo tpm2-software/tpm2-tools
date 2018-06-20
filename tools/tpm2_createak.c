@@ -457,22 +457,22 @@ static bool on_option(char key, char *value) {
             }
         }
         break;
-    case 'g':
-        ctx.ak.in.alg.type = tpm2_alg_util_from_optarg(value);
+    case 'G':
+        ctx.ak.in.alg.type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
         if (ctx.ak.in.alg.type == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert algorithm. got: \"%s\".", value);
             return false;
         }
         break;
     case 'D':
-        ctx.ak.in.alg.digest = tpm2_alg_util_from_optarg(value);
+        ctx.ak.in.alg.digest = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.ak.in.alg.digest == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert digest algorithm.");
             return false;
         }
         break;
     case 's':
-        ctx.ak.in.alg.sign = tpm2_alg_util_from_optarg(value);
+        ctx.ak.in.alg.sign = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
         if (ctx.ak.in.alg.sign == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signing algorithm.");
             return false;
@@ -522,7 +522,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth-ak",        required_argument, NULL, 'P' },
         { "ek-context",     required_argument, NULL, 'C' },
         { "ak-handle",      required_argument, NULL, 'k' },
-        { "algorithm",      required_argument, NULL, 'g' },
+        { "algorithm",      required_argument, NULL, 'G' },
         { "digest-alg",     required_argument, NULL, 'D' },
         { "sign-alg",       required_argument, NULL, 's' },
         { "file",           required_argument, NULL, 'p' },
@@ -532,7 +532,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "privfile",       required_argument, NULL, 'r'},
     };
 
-    *opts = tpm2_options_new("o:C:E:k:g:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:C:E:k:G:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

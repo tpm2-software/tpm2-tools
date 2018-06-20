@@ -33,20 +33,18 @@
 
 source helpers.sh
 
-alg_primary_obj=0x000B
-alg_primary_key=0x0001
-alg_create_obj=0x000B
-alg_create_key=0x0008
-halg=0x000B
+alg_primary_obj=sha256
+alg_primary_key=rsa
+alg_create_key=hmac
 
 handle_hmac_key=0x81010013
 
-file_primary_key_ctx=context.p_"$alg_primary_obj"_"$alg_primary_key"
-file_hmac_key_pub=opu_"$alg_create_obj"_"$alg_create_key"
-file_hmac_key_priv=opr_"$alg_create_obj"_"$alg_create_key"
-file_hmac_key_name=name.load_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
-file_hmac_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_create_obj"_"$alg_create_key"
-file_hmac_output=hmac_"$file_hmac_key_ctx"
+file_primary_key_ctx=primary.ctx
+file_hmac_key_pub=key.pub
+file_hmac_key_priv=key.priv
+file_hmac_key_name=name.dat
+file_hmac_key_ctx=key.ctx
+file_hmac_output=hmac.out
 
 file_input_data=secret.data
 
@@ -76,26 +74,23 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C $file_primary_key_ctx
+tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C $file_primary_key_ctx
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
-cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_ctx  -g $halg -o $file_hmac_output
+cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_ctx -o $file_hmac_output
 
 cleanup "keep-context" "no-shut-down"
 
 # Test large file, ie sequence hmac'ing.
 dd if=/dev/urandom of=$file_input_data bs=2093 count=1 2>/dev/null
-tpm2_hmac -Q -C $file_hmac_key_ctx -g $halg -o $file_hmac_output $file_input_data
+tpm2_hmac -Q -C $file_hmac_key_ctx -o $file_hmac_output $file_input_data
 
 ####handle test
 rm -f $file_hmac_output
 
 tpm2_evictcontrol -a o -c $file_hmac_key_ctx -p $handle_hmac_key > evict.log
 grep -q "persistentHandle: "$handle_hmac_key"" evict.log
-
-echo "12345678" > $file_input_data
-tpm2_hmac -Q -C $handle_hmac_key  -g $halg -o $file_hmac_output $file_input_data
 
 cleanup "no-shut-down"
 
@@ -106,7 +101,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
 
-tpm2_create -Q -g sha1 -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C $file_primary_key_ctx
+tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C $file_primary_key_ctx
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
@@ -115,11 +110,8 @@ cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_ctx -o $file_hmac_output
 # test no output file
 cat $file_input_data | tpm2_hmac -C $file_hmac_key_ctx 1>/dev/null
 
-# test no output file with halg
-cat $file_input_data | tpm2_hmac -g sha1 -C $file_hmac_key_ctx 1>/dev/null
-
 # verify that silent is indeed silent
-stdout=`cat $file_input_data | tpm2_hmac -Q -g sha1 -C $file_hmac_key_ctx`
+stdout=`cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_ctx`
 if [ -n "$stdout" ]; then
     echo "Expected no output when run in quiet mode, got\"$stdout\""
     exit 1

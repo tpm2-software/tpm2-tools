@@ -202,7 +202,7 @@ static bool on_option(char key, char *value) {
 	    ctx.context_arg = value;
 	    break;
 	case 'G': {
-		ctx.halg = tpm2_alg_util_from_optarg(value);
+		ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
 		if (ctx.halg == TPM2_ALG_ERROR) {
 			LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
 			return false;
@@ -225,17 +225,12 @@ static bool on_option(char key, char *value) {
 	}
 		break;
 	case 'f': {
-		ctx.format = tpm2_alg_util_from_optarg(value);
+		ctx.format = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
 		if (ctx.format == TPM2_ALG_ERROR) {
 		    LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
 		    return false;
 		}
 
-		bool result = tpm2_alg_util_is_signing_scheme(ctx.format);
-		if (!result) {
-		    LOG_ERR("Algorithm is NOT a signing scheme, got: \"%s\"", value);
-		    return false;
-		}
 		ctx.flags.fmt = 1;
 	} break;
 	case 's':

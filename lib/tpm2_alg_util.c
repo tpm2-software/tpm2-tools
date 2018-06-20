@@ -36,6 +36,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2_attr_util.h"
 #include "tpm2_errata.h"
 #include "tpm2_hash.h"
 #include "tpm2_alg_util.h"
@@ -45,61 +46,423 @@ typedef struct alg_pair alg_pair;
 struct alg_pair {
     const char *name;
     TPM2_ALG_ID id;
+    tpm2_alg_util_flags flags;
+    tpm2_alg_util_flags _flags;
 };
 
-void tpm2_alg_util_for_each_alg(tpm2_alg_util_alg_iterator iterator, void *userdata) {
+typedef enum alg_iter_res alg_iter_res;
+enum alg_iter_res {
+    stop,
+    go,
+    found
+};
+
+typedef alg_iter_res (*alg_iter)(TPM2_ALG_ID id, const char *name, tpm2_alg_util_flags flags, void *userdata);
+
+static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
 
     static const alg_pair algs[] = {
-        { .name = "rsa", .id = TPM2_ALG_RSA },
-        { .name = "sha1", .id = TPM2_ALG_SHA1 },
-        { .name = "hmac", .id = TPM2_ALG_HMAC },
-        { .name = "aes", .id = TPM2_ALG_AES },
-        { .name = "mgf1", .id = TPM2_ALG_MGF1 },
-        { .name = "keyedhash", .id = TPM2_ALG_KEYEDHASH },
-        { .name = "xor", .id = TPM2_ALG_XOR },
-        { .name = "sha256", .id = TPM2_ALG_SHA256 },
-        { .name = "sha384", .id = TPM2_ALG_SHA384 },
-        { .name = "sha512", .id = TPM2_ALG_SHA512 },
-        { .name = "null", .id = TPM2_ALG_NULL },
-        { .name = "sm3_256", .id = TPM2_ALG_SM3_256 },
-        { .name = "sm4", .id = TPM2_ALG_SM4 },
-        { .name = "rsassa", .id = TPM2_ALG_RSASSA },
-        { .name = "rsaes", .id = TPM2_ALG_RSAES },
-        { .name = "rsapss", .id = TPM2_ALG_RSAPSS },
-        { .name = "oaep", .id = TPM2_ALG_OAEP },
-        { .name = "ecdsa", .id = TPM2_ALG_ECDSA },
-        { .name = "ecdh", .id = TPM2_ALG_ECDH },
-        { .name = "ecdaa", .id = TPM2_ALG_ECDAA },
-        { .name = "sm2", .id = TPM2_ALG_SM2 },
-        { .name = "ecschnorr", .id = TPM2_ALG_ECSCHNORR },
-        { .name = "ecmqv", .id = TPM2_ALG_ECMQV },
-        { .name = "kdf1_sp800_56a", .id = TPM2_ALG_KDF1_SP800_56A },
-        { .name = "kdf2", .id = TPM2_ALG_KDF2 },
-        { .name = "kdf1_sp800_108", .id = TPM2_ALG_KDF1_SP800_108 },
-        { .name = "ecc", .id = TPM2_ALG_ECC },
-        { .name = "symcipher", .id = TPM2_ALG_SYMCIPHER },
-        { .name = "camellia", .id = TPM2_ALG_CAMELLIA },
-        { .name = "sha3_256", .id = TPM2_ALG_SHA3_256 },
-        { .name = "sha3_384", .id = TPM2_ALG_SHA3_384 },
-        { .name = "sha3_512", .id = TPM2_ALG_SHA3_512 },
-        { .name = "ctr", .id = TPM2_ALG_CTR },
-        { .name = "ofb", .id = TPM2_ALG_OFB },
-        { .name = "cbc", .id = TPM2_ALG_CBC },
-        { .name = "cfb", .id = TPM2_ALG_CFB },
-        { .name = "ecb", .id = TPM2_ALG_ECB },
+
+        // Assymetric
+        { .name = "rsa", .id = TPM2_ALG_RSA, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
+        { .name = "ecc", .id = TPM2_ALG_ECC, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
+
+        // Symmetric
+        { .name = "aes", .id = TPM2_ALG_AES, .flags = tpm2_alg_util_flags_symmetric },
+        { .name = "camellia", .id = TPM2_ALG_CAMELLIA, .flags = tpm2_alg_util_flags_symmetric },
+
+        // Hash
+        { .name = "sha1", .id = TPM2_ALG_SHA1, .flags = tpm2_alg_util_flags_hash },
+        { .name = "sha256", .id = TPM2_ALG_SHA256, .flags = tpm2_alg_util_flags_hash },
+        { .name = "sha384", .id = TPM2_ALG_SHA384, .flags = tpm2_alg_util_flags_hash },
+        { .name = "sha512", .id = TPM2_ALG_SHA512, .flags = tpm2_alg_util_flags_hash },
+        { .name = "sm3_256", .id = TPM2_ALG_SM3_256, .flags = tpm2_alg_util_flags_hash },
+        { .name = "sha3_256", .id = TPM2_ALG_SHA3_256, .flags = tpm2_alg_util_flags_hash },
+        { .name = "sha3_384", .id = TPM2_ALG_SHA3_384, .flags = tpm2_alg_util_flags_hash },
+        { .name = "sha3_512", .id = TPM2_ALG_SHA3_512, .flags = tpm2_alg_util_flags_hash },
+
+        // Keyed hash
+        { .name = "hmac", .id = TPM2_ALG_HMAC, tpm2_alg_util_flags_keyedhash | tpm2_alg_util_flags_sig },
+        { .name = "xor", .id = TPM2_ALG_XOR, tpm2_alg_util_flags_keyedhash },
+
+        // Mask Generation Functions
+        { .name = "mgf1", .id = TPM2_ALG_MGF1, .flags = tpm2_alg_util_flags_mgf },
+
+        // Signature Schemes
+        { .name = "rsassa", .id = TPM2_ALG_RSASSA, .flags = tpm2_alg_util_flags_sig },
+        { .name = "rsapss", .id = TPM2_ALG_RSAPSS, .flags = tpm2_alg_util_flags_sig },
+        { .name = "ecdsa", .id = TPM2_ALG_ECDSA, .flags = tpm2_alg_util_flags_sig },
+        { .name = "ecdh", .id = TPM2_ALG_ECDH, .flags = tpm2_alg_util_flags_sig },
+        { .name = "ecdaa", .id = TPM2_ALG_ECDAA, .flags = tpm2_alg_util_flags_sig },
+        { .name = "ecschnorr", .id = TPM2_ALG_ECSCHNORR, .flags = tpm2_alg_util_flags_sig },
+
+        // Assyemtric Encryption Scheme
+        { .name = "oaep", .id = TPM2_ALG_OAEP, .flags = tpm2_alg_util_flags_enc_scheme },
+        { .name = "rsaes", .id = TPM2_ALG_RSAES, .flags = tpm2_alg_util_flags_enc_scheme },
+
+
+        // XXX are these sigs?
+        { .name = "sm2", .id = TPM2_ALG_SM2, .flags = tpm2_alg_util_flags_sig },
+        { .name = "sm4", .id = TPM2_ALG_SM4, .flags = tpm2_alg_util_flags_sig },
+
+        // Key derivation functions
+        { .name = "kdf1_sp800_56a", .id = TPM2_ALG_KDF1_SP800_56A, .flags = tpm2_alg_util_flags_kdf },
+        { .name = "kdf2", .id = TPM2_ALG_KDF2, .flags = tpm2_alg_util_flags_kdf },
+        { .name = "kdf1_sp800_108", .id = TPM2_ALG_KDF1_SP800_108, .flags = tpm2_alg_util_flags_kdf },
+        { .name = "ecmqv", .id = TPM2_ALG_ECMQV, .flags = tpm2_alg_util_flags_kdf },
+
+        // Modes
+        { .name = "ctr", .id = TPM2_ALG_CTR, .flags = tpm2_alg_util_flags_mode },
+        { .name = "ofb", .id = TPM2_ALG_OFB, .flags = tpm2_alg_util_flags_mode },
+        { .name = "cbc", .id = TPM2_ALG_CBC, .flags = tpm2_alg_util_flags_mode },
+        { .name = "cfb", .id = TPM2_ALG_CFB, .flags = tpm2_alg_util_flags_mode },
+        { .name = "ecb", .id = TPM2_ALG_ECB, .flags = tpm2_alg_util_flags_mode },
+
+        { .name = "symcipher", .id = TPM2_ALG_SYMCIPHER, .flags = tpm2_alg_util_flags_base },
+        { .name = "keyedhash", .id = TPM2_ALG_KEYEDHASH, .flags = tpm2_alg_util_flags_base },
+
+        // Misc
+        { .name = "null", .id = TPM2_ALG_NULL, .flags = tpm2_alg_util_flags_misc },
     };
 
     size_t i;
     for (i=0; i < ARRAY_LEN(algs); i++) {
         const alg_pair *alg = &algs[i];
-        bool result = iterator(alg->id, alg->name, userdata);
-        if (result) {
+        alg_iter_res result = iterator(alg->id, alg->name, alg->flags, userdata);
+        if (result != go) {
             return;
         }
     }
 }
 
-static bool find_match(TPM2_ALG_ID id, const char *name, void *userdata) {
+static bool handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
+
+    s->algorithm = TPM2_ALG_AES;
+
+    if (*ext == '\0') {
+        ext = "256";
+    }
+
+    if (!strncmp(ext, "128", 3)) {
+        s->keyBits.aes = 128;
+    } else if (!strncmp(ext, "256", 3)) {
+        s->keyBits.aes = 256;
+    } else if (!strncmp(ext, "384", 3)) {
+        s->keyBits.aes = 384;
+    } else if (!strncmp(ext, "512", 3)) {
+        s->keyBits.aes = 512;
+    } else {
+        return false;
+    }
+
+    ext += 3;
+
+    if (*ext == '\0') {
+        ext = "null";
+    }
+
+    s->mode.sym = tpm2_alg_util_strtoalg(ext,
+            tpm2_alg_util_flags_mode
+            |tpm2_alg_util_flags_misc);
+    if (s->mode.sym == TPM2_ALG_ERROR) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_RSA;
+    TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
+    r->exponent = 0;
+
+    /*
+     * Deal with normalizing the input strings.
+     *
+     * "rsa --> maps to rsa2048:aes256cbc
+     * "rsa:aes --> maps to rsa2048:aes256cbc
+     * "rsa:null" -- maps to rsa2048:null
+     *
+     * This function is invoked with rsa removed.
+     */
+
+    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
+
+    size_t len = strlen(ext);
+    if (len == 0 || ext[0] == ':') {
+        ext = "2048";
+    }
+
+    // Deal with bit size
+    if (!strncmp(ext, "1024", 4)) {
+        r->keyBits = 1024;
+    } else if (!strncmp(ext, "2048", 4)) {
+        r->keyBits = 2048;
+    } else if (!strncmp(ext, "4096", 4)) {
+        r->keyBits = 4096;
+    } else {
+        return false;
+    }
+
+    // go past bit size
+    ext += 4;
+
+    if (*ext != ':' || *ext + 1 == '\0') {
+        ext = is_restricted ? ":null:aes256cfb" : ":null:null";
+    }
+
+    // go past the colon separator
+    ext++;
+
+    // Get the scheme
+    const char *scheme;
+    char tmp[32];
+    char *next = strchr(ext, ':');
+    if (next) {
+        snprintf(tmp, sizeof(tmp), "%.*s", (int)(next - ext), ext);
+        scheme = tmp;
+    } else {
+        scheme = ext;
+    }
+
+    /*
+     * This can fail... if the spec is missing scheme, default the scheme to NULL
+     */
+    bool is_missing_scheme = false;
+    r->scheme.scheme = tpm2_alg_util_strtoalg(scheme,
+            tpm2_alg_util_flags_enc_scheme
+            |tpm2_alg_util_flags_misc);
+    if (r->scheme.scheme == TPM2_ALG_ERROR) {
+        r->scheme.scheme = TPM2_ALG_NULL;
+        is_missing_scheme = true;
+    }
+
+    if (is_restricted && r->scheme.scheme != TPM2_ALG_NULL) {
+        LOG_ERR("Restricted objects require a NULL scheme");
+        return false;
+    }
+
+    if (is_missing_scheme) {
+        ext = scheme;
+    } else {
+        if (!next || *(next + 1) == '\0') {
+            next = is_restricted ? ":aes256cfb" : ":null";
+        }
+
+        // Go past next :
+        ext = ++next;
+    }
+
+    if (!strncmp(ext, "aes", 3)) {
+        return handle_aes_raw(&ext[3], &r->symmetric);
+    } else if (!strcmp(ext, "null")) {
+        r->symmetric.algorithm = TPM2_ALG_NULL;
+        return true;
+    }
+
+    return false;
+}
+
+static bool handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_ECC;
+
+    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
+
+    size_t len = strlen(ext);
+    if (len == 0 || ext[0] == ':') {
+        ext = "256";
+    }
+
+    TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
+    e->kdf.scheme = TPM2_ALG_NULL;
+
+    if (!strncmp(ext, "192", 3)) {
+        e->curveID = TPM2_ECC_NIST_P192;
+    } else if (!strncmp(ext, "224", 3)) {
+        e->curveID = TPM2_ECC_NIST_P224;
+    } else if (!strncmp(ext, "256", 3)) {
+        e->curveID = TPM2_ECC_NIST_P256;
+    } else if (!strncmp(ext, "384", 3)) {
+        e->curveID = TPM2_ECC_NIST_P384;
+    } else if (!strncmp(ext, "521", 3)) {
+        e->curveID = TPM2_ECC_NIST_P521;
+    } else {
+        return false;
+    }
+
+    // go past ecc size
+    ext += 3;
+
+    if (*ext != ':' || *ext + 1 == '\0') {
+        ext = is_restricted ? ":null:aes256cfb" : ":null:null";
+    }
+
+    // go past the colon separator
+    ext++;
+
+    // Get the scheme
+    const char *scheme;
+    char tmp[32];
+    char *next = strchr(ext, ':');
+    if (next) {
+        snprintf(tmp, sizeof(tmp), "%.*s", (int)(next - ext), ext);
+        scheme = tmp;
+    } else {
+        scheme = ext;
+    }
+
+    e->scheme.scheme = tpm2_alg_util_strtoalg(scheme,
+            tpm2_alg_util_flags_enc_scheme
+            |tpm2_alg_util_flags_misc);
+    if (e->scheme.scheme == TPM2_ALG_ERROR) {
+        return false;
+    }
+
+    if (is_restricted && e->scheme.scheme != TPM2_ALG_NULL) {
+        LOG_ERR("Restricted objects require a NULL scheme");
+        return false;
+    }
+
+    if (!next || *(next + 1) == '\0') {
+        next = is_restricted ? ":aes256cfb" : ":null";
+    }
+
+    // Go past next :
+    ext = ++next;
+
+    if (!strncmp(ext, "aes", 3)) {
+        return handle_aes_raw(&ext[3], &e->symmetric);
+    } else if (!strcmp(ext, "null")) {
+        e->symmetric.algorithm = TPM2_ALG_NULL;
+        return true;
+    }
+
+    return false;
+}
+
+static bool handle_aes(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_SYMCIPHER;
+
+    tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+                      &public->publicArea.objectAttributes);
+
+    TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
+    return handle_aes_raw(ext, s);
+}
+
+static bool handle_xor(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_KEYEDHASH;
+
+    /*
+     * Fixup and normalize things like:
+     * xor --> xor:sha256
+     */
+
+    if (*ext == '\0') {
+        ext = ":sha256";
+    }
+
+    // Move past first colon separator from xor to hash
+    ext++;
+
+    TPMT_KEYEDHASH_SCHEME *s = &public->publicArea.parameters.keyedHashDetail.scheme;
+    s->scheme = TPM2_ALG_XOR;
+    s->details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
+
+    TPM2_ALG_ID alg = tpm2_alg_util_strtoalg(ext, tpm2_alg_util_flags_hash);
+    if (alg == TPM2_ALG_ERROR) {
+        LOG_ERR("Spec does not contain hash algorithm");
+        return false;
+    }
+    s->details.exclusiveOr.hashAlg = alg;
+
+    return true;
+}
+
+static bool handle_hmac(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_KEYEDHASH;
+    public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
+
+    /*
+     * Fixup and normalize things like:
+     * hmac --> hmac:sha256
+     *
+     * Note this is called with hmac stripped
+     */
+
+    if (*ext == ':') {
+        ext++;
+    }
+
+    if (*ext == '\0') {
+        ext = "sha256";
+    }
+
+    TPM2_ALG_ID alg = tpm2_alg_util_strtoalg(ext, tpm2_alg_util_flags_hash);
+    if (alg == TPM2_ALG_ERROR) {
+        return false;
+    }
+
+    public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = alg;
+    return true;
+}
+
+static bool handle_keyedhash(TPM2B_PUBLIC *public) {
+
+        public->publicArea.type = TPM2_ALG_KEYEDHASH;
+        public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
+
+        return true;
+}
+
+static bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
+
+    /*
+     * Fix up numerics, like 0x1 for rsa
+     */
+    TPM2_ALG_ID alg;
+    bool res = tpm2_util_string_to_uint16(alg_spec, &alg);
+    if (res) {
+        alg_spec = tpm2_alg_util_algtostr(alg,
+                tpm2_alg_util_flags_asymmetric
+                | tpm2_alg_util_flags_symmetric
+                | tpm2_alg_util_flags_keyedhash);
+        if (!alg_spec) {
+            return false;
+        }
+    }
+
+    /*
+     * TODO handle Camelia
+     */
+    res = false;
+    if (!strncmp(alg_spec, "rsa", 3)) {
+        res = handle_rsa(&alg_spec[3], public);
+    } else if (!strncmp(alg_spec, "aes", 3)) {
+        res = handle_aes(&alg_spec[3], public);
+    } else if (!strncmp(alg_spec, "xor", 3)) {
+        res = handle_xor(&alg_spec[3], public);
+    } else if (!strncmp(alg_spec, "ecc", 3)) {
+        res = handle_ecc(&alg_spec[3], public);
+    } else if (!strncmp(alg_spec, "hmac", 4)) {
+        res = handle_hmac(&alg_spec[4], public);
+    } else if (!strcmp(alg_spec, "keyedhash")) {
+        res = handle_keyedhash(public);
+    }
+
+    if (!res) {
+        LOG_ERR("Could not handle algorithm spec: \"%s\"", alg_spec);
+    }
+
+    return res;
+}
+
+static alg_iter_res find_match(TPM2_ALG_ID id, const char *name, tpm2_alg_util_flags flags, void *userdata) {
 
     alg_pair *search_data = (alg_pair *)userdata;
 
@@ -108,21 +471,30 @@ static bool find_match(TPM2_ALG_ID id, const char *name, void *userdata) {
      * search by id.
      */
     if (search_data->name && !strcmp(search_data->name, name)) {
-        search_data->id = id;
-        return true;
+        alg_iter_res res = search_data->flags & flags ? found : stop;
+        if (res == found) {
+            search_data->id = id;
+            search_data->_flags = flags;
+        }
+        return res;
     } else if (search_data->id == id) {
-        search_data->name = name;
-        return true;
+        alg_iter_res res = search_data->flags & flags ? found : stop;
+        if (res == found) {
+            search_data->name = name;
+            search_data->_flags = flags;
+        }
+        return  res;
     }
 
-    return false;
+    return go;
 }
 
-TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name) {
+TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name, tpm2_alg_util_flags flags) {
 
     alg_pair userdata = {
         .name = name,
-        .id = TPM2_ALG_ERROR
+        .id = TPM2_ALG_ERROR,
+        .flags = flags
     };
 
     if (name) {
@@ -132,11 +504,12 @@ TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name) {
     return userdata.id;
 }
 
-const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id) {
+const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id, tpm2_alg_util_flags flags) {
 
     alg_pair userdata = {
         .name = NULL,
-        .id = id
+        .id = id,
+        .flags = flags
     };
 
     tpm2_alg_util_for_each_alg(find_match, &userdata);
@@ -144,53 +517,33 @@ const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id) {
     return userdata.name;
 }
 
-TPM2_ALG_ID tpm2_alg_util_from_optarg(char *optarg) {
+tpm2_alg_util_flags tpm2_alg_util_algtoflags(TPM2_ALG_ID id) {
+
+    alg_pair userdata = {
+        .name = NULL,
+        .id = id,
+        .flags = tpm2_alg_util_flags_any,
+        ._flags = tpm2_alg_util_flags_none
+    };
+
+    tpm2_alg_util_for_each_alg(find_match, &userdata);
+
+    return userdata._flags;
+}
+
+
+TPM2_ALG_ID tpm2_alg_util_from_optarg(const char *optarg, tpm2_alg_util_flags flags) {
 
     TPM2_ALG_ID halg;
     bool res = tpm2_util_string_to_uint16(optarg, &halg);
     if (!res) {
-        halg = tpm2_alg_util_strtoalg(optarg);
+        halg = tpm2_alg_util_strtoalg(optarg, flags);
+    } else {
+        if (!tpm2_alg_util_algtostr(halg, flags)) {
+            return TPM2_ALG_ERROR;
+        }
     }
     return halg;
-}
-
-bool tpm2_alg_util_is_hash_alg(TPM2_ALG_ID id) {
-
-    switch (id) {
-    case TPM2_ALG_SHA1 :
-        /* fallsthrough */
-    case TPM2_ALG_SHA256 :
-        /* fallsthrough */
-    case TPM2_ALG_SHA384 :
-        /* fallsthrough */
-    case TPM2_ALG_SHA512 :
-        /* fallsthrough */
-    case TPM2_ALG_SM3_256 :
-        return true;
-        /* no default */
-    }
-
-    return false;
-}
-
-bool tpm2_alg_util_is_signing_scheme(TPM2_ALG_ID id) {
-
-    switch (id) {
-    case TPM2_ALG_RSASSA:
-        /* fallsthrough */
-    case TPM2_ALG_RSAES:
-        /* fallsthrough */
-    case TPM2_ALG_RSAPSS:
-        /* fallsthrough */
-    case TPM2_ALG_OAEP:
-        /* fallsthrough */
-    case TPM2_ALG_HMAC:
-        /* fallsthrough */
-        return true;
-        /* no default */
-    }
-
-    return false;
 }
 
 UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id) {
@@ -294,16 +647,9 @@ bool pcr_parse_digest_list(char **argv, int len,
             /*
              * Convert and validate the hash algorithm. It should be a hash algorithm
              */
-            TPM2_ALG_ID alg = tpm2_alg_util_from_optarg(stralg);
+            TPM2_ALG_ID alg = tpm2_alg_util_from_optarg(stralg, tpm2_alg_util_flags_hash);
             if (alg == TPM2_ALG_ERROR) {
                 LOG_ERR("Could not convert algorithm, got: \"%s\"", stralg);
-                return false;
-            }
-
-            bool is_hash_alg = tpm2_alg_util_is_hash_alg(alg);
-            if (!is_hash_alg) {
-                LOG_ERR("Algorithm is not a hash algorithm, got: \"%s\"",
-                        stralg);
                 return false;
             }
 
@@ -462,128 +808,39 @@ bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
     return true;
 }
 
-bool tpm2_alg_util_set_leaf_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public, bool is_sealing) {
+bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, TPMA_OBJECT def_attrs,
+        TPM2B_PUBLIC *public) {
 
-    switch(type) {
-    case TPM2_ALG_RSA:
-        public->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;
-        public->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
-        public->publicArea.parameters.rsaDetail.keyBits = 2048;
-        public->publicArea.parameters.rsaDetail.exponent = 0;
-        public->publicArea.unique.rsa.size = 0;
-        break;
+    memset(public, 0, sizeof(*public));
 
-    case TPM2_ALG_KEYEDHASH:
-        public->publicArea.unique.keyedHash.size = 0;
-        public->publicArea.objectAttributes &= ~TPMA_OBJECT_DECRYPT;
-        if (is_sealing) {
-            // sealing
-            public->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN_ENCRYPT;
-            public->publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
-            public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
-        } else {
-            // hmac
-            public->publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;
-            public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
-            public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = public->publicArea.nameAlg;  //for tpm2_hmac multi alg
+    /* load a policy from a path if present */
+    if (auth_policy) {
+        public->publicArea.authPolicy.size = sizeof(public->publicArea.authPolicy.buffer);
+        bool res = files_load_bytes_from_path(auth_policy,
+                    public->publicArea.authPolicy.buffer, &public->publicArea.authPolicy.size);
+        if (!res) {
+            return false;
         }
-        break;
+    }
 
-    case TPM2_ALG_ECC:
-        public->publicArea.parameters.eccDetail.symmetric.algorithm = TPM2_ALG_NULL;
-        public->publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
-        public->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
-        public->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
-        public->publicArea.unique.ecc.x.size = 0;
-        public->publicArea.unique.ecc.y.size = 0;
-        break;
-
-    case TPM2_ALG_SYMCIPHER:
-        tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
-                          &public->publicArea.objectAttributes);
-
-        public->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
-        public->publicArea.parameters.symDetail.sym.keyBits.sym = 128;
-        public->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
-        public->publicArea.unique.sym.size = 0;
-        break;
-
-    default:
-        LOG_ERR("type algorithm: 0x%0x not supported!", public->publicArea.type);
+    /* Set the hashing algorithm used for object name */
+    public->publicArea.nameAlg =
+            name_halg ? tpm2_alg_util_from_optarg(name_halg, tpm2_alg_util_flags_hash) : TPM2_ALG_SHA256;
+    if (public->publicArea.nameAlg == TPM2_ALG_ERROR) {
+        LOG_ERR("Invalid name hashing algorithm, got\"%s\"", name_halg);
         return false;
     }
 
-    public->publicArea.type = type;
-
-    return true;
-}
-
-
-bool tpm2_alg_util_set_parent_pub_params(TPMI_ALG_PUBLIC type, TPM2B_PUBLIC *public) {
-
-    switch(type) {
-    case TPM2_ALG_RSA: {
-        TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
-       r->symmetric.algorithm = TPM2_ALG_AES;
-       r->symmetric.keyBits.aes = 128;
-       r->symmetric.mode.aes = TPM2_ALG_CFB;
-       r->scheme.scheme = TPM2_ALG_NULL;
-       r->keyBits = 2048;
-       r->exponent = 0;
-       public->publicArea.unique.rsa.size = 0;
-    } break;
-    case TPM2_ALG_KEYEDHASH: {
-        TPMT_KEYEDHASH_SCHEME *s = &public->publicArea.parameters.keyedHashDetail.scheme;
-       s->scheme = TPM2_ALG_XOR;
-       s->details.exclusiveOr.hashAlg = TPM2_ALG_SHA256;
-       s->details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
-       public->publicArea.unique.keyedHash.size = 0;
-    } break;
-    case TPM2_ALG_ECC: {
-        TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
-       e->symmetric.algorithm = TPM2_ALG_AES;
-       e->symmetric.keyBits.aes = 128;
-       e->symmetric.mode.sym = TPM2_ALG_CFB;
-       e->scheme.scheme = TPM2_ALG_NULL;
-       e->curveID = TPM2_ECC_NIST_P256;
-       e->kdf.scheme = TPM2_ALG_NULL;
-       public->publicArea.unique.ecc.x.size = 0;
-       public->publicArea.unique.ecc.y.size = 0;
-    } break;
-    case TPM2_ALG_SYMCIPHER: {
-        TPMS_SYMCIPHER_PARMS *s = &public->publicArea.parameters.symDetail;
-       s->sym.algorithm = TPM2_ALG_AES;
-       s->sym.keyBits.sym = 128;
-       s->sym.mode.sym = TPM2_ALG_CFB;
-       public->publicArea.unique.sym.size = 0;
-    } break;
-    default:
-        LOG_ERR("type algorithm \"%s\" not supported!",
-                tpm2_alg_util_algtostr(public->publicArea.type));
-
-        return false;
+    /* Set specified attributes or use default */
+    if (attrs) {
+        bool res = tpm2_attr_util_obj_from_optarg(attrs,
+                &public->publicArea.objectAttributes);
+        if (!res) {
+            return res;
+        }
+    } else {
+        public->publicArea.objectAttributes = def_attrs;
     }
 
-    public->publicArea.type = type;
-
-    return true;
-}
-
-bool tpm2_alg_util_set_name(TPMI_ALG_HASH halg, TPM2B_PUBLIC *public) {
-
-    switch(halg) {
-    case TPM2_ALG_SHA1:
-    case TPM2_ALG_SHA256:
-    case TPM2_ALG_SHA384:
-    case TPM2_ALG_SHA512:
-    case TPM2_ALG_SM3_256:
-    case TPM2_ALG_NULL:
-        public->publicArea.nameAlg = halg;
-        return true;
-    }
-
-    LOG_ERR("name algorithm \"%s\" not supported!",
-            tpm2_alg_util_algtostr(halg));
-
-    return false;
+    return tpm2_alg_util_handle_ext_alg(alg_details, public);
 }

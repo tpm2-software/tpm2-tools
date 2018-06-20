@@ -38,7 +38,7 @@ handle_base=0x81000000
 auth=o
 
 declare -a hashes=("sha1" "sha256")
-declare -a keys=("ecc" "keyedhash")
+declare -a keys=("ecc" "xor")
 
 cleanup() {
     for idx in "${!keys[@]}"
@@ -94,6 +94,9 @@ fi
 # Test filtering by key algorithm
 for alg in "${keys[@]}"
 do
+    tpm2_listpersistent -G "$alg"
+    echo "Bill"
+    echo "tpm2_listpersistent -G \"$alg\" | grep -q \"$alg\""
     tpm2_listpersistent -G "$alg" | grep -q "$alg"
 done
 

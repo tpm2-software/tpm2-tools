@@ -57,14 +57,15 @@ loaded-key:
     the context file via this option and the public key via the **-p** option, the
     AK can be restored via a call to tpm2_loadexternal(1).
 
-  * **-g**, **--algorithm**=_ALGORITHM_:
-    Specifies the algorithm type of AK. Algorithms should follow the
-    "formatting standards", see section "Algorithm Specifiers".
-    See section "Supported Public Object Algorithms" for a list of supported
-    object algorithms.
+  * **-G**, **--algorithm**=_ALGORITHM_:
+    Specifies the algorithm type of AK. Supports:
+    * ecc - An P256 key.
+    * rsa - An RSA2048 key.
+    * keyedhash - hmac key.
 
   * **-D**, **--digest-alg**=_HASH\_ALGORITHM_:
-    Like -g, but specifies the digest algorithm. Algorithms should follow the
+    Like -g, but specifies the digest algorithm used for signing.
+    Algorithms should follow the
     "formatting standards", see section "Algorithm Specifiers".
     See section "Supported Hash Algorithms" for a list of supported hash
     algorithms.

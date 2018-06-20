@@ -48,7 +48,7 @@ handle_signing_key=0x81010005
 
 alg_hash=sha256
 alg_primary_key=0x0001
-alg_signing_key=0x0008
+alg_signing_key=hmac
 
 cleanup() {
     rm -f $file_input_data $file_primary_key_ctx $file_signing_key_pub \

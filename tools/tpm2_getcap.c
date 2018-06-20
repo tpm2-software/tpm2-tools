@@ -574,7 +574,7 @@ static void
 dump_algorithm_properties (TPM2_ALG_ID       id,
                            TPMA_ALGORITHM   alg_attrs)
 {
-    const char *id_name = tpm2_alg_util_algtostr(id);
+    const char *id_name = tpm2_alg_util_algtostr(id, tpm2_alg_util_flags_any);
     bool is_unknown = id_name == NULL;
     id_name = id_name ? id_name : "unknown";
 

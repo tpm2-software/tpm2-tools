@@ -82,7 +82,7 @@ start_up
 
 head -c 4096 /dev/random > $file_hash_input
 
-tpm2_createek -Q -g $alg_ek -p "$file_pubek_orig" -c $handle_ek
+tpm2_createek -Q -G $alg_ek -p "$file_pubek_orig" -c $handle_ek
 
 for fmt in tss pem der; do
 
@@ -98,7 +98,7 @@ for fmt in tss pem der; do
 
 done
 
-tpm2_createak -Q -g $alg_ak -C $handle_ek -k $handle_ak -p "$file_pubak_tss" -n "$file_pubak_name"
+tpm2_createak -Q -G $alg_ak -C $handle_ek -k $handle_ak -p "$file_pubak_tss" -n "$file_pubak_name"
 
 tpm2_readpublic -Q -c $handle_ak -f "pem" -o "$file_pubak_pem"
 

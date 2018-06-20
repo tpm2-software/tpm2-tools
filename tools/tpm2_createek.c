@@ -210,10 +210,10 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.ek_auth_str = value;
         break;
-    case 'g': {
-        TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value);
+    case 'G': {
+        TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
         if (type == TPM2_ALG_ERROR) {
-            LOG_ERR("Invalid key algorithm, got\"%s\"", value);
+            LOG_ERR("Invalid key algorithm, got \"%s\"", value);
             return false;
         }
         ctx.objdata.in.public.publicArea.type = type;
@@ -246,13 +246,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth-endorse",         required_argument, NULL, 'e' },
         { "auth-owner",           required_argument, NULL, 'o' },
         { "auth-ek",              required_argument, NULL, 'P' },
-        { "algorithm",            required_argument, NULL, 'g' },
+        { "algorithm",            required_argument, NULL, 'G' },
         { "file",                 required_argument, NULL, 'p' },
         { "format",               required_argument, NULL, 'f' },
         { "context",              required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("e:o:P:g:p:f:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:P:G:p:f:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

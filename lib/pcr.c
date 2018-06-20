@@ -77,7 +77,7 @@ static bool pcr_parse_selection(const char *str, size_t len, TPMS_PCR_SELECTION 
 
     snprintf(buf, strLeft - str + 1, "%s", str);
 
-    pcrSel->hash = tpm2_alg_util_from_optarg(buf);
+    pcrSel->hash = tpm2_alg_util_from_optarg(buf, tpm2_alg_util_flags_hash);
 
     if (pcrSel->hash == TPM2_ALG_ERROR) {
         return false;

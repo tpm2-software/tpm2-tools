@@ -42,21 +42,26 @@ These options for creating the tpm entity:
     hash algorithms.
 
   * **-G**, **--kalg**=_KEY\_ALGORITHM_:
-    The key algorithm associated with this object. It defaults to RSA if not
+    The key algorithm associated with this object. It defaults to "rsa" if not
     specified.
     It accepts friendly names just like -g option.
     See section "Supported Public Object Algorithms" for a list
-    of supported object algorithms.
+    of supported object algorithms. Mutually exclusive of **-I**.
 
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
 
-    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
+    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
+
+    When **-I** is specified for sealing, `TPMA_OBJECT_SIGN_ENCRYPT` and `TPMA_OBJECT_DECRYPT` are removed from the default attribute set.
+    The algorithm is set in a way where the the object is only good for sealing and unsealing. Ie one cannot use an object for sealing and cryptography
+    operations.
 
   * **-I**, **--in-file**=_FILE_:
     The data file to be sealed, optional. If file is -, read from stdin.
-    When sealing data only the TPM_ALG_KEYEDHASH algorithm is allowed.
+    When sealing data only the _TPM_ALG_KEYEDHASH_ algorithm with a NULL scheme is allowed. Thus, **-G** cannot
+    be specified.
 
   * **-L**, **--policy-file**=_POLICY\_FILE_:
     The input policy file, optional.

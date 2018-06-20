@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_hmac: drop -g, just use the algorithm associated with the object.
+  * tpm2_getmanufec: -g changes to -G
+  * tpm2_createek: -g changes to -G
+  * tpm2_createak: -g changes to -G
   * tpm2_verifysignature: -g becomes -G
   * tpm2_sign: -g becomes -G
   * tpm2_import: support specifying parent key with a context file,

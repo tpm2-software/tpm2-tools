@@ -72,7 +72,7 @@ static bool on_option(char key, char *value) {
         ctx.session.type = TPM2_SE_POLICY;
         break;
     case 'g':
-        ctx.session.halg = tpm2_alg_util_from_optarg(value);
+        ctx.session.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if(ctx.session.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid choice for policy digest hash algorithm");
             return false;

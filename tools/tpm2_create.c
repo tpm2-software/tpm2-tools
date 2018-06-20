@@ -51,6 +51,11 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
+#define DEFAULT_ATTRS \
+     TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM \
+    |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN \
+    |TPMA_OBJECT_USERWITHAUTH
+
 typedef struct tpm_create_ctx tpm_create_ctx;
 struct tpm_create_ctx {
     struct {
@@ -66,7 +71,12 @@ struct tpm_create_ctx {
     char *parent_auth_str;
     const char *context_arg;
     tpm2_loaded_object context_object;
-    TPM2_ALG_ID alg;
+
+    char *alg;
+    char *attrs;
+    char *halg;
+    char *policy;
+
     struct {
         UINT16 P : 1;
         UINT16 K : 1;
@@ -79,34 +89,13 @@ struct tpm_create_ctx {
     } flags;
 };
 
-#define PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT { \
-    .publicArea = { \
-        .type = TPM2_ALG_RSA, \
-        .nameAlg = TPM2_ALG_SHA256, \
-        .objectAttributes = \
-                  TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM \
-                  |TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN| \
-                   TPMA_OBJECT_USERWITHAUTH, \
-       .unique = { .rsa = { .size = 0 }}, \
-        .parameters = { \
-            .rsaDetail = { \
-                .exponent = 0, \
-                .keyBits = 2048, \
-                .scheme = { .scheme = TPM2_ALG_NULL }, \
-                .symmetric = { \
-                    .algorithm = TPM2_ALG_NULL, \
-                }, \
-            }, \
-        }, \
-    }, \
-}
+#define DEFAULT_KEY_ALG "rsa2048"
 
 static tpm_create_ctx ctx = {
+        .alg = DEFAULT_KEY_ALG,
     .auth = {
             .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     },
-    .in_public = PUBLIC_AREA_TPMA_OBJECT_DEFAULT_INIT,
-    .alg = TPM2_ALG_RSA
 };
 
 static bool create(TSS2_SYS_CONTEXT *sapi_context) {
@@ -137,7 +126,7 @@ static bool create(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    tpm2_util_public_to_yaml(&outPublic);
+    tpm2_util_public_to_yaml(&outPublic, NULL);
 
     if (ctx.flags.u) {
         bool res = files_save_public(&outPublic, ctx.opu_path);
@@ -168,48 +157,27 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.parent_auth_str = value;
         break;
-    case 'K': {
+    case 'K':
         ctx.flags.K = 1;
         ctx.key_auth_str = value;
-    } break;
-    case 'g': {
-        TPMI_ALG_HASH halg = tpm2_alg_util_from_optarg(value);
-        if (halg == TPM2_ALG_ERROR) {
-            LOG_ERR("Invalid hash algorithm, got\"%s\"", value);
-            return false;
-        }
-
-        bool res = tpm2_alg_util_set_name(halg, &ctx.in_public);
-        if (!res) {
-            return false;
-        }
-    } break;
-    case 'G': {
-        ctx.alg = tpm2_alg_util_from_optarg(value);
-        if(ctx.alg == TPM2_ALG_ERROR) {
-            LOG_ERR("Invalid key algorithm, got\"%s\"", value);
-            return false;
-        }
-    } break;
-    case 'A': {
-        bool res = tpm2_attr_util_obj_from_optarg(value,
-                &ctx.in_public.publicArea.objectAttributes);
-        if(!res) {
-            LOG_ERR("Invalid object attribute, got\"%s\"", value);
-            return false;
-        }
+    break;
+    case 'g':
+        ctx.halg = value;
+    break;
+    case 'G':
+        ctx.alg =  value;
+        ctx.flags.G = 1;
+    break;
+    case 'A':
+        ctx.attrs = value;
         ctx.flags.A = 1;
-    } break;
+    break;
     case 'I':
         ctx.input = strcmp("-", value) ? value : NULL;
         ctx.flags.I = 1;
         break;
     case 'L':
-        ctx.in_public.publicArea.authPolicy.size = sizeof(ctx.in_public.publicArea.authPolicy) - 2;
-        if(!files_load_bytes_from_path(value, ctx.in_public.publicArea.authPolicy.buffer,
-                                       &ctx.in_public.publicArea.authPolicy.size)) {
-            return false;
-        }
+        ctx.policy = value;
         ctx.flags.L = 1;
         break;
     case 'u':
@@ -263,17 +231,32 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
+    TPMA_OBJECT attrs = DEFAULT_ATTRS;
+
     if (ctx.flags.I) {
         bool res = load_sensitive();
         if (!res) {
             goto out;
         }
+
+        if (ctx.flags.G) {
+            LOG_ERR("Cannot specify -G and -I together.");
+            goto out;
+        }
+
+        ctx.alg = "keyedhash";
+
+        if (!ctx.flags.A) {
+            attrs &= ~TPMA_OBJECT_SIGN_ENCRYPT;
+            attrs &= ~TPMA_OBJECT_DECRYPT;
+            attrs &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
+        }
+    } else if (!ctx.flags.A && !strncmp("hmac", ctx.alg, 4)) {
+        attrs &= ~TPMA_OBJECT_DECRYPT;
     }
 
-    result =
-        ctx.in_public.publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED ?
-                tpm2_alg_util_set_parent_pub_params(ctx.alg, &ctx.in_public) :
-                tpm2_alg_util_set_leaf_pub_params(ctx.alg, &ctx.in_public, ctx.flags.I);
+    result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, attrs,
+            &ctx.in_public);
     if(!result) {
         goto out;
     }

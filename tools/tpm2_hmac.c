@@ -53,7 +53,6 @@ struct tpm_hmac_ctx {
         TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
     } auth;
-    TPMI_ALG_HASH algorithm;
     char *hmac_output_file_path;
     const char *context_arg;
     tpm2_loaded_object key_context_object;
@@ -66,7 +65,6 @@ struct tpm_hmac_ctx {
 
 static tpm_hmac_ctx ctx = {
     .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-    .algorithm = TPM2_ALG_SHA1,
 };
 
 static bool tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) {
@@ -93,7 +91,7 @@ static bool tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) 
         }
 
         TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HMAC(sapi_context, ctx.key_context_object.handle,
-                &sessions_data, &buffer, ctx.algorithm, result,
+                &sessions_data, &buffer, TPM2_ALG_NULL, result,
                 &sessions_data_out));
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(TSS2_RC_SUCCESS, rval);
@@ -112,7 +110,7 @@ static bool tpm_hmac_file(TSS2_SYS_CONTEXT *sapi_context, TPM2B_DIGEST *result) 
      * to loop over, if possible. This way we can call Complete with data.
      */
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HMAC_Start(sapi_context, ctx.key_context_object.handle,
-            &sessions_data, &null_auth, ctx.algorithm, &sequence_handle, &sessions_data_out));
+            &sessions_data, &null_auth, TPM2_ALG_NULL, &sequence_handle, &sessions_data_out));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_HMAC_Start, rval);
         return false;
@@ -190,7 +188,6 @@ static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (hmac_out.size) {
         UINT16 i;
-        tpm2_tool_output("hmac(%s):", tpm2_alg_util_algtostr(ctx.algorithm));
         for (i = 0; i < hmac_out.size; i++) {
             tpm2_tool_output("%02x", hmac_out.buffer[i]);
         }
@@ -207,8 +204,6 @@ static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool on_option(char key, char *value) {
 
-    bool result = false;
-
     switch (key) {
     case 'C':
         ctx.context_arg = value;
@@ -217,19 +212,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.key_auth_str = value;
         break;
-    case 'g':
-        ctx.algorithm = tpm2_alg_util_from_optarg(value);
-        if (ctx.algorithm == TPM2_ALG_ERROR) {
-            LOG_ERR("Could not convert algorithm to number, got \"%s\"",
-                    value);
-            return false;
-        }
-        break;
     case 'o':
-        result = files_does_file_exist(value);
-        if (result) {
-            return false;
-        }
         ctx.hmac_output_file_path = value;
         break;
     }
@@ -259,13 +242,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "key-context",          required_argument, NULL, 'C' },
         { "auth-key",             required_argument, NULL, 'P' },
-        { "halg",                 required_argument, NULL, 'g' },
         { "out-file",             required_argument, NULL, 'o' },
     };
 
     ctx.input = stdin;
 
-    *opts = tpm2_options_new("C:P:g:o:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("C:P:o:", ARRAY_LEN(topts), topts, on_option,
                              on_args, 0);
 
     return *opts != NULL;

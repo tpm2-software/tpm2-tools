@@ -36,7 +36,7 @@ source helpers.sh
 alg_primary_obj=sha256
 alg_primary_key=rsa
 alg_create_obj=0x000B
-alg_create_key=0x0008
+alg_create_key=hmac
 
 alg_quote=0x0004
 alg_quote1=0x000b
@@ -104,7 +104,7 @@ tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -q $nonce
 tpm2_quote -Q -C $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
 
 #####AK
-tpm2_createek -Q -c $Handle_ek_quote -g 0x01 -p ek.pub2
+tpm2_createek -Q -c $Handle_ek_quote -G 0x01 -p ek.pub2
 
 tpm2_createak -Q -C $Handle_ek_quote -k  $Handle_ak_quote2 -p ak.pub2 -n ak.name_2
 

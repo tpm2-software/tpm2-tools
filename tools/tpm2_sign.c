@@ -193,7 +193,7 @@ static bool on_option(char key, char *value) {
         ctx.key_auth_str = value;
         break;
     case 'G': {
-        ctx.halg = tpm2_alg_util_from_optarg(value);
+        ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
                     value);

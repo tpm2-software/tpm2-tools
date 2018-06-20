@@ -50,7 +50,7 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
         LOG_ERR("Could not convert attributes to string form");
     }
 
-    const char *alg = tpm2_alg_util_algtostr(nv_public->nvPublic.nameAlg);
+    const char *alg = tpm2_alg_util_algtostr(nv_public->nvPublic.nameAlg, tpm2_alg_util_flags_hash);
     if (!alg) {
         LOG_ERR("Could not convert algorithm to string form");
     }

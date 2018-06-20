@@ -44,11 +44,11 @@ Refer to:
     If one saves the context file via this option and the public key via the
     **-p** option, the EK can be restored via a call to tpm2_loadexternal(1).
 
-  * **-g**, **--algorithm**=_ALGORITHM_:
-    specifies the algorithm type of EK.
-    See section "Supported Public Object Algorithms" for a list of supported
-    object algorithms. See section "Algorithm Specifiers" on how to specify
-    an algorithm argument.
+  * **-G**, **--algorithm**=_ALGORITHM_:
+    specifies the algorithm type of EK. Supports:
+    * ecc - An P256 key.
+    * rsa - An RSA2048 key.
+    * keyedhash - hmac key.
 
   * **-p**, **--file**=_FILE_:
     Optional: specifies the file used to save the public portion of EK. This defaults

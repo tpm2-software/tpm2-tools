@@ -54,12 +54,12 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_createek -Q -c 0x8101000b -g rsa -p ek.pub
+tpm2_createek -Q -c 0x8101000b -G rsa -p ek.pub
 
-tpm2_createak -Q -C 0x8101000b -k 0x8101000c -g rsa -D sha256 -s rsassa -p ak.pub -n ak.name
+tpm2_createak -Q -C 0x8101000b -k 0x8101000c -G rsa -D sha256 -s rsassa -p ak.pub -n ak.name
 
 # Find a vacant persistent handle
-tpm2_createak -C 0x8101000b -k - -g rsa -D sha256 -s rsassa -p ak.pub -n ak.name > ak.log
+tpm2_createak -C 0x8101000b -k - -G rsa -D sha256 -s rsassa -p ak.pub -n ak.name > ak.log
 phandle=`yaml_get_kv ak.log \"ak\-persistent\-handle\"`
 tpm2_evictcontrol -Q -a o -c $phandle
 

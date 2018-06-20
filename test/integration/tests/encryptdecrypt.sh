@@ -71,7 +71,7 @@ tpm2_clear -Q
 
 tpm2_createprimary -Q -a e -g sha1 -G rsa -o primary.ctx
 
-tpm2_create -Q -g sha256 -G symcipher -u key.pub -r key.priv -C primary.ctx
+tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C primary.ctx
 
 tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -o decrypt.ctx
 
