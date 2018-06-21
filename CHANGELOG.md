@@ -1,5 +1,5 @@
 ## Changelog
-### 3.1.0-rc0 - 2018-06-11
+### 3.1.0 - 2018-06-21
   * Update to use TSS version 2.0
   * When user supplies nv attributes use those exclusively, not in addition to the defaults
   * When user supplies object attributes use those exclusively, not in addition to the defaults
