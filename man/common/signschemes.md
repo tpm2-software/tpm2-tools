@@ -1,6 +1,6 @@
 # Supported Signing Schemes
 
-Supported hash algorithms are:
+Supported signing algorithms are:
 
   * **0x5**  or **hmac** for **TPM_ALG_HMAC**
   * **0x14** or **rsassa** for **TPM_ALG_RSASSA**
