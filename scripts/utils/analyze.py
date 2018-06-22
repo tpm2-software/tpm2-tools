@@ -44,7 +44,8 @@ class ToolConflictor(object):
 
     _ignore = ["tpm2_tool"]
 
-    def __init__(self, tools):
+    def __init__(self, tools, full=False):
+        self.full = full
 
         # Using the command summary here:
         # https://trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-3-Commands-01.38.pdf
@@ -242,6 +243,9 @@ class ToolConflictor(object):
             if conflicts is None:
                 continue
 
+            if not self.full and gname == "custom":
+                continue
+
             has_conflicts = True
             print "group: %s:" % (gname)
             print "\ttools: %s" % str([t.name for t in tools])
@@ -291,16 +295,18 @@ class Parser(object):
 
 
 def main():
-    '''main entry point to program'''
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path", help="path to directory of c files to analyze")
+    parser.add_argument("-c", "--custom",
+                        help="include custom tools in the report",
+                        action="store_true")
+    args = parser.parse_args()
 
-    if len(sys.argv) != 2:
-        sys.exit("Expected file path argument, got %d arguments" %
-                 (len(sys.argv)))
-
-    parser = Parser(sys.argv[1])
+    parser = Parser(args.path)
     tools = parser.parse()
 
-    conflictor = ToolConflictor(tools)
+    conflictor = ToolConflictor(tools, full=args.custom)
     conflictor.process()
 
     has_conflicts = conflictor.report()
