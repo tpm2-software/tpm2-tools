@@ -29,7 +29,7 @@ sign.
       * **e** for **TPM_RH_ENDORSEMENT**
       * **n** for **TPM_RH_NULL**
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
+  * **-G**, **--halg**=_HASH\_ALGORITHM_:
     The hash algorithm to use.
     Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers".
@@ -55,7 +55,7 @@ sign.
 Hash a file with sha1 hash algorithm and save the hash and ticket to a file:
 
 ```
-tpm2_hash -H e -g sha1 -o hash.bin -t ticket.bin data.txt
+tpm2_hash -H e -G sha1 -o hash.bin -t ticket.bin data.txt
 ```
 
 # RETURNS
