@@ -16,6 +16,8 @@ if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
     -v `pwd`:/workspace/tpm2-tools tpm2software/tpm2-tss \
     /bin/bash -c '/workspace/tpm2-tools/.ci/docker.run'
 
+  # check to ensure change hasn't introduced conflicting short options
+  scripts/utils/analyze.py tools
 else
 
   if [[ "$CC" == clang* ]]; then
