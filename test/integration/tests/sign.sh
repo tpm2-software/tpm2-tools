@@ -90,7 +90,7 @@ rm -f $file_output_data
 
 # generate hash and test validation
 
-tpm2_hash -Q -a e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
+tpm2_hash -Q -a e -G $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
 
 tpm2_sign -Q -c $handle_signing_key -G $alg_hash -s $file_output_data -m $file_input_data -t $file_output_ticket
 
