@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_verifysignature: -f/--format becomes -i/--input-format
   * tpm2_import: support specifying parent key with a context file,
     --parent-key-handle/-H becomes --parent-key/-C
   * tpm2_nvwrite and tpm2_nvread: when -P is "index" -a is optional and defaults to
