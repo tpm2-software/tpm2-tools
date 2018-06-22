@@ -26,7 +26,7 @@ symmetric key, both the public and private portions need to be loaded.
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
+  * **-G**, **--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
