@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_verifysignature: -g becomes -G
   * tpm2_sign: -g becomes -G
   * tpm2_verifysignature: -f/--format becomes -i/--input-format
   * tpm2_import: support specifying parent key with a context file,

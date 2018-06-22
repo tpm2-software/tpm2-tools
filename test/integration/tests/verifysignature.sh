@@ -79,7 +79,7 @@ tpm2_load -Q -C $file_primary_key_ctx  -u $file_signing_key_pub  -r $file_signin
 
 tpm2_sign -Q -c $file_signing_key_ctx -G $alg_hash -m $file_input_data -s $file_output_data
 
-tpm2_verifysignature -Q -c $file_signing_key_ctx  -g $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
+tpm2_verifysignature -Q -c $file_signing_key_ctx  -G $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
 
 tpm2_hash -Q -a n -g $alg_hash -o $file_input_data_hash -t $file_input_data_hash_tk $file_input_data
 
@@ -89,6 +89,6 @@ tpm2_verifysignature -Q -c $file_signing_key_ctx  -D  $file_input_data_hash -s $
 rm -f $file_verify_tk_data $file_signing_key_ctx  -rf
 tpm2_loadexternal -Q -a n -u $file_signing_key_pub -o  $file_signing_key_ctx
 
-tpm2_verifysignature -Q -c $file_signing_key_ctx  -g $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
+tpm2_verifysignature -Q -c $file_signing_key_ctx  -G $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
 
 exit 0
