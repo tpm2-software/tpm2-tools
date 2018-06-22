@@ -100,7 +100,7 @@ class ToolConflictor(object):
                 ["tpm2_encryptdecrypt", "tpm2_hmac", "tpm2_hash"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['a', 'hierarchy', 'D', 'decrypt', 't', 'ticket'])
+                "ignore": set(['a', 'hierarchy', 'D', 'decrypt', 't', 'ticket', 'i', 'iv', 'mode', 'halg'])
             },
             {
                 "gname": "random",
