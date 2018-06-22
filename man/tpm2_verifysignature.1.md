@@ -48,7 +48,7 @@ symmetric key, both the public and private portions need to be loaded.
 
     The input signature file of the signature to be validated.
 
-  * **-i**, **--input-format**=_INPUT\_FORMAT_:
+  * **-f**, **--format**:
 
     Set the input signature file to a specified format. The default is the tpm2.0 TPMT_SIGNATURE
     data format, however different schemes can be selected if the data came from an external

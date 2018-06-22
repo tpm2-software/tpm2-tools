@@ -105,6 +105,6 @@ openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed 
 openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
 
 # Verify with the TPM
-tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -i rsassa -s data.out.signed -t ticket.out
+tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
 
 exit 0
