@@ -116,11 +116,6 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (argc == 1 && tool_opts && (tool_opts->flags & TPM2_OPTIONS_SHOW_USAGE)) {
-        tpm2_print_usage(argv[0], tool_opts);
-        return ret;
-    }
-
     tpm2_option_flags flags = { .all = 0 };
     TSS2_TCTI_CONTEXT *tcti = NULL;
     tpm2_option_code rc = tpm2_handle_options(argc, argv, tool_opts, &flags, &tcti);

@@ -216,7 +216,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("C:P:l:L:q:s:m:f:G:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
+                             on_option, NULL, 0);
 
     return *opts != NULL;
 }

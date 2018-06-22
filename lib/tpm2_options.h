@@ -98,13 +98,10 @@ typedef bool (*tpm2_arg_handler)(int argc, char **argv);
 /**
  * TPM2_OPTIONS_* flags change default behavior of the argument parser
  *
- * TPM2_OPTIONS_SHOW_USAGE:
- *  Enable printing a short usage summary (I.e. help)
  * TPM2_OPTIONS_NO_SAPI:
  *  Skip SAPI initialization. Removes the "-T" common option.
  */
-#define TPM2_OPTIONS_SHOW_USAGE 0x1
-#define TPM2_OPTIONS_NO_SAPI 0x2
+#define TPM2_OPTIONS_NO_SAPI 0x1
 
 struct tpm2_options {
     struct {
