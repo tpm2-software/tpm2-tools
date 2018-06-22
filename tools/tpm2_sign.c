@@ -192,7 +192,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.key_auth_str = value;
         break;
-    case 'g': {
+    case 'G': {
         ctx.halg = tpm2_alg_util_from_optarg(value);
         if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
@@ -249,7 +249,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
       { "auth-key",             required_argument, NULL, 'P' },
-      { "halg",                 required_argument, NULL, 'g' },
+      { "halg",                 required_argument, NULL, 'G' },
       { "message",              required_argument, NULL, 'm' },
       { "digest",               required_argument, NULL, 'D' },
       { "sig",                  required_argument, NULL, 's' },
@@ -258,7 +258,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("P:g:m:D:t:s:c:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:G:m:D:t:s:c:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;

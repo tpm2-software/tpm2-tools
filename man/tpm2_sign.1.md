@@ -31,7 +31,7 @@ data and validation shall indicate that hashed data did not start with
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
+  * **-G**, **--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
