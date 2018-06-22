@@ -97,7 +97,7 @@ echo "data to sign" > data.in.raw
 
 sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -D data.in.digest -f plain -s data.out.signed
+tpm2_sign -Q -c import_rsa_key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
 
 openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
