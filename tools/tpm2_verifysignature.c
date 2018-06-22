@@ -224,7 +224,7 @@ static bool on_option(char key, char *value) {
 		ctx.flags.digest = 1;
 	}
 		break;
-	case 'f': {
+	case 'i': {
 		ctx.format = tpm2_alg_util_from_optarg(value);
 		if (ctx.format == TPM2_ALG_ERROR) {
 		    LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
@@ -259,17 +259,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-            { "digest",      required_argument, NULL, 'D' },
-            { "halg",        required_argument, NULL, 'g' },
-            { "message",     required_argument, NULL, 'm' },
-            { "format",      required_argument, NULL, 'f' },
-            { "sig",         required_argument, NULL, 's' },
-            { "ticket",      required_argument, NULL, 't' },
-            { "key-context", required_argument, NULL, 'c' },
+            { "digest",       required_argument, NULL, 'D' },
+            { "halg",         required_argument, NULL, 'g' },
+            { "message",      required_argument, NULL, 'm' },
+            { "input-format", required_argument, NULL, 'i' },
+            { "sig",          required_argument, NULL, 's' },
+            { "ticket",       required_argument, NULL, 't' },
+            { "key-context",  required_argument, NULL, 'c' },
     };
 
 
-    *opts = tpm2_options_new("g:m:D:f:s:t:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:m:D:i:s:t:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
