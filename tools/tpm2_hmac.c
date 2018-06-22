@@ -266,7 +266,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     ctx.input = stdin;
 
     *opts = tpm2_options_new("C:P:g:o:", ARRAY_LEN(topts), topts, on_option,
-                             on_args, TPM2_OPTIONS_SHOW_USAGE);
+                             on_args, 0);
 
     return *opts != NULL;
 }

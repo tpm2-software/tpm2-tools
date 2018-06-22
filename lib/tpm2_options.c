@@ -35,11 +35,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <fcntl.h>
 #include <getopt.h>
 #include <unistd.h>
 
+#include <linux/limits.h>
+
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 
 #include "log.h"
 #include "tpm2_options.h"
@@ -221,7 +225,7 @@ static tcti_conf tcti_get_config(const char *optstr) {
     return conf;
 }
 
-static bool execute_man(char *prog_name) {
+static bool execute_man(char *prog_name, bool show_errors) {
 
     pid_t  pid;
     int status;
@@ -233,6 +237,14 @@ static bool execute_man(char *prog_name) {
     }
 
     if (pid == 0) {
+
+        if (!show_errors) {
+            /* redirect manpager errors to stderr */
+            int fd = open("/dev/null", O_WRONLY);
+            dup2(fd, 2);
+            close(fd);
+        }
+
         char *manpage = basename(prog_name);
         execlp("man", "man", manpage, NULL);
     } else {
@@ -268,17 +280,22 @@ static void show_version (const char *name) {
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     unsigned int i;
     bool indent = true;
-    char *command_copy;
 
-    if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_SHOW_USAGE)) {
+    if (!tool_opts) {
         return;
     }
 
-    command_copy = strdup(command);
-    printf("Usage: %s%s%s\n", basename(command_copy),
+    char command_copy[PATH_MAX];
+    snprintf(command_copy, sizeof(command_copy), "%s", command);
+    char *name = basename(command_copy);
+    if (!tool_opts) {
+        printf("Usage: %s\n", name);
+        return;
+    }
+
+    printf("Usage: %s%s%s\n", name,
            tool_opts->callbacks.on_opt ? " [<options>]" : "",
            tool_opts->callbacks.on_arg ? " <arguments>" : "");
-    free(command_copy);
 
     if (tool_opts->callbacks.on_opt) {
         printf("Where <options> are:\n");
@@ -311,6 +328,8 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
     tpm2_option_code rc = tpm2_option_code_err;
     bool result = false;
     bool show_help = false;
+    bool manpager = true;
+    bool explicit_manpager = false;
 
     /*
      * Handy way to *try* and find all used options:
@@ -318,7 +337,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
      */
     struct option long_options [] = {
         { "tcti",          required_argument, NULL, 'T' },
-        { "help",          no_argument,       NULL, 'h' },
+        { "help",          optional_argument, NULL, 'h' },
         { "verbose",       no_argument,       NULL, 'V' },
         { "quiet",         no_argument,       NULL, 'Q' },
         { "version",       no_argument,       NULL, 'v' },
@@ -328,7 +347,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
     const char *tcti_conf_option = NULL;
 
     /* handle any options */
-    const char* common_short_opts = "T:hvVQZ";
+    const char* common_short_opts = "T:h::vVQZ";
     tpm2_options *opts = tpm2_options_new(common_short_opts,
             ARRAY_LEN(long_options), long_options, NULL, NULL, true);
     if (!opts) {
@@ -359,6 +378,19 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
             break;
         case 'h':
             show_help = true;
+            if (optarg) {
+                if (!strcmp(optarg, "man")) {
+                    manpager = true;
+                    explicit_manpager = true;
+                    optind++;
+                } else if (!strcmp(optarg, "no-man")) {
+                    manpager = false;
+                    optind++;
+                } else {
+                    LOG_ERR("Unknown help argument, got: \"%s\"", optarg);
+                }
+            }
+            goto out;
         break;
         case 'V':
             flags->verbose = 1;
@@ -395,6 +427,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
     /* have args and no handler, error condition */
     if (tool_argc && (!tool_opts || !tool_opts->callbacks.on_arg)) {
         LOG_ERR("Got arguments but the tool takes no arguments");
+        show_help = true;
         goto out;
     }
     /* have args and a handler to process */
@@ -423,15 +456,29 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
     rc = tpm2_option_code_continue;
 out:
 
+    /*
+     * If help output is selected via -h or indicated by an error that help output
+     * is desirable, show it.
+     *
+     * However, 3 conditions are possible:
+     * 1. Try manpager and success -- done, no need to show short help output.
+     * 2. Try manpager and failure -- show short help output.
+     * 3. Do not use manpager -- show short help output.
+     *
+     */
     if (show_help) {
-        bool did_manpager = execute_man(argv[0]);
+        bool did_manpager = false;
+        if (manpager) {
+            did_manpager = execute_man(argv[0], explicit_manpager);
+        }
+
         if (!did_manpager) {
             tpm2_print_usage(argv[0], tool_opts);
         }
 
         const TSS2_TCTI_INFO *info = tpm2_tcti_ldr_getinfo();
         if (info) {
-            printf("\ntcti-help: %s\n", info->config_help);
+            printf("\ntcti-help(%s): %s\n", info->name, info->config_help);
         }
         rc = tpm2_option_code_stop;
     }
