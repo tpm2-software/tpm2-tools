@@ -119,12 +119,23 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
 static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     // change owner, endorsement and lockout auth.
-    return change_auth(sapi_context, &ctx.auths.owner,
-                "Owner", TPM2_RH_OWNER)
-        && change_auth(sapi_context, &ctx.auths.endorse,
-                "Endorsement", TPM2_RH_ENDORSEMENT)
-        && change_auth(sapi_context, &ctx.auths.lockout,
+    bool result = true;
+    if (ctx.flags.o || ctx.flags.O) {
+        result &= change_auth(sapi_context, &ctx.auths.owner,
+                "Owner", TPM2_RH_OWNER);
+    }
+
+    if (ctx.flags.e || ctx.flags.E) {
+        result &= change_auth(sapi_context, &ctx.auths.endorse,
+                "Endorsement", TPM2_RH_ENDORSEMENT);
+    }
+
+    if (ctx.flags.l || ctx.flags.L) {
+        result &= change_auth(sapi_context, &ctx.auths.lockout,
                 "Lockout", TPM2_RH_LOCKOUT);
+    }
+
+    return result;
 }
 
 static bool on_option(char key, char *value) {
