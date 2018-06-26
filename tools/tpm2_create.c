@@ -200,7 +200,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "auth-parent",          required_argument, NULL, 'P' },
-      { "auth-key",             required_argument, NULL, 'K' },
+      { "auth-key",             required_argument, NULL, 'k' },
       { "halg",                 required_argument, NULL, 'g' },
       { "kalg",                 required_argument, NULL, 'G' },
       { "object-attributes",    required_argument, NULL, 'A' },
@@ -211,7 +211,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "context-parent",       required_argument, NULL, 'C' },
     };
 
-    *opts = tpm2_options_new("P:K:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:k:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

@@ -29,7 +29,7 @@ These options for creating the tpm entity:
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-K**, **--auth-key**=_KEY\_AUTH_:
+  * **-k**, **--auth-key**=_KEY\_AUTH_:
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
