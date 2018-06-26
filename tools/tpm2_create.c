@@ -105,18 +105,13 @@ static bool create(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
-    TPML_PCR_SELECTION      creationPCR;
+    TPML_PCR_SELECTION      creationPCR = { .count = 0 };
     TPM2B_PUBLIC            outPublic = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE           outPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
     TPM2B_CREATION_DATA     creationData = TPM2B_EMPTY_INIT;
     TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
-
-
-    ctx.in_sensitive.size = ctx.in_sensitive.sensitive.userAuth.size + 2;
-
-    creationPCR.count = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.context_object.handle, &sessionsData, &ctx.in_sensitive,
                            &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
