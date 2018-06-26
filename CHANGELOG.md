@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_create: -K becomes -k
   * tpm2_hash: -g changes to -G
   * tpm2_encryptdecrypt: Support IVs via -i and algorithm modes via -G.
   * tpm2_hmac: drop -g, just use the algorithm associated with the object.

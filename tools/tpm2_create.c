@@ -79,7 +79,7 @@ struct tpm_create_ctx {
 
     struct {
         UINT16 P : 1;
-        UINT16 K : 1;
+        UINT16 k : 1;
         UINT16 A : 1;
         UINT16 I : 1;
         UINT16 L : 1;
@@ -105,18 +105,13 @@ static bool create(TSS2_SYS_CONTEXT *sapi_context) {
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
-    TPML_PCR_SELECTION      creationPCR;
+    TPML_PCR_SELECTION      creationPCR = { .count = 0 };
     TPM2B_PUBLIC            outPublic = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE           outPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
     TPM2B_CREATION_DATA     creationData = TPM2B_EMPTY_INIT;
     TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
-
-
-    ctx.in_sensitive.size = ctx.in_sensitive.sensitive.userAuth.size + 2;
-
-    creationPCR.count = 0;
 
     rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.context_object.handle, &sessionsData, &ctx.in_sensitive,
                            &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
@@ -157,8 +152,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.parent_auth_str = value;
         break;
-    case 'K':
-        ctx.flags.K = 1;
+    case 'k':
+        ctx.flags.k = 1;
         ctx.key_auth_str = value;
     break;
     case 'g':
@@ -200,7 +195,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "auth-parent",          required_argument, NULL, 'P' },
-      { "auth-key",             required_argument, NULL, 'K' },
+      { "auth-key",             required_argument, NULL, 'k' },
       { "halg",                 required_argument, NULL, 'g' },
       { "kalg",                 required_argument, NULL, 'G' },
       { "object-attributes",    required_argument, NULL, 'A' },
@@ -211,7 +206,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "context-parent",       required_argument, NULL, 'C' },
     };
 
-    *opts = tpm2_options_new("P:K:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:k:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -279,7 +274,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.K) {
+    if (ctx.flags.k) {
         TPMS_AUTH_COMMAND tmp;
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
         if (!result) {
