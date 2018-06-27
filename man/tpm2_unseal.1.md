@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_unseal**(1) - -returns the data in a loaded Sealed Data Object.
+**tpm2_unseal**(1) - returns the data in a loaded Sealed Data Object.
 
 **NOTE**: The **--set-list** and **--pcr-input-file** options should only be
 used for simple PCR authentication policies. For more complex policies the
@@ -26,9 +26,9 @@ alive and pass that session using the **--input-session-handle** option.
     Context object for the loaded object. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-P**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **--auth-key**=_KEY\_AUTH_:
 
-    Optional authorization value to use the key specified by **-k**.
+    Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
@@ -66,9 +66,9 @@ alive and pass that session using the **--input-session-handle** option.
 # EXAMPLES
 
 ```
-tpm2_unseal -H 0x81010001 -P abc123 -o out.dat
-tpm2_unseal -c item.context -P abc123 -o out.dat
-tpm2_unseal -c 0x81010001 -P "hex:123abc" -o out.dat
+tpm2_unseal -c 0x81010001 -p abc123 -o out.dat
+tpm2_unseal -c item.context -p abc123 -o out.dat
+tpm2_unseal -c 0x81010001 -p "hex:123abc" -o out.dat
 tpm2_unseal -c item.context -L sha1:0,1,2 -F out.dat
 ```
 

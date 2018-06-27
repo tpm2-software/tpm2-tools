@@ -60,7 +60,7 @@ struct tpm_unseal_ctx {
     const char *context_arg;
     tpm2_loaded_object context_object;
     struct {
-        UINT8 P : 1;
+        UINT8 p : 1;
         UINT8 L : 1;
     } flags;
 };
@@ -125,7 +125,7 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (!ctx.context_arg) {
-        LOG_ERR("Expected option C");
+        LOG_ERR("Expected option c");
         return false;
     }
 
@@ -153,8 +153,8 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
-    case 'P': {
-        ctx.flags.P = 1;
+    case 'p': {
+        ctx.flags.p = 1;
         ctx.parent_auth_str = value;
     }
         break;
@@ -179,14 +179,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "auth-key",             required_argument, NULL, 'P' },
+      { "auth-key",             required_argument, NULL, 'p' },
       { "out-file",             required_argument, NULL, 'o' },
       { "item-context",         required_argument, NULL, 'c' },
       { "set-list",             required_argument, NULL, 'L' },
       { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("P:o:c:L:F:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:o:c:L:F:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -202,7 +202,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.P) {
+    if (ctx.flags.p) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {

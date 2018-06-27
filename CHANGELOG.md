@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_unseal: -P becomes -p
   * tpm2_sign: -P becomes -p
   * tpm2_nvreadlock: long form for -P is now --auth-hierarchy
   * tpm2_rsadecrypt: -P becomes -p
