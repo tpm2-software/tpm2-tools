@@ -29,11 +29,6 @@ The key referenced by key-context is **required** to be:
     encryption. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-P**, **--pwdk**=_KEY\_PASSWORD_:
-
-    Specifies the password of _KEY\_HANDLE_. Passwords should follow the
-    "authorization formatting standards", see section "Authorization Formatting".
-
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data. The default is to print an
@@ -46,12 +41,10 @@ The key referenced by key-context is **required** to be:
 
 [context object format](commmon/ctxobj.md)
 
-[authorization formatting](common/password.md)
-
 # EXAMPLES
 
 ```
-tpm2_rsaencrypt -C 0x81010001 -I plain.in -o encrypted.out
+tpm2_rsaencrypt -C 0x81010001 -o encrypted.out
 ```
 
 # RETURNS
