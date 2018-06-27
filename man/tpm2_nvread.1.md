@@ -19,8 +19,8 @@
   * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to define the space at.
 
-  * **-a**, **--auth-handle**=_AUTH_:
-    specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
+  * **-a**, **--hierarchy**=_AUTH_:
+    specifies the hierarchy used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
@@ -29,7 +29,7 @@
 
     When **-a** isn't explicitly passed the index handle will be used to
     authorize against the index. The index auth value is set via the
-    **-I** option to tpm2_nvdefine(1).
+    **-p** option to tpm2_nvdefine(1).
 
   * **-f**, **--out-file**=_FILE_:
     file to write data
