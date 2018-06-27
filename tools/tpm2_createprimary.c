@@ -67,7 +67,7 @@ struct tpm_createprimary_ctx {
     char *context_file;
     struct {
         UINT8 P :1;
-        UINT8 K :1;
+        UINT8 p :1;
     } flags;
     char *parent_auth_str;
     char *key_auth_str;
@@ -105,8 +105,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.parent_auth_str = value;
         break;
-    case 'k':
-        ctx.flags.K = 1;
+    case 'p':
+        ctx.flags.p = 1;
         ctx.key_auth_str = value;
         break;
     case 'g':
@@ -138,7 +138,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "hierarchy",            required_argument, NULL, 'a' },
         { "auth-hierarchy",       required_argument, NULL, 'P' },
-        { "auth-object",          required_argument, NULL, 'K' },
+        { "auth-object",          required_argument, NULL, 'p' },
         { "halg",                 required_argument, NULL, 'g' },
         { "kalg",                 required_argument, NULL, 'G' },
         { "out-context",          required_argument, NULL, 'o' },
@@ -146,7 +146,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object-attributes",    required_argument, NULL, 'A' },
     };
 
-    *opts = tpm2_options_new("A:P:K:g:G:o:L:a:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("A:P:p:g:G:o:L:a:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -166,7 +166,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.K) {
+    if (ctx.flags.p) {
         TPMS_AUTH_COMMAND tmp;
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
         if (!result) {
