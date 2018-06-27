@@ -55,7 +55,7 @@ struct dictionarylockout_ctx {
         tpm2_session *session;
     } auth;
     struct {
-        UINT8 P : 1;
+        UINT8 p : 1;
         UINT8 unused : 7;
     } flags;
     char *lockout_auth_str;
@@ -112,8 +112,8 @@ static bool on_option(char key, char *value) {
     case 's':
         ctx.setup_parameters = true;
         break;
-    case 'P':
-        ctx.flags.P = 1;
+    case 'p':
+        ctx.flags.p = 1;
         ctx.lockout_auth_str = value;
         break;
     case 'n':
@@ -155,12 +155,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "max-tries",             required_argument, NULL, 'n' },
         { "recovery-time",         required_argument, NULL, 't' },
         { "lockout-recovery-time", required_argument, NULL, 'l' },
-        { "auth-lockout",          required_argument, NULL, 'P' },
+        { "auth-lockout",          required_argument, NULL, 'p' },
         { "clear-lockout",         no_argument,       NULL, 'c' },
         { "setup-parameters",      no_argument,       NULL, 's' },
     };
 
-    *opts = tpm2_options_new("n:t:l:P:cs", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("n:t:l:p:cs", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -178,7 +178,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.P) {
+    if (ctx.flags.p) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
