@@ -41,7 +41,7 @@
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-I**, **--auth-index**=_INDEX\_PASSWORD_:
+  * **-p**, **--auth-index**=_INDEX\_PASSWORD_:
     Specifies the password of NV Index when created.
     HMAC and Password authorization values should follow the "authorization
     formatting standards", see section "Authorization Formatting".
@@ -61,7 +61,7 @@
 
 ```
 tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t ownerread|ownerwrite|policywrite -I 1a1b1c
+tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t ownerread|ownerwrite|policywrite -p 1a1b1c
 ```
 
 # RETURNS

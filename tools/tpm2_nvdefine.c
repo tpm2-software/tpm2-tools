@@ -61,7 +61,7 @@ struct tpm_nvdefine_ctx {
     char *policy_file;
     struct {
         UINT8 P : 1;
-        UINT8 I : 1;
+        UINT8 p : 1;
         UINT8 unused : 6;
     } flags;
     char *hierarchy_auth_str;
@@ -167,8 +167,8 @@ static bool on_option(char key, char *value) {
                 }
             }
             break;
-        case 'I':
-            ctx.flags.I = 1;
+        case 'p':
+            ctx.flags.p = 1;
             ctx.index_auth_str = value;
             break;
         case 'L':
@@ -187,12 +187,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "size",                   required_argument,  NULL,   's' },
         { "attributes",             required_argument,  NULL,   't' },
         { "auth-hierarchy",         required_argument,  NULL,   'P' },
-        { "auth-index",             required_argument,  NULL,   'I' },
+        { "auth-index",             required_argument,  NULL,   'p' },
         { "policy-file",            required_argument,  NULL,   'L' },
         { "session",                required_argument,  NULL,   'S' },
     };
 
-    *opts = tpm2_options_new("x:a:s:t:P:I:L:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:s:t:P:Ip:L:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -214,7 +214,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.I) {
+    if (ctx.flags.p) {
         TPMS_AUTH_COMMAND tmp;
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.index_auth_str,
                 &tmp, NULL);

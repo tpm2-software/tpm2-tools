@@ -192,7 +192,7 @@ tpm2_changeauth -o owner
 
 tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
   -t "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
-  -I "index" -P "owner"
+  -p "index" -P "owner"
 
 # Use index password write/read, implicit -a
 tpm2_nvwrite -Q -x 0x1500015 -P "index" nv.test_w
