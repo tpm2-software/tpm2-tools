@@ -17,7 +17,7 @@ _FILE_ is not specified, then data is read from stdin.
 
 # OPTIONS
 
- * **-C**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-C**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
     The context object of the symmetric signing key providing the HMAC key.
     Either a file or a handle number. See section "Context Object Format".
 
