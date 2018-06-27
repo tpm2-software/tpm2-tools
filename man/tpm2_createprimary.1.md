@@ -37,7 +37,7 @@ will create and load a Primary Object. The sensitive area is not returned.
     values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-k**, **--auth-object**=_OBJECT\_AUTH_:
+  * **-p**, **--auth-object**=_OBJECT\_AUTH_:
     Optional authorization password for the newly created object. Password
     values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
