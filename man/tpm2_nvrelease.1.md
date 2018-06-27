@@ -20,8 +20,8 @@ defined with tpm2_nvdefine(1).
   * **-x**, **--index**=_NV\_INDEX_:
     Specifies the index to release.
 
-  * **-a**, **--auth-handle**=_AUTH_:
-    specifies the handle used to authorize.
+  * **-a**, **--hierarchy**=_AUTH_:
+    specifies the hierarchy used to authorize.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
@@ -30,9 +30,10 @@ defined with tpm2_nvdefine(1).
   * **-s**, **--size**=_SIZE_:
     specifies the size of data area in bytes.
 
-  * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
-    specifies the password of authHandle. Passwords should follow the
-    "authorization formatting standards", see section "Authorization Formatting".
+  * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
+    Specifies the authorization value for the hierarchy. Authorization values
+    should follow the "authorization formatting standards", see section
+    "Authorization Formatting".
 
   * **-S**, **--session**=_SESSION\_FILE_:
 
