@@ -29,7 +29,7 @@ These options for creating the tpm entity:
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-K**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **--auth-key**=_KEY\_AUTH_:
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
@@ -97,7 +97,7 @@ These options for creating the tpm entity:
 
 ```
 tpm2_create -C 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File -o opu.File
-tpm2_create -C file:parent.context -P abc123 -K def456 -g sha256 -G keyedhash -I data.File -o opu.File
+tpm2_create -C file:parent.context -P abc123 -p def456 -g sha256 -G keyedhash -I data.File -o opu.File
 tpm2_create -C 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File -o opu.File
 ```
 

@@ -79,7 +79,7 @@ struct tpm_create_ctx {
 
     struct {
         UINT16 P : 1;
-        UINT16 K : 1;
+        UINT16 p : 1;
         UINT16 A : 1;
         UINT16 I : 1;
         UINT16 L : 1;
@@ -152,8 +152,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.parent_auth_str = value;
         break;
-    case 'K':
-        ctx.flags.K = 1;
+    case 'p':
+        ctx.flags.p = 1;
         ctx.key_auth_str = value;
     break;
     case 'g':
@@ -195,7 +195,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "auth-parent",          required_argument, NULL, 'P' },
-      { "auth-key",             required_argument, NULL, 'K' },
+      { "auth-key",             required_argument, NULL, 'p' },
       { "halg",                 required_argument, NULL, 'g' },
       { "kalg",                 required_argument, NULL, 'G' },
       { "object-attributes",    required_argument, NULL, 'A' },
@@ -206,7 +206,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "context-parent",       required_argument, NULL, 'C' },
     };
 
-    *opts = tpm2_options_new("P:K:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -274,7 +274,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.K) {
+    if (ctx.flags.p) {
         TPMS_AUTH_COMMAND tmp;
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
         if (!result) {
