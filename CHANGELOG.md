@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_nvdefine: -I becomes -p
   * tpm2_encryptdecrypt: -P becomes -p
   * tpm2_dictionarylockout: -P becomes -p
   * tpm2_createprimary: -K becomes -p
