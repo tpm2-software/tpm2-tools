@@ -66,7 +66,7 @@ struct tpm_sign_ctx {
     char *inMsgFileName;
     tpm2_convert_sig_fmt sig_format;
     struct {
-        UINT16 P : 1;
+        UINT16 p : 1;
         UINT16 g : 1;
         UINT16 m : 1;
         UINT16 t : 1;
@@ -188,8 +188,8 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
-    case 'P':
-        ctx.flags.P = 1;
+    case 'p':
+        ctx.flags.p = 1;
         ctx.key_auth_str = value;
         break;
     case 'G': {
@@ -248,7 +248,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "auth-key",             required_argument, NULL, 'P' },
+      { "auth-key",             required_argument, NULL, 'p' },
       { "halg",                 required_argument, NULL, 'G' },
       { "message",              required_argument, NULL, 'm' },
       { "digest",               required_argument, NULL, 'D' },
@@ -258,7 +258,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("P:G:m:D:t:s:c:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:G:m:D:t:s:c:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -274,7 +274,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.P) {
+    if (ctx.flags.p) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
