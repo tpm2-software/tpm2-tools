@@ -46,7 +46,7 @@
 typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;
 struct tpm_rsadecrypt_ctx {
     struct {
-        UINT8 P : 1;
+        UINT8 p : 1;
         UINT8 I : 1;
         UINT8 o : 1;
         UINT8 unused : 3;
@@ -96,8 +96,8 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
-    case 'P':
-        ctx.flags.P = 1;
+    case 'p':
+        ctx.flags.p = 1;
         ctx.key_auth_str = value;
         break;
     case 'I': {
@@ -126,7 +126,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "auth-key",     required_argument, NULL, 'P' },
+      { "auth-key",     required_argument, NULL, 'p' },
       { "in-file",      required_argument, NULL, 'I' },
       { "out-file",     required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
@@ -168,7 +168,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.P) {
+    if (ctx.flags.p) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {

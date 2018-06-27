@@ -28,7 +28,7 @@ The key referenced by key-context is **required** to be:
     decryption. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-P**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **--auth-key**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-k**.
     Authorization values should follow the "authorization formatting standards",
