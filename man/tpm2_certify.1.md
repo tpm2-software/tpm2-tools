@@ -38,7 +38,7 @@ These options control the certification:
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-k**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **--auth-key**=_KEY\_AUTH_:
     Use _KEY\_AUTH_ for providing an authorization value for the key specified
     in _KEY\_CONTEXT_.
     Follows the same formatting guidelines as the object handle authorization or
@@ -67,9 +67,9 @@ These options control the certification:
 # EXAMPLES
 
 ```
-tpm2_certify -H 0x81010002 -P 0x0011 -k 0x00FF -g 0x00B -a <fileName> -s <fileName>
-tpm2_certify -C obj.context -c key.context -P 0x0011 -k 0x00FF -g 0x00B -a <fileName> -s <fileName>
-tpm2_certify -H 0x81010002 -P 0011 -k 00FF -X -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -H 0x81010002 -P 0x0011 -p 0x00FF -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -C obj.context -c key.context -P 0x0011 -p 0x00FF -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -H 0x81010002 -P 0011 -p 00FF -X -g 0x00B -a <fileName> -s <fileName>
 ```
 
 # RETURNS
