@@ -66,7 +66,7 @@ struct tpm_encrypt_decrypt_ctx {
         char *out;
     } iv;
     struct {
-        UINT8 P : 1;
+        UINT8 p : 1;
         UINT8 D : 1;
         UINT8 I : 1;
         UINT8 X : 1;
@@ -160,8 +160,8 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
-    case 'P':
-        ctx.flags.P = 1;
+    case 'p':
+        ctx.flags.p = 1;
         ctx.key_auth_str = value;
         break;
     case 'D':
@@ -192,7 +192,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth-key",             required_argument, NULL, 'P' },
+        { "auth-key",             required_argument, NULL, 'p' },
         { "decrypt",              no_argument,       NULL, 'D' },
         { "in-file",              required_argument, NULL, 'I' },
         { "iv",                   required_argument, NULL, 'i' },
@@ -201,7 +201,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-context",          required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("P:DI:o:c:i:G:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("p:DI:o:c:i:G:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -233,7 +233,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.P) {
+    if (ctx.flags.p) {
         result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
