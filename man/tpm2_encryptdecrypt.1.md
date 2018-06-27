@@ -22,9 +22,9 @@ specified symmetric key.
     Name of the key context object to be used for the  operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-P**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **--auth-key**=_KEY\_AUTH_:
 
-    Optional authorization value to use the key specified by **-k**.
+    Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
@@ -74,9 +74,9 @@ specified symmetric key.
 # EXAMPLES
 
 ```
-tpm2_encryptdecrypt -C 0x81010001 -P abc123 -I <filePath> -o <filePath>
-tpm2_encryptdecrypt -C key.dat -P abc123 -I <filePath> -o <filePath>
-tpm2_encryptdecrypt -C 0x81010001 -P 123abca -X -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -C 0x81010001 -p abc123 -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -C key.dat -p abc123 -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -C 0x81010001 -p 123abca -X -I <filePath> -o <filePath>
 ```
 
 # RETURNS
