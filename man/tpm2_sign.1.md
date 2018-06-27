@@ -25,9 +25,9 @@ data and validation shall indicate that hashed data did not start with
     Context object pointing to the the key used for signing. Either a file or a
     handle number. See section "Context Object Format".
 
-  * **-P**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **--auth-key**=_KEY\_AUTH_:
 
-    Optional authorization value to use the key specified by **-k**.
+    Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
@@ -83,8 +83,8 @@ data and validation shall indicate that hashed data did not start with
 
 
 ```
-tpm2_sign -C 0x81010001 -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
-tpm2_sign -C key.context -P abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_sign -c 0x81010001 -p abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_sign -c key.context -p abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
 ```
 
 # RETURNS
