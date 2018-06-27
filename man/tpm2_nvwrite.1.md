@@ -23,7 +23,7 @@ If _FILE_ is not specified, it defaults to stdin.
   * **-o**, **--offset**=_OFFSET_:
     The offset within the NV index to start writing at.
 
-  * **-a**, **--auth-handle**=_AUTH_:
+  * **-a**, **--hierarchy**=_AUTH_:
     specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
     Supported options are:
@@ -33,7 +33,7 @@ If _FILE_ is not specified, it defaults to stdin.
 
     When **-a** isn't explicitly passed the index handle will be used to
     authorize against the index. The index auth value is set via the
-    **-I** option to tpm2_nvdefine(1).
+    **-p** option to tpm2_nvdefine(1).
 
   * **-P**, **--auth-hierarchy**=_HIERARCHY\_AUTH_:
     Specifies the authorization value for the hierarchy. Authorization values
