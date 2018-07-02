@@ -280,22 +280,17 @@ static void show_version (const char *name) {
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     unsigned int i;
     bool indent = true;
+    char *command_copy;
 
     if (!tool_opts) {
         return;
     }
 
-    char command_copy[PATH_MAX];
-    snprintf(command_copy, sizeof(command_copy), "%s", command);
-    char *name = basename(command_copy);
-    if (!tool_opts) {
-        printf("Usage: %s\n", name);
-        return;
-    }
-
-    printf("Usage: %s%s%s\n", name,
+    command_copy = strdup(command);
+    printf("Usage: %s%s%s\n", basename(command_copy),
            tool_opts->callbacks.on_opt ? " [<options>]" : "",
            tool_opts->callbacks.on_arg ? " <arguments>" : "");
+    free(command_copy);
 
     if (tool_opts->callbacks.on_opt) {
         printf("Where <options> are:\n");
@@ -346,6 +341,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
 
     const char *tcti_conf_option = NULL;
 
+
     /* handle any options */
     const char* common_short_opts = "T:h::vVQZ";
     tpm2_options *opts = tpm2_options_new(common_short_opts,
@@ -378,16 +374,17 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
             break;
         case 'h':
             show_help = true;
-            if (optarg) {
-                if (!strcmp(optarg, "man")) {
+            if (argv[optind]) {
+                if (!strcmp(argv[optind], "man")) {
                     manpager = true;
                     explicit_manpager = true;
                     optind++;
-                } else if (!strcmp(optarg, "no-man")) {
+                } else if (!strcmp(argv[optind], "no-man")) {
                     manpager = false;
                     optind++;
                 } else {
-                    LOG_ERR("Unknown help argument, got: \"%s\"", optarg);
+                    show_help=false;
+                    LOG_ERR("Unknown help argument, got: \"%s\"", argv[optind]);
                 }
             }
             goto out;
@@ -438,19 +435,21 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         }
 	}
 
-    /* Only init a TCTI if the tool needs it */
-    if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
-        tcti_conf conf = tcti_get_config(tcti_conf_option);
+    /* Only init a TCTI if the tool needs it and if the -h/--help option isn't present */
+    if (show_help){
+      if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
+          tcti_conf conf = tcti_get_config(tcti_conf_option);
 
-        *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
-        if (!*tcti) {
-            LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
-            goto out;
-        }
+          *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
+          if (!*tcti) {
+              LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
+              goto out;
+          }
 
-        if (!flags->enable_errata) {
-            flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
-        }
+          if (!flags->enable_errata) {
+              flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
+          }
+      }
     }
 
     rc = tpm2_option_code_continue;

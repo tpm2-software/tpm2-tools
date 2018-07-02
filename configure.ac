@@ -22,6 +22,10 @@ PKG_CHECK_MODULES([TSS2_SYS], [tss2-sys >= 2.0.0])
 PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
 PKG_CHECK_MODULES([CURL], [libcurl])
 
+PKG_CHECK_VAR(bashcompdir, [bash-completion], [compatdir], ,
+  bashcompdir="${sysconfdir}/bash_completion.d")
+AC_SUBST(bashcompdir)
+
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
                             [build cmocka unit tests (default is no)])],
