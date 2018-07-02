@@ -34,8 +34,9 @@
 source helpers.sh
 
 cleanup() {
-  rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat commands.cap secret2.dat iv.dat iv2.dat
+  rm -f primary.ctx decrypt.ctx key.pub key.priv key.name \
+        decrypt.out decrypt2.out encrypt.out encrypt2.out \
+        secret.dat commands.cap secret2.dat iv.dat iv2.dat
 
   if [ "$1" != "no-shut-down" ]; then
       shut_down
@@ -104,6 +105,16 @@ tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -I secret.dat --iv=iv.dat  -o encry
 tpm2_encryptdecrypt -Q -D -c decrypt.ctx -I encrypt.out --iv iv.dat -o decrypt.out
 
 cmp secret.dat decrypt.out
+
+# Test that iv looping works
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -I secret.dat --iv=iv.dat:iv2.dat -o encrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -I secret.dat --iv=iv2.dat -o encrypt2.out
+
+tpm2_encryptdecrypt -Q -D -c decrypt.ctx -I encrypt.out --iv iv.dat -o decrypt.out
+tpm2_encryptdecrypt -Q -D -c decrypt.ctx -I encrypt2.out --iv iv2.dat -o decrypt2.out
+
+cmp secret.dat decrypt.out
+cmp secret.dat decrypt2.out
 
 # Negative that bad mode fails
 trap - ERR
