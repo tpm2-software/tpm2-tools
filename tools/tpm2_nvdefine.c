@@ -192,7 +192,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "session",                required_argument,  NULL,   'S' },
     };
 
-    *opts = tpm2_options_new("x:a:s:t:P:Ip:L:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:s:t:P:p:L:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
