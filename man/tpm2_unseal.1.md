@@ -16,7 +16,7 @@
 
 **NOTE**: The **--set-list** and **--pcr-input-file** options should only be
 used for simple PCR authentication policies. For more complex policies the
-tools should be ran in an execution environment that keeps the session context
+tools should be run in an execution environment that keeps the session context
 alive and pass that session using the **--input-session-handle** option.
 
 # OPTIONS

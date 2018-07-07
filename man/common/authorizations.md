@@ -10,7 +10,7 @@ Authorization for use of an object in TPM2.0 can come in 3 different forms:
 ## Passwords
 
 Passwords are interpreted in two forms, string and hex-string. A string password is not
-interpreted, and is directly used for authorization. A hex-string, is converted from
+interpreted, and is directly used for authorization. A hex-string password is converted from
 a hexidecimal form into a byte array form, thus allowing passwords with non-printable
 and/or terminal un-friendly characters.
 
@@ -27,6 +27,6 @@ HMAC tickets can be presented as hex escaped passwords.
 
 ## Sessions
 
-When using a policy session to authorize the use of an object, one prefixes the option argument
-with the *session* keyword. You then indicate a path to a session file that was created
+When using a policy session to authorize the use of an object, prefixe the option argument
+with the *session* keyword.  Then indicate a path to a session file that was created
 with tpm2_startauthsession(1).
