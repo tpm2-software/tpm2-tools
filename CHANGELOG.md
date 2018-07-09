@@ -1,5 +1,5 @@
 ## Changelog
-### next
+### 3.1.1 - 2018-07-09
   * Allow man page installation without pandoc being available
 
 ### 3.1.0 - 2018-06-21
