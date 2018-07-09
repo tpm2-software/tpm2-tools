@@ -27,6 +27,6 @@ HMAC tickets can be presented as hex escaped passwords.
 
 ## Sessions
 
-When using a policy session to authorize the use of an object, prefixe the option argument
+When using a policy session to authorize the use of an object, prefix the option argument
 with the *session* keyword.  Then indicate a path to a session file that was created
 with tpm2_startauthsession(1).
