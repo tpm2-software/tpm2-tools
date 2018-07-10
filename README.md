@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/tpm2-software/tpm2-tools.svg?branch=master)](https://travis-ci.org/tpm2-software/tpm2-tools)
 [![Coverity Scan](https://img.shields.io/coverity/scan/3997.svg)](https://scan.coverity.com/projects/01org-tpm2-0-tools)
-[![Coverage Status](https://coveralls.io/repos/github/01org/tpm2-tools/badge.svg?branch=master)](https://coveralls.io/github/01org/tpm2-tools?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/tpm2-software/tpm2-tools/badge.svg?branch=master)](https://coveralls.io/github/tpm2-software/tpm2-tools?branch=master)
 
 **This site contains the code for the TPM (Trusted Platform Module) 2.0 tools based on tpm2-tss**
 
