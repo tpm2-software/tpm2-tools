@@ -501,7 +501,6 @@ bool tpm2_attr_util_nv_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
 
 bool tpm2_attr_util_obj_strtoattr(char *attribute_list, TPMA_OBJECT *objattrs) {
 
-    memset(objattrs, 0, sizeof(*objattrs));
     return common_strtoattr(attribute_list, objattrs, obj_attr_table, ARRAY_LEN(obj_attr_table));
 }
 
