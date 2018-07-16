@@ -1,4 +1,7 @@
 ## Changelog
+### Next - TBD
+  * Revert the change to use user supplied object attributes exclusively. This is an inappropriate behavioural change for a MINOR version number increment.
+
 ### 3.1.1 - 2018-07-09
   * Allow man page installation without pandoc being available
 
