@@ -322,6 +322,19 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent) {
     free(attrs);
 }
 
+static void print_sym(TPMT_SYM_DEF_OBJECT *sym, const char *indent) {
+
+    tpm2_tool_output("%salgorithm: \n", indent);
+    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(sym->algorithm, tpm2_alg_util_flags_any));
+    tpm2_tool_output("%s  raw: 0x%x\n", indent, sym->algorithm);
+
+    tpm2_tool_output("%smode:\n", indent);
+    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(sym->mode.sym, tpm2_alg_util_flags_any));
+    tpm2_tool_output("%s  raw: 0x%x\n", indent, sym->mode.sym);
+
+    tpm2_tool_output("%skeybits: %u\n", indent, sym->keyBits.sym);
+}
+
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
 
     if (!indent) {
@@ -341,15 +354,7 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     switch(public->publicArea.type) {
     case TPM2_ALG_SYMCIPHER: {
         TPMS_SYMCIPHER_PARMS *s = &public->publicArea.parameters.symDetail;
-        tpm2_tool_output("%salgorithm: \n", indent);
-        tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(s->sym.algorithm, tpm2_alg_util_flags_any));
-        tpm2_tool_output("%s  raw: 0x%x\n", indent, s->sym.algorithm);
-
-        tpm2_tool_output("%smode:\n", indent);
-        tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(s->sym.mode.sym, tpm2_alg_util_flags_any));
-        tpm2_tool_output("%s  raw: 0x%x\n", indent, s->sym.mode.sym);
-
-        tpm2_tool_output("%skeybits: %u\n", indent, s->sym.keyBits.sym);
+        print_sym(&s->sym, indent);
     } break;
     case TPM2_ALG_KEYEDHASH: {
         TPMS_KEYEDHASH_PARMS *k = &public->publicArea.parameters.keyedHashDetail;
@@ -371,6 +376,21 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
             tpm2_tool_output("%s  raw: 0x%x\n", indent, k->scheme.details.exclusiveOr.kdf);
         }
 
+    } break;
+    case TPM2_ALG_RSA: {
+        TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
+        tpm2_tool_output("%srsa-scheme: \n", indent);
+        tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(r->scheme.scheme, tpm2_alg_util_flags_any));
+        tpm2_tool_output("%s  raw: 0x%x\n", indent, r->scheme.scheme);
+
+        tpm2_tool_output("%sexponent: 0x%x\n", indent, r->exponent);
+        tpm2_tool_output("%sbits: %u\n", indent, r->keyBits);
+
+        tpm2_tool_output("%ssymmetric:\n", indent);
+
+        char new_indent[256];
+        snprintf(new_indent, sizeof(new_indent), "%s  ", indent);
+        print_sym(&r->symmetric, new_indent);
     } break;
     }
     tpm2_util_keydata keydata = TPM2_UTIL_KEYDATA_INIT;
