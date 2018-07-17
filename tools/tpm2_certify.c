@@ -206,16 +206,10 @@ static bool on_option(char key, char *value) {
         ctx.flags.g = 1;
         break;
     case 'a':
-        if (files_does_file_exist(value)) {
-            return false;
-        }
         ctx.file_path.attest = value;
         ctx.flags.a = 1;
         break;
     case 's':
-        if (files_does_file_exist(value)) {
-            return false;
-        }
         ctx.file_path.sig = value;
         ctx.flags.s = 1;
         break;
