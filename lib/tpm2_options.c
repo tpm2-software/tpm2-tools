@@ -436,7 +436,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
 	}
 
     /* Only init a TCTI if the tool needs it and if the -h/--help option isn't present */
-    if (show_help){
+    if (!show_help){
       if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
           tcti_conf conf = tcti_get_config(tcti_conf_option);
 
