@@ -269,16 +269,6 @@ bool files_save_private(TPM2B_PRIVATE *private, const char *path);
 bool files_load_private(const char *path, TPM2B_PRIVATE *private);
 
 /**
- * Checks a file for existence.
- * @param path
- *  The file to check for existence.
- * @return
- * true if a file exists with read permissions, false if it doesn't exist or an error occurs.
- *
- */
-bool files_does_file_exist(const char *path);
-
-/**
  * Retrieves a files size given a file path.
  * @param path
  *  The path of the file to retrieve the size of.

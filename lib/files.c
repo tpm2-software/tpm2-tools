@@ -352,23 +352,6 @@ bool files_load_tpm_context_from_path(TSS2_SYS_CONTEXT *sapi_context,
     return result;
 }
 
-bool files_does_file_exist(const char *path) {
-
-    if (!path) {
-        LOG_ERR("Path cannot be NULL");
-        return false;
-    }
-
-    FILE *fp = fopen(path,"rb");
-    if (fp) {
-        fclose(fp);
-        LOG_ERR("Path: %s already exists. Please rename or delete the file!",
-                path);
-        return true;
-    }
-    return false;
-}
-
 bool files_get_file_size_path(const char *path, unsigned long *file_size) {
 
     bool result = false;
