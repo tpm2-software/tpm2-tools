@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e
+
 if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
 
   docker pull tpm2software/tpm2-tss
