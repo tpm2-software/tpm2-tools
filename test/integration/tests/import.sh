@@ -54,13 +54,16 @@ run_test() {
 	cleanup "no-shut-down"
 
 	parent_alg=$1
+	name_alg=$2
 
-	tpm2_createprimary -Q -G "$parent_alg" -a o -o parent.ctx
+	tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
 
 	dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 
 	#Symmetric Key Import Test
-	tpm2_import -Q -G aes -k sym.key -C parent.ctx -q import_key.pub \
+	echo "tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -q import_key.pub -r import_key.priv"
+	
+	tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -q import_key.pub \
 	-r import_key.priv
 
 	tpm2_load -Q -C parent.ctx -u import_key.pub -r import_key.priv -n import_key.name \
@@ -80,7 +83,7 @@ run_test() {
 	openssl rsa -in private.pem -pubout > public.pem
 
 	# Test an import without the parent public info data to force a readpublic
-	tpm2_import -Q -G rsa -k private.pem -C parent.ctx \
+	tpm2_import -Q -G rsa -g "$name_alg" -k private.pem -C parent.ctx \
 	-q import_rsa_key.pub -r import_rsa_key.priv
 
 	tpm2_load -Q -C parent.ctx -u import_rsa_key.pub -r import_rsa_key.priv \
@@ -110,11 +113,18 @@ run_test() {
 }
 
 #
-# Run the tests against RSA2048 with AES CFB 128 and 256 bit parents
+# Run the tests against:
+#   - RSA2048 with AES CFB 128 and 256 bit parents
+#   - SHA256 object (not parent) name algorithms
 #
 parent_algs=("rsa2048:aes128cfb" "rsa2048:aes256cfb")
+halgs=`populate_hash_algs 'and alg != "sha1"'`
+echo "halgs: $halgs"
 for pa in "${parent_algs[@]}"; do
-	run_test "$pa"
+  for name in $halgs; do
+    echo "$pa - $name"
+    run_test "$pa" "$name"
+  done;
 done;
 
 exit 0
