@@ -23,6 +23,13 @@ These options control the key importation process:
     * aes - AES 128 key.
     * rsa - RSA 2048 key.
 
+  * **-g**, **--halg**=_ALGORITHM_:
+    The hash algorithm for generating the objects name. This is optional
+    and defaults to sha256 when not specified. Algorithms should follow the
+    "formatting standards", see section "Algorithm Specifiers".
+    Also, see section "Supported Hash Algorithms" for a list of supported
+    hash algorithms.
+
   * **-k**, **--input-key-file**=_FILE_:
     Specifies the filename of symmetric key (128 bit data) to be imported. OR,
     Specifies the filename for the RSA2K private key file in PEM and PKCS#1
@@ -63,6 +70,11 @@ tpm2_import -k sym.key -C 0x81010001 -f parent.pub -q import_key.pub -r import_k
 tpm2_import -Q -G rsa -k private.pem -C 0x81010005 -f parent.pub \
 -q import_rsa_key.pub -r import_rsa_key.priv
 ```
+
+# LIMITATIONS
+  * The TPM requires that the name algorithm of the child be smaller than the parent.
+  * Parents with a SHA1 hash algorithm currently fail. See bug
+    [#119](https://github.com/tpm2-software/tpm2-tools/issues/1119) for details.
 
 # RETURNS
 

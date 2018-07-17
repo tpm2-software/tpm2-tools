@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  8 tpm2_import: Supports setting object name algorithm via -g.
   * tpm2_unseal: -P becomes -p
   * tpm2_sign: -P becomes -p
   * tpm2_nvreadlock: long form for -P is now --auth-hierarchy
