@@ -34,12 +34,12 @@
 source helpers.sh
 
 cleanup() {
-    tpm2_evictcontrol -Q -a o -c 0x81010005 2>/dev/null
+    tpm2_evictcontrol -Q -a o -c parent.ctx 2>/dev/null
     rm -f import_key.ctx  import_key.name  import_key.priv  import_key.pub \
-          parent.ctx parent.pub  plain.dec.ssl  plain.enc  plain.txt  sym.key \
+          parent.ctx plain.dec.ssl  plain.enc  plain.txt  sym.key \
           import_rsa_key.pub import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name \
           private.pem public.pem plain.rsa.enc plain.rsa.dec \
-          public.pem data.in.raw data.in.digest data.out.signed
+          public.pem data.in.raw data.in.digest data.out.signed ticket.out
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -49,62 +49,72 @@ trap cleanup EXIT
 
 start_up
 
-cleanup "no-shut-down"
+run_test() {
 
-tpm2_createprimary -Q -G 1 -g 0xb -a o -o parent.ctx
-tpm2_evictcontrol -Q -a o -c parent.ctx -p 0x81010005
+	cleanup "no-shut-down"
 
-dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
+	parent_alg=$1
 
-tpm2_readpublic -Q -c 0x81010005 --out-file parent.pub
+	tpm2_createprimary -Q -G "$parent_alg" -a o -o parent.ctx
 
-#Symmetric Key Import Test
-tpm2_import -Q -G aes -k sym.key -C 0x81010005 -K parent.pub -q import_key.pub \
--r import_key.priv
+	dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 
-tpm2_load -Q -C 0x81010005 -u import_key.pub -r import_key.priv -n import_key.name \
--o import_key.ctx
+	#Symmetric Key Import Test
+	tpm2_import -Q -G aes -k sym.key -C parent.ctx -q import_key.pub \
+	-r import_key.priv
 
-echo "plaintext" > "plain.txt"
+	tpm2_load -Q -C parent.ctx -u import_key.pub -r import_key.priv -n import_key.name \
+	-o import_key.ctx
 
-tpm2_encryptdecrypt -c import_key.ctx  -I plain.txt -o plain.enc
+	echo "plaintext" > "plain.txt"
 
-openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
--aes-128-cfb
+	tpm2_encryptdecrypt -c import_key.ctx  -I plain.txt -o plain.enc
 
-diff plain.txt plain.dec.ssl
+	openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
+	-aes-128-cfb
 
-#Asymmetric Key Import Test
-openssl genrsa -out private.pem 2048
-openssl rsa -in private.pem -pubout > public.pem
+	diff plain.txt plain.dec.ssl
 
-# Test an import without the parent public info data to force a readpublic
-tpm2_import -Q -G rsa -k private.pem -C 0x81010005 \
--q import_rsa_key.pub -r import_rsa_key.priv
+	#Asymmetric Key Import Test
+	openssl genrsa -out private.pem 2048
+	openssl rsa -in private.pem -pubout > public.pem
 
-tpm2_load -Q -C 0x81010005 -u import_rsa_key.pub -r import_rsa_key.priv \
--n import_rsa_key.name -o import_rsa_key.ctx
+	# Test an import without the parent public info data to force a readpublic
+	tpm2_import -Q -G rsa -k private.pem -C parent.ctx \
+	-q import_rsa_key.pub -r import_rsa_key.priv
 
-openssl rsa -in private.pem -out public.pem -outform PEM -pubout
-openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
+	tpm2_load -Q -C parent.ctx -u import_rsa_key.pub -r import_rsa_key.priv \
+	-n import_rsa_key.name -o import_rsa_key.ctx
 
-tpm2_rsadecrypt -c import_rsa_key.ctx -I plain.rsa.enc -o plain.rsa.dec
+	openssl rsa -in private.pem -out public.pem -outform PEM -pubout
+	openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
 
-diff plain.txt plain.rsa.dec
+	tpm2_rsadecrypt -c import_rsa_key.ctx -I plain.rsa.enc -o plain.rsa.dec
 
-# test verifying a sigature with the imported key, ie sign in tpm and verify with openssl
-echo "data to sign" > data.in.raw
+	diff plain.txt plain.rsa.dec
 
-sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+	# test verifying a sigature with the imported key, ie sign in tpm and verify with openssl
+	echo "data to sign" > data.in.raw
 
-tpm2_sign -Q -c import_rsa_key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
+	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+	tpm2_sign -Q -c import_rsa_key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
 
-# Sign with openssl and verify with TPM
-openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
+	openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
-# Verify with the TPM
-tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+	# Sign with openssl and verify with TPM
+	openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
+
+	# Verify with the TPM
+	tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+}
+
+#
+# Run the tests against RSA2048 with AES CFB 128 and 256 bit parents
+#
+parent_algs=("rsa2048:aes128cfb" "rsa2048:aes256cfb")
+for pa in "${parent_algs[@]}"; do
+	run_test "$pa"
+done;
 
 exit 0
