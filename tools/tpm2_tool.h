@@ -59,7 +59,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
  * @param flags
  *  Flags that tools may wish to respect.
  * @return
- *  0 on success.
+ *  0 on success
+ *  1 on failure
+ * -1 to show usage
  */
 int tpm2_tool_onrun (TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) __attribute__((weak));
 
