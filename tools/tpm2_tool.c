@@ -157,10 +157,16 @@ int main(int argc, char *argv[]) {
     /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
+     * rc 1 = failure
+     * rc 0 = success
+     * rc -1 = show usage
      */
-    ret = tpm2_tool_onrun(sapi_context, flags) ? 1 : 0;
-    if (ret != 0) {
+    ret = tpm2_tool_onrun(sapi_context, flags);
+    if (ret > 0) {
         LOG_ERR("Unable to run %s", argv[0]);
+    } else if (ret < 0) {
+        tpm2_print_usage(argv[0], tool_opts);
+        ret = 0;
     }
 
     /*
