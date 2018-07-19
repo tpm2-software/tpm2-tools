@@ -228,14 +228,19 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     TPMA_OBJECT attrs = DEFAULT_ATTRS;
 
-    if (ctx.flags.I) {
-        bool res = load_sensitive();
-        if (!res) {
-            goto out;
-        }
+    if(!ctx.context_arg) {
+        LOG_ERR("Must specify parent object via -C.");
+        return -1;
+    }
 
+    if (ctx.flags.I) {
         if (ctx.flags.G) {
             LOG_ERR("Cannot specify -G and -I together.");
+            return -1;
+        }
+
+        bool res = load_sensitive();
+        if (!res) {
             goto out;
         }
 
@@ -258,11 +263,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.I && ctx.in_public.publicArea.type != TPM2_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM2_ALG_KEYEDHASH algorithm is allowed when sealing data");
-        goto out;
-    }
-
-    if(!ctx.context_arg) {
-        LOG_ERR("Must specify parent object via -C");
         goto out;
     }
 
