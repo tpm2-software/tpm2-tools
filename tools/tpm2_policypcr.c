@@ -104,17 +104,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     bool fail = false;
     if (!ctx.session_path) {
-        LOG_ERR("Must specify -S session file");
+        LOG_ERR("Must specify -S session file.");
         fail = true;
     }
 
     if (!ctx.pcr_selection.count) {
-        LOG_ERR("Must specify -L pcr selection list");
+        LOG_ERR("Must specify -L pcr selection list.");
         fail = true;
     }
 
     if (fail) {
-        return rc;
+        return -1;
     }
 
     s = tpm2_session_restore(sapi_context, ctx.session_path);
