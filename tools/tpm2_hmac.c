@@ -261,11 +261,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result;
 
     /*
-     * Options k or c must be specified.
+     * Option C must be specified.
      */
     if (!ctx.context_arg) {
-        LOG_ERR("Must specify options C");
-        return rc;
+        LOG_ERR("Must specify options C.");
+        return -1;
     }
 
     if (ctx.flags.P) {
