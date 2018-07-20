@@ -420,6 +420,18 @@ static bool handle_keyedhash(TPM2B_PUBLIC *public) {
         return true;
 }
 
+static const char *alg_spec_fixup(const char *alg_spec) {
+
+    /*
+     * symcipher used to imply aes128cfb.
+     */
+    if (!strcmp(alg_spec, "symcipher")) {
+        return "aes128cfb";
+    }
+
+    return alg_spec;
+}
+
 static bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
 
     /*
@@ -433,6 +445,7 @@ static bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *pub
         if (!alg_spec) {
             return false;
         }
+        alg_spec = alg_spec_fixup(alg_spec);
     }
 
     /*

@@ -58,8 +58,9 @@ tpm2_createprimary -Q -a o -g sha1 -G rsa -o context.out
 
 # Keep the algorithm specifiers mixed to test friendly and raw
 # values.
-for gAlg in `populate_hash_algs mixed`; do
+for gAlg in `populate_hash_algs`; do
     for GAlg in rsa 0x08 ecc 0x25; do
+        echo "tpm2_create -Q -C context.out -g $gAlg -G $GAlg -u key.pub -r key.priv"
         tpm2_create -Q -C context.out -g $gAlg -G $GAlg -u key.pub -r key.priv
         cleanup "keep-context" "no-shut-down"
     done

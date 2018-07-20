@@ -31,42 +31,30 @@
 # THE POSSIBILITY OF SUCH DAMAGE.
 #;**********************************************************************;
 
+function filter_algs_by() {
+
+python << pyscript
+from __future__ import print_function
+
+import sys
+import yaml
+
+with open("$1") as f:
+    try:
+        y = yaml.load(f)
+        for alg, details in y.iteritems():
+            if $2:
+                print(alg)
+    except yaml.YAMLError as exc:
+        sys.exit(exc)
+pyscript
+}
+
 populate_hash_algs() {
-    declare -A local name2hex=(
-        ["sha1"]=0x04
-        ["sha256"]=0x0B
-        ["sha384"]=0x0C
-        ["sha512"]=0x0D
-        ["sm3_256"]=0x12
-    )
-    local algs="`tpm2_getcap -c algorithms | grep 'hash:\s*set$' -B 3 | awk '{ print $6 }' | xargs`"
-    local algs_supported=""
-    local t_alg
-
-    # Filter out the hash algorithms not appropriate for the test.
-    for t_alg in $algs; do
-        [ ! ${name2hex[$t_alg]} ] && continue
-
-        algs_supported="$t_alg $algs_supported"
-    done
-
-    local mode=${1:-"name"}
-    local ret=""
-    local let i=0
-
-    for t_alg in $algs_supported; do
-        if [ "$mode" = "hex" ]; then
-            ret="$ret ${name2hex[$t_alg]}"
-        elif [ "$mode" = "mixed" ]; then
-            [ $i -eq 0 ] && ret="$ret $t_alg" || ret="$ret ${name2hex[$t_alg]}"
-            let "i=$i^1"
-        else
-            echo "$algs_supported"
-            return
-        fi
-    done
-
-    echo "$ret"
+	algs=`mktemp`
+	`tpm2_getcap -c algorithms > "$algs"`
+	filter_algs_by "$algs" 'details["hash"] and not details["method"] and not details["symmetric"] and not details["signing"] $1'
+	rm "$algs"
 }
 
 # Return alg argument if supported by TPM.
