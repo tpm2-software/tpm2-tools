@@ -175,7 +175,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (!ctx.clear_lockout && !ctx.setup_parameters) {
         LOG_ERR( "Invalid operational input: Neither Setup nor Clear lockout requested.");
-        goto out;
+        return -1;
     }
 
     if (ctx.flags.p) {
