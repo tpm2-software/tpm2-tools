@@ -278,8 +278,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     if ((!ctx.ctx_arg)
             && (!ctx.key_ctx_arg)
             && !ctx.flags.f && !ctx.flags.o) {
-        LOG_ERR("Expected options c and C and f and o");
-        return 1;
+        LOG_ERR("Expected options c and C and f and o.");
+        return -1;
     }
 
     bool res = tpm2_util_object_load(sapi_context, ctx.ctx_arg, &ctx.ctx_obj);
