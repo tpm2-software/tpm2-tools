@@ -545,7 +545,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.f && !ctx.ak.out.pub_file) {
         LOG_ERR("Please specify an output file name when specifying a format");
-        return 1;
+        return -1;
     }
 
     if (ctx.find_persistent_ak) {
