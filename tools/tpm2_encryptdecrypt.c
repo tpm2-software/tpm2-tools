@@ -215,8 +215,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     int rc = 1;
 
     if (!ctx.context_arg) {
-        LOG_ERR("Expected a context file or handle, got none");
-        goto out;
+        LOG_ERR("Expected a context file or handle, got none.");
+        return -1;
     }
 
     ctx.data.size = sizeof(ctx.data.buffer);
