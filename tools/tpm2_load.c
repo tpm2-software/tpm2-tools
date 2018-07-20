@@ -171,8 +171,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result;
 
     if ((!ctx.context_arg) || (!ctx.flags.u || !ctx.flags.r)) {
-        LOG_ERR("Expected options C, u and r");
-        goto out;
+        LOG_ERR("Expected options C, u and r.");
+        return -1;
     }
 
     if(ctx.flags.P) {
