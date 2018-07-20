@@ -429,9 +429,7 @@ static bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *pub
     bool res = tpm2_util_string_to_uint16(alg_spec, &alg);
     if (res) {
         alg_spec = tpm2_alg_util_algtostr(alg,
-                tpm2_alg_util_flags_asymmetric
-                | tpm2_alg_util_flags_symmetric
-                | tpm2_alg_util_flags_keyedhash);
+                tpm2_alg_util_flags_base);
         if (!alg_spec) {
             return false;
         }
