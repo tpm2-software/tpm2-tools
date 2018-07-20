@@ -97,5 +97,12 @@ mode=$(yaml_get_kv out.yaml \"mode\" \"value\")
 test "$keybits" -eq "128"
 test "$mode" == "ofb"
 
+#
+# Test scheme support
+#
+
+for alg in "rsa1024:rsaes" "ecc384:ecdaa4-sha256"; do
+  tpm2_create -Q -C context.out -g sha256 -G "$alg" -u key.pub -r key.priv
+done
 
 exit 0

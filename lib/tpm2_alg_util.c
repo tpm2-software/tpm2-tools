@@ -92,13 +92,13 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
         { .name = "rsassa", .id = TPM2_ALG_RSASSA, .flags = tpm2_alg_util_flags_sig },
         { .name = "rsapss", .id = TPM2_ALG_RSAPSS, .flags = tpm2_alg_util_flags_sig },
         { .name = "ecdsa", .id = TPM2_ALG_ECDSA, .flags = tpm2_alg_util_flags_sig },
-        { .name = "ecdh", .id = TPM2_ALG_ECDH, .flags = tpm2_alg_util_flags_sig },
         { .name = "ecdaa", .id = TPM2_ALG_ECDAA, .flags = tpm2_alg_util_flags_sig },
         { .name = "ecschnorr", .id = TPM2_ALG_ECSCHNORR, .flags = tpm2_alg_util_flags_sig },
 
         // Assyemtric Encryption Scheme
         { .name = "oaep", .id = TPM2_ALG_OAEP, .flags = tpm2_alg_util_flags_enc_scheme },
         { .name = "rsaes", .id = TPM2_ALG_RSAES, .flags = tpm2_alg_util_flags_enc_scheme },
+        { .name = "ecdh", .id = TPM2_ALG_ECDH, .flags = tpm2_alg_util_flags_enc_scheme },
 
 
         // XXX are these sigs?
@@ -171,6 +171,183 @@ static bool handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
     return true;
 }
 
+static bool handle_scheme_alg(const char *ext, TPMS_ASYM_PARMS *s) {
+
+    if (ext[0] == '\0') {
+        ext = "sha256";
+    }
+
+    s->scheme.details.anySig.hashAlg = tpm2_alg_util_strtoalg(ext, tpm2_alg_util_flags_hash);
+    if (s->scheme.details.anySig.hashAlg == TPM2_ALG_ERROR) {
+        return false;
+    }
+
+    return true;
+}
+
+static bool handle_ecdaa_scheme_details(const char *ext, TPMS_ASYM_PARMS *s) {
+
+    /* Was it just "ecdaa" and we should set some default. */
+    if (ext[0] == '\0') {
+        ext = "4-sha256";
+    }
+
+    /*
+     * Work off of a buffer since we expect const behavior
+     */
+    char buf[256];
+    snprintf(buf, sizeof(buf), "%s", ext);
+
+    char *split = strchr(buf, '-');
+    if (!split) {
+        LOG_ERR("Invalid ecdaa scheme, expected <num>-<hash-alg>, got: \"%s\"", ext);
+        return false;
+    }
+
+    char *num = buf;
+    split[0] = '\0';
+    split++;
+    char *halg = split;
+
+    TPMS_SIG_SCHEME_ECDAA *e = &s->scheme.details.ecdaa;
+
+    bool res = tpm2_util_string_to_uint16(num, &e->count);
+    if (!res) {
+        LOG_ERR("Invalid ecdaa count, expected <num>-<hash-alg>, got: \"%s\"", ext);
+        return false;
+    }
+
+    e->hashAlg = tpm2_alg_util_strtoalg(halg, tpm2_alg_util_flags_hash);
+    if (e->hashAlg == TPM2_ALG_ERROR) {
+        LOG_ERR("Invalid ecdaa hashing algorithm, expected <num>-<hash-alg>, got: \"%s\"", ext);
+        return false;
+    }
+
+    return true;
+}
+
+/*
+ * Macro for redundant code collapse in handle_asym_scheme_common
+ * You cannot change all the variables in this, as they are dependent
+ * on names in that routine; this is for simplicity.
+ */
+#define do_scheme_halg_and_advance(advance, alg) \
+    do { \
+        s->scheme.scheme = alg; \
+        scheme += advance; \
+        do_scheme_hash_alg = true; \
+    } while (0)
+
+static bool handle_asym_scheme_common(const char *ext, TPM2B_PUBLIC *public) {
+
+    // Get the scheme and symetric details
+    TPMS_ASYM_PARMS *s = &public->publicArea.parameters.asymDetail;
+
+    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
+
+    // Get the scheme
+    const char *scheme;
+    char tmp[32];
+    char *next = strchr(ext, ':');
+    if (next) {
+        snprintf(tmp, sizeof(tmp), "%.*s", (int)(next - ext), ext);
+        scheme = tmp;
+    } else {
+        scheme = ext;
+    }
+
+    const char *orig = scheme;
+
+    /*
+     * This can fail... if the spec is missing scheme, default the scheme to NULL
+     */
+    bool is_missing_scheme = false;
+    bool do_scheme_hash_alg = false;
+    if (!strncmp(scheme, "oaep", 4)) {
+        do_scheme_halg_and_advance(4, TPM2_ALG_OAEP);
+    } else if (!strncmp(scheme, "ecdsa", 5)) {
+        do_scheme_halg_and_advance(5, TPM2_ALG_ECDSA);
+    } else if (!strncmp(scheme, "ecdh", 4)) {
+        do_scheme_halg_and_advance(4, TPM2_ALG_ECDH);
+    } else if (!strncmp(scheme, "ecschnorr", 9)) {
+        do_scheme_halg_and_advance(9, TPM2_ALG_ECSCHNORR);
+    } else if (!strncmp(scheme, "ecdaa", 5)) {
+        /*
+         * ECDAA has both a count and hashing algorithm
+         */
+        scheme += 5;
+        s->scheme.scheme = TPM2_ALG_ECDAA;
+        bool result = handle_ecdaa_scheme_details(scheme, s);
+        if (!result) {
+            /* don't print another error message */
+            return false;
+        }
+    } else if (!strcmp(scheme, "rsaes")) {
+        /*
+         * rsaes has no hash alg or details, so it MUST
+         * match exactly, notice strcmp and NOT strNcmp!
+         */
+        s->scheme.scheme = TPM2_ALG_RSAES;
+    } else if (!strcmp("null", scheme)) {
+        s->scheme.scheme = TPM2_ALG_NULL;
+    } else {
+        s->scheme.scheme = TPM2_ALG_NULL;
+        is_missing_scheme = true;
+    }
+
+    if (do_scheme_hash_alg) {
+        bool result = handle_scheme_alg(scheme, s);
+        if (!result) {
+            goto error;
+        }
+    }
+
+    if (is_restricted && s->scheme.scheme != TPM2_ALG_NULL) {
+        LOG_ERR("Restricted objects require a NULL scheme");
+        /* don't print another error message */
+        return false;
+    }
+
+    /*
+     * If the scheme is set, both the encrypt and decrypt attributes cannot be set,
+     * check to see if this is the case, and turn down:
+     *  - DECRYPT - If its a signing scheme.
+     *  - ENCRYPT - If its an asymmetric enc scheme.
+     */
+    if (s->scheme.scheme != TPM2_ALG_NULL) {
+        bool is_both_set =
+                !!(public->publicArea.objectAttributes & (TPMA_OBJECT_SIGN_ENCRYPT | TPMA_OBJECT_DECRYPT));
+        if (is_both_set) {
+            tpm2_alg_util_flags flags = tpm2_alg_util_algtoflags(s->scheme.scheme);
+            TPMA_OBJECT turn_down_flags = (flags & tpm2_alg_util_flags_sig) ?
+                    TPMA_OBJECT_DECRYPT : TPMA_OBJECT_SIGN_ENCRYPT;
+            public->publicArea.objectAttributes &= ~turn_down_flags;
+        }
+    }
+
+    if (is_missing_scheme) {
+        ext = scheme;
+    } else {
+        if (!next || *(next + 1) == '\0') {
+            next = is_restricted ? ":aes256cfb" : ":null";
+        }
+
+        // Go past next :
+        ext = ++next;
+    }
+
+    if (!strncmp(ext, "aes", 3)) {
+        return handle_aes_raw(&ext[3], &s->symmetric);
+    } else if (!strcmp(ext, "null")) {
+        s->symmetric.algorithm = TPM2_ALG_NULL;
+        return true;
+    }
+
+error:
+    LOG_ERR("Unsupported scheme, got: \"%s\"", orig);
+    return false;
+}
+
 static bool handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_RSA;
@@ -215,53 +392,8 @@ static bool handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
     // go past the colon separator
     ext++;
 
-    // Get the scheme
-    const char *scheme;
-    char tmp[32];
-    char *next = strchr(ext, ':');
-    if (next) {
-        snprintf(tmp, sizeof(tmp), "%.*s", (int)(next - ext), ext);
-        scheme = tmp;
-    } else {
-        scheme = ext;
-    }
-
-    /*
-     * This can fail... if the spec is missing scheme, default the scheme to NULL
-     */
-    bool is_missing_scheme = false;
-    r->scheme.scheme = tpm2_alg_util_strtoalg(scheme,
-            tpm2_alg_util_flags_enc_scheme
-            |tpm2_alg_util_flags_misc);
-    if (r->scheme.scheme == TPM2_ALG_ERROR) {
-        r->scheme.scheme = TPM2_ALG_NULL;
-        is_missing_scheme = true;
-    }
-
-    if (is_restricted && r->scheme.scheme != TPM2_ALG_NULL) {
-        LOG_ERR("Restricted objects require a NULL scheme");
-        return false;
-    }
-
-    if (is_missing_scheme) {
-        ext = scheme;
-    } else {
-        if (!next || *(next + 1) == '\0') {
-            next = is_restricted ? ":aes256cfb" : ":null";
-        }
-
-        // Go past next :
-        ext = ++next;
-    }
-
-    if (!strncmp(ext, "aes", 3)) {
-        return handle_aes_raw(&ext[3], &r->symmetric);
-    } else if (!strcmp(ext, "null")) {
-        r->symmetric.algorithm = TPM2_ALG_NULL;
-        return true;
-    }
-
-    return false;
+    // Get the scheme and symetric details
+    return handle_asym_scheme_common(ext, public);
 }
 
 static bool handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
@@ -302,44 +434,7 @@ static bool handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
     // go past the colon separator
     ext++;
 
-    // Get the scheme
-    const char *scheme;
-    char tmp[32];
-    char *next = strchr(ext, ':');
-    if (next) {
-        snprintf(tmp, sizeof(tmp), "%.*s", (int)(next - ext), ext);
-        scheme = tmp;
-    } else {
-        scheme = ext;
-    }
-
-    e->scheme.scheme = tpm2_alg_util_strtoalg(scheme,
-            tpm2_alg_util_flags_enc_scheme
-            |tpm2_alg_util_flags_misc);
-    if (e->scheme.scheme == TPM2_ALG_ERROR) {
-        return false;
-    }
-
-    if (is_restricted && e->scheme.scheme != TPM2_ALG_NULL) {
-        LOG_ERR("Restricted objects require a NULL scheme");
-        return false;
-    }
-
-    if (!next || *(next + 1) == '\0') {
-        next = is_restricted ? ":aes256cfb" : ":null";
-    }
-
-    // Go past next :
-    ext = ++next;
-
-    if (!strncmp(ext, "aes", 3)) {
-        return handle_aes_raw(&ext[3], &e->symmetric);
-    } else if (!strcmp(ext, "null")) {
-        e->symmetric.algorithm = TPM2_ALG_NULL;
-        return true;
-    }
-
-    return false;
+    return handle_asym_scheme_common(ext, public);
 }
 
 static bool handle_aes(const char *ext, TPM2B_PUBLIC *public) {
@@ -853,5 +948,28 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
         public->publicArea.objectAttributes = def_attrs;
     }
 
-    return tpm2_alg_util_handle_ext_alg(alg_details, public);
+    /*
+     * Some defaults may not be OK with the specified algorithms, if their defaults,
+     * tweak the Object Attributes, if specified by user, complain things will not
+     * work together and suggest attributes. This allows the user to verify what the
+     * want.
+     */
+    TPM2B_PUBLIC tmp = *public;
+    bool res = tpm2_alg_util_handle_ext_alg(alg_details, &tmp);
+    if (!res) {
+        return false;
+    }
+
+    if (attrs && tmp.publicArea.objectAttributes != public->publicArea.objectAttributes) {
+
+        char *proposed_attrs = tpm2_attr_util_obj_attrtostr(tmp.publicArea.objectAttributes);
+        LOG_ERR("Specified attributes \"%s\" and algorithm specifier \"%s\" do not work together, try"
+                "attributes: \"%s\"", attrs, alg_details, proposed_attrs);
+        free(proposed_attrs);
+        return false;
+    }
+
+    *public = tmp;
+
+    return true;
 }
