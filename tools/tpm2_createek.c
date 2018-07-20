@@ -300,7 +300,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.f && !ctx.out_file_path) {
         LOG_ERR("Please specify an output file name when specifying a format");
-        goto out;
+        return -1;
     }
 
     bool ret;
