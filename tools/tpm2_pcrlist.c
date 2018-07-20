@@ -419,7 +419,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
                 ctx.flags.L ? "-L" : "",
                 ctx.flags.s ? "-s" : ""
         );
-        goto error;
+        return -1;
     }
 
     if (ctx.flags.o) {
