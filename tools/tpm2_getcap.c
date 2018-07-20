@@ -957,8 +957,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     if (options.list && options.capability_string) {
-        LOG_ERR("Cannot specify -l with -c");
-        return 1;
+        LOG_ERR("Cannot specify -l with -c.");
+        return -1;
     }
 
     /* list known capabilities, ie -l option */
@@ -974,7 +974,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     ret = sanity_check_capability_opts();
     if (ret == 1) {
         LOG_ERR("Invalid capability string. See --help.\n");
-        return 1;
+        return -1;
     }
     /* get requested capability from TPM, dump it to stdout */
     if (!get_tpm_capability_all(sapi_context, &capability_data))
