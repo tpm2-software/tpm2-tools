@@ -235,7 +235,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "sig-file",      required_argument, NULL, 's' },
       { "obj-context",   required_argument, NULL, 'C' },
       { "key-context",   required_argument, NULL, 'c' },
-      {  "format",       required_argument, NULL, 'f' },
+      { "format",        required_argument, NULL, 'f' },
     };
 
     *opts = tpm2_options_new("P:p:g:a:s:c:C:f:", ARRAY_LEN(topts), topts,
@@ -256,7 +256,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         && (!ctx.key_context_arg)
         && (ctx.flags.g) && (ctx.flags.a)
         && (ctx.flags.s)) {
-        goto out;
+        return -1;
     }
 
     /* Load input files */
