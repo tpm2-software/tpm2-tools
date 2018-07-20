@@ -103,6 +103,7 @@ For more detailed information about the dependencies of tpm2-tss and tmp2-abrmd,
 | tpm2-tools version | tpm2-tss version | tpm2-abrmd version|
 |--------------------|------------------|-------------------|
 |[master](https://github.com/tpm2-software/tpm2-tools)|[master](https://github.com/tpm2-software/tpm2-tss)|[master](https://github.com/tpm2-software/tpm2-abrmd)|
+|[3.1.0](https://github.com/tpm2-software/tpm2-tools/releases/tag/3.1.0)|[2.0.0](https://github.com/tpm2-software/tpm2-tss/releases/tag/2.0.0)|[2.0.0](https://github.com/tpm2-software/tpm2-abrmd/tree/2.0.0)|
 |[2.1.0](https://github.com/tpm2-software/tpm2-tools/releases/tag/2.1.0)|[1.2.0](https://github.com/tpm2-software/tpm2-tss/releases/tag/1.2.0)|[1.1.1](https://github.com/tpm2-software/tpm2-abrmd/releases/tag/1.1.1)|
 |[df751ae](https://github.com/tpm2-software/tpm2.0-tools/tree/df751ae5bea0bb057c9ee4cb0c1176c48ff68492)(master)|[1.1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.1.0)|[1.0.0](https://github.com/tpm2-software/tpm2-abrmd/releases/tag/1.0.0)|
 |[v2.0.0](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/2.0.0)|[1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0)|old resourcemgr|
@@ -192,7 +193,7 @@ $ sudo make install
 
 * ##### Tpm2-abrmd
 ```
-$ git://github.com/tpm2-software/tpm2-abrmd.git
+$ git clone git://github.com/tpm2-software/tpm2-abrmd.git
 $ cd tpm2-abrmd
 $ ./bootstrap
 $ ./configure --with-dbuspolicydir=/etc/dbus-1/system.d
