@@ -230,8 +230,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     /* TODO this whole file needs to be re-done, especially the option validation */
     if (!ctx.flags.l && !ctx.flags.L) {
-        LOG_ERR("Expected either -l or -L to be specified");
-        goto out;
+        LOG_ERR("Expected either -l or -L to be specified.");
+        return -1;
     }
 
     if (ctx.flags.P) {
