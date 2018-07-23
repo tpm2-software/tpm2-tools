@@ -40,12 +40,6 @@ cat /path/to/tpm/quote | tpm2_print --type=TPMS_ATTEST
 
 # RETURNS
 
-0 on success. Non-zero otherwise.
+0 on success or 1 on failure.
 
-# BUGS
-
-[Github Issues](https://github.com/tpm2-software/tpm2-tools/issues)
-
-# HELP
-
-See the [Mailing List](https://lists.01.org/mailman/listinfo/tpm2)
+[footer](common/footer.md)
