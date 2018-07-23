@@ -53,7 +53,7 @@ pyscript
 populate_hash_algs() {
 	algs=`mktemp`
 	`tpm2_getcap -c algorithms > "$algs"`
-	filter_algs_by "$algs" 'details["hash"] and not details["method"] and not details["symmetric"] and not details["signing"] $1'
+	filter_algs_by "$algs" "details['hash'] and not details['method'] and not details['symmetric'] and not details['signing'] $1"
 	rm "$algs"
 }
 
