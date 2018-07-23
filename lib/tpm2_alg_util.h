@@ -199,4 +199,13 @@ bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
 bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, TPMA_OBJECT def_attrs,
        TPM2B_PUBLIC *public);
 
+/**
+ * Returns an ECC curve as a friendly name.
+ * @param curve_id
+ *  The curve to look up a friendly string for.
+ * @return
+ *  The friendly string or NULL if not found.
+ */
+const char *tpm2_alg_util_ecc_to_str(TPM2_ECC_CURVE curve_id);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */

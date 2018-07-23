@@ -84,16 +84,16 @@ test "$policy_orig" == "$policy_new"
 tpm2_create -Q -C context.out -g sha256 -G aes256cbc -u key.pub -r key.priv
 tpm2_load -Q -C context.out -u key.pub -r key.priv -o key.ctx
 tpm2_readpublic -c key.ctx > out.yaml
-keybits=$(yaml_get_kv out.yaml \"keybits\")
-mode=$(yaml_get_kv out.yaml \"mode\" \"value\")
+keybits=$(yaml_get_kv out.yaml \"sym-keybits\")
+mode=$(yaml_get_kv out.yaml \"sym-mode\" \"value\")
 test "$keybits" -eq "256"
 test "$mode" == "cbc"
 
 tpm2_create -Q -C context.out -g sha256 -G aes128ofb -u key.pub -r key.priv
 tpm2_load -Q -C context.out -u key.pub -r key.priv -o key.ctx
 tpm2_readpublic -c key.ctx > out.yaml
-keybits=$(yaml_get_kv out.yaml \"keybits\")
-mode=$(yaml_get_kv out.yaml \"mode\" \"value\")
+keybits=$(yaml_get_kv out.yaml \"sym-keybits\")
+mode=$(yaml_get_kv out.yaml \"sym-mode\" \"value\")
 test "$keybits" -eq "128"
 test "$mode" == "ofb"
 

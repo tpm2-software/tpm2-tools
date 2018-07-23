@@ -511,7 +511,6 @@ static bool handle_keyedhash(TPM2B_PUBLIC *public) {
 
         public->publicArea.type = TPM2_ALG_KEYEDHASH;
         public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
-
         return true;
 }
 
@@ -972,4 +971,28 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
     *public = tmp;
 
     return true;
+}
+
+const char *tpm2_alg_util_ecc_to_str(TPM2_ECC_CURVE curve_id) {
+
+    switch(curve_id) {
+    case TPM2_ECC_NIST_P192:
+        return "NIST p192";
+    case TPM2_ECC_NIST_P224:
+        return "NIST p224";
+    case TPM2_ECC_NIST_P256:
+        return "NIST p256";
+    case TPM2_ECC_NIST_P384:
+        return "NIST p384";
+    case TPM2_ECC_NIST_P521:
+        return "NIST 521";
+    case TPM2_ECC_BN_P256:
+        return "BN P256";
+    case TPM2_ECC_BN_P638:
+        return "BN P638";
+    case TPM2_ECC_SM2_P256:
+        return "SM2 p256";
+        /* no default */
+    }
+    return NULL;
 }
