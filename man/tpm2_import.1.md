@@ -1,23 +1,20 @@
 tpm2_import 1 "SEPTEMBER 2017" tpm2-tools
 ==================================================
 
-NAME
-----
+# NAME
 
 tpm2_import(8) - imports an external key (AES-128) into the tpm as a TPM managed key object.
 
-SYNOPSIS
---------
+# SYNOPSIS
 
-`tpm2_import` [OPTIONS]
+**tpm2_import** [*OPTIONS*]
 
-DESCRIPTION
------------
+# DESCRIPTION
+
 This tool imports an external key either, a symmetric AES-128 or an RSA2K as TPM managed key object.
 It requires the parent handle be persistent and an object of type RSA key.
 
-OPTIONS
--------
+# OPTIONS
 
 These options control the key importation process:
 
@@ -31,7 +28,7 @@ These options control the key importation process:
     Specifies the filename for the RSA2K private key file in PEM and PKCS#1
     format. A typical file is generated with openssl genrsa.
 
-  * **-C**, **--parent-key**=_PARENT_CONTEXT_:
+  * **-C**, **--parent-key**=_PARENT\_CONTEXT_:
     Specifies the context object for the parent key. Either a file or a handle number.
     See section "Context Object Format".
 
@@ -58,16 +55,17 @@ These options control the key importation process:
 
 [algorithm specifiers](common/alg.md)
 
-EXAMPLES
---------
+# EXAMPLES
 
+```
 tpm2_import -k sym.key -C 0x81010001 -f parent.pub -q import_key.pub -r import_key.priv
 
 tpm2_import -Q -G rsa -k private.pem -C 0x81010005 -f parent.pub \
 -q import_rsa_key.pub -r import_rsa_key.priv
+```
 
-RETURNS
--------
+# RETURNS
+
 0 on success or 1 on failure.
 
 [footer](common/footer.md)
