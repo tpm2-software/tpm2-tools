@@ -322,17 +322,61 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent) {
     free(attrs);
 }
 
+static void print_alg_raw(const char *name, TPM2_ALG_ID alg, const char *indent) {
+
+    tpm2_tool_output("%s%s:\n", indent, name);
+    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(alg, tpm2_alg_util_flags_any));
+    tpm2_tool_output("%s  raw: 0x%x\n", indent, alg);
+}
+
+static void print_scheme_common(TPMI_ALG_RSA_SCHEME scheme, const char *indent) {
+    print_alg_raw("scheme", scheme, indent);
+}
+
 static void print_sym(TPMT_SYM_DEF_OBJECT *sym, const char *indent) {
 
-    tpm2_tool_output("%salgorithm: \n", indent);
-    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(sym->algorithm, tpm2_alg_util_flags_any));
-    tpm2_tool_output("%s  raw: 0x%x\n", indent, sym->algorithm);
+    print_alg_raw("sym-alg", sym->algorithm, indent);
+    print_alg_raw("sym-mode", sym->mode.sym, indent);
+    tpm2_tool_output("%ssym-keybits: %u\n", indent, sym->keyBits.sym);
+}
 
-    tpm2_tool_output("%smode:\n", indent);
-    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(sym->mode.sym, tpm2_alg_util_flags_any));
-    tpm2_tool_output("%s  raw: 0x%x\n", indent, sym->mode.sym);
+static void print_rsa_scheme(TPMT_RSA_SCHEME *scheme, const char *indent) {
 
-    tpm2_tool_output("%skeybits: %u\n", indent, sym->keyBits.sym);
+    print_scheme_common(scheme->scheme, indent);
+
+    /*
+     * everything is a union on a hash algorithm except for RSAES which
+     * has nothing. So on RSAES skip the hash algorithm printing
+     */
+    if (scheme->scheme != TPM2_ALG_RSAES) {
+        print_alg_raw("scheme-halg", scheme->details.oaep.hashAlg, indent);
+    }
+}
+
+static void print_ecc_scheme(TPMT_ECC_SCHEME *scheme, const char *indent) {
+
+    print_scheme_common(scheme->scheme, indent);
+
+    /*
+     * everything but ecdaa uses only hash alg
+     * in a union, so we only need to do things differently
+     * for ecdaa.
+     */
+    print_alg_raw("scheme-halg", scheme->details.oaep.hashAlg, indent);
+
+    if (scheme->scheme == TPM2_ALG_ECDAA) {
+        tpm2_tool_output("%sscheme-count: %u\n", indent, scheme->details.ecdaa.count);
+    }
+}
+
+static void print_kdf_scheme(TPMT_KDF_SCHEME *kdf, const char *indent) {
+
+    print_alg_raw("kdfa-alg", kdf->scheme, indent);
+
+    /*
+     * The hash algorithm for the KDFA is in a union, just grab one of them.
+     */
+    print_alg_raw("kdfa-halg", kdf->details.mgf1.hashAlg, indent);
 }
 
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
@@ -379,20 +423,29 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     } break;
     case TPM2_ALG_RSA: {
         TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
-        tpm2_tool_output("%srsa-scheme: \n", indent);
-        tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(r->scheme.scheme, tpm2_alg_util_flags_any));
-        tpm2_tool_output("%s  raw: 0x%x\n", indent, r->scheme.scheme);
-
         tpm2_tool_output("%sexponent: 0x%x\n", indent, r->exponent);
         tpm2_tool_output("%sbits: %u\n", indent, r->keyBits);
 
-        tpm2_tool_output("%ssymmetric:\n", indent);
+        print_rsa_scheme(&r->scheme, indent);
 
-        char new_indent[256];
-        snprintf(new_indent, sizeof(new_indent), "%s  ", indent);
-        print_sym(&r->symmetric, new_indent);
+        print_sym(&r->symmetric, indent);
+    } break;
+    case TPM2_ALG_ECC: {
+        TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
+
+        tpm2_tool_output("%scurve-id:\n", indent);
+        tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_ecc_to_str(e->curveID));
+        tpm2_tool_output("%s  raw: 0x%x\n", indent, e->curveID);
+
+        print_kdf_scheme(&e->kdf, indent);
+
+        print_ecc_scheme(&e->scheme, indent);
+
+        print_sym(&e->symmetric, indent);
     } break;
     }
+
+
     tpm2_util_keydata keydata = TPM2_UTIL_KEYDATA_INIT;
     tpm2_util_public_to_keydata(public, &keydata);
 
