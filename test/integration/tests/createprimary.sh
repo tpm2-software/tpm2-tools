@@ -56,7 +56,7 @@ cleanup "no-shut-down"
 # Keep the algorithm specifiers mixed to test friendly and raw
 # values.
 for gAlg in `populate_hash_algs 'and alg != "keyedhash"'`; do
-    for GAlg in 0x01 keyedhash ecc 0x25; do
+    for GAlg in rsa xor ecc aes; do
         echo tpm2_createprimary -Q -g $gAlg -G $GAlg -o context.out
         tpm2_createprimary -Q -g $gAlg -G $GAlg -o context.out
         cleanup "no-shut-down" "keep-context"
