@@ -68,8 +68,6 @@ struct tpm_import_ctx {
     char *import_key_public_file;
     char *import_key_private_file;
     char *parent_key_public_file;
-    uint8_t *input_key_buffer;
-    uint16_t input_key_buffer_length;
     uint8_t *input_pub_key_buffer;
     uint16_t input_pub_key_buffer_length;
     TPMI_ALG_PUBLIC key_type;
@@ -372,14 +370,14 @@ static digester halg_to_digester(TPMI_ALG_HASH halg) {
     return NULL;
 }
 
-static bool calc_sensitive_unique_data(void) {
+static bool calc_sensitive_unique_data(TPM2B_MAX_BUFFER *key) {
 
     bool result = false;
 
     ctx.import_key_public_unique_data = malloc(tpm2_alg_util_get_hash_size(ctx.name_alg));
 
     uint8_t *concatenated_seed_unique = malloc(ctx.protection_seed_data.size +
-                                            ctx.input_key_buffer_length);
+                                            key->size);
     if (!concatenated_seed_unique) {
         LOG_ERR("oom");
         return false;
@@ -388,15 +386,15 @@ static bool calc_sensitive_unique_data(void) {
     memcpy(concatenated_seed_unique, ctx.protection_seed_data.buffer,
             ctx.protection_seed_data.size);
 
-    memcpy(concatenated_seed_unique + ctx.protection_seed_data.size, ctx.input_key_buffer,
-        ctx.input_key_buffer_length);
+    memcpy(concatenated_seed_unique + ctx.protection_seed_data.size, key->buffer,
+        key->size);
 
     digester d = halg_to_digester(ctx.name_alg);
     if (!d) {
         goto out;
     }
 
-    d(concatenated_seed_unique, ctx.protection_seed_data.size + ctx.input_key_buffer_length,
+    d(concatenated_seed_unique, ctx.protection_seed_data.size + key->size,
         ctx.import_key_public_unique_data);
 
     result = true;
@@ -505,7 +503,7 @@ static bool create_import_key_public_data_and_name(TPM2B_PUBLIC *public) {
     return true;
 }
 
-static void create_import_key_sensitive_data(TPM2B_SENSITIVE *sensitive) {
+static void create_import_key_sensitive_data(TPM2B_SENSITIVE *sensitive, TPM2B_MAX_BUFFER *key) {
 
     sensitive->sensitiveArea.authValue.size = 0;
     sensitive->sensitiveArea.seedValue.size =
@@ -519,17 +517,17 @@ static void create_import_key_sensitive_data(TPM2B_SENSITIVE *sensitive) {
             sensitive->sensitiveArea.sensitiveType =
                 TPM2_ALG_SYMCIPHER;
             sensitive->sensitiveArea.sensitive.sym.size =
-                ctx.input_key_buffer_length;
+                key->size;
             memcpy(sensitive->sensitiveArea.sensitive.sym.buffer,
-                ctx.input_key_buffer, ctx.input_key_buffer_length);
+                key->buffer, key->size);
             break;
         case TPM2_ALG_RSA:
             sensitive->sensitiveArea.sensitiveType =
                 TPM2_ALG_RSA;
             sensitive->sensitiveArea.sensitive.rsa.size =
-                ctx.input_key_buffer_length;
+                key->size;
             memcpy(sensitive->sensitiveArea.sensitive.rsa.buffer,
-                ctx.input_key_buffer, ctx.input_key_buffer_length);
+                key->buffer, key->size);
             break;
     }
 }
@@ -702,7 +700,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     return true;
 }
 
-static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
+static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *key) {
 
     /*
      * Load the parent public, either via ascertained file or readpublic.
@@ -740,7 +738,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
     create_random_seed_and_sensitive_enc_key();
 
     if (ctx.key_type == TPM2_ALG_AES) {
-        res = calc_sensitive_unique_data();
+        res = calc_sensitive_unique_data(key);
         if (!res) {
             return false;
         }
@@ -753,7 +751,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     TPM2B_SENSITIVE sensitive = TPM2B_EMPTY_INIT;
-    create_import_key_sensitive_data(&sensitive);
+    create_import_key_sensitive_data(&sensitive, key);
 
     calc_outer_integrity_hmac_key_and_dupsensitive_enc_key();
 
@@ -779,17 +777,9 @@ static bool on_option(char key, char *value) {
         ctx.key_type = tpm2_alg_util_from_optarg(value,
                 tpm2_alg_util_flags_asymmetric
                 |tpm2_alg_util_flags_symmetric);
-        switch(ctx.key_type) {
-            case TPM2_ALG_AES:
-                ctx.input_key_buffer_length = TPM2_MAX_SYM_BLOCK_SIZE;
-                break;
-            case TPM2_ALG_RSA:
-                ctx.input_key_buffer_length = 128;
-                break;
-            default:
-                LOG_ERR("Invalid/ unsupported key algorithm for import, got\"%s\"",
-                    value);
-                return false;
+        if (ctx.key_type == TPM2_ALG_ERROR) {
+            LOG_ERR("Unsupported key type");
+            return false;
         }
         return true;
     case 'k':
@@ -847,7 +837,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool load_rsa_key(void) {
+static bool load_rsa_key(TPM2B_MAX_BUFFER *data) {
 
     bool res = false;
     RSA *k = NULL;
@@ -878,13 +868,13 @@ static bool load_rsa_key(void) {
 #endif
 
     int priv_bytes = BN_num_bytes(p);
-    if (priv_bytes > ctx.input_key_buffer_length) {
+    if (priv_bytes > data->size) {
         LOG_ERR("Expected prime \"p\" to be less than or equal to %u,"
-                " got: %d", ctx.input_key_buffer_length, priv_bytes);
+                " got: %d", data->size, priv_bytes);
         goto out;
     }
 
-    int success = BN_bn2bin(p, ctx.input_key_buffer);
+    int success = BN_bn2bin(p, data->buffer);
     if (!success) {
         ERR_print_errors_fp (stderr);
         LOG_ERR("Could not convert prime \"p\"");
@@ -921,24 +911,30 @@ out:
 }
 
 static void free_key(void) {
-    free(ctx.input_key_buffer);
     free(ctx.input_pub_key_buffer);
 }
 
-static bool load_key(void) {
+static bool load_key(TPMI_ALG_PUBLIC key_type, TPM2B_MAX_BUFFER *data) {
 
-    ctx.input_key_buffer = malloc(ctx.input_key_buffer_length);
-    if (!ctx.input_key_buffer) {
-        LOG_ERR("oom");
-        return false;
+    switch(key_type) {
+        case TPM2_ALG_AES:
+            data->size = TPM2_MAX_SYM_BLOCK_SIZE;
+            break;
+        case TPM2_ALG_RSA:
+            data->size = 128;
+            break;
+        default:
+            LOG_ERR("Invalid/ unsupported key algorithm for import, got\"0x%x\"",
+                key_type);
+            return false;
     }
 
     if (ctx.key_type == TPM2_ALG_RSA) {
-        return load_rsa_key();
+        return load_rsa_key(data);
     }
 
     bool res = files_load_bytes_from_path(ctx.input_key_file,
-        ctx.input_key_buffer, &ctx.input_key_buffer_length);
+        data->buffer, &data->size);
     if (!res) {
         LOG_ERR("Input key file load failed");
         return false;
@@ -976,12 +972,13 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return 1;
     }
 
-    result = load_key();
+    TPM2B_MAX_BUFFER key;
+    result = load_key(ctx.key_type, &key);
     if (!result) {
         goto out;
     }
 
-    result = key_import(sapi_context);
+    result = key_import(sapi_context, &key);
     if (!result) {
         goto out;
     }
