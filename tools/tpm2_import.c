@@ -73,14 +73,12 @@ struct tpm_import_ctx {
     const char *parent_ctx_arg;
 
     UINT32 objectAttributes;
-    TPM2B_PUBLIC parent_pub;
     TPMI_ALG_HASH name_alg;
 };
 
 static tpm_import_ctx ctx = { 
     .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL,
-    .parent_pub = TPM2B_EMPTY_INIT,
     .name_alg = TPM2_ALG_ERROR
 };
 
@@ -127,14 +125,15 @@ static bool tpm2_readpublic(TSS2_SYS_CONTEXT *sapi, TPMI_DH_OBJECT handle, TPM2B
 }
 
 static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DATA *protection_seed,
+        TPM2B_PUBLIC *parent_pub,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
     bool rval = false;
     RSA *rsa = NULL;
 
     // Public modulus
-    TPMI_RSA_KEY_BITS mod_size_bits = ctx.parent_pub.publicArea.parameters.rsaDetail.keyBits;
+    TPMI_RSA_KEY_BITS mod_size_bits = parent_pub->publicArea.parameters.rsaDetail.keyBits;
     UINT16 mod_size = mod_size_bits / 8;
-    TPM2B *pub_key_val = (TPM2B *)&ctx.parent_pub.publicArea.unique.rsa;
+    TPM2B *pub_key_val = (TPM2B *)&parent_pub->publicArea.unique.rsa;
     unsigned char *pub_modulus = malloc(mod_size);
     if (pub_modulus == NULL) {
         LOG_ERR("Failed to allocate memory to store public key's modulus.");
@@ -142,7 +141,7 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DATA *protection_seed,
     }
     memcpy(pub_modulus, pub_key_val->buffer, mod_size);
 
-    TPMI_ALG_HASH parent_name_alg = ctx.parent_pub.publicArea.nameAlg;
+    TPMI_ALG_HASH parent_name_alg = parent_pub->publicArea.nameAlg;
 
     unsigned char encoded[RSA_2K_MODULUS_SIZE_IN_BYTES];
     unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
@@ -308,7 +307,9 @@ out:
     return result;
 }
 
-static void hmac_outer_integrity(uint8_t *buffer1, uint16_t buffer1_size,
+static void hmac_outer_integrity(
+        TPMI_ALG_HASH parent_name_alg,
+        uint8_t *buffer1, uint16_t buffer1_size,
         uint8_t *buffer2, uint16_t buffer2_size, uint8_t *hmac_key,
         TPM2B_DIGEST *outer_integrity_hmac) {
 
@@ -317,7 +318,6 @@ static void hmac_outer_integrity(uint8_t *buffer1, uint16_t buffer1_size,
     memcpy(to_hmac_buffer + buffer1_size, buffer2, buffer2_size);
     uint32_t size = 0;
 
-    TPMI_ALG_HASH parent_name_alg = ctx.parent_pub.publicArea.nameAlg;
     UINT16 hash_size = tpm2_alg_util_get_hash_size(parent_name_alg);
 
     HMAC(tpm2_openssl_halg_from_tpmhalg(parent_name_alg), hmac_key, hash_size, to_hmac_buffer,
@@ -330,7 +330,6 @@ static void create_random_seed_and_sensitive_enc_key(TPM2B_DATA *protection_seed
     protection_seed->size = tpm2_alg_util_get_hash_size(ctx.name_alg);
     RAND_bytes(protection_seed->buffer, protection_seed->size);
 
-    enc_sensitive_key->size = ctx.parent_pub.publicArea.parameters.rsaDetail.symmetric.keyBits.sym / 8;
     RAND_bytes(enc_sensitive_key->buffer, enc_sensitive_key->size);
 }
 
@@ -517,10 +516,10 @@ static void create_import_key_sensitive_data(TPM2B_SENSITIVE *sensitive, TPM2B_M
     }
 }
 
-static TPM2_KEY_BITS get_pub_asym_key_bits(void) {
+static TPM2_KEY_BITS get_pub_asym_key_bits(TPM2B_PUBLIC *public) {
 
-    TPMU_PUBLIC_PARMS *p = &ctx.parent_pub.publicArea.parameters;
-    switch(ctx.parent_pub.publicArea.type) {
+    TPMU_PUBLIC_PARMS *p = &public->publicArea.parameters;
+    switch(public->publicArea.type) {
     case TPM2_ALG_ECC:
         /* fall-thru */
     case TPM2_ALG_RSA:
@@ -532,6 +531,7 @@ static TPM2_KEY_BITS get_pub_asym_key_bits(void) {
 }
 
 static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
+        TPM2B_PUBLIC *parent_pub,
         TPM2B_NAME *pubname,
         TPM2B_DATA *protection_seed,
         TPM2B_MAX_BUFFER *protection_hmac_key,
@@ -539,7 +539,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
 
     TPM2B null_2b = { .size = 0 };
 
-    TPMI_ALG_HASH parent_alg = ctx.parent_pub.publicArea.nameAlg;
+    TPMI_ALG_HASH parent_alg = parent_pub->publicArea.nameAlg;
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_alg);
 
     TSS2_RC rval = tpm_kdfa(parent_alg, (TPM2B *)protection_seed, "INTEGRITY",
@@ -548,7 +548,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
         return false;
     }
 
-    TPM2_KEY_BITS pub_key_bits = get_pub_asym_key_bits();
+    TPM2_KEY_BITS pub_key_bits = get_pub_asym_key_bits(parent_pub);
 
     rval = tpm_kdfa(parent_alg, (TPM2B *)protection_seed, "STORAGE",
             (TPM2B *)pubname, &null_2b, pub_key_bits,
@@ -561,6 +561,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
 }
 
 static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pubname, TPM2B_DATA *enc_sensitive_key,
+        TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_MAX_BUFFER *encrypted_inner_integrity) {
 
     //Marshal sensitive area
@@ -601,18 +602,21 @@ static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pu
             + marshalled_sensitive_size + pubname->size;
 
     aes_encrypt_buffers(
-            &ctx.parent_pub.publicArea.parameters.rsaDetail.symmetric,
+            sym_alg,
             enc_sensitive_key->buffer,
             marshalled_sensitive_and_name_digest, hash_size + digest_size_info,
             buffer_marshalled_sensitiveArea, marshalled_sensitive_size_info + marshalled_sensitive_size,
             encrypted_inner_integrity);
 }
 
-static void calculate_outer_integrity(TPM2B_NAME *pubname,
+static void calculate_outer_integrity(
+        TPMI_ALG_HASH parent_name_alg,
+        TPM2B_NAME *pubname,
         TPM2B_MAX_BUFFER *encrypted_inner_integrity,
         TPM2B_MAX_BUFFER *protection_hmac_key,
         TPM2B_MAX_BUFFER *protection_enc_key,
         TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
+        TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_DIGEST *outer_hmac) {
 
     //Calculate dupSensitive
@@ -620,26 +624,30 @@ static void calculate_outer_integrity(TPM2B_NAME *pubname,
             encrypted_inner_integrity->size;
 
     aes_encrypt_buffers(
-            &ctx.parent_pub.publicArea.parameters.rsaDetail.symmetric,
+            sym_alg,
             protection_enc_key->buffer,
             encrypted_inner_integrity->buffer,
             encrypted_inner_integrity->size,
             NULL, 0,
             encrypted_duplicate_sensitive);
     //Calculate outerHMAC
-    hmac_outer_integrity(encrypted_duplicate_sensitive->buffer,
+    hmac_outer_integrity(
+            parent_name_alg,
+            encrypted_duplicate_sensitive->buffer,
             encrypted_duplicate_sensitive->size,
             pubname->name,
             pubname->size, protection_hmac_key->buffer,
             outer_hmac);
 }
 
-static void create_import_key_private_data(TPM2B_PRIVATE *private,
+static void create_import_key_private_data(
+        TPM2B_PRIVATE *private,
+        TPMI_ALG_HASH parent_name_alg,
         TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
         TPM2B_DIGEST *outer_hmac) {
 
     //UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
-    UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(ctx.parent_pub.publicArea.nameAlg);
+    UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_name_alg);
 
     private->size = sizeof(uint16_t) + parent_hash_size
             + encrypted_duplicate_sensitive->size;
@@ -659,20 +667,19 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
         TPM2_HANDLE phandle,
         TPM2B_ENCRYPTED_SECRET *encrypted_seed,
         TPM2B_DATA *enc_sensitive_key,
-        TPM2B_PRIVATE *private, TPM2B_PUBLIC *public) {
+        TPM2B_PRIVATE *private, TPM2B_PUBLIC *public,
+        TPMT_SYM_DEF_OBJECT *sym_alg) {
 
     TSS2L_SYS_AUTH_COMMAND npsessionsData =
             TSS2L_SYS_AUTH_COMMAND_INIT(1, {TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)});
 
     TSS2L_SYS_AUTH_RESPONSE npsessionsDataOut;
 
-    TPMT_SYM_DEF_OBJECT *symmetricAlg = &ctx.parent_pub.publicArea.parameters.rsaDetail.symmetric;
-
     TPM2B_PRIVATE importPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, phandle,
             &npsessionsData, enc_sensitive_key, public,
-            private, encrypted_seed, symmetricAlg,
+            private, encrypted_seed, sym_alg,
             &importPrivate, &npsessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_Import, rval);
@@ -694,21 +701,22 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
 
 static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2B_MAX_BUFFER *privkey, TPM2B_MAX_BUFFER *pubkey) {
 
+    TPM2B_PUBLIC parent_pub = TPM2B_EMPTY_INIT;
 
     /*
      * Load the parent public, either via ascertained file or readpublic.
      */
     bool res = ctx.parent_key_public_file ?
-            files_load_public(ctx.parent_key_public_file, &ctx.parent_pub) :
-            tpm2_readpublic(sapi_context, phandle, &ctx.parent_pub);
+            files_load_public(ctx.parent_key_public_file, &parent_pub) :
+            tpm2_readpublic(sapi_context, phandle, &parent_pub);
     if (!res) {
         LOG_ERR("Failed loading parent key public.");
         return false;
     }
 
     if (ctx.name_alg == TPM2_ALG_ERROR) {
-        ctx.name_alg = ctx.parent_pub.publicArea.nameAlg;
-    } else if (ctx.parent_pub.publicArea.parameters.rsaDetail.scheme.scheme == TPM2_ALG_NULL){
+        ctx.name_alg = parent_pub.publicArea.nameAlg;
+    } else if (parent_pub.publicArea.parameters.rsaDetail.scheme.scheme == TPM2_ALG_NULL){
         /*
          * The TPM Requires that the name algorithm for the child be less than the name
          * algorithm of the parent when the parent's scheme is NULL.
@@ -720,16 +728,21 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2
          *   - Decription: Limits the size of the hash algorithm to less then the parent's name-alg when scheme is NULL.
          */
         UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
-        UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(ctx.parent_pub.publicArea.nameAlg);
+        UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_pub.publicArea.nameAlg);
         if (hash_size > parent_hash_size) {
             LOG_WARN("Hash selected is larger then parent hash size, coercing to parent hash algorithm: %s",
-                    tpm2_alg_util_algtostr(ctx.parent_pub.publicArea.nameAlg, tpm2_alg_util_flags_hash));
-            ctx.name_alg = ctx.parent_pub.publicArea.nameAlg;
+                    tpm2_alg_util_algtostr(parent_pub.publicArea.nameAlg, tpm2_alg_util_flags_hash));
+            ctx.name_alg = parent_pub.publicArea.nameAlg;
         }
     }
 
     TPM2B_DATA protection_seed = TPM2B_EMPTY_INIT;
-    TPM2B_DATA enc_sensitive_key = TPM2B_EMPTY_INIT;
+
+
+    TPM2B_DATA enc_sensitive_key = {
+        .size = parent_pub.publicArea.parameters.rsaDetail.symmetric.keyBits.sym / 8
+    };
+
     create_random_seed_and_sensitive_enc_key(&protection_seed, &enc_sensitive_key);
 
     TPM2B_DIGEST sym = TPM2B_EMPTY_INIT;
@@ -753,39 +766,52 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2
 
     TPM2B_MAX_BUFFER hmac_key;
     TPM2B_MAX_BUFFER enc_key;
-    calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(&pubname, &protection_seed,
+    calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
+            &parent_pub,
+            &pubname,
+            &protection_seed,
             &hmac_key,
             &enc_key);
 
     TPM2B_MAX_BUFFER encrypted_inner_integrity = TPM2B_EMPTY_INIT;
     calculate_inner_integrity(&sensitive, &pubname, &enc_sensitive_key,
+            &parent_pub.publicArea.parameters.rsaDetail.symmetric,
             &encrypted_inner_integrity);
 
     TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
     TPM2B_MAX_BUFFER encrypted_duplicate_sensitive = TPM2B_EMPTY_INIT;
-    calculate_outer_integrity(&pubname,
+    calculate_outer_integrity(
+            parent_pub.publicArea.nameAlg,
+            &pubname,
             &encrypted_inner_integrity,
             &hmac_key,
             &enc_key,
             &encrypted_duplicate_sensitive,
+            &parent_pub.publicArea.parameters.rsaDetail.symmetric,
             &outer_hmac);
 
 
     create_import_key_private_data(&private,
+            parent_pub.publicArea.nameAlg,
             &encrypted_duplicate_sensitive, &outer_hmac);
 
     TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
-    res = encrypt_seed_with_tpm2_rsa_public_key(&protection_seed, &encrypted_seed);
+    res = encrypt_seed_with_tpm2_rsa_public_key(&protection_seed,
+            &parent_pub,
+            &encrypted_seed);
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");
         return false;
     }
 
+    TPMT_SYM_DEF_OBJECT *sym_alg = &parent_pub.publicArea.parameters.rsaDetail.symmetric;
+
     return import_external_key_and_save_public_private_data(
             sapi_context,
             phandle,
             &encrypted_seed, &enc_sensitive_key,
-            &private, &public);
+            &private, &public,
+            sym_alg);
 }
 
 static bool on_option(char key, char *value) {
