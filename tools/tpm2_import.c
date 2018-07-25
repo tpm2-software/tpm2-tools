@@ -73,10 +73,6 @@ struct tpm_import_ctx {
     //TPM2 Parent key to host the imported key
     tpm2_loaded_object parent_ctx;
     const char *parent_ctx_arg;
-    //External key name
-    TPM2B_NAME import_key_public_name;
-    //External key sensitive
-    //External key private
     TPM2B_PRIVATE import_key_private;
     //Protection Seed and keys
     TPM2B_DIGEST protection_seed_data;
@@ -96,7 +92,6 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL,
-    .import_key_public_name = TPM2B_TYPE_INIT(TPM2B_NAME, name),
     .import_key_private = TPM2B_EMPTY_INIT,
     .parent_pub = TPM2B_EMPTY_INIT,
     .protection_seed_data = TPM2B_EMPTY_INIT,
@@ -439,7 +434,7 @@ static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_PUBLIC *p) {
     p->publicArea.unique.rsa.size = RSA_2K_MODULUS_SIZE_IN_BYTES;
 }
 
-static bool create_import_key_public_data_and_name(TPM2B_PUBLIC *public, TPM2B_MAX_BUFFER *pubkey) {
+static bool create_import_key_public_data_and_name(TPM2B_MAX_BUFFER *pubkey, TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
 
     switch (ctx.key_type) {
         case TPM2_ALG_AES:
@@ -474,8 +469,8 @@ static bool create_import_key_public_data_and_name(TPM2B_PUBLIC *public, TPM2B_M
 
     // Step 1 - set beginning of name to hash alg
     size_t hash_offset = 0;
-    Tss2_MU_UINT16_Marshal(ctx.name_alg, (uint8_t *)&ctx.import_key_public_name.name,
-            sizeof(ctx.import_key_public_name.name), &hash_offset);
+    Tss2_MU_UINT16_Marshal(ctx.name_alg, pubname->name,
+            pubname->size, &hash_offset);
 
     // Step 2 - marshal TPMTP
     TPMT_PUBLIC marshaled_tpmt;
@@ -492,12 +487,12 @@ static bool create_import_key_public_data_and_name(TPM2B_PUBLIC *public, TPM2B_M
 
     d((const unsigned char *)&marshaled_tpmt,
             tpmt_marshalled_size,
-            ctx.import_key_public_name.name + 2);
+            pubname->name + 2);
 
 
     //Set the name size, UINT16 followed by HASH
     UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
-    ctx.import_key_public_name.size = hash_size + 2;
+    pubname->size = hash_size + 2;
 
     return true;
 }
@@ -545,7 +540,7 @@ static TPM2_KEY_BITS get_pub_asym_key_bits(void) {
     return 0;
 }
 
-static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(void) {
+static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(TPM2B_NAME *pubname) {
 
     TPM2B null_2b = { .size = 0 };
     TPM2B_DIGEST to_TPM2B_seed = TPM2B_EMPTY_INIT;
@@ -567,7 +562,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(void) {
     TPM2_KEY_BITS pub_key_bits = get_pub_asym_key_bits();
 
     rval = tpm_kdfa(parent_alg, (TPM2B *)&to_TPM2B_seed, "STORAGE",
-            (TPM2B *)&ctx.import_key_public_name, &null_2b, pub_key_bits,
+            (TPM2B *)pubname, &null_2b, pub_key_bits,
             &ctx.protection_enc_key);
     if (rval != TPM2_RC_SUCCESS) {
         return false;
@@ -576,7 +571,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(void) {
     return true;
 }
 
-static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive) {
+static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pubname) {
 
     //Marshal sensitive area
     uint8_t buffer_marshalled_sensitiveArea[TPM2_MAX_DIGEST_BUFFER] = { 0 };
@@ -592,14 +587,14 @@ static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive) {
     memcpy(
             buffer_marshalled_sensitiveArea + marshalled_sensitive_size
                     + marshalled_sensitive_size_info,
-            ctx.import_key_public_name.name,
-            ctx.import_key_public_name.size);
+            pubname->name,
+            pubname->size);
 
     //Digest marshalled-sensitive || name
     uint8_t *marshalled_sensitive_and_name_digest =
             buffer_marshalled_sensitiveArea + marshalled_sensitive_size
                     + marshalled_sensitive_size_info
-                    + ctx.import_key_public_name.size;
+                    + pubname->size;
     size_t digest_size_info = 0;
     UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
     Tss2_MU_UINT16_Marshal(hash_size, marshalled_sensitive_and_name_digest,
@@ -608,12 +603,12 @@ static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive) {
     digester d = halg_to_digester(ctx.name_alg);
     d(buffer_marshalled_sensitiveArea,
             marshalled_sensitive_size_info + marshalled_sensitive_size
-                    + ctx.import_key_public_name.size,
+                    + pubname->size,
             marshalled_sensitive_and_name_digest + digest_size_info);
 
     //Inner integrity
     ctx.encrypted_inner_integrity.size = marshalled_sensitive_size_info
-            + marshalled_sensitive_size + ctx.import_key_public_name.size;
+            + marshalled_sensitive_size + pubname->size;
 
     aes_encrypt_buffers(
             &ctx.parent_pub.publicArea.parameters.rsaDetail.symmetric,
@@ -623,7 +618,7 @@ static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive) {
             &ctx.encrypted_inner_integrity);
 }
 
-static void calculate_outer_integrity(void) {
+static void calculate_outer_integrity(TPM2B_NAME *pubname) {
 
     //Calculate dupSensitive
     ctx.encrypted_duplicate_sensitive.size =
@@ -639,8 +634,8 @@ static void calculate_outer_integrity(void) {
     //Calculate outerHMAC
     hmac_outer_integrity(ctx.encrypted_duplicate_sensitive.buffer,
             ctx.encrypted_duplicate_sensitive.size,
-            ctx.import_key_public_name.name,
-            ctx.import_key_public_name.size, ctx.protection_hmac_key,
+            pubname->name,
+            pubname->size, ctx.protection_hmac_key,
             ctx.outer_integrity_hmac);
 }
 
@@ -744,7 +739,8 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
     }
 
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
-    res = create_import_key_public_data_and_name(&public, pubkey);
+    TPM2B_NAME pubname = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    res = create_import_key_public_data_and_name(pubkey, &public, &pubname);
     if (!res) {
         return false;
     }
@@ -752,11 +748,11 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
     TPM2B_SENSITIVE sensitive = TPM2B_EMPTY_INIT;
     create_import_key_sensitive_data(&sensitive, privkey);
 
-    calc_outer_integrity_hmac_key_and_dupsensitive_enc_key();
+    calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(&pubname);
 
-    calculate_inner_integrity(&sensitive);
+    calculate_inner_integrity(&sensitive, &pubname);
 
-    calculate_outer_integrity();
+    calculate_outer_integrity(&pubname);
 
     create_import_key_private_data();
 
