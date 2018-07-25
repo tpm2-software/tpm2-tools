@@ -70,8 +70,6 @@ struct tpm_import_ctx {
     char *parent_key_public_file;
 
     TPMI_ALG_PUBLIC key_type;
-    //TPM2 Parent key to host the imported key
-    tpm2_loaded_object parent_ctx;
     const char *parent_ctx_arg;
 
     UINT32 objectAttributes;
@@ -658,6 +656,7 @@ static void create_import_key_private_data(TPM2B_PRIVATE *private,
 }
 
 static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context,
+        TPM2_HANDLE phandle,
         TPM2B_ENCRYPTED_SECRET *encrypted_seed,
         TPM2B_DATA *enc_sensitive_key,
         TPM2B_PRIVATE *private, TPM2B_PUBLIC *public) {
@@ -671,7 +670,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
 
     TPM2B_PRIVATE importPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_ctx.handle,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, phandle,
             &npsessionsData, enc_sensitive_key, public,
             private, encrypted_seed, symmetricAlg,
             &importPrivate, &npsessionsDataOut));
@@ -693,14 +692,15 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     return true;
 }
 
-static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey, TPM2B_MAX_BUFFER *pubkey) {
+static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2B_MAX_BUFFER *privkey, TPM2B_MAX_BUFFER *pubkey) {
+
 
     /*
      * Load the parent public, either via ascertained file or readpublic.
      */
     bool res = ctx.parent_key_public_file ?
             files_load_public(ctx.parent_key_public_file, &ctx.parent_pub) :
-            tpm2_readpublic(sapi_context, ctx.parent_ctx.handle, &ctx.parent_pub);
+            tpm2_readpublic(sapi_context, phandle, &ctx.parent_pub);
     if (!res) {
         LOG_ERR("Failed loading parent key public.");
         return false;
@@ -781,7 +781,9 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
         return false;
     }
 
-    return import_external_key_and_save_public_private_data(sapi_context,
+    return import_external_key_and_save_public_private_data(
+            sapi_context,
+            phandle,
             &encrypted_seed, &enc_sensitive_key,
             &private, &public);
 }
@@ -961,20 +963,22 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     OpenSSL_add_all_ciphers();
     ERR_load_crypto_strings();
 
+    tpm2_loaded_object parent_ctx;
+
     result = tpm2_util_object_load(sapi_context, ctx.parent_ctx_arg,
-                    &ctx.parent_ctx);
+                    &parent_ctx);
     if (!result) {
         tpm2_tool_output(
             "Failed to load context object (handle: 0x%x, path: %s).\n",
-            ctx.parent_ctx.handle, ctx.parent_ctx.path);
+            parent_ctx.handle, parent_ctx.path);
       goto out;
     }
 
-    if (!ctx.input_key_file || !ctx.parent_ctx.handle
+    if (!ctx.input_key_file || !parent_ctx.handle
             || !ctx.import_key_public_file || !ctx.import_key_private_file
             || !ctx.key_type) {
         LOG_ERR("tpm2_import tool missing arguments: %s\n %08X\n %s\n %s",
-             ctx.input_key_file, ctx.parent_ctx.handle,
+             ctx.input_key_file, parent_ctx.handle,
              ctx.import_key_public_file, ctx.import_key_private_file);
         return 1;
     }
@@ -986,7 +990,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = key_import(sapi_context, &private, &public);
+    result = key_import(sapi_context, parent_ctx.handle, &private, &public);
     if (!result) {
         goto out;
     }
