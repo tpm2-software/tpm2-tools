@@ -70,4 +70,21 @@ void tpm2_openssl_hmac_free(HMAC_CTX *ctx);
 bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg,
         TPML_DIGEST *digests, TPM2B_DIGEST *digest);
 
+/**
+ * Obtains an OpenSSL EVP_CIPHER_CTX dealing with version
+ * API changes in OSSL.
+ *
+ * @return
+ *  An Initialized OpenSSL EVP_CIPHER_CTX.
+ */
+EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void);
+
+/**
+ * Free's an EVP_CIPHER_CTX obtained via tpm2_openssl_cipher_new()
+ * dealing with OSSL API version changes.
+ * @param ctx
+ *  The EVP_CIPHER_CTX to free.
+ */
+void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx);
+
 #endif /* LIB_TPM2_OPENSSL_H_ */
