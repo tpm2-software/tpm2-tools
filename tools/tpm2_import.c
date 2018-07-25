@@ -275,15 +275,14 @@ bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym, uint8_t *encryption_key,
         return false;
     }
 
-    EVP_CIPHER_CTX ctx;
-    EVP_CIPHER_CTX_init(&ctx);
+    EVP_CIPHER_CTX *ctx = tpm2_openssl_cipher_new();
 
-    int rc = EVP_EncryptInit_ex(&ctx, cipher, NULL, encryption_key, iv);
+    int rc = EVP_EncryptInit_ex(ctx, cipher, NULL, encryption_key, iv);
     if (!rc) {
         return false;
     }
 
-    EVP_CIPHER_CTX_set_padding(&ctx, 0);
+    EVP_CIPHER_CTX_set_padding(ctx, 0);
 
     uint8_t *bufs[2] = {
         buf1,
@@ -307,7 +306,7 @@ bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym, uint8_t *encryption_key,
 
         int output_len = total_len - offset;
 
-        rc = EVP_EncryptUpdate(&ctx, &cipher_text->buffer[offset], &output_len - offset, b, l);
+        rc = EVP_EncryptUpdate(ctx, &cipher_text->buffer[offset], &output_len - offset, b, l);
         if (!rc) {
             LOG_ERR("Encrypt failed");
             goto out;
@@ -317,7 +316,7 @@ bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym, uint8_t *encryption_key,
     }
 
     int tmp_len = 0;
-    rc = EVP_EncryptFinal_ex(&ctx, NULL, &tmp_len);
+    rc = EVP_EncryptFinal_ex(ctx, NULL, &tmp_len);
     if (!rc) {
         LOG_ERR("Encrypt failed");
         goto out;
@@ -328,7 +327,7 @@ bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym, uint8_t *encryption_key,
     result = true;
 
 out:
-    EVP_CIPHER_CTX_cleanup(&ctx);
+    tpm2_openssl_cipher_free(ctx);
 
     return result;
 }

@@ -130,3 +130,29 @@ void tpm2_openssl_hmac_free(HMAC_CTX *ctx) {
     HMAC_CTX_free(ctx);
 #endif
 }
+
+EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void) {
+    EVP_CIPHER_CTX *ctx;
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
+    ctx = malloc(sizeof(*ctx));
+#else
+    ctx = EVP_CIPHER_CTX_new();
+#endif
+    if (!ctx)
+        return NULL;
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
+    EVP_CIPHER_CTX_init(ctx);
+#endif
+
+    return ctx;
+}
+
+void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx) {
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
+    EVP_CIPHER_CTX_cleanup(ctx);
+    free(ctx);
+#else
+    EVP_CIPHER_CTX_free(ctx);
+#endif
+}
