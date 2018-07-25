@@ -73,7 +73,6 @@ struct tpm_import_ctx {
     //TPM2 Parent key to host the imported key
     tpm2_loaded_object parent_ctx;
     const char *parent_ctx_arg;
-    TPM2B_PRIVATE import_key_private;
     //Protection Seed and keys
     TPM2B_DIGEST protection_seed_data;
     uint8_t encrypted_protection_seed_data[RSA_2K_MODULUS_SIZE_IN_BYTES];
@@ -92,7 +91,6 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL,
-    .import_key_private = TPM2B_EMPTY_INIT,
     .parent_pub = TPM2B_EMPTY_INIT,
     .protection_seed_data = TPM2B_EMPTY_INIT,
     .name_alg = TPM2_ALG_ERROR
@@ -639,25 +637,26 @@ static void calculate_outer_integrity(TPM2B_NAME *pubname) {
             ctx.outer_integrity_hmac);
 }
 
-static void create_import_key_private_data(void) {
+static void create_import_key_private_data(TPM2B_PRIVATE *private) {
 
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(ctx.parent_pub.publicArea.nameAlg);
 
-    ctx.import_key_private.size = sizeof(uint16_t) + parent_hash_size
+    private->size = sizeof(uint16_t) + parent_hash_size
             + ctx.encrypted_duplicate_sensitive.size;
     size_t hmac_size_offset = 0;
-    Tss2_MU_UINT16_Marshal(parent_hash_size, ctx.import_key_private.buffer,
+    Tss2_MU_UINT16_Marshal(parent_hash_size, private->buffer,
             sizeof(uint16_t), &hmac_size_offset);
-    memcpy(ctx.import_key_private.buffer + hmac_size_offset,
+    memcpy(private->buffer + hmac_size_offset,
             ctx.outer_integrity_hmac, parent_hash_size);
     memcpy(
-            ctx.import_key_private.buffer + hmac_size_offset
+            private->buffer + hmac_size_offset
                     + parent_hash_size,
             ctx.encrypted_duplicate_sensitive.buffer,
             ctx.encrypted_duplicate_sensitive.size);
 }
 
-static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context, TPM2B_PUBLIC *public) {
+static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context,
+        TPM2B_PRIVATE *private, TPM2B_PUBLIC *public) {
 
     TSS2L_SYS_AUTH_COMMAND npsessionsData =
             TSS2L_SYS_AUTH_COMMAND_INIT(1, {TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)});
@@ -674,7 +673,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_ctx.handle,
             &npsessionsData, &ctx.enc_sensitive_key, public,
-            &ctx.import_key_private, &enc_inp_seed, symmetricAlg,
+            private, &enc_inp_seed, symmetricAlg,
             &importPrivate, &npsessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_Import, rval);
@@ -738,6 +737,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
         }
     }
 
+    TPM2B_PRIVATE private = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_NAME pubname = TPM2B_TYPE_INIT(TPM2B_NAME, name);
     res = create_import_key_public_data_and_name(pubkey, &public, &pubname);
@@ -754,7 +754,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
 
     calculate_outer_integrity(&pubname);
 
-    create_import_key_private_data();
+    create_import_key_private_data(&private);
 
     res = encrypt_seed_with_tpm2_rsa_public_key();
     if (!res) {
@@ -762,7 +762,8 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
         return false;
     }
 
-    return import_external_key_and_save_public_private_data(sapi_context, &public);
+    return import_external_key_and_save_public_private_data(sapi_context,
+            &private, &public);
 }
 
 static bool on_option(char key, char *value) {
