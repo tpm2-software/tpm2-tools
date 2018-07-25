@@ -74,7 +74,6 @@ struct tpm_import_ctx {
     tpm2_loaded_object parent_ctx;
     const char *parent_ctx_arg;
 
-    TPM2B_MAX_BUFFER encrypted_inner_integrity;
     TPM2B_MAX_BUFFER encrypted_duplicate_sensitive;
     UINT32 objectAttributes;
     TPM2B_PUBLIC parent_pub;
@@ -564,7 +563,8 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
     return true;
 }
 
-static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pubname, TPM2B_DATA *enc_sensitive_key) {
+static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pubname, TPM2B_DATA *enc_sensitive_key,
+        TPM2B_MAX_BUFFER *encrypted_inner_integrity) {
 
     //Marshal sensitive area
     uint8_t buffer_marshalled_sensitiveArea[TPM2_MAX_DIGEST_BUFFER] = { 0 };
@@ -600,7 +600,7 @@ static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pu
             marshalled_sensitive_and_name_digest + digest_size_info);
 
     //Inner integrity
-    ctx.encrypted_inner_integrity.size = marshalled_sensitive_size_info
+    encrypted_inner_integrity->size = marshalled_sensitive_size_info
             + marshalled_sensitive_size + pubname->size;
 
     aes_encrypt_buffers(
@@ -608,23 +608,24 @@ static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pu
             enc_sensitive_key->buffer,
             marshalled_sensitive_and_name_digest, hash_size + digest_size_info,
             buffer_marshalled_sensitiveArea, marshalled_sensitive_size_info + marshalled_sensitive_size,
-            &ctx.encrypted_inner_integrity);
+            encrypted_inner_integrity);
 }
 
 static void calculate_outer_integrity(TPM2B_NAME *pubname,
+        TPM2B_MAX_BUFFER *encrypted_inner_integrity,
         TPM2B_MAX_BUFFER *protection_hmac_key,
         TPM2B_MAX_BUFFER *protection_enc_key,
         TPM2B_DIGEST *outer_hmac) {
 
     //Calculate dupSensitive
     ctx.encrypted_duplicate_sensitive.size =
-            ctx.encrypted_inner_integrity.size;
+            encrypted_inner_integrity->size;
 
     aes_encrypt_buffers(
             &ctx.parent_pub.publicArea.parameters.rsaDetail.symmetric,
             protection_enc_key->buffer,
-            ctx.encrypted_inner_integrity.buffer,
-            ctx.encrypted_inner_integrity.size,
+            encrypted_inner_integrity->buffer,
+            encrypted_inner_integrity->size,
             NULL, 0,
             &ctx.encrypted_duplicate_sensitive);
     //Calculate outerHMAC
@@ -754,10 +755,13 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
             &hmac_key,
             &enc_key);
 
-    calculate_inner_integrity(&sensitive, &pubname, &enc_sensitive_key);
+    TPM2B_MAX_BUFFER encrypted_inner_integrity = TPM2B_EMPTY_INIT;
+    calculate_inner_integrity(&sensitive, &pubname, &enc_sensitive_key,
+            &encrypted_inner_integrity);
 
     TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
     calculate_outer_integrity(&pubname,
+            &encrypted_inner_integrity,
             &hmac_key,
             &enc_key,
             &outer_hmac);
