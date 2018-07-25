@@ -74,7 +74,6 @@ struct tpm_import_ctx {
     tpm2_loaded_object parent_ctx;
     const char *parent_ctx_arg;
 
-    uint8_t *import_key_public_unique_data;
     uint8_t outer_integrity_hmac[TPM2_SHA512_DIGEST_SIZE];
     TPM2B_DATA enc_sensitive_key;
     TPM2B_MAX_BUFFER encrypted_inner_integrity;
@@ -359,11 +358,9 @@ static digester halg_to_digester(TPMI_ALG_HASH halg) {
     return NULL;
 }
 
-static bool calc_sensitive_unique_data(TPM2B_MAX_BUFFER *key, TPM2B_DIGEST *protection_seed) {
+static bool calc_sensitive_unique_data(TPM2B_MAX_BUFFER *key, TPM2B_DIGEST *protection_seed, TPM2B_DIGEST *unique_data) {
 
     bool result = false;
-
-    ctx.import_key_public_unique_data = malloc(tpm2_alg_util_get_hash_size(ctx.name_alg));
 
     uint8_t *concatenated_seed_unique = malloc(protection_seed->size +
                                             key->size);
@@ -383,8 +380,9 @@ static bool calc_sensitive_unique_data(TPM2B_MAX_BUFFER *key, TPM2B_DIGEST *prot
         goto out;
     }
 
+    unique_data->size = tpm2_alg_util_get_hash_size(ctx.name_alg);
     d(concatenated_seed_unique, protection_seed->size + key->size,
-        ctx.import_key_public_unique_data);
+        unique_data->buffer);
 
     result = true;
 
@@ -429,14 +427,16 @@ static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_PUBLIC *p) {
     p->publicArea.unique.rsa.size = RSA_2K_MODULUS_SIZE_IN_BYTES;
 }
 
-static bool create_import_key_public_data_and_name(TPM2B_MAX_BUFFER *pubkey, TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
+static bool create_import_key_public_data_and_name(
+        TPM2B_MAX_BUFFER *pubkey,
+        TPM2B_PUBLIC *public,
+        TPM2B_NAME *pubname,
+        TPM2B_DIGEST *sym) {
 
     switch (ctx.key_type) {
         case TPM2_ALG_AES:
             IMPORT_KEY_SYM_PUBLIC_AREA(public);
-            memcpy(public->publicArea.unique.sym.buffer,
-                ctx.import_key_public_unique_data, tpm2_alg_util_get_hash_size(ctx.name_alg));
-            free(ctx.import_key_public_unique_data);
+            public->publicArea.unique.sym = *sym;
             break;
         case TPM2_ALG_RSA:
             IMPORT_KEY_RSA2K_PUBLIC_AREA(public);
@@ -637,6 +637,7 @@ static void calculate_outer_integrity(TPM2B_NAME *pubname,
 
 static void create_import_key_private_data(TPM2B_PRIVATE *private) {
 
+    //UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(ctx.parent_pub.publicArea.nameAlg);
 
     private->size = sizeof(uint16_t) + parent_hash_size
@@ -725,8 +726,9 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
     TPM2B_DIGEST protection_seed = TPM2B_EMPTY_INIT;
     create_random_seed_and_sensitive_enc_key(&protection_seed);
 
+    TPM2B_DIGEST sym = TPM2B_EMPTY_INIT;
     if (ctx.key_type == TPM2_ALG_AES) {
-        res = calc_sensitive_unique_data(privkey, &protection_seed);
+        res = calc_sensitive_unique_data(privkey, &protection_seed, &sym);
         if (!res) {
             return false;
         }
@@ -735,7 +737,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
     TPM2B_PRIVATE private = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_NAME pubname = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-    res = create_import_key_public_data_and_name(pubkey, &public, &pubname);
+    res = create_import_key_public_data_and_name(pubkey, &public, &pubname, &sym);
     if (!res) {
         return false;
     }
