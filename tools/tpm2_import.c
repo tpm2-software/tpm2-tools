@@ -76,8 +76,6 @@ struct tpm_import_ctx {
     //TPM2 Parent key to host the imported key
     tpm2_loaded_object parent_ctx;
     const char *parent_ctx_arg;
-    //External key public
-    TPM2B_PUBLIC import_key_public;
     //External key name
     TPM2B_NAME import_key_public_name;
     //External key sensitive
@@ -101,7 +99,6 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL,
-    .import_key_public = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea),
     .import_key_public_name = TPM2B_TYPE_INIT(TPM2B_NAME, name),
     .import_key_private = TPM2B_EMPTY_INIT,
     .parent_pub = TPM2B_EMPTY_INIT,
@@ -410,63 +407,65 @@ out:
     return result;
 }
 
-#define IMPORT_KEY_SYM_PUBLIC_AREA(X) \
-    (X).publicArea.type = TPM2_ALG_SYMCIPHER; \
-    (X).publicArea.nameAlg = ctx.name_alg;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;\
-    (X).publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;\
-    (X).publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;\
-    (X).publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDTPM;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDPARENT;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;\
-    (X).publicArea.authPolicy.size = 0;\
-    (X).publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;\
-    (X).publicArea.parameters.symDetail.sym.keyBits.sym = 128;\
-    (X).publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;\
-    (X).publicArea.unique.sym.size = tpm2_alg_util_get_hash_size(ctx.name_alg);
+static inline void  IMPORT_KEY_SYM_PUBLIC_AREA(TPM2B_PUBLIC *p) {
+    p->publicArea.type = TPM2_ALG_SYMCIPHER;
+    p->publicArea.nameAlg = ctx.name_alg;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;
+    p->publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
+    p->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
+    p->publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDTPM;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDPARENT;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
+    p->publicArea.authPolicy.size = 0;
+    p->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
+    p->publicArea.parameters.symDetail.sym.keyBits.sym = 128;
+    p->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
+    p->publicArea.unique.sym.size = tpm2_alg_util_get_hash_size(ctx.name_alg);
+}
 
-#define IMPORT_KEY_RSA2K_PUBLIC_AREA(X) \
-    (X).publicArea.type = TPM2_ALG_RSA; \
-    (X).publicArea.nameAlg = ctx.name_alg;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;\
-    (X).publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;\
-    (X).publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;\
-    (X).publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDTPM;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDPARENT;\
-    (X).publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;\
-    (X).publicArea.authPolicy.size = 0;\
-    (X).publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;\
-    (X).publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;\
-    (X).publicArea.parameters.rsaDetail.keyBits = RSA_2K_MODULUS_SIZE_IN_BITS;\
-    (X).publicArea.parameters.rsaDetail.exponent = 0x0;\
-    (X).publicArea.unique.rsa.size = RSA_2K_MODULUS_SIZE_IN_BYTES;\
+static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_PUBLIC *p) {
+    p->publicArea.type = TPM2_ALG_RSA;
+    p->publicArea.nameAlg = ctx.name_alg;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;
+    p->publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
+    p->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
+    p->publicArea.objectAttributes |= TPMA_OBJECT_SIGN_ENCRYPT;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDTPM;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_FIXEDPARENT;
+    p->publicArea.objectAttributes &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
+    p->publicArea.authPolicy.size = 0;
+    p->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;
+    p->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
+    p->publicArea.parameters.rsaDetail.keyBits = RSA_2K_MODULUS_SIZE_IN_BITS;
+    p->publicArea.parameters.rsaDetail.exponent = 0x0;
+    p->publicArea.unique.rsa.size = RSA_2K_MODULUS_SIZE_IN_BYTES;
+}
 
-static bool create_import_key_public_data_and_name(void) {
+static bool create_import_key_public_data_and_name(TPM2B_PUBLIC *public) {
 
     switch (ctx.key_type) {
         case TPM2_ALG_AES:
-            IMPORT_KEY_SYM_PUBLIC_AREA(ctx.import_key_public);
-            memcpy(ctx.import_key_public.publicArea.unique.sym.buffer,
+            IMPORT_KEY_SYM_PUBLIC_AREA(public);
+            memcpy(public->publicArea.unique.sym.buffer,
                 ctx.import_key_public_unique_data, tpm2_alg_util_get_hash_size(ctx.name_alg));
             free(ctx.import_key_public_unique_data);
             break;
         case TPM2_ALG_RSA:
-            IMPORT_KEY_RSA2K_PUBLIC_AREA(ctx.import_key_public);
-            memcpy(ctx.import_key_public.publicArea.unique.rsa.buffer,
+            IMPORT_KEY_RSA2K_PUBLIC_AREA(public);
+            memcpy(public->publicArea.unique.rsa.buffer,
                 ctx.input_pub_key_buffer, ctx.input_pub_key_buffer_length);
             break;
     }
 
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
-                      &ctx.import_key_public.publicArea.objectAttributes);
+                      &public->publicArea.objectAttributes);
 
     if (ctx.objectAttributes) {
-        ctx.import_key_public.publicArea.objectAttributes = ctx.objectAttributes;
+        public->publicArea.objectAttributes = ctx.objectAttributes;
     }
 
-    tpm2_util_tpma_object_to_yaml(ctx.import_key_public.publicArea.objectAttributes, NULL);
+    tpm2_util_tpma_object_to_yaml(public->publicArea.objectAttributes, NULL);
 
     /*
      * A TPM2B_NAME is the name of the algorithm, followed by the hash.
@@ -484,8 +483,8 @@ static bool create_import_key_public_data_and_name(void) {
     // Step 2 - marshal TPMTP
     TPMT_PUBLIC marshaled_tpmt;
     size_t tpmt_marshalled_size = 0;
-    Tss2_MU_TPMT_PUBLIC_Marshal(&ctx.import_key_public.publicArea,
-            (uint8_t *)&marshaled_tpmt, sizeof(ctx.import_key_public.publicArea),
+    Tss2_MU_TPMT_PUBLIC_Marshal(&public->publicArea,
+            (uint8_t *)&marshaled_tpmt, sizeof(public->publicArea),
         &tpmt_marshalled_size);
 
     // Step 3 - Hash the data into name just past the alg type.
@@ -666,7 +665,7 @@ static void create_import_key_private_data(void) {
             ctx.encrypted_duplicate_sensitive.size);
 }
 
-static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context) {
+static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context, TPM2B_PUBLIC *public) {
 
     TSS2L_SYS_AUTH_COMMAND npsessionsData =
             TSS2L_SYS_AUTH_COMMAND_INIT(1, {TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)});
@@ -682,7 +681,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
             RSA_2K_MODULUS_SIZE_IN_BYTES);
 
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Import(sapi_context, ctx.parent_ctx.handle,
-            &npsessionsData, &ctx.enc_sensitive_key, &ctx.import_key_public,
+            &npsessionsData, &ctx.enc_sensitive_key, public,
             &ctx.import_key_private, &enc_inp_seed, symmetricAlg,
             &importPrivate, &npsessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
@@ -690,7 +689,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
         return false;
     }
 
-    bool res = files_save_public(&ctx.import_key_public, ctx.import_key_public_file);
+    bool res = files_save_public(public, ctx.import_key_public_file);
     if(!res) {
         return false;
     }
@@ -747,13 +746,13 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
         }
     }
 
-    res = create_import_key_public_data_and_name();
+    TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
+    res = create_import_key_public_data_and_name(&public);
     if (!res) {
         return false;
     }
 
     TPM2B_SENSITIVE sensitive = TPM2B_EMPTY_INIT;
-
     create_import_key_sensitive_data(&sensitive);
 
     calc_outer_integrity_hmac_key_and_dupsensitive_enc_key();
@@ -770,7 +769,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return import_external_key_and_save_public_private_data(sapi_context);
+    return import_external_key_and_save_public_private_data(sapi_context, &public);
 }
 
 static bool on_option(char key, char *value) {
