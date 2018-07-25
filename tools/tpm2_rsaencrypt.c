@@ -51,7 +51,9 @@ struct tpm_rsaencrypt_ctx {
     char *input_path;
 };
 
-static tpm_rsaencrypt_ctx ctx = {};
+static tpm_rsaencrypt_ctx ctx = {
+    .context_arg = NULL
+};
 
 static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
