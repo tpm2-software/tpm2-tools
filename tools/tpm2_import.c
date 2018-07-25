@@ -81,7 +81,6 @@ struct tpm_import_ctx {
     //External key name
     TPM2B_NAME import_key_public_name;
     //External key sensitive
-    TPM2B_SENSITIVE import_key_sensitive;
     //External key private
     TPM2B_PRIVATE import_key_private;
     //Protection Seed and keys
@@ -507,30 +506,30 @@ static bool create_import_key_public_data_and_name(void) {
     return true;
 }
 
-static void create_import_key_sensitive_data(void) {
+static void create_import_key_sensitive_data(TPM2B_SENSITIVE *sensitive) {
 
-    ctx.import_key_sensitive.sensitiveArea.authValue.size = 0;
-    ctx.import_key_sensitive.sensitiveArea.seedValue.size =
+    sensitive->sensitiveArea.authValue.size = 0;
+    sensitive->sensitiveArea.seedValue.size =
             tpm2_alg_util_get_hash_size(ctx.name_alg);
 
-    memcpy(ctx.import_key_sensitive.sensitiveArea.seedValue.buffer,
-            ctx.protection_seed_data.buffer, ctx.import_key_sensitive.sensitiveArea.seedValue.size);
+    memcpy(sensitive->sensitiveArea.seedValue.buffer,
+            ctx.protection_seed_data.buffer, sensitive->sensitiveArea.seedValue.size);
 
     switch (ctx.key_type) {
         case TPM2_ALG_AES:
-            ctx.import_key_sensitive.sensitiveArea.sensitiveType =
+            sensitive->sensitiveArea.sensitiveType =
                 TPM2_ALG_SYMCIPHER;
-            ctx.import_key_sensitive.sensitiveArea.sensitive.sym.size =
+            sensitive->sensitiveArea.sensitive.sym.size =
                 ctx.input_key_buffer_length;
-            memcpy(ctx.import_key_sensitive.sensitiveArea.sensitive.sym.buffer,
+            memcpy(sensitive->sensitiveArea.sensitive.sym.buffer,
                 ctx.input_key_buffer, ctx.input_key_buffer_length);
             break;
         case TPM2_ALG_RSA:
-            ctx.import_key_sensitive.sensitiveArea.sensitiveType =
+            sensitive->sensitiveArea.sensitiveType =
                 TPM2_ALG_RSA;
-            ctx.import_key_sensitive.sensitiveArea.sensitive.rsa.size =
+            sensitive->sensitiveArea.sensitive.rsa.size =
                 ctx.input_key_buffer_length;
-            memcpy(ctx.import_key_sensitive.sensitiveArea.sensitive.rsa.buffer,
+            memcpy(sensitive->sensitiveArea.sensitive.rsa.buffer,
                 ctx.input_key_buffer, ctx.input_key_buffer_length);
             break;
     }
@@ -581,12 +580,12 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(void) {
     return true;
 }
 
-static void calculate_inner_integrity(void) {
+static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive) {
 
     //Marshal sensitive area
     uint8_t buffer_marshalled_sensitiveArea[TPM2_MAX_DIGEST_BUFFER] = { 0 };
     size_t marshalled_sensitive_size = 0;
-    Tss2_MU_TPMT_SENSITIVE_Marshal(&ctx.import_key_sensitive.sensitiveArea,
+    Tss2_MU_TPMT_SENSITIVE_Marshal(&sensitive->sensitiveArea,
             buffer_marshalled_sensitiveArea + sizeof(uint16_t), TPM2_MAX_DIGEST_BUFFER,
             &marshalled_sensitive_size);
     size_t marshalled_sensitive_size_info = 0;
@@ -753,11 +752,13 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    create_import_key_sensitive_data();
+    TPM2B_SENSITIVE sensitive = TPM2B_EMPTY_INIT;
+
+    create_import_key_sensitive_data(&sensitive);
 
     calc_outer_integrity_hmac_key_and_dupsensitive_enc_key();
 
-    calculate_inner_integrity();
+    calculate_inner_integrity(&sensitive);
 
     calculate_outer_integrity();
 
