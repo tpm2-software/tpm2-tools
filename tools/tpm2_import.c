@@ -74,7 +74,6 @@ struct tpm_import_ctx {
     tpm2_loaded_object parent_ctx;
     const char *parent_ctx_arg;
 
-    TPM2B_MAX_BUFFER encrypted_duplicate_sensitive;
     UINT32 objectAttributes;
     TPM2B_PUBLIC parent_pub;
     TPMI_ALG_HASH name_alg;
@@ -615,10 +614,11 @@ static void calculate_outer_integrity(TPM2B_NAME *pubname,
         TPM2B_MAX_BUFFER *encrypted_inner_integrity,
         TPM2B_MAX_BUFFER *protection_hmac_key,
         TPM2B_MAX_BUFFER *protection_enc_key,
+        TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
         TPM2B_DIGEST *outer_hmac) {
 
     //Calculate dupSensitive
-    ctx.encrypted_duplicate_sensitive.size =
+    encrypted_duplicate_sensitive->size =
             encrypted_inner_integrity->size;
 
     aes_encrypt_buffers(
@@ -627,22 +627,24 @@ static void calculate_outer_integrity(TPM2B_NAME *pubname,
             encrypted_inner_integrity->buffer,
             encrypted_inner_integrity->size,
             NULL, 0,
-            &ctx.encrypted_duplicate_sensitive);
+            encrypted_duplicate_sensitive);
     //Calculate outerHMAC
-    hmac_outer_integrity(ctx.encrypted_duplicate_sensitive.buffer,
-            ctx.encrypted_duplicate_sensitive.size,
+    hmac_outer_integrity(encrypted_duplicate_sensitive->buffer,
+            encrypted_duplicate_sensitive->size,
             pubname->name,
             pubname->size, protection_hmac_key->buffer,
             outer_hmac);
 }
 
-static void create_import_key_private_data(TPM2B_PRIVATE *private, TPM2B_DIGEST *outer_hmac) {
+static void create_import_key_private_data(TPM2B_PRIVATE *private,
+        TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
+        TPM2B_DIGEST *outer_hmac) {
 
     //UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(ctx.parent_pub.publicArea.nameAlg);
 
     private->size = sizeof(uint16_t) + parent_hash_size
-            + ctx.encrypted_duplicate_sensitive.size;
+            + encrypted_duplicate_sensitive->size;
     size_t hmac_size_offset = 0;
     Tss2_MU_UINT16_Marshal(parent_hash_size, private->buffer,
             sizeof(uint16_t), &hmac_size_offset);
@@ -651,8 +653,8 @@ static void create_import_key_private_data(TPM2B_PRIVATE *private, TPM2B_DIGEST 
     memcpy(
             private->buffer + hmac_size_offset
                     + parent_hash_size,
-            ctx.encrypted_duplicate_sensitive.buffer,
-            ctx.encrypted_duplicate_sensitive.size);
+            encrypted_duplicate_sensitive->buffer,
+            encrypted_duplicate_sensitive->size);
 }
 
 static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *sapi_context,
@@ -760,14 +762,17 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2B_MAX_BUFFER *privkey
             &encrypted_inner_integrity);
 
     TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
+    TPM2B_MAX_BUFFER encrypted_duplicate_sensitive = TPM2B_EMPTY_INIT;
     calculate_outer_integrity(&pubname,
             &encrypted_inner_integrity,
             &hmac_key,
             &enc_key,
+            &encrypted_duplicate_sensitive,
             &outer_hmac);
 
 
-    create_import_key_private_data(&private, &outer_hmac);
+    create_import_key_private_data(&private,
+            &encrypted_duplicate_sensitive, &outer_hmac);
 
     TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
     res = encrypt_seed_with_tpm2_rsa_public_key(&protection_seed, &encrypted_seed);
