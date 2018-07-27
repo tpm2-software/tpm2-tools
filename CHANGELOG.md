@@ -1,6 +1,7 @@
 ## Changelog
 ### Next - TBD
   * Revert the change to use user supplied object attributes exclusively. This is an inappropriate behavioural change for a MINOR version number increment.
+  * Fix inclusion of object attribute specifiers section in tpm2_create and tpm2_createprimary man pages.
 
 ### 3.1.1 - 2018-07-09
   * Allow man page installation without pandoc being available
