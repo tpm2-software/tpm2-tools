@@ -74,7 +74,7 @@ will create and load a Primary Object. The sensitive area is not returned.
 
 [algorithm specifiers](common/alg.md)
 
-[object attribute specifiers](common/object-attrs.md)
+[object attribute specifiers](common/obj-attrs.md)
 
 # EXAMPLES
 
