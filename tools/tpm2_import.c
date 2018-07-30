@@ -881,16 +881,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool load_rsa_key(TPM2B_MAX_BUFFER *priv, TPM2B_MAX_BUFFER *pub) {
+static bool load_rsa_key(const char *private_path,
+        TPM2B_MAX_BUFFER *priv, TPM2B_MAX_BUFFER *pub) {
 
     bool res = false;
     RSA *k = NULL;
     const BIGNUM *p, *n;
 
-    FILE *fk = fopen(ctx.input_key_file, "r");
+    FILE *fk = fopen(private_path, "r");
     if (!fk) {
         LOG_ERR("Could not open file \"%s\", error: %s",
-                ctx.input_key_file, strerror(errno));
+                private_path, strerror(errno));
         return false;
     }
 
@@ -899,7 +900,7 @@ static bool load_rsa_key(TPM2B_MAX_BUFFER *priv, TPM2B_MAX_BUFFER *pub) {
     fclose(fk);
     if (!k) {
          ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading PEM file \"%s\" failed", ctx.input_key_file);
+         LOG_ERR("Reading PEM file \"%s\" failed", private_path);
          return false;
     }
 
@@ -949,7 +950,10 @@ out:
     return res;
 }
 
-static bool load_key(TPMI_ALG_PUBLIC key_type, TPM2B_MAX_BUFFER *private, TPM2B_MAX_BUFFER *public) {
+static bool load_key(
+        TPMI_ALG_PUBLIC key_type,
+        const char *private_path,
+        TPM2B_MAX_BUFFER *private, TPM2B_MAX_BUFFER *public) {
 
     switch(key_type) {
         case TPM2_ALG_AES:
@@ -965,7 +969,7 @@ static bool load_key(TPMI_ALG_PUBLIC key_type, TPM2B_MAX_BUFFER *private, TPM2B_
     }
 
     if (ctx.key_type == TPM2_ALG_RSA) {
-        return load_rsa_key(private, public);
+        return load_rsa_key(private_path, private, public);
     }
 
     bool res = files_load_bytes_from_path(ctx.input_key_file,
@@ -1011,7 +1015,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     TPM2B_MAX_BUFFER private = TPM2B_EMPTY_INIT;
     TPM2B_MAX_BUFFER public = TPM2B_EMPTY_INIT;;
-    result = load_key(ctx.key_type, &private, &public);
+    result = load_key(ctx.key_type, ctx.input_key_file, &private, &public);
     if (!result) {
         goto out;
     }
