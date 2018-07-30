@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_import: support RSA1024 keys.
   * tpm2_import: -q changes to -u to align with tpm2_loads public/private output arguments.
   * tpm2_import: Supports setting object name algorithm via -g.
   * tpm2_unseal: -P becomes -p

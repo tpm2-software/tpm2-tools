@@ -49,24 +49,17 @@ trap cleanup EXIT
 
 start_up
 
-run_test() {
+run_aes_import_test() {
 
-	cleanup "no-shut-down"
-
-	parent_alg=$1
-	name_alg=$2
-
-	tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
-
-	dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
+	dd if=/dev/urandom of=sym.key bs=1 count=$2 2>/dev/null
 
 	#Symmetric Key Import Test
-	echo "tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -u import_key.pub -r import_key.priv"
+	echo "tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C $1 -u import_key.pub -r import_key.priv"
 	
-	tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -u import_key.pub \
+	tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C $1 -u import_key.pub \
 	-r import_key.priv
 
-	tpm2_load -Q -C parent.ctx -u import_key.pub -r import_key.priv -n import_key.name \
+	tpm2_load -Q -C $1 -u import_key.pub -r import_key.priv -n import_key.name \
 	-o import_key.ctx
 
 	echo "plaintext" > "plain.txt"
@@ -77,16 +70,19 @@ run_test() {
 	-aes-128-cfb
 
 	diff plain.txt plain.dec.ssl
+}
+
+run_rsa_import_test() {
 
 	#Asymmetric Key Import Test
-	openssl genrsa -out private.pem 2048
+	openssl genrsa -out private.pem $2
 	openssl rsa -in private.pem -pubout > public.pem
 
 	# Test an import without the parent public info data to force a readpublic
-	tpm2_import -Q -G rsa -g "$name_alg" -k private.pem -C parent.ctx \
+	tpm2_import -Q -G rsa -g "$name_alg" -k private.pem -C $1 \
 	-u import_rsa_key.pub -r import_rsa_key.priv
 
-	tpm2_load -Q -C parent.ctx -u import_rsa_key.pub -r import_rsa_key.priv \
+	tpm2_load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
 	-n import_rsa_key.name -o import_rsa_key.ctx
 
 	openssl rsa -in private.pem -out public.pem -outform PEM -pubout
@@ -110,6 +106,24 @@ run_test() {
 
 	# Verify with the TPM
 	tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+
+
+}
+
+run_test() {
+
+	cleanup "no-shut-down"
+
+	parent_alg=$1
+	name_alg=$2
+
+	tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
+
+	# 128 bit AES is 16 bytes
+	run_aes_import_test 16
+
+	run_rsa_import_test parent.ctx 1024
+    run_rsa_import_test parent.ctx 2048
 }
 
 #

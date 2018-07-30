@@ -3,7 +3,7 @@ tpm2_import 1 "SEPTEMBER 2017" tpm2-tools
 
 # NAME
 
-tpm2_import(8) - imports an external key (AES-128) into the tpm as a TPM managed key object.
+tpm2_import(8) - imports an external key into the tpm as a TPM managed key object.
 
 # SYNOPSIS
 
@@ -11,8 +11,8 @@ tpm2_import(8) - imports an external key (AES-128) into the tpm as a TPM managed
 
 # DESCRIPTION
 
-This tool imports an external key either, a symmetric AES-128 or an RSA2K as TPM managed key object.
-It requires the parent handle be persistent and an object of type RSA key.
+This tool imports an external generated key as TPM managed key object.
+It requires that the parent key object be of type RSA key.
 
 # OPTIONS
 
@@ -21,7 +21,7 @@ These options control the key importation process:
   * **-G**, **--import-key-alg**=_ALGORITHM_:
     The algorithm used by the key to be imported. Supports:
     * aes - AES 128 key.
-    * rsa - RSA 2048 key.
+    * rsa - RSA 1024 or 2048 key.
 
   * **-g**, **--halg**=_ALGORITHM_:
     The hash algorithm for generating the objects name. This is optional
