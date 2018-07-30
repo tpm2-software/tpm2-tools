@@ -835,7 +835,7 @@ static bool on_option(char key, char *value) {
     case 'K':
         ctx.parent_key_public_file = value;
         break;
-    case 'q':
+    case 'u':
         ctx.import_key_public_file = value;
         break;
     case 'r':
@@ -870,12 +870,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "parent-key",         required_argument, NULL, 'C'},
       { "parent-key-public",  required_argument, NULL, 'K'},
       { "import-key-private", required_argument, NULL, 'r'},
-      { "import-key-public",  required_argument, NULL, 'q'},
+      { "import-key-public",  required_argument, NULL, 'u'},
       { "object-attributes",  required_argument, NULL, 'A'},
       { "halg",               required_argument, NULL, 'g'},
     };
 
-    *opts = tpm2_options_new("G:k:C:K:q:r:A:g:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("G:k:C:K:u:r:A:g:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
