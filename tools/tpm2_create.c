@@ -256,6 +256,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.K = 1;
+        ctx.in_public.t.publicArea.objectAttributes.userWithAuth = 1;
         break;
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
@@ -294,6 +295,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.L = 1;
+        if (!ctx.flags.K) {
+             ctx.in_public.t.publicArea.objectAttributes.userWithAuth = 0;
+        }
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
