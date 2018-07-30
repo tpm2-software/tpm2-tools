@@ -284,16 +284,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     bool res = tpm2_util_object_load(sapi_context, ctx.ctx_arg, &ctx.ctx_obj);
     if (!res) {
-        tpm2_tool_output(
-                "Failed to load context object (handle: 0x%x, path: %s).\n",
-                ctx.ctx_obj.handle, ctx.ctx_obj.path);
         return 1;
     }
 
     res = tpm2_util_object_load(sapi_context, ctx.key_ctx_arg, &ctx.key_ctx_obj);
     if (!res) {
-        tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
-                ctx.key_ctx_obj.handle, ctx.key_ctx_obj.path);
         return 1;
     }
 

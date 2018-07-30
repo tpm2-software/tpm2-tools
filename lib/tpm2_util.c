@@ -491,6 +491,10 @@ bool tpm2_util_object_load(TSS2_SYS_CONTEXT *sapi_ctx,
     result = files_load_tpm_context_from_path(sapi_ctx, &outobject->handle,
                 outobject->path);
 
+    if (!result) {
+        LOG_ERR("Could not load object, got: \"%s\"", objectstr);
+    }
+
     return result;
 }
 
