@@ -61,9 +61,9 @@ run_test() {
 	dd if=/dev/urandom of=sym.key bs=1 count=16 2>/dev/null
 
 	#Symmetric Key Import Test
-	echo "tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -q import_key.pub -r import_key.priv"
+	echo "tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -u import_key.pub -r import_key.priv"
 	
-	tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -q import_key.pub \
+	tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C parent.ctx -u import_key.pub \
 	-r import_key.priv
 
 	tpm2_load -Q -C parent.ctx -u import_key.pub -r import_key.priv -n import_key.name \
@@ -84,7 +84,7 @@ run_test() {
 
 	# Test an import without the parent public info data to force a readpublic
 	tpm2_import -Q -G rsa -g "$name_alg" -k private.pem -C parent.ctx \
-	-q import_rsa_key.pub -r import_rsa_key.priv
+	-u import_rsa_key.pub -r import_rsa_key.priv
 
 	tpm2_load -Q -C parent.ctx -u import_rsa_key.pub -r import_rsa_key.priv \
 	-n import_rsa_key.name -o import_rsa_key.ctx

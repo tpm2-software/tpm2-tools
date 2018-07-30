@@ -48,7 +48,7 @@ These options control the key importation process:
     Specifies the file path required to save the encrypted private portion of
     the object imported as key.
 
-  * **-q**, **--import-key-public**=_FILE_:
+  * **-u**, **--import-key-public**=_FILE_:
     Specifies the file path required to save the public portion of the object imported as key
 
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
@@ -68,7 +68,7 @@ These options control the key importation process:
 tpm2_import -k sym.key -C 0x81010001 -f parent.pub -q import_key.pub -r import_key.priv
 
 tpm2_import -Q -G rsa -k private.pem -C 0x81010005 -f parent.pub \
--q import_rsa_key.pub -r import_rsa_key.priv
+-u import_rsa_key.pub -r import_rsa_key.priv
 ```
 
 # LIMITATIONS
