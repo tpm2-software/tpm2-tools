@@ -912,12 +912,14 @@ static bool load_rsa_key(const char *private_path,
     RSA_get0_key(k, &n, NULL, NULL);
 #endif
 
-    int priv_bytes = BN_num_bytes(p);
-    if (priv_bytes > priv->size) {
-        LOG_ERR("Expected prime \"p\" to be less than or equal to %u,"
-                " got: %d", priv->size, priv_bytes);
+    unsigned priv_bytes = BN_num_bytes(p);
+    if (priv_bytes > sizeof(priv->buffer)) {
+        LOG_ERR("Expected prime \"p\" to be less than or equal to %lu,"
+                " got: %u", sizeof(priv->buffer), priv_bytes);
         goto out;
     }
+
+    priv->size = priv_bytes;
 
     int success = BN_bn2bin(p, priv->buffer);
     if (!success) {
@@ -960,7 +962,6 @@ static bool load_key(
             private->size = TPM2_MAX_SYM_BLOCK_SIZE;
             break;
         case TPM2_ALG_RSA:
-            private->size = 128;
             break;
         default:
             LOG_ERR("Invalid/ unsupported key algorithm for import, got\"0x%x\"",
