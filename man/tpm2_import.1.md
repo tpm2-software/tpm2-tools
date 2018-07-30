@@ -20,7 +20,7 @@ These options control the key importation process:
 
   * **-G**, **--import-key-alg**=_ALGORITHM_:
     The algorithm used by the key to be imported. Supports:
-    * aes - AES 128 key.
+    * aes - AES 128,192 or 256 key.
     * rsa - RSA 1024 or 2048 key.
 
   * **-g**, **--halg**=_ALGORITHM_:
