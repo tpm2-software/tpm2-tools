@@ -243,6 +243,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.K = 1;
+        ctx.in_public.publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
         break;
     case 'g':
         ctx.nameAlg = tpm2_alg_util_from_optarg(value);
@@ -281,6 +282,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.L = 1;
+        if (!ctx.flags.K) {
+             ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
+        }
         break;
     case 'S':
         if (!tpm2_util_string_to_uint32(value, &ctx.session_data.sessionHandle)) {
