@@ -982,6 +982,42 @@ static bool load_key(
     return true;
 }
 
+/**
+ * Check all options and report as many errors as possible via LOG_ERR.
+ * @return
+ *  0 on success, -1 on failure.
+ */
+static int check_options(void) {
+
+    int rc = 0;
+
+    if (!ctx.input_key_file) {
+        LOG_ERR("Expected to be imported key data to be specified via \"-k\","
+                " missing option.");
+        rc = -1;
+    }
+
+    if (!ctx.import_key_public_file) {
+        LOG_ERR("Expected output public file missing, specify \"-u\","
+                " missing option.");
+        rc = -1;
+    }
+
+    if (!ctx.import_key_public_file) {
+        LOG_ERR("Expected output private file missing, specify \"-r\","
+                " missing option.");
+        rc = -1;
+    }
+
+    if (!ctx.key_type) {
+        LOG_ERR("Expected key type to be specified via \"-G\","
+                " missing option.");
+        rc = -1;
+    }
+
+    return rc;
+}
+
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
@@ -1004,13 +1040,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
       goto out;
     }
 
-    if (!ctx.input_key_file || !parent_ctx.handle
-            || !ctx.import_key_public_file || !ctx.import_key_private_file
-            || !ctx.key_type) {
-        LOG_ERR("tpm2_import tool missing arguments: %s\n %08X\n %s\n %s",
-             ctx.input_key_file, parent_ctx.handle,
-             ctx.import_key_public_file, ctx.import_key_private_file);
-        return 1;
+    rc = check_options();
+    if (rc) {
+        goto out;
     }
 
     TPM2B_MAX_BUFFER private = TPM2B_EMPTY_INIT;
