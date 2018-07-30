@@ -59,9 +59,6 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-#define RSA_2K_MODULUS_SIZE_IN_BYTES TPM2_MAX_RSA_KEY_BYTES / 2
-#define RSA_2K_MODULUS_SIZE_IN_BITS RSA_2K_MODULUS_SIZE_IN_BYTES * 8
-
 typedef struct tpm_import_ctx tpm_import_ctx;
 struct tpm_import_ctx {
     char *input_key_file;
@@ -143,10 +140,13 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DATA *protection_seed,
 
     TPMI_ALG_HASH parent_name_alg = parent_pub->publicArea.nameAlg;
 
-    unsigned char encoded[RSA_2K_MODULUS_SIZE_IN_BYTES];
+    /*
+     * This is the biggest buffer value, so it should always be sufficient.
+     */
+    unsigned char encoded[TPM2_MAX_DIGEST_BUFFER];
     unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
     int return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded,
-            RSA_2K_MODULUS_SIZE_IN_BYTES, protection_seed->buffer, protection_seed->size, label, 10,
+            mod_size, protection_seed->buffer, protection_seed->size, label, 10,
             tpm2_openssl_halg_from_tpmhalg(parent_name_alg), NULL);
     if (return_code != 1) {
         LOG_ERR("Failed RSA_padding_add_PKCS1_OAEP_mgf1\n");
@@ -169,13 +169,13 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DATA *protection_seed,
         BN_free(bne);
         goto error;
     }
-    return_code = RSA_generate_key_ex(rsa, 2048, bne, NULL);
+    return_code = RSA_generate_key_ex(rsa, mod_size_bits, bne, NULL);
     BN_free(bne);
     if (return_code != 1) {
         LOG_ERR("RSA_generate_key_ex failed\n");
         goto error;
     }
-    BIGNUM *n = BN_bin2bn(pub_modulus, RSA_2K_MODULUS_SIZE_IN_BYTES, NULL);
+    BIGNUM *n = BN_bin2bn(pub_modulus, mod_size, NULL);
     if (n == NULL) {
         LOG_ERR("BN_bin2bn failed\n");
         goto error;
@@ -186,8 +186,8 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DATA *protection_seed,
         goto error;
     }
     // Encrypting
-    encrypted_protection_seed->size = RSA_2K_MODULUS_SIZE_IN_BYTES;
-    return_code = RSA_public_encrypt(RSA_2K_MODULUS_SIZE_IN_BYTES, encoded,
+    encrypted_protection_seed->size = mod_size;
+    return_code = RSA_public_encrypt(mod_size, encoded,
             encrypted_protection_seed->secret, rsa, RSA_NO_PADDING);
     if (return_code < 0) {
         LOG_ERR("Failed RSA_public_encrypt\n");
@@ -403,7 +403,7 @@ static inline void  IMPORT_KEY_SYM_PUBLIC_AREA(TPM2B_PUBLIC *p) {
     p->publicArea.unique.sym.size = tpm2_alg_util_get_hash_size(ctx.name_alg);
 }
 
-static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_PUBLIC *p) {
+static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_MAX_BUFFER *pubkey, TPM2B_PUBLIC *p) {
     p->publicArea.type = TPM2_ALG_RSA;
     p->publicArea.nameAlg = ctx.name_alg;
     p->publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;
@@ -416,9 +416,9 @@ static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_PUBLIC *p) {
     p->publicArea.authPolicy.size = 0;
     p->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;
     p->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
-    p->publicArea.parameters.rsaDetail.keyBits = RSA_2K_MODULUS_SIZE_IN_BITS;
+    p->publicArea.parameters.rsaDetail.keyBits = pubkey->size * 8;
     p->publicArea.parameters.rsaDetail.exponent = 0x0;
-    p->publicArea.unique.rsa.size = RSA_2K_MODULUS_SIZE_IN_BYTES;
+    p->publicArea.unique.rsa.size = pubkey->size;
 }
 
 static bool create_import_key_public_data_and_name(
@@ -433,7 +433,7 @@ static bool create_import_key_public_data_and_name(
             public->publicArea.unique.sym = *sym;
             break;
         case TPM2_ALG_RSA:
-            IMPORT_KEY_RSA2K_PUBLIC_AREA(public);
+            IMPORT_KEY_RSA2K_PUBLIC_AREA(pubkey, public);
             memcpy(public->publicArea.unique.rsa.buffer,
                 pubkey->buffer, pubkey->size);
             break;
@@ -926,10 +926,10 @@ static bool load_rsa_key(const char *private_path,
         goto out;
     }
 
-    int pub_bytes = BN_num_bytes(n);
-    if (pub_bytes > RSA_2K_MODULUS_SIZE_IN_BYTES) {
-        LOG_ERR("Expected modulus \"n\" to be less than or equal to %u,"
-                " got: %d", RSA_2K_MODULUS_SIZE_IN_BYTES, pub_bytes);
+    unsigned pub_bytes = BN_num_bytes(n);
+    if (pub_bytes > sizeof(pub->buffer)) {
+        LOG_ERR("Expected modulus \"n\" to be less than or equal to %lu,"
+                " got: %u", sizeof(pub->buffer), pub_bytes);
         goto out;
     }
 
