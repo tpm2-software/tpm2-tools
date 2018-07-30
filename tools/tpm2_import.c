@@ -1034,9 +1034,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     result = tpm2_util_object_load(sapi_context, ctx.parent_ctx_arg,
                     &parent_ctx);
     if (!result) {
-        tpm2_tool_output(
-            "Failed to load context object (handle: 0x%x, path: %s).\n",
-            parent_ctx.handle, parent_ctx.path);
       goto out;
     }
 

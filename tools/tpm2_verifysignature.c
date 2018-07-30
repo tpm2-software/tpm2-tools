@@ -147,9 +147,6 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     return_value = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.key_context_object);
     if (!return_value) {
-        tpm2_tool_output(
-                "Failed to load contest object for key (handle: 0x%x, path: %s).\n",
-                ctx.key_context_object.handle, ctx.key_context_object.path);
         return false;
     }
 
