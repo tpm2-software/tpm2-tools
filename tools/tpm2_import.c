@@ -959,8 +959,7 @@ static bool load_key(
 
     switch(key_type) {
         case TPM2_ALG_AES:
-            private->size = TPM2_MAX_SYM_BLOCK_SIZE;
-            break;
+            /* falls through */
         case TPM2_ALG_RSA:
             break;
         default:
@@ -973,6 +972,7 @@ static bool load_key(
         return load_rsa_key(private_path, private, public);
     }
 
+    private->size = sizeof(private->buffer);
     bool res = files_load_bytes_from_path(ctx.input_key_file,
         private->buffer, &private->size);
     if (!res) {
