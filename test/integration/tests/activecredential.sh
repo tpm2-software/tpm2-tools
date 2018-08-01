@@ -59,10 +59,13 @@ tpm2_createak -C 0x81010009 -k 0x8101000a -G rsa -D sha256 -s rsassa -p ak.pub -
 
 # Capture the yaml output and verify that its the same as the name output
 loaded_key_name_yaml=`python << pyscript
+from __future__ import print_function
+
 import yaml
+
 with open('ak.out', 'r') as f:
     doc = yaml.load(f)
-    print doc['loaded-key']['name']
+    print(doc['loaded-key']['name'])
 pyscript`
 
 # Use -c in xxd so there is no line wrapping
