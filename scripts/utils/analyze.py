@@ -12,6 +12,7 @@ a human will need to make a plan of action to correct the tools so they conform.
 The tool exits with a status of non-zero on error, making this useful for checking
 PRs and can thus be added to travis.
 '''
+from __future__ import print_function
 
 import glob
 import os
@@ -247,9 +248,9 @@ class ToolConflictor(object):
                 continue
 
             has_conflicts = True
-            print "group: %s:" % (gname)
-            print "\ttools: %s" % str([t.name for t in tools])
-            print "\tconflicts: %s" % (str(conflicts))
+            print("group: %s:" % (gname))
+            print("\ttools: %s" % str([t.name for t in tools]))
+            print("\tconflicts: %s" % (str(conflicts)))
 
         return has_conflicts
 
