@@ -1,4 +1,8 @@
 ## Changelog
+### 3.0.5-rc0 - 2018-08-01
+  * Fix inclusion of object attribute specifiers section in tpm2_create and tpm2_createprimary man pages.
+  * Use better object attribute defaults for authentication, preventing an empty password being used for authentication when a policy is set.
+
 ### 3.0.4 - 2018-05-30
   * Fix save and load for TPM2B_PRIVATE object.
   * Use a default buffer size for tpm2_nv{read,write} if the TPM reports a 0 size.
