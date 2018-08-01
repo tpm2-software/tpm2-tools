@@ -79,7 +79,7 @@ These options for creating the tpm entity:
 
 [algorithm specifiers](common/alg.md)
 
-[object attribute specifiers](common/object-attrs.md)
+[object attribute specifiers](common/obj-attrs.md)
 
 # EXAMPLES
 
