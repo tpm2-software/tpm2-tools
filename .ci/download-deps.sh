@@ -47,8 +47,10 @@ function get_deps() {
 	echo "pwd done tss: `pwd`"
 
 	echo "pwd clone abrmd: `pwd`"
-	git clone -b master https://github.com/tpm2-software/tpm2-abrmd.git
+	git clone https://github.com/tpm2-software/tpm2-abrmd.git --depth=1
 	pushd tpm2-abrmd
+	git fetch --tags
+	git checkout 2.0.1 -b release-2.0.1
 	echo "pwd build abrmd: `pwd`"
 	./bootstrap
 	./configure
