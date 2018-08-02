@@ -914,7 +914,7 @@ static bool load_rsa_key(const char *private_path,
 
     unsigned priv_bytes = BN_num_bytes(p);
     if (priv_bytes > sizeof(priv->buffer)) {
-        LOG_ERR("Expected prime \"p\" to be less than or equal to %lu,"
+        LOG_ERR("Expected prime \"p\" to be less than or equal to %zu,"
                 " got: %u", sizeof(priv->buffer), priv_bytes);
         goto out;
     }
@@ -930,7 +930,7 @@ static bool load_rsa_key(const char *private_path,
 
     unsigned pub_bytes = BN_num_bytes(n);
     if (pub_bytes > sizeof(pub->buffer)) {
-        LOG_ERR("Expected modulus \"n\" to be less than or equal to %lu,"
+        LOG_ERR("Expected modulus \"n\" to be less than or equal to %zu,"
                 " got: %u", sizeof(pub->buffer), pub_bytes);
         goto out;
     }
