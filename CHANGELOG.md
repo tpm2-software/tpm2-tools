@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_verifysignature: make -t optional.
   * tpm2_import: support additional import key types:
     * RSA1024/2048
     * AES128/192/256
