@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_verifysignature: stop outputting message hash.
   * tpm2_verifysignature: issues a warning when ticket is specified for a NULL hierarchy.
   * tpm2_verifysignature: make -t optional.
   * tpm2_import: support additional import key types:

@@ -78,18 +78,10 @@ tpm2_verifysig_ctx ctx = {
 static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
 
 
-    UINT32 rval;
     TPMT_TK_VERIFIED validation;
-
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
-    UINT16 i;
-    for (i = 0; i < ctx.msgHash.size; i++) {
-        tpm2_tool_output("%02x ", ctx.msgHash.buffer[i]);
-    }
-    tpm2_tool_output("\n");
-
-    rval = TSS2_RETRY_EXP(Tss2_Sys_VerifySignature(sapi_context, ctx.key_context_object.handle, NULL,
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_VerifySignature(sapi_context, ctx.key_context_object.handle, NULL,
             &ctx.msgHash, &ctx.signature, &validation, &sessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_VerifySignature, rval);
