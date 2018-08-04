@@ -96,7 +96,20 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return ctx.out_file_path ? files_save_ticket(&validation, ctx.out_file_path) : true;
+    /*
+     * NULL Hierarchies don't produce validation data, so let the user know
+     * by issuing a warning.
+     */
+    if (ctx.out_file_path) {
+        if (validation.hierarchy == TPM2_RH_NULL) {
+            LOG_WARN("The NULL hierarchy doesn't produce a validation ticket,"
+                    " not outputting ticket");
+        } else {
+            return files_save_ticket(&validation, ctx.out_file_path);
+        }
+    }
+
+    return true;
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
