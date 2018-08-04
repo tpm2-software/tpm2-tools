@@ -96,7 +96,7 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return files_save_ticket(&validation, ctx.out_file_path);
+    return ctx.out_file_path ? files_save_ticket(&validation, ctx.out_file_path) : true;
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
@@ -136,9 +136,9 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    if (!(ctx.context_arg && ctx.flags.sig && ctx.flags.ticket)) {
+    if (!(ctx.context_arg && ctx.flags.sig)) {
         LOG_ERR(
-                "--keyHandle (-k) or --keyContext (-c) and --sig (-s) and --ticket (-t) must be specified");
+                "--key-context (-c) and --sig (-s) are required");
         return false;
     }
 
