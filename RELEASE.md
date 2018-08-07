@@ -30,7 +30,9 @@ for the details.
 Version tags after v1.1.0 shall be signed. Valid known public keys can be reached by
 referencing the annotated tags listed below:
 
-william-roberts-pub
+- william-roberts-pub
+- javier-martinez-pub
+- joshua-lock-pub
 
 ### Verifying tags
 
