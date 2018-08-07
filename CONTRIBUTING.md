@@ -7,7 +7,7 @@ All non security bugs can be filed on the Issues tracker:
 Security sensitive bugs should be emailed to a maintainer or to Intel
 via the guidelines here:
 
-<ttps://security-center.intel.com/VulnerabilityHandlingGuidelines.aspx>
+<https://security-center.intel.com/VulnerabilityHandlingGuidelines.aspx>
 
 ## Guidelines for submitting changes:
 
