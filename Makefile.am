@@ -49,8 +49,8 @@ LDADD = \
 
 # keep me sorted
 bin_PROGRAMS = \
-    tools/aux/tpm2_print \
-    tools/aux/tpm2_rc_decode \
+    tools/misc/tpm2_print \
+    tools/misc/tpm2_rc_decode \
     tools/tpm2_activatecredential \
     tools/tpm2_certify \
     tools/tpm2_changeauth \
@@ -101,8 +101,8 @@ noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
-tools_aux_tpm2_print_SOURCES = tools/aux/tpm2_print.c $(TOOL_SRC)
-tools_aux_tpm2_rc_decode_SOURCES = tools/aux/tpm2_rc_decode.c $(TOOL_SRC)
+tools_misc_tpm2_print_SOURCES = tools/misc/tpm2_print.c $(TOOL_SRC)
+tools_misc_tpm2_rc_decode_SOURCES = tools/misc/tpm2_rc_decode.c $(TOOL_SRC)
 
 tools_tpm2_clear_SOURCES = tools/tpm2_clear.c $(TOOL_SRC)
 tools_tpm2_clearlock_SOURCES = tools/tpm2_clearlock.c $(TOOL_SRC)
@@ -243,7 +243,7 @@ abs_build_dir=$(abspath $(builddir))
 AM_TESTS_ENVIRONMENT =	\
 	TPM2_ABRMD="tpm2-abrmd" \
 	TPM2_SIM="tpm_server" \
-	PATH=$(abs_build_dir)/tools:$(abs_build_dir)/tools/aux:$(abs_top_srcdir)/test/integration:$(PATH) \
+	PATH=$(abs_build_dir)/tools:$(abs_build_dir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH) \
 	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures
 endif
 
