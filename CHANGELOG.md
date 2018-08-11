@@ -1,5 +1,5 @@
 ## Changelog
-### 3.0.5-rc0 - 2018-08-01
+### 3.0.5 - 2018-08-11
   * Fix inclusion of object attribute specifiers section in tpm2_create and tpm2_createprimary man pages.
   * Use better object attribute defaults for authentication, preventing an empty password being used for authentication when a policy is set.
 
