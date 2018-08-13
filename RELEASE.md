@@ -1,7 +1,7 @@
 ## Release Instructions
 
 The general release process will be to fork a branch at each major release followed by a ".X".
-For example, the major version 2 branches will be 2.X. Release candidates (rc), will be tagged
+For example, the major version 2 branches will be 2.X. Release candidates (RC), will be tagged
 using a -rc suffix (starting with rc0), signed, pushed to github, and marked under releases as
 "pre-release". The release notes on github will contain the CHANGELOG contents for the running
 rc series. Releases shall be pushed to branch coverity_scan, to initiate a scan.
@@ -21,7 +21,7 @@ the last release to the latest release.
 ### Updating the CHANGELOG for release candidates and final releases
 
 When a first release candidate is cut, a new entry will be added to the CHANGELOG file. This
-entry will have the release candiate version and the date on which the release candidate was
+entry will have the release candidate version and the date on which the release candidate was
 released. The entry will list all the changes that happened between the latest final release
 and the first release candidate.
 
