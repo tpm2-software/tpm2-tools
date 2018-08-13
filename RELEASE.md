@@ -42,7 +42,18 @@ date should be updated in the CHANGELOG.
 
 The commit that updated the CHANGELOG entry will be tagged as the final release.
 
-For a final release, change the version to the final release version (i.e: 3.0.5-rc3 -> 3.0.5) and update the date. The commit for this change will be tagged as $version.
+For a final release, change the version to the final release version (i.e: 3.0.5-rc3 -> 3.0.5)
+and update the date. The commit for this change will be tagged as $version.
+
+The format for the release entry in the CHANGELOG shall be the version date header, and a list of
+change items, like so:
+
+```
+<VERSION> - <DATE>
+  * item 1
+  * item 2
+  * ...
+```
 
 ### Version Information
 
