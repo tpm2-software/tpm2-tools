@@ -125,4 +125,4 @@ popd
 # upload coveralls results
 ./.ci/coveralls-upload.sh
 
-exit 0
+exit $?
