@@ -39,7 +39,7 @@ function get_deps() {
 	git clone https://github.com/tpm2-software/tpm2-tss.git --depth=1
 	pushd tpm2-tss
 	git fetch --tags
-	git checkout 2.0.0 -b release-2.0.0
+	git checkout 2.0.1 -b release-2.0.1
 	echo "pwd build tss: `pwd`"
 	./bootstrap
 	./configure
