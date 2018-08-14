@@ -1,5 +1,5 @@
 ## Changelog
-### 3.1.2 - TBD
+### 3.1.2 - 2018-08-14
   * Revert the change to use user supplied object attributes exclusively. This is an inappropriate behavioural change for a MINOR version number increment.
   * Fix inclusion of object attribute specifiers section in tpm2_create and tpm2_createprimary man pages.
   * Use better object attribute defaults for authentication, preventing an empty password being used for authentication when a policy is set.
