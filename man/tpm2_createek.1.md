@@ -56,10 +56,6 @@ Refer to:
     specification. Using the **--format** option allows one to change this
     behavior.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-
 [pubkey options](common/pubkey.md)
 
 [common options](common/options.md)

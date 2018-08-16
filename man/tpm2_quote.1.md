@@ -56,10 +56,6 @@
     Data given as a Hex string to qualify the  quote, optional. This is typically
     used to add a nonce against replay attacks.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-
   * **-G**, **--sig-hash-algorithm**:
 
     Hash algorithm for signature.

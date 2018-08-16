@@ -63,11 +63,6 @@ server.
     specifies to attempt connecting with the  TPM manufacturer provisioning server
     with SSL_NO_VERIFY option.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

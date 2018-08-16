@@ -72,11 +72,6 @@ These options for creating the tpm entity:
   * **-r**, **--privfile**=_OUTPUT\_PRIVATE\_FILE_:
     The output file which contains the sensitive portion of the object, optional.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option. This session
-    is used in lieu of starting a session and using the PCR policy options.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

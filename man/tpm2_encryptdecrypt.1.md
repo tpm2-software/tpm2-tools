@@ -37,11 +37,6 @@ specified symmetric key.
     Optional. Specifies the input file path for either the encrypted or decrypted
     data, depending on option **-D**. If not specified, defaults to **stdin**.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, a session file from **tpm2_startauthsession**(1)'s **-S** option. This session
-    is used in lieu of starting a session and using the PCR policy options.
-
   * **-o**, **--out-file**=_OUT\_FILE_:
 
     Optional. Specifies the output file path for either the encrypted or decrypted
