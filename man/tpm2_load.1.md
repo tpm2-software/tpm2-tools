@@ -38,10 +38,6 @@ into the TPM.
   * **-o**, **--out-context**=_CONTEXT\_FILE_:
     An optional file to save the object context to.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

@@ -46,10 +46,6 @@ be evicted.
     Optional authorization value. Authorization values should follow the
     "authorization formatting standards", see section "Authorization Formatting".
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

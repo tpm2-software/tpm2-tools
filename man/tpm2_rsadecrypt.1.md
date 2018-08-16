@@ -42,10 +42,6 @@ The key referenced by key-context is **required** to be:
 
     Output file path, record the decrypted data.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
-
-    Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
