@@ -128,7 +128,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-context",  required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("P:I:o:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:I:o:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
