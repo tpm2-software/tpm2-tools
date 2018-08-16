@@ -30,9 +30,11 @@
  */
 #include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
 #include "tpm2_alg_util.h"
@@ -614,14 +616,6 @@ dump_algorithms (TPMS_ALG_PROPERTY   alg_properties[],
                                    alg_properties[i].algProperties);
 }
 
-/*
- * TODO: delet me. work around to TSS bug:
- *  - https://github.com/tpm2-software/tpm2-tss/issues/682
- */
-#ifndef TPM2_CC_PolicyAuthorizeNV
-#define TPM2_CC_PolicyAuthorizeNV 0x192
-#endif
-
 static const char *cc_to_str(UINT32 cc) {
 
     struct {
@@ -859,9 +853,9 @@ dump_handles (TPM2_HANDLE     handles[],
  * Query the TPM for TPM capabilities.
  */
 static TSS2_RC
-get_tpm_capability_all (TSS2_SYS_CONTEXT *sapi_ctx,
-                        TPMS_CAPABILITY_DATA  *capability_data) {
-    return tpm2_capability_get(sapi_ctx, options.capability, options.property,
+get_tpm_capability_all (ESYS_CONTEXT *context,
+                        TPMS_CAPABILITY_DATA  **capability_data) {
+    return tpm2_capability_get(context, options.capability, options.property,
                             options.count, capability_data);
 }
 
@@ -952,7 +946,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -968,7 +962,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     /* List a capability, ie -c <arg> option */
-    TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
+    TPMS_CAPABILITY_DATA *capability_data = NULL;
     int ret;
 
     ret = sanity_check_capability_opts();
@@ -977,9 +971,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return -1;
     }
     /* get requested capability from TPM, dump it to stdout */
-    if (!get_tpm_capability_all(sapi_context, &capability_data))
+    if (!get_tpm_capability_all(context, &capability_data))
         return 1;
 
-    bool result = dump_tpm_capability(&capability_data.data);
+    bool result = dump_tpm_capability(&capability_data->data);
+    free(capability_data);
     return !result;
 }

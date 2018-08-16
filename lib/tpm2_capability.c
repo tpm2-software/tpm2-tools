@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
 #include "tpm2_util.h"
@@ -84,7 +85,34 @@ static size_t tpm2_get_property_data_size(TPM2_CAP capability) {
     return size;
 }
 
-bool tpm2_capability_get (TSS2_SYS_CONTEXT *sapi_ctx,
+bool tpm2_capability_get (ESYS_CONTEXT *context,
+        TPM2_CAP capability,
+        UINT32 property,
+        UINT32 count,
+        TPMS_CAPABILITY_DATA **capability_data) {
+
+    TPMI_YES_NO            more_data;
+
+    TSS2_RC rval = Esys_GetCapability (context, ESYS_TR_NONE, ESYS_TR_NONE,
+                                ESYS_TR_NONE, capability, property, count,
+                                &more_data, capability_data);
+    LOG_INFO("GetCapability: capability: 0x%x, property: 0x%x", capability, property);
+
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
+                 capability, property);
+        LOG_PERR(ESys_GetCapability, rval);
+        return false;
+    } else if (more_data) {
+        LOG_WARN("More data to be queried: capability: 0x%x, property: "
+                 "0x%x\n", capability, property);
+        return false;
+    }
+
+    return true;
+}
+
+bool tpm2_capability_get_sapi (TSS2_SYS_CONTEXT *sapi_ctx,
         TPM2_CAP capability,
         UINT32 property,
         UINT32 count,
@@ -143,7 +171,7 @@ bool tpm2_capability_find_vacant_persistent_handle (TSS2_SYS_CONTEXT *sapi_ctx,
         UINT32 *vacant) {
 
     TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
-    bool ret = tpm2_capability_get(sapi_ctx, TPM2_CAP_HANDLES,
+    bool ret = tpm2_capability_get_sapi(sapi_ctx, TPM2_CAP_HANDLES,
                     TPM2_PERSISTENT_FIRST, TPM2_MAX_CAP_HANDLES,
                     &capability_data);
     if (!ret) {
