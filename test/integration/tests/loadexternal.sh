@@ -50,7 +50,8 @@ Handle_parent=0x81010019
 cleanup() {
   rm -f $file_primary_key_ctx $file_loadexternal_key_pub $file_loadexternal_key_priv \
          $file_loadexternal_key_name $file_loadexternal_key_ctx \
-         $file_loadexternal_output
+         $file_loadexternal_output private.pem public.pem plain.txt \
+         plain.rsa.dec key.ctx
 
   ina "$@" "keep_handle"
   if [ $? -ne 0 ]; then
@@ -91,5 +92,23 @@ cleanup "keep_handle" "no-shut-down"
 tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
 
 tpm2_loadexternal -Q -u $file_loadexternal_key_pub
+
+# Test loading an OSSL generated private key with a password
+openssl genrsa -out private.pem 2048
+openssl rsa -in private.pem -out public.pem -outform PEM -pubout
+
+echo "hello world" > plain.txt
+openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
+
+tpm2_loadexternal -a n -p foo -r private.pem -o key.ctx
+
+#
+# This command is failing with:
+# ERROR: Tss2_Sys_RSA_Decrypt(0x12F) - tpm:error(2.0): authValue or authPolicy is not
+# available forselected entity
+#
+tpm2_rsadecrypt -c key.ctx -p foo -I plain.rsa.enc -o plain.rsa.dec
+
+diff plain.txt plain.rsa.dec
 
 exit 0
