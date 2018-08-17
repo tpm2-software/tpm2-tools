@@ -973,7 +973,7 @@ static bool load_key(
     }
 
     private->size = sizeof(private->buffer);
-    bool res = files_load_bytes_from_path(ctx.input_key_file,
+    bool res = files_load_bytes_from_path(private_path,
         private->buffer, &private->size);
     if (!res) {
         LOG_ERR("Input key file load failed");
