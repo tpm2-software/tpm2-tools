@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "tpm2_options.h"
@@ -47,7 +47,6 @@
 
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {
-    TPM2_HANDLE rsa2048_handle;
     TPM2B_NAME object_name;
     char *out_file_path;
     TPM2B_PUBLIC public;
@@ -115,38 +114,39 @@ out:
     return result;
 }
 
-static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
+static bool make_credential_and_save(ESYS_CONTEXT *ectx)
 {
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TPM2B_ID_OBJECT *cred_blob;
+    TPM2B_ENCRYPTED_SECRET *secret;
+    ESYS_TR tr_handle = ESYS_TR_NONE;
+    UINT32 rval;
 
-    TPM2B_NAME name_ext = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_ID_OBJECT cred_blob = TPM2B_TYPE_INIT(TPM2B_ID_OBJECT, credential);
-
-    TPM2B_ENCRYPTED_SECRET secret = TPM2B_TYPE_INIT(TPM2B_ENCRYPTED_SECRET, secret);
-
-    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, 0, NULL, &ctx.public,
-            TPM2_RH_NULL, &ctx.rsa2048_handle, &name_ext, &sessions_data_out));
+    rval = Esys_LoadExternal(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+                        ESYS_TR_NONE, NULL, &ctx.public, TPM2_RH_NULL,
+                        &tr_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_LoadExternal, rval);
+        LOG_PERR(Esys_LoadExternal, rval);
         return false;
     }
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_MakeCredential(sapi_context, ctx.rsa2048_handle, 0,
-            &ctx.credential, &ctx.object_name, &cred_blob, &secret,
-            &sessions_data_out));
+    rval = Esys_MakeCredential(ectx, tr_handle, ESYS_TR_NONE,
+                        ESYS_TR_NONE, ESYS_TR_NONE, &ctx.credential,
+                        &ctx.object_name, &cred_blob, &secret);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_MakeCredential, rval);
+        LOG_PERR(Esys_MakeCredential, rval);
         return false;
     }
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, ctx.rsa2048_handle));
+    rval = Esys_FlushContext(ectx, tr_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_FlushContext, rval);
+        LOG_PERR(Esys_FlushContext, rval);
         return false;
     }
 
-    return write_cred_and_secret(ctx.out_file_path, &cred_blob, &secret);
+    bool ret = write_cred_and_secret(ctx.out_file_path, cred_blob, secret);
+    free(cred_blob);
+    free(secret);
+    return ret;
 }
 
 static bool on_option(char key, char *value) {
@@ -201,7 +201,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -210,5 +210,5 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return -11;
     }
 
-    return make_credential_and_save(sapi_context) != true;
+    return make_credential_and_save(ectx) != true;
 }
