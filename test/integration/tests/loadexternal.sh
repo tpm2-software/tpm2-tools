@@ -71,44 +71,69 @@ cleanup "no-shut-down"
 
 tpm2_clear
 
-tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
+run_tss_test() {
 
-tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -C $file_primary_key_ctx
+	tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
 
-tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
+	tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -C $file_primary_key_ctx
 
-tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
+	tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
 
-# Test with Handle
-cleanup "keep_handle" "no-shut-down"
+	tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
 
-tpm2_create -Q -C $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
+	# Test with Handle
+	cleanup "keep_handle" "no-shut-down"
 
-tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub
+	tpm2_create -Q -C $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
 
-# Test with default hierarchy (and handle)
-cleanup "keep_handle" "no-shut-down"
+	tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub
 
-tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
+	# Test with default hierarchy (and handle)
+	cleanup "keep_handle" "no-shut-down"
 
-tpm2_loadexternal -Q -u $file_loadexternal_key_pub
+	tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
+
+	tpm2_loadexternal -Q -u $file_loadexternal_key_pub
+}
 
 # Test loading an OSSL generated private key with a password
-openssl genrsa -out private.pem 2048
-openssl rsa -in private.pem -out public.pem -outform PEM -pubout
+run_rsa_test() {
 
-echo "hello world" > plain.txt
-openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
+    openssl genrsa -out private.pem $1
+    openssl rsa -in private.pem -out public.pem -outform PEM -pubout
 
-tpm2_loadexternal -a n -p foo -r private.pem -o key.ctx
+    echo "hello world" > plain.txt
+    openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
 
-#
-# This command is failing with:
-# ERROR: Tss2_Sys_RSA_Decrypt(0x12F) - tpm:error(2.0): authValue or authPolicy is not
-# available forselected entity
-#
-tpm2_rsadecrypt -c key.ctx -p foo -I plain.rsa.enc -o plain.rsa.dec
+    tpm2_loadexternal -G rsa -a n -p foo -r private.pem -o key.ctx
 
-diff plain.txt plain.rsa.dec
+    tpm2_rsadecrypt -c key.ctx -p foo -I plain.rsa.enc -o plain.rsa.dec
+
+    diff plain.txt plain.rsa.dec
+}
+
+run_aes_test() {
+
+    dd if=/dev/urandom of=sym.key bs=1 count=$(($1 / 8)) 2>/dev/null
+
+    tpm2_loadexternal -G aes -r sym.key -o key.ctx
+
+    echo "plaintext" > "plain.txt"
+
+    tpm2_encryptdecrypt -c key.ctx -I plain.txt -o plain.enc
+
+    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
+        -aes-$1-cfb
+
+    diff plain.txt plain.dec.ssl
+}
+
+run_tss_test
+
+run_rsa_test 1024
+run_rsa_test 2048
+
+run_aes_test 128
+run_aes_test 256
 
 exit 0

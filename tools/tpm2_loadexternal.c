@@ -38,9 +38,7 @@
 
 #include <tss2/tss2_sys.h>
 
-#include <openssl/err.h>
-#include <openssl/pem.h>
-#include <openssl/rsa.h>
+#include <openssl/rand.h>
 
 #include "files.h"
 #include "log.h"
@@ -48,6 +46,7 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_hierarchy.h"
+#include "tpm2_openssl.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -68,6 +67,7 @@ struct tpm_loadexternal_ctx {
     char *auth; /* The password for use of the private portion */
     char *policy; /* a policy for use of the private portion */
     char *name_alg; /* name hashing algorithm */
+    char *key_type; /* type of key attempting to load, defaults to an auto attempt */
 };
 
 static tpm_loadexternal_ctx ctx = {
@@ -129,6 +129,9 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.name_alg = value;
         break;
+    case 'G':
+        ctx.key_type = value;
+        break;
     }
 
     return true;
@@ -146,9 +149,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth-key",           required_argument, NULL, 'p'},
       { "halg",               required_argument, NULL, 'g'},
       { "auth-parent",        required_argument, NULL, 'P'},
+      { "key-alg",            required_argument, NULL, 'G'},
     };
 
-    *opts = tpm2_options_new("a:u:r:o:A:p:L:g:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("a:u:r:o:A:p:L:g:G:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -246,7 +250,7 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
     return BN_bn2bin(e, (unsigned char *)&rdetail->exponent);
 }
 
-static bool load_public_RSA_from_pem(const char *path, TPM2B_PUBLIC *pub) {
+static bool load_public_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub) {
 
     /*
      * Public PEM files appear in two formats:
@@ -256,7 +260,6 @@ static bool load_public_RSA_from_pem(const char *path, TPM2B_PUBLIC *pub) {
      * See:
      *  - https://stackoverflow.com/questions/7818117/why-i-cant-read-openssl-generated-rsa-pub-key-with-pem-read-rsapublickey
      */
-    FILE *f = fopen(path, "r");
     RSA *k = PEM_read_RSA_PUBKEY(f, NULL,
         NULL, NULL);
     if (!k) {
@@ -276,107 +279,206 @@ static bool load_public_RSA_from_pem(const char *path, TPM2B_PUBLIC *pub) {
     return result;
 }
 
-static bool is_path_pem(const char *path) {
+/*
+ * XXX HELPER IN LIB
+ */
+static bool is_valid_aes_size(UINT16 size_in_bytes) {
 
-    unsigned char buf[4096];
-    UINT16 size = sizeof(buf);
+    switch (size_in_bytes) {
+    case 16:
+    case 24:
+    case 32:
+        return true;
+    default:
+        LOG_ERR("Invalid AES key size, got %u bytes, expected 16,24 or 32",
+                size_in_bytes);
+        return false;
+    }
+}
 
-    bool result = files_load_bytes_from_path(path, buf, &size);
+static bool load_public_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    /*
+     * Get the file size and validate that it is the proper AES keysize.
+     */
+    unsigned long file_size = 0;
+    bool result = files_get_file_size(f, &file_size, path);
     if (!result) {
         return false;
     }
 
-    static const char compareto[] = "-----BEGIN";
-
-    return size > (sizeof(compareto) - 1)
-           && !memcmp(buf, compareto, (sizeof(compareto) - 1));
-}
-
-static bool load_public(const char *path, TPM2B_PUBLIC *pub) {
-
-    if (is_path_pem(path)) {
-        return load_public_RSA_from_pem(path, pub);
+    result = is_valid_aes_size(file_size);
+    if (!result) {
+        return false;
     }
 
-    return files_load_public(path, pub);
+    pub->publicArea.type = TPM2_ALG_SYMCIPHER;
+    TPMT_SYM_DEF_OBJECT *s = &pub->publicArea.parameters.symDetail.sym;
+    s->algorithm = TPM2_ALG_AES;
+    s->keyBits.aes = file_size * 8;
+
+    /* allow any mode later on */
+    s->mode.aes = TPM2_ALG_NULL;
+
+    /*
+     * Calculate the unique field with is the
+     * is HMAC(sensitive->seedValue, sensitive->sensitive(key itself))
+     * Where:
+     *   - HMAC Key is the seed
+     *   - Hash algorithm is the name algorithm
+     */
+    TPM2B_DIGEST *unique = &pub->publicArea.unique.sym;
+    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
+    TPM2B_PRIVATE_VENDOR_SPECIFIC *key = &priv->sensitiveArea.sensitive.any;
+    TPMI_ALG_HASH name_alg = pub->publicArea.nameAlg;
+
+    return tpm2_util_calc_unique(name_alg, key, seed, unique);
 }
 
-static int load_private_RSA_from_pem(const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+static bool load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub) {
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("Could not open file \"%s\" error: %s", path, strerror(errno));
+        return false;
+    }
+
+    bool result = false;
+
+    switch (alg) {
+    case TPM2_ALG_RSA:
+        result = load_public_RSA_from_pem(f, path, pub);
+        break;
+    /* Skip AES here, as we can only load this one from a private file */
+    default:
+        /* default try TSS */
+        result = files_load_public(path, pub);
+    }
+
+    fclose(f);
+
+    return result;
+}
+
+typedef enum load_private_rc load_private_rc;
+enum load_private_rc {
+    lprc_error     = 0,      /* an error has occurred */
+    lprc_private   = 1 << 0, /* successfully loaded a private portion of object */
+    lprc_public    = 1 << 1, /* successfully loaded a public portion of object */
+};
+
+static load_private_rc load_private_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     RSA *k = NULL;
 
-    int rc = 0;
+    load_private_rc rc = lprc_error;
 
-    FILE *fk = fopen(path, "r");
-    if (!fk) {
+    k = PEM_read_RSAPrivateKey(f, NULL,
+        NULL, NULL);
+    fclose(f);
+    if (!k) {
+         ERR_print_errors_fp (stderr);
+         LOG_ERR("Reading PEM file \"%s\" failed", path);
+         return lprc_error;
+    }
+
+    bool loaded_priv = load_private_RSA_from_key(k, priv);
+    if (!loaded_priv) {
+        return lprc_error;
+    } else {
+        rc |= lprc_private;
+    }
+
+    bool loaded_pub = load_public_RSA_from_key(k, pub);
+    if (!loaded_pub) {
+        return lprc_error;
+    } else {
+        rc |= lprc_public;
+    }
+
+    return rc;
+}
+
+static load_private_rc load_private_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *pub,
+        TPM2B_SENSITIVE *priv) {
+
+    unsigned long file_size = 0;
+    bool result = files_get_file_size(f, &file_size, path);
+    if (!result) {
+        return lprc_error;
+    }
+
+    result = is_valid_aes_size(file_size);
+    if (!result) {
+        return lprc_error;
+    }
+
+    priv->sensitiveArea.sensitiveType = TPM2_ALG_SYMCIPHER;
+
+    TPM2B_SYM_KEY *s = &priv->sensitiveArea.sensitive.sym;
+    s->size = file_size;
+
+    result = files_read_bytes(f, s->buffer, s->size);
+    if (!result) {
+        return lprc_error;
+    }
+
+    /* set the seed */
+    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
+    seed->size = tpm2_alg_util_get_hash_size(pub->publicArea.nameAlg);
+
+    RAND_bytes(seed->buffer, seed->size);
+
+    result = load_public_AES_from_file(f, path, pub, priv);
+    if (!result) {
+        return lprc_error;
+    }
+
+    return lprc_private | lprc_public;
+}
+
+/**
+ * Loads a private portion of a key, and possibly the public portion, as for RSA the public data is in
+ * a private pem file.
+ *
+ * @param path
+ *  The path to load from.
+ * @param alg
+ *  algorithm type to import.
+ * @param pub
+ *  The public structure to populate. Note that nameAlg must be populated.
+ * @param priv
+ *  The sensitive structure to populate.
+ *
+ * @returns
+ *  A private object loading status
+ */
+static load_private_rc load_private(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    FILE *f = fopen(path, "r");
+    if (!f) {
         LOG_ERR("Could not open file \"%s\", error: %s",
                 path, strerror(errno));
         return 0;
     }
 
-    k = PEM_read_RSAPrivateKey(fk, NULL,
-        NULL, NULL);
-    fclose(fk);
-    if (!k) {
-         ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading PEM file \"%s\" failed", path);
-         return 0;
+    switch (alg) {
+    case TPM2_ALG_RSA:
+        return load_private_RSA_from_pem(f, path, pub, priv);
+    case TPM2_ALG_AES:
+        return load_private_AES_from_file(f, path, pub,
+                priv);
+    /* no default */
     }
 
-    bool loaded_priv = load_private_RSA_from_key(k, priv);
-    if (!loaded_priv) {
-        goto out;
-    } else {
-        rc |= 0x1;
-    }
-
-    bool loaded_pub = load_public_RSA_from_key(k, pub);
-    if (!loaded_pub) {
-        goto out;
-    } else {
-        rc |= 0x2;
-    }
-
-out:
-    RSA_free(k);
-
-    return rc;
-}
-
-/**
- * Loads a private portion of a key, and possibley the public portion, as RSA public data is in
- * a private pem file.
- *
- * @param path
- *  The path to load from.
- * @param pub
- *  The public structure to populate.
- * @param priv
- *  The sensitive structure to populate.
- *
- * @returns
- *  0 - error
- *  1 - loaded private
- *  2 - loaded public
- *  3 - loaded both
- */
-static int load_private(const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
-
-    /*
-     * load a PEM format private structure
-     */
-    if (is_path_pem(path)) {
-        /*
-         * returns the 0,1,2,3 scheme.
-         */
-        return load_private_RSA_from_pem(path, pub, priv);
-    }
+    LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,
+            tpm2_alg_util_flags_any));
 
     return 0;
 }
 
-static inline bool did_load_public(int load_count) {
-    return (load_count & 0x2);
+static inline bool did_load_public(load_private_rc load_status) {
+    return (load_status & lprc_public);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
@@ -387,7 +489,36 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (!ctx.public_key_path && !ctx.private_key_path) {
         LOG_ERR("Expected either -r or -u options");
-        return false;
+        return 1;
+    }
+
+    /*
+     * We only load a TSS format for the public portion, so if
+     * someone hands us a public file, we'll assume the TSS format when
+     * no -G is specified.
+     *
+     * If they specify a private they need to tell us the type we expect.
+     * This helps reduce auto-guess complexity, as well as future proofing
+     * us for being able to load XOR. Ie we don't want to guess XOR or HMAC
+     * in leui of AES or vice versa.
+     */
+    if (!ctx.key_type && ctx.private_key_path) {
+        LOG_ERR("Expected key type via -G option when specifying private"
+                " portion of object");
+        return 1;
+    }
+
+    TPMI_ALG_PUBLIC alg = TPM2_ALG_NULL;
+
+    if (ctx.key_type) {
+        alg = tpm2_alg_util_from_optarg(ctx.key_type,
+                        tpm2_alg_util_flags_asymmetric
+                        |tpm2_alg_util_flags_symmetric);
+        if (alg == TPM2_ALG_ERROR) {
+            LOG_ERR("Unsupported key type, got: \"%s\"",
+                    ctx.key_type);
+            return 1;
+        }
     }
 
     /*
@@ -481,10 +612,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         priv.sensitiveArea.authValue = tmp.hmac;
     }
 
-    int load_count = 0;
+    load_private_rc load_status = lprc_error;
     if (ctx.private_key_path) {
-        load_count = load_private(ctx.private_key_path, &pub, &priv);
-        if (!load_count) {
+        load_status = load_private(ctx.private_key_path, alg, &pub, &priv);
+        if (load_status == lprc_error) {
             return 1;
         }
     }
@@ -497,11 +628,12 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
      * specified, this is warning. re-init public and load the
      * specified one.
      */
-    if (!did_load_public(load_count) && !ctx.public_key_path) {
+    if (!did_load_public(load_status) && !ctx.public_key_path) {
         LOG_ERR("Only loaded a private key, expected public key in either"
                 " private PEM or -r option");
         return 1;
-    } else if(did_load_public(load_count) && ctx.public_key_path) {
+
+    } else if(did_load_public(load_status) && ctx.public_key_path) {
         LOG_WARN("Loaded a public key from the private portion"
                  " and a public portion was specified via -u. Defaulting"
                  " to specified public");
@@ -511,7 +643,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.public_key_path) {
-        result = load_public(ctx.public_key_path, &pub);
+        result = load_public(ctx.public_key_path, alg, &pub);
         if (!result) {
             return 1;
         }

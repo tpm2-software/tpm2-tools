@@ -38,6 +38,7 @@
 #include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_openssl.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -506,4 +507,28 @@ bool tpm2_util_object_save(TSS2_SYS_CONTEXT *sapi_ctx,
                 inobject.path);
     }
     return false;
+}
+
+bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,
+        TPM2B_DIGEST *seed, TPM2B_DIGEST *unique_data) {
+
+    TPM2B_MAX_BUFFER buf = { .size = key->size + seed->size };
+    if (buf.size > sizeof(buf.buffer)) {
+        LOG_ERR("Seed and key size are too big");
+        return false;
+    }
+
+    memcpy(buf.buffer, seed->buffer, seed->size);
+    memcpy(&buf.buffer[seed->size], key->buffer,
+        key->size);
+
+    digester d = tpm2_openssl_halg_to_digester(name_alg);
+    if (!d) {
+        return false;
+    }
+
+    unique_data->size = tpm2_alg_util_get_hash_size(name_alg);
+    d(buf.buffer, buf.size, unique_data->buffer);
+
+    return true;
 }

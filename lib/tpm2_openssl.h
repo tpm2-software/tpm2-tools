@@ -34,6 +34,22 @@
 #include <openssl/hmac.h>
 
 /**
+ * Function prototype for a hashing routine.
+ *
+ * This is a wrapper around OSSL SHA256|384 and etc digesters.
+ *
+ * @param d
+ *  The data to digest.
+ * @param n
+ *  The length of the data to digest.
+ * @param md
+ *  The output message digest.
+ * @return
+ * A pointer to the digest or NULL on error.
+ */
+typedef unsigned char *(*digester)(const unsigned char *d, size_t n, unsigned char *md);
+
+/**
  * Get an openssl message digest from a tpm hashing algorithm.
  * @param algorithm
  *  The tpm algorithm to get the corresponding openssl version of.
@@ -86,5 +102,16 @@ EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void);
  *  The EVP_CIPHER_CTX to free.
  */
 void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx);
+
+/**
+ * Returns a function pointer capable of performing the
+ * given digest from a TPMI_HASH_ALG.
+ *
+ * @param halg
+ *  The hashing algorithm to use.
+ * @return
+ *  NULL on failure or a valid digester on success.
+ */
+digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg);
 
 #endif /* LIB_TPM2_OPENSSL_H_ */
