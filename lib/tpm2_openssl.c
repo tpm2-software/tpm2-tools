@@ -25,13 +25,23 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************
 
-#include <tss2/tss2_sys.h>
+#include <errno.h>
+#include <string.h>
 
+#include <openssl/aes.h>
+#include <openssl/bn.h>
+#include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/hmac.h>
-#include <openssl/sha.h>
+#include <openssl/pem.h>
+#include <openssl/rand.h>
+#include <openssl/rsa.h>
 
+#include <tss2/tss2_sys.h>
+
+#include "files.h"
 #include "log.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_util.h"
 
@@ -175,3 +185,298 @@ digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
     return NULL;
 }
 
+static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
+
+    TPMT_PUBLIC *pt = &pub->publicArea;
+    pt->type = TPM2_ALG_RSA;
+
+    TPMS_RSA_PARMS *rdetail = &pub->publicArea.parameters.rsaDetail;
+    rdetail->scheme.scheme = TPM2_ALG_NULL;
+    rdetail->symmetric.algorithm = TPM2_ALG_NULL;
+
+    const BIGNUM *n; /* modulus */
+    const BIGNUM *e; /* public key exponent */
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+    n = k->n;
+    e = k->e;
+#else
+    RSA_get0_key(k, &n, &e, NULL);
+#endif
+
+    /*
+     * The size of the modulus is the key size in RSA, store this as the
+     * keyBits in the RSA details.
+     */
+    rdetail->keyBits = BN_num_bytes(n) * 8;
+    switch (rdetail->keyBits) {
+    case 1024: /* falls-through */
+    case 2048: /* falls-through */
+    case 4096: /* falls-through */
+        break;
+    default:
+        LOG_ERR("RSA key-size %u is not supported", rdetail->keyBits);
+        return false;
+    }
+
+    /* copy the modulus to the unique RSA field */
+    pt->unique.rsa.size = rdetail->keyBits/8;
+    int success = BN_bn2bin(n, pt->unique.rsa.buffer);
+    if (!success) {
+        LOG_ERR("Could not copy public modulus N");
+        return false;
+    }
+
+    /*Make sure that we can fit the exponent into a UINT32 */
+    unsigned e_size = BN_num_bytes(e);
+    if (e_size > sizeof(rdetail->exponent)) {
+        LOG_ERR("Exponent is too big. Got %d expected less than or equal to %zu",
+                e_size, sizeof(rdetail->exponent));
+        return false;
+    }
+
+    /*
+     * Copy the exponent into the field.
+     * Returns 1 on success false on error.
+     */
+    return BN_bn2bin(e, (unsigned char *)&rdetail->exponent);
+}
+
+static bool load_public_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub) {
+
+    /*
+     * Public PEM files appear in two formats:
+     * 1. PEM format, read with PEM_read_RSA_PUBKEY
+     * 2. PKCS#1 format, read with PEM_read_RSAPublicKey
+     *
+     * See:
+     *  - https://stackoverflow.com/questions/7818117/why-i-cant-read-openssl-generated-rsa-pub-key-with-pem-read-rsapublickey
+     */
+    RSA *k = PEM_read_RSA_PUBKEY(f, NULL,
+        NULL, NULL);
+    if (!k) {
+        k = PEM_read_RSAPublicKey(f, NULL, NULL, NULL);
+    }
+    fclose(f);
+    if (!k) {
+         ERR_print_errors_fp (stderr);
+         LOG_ERR("Reading public PEM file \"%s\" failed", path);
+         return false;
+    }
+
+    bool result = load_public_RSA_from_key(k, pub);
+
+    RSA_free(k);
+
+    return result;
+}
+
+static bool load_public_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    /*
+     * Get the file size and validate that it is the proper AES keysize.
+     */
+    unsigned long file_size = 0;
+    bool result = files_get_file_size(f, &file_size, path);
+    if (!result) {
+        return false;
+    }
+
+    result = tpm2_alg_util_is_aes_size_valid(file_size);
+    if (!result) {
+        return false;
+    }
+
+    pub->publicArea.type = TPM2_ALG_SYMCIPHER;
+    TPMT_SYM_DEF_OBJECT *s = &pub->publicArea.parameters.symDetail.sym;
+    s->algorithm = TPM2_ALG_AES;
+    s->keyBits.aes = file_size * 8;
+
+    /* allow any mode later on */
+    s->mode.aes = TPM2_ALG_NULL;
+
+    /*
+     * Calculate the unique field with is the
+     * is HMAC(sensitive->seedValue, sensitive->sensitive(key itself))
+     * Where:
+     *   - HMAC Key is the seed
+     *   - Hash algorithm is the name algorithm
+     */
+    TPM2B_DIGEST *unique = &pub->publicArea.unique.sym;
+    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
+    TPM2B_PRIVATE_VENDOR_SPECIFIC *key = &priv->sensitiveArea.sensitive.any;
+    TPMI_ALG_HASH name_alg = pub->publicArea.nameAlg;
+
+    return tpm2_util_calc_unique(name_alg, key, seed, unique);
+}
+
+
+static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
+
+    const BIGNUM *p; /* the private key exponent */
+
+#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+    p = k->p;
+#else
+    RSA_get0_factors(k, &p, NULL);
+#endif
+
+    TPMT_SENSITIVE *sa = &priv->sensitiveArea;
+
+    sa->sensitiveType = TPM2_ALG_RSA;
+
+    TPM2B_PRIVATE_KEY_RSA *pkr = &sa->sensitive.rsa;
+
+    unsigned priv_bytes = BN_num_bytes(p);
+    if (priv_bytes > sizeof(pkr->buffer)) {
+        LOG_ERR("Expected prime \"d\" to be less than or equal to %zu,"
+                " got: %u", sizeof(pkr->buffer), priv_bytes);
+        return false;
+    }
+
+    pkr->size = priv_bytes;
+
+    int success = BN_bn2bin(p, pkr->buffer);
+    if (!success) {
+        ERR_print_errors_fp (stderr);
+        LOG_ERR("Could not copy private exponent \"d\"");
+        return false;
+    }
+
+    return true;
+}
+
+ bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub) {
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("Could not open file \"%s\" error: %s", path, strerror(errno));
+        return false;
+    }
+
+    bool result = false;
+
+    switch (alg) {
+    case TPM2_ALG_RSA:
+        result = load_public_RSA_from_pem(f, path, pub);
+        break;
+    /* Skip AES here, as we can only load this one from a private file */
+    default:
+        /* default try TSS */
+        result = files_load_public(path, pub);
+    }
+
+    fclose(f);
+
+    return result;
+}
+
+static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    RSA *k = NULL;
+
+    tpm2_openssl_load_rc rc = lprc_error;
+
+    k = PEM_read_RSAPrivateKey(f, NULL,
+        NULL, NULL);
+    fclose(f);
+    if (!k) {
+         ERR_print_errors_fp (stderr);
+         LOG_ERR("Reading PEM file \"%s\" failed", path);
+         return lprc_error;
+    }
+
+    bool loaded_priv = load_private_RSA_from_key(k, priv);
+    if (!loaded_priv) {
+        return lprc_error;
+    } else {
+        rc |= lprc_private;
+    }
+
+    bool loaded_pub = load_public_RSA_from_key(k, pub);
+    if (!loaded_pub) {
+        return lprc_error;
+    } else {
+        rc |= lprc_public;
+    }
+
+    return rc;
+}
+
+static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *pub,
+        TPM2B_SENSITIVE *priv) {
+
+    unsigned long file_size = 0;
+    bool result = files_get_file_size(f, &file_size, path);
+    if (!result) {
+        return lprc_error;
+    }
+
+    result = tpm2_alg_util_is_aes_size_valid(file_size);
+    if (!result) {
+        return lprc_error;
+    }
+
+    priv->sensitiveArea.sensitiveType = TPM2_ALG_SYMCIPHER;
+
+    TPM2B_SYM_KEY *s = &priv->sensitiveArea.sensitive.sym;
+    s->size = file_size;
+
+    result = files_read_bytes(f, s->buffer, s->size);
+    if (!result) {
+        return lprc_error;
+    }
+
+    /* set the seed */
+    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
+    seed->size = tpm2_alg_util_get_hash_size(pub->publicArea.nameAlg);
+
+    RAND_bytes(seed->buffer, seed->size);
+
+    result = load_public_AES_from_file(f, path, pub, priv);
+    if (!result) {
+        return lprc_error;
+    }
+
+    return lprc_private | lprc_public;
+}
+
+/**
+ * Loads a private portion of a key, and possibly the public portion, as for RSA the public data is in
+ * a private pem file.
+ *
+ * @param path
+ *  The path to load from.
+ * @param alg
+ *  algorithm type to import.
+ * @param pub
+ *  The public structure to populate. Note that nameAlg must be populated.
+ * @param priv
+ *  The sensitive structure to populate.
+ *
+ * @returns
+ *  A private object loading status
+ */
+tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    FILE *f = fopen(path, "r");
+    if (!f) {
+        LOG_ERR("Could not open file \"%s\", error: %s",
+                path, strerror(errno));
+        return 0;
+    }
+
+    switch (alg) {
+    case TPM2_ALG_RSA:
+        return load_private_RSA_from_pem(f, path, pub, priv);
+    case TPM2_ALG_AES:
+        return load_private_AES_from_file(f, path, pub,
+                priv);
+    /* no default */
+    }
+
+    LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,
+            tpm2_alg_util_flags_any));
+
+    return 0;
+}

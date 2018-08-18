@@ -208,4 +208,13 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
  */
 const char *tpm2_alg_util_ecc_to_str(TPM2_ECC_CURVE curve_id);
 
+/**
+ * Determines if a size is a valid AES key size.
+ * @param size_in_bytes
+ *  The size of a potential AES key in bytes.
+ * @return
+ *  true if valid, false otherwise.
+ */
+bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes);
+
 #endif /* LIB_TPM2_ALG_UTIL_H_ */
