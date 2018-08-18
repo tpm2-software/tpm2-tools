@@ -114,4 +114,65 @@ void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx);
  */
 digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg);
 
+typedef enum tpm2_openssl_load_rc tpm2_openssl_load_rc;
+enum tpm2_openssl_load_rc {
+    lprc_error     = 0,      /* an error has occurred */
+    lprc_private   = 1 << 0, /* successfully loaded a private portion of object */
+    lprc_public    = 1 << 1, /* successfully loaded a public portion of object */
+};
+
+/**
+ * Helper routine for gathering if the loading status included a public
+ * portion of an object.
+ *
+ * @param load_status
+ *  The loading status obtained from a call to tpm2_openssl_load_private().
+ * @return
+ *  True if the load status indicates it loaded a public portion of an object,
+ *  false otherwise.
+ */
+static inline bool tpm2_openssl_did_load_public(tpm2_openssl_load_rc load_status) {
+    return (load_status & lprc_public);
+}
+
+/**
+ * Loads a private portion of a key, and possibly the public portion.
+ * For asymmetric algorithms the public data is in  private PEM file.
+ * For symmetric keys, the file type is raw. For asymmetric keys, the
+ * file type is a PEM file.
+ *
+ * This ONLY supports AES and RSA.
+ *
+ * It populates the sensitive seed with a random value for symmetric keys.
+ *
+ * @param path
+ *  The path to load from.
+ * @param alg
+ *  algorithm type to import.
+ * @param pub
+ *  The public structure to populate. Note that nameAlg must be populated.
+ * @param priv
+ *  The sensitive structure to populate.
+ *
+ * @returns
+ *  A private object loading status
+ */
+tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC alg,
+        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv);
+
+/**
+ * Loads a public portion of a key from a file. Files can be the raw key, in the case
+ * of symmetric ciphers, or a PEM file.
+ *
+ * @param path
+ *  The path to load from.
+ * @param alg
+ *  algorithm type to import.
+ * @param pub
+ *  The public structure to populate.
+ * @return
+ *  True on success, false on failure.
+ */
+bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub);
+
 #endif /* LIB_TPM2_OPENSSL_H_ */

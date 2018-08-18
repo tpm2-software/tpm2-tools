@@ -996,3 +996,18 @@ const char *tpm2_alg_util_ecc_to_str(TPM2_ECC_CURVE curve_id) {
     }
     return NULL;
 }
+
+bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes) {
+
+    switch (size_in_bytes) {
+    case 16:
+    case 24:
+    case 32:
+        return true;
+    default:
+        LOG_ERR("Invalid AES key size, got %u bytes, expected 16,24 or 32",
+                size_in_bytes);
+        return false;
+    }
+}
+

@@ -43,7 +43,6 @@
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
-#include <openssl/sha.h>
 
 #include <limits.h>
 #include <tss2/tss2_sys.h>
@@ -65,18 +64,17 @@ struct tpm_import_ctx {
     char *import_key_public_file;
     char *import_key_private_file;
     char *parent_key_public_file;
+    char *name_alg;
 
     TPMI_ALG_PUBLIC key_type;
     const char *parent_ctx_arg;
 
     UINT32 objectAttributes;
-    TPMI_ALG_HASH name_alg;
 };
 
 static tpm_import_ctx ctx = { 
     .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL,
-    .name_alg = TPM2_ALG_ERROR
 };
 
 #if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
@@ -121,7 +119,7 @@ static bool tpm2_readpublic(TSS2_SYS_CONTEXT *sapi, TPMI_DH_OBJECT handle, TPM2B
     return true;
 }
 
-static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DATA *protection_seed,
+static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
         TPM2B_PUBLIC *parent_pub,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
     bool rval = false;
@@ -325,70 +323,13 @@ static void hmac_outer_integrity(
     outer_integrity_hmac->size = size;
 }
 
-static void create_random_seed_and_sensitive_enc_key(TPM2B_DATA *protection_seed, TPM2B_DATA *enc_sensitive_key) {
-
-    protection_seed->size = tpm2_alg_util_get_hash_size(ctx.name_alg);
-    RAND_bytes(protection_seed->buffer, protection_seed->size);
+static void create_enc_key(TPM2B_DATA *enc_sensitive_key) {
 
     RAND_bytes(enc_sensitive_key->buffer, enc_sensitive_key->size);
 }
 
-typedef unsigned char *(*digester)(const unsigned char *d, size_t n, unsigned char *md);
-
-static digester halg_to_digester(TPMI_ALG_HASH halg) {
-
-    switch(halg) {
-    case TPM2_ALG_SHA1:
-        return SHA1;
-    case TPM2_ALG_SHA256:
-        return SHA256;
-    case TPM2_ALG_SHA384:
-        return SHA384;
-    case TPM2_ALG_SHA512:
-        return SHA512;
-    /* no default */
-    }
-
-    return NULL;
-}
-
-static bool calc_sensitive_unique_data(TPM2B_MAX_BUFFER *key, TPM2B_DATA *protection_seed, TPM2B_DIGEST *unique_data) {
-
-    bool result = false;
-
-    uint8_t *concatenated_seed_unique = malloc(protection_seed->size +
-                                            key->size);
-    if (!concatenated_seed_unique) {
-        LOG_ERR("oom");
-        return false;
-    } 
-
-    memcpy(concatenated_seed_unique, protection_seed->buffer,
-            protection_seed->size);
-
-    memcpy(concatenated_seed_unique + protection_seed->size, key->buffer,
-        key->size);
-
-    digester d = halg_to_digester(ctx.name_alg);
-    if (!d) {
-        goto out;
-    }
-
-    unique_data->size = tpm2_alg_util_get_hash_size(ctx.name_alg);
-    d(concatenated_seed_unique, protection_seed->size + key->size,
-        unique_data->buffer);
-
-    result = true;
-
-out:
-    free(concatenated_seed_unique);
-
-    return result;
-}
-
 static inline void  IMPORT_KEY_SYM_PUBLIC_AREA(TPM2B_PUBLIC *p) {
     p->publicArea.type = TPM2_ALG_SYMCIPHER;
-    p->publicArea.nameAlg = ctx.name_alg;
     p->publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;
     p->publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
     p->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
@@ -400,12 +341,10 @@ static inline void  IMPORT_KEY_SYM_PUBLIC_AREA(TPM2B_PUBLIC *p) {
     p->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
     p->publicArea.parameters.symDetail.sym.keyBits.sym = 128;
     p->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
-    p->publicArea.unique.sym.size = tpm2_alg_util_get_hash_size(ctx.name_alg);
 }
 
-static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_MAX_BUFFER *pubkey, TPM2B_PUBLIC *p) {
+static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_PUBLIC *p) {
     p->publicArea.type = TPM2_ALG_RSA;
-    p->publicArea.nameAlg = ctx.name_alg;
     p->publicArea.objectAttributes &= ~TPMA_OBJECT_RESTRICTED;
     p->publicArea.objectAttributes |= TPMA_OBJECT_USERWITHAUTH;
     p->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
@@ -416,13 +355,9 @@ static inline void IMPORT_KEY_RSA2K_PUBLIC_AREA(TPM2B_MAX_BUFFER *pubkey, TPM2B_
     p->publicArea.authPolicy.size = 0;
     p->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;
     p->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
-    p->publicArea.parameters.rsaDetail.keyBits = pubkey->size * 8;
-    p->publicArea.parameters.rsaDetail.exponent = 0x0;
-    p->publicArea.unique.rsa.size = pubkey->size;
 }
 
 static bool create_import_key_public_data_and_name(
-        TPM2B_MAX_BUFFER *pubkey,
         TPM2B_PUBLIC *public,
         TPM2B_NAME *pubname,
         TPM2B_DIGEST *sym) {
@@ -433,9 +368,7 @@ static bool create_import_key_public_data_and_name(
             public->publicArea.unique.sym = *sym;
             break;
         case TPM2_ALG_RSA:
-            IMPORT_KEY_RSA2K_PUBLIC_AREA(pubkey, public);
-            memcpy(public->publicArea.unique.rsa.buffer,
-                pubkey->buffer, pubkey->size);
+            IMPORT_KEY_RSA2K_PUBLIC_AREA(public);
             break;
     }
 
@@ -456,9 +389,11 @@ static bool create_import_key_public_data_and_name(
      * 3. Hash the TPMT_PUBLIC portion in marshaled data.
      */
 
+    TPMI_ALG_HASH name_alg = public->publicArea.nameAlg;
+
     // Step 1 - set beginning of name to hash alg
     size_t hash_offset = 0;
-    Tss2_MU_UINT16_Marshal(ctx.name_alg, pubname->name,
+    Tss2_MU_UINT16_Marshal(name_alg, pubname->name,
             pubname->size, &hash_offset);
 
     // Step 2 - marshal TPMTP
@@ -469,7 +404,7 @@ static bool create_import_key_public_data_and_name(
         &tpmt_marshalled_size);
 
     // Step 3 - Hash the data into name just past the alg type.
-    digester d = halg_to_digester(ctx.name_alg);
+    digester d = tpm2_openssl_halg_to_digester(name_alg);
     if (!d) {
         return false;
     }
@@ -480,38 +415,26 @@ static bool create_import_key_public_data_and_name(
 
 
     //Set the name size, UINT16 followed by HASH
-    UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
+    UINT16 hash_size = tpm2_alg_util_get_hash_size(name_alg);
     pubname->size = hash_size + 2;
 
     return true;
 }
 
-static void create_import_key_sensitive_data(TPM2B_SENSITIVE *sensitive, TPM2B_MAX_BUFFER *key,
-        TPM2B_DATA *protection_seed) {
+static void create_import_key_sensitive_data(TPMI_ALG_HASH name_alg, TPM2B_SENSITIVE *sensitive) {
 
     sensitive->sensitiveArea.authValue.size = 0;
     sensitive->sensitiveArea.seedValue.size =
-            tpm2_alg_util_get_hash_size(ctx.name_alg);
-
-    memcpy(sensitive->sensitiveArea.seedValue.buffer,
-            protection_seed->buffer, sensitive->sensitiveArea.seedValue.size);
+            tpm2_alg_util_get_hash_size(name_alg);
 
     switch (ctx.key_type) {
         case TPM2_ALG_AES:
             sensitive->sensitiveArea.sensitiveType =
                 TPM2_ALG_SYMCIPHER;
-            sensitive->sensitiveArea.sensitive.sym.size =
-                key->size;
-            memcpy(sensitive->sensitiveArea.sensitive.sym.buffer,
-                key->buffer, key->size);
             break;
         case TPM2_ALG_RSA:
             sensitive->sensitiveArea.sensitiveType =
                 TPM2_ALG_RSA;
-            sensitive->sensitiveArea.sensitive.rsa.size =
-                key->size;
-            memcpy(sensitive->sensitiveArea.sensitive.rsa.buffer,
-                key->buffer, key->size);
             break;
     }
 }
@@ -533,7 +456,7 @@ static TPM2_KEY_BITS get_pub_asym_key_bits(TPM2B_PUBLIC *public) {
 static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
         TPM2B_PUBLIC *parent_pub,
         TPM2B_NAME *pubname,
-        TPM2B_DATA *protection_seed,
+        TPM2B_DIGEST *protection_seed,
         TPM2B_MAX_BUFFER *protection_hmac_key,
         TPM2B_MAX_BUFFER *protection_enc_key) {
 
@@ -560,7 +483,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
     return true;
 }
 
-static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pubname, TPM2B_DATA *enc_sensitive_key,
+static void calculate_inner_integrity(TPMI_ALG_HASH name_alg, TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pubname, TPM2B_DATA *enc_sensitive_key,
         TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_MAX_BUFFER *encrypted_inner_integrity) {
 
@@ -587,11 +510,11 @@ static void calculate_inner_integrity(TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pu
                     + marshalled_sensitive_size_info
                     + pubname->size;
     size_t digest_size_info = 0;
-    UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
+    UINT16 hash_size = tpm2_alg_util_get_hash_size(name_alg);
     Tss2_MU_UINT16_Marshal(hash_size, marshalled_sensitive_and_name_digest,
             sizeof(uint16_t), &digest_size_info);
 
-    digester d = halg_to_digester(ctx.name_alg);
+    digester d = tpm2_openssl_halg_to_digester(name_alg);
     d(buffer_marshalled_sensitiveArea,
             marshalled_sensitive_size_info + marshalled_sensitive_size
                     + pubname->size,
@@ -699,7 +622,7 @@ static bool import_external_key_and_save_public_private_data(TSS2_SYS_CONTEXT *s
     return true;
 }
 
-static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2B_MAX_BUFFER *privkey, TPM2B_MAX_BUFFER *pubkey) {
+static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2B_SENSITIVE *privkey, TPM2B_PUBLIC *pubkey) {
 
     TPM2B_PUBLIC parent_pub = TPM2B_EMPTY_INIT;
 
@@ -714,8 +637,13 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2
         return false;
     }
 
-    if (ctx.name_alg == TPM2_ALG_ERROR) {
-        ctx.name_alg = parent_pub.publicArea.nameAlg;
+    TPMI_ALG_HASH *name_alg = &pubkey->publicArea.nameAlg;
+
+    /*
+     * If their was no name algorithm specified, use the parent.
+     */
+    if (!ctx.name_alg) {
+        *name_alg = parent_pub.publicArea.nameAlg;
     } else if (parent_pub.publicArea.parameters.rsaDetail.scheme.scheme == TPM2_ALG_NULL){
         /*
          * The TPM Requires that the name algorithm for the child be less than the name
@@ -727,54 +655,51 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2
          *   - Line: 2019
          *   - Decription: Limits the size of the hash algorithm to less then the parent's name-alg when scheme is NULL.
          */
-        UINT16 hash_size = tpm2_alg_util_get_hash_size(ctx.name_alg);
+        UINT16 hash_size = tpm2_alg_util_get_hash_size(*name_alg);
         UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_pub.publicArea.nameAlg);
         if (hash_size > parent_hash_size) {
             LOG_WARN("Hash selected is larger then parent hash size, coercing to parent hash algorithm: %s",
                     tpm2_alg_util_algtostr(parent_pub.publicArea.nameAlg, tpm2_alg_util_flags_hash));
-            ctx.name_alg = parent_pub.publicArea.nameAlg;
+            *name_alg = parent_pub.publicArea.nameAlg;
         }
     }
 
-    TPM2B_DATA protection_seed = TPM2B_EMPTY_INIT;
-
+    TPM2B_DIGEST *seed = &privkey->sensitiveArea.seedValue;
 
     TPM2B_DATA enc_sensitive_key = {
         .size = parent_pub.publicArea.parameters.rsaDetail.symmetric.keyBits.sym / 8
     };
 
-    create_random_seed_and_sensitive_enc_key(&protection_seed, &enc_sensitive_key);
+    create_enc_key(&enc_sensitive_key);
 
     TPM2B_DIGEST sym = TPM2B_EMPTY_INIT;
     if (ctx.key_type == TPM2_ALG_AES) {
-        res = calc_sensitive_unique_data(privkey, &protection_seed, &sym);
+        TPM2B_PRIVATE_VENDOR_SPECIFIC *key = &privkey->sensitiveArea.sensitive.any;
+        res = tpm2_util_calc_unique(*name_alg, key, seed, &sym);
         if (!res) {
             return false;
         }
     }
 
-    TPM2B_PRIVATE private = TPM2B_EMPTY_INIT;
-    TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_NAME pubname = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-    res = create_import_key_public_data_and_name(pubkey, &public, &pubname, &sym);
+    res = create_import_key_public_data_and_name(pubkey, &pubname, &sym);
     if (!res) {
         return false;
     }
 
-    TPM2B_SENSITIVE sensitive = TPM2B_EMPTY_INIT;
-    create_import_key_sensitive_data(&sensitive, privkey, &protection_seed);
+    create_import_key_sensitive_data(*name_alg, privkey);
 
     TPM2B_MAX_BUFFER hmac_key;
     TPM2B_MAX_BUFFER enc_key;
     calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
             &parent_pub,
             &pubname,
-            &protection_seed,
+            seed,
             &hmac_key,
             &enc_key);
 
     TPM2B_MAX_BUFFER encrypted_inner_integrity = TPM2B_EMPTY_INIT;
-    calculate_inner_integrity(&sensitive, &pubname, &enc_sensitive_key,
+    calculate_inner_integrity(*name_alg, privkey, &pubname, &enc_sensitive_key,
             &parent_pub.publicArea.parameters.rsaDetail.symmetric,
             &encrypted_inner_integrity);
 
@@ -790,13 +715,13 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2
             &parent_pub.publicArea.parameters.rsaDetail.symmetric,
             &outer_hmac);
 
-
+    TPM2B_PRIVATE private = TPM2B_EMPTY_INIT;
     create_import_key_private_data(&private,
             parent_pub.publicArea.nameAlg,
             &encrypted_duplicate_sensitive, &outer_hmac);
 
     TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
-    res = encrypt_seed_with_tpm2_rsa_public_key(&protection_seed,
+    res = encrypt_seed_with_tpm2_rsa_public_key(seed,
             &parent_pub,
             &encrypted_seed);
     if (!res) {
@@ -810,7 +735,7 @@ static bool key_import(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE phandle, TPM2
             sapi_context,
             phandle,
             &encrypted_seed, &enc_sensitive_key,
-            &private, &public,
+            &private, pubkey,
             sym_alg);
 }
 
@@ -848,11 +773,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'g':
-        ctx.name_alg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
-        if (ctx.name_alg == TPM2_ALG_ERROR) {
-            LOG_ERR("Invalid name hashing algorithm, got\"%s\"", value);
-            return false;
-        }
+        ctx.name_alg = value;
         break;
     default:
         LOG_ERR("Invalid option");
@@ -879,108 +800,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
                              NULL, 0);
 
     return *opts != NULL;
-}
-
-static bool load_rsa_key(const char *private_path,
-        TPM2B_MAX_BUFFER *priv, TPM2B_MAX_BUFFER *pub) {
-
-    bool res = false;
-    RSA *k = NULL;
-    const BIGNUM *p, *n;
-
-    FILE *fk = fopen(private_path, "r");
-    if (!fk) {
-        LOG_ERR("Could not open file \"%s\", error: %s",
-                private_path, strerror(errno));
-        return false;
-    }
-
-    k = PEM_read_RSAPrivateKey(fk, NULL,
-        NULL, NULL);
-    fclose(fk);
-    if (!k) {
-         ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading PEM file \"%s\" failed", private_path);
-         return false;
-    }
-
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
-    p = k->p;
-    n = k->n;
-#else
-    RSA_get0_factors(k, &p, NULL);
-    RSA_get0_key(k, &n, NULL, NULL);
-#endif
-
-    unsigned priv_bytes = BN_num_bytes(p);
-    if (priv_bytes > sizeof(priv->buffer)) {
-        LOG_ERR("Expected prime \"p\" to be less than or equal to %zu,"
-                " got: %u", sizeof(priv->buffer), priv_bytes);
-        goto out;
-    }
-
-    priv->size = priv_bytes;
-
-    int success = BN_bn2bin(p, priv->buffer);
-    if (!success) {
-        ERR_print_errors_fp (stderr);
-        LOG_ERR("Could not convert prime \"p\"");
-        goto out;
-    }
-
-    unsigned pub_bytes = BN_num_bytes(n);
-    if (pub_bytes > sizeof(pub->buffer)) {
-        LOG_ERR("Expected modulus \"n\" to be less than or equal to %zu,"
-                " got: %u", sizeof(pub->buffer), pub_bytes);
-        goto out;
-    }
-
-    pub->size = pub_bytes;
-
-    success = BN_bn2bin(n, pub->buffer);
-    if (!success) {
-        ERR_print_errors_fp (stderr);
-        LOG_ERR("Could not convert modulus \"n\"");
-        goto out;
-    }
-
-    res = true;
-
-out:
-    RSA_free(k);
-
-    return res;
-}
-
-static bool load_key(
-        TPMI_ALG_PUBLIC key_type,
-        const char *private_path,
-        TPM2B_MAX_BUFFER *private, TPM2B_MAX_BUFFER *public) {
-
-    switch(key_type) {
-        case TPM2_ALG_AES:
-            /* falls through */
-        case TPM2_ALG_RSA:
-            break;
-        default:
-            LOG_ERR("Invalid/ unsupported key algorithm for import, got\"0x%x\"",
-                key_type);
-            return false;
-    }
-
-    if (ctx.key_type == TPM2_ALG_RSA) {
-        return load_rsa_key(private_path, private, public);
-    }
-
-    private->size = sizeof(private->buffer);
-    bool res = files_load_bytes_from_path(private_path,
-        private->buffer, &private->size);
-    if (!res) {
-        LOG_ERR("Input key file load failed");
-        return false;
-    }
-
-    return true;
 }
 
 /**
@@ -1043,10 +862,33 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    TPM2B_MAX_BUFFER private = TPM2B_EMPTY_INIT;
-    TPM2B_MAX_BUFFER public = TPM2B_EMPTY_INIT;;
-    result = load_key(ctx.key_type, ctx.input_key_file, &private, &public);
-    if (!result) {
+    rc = 1;
+
+    TPM2B_SENSITIVE private = TPM2B_EMPTY_INIT;
+    TPM2B_PUBLIC public = {
+        .size = 0,
+        .publicArea = {
+            .nameAlg = TPM2_ALG_SHA256
+        },
+    };
+
+    if (ctx.name_alg) {
+        TPMI_ALG_HASH alg = tpm2_alg_util_from_optarg(ctx.name_alg,
+                tpm2_alg_util_flags_hash);
+        if (alg == TPM2_ALG_ERROR) {
+            LOG_ERR("Invalid name hashing algorithm, got\"%s\"", ctx.name_alg);
+            return false;
+        }
+        public.publicArea.nameAlg = alg;
+    }
+
+    tpm2_openssl_load_rc status = tpm2_openssl_load_private(ctx.input_key_file, ctx.key_type, &public, &private);
+    if (status == lprc_error) {
+        goto out;
+    }
+
+    if (!tpm2_openssl_did_load_public(status)) {
+        LOG_ERR("Did not find public key information in file: \"%s\"", ctx.input_key_file);
         goto out;
     }
 
