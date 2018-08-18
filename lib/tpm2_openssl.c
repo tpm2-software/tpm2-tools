@@ -29,6 +29,7 @@
 
 #include <openssl/err.h>
 #include <openssl/hmac.h>
+#include <openssl/sha.h>
 
 #include "log.h"
 #include "tpm2_openssl.h"
@@ -156,3 +157,21 @@ void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx) {
     EVP_CIPHER_CTX_free(ctx);
 #endif
 }
+
+digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
+
+    switch(halg) {
+    case TPM2_ALG_SHA1:
+        return SHA1;
+    case TPM2_ALG_SHA256:
+        return SHA256;
+    case TPM2_ALG_SHA384:
+        return SHA384;
+    case TPM2_ALG_SHA512:
+        return SHA512;
+    /* no default */
+    }
+
+    return NULL;
+}
+

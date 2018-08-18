@@ -338,4 +338,23 @@ bool tpm2_util_object_load(TSS2_SYS_CONTEXT *sapi_ctx,
 bool tpm2_util_object_save(TSS2_SYS_CONTEXT *sapi_ctx,
         tpm2_loaded_object inobject);
 
+/**
+ * Calculates the unique public field. The unique public field is the digest, based on name algorithm
+ * of the key + protection seed (concatenated).
+ *
+ * @param namealg
+ *  The name algorithm of the object, from the public portion.
+ * @param key
+ *  The key bytes themselves. It seems odd that the type is TPM2B_PRIVATE_VENDOR_SPECIFIC
+ *  but this for access to the ANY field.
+ * @param seed
+ *  The seed, from the sensitive portion.
+ * @param unique
+ *  The result, a generated unique value for the public portion.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,
+        TPM2B_DIGEST *seed, TPM2B_DIGEST *unique);
+
 #endif /* STRING_BYTES_H */
