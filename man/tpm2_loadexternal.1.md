@@ -36,12 +36,15 @@ scalar.
     The algorithm used by the key to be imported. Supports:
     * aes - AES 128,192 or 256 key.
     * rsa - RSA 1024 or 2048 key.
+    * ecc - ECC NIST P192, P224, P256, P384 or P521 public and private key.
 
   * **-u**, **--pubfile**=_PUBLIC\_FILE_:
     The public portion of the object, this can be one of the following file formats:
       * TSS - The TSS/TPm format. For example from option `-u` of command `tpm2_create`.
       * RSA - OSSL PEM formats. For example `public.pem` from the command
         `openssl rsa -in private.pem -out public.pem -pubout`
+      * ECC - OSSL PEM formats. For example `public.pem` from the command
+        `openssl ec -in private.ecc.pem -out public.ecc.pem -pubout`
 
   * **-r**, **--privfile**=_PRIVATE\_FILE_:
     The sensitive portion of the object, optional. If one wishes to use the private portion

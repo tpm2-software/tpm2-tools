@@ -51,7 +51,8 @@ cleanup() {
   rm -f $file_primary_key_ctx $file_loadexternal_key_pub $file_loadexternal_key_priv \
          $file_loadexternal_key_name $file_loadexternal_key_ctx \
          $file_loadexternal_output private.pem public.pem plain.txt \
-         plain.rsa.dec key.ctx
+         plain.rsa.dec key.ctx public.ecc.pem private.ecc.pem \
+         data.in.digest data.out.signed ticket.out
 
   ina "$@" "keep_handle"
   if [ $? -ne 0 ]; then
@@ -128,6 +129,45 @@ run_aes_test() {
     diff plain.txt plain.dec.ssl
 }
 
+run_ecc_test() {
+	#
+	# Test loading an OSSL PEM format ECC key, and verifying a signature external
+	# to the TPM
+	#
+
+	#
+	# Generate a NIST P256 Private and Public ECC pem file
+	#
+	openssl ecparam -name $1 -genkey -noout -out private.ecc.pem
+	openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
+
+	# Generate a hash to sign
+	echo "data to sign" > data.in.raw
+	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+
+	# Load the private key for signing
+    tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
+
+	# Sign in the TPM and verify with OSSL
+	#
+	# XXX
+	# Verify fails..
+	# 139777493120664:error:0D0680A8:asn1 encoding routines:ASN1_CHECK_TLEN:wrong tag:tasn_dec.c:1217:
+    #139777493120664:error:0D07803A:asn1 encoding routines:ASN1_ITEM_EX_D2I:nested asn1 error:tasn_dec.c:386:Type=ECDSA_SIG
+    #
+	tpm2_sign -Q -c key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
+	# openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+
+	# Sign with openssl and verify with TPM
+	#
+	# Verify in the TPM fails:
+	# ERROR: Unsupported signature input format.
+    # ERROR: Tss2_Sys_VerifySignature(0x1D5) - tpm:parameter(1):structure is the wrong size
+    # ERROR: Verify signature failed!
+	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
+	# tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f plain -s data.out.signed -t ticket.out
+}
+
 run_tss_test
 
 run_rsa_test 1024
@@ -135,5 +175,7 @@ run_rsa_test 2048
 
 run_aes_test 128
 run_aes_test 256
+
+run_ecc_test prime256v1
 
 exit 0

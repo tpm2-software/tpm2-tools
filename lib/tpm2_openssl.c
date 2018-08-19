@@ -33,6 +33,7 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 #include <openssl/hmac.h>
+#include <openssl/obj_mac.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
@@ -271,6 +272,155 @@ static bool load_public_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pu
     return result;
 }
 
+/**
+ * Maps an OSSL nid as defined obj_mac.h to a TPM2 ECC curve id.
+ * @param nid
+ *  The nid to map.
+ * @return
+ *  A valid TPM2_ECC_* or TPM2_ALG_ERROR on error.
+ */
+static TPMI_ECC_CURVE ossl_nid_to_curve(int nid) {
+
+    switch(nid) {
+    /*
+    * NIST CURVES
+    */
+    case NID_X9_62_prime192v1:
+        return TPM2_ECC_NIST_P192;
+    case NID_secp224r1:
+        return TPM2_ECC_NIST_P224;
+    case NID_X9_62_prime256v1:
+        return TPM2_ECC_NIST_P256;
+    case NID_secp384r1:
+        return TPM2_ECC_NIST_P384;
+    case NID_secp521r1:
+        return TPM2_ECC_NIST_P521;
+     /*
+      * XXX
+      * See if it's possible to support the other curves, I didn't see the
+      * mapping in OSSL:
+      *  - TPM2_ECC_BN_P256
+      *  - TPM2_ECC_BN_P638
+      *  - TPM2_ECC_SM2_P256
+      */
+    /* no default */
+    }
+
+    LOG_ERR("Cannot map nid \"%d\" to TPM ECC curve", nid);
+    return TPM2_ALG_ERROR;
+}
+
+static bool load_public_ECC_from_key(EC_KEY *k, TPM2B_PUBLIC *pub) {
+
+    bool result = false;
+
+    BIGNUM *y = BN_new();
+    BIGNUM *x = BN_new();
+    if (!x || !y) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    /*
+     * Set the algorithm type
+     */
+    pub->publicArea.type = TPM2_ALG_ECC;
+
+    /*
+     * Get the curve type
+     */
+    const EC_GROUP *group = EC_KEY_get0_group(k);
+    int nid = EC_GROUP_get_curve_name(group);
+
+    TPMS_ECC_PARMS *pp = &pub->publicArea.parameters.eccDetail;
+    TPM2_ECC_CURVE curve_id = ossl_nid_to_curve(nid); // Not sure what lines up with NIST 256...
+    if (curve_id == TPM2_ALG_ERROR) {
+        goto out;
+    }
+
+    pp->curveID = curve_id;
+
+    /*
+     * Set the unique data to the public key.
+     */
+    const EC_POINT *point = EC_KEY_get0_public_key(k);
+
+    int ret = EC_POINT_get_affine_coordinates_GFp(group, point, x, y, NULL);
+    if (!ret) {
+        LOG_ERR("Could not get X and Y affine coordinates");
+        goto out;
+    }
+
+    /*
+     * Copy the X and Y coordinate data into the ECC unique field,
+     * ensuring that it fits along the way.
+     */
+    TPM2B_ECC_PARAMETER *X = &pub->publicArea.unique.ecc.x;
+    TPM2B_ECC_PARAMETER *Y = &pub->publicArea.unique.ecc.y;
+
+    unsigned x_size = BN_num_bytes(x);
+    if (x_size > sizeof(X->buffer)) {
+        LOG_ERR("X coordinate is too big. Got %u expected less than or equal to %zu",
+                x_size, sizeof(X->buffer));
+        goto out;
+    }
+
+    unsigned y_size = BN_num_bytes(y);
+    if (y_size > sizeof(Y->buffer)) {
+        LOG_ERR("X coordinate is too big. Got %u expected less than or equal to %zu",
+                y_size, sizeof(Y->buffer));
+        goto out;
+    }
+
+    X->size = BN_bn2bin(x, X->buffer);
+    if (X->size != x_size) {
+        LOG_ERR("Error converting X point BN to binary");
+        goto out;
+    }
+
+    Y->size = BN_bn2bin(y, Y->buffer);
+    if (Y->size != y_size) {
+        LOG_ERR("Error converting Y point BN to binary");
+        goto out;
+    }
+
+    /*
+     * no kdf - not sure what this should be
+     */
+    pp->kdf.scheme = TPM2_ALG_NULL;
+    pp->scheme.scheme = TPM2_ALG_NULL;
+    pp->symmetric.algorithm = TPM2_ALG_NULL;
+
+    result = true;
+
+out:
+    if (x) {
+        BN_free(x);
+    }
+    if (y) {
+        BN_free(y);
+    }
+
+    return result;
+}
+
+static bool load_public_ECC_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub) {
+
+    EC_KEY *k = PEM_read_EC_PUBKEY(f, NULL,
+        NULL, NULL);
+    if (!k) {
+         ERR_print_errors_fp (stderr);
+         LOG_ERR("Reading PEM file \"%s\" failed", path);
+         return false;
+    }
+
+    bool result = load_public_ECC_from_key(k, pub);
+
+    EC_KEY_free(k);
+
+    return result;
+}
+
 static bool load_public_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     /*
@@ -346,7 +496,7 @@ static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
     return true;
 }
 
- bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub) {
+bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub) {
 
     FILE *f = fopen(path, "rb");
     if (!f) {
@@ -360,6 +510,9 @@ static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
     case TPM2_ALG_RSA:
         result = load_public_RSA_from_pem(f, path, pub);
         break;
+    case TPM2_ALG_ECC:
+        result = load_public_ECC_from_pem(f, path, pub);
+        break;
     /* Skip AES here, as we can only load this one from a private file */
     default:
         /* default try TSS */
@@ -369,6 +522,67 @@ static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
     fclose(f);
 
     return result;
+}
+
+ static bool load_private_ECC_from_key(EC_KEY *k, TPM2B_SENSITIVE *priv) {
+
+     /*
+      * private data
+      */
+     priv->sensitiveArea.sensitiveType = TPM2_ALG_ECC;
+
+     TPM2B_ECC_PARAMETER *p = &priv->sensitiveArea.sensitive.ecc;
+
+     const BIGNUM *b = EC_KEY_get0_private_key(k);
+
+     unsigned priv_bytes = BN_num_bytes(b);
+     if (priv_bytes > sizeof(p->buffer)) {
+         LOG_ERR("Expected ECC private portion to be less than or equal to %zu,"
+                 " got: %u", sizeof(p->buffer), priv_bytes);
+         return false;
+     }
+
+     p->size = priv_bytes;
+     int success = BN_bn2bin(b, p->buffer);
+     if (!success) {
+         return false;
+     }
+
+     return true;
+}
+
+static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+
+    tpm2_openssl_load_rc rc = lprc_error;
+
+    EC_KEY *k = PEM_read_ECPrivateKey(f, NULL,
+        NULL, NULL);
+    fclose(f);
+    if (!k) {
+         ERR_print_errors_fp (stderr);
+         LOG_ERR("Reading PEM file \"%s\" failed", path);
+         return lprc_error;
+    }
+
+    bool result = load_private_ECC_from_key(k, priv);
+    if (!result) {
+        rc = lprc_error;
+        goto out;
+    }
+
+    rc |= lprc_private;
+
+    result = load_public_ECC_from_key(k, pub);
+    if (!result) {
+        rc = lprc_error;
+        goto out;
+    }
+
+    rc |= lprc_public;
+
+out:
+    EC_KEY_free(k);
+    return rc;
 }
 
 static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
@@ -472,6 +686,8 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC
     case TPM2_ALG_AES:
         return load_private_AES_from_file(f, path, pub,
                 priv);
+    case TPM2_ALG_ECC:
+        return load_private_ECC_from_pem(f, path, pub, priv);
     /* no default */
     }
 
