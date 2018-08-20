@@ -194,7 +194,6 @@ tools_tpm2_sign_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_unseal_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_dictionarylockout_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_createpolicy_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_pcrextend_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_pcrevent_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_import_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_flushcontext_CFLAGS = $(AM_CFLAGS) -DSAPI
