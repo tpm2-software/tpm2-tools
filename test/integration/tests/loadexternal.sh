@@ -159,13 +159,8 @@ run_ecc_test() {
 	# openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
 	# Sign with openssl and verify with TPM
-	#
-	# Verify in the TPM fails:
-	# ERROR: Unsupported signature input format.
-    # ERROR: Tss2_Sys_VerifySignature(0x1D5) - tpm:parameter(1):structure is the wrong size
-    # ERROR: Verify signature failed!
 	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-	# tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f plain -s data.out.signed -t ticket.out
+	tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
 }
 
 run_tss_test
