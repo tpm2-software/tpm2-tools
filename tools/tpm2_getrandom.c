@@ -35,7 +35,7 @@
 #include <string.h>
 
 #include <limits.h>
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_options.h"
 #include "log.h"
@@ -52,11 +52,11 @@ struct tpm_random_ctx {
 
 static tpm_random_ctx ctx;
 
-static bool get_random_and_save(ESYS_CONTEXT *context) {
+static bool get_random_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *random_bytes;
 
-    TSS2_RC rval = Esys_GetRandom(context,
+    TSS2_RC rval = Esys_GetRandom(ectx,
                                   ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                                   ctx.num_of_bytes, &random_bytes);
     if (rval != TPM2_RC_SUCCESS) {
@@ -125,9 +125,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return get_random_and_save(sapi_context) != true;
+    return get_random_and_save(ectx) != true;
 }
