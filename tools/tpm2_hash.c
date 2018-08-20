@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
