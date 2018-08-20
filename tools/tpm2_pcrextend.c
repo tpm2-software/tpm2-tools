@@ -31,7 +31,7 @@
 
 #include <stdlib.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
 #include "tpm2_alg_util.h"
@@ -47,28 +47,27 @@ struct tpm_pcr_extend_ctx {
 
 static tpm_pcr_extend_ctx ctx;
 
-static bool pcr_extend_one(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_DH_PCR pcr_index, TPML_DIGEST_VALUES *digests) {
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, {{ .sessionHandle=TPM2_RS_PW }}};
+static bool pcr_extend_one(ESYS_CONTEXT *ectx,
+        TPMI_DH_PCR pcr_index, TPML_DIGEST_VALUES *digests) {;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Extend(sapi_context, pcr_index, &sessions_data,
-            digests, &sessions_data_out));
+    TSS2_RC rval = Esys_PCR_Extend(ectx, pcr_index,
+                            ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
+                            digests);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Could not extend pcr index: 0x%X", pcr_index);
-        LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
+        LOG_PERR(Esys_PCR_Extend, rval);
         return false;
     }
 
     return true;
 }
 
-static bool pcr_extend(TSS2_SYS_CONTEXT *sapi_context) {
+static bool pcr_extend(ESYS_CONTEXT *ectx) {
 
     size_t i;
     for (i = 0; i < ctx.digest_spec_len; i++) {
         tpm2_pcr_digest_spec *dspec = &ctx.digest_spec[i];
-        bool result = pcr_extend_one(sapi_context, dspec->pcr_index,
+        bool result = pcr_extend_one(ectx, dspec->pcr_index,
                 &dspec->digests);
         if (!result) {
             return false;
@@ -105,11 +104,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return pcr_extend(sapi_context) != true;
+    return pcr_extend(ectx) != true;
 }
 
 void tpm2_tool_onexit(void) {
