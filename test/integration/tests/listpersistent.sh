@@ -94,9 +94,6 @@ fi
 # Test filtering by key algorithm
 for alg in "${keys[@]}"
 do
-    tpm2_listpersistent -G "$alg"
-    echo "Bill"
-    echo "tpm2_listpersistent -G \"$alg\" | grep -q \"$alg\""
     tpm2_listpersistent -G "$alg" | grep -q "$alg"
 done
 
