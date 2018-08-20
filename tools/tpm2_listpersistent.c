@@ -36,13 +36,14 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_capability.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -94,21 +95,25 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-static int read_public(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_DH_OBJECT objectHandle, TPM2B_PUBLIC *outPublic) {
+static int read_public(ESYS_CONTEXT *ectx,
+        TPM2_HANDLE objectHandle, TPM2B_PUBLIC **outPublic) {
 
-    UINT32 rval;
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TSS2_RC rval;
+    ESYS_TR objHandle = ESYS_TR_NONE;
 
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-    TPM2B_NAME qualifiedName = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    rval = TSS2_RETRY_EXP(
-               Tss2_Sys_ReadPublic(sapi_context, objectHandle, NULL, outPublic,
-                       &name, &qualifiedName, &sessionsDataOut)
-           );
+    rval = Esys_TR_FromTPMPublic(ectx, objectHandle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &objHandle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_ReadPublic, rval);
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return -1;
+    }
+
+    rval = Esys_ReadPublic(ectx, objHandle,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        outPublic, NULL, NULL);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_ReadPublic, rval);
         return -1;
     }
 
@@ -128,48 +133,52 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    TPMI_YES_NO moreData;
-    TPMS_CAPABILITY_DATA capabilityData;
-    UINT32 rval;
-
-    UINT32 property = tpm2_util_endian_swap_32(TPM2_HT_PERSISTENT);
-    rval = TSS2_RETRY_EXP(
-                Tss2_Sys_GetCapability(sapi_context, NULL, TPM2_CAP_HANDLES,
-                        property, TPM2_PT_TPM2_HR_PERSISTENT, &moreData,
-                        &capabilityData, NULL));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_GetCapability, rval);
-        return 1;
+    TPMS_CAPABILITY_DATA *capabilityData = NULL;
+    int rc = 0;
+    bool ret = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
+                                TPM2_PERSISTENT_FIRST, TPM2_MAX_CAP_HANDLES,
+                                &capabilityData);
+    if (!ret) {
+        LOG_ERR("Failed to read TPM capabilities.");
+        rc = 1;
+        goto out;
     }
 
     UINT32 i;
-    for (i = 0; i < capabilityData.data.handles.count; i++) {
-        TPM2B_PUBLIC outPublic = TPM2B_EMPTY_INIT;
-        TPM2_HANDLE objectHandle = capabilityData.data.handles.handle[i];
-        if (read_public(sapi_context, objectHandle, &outPublic)) {
-            return 2;
+    for (i = 0; i < capabilityData->data.handles.count; i++) {
+        TPM2B_PUBLIC *outPublic = NULL;
+        TPM2_HANDLE objectHandle = capabilityData->data.handles.handle[i];
+        if (read_public(ectx, objectHandle, &outPublic)) {
+            free(outPublic);
+            rc = 2;
+            goto out;
         }
 
-        TPMI_ALG_KEYEDHASH_SCHEME kh_scheme = outPublic.publicArea.parameters.keyedHashDetail.scheme.scheme;
-        TPMI_ALG_KEYEDHASH_SCHEME sym_scheme = outPublic.publicArea.parameters.symDetail.sym.algorithm;
-        TPMI_ALG_PUBLIC type = outPublic.publicArea.type;
-        TPMI_ALG_HASH nameAlg = outPublic.publicArea.nameAlg;
+        TPMI_ALG_KEYEDHASH_SCHEME kh_scheme = outPublic->publicArea.parameters.keyedHashDetail.scheme.scheme;
+        TPMI_ALG_KEYEDHASH_SCHEME sym_scheme = outPublic->publicArea.parameters.symDetail.sym.algorithm;
+        TPMI_ALG_PUBLIC type = outPublic->publicArea.type;
+        TPMI_ALG_HASH nameAlg = outPublic->publicArea.nameAlg;
         if ((ctx.type != TPM2_ALG_NULL && ctx.type != type)
                 || (ctx.nameAlg != TPM2_ALG_NULL && ctx.nameAlg != nameAlg)
                 || (ctx.type == TPM2_ALG_KEYEDHASH && kh_scheme != ctx.scheme)
                 || (ctx.type == TPM2_ALG_SYMCIPHER && sym_scheme != ctx.scheme)) {
             /* Skip, filter me out */
-            continue;
+            goto cont;
         }
 
         tpm2_tool_output("- handle: 0x%x\n", objectHandle);
-        tpm2_util_public_to_yaml(&outPublic, "  ");
+        tpm2_util_public_to_yaml(outPublic, "  ");
         tpm2_tool_output("\n");
+    cont:
+        free(outPublic);
     }
 
-    return 0;
+out:
+    free(capabilityData);
+
+    return rc;
 }
