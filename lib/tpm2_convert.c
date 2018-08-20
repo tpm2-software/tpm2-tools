@@ -33,6 +33,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include <openssl/asn1.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bn.h>
@@ -216,6 +217,64 @@ bool tpm2_convert_sig(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, co
     }
 }
 
+/**
+ * Parses the ASN1 format for an ECDSA Signature
+ *
+ * The ASN1 format for ECDSA signature is: https://www.ietf.org/rfc/rfc5480.txt
+ *   ECDSA-Sig-Value ::= SEQUENCE { r INTEGER, s INTEGER }
+ *
+ * @param path
+ * @param ecdsa
+ * @return
+ */
+static bool pop_ecdsa(const char *path, TPMS_SIGNATURE_ECDSA *ecdsa) {
+
+    TPM2B_MAX_BUFFER buf = { .size = sizeof(buf.buffer) };
+
+    bool res = files_load_bytes_from_path(path,
+            buf.buffer,
+            &buf.size);
+    if (!res) {
+        return res;
+    }
+
+    int tag;
+    int class;
+    long len;
+    const unsigned char *p = buf.buffer;
+
+    int j = ASN1_get_object(&p, &len, &tag, &class, buf.size);
+    if (!(j & V_ASN1_CONSTRUCTED)) {
+        LOG_ERR("Expected ECDSA signature to start as ASN1 Constructed object");
+        return false;
+    }
+
+    if (tag != V_ASN1_SEQUENCE) {
+        LOG_ERR("Expected ECDSA signature to be an ASN1 sequence");
+        return false;
+    }
+
+    /*
+     * Get R
+     */
+    TPM2B_ECC_PARAMETER *R = &ecdsa->signatureR;
+    ASN1_INTEGER *r = d2i_ASN1_INTEGER(NULL, &p, len);
+    memcpy(R->buffer, r->data, r->length);
+    R->size = r->length;
+    ASN1_INTEGER_free(r);
+
+    /*
+     * Get S
+     */
+    TPM2B_ECC_PARAMETER *S = &ecdsa->signatureS;
+    ASN1_INTEGER *s = d2i_ASN1_INTEGER(NULL, &p, len);
+    memcpy(S->buffer, s->data, s->length);
+    S->size = s->length;
+    ASN1_INTEGER_free(s);
+
+    return true;
+}
+
 static bool sig_load(const char *path, TPMI_ALG_SIG_SCHEME sig_alg,
         TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature) {
 
@@ -229,6 +288,9 @@ static bool sig_load(const char *path, TPMI_ALG_SIG_SCHEME sig_alg,
                     signature->signature.rsassa.sig.buffer,
                     &signature->signature.rsassa.sig.size);
             return res;
+        case TPM2_ALG_ECDSA:
+            signature->signature.ecdsa.hash = halg;
+            return pop_ecdsa(path, &signature->signature.ecdsa);
         default:
             LOG_ERR("Unsupported signature input format.");
             return false;
