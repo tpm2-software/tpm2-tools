@@ -113,7 +113,7 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return tpm2_convert_sig(&signature, ctx.sig_format, ctx.outFilePath);
+    return tpm2_convert_sig_save(&signature, ctx.sig_format, ctx.outFilePath);
 }
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {

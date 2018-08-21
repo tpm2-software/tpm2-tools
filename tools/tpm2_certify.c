@@ -177,7 +177,7 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    return tpm2_convert_sig(&signature, ctx.sig_fmt, ctx.file_path.sig);
+    return tpm2_convert_sig_save(&signature, ctx.sig_fmt, ctx.file_path.sig);
 }
 
 static bool on_option(char key, char *value) {

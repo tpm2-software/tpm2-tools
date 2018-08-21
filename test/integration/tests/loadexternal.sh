@@ -149,14 +149,8 @@ run_ecc_test() {
     tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
 
 	# Sign in the TPM and verify with OSSL
-	#
-	# XXX
-	# Verify fails..
-	# 139777493120664:error:0D0680A8:asn1 encoding routines:ASN1_CHECK_TLEN:wrong tag:tasn_dec.c:1217:
-    #139777493120664:error:0D07803A:asn1 encoding routines:ASN1_ITEM_EX_D2I:nested asn1 error:tasn_dec.c:386:Type=ECDSA_SIG
-    #
 	tpm2_sign -Q -c key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
-	# openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+	openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
 	# Sign with openssl and verify with TPM
 	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw

@@ -82,7 +82,7 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
 
     bool res = true;
     if (ctx.signature_path) {
-        res &= tpm2_convert_sig(signature, ctx.sig_format, ctx.signature_path);
+        res &= tpm2_convert_sig_save(signature, ctx.sig_format, ctx.signature_path);
     }
 
     if (ctx.message_path) {
@@ -126,7 +126,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
     tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature.sigAlg, tpm2_alg_util_flags_sig));
 
     UINT16 size;
-    BYTE *sig = tpm2_extract_plain_signature(&size, &signature);
+    BYTE *sig = tpm2_convert_sig(&size, &signature);
     tpm2_tool_output("  sig: ");
     tpm2_util_hexdump(sig, size);
     tpm2_tool_output("\n");
