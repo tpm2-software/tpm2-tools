@@ -57,7 +57,7 @@ data and validation shall indicate that hashed data did not start with
 
     The ticket file, containing the validation structure, optional.
 
-  * **-s**, **--sig**=_TICKET\_FILE_:
+  * **-s**, **--sig**=_SIGNATURE\_FILE_:
 
     The signature file, records the signature structure.
 
@@ -81,10 +81,32 @@ data and validation shall indicate that hashed data did not start with
 
 # EXAMPLES
 
-
+Sign and verify with the TPM using the *endorsement* hierarchy
 ```
-tpm2_sign -c 0x81010001 -p abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
-tpm2_sign -c key.context -p abc123 -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_createprimary -a e -o primary.ctx
+tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
+tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -o rsa.ctx
+
+echo "my message > message.dat
+tpm2_sign -c rsa.ctx -G sha256 -m message.dat -s sig.rssa
+tpm2_verifysignature -c rsa.ctx -G sha256 -m message.dat -s sig.rssa
+```
+
+Sign with the TPM and verify with OSSL
+```
+openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
+openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
+
+# Generate a hash to sign
+echo "data to sign" > data.in.raw
+sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+
+# Load the private key for signing
+tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
+
+# Sign in the TPM and verify with OSSL
+tpm2_sign -Q -c key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
+openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 ```
 
 # RETURNS
