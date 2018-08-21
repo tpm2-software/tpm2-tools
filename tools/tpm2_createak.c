@@ -412,7 +412,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
         }
         LOG_INFO("Flush transient AK succ.");
     } else if (ctx.ak.out.ctx_file) {
-        bool result = files_save_tpm_context_to_path(sapi_context,
+        bool result = files_save_tpm_context_to_path_sapi(sapi_context,
                 loaded_sha1_key_handle, ctx.ak.out.ctx_file);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");

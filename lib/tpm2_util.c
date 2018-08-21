@@ -473,8 +473,8 @@ bool tpm2_util_object_load(TSS2_SYS_CONTEXT *sapi_ctx,
         return false;
     }
 
-    bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
     bool result;
+    bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
 
     if (starts_with_file) {
         outobject->path = objectstr += FILE_PREFIX_LEN;
@@ -489,7 +489,7 @@ bool tpm2_util_object_load(TSS2_SYS_CONTEXT *sapi_ctx,
         outobject->path = objectstr;
     }
 
-    result = files_load_tpm_context_from_path(sapi_ctx, &outobject->handle,
+    result = files_load_tpm_context_from_path_sapi(sapi_ctx, &outobject->handle,
                 outobject->path);
 
     if (!result) {
@@ -503,7 +503,7 @@ bool tpm2_util_object_save(TSS2_SYS_CONTEXT *sapi_ctx,
         tpm2_loaded_object inobject) {
 
     if (inobject.path) {
-        return files_save_tpm_context_to_path(sapi_ctx, inobject.handle,
+        return files_save_tpm_context_to_path_sapi(sapi_ctx, inobject.handle,
                 inobject.path);
     }
     return false;

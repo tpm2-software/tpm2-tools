@@ -347,7 +347,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     tpm2_tool_output("\n");
 
     if(ctx.context_file_path) {
-        result = files_save_tpm_context_to_path(sapi_context, ctx.handle,
+        result = files_save_tpm_context_to_path_sapi(sapi_context, ctx.handle,
                    ctx.context_file_path);
         if (!result) {
             return 1;

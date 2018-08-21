@@ -192,7 +192,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     tpm2_tool_output("handle: 0x%X\n", ctx.objdata.out.handle);
 
     if (ctx.context_file) {
-        result = files_save_tpm_context_to_path(sapi_context, ctx.objdata.out.handle,
+        result = files_save_tpm_context_to_path_sapi(sapi_context, ctx.objdata.out.handle,
             ctx.context_file);
         if (!result) {
             goto out;
