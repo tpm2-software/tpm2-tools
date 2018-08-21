@@ -129,7 +129,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    bool retval = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.context_object);
+    bool retval = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+                    &ctx.context_object);
     if (!retval) {
         return false;
     }

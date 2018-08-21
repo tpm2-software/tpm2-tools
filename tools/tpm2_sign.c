@@ -152,7 +152,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     /*
      * load tpm context from a file if -c is provided
      */
-    bool result = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.key_context);
+    bool result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+                    &ctx.key_context);
     if (!result) {
         return false;
     }

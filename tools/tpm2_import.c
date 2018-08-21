@@ -840,7 +840,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
      * Load the parent public file, or read it from the TPM if not specified.
      * We need this information for encrypting the protection seed.
      */
-    result = tpm2_util_object_load(sapi_context, ctx.parent_ctx_arg,
+    result = tpm2_util_object_load_sapi(sapi_context, ctx.parent_ctx_arg,
                     &parent_ctx);
     if (!result) {
       goto out;

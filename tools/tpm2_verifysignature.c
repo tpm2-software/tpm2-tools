@@ -150,7 +150,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B *msg = NULL;
     bool return_value = false;
 
-    bool tmp = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.key_context_object);
+    bool tmp = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg, &ctx.key_context_object);
     if (!tmp) {
         return false;
     }

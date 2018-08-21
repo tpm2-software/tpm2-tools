@@ -173,8 +173,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         } else {
             bool result;
 
-            result = tpm2_util_object_load(sapi_context, ctx.context_arg,
-                    &ctx.context_object);
+            result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+                        &ctx.context_object);
             if (!result) {
                 return 1;
             }

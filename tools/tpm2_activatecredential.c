@@ -282,12 +282,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return -1;
     }
 
-    bool res = tpm2_util_object_load(sapi_context, ctx.ctx_arg, &ctx.ctx_obj);
+    bool res = tpm2_util_object_load_sapi(sapi_context, ctx.ctx_arg,
+                    &ctx.ctx_obj);
     if (!res) {
         return 1;
     }
 
-    res = tpm2_util_object_load(sapi_context, ctx.key_ctx_arg, &ctx.key_ctx_obj);
+    res = tpm2_util_object_load_sapi(sapi_context, ctx.key_ctx_arg,
+                &ctx.key_ctx_obj);
     if (!res) {
         return 1;
     }
