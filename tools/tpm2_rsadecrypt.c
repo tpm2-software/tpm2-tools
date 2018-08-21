@@ -142,8 +142,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    bool result = tpm2_util_object_load(sapi_context, ctx.context_arg,
-            &ctx.key_context_object);
+    bool result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+                    &ctx.key_context_object);
     if (!result) {
         return false;
     }

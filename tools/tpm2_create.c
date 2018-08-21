@@ -270,7 +270,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_util_object_load(sapi_context, ctx.context_arg,
+    result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
             &ctx.context_object);
     if (!result) {
         goto out;

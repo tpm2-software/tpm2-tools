@@ -559,7 +559,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         tpm2_tool_output("ak-persistent-handle: 0x%x\n", ctx.ak.in.handle);
     }
 
-    ret = tpm2_util_object_load(sapi_context, ctx.ek.ctx_arg, &ctx.ek.ek_ctx);
+    ret = tpm2_util_object_load_sapi(sapi_context, ctx.ek.ctx_arg,
+            &ctx.ek.ek_ctx);
     if (!ret) {
         return 1;
     }

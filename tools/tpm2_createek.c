@@ -317,7 +317,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.ctx_obj.handle);
     } else if (ctx.context_arg) {
-        ret = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.ctx_obj);
+        ret = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg, &ctx.ctx_obj);
         if (!ret) {
             goto out;
         }

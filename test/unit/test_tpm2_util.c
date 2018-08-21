@@ -113,19 +113,19 @@ static void test_tpm2_util_object_load(void **state) {
     // We ignore the return value -- there isn't a real SAPI context and thus
     // the load will fail, however the path should have been parsed and we can
     // test that it has been done correctly.
-    tpm2_util_object_load(SAPI_CONTEXT, "file:0x123", &ctx_obj);
+    tpm2_util_object_load_sapi(SAPI_CONTEXT, "file:0x123", &ctx_obj);
     assert_string_equal(ctx_obj.path, "0x123");
     int rc = remove("0x123");
     assert_return_code(rc, errno);
 
     // Parses as uint32, a handle, thus path should be unset
-    tpm2_util_object_load(SAPI_CONTEXT, "0x123", &ctx_obj);
+    tpm2_util_object_load_sapi(SAPI_CONTEXT, "0x123", &ctx_obj);
     assert_true(ctx_obj.path == NULL);
 
     // Doesn't parse as uint32, therefore assumed to be a file path.
     // Path should match.
     save_tpm_context(context, "foobar");
-    tpm2_util_object_load(SAPI_CONTEXT, "foobar", &ctx_obj);
+    tpm2_util_object_load_sapi(SAPI_CONTEXT, "foobar", &ctx_obj);
     rc = remove("foobar");
     assert_return_code(rc, errno);
 }
