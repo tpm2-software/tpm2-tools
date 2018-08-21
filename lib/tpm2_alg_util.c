@@ -802,64 +802,6 @@ bool pcr_parse_digest_list(char **argv, int len,
     return true;
 }
 
-UINT8* tpm2_extract_plain_signature(UINT16 *size, TPMT_SIGNATURE *signature) {
-
-    UINT8 *buffer = NULL;
-    *size = 0;
-
-    switch (signature->sigAlg) {
-    case TPM2_ALG_RSASSA:
-        *size = sizeof(signature->signature.rsassa.sig.buffer);
-        buffer = malloc(*size);
-        if (!buffer) {
-            goto nomem;
-        }
-        memcpy(buffer, signature->signature.rsassa.sig.buffer, *size);
-        break;
-    case TPM2_ALG_HMAC: {
-        TPMU_HA *hmac_sig = &(signature->signature.hmac.digest);
-        *size = tpm2_alg_util_get_hash_size(signature->signature.hmac.hashAlg);
-        if (*size == 0) {
-            LOG_ERR("Hash algorithm %d has 0 size",
-                signature->signature.hmac.hashAlg);
-            goto nomem;
-        }
-        buffer = malloc(*size);
-        if (!buffer) {
-            goto nomem;
-        }
-        memcpy(buffer, hmac_sig, *size);
-        break;
-    }
-    case TPM2_ALG_ECDSA: {
-        const size_t ECC_PAR_LEN = sizeof(TPM2B_ECC_PARAMETER);
-        *size = ECC_PAR_LEN * 2;
-        buffer = malloc(*size);
-        if (!buffer) {
-            goto nomem;
-        }
-        memcpy(buffer,
-            (UINT8*)&(signature->signature.ecdsa.signatureR),
-            ECC_PAR_LEN
-        );
-        memcpy(buffer + ECC_PAR_LEN,
-            (UINT8*)&(signature->signature.ecdsa.signatureS),
-            ECC_PAR_LEN
-        );
-        break;
-    }
-    default:
-        LOG_ERR("%s: unknown signature scheme: 0x%x", __func__,
-            signature->sigAlg);
-        return NULL;
-    }
-
-    return buffer;
-nomem:
-    LOG_ERR("%s: couldn't allocate memory", __func__);
-    return NULL;
-}
-
 static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle,
         TPMI_ALG_PUBLIC *type) {
 

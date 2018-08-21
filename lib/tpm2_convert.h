@@ -84,8 +84,21 @@ tpm2_convert_sig_fmt tpm2_convert_sig_fmt_from_optarg(const char *label);
  *
  * LOG_ERR is used to communicate errors.
  */
-bool tpm2_convert_sig(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format,
+bool tpm2_convert_sig_save(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format,
         const char *path);
+
+/**
+ * Like tpm2_convert_save with the "plain" signature option.
+ *
+ * @param size
+ *  The size of the signature buffer.
+ * @param signature
+ *  The signature to convert.
+ * @return
+ *  NULL on error or a buffer of size bytes to be freed by the caller
+ *  via free(2).
+ */
+UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature);
 
 /**
  * Load a signature from path and convert the format

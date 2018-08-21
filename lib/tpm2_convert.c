@@ -193,7 +193,7 @@ error:
     return ret;
 }
 
-bool tpm2_convert_sig(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, const char *path) {
+bool tpm2_convert_sig_save(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, const char *path) {
 
     switch(format) {
     case signature_format_tss:
@@ -202,7 +202,7 @@ bool tpm2_convert_sig(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, co
         UINT8 *buffer;
         UINT16 size;
 
-        buffer = tpm2_extract_plain_signature(&size, signature);
+        buffer = tpm2_convert_sig(&size, signature);
         if (buffer == NULL) {
             return false;
         }
@@ -259,6 +259,10 @@ static bool pop_ecdsa(const char *path, TPMS_SIGNATURE_ECDSA *ecdsa) {
      */
     TPM2B_ECC_PARAMETER *R = &ecdsa->signatureR;
     ASN1_INTEGER *r = d2i_ASN1_INTEGER(NULL, &p, len);
+    if (!r) {
+        LOG_ERR("oom");
+        return false;
+    }
     memcpy(R->buffer, r->data, r->length);
     R->size = r->length;
     ASN1_INTEGER_free(r);
@@ -268,6 +272,10 @@ static bool pop_ecdsa(const char *path, TPMS_SIGNATURE_ECDSA *ecdsa) {
      */
     TPM2B_ECC_PARAMETER *S = &ecdsa->signatureS;
     ASN1_INTEGER *s = d2i_ASN1_INTEGER(NULL, &p, len);
+    if (!s) {
+        LOG_ERR("oom");
+        return false;
+    }
     memcpy(S->buffer, s->data, s->length);
     S->size = s->length;
     ASN1_INTEGER_free(s);
@@ -309,4 +317,149 @@ bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format, TPMI_A
         LOG_ERR("Unsupported signature input format.");
         return false;
     }
+}
+
+static UINT8* extract_ecdsa(TPMS_SIGNATURE_ECDSA *ecdsa, UINT16 *size) {
+
+    /*
+     * This code is a bit of hack for converting from a TPM ECDSA
+     * signature, to an ASN1 encoded one for things like OSSL.
+     *
+     * The problem here, is that it is unclear the proper OSSL
+     * calls to make the SEQUENCE HEADER populate.
+     *
+     * AN ECDSA Signature is an ASN1 sequence of 2 ASNI Integers,
+     * the R and the S portions of the signature.
+     */
+    static const unsigned SEQ_HDR_SIZE = 2;
+
+    unsigned char *buf = NULL;
+    unsigned char *buf_r = NULL;
+    unsigned char *buf_s = NULL;
+
+    TPM2B_ECC_PARAMETER *R = &ecdsa->signatureR;
+    TPM2B_ECC_PARAMETER *S = &ecdsa->signatureS;
+
+    /*
+     * 1. Calculate the sizes of the ASN1 INTEGERS
+     *    DER encoded.
+     * 2. Allocate an array big enough for them and
+     *    the SEQUENCE header.
+     * 3. Set the header 0x30 and length
+     * 4. Copy in R then S
+     */
+    ASN1_INTEGER *asn1_r = ASN1_INTEGER_new();
+    ASN1_INTEGER *asn1_s = ASN1_INTEGER_new();
+    if (!asn1_r || !asn1_s) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    /*
+     * I wanted to calc the total size with i2d_ASN1_INTEGER
+     * using a NULL output buffer, per the man page this should
+     * work, however the code was dereferencing the pointer.
+     *
+     * I'll just let is alloc the buffers
+     */
+    ASN1_STRING_set(asn1_r, R->buffer, R->size);
+    int size_r = i2d_ASN1_INTEGER(asn1_r, &buf_r);
+    if (size_r < 0) {
+        LOG_ERR("Error converting R to ASN1");
+        goto out;
+    }
+
+    ASN1_STRING_set(asn1_s, S->buffer, S->size);
+    int size_s = i2d_ASN1_INTEGER(asn1_s, &buf_s);
+    if (size_s < 0) {
+        LOG_ERR("Error converting R to ASN1");
+        goto out;
+    }
+
+    /*
+     * If the size doesn't fit in a byte my
+     * encoding hack for ASN1 Sequence won't
+     * work, so fail...loudly.
+     */
+    if (size_s + size_r > 0xFF) {
+        LOG_ERR("Cannot encode ASN1 Sequence, too big!");
+        goto out;
+    }
+
+    buf = malloc(size_s + size_r + SEQ_HDR_SIZE);
+    if (!buf) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    unsigned char *p = buf;
+
+    /* populate header and skip */
+    p[0] = 0x30;
+    p[1] = size_r + size_s;
+    p += 2;
+
+    memcpy(p, buf_r, size_r);
+    p += size_r;
+    memcpy(p, buf_s, size_s);
+
+    *size = size_r + size_s + SEQ_HDR_SIZE;
+
+out:
+    if (asn1_r) {
+        ASN1_INTEGER_free(asn1_r);
+    }
+
+    if (asn1_s) {
+        ASN1_INTEGER_free(asn1_s);
+    }
+
+    free(buf_r);
+    free(buf_s);
+
+    return buf;
+}
+
+UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature) {
+
+    UINT8 *buffer = NULL;
+    *size = 0;
+
+    switch (signature->sigAlg) {
+    case TPM2_ALG_RSASSA:
+        *size = sizeof(signature->signature.rsassa.sig.buffer);
+        buffer = malloc(*size);
+        if (!buffer) {
+            goto nomem;
+        }
+        memcpy(buffer, signature->signature.rsassa.sig.buffer, *size);
+        break;
+    case TPM2_ALG_HMAC: {
+        TPMU_HA *hmac_sig = &(signature->signature.hmac.digest);
+        *size = tpm2_alg_util_get_hash_size(signature->signature.hmac.hashAlg);
+        if (*size == 0) {
+            LOG_ERR("Hash algorithm %d has 0 size",
+                signature->signature.hmac.hashAlg);
+            goto nomem;
+        }
+        buffer = malloc(*size);
+        if (!buffer) {
+            goto nomem;
+        }
+        memcpy(buffer, hmac_sig, *size);
+        break;
+    }
+    case TPM2_ALG_ECDSA: {
+        return extract_ecdsa(&signature->signature.ecdsa, size);
+    }
+    default:
+        LOG_ERR("%s: unknown signature scheme: 0x%x", __func__,
+            signature->sigAlg);
+        return NULL;
+    }
+
+    return buffer;
+nomem:
+    LOG_ERR("%s: couldn't allocate memory", __func__);
+    return NULL;
 }
