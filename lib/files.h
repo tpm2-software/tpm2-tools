@@ -34,7 +34,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 /**
  * Reads a series of bytes from a file as a byte array. This is similar to files_read_bytes(),
@@ -85,10 +85,11 @@ bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
 bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
 
 /**
- * Saves the TPM context for an object handle to disk by calling Tss2_Sys_ContextSave() and serializing the
- * resulting TPMS_CONTEXT structure to disk.
- * @param sapi_context
- *  The system api context
+ * Saves the TPM ESAPI context for an object handle to disk by calling
+ * Esys_ContextSave() and serializing the resulting TPMS_CONTEXT structure
+ * to disk.
+ * @param context
+ *  The Enhances System API (ESAPI) context
  * @param handle
  *  The object handle for the object to save.
  * @param path
@@ -97,12 +98,13 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
  * @return
  *  True on success, False on error.
  */
-bool files_save_tpm_context_to_path(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handle, const char *path);
+bool files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
+        const char *path);
 
 /**
  * Like files_save_tpm_context_to_path() but saves a tpm session to a FILE stream.
- * @param sapi_context
- *  The system api context
+ * @param context
+ *  The Enhances System API (ESAPI) context
  * @param handle
  *  The object handle for the object to save.
  * @param stream
@@ -110,13 +112,14 @@ bool files_save_tpm_context_to_path(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE 
  * @return
  *  True on success, False on error.
  */
-bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handle,
+bool files_save_tpm_context_to_file(ESYS_CONTEXT *context,
+        ESYS_TR handle,
         FILE *stream);
 
 /**
- * Loads a TPM object context from disk.
- * @param sapi_context
- *  The system API context
+ * Loads a ESAPI TPM object context from disk.
+ * @param context
+ *  The Enhances System API (ESAPI) context
  * @param handle
  *  The object handle that was saved.
  * @param path
@@ -124,12 +127,13 @@ bool files_save_tpm_context_to_file(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE 
  * @return
  *  True on Success, false on error.
  */
-bool files_load_tpm_context_from_path(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE *handle, const char *path);
+bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
+        ESYS_TR *handle, const char *path);
 
 /**
  * Like files_load_tpm_context_from_path() but loads the context from a FILE stream.
- * @param sapi_context
- *  The system API context
+ * @param context
+ *  The Enhances System API (ESAPI) context
  * @param handle
  *  The object handle that was saved.
  * @param stream
@@ -137,8 +141,8 @@ bool files_load_tpm_context_from_path(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDL
  * @return
  *  True on success, False on error.
  */
-bool files_load_tpm_context_from_file(TSS2_SYS_CONTEXT *sapi_context,
-        TPM2_HANDLE *handle, FILE *stream);
+bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
+        ESYS_TR *handle, FILE *stream);
 
 /**
  * Serializes a TPM2B_PUBLIC to the file path provided.

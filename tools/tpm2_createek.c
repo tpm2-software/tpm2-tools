@@ -174,7 +174,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
             return false;
         }
     } else if (ctx.ctx_obj.path) {
-        bool result = files_save_tpm_context_to_path(sapi_context,
+        bool result = files_save_tpm_context_to_path_sapi(sapi_context,
                 ctx.objdata.out.handle, ctx.ctx_obj.path);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");

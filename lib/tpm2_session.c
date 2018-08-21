@@ -248,7 +248,8 @@ tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path) 
     }
 
     TPM2_HANDLE handle_from_context;
-    result = files_load_tpm_context_from_file (sys_ctx, &handle_from_context, f);
+    result = files_load_tpm_context_from_file_sapi(sys_ctx,
+                    &handle_from_context, f);
     if (!result) {
         LOG_ERR("Could not load session context");
         goto out;
@@ -339,7 +340,8 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
      * Save session context at end of tpm2_session. With tabrmd support it
      * can be reloaded under certain circumstances.
      */
-    result = files_save_tpm_context_to_file(sapi_context, handle, session_file);
+    result = files_save_tpm_context_to_file_sapi(sapi_context, handle,
+                                            session_file);
     if (!result) {
         LOG_ERR("Could not write session context");
     }
