@@ -59,10 +59,6 @@ symmetric key, both the public and private portions need to be loaded.
 
     The ticket file to record the validation structure.
 
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
-
-    Optional Input session handle from a policy session for authorization.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
@@ -75,10 +71,37 @@ symmetric key, both the public and private portions need to be loaded.
 
 # EXAMPLES
 
+Sign and verify with the TPM using the *endorsement* hierarchy
 ```
-tpm2_verifysignature -k 0x81010001 -g sha256 -m <filePath> -s <filePath> -t <filePath>
-tpm2_verifysignature -k 0x81010001 -D <filePath> -s <filePath> -t <filePath>
-tpm2_verifysignature -c key.context -g sha256 -m <filePath> -s <filePath> -t <filePath>
+tpm2_createprimary -a e -o primary.ctx
+tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
+tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -o rsa.ctx
+
+echo "my message > message.dat
+tpm2_sign -c rsa.ctx -G sha256 -m message.dat -s sig.rssa
+tpm2_verifysignature -c rsa.ctx -G sha256 -m message.dat -s sig.rssa
+```
+
+Sign with openssl and verify with the TPM
+```
+# Generate an ECC key
+openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
+openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
+
+# Generate a hash to sign (OSSL needs the hash of the message)
+echo "data to sign" > data.in.raw
+sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+
+# Load the private key for signing
+tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
+
+# Sign in the TPM and verify with OSSL
+tpm2_sign -Q -c key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
+openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+
+# Sign with openssl and verify with TPM
+openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
+tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
 ```
 
 RETURNS
