@@ -258,7 +258,7 @@ static bool load_public_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pu
     if (!k) {
         k = PEM_read_RSAPublicKey(f, NULL, NULL, NULL);
     }
-    fclose(f);
+
     if (!k) {
          ERR_print_errors_fp (stderr);
          LOG_ERR("Reading public PEM file \"%s\" failed", path);
