@@ -194,6 +194,13 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
     TPMS_RSA_PARMS *rdetail = &pub->publicArea.parameters.rsaDetail;
     rdetail->scheme.scheme = TPM2_ALG_NULL;
     rdetail->symmetric.algorithm = TPM2_ALG_NULL;
+    rdetail->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
+
+    /* NULL out sym details */
+    TPMT_SYM_DEF_OBJECT *sym = &rdetail->symmetric;
+    sym->algorithm = TPM2_ALG_NULL;
+    sym->keyBits.sym = 0;
+    sym->mode.sym = TPM2_ALG_NULL;
 
     const BIGNUM *n; /* modulus */
     const BIGNUM *e; /* public key exponent */
@@ -390,6 +397,13 @@ static bool load_public_ECC_from_key(EC_KEY *k, TPM2B_PUBLIC *pub) {
     pp->kdf.scheme = TPM2_ALG_NULL;
     pp->scheme.scheme = TPM2_ALG_NULL;
     pp->symmetric.algorithm = TPM2_ALG_NULL;
+    pp->scheme.details.anySig.hashAlg = TPM2_ALG_NULL;
+
+    /* NULL out sym details */
+    TPMT_SYM_DEF_OBJECT *sym = &pp->symmetric;
+    sym->algorithm = TPM2_ALG_NULL;
+    sym->keyBits.sym = 0;
+    sym->mode.sym = TPM2_ALG_NULL;
 
     result = true;
 
@@ -617,8 +631,8 @@ static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path,
     return rc;
 }
 
-static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *pub,
-        TPM2B_SENSITIVE *priv) {
+static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f, const char *path,
+        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     unsigned long file_size = 0;
     bool result = files_get_file_size(f, &file_size, path);
@@ -640,12 +654,6 @@ static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f, const char *path
     if (!result) {
         return lprc_error;
     }
-
-    /* set the seed */
-    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
-    seed->size = tpm2_alg_util_get_hash_size(pub->publicArea.nameAlg);
-
-    RAND_bytes(seed->buffer, seed->size);
 
     result = load_public_AES_from_file(f, path, pub, priv);
     if (!result) {
@@ -680,19 +688,28 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC
         return 0;
     }
 
+    /* set the seed */
+    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
+    seed->size = tpm2_alg_util_get_hash_size(pub->publicArea.nameAlg);
+    RAND_bytes(seed->buffer, seed->size);
+
+    tpm2_openssl_load_rc rc = lprc_error;
+
     switch (alg) {
     case TPM2_ALG_RSA:
-        return load_private_RSA_from_pem(f, path, pub, priv);
+        rc = load_private_RSA_from_pem(f, path, pub, priv);
+        break;
     case TPM2_ALG_AES:
-        return load_private_AES_from_file(f, path, pub,
-                priv);
+        rc = load_private_AES_from_file(f, path, pub, priv);
+        break;
     case TPM2_ALG_ECC:
-        return load_private_ECC_from_pem(f, path, pub, priv);
-    /* no default */
+        rc =load_private_ECC_from_pem(f, path, pub, priv);
+        break;
+    default:
+        LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,
+            tpm2_alg_util_flags_any));
+        return lprc_error;
     }
 
-    LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,
-            tpm2_alg_util_flags_any));
-
-    return 0;
+    return rc;
 }

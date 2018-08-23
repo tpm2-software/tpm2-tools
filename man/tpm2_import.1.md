@@ -22,6 +22,7 @@ These options control the key importation process:
     The algorithm used by the key to be imported. Supports:
     * aes - AES 128,192 or 256 key.
     * rsa - RSA 1024 or 2048 key.
+    * ecc - ECC NIST P192, P224, P256, P384 or P521 public and private key.
 
   * **-g**, **--halg**=_ALGORITHM_:
     The hash algorithm for generating the objects name. This is optional
@@ -37,7 +38,8 @@ These options control the key importation process:
 
   * **-C**, **--parent-key**=_PARENT\_CONTEXT_:
     Specifies the context object for the parent key. Either a file or a handle number.
-    See section "Context Object Format".
+    See section "Context Object Format". The parent key **MUST** be an *RSA* key with an
+    symmetric cipher of *AES128cfb*.
 
   * **-K**, **--parent-key-public**=_FILE_:
     Optional. Specifies the parent key public data file input. This can be read with
@@ -64,11 +66,34 @@ These options control the key importation process:
 
 # EXAMPLES
 
+To import a key, one needs to have a parent key:
 ```
-tpm2_import -k sym.key -C 0x81010001 -f parent.pub -q import_key.pub -r import_key.priv
+tpm2_createprimary -Tmssim -Q -Grsa2048:aes128cfb -a o -o parent.ctx
+```
 
-tpm2_import -Q -G rsa -k private.pem -C 0x81010005 -f parent.pub \
--u import_rsa_key.pub -r import_rsa_key.priv
+Create your key and and import it. If you already have a key, just use that
+and skip creating it.
+
+Import an AES 128 key
+
+```
+dd if=/dev/urandom of=sym.key bs=1 count=128
+
+tpm2_import -C parent.ctx -k sym.key -q key.pub -r key.priv
+```
+
+Import an RSA key
+```
+openssl genrsa -out private.pem 2048
+	
+tpm2_import -C parent.ctx -G rsa -k private.pem -u key.pub -r key.priv
+```
+
+Import an ECC key
+```
+openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
+
+tpm2_import -C parent.ctx -G ecc -k private.ecc.pem -u key.pub -r key.priv
 ```
 
 # LIMITATIONS
