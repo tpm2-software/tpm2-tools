@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_loadexternal: ECC Public and Private PEM support.
+  * tpm2_loadexternal: AES Public and Private "raw file" support.
   * tpm2_loadexternal: RSA Public and Private PEM support.
   * tpm2_loadexternal: Object Attribute support.
   * tpm2_loadexternal: Object authorization support.
