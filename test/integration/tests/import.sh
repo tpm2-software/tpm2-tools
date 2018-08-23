@@ -39,7 +39,8 @@ cleanup() {
           parent.ctx plain.dec.ssl  plain.enc  plain.txt  sym.key \
           import_rsa_key.pub import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name \
           private.pem public.pem plain.rsa.enc plain.rsa.dec \
-          public.pem data.in.raw data.in.digest data.out.signed ticket.out
+          public.pem data.in.raw data.in.digest data.out.signed ticket.out \
+          ecc.pub ecc.priv ecc.name ecc.ctx private.ecc.pem public.ecc.pem
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -106,8 +107,35 @@ run_rsa_import_test() {
 
 	# Verify with the TPM
 	tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+}
 
+run_ecc_import_test() {
+	#
+	# Test loading an OSSL PEM format ECC key, and verifying a signature external
+	# to the TPM
+	#
 
+	#
+	# Generate a Private and Public ECC pem file
+	#
+	openssl ecparam -name $2 -genkey -noout -out private.ecc.pem
+	openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
+
+	# Generate a hash to sign
+	echo "data to sign" > data.in.raw
+	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+
+	tpm2_import -Q -G ecc -g "$name_alg" -k private.ecc.pem -C $1 -u ecc.pub -r ecc.priv
+
+	tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -o ecc.ctx
+
+	# Sign in the TPM and verify with OSSL
+	tpm2_sign -Q -c ecc.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
+	openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+
+	# Sign with openssl and verify with TPM.
+	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
+	tpm2_verifysignature -Q -c ecc.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
 }
 
 run_test() {
@@ -126,6 +154,8 @@ run_test() {
 
 	run_rsa_import_test parent.ctx 1024
     run_rsa_import_test parent.ctx 2048
+    
+    run_ecc_import_test parent.ctx prime256v1
 }
 
 #
