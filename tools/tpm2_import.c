@@ -823,7 +823,7 @@ static int check_options(void) {
         rc = -1;
     }
 
-    if (!ctx.import_key_public_file) {
+    if (!ctx.import_key_private_file) {
         LOG_ERR("Expected output private file missing, specify \"-r\","
                 " missing option.");
         rc = -1;
