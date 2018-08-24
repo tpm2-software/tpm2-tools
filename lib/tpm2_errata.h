@@ -32,7 +32,6 @@
 #define TPM2_ERRATA_H
 
 #include <tss2/tss2_esys.h>
-#include <tss2/tss2_sys.h>
 #include <stdbool.h>
 
 /*
@@ -54,7 +53,6 @@ typedef enum {
  *  ESAPI context to be queried.
  */
 void tpm2_errata_init(ESYS_CONTEXT *ctx);
-void tpm2_errata_init_sapi(TSS2_SYS_CONTEXT *sapi_ctx);
 
 /**
  * Request an errata correction for a specific errata version.

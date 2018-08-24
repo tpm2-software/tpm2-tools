@@ -34,6 +34,7 @@
 
 #include "log.h"
 #include "tpm2_errata.h"
+#include "tpm2_capability.h"
 #include "tpm2_util.h"
 
 struct tpm2_errata_desc {
@@ -205,35 +206,14 @@ static void process(TPMS_CAPABILITY_DATA capability_data) {
             year, day_of_year);
 }
 
-void tpm2_errata_init_sapi(TSS2_SYS_CONTEXT *sapi_ctx) {
-
-    TPMS_CAPABILITY_DATA capability_data;
-    TSS2_RC rc;
-
-    rc = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM2_CAP_TPM_PROPERTIES,
-                                TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, NULL,
-                                &capability_data, NULL);
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                "TSS2_RC: 0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED, rc);
-        return;
-    }
-
-    process(capability_data);
-}
-
 void tpm2_errata_init(ESYS_CONTEXT *ctx) {
 
     TPMS_CAPABILITY_DATA *capability_data;
-    TSS2_RC rc;
-
-    rc = Esys_GetCapability(ctx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                            TPM2_CAP_TPM_PROPERTIES,
-                            TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, NULL,
-                            &capability_data);
-    if (rc != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, "
-                "TSS2_RC: 0x%x", TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED, rc);
+    bool ret = tpm2_capability_get(ctx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED,
+                    TPM2_PT_FIXED, &capability_data);
+    if (!ret) {
+        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, ",
+                TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED);
         return;
     }
 
