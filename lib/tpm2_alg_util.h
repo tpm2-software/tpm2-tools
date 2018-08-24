@@ -33,7 +33,7 @@
 
 #include <stdbool.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 typedef enum tpm2_alg_util_flags tpm2_alg_util_flags;
 enum tpm2_alg_util_flags {
@@ -125,9 +125,6 @@ struct tpm2_pcr_digest_spec {
  *   At most 5 hash extensions per PCR entry are supported. This
  *   is to keep the parser simple.
  *
- * @param sapi_context
- *  The system API context for hashing files with the tpm. This can
- *  be NULL if the argument vector doesn't have a file spec for the hash.
  * @param argv
  *  The argv of digest specifications to parse.
  * @param len
@@ -155,8 +152,8 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
 /**
  * Retrieves an appropriate signature scheme (scheme) signable by
  * specified key (keyHandle) and hash algorithm (halg).
- * @param sapi_context
- *  System API context for tpm
+ * @param context
+ *  Enhanced System API (ESAPI) context for tpm
  * @param keyHandle
  *  Handle to key used in signing operation
  * @param halg
@@ -167,8 +164,8 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
  *  True if successful
  *  False otherwise, and scheme is left unmodified
  */
-bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg,
+bool get_signature_scheme(ESYS_CONTEXT *context,
+        ESYS_TR keyHandle, TPMI_ALG_HASH halg,
         TPMT_SIG_SCHEME *scheme);
 
 /**

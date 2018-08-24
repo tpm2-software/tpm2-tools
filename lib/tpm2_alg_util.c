@@ -32,7 +32,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -796,33 +796,32 @@ bool pcr_parse_digest_list(char **argv, int len,
     return true;
 }
 
-static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT objectHandle,
+static bool get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT objectHandle,
         TPMI_ALG_PUBLIC *type) {
 
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TPM2B_PUBLIC *out_public;
 
-    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
-
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TSS2_RC rval = Tss2_Sys_ReadPublic(sapi_context, objectHandle, 0, &out_public, &name,
-            &qualified_name, &sessions_data_out);
+    TSS2_RC rval = Esys_ReadPublic(ectx, objectHandle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &out_public, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Sys_ReadPublic failed, error code: 0x%x", rval);
+        LOG_PERR(Esys_ReadPublic, rval);
         return false;
     }
-    *type = out_public.publicArea.type;
+
+    *type = out_public->publicArea.type;
+
+    free(out_public);
+
     return true;
 }
 
-bool get_signature_scheme(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_DH_OBJECT keyHandle, TPMI_ALG_HASH halg,
+bool get_signature_scheme(ESYS_CONTEXT *context,
+        ESYS_TR keyHandle, TPMI_ALG_HASH halg,
         TPMT_SIG_SCHEME *scheme) {
 
     TPM2_ALG_ID type;
-    bool result = get_key_type(sapi_context, keyHandle, &type);
+    bool result = get_key_type(context, keyHandle, &type);
     if (!result) {
         return false;
     }
