@@ -389,4 +389,17 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
         TPM2B_DIGEST *seed, TPM2B_DIGEST *unique);
 
 
+/**
+ * Uses Esys_TR_FromTPMPublic() to construct the ESYS_TR object corresponding
+ * to the passed TPM2_HANDLE.
+ * @param context
+ *  an ESAPI context
+ * @param sys_handle
+ *  the TPM2_HANDLE to construct an ESYS_TR handle for
+ * @param esys_handle
+ *  pointer to an ESYS_TR handle to output the found handle into
+ */
+bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
+        TPM2_HANDLE sys_handle, ESYS_TR *esys_handle);
+
 #endif /* STRING_BYTES_H */

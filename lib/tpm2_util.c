@@ -577,3 +577,16 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
 
     return true;
 }
+
+bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
+        TPM2_HANDLE sys_handle, ESYS_TR *esys_handle) {
+
+    TSS2_RC ret = Esys_TR_FromTPMPublic(context, sys_handle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, esys_handle);
+    if (ret != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, ret);
+        return false;
+    }
+
+    return true;
+}
