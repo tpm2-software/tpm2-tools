@@ -30,9 +30,9 @@
 //**********************************************************************;
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
 #include <tss2/tss2_esys.h>
 
 #include "log.h"
@@ -85,108 +85,98 @@ static size_t tpm2_get_property_data_size(TPM2_CAP capability) {
     return size;
 }
 
-bool tpm2_capability_get (ESYS_CONTEXT *context,
+bool tpm2_capability_get (ESYS_CONTEXT *ectx,
         TPM2_CAP capability,
         UINT32 property,
         UINT32 count,
         TPMS_CAPABILITY_DATA **capability_data) {
 
-    TPMI_YES_NO            more_data;
-
-    TSS2_RC rval = Esys_GetCapability (context, ESYS_TR_NONE, ESYS_TR_NONE,
-                                ESYS_TR_NONE, capability, property, count,
-                                &more_data, capability_data);
-    LOG_INFO("GetCapability: capability: 0x%x, property: 0x%x", capability, property);
-
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
-                 capability, property);
-        LOG_PERR(ESys_GetCapability, rval);
-        return false;
-    } else if (more_data) {
-        LOG_WARN("More data to be queried: capability: 0x%x, property: "
-                 "0x%x\n", capability, property);
-        return false;
-    }
-
-    return true;
-}
-
-bool tpm2_capability_get_sapi (TSS2_SYS_CONTEXT *sapi_ctx,
-        TPM2_CAP capability,
-        UINT32 property,
-        UINT32 count,
-        TPMS_CAPABILITY_DATA *capability_data) {
-
     TPMI_YES_NO more_data;
-
-    TPMS_CAPABILITY_DATA local_data;
-
-    UINT32 result_count;
-    UINT32 offset = 0;
-
-    /*
-     * All count and data fields line up within the TPMU_CAPABILITIES union
-     * so it it safe to pick one here.
-     */
-    BYTE *data_dest = (BYTE *) capability_data->data.algorithms.algProperties;
-    BYTE *data_src  = (BYTE *) local_data.data.algorithms.algProperties;
+    *capability_data = NULL;
 
     size_t property_size = tpm2_get_property_data_size(capability);
 
-    if (!property_size)
-    	return false;
+    if (!property_size) {
+        return false;
+    }
 
     do {
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability (sapi_ctx,
-                    NULL,
-                    capability,
-                    property+offset,
-                    count,
-                    &more_data,
-                    &local_data,
-                    NULL));
+
+        /* fetch capability info */
+        TPMS_CAPABILITY_DATA *fetched_data = NULL;
+        TSS2_RC rval = Esys_GetCapability (ectx,
+                            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                            capability, property, count,
+                            &more_data, &fetched_data);
+        LOG_INFO("GetCapability: capability: 0x%x, property: 0x%x", capability, property);
 
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
-                  capability, property);
-            LOG_PERR(Tss2_Sys_GetCapability, rval);
+                     capability, property);
+            LOG_PERR(ESys_GetCapability, rval);
             return false;
         }
 
-        result_count = local_data.data.algorithms.count;
+        /* allocate memory for consolidated capabilities list */
+        TPMS_CAPABILITY_DATA *updated = calloc(1, sizeof(TPMS_CAPABILITY_DATA));
+        if (!updated) {
+            LOG_ERR("oom");
+            free(fetched_data);
+            return false;
+        }
 
-        data_dest += offset * property_size;
+        UINT32 i;
+        UINT32 existing = 0;
+        /* Copy all existing results into the newly allocated area */
+        if (*capability_data) {
+            existing = (*capability_data)->data.algorithms.count;
+            for (i = 0; i < existing; i++) {
+                updated->data.algorithms.algProperties[i] =
+                    (*capability_data)->data.algorithms.algProperties[i];
+            }
+            updated->data.algorithms.count = existing;
 
-        memcpy(data_dest, data_src, result_count*property_size);
+            free(*capability_data);
+            *capability_data = NULL;
+        }
 
-        offset += result_count;
-        capability_data->data.algorithms.count = offset;
+        /* copy the newly retrieved data in too */
+        UINT32 new_items = fetched_data->data.algorithms.count;
+        for (i = 0; i < new_items; i++) {
+            updated->data.algorithms.algProperties[i] = fetched_data->data.algorithms.algProperties[i];
+            updated->data.algorithms.count++;
+        }
+
+        /* set the out-value */
+        *capability_data = updated;
+        (*capability_data)->capability = capability;
+
+        free(fetched_data);
     } while (more_data);
 
     return true;
 }
 
-bool tpm2_capability_find_vacant_persistent_handle (TSS2_SYS_CONTEXT *sapi_ctx,
+bool tpm2_capability_find_vacant_persistent_handle (ESYS_CONTEXT *ctx,
         UINT32 *vacant) {
 
-    TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
-    bool ret = tpm2_capability_get_sapi(sapi_ctx, TPM2_CAP_HANDLES,
+    TPMS_CAPABILITY_DATA *capability_data;
+    bool handle_found = false;
+    bool ret = tpm2_capability_get(ctx, TPM2_CAP_HANDLES,
                     TPM2_PERSISTENT_FIRST, TPM2_MAX_CAP_HANDLES,
                     &capability_data);
     if (!ret) {
-        return false;
+        goto out;
     }
 
-    bool handle_found = false;
-    UINT32 count = capability_data.data.handles.count;
+    UINT32 count = capability_data->data.handles.count;
     if (count == 0) {
         /* There aren't any persistent handles, so use the first */
         *vacant = TPM2_PERSISTENT_FIRST;
         handle_found = true;
     } else if (count == TPM2_MAX_CAP_HANDLES) {
         /* All persistent handles are already in use */
-        return false;
+        goto out;
     } else if (count < TPM2_MAX_CAP_HANDLES) {
         /* iterate over used handles to ensure we're selecting
             the next available handle. */
@@ -197,7 +187,7 @@ bool tpm2_capability_find_vacant_persistent_handle (TSS2_SYS_CONTEXT *sapi_ctx,
             bool inuse = false;
             UINT32 c;
             for (c = 0; c < count; ++c) {
-                if (capability_data.data.handles.handle[c] == i) {
+                if (capability_data->data.handles.handle[c] == i) {
                     inuse = true;
                     break;
                 }
@@ -211,5 +201,7 @@ bool tpm2_capability_find_vacant_persistent_handle (TSS2_SYS_CONTEXT *sapi_ctx,
         }
     }
 
+out:
+    free(capability_data);
     return handle_found;
 }
