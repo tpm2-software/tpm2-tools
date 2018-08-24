@@ -30,11 +30,13 @@
 //**********************************************************************;
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_util.h"
 
@@ -112,26 +114,64 @@ bool tpm2_hierarchy_from_optarg(const char *value,
     return result;
 }
 
-bool tpm2_hierarchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
+ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh) {
+
+    switch (inh) {
+    case TPM2_RH_OWNER:
+        return ESYS_TR_RH_OWNER;
+        break;
+    case TPM2_RH_PLATFORM:
+        return ESYS_TR_RH_PLATFORM;
+        break;
+    case TPM2_RH_ENDORSEMENT:
+        return ESYS_TR_RH_ENDORSEMENT;
+        break;
+    case TPM2_RH_NULL:
+        return ESYS_TR_RH_NULL;
+        break;
+    }
+    return ESYS_TR_NONE;
+}
+
+bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
         TPMS_AUTH_COMMAND *sdata,
+        tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata) {
 
-    TSS2L_SYS_AUTH_COMMAND sessionsData =
-            TSS2L_SYS_AUTH_COMMAND_INIT(1, {*sdata});
+    ESYS_TR hierarchy;
 
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
-    TSS2_RC rval = TSS2_RETRY_EXP(
-            Tss2_Sys_CreatePrimary(sapi_context, objdata->in.hierarchy,
-                &sessionsData, &objdata->in.sensitive, &objdata->in.public,
-                &objdata->in.outside_info, &objdata->in.creation_pcr,
-                &objdata->out.handle, &objdata->out.public,
-                &objdata->out.creation.data, &objdata->out.hash,
-                &objdata->out.creation.ticket, &objdata->out.name,
-                &sessionsDataOut));
+    hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(objdata->in.hierarchy);
+
+    TSS2_RC rval;
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy, sdata, sess);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Couldn't get shandle for hierarchy");
+        return false;
+    }
+
+    rval = Esys_CreatePrimary(ectx, hierarchy,
+            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+            &objdata->in.sensitive, &objdata->in.public,
+            &objdata->in.outside_info, &objdata->in.creation_pcr,
+            &objdata->out.handle, &objdata->out.public,
+            &objdata->out.creation.data, &objdata->out.hash,
+            &objdata->out.creation.ticket);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_CreatePrimary, rval);
+        LOG_PERR(Esys_CreatePrimary, rval);
         return false;
     }
 
     return true;
+}
+
+void tpm2_hierarchy_pdata_free(tpm2_hierarchy_pdata *objdata) {
+
+    free(objdata->out.creation.data);
+    objdata->out.creation.data = NULL;
+    free(objdata->out.creation.ticket);
+    objdata->out.creation.ticket = NULL;
+    free(objdata->out.hash);
+    objdata->out.hash = NULL;
+    free(objdata->out.public);
+    objdata->out.public = NULL;
 }

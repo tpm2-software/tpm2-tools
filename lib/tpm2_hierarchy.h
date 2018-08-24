@@ -34,7 +34,8 @@
 
 #include <stdbool.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
+#include "tpm2_session.h"
 
 typedef enum tpm2_hierarchy_flags tpm2_hierarchy_flags;
 
@@ -53,22 +54,21 @@ bool tpm2_hierarchy_from_optarg(const char *value,
 typedef struct tpm2_hierarchy_pdata tpm2_hierarchy_pdata;
 struct tpm2_hierarchy_pdata {
     struct {
-        TPMI_RH_HIERARCHY hierarchy;
+        TPMI_RH_PROVISION hierarchy;
         TPM2B_SENSITIVE_CREATE sensitive;
         TPM2B_PUBLIC public;
         TPM2B_DATA outside_info;
         TPML_PCR_SELECTION creation_pcr;
-        TPM2_HANDLE object_handle;
+        ESYS_TR object_handle;
     } in;
     struct {
-        TPM2_HANDLE handle;
-        TPM2B_PUBLIC public;
-        TPM2B_DIGEST hash;
+        ESYS_TR handle;
+        TPM2B_PUBLIC *public;
+        TPM2B_DIGEST *hash;
         struct {
-            TPM2B_CREATION_DATA data;
-            TPMT_TK_CREATION ticket;
+            TPM2B_CREATION_DATA *data;
+            TPMT_TK_CREATION *ticket;
         } creation;
-        TPM2B_NAME name;
     } out;
 };
 
@@ -106,19 +106,37 @@ struct tpm2_hierarchy_pdata {
 
 /**
  * Creates a primary object.
- * @param sapi_context
- *  The system api context
+ * @param context
+ *  The Enhanced System API (ESAPI) context
  * @param sdata
  *  The authorization data for the hierarchy the primary object
  *  is associated with.
+ * @param session
+ *  The authorised session for accessing the primary object
  * @param objdata
  *  The objects data configuration.
  * @return
  *  True on success, False on error.
  *  Logs errors via LOG_ERR().
  */
-bool tpm2_hierarchy_create_primary(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *context,
         TPMS_AUTH_COMMAND *sdata,
+        tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata);
+
+/**
+ * Map a TPMI_RH_PROVISION to the corresponding ESYS_TR constant
+ * @param inh
+ *  The hierarchy to map
+ */
+ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh);
+
+/**
+ * Free allocated memory in a tpm2_hierarchy_pdata structure
+ *
+ * @param objdata
+ *  The tpm2_hierarchy_pdata for which to free memory
+ */
+void tpm2_hierarchy_pdata_free(tpm2_hierarchy_pdata *objdata);
 
 #endif /* TOOLS_TPM2_HIERARCHY_H_ */
