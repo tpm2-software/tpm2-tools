@@ -30,7 +30,7 @@
 
 #include <stdbool.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 typedef struct tpm2_session_data tpm2_session_data;
 typedef struct tpm2_session tpm2_session;
@@ -44,7 +44,6 @@ typedef struct tpm2_session tpm2_session;
  *   tpmKey = TPM2_RH_NULL
  *   bind = TPM2_RH_NULL
  *   nonceCaller = a SHA1 hash of all 0s.
- *   encryptedSalt = Empty Buffer
  *   symmetric = TPM2_ALG_NULL
  *   authHash = TPM2_ALG_SHA256
 ^ *
@@ -86,16 +85,6 @@ void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce);
 void tpm2_session_set_bind(tpm2_session_data *data, TPMI_DH_ENTITY bind);
 
 /**
- * Sets the encryptedSalt parameter.
- * @param data
- *  The session data object to modify.
- * @param encsalt
- *  The encryptedSalt parameter value itself.
- */
-void tpm2_session_set_encryptedsalt(tpm2_session_data *data,
-        TPM2B_ENCRYPTED_SECRET *encsalt);
-
-/**
  * Sets the symmetric parameter.
  * @param data
  *  The session data object to modify.
@@ -131,7 +120,7 @@ TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session);
  * @return
  *  The session handle.
  */
-TPMI_SH_AUTH_SESSION tpm2_session_get_handle(tpm2_session *session);
+ESYS_TR tpm2_session_get_handle(tpm2_session *session);
 
 /**
  * Retrieves the type of session, ie trial or policy session.
@@ -154,9 +143,9 @@ static inline bool tpm2_session_is_trial(tpm2_session *session) {
 }
 
 /**
- * Starts a session with the tpm via Tss2_Sys_StartAuthSession().
- * @param sapi_context
- *  The system api context.
+ * Starts a session with the tpm via Esys_StartAuthSession().
+ * @param context
+ *  The Enhanced System API (ESAPI) context.
  * @param data
  *  A session data object created with tpm2_session_data_new() and potentially
  *  modified with the tpm2_session_data_set_*() routines.
@@ -165,7 +154,7 @@ static inline bool tpm2_session_is_trial(tpm2_session *session) {
  * @return
  *  A tpm2_session object and a started tpm session or NULL on failure.
  */
-tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
+tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
         tpm2_session_data *data);
 
 /**
@@ -174,49 +163,62 @@ tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
  *
  * @Note
  * This is accomplished by calling:
- *   - Tss2_Sys_ContextSave - marks to some RMs like tpm2-abrmd not to flush this session
+ *   - Eys_ContextSave - marks to some RMs like tpm2-abrmd not to flush this session
  *                            handle on client disconnection.
- *   - Tss2_Sys_ContextLoad - restores the session so it can be used.
+ *   - Eys_ContextLoad - restores the session so it can be used.
  *   - Saving a custom file format at path - records the handle and algorithm.
+ * @param context
+ *  The Enhanced System API (ESAPI) context
  * @param session
  *  The session context to save
- * @param sapi_context
- *  The system api context
  * @param path
  *  The path to save the session context too.
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
+bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
         const char *path);
 
 /**
  * Restores a session saved with tpm2_session_save().
+ * @param context
+ *  The Enhanced System API (ESAPI) context
  * @param path
  *  The path to restore from.
  * @return
  *  NULL on failure or a session pointer on success.
  */
-tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path);
+tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path);
 
 /**
  * restarts the session to it's initial state via a call to
- * Tss2_Sys_PolicyRestart().
- * @param sapi_context
- *  The system api context
+ * Esys_PolicyRestart().
+ * @param context
+ *  The Enhanced System API (ESAPI) context
  * @param s
  *  The session
  * @return
  *  true on success, false otherwise.
  */
-bool tpm2_session_restart(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s);
+bool tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s);
 
 /**
- * Frees a tpm2_sessio but DOES NOT FLUSH the handle. Frees the associated
+ * Frees a tpm2_session but DOES NOT FLUSH the handle. Frees the associated
  * tpm2_session_data object as well.
  * @param session
  *  The tpm2_session to free and set to NULL.
  */
 void tpm2_session_free(tpm2_session **session);
+
+/**
+ * Sets the TPMA_SESSION_CONTINUESESSION attribute for the session.
+ * @param ectx
+ *  The Enhanced System API (ESAPI) context
+ * @param s
+ *  The tpm2_session for which attributes will be modified
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_session_set_continuesession(ESYS_CONTEXT *ectx, tpm2_session *s);
 
 #endif /* SRC_TPM2_SESSION_H_ */
