@@ -32,9 +32,9 @@
 #define LIB_TPM2_NV_UTIL_H_
 
 #include <tss2/tss2_esys.h>
-#include <tss2/tss2_sys.h>
 
 #include "log.h"
+#include "tpm2_capability.h"
 #include "tpm2_util.h"
 
 /*
@@ -84,47 +84,36 @@ static inline bool tpm2_util_nv_read_public(ESYS_CONTEXT *context,
     return true;
 }
 
-static inline bool tpm2_util_nv_read_public_sapi(TSS2_SYS_CONTEXT *sapi_context,
-        TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC *nv_public) {
-
-    TPM2B_NAME nv_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ReadPublic(sapi_context, nv_index, NULL, nv_public,
-            &nv_name, NULL));
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_NV_ReadPublic, rval);
-        return false;
-    }
-
-    return true;
-}
-
 /**
  * Retrieves the maximum transmission size for an NV buffer by
  * querying the capabilities for TPM2_PT_NV_BUFFER_MAX.
- * @param sapi_context
- *  The system api context
+ * @param context
+ *  The Enhanced System API (ESAPI) context
  * @param size
  *  The size of the buffer.
  * @return
  *  True on success, false otherwise.
  */
-static inline bool tpm2_util_nv_max_buffer_size(TSS2_SYS_CONTEXT *sapi_context,
+static inline bool tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
         UINT32 *size) {
 
     /* Get the maximum read block size */
-    TPMS_CAPABILITY_DATA cap_data;
+    TPMS_CAPABILITY_DATA *cap_data;
     TPMI_YES_NO more_data;
-    TSS2_RC rval = TSS2_RETRY_EXP(
-               Tss2_Sys_GetCapability (sapi_context, NULL,
-                   TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX, 1,
-                   &more_data, &cap_data, NULL));
+    TSS2_RC rval = Esys_GetCapability(ectx,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX,
+                        1, &more_data, &cap_data);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_NV_ReadPublic, rval);
+        LOG_PERR(Esys_GetCapability, rval);
+        LOG_ERR("Got size of %d",
+                cap_data->data.tpmProperties.tpmProperty[0].value);
         return false;
     }
 
-    *size = cap_data.data.tpmProperties.tpmProperty[0].value;
+    *size = cap_data->data.tpmProperties.tpmProperty[0].value;
+
+    free(cap_data);
 
     return true;
 }
