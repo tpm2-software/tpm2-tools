@@ -39,6 +39,7 @@
 #include "log.h"
 #include "tpm2_hash.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_policy.h"
 #include "tpm2_session.h"
@@ -108,7 +109,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
     return true;
 }
 
-static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
+static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, const char *raw_pcrs_file,
         TPML_PCR_SELECTION *pcr_selections) {
 
@@ -149,14 +150,26 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
         fclose(fp);
     } else {
         UINT32 pcr_update_counter;
-        TPML_PCR_SELECTION pcr_selection_out;
+        TPML_DIGEST *pcr_val = NULL;
         // Read PCRs
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Read(sapi_context, NULL, pcr_selections,
-                &pcr_update_counter, &pcr_selection_out, &pcr_values, NULL));
+        TSS2_RC rval = Esys_PCR_Read(ectx,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        pcr_selections, &pcr_update_counter,
+                        NULL, &pcr_val);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_PCR_Read, rval);
+            LOG_PERR(Esys_PCR_Read, rval);
+            free(pcr_val);
             return false;
         }
+
+        UINT32 i;
+        pcr_val->count = pcr_values.count;
+        for (i = 0; i < pcr_val->count; i++) {
+            memcpy(pcr_values.digests[i].buffer, pcr_val->digests[i].buffer,
+                    pcr_val->digests[i].size);
+            pcr_values.digests[i].size = pcr_val->digests[i].size;
+        }
+        free(pcr_val);
     }
 
     // Calculate hashes
@@ -164,33 +177,33 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(policy_session);
 
     result = tpm2_openssl_hash_pcr_values(auth_hash,
-            &pcr_values, &pcr_digest);
+                &pcr_values, &pcr_digest);
     if (!result) {
         LOG_ERR("Could not hash pcr values");
         return false;
     }
 
     // Call the PolicyPCR command
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(
-            policy_session);
+    ESYS_TR handle = tpm2_session_get_handle(policy_session);
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyPCR(sapi_context, handle,
-    NULL, &pcr_digest, pcr_selections, NULL));
+    TSS2_RC rval = Esys_PolicyPCR(ectx, handle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &pcr_digest, pcr_selections);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicyPCR, rval);
+        LOG_PERR(Esys_PolicyPCR, rval);
         return false;
     }
 
     return true;
 }
 
-bool tpm2_policy_build_pcr(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session,
         const char *raw_pcrs_file,
         TPML_PCR_SELECTION *pcr_selections) {
 
     // Issue policy command.
-    bool result = tpm2_policy_pcr_build(sapi_context, policy_session,
+    bool result = tpm2_policy_pcr_build(ectx, policy_session,
             raw_pcrs_file, pcr_selections);
 
     if (!result) {
@@ -201,7 +214,7 @@ bool tpm2_policy_build_pcr(TSS2_SYS_CONTEXT *sapi_context,
 }
 
 bool tpm2_policy_build_policyauthorize(
-    TSS2_SYS_CONTEXT *sapi_context,
+    ESYS_CONTEXT *ectx,
     tpm2_session *policy_session,
     const char *policy_digest_path,
     const char *policy_qualifier_path,
@@ -284,92 +297,96 @@ bool tpm2_policy_build_policyauthorize(
         }
     }
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(policy_session);
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyAuthorize(sapi_context, handle, NULL,
-        &approved_policy, &policy_qualifier, &key_sign, &check_ticket,NULL));
+    ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
+    TSS2_RC rval = Esys_PolicyAuthorize(ectx, sess_handle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &approved_policy, &policy_qualifier, &key_sign,
+                    &check_ticket);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicyAuthorize, rval);
+        LOG_PERR(Esys_PolicyAuthorize, rval);
         return false;
     }
 
     return true;
 }
 
-bool tpm2_policy_build_policyor(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
     tpm2_session *policy_session, TPML_DIGEST policy_list) {
 
-    TPMI_SH_POLICY policy_session_handle = tpm2_session_get_handle(policy_session);
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyOR(sapi_context, policy_session_handle,
-        NULL, &policy_list, NULL));
-
+    ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
+    TSS2_RC rval = Esys_PolicyOR(ectx, sess_handle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &policy_list);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicyOR, rval);
+        LOG_PERR(Esys_PolicyOR, rval);
         return false;
     }
 
     return true;
 }
 
-bool tpm2_policy_build_policypassword(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
         tpm2_session *session) {
 
-    TPMI_SH_POLICY policy_session_handle = tpm2_session_get_handle(session);
+    ESYS_TR policy_session_handle = tpm2_session_get_handle(session);
 
-    TSS2_RC rval = Tss2_Sys_PolicyPassword(sapi_context, policy_session_handle,
-        NULL, NULL);
+    TSS2_RC rval = Esys_PolicyPassword(ectx, policy_session_handle,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicyPassword, rval);
+        LOG_PERR(Esys_PolicyPassword, rval);
         return false;
     }
 
     return true;
 }
 
-bool tpm2_policy_build_policysecret(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
     tpm2_session *policy_session, TPMS_AUTH_COMMAND session_data,
-    TPM2_HANDLE handle) {
+    ESYS_TR handle) {
 
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-
-    TSS2_RC rval = Tss2_Sys_PolicySecret(sapi_context, handle,
-        tpm2_session_get_handle(policy_session), &sessions_data, NULL, NULL,
-        NULL, 0, NULL, NULL, &sessions_data_out);
-
+    ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
+    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, handle,
+                        &session_data, policy_session);
+    if (shandle == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
+        return false;
+    }
+    TSS2_RC rval = Esys_PolicySecret(ectx, handle, policy_session_handle,
+                    shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+                    NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicySecret, rval);
+        LOG_PERR(Esys_PolicySecret, rval);
         return false;
     }
 
     return true;
 }
 
-bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_policy_get_digest(ESYS_CONTEXT *ectx,
         tpm2_session *session,
-        TPM2B_DIGEST *policy_digest) {
+        TPM2B_DIGEST **policy_digest) {
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
+    ESYS_TR handle = tpm2_session_get_handle(session);
 
-    TPM2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyGetDigest(sapi_context, handle,
-    NULL, policy_digest, NULL));
+    TPM2_RC rval = Esys_PolicyGetDigest(ectx, handle,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        policy_digest);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicyGetDigest, rval);
+        LOG_PERR(Esys_PolicyGetDigest, rval);
         return false;
     }
     return true;
 }
 
-bool tpm2_policy_build_policycommandcode(TSS2_SYS_CONTEXT *sapi_context,
+bool tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
     tpm2_session *session, uint32_t command_code) {
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
+    ESYS_TR handle = tpm2_session_get_handle(session);
 
-    TPM2_RC rval = Tss2_Sys_PolicyCommandCode(sapi_context, handle, NULL,
-        command_code, NULL);
+    TPM2_RC rval = Esys_PolicyCommandCode(ectx, handle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, command_code);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicyCommandCode, rval);
+        LOG_PERR(Esys_PolicyCommandCode, rval);
         return false;
     }
     return true;
