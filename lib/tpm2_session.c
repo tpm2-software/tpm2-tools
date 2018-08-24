@@ -31,7 +31,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -41,9 +41,8 @@
 #include "tpm2_util.h"
 
 struct tpm2_session_data {
-    TPMI_DH_OBJECT key;
-    TPMI_DH_ENTITY bind;
-    TPM2B_ENCRYPTED_SECRET encrypted_salt;
+    ESYS_TR key;
+    ESYS_TR bind;
     TPM2_SE session_type;
     TPMT_SYM_DEF symmetric;
     TPMI_ALG_HASH authHash;
@@ -55,8 +54,7 @@ struct tpm2_session {
     tpm2_session_data* input;
 
     struct {
-        TPMI_SH_AUTH_SESSION session_handle;
-        TPM2B_NONCE nonceTPM;
+        ESYS_TR session_handle;
     } output;
 
     struct {
@@ -69,8 +67,8 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
     tpm2_session_data * d = calloc(1, sizeof(tpm2_session_data));
     if (d) {
         d->symmetric.algorithm = TPM2_ALG_NULL;
-        d->key = TPM2_RH_NULL;
-        d->bind = TPM2_RH_NULL;
+        d->key = ESYS_TR_NONE;
+        d->bind = ESYS_TR_NONE;
         d->session_type = type;
         d->authHash = TPM2_ALG_SHA256;
         d->nonce_caller.size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA1);
@@ -78,7 +76,7 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
     return d;
 }
 
-void tpm2_session_set_key(tpm2_session_data *data, TPMI_DH_OBJECT key) {
+void tpm2_session_set_key(tpm2_session_data *data, ESYS_TR key) {
     data->key = key;
 }
 
@@ -86,13 +84,8 @@ void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce) 
     data->nonce_caller = *nonce;
 }
 
-void tpm2_session_set_bind(tpm2_session_data *data, TPMI_DH_ENTITY bind) {
+void tpm2_session_set_bind(tpm2_session_data *data, ESYS_TR bind) {
     data->bind = bind;
-}
-
-void tpm2_session_set_encryptedsalt(tpm2_session_data *data,
-        TPM2B_ENCRYPTED_SECRET *encsalt) {
-    data->encrypted_salt = *encsalt;
 }
 
 void tpm2_session_set_type(tpm2_session_data *data, TPM2_SE type) {
@@ -112,7 +105,7 @@ TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session) {
     return session->input->authHash;
 }
 
-TPMI_SH_AUTH_SESSION tpm2_session_get_handle(tpm2_session *session) {
+ESYS_TR tpm2_session_get_handle(tpm2_session *session) {
     return session->output.session_handle;
 }
 
@@ -121,22 +114,22 @@ TPM2_SE tpm2_session_get_type(tpm2_session *session) {
 }
 
 //
-// This is a wrapper function around the TPM2_StartAuthSession command.
+// This is a wrapper function around the Esys_StartAuthSession command.
 // It performs the command, calculates the session key, and updates a
 // SESSION structure.
 //
-static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context,
+static bool start_auth_session(ESYS_CONTEXT *context,
         tpm2_session *session) {
 
     tpm2_session_data *d = session->input;
 
-    TSS2_RC rval = Tss2_Sys_StartAuthSession(sapi_context, d->key, d->bind,
-            NULL, &session->input->nonce_caller, &d->encrypted_salt,
-            d->session_type, &d->symmetric, d->authHash,
-            &session->output.session_handle, &session->internal.nonceNewer,
-            NULL);
+    TSS2_RC rval = Esys_StartAuthSession(context, d->key, d->bind,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        &session->input->nonce_caller, d->session_type,
+                        &d->symmetric, d->authHash,
+                        &session->output.session_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_StartAuthSession, rval);
+        LOG_PERR(Esys_StartAuthSession, rval);
     }
 
     return rval == TPM2_RC_SUCCESS;
@@ -156,7 +149,7 @@ void tpm2_session_free(tpm2_session **session) {
     }
 }
 
-tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
+tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
         tpm2_session_data *data) {
 
     tpm2_session *session = calloc(1, sizeof(tpm2_session));
@@ -170,11 +163,11 @@ tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
 
     session->internal.nonceNewer.size = session->input->nonce_caller.size;
 
-    if (!sapi_context) {
+    if (!context) {
         return session;
     }
 
-    bool result = start_auth_session(sapi_context, session);
+    bool result = start_auth_session(context, session);
     if (!result) {
         tpm2_session_free(&session);
         return NULL;
@@ -183,7 +176,11 @@ tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
     return session;
 }
 
-#define SESSION_VERSION 1
+/* SESSION_VERSION 1 was used prior to the switch to ESAPI. As the types of
+ * several of the tpm2_session_data object members have changed the version is
+ * bumped.
+ */
+#define SESSION_VERSION 2
 
 /*
  * Checks that two types are equal in size.
@@ -198,11 +195,11 @@ tpm2_session *tpm2_session_new(TSS2_SYS_CONTEXT *sapi_context,
     typedef char WRONG_SIZE_##a[(sizeof(a) == sizeof(b)) - 1]
 
 // We check that the TSS library does not change sizes unbeknownst to us.
-COMPILE_ASSERT_SIZE(TPM2_HANDLE, UINT32);
+COMPILE_ASSERT_SIZE(ESYS_TR, UINT32);
 COMPILE_ASSERT_SIZE(TPMI_ALG_HASH, UINT16);
 COMPILE_ASSERT_SIZE(TPM2_SE, UINT8);
 
-tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path) {
+tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
 
     tpm2_session *s = NULL;
 
@@ -240,22 +237,24 @@ tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path) 
         goto out;
     }
 
-    TPM2_HANDLE handle;
-    result = files_read_32(f, &handle);
+    TPM2_HANDLE tpm_handle;
+    result = files_read_32(f, &tpm_handle);
     if (!result) {
         LOG_ERR("Could not read session handle");
         goto out;
     }
 
     TPM2_HANDLE handle_from_context;
-    result = files_load_tpm_context_from_file_sapi(sys_ctx,
-                    &handle_from_context, f);
+    ESYS_TR handle;
+    result = files_load_tpm_context_from_file(ctx,
+                    &handle_from_context, &handle, f);
     if (!result) {
         LOG_ERR("Could not load session context");
         goto out;
     }
-    if (handle != handle_from_context) {
-        LOG_WARN("Handle from tpm2_session disagrees with session context");
+
+    if (tpm_handle != handle_from_context) {
+        LOG_WARN("Handle from tpm2_session (0x%X) disagrees with session context (0x%X)", handle_from_context, tpm_handle);
     }
 
     tpm2_session_data *d = tpm2_session_data_new(type);
@@ -279,7 +278,7 @@ out:
     return s;
 }
 
-bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
+bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
         const char *path) {
 
     if (!session) {
@@ -311,36 +310,45 @@ bool tpm2_session_save(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *session,
     if (!result) {
          LOG_ERR("Could not write context file header");
          goto out;
-     }
+    }
 
-     // UINT8 session type:
-     TPM2_SE session_type = session->input->session_type;
-     result = files_write_bytes(session_file, &session_type, sizeof(session_type));
-     if (!result) {
-         LOG_ERR("Could not write session type");
-         goto out;
-     }
+    // UINT8 session type:
+    TPM2_SE session_type = session->input->session_type;
+    result = files_write_bytes(session_file, &session_type,
+                sizeof(session_type));
+    if (!result) {
+        LOG_ERR("Could not write session type");
+        goto out;
+    }
 
-     // UINT16 - auth hash digest
-     result = files_write_16(session_file, tpm2_session_get_authhash(session));
-     if (!result) {
-         LOG_ERR("Could not write savedHandle");
-         goto out;
-     }
+    // UINT16 - auth hash digest
+    TPMI_ALG_HASH hash = tpm2_session_get_authhash(session);
+    result = files_write_16(session_file, hash);
+    if (!result) {
+        LOG_ERR("Could not write auth hash");
+        goto out;
+    }
 
-     // UINT32 - Handle
-    TPM2_HANDLE handle = tpm2_session_get_handle(session);
-     result = files_write_32(session_file, handle);
-     if (!result) {
-         LOG_ERR("Could not write handle");
-         goto out;
-     }
+    // UINT32 - Handle
+    ESYS_TR handle = tpm2_session_get_handle(session);
+    TPM2_HANDLE tpm_handle;
+    result = tpm2_util_esys_handle_to_sys_handle(context, handle, &tpm_handle);
+    if (!result) {
+        LOG_ERR("Could not find underlying TPM handle");
+        goto out;
+    }
+
+    result = files_write_32(session_file, tpm_handle);
+    if (!result) {
+        LOG_ERR("Could not write handle");
+        goto out;
+    }
 
     /*
      * Save session context at end of tpm2_session. With tabrmd support it
      * can be reloaded under certain circumstances.
      */
-    result = files_save_tpm_context_to_file_sapi(sapi_context, handle,
+    result = files_save_tpm_context_to_file(context, handle,
                                             session_file);
     if (!result) {
         LOG_ERR("Could not write session context");
@@ -354,13 +362,14 @@ out:
     return result;
 }
 
-bool tpm2_session_restart(TSS2_SYS_CONTEXT *sapi_context, tpm2_session *s) {
+bool tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s) {
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
+    ESYS_TR handle = tpm2_session_get_handle(s);
 
-    TSS2_RC rval = Tss2_Sys_PolicyRestart(sapi_context, handle, NULL, NULL);
+    TSS2_RC rval = Esys_PolicyRestart(context, handle,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicyRestart, rval);
+        LOG_PERR(Esys_PolicyRestart, rval);
     }
 
     return rval == TPM2_RC_SUCCESS;
