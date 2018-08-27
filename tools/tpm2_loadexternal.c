@@ -68,6 +68,7 @@ struct tpm_loadexternal_ctx {
     char *policy; /* a policy for use of the private portion */
     char *name_alg; /* name hashing algorithm */
     char *key_type; /* type of key attempting to load, defaults to an auto attempt */
+    char *name_path; /* An optional path to output the loaded objects name information to */
 };
 
 static tpm_loadexternal_ctx ctx = {
@@ -78,15 +79,13 @@ static tpm_loadexternal_ctx ctx = {
     .hierarchy_value = TPM2_RH_NULL,
 };
 
-static bool load_external(TSS2_SYS_CONTEXT *sapi_context, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv, bool has_priv) {
+static bool load_external(TSS2_SYS_CONTEXT *sapi_context, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME *name) {
 
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
 
-    TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
     TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, NULL,
             has_priv ? priv : NULL, pub,
-            ctx.hierarchy_value, &ctx.handle, &nameExt,
+            ctx.hierarchy_value, &ctx.handle, name,
             &sessionsDataOut));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_LoadExternal, rval);
@@ -132,6 +131,9 @@ static bool on_option(char key, char *value) {
     case 'G':
         ctx.key_type = value;
         break;
+    case 'n':
+        ctx.name_path = value;
+        break;
     }
 
     return true;
@@ -150,9 +152,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "halg",               required_argument, NULL, 'g'},
       { "auth-parent",        required_argument, NULL, 'P'},
       { "key-alg",            required_argument, NULL, 'G'},
+      { "name",                 required_argument, NULL, 'n' },
     };
 
-    *opts = tpm2_options_new("a:u:r:o:A:p:L:g:G:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("a:u:r:o:A:p:L:g:G:n:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -326,16 +329,30 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = load_external(sapi_context, &pub, &priv, ctx.private_key_path != NULL);
+    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
+    result = load_external(sapi_context, &pub, &priv, ctx.private_key_path != NULL, &name);
     if (!result) {
         return 1;
     }
 
-    tpm2_tool_output("0x%X\n", ctx.handle);
+    tpm2_tool_output("handle: 0x%X\n", ctx.handle);
+    tpm2_tool_output("name: 0x");
+    tpm2_util_hexdump(name.name, name.size);
+    tpm2_tool_output("\n");
 
     if(ctx.context_file_path) {
-        return files_save_tpm_context_to_path(sapi_context, ctx.handle,
-                   ctx.context_file_path) != true;
+        result = files_save_tpm_context_to_path(sapi_context, ctx.handle,
+                   ctx.context_file_path);
+        if (!result) {
+            return 1;
+        }
+    }
+
+    if (ctx.name_path) {
+        result = files_save_bytes_to_file(ctx.name_path, name.name, name.size);
+        if(!result) {
+            return 1;
+        }
     }
 
     return 0;
