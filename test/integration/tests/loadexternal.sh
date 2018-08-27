@@ -52,7 +52,7 @@ cleanup() {
          $file_loadexternal_key_name $file_loadexternal_key_ctx \
          $file_loadexternal_output private.pem public.pem plain.txt \
          plain.rsa.dec key.ctx public.ecc.pem private.ecc.pem \
-         data.in.digest data.out.signed ticket.out
+         data.in.digest data.out.signed ticket.out name.bin stdout.yaml
 
   ina "$@" "keep_handle"
   if [ $? -ne 0 ]; then
@@ -122,11 +122,23 @@ run_rsa_test() {
     diff plain.txt plain.rsa.dec
 }
 
+#
+# Verify loading an external AES key.
+#
+# Paramter 1: The AES keysize to create in bytes.
+#
+# Notes: Also tests that name output and YAML output are valid.
+#
 run_aes_test() {
 
     dd if=/dev/urandom of=sym.key bs=1 count=$(($1 / 8)) 2>/dev/null
 
-    tpm2_loadexternal -G aes -r sym.key -o key.ctx
+    tpm2_loadexternal -G aes -r sym.key -n name.bin -o key.ctx > stdout.yaml
+
+	local name1=`yaml_get_kv "stdout.yaml" "name"`
+	local name2=`xxd -c 256 -p name.bin`
+
+	test "$name1" == "$name2"
 
     echo "plaintext" > "plain.txt"
 

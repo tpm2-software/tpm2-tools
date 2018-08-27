@@ -19,8 +19,13 @@ TPM. The command allows loading of a public area or both a public and a
 sensitive area.
 
 # Output
-The tool outputs the handle of the loaded object in hex. It is the form of a YAML
-scalar.
+The tool outputs the handle and name of the loaded object in a YAML format.
+
+## Example Output via *stdout*
+```
+handle: 0x800000FF
+name: 0x000b44e59fa5658ab443834a069a488ecc1f6d7deb47c40c6ec49871ef57d7036b43
+```
 
 # OPTIONS
 
@@ -67,7 +72,7 @@ scalar.
     The input policy file, optional. A file containing the hash of a policy derived from
     `tpm2_createpolicy`.
 
-  * **-g**, **--halg**=_ALGORITHM_:
+  * **-g**, **--halg**=_NAME\_ALGORITHM_:
     The hash algorithm for generating the objects name. This is optional
     and defaults to sha256 when not specified. However, load external supports
     having a *null* name algorithm. In this case, no cryptographic binding checks
@@ -89,6 +94,10 @@ scalar.
 
   * **-o**, **--out-context**=_CONTEXT\_FILE_
     The file to save the object context, optional.
+
+  * **-n**, **--name**=_NAME\_DATA\_FILE_:
+    An optional file to save the object name, which is in a binary hash format. The size of the hash is
+    based on name algorithm or the **-g** option.
 
 # Notes
 
