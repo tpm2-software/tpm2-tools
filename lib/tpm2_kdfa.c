@@ -31,11 +31,11 @@
 #include <openssl/hmac.h>
 
 #include "log.h"
-#include "tpm_kdfa.h"
+#include "tpm2_kdfa.h"
 #include "tpm2_openssl.h"
 #include "tpm2_util.h"
 
-TSS2_RC tpm_kdfa(TPMI_ALG_HASH hashAlg,
+TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,
         TPM2B_MAX_BUFFER  *resultKey )
 {

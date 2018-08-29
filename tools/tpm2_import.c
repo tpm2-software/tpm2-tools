@@ -52,7 +52,7 @@
 #include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
-#include "tpm_kdfa.h"
+#include "tpm2_kdfa.h"
 #include "tpm2_errata.h"
 #include "tpm2_openssl.h"
 #include "tpm2_options.h"
@@ -396,7 +396,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
     TPMI_ALG_HASH parent_alg = parent_pub->publicArea.nameAlg;
     UINT16 parent_hash_size = tpm2_alg_util_get_hash_size(parent_alg);
 
-    TSS2_RC rval = tpm_kdfa(parent_alg, (TPM2B *)protection_seed, "INTEGRITY",
+    TSS2_RC rval = tpm2_kdfa(parent_alg, (TPM2B *)protection_seed, "INTEGRITY",
             &null_2b, &null_2b, parent_hash_size * 8, protection_hmac_key);
     if (rval != TPM2_RC_SUCCESS) {
         return false;
@@ -404,7 +404,7 @@ static bool calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
 
     TPM2_KEY_BITS pub_key_bits = get_pub_asym_key_bits(parent_pub);
 
-    rval = tpm_kdfa(parent_alg, (TPM2B *)protection_seed, "STORAGE",
+    rval = tpm2_kdfa(parent_alg, (TPM2B *)protection_seed, "STORAGE",
             (TPM2B *)pubname, &null_2b, pub_key_bits,
             protection_enc_key);
     if (rval != TPM2_RC_SUCCESS) {
