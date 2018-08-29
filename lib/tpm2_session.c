@@ -35,7 +35,7 @@
 
 #include "files.h"
 #include "log.h"
-#include "tpm_kdfa.h"
+#include "tpm2_kdfa.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_session.h"
 #include "tpm2_util.h"
