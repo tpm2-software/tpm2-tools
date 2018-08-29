@@ -166,7 +166,6 @@ tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC
 
 tools_tpm2_clearlock_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_create_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_createprimary_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_load_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_verifysignature_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_getmanufec_CFLAGS += -DSAPI

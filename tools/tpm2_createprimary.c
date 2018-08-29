@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -94,13 +94,15 @@ static bool on_option(char key, char *value) {
     bool res;
 
     switch (key) {
-    case 'a':
+    case 'a': {
         res = tpm2_hierarchy_from_optarg(value, &ctx.objdata.in.hierarchy,
                 TPM2_HIERARCHY_FLAGS_ALL);
+
         if (!res) {
             return false;
         }
         break;
+    }
     case 'P':
         ctx.flags.P = 1;
         ctx.parent_auth_str = value;
@@ -152,14 +154,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     bool result;
     int rc = 1;
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str, &ctx.auth.session_data, &ctx.auth.session);
+        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str, &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
             goto out;
@@ -168,7 +170,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.p) {
         TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
+        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, NULL);
         if (!result) {
             LOG_ERR("Invalid new key authorization, got\"%s\"", ctx.key_auth_str);
             goto out;
@@ -182,17 +184,24 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_hierarchy_create_primary(sapi_context, &ctx.auth.session_data, &ctx.objdata);
+    result = tpm2_hierarchy_create_primary(ectx, &ctx.auth.session_data,
+                ctx.auth.session, &ctx.objdata);
     if (!result) {
         goto out;
     }
 
-    tpm2_util_public_to_yaml(&ctx.objdata.out.public, NULL);
+    tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);
 
-    tpm2_tool_output("handle: 0x%X\n", ctx.objdata.out.handle);
+    TPM2_HANDLE tpm_hndl;
+    result = tpm2_util_esys_handle_to_sys_handle(ectx, ctx.objdata.out.handle,
+                &tpm_hndl);
+    if (!result) {
+        goto out;
+    }
+    tpm2_tool_output("handle: 0x%X\n", tpm_hndl);
 
     if (ctx.context_file) {
-        result = files_save_tpm_context_to_path_sapi(sapi_context, ctx.objdata.out.handle,
+        result = files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
             ctx.context_file);
         if (!result) {
             goto out;
@@ -202,7 +211,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -213,4 +222,5 @@ out:
 void tpm2_onexit(void) {
 
     tpm2_session_free(&ctx.auth.session);
+    tpm2_hierarchy_pdata_free(&ctx.objdata);
 }
