@@ -58,21 +58,27 @@ static clear_ctx ctx = {
     },
 };
 
-static bool clear(TSS2_SYS_CONTEXT *sapi_context) {
+static bool clear(ESYS_CONTEXT *ectx) {
 
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.auth.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
-    TPMI_RH_CLEAR rh = TPM2_RH_LOCKOUT;
+    ESYS_TR rh = ESYS_TR_RH_LOCKOUT;
 
     LOG_INFO ("Sending TPM2_Clear command with %s",
             ctx.platform ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
     if (ctx.platform)
-        rh = TPM2_RH_PLATFORM;
+        rh = ESYS_TR_RH_PLATFORM;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Clear (sapi_context,
-            rh, &sessionsData, &sessionsDataOut));
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, rh,
+                            &ctx.auth.session_data,
+                            ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle for hierarchy");
+        return false;
+    }
+
+    TSS2_RC rval = Esys_Clear(ectx, rh,
+                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
-        LOG_PERR(Tss2_Sys_Clear, rval);
+        LOG_PERR(Esys_Clear, rval);
         return false;
     }
 
@@ -108,13 +114,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
     bool result = false;;
 
     if (ctx.flags.L) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.lockout_auth_str);
@@ -122,9 +128,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = clear(sapi_context);
+    result = clear(ectx);
 
-    result &= tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result &= tpm2_session_save(ectx, ctx.auth.session, NULL);
 
     return result == false;
 }
