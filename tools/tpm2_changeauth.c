@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -116,19 +116,24 @@ static changeauth_ctx ctx = {
     .flags = { 0 },
 };
 
-static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
+static bool change_auth(ESYS_CONTEXT *ectx,
         struct auth *pwd, const char *desc,
-        TPMI_RH_HIERARCHY_AUTH auth_handle) {
+        ESYS_TR auth_handle) {
 
-    TSS2L_SYS_AUTH_COMMAND sessionsData = {
-        .count = 1,
-        .auths = { pwd->old.auth }
-    };
+    TSS2_RC rval;
 
-    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_HierarchyChangeAuth(sapi_context,
-            auth_handle, &sessionsData, &pwd->new.auth.hmac, NULL));
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, auth_handle,
+                            &pwd->old.auth, pwd->old.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle for auth");
+        return false;
+    }
+
+    rval = Esys_HierarchyChangeAuth(ectx, auth_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                &pwd->new.auth.hmac);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_HierarchyChangeAuth, rval);
+        LOG_PERR(Esys_HierarchyChangeAuth, rval);
         return false;
     }
 
@@ -137,35 +142,35 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
     return true;
 }
 
-static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
+static bool change_hierarchy_auth(ESYS_CONTEXT *ectx) {
 
     // change owner, endorsement and lockout auth.
     bool result = true;
     if (ctx.flags.o || ctx.flags.O) {
-        result &= change_auth(sapi_context, &ctx.auths.owner,
-                "Owner", TPM2_RH_OWNER);
+        result &= change_auth(ectx, &ctx.auths.owner,
+                "Owner", ESYS_TR_RH_OWNER);
     }
 
     if (ctx.flags.e || ctx.flags.E) {
-        result &= change_auth(sapi_context, &ctx.auths.endorse,
-                "Endorsement", TPM2_RH_ENDORSEMENT);
+        result &= change_auth(ectx, &ctx.auths.endorse,
+                "Endorsement", ESYS_TR_RH_ENDORSEMENT);
     }
 
     if (ctx.flags.l || ctx.flags.L) {
-        result &= change_auth(sapi_context, &ctx.auths.lockout,
-                "Lockout", TPM2_RH_LOCKOUT);
+        result &= change_auth(ectx, &ctx.auths.lockout,
+                "Lockout", ESYS_TR_RH_LOCKOUT);
     }
 
     return result;
 }
 
 
-static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
+static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
 
     bool result;
 
     if (ctx.flags.o) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
                 &ctx.auths.owner.new.auth, NULL);
         if (!result) {
             LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
@@ -174,7 +179,7 @@ static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.e) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
                 &ctx.auths.endorse.new.auth, NULL);
         if (!result) {
             LOG_ERR("Invalid new endorse authorization, got\"%s\"",
@@ -184,7 +189,7 @@ static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.l) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
                 &ctx.auths.lockout.new.auth, NULL);
         if (!result) {
             LOG_ERR("Invalid new lockout authorization, got\"%s\"",
@@ -194,7 +199,7 @@ static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.O) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_old_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_old_str,
                 &ctx.auths.owner.old.auth, &ctx.auths.owner.old.session);
         if (!result) {
             LOG_ERR("Invalid current owner authorization, got\"%s\"",
@@ -204,7 +209,7 @@ static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.E) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_old_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_old_str,
                 &ctx.auths.endorse.old.auth, &ctx.auths.endorse.old.session);
         if (!result) {
             LOG_ERR("Invalid current endorse authorization, got\"%s\"",
@@ -214,7 +219,7 @@ static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.L) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_old_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_old_str,
                 &ctx.auths.lockout.old.auth, &ctx.auths.lockout.old.session);
         if (!result) {
             LOG_ERR("Invalid current lockout authorization, got\"%s\"",
@@ -223,19 +228,19 @@ static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
         }
     }
 
-    result = change_hierarchy_auth(sapi_context);
-    result &= tpm2_session_save(sapi_context, ctx.auths.endorse.old.session, NULL);
-    result &= tpm2_session_save(sapi_context, ctx.auths.owner.old.session, NULL);
-    result &= tpm2_session_save(sapi_context, ctx.auths.lockout.old.session, NULL);
+    result = change_hierarchy_auth(ectx);
+    result &= tpm2_session_save(ectx, ctx.auths.endorse.old.session, NULL);
+    result &= tpm2_session_save(ectx, ctx.auths.owner.old.session, NULL);
+    result &= tpm2_session_save(ectx, ctx.auths.lockout.old.session, NULL);
 
     return result;
 }
 
-static bool process_tpm_handle_auths(TSS2_SYS_CONTEXT *sapi_context) {
+static bool process_tpm_handle_auths(ESYS_CONTEXT *ectx) {
 
     bool result;
     if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.tpm_handle_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_str,
                 &ctx.auths.tpm_handle.new.auth, NULL);
         if (!result) {
             LOG_ERR("Invalid new authorization for tpm handle, got\"%s\"",
@@ -245,7 +250,7 @@ static bool process_tpm_handle_auths(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.tpm_handle_auth_old_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_old_str,
                 &ctx.auths.tpm_handle.old.auth, &ctx.auths.tpm_handle.old.session);
         if (!result) {
             LOG_ERR("Invalid current authorization for tpm handle, got\"%s\"",
@@ -260,9 +265,9 @@ static bool process_tpm_handle_auths(TSS2_SYS_CONTEXT *sapi_context) {
     return true;
 }
 
-static bool process_change_nv_handle_auth(TSS2_SYS_CONTEXT *sapi_context) {
+static bool process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
 
-    bool result = process_tpm_handle_auths(sapi_context);
+    bool result = process_tpm_handle_auths(ectx);
     if (!result) {
         return false;
     }
@@ -272,62 +277,61 @@ static bool process_change_nv_handle_auth(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    TSS2L_SYS_AUTH_COMMAND cmd_sessions_data = {
-        .count = 1,
-        .auths = {ctx.auths.tpm_handle.old.auth},
-    };
+    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, 
+                        ctx.tpm_handle_context_object.tr_handle, 
+                        &ctx.auths.tpm_handle.old.auth,
+                        ctx.auths.tpm_handle.old.session);
+    if (shandle == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
+        return false;
+    }
 
-    cmd_sessions_data.auths[0].sessionHandle =
-        tpm2_session_get_handle(ctx.auths.tpm_handle.old.session);
-
-    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ChangeAuth(sapi_context,
-        ctx.tpm_handle_context_object.handle, &cmd_sessions_data,
-        &ctx.auths.tpm_handle.new.auth.hmac, NULL));
-
+    TSS2_RC rval = Esys_NV_ChangeAuth(ectx, 
+                        ctx.tpm_handle_context_object.tr_handle,
+                        shandle, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.auths.tpm_handle.new.auth.hmac);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_NV_ChangeAuth, rval);
+        LOG_PERR(Esys_NV_ChangeAuth, rval);
         return false;
     }
 
     return true;
 }
 
-static bool process_change_tpm_handle_auth(TSS2_SYS_CONTEXT *sapi_context) {
+static bool process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
 
-    bool result = process_tpm_handle_auths(sapi_context);
+    bool result = process_tpm_handle_auths(ectx);
     if (!result) {
         return false;
     }
 
-    TSS2L_SYS_AUTH_COMMAND cmd_sessions_data = {
-        .count = 1,
-        .auths = { ctx.auths.tpm_handle.old.auth }
-    };
-
-    //Check needed to see if a policy session is being specified
-    if (ctx.is_auth_policy_session_loaded) {
-        cmd_sessions_data.auths[0].sessionHandle =
-            tpm2_session_get_handle(ctx.auths.tpm_handle.old.session);
+    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
+                        ctx.tpm_handle_context_object.tr_handle,
+                        &ctx.auths.tpm_handle.old.auth,
+                        ctx.auths.tpm_handle.old.session);
+    if (shandle == ESYS_TR_NONE) {
+        return false;
     }
 
-    TPM2B_PRIVATE outPrivate;
-
-    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_ObjectChangeAuth(sapi_context,
-        ctx.tpm_handle_context_object.handle,
-        ctx.tpm_handle_parent_context_object.handle, &cmd_sessions_data,
-        &ctx.auths.tpm_handle.new.auth.hmac, &outPrivate, NULL));
+    TPM2B_PRIVATE *outPrivate = NULL;
+    TSS2_RC rval = Esys_ObjectChangeAuth(ectx,
+                        ctx.tpm_handle_context_object.tr_handle,
+                        ctx.tpm_handle_parent_context_object.tr_handle,
+                        shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+                        &ctx.auths.tpm_handle.new.auth.hmac, &outPrivate);
 
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_ObjectChangeAuth, rval);
+        LOG_PERR(Esys_ObjectChangeAuth, rval);
         return false;
     }
 
     if (ctx.flags.r) {
-        bool res = files_save_private(&outPrivate, ctx.opr_path);
+        bool res = files_save_private(outPrivate, ctx.opr_path);
         if (!res) {
             return false;
         }
     }
+
+    free(outPrivate);
 
     return true;
 }
@@ -462,13 +466,13 @@ static bool is_input_option_args_valid(void) {
     return true;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     bool result;
     if (ctx.flags.c) {
-        result = tpm2_util_object_load(sapi_context, ctx.tpm_handle_context_arg,
+        result = tpm2_util_object_load(ectx, ctx.tpm_handle_context_arg,
             &ctx.tpm_handle_context_object);
         if (!result) {
             LOG_ERR("Invalid TPM object handle");
@@ -477,7 +481,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.a) {
-        result = tpm2_util_object_load(sapi_context, ctx.tpm_handle_parent_context_arg,
+        result = tpm2_util_object_load(ectx, ctx.tpm_handle_parent_context_arg,
             &ctx.tpm_handle_parent_context_object);
         if (!result) {
             LOG_ERR("Invalid TPM object handle parent");
@@ -491,16 +495,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.is_persistent || ctx.is_transient) {
-        result = process_change_tpm_handle_auth(sapi_context);
+        result = process_change_tpm_handle_auth(ectx);
     }
 
     if (ctx.is_nv) {
-        result = process_change_nv_handle_auth(sapi_context);
+        result = process_change_nv_handle_auth(ectx);
     }
 
     if (ctx.flags.o || ctx.flags.e || ctx.flags.l || ctx.flags.O || ctx.flags.E
             || ctx.flags.L) {
-        result = process_change_hierarchy_auth(sapi_context);
+        result = process_change_hierarchy_auth(ectx);
     }
 
     /* true is success, coerce to 0 for program success */
