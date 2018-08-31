@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -66,28 +66,36 @@ tpm_rsadecrypt_ctx ctx = {
     .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
 };
 
-static bool rsa_decrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
+static bool rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     TPMT_RSA_DECRYPT inScheme;
     TPM2B_DATA label;
-    TPM2B_PUBLIC_KEY_RSA message = TPM2B_TYPE_INIT(TPM2B_PUBLIC_KEY_RSA, buffer);
-
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TPM2B_PUBLIC_KEY_RSA *message;
 
     inScheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Decrypt(sapi_context, ctx.key_context_object.handle,
-            &sessions_data, &ctx.cipher_text, &inScheme, &label, &message,
-            &sessions_data_out));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_RSA_Decrypt, rval);
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.key_context_object.tr_handle,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
         return false;
     }
 
-    return files_save_bytes_to_file(ctx.output_file_path, message.buffer,
-            message.size);
+    TSS2_RC rval = Esys_RSA_Decrypt(ectx, ctx.key_context_object.tr_handle,
+                        shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                        &ctx.cipher_text, &inScheme, &label, &message);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_RSA_Decrypt, rval);
+        return false;
+    }
+
+    bool ret = files_save_bytes_to_file(ctx.output_file_path, message->buffer,
+                    message->size);
+
+    free(message);
+
+    return ret;
 }
 
 static bool on_option(char key, char *value) {
@@ -134,7 +142,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool init(TSS2_SYS_CONTEXT *sapi_context) {
+static bool init(ESYS_CONTEXT *ectx) {
 
 
     if (!(ctx.context_arg && ctx.flags.I && ctx.flags.o)) {
@@ -142,7 +150,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    bool result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
                     &ctx.key_context_object);
     if (!result) {
         return false;
@@ -151,18 +159,18 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
    return true;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     int rc = 1;
-    bool result = init(sapi_context);
+    bool result = init(ectx);
     if (!result) {
         goto out;
     }
 
     if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
@@ -170,7 +178,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = rsa_decrypt_and_save(sapi_context);
+    result = rsa_decrypt_and_save(ectx);
     if (!result) {
         goto out;
     }
@@ -178,7 +186,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 out:
 
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
