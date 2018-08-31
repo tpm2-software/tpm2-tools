@@ -34,7 +34,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -146,35 +146,36 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
     return true;
 }
 
-static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
+static bool create_ek_handle(ESYS_CONTEXT *ectx) {
 
     bool result = set_key_algorithm(&ctx.objdata.in.public);
     if (!result) {
         return false;
     }
 
-    result = tpm2_hierarchy_create_primary(sapi_context, &ctx.auth.endorse.session_data,
-            &ctx.objdata);
+    result = tpm2_hierarchy_create_primary(ectx, &ctx.auth.endorse.session_data,
+            ctx.auth.endorse.session, &ctx.objdata);
     if (!result) {
         return false;
     }
 
     if (ctx.ctx_obj.handle) {
 
-        result = tpm2_ctx_mgmt_evictcontrol(sapi_context, TPM2_RH_OWNER,
-                &ctx.auth.owner.session_data, ctx.objdata.out.handle,
+        result = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
+                &ctx.auth.owner.session_data, ctx.auth.owner.session,
+                ctx.objdata.out.handle,
                 ctx.ctx_obj.handle);
         if (!result) {
             return false;
         }
 
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, ctx.objdata.out.handle));
+        TSS2_RC rval = Esys_FlushContext(ectx, ctx.objdata.out.handle);
         if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_FlushContext, rval);
+            LOG_PERR(Esys_FlushContext, rval);
             return false;
         }
     } else if (ctx.ctx_obj.path) {
-        bool result = files_save_tpm_context_to_path_sapi(sapi_context,
+        bool result = files_save_tpm_context_to_path(ectx,
                 ctx.objdata.out.handle, ctx.ctx_obj.path);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
@@ -188,7 +189,7 @@ static bool create_ek_handle(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     if (ctx.out_file_path) {
-        return tpm2_convert_pubkey_save(&ctx.objdata.out.public,
+        return tpm2_convert_pubkey_save(ctx.objdata.out.public,
                 ctx.format, ctx.out_file_path);
     }
 
@@ -285,7 +286,7 @@ static void set_default_hierarchy(void) {
     ctx.objdata.in.hierarchy = TPM2_RH_ENDORSEMENT;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -308,7 +309,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         /* If user passes a handle of '-' we try and find a vacant slot for
          * to use and tell them what it is.
          */
-        ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+        ret = tpm2_capability_find_vacant_persistent_handle(ectx,
                         &ctx.ctx_obj.handle);
         if (!ret) {
             LOG_ERR("handle/-H passed with a value '-' but unable to find a"
@@ -317,14 +318,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.ctx_obj.handle);
     } else if (ctx.context_arg) {
-        ret = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg, &ctx.ctx_obj);
+        ret = tpm2_util_object_load(ectx, ctx.context_arg, &ctx.ctx_obj);
         if (!ret) {
             goto out;
         }
     }
 
     if (ctx.flags.e) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+        bool res = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
                 &ctx.auth.endorse.session_data, &ctx.auth.endorse.session);
         if (!res) {
             LOG_ERR("Invalid endorse authorization, got\"%s\"",
@@ -333,7 +334,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
     if (ctx.flags.o) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
+        bool res = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
                 &ctx.auth.owner.session_data, &ctx.auth.owner.session);
         if (!res) {
             LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner_auth_str);
@@ -341,7 +342,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
     if (ctx.flags.P) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.ek_auth_str,
+        bool res = tpm2_auth_util_from_optarg(ectx, ctx.ek_auth_str,
                 &ctx.auth.ek.session_data, &ctx.auth.ek.session);
         if (!res) {
             LOG_ERR("Invalid EK authorization, got\"%s\"", ctx.ek_auth_str);
@@ -359,7 +360,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     set_default_hierarchy();
 
     /* normalize 0 success 1 failure */
-    bool result = create_ek_handle(sapi_context);
+    bool result = create_ek_handle(ectx);
     if (!result) {
         goto out;
     }
@@ -370,7 +371,7 @@ out:
 
     for(i=0; i < ARRAY_LEN(sessions); i++) {
         tpm2_session *s = *sessions[i];
-        result = tpm2_session_save (sapi_context, s, NULL);
+        result = tpm2_session_save (ectx, s, NULL);
         if (!result) {
             rc = 1;
         }
@@ -392,4 +393,6 @@ void tpm2_onexit(void) {
         tpm2_session **s = sessions[i];
         tpm2_session_free(s);
     }
+
+    tpm2_hierarchy_pdata_free(&ctx.objdata);
 }
