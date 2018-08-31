@@ -179,7 +179,6 @@ tools_tpm2_nvdefine_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_nvrelease_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_hmac_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_certify_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_readpublic_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_encryptdecrypt_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_evictcontrol_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_loadexternal_CFLAGS = $(AM_CFLAGS) -DSAPI
