@@ -38,7 +38,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -98,46 +98,62 @@ static tpm_create_ctx ctx = {
     },
 };
 
-static bool create(TSS2_SYS_CONTEXT *sapi_context) {
+static bool create(ESYS_CONTEXT *ectx) {
     TSS2_RC rval;
-    TSS2L_SYS_AUTH_COMMAND sessionsData =
-            TSS2L_SYS_AUTH_COMMAND_INIT(1, { ctx.auth.session_data });
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    bool ret = true;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION      creationPCR = { .count = 0 };
-    TPM2B_PUBLIC            outPublic = TPM2B_EMPTY_INIT;
-    TPM2B_PRIVATE           outPrivate = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
+    TPM2B_PUBLIC            *outPublic;
+    TPM2B_PRIVATE           *outPrivate;
 
-    TPM2B_CREATION_DATA     creationData = TPM2B_EMPTY_INIT;
-    TPM2B_DIGEST            creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMT_TK_CREATION        creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
+    TPM2B_CREATION_DATA     *creationData;
+    TPM2B_DIGEST            *creationHash;
+    TPMT_TK_CREATION        *creationTicket;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.context_object.handle, &sessionsData, &ctx.in_sensitive,
-                           &ctx.in_public, &outsideInfo, &creationPCR, &outPrivate,&outPublic,
-                           &creationData, &creationHash, &creationTicket, &sessionsDataOut));
-    if(rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_Create, rval);
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.context_object.tr_handle,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Couldn't get shandle");
         return false;
     }
 
-    tpm2_util_public_to_yaml(&outPublic, NULL);
+    rval = Esys_Create(ectx, ctx.context_object.tr_handle,
+            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+            &ctx.in_sensitive, &ctx.in_public, &outsideInfo, &creationPCR,
+            &outPrivate, &outPublic, &creationData, &creationHash,
+            &creationTicket);
+    if(rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Create, rval);
+        ret = false;
+        goto out;
+    }
+
+    tpm2_util_public_to_yaml(outPublic, NULL);
 
     if (ctx.flags.u) {
-        bool res = files_save_public(&outPublic, ctx.opu_path);
+        bool res = files_save_public(outPublic, ctx.opu_path);
         if(!res) {
-            return false;
+            ret = false;
         }
     }
 
     if (ctx.flags.r) {
-        bool res = files_save_private(&outPrivate, ctx.opr_path);
+        bool res = files_save_private(outPrivate, ctx.opr_path);
         if (!res) {
-            return false;
+            ret = false;
         }
     }
 
-    return true;
+out:
+    free(outPrivate);
+    free(outPublic);
+    free(creationData);
+    free(creationHash);
+    free(creationTicket);
+
+    return ret;
 }
 
 static bool on_option(char key, char *value) {
@@ -219,7 +235,7 @@ static bool load_sensitive(void) {
             &ctx.in_sensitive.sensitive.data.size, ctx.in_sensitive.sensitive.data.buffer);
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -270,15 +286,23 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
             &ctx.context_object);
     if (!result) {
         goto out;
     }
 
+    if (!ctx.context_object.tr_handle) {
+        result = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.context_object.handle, &ctx.context_object.tr_handle);
+        if (!result) {
+            goto out;
+        }
+    }
+
     if (ctx.flags.p) {
         TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
+        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, NULL);
         if (!result) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
             goto out;
@@ -287,7 +311,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
             &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
@@ -295,7 +319,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = create(sapi_context);
+    result = create(ectx);
     if (!result) {
         goto out;
     }
@@ -303,7 +327,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save (sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save (ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
