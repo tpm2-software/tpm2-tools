@@ -329,7 +329,7 @@ static bool handle_asym_scheme_common(const char *ext, TPM2B_PUBLIC *public) {
         ext = scheme;
     } else {
         if (!next || *(next + 1) == '\0') {
-            next = is_restricted ? ":aes256cfb" : ":null";
+            next = is_restricted ? ":aes128cfb" : ":null";
         }
 
         // Go past next :
@@ -357,8 +357,8 @@ static bool handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
     /*
      * Deal with normalizing the input strings.
      *
-     * "rsa --> maps to rsa2048:aes256cbc
-     * "rsa:aes --> maps to rsa2048:aes256cbc
+     * "rsa --> maps to rsa2048:aes128cbc
+     * "rsa:aes --> maps to rsa2048:aes128cbc
      * "rsa:null" -- maps to rsa2048:null
      *
      * This function is invoked with rsa removed.
@@ -386,7 +386,7 @@ static bool handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
     ext += 4;
 
     if (*ext != ':' || *ext + 1 == '\0') {
-        ext = is_restricted ? ":null:aes256cfb" : ":null:null";
+        ext = is_restricted ? ":null:aes128cfb" : ":null:null";
     }
 
     // go past the colon separator
@@ -428,7 +428,7 @@ static bool handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
     ext += 3;
 
     if (*ext != ':' || *ext + 1 == '\0') {
-        ext = is_restricted ? ":null:aes256cfb" : ":null:null";
+        ext = is_restricted ? ":null:aes128cfb" : ":null:null";
     }
 
     // go past the colon separator
