@@ -34,7 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -55,34 +55,36 @@ static tpm_rsaencrypt_ctx ctx = {
     .context_arg = NULL
 };
 
-static bool rsa_encrypt_and_save(TSS2_SYS_CONTEXT *sapi_context) {
+static bool rsa_encrypt_and_save(ESYS_CONTEXT *context) {
 
+    bool ret = true;
     // Inputs
     TPMT_RSA_DECRYPT scheme;
     TPM2B_DATA label;
     // Outputs
-    TPM2B_PUBLIC_KEY_RSA out_data = TPM2B_TYPE_INIT(TPM2B_PUBLIC_KEY_RSA, buffer);
-
-    TSS2L_SYS_AUTH_RESPONSE out_sessions_data;
+    TPM2B_PUBLIC_KEY_RSA *out_data;
 
     scheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_RSA_Encrypt(sapi_context, ctx.key_context.handle, NULL,
-            &ctx.message, &scheme, &label, &out_data, &out_sessions_data));
+    TSS2_RC rval = Esys_RSA_Encrypt(context, ctx.key_context.tr_handle,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        &ctx.message, &scheme, &label, &out_data);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_RSA_Encrypt, rval);
+        LOG_PERR(Esys_RSA_Encrypt, rval);
         return false;
     }
 
     if (ctx.output_path) {
-        return files_save_bytes_to_file(ctx.output_path, out_data.buffer,
-            out_data.size);
+        ret = files_save_bytes_to_file(ctx.output_path, out_data->buffer,
+                out_data->size);
     }
 
-    tpm2_util_print_tpm2b((TPM2B *)&out_data);
+    tpm2_util_print_tpm2b((TPM2B *)out_data);
 
-    return true;
+    free(out_data);
+
+    return ret;
 }
 
 static bool on_option(char key, char *value) {
@@ -123,14 +125,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool init(TSS2_SYS_CONTEXT *sapi_context) {
+static bool init(ESYS_CONTEXT *context) {
 
     if (!ctx.context_arg) {
         LOG_ERR("Expected option C");
         return false;
     }
 
-    bool result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    bool result = tpm2_util_object_load(context, ctx.context_arg,
                     &ctx.key_context);
     if (!result) {
         return false;
@@ -141,14 +143,14 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
         &ctx.message.size, ctx.message.buffer);
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = init(sapi_context);
+    bool result = init(context);
     if (!result) {
         return 1;
     }
 
-    return rsa_encrypt_and_save(sapi_context) != true;
+    return rsa_encrypt_and_save(context) != true;
 }
