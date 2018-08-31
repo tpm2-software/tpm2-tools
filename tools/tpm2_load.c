@@ -38,7 +38,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -47,8 +47,6 @@
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
-
-TPM2_HANDLE handle;
 
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {
@@ -69,41 +67,62 @@ struct tpm_load_ctx {
         UINT8 P : 1;
         UINT8 o : 1;
     } flags;
+    ESYS_TR handle;
 };
 
 static tpm_load_ctx ctx = {
     .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
 };
 
-int load (TSS2_SYS_CONTEXT *sapi_context) {
-    UINT32 rval;
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.auth.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+int load (ESYS_CONTEXT *ectx) {
 
-    TPM2B_NAME nameExt = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context,
-                         ctx.context_object.handle,
-                         &sessionsData,
-                         &ctx.in_private,
-                         &ctx.in_public,
-                         &handle,
-                         &nameExt,
-                         &sessionsDataOut));
-    if(rval != TPM2_RC_SUCCESS)
-    {
-        LOG_PERR(Tss2_Sys_Load, rval);
+    int ret = 0;
+    TPM2_RC rval;
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.context_object.tr_handle,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
         return -1;
     }
-    tpm2_tool_output("handle: 0x%08x\n", handle);
 
-    if (ctx.out_name_file) {
-        if(!files_save_bytes_to_file(ctx.out_name_file, nameExt.name, nameExt.size)) {
-            return -2;
-        }
+    rval = Esys_Load(ectx, ctx.context_object.tr_handle,
+            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+            &ctx.in_private, &ctx.in_public, &ctx.handle);
+    if (rval != TPM2_RC_SUCCESS)
+    {
+        LOG_PERR(Eys_Load, rval);
+        return -1;
     }
 
-    return 0;
+    TPM2_HANDLE tpm_handle;
+    bool ok = tpm2_util_esys_handle_to_sys_handle(ectx, ctx.handle,
+                &tpm_handle);
+    if (!ok) {
+        return -1;
+    }
+    tpm2_tool_output("handle: 0x%08x\n", tpm_handle);
+
+    if (ctx.out_name_file) {
+
+        TPM2B_NAME *nameExt;
+
+        rval = Esys_TR_GetName(ectx, ctx.handle, &nameExt);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_TR_GetName, rval);
+            ret = -1;
+            goto done;
+        }
+
+        if(!files_save_bytes_to_file(ctx.out_name_file, nameExt->name, nameExt->size)) {
+            ret = -2;
+        }
+
+    done:
+        free(nameExt);
+    }
+
+    return ret;
 }
 
 static bool on_option(char key, char *value) {
@@ -163,7 +182,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -176,7 +195,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if(ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
@@ -184,20 +203,27 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = tpm2_util_object_load_sapi(sapi_context,
-            ctx.context_arg, &ctx.context_object);
+    result = tpm2_util_object_load(ectx,
+                ctx.context_arg, &ctx.context_object);
     if (!result) {
         goto out;
+    } else if (!ctx.context_object.tr_handle) {
+        result = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.context_object.handle,
+                    &ctx.context_object.tr_handle);
+        if (!result) {
+            goto out;
+        }
     }
 
-    int tmp_rc = load(sapi_context);
+    int tmp_rc = load(ectx);
     if (tmp_rc) {
         goto out;
     }
 
     if (ctx.flags.o) {
-        result = files_save_tpm_context_to_path_sapi(sapi_context,
-                    handle,
+        result = files_save_tpm_context_to_path(ectx,
+                    ctx.handle,
                     ctx.context_file);
         if (!result) {
             goto out;
@@ -207,7 +233,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
