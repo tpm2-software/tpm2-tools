@@ -90,6 +90,7 @@ arguments.
 
 #### Hash Optional Scheme Specifiers
 These scheme specifiers are followed immediately by a valid hash algorithm, For example: `oaepsha256`.
+
   * oaep
   * ecdh
   * rsassa
@@ -107,11 +108,12 @@ This scheme specifier takes NO arguments.
 
 ### Symmetric Details Specifiers
 This field is optional, and defaults based on the *type* of object being created and it's attributes.
-Generally, any valid **Symmetric** specifier from the **Type Scpefiers** list should work.
+Generally, any valid **Symmetric** specifier from the **Type Specifiers** list should work. If not
+specified, an asymmetric objects symmetric details defaults to *aes128cfb*.
 
 ## Examples:
 
-Create an rsa2048 key with an rsaes assymmetric encryption scheme:
+Create an rsa2048 key with an rsaes asymmetric encryption scheme:
 `tpm2_create -C parent.ctx -G rsa2048:rsaes -u key.pub -r key.priv`
 
 Create an ecc256 key with an ecdaa signing scheme with a count of 4 and sha384 hash:
