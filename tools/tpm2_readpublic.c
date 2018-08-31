@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_convert.h"
 #include "files.h"
@@ -59,40 +59,55 @@ static tpm_readpub_ctx ctx = {
     .format = pubkey_format_tss,
 };
 
-static int read_public_and_save(TSS2_SYS_CONTEXT *sapi_context) {
+static int read_public_and_save(ESYS_CONTEXT *ectx) {
 
-    TSS2L_SYS_AUTH_RESPONSE sessions_out_data;
+    TPM2B_PUBLIC *public;
+    TPM2B_NAME *name;
+    TPM2B_NAME *qualified_name;
 
-    TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
+    // If we loaded a context file tr_handle is set, whereas if we loaded a
+    // UINT as handle we need to convert it to an ESYS_TR
+    if (!ctx.context_object.tr_handle) {
+        bool ok = tpm2_util_sys_handle_to_esys_handle(ectx,
+                        ctx.context_object.handle,
+                        &ctx.context_object.tr_handle);
+        if (!ok) {
+            LOG_ERR("Failed to get an ESYS handle for the given SYS handle");
+            return false;
+        }
+    }
 
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, ctx.context_object.handle, 0,
-            &public, &name, &qualified_name, &sessions_out_data));
+    TSS2_RC rval = Esys_ReadPublic(ectx, ctx.context_object.tr_handle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &public, &name, &qualified_name);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_ReadPublic, rval);
+        LOG_PERR(Eys_ReadPublic, rval);
         return false;
     }
 
     tpm2_tool_output("name: ");
     UINT16 i;
-    for (i = 0; i < name.size; i++) {
-        tpm2_tool_output("%02x", name.name[i]);
+    for (i = 0; i < name->size; i++) {
+        tpm2_tool_output("%02x", name->name[i]);
     }
     tpm2_tool_output("\n");
 
     tpm2_tool_output("qualified name: ");
-    for (i = 0; i < qualified_name.size; i++) {
-        tpm2_tool_output("%02x", qualified_name.name[i]);
+    for (i = 0; i < qualified_name->size; i++) {
+        tpm2_tool_output("%02x", qualified_name->name[i]);
     }
     tpm2_tool_output("\n");
 
-    tpm2_util_public_to_yaml(&public, NULL);
+    tpm2_util_public_to_yaml(public, NULL);
 
-    return ctx.outFilePath ?
-            tpm2_convert_pubkey_save(&public, ctx.format, ctx.outFilePath) : true;
+    bool ret = ctx.outFilePath ?
+            tpm2_convert_pubkey_save(public, ctx.format, ctx.outFilePath) : true;
+
+    free(public);
+    free(name);
+    free(qualified_name);
+
+    return ret;
 }
 
 static bool on_option(char key, char *value) {
@@ -130,9 +145,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool init(TSS2_SYS_CONTEXT *sapi_context) {
+static bool init(ESYS_CONTEXT *context) {
 
-    bool result = tpm2_util_object_load_sapi(sapi_context,
+    bool result = tpm2_util_object_load(context,
                     ctx.context_arg, &ctx.context_object);
     if (!result) {
         return false;
@@ -141,14 +156,14 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     return true;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = init(sapi_context);
+    bool result = init(context);
     if (!result) {
         return 1;
     }
 
-    return read_public_and_save(sapi_context) != true;
+    return read_public_and_save(context) != true;
 }
