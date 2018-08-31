@@ -43,7 +43,7 @@
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -71,7 +71,7 @@ struct tpm_getmanufec_ctx {
     } auth;
     TPM2B_SENSITIVE_CREATE inSensitive;
     char *ec_cert_path;
-    TPM2_HANDLE persistent_handle;
+    ESYS_TR persistent_handle;
     UINT32 algorithm_type;
     FILE *ec_cert_file;
     char *ek_server_addr;
@@ -79,7 +79,7 @@ struct tpm_getmanufec_ctx {
     unsigned int SSL_NO_VERIFY;
     char *ek_path;
     bool verbose;
-    TPM2B_PUBLIC outPublic;
+    TPM2B_PUBLIC *outPublic;
     bool find_persistent_handle;
     struct {
         UINT8 e : 1;
@@ -163,40 +163,39 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
     return 0;
 }
 
-int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
+int createEKHandle(ESYS_CONTEXT *ectx)
 {
-    UINT32 rval;
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.auth.endorse.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TPM2_RC rval;
 
     TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
 
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION creationPCR;
 
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_CREATION_DATA creationData = TPM2B_EMPTY_INIT;
-    TPM2B_DIGEST creationHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    TPMT_TK_CREATION creationTicket = TPMT_TK_CREATION_EMPTY_INIT;
-
-    TPM2_HANDLE handle2048ek;
+    ESYS_TR handle2048ek;
 
     if (set_key_algorithm(&inPublic) )
           return 1;
 
     creationPCR.count = 0;
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_CreatePrimary(sapi_context, TPM2_RH_ENDORSEMENT, &sessionsData,
-                                  &ctx.inSensitive, &inPublic, &outsideInfo,
-                                  &creationPCR, &handle2048ek, &ctx.outPublic,
-                                  &creationData, &creationHash, &creationTicket,
-                                  &name, &sessionsDataOut));
-    if (rval != TPM2_RC_SUCCESS ) {
-        LOG_PERR(Tss2_Sys_CreatePrimary, rval);
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
+                            &ctx.auth.endorse.session_data,
+                            ctx.auth.endorse.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
         return 1;
     }
-    LOG_INFO("EK create succ.. Handle: 0x%8.8x", handle2048ek);
+
+    rval = Esys_CreatePrimary(ectx, ESYS_TR_RH_ENDORSEMENT,
+            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+            &ctx.inSensitive, &inPublic, &outsideInfo,
+            &creationPCR, &handle2048ek, &ctx.outPublic,
+            NULL, NULL, NULL);
+    if (rval != TPM2_RC_SUCCESS ) {
+        LOG_PERR(Esys_CreatePrimary, rval);
+        return 1;
+    }
 
     if (!ctx.non_persistent_read) {
 
@@ -205,27 +204,40 @@ int createEKHandle(TSS2_SYS_CONTEXT *sapi_context)
             return 1;
         }
 
-        sessionsData.auths[0] = ctx.auth.owner.session_data;
+        ESYS_TR new_handle;
 
-        rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, handle2048ek,
-                                     &sessionsData, ctx.persistent_handle, &sessionsDataOut));
+        ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
+                                &ctx.auth.owner.session_data,
+                                ctx.auth.owner.session);
+        if (shandle == ESYS_TR_NONE) {
+            LOG_ERR("Couldn't get shandle for owner hierarchy");
+            return 1;
+        }
+
+        rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, handle2048ek,
+                shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+                ctx.persistent_handle, &new_handle);
         if (rval != TPM2_RC_SUCCESS ) {
-            LOG_PERR(Tss2_Sys_EvictControl, rval);
+            LOG_PERR(Esys_EvictControl, rval);
             return 1;
         }
         LOG_INFO("EvictControl EK persistent succ.");
+
+        rval = Esys_TR_Close(ectx, &new_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_TR_Close, rval);
+        }
     }
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
-                                 handle2048ek));
+    rval = Esys_FlushContext(ectx, handle2048ek);
     if (rval != TPM2_RC_SUCCESS ) {
-        LOG_PERR(Tss2_Sys_FlushContext, rval);
+        LOG_PERR(Esys_FlushContext, rval);
         return 1;
     }
 
     LOG_INFO("Flush transient EK succ.");
 
-    return files_save_public(&ctx.outPublic, ctx.output_file) != true;
+    return files_save_public(ctx.outPublic, ctx.output_file) != true;
 }
 
 static unsigned char *HashEKPublicKey(void) {
@@ -244,8 +256,8 @@ static unsigned char *HashEKPublicKey(void) {
         goto err;
     }
 
-    is_success = SHA256_Update(&sha256, ctx.outPublic.publicArea.unique.rsa.buffer,
-            ctx.outPublic.publicArea.unique.rsa.size);
+    is_success = SHA256_Update(&sha256, ctx.outPublic->publicArea.unique.rsa.buffer,
+            ctx.outPublic->publicArea.unique.rsa.size);
     if (!is_success) {
         LOG_ERR ("SHA256_Update failed");
         goto err;
@@ -529,7 +541,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     int rc = 1;
     bool result;
@@ -542,7 +554,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     ctx.verbose = flags.verbose;
 
     if (ctx.flags.e) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
                 &ctx.auth.endorse.session_data, &ctx.auth.endorse.session);
         if (!result) {
             LOG_ERR("Invalid endorsement authorization, got\"%s\"",
@@ -552,8 +564,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.o) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
-                &ctx.auth.owner.session_data, &ctx.auth.endorse.session);
+        result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
+                &ctx.auth.owner.session_data, &ctx.auth.owner.session);
         if (!result) {
             LOG_ERR("Invalid owner authorization, got\"%s\"",
                 ctx.owner_auth_str);
@@ -563,7 +575,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.flags.P) {
         TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.ek_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.ek_auth_str,
                 &tmp, NULL);
         if (!result) {
             LOG_ERR("Invalid EK authorization, got\"%s\"", ctx.ek_auth_str);
@@ -573,7 +585,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.find_persistent_handle) {
-        bool ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+        bool ret = tpm2_capability_find_vacant_persistent_handle(ectx,
                         &ctx.persistent_handle);
         if (!ret) {
             LOG_ERR("handle/H passed with a value of '-' but unable to find a"
@@ -592,14 +604,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (!ctx.ek_path) {
-        int tmp_rc = createEKHandle(sapi_context);
+        int tmp_rc = createEKHandle(ectx);
         if (tmp_rc) {
             goto out;
         }
     } else {
-        bool res = files_load_public(ctx.ek_path, &ctx.outPublic);
+        ctx.outPublic = malloc(sizeof(*ctx.outPublic));
+        ctx.outPublic->size = 0;
+
+        bool res = files_load_public(ctx.ek_path, ctx.outPublic);
         if (!res) {
-            LOG_ERR("Could not load exiting EK public from file");
+            LOG_ERR("Could not load existing EK public from file");
             goto out;
         }
     }
@@ -616,8 +631,8 @@ out:
         fclose(ctx.ec_cert_file);
     }
 
-    result = tpm2_session_save(sapi_context, ctx.auth.owner.session, NULL);
-    result &= tpm2_session_save(sapi_context, ctx.auth.endorse.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.owner.session, NULL);
+    result &= tpm2_session_save(ectx, ctx.auth.endorse.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -628,6 +643,7 @@ out:
 
 void tpm2_onexit(void) {
 
+    free(ctx.outPublic);
     tpm2_session_free(&ctx.auth.owner.session);
     tpm2_session_free(&ctx.auth.endorse.session);
 }

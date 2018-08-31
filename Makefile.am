@@ -168,7 +168,6 @@ tools_tpm2_clearlock_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_create_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_load_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_verifysignature_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_getmanufec_CFLAGS += -DSAPI
 tools_tpm2_quote_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_createek_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_createak_CFLAGS = $(AM_CFLAGS) -DSAPI
