@@ -58,6 +58,32 @@ bool tpm2_policy_build_pcr(TSS2_SYS_CONTEXT *sapi_context,
         const char *raw_pcrs_file,
         TPML_PCR_SELECTION *pcr_selections);
 
+
+/**
+ * Enables a signing authority to authorize policies
+ * @param sapi_context
+ *   The system api context
+ * @param policy_session
+ *   The policy session that has the policy digest to be authorized
+ * @param policy_digest_path
+ *   The policy digest file that needs to be authorized by signing authority
+ * @param policy_qualifier_path
+ *   The policy qualifier data that concatenates with approved policies
+ * @param verifying_pubkey_name_path
+ *   The name of the public key that verifies the signature of the signer
+ * @param ticket_path
+ *   The verification ticket generated when TPM verifies the signature
+ * @return
+ *   true on success, false otherwise.
+ */
+bool tpm2_policy_build_policyauthorize(
+    TSS2_SYS_CONTEXT *sapi_context,
+    tpm2_session *policy_session,
+    const char *policy_digest_path,
+    const char *policy_qualifier_path,
+    const char *verifying_pubkey_name_path,
+    const char *ticket_path);
+
 /**
  * Retrieves the policy digest for a session via Tss2_Sys_PolicyGetDigest.
  * @param sapi_context
@@ -71,6 +97,6 @@ bool tpm2_policy_build_pcr(TSS2_SYS_CONTEXT *sapi_context,
  */
 bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
         tpm2_session *session,
-        TPM2B_DIGEST *policy_digest);
+        TPM2B_DIGEST *policy_digest_path);
 
 #endif /* TPM2_POLICY_H_ */
