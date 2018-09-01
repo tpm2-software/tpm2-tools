@@ -200,6 +200,102 @@ bool tpm2_policy_build_pcr(TSS2_SYS_CONTEXT *sapi_context,
     return result;
 }
 
+bool tpm2_policy_build_policyauthorize(
+    TSS2_SYS_CONTEXT *sapi_context,
+    tpm2_session *policy_session,
+    const char *policy_digest_path,
+    const char *policy_qualifier_path,
+    const char *verifying_pubkey_name_path,
+    const char *ticket_path) {
+
+    unsigned long file_size = 0;
+
+    bool result = files_get_file_size_path(policy_digest_path, &file_size);
+    if (!result) {
+        return false;
+    }
+
+    TPM2B_DIGEST approved_policy = {
+        .size = (uint16_t)file_size
+    };
+    result = files_load_bytes_from_path(policy_digest_path,
+        approved_policy.buffer, &approved_policy.size);
+    if (!result) {
+        return false;
+    }
+
+    /*
+     * Qualifier data is optional. If not specified default to 0
+     */
+    file_size = 0;
+    if (policy_qualifier_path) {
+        result = files_get_file_size_path(policy_qualifier_path,
+            &file_size);
+        if (!result) {
+            return false;
+        }
+    }
+
+    TPM2B_NONCE policy_qualifier = {
+        .size = (uint16_t) file_size
+    };
+
+    if (file_size != 0) {
+        result = files_load_bytes_from_path(policy_qualifier_path,
+            policy_qualifier.buffer, &policy_qualifier.size);
+        if (!result) {
+            return false;
+        }
+    }
+
+    result = files_get_file_size_path(verifying_pubkey_name_path, &file_size);
+    if (!result) {
+        return false;
+    }
+
+    if (!file_size) {
+        LOG_ERR("Verifying public key name file \"%s\", cannot be empty",
+                verifying_pubkey_name_path);
+        return false;
+    }
+
+    TPM2B_NAME key_sign = {
+        .size = (uint16_t)file_size
+    };
+
+    result = files_load_bytes_from_path(verifying_pubkey_name_path,
+            key_sign.name,
+        &key_sign.size);
+    if (!result) {
+        return false;
+    }
+
+    TPMT_TK_VERIFIED  check_ticket = {
+        .tag = TPM2_ST_VERIFIED,
+        .hierarchy = TPM2_RH_OWNER,
+        .digest = {0}
+    };
+    result = tpm2_session_is_trial(policy_session);
+    if (!result) {
+        result = files_load_ticket(ticket_path, &check_ticket);
+        if (!result) {
+            LOG_ERR("Could not load verification ticket file");
+            return false;
+        }
+    }
+
+    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(policy_session);
+
+    TSS2_RC rval = Tss2_Sys_PolicyAuthorize(sapi_context, handle, NULL,
+        &approved_policy, &policy_qualifier, &key_sign, &check_ticket,NULL);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_PolicyAuthorize, rval);
+        return false;
+    }
+
+    return true;
+}
+
 bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
         tpm2_session *session,
         TPM2B_DIGEST *policy_digest) {
