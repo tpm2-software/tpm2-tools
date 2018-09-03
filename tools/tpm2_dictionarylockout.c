@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
 #include "tpm2_auth_util.h"
@@ -66,10 +66,15 @@ static dictionarylockout_ctx ctx = {
     .flags = { 0 },
 };
 
-bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context) {
+bool dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
 
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { ctx.auth.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
+    TPM2_RC rval;
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_LOCKOUT,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Couldn't get shandle for lockout hierarchy");
+        return false;
+    }
 
     /*
      * If setup params and clear lockout are both required, clear lockout should
@@ -78,22 +83,22 @@ bool dictionary_lockout_reset_and_parameter_setup(TSS2_SYS_CONTEXT *sapi_context
     if (ctx.clear_lockout) {
 
         LOG_INFO("Resetting dictionary lockout state.");
-        UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_DictionaryAttackLockReset(sapi_context,
-                TPM2_RH_LOCKOUT, &sessionsData, &sessionsDataOut));
+        rval = Esys_DictionaryAttackLockReset(ectx, ESYS_TR_RH_LOCKOUT,
+                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_DictionaryAttackLockReset, rval);
+            LOG_PERR(Esys_DictionaryAttackLockReset, rval);
             return false;
         }
     }
 
     if (ctx.setup_parameters) {
         LOG_INFO("Setting up Dictionary Lockout parameters.");
-        UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_DictionaryAttackParameters(sapi_context,
-                TPM2_RH_LOCKOUT, &sessionsData, ctx.max_tries,
-                ctx.recovery_time, ctx.lockout_recovery_time,
-                &sessionsDataOut));
+        rval = Esys_DictionaryAttackParameters(ectx, ESYS_TR_RH_LOCKOUT,
+                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                    ctx.max_tries, ctx.recovery_time,
+                    ctx.lockout_recovery_time);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_DictionaryAttackParameters, rval);
+            LOG_PERR(Esys_DictionaryAttackParameters, rval);
             return false;
         }
     }
@@ -166,7 +171,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -179,7 +184,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid lockout authorization, got\"%s\"",
@@ -188,7 +193,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = dictionary_lockout_reset_and_parameter_setup(sapi_context);
+    result = dictionary_lockout_reset_and_parameter_setup(ectx);
     if (!result) {
         goto out;
     }
@@ -196,7 +201,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
