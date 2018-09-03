@@ -56,24 +56,25 @@ static clearlock_ctx ctx = {
     .flags = { 0 },
 };
 
-static bool clearlock(TSS2_SYS_CONTEXT *sapi_context) {
+static bool clearlock(ESYS_CONTEXT *ectx) {
 
-    TPMI_RH_CLEAR rh = ctx.platform ? TPM2_RH_PLATFORM : TPM2_RH_LOCKOUT;
+    ESYS_TR rh = ctx.platform ? ESYS_TR_RH_PLATFORM : ESYS_TR_RH_LOCKOUT;
     TPMI_YES_NO disable = ctx.clear ? 0 : 1;
 
     LOG_INFO ("Sending TPM2_ClearControl(%s) command on %s",
             ctx.clear ? "CLEAR" : "SET",
             ctx.platform ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
 
-    TSS2L_SYS_AUTH_COMMAND sessionsData =
-            TSS2L_SYS_AUTH_COMMAND_INIT(1, { ctx.session_data });
-
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ClearControl (sapi_context,
-            rh, &sessionsData, disable, &sessionsDataOut));
+    TSS2_RC rval = Esys_TR_SetAuth(ectx, rh, &ctx.session_data.hmac);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_SetAuth, rval);
+        return false;
+    }
+    
+    rval = Esys_ClearControl(ectx, rh,
+                ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE, disable);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
-        LOG_PERR(Tss2_Sys_ClearControl, rval);
+        LOG_PERR(Esys_ClearControl, rval);
         return false;
     }
 
@@ -113,12 +114,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     if (ctx.flags.L) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
+        bool res = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
                 &ctx.session_data, NULL);
         if (!res) {
             LOG_ERR("Invalid lockout authorization, got\"%s\"",
@@ -127,5 +128,5 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    return clearlock(sapi_context) != true;
+    return clearlock(ectx) != true;
 }
