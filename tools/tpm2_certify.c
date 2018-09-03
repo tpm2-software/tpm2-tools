@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -82,33 +82,40 @@ static tpm_certify_ctx ctx = {
     .sig_fmt = signature_format_tss,
 };
 
-static bool get_key_type(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT object_handle, TPMI_ALG_PUBLIC *type) {
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+static bool get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
+                            TPMI_ALG_PUBLIC *type) {
 
-    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
+    TSS2_RC rval;
+    bool ret = true;
+    TPM2B_PUBLIC *out_public;
+    TPM2B_NAME *name;
+    TPM2B_NAME *qualified_name;
 
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, object_handle, 0,
-            &out_public, &name, &qualified_name, &sessions_data_out));
+    rval = Esys_ReadPublic(ectx, object_handle,
+                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                &out_public, &name, &qualified_name);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_ReadPublic, rval);
+        LOG_PERR(Esys_ReadPublic, rval);
         *type = TPM2_ALG_ERROR;
-        return false;
+        ret = false;
+        goto out;
     }
 
-    *type = out_public.publicArea.type;
+    *type = out_public->publicArea.type;
 
-    return true;
+out:
+    free(out_public);
+    free(name);
+    free(qualified_name);
+
+    return ret;
 }
 
-static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle,
+static bool set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
         TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *scheme) {
 
     TPM2_ALG_ID type;
-    bool result = get_key_type(sapi_context, key_handle, &type);
+    bool result = get_key_type(ectx, key_handle, &type);
     if (!result) {
         return false;
     }
@@ -135,14 +142,9 @@ static bool set_scheme(TSS2_SYS_CONTEXT *sapi_context, TPMI_DH_OBJECT key_handle
     return true;
 }
 
-static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
+static bool certify_and_save_data(ESYS_CONTEXT *ectx) {
 
-    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
-        .count = ARRAY_LEN(ctx.cmd_auth),
-        .auths = { ctx.cmd_auth[0], ctx.cmd_auth[1]}
-    };
-
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TSS2_RC rval;
 
     TPM2B_DATA qualifying_data = {
         .size = 4,
@@ -150,34 +152,56 @@ static bool certify_and_save_data(TSS2_SYS_CONTEXT *sapi_context) {
     };
 
     TPMT_SIG_SCHEME scheme;
-    bool result = set_scheme(sapi_context, ctx.key_context_object.handle, ctx.halg, &scheme);
+    bool result = set_scheme(ectx, ctx.key_context_object.tr_handle, ctx.halg,
+                    &scheme);
     if (!result) {
         LOG_ERR("No suitable signing scheme!");
         return false;
     }
 
-    TPM2B_ATTEST certify_info = {
-        .size = sizeof(certify_info)-2
-    };
+    TPM2B_ATTEST *certify_info;
+    TPMT_SIGNATURE *signature;
 
-    TPMT_SIGNATURE signature;
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, 
+                            ctx.context_object.tr_handle, &ctx.cmd_auth[0], 
+                            ctx.session[0]);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get session handle for TPM object");
+        return false;
+    }
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Certify(sapi_context, ctx.context_object.handle,
-            ctx.key_context_object.handle, &cmd_auth_array, &qualifying_data, &scheme,
-            &certify_info, &signature, &sessions_data_out));
+    ESYS_TR shandle2 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.key_context_object.tr_handle,
+                            &ctx.cmd_auth[1], ctx.session[1]);
+    if (shandle2 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get session handle for key");
+        return false;
+    }
+
+    rval = Esys_Certify(ectx, ctx.context_object.tr_handle,
+                        ctx.key_context_object.tr_handle,
+                        shandle1, shandle2, ESYS_TR_NONE,
+                        &qualifying_data, &scheme, &certify_info,
+                        &signature);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_Certify, rval);
+        LOG_PERR(Eys_Certify, rval);
         return false;
     }
 
     /* serialization is safe here, since it's just a byte array */
     result = files_save_bytes_to_file(ctx.file_path.attest,
-            certify_info.attestationData, certify_info.size);
+            certify_info->attestationData, certify_info->size);
     if (!result) {
-        return false;
+        goto out;
     }
 
-    return tpm2_convert_sig_save(&signature, ctx.sig_fmt, ctx.file_path.sig);
+    result = tpm2_convert_sig_save(signature, ctx.sig_fmt, ctx.file_path.sig);
+
+out:
+    free(certify_info);
+    free(signature);
+
+    return result;
 }
 
 static bool on_option(char key, char *value) {
@@ -244,7 +268,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     size_t i;
     int rc = 1;
@@ -260,24 +284,30 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     /* Load input files */
-    result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
             &ctx.context_object);
     if (!result) {
         tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
                 ctx.context_object.handle, ctx.context_object.path);
         goto out;
+    } else  if (!ctx.context_object.tr_handle) {
+        tpm2_util_sys_handle_to_esys_handle(ectx, ctx.context_object.handle,
+            &ctx.context_object.tr_handle);
     }
 
-    result = tpm2_util_object_load_sapi(sapi_context, ctx.key_context_arg,
+    result = tpm2_util_object_load(ectx, ctx.key_context_arg,
             &ctx.key_context_object);
     if (!result) {
         tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
                 ctx.key_context_object.handle, ctx.key_context_object.path);
         goto out;
+    } else if (!ctx.key_context_object.tr_handle) {
+        tpm2_util_sys_handle_to_esys_handle(ectx, ctx.key_context_object.handle,
+            &ctx.key_context_object.tr_handle);
     }
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.object_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.object_auth_str,
                 &ctx.cmd_auth[0], &ctx.session[0]);
         if (!result) {
             LOG_ERR("Invalid object key authorization, got\"%s\"", ctx.object_auth_str);
@@ -286,7 +316,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str,
                 &ctx.cmd_auth[1], &ctx.session[1]);
         if (!result) {
             LOG_ERR("Invalid key handle authorization, got\"%s\"", ctx.key_auth_str);
@@ -294,7 +324,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = certify_and_save_data(sapi_context);
+    result = certify_and_save_data(ectx);
     if (!result) {
         goto out;
     }
@@ -303,7 +333,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 out:
 
     for (i=0; i < ARRAY_LEN(ctx.session); i++) {
-        result = tpm2_session_save(sapi_context, ctx.session[i], NULL);
+        result = tpm2_session_save(ectx, ctx.session[i], NULL);
         if (!result) {
             rc = 1;
         }
