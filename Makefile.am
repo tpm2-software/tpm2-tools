@@ -164,7 +164,6 @@ tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC)
 
-tools_tpm2_clearlock_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_verifysignature_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_quote_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_createak_CFLAGS = $(AM_CFLAGS) -DSAPI
