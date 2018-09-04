@@ -304,7 +304,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     bool ret;
-    if (!strcmp(ctx.context_arg, "-")) {
+    if (ctx.context_arg && !strcmp(ctx.context_arg, "-")) {
         /* If user passes a handle of '-' we try and find a vacant slot for
          * to use and tell them what it is.
          */
@@ -316,7 +316,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
             goto out;
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.ctx_obj.handle);
-    } else {
+    } else if (ctx.context_arg) {
         ret = tpm2_util_object_load(sapi_context, ctx.context_arg, &ctx.ctx_obj);
         if (!ret) {
             goto out;
