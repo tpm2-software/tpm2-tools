@@ -58,4 +58,6 @@ tpm2_createek -c - -G rsa -p ek.pub > ek.log
 phandle=`yaml_get_kv ek.log \"persistent\-handle\"`
 tpm2_evictcontrol -Q -a o -c $phandle
 
+tpm2_createek -G rsa -p ek.pub
+
 exit 0
