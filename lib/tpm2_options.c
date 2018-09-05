@@ -52,6 +52,10 @@
 #endif
 
 #define TPM2TOOLS_ENV_TCTI      "TPM2TOOLS_TCTI"
+#define TPM2TOOLS_ENV_TCTI_NAME "TPM2TOOLS_TCTI_NAME"
+#define TPM2TOOLS_ENV_DEVICE    "TPM2TOOLS_DEVICE_FILE"
+#define TPM2TOOLS_ENV_SOCK_ADDR "TPM2TOOLS_SOCKET_ADDRESS"
+#define TPM2TOOLS_ENV_SOCK_PORT "TPM2TOOLS_SOCKET_PORT"
 #define TPM2TOOLS_ENV_ENABLE_ERRATA  "TPM2TOOLS_ENABLE_ERRATA"
 
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
@@ -136,13 +140,25 @@ void tpm2_options_free(tpm2_options *opts) {
 }
 typedef struct tcti_conf tcti_conf;
 struct tcti_conf {
-    const char *name;
-    const char *opts;
+    char *name;
+    char *opts;
 };
 
+/*
+ * Some tcti names changed in TSS 2.0, so in order to not break the
+ * expected options of the 3.X tools series map:
+ * - abrmd  -> tabrmd
+ * - socket -> mssim
+ */
 static inline const char *fixup_name(const char *name) {
 
-    return !strcmp(name, "abrmd") ? "tabrmd" : name;
+    if (!strcmp(name, "abrmd")) {
+        return "tabrmd";
+    } else if (!strcmp(name, "socket")) {
+        return "mssim";
+    }
+
+    return name;
 }
 
 static const char *find_default_tcti(void) {
@@ -165,27 +181,14 @@ static const char *find_default_tcti(void) {
     return NULL;
 }
 
-static tcti_conf tcti_get_config(const char *optstr) {
-
-    /* set up the default configuration */
-    tcti_conf conf = {
-        .name = find_default_tcti()
-    };
-
-    /* no tcti config supplied, get it from env */
-    if (!optstr) {
-        optstr = getenv (TPM2TOOLS_ENV_TCTI);
-        if (!optstr) {
-            /* nothing user supplied, use default */
-            return conf;
-        }
-    }
+/* Parse new-style, TSS 2.0, environment variables */
+static void parse_env_tcti(const char *optstr, tcti_conf *conf) {
 
     char *split = strchr(optstr, ':');
     if (!split) {
         /* --tcti=device */
-        conf.name = fixup_name(optstr);
-        return conf;
+        conf->name = strdup(fixup_name(optstr));
+        return;
     }
 
     /*
@@ -200,24 +203,99 @@ static tcti_conf tcti_get_config(const char *optstr) {
 
     /* Case A */
     if (!optstr[0] && !split[1]) {
-        return conf;
+        return;
     }
 
     /* Case B */
     if (!optstr[0]) {
-        conf.opts = &split[1];
-        return conf;
+        conf->opts = strdup(&split[1]);
+        return;
     }
 
     /* Case C */
     if (!split[1]) {
-        conf.name = fixup_name(optstr);
-        return conf;
+        conf->name = strdup(fixup_name(optstr));
+        return;
     }
 
     /* Case D */
-    conf.name = fixup_name(optstr);
-    conf.opts = &split[1];
+    conf->name = strdup(fixup_name(optstr));
+    conf->opts = strdup(&split[1]);
+    return;
+}
+
+static char* parse_device_tcti(void) {
+    const char *device = getenv(TPM2TOOLS_ENV_DEVICE);
+    return strdup(device);
+}
+
+static char* parse_socket_tcti(void) {
+
+    /*
+     * tpm2_tcti_ldr_load() expects conf->opts to be of the format
+     * "host=localhost,port=2321" for the mssim tcti
+     *
+     * Max IPV6 IP address, 45 characters   (45)
+     * Ports are 16bit int, 5 characters    (5)
+     * "host=", 5 characters                (5)
+     * "port=", 5 characters                (5)
+     * strlen = 60
+     */
+    size_t optlen = 60;
+    const char *host;
+    const char *port;
+    char *ret = malloc(optlen);
+    if (!ret) {
+        LOG_ERR ("OOM");
+        return NULL;
+    }
+
+    host = getenv(TPM2TOOLS_ENV_SOCK_ADDR);
+    port = getenv(TPM2TOOLS_ENV_SOCK_PORT);
+
+    if (host && port) {
+        snprintf(ret, optlen, "host=%s,port=%s", host, port);
+    } else if (host) {
+        snprintf(ret, optlen, "host=%s", host);
+    } else if (port) {
+        snprintf(ret, optlen, "port=%s", port);
+    }
+    return ret;
+}
+
+static tcti_conf tcti_get_config(const char *optstr) {
+
+    tcti_conf conf = {
+        .name = NULL
+    };
+
+    /* no tcti config supplied, get it from env */
+    if (!optstr) {
+        /*
+         * Check the "old" way of specifying TCTI, using a shared env var and
+         * per-tcti option variables.
+         */
+        optstr = getenv (TPM2TOOLS_ENV_TCTI_NAME);
+        if (optstr) {
+            conf.name = strdup(fixup_name(optstr));
+            if (!strcmp(conf.name, "mssim")) {
+                conf.opts = parse_socket_tcti();
+            } else if (!strcmp(conf.name, "device")) {
+                conf.opts = parse_device_tcti();
+            }
+        } else {
+            /* Check the new way of defining a TCTI using a shared env var */
+            optstr = getenv (TPM2TOOLS_ENV_TCTI);
+            if (optstr) {
+                parse_env_tcti(optstr, &conf);
+            }
+        }
+    }
+
+    if (!conf.name) {
+        conf.name = strdup(find_default_tcti());
+    }
+
     return conf;
 }
 
@@ -418,6 +496,8 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         if (!flags->enable_errata) {
             flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
         }
+        free(conf.name);
+        free(conf.opts);
     }
 
     rc = tpm2_option_code_continue;
