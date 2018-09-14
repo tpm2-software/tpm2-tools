@@ -37,7 +37,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -79,65 +79,72 @@ static tpm_encrypt_decrypt_ctx ctx = {
     .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
 };
 
-static bool readpub(TSS2_SYS_CONTEXT *sapi_context, TPM2B_PUBLIC *public) {
+static bool readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
 
-    TSS2L_SYS_AUTH_RESPONSE sessions_out_data;
-
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_NAME qualified_name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_ReadPublic(sapi_context, ctx.key_context_object.handle, 0,
-            public, &name, &qualified_name, &sessions_out_data));
+    TSS2_RC rval = Esys_ReadPublic(ectx, ctx.key_context_object.tr_handle,
+                      ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                      public, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_ReadPublic, rval);
+        LOG_PERR(Esys_ReadPublic, rval);
         return false;
     }
 
     return true;
 }
 
-static bool encrypt_decrypt(TSS2_SYS_CONTEXT *sapi_context, TPM2B_IV *iv_in) {
+static bool encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
 
-    TPM2B_MAX_BUFFER out_data = TPM2B_TYPE_INIT(TPM2B_MAX_BUFFER, buffer);
-
-    TPM2B_IV iv_out = TPM2B_TYPE_INIT(TPM2B_IV, buffer);
-
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TPM2B_MAX_BUFFER *out_data;
+    TPM2B_IV *iv_out;
 
     /*
-     * try EncryptDecrypt2 first, and if the command is not supported by the TPM, fallback to
-     * EncryptDecrypt. Keep track of which version you ran, for error reporting.
+     * try EncryptDecrypt2 first, and if the command is not supported by the TPM
+     * fall back to EncryptDecrypt. Keep track of which version you ran,
+     * for error reporting.
      */
     unsigned version = 2;
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt2(sapi_context,
-            ctx.key_context_object.handle, &sessions_data, &ctx.data,
-            ctx.is_decrypt, ctx.mode, iv_in, &out_data, &iv_out,
-            &sessions_data_out));
+
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.key_context_object.tr_handle,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
+        return false;
+    }
+
+    TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.key_context_object.tr_handle,
+                      shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                      &ctx.data, ctx.is_decrypt, ctx.mode, iv_in,
+                      &out_data, &iv_out);
     if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
         version = 1;
-        rval = TSS2_RETRY_EXP(Tss2_Sys_EncryptDecrypt(sapi_context,
-                ctx.key_context_object.handle, &sessions_data, ctx.is_decrypt,
-                ctx.mode, iv_in, &ctx.data, &out_data, &iv_out,
-                &sessions_data_out));
+        rval = Esys_EncryptDecrypt(ectx, ctx.key_context_object.tr_handle,
+                  shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                  ctx.is_decrypt, ctx.mode, iv_in, &ctx.data,
+                  &out_data, &iv_out);
     }
     if (rval != TPM2_RC_SUCCESS) {
         if (version == 2) {
-            LOG_PERR(Tss2_Sys_EncryptDecrypt2, rval);
+            LOG_PERR(Esys_EncryptDecrypt2, rval);
         } else {
-            LOG_PERR(Tss2_Sys_EncryptDecrypt, rval);
+            LOG_PERR(Esys_EncryptDecrypt, rval);
         }
         return false;
     }
 
-    bool result = files_save_bytes_to_file(ctx.out_file_path, out_data.buffer,
-            out_data.size);
-    if (!result) {
-        return false;
+    bool result = files_save_bytes_to_file(ctx.out_file_path, out_data->buffer,
+            out_data->size);
+
+    if (result) {
+        result = ctx.iv.out ? files_save_bytes_to_file(ctx.iv.out,
+                                iv_out->buffer,
+                                iv_out->size) : true;
     }
 
-    return ctx.iv.out ? files_save_bytes_to_file(ctx.iv.out, iv_out.buffer, iv_out.size) : true;
+    free(out_data);
+    free(iv_out);
+
+    return result;
 }
 
 static void parse_iv(char *value) {
@@ -207,7 +214,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -226,14 +233,21 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return false;
     }
 
-    result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
                 &ctx.key_context_object);
     if (!result) {
         goto out;
+    } else if (!ctx.key_context_object.tr_handle) {
+        result = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.key_context_object.handle,
+                    &ctx.key_context_object.tr_handle);
+        if (!result) {
+            goto out;
+        }
     }
 
     if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid object key authorization, got\"%s\"",
@@ -250,18 +264,20 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
      */
     if (ctx.mode == TPM2_ALG_NULL) {
 
-        TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
-        result = readpub(sapi_context,&public);
+        TPM2B_PUBLIC *public;
+        result = readpub(ectx, &public);
         if (!result) {
             goto out;
         }
 
-        TPMI_ALG_SYM_MODE objmode = public.publicArea.parameters.symDetail.sym.mode.sym;
+        TPMI_ALG_SYM_MODE objmode = public->publicArea.parameters.symDetail.sym.mode.sym;
         if (objmode == TPM2_ALG_NULL) {
             ctx.mode = TPM2_ALG_CFB;
         } else {
             ctx.mode = objmode;
         }
+
+        free(public);
     }
 
     TPM2B_IV iv = { .size = sizeof(iv.buffer), .buffer = { 0 } };
@@ -288,14 +304,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         LOG_WARN("Using a weak IV, try specifying an IV");
     }
 
-    result = encrypt_decrypt(sapi_context, &iv);
+    result = encrypt_decrypt(ectx, &iv);
     if (!result) {
         goto out;
     }
 
     rc = 0;
 out:
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
