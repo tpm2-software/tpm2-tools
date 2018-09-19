@@ -13,13 +13,11 @@ a policy digest from TPM policy events.
 
 # DESCRIPTION
 
-**tpm2_policyauthorize**(1) Generates a policy_authorize event with the TPM. It
-expects a session to be already established via **tpm2_startauthsession**(1). If
-the input session is a trial session this tool generates a policy digest that
-associates a signing authority's public key name with the policy being
-authorized. If the input session is real policy session **tpm2_policyauthorize**
-looks for a verification ticket from the TPM to attest that the TPM has verified
-the signature on the policy digest.
+**tpm2_policyauthorize** Generates a policy_authorize event with the TPM. It expects a session to be already established via **tpm2_startauthsession** and requires extended session support with tpm2-abrmd.
+1. If the input session is a trial session this tool generates a policy digest that associates a signing authority's public key name with the policy being
+authorized.
+2. If the input session is real policy session **tpm2_policyauthorize**
+looks for a verification ticket from the TPM to attest that the TPM has verified the signature on the policy digest before authorizing the policy in the policy digest.
 
 # OPTIONS
 
@@ -68,34 +66,42 @@ Subsequently when the PCR change and so does the pcr policy digest, the actual
 policy digest from the **tpm2_policyauthorize** used in creation of the object
 will not change. At runtime the new pcr policy needs to be satisfied along with
 verification of the signature on the pcr policy digest using **tpm2_policyauthorize**
-```
-(1) Create a policy to be authorized like pcr policy:
-tpm2_pcrlist  -L sha256:0 -o file_pcr_value
-tpm2_startauthsession  -S file_session_file
-tpm2_policypcr  -S file_session_file -L sha256:0 -F file_pcr_value -f pcr_policy
-tpm2_flushcontext -S file_session_file
 
-(2)Generate an authorized policy for the policy:
-tpm2_startauthsession  -S file_session_file
-tpm2_policyauthorize  -S file_session_file -o final_policy -f pcr_policy \
-  -q policy_qualifier -n verifying_public_key_name
-tpm2_flushcontext -S file_session_file
+## Create a signing authority
+* openssl genrsa -out signing_key_private.pem 2048
+* openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
+* tpm2_loadexternal -G rsa -a n -u signing_key_public.pem -o signing_key.ctx\
+ -n signing_key.name
 
-(3)Create a sealing object with policyauthorize as the sealing auth policy:
-tpm2_createprimary -Q -a o -g sha256 -G rsa -o prim.ctx
-tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -I- -C prim.ctx \
-  -L final_policy -A 'fixedtpm|fixedparent' <<< "secret to seal"
+## Create a policy to be authorized like a pcr policy:
+* tpm2_pcrlist -L sha256:0 -o pcr0.sha256
+* tpm2_startauthsession -S session.ctx
+* tpm2_policypcr -S session.ctx -L sha256:0 -F pcr0.sha256 -f pcr.policy
+* tpm2_flushcontext -S session.ctx
 
-(4)Satisfy policy and unseal secret data:
-tpm2_startauthsession -a -S real_policy_session_policyAuthorize
-tpm2_policypcr -Q -S real_policy_session_policyAuthorize -L sha256:0 \
-  -F file_pcr_value -f pcr_policy
-tpm2_policyauthorize  -S file_session_file -o final_policy -f pcr_policy \
-  -q policy_qualifier -n verifying_public_key_name -t verification_ticket
-unsealed=`tpm2_unseal -p"session:real_policy_session_policyAuthorize" \
-  -c sealing_key.ctx
-tpm2_flushcontext -S file_session_file
-```
+## Sign the policy
+* openssl dgst -sha256 -sign signing_key_private.pem -out pcr.signature pcr.policy
+
+## Authorize the policy in the policy digest:
+* tpm2_startauthsession -S session.ctx
+* tpm2_policyauthorize -S session.ctx -o authorized.policy -f pcr.policy\
+ -n signing_key.name
+* tpm2_flushcontext -S session.ctx
+
+## Create a TPM object like a sealing object with the authorized policy based authentication:
+* tpm2_createprimary -Q -a o -g sha256 -G rsa -o prim.ctx
+* tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -I- -C prim.ctx\
+ -L authorized.policy <<< "secret to seal"
+
+## Satisfy policy and unseal the secret:
+* tpm2_verifysignature -c signing_key.ctx -G sha256 -m pcr.policy\
+ -s pcr.signature -t verification.tkt -f rsassa
+* tpm2_startauthsession -a -S session.ctx
+* tpm2_policypcr -Q -S session.ctx -L sha256:0 -f pcr.policy
+* tpm2_policyauthorize -S session.ctx -o authorized.policy -f pcr.policy\
+ -n verifying_public_key.name -t verification.tkt
+* unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx
+* tpm2_flushcontext -S session.ctx
 
 # RETURNS
 
