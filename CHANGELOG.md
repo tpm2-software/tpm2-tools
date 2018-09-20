@@ -1,4 +1,10 @@
 ## Changelog
+### 3.1.3-rc0 - 2018-09-20
+  * Restore support for the TPM2TOOLS_* env vars for TCTI configuration, in
+  addition to supporting the new unified TPM2TOOLS_ENV_TCTI
+  * Fix tpm2_getcap to print properties with the TPM_PT prefix, rather than
+  TPM2_PT
+
 ### 3.1.2 - 2018-08-14
   * Revert the change to use user supplied object attributes exclusively. This is an inappropriate behavioural change for a MINOR version number increment.
   * Fix inclusion of object attribute specifiers section in tpm2_create and tpm2_createprimary man pages.
