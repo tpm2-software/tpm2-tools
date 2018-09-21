@@ -110,4 +110,54 @@ unsealed=`tpm2_unseal -c $file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F
 
 test "$unsealed" == "$secret"
 
+# Test that unseal fails if a PCR policy isn't provided
+
+trap - ERR
+
+tpm2_unseal -c $file_unseal_key_ctx 2> /dev/null
+if [ $? != 1 ]; then
+  echo "tpm2_unseal didn't fail without a PCR policy!"
+  exit 1
+fi
+
+# Test that unseal fails if PCR state isn't the same as the defined PCR policy
+
+pcr_extend=$(echo $pcr_ids | cut -d ',' -f1)
+
+tpm2_pcrextend $pcr_extend:sha1=6c10289a8da7f774cf67bd2fc8502cd4b585346a
+
+tpm2_unseal -c $file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value 2> /dev/null
+if [ $? != 1 ]; then
+  echo "tpm2_unseal didn't fail with a PCR state different than the policy!"
+  exit 1
+fi
+
+# Test that the object can be unsealed without a policy but a password
+
+trap onerror ERR
+
+rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
+
+tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
+
+tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+
+tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx -L $file_policy -p secretpass <<< $secret
+
+tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
+
+unsealed=`tpm2_unseal -c $file_unseal_key_ctx -p secretpass`
+
+test "$unsealed" == "$secret"
+
+# Test that unseal fails when using a wrong password
+
+trap - ERR
+
+tpm2_unseal -c $file_unseal_key_ctx -p wrongpass 2> /dev/null
+if [ $? != 1 ]; then
+  echo "tpm2_unseal didn't fail when using a wrong object password!"
+  exit 1
+fi
+
 exit 0
