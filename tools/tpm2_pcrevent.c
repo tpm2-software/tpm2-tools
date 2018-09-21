@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -56,39 +56,21 @@ struct tpm_pcrevent_ctx {
         TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
     } auth;
-    TPMI_DH_PCR pcr;
+    ESYS_TR pcr;
     FILE *input;
     char *pcr_auth_str;
 };
 
 static tpm_pcrevent_ctx ctx = {
-        .pcr = TPM2_RH_NULL,
+        .pcr = ESYS_TR_RH_NULL,
         .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
 };
 
-static inline void swap_auths(TPMS_AUTH_COMMAND *a, TPMS_AUTH_COMMAND *b) {
+static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
+        TPML_DIGEST_VALUES **result) {
 
-    TPMS_AUTH_COMMAND tmp = *a;
-    *a = *b;
-    *b = tmp;
-}
-
-static bool tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
-        TPML_DIGEST_VALUES *result) {
-
-    /*
-     * commands only use one of 2 values, so just swap
-     * positions until all 2 need to be used
-     */
-    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
-        1, {
-            ctx.auth.session_data,
-            TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)
-         },
-    };
-
+    TSS2_RC rval;
     unsigned long file_size = 0;
-
     FILE *input = ctx.input;
 
     /* Suppress error reporting with NULL path */
@@ -105,18 +87,24 @@ static bool tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
             return false;
         }
 
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Event(sapi_context, ctx.pcr, &cmd_auth_array,
-                &buffer, result,
-                NULL));
+        ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
+                                &ctx.auth.session_data, ctx.auth.session);
+        if (shandle1 == ESYS_TR_NONE) {
+            return false;
+        }
+
+        rval = Esys_PCR_Event(ectx, ctx.pcr,
+                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &buffer, result);
         if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_PCR_Event, rval);
+            LOG_PERR(Esys_PCR_Event, rval);
             return false;
         }
 
         return true;
     }
 
-    TPMI_DH_OBJECT sequence_handle;
+    ESYS_TR sequence_handle;
     TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
 
     /*
@@ -124,27 +112,27 @@ static bool tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_HashSequenceStart(sapi_context, NULL, &nullAuth,
-    TPM2_ALG_NULL, &sequence_handle, NULL));
+    rval = Esys_HashSequenceStart(ectx,
+                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                &nullAuth, TPM2_ALG_NULL, &sequence_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_HashSequenceStart, rval);
+        LOG_PERR(Esys_HashSequenceStart, rval);
         return false;
     }
 
-    /* If we know the file size, we decrement the amount read and terminate the loop
-     * when 1 block is left, else we go till feof.
+    rval = Esys_TR_SetAuth(ectx, sequence_handle, &nullAuth);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_SetAuth, rval);
+        return false;
+    }
+
+    /* If we know the file size, we decrement the amount read and terminate the
+     * loop when 1 block is left, else we go till feof.
      */
     size_t left = file_size;
     bool use_left = !!res;
 
     TPM2B_MAX_BUFFER data;
-
-    /*
-     * swap the auths (leave count 1) so that
-     * the sequence auth is used
-     * for the update call.
-     */
-    swap_auths(&cmd_auth_array.auths[0], &cmd_auth_array.auths[1]);
 
     bool done = false;
     while (!done) {
@@ -159,10 +147,11 @@ static bool tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         data.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = TSS2_RETRY_EXP(Tss2_Sys_SequenceUpdate(sapi_context, sequence_handle,
-                &cmd_auth_array, &data, NULL));
+        rval = Esys_SequenceUpdate(ectx, sequence_handle,
+                    ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
+                    &data);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_SequenceUpdate, rval);
+            LOG_PERR(Esys_SequenceUpdate, rval);
             return false;
         }
 
@@ -188,35 +177,33 @@ static bool tpm_pcrevent_file(TSS2_SYS_CONTEXT *sapi_context,
         data.size = 0;
     }
 
-    /*
-     * Swap back so the order is correct for the complete call
-     * and update the size to 2, as complete needs both the PCR
-     * and the sequence auths.
-     */
-    swap_auths(&cmd_auth_array.auths[0], &cmd_auth_array.auths[1]);
-    cmd_auth_array.count = 2;
-
-    rval = TSS2_RETRY_EXP(Tss2_Sys_EventSequenceComplete(sapi_context, ctx.pcr,
-            sequence_handle, &cmd_auth_array, &data, result, NULL));
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        return false;
+    }
+    rval = Esys_EventSequenceComplete(ectx, ctx.pcr, sequence_handle,
+                shandle1, ESYS_TR_PASSWORD, ESYS_TR_NONE,
+                &data, result);
     if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_EventSequenceComplete, rval);
+        LOG_PERR(Esys_EventSequenceComplete, rval);
         return false;
     }
 
     return true;
 }
 
-static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
+static bool do_hmac_and_output(ESYS_CONTEXT *ectx) {
 
-    TPML_DIGEST_VALUES digests;
-    bool res = tpm_pcrevent_file(sapi_context, &digests);
+    TPML_DIGEST_VALUES *digests = NULL;
+    bool res = tpm_pcrevent_file(ectx, &digests);
     if (!res) {
         return false;
     }
 
     UINT32 i;
-    for (i = 0; i < digests.count; i++) {
-        TPMT_HA *d = &digests.digests[i];
+    for (i = 0; i < digests->count; i++) {
+        TPMT_HA *d = &digests->digests[i];
 
         tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(d->hashAlg, tpm2_alg_util_flags_hash));
 
@@ -262,6 +249,7 @@ static bool do_hmac_and_output(TSS2_SYS_CONTEXT *sapi_context) {
 
     }
 
+    free(digests);
     return true;
 }
 
@@ -330,7 +318,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -341,7 +329,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.pcr_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.pcr_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid key handle authorization, got\"%s\"",
@@ -350,7 +338,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = do_hmac_and_output(sapi_context);
+    result = do_hmac_and_output(ectx);
     if (!result) {
         goto out;
     }
@@ -359,7 +347,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
 out:
 
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
