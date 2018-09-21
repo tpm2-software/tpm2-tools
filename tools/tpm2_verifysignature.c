@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -60,7 +60,7 @@ struct tpm2_verifysig_ctx {
     } flags;
     TPMI_ALG_SIG_SCHEME format;
     TPMI_ALG_HASH halg;
-    TPM2B_DIGEST msgHash;
+    TPM2B_DIGEST *msgHash;
     TPMT_SIGNATURE signature;
     char *msg_file_path;
     char *sig_file_path;
@@ -71,21 +71,23 @@ struct tpm2_verifysig_ctx {
 
 tpm2_verifysig_ctx ctx = {
         .format = TPM2_ALG_ERROR,
-        .halg = TPM2_ALG_SHA1,
-        .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
+        .msgHash = NULL,
+        .halg = TPM2_ALG_SHA1
 };
 
-static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
+static bool verify_signature(ESYS_CONTEXT *context) {
 
+    bool ret = true;
+    TPMT_TK_VERIFIED *validation;
 
-    TPMT_TK_VERIFIED validation;
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_VerifySignature(sapi_context, ctx.key_context_object.handle, NULL,
-            &ctx.msgHash, &ctx.signature, &validation, &sessionsDataOut));
+    TSS2_RC rval = Esys_VerifySignature(context,
+                        ctx.key_context_object.tr_handle,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        ctx.msgHash, &ctx.signature, &validation);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_VerifySignature, rval);
-        return false;
+        LOG_PERR(Esys_VerifySignature, rval);
+        ret = false;
+        goto out;
     }
 
     /*
@@ -93,15 +95,17 @@ static bool verify_signature(TSS2_SYS_CONTEXT *sapi_context) {
      * by issuing a warning.
      */
     if (ctx.out_file_path) {
-        if (validation.hierarchy == TPM2_RH_NULL) {
+        if (validation->hierarchy == TPM2_RH_NULL) {
             LOG_WARN("The NULL hierarchy doesn't produce a validation ticket,"
-                    " not outputting ticket");
+                     " not outputting ticket");
+            ret = true;
         } else {
-            return files_save_ticket(&validation, ctx.out_file_path);
+            ret = files_save_ticket(validation, ctx.out_file_path);
         }
     }
-
-    return true;
+out:
+    free(validation);
+    return ret;
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
@@ -132,7 +136,7 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     return msg;
 }
 
-static bool init(TSS2_SYS_CONTEXT *sapi_context) {
+static bool init(ESYS_CONTEXT *context) {
 
     /* check flags for mismatches */
     if (ctx.flags.digest && (ctx.flags.msg || ctx.flags.halg)) {
@@ -150,7 +154,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     TPM2B *msg = NULL;
     bool return_value = false;
 
-    bool tmp = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg, &ctx.key_context_object);
+    bool tmp = tpm2_util_object_load(context, ctx.context_arg, &ctx.key_context_object);
     if (!tmp) {
         return false;
     }
@@ -176,13 +180,14 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     if (!ctx.flags.digest) {
         if (!msg) {
             /*
-             * This is a redundant check since main() checks this case, but we'll add it here to silence any
-             * complainers.
+             * This is a redundant check since main() checks this case, but
+             * we'll add it here to silence any complainers (such as static
+             * analysers).
              */
             LOG_ERR("No digest set and no message file to compute from, cannot compute message hash!");
             goto err;
         }
-        bool res = tpm2_hash_compute_data_sapi(sapi_context, ctx.halg,
+        bool res = tpm2_hash_compute_data(context, ctx.halg,
                 TPM2_RH_NULL, msg->buffer, msg->size, &ctx.msgHash, NULL);
         if (!res) {
             LOG_ERR("Compute message hash failed!");
@@ -218,8 +223,9 @@ static bool on_option(char key, char *value) {
 	}
 		break;
 	case 'D': {
-	    ctx.msgHash.size = sizeof(ctx.msgHash.buffer);
-		if (!files_load_bytes_from_path(value, ctx.msgHash.buffer, &ctx.msgHash.size)) {
+        ctx.msgHash = malloc(sizeof(TPM2B_DIGEST));
+	    ctx.msgHash->size = sizeof(ctx.msgHash->buffer);
+		if (!files_load_bytes_from_path(value, ctx.msgHash->buffer, &ctx.msgHash->size)) {
 			LOG_ERR("Could not load digest from file!");
 			return false;
 		}
@@ -268,21 +274,27 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
 	UNUSED(flags);
 
     /* initialize and process */
-    bool res = init(sapi_context);
+    bool res = init(context);
     if (!res) {
         return 1;
     }
 
-    res = verify_signature(sapi_context);
+    res = verify_signature(context);
     if (!res) {
         LOG_ERR("Verify signature failed!");
         return 1;
     }
 
     return 0;
+}
+
+void tpm2_tool_onexit(void) {
+    if (ctx.msgHash) {
+        free(ctx.msgHash);
+    }
 }
