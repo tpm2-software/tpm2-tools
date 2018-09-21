@@ -35,7 +35,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -71,18 +71,15 @@ struct tpm_nvdefine_ctx {
 static tpm_nvdefine_ctx ctx = {
     .auth= {
         .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .hierarchy = TPM2_RH_OWNER
+        .hierarchy = ESYS_TR_RH_OWNER
     },
     .nvAuth = TPM2B_EMPTY_INIT,
     .size = TPM2_MAX_NV_BUFFER_SIZE,
 };
 
-static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
+static int nv_space_define(ESYS_CONTEXT *ectx) {
 
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
-
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
 
     public_info.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
@@ -105,15 +102,28 @@ static int nv_space_define(TSS2_SYS_CONTEXT *sapi_context) {
 
     public_info.nvPublic.dataSize = ctx.size;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_DefineSpace(sapi_context, ctx.auth.hierarchy,
-            &sessions_data, &ctx.nvAuth, &public_info, &sessions_data_out));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to define NV area at index 0x%X", ctx.nvIndex);
-        LOG_PERR(Tss2_Sys_NV_DefineSpace, rval);
+    ESYS_TR nvHandle;
+    ESYS_TR auth_handle = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
+    ESYS_TR shandle1;
+    TSS2_RC rval;
+
+    shandle1 = tpm2_auth_util_get_shandle(ectx, auth_handle,
+                    &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
         return false;
     }
 
-    LOG_INFO("Success to define NV area at index 0x%x (%d).", ctx.nvIndex, ctx.nvIndex);
+    rval = Esys_NV_DefineSpace(ectx, auth_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                &ctx.nvAuth, &public_info, &nvHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to define NV area at index 0x%X", ctx.nvIndex);
+        LOG_PERR(Esys_NV_DefineSpace, rval);
+        return false;
+    }
+
+    LOG_INFO("Success to define NV area at index 0x%x (%d).", ctx.nvIndex, nvHandle);
 
     return true;
 }
@@ -198,7 +208,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -206,17 +216,17 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     int rc = 1;
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.hierarchy_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.hierarchy_auth_str);
+            LOG_ERR("Invalid handle authorization, got \"%s\"", ctx.hierarchy_auth_str);
             goto out;
         }
     }
 
     if (ctx.flags.p) {
         TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.index_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.index_auth_str,
                 &tmp, NULL);
         if (!result) {
             LOG_ERR("Invalid index authorization, got\"%s\"", ctx.index_auth_str);
@@ -225,7 +235,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         ctx.nvAuth = tmp.hmac;
     }
 
-    result = nv_space_define(sapi_context);
+    result = nv_space_define(ectx);
     if (!result) {
         goto out;
     }
@@ -233,7 +243,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
