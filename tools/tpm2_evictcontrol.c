@@ -37,7 +37,8 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -122,30 +123,51 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     int rc = 1;
     bool result;
 
-    result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
                 &ctx.context_object);
     if (!result) {
         goto out;
     }
 
+    /* If we loaded the object from a hex handle we need to also load the
+     * associated ESYS_TR for ESAPI calls
+     */
+    if (!ctx.context_object.tr_handle) {
+        tpm2_util_sys_handle_to_esys_handle(ectx, ctx.context_object.handle,
+            &ctx.context_object.tr_handle);
+    }
+
+    /* If we load from a saved context we won't have a TPM2_HANDLE, which we
+     * need to determine whether the object is persistent
+     */
+    if (!ctx.context_object.handle) {
+        result = tpm2_util_esys_handle_to_sys_handle(ectx,
+                    ctx.context_object.tr_handle, &ctx.context_object.handle);
+        if (!result) {
+            goto out;
+        }
+    }
+
+    /* Determine whether the loaded object is already persistent */
     if (ctx.context_object.handle >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
         ctx.persist_handle = ctx.context_object.handle;
         ctx.flags.p = 1;
     }
 
-    /* If we've been given a handle or context object to persist and not an explicit persistent handle
-     * to use, find an available vacant handle in the persistent namespace and use that.
+    /* If we've been given a handle or context object to persist and not an
+     * explicit persistent handle to use, find an available vacant handle in
+     * the persistent namespace and use that.
      */
     if (ctx.flags.c && !ctx.flags.p) {
-        result = tpm2_capability_find_vacant_persistent_handle(sapi_context,
-                &ctx.persist_handle);
+        result = tpm2_capability_find_vacant_persistent_handle(ectx,
+                    &ctx.persist_handle);
         if (!result) {
             tpm2_tool_output("Unable to find a vacant persistent handle.\n");
             goto out;
@@ -153,7 +175,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.hierarchy_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy_auth_str,
                &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid authorization authorization, got\"%s\"",
@@ -164,10 +186,12 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     tpm2_tool_output("persistentHandle: 0x%x\n", ctx.persist_handle);
 
-    result = tpm2_ctx_mgmt_evictcontrol(sapi_context,
-            ctx.hierarchy,
+    ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
+    result = tpm2_ctx_mgmt_evictcontrol(ectx,
+            hierarchy,
             &ctx.auth.session_data,
-            ctx.context_object.handle,
+            ctx.auth.session,
+            ctx.context_object.tr_handle,
             ctx.persist_handle);
     if (!result) {
         goto out;
@@ -176,7 +200,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
