@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -54,7 +54,7 @@ typedef struct tpm2_common_policy_options tpm2_common_policy_options;
 struct tpm2_common_policy_options {
     tpm2_session *policy_session; // policy session
     TPM2_SE policy_session_type; // TPM2_SE_TRIAL or TPM2_SE_POLICY
-    TPM2B_DIGEST policy_digest; // buffer to hold policy digest
+    TPM2B_DIGEST *policy_digest; // buffer to hold policy digest
     TPMI_ALG_HASH policy_digest_hash_alg; // hash alg of final policy digest
     char *policy_file; // filepath for the policy digest
     bool policy_file_flag; // if policy file input has been given
@@ -78,7 +78,7 @@ struct create_policy_ctx {
 #define TPM2_COMMON_POLICY_INIT { \
             .policy_session = NULL, \
             .policy_session_type = TPM2_SE_TRIAL, \
-            .policy_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer), \
+            .policy_digest = NULL, \
             .policy_digest_hash_alg = TPM2_ALG_SHA256, \
         }
 
@@ -86,7 +86,7 @@ static create_policy_ctx pctx = {
     .common_policy_options = TPM2_COMMON_POLICY_INIT
 };
 
-static bool parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
+static bool parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
     if (!pctx.common_policy_options.policy_type.PolicyPCR){
         LOG_ERR("Only PCR policy is currently supported!");
@@ -103,10 +103,10 @@ static bool parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
     tpm2_session_set_authhash(session_data,
             pctx.common_policy_options.policy_digest_hash_alg);
 
-    pctx.common_policy_options.policy_session = tpm2_session_new(sapi_context,
+    pctx.common_policy_options.policy_session = tpm2_session_new(ectx,
             session_data);
 
-    bool result = tpm2_policy_build_pcr(sapi_context, pctx.common_policy_options.policy_session,
+    bool result = tpm2_policy_build_pcr(ectx, pctx.common_policy_options.policy_session,
             pctx.pcr_policy_options.raw_pcrs_file,
             &pctx.pcr_policy_options.pcr_selections);
     if (!result) {
@@ -114,7 +114,8 @@ static bool parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    result = tpm2_policy_get_digest(sapi_context, pctx.common_policy_options.policy_session,
+    result = tpm2_policy_get_digest(ectx,
+            pctx.common_policy_options.policy_session,
             &pctx.common_policy_options.policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
@@ -125,8 +126,8 @@ static bool parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
     if (pctx.common_policy_options.policy_session_type == TPM2_SE_POLICY) {
         tpm2_tool_output("policy-digest: 0x");
         int i;
-        for(i = 0; i < pctx.common_policy_options.policy_digest.size; i++) {
-            tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest.buffer[i]);
+        for(i = 0; i < pctx.common_policy_options.policy_digest->size; i++) {
+            tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest->buffer[i]);
         }
         tpm2_tool_output("\n");
     }
@@ -135,8 +136,8 @@ static bool parse_policy_type_specific_command(TSS2_SYS_CONTEXT *sapi_context) {
     if (pctx.common_policy_options.policy_session_type == TPM2_SE_TRIAL) {
         //save the policy buffer in a file for use later
         bool result = files_save_bytes_to_file(pctx.common_policy_options.policy_file,
-                          (UINT8 *) &pctx.common_policy_options.policy_digest.buffer,
-                                      pctx.common_policy_options.policy_digest.size);
+                          (UINT8 *) &pctx.common_policy_options.policy_digest->buffer,
+                                      pctx.common_policy_options.policy_digest->size);
         if (!result) {
             LOG_ERR("Failed to save policy digest into file \"%s\"",
                     pctx.common_policy_options.policy_file);
@@ -198,7 +199,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -209,10 +210,15 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return 1;
     }
 
-    bool result = parse_policy_type_specific_command(sapi_context);
+    bool result = parse_policy_type_specific_command(ectx);
     if (!result) {
         return 1;
     }
 
     return 0; 
+}
+
+void tpm2_onexit(void) {
+
+    free(pctx.common_policy_options.policy_digest);
 }
