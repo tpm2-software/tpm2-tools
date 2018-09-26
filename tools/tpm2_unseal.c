@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -69,30 +69,45 @@ static tpm_unseal_ctx ctx = {
     .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
 };
 
-bool unseal_and_save(TSS2_SYS_CONTEXT *sapi_context) {
+bool unseal_and_save(ESYS_CONTEXT *ectx) {
 
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    bool ret = false;
+    TPM2B_SENSITIVE_DATA *outData = NULL;
 
-    TPM2B_SENSITIVE_DATA outData = TPM2B_TYPE_INIT(TPM2B_SENSITIVE_DATA, buffer);
+    TSS2_RC rval;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Unseal(sapi_context, ctx.context_object.handle,
-            &sessions_data, &outData, &sessions_data_out));
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.context_object.tr_handle,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        ret = false;
+        goto out;
+    }
+
+    rval = Esys_Unseal(ectx, ctx.context_object.tr_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                &outData);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_Unseal, rval);
-        return false;
+        LOG_PERR(Esys_Unseal, rval);
+        ret = false;
+        goto out;
     }
 
     if (ctx.outFilePath) {
-        return files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
-                                        outData.buffer, outData.size);
+        ret = files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
+                                        outData->buffer, outData->size);
     } else {
-        return files_write_bytes(stdout, (UINT8 *) outData.buffer,
-                                 outData.size);
+        ret = files_write_bytes(stdout, (UINT8 *) outData->buffer,
+                                 outData->size);
     }
+
+out:
+    free(outData);
+
+    return ret;
 }
 
-static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
+static bool start_auth_session(ESYS_CONTEXT *ectx) {
 
     tpm2_session_data *session_data =
             tpm2_session_data_new(TPM2_SE_POLICY);
@@ -101,42 +116,45 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    ctx.auth.session = tpm2_session_new(sapi_context,
+    ctx.auth.session = tpm2_session_new(ectx,
             session_data);
     if (!ctx.auth.session) {
         LOG_ERR("Could not start tpm session");
         return false;
     }
 
-    bool result = tpm2_policy_build_pcr(sapi_context, ctx.auth.session,
-            ctx.raw_pcrs_file,
-            &ctx.pcr_selection);
+    bool result = tpm2_policy_build_pcr(ectx, ctx.auth.session,
+                    ctx.raw_pcrs_file, &ctx.pcr_selection);
     if (!result) {
         LOG_ERR("Could not build a pcr policy");
         return false;
     }
 
-    ctx.auth.session_data.sessionHandle = tpm2_session_get_handle(ctx.auth.session);
-    ctx.auth.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
-
     return true;
 }
 
-static bool init(TSS2_SYS_CONTEXT *sapi_context) {
+static bool init(ESYS_CONTEXT *ectx) {
 
     if (!ctx.context_arg) {
         LOG_ERR("Expected option c");
         return false;
     }
 
-    bool retval = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    bool retval = tpm2_util_object_load(ectx, ctx.context_arg,
                     &ctx.context_object);
     if (!retval) {
         return false;
+    } else if (!ctx.context_object.tr_handle) {
+        retval = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.context_object.handle,
+                    &ctx.context_object.tr_handle);
+        if (!retval) {
+            return false;
+        }
     }
 
     if (ctx.flags.L) {
-        bool result = start_auth_session(sapi_context);
+        bool result = start_auth_session(ectx);
         if (!result) {
             return false;
         }
@@ -190,18 +208,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     int rc = 1;
-    bool result = init(sapi_context);
+    bool result = init(ectx);
     if (!result) {
         goto out;
     }
 
     if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.parent_auth_str);
@@ -209,7 +227,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = unseal_and_save(sapi_context);
+    result = unseal_and_save(ectx);
     if (!result) {
         LOG_ERR("Unseal failed!");
         goto out;
@@ -222,14 +240,14 @@ out:
         /*
          * Only flush sessions started internally by the tool.
          */
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context,
-                            ctx.auth.session_data.sessionHandle));
+        ESYS_TR handle = tpm2_session_get_handle(ctx.auth.session);
+        TSS2_RC rval = Esys_FlushContext(ectx, handle);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_FlushContext, rval);
+            LOG_PERR(Esys_FlushContext, rval);
             rc = 1;
         }
     } else {
-        result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+        result = tpm2_session_save(ectx, ctx.auth.session, NULL);
         if (!result) {
             rc = 1;
         }
