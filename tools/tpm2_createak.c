@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_convert.h"
 #include "tpm2_options.h"
@@ -239,37 +239,19 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
     return true;
 }
 
-static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
+static bool create_ak(ESYS_CONTEXT *ectx) {
 
     TPML_PCR_SELECTION creation_pcr = { .count = 0 };
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-    TSS2L_SYS_AUTH_COMMAND sessions_data = {1, {
-        {
-        .sessionHandle = TPM2_RS_PW,
-        .nonce = TPM2B_EMPTY_INIT,
-        .hmac = TPM2B_EMPTY_INIT,
-        .sessionAttributes = 0,
-    }}};
-
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
-    TPM2B_PUBLIC out_public = TPM2B_EMPTY_INIT;
-    TPMT_TK_CREATION creation_ticket = TPMT_TK_CREATION_EMPTY_INIT;
-    TPM2B_CREATION_DATA creation_data = TPM2B_EMPTY_INIT;
-
+    TPM2B_PUBLIC *out_public;
+    TPM2B_PRIVATE *out_private;
     TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
-
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-
-    TPM2B_PRIVATE out_private = TPM2B_TYPE_INIT(TPM2B_PRIVATE, buffer);
-
-    TPM2B_DIGEST creation_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+    bool retval = true;
 
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
         return false;
     }
-
-    sessions_data.auths[0] = ctx.ek.auth2.session_data;
 
     tpm2_session_data *data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
@@ -277,7 +259,7 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    tpm2_session *session = tpm2_session_new(sapi_context, data);
+    tpm2_session *session = tpm2_session_new(ectx, data);
     if (!session) {
         LOG_ERR("Could not start tpm session");
         return false;
@@ -285,157 +267,262 @@ static bool create_ak(TSS2_SYS_CONTEXT *sapi_context) {
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
+    ESYS_TR sess_handle = tpm2_session_get_handle(session);
     tpm2_session_free(&session);
 
-
-    TPM2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(
-            sapi_context,
-            TPM2_RH_ENDORSEMENT,
-            handle,
-            &sessions_data,
-            NULL,
-            NULL,
-            NULL,
-            0,
-            NULL,
-            NULL,
-            NULL));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicySecret, rval);
+    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
+                        &ctx.ek.auth2.session_data, ctx.ek.auth2.session);
+    if (shandle == ESYS_TR_NONE) {
         return false;
     }
 
-    LOG_INFO("Tss2_Sys_PolicySecret succ");
-
-    // Set up the session data for the handle used in PolicySecret.
-    sessions_data.auths[0].sessionHandle = handle;
-    sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
-    sessions_data.auths[0].hmac.size = 0;
-
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Create(sapi_context, ctx.ek.ek_ctx.handle, &sessions_data,
-            &ctx.ak.in.inSensitive, &inPublic, &outsideInfo, &creation_pcr, &out_private,
-            &out_public, &creation_data, &creation_hash, &creation_ticket,
-            &sessions_data_out));
+    TPM2_RC rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
+                    shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+                    NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_Create, rval);
+        LOG_PERR(Esys_PolicySecret, rval);
         return false;
     }
-    LOG_INFO("TPM2_Create succ");
+    LOG_INFO("Esys_PolicySecret success");
+
+    rval = Esys_Create(ectx, ctx.ek.ek_ctx.tr_handle,
+                sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+                &ctx.ak.in.inSensitive, &inPublic, &outsideInfo,
+                &creation_pcr, &out_private, &out_public, NULL, NULL, NULL);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Create, rval);
+        retval = false;
+        goto out;
+    }
+    LOG_INFO("Esys_Create success");
 
     // Need to flush the session here.
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
+    rval = Esys_FlushContext(ectx, sess_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_FlushContext, rval);
-        return false;
+        LOG_PERR(Esys_FlushContext, rval);
+        retval = false;
+        goto out;
     }
-
-    sessions_data.auths[0] = ctx.ek.auth2.session_data;
 
     data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
         LOG_ERR("oom");
-        return false;
+        retval = false;
+        goto out;
     }
 
-    session = tpm2_session_new(sapi_context, data);
+    session = tpm2_session_new(ectx, data);
     if (!session) {
         LOG_ERR("Could not start tpm session");
-        return false;
+        retval = false;
+        goto out;
     }
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
-    handle = tpm2_session_get_handle(session);
+    sess_handle = tpm2_session_get_handle(session);
     tpm2_session_free(&session);
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
-            handle, &sessions_data, 0, 0, 0, 0, 0, 0, 0));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicySecret, rval);
-        return false;
+    shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
+                &ctx.ek.auth2.session_data, ctx.ek.auth2.session);
+    if (shandle == ESYS_TR_NONE) {
+        goto out;
     }
-    LOG_INFO("Tss2_Sys_PolicySecret succ");
 
-    // Set up the session data for the handle used in PolicySecret.
-    sessions_data.auths[0].sessionHandle = handle;
-    sessions_data.auths[0].sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
-    sessions_data.auths[0].hmac.size = 0;
-
-    TPM2_HANDLE loaded_sha1_key_handle;
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Load(sapi_context, ctx.ek.ek_ctx.handle, &sessions_data, &out_private,
-            &out_public, &loaded_sha1_key_handle, &name, &sessions_data_out));
+    rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
+                shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+                NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_Load, rval);
-        return false;
+        LOG_PERR(Esys_PolicySecret, rval);
+        retval = false;
+        goto out;
+    }
+    LOG_INFO("Esys_PolicySecret success");
+
+    // Snapshot loaded transient handles, we'll then delta this list to
+    // determine where the following Esys_Load call puts the newly loaded object
+    TPMS_CAPABILITY_DATA *pre_load_cap_data = NULL;
+    bool load = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
+                    TPM2_TRANSIENT_FIRST, TPM2_MAX_CAP_HANDLES,
+                    &pre_load_cap_data);
+    if (!load) {
+        LOG_ERR("Failed to load capability data");
+        retval = false;
+        goto out;
+    }
+
+    ESYS_TR loaded_sha1_key_handle;
+    rval = Esys_Load(ectx, ctx.ek.ek_ctx.tr_handle,
+                sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+                out_private, out_public, &loaded_sha1_key_handle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Load, rval);
+        retval = false;
+        goto out;
+    }
+
+    // Esys_TR_GetName() gives us a TPM2B_PUBLIC, which we can't get the
+    // handle from. In lieu of a ESAPI method to get the TPM2_HANDLE for a key
+    // oject we instead iterate over the transient handles and try to find one
+    // which didn't exist before the Esys_Load() call...
+    TPMS_CAPABILITY_DATA *post_load_cap_data = NULL;
+    load = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
+                TPM2_TRANSIENT_FIRST, TPM2_MAX_CAP_HANDLES,
+                &post_load_cap_data);
+    if (!load) {
+        LOG_ERR("Failed to load capability data");
+        retval = false;
+        goto out;
+    }
+
+    bool found = false;
+    bool gothandle = false;
+    UINT32 i;
+    TPM2_HANDLE loaded_key_handle;
+    TPMU_CAPABILITIES capabilities = post_load_cap_data->data;
+    for (i = 0; i < capabilities.handles.count; ++i) {
+        char buf[10];
+        snprintf(buf, 10, "0x%X", capabilities.handles.handle[i]);
+        LOG_INFO("Checking whether %s is new", buf);
+
+        UINT32 j;
+        TPMU_CAPABILITIES caps = pre_load_cap_data->data;
+        for (j = 0; j < caps.handles.count; j++) {
+            char obuf[10];
+            snprintf(obuf, 10, "0x%X", caps.handles.handle[j]);
+            LOG_INFO("\tComparing %s to %s", buf, obuf);
+            if (!strncmp(buf, obuf, 10)) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            LOG_INFO("Found key handle %s", buf);
+            loaded_key_handle = capabilities.handles.handle[i];
+            gothandle = true;
+            break;
+        }
+    }
+
+    if (!gothandle) {
+        LOG_ERR("Couldn't find transient key handle that AK was created in");
+        goto out;
+    }
+
+    LOG_INFO("Loaded key handle 0x%X", loaded_key_handle);
+
+    // Load the TPM2 handle so that we can print it
+    TPM2B_NAME *key_name;
+    rval = Esys_TR_GetName(ectx, loaded_sha1_key_handle, &key_name);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_GetName, rval);
+        retval = false;
+        goto nameout;
     }
 
     /* Output in YAML format */
     tpm2_tool_output("loaded-key:\n");
-    tpm2_tool_output("  handle: 0x%X\n  name: ", loaded_sha1_key_handle);
-    tpm2_util_print_tpm2b((TPM2B *)&name);
+    tpm2_tool_output("  handle: 0x%X\n  name: ", loaded_key_handle);
+    tpm2_util_print_tpm2b((TPM2B *)key_name);
     tpm2_tool_output("\n");
 
     // write name to ak.name file
     if (ctx.ak.out.name_file) {
-        result = files_save_bytes_to_file(ctx.ak.out.name_file, &name.name[0], name.size);
+        result = files_save_bytes_to_file(ctx.ak.out.name_file,
+                    key_name->name, key_name->size);
         if (!result) {
-            LOG_ERR("Failed to save AK name into file \"%s\"", ctx.ak.out.name_file);
-            return false;
+            LOG_ERR("Failed to save AK name into file \"%s\"",
+                        ctx.ak.out.name_file);
+            retval = false;
+            goto nameout;
         }
     }
 
     // Need to flush the session here.
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
+    rval = Esys_FlushContext(ectx, sess_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_FlushContext, rval);
-        return false;
+        LOG_PERR(Esys_FlushContext, rval);
+        retval = false;
+        goto nameout;
     }
 
-    // use the owner auth here.
-    sessions_data.auths[0] = ctx.owner.auth2.session_data;
-
     if (ctx.ak.in.handle) {
-
-        rval = TSS2_RETRY_EXP(Tss2_Sys_EvictControl(sapi_context, TPM2_RH_OWNER, loaded_sha1_key_handle,
-                &sessions_data, ctx.ak.in.handle, &sessions_data_out));
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_EvictControl, rval);
-            return false;
+        // use the owner auth here.
+        shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
+                    &ctx.owner.auth2.session_data, ctx.owner.auth2.session);
+        if (shandle == ESYS_TR_NONE) {
+            retval = false;
+            goto nameout;
         }
-        LOG_INFO("EvictControl: Make AK persistent succ.");
 
-        rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, loaded_sha1_key_handle));
+        ESYS_TR ak_handle;
+        rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER,
+                    loaded_sha1_key_handle,
+                    shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+                    ctx.ak.in.handle, &ak_handle);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_FlushContext, rval);
-            return false;
+            LOG_PERR(Esys_EvictControl, rval);
+            retval = false;
+            goto nameout;
         }
-        LOG_INFO("Flush transient AK succ.");
+        LOG_INFO("EvictControl: Make AK persistent success.");
+
+        // Free up resources used by the persistent handle, whilst leaving it
+        // loaded in the TPM
+        rval = Esys_TR_Close(ectx, &ak_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            // Not being able to close the handle shouldn't prevent us from
+            // proceeding
+            LOG_PERR(Esys_TR_Close, rval);
+        } else {
+            LOG_INFO("Close persistent AK success.");
+        }
+
+        // Free up resources used by the transient object
+        rval = Esys_FlushContext(ectx, loaded_sha1_key_handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_FlushContext, rval);
+            retval = false;
+            goto nameout;
+        }
+        LOG_INFO("Flush transient AK success.");
     } else if (ctx.ak.out.ctx_file) {
-        bool result = files_save_tpm_context_to_path_sapi(sapi_context,
+        bool result = files_save_tpm_context_to_path(ectx,
                 loaded_sha1_key_handle, ctx.ak.out.ctx_file);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
-            return false;
+            retval = false;
+            goto nameout;
         }
     }
 
     if (ctx.ak.out.pub_file) {
-        result = tpm2_convert_pubkey_save(&out_public, ctx.ak.out.pub_fmt,
+        result = tpm2_convert_pubkey_save(out_public, ctx.ak.out.pub_fmt,
                 ctx.ak.out.pub_file);
         if (!result) {
-            return false;
+            retval = false;
+            goto nameout;
         }
     }
 
     if (ctx.ak.out.priv_file) {
-        result = files_save_private(&out_private, ctx.ak.out.priv_file);
+        result = files_save_private(out_private, ctx.ak.out.priv_file);
         if (!result) {
-            return false;
+            retval = false;
+            goto nameout;
         }
     }
 
-    return true;
+nameout:
+    free(key_name);
+out:
+    free(pre_load_cap_data);
+    free(post_load_cap_data);
+    free(out_public);
+    free(out_private);
+
+    return retval;
 }
 
 static bool on_option(char key, char *value) {
@@ -538,9 +625,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    bool ret;
     UNUSED(flags);
 
     if (ctx.flags.f && !ctx.ak.out.pub_file) {
@@ -549,9 +635,9 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.find_persistent_ak) {
-        ret = tpm2_capability_find_vacant_persistent_handle(sapi_context,
+        bool res = tpm2_capability_find_vacant_persistent_handle(ectx,
                         &ctx.ak.in.handle);
-        if (!ret) {
+        if (!res) {
             LOG_ERR("ak-handle/k passed with a value of '-' but unable to find"
                     " a vacant persistent handle!");
             return 1;
@@ -559,14 +645,22 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         tpm2_tool_output("ak-persistent-handle: 0x%x\n", ctx.ak.in.handle);
     }
 
-    ret = tpm2_util_object_load_sapi(sapi_context, ctx.ek.ctx_arg,
-            &ctx.ek.ek_ctx);
+    ret = tpm2_util_object_load(ectx, ctx.ek.ctx_arg, &ctx.ek.ek_ctx);
     if (!ret) {
         return 1;
     }
 
+    if (!ctx.ek.ek_ctx.tr_handle) {
+        bool res = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.ek.ek_ctx.handle, &ctx.ek.ek_ctx.tr_handle);
+        if (!res) {
+            LOG_ERR("Converting ek_ctx TPM2_HANDLE to ESYS_TR");
+            return 1;
+        }
+    }
+
     if (ctx.flags.o) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
+        bool res = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
                 &ctx.owner.auth2.session_data, &ctx.owner.auth2.session);
         if (!res) {
             LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner_auth_str);
@@ -575,7 +669,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.e) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+        bool res = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
                 &ctx.ek.auth2.session_data, &ctx.ek.auth2.session);
         if (!res) {
             LOG_ERR("Invalid endorse authorization, got\"%s\"",
@@ -585,7 +679,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
     if (ctx.flags.P) {
         TPMS_AUTH_COMMAND tmp;
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.ak_auth_str,
+        bool res = tpm2_auth_util_from_optarg(ectx, ctx.ak_auth_str,
                 &tmp, NULL);
         if (!res) {
             LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak_auth_str);
@@ -593,5 +687,5 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
         ctx.ak.in.inSensitive.sensitive.userAuth = tmp.hmac;
     } 
-    return !create_ak(sapi_context);
+    return !create_ak(ectx);
 }
