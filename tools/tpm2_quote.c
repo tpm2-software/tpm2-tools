@@ -34,7 +34,7 @@
 #include <string.h>
 #include <errno.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_convert.h"
 #include "files.h"
@@ -94,45 +94,54 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
     return res;
 }
 
-static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_SELECTION *pcrSelection)
+static int quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
 {
-    UINT32 rval;
-    TPMT_SIG_SCHEME inScheme;
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
-    TPM2B_ATTEST quoted = TPM2B_TYPE_INIT(TPM2B_ATTEST, attestationData);
-    TPMT_SIGNATURE signature;
-    TSS2L_SYS_AUTH_COMMAND cmd_auth_array = {
-        1, {
-            ctx.auth.session_data,
-         },
-    };
 
-    if(!ctx.flags.G || !get_signature_scheme(sapi_context, akHandle, ctx.sig_hash_algorithm, &inScheme)) {
+    TPM2_RC rval;
+    TPMT_SIG_SCHEME inScheme;
+    TPM2B_ATTEST *quoted = NULL;
+    TPMT_SIGNATURE *signature = NULL;
+
+    if(!ctx.flags.G || !get_signature_scheme(ectx, ctx.context_object.tr_handle,
+                            ctx.sig_hash_algorithm, &inScheme)) {
         inScheme.scheme = TPM2_ALG_NULL;
     }
 
-    rval = TSS2_RETRY_EXP(Tss2_Sys_Quote(sapi_context, akHandle, &cmd_auth_array,
-            &ctx.qualifyingData, &inScheme, pcrSelection, &quoted,
-            &signature, &sessionsDataOut));
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.context_object.tr_handle,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
+        return -1;
+    }
+
+    rval = Esys_Quote(ectx, ctx.context_object.tr_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                &ctx.qualifyingData, &inScheme, pcrSelection,
+                &quoted, &signature);
     if(rval != TPM2_RC_SUCCESS)
     {
-        LOG_PERR(Tss2_Sys_Quote, rval);
+        LOG_PERR(Esys_Quote, rval);
         return -1;
     }
 
     tpm2_tool_output( "quoted: " );
-    tpm2_util_print_tpm2b((TPM2B *)&quoted);
+    tpm2_util_print_tpm2b((TPM2B *)quoted);
     tpm2_tool_output("\nsignature:\n" );
-    tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature.sigAlg, tpm2_alg_util_flags_sig));
+    tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature->sigAlg, tpm2_alg_util_flags_sig));
 
     UINT16 size;
-    BYTE *sig = tpm2_convert_sig(&size, &signature);
+    BYTE *sig = tpm2_convert_sig(&size, signature);
     tpm2_tool_output("  sig: ");
     tpm2_util_hexdump(sig, size);
     tpm2_tool_output("\n");
     free(sig);
 
-    bool res = write_output_files(&quoted, &signature);
+    bool res = write_output_files(quoted, signature);
+
+    free(quoted);
+    free(signature);
+
     return res == true ? 0 : 1;
 }
 
@@ -221,7 +230,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -235,7 +244,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.ak_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.ak_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak_auth_str);
@@ -243,12 +252,19 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg, &                    ctx.context_object);
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
+                &ctx.context_object);
     if (!result) {
         goto out;
+    } else if (!ctx.context_object.tr_handle) {
+        bool ok = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.context_object.handle, &ctx.context_object.tr_handle);
+        if (!ok) {
+            goto out;
+        }
     }
 
-    int tmp_rc = quote(sapi_context, ctx.context_object.handle, &ctx.pcrSelections);
+    int tmp_rc = quote(ectx, &ctx.pcrSelections);
     if (tmp_rc) {
         goto out;
     }
@@ -257,7 +273,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
 out:
 
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
