@@ -1,9 +1,10 @@
 ## Changelog
-### 3.1.3-rc0 - 2018-09-20
+### 3.1.3-rc1 - 2018-10-04
   * Restore support for the TPM2TOOLS_* env vars for TCTI configuration, in
   addition to supporting the new unified TPM2TOOLS_ENV_TCTI
   * Fix tpm2_getcap to print properties with the TPM_PT prefix, rather than
   TPM2_PT
+  * Make test_tpm2_activecredential Python 3 compatible
   * Fix tpm2_takeownership to only attempt to change the specified hierarchies
 
 ### 3.1.2 - 2018-08-14
