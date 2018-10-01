@@ -59,6 +59,15 @@ struct takeownership_ctx {
         UINT8 clear_auth : 1;
         UINT8 unused     : 7;
     };
+
+    struct {
+        UINT8 o : 1;
+        UINT8 e : 1;
+        UINT8 l : 1;
+        UINT8 O : 1;
+        UINT8 E : 1;
+        UINT8 L : 1;
+    } flags;
 };
 
 static takeownership_ctx ctx;
@@ -111,12 +120,23 @@ static bool change_auth(TSS2_SYS_CONTEXT *sapi_context,
 static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
 
     // change owner, endorsement and lockout auth.
-    return change_auth(sapi_context, &ctx.passwords.owner,
-                "Owner", TPM2_RH_OWNER)
-        && change_auth(sapi_context, &ctx.passwords.endorse,
-                "Endorsement", TPM2_RH_ENDORSEMENT)
-        && change_auth(sapi_context, &ctx.passwords.lockout,
-                "Lockout", TPM2_RH_LOCKOUT);
+    bool result = true;
+    if (ctx.flags.o || ctx.flags.O) {
+        result &= change_auth(sapi_context, &ctx.passwords.owner,
+                        "Owner", TPM2_RH_OWNER);
+    }
+
+    if (ctx.flags.e || ctx.flags.E) {
+        result &= change_auth(sapi_context, &ctx.passwords.endorse,
+                        "Endorsement", TPM2_RH_ENDORSEMENT);
+    }
+
+    if (ctx.flags.l || ctx.flags.L) {
+        result &= change_auth(sapi_context, &ctx.passwords.lockout,
+                        "Lockout", TPM2_RH_LOCKOUT);
+    }
+
+    return result;
 }
 
 static bool on_option(char key, char *value) {
@@ -134,6 +154,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Invalid new owner password, got\"%s\"", optarg);
             return false;
         }
+        ctx.flags.o = 1;
         break;
     case 'e':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.new);
@@ -141,6 +162,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Invalid new endorse password, got\"%s\"", optarg);
             return false;
         }
+        ctx.flags.e = 1;
         break;
     case 'l':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.new);
@@ -148,6 +170,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Invalid new lockout password, got\"%s\"", optarg);
             return false;
         }
+        ctx.flags.l = 1;
         break;
     case 'O':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.owner.old);
@@ -155,6 +178,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Invalid current owner password, got\"%s\"", optarg);
             return false;
         }
+        ctx.flags.O = 1;
         break;
     case 'E':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.old);
@@ -162,6 +186,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Invalid current endorse password, got\"%s\"", optarg);
             return false;
         }
+        ctx.flags.E = 1;
         break;
     case 'L':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.lockout.old);
@@ -169,6 +194,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Invalid current lockout password, got\"%s\"", optarg);
             return false;
         }
+        ctx.flags.L = 1;
         break;
         /*no default */
     }

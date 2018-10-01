@@ -4,6 +4,7 @@
   addition to supporting the new unified TPM2TOOLS_ENV_TCTI
   * Fix tpm2_getcap to print properties with the TPM_PT prefix, rather than
   TPM2_PT
+  * Fix tpm2_takeownership to only attempt to change the specified hierarchies
 
 ### 3.1.2 - 2018-08-14
   * Revert the change to use user supplied object attributes exclusively. This is an inappropriate behavioural change for a MINOR version number increment.
