@@ -87,6 +87,7 @@ bin_PROGRAMS = \
     tools/tpm2_pcrevent \
     tools/tpm2_pcrextend \
     tools/tpm2_pcrlist \
+    tools/tpm2_pcrreset \
     tools/tpm2_quote \
     tools/tpm2_rc_decode \
     tools/tpm2_readpublic \
@@ -179,6 +180,7 @@ tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
 tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
+tools_tpm2_pcrreset_SOURCES = tools/tpm2_pcrreset.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_rc_decode_SOURCES = tools/tpm2_rc_decode.c $(TOOL_SRC)
 
@@ -279,6 +281,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_pcrevent.1 \
     man/man1/tpm2_pcrextend.1 \
     man/man1/tpm2_pcrlist.1 \
+    man/man1/tpm2_pcrreset.1 \
     man/man1/tpm2_quote.1 \
     man/man1/tpm2_rc_decode.1 \
     man/man1/tpm2_readpublic.1 \
