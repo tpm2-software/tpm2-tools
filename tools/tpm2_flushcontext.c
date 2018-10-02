@@ -31,10 +31,12 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "tpm2_capability.h"
 #include "tpm2_options.h"
 #include "tpm2_session.h"
 #include "tpm2_util.h"
@@ -65,38 +67,41 @@ static const char *get_property_name(TPM2_HANDLE handle) {
     return "invalid";
 }
 
-static TSS2_RC
-get_capability_handles(TSS2_SYS_CONTEXT *sapi_ctx, UINT32 property,
-                       TPMS_CAPABILITY_DATA *capability_data) {
-
-    TPMI_YES_NO more_data;
-
-    TSS2_RC rval = Tss2_Sys_GetCapability(sapi_ctx, NULL, TPM2_CAP_HANDLES, property,
-                                TPM2_MAX_CAP_HANDLES, &more_data,
-                                capability_data,
-                                NULL);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_GetCapability, rval);
-    } else if (more_data) {
-        LOG_WARN("More data to be queried: capability: 0x%x, property: "
-                 "0x%x", TPM2_CAP_HANDLES, property);
-    }
-
-    return rval;
-}
-
-static bool flush_contexts(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE handles[],
+static bool flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
                           UINT32 count) {
 
     UINT32 i;
 
     for (i = 0; i < count; ++i) {
 
-        TPM2_RC rval = Tss2_Sys_FlushContext(sapi_context, handles[i]);
+        ESYS_TR handle;
+        bool ok = tpm2_util_sys_handle_to_esys_handle(ectx, handles[i],
+                    &handle);
+        if (!ok) {
+            return false;
+        }
+
+        TPM2_RC rval = Esys_FlushContext(ectx, handle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed Flush Context for %s handle 0x%x",
                     get_property_name(handles[i]), handles[i]);
-            LOG_PERR(Tss2_Sys_FlushContext, rval);
+            LOG_PERR(Esys_FlushContext, rval);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
+                UINT32 count) {
+
+    UINT32 i;
+
+    for (i = 0; i < count; ++i) {
+        TPM2_RC rval = Esys_FlushContext(ectx, handles[i]);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_FlushContext, rval);
             return false;
         }
     }
@@ -144,47 +149,60 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    TPMS_CAPABILITY_DATA capability_data = TPMS_CAPABILITY_DATA_EMPTY_INIT;
-    TPML_HANDLE *handles = &capability_data.data.handles;
-
     if (ctx.property) {
-        TSS2_RC rc;
-
-        rc = get_capability_handles(sapi_context, ctx.property, &capability_data);
-        if (rc != TPM2_RC_SUCCESS) {
+        TPMS_CAPABILITY_DATA *capability_data;
+        bool ok = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, ctx.property,
+                TPM2_MAX_CAP_HANDLES, &capability_data);
+        if (!ok) {
             return 1;
         }
+
+        TPML_HANDLE *handles = &capability_data->data.handles;
+        int retval = flush_contexts_tpm2(ectx, handles->handle,
+                                    handles->count) != true;
+        free(capability_data);
+        return retval;
     } else {
 
+        ESYS_TR handles[1];
         /* handle from a session file */
         if (ctx.session.path) {
-            tpm2_session *s = tpm2_session_restore(sapi_context, ctx.session.path);
+            tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path);
             if (!s) {
+                LOG_ERR("Failed to load session from path: %s",
+                        ctx.session.path);
                 return 1;
             }
 
-            ctx.context_object.handle = tpm2_session_get_handle(s);
+            handles[0] = tpm2_session_get_handle(s);
 
             tpm2_session_free(&s);
         } else {
             bool result;
 
-            result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+            result = tpm2_util_object_load(ectx, ctx.context_arg,
                         &ctx.context_object);
             if (!result) {
                 return 1;
             }
+
+            if (!ctx.context_object.tr_handle) {
+                bool ok = tpm2_util_sys_handle_to_esys_handle(ectx,
+                            ctx.context_object.handle,
+                            &ctx.context_object.tr_handle);
+                if (!ok) {
+                    return 2;
+                }
+            }
+
+            handles[0] = ctx.context_object.tr_handle;
         }
 
-        handles->handle[0] = ctx.context_object.handle;
-        LOG_INFO("got session handle 0x%" PRIx32, handles->handle[0]);
-        handles->count = 1;
+        int retval = flush_contexts_tr(ectx, handles, 1) != true;
+        return retval;
     }
-
-    return flush_contexts(sapi_context, handles->handle,
-                          handles->count) != true;
 }
