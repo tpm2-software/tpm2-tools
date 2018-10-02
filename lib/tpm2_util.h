@@ -316,24 +316,6 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent);
  * The objectstr will recognised as a context file when prefixed with "file:"
  * or should the value not be parsable as a handle number (as understood by
  * strtoul()).
- * @param sapi_ctx
- * a TSS SAPI context.
- * @param objectstr
- * The string representation of the object to be loaded.
- * @param outobject
- * A *tpm2_loaded_object* with a loaded handle. The path member will also be
- * set when the *objectstr* is a context file.
- */
-bool tpm2_util_object_load_sapi(TSS2_SYS_CONTEXT *sapi_ctx,
-        const char *objectstr, tpm2_loaded_object *outobject);
-
-/**
- * Parses a string representation of a context object, either a file or handle,
- * and loads the context object ensuring the handle member of the out object is
- * set.
- * The objectstr will recognised as a context file when prefixed with "file:"
- * or should the value not be parsable as a handle number (as understood by
- * strtoul()).
  * @param ctx
  * a TSS ESAPI context.
  * @param objectstr
@@ -344,18 +326,6 @@ bool tpm2_util_object_load_sapi(TSS2_SYS_CONTEXT *sapi_ctx,
  */
 bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
         const char *objectstr, tpm2_loaded_object *outobject);
-
-/**
- * Saves a loaded object to the context file specified by the object's path
- * member.
- * @param sapi_ctx
- * a TSS SAPI context.
- * @param inobject
- * A tpm2_loaded_object with a path member set to the location at which to save
- * the object context.
- */
-bool tpm2_util_object_save_sapi(TSS2_SYS_CONTEXT *sapi_ctx,
-        tpm2_loaded_object inobject);
 
 /**
  * Saves a loaded object to the context file specified by the object's path

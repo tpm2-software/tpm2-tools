@@ -490,29 +490,6 @@ bool object_load_pre(const char *objectstr, tpm2_loaded_object *outobject) {
     return fullyloaded;
 }
 
-bool tpm2_util_object_load_sapi(TSS2_SYS_CONTEXT *sapi_ctx,
-        const char *objectstr, tpm2_loaded_object *outobject) {
-
-    if (!objectstr) {
-        return false;
-    }
-
-    bool result;
-    result = object_load_pre(objectstr, outobject);
-    if (result) {
-        return result;
-    }
-
-    result = files_load_tpm_context_from_path_sapi(sapi_ctx, &outobject->handle,
-                outobject->path);
-
-    if (!result) {
-        LOG_ERR("Could not load object, got: \"%s\"", objectstr);
-    }
-
-    return result;
-}
-
 bool tpm2_util_object_load(ESYS_CONTEXT *ctx, const char *objectstr,
         tpm2_loaded_object *outobject) {
 
@@ -535,16 +512,6 @@ bool tpm2_util_object_load(ESYS_CONTEXT *ctx, const char *objectstr,
 
 out:
     return result;
-}
-
-bool tpm2_util_object_save_sapi(TSS2_SYS_CONTEXT *sapi_ctx,
-        tpm2_loaded_object inobject) {
-
-    if (inobject.path) {
-        return files_save_tpm_context_to_path_sapi(sapi_ctx, inobject.handle,
-                inobject.path);
-    }
-    return false;
 }
 
 bool tpm2_util_object_save(ESYS_CONTEXT *ctx,
