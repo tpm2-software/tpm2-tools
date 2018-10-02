@@ -85,6 +85,21 @@ bool tpm2_policy_build_policyauthorize(
     const char *ticket_path);
 
 /**
+ * Compounds policies in an OR fashion
+ *
+ * @param sapi_context
+ *   The system api context
+ * @param policy_session 
+ *   The policy session into which the policy digest is extended into
+ * @param policy_list 
+ *   The list of policy policy digests
+ *
+ * @return     { description_of_the_return_value }
+ */
+bool tpm2_policy_build_policyor(TSS2_SYS_CONTEXT *sapi_context,
+    tpm2_session *policy_session, TPML_DIGEST policy_list);
+
+/**
  * Retrieves the policy digest for a session via Tss2_Sys_PolicyGetDigest.
  * @param sapi_context
  *  The system api context.
@@ -98,5 +113,17 @@ bool tpm2_policy_build_policyauthorize(
 bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
         tpm2_session *session,
         TPM2B_DIGEST *policy_digest_path);
+
+/**
+ * Parses the policy digest algorithm for the list of policies specified
+ *
+ * @param str
+ *  The string specifying the policy digest algorithm and list of policies
+ * @param policy_list
+ *  The policy list structure that records all the policies from policy list
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list);
 
 #endif /* TPM2_POLICY_H_ */
