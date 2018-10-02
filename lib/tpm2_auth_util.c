@@ -30,10 +30,12 @@
 //**********************************************************************;
 #include <limits.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
+#include <tss2/tss2_mu.h>
 
 #include "log.h"
 #include "tpm2_auth_util.h"
@@ -98,7 +100,7 @@ static bool handle_password(const char *password, TPMS_AUTH_COMMAND *auth) {
     return handle_str_password(password, auth);
 }
 
-static bool handle_session(TSS2_SYS_CONTEXT *sys_ctx, const char *path, TPMS_AUTH_COMMAND *auth,
+static bool handle_session(ESYS_CONTEXT *ectx, const char *path, TPMS_AUTH_COMMAND *auth,
         tpm2_session **session) {
 
     /* if it is session, then skip the prefix */
@@ -130,12 +132,18 @@ static bool handle_session(TSS2_SYS_CONTEXT *sys_ctx, const char *path, TPMS_AUT
         }
     }
 
-    *session = tpm2_session_restore(sys_ctx, tmp);
+    *session = tpm2_session_restore(ectx, tmp);
     if (!*session) {
         return false;
     }
 
-    auth->sessionHandle = tpm2_session_get_handle(*session);
+    // TODO: is setting this necessary?
+    ESYS_TR sessiontr = tpm2_session_get_handle(*session);
+    bool ok = tpm2_util_esys_handle_to_sys_handle(ectx, sessiontr,
+                &auth->sessionHandle);
+    if (!ok) {
+        LOG_WARN("Failed to set sessionHandle for auth");
+    }
 
     bool is_trial = tpm2_session_is_trial(*session);
     if (is_trial) {
@@ -148,7 +156,7 @@ static bool handle_session(TSS2_SYS_CONTEXT *sys_ctx, const char *path, TPMS_AUT
     return true;
 }
 
-bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx, const char *password,
+bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     TPMS_AUTH_COMMAND *auth, tpm2_session **session) {
 
     bool is_session = !strncmp(password, SESSION_PREFIX, SESSION_PREFIX_LEN);
@@ -158,6 +166,6 @@ bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx, const char *password,
     }
 
     return is_session ?
-         handle_session(sys_ctx, password, auth, session) :
+         handle_session(ectx, password, auth, session) :
          handle_password(password, auth);
 }

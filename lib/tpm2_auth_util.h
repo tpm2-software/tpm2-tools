@@ -31,7 +31,7 @@
 #ifndef SRC_PASSWORD_UTIL_H_
 #define SRC_PASSWORD_UTIL_H_
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_session.h"
 
@@ -56,6 +56,8 @@
  * prefix to escape it, like so:
  * "str:hex:password"
  *
+ * @param ctx
+ *  Enhanced System API (ESAPI) context
  * @param password
  *  The optarg containing the password string.
  * @param dest
@@ -65,7 +67,7 @@
  * @return
  *  true on success, false on failure.
  */
-bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx,
+bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
         const char *password, TPMS_AUTH_COMMAND *auth,
         tpm2_session **session);
 
