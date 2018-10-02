@@ -296,6 +296,22 @@ bool tpm2_policy_build_policyauthorize(
     return true;
 }
 
+bool tpm2_policy_build_policyor(TSS2_SYS_CONTEXT *sapi_context,
+    tpm2_session *policy_session, TPML_DIGEST policy_list) {
+
+    TPMI_SH_POLICY policy_session_handle = tpm2_session_get_handle(policy_session);
+
+    TSS2_RC rval = Tss2_Sys_PolicyOR(sapi_context, policy_session_handle,
+        NULL, &policy_list, NULL);
+
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_PolicyOR, rval);
+        return false;
+    }
+
+    return true;
+}
+
 bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
         tpm2_session *session,
         TPM2B_DIGEST *policy_digest) {
@@ -311,3 +327,90 @@ bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
     return true;
 }
 
+static bool tpm2_policy_populate_digest_list(char *buf, TPML_DIGEST *policy_list,
+    TPMI_ALG_HASH hash) {
+
+        uint8_t hash_len = tpm2_alg_util_get_hash_size(hash);
+        if (!hash_len) {
+            return false;
+        }
+
+        unsigned long file_size;
+        bool retval = files_get_file_size_path(buf, &file_size);
+        if (!retval) {
+            return false;
+        }
+        if (file_size != hash_len) {
+            return false;
+        }
+
+        policy_list->digests[policy_list->count].size = hash_len;
+        /* All policy digests are expected to be of same hash len */
+        if (policy_list->count > 0 &&
+            policy_list->digests[policy_list->count].size !=
+            policy_list->digests[policy_list->count - 1].size) {
+            return false;
+        }
+
+        uint16_t policy_digest_size = hash_len;
+        retval = files_load_bytes_from_path(buf, 
+            policy_list->digests[policy_list->count].buffer, &policy_digest_size);
+        if (!retval) {
+            return false;
+        }
+
+        policy_list->count++;
+
+        return true;
+}
+
+bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
+
+    char *str1;
+    char *str2;
+    char *token;
+    char *subtoken;
+    char *saveptr1;
+    char *saveptr2;
+    const char *delimiter1 = ":";
+    const char *delimiter2 = ",";
+
+    unsigned int j;
+    bool retval;
+    TPMI_ALG_HASH hash = TPM2_ALG_ERROR;
+
+    for (j = 1, str1 = str; ; j++, str1 = NULL) {
+
+        token = strtok_r(str1, delimiter1, &saveptr1);
+        if (token == NULL) {
+            break;
+        }
+
+        for (str2 = token; ; str2 = NULL) {
+
+            subtoken = strtok_r(str2, delimiter2, &saveptr2);
+            if (subtoken == NULL) {
+                break;
+            }
+            
+            //Expecting one policy digest of same hash alg type for all policies
+            if (j == 1) {
+                hash = tpm2_alg_util_from_optarg(subtoken, tpm2_alg_util_flags_hash);
+                if (hash == TPM2_ALG_ERROR) {
+                    return false;
+                }
+            }
+
+            //Multiple valid policy files
+            if (j > 1) {
+                retval = tpm2_policy_populate_digest_list(subtoken, policy_list, hash);
+                if (!retval) {
+                    return false;
+                }
+            }
+
+        }
+    }
+
+    return true;
+}
