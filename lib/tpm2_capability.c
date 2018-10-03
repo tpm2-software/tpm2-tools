@@ -30,6 +30,7 @@
 //**********************************************************************;
 
 #include <stdbool.h>
+#include <string.h>
 
 #include <tss2/tss2_sys.h>
 
@@ -38,33 +39,102 @@
 
 #include "tpm2_capability.h"
 
+static size_t tpm2_get_property_data_size(TPM2_CAP capability) {
+
+    size_t size;
+    TPMS_CAPABILITY_DATA dummy;
+
+    switch (capability) {
+        case TPM2_CAP_ALGS:
+            size = sizeof(dummy.data.algorithms.algProperties[0]);
+            break;
+        case TPM2_CAP_HANDLES:
+            size = sizeof(dummy.data.handles.handle[0]);
+            break;
+        case TPM2_CAP_COMMANDS:
+            size = sizeof(dummy.data.command.commandAttributes[0]);
+            break;
+        case TPM2_CAP_PP_COMMANDS:
+            size = sizeof(dummy.data.ppCommands.commandCodes[0]);
+            break;
+        case TPM2_CAP_AUDIT_COMMANDS:
+            size = sizeof(dummy.data.auditCommands.commandCodes[0]);
+            break;
+        case TPM2_CAP_PCRS:
+            size = sizeof(dummy.data.assignedPCR.pcrSelections[0]);
+            break;
+        case TPM2_CAP_TPM_PROPERTIES:
+            size = sizeof(dummy.data.tpmProperties.tpmProperty[0]);
+            break;
+        case TPM2_CAP_PCR_PROPERTIES:
+            size = sizeof(dummy.data.pcrProperties.pcrProperty[0]);
+            break;
+        case TPM2_CAP_ECC_CURVES:
+            size = sizeof(dummy.data.eccCurves.eccCurves[0]);
+            break;
+        case TPM2_CAP_VENDOR_PROPERTY:
+            size = sizeof(dummy.data.intelPttProperty.property[0]);
+            break;
+        default:
+            size = 0;
+            LOG_ERR("Unable to determine property size for capability:  %d\n", capability);
+            break;
+    }
+
+    return size;
+}
+
 bool tpm2_capability_get (TSS2_SYS_CONTEXT *sapi_ctx,
         TPM2_CAP capability,
         UINT32 property,
         UINT32 count,
         TPMS_CAPABILITY_DATA *capability_data) {
 
-    TPMI_YES_NO            more_data;
+    TPMI_YES_NO more_data;
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability (sapi_ctx,
-                                NULL,
-                                capability,
-                                property,
-                                count,
-                                &more_data,
-                                capability_data,
-                                NULL));
+    TPMS_CAPABILITY_DATA local_data;
 
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
-                 capability, property);
-        LOG_PERR(Tss2_Sys_GetCapability, rval);
-        return false;
-    } else if (more_data) {
-        LOG_WARN("More data to be queried: capability: 0x%x, property: "
-                 "0x%x\n", capability, property);
-        return false;
-    }
+    UINT32 result_count;
+    UINT32 offset = 0;
+
+    /*
+     * All count and data fields line up within the TPMU_CAPABILITIES union
+     * so it it safe to pick one here.
+     */
+    BYTE *data_dest = (BYTE *) capability_data->data.algorithms.algProperties;
+    BYTE *data_src  = (BYTE *) local_data.data.algorithms.algProperties;
+
+    size_t property_size = tpm2_get_property_data_size(capability);
+
+    if (!property_size)
+    	return false;
+
+    do {
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability (sapi_ctx,
+                    NULL,
+                    capability,
+                    property+offset,
+                    count,
+                    &more_data,
+                    &local_data,
+                    NULL));
+
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
+                  capability, property);
+            LOG_PERR(Tss2_Sys_GetCapability, rval);
+            return false;
+        }
+
+        result_count = local_data.data.algorithms.count;
+
+        data_dest += offset * property_size;
+
+        memcpy(data_dest, data_src, result_count*property_size);
+
+        offset += result_count;
+        capability_data->data.algorithms.count = offset;
+    } while (more_data);
 
     return true;
 }
