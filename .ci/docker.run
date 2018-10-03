@@ -41,6 +41,10 @@ if [ -e /var/run/dbus/pid ]; then
   rm /var/run/dbus/pid
 fi
 
+if [ -e /var/run/dbus/system_bus_socket ]; then
+  rm /var/run/dbus/system_bus_socket
+fi
+
 # start dbus
 dbus-daemon --fork --system
 echo "dbus started"
