@@ -167,7 +167,6 @@ tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC
 tools_tpm2_activatecredential_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_nvread_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_nvreadlock_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_nvwrite_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_nvrelease_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_loadexternal_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_sign_CFLAGS = $(AM_CFLAGS) -DSAPI
