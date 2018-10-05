@@ -37,7 +37,7 @@
 
 #include <limits.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -52,7 +52,7 @@
 
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
 struct tpm_nvwrite_ctx {
-    UINT32 nv_index;
+    TPM2_HANDLE nv_index;
     UINT16 data_size;
     UINT8 nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
     struct {
@@ -80,13 +80,9 @@ static tpm_nvwrite_ctx ctx = {
     }
 };
 
-static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
+static bool nv_write(ESYS_CONTEXT *ectx) {
 
     TPM2B_MAX_NV_BUFFER nv_write_data;
-
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
-
     UINT16 data_offset = 0;
 
     if (!ctx.data_size) {
@@ -97,23 +93,26 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
      * Ensure that writes will fit before attempting write to prevent data
      * from being partially written to the index.
      */
-    TPM2B_NV_PUBLIC nv_public = TPM2B_EMPTY_INIT;
-    bool res = tpm2_util_nv_read_public_sapi(sapi_context, ctx.nv_index, &nv_public);
+    TPM2B_NV_PUBLIC *nv_public = NULL;
+    bool res = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
     if (!res) {
         LOG_ERR("Failed to write NVRAM public area at index 0x%X",
                 ctx.nv_index);
+        free(nv_public);
         return false;
     }
 
-    if (ctx.offset + ctx.data_size > nv_public.nvPublic.dataSize) {
+    if (ctx.offset + ctx.data_size > nv_public->nvPublic.dataSize) {
         LOG_ERR("The starting offset (%u) and the size (%u) are larger than the"
                 " defined space: %u.",
-                ctx.offset, ctx.data_size, nv_public.nvPublic.dataSize);
+                ctx.offset, ctx.data_size, nv_public->nvPublic.dataSize);
+        free(nv_public);
         return false;
     }
+    free(nv_public);
 
     UINT32 max_data_size;
-    res = tpm2_util_nv_max_buffer_size(sapi_context, &max_data_size);
+    res = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
     if (!res) {
         return false;
     }
@@ -123,6 +122,30 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
     }
     else if (max_data_size == 0) {
         max_data_size = NV_DEFAULT_BUFFER_SIZE;
+    }
+
+    // Convert TPM2_HANDLE ctx.nv_index to an ESYS_TR
+    ESYS_TR nv_index;
+    TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &nv_index);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return false;
+    }
+
+    // Convert TPMI_RH_PROVISION ctx.auth.hierarchy to an ESYS_TR
+    ESYS_TR hierarchy;
+    if (ctx.auth.hierarchy == ctx.nv_index) {
+        hierarchy = nv_index;
+    } else {
+        hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
+    }
+
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Failed to get shandle");
+        return false;
     }
 
     while (ctx.data_size > 0) {
@@ -135,9 +158,9 @@ static bool nv_write(TSS2_SYS_CONTEXT *sapi_context) {
 
         memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset], nv_write_data.size);
 
-        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_Write(sapi_context,
-                ctx.auth.hierarchy, ctx.nv_index, &sessions_data, &nv_write_data,
-                ctx.offset + data_offset, &sessions_data_out));
+        TSS2_RC rval = Esys_NV_Write(ectx, hierarchy, nv_index,
+                        shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                        &nv_write_data, ctx.offset + data_offset);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to write NV area at index 0x%X", ctx.nv_index);
             LOG_PERR(Tss2_Sys_NV_Write, rval);
@@ -240,7 +263,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
+static bool start_auth_session(ESYS_CONTEXT *ectx) {
 
     tpm2_session_data *session_data =
             tpm2_session_data_new(TPM2_SE_POLICY);
@@ -249,14 +272,14 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    ctx.auth.session = tpm2_session_new(sapi_context,
+    ctx.auth.session = tpm2_session_new(ectx,
             session_data);
     if (!ctx.auth.session) {
         LOG_ERR("Could not start tpm session");
         return false;
     }
 
-    bool result = tpm2_policy_build_pcr(sapi_context, ctx.auth.session,
+    bool result = tpm2_policy_build_pcr(ectx, ctx.auth.session,
             ctx.raw_pcrs_file,
             &ctx.pcr_selection);
     if (!result) {
@@ -264,14 +287,11 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    ctx.auth.session_data.sessionHandle = tpm2_session_get_handle(ctx.auth.session);
-    ctx.auth.session_data.sessionAttributes |= TPMA_SESSION_CONTINUESESSION;
-
     return true;
 }
 
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -285,14 +305,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.L) {
-        result = start_auth_session(sapi_context);
+        result = start_auth_session(ectx);
         if (!result) {
             goto out;
         }
     }
 
-    /* If the users doesn't specify an auth-hierarchy use the index passed to
-     * -x/--index for the authorisation index.
+    /* If the users doesn't specify an authorisation hierarchy use the index
+     * passed to -x/--index for the authorisation index.
      */
     if (!ctx.flags.a) {
         ctx.auth.hierarchy = ctx.nv_index;
@@ -309,10 +329,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.hierarchy_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid handle authorization, got\"%s\"",
+            LOG_ERR("Invalid handle authorization, got \"%s\"",
                 ctx.hierarchy_auth_str);
             goto out;
         }
@@ -348,7 +368,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         ctx.data_size = (UINT16)bytes;
     }
 
-    result = nv_write(sapi_context);
+    result = nv_write(ectx);
     if (!result) {
         goto out;
     }
@@ -358,14 +378,14 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 out:
 
     if (ctx.flags.L) {
-        TSS2_RC rval = Tss2_Sys_FlushContext(sapi_context,
-                ctx.auth.session_data.sessionHandle);
+        ESYS_TR sess_handle = tpm2_session_get_handle(ctx.auth.session);
+        TSS2_RC rval = Esys_FlushContext(ectx, sess_handle);
         if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Tss2_Sys_FlushContext, rval);
+            LOG_PERR(Esys_FlushContext, rval);
             rc = 1;
         }
     } else {
-        result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+        result = tpm2_session_save(ectx, ctx.auth.session, NULL);
         if (!result) {
             rc = 1;
         }
