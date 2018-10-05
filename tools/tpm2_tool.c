@@ -59,52 +59,6 @@ static void tcti_teardown (TSS2_TCTI_CONTEXT *tcti_context) {
     free (tcti_context);
 }
 
-#ifdef SAPI
-
-static void sapi_teardown (TSS2_SYS_CONTEXT *sapi_context) {
-
-    if (sapi_context == NULL)
-        return;
-    Tss2_Sys_Finalize (sapi_context);
-    free (sapi_context);
-}
-
-static void teardown_full (TSS2_SYS_CONTEXT *sapi_context) {
-
-    TSS2_TCTI_CONTEXT *tcti_context = NULL;
-    TSS2_RC rc;
-
-    rc = Tss2_Sys_GetTctiContext (sapi_context, &tcti_context);
-    if (rc != TPM2_RC_SUCCESS)
-        return;
-    sapi_teardown (sapi_context);
-    tcti_teardown (tcti_context);
-}
-
-static TSS2_SYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
-
-    TSS2_ABI_VERSION abi_version = SUPPORTED_ABI_VERSION;
-
-    size_t size = Tss2_Sys_GetContextSize(0);
-    TSS2_SYS_CONTEXT *sapi_ctx = (TSS2_SYS_CONTEXT*) calloc(1, size);
-    if (sapi_ctx == NULL) {
-        LOG_ERR("Failed to allocate 0x%zx bytes for the SAPI context\n",
-                size);
-        return NULL;
-    }
-
-    TSS2_RC rval = Tss2_Sys_Initialize(sapi_ctx, size, tcti_ctx, &abi_version);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_Initialize, rval);
-        free(sapi_ctx);
-        return NULL;
-    }
-
-    return sapi_ctx;
-}
-
-#else
-
 static void esys_teardown (ESYS_CONTEXT **esys_context) {
 
     if (esys_context == NULL)
@@ -139,8 +93,6 @@ static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
 
     return esys_ctx;
 }
-#endif
-
 
 /*
  * This program is a template for TPM2 tools that use the SAPI. It does
@@ -183,20 +135,16 @@ int main(int argc, char *argv[]) {
         output_enabled = false;
     }
 
-    THE_CONTEXT() *context = NULL;
+    ESYS_CONTEXT *ectx = NULL;
     if (tcti) {
-        context = ctx_init(tcti);
-        if (!context) {
+        ectx = ctx_init(tcti);
+        if (!ectx) {
             goto free_opts;
         }
     }
 
     if (flags.enable_errata) {
-#ifdef SAPI
-        tpm2_errata_init_sapi(context);
-#else
-        tpm2_errata_init(context);
-#endif
+        tpm2_errata_init(ectx);
     }
 
     /*
@@ -214,7 +162,7 @@ int main(int argc, char *argv[]) {
      * rc 0 = success
      * rc -1 = show usage
      */
-    ret = tpm2_tool_onrun(context, flags);
+    ret = tpm2_tool_onrun(ectx, flags);
     if (ret > 0) {
         LOG_ERR("Unable to run %s", argv[0]);
     } else if (ret < 0) {
@@ -226,11 +174,7 @@ int main(int argc, char *argv[]) {
      * Cleanup contexts & memory allocated for the modified argument vector
      * passed to execute_tool.
      */
-#ifdef SAPI
-    teardown_full(context);
-#else
-    teardown_full(&context);
-#endif
+    teardown_full(&ectx);
 
 free_opts:
     if (tool_opts) {

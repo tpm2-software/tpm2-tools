@@ -105,7 +105,7 @@ bin_PROGRAMS = \
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)
-lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS) -DSAPI
+lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_misc_tpm2_print_SOURCES = tools/misc/tpm2_print.c $(TOOL_SRC)
