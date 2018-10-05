@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "log.h"
 #include "tpm2_auth_util.h"
@@ -63,15 +63,30 @@ static tpm_nvrelease_ctx ctx = {
     .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
 };
 
-static bool nv_space_release(TSS2_SYS_CONTEXT *sapi_context) {
+static bool nv_space_release(ESYS_CONTEXT *ectx) {
 
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
+    ESYS_TR nv_handle;
+    TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
+                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                        &nv_handle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return false;
+    }
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_NV_UndefineSpace(sapi_context,
-            ctx.auth.hierarchy, ctx.nv_index, &sessions_data, NULL));
+    ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, nv_handle,
+                            &ctx.auth.session_data, ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
+        LOG_ERR("Couldn't get shandle");
+        return false;
+    }
+
+    rval = Esys_NV_UndefineSpace(ectx, hierarchy, nv_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to release NV area at index 0x%X", ctx.nv_index);
-        LOG_PERR(Tss2_Sys_NV_UndefineSpace, rval);
+        LOG_PERR(Esys_NV_UndefineSpace, rval);
         return false;
     }
 
@@ -130,7 +145,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -138,16 +153,16 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     bool result;
 
     if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.passwd_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.passwd_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
-            LOG_ERR("Invalid handle authorization, got\"%s\"",
+            LOG_ERR("Invalid handle authorization, got \"%s\"",
                 ctx.passwd_auth_str);
             goto out;
         }
     }
 
-    result = nv_space_release(sapi_context);
+    result = nv_space_release(ectx);
     if (!result) {
         goto out;
     }
@@ -155,7 +170,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
