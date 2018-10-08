@@ -56,9 +56,13 @@ be evicted.
 
 # EXAMPLES
 
+## To make a transient handle persistent
 ```
-tpm2_evictcontrol -A o -c object.context -S 0x81010002 -P abc123
-tpm2_evictcontrol -A o -c 0x81010002 -S 0x81010002 -P abc123
+tpm2_evictcontrol -a o -c object.context -p 0x81010002 -P abc123
+```
+## To evict a persistent handle
+```
+tpm2_evictcontrol -a o -c 0x81010002 -p 0x81010002 -P abc123
 ```
 
 # RETURNS
