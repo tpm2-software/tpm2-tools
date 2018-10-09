@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -95,7 +95,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -117,13 +117,13 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return -1;
     }
 
-    s = tpm2_session_restore(sapi_context, ctx.session_path);
+    s = tpm2_session_restore(ectx, ctx.session_path);
     if (!s) {
         return rc;
     }
 
 
-    bool result = tpm2_policy_build_pcr(sapi_context, s,
+    bool result = tpm2_policy_build_pcr(ectx, s,
             ctx.raw_pcrs_file,
             &ctx.pcr_selection);
     if (!result) {
@@ -131,38 +131,40 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         goto out;
     }
 
-    TPM2B_DIGEST policy_digest = TPM2B_EMPTY_INIT;
-    result = tpm2_policy_get_digest(sapi_context, s,
+    TPM2B_DIGEST *policy_digest;
+    result = tpm2_policy_get_digest(ectx, s,
             &policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
-        goto out;
+        goto out_policy;
     }
 
     tpm2_tool_output("policy-digest: 0x");
     UINT16 i;
-    for(i = 0; i < policy_digest.size; i++) {
-        tpm2_tool_output("%02X", policy_digest.buffer[i]);
+    for(i = 0; i < policy_digest->size; i++) {
+        tpm2_tool_output("%02X", policy_digest->buffer[i]);
     }
     tpm2_tool_output("\n");
 
     if (ctx.policy_out_path) {
         result = files_save_bytes_to_file(ctx.policy_out_path,
-                    (UINT8 *) &policy_digest.buffer,
-                    policy_digest.size);
+                    (UINT8 *) &policy_digest->buffer,
+                    policy_digest->size);
         if (!result) {
             LOG_ERR("Failed to save policy digest into file \"%s\"",
                     ctx.policy_out_path);
-            goto out;
+            goto out_policy;
         }
     }
-    result = tpm2_session_save(sapi_context, s, ctx.session_path);
+    result = tpm2_session_save(ectx, s, ctx.session_path);
     if (!result) {
         LOG_ERR("Failed to save policy to file \"%s\"", ctx.session_path);
     }
 
     rc = 0;
 
+out_policy:
+    free(policy_digest);
 out:
     tpm2_session_free(&s);
     return rc;
