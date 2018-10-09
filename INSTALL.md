@@ -183,7 +183,7 @@ Now putting all together:
 
 * ##### Tpm2-tss
 ```
-$ git clone git://github.com/tpm2-software/tpm2-tss.git
+$ git clone https://github.com/tpm2-software/tpm2-tss.git
 $ cd tpm2-tss
 $ ./bootstrap
 $ ./configure --prefix=/usr
@@ -193,7 +193,7 @@ $ sudo make install
 
 * ##### Tpm2-abrmd
 ```
-$ git clone git://github.com/tpm2-software/tpm2-abrmd.git
+$ git clone https://github.com/tpm2-software/tpm2-abrmd.git
 $ cd tpm2-abrmd
 $ ./bootstrap
 $ ./configure --with-dbuspolicydir=/etc/dbus-1/system.d
@@ -206,7 +206,7 @@ $ sudo make install
 
 * ##### Tpm2-tools
 ```
-$ git clone git://github.com/tpm2-software/tpm2-tools.git
+$ git clone https://github.com/tpm2-software/tpm2-tools.git
 $ cd tpm2-tools
 $ ./bootstrap
 $ ./configure --prefix=/usr
