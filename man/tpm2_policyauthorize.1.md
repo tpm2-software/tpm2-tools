@@ -70,7 +70,7 @@ verification of the signature on the pcr policy digest using **tpm2_policyauthor
 ## Create a signing authority
 * openssl genrsa -out signing_key_private.pem 2048
 * openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
-* tpm2_loadexternal -G rsa -a n -u signing_key_public.pem -o signing_key.ctx\
+* tpm2_loadexternal -G rsa -a o -u signing_key_public.pem -o signing_key.ctx\
  -n signing_key.name
 
 ## Create a policy to be authorized like a pcr policy:
@@ -90,7 +90,7 @@ verification of the signature on the pcr policy digest using **tpm2_policyauthor
 
 ## Create a TPM object like a sealing object with the authorized policy based authentication:
 * tpm2_createprimary -Q -a o -g sha256 -G rsa -o prim.ctx
-* tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -I- -C prim.ctx\
+* tpm2_create -Q -g sha256 --u sealing_pubkey.pub -r sealing_prikey.pub -I- -C prim.ctx\
  -L authorized.policy <<< "secret to seal"
 
 ## Satisfy policy and unseal the secret:
@@ -99,8 +99,10 @@ verification of the signature on the pcr policy digest using **tpm2_policyauthor
 * tpm2_startauthsession -a -S session.ctx
 * tpm2_policypcr -Q -S session.ctx -L sha256:0 -f pcr.policy
 * tpm2_policyauthorize -S session.ctx -o authorized.policy -f pcr.policy\
- -n verifying_public_key.name -t verification.tkt
-* unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx
+ -n signing_key.name -t verification.tkt
+* tpm2_load -Q -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -o sealing_key.context
+* unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx`
+* echo $unsealed
 * tpm2_flushcontext -S session.ctx
 
 # RETURNS
