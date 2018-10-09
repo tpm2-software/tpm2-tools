@@ -36,7 +36,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -78,17 +78,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     int rc = 1;
-    tpm2_session *s = tpm2_session_restore(sapi_context, ctx.session.path);
+    tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path);
     if (!s) {
         return rc;
     }
 
-    bool result = tpm2_session_restart(sapi_context, s);
+    bool result = tpm2_session_restart(ectx, s);
     if (!result) {
         goto out;
     }
