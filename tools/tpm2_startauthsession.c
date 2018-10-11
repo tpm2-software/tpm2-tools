@@ -37,7 +37,8 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -100,7 +101,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -113,17 +114,24 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     tpm2_session_set_authhash(session_data, ctx.session.halg);
 
-    tpm2_session *s = tpm2_session_new(sapi_context,
+    tpm2_session *s = tpm2_session_new(ectx,
             session_data);
     if (!s) {
         return rc;
     }
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
-    tpm2_tool_output("session-handle: 0x%" PRIx32 "\n", handle);
+    ESYS_TR session_handle = tpm2_session_get_handle(s);
+    TPMI_SH_AUTH_SESSION tpm_handle;
+    bool result = tpm2_util_esys_handle_to_sys_handle(ectx, session_handle,
+                    &tpm_handle);
+    if (!result) {
+        goto out;
+    }
+
+    tpm2_tool_output("session-handle: 0x%" PRIx32 "\n", tpm_handle);
 
     if (ctx.output.path) {
-        bool result = tpm2_session_save(sapi_context, s, ctx.output.path);
+        result = tpm2_session_save(ectx, s, ctx.output.path);
         if (!result) {
             goto out;
         }

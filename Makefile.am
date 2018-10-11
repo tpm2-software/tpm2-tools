@@ -168,7 +168,6 @@ tools_tpm2_activatecredential_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_loadexternal_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_sign_CFLAGS = $(AM_CFLAGS) -DSAPI
 tools_tpm2_import_CFLAGS = $(AM_CFLAGS) -DSAPI
-tools_tpm2_startauthsession_CFLAGS = $(AM_CFLAGS) -DSAPI
 
 if UNIT
 TESTS = $(check_PROGRAMS)
