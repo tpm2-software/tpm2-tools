@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <tss2/tss2_mu.h>
+
 #include "log.h"
 #include "files.h"
 #include "tpm2_alg_util.h"
@@ -589,4 +591,36 @@ bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
     }
 
     return true;
+}
+
+bool tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
+        ESYS_TR esys_handle, TPM2_HANDLE *sys_handle) {
+
+    bool result = true;
+    TPM2B_NAME *loaded_name;
+
+    TSS2_RC rval = Esys_TR_GetName(context, esys_handle, &loaded_name);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_GetName, rval);
+        result = false;
+        goto outname;
+    }
+
+    size_t offset = 0;
+    TPM2_HANDLE hndl;
+    // TODO: this doesn't produce handles that _look_ right
+    rval = Tss2_MU_TPM2_HANDLE_Unmarshal(loaded_name->name, loaded_name->size,
+                &offset, &hndl);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_MU_TPM2_HANDLE_Unmarshal, rval);
+        result = false;
+        goto outname;
+    }
+
+    *sys_handle = hndl;
+
+outname:
+    free(loaded_name);
+
+    return result;
 }
