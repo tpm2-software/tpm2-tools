@@ -402,4 +402,16 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
 bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle);
 
+/**
+ * Get the underlying TPM2_HANDLE for the given ESYS_TR handle
+ * @param context
+ *  an ESAPI context
+ * @param esys_handle
+ *  the ESYS_TR for which a TPM handle is desired
+ * @param sys_handle
+ *  pointer to the TPM2_HANDLE in which to store the output
+ */
+bool tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
+        ESYS_TR esys_handle, TPM2_HANDLE *sys_handle);
+
 #endif /* STRING_BYTES_H */
