@@ -1,5 +1,5 @@
 ## Changelog
-### 3.1.3-rc1 - 2018-10-04
+### 3.1.3 - 2018-10-15
   * Restore support for the TPM2TOOLS_* env vars for TCTI configuration, in
   addition to supporting the new unified TPM2TOOLS_ENV_TCTI
   * Fix tpm2_getcap to print properties with the TPM_PT prefix, rather than
