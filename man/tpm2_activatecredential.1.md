@@ -37,9 +37,9 @@ These options control the object verification:
     Passwords should follow the "authorization formatting standards", see
     section "Authorization Formatting".
 
-  * **-E**, **--endorse-password**=_ENDORSE\_PASSWORD_:
-    The endorsement password, optional. Follows the same formatting guidelines
-    as the handle password option -P.
+  * **-E**, **--auth-endorse**=_ENDORSE\_PASSWORD_:
+    The endorsement authorization value, optional. Follows the same formatting
+    guidelines as the key authorization option -P.
 
   * **-f**, **--in-file**=_INPUT\_FILE_:
     Input file path, containing the two structures needed by
