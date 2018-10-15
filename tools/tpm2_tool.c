@@ -73,6 +73,10 @@ static void teardown_full (ESYS_CONTEXT **esys_context) {
     TSS2_TCTI_CONTEXT *tcti_context = NULL;
     TSS2_RC rc;
 
+    if (!*esys_context) {
+        return;
+    }
+
     rc = Esys_GetTcti(*esys_context, &tcti_context);
     if (rc != TPM2_RC_SUCCESS)
         return;
