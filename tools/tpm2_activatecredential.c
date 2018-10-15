@@ -259,7 +259,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"context",        required_argument, NULL, 'c'},
          {"key-context",    required_argument, NULL, 'C'},
          {"auth-key",       required_argument, NULL, 'P'},
-         {"endorse-passwd", required_argument, NULL, 'E'},
+         {"auth-endorse",   required_argument, NULL, 'E'},
          {"in-file",        required_argument, NULL, 'f'},
          {"out-file",       required_argument, NULL, 'o'},
     };

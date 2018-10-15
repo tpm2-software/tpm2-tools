@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_activatecredential: Option `--endorse-passwd` changes to `--auth-endorse`.
   * tpm2_loadexternal: name output to file and stdout. Changes YAML stdout output.
   * tpm2_loadexternal: ECC Public and Private PEM support.
   * tpm2_loadexternal: AES Public and Private "raw file" support.
