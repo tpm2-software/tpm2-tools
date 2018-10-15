@@ -169,3 +169,25 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
          handle_session(ectx, password, auth, session) :
          handle_password(password, auth);
 }
+
+ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
+            TPMS_AUTH_COMMAND *auth, tpm2_session *session) {
+
+    // If we have a valid auth value, prefer it
+    if (auth->hmac.size > 0) {
+        TPM2_RC rval = Esys_TR_SetAuth(ectx, for_auth, &auth->hmac);
+        if (rval != TPM2_RC_SUCCESS) {
+            return ESYS_TR_NONE;
+        }
+
+        return ESYS_TR_PASSWORD;
+    }
+
+    // If we have a valid session, use that
+    if (session) {
+        return tpm2_session_get_handle(session);
+    }
+
+    // For an empty auth and no session use ESYS_TR_PASSWORD
+    return ESYS_TR_PASSWORD;
+}

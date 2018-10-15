@@ -71,4 +71,22 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
         const char *password, TPMS_AUTH_COMMAND *auth,
         tpm2_session **session);
 
+/**
+ * Set up authorisation for a handle and return a session handle for use in
+ * ESAPI calls.
+ *
+ * @param ectx
+ *  Enhanced System API (ESAPI) context
+ * @param for_auth
+ *  The target handle which needs authorisation setting up
+ * @param auth
+ *  Auth command for the handle
+ * @param session
+ *  Session for the handle
+ * @return
+ *  The authorised session handle of type ESYS_TR for the target handle
+ */
+ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
+                TPMS_AUTH_COMMAND *auth, tpm2_session *session);
+
 #endif /* SRC_PASSWORD_UTIL_H_ */

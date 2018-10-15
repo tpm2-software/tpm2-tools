@@ -39,6 +39,18 @@
 #include "tpm2_util.h"
 #include "tpm2_auth_util.h"
 
+#include "esys_stubs.h"
+#include "test_session_common.h"
+
+TSS2_RC __wrap_Esys_TR_SetAuth(ESYS_CONTEXT *esysContext, ESYS_TR handle,
+			TPM2B_AUTH const *authValue) {
+	UNUSED(esysContext);
+	UNUSED(handle);
+	UNUSED(authValue);
+
+	return TPM2_RC_SUCCESS;
+}
+
 static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {
     (void)state;
 
@@ -142,6 +154,59 @@ static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(void **stat
     assert_int_equal(dest.hmac.size, 0);
 }
 
+static int setup(void **state) {
+    TSS2_RC rc;
+    ESYS_CONTEXT *ectx;
+    size_t size = sizeof(TSS2_TCTI_CONTEXT_FAKE);
+    TSS2_TCTI_CONTEXT *tcti = malloc(size);
+
+    rc = tcti_fake_initialize(tcti, &size);
+    if (rc) {
+      return (int)rc;
+    }
+    rc = Esys_Initialize(&ectx, tcti, NULL);
+    *state = (void *)ectx;
+    return (int)rc;
+}
+
+static int teardown(void **state) {
+    TSS2_TCTI_CONTEXT *tcti;
+    ESYS_CONTEXT *ectx = (ESYS_CONTEXT *)*state;
+    Esys_GetTcti(ectx, &tcti);
+    Esys_Finalize(&ectx);
+    free(tcti);
+    return 0;
+}
+
+static void test_tpm2_auth_util_get_shandle(void **state) {
+
+    ESYS_CONTEXT *ectx = (ESYS_CONTEXT *)*state;
+    ESYS_TR auth_handle = ESYS_TR_NONE;
+    ESYS_TR shandle;
+    TPMS_AUTH_COMMAND auth = TPMS_AUTH_COMMAND_EMPTY_INIT;
+
+    shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, &auth, NULL);
+    assert_true(shandle == ESYS_TR_PASSWORD);
+
+    set_expected_defaults(TPM2_SE_POLICY, SESSION_HANDLE, TPM2_RC_SUCCESS);
+
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
+    assert_non_null(d);
+
+    tpm2_session *s = tpm2_session_new(ectx, d);
+    assert_non_null(s);
+
+    shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, &auth, s);
+    assert_int_equal(SESSION_HANDLE, shandle);
+
+    tpm2_session_free(&s);
+}
+
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
@@ -151,6 +216,9 @@ int main(int argc, char* argv[]) {
             cmocka_unit_test(test_tpm2_password_util_from_optarg_str_prefix),
             cmocka_unit_test(test_tpm2_password_util_from_optarg_hex_prefix),
             cmocka_unit_test(test_tpm2_password_util_from_optarg_str_escaped_hex_prefix),
+
+            cmocka_unit_test_setup_teardown(test_tpm2_auth_util_get_shandle,
+                                            setup, teardown),
 
             /* negative testing */
             cmocka_unit_test(test_tpm2_password_util_from_optarg_raw_overlength),
