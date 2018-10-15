@@ -244,6 +244,8 @@ test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
 
 test_unit_test_tpm2_auth_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_auth_util_LDFLAGS  = -Wl,--wrap=Esys_TR_SetAuth \
+                                         -Wl,--wrap=Esys_StartAuthSession
 test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_auth_util_SOURCES  = test/unit/test_tpm2_auth_util.c
 
