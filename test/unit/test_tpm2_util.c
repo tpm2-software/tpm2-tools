@@ -33,13 +33,37 @@
 #include <errno.h>
 
 #include <cmocka.h>
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "tpm2_util.h"
 #include "log.h"
 #include "files.h"
 
-#define SAPI_CONTEXT ((TSS2_SYS_CONTEXT *)0xDEADBEEF)
+#include "esys_stubs.h"
+
+static int setup(void **state) {
+    TSS2_RC rc;
+    ESYS_CONTEXT *ectx;
+    size_t size = sizeof(TSS2_TCTI_CONTEXT_FAKE);
+    TSS2_TCTI_CONTEXT *tcti = malloc(size);
+
+    rc = tcti_fake_initialize(tcti, &size);
+    if (rc) {
+      return (int)rc;
+    }
+    rc = Esys_Initialize(&ectx, tcti, NULL);
+    *state = (void *)ectx;
+    return (int)rc;
+}
+
+static int teardown(void **state) {
+    TSS2_TCTI_CONTEXT *tcti;
+    ESYS_CONTEXT *ectx = (ESYS_CONTEXT *)*state;
+    Esys_GetTcti(ectx, &tcti);
+    Esys_Finalize(&ectx);
+    free(tcti);
+    return 0;
+}
 
 /*
  * NOTE: very much a copy/paste/edit from files_load_tpm_context_from_file()
@@ -103,29 +127,28 @@ static void test_tpm2_create_dummy_context(TPMS_CONTEXT *context) {
 
 static void test_tpm2_util_object_load(void **state) {
 
-    UNUSED(state);
-
+    ESYS_CONTEXT *ectx = (ESYS_CONTEXT *)*state;
     TPMS_CONTEXT context;
     test_tpm2_create_dummy_context(&context);
     save_tpm_context(context, "0x123");
 
     tpm2_loaded_object ctx_obj;
-    // We ignore the return value -- there isn't a real SAPI context and thus
+    // We ignore the return value -- there isn't a real ESAPI context and thus
     // the load will fail, however the path should have been parsed and we can
     // test that it has been done correctly.
-    tpm2_util_object_load_sapi(SAPI_CONTEXT, "file:0x123", &ctx_obj);
+    tpm2_util_object_load(ectx, "file:0x123", &ctx_obj);
     assert_string_equal(ctx_obj.path, "0x123");
     int rc = remove("0x123");
     assert_return_code(rc, errno);
 
     // Parses as uint32, a handle, thus path should be unset
-    tpm2_util_object_load_sapi(SAPI_CONTEXT, "0x123", &ctx_obj);
+    tpm2_util_object_load(ectx, "0x123", &ctx_obj);
     assert_true(ctx_obj.path == NULL);
 
     // Doesn't parse as uint32, therefore assumed to be a file path.
     // Path should match.
     save_tpm_context(context, "foobar");
-    tpm2_util_object_load_sapi(SAPI_CONTEXT, "foobar", &ctx_obj);
+    tpm2_util_object_load(ectx, "foobar", &ctx_obj);
     rc = remove("foobar");
     assert_return_code(rc, errno);
 }
@@ -135,7 +158,7 @@ int main(int argc, char* argv[]) {
     (void)argv;
 
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_tpm2_util_object_load),
+        cmocka_unit_test_setup_teardown(test_tpm2_util_object_load, setup, teardown),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
