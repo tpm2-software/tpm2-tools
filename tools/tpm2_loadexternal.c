@@ -36,7 +36,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include <openssl/rand.h>
 
@@ -60,7 +60,7 @@ typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
 struct tpm_loadexternal_ctx {
     char *context_file_path;
     TPMI_RH_HIERARCHY hierarchy_value;
-    TPM2_HANDLE handle;
+    ESYS_TR handle;
     char *public_key_path; /* path to the public portion of an object */
     char *private_key_path; /* path to the private portion of an object */
     char *attrs; /* The attributes to use */
@@ -80,16 +80,21 @@ static tpm_loadexternal_ctx ctx = {
     .hierarchy_value = TPM2_RH_NULL,
 };
 
-static bool load_external(TSS2_SYS_CONTEXT *sapi_context, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME *name) {
+static bool load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
+                TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME **name) {
 
-    TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
-
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_LoadExternal(sapi_context, NULL,
-            has_priv ? priv : NULL, pub,
-            ctx.hierarchy_value, &ctx.handle, name,
-            &sessionsDataOut));
+    TSS2_RC rval = Esys_LoadExternal(ectx,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+                    has_priv ? priv : NULL, pub, ctx.hierarchy_value,
+                    &ctx.handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_LoadExternal, rval);
+        LOG_PERR(Esys_LoadExternal, rval);
+        return false;
+    }
+
+    rval = Esys_TR_GetName(ectx, ctx.handle, name);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_GetName, rval);
         return false;
     }
 
@@ -166,7 +171,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -288,7 +293,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (ctx.auth) {
         TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.auth, &tmp, NULL);
+        result = tpm2_auth_util_from_optarg(ectx, ctx.auth, &tmp, NULL);
         if (!result) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.auth);
             return 1;
@@ -335,31 +340,44 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    TPM2B_NAME name = TPM2B_TYPE_INIT(TPM2B_NAME, name);
-    result = load_external(sapi_context, &pub, &priv, ctx.private_key_path != NULL, &name);
+    int ret = 0;
+    TPM2B_NAME *name = NULL;
+    result = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
+                &name);
     if (!result) {
-        return 1;
+        ret = 1;
+        goto out;
     }
 
-    tpm2_tool_output("handle: 0x%X\n", ctx.handle);
+    TPM2_HANDLE tpm_hndl;
+    result = tpm2_util_esys_handle_to_sys_handle(ectx, ctx.handle, &tpm_hndl);
+    if (!result) {
+        ret = 1;
+        goto out;
+    }
+    tpm2_tool_output("handle: 0x%X\n", tpm_hndl);
     tpm2_tool_output("name: 0x");
-    tpm2_util_hexdump(name.name, name.size);
+    tpm2_util_hexdump(name->name, name->size);
     tpm2_tool_output("\n");
 
     if(ctx.context_file_path) {
-        result = files_save_tpm_context_to_path_sapi(sapi_context, ctx.handle,
+        result = files_save_tpm_context_to_path(ectx, ctx.handle,
                    ctx.context_file_path);
         if (!result) {
-            return 1;
+            ret = 1;
+            goto out;
         }
     }
 
     if (ctx.name_path) {
-        result = files_save_bytes_to_file(ctx.name_path, name.name, name.size);
+        result = files_save_bytes_to_file(ctx.name_path, name->name,
+                    name->size);
         if(!result) {
-            return 1;
+            ret = 1;
         }
     }
+out:
+    free(name);
 
-    return 0;
+    return ret;
 }
