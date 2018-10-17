@@ -164,8 +164,6 @@ tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC)
 
-tools_tpm2_activatecredential_CFLAGS = $(AM_CFLAGS) -DSAPI
-
 if UNIT
 TESTS = $(check_PROGRAMS)
 check_PROGRAMS = \

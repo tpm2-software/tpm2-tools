@@ -39,7 +39,7 @@
 #include <limits.h>
 #include <ctype.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -152,22 +152,9 @@ static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
     return files_save_bytes_to_file(path, digest->buffer, digest->size);
 }
 
-static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
+static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
-    TPM2B_DIGEST certInfoData = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-
-    TSS2L_SYS_AUTH_COMMAND cmd_auth_array_password = {
-        2, {
-            ctx.auth,
-            TPMS_AUTH_COMMAND_INIT(0),
-        }
-    };
-
-    TSS2L_SYS_AUTH_COMMAND cmd_auth_array_endorse = {
-        1, {
-            ctx.endorse_auth
-        }
-    };
+    TPM2B_DIGEST *certInfoData;
 
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!d) {
@@ -175,45 +162,63 @@ static bool activate_credential_and_output(TSS2_SYS_CONTEXT *sapi_context) {
         return false;
     }
 
-    tpm2_session *session = tpm2_session_new(sapi_context, d);
+    tpm2_session *session = tpm2_session_new(ectx, d);
     if (!session) {
         LOG_ERR("Could not start tpm session");
         return false;
     }
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
+    // Set session up
+    ESYS_TR sess_handle = tpm2_session_get_handle(session);
+    tpm2_session_free(&session);
 
-
-    TPM2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicySecret(sapi_context, TPM2_RH_ENDORSEMENT,
-            handle, &cmd_auth_array_endorse, 0, 0, 0, 0, 0, 0, 0));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_PolicySecret, rval);
+    ESYS_TR endorse_shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
+                                &ctx.endorse_auth, ctx.endorse_session);
+    if (endorse_shandle == ESYS_TR_NONE) {
         return false;
     }
 
-    cmd_auth_array_password.auths[1].sessionHandle = handle;
-    cmd_auth_array_password.auths[1].sessionAttributes |= 
-            TPMA_SESSION_CONTINUESESSION;
-    cmd_auth_array_password.auths[1].hmac.size = 0;
-
-    rval = TSS2_RETRY_EXP(Tss2_Sys_ActivateCredential(sapi_context, ctx.ctx_obj.handle,
-            ctx.key_ctx_obj.handle, &cmd_auth_array_password, &ctx.credentialBlob, &ctx.secret,
-            &certInfoData, 0));
+    TSS2_RC rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
+                    endorse_shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+                    NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_ActivateCredential, rval);
+        LOG_PERR(Esys_PolicySecret, rval);
         return false;
+    }
+
+    ESYS_TR key_shandle = tpm2_auth_util_get_shandle(ectx,
+                            ctx.key_ctx_obj.tr_handle, &ctx.auth,
+                            ctx.auth_session);
+    if (key_shandle == ESYS_TR_NONE) {
+        return false;
+    }
+
+    bool retval = true;
+    // NOTE: key_shandle and sess_handle don't seem to match docs
+    rval = Esys_ActivateCredential(ectx, ctx.ctx_obj.tr_handle,
+            ctx.key_ctx_obj.tr_handle,
+            key_shandle, sess_handle, ESYS_TR_NONE,
+            &ctx.credentialBlob, &ctx.secret, &certInfoData);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_ActivateCredential, rval);
+        retval = false;
+        goto out;
     }
 
     // Need to flush the session here.
-    rval = TSS2_RETRY_EXP(Tss2_Sys_FlushContext(sapi_context, handle));
+    rval = Esys_FlushContext(ectx, sess_handle);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_FlushContext, rval);
-        return false;
+        LOG_PERR(Esys_FlushContext, rval);
+        retval = false;
+        goto out;
     }
 
-    tpm2_session_free(&session);
+    retval = output_and_save(certInfoData, ctx.output_file);
 
-    return output_and_save(&certInfoData, ctx.output_file);
+out:
+    free(certInfoData);
+
+    return retval;
 }
 
 static bool on_option(char key, char *value) {
@@ -270,7 +275,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* opts is unused, avoid compiler warning */
     UNUSED(flags);
@@ -282,20 +287,32 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return -1;
     }
 
-    bool res = tpm2_util_object_load_sapi(sapi_context, ctx.ctx_arg,
+    bool res = tpm2_util_object_load(ectx, ctx.ctx_arg,
                     &ctx.ctx_obj);
     if (!res) {
         return 1;
+    } else if (!ctx.ctx_obj.tr_handle) {
+        res = tpm2_util_sys_handle_to_esys_handle(ectx, ctx.ctx_obj.handle,
+                &ctx.ctx_obj.tr_handle);
+        if (!res) {
+            return 1;
+        }
     }
 
-    res = tpm2_util_object_load_sapi(sapi_context, ctx.key_ctx_arg,
+    res = tpm2_util_object_load(ectx, ctx.key_ctx_arg,
                 &ctx.key_ctx_obj);
     if (!res) {
         return 1;
+    } else if (!ctx.key_ctx_obj.tr_handle) {
+        res = tpm2_util_sys_handle_to_esys_handle(ectx, ctx.key_ctx_obj.handle,
+                &ctx.key_ctx_obj.tr_handle);
+        if (!res) {
+            return 1;
+        }
     }
 
     if (ctx.flags.P) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.passwd_auth_str,
+        res = tpm2_auth_util_from_optarg(ectx, ctx.passwd_auth_str,
                 &ctx.auth, &ctx.auth_session);
         if (!res) {
             LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.passwd_auth_str);
@@ -304,7 +321,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.E) {
-        bool res = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+        res = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
                 &ctx.endorse_auth, &ctx.endorse_session);
         if (!res) {
             LOG_ERR("Invalid endorse authorization, got\"%s\"", ctx.endorse_auth_str);
@@ -313,7 +330,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     int rc = 0;
-    res = activate_credential_and_output(sapi_context);
+    res = activate_credential_and_output(ectx);
     if (!res) {
         rc = 1;
         goto out;
@@ -322,7 +339,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 out:
 
     if (ctx.auth_session) {
-        res = tpm2_session_save(sapi_context, ctx.auth_session, NULL);
+        res = tpm2_session_save(ectx, ctx.auth_session, NULL);
         if (!res) {
             rc = 1;
         }
@@ -331,7 +348,7 @@ out:
     }
 
     if (ctx.endorse_session) {
-        res = tpm2_session_save(sapi_context, ctx.endorse_session, NULL);
+        res = tpm2_session_save(ectx, ctx.endorse_session, NULL);
         if (!res) {
             rc = 1;
         }
