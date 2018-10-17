@@ -274,6 +274,7 @@ char *Base64Encode(const unsigned char* buffer)
 {
     BIO *bio, *b64;
     BUF_MEM *bufferPtr;
+    char *final_string = NULL;
 
     LOG_INFO("Calculating the Base64Encode of the hash of the Endorsement Public Key:");
 
@@ -287,9 +288,19 @@ char *Base64Encode(const unsigned char* buffer)
     bio = BIO_push(b64, bio);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     BIO_write(bio, buffer, SHA256_DIGEST_LENGTH);
-    BIO_flush(bio);
+    int rc = BIO_flush(bio);
+    if (rc < 0) {
+        LOG_ERR("BIO_flush() failed");
+        goto bio_out;
+    }
+
     BIO_get_mem_ptr(bio, &bufferPtr);
-    BIO_set_close(bio, BIO_NOCLOSE);
+
+    rc = BIO_set_close(bio, BIO_NOCLOSE);
+    if (rc < 0) {
+        LOG_ERR("BIO_set_close() failed");
+        goto bio_out;
+    }
 
     /* these are not NULL terminated */
     char *b64text = bufferPtr->data;
@@ -305,8 +316,6 @@ char *Base64Encode(const unsigned char* buffer)
         }
     }
 
-    char *final_string = NULL;
-
     CURL *curl = curl_easy_init();
     if (curl) {
         char *output = curl_easy_escape(curl, b64text, len);
@@ -317,6 +326,7 @@ char *Base64Encode(const unsigned char* buffer)
     }
     curl_easy_cleanup(curl);
     curl_global_cleanup();
+bio_out:
     BIO_free_all(bio);
 
     /* format to a proper NULL terminated string */
