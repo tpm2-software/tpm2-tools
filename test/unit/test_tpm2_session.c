@@ -39,7 +39,8 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
+#include <tss2/tss2_mu.h>
 
 #include "tpm2_alg_util.h"
 #include "tpm2_session.h"
@@ -48,9 +49,8 @@
 typedef struct expected_data expected_data;
 struct expected_data {
     struct {
-        TPMI_DH_OBJECT key;
-        TPMI_DH_ENTITY bind;
-        TPM2B_ENCRYPTED_SECRET encrypted_salt;
+        ESYS_TR key;
+        ESYS_TR bind;
         TPM2_SE session_type;
         TPMT_SYM_DEF symmetric;
         TPMI_ALG_HASH auth_hash;
@@ -58,22 +58,21 @@ struct expected_data {
     } input;
 
     struct output {
-        TPMI_SH_AUTH_SESSION handle;
+        ESYS_TR handle;
         TPM2_RC rc;
     } output;
 };
 
-static inline void set_expected(TPMI_DH_OBJECT key, TPMI_DH_ENTITY bind,
-        TPM2B_ENCRYPTED_SECRET *encrypted_salt, TPM2_SE session_type,
+static inline void set_expected(ESYS_TR key, ESYS_TR bind,
+        TPM2_SE session_type,
         TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH auth_hash,
-        TPM2B_NONCE *nonce_caller, TPMI_SH_AUTH_SESSION handle, TPM2_RC rc) {
+        TPM2B_NONCE *nonce_caller, ESYS_TR handle, TPM2_RC rc) {
 
     expected_data *e = calloc(1, sizeof(*e));
     assert_non_null(e);
 
     e->input.key = key;
     e->input.bind = bind;
-    e->input.encrypted_salt = *encrypted_salt;
     e->input.session_type = session_type;
     e->input.symmetric = *symmetric;
     e->input.auth_hash = auth_hash;
@@ -82,14 +81,11 @@ static inline void set_expected(TPMI_DH_OBJECT key, TPMI_DH_ENTITY bind,
     e->output.handle = handle;
     e->output.rc = rc;
 
-    will_return(__wrap_Tss2_Sys_StartAuthSession, e);
+    will_return(__wrap_Esys_StartAuthSession, e);
 }
 
 static inline void set_expected_defaults(TPM2_SE session_type,
-        TPMI_SH_AUTH_SESSION handle, TPM2_RC rc) {
-
-    TPM2B_ENCRYPTED_SECRET encrypted_salt;
-    memset(&encrypted_salt, 0, sizeof(encrypted_salt));
+        ESYS_TR handle, TPM2_RC rc) {
 
     TPMT_SYM_DEF symmetric;
     memset(&symmetric, 0, sizeof(symmetric));
@@ -100,24 +96,23 @@ static inline void set_expected_defaults(TPM2_SE session_type,
     nonce_caller.size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA1);
 
     set_expected(
-    TPM2_RH_NULL,
-    TPM2_RH_NULL, &encrypted_salt, session_type, &symmetric,
+    ESYS_TR_NONE,
+    ESYS_TR_NONE, session_type, &symmetric,
     TPM2_ALG_SHA256, &nonce_caller, handle, rc);
 }
 
-TSS2_RC __wrap_Tss2_Sys_StartAuthSession(TSS2_SYS_CONTEXT *sysContext,
-        TPMI_DH_OBJECT tpmKey, TPMI_DH_ENTITY bind,
-        TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray,
-        const TPM2B_NONCE *nonceCaller,
-        const TPM2B_ENCRYPTED_SECRET *encryptedSalt, TPM2_SE sessionType,
-        const TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH authHash,
-        TPMI_SH_AUTH_SESSION *sessionHandle, TPM2B_NONCE *nonceTPM,
-        TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray) {
+TSS2_RC __wrap_Esys_StartAuthSession(ESYS_CONTEXT *esysContext,
+            ESYS_TR tpmKey, ESYS_TR bind,
+            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+            const TPM2B_NONCE *nonceCaller, TPM2_SE sessionType,
+            const TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH authHash,
+            ESYS_TR *sessionHandle) {
 
-    UNUSED(sysContext);
-    UNUSED(cmdAuthsArray);
-    UNUSED(nonceTPM);
-    UNUSED(rspAuthsArray);
+    UNUSED(esysContext);
+    UNUSED(shandle1);
+    UNUSED(shandle2);
+    UNUSED(shandle3);
+    UNUSED(sessionHandle);
 
     expected_data *e = mock_ptr_type(expected_data *);
 
@@ -128,12 +123,10 @@ TSS2_RC __wrap_Tss2_Sys_StartAuthSession(TSS2_SYS_CONTEXT *sysContext,
     assert_memory_equal(nonceCaller, &e->input.nonce_caller,
             sizeof(*nonceCaller));
 
-    assert_memory_equal(encryptedSalt, &e->input.encrypted_salt,
-            sizeof(*encryptedSalt));
-
     assert_int_equal(sessionType, e->input.session_type);
 
-    assert_memory_equal(symmetric, &e->input.symmetric, sizeof(*symmetric));
+    assert_memory_equal(symmetric, &e->input.symmetric,
+            sizeof(*symmetric));
 
     assert_int_equal(authHash, e->input.auth_hash);
 
@@ -144,26 +137,35 @@ TSS2_RC __wrap_Tss2_Sys_StartAuthSession(TSS2_SYS_CONTEXT *sysContext,
     return rc;
 }
 
-TPMI_DH_CONTEXT _save_handle;
+ESYS_TR _save_handle;
 
-TSS2_RC __wrap_Tss2_Sys_ContextSave(
-    TSS2_SYS_CONTEXT *sysContext,
-    TPMI_DH_CONTEXT saveHandle,
-    TPMS_CONTEXT *context) {
-    UNUSED(sysContext);
-    UNUSED(context);
+static void test_tpm2_create_dummy_context(TPMS_CONTEXT *context) {
+    context->hierarchy = TPM2_RH_ENDORSEMENT;
+    context->savedHandle = 2147483648;
+    context->sequence = 10;
+    context->contextBlob.size = 200;
+    memset(context->contextBlob.buffer, '\0', context->contextBlob.size);
+}
 
+TSS2_RC __wrap_Esys_ContextSave(ESYS_CONTEXT *esysContext,
+            ESYS_TR saveHandle, TPMS_CONTEXT **context) {
+
+    UNUSED(esysContext);
+
+    // context should be non-null or bool files_save_tpm_context_to_file()
+    // segfaults
+    TPMS_CONTEXT *dummy_context = calloc(1, sizeof(TPMS_CONTEXT));
+    test_tpm2_create_dummy_context(dummy_context);
+    *context = dummy_context;
     _save_handle = saveHandle;
 
     return TPM2_RC_SUCCESS;
 }
 
-TSS2_RC __wrap_Tss2_Sys_ContextLoad(
-    TSS2_SYS_CONTEXT *sysContext,
-    const TPMS_CONTEXT *context,
-    TPMI_DH_CONTEXT *loadedHandle) {
+TSS2_RC __wrap_Esys_ContextLoad(ESYS_CONTEXT *esysContext,
+            const TPMS_CONTEXT *context, ESYS_TR *loadedHandle) {
 
-    UNUSED(sysContext);
+    UNUSED(esysContext);
     UNUSED(context);
 
     *loadedHandle = _save_handle;
@@ -175,23 +177,37 @@ static TSS2_RC policy_restart_return() {
     return (TSS2_RC)mock();
 }
 
-TSS2_RC __wrap_Tss2_Sys_PolicyRestart(
-    TSS2_SYS_CONTEXT *sysContext,
-    TPMI_SH_POLICY  sessionHandle,
-    TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray,
-    TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray
-    ) {
+TSS2_RC __wrap_Esys_PolicyRestart(ESYS_CONTEXT *esysContext,
+            ESYS_TR sessionHandle,
+            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3) {
 
-    UNUSED(sysContext);
+    UNUSED(esysContext);
     UNUSED(sessionHandle);
-    UNUSED(cmdAuthsArray);
-    UNUSED(rspAuthsArray);
+    UNUSED(shandle1);
+    UNUSED(shandle2);
+    UNUSED(shandle3);
 
     return policy_restart_return();
 }
 
-#define SAPI_CONTEXT   ((TSS2_SYS_CONTEXT *)0xDEADBEEF)
+#define CONTEXT   ((ESYS_CONTEXT *)0xDEADBEEF)
 #define SESSION_HANDLE 0xBADC0DE
+
+TSS2_RC __wrap_Esys_TR_GetName(ESYS_CONTEXT *esysContext, ESYS_TR handle,
+            TPM2B_NAME **name) {
+
+    UNUSED(esysContext);
+    UNUSED(handle);
+
+    *name = malloc(sizeof(TPM2B_NAME));
+    size_t offset = 0;
+    TSS2_RC rc = Tss2_MU_TPM2_HANDLE_Marshal(SESSION_HANDLE,
+                    &(*name)->name[0], sizeof(TPM2_HANDLE), &offset);
+    (*name)->size = offset;
+
+    return rc;
+}
+
 
 static void test_tpm2_session_defaults_good(void **state) {
     UNUSED(state);
@@ -201,10 +217,10 @@ static void test_tpm2_session_defaults_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(CONTEXT, d);
     assert_non_null(s);
 
-    TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
+    ESYS_TR handle = tpm2_session_get_handle(s);
     assert_int_equal(handle, SESSION_HANDLE);
 
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(s);
@@ -235,15 +251,6 @@ static void test_tpm2_session_setters_good(void **state) {
 
     tpm2_session_set_symmetric(d, &symmetric);
 
-    TPM2B_ENCRYPTED_SECRET encsalt = {
-            .size = 6,
-            .secret = {
-                'S', 'E', 'C', 'R', 'E', 'T'
-            }
-    };
-
-    tpm2_session_set_encryptedsalt(d, &encsalt);
-
     tpm2_session_set_bind(d, 42);
 
     TPM2B_NONCE nonce = {
@@ -257,13 +264,13 @@ static void test_tpm2_session_setters_good(void **state) {
 
     tpm2_session_set_key(d, 0x1234);
 
-    set_expected(0x1234, 42, &encsalt,
+    set_expected(0x1234, 42,
     TPM2_SE_TRIAL, &symmetric,
     TPM2_ALG_SHA512, &nonce,
     SESSION_HANDLE,
     TPM2_RC_SUCCESS);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(CONTEXT, d);
     assert_non_null(s);
 
     TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
@@ -284,7 +291,7 @@ static void test_tpm2_session_defaults_bad(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(CONTEXT, d);
     assert_null(s);
 }
 
@@ -307,12 +314,16 @@ static void test_tpm2_session_save(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(CONTEXT, d);
     assert_non_null(s);
 
-    TPMI_SH_AUTH_SESSION handle1 = tpm2_session_get_handle(s);
+    ESYS_TR handle1 = tpm2_session_get_handle(s);
+    TPMI_SH_AUTH_SESSION tpm_handle1;
+    bool result = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle1,
+                    &tpm_handle1);
+    assert_true(result);
 
-    bool result = tpm2_session_save(SAPI_CONTEXT, s, (char *)*state);
+    result = tpm2_session_save(CONTEXT, s, (char *)*state);
     assert_true(result);
 
     tpm2_session_free(&s);
@@ -321,9 +332,13 @@ static void test_tpm2_session_save(void **state) {
     s = tpm2_session_restore(NULL, (char *)*state);
     assert_non_null(s);
 
-    TPMI_SH_AUTH_SESSION handle2 = tpm2_session_get_handle(s);
+    ESYS_TR handle2 = tpm2_session_get_handle(s);
+    TPMI_SH_AUTH_SESSION tpm_handle2;
+    result = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle2,
+                &tpm_handle2);
+    assert_true(result);
 
-    assert_int_equal(handle1, handle2);
+    assert_int_equal(tpm_handle1, tpm_handle2);
 
     tpm2_session_free(&s);
     assert_null(s);
@@ -337,15 +352,15 @@ static void test_tpm2_session_restart(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(CONTEXT, d);
     assert_non_null(s);
 
     will_return(policy_restart_return, TPM2_RC_SUCCESS);
-    bool result = tpm2_session_restart(SAPI_CONTEXT, s);
+    bool result = tpm2_session_restart(CONTEXT, s);
     assert_true(result);
 
     will_return(policy_restart_return, TPM2_RC_HANDLE);
-    result = tpm2_session_restart(SAPI_CONTEXT, s);
+    result = tpm2_session_restart(CONTEXT, s);
     assert_false(result);
 
     tpm2_session_free(&s);
@@ -360,7 +375,7 @@ static void test_tpm2_session_is_trial_test(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_TRIAL);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(CONTEXT, d);
     assert_non_null(s);
 
     TPM2_SE type = tpm2_session_get_type(s);
