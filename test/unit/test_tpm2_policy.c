@@ -37,7 +37,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "pcr.h"
 #include "tpm2_alg_util.h"
@@ -61,12 +61,12 @@ struct test_file {
 
 /*
  * Dummy value for the session handle read by the wrapped version of:
- *   Tss2_Sys_StartAuthSession
+ *   Esys_StartAuthSession
  */
 #define SESSION_HANDLE 0xDEADBEEF
 
-/* dummy handle for sapi context */
-#define SAPI_CONTEXT   ((TSS2_SYS_CONTEXT *)0xDEADBEEF)
+/* dummy handle for esys context */
+#define ESAPI_CONTEXT ((ESYS_CONTEXT *)0xDEADBEEF)
 
 /* Any PCR read returns this value */
 static TPM2B_DIGEST pcr_value = {
@@ -90,95 +90,99 @@ static TPM2B_DIGEST expected_policy_digest = {
         }
 };
 
-TSS2_RC __wrap_Tss2_Sys_StartAuthSession(TSS2_SYS_CONTEXT *sysContext,
-        TPMI_DH_OBJECT tpmKey, TPMI_DH_ENTITY bind,
-        TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray,
-        const TPM2B_NONCE *nonceCaller,
-        const TPM2B_ENCRYPTED_SECRET *encryptedSalt, TPM2_SE sessionType,
-        const TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH authHash,
-        TPMI_SH_AUTH_SESSION *sessionHandle, TPM2B_NONCE *nonceTPM,
-        TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray) {
+TSS2_RC __wrap_Esys_StartAuthSession(ESYS_CONTEXT *esysContext,
+            ESYS_TR tpmKey, ESYS_TR bind,
+            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+            const TPM2B_NONCE *nonceCaller, TPM2_SE sessionType,
+            const TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH authHash,
+            ESYS_TR *sessionHandle) {
 
-    UNUSED(sysContext);
+    UNUSED(esysContext);
     UNUSED(tpmKey);
     UNUSED(bind);
-    UNUSED(cmdAuthsArray);
+    UNUSED(shandle1);
+    UNUSED(shandle2);
+    UNUSED(shandle3);
     UNUSED(nonceCaller);
-    UNUSED(encryptedSalt);
     UNUSED(sessionType);
     UNUSED(symmetric);
     UNUSED(authHash);
-    UNUSED(nonceTPM);
-    UNUSED(rspAuthsArray);
 
     *sessionHandle = SESSION_HANDLE;
 
     return TPM2_RC_SUCCESS;
 }
-
 /*
  * The current digest passed via PolicyPCR and
  * PolicyGetDigest.
  */
 static TPM2B_DIGEST current_digest;
 
-TSS2_RC __wrap_Tss2_Sys_PolicyPCR(
-        TSS2_SYS_CONTEXT *sysContext,
-        TPMI_SH_POLICY policySession,
-        TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray,
-        const TPM2B_DIGEST *pcrDigest,
-        const TPML_PCR_SELECTION *pcrs,
-        TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray) {
+TSS2_RC __wrap_Esys_PolicyPCR(ESYS_CONTEXT *esysContext,
+            ESYS_TR policySession,
+            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+            const TPM2B_DIGEST *pcrDigest, const TPML_PCR_SELECTION *pcrs) {
 
-    UNUSED(sysContext);
+    UNUSED(esysContext);
     UNUSED(policySession);
-    UNUSED(cmdAuthsArray);
+    UNUSED(shandle1);
+    UNUSED(shandle2);
+    UNUSED(shandle3);
     UNUSED(pcrs);
-    UNUSED(rspAuthsArray);
 
     /*
      * Set the computed digest, which will be retrieved via
-     * a call to Tss2_Sys_PolicyGetDigest
+     * a call to Esys_PolicyGetDigest
      */
     current_digest = *pcrDigest;
 
     return TPM2_RC_SUCCESS;
 }
 
-TSS2_RC __wrap_Tss2_Sys_PolicyGetDigest(
-        TSS2_SYS_CONTEXT *sysContext,
-        TPMI_SH_POLICY policySession,
-        TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray,
-        TPM2B_DIGEST *policyDigest,
-        TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray) {
+TSS2_RC __wrap_Esys_PolicyGetDigest(ESYS_CONTEXT *esysContext,
+            ESYS_TR policySession,
+            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+            TPM2B_DIGEST **policyDigest) {
 
-    UNUSED(sysContext);
+    UNUSED(esysContext);
     UNUSED(policySession);
-    UNUSED(cmdAuthsArray);
-    UNUSED(rspAuthsArray);
+    UNUSED(shandle1);
+    UNUSED(shandle2);
+    UNUSED(shandle3);
 
-    *policyDigest = current_digest;
+    *policyDigest = &current_digest;
 
     return TPM2_RC_SUCCESS;
 }
 
-TSS2_RC __wrap_Tss2_Sys_PCR_Read(
-        TSS2_SYS_CONTEXT *sysContext,
-        TSS2L_SYS_AUTH_COMMAND const *cmdAuthsArray,
-        const TPML_PCR_SELECTION *pcrSelectionIn, UINT32 *pcrUpdateCounter,
-        TPML_PCR_SELECTION *pcrSelectionOut, TPML_DIGEST *pcrValues,
-        TSS2L_SYS_AUTH_RESPONSE *rspAuthsArray) {
+TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext,
+            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+            const TPML_PCR_SELECTION *pcrSelectionIn, UINT32 *pcrUpdateCounter,
+            TPML_PCR_SELECTION **pcrSelectionOut, TPML_DIGEST **pcrValues) {
 
-    UNUSED(sysContext);
+    UNUSED(esysContext);
+    UNUSED(shandle1);
+    UNUSED(shandle2);
+    UNUSED(shandle3);
     UNUSED(pcrSelectionIn);
     UNUSED(pcrUpdateCounter);
     UNUSED(pcrSelectionOut);
-    UNUSED(cmdAuthsArray);
-    UNUSED(rspAuthsArray);
+
+    *pcrValues = calloc(1, sizeof(TPML_DIGEST));
+    if (*pcrValues == NULL) {
+        return TPM2_RC_FAILURE;
+    }
 
     UINT32 i;
-    for (i = 0; i < pcrValues->count; i++) {
-        pcrValues->digests[i] = pcr_value;
+    /* NOTE: magic number of 4... The prior (SAPI) implementation had a
+     * semi-populated pcrValues with an appropriate count value set.
+     * This ESAPI call allocates the pcrValues out-value and thus we don't have
+     * an appropriate count number at call time, therefore we hard-code the
+     * expected value for the *one* call we're currently making in this unit
+     * test.
+     */
+    for (i = 0; i < 4; i++) {
+        (*pcrValues)->digests[i] = pcr_value;
     }
 
     return TPM2_RC_SUCCESS;
@@ -190,22 +194,22 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(ESAPI_CONTEXT, d);
     assert_non_null(s);
 
     TPML_PCR_SELECTION pcr_selections;
     bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections);
     assert_true(res);
 
-    bool result = tpm2_policy_build_pcr(SAPI_CONTEXT, s, NULL, &pcr_selections);
+    bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections);
     assert_true(result);
 
-    TPM2B_DIGEST policy_digest;
-    result = tpm2_policy_get_digest(SAPI_CONTEXT, s, &policy_digest);
+    TPM2B_DIGEST *policy_digest;
+    result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
     assert_true(result);
 
-    assert_int_equal(policy_digest.size, expected_policy_digest.size);
-    assert_memory_equal(policy_digest.buffer, expected_policy_digest.buffer,
+    assert_int_equal(policy_digest->size, expected_policy_digest.size);
+    assert_memory_equal(policy_digest->buffer, expected_policy_digest.buffer,
             expected_policy_digest.size);
 
     tpm2_session_free(&s);
@@ -305,19 +309,19 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(ESAPI_CONTEXT, d);
     assert_non_null(s);
 
-    bool result = tpm2_policy_build_pcr(SAPI_CONTEXT, s, tf->path,
+    bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
             &pcr_selections);
     assert_true(result);
 
-    TPM2B_DIGEST policy_digest;
-    result = tpm2_policy_get_digest(SAPI_CONTEXT, s, &policy_digest);
+    TPM2B_DIGEST *policy_digest;
+    result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
     assert_true(result);
 
-    assert_int_equal(policy_digest.size, expected_policy_digest.size);
-    assert_memory_equal(policy_digest.buffer, expected_policy_digest.buffer,
+    assert_int_equal(policy_digest->size, expected_policy_digest.size);
+    assert_memory_equal(policy_digest->buffer, expected_policy_digest.buffer,
             expected_policy_digest.size);
 
     tpm2_session_free(&s);
@@ -361,10 +365,10 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(SAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_new(ESAPI_CONTEXT, d);
     assert_non_null(s);
 
-    bool result = tpm2_policy_build_pcr(SAPI_CONTEXT, s, tf->path,
+    bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
             &pcr_selections);
     tpm2_session_free(&s);
     assert_null(s);
