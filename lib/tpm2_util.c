@@ -526,13 +526,14 @@ bool tpm2_util_object_load(ESYS_CONTEXT *ctx, const char *objectstr,
         return result;
     }
 
-    result = files_load_tpm_context_from_path(ctx, &outobject->tr_handle,
-                outobject->path);
-
+    result = files_load_tpm_context_from_path(ctx, &outobject->handle,
+                &outobject->tr_handle, outobject->path);
     if (!result) {
         LOG_ERR("Could not load object, got: \"%s\"", objectstr);
+        goto out;
     }
 
+out:
     return result;
 }
 
