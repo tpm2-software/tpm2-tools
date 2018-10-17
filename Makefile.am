@@ -265,10 +265,10 @@ test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_session_SOURCES  = test/unit/test_tpm2_session.c
 
 test_unit_test_tpm2_policy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession \
-                                      -Wl,--wrap=Tss2_Sys_PolicyPCR \
-                                      -Wl,--wrap=Tss2_Sys_PCR_Read \
-                                      -Wl,--wrap=Tss2_Sys_PolicyGetDigest
+test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
+                                      -Wl,--wrap=Esys_PolicyPCR \
+                                      -Wl,--wrap=Esys_PCR_Read \
+                                      -Wl,--wrap=Esys_PolicyGetDigest
 test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_policy_SOURCES  = test/unit/test_tpm2_policy.c
 
