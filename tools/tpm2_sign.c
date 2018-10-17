@@ -36,7 +36,7 @@
 #include <string.h>
 
 #include <getopt.h>
-#include <tss2/tss2_sys.h>
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -57,7 +57,7 @@ struct tpm_sign_ctx {
         tpm2_session *session;
     } auth;
     TPMI_ALG_HASH halg;
-    TPM2B_DIGEST digest;
+    TPM2B_DIGEST *digest;
     char *outFilePath;
     BYTE *msg;
     UINT16 length;
@@ -80,19 +80,16 @@ struct tpm_sign_ctx {
 tpm_sign_ctx ctx = {
         .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         .halg = TPM2_ALG_SHA1,
-        .digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
+        .digest = NULL,
 };
 
-static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
+static bool sign_and_save(ESYS_CONTEXT *ectx) {
 
     TPMT_SIG_SCHEME in_scheme;
-    TPMT_SIGNATURE signature;
-
-    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { ctx.auth.session_data }};
-    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+    TPMT_SIGNATURE *signature;
 
     if (!ctx.flags.D) {
-      bool res = tpm2_hash_compute_data_sapi(sapi_context, ctx.halg, TPM2_RH_NULL,
+      bool res = tpm2_hash_compute_data(ectx, ctx.halg, TPM2_RH_NULL,
               ctx.msg, ctx.length, &ctx.digest, NULL);
       if (!res) {
           LOG_ERR("Compute message hash failed!");
@@ -100,23 +97,36 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
       }
     }
 
-    bool result = get_signature_scheme(sapi_context, ctx.key_context.handle, ctx.halg, &in_scheme);
+    bool result = get_signature_scheme(ectx, ctx.key_context.tr_handle,
+                    ctx.halg, &in_scheme);
     if (!result) {
         return false;
     }
 
-    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_Sign(sapi_context, ctx.key_context.handle,
-            &sessions_data, &ctx.digest, &in_scheme, &ctx.validation, &signature,
-            &sessions_data_out));
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_Sys_Sign, rval);
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+                            ctx.key_context.tr_handle, &ctx.auth.session_data,
+                            ctx.auth.session);
+    if (shandle1 == ESYS_TR_NONE) {
         return false;
     }
 
-    return tpm2_convert_sig_save(&signature, ctx.sig_format, ctx.outFilePath);
+    TSS2_RC rval = Esys_Sign(ectx, ctx.key_context.tr_handle,
+                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                    ctx.digest, &in_scheme, &ctx.validation, &signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Eys_Sign, rval);
+        result = false;
+    } else {
+        result = tpm2_convert_sig_save(signature, ctx.sig_format,
+                    ctx.outFilePath);
+    }
+
+    free(signature);
+
+    return result;
 }
 
-static bool init(TSS2_SYS_CONTEXT *sapi_context) {
+static bool init(ESYS_CONTEXT *ectx) {
 
     bool option_fail = false;
 
@@ -152,10 +162,16 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     /*
      * load tpm context from a file if -c is provided
      */
-    bool result = tpm2_util_object_load_sapi(sapi_context, ctx.context_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
                     &ctx.key_context);
     if (!result) {
         return false;
+    } else if (!ctx.key_context.tr_handle) {
+        result = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.key_context.handle, &ctx.key_context.tr_handle);
+        if (!result) {
+            return false;
+        }
     }
 
     /*
@@ -217,8 +233,9 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'D': {
-        ctx.digest.size = sizeof(ctx.digest.buffer);
-        if (!files_load_bytes_from_path(value, ctx.digest.buffer, &ctx.digest.size)) {
+        ctx.digest = malloc(sizeof(TPM2B_DIGEST));
+        ctx.digest->size = sizeof(TPM2B_DIGEST);
+        if (!files_load_bytes_from_path(value, ctx.digest->buffer, &ctx.digest->size)) {
             LOG_ERR("Could not load digest from file \"%s\"!", value);
             return false;
         }
@@ -274,18 +291,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     int rc = 1;
-    bool result = init(sapi_context);
+    bool result = init(ectx);
     if (!result) {
         goto out;
     }
 
     if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str,
+        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str,
                 &ctx.auth.session_data, &ctx.auth.session);
         if (!result) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
@@ -293,7 +310,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         }
     }
 
-    result = sign_and_save(sapi_context);
+    result = sign_and_save(ectx);
     if (!result) {
         goto out;
     }
@@ -301,7 +318,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 out:
 
-    result = tpm2_session_save(sapi_context, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -313,5 +330,8 @@ out:
 
 void tpm2_tool_onexit(void) {
 
+    if (ctx.digest) {
+        free(ctx.digest);
+    }
     free(ctx.msg);
 }
