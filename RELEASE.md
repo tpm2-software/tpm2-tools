@@ -134,3 +134,16 @@ feature to detect memory corruption issues.
 
 A lot of this git/gpg information was edited from:
 <https://blog.thesoftwarecraft.com/2013/03/signing-git-tags.html>
+
+## Release Checklist
+
+The steps, in order, required to make a release. Refer to the above for
+details on each step.
+
+1. Update CHANGELOG
+2. For major releases, update the version matrix in the README
+3. Create a signed tag for the release
+4. Build a tarball for the release
+5. Generate a detached signature for the tarball
+6. Create a release on GitHub, upload the tarball and signature
+7. After the release add a commit to master updating the News section of the README to point to the latest release.
