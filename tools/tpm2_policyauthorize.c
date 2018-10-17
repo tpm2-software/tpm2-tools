@@ -29,7 +29,9 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <tss2/tss2_sys.h>
+#include <stdlib.h>
+
+#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
@@ -119,9 +121,11 @@ bool is_check_input_options_ok(void) {
     return true;
 }
 
-int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
+    TPM2B_DIGEST *policy_digest = NULL;
 
     if (!is_check_input_options_ok()) {
         return -1;
@@ -129,38 +133,38 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     int rc = 1;
 
-    tpm2_session *s = tpm2_session_restore(sapi_context, ctx.session_path);
+    tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path);
     if (!s) {
         return rc;
     }
 
-    bool result = tpm2_policy_build_policyauthorize(sapi_context, s, ctx.policy_digest_path,
+    bool result = tpm2_policy_build_policyauthorize(ectx, s,
+                        ctx.policy_digest_path,
                         ctx.qualifier_data_path, ctx.verifying_pubkey_path, ctx.ticket_path);
     if (!result) {
         LOG_ERR("Could not build tpm authorized policy");
         goto out;
     }
 
-    TPM2B_DIGEST policy_digest = TPM2B_EMPTY_INIT;
-    result = tpm2_policy_get_digest(sapi_context, s, &policy_digest);
+    result = tpm2_policy_get_digest(ectx, s, &policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
         goto out;
     }
 
-    tpm2_util_hexdump(policy_digest.buffer, policy_digest.size);
+    tpm2_util_hexdump(policy_digest->buffer, policy_digest->size);
     tpm2_tool_output("\n");
 
     if (ctx.out_policy_dgst_path) {
-        result = files_save_bytes_to_file(ctx.out_policy_dgst_path, policy_digest.buffer,
-                    policy_digest.size);
+        result = files_save_bytes_to_file(ctx.out_policy_dgst_path,
+                    policy_digest->buffer, policy_digest->size);
         if (!result) {
             LOG_ERR("Failed to save policy digest into file \"%s\"",
                     ctx.out_policy_dgst_path);
             goto out;
         }
     }
-    result = tpm2_session_save(sapi_context, s, ctx.session_path);
+    result = tpm2_session_save(ectx, s, ctx.session_path);
     if (!result) {
         LOG_ERR("Failed to save policy to file \"%s\"", ctx.session_path);
         goto out;
@@ -169,6 +173,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     rc = 0;
 
 out:
+    free(policy_digest);
     tpm2_session_free(&s);
     return rc;
 }
