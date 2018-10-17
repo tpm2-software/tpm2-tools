@@ -34,9 +34,9 @@ Specifically, the following sections:
 This specifies the external programatic interface to the TPM:
 <https://trustedcomputinggroup.org/tpm-library-specification/>
 
-### The System API Specification
-This is the *SAPI* dependency mentioned in [INSTALL.md](INSTALL.md). This is the low-level software API to the tpm. The tpm2-tools
-project relies heavily on this. <https://trustedcomputinggroup.org/wp-content/uploads/TSS_SAPI_v1.1_r21_Public_Review.pdf>
+### The Enhanced System API Specification
+This is the *ESAPI* dependency mentioned in [INSTALL.md](INSTALL.md). This is the enhanced software API to the tpm. The tpm2-tools
+project relies heavily on this. <https://trustedcomputinggroup.org/wp-content/uploads/TSS_ESAPI_Version-0.9_Revision-04_reviewEND030918.pdf>
 
 ### The TCTI Specification
 This specifies the transmission interfaces or how bytes get from the system api to the tpm.
