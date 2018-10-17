@@ -18,7 +18,7 @@ To build and install the tpm2-tools software the following software is required:
   * pkg-config
   * C compiler
   * C Library Development Libraries and Header Files (for pthreads headers)
-  * SAPI - TPM2.0 TSS SAPI library and header files
+  * ESAPI - TPM2.0 TSS ESAPI library (tss2-esys) and header files
   * OpenSSL libcrypto library and header files
   * Curl library and header files
 
@@ -67,7 +67,7 @@ sudo apt-get install autoconf automake libtool pkg-config gcc libssl-dev \
 The following tpm2 userspace dependencies can be satisfied by getting the
 source, building and installing them. They can be located here:
 
-  * SAPI - The low level system API: <https://github.com/tpm2-software/tpm2-tss>
+  * ESAPI - The enhanced system API: <https://github.com/tpm2-software/tpm2-tss>
   * ABRMD (**recommended but optional**) - Which is the userspace resource
     manager: <https://github.com/tpm2-software/tpm2-abrmd>
 
@@ -76,7 +76,7 @@ source, building and installing them. They can be located here:
 #### Fedora
 
 
-In case you want to build from source the next command block should cover all the dependencies for tpm2-tools, the low level system API (tpm2-tss) and the userspace resource manager (tpm2-abrmd).  
+In case you want to build from source the next command block should cover all the dependencies for tpm2-tools, the enhanced system API (tpm2-tss) and the userspace resource manager (tpm2-abrmd).
 
 ```
 $ sudo dnf -y update && sudo dnf -y install automake libtool \
@@ -98,7 +98,7 @@ For more detailed information about the dependencies of tpm2-tss and tmp2-abrmd,
 
 
 
-### tpm2-tools SAPI and ABRMD Dependency Version Chart
+### tpm2-tools TSS and ABRMD Dependency Version Chart
 
 | tpm2-tools version | tpm2-tss version | tpm2-abrmd version|
 |--------------------|------------------|-------------------|
