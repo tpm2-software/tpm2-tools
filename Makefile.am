@@ -253,10 +253,11 @@ test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
 test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Tss2_Sys_StartAuthSession \
-                                       -Wl,--wrap=Tss2_Sys_ContextSave \
-                                       -Wl,--wrap=Tss2_Sys_ContextLoad \
-                                       -Wl,--wrap=Tss2_Sys_PolicyRestart
+test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
+                                       -Wl,--wrap=Esys_ContextSave \
+                                       -Wl,--wrap=Esys_ContextLoad \
+                                       -Wl,--wrap=Esys_PolicyRestart \
+                                       -Wl,--wrap=Esys_TR_GetName
 
 test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
 test_unit_test_tpm2_session_SOURCES  = test/unit/test_tpm2_session.c
