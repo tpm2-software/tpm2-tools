@@ -72,7 +72,7 @@ echo "T0naX0u123abc" > $hash_in_file
 tpm2_hash -a p -G sha256 -Q -o $hash_out_file -t $ticket_file < $hash_in_file
 
 expected=`sha256sum $hash_in_file | awk '{print $1}'`
-actual=`cat $hash_out_file | xxd -p -c 256`
+actual=`cat $hash_out_file | xxd -p -c 32`
 
 test "$expected" == "$actual"
 
