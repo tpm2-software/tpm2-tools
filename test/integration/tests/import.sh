@@ -162,9 +162,9 @@ run_test() {
 	tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
 
 	# 128 bit AES is 16 bytes
-	run_aes_import_test 16
+	run_aes_import_test parent.ctx 16
 	# 256 bit AES is 32 bytes
-	run_aes_import_test 32
+	run_aes_import_test parent.ctx 32
 
 	run_rsa_import_test parent.ctx 1024
     run_rsa_import_test parent.ctx 2048
