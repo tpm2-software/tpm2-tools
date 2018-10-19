@@ -62,7 +62,11 @@ TSS2_RC __wrap_Esys_GetCapability(ESYS_CONTEXT *context,
     UNUSED(capability);
     UNUSED(property);
     UNUSED(propertyCount);
-    UNUSED(moreData);
+
+    /* Ensure moreData is TPM2_NO, otherwise tpm2_capability_get() will make
+     * multiple calls to Esys_CapabilityGet()
+     */
+    *moreData = TPM2_NO;
 
     *capabilityData = calloc(1, sizeof(**capabilityData));
     TPML_TAGGED_TPM_PROPERTY *properties = &(*capabilityData)->data.tpmProperties;
