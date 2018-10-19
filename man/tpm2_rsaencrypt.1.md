@@ -55,7 +55,7 @@ The key referenced by keyHandle is **required** to be:
 # EXAMPLES
 
 ```
-tpm2_rsaencrypt -k 0x81010001 -I plain.in -o encrypted.out
+tpm2_rsaencrypt -k 0x81010001 -o encrypted.out plain.in
 ```
 
 # RETURNS
