@@ -47,15 +47,15 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct tpm2_startauthsession_ctx tpm2_startauthsession_ctx;
-struct tpm2_startauthsession_ctx {
+typedef struct tpm2_policypcr_ctx tpm2_policypcr_ctx;
+struct tpm2_policypcr_ctx {
    const char *session_path;
    const char *raw_pcrs_file;
    TPML_PCR_SELECTION pcr_selection;
    const char *policy_out_path;
 };
 
-static tpm2_startauthsession_ctx ctx;
+static tpm2_policypcr_ctx ctx;
 
 static bool on_option(char key, char *value) {
 
