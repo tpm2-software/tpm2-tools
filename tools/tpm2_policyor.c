@@ -133,13 +133,11 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return rc;
     }
 
-#if 1
     bool result = tpm2_policy_build_policyor(sapi_context, s, ctx.policy_list);
     if (!result) {
         LOG_ERR("Could not build policyor TPM");
         goto out;
     }
-#endif
 
     TPM2B_DIGEST policy_digest = TPM2B_EMPTY_INIT;
     //bool
