@@ -40,8 +40,8 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct tpm2_startauthsession_ctx tpm2_startauthsession_ctx;
-struct tpm2_startauthsession_ctx {
+typedef struct tpm2_policyor_ctx tpm2_policyor_ctx;
+struct tpm2_policyor_ctx {
    //File path for the session context data
    const char *session_path;
    //List of policy digests that will be compounded
@@ -50,7 +50,7 @@ struct tpm2_startauthsession_ctx {
    const char *out_policy_dgst_path;
 };
 
-static tpm2_startauthsession_ctx ctx;
+static tpm2_policyor_ctx ctx;
 
 static bool on_option(char key, char *value) {
 
