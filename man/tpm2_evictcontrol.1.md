@@ -28,7 +28,7 @@ be evicted.
   * **-c**, **--context**=_OBJECT_CONTEXT_:
 
     A context object specifier of a transient or persistent object.
-    Either a file path of a handle id. See section "Context Object Format".
+    Either a file path of a context blob or a handle id. See section "Context Object Format".
 
     If _OBJECT\_CONTEXT_ is for a transient object it will be persisted, either
     to the handle specified by the **-p** option, or to the first available vacant
