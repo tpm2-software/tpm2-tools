@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * Ported all tools from SAPI to ESAPI
   * tpm2_loadexternal: support OSSL style -passin argument as --passin for PEM file passwords.
   * tpm2_import: support OSSL style -passin argument as --passin for PEM file passwords.
   * tpm2_readpublic: supports ECC pem and der file generation.
