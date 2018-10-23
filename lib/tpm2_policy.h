@@ -94,7 +94,8 @@ bool tpm2_policy_build_policyauthorize(
  * @param policy_list 
  *   The list of policy policy digests
  *
- * @return     { description_of_the_return_value }
+ * @return
+ *   true on success, false otherwise.
  */
 bool tpm2_policy_build_policyor(TSS2_SYS_CONTEXT *sapi_context,
     tpm2_session *policy_session, TPML_DIGEST policy_list);
