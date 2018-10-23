@@ -279,6 +279,25 @@ static bool load_public_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pu
     return result;
 }
 
+static const struct {
+    TPMI_ECC_CURVE curve;
+    int nid;
+} nid_curve_map[] = {
+    { TPM2_ECC_NIST_P192, NID_X9_62_prime192v1 },
+    { TPM2_ECC_NIST_P224, NID_secp224r1        },
+    { TPM2_ECC_NIST_P256, NID_X9_62_prime256v1 },
+    { TPM2_ECC_NIST_P384, NID_secp384r1        },
+    { TPM2_ECC_NIST_P521, NID_secp521r1        }
+    /*
+     * XXX
+     * See if it's possible to support the other curves, I didn't see the
+     * mapping in OSSL:
+     *  - TPM2_ECC_BN_P256
+     *  - TPM2_ECC_BN_P638
+     *  - TPM2_ECC_SM2_P256
+     */
+};
+
 /**
  * Maps an OSSL nid as defined obj_mac.h to a TPM2 ECC curve id.
  * @param nid
@@ -288,33 +307,34 @@ static bool load_public_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pu
  */
 static TPMI_ECC_CURVE ossl_nid_to_curve(int nid) {
 
-    switch(nid) {
-    /*
-    * NIST CURVES
-    */
-    case NID_X9_62_prime192v1:
-        return TPM2_ECC_NIST_P192;
-    case NID_secp224r1:
-        return TPM2_ECC_NIST_P224;
-    case NID_X9_62_prime256v1:
-        return TPM2_ECC_NIST_P256;
-    case NID_secp384r1:
-        return TPM2_ECC_NIST_P384;
-    case NID_secp521r1:
-        return TPM2_ECC_NIST_P521;
-     /*
-      * XXX
-      * See if it's possible to support the other curves, I didn't see the
-      * mapping in OSSL:
-      *  - TPM2_ECC_BN_P256
-      *  - TPM2_ECC_BN_P638
-      *  - TPM2_ECC_SM2_P256
-      */
-    /* no default */
+    unsigned i;
+    for (i=0; i < ARRAY_LEN(nid_curve_map); i++) {
+        TPMI_ECC_CURVE c = nid_curve_map[i].curve;
+        int n = nid_curve_map[i].nid;
+
+        if (n == nid) {
+            return c;
+        }
     }
 
     LOG_ERR("Cannot map nid \"%d\" to TPM ECC curve", nid);
     return TPM2_ALG_ERROR;
+}
+
+int tpm2_ossl_curve_to_nid(TPMI_ECC_CURVE curve) {
+
+    unsigned i;
+    for (i=0; i < ARRAY_LEN(nid_curve_map); i++) {
+        TPMI_ECC_CURVE c = nid_curve_map[i].curve;
+        int n = nid_curve_map[i].nid;
+
+        if (c == curve) {
+            return n;
+        }
+    }
+
+    LOG_ERR("Cannot map TPM ECC curve \"%u\" to nid", curve);
+    return -1;
 }
 
 static bool load_public_ECC_from_key(EC_KEY *k, TPM2B_PUBLIC *pub) {
