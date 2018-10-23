@@ -175,4 +175,13 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC
  */
 bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub);
 
+/**
+ * Maps an ECC curve to an openssl nid value.
+ * @param curve
+ *  The curve to map.
+ * @return
+ *  -1 on error or a >=0 nid on success.
+ */
+int tpm2_ossl_curve_to_nid(TPMI_ECC_CURVE curve);
+
 #endif /* LIB_TPM2_OPENSSL_H_ */

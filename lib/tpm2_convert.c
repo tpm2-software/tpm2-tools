@@ -43,6 +43,7 @@
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
+#include "tpm2_openssl.h"
 #include "tpm2_util.h"
 
 static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path);
@@ -97,20 +98,11 @@ bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public, tpm2_convert_pubkey_fmt form
     return false;
 }
 
-static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path) {
+static bool convert_pubkey_RSA(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, FILE *fp) {
+
     bool ret = false;
-    FILE *fp = NULL;
     RSA *ssl_rsa_key = NULL;
     BIGNUM *e = NULL, *n = NULL;
-
-    // need this before the first SSL call for getting human readable error
-    // strings in print_ssl_error()
-    ERR_load_crypto_strings();
-
-    if (public->type != TPM2_ALG_RSA) {
-        LOG_ERR("Unsupported key type for requested output format. Only RSA is supported.");
-        goto error;
-    }
 
     UINT32 exponent = (public->parameters).rsaDetail.exponent;
     if (exponent == 0) {
@@ -147,13 +139,6 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt
     /* modulus and exponent components are now owned by the RSA struct */
     n = e = NULL;
 
-    fp = fopen(path, "wb");
-    if (!fp) {
-        LOG_ERR("Failed to open public key output file '%s': %s",
-            path, strerror(errno));
-        goto error;
-    }
-
     int ssl_res = 0;
 
     switch(format) {
@@ -176,9 +161,6 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt
     ret = true;
 
 error:
-    if (fp) {
-        fclose(fp);
-    }
     if (n) {
         BN_free(n);
     }
@@ -188,9 +170,144 @@ error:
     if (ssl_rsa_key) {
         RSA_free(ssl_rsa_key);
     }
-    ERR_free_strings();
 
     return ret;
+}
+
+static bool convert_pubkey_ECC(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, FILE *fp) {
+
+    BIGNUM *x = NULL;
+    BIGNUM *y = NULL;
+    EC_KEY *key = NULL;
+    EC_POINT *point = NULL;
+    const EC_GROUP *group = NULL;
+
+    bool result = false;
+
+    TPMS_ECC_PARMS *tpm_ecc = &public->parameters.eccDetail;
+    TPMS_ECC_POINT *tpm_point = &public->unique.ecc;
+
+    int nid = tpm2_ossl_curve_to_nid(tpm_ecc->curveID);
+    if (nid < 0) {
+        return false;
+    }
+
+    /*
+     * Create an empty EC key by the NID
+     */
+    key = EC_KEY_new_by_curve_name(nid);
+    if (!key) {
+        print_ssl_error("Failed to create EC key from nid");
+        return false;
+    }
+
+    group = EC_KEY_get0_group(key);
+    if (!group) {
+        print_ssl_error("EC key missing group");
+        goto out;
+    }
+
+    /*
+     * Create a new point in the group, which is the public key.
+     */
+    point = EC_POINT_new(group);
+
+    /*
+     * Set the affine coordinates for the point
+     */
+    x = BN_bin2bn(tpm_point->x.buffer, tpm_point->x.size, NULL);
+    if (!x) {
+        print_ssl_error("Could not convert x coordinate to BN");
+        goto out;
+    }
+
+    y = BN_bin2bn(tpm_point->y.buffer, tpm_point->y.size, NULL);
+    if (!y) {
+        print_ssl_error("Could not convert y coordinate to BN");
+        goto out;
+    }
+
+    int rc = EC_POINT_set_affine_coordinates_GFp(group, point,
+                                            x, y,
+                                            NULL);
+    if (!rc) {
+        print_ssl_error("Could not set affine coordinates");
+        goto out;
+    }
+
+    rc = EC_KEY_set_public_key(key, point);
+    if (!rc) {
+        print_ssl_error("Could not set point as public key portion");
+        goto out;
+    }
+
+    int ssl_res = 0;
+
+    switch(format) {
+    case pubkey_format_pem:
+        ssl_res = PEM_write_EC_PUBKEY(fp, key);
+        break;
+    case pubkey_format_der:
+        ssl_res = i2d_EC_PUBKEY_fp(fp, key);
+        break;
+    default:
+        LOG_ERR("Invalid OpenSSL target format %d encountered", format);
+        goto out;
+    }
+
+    if (ssl_res <= 0) {
+        print_ssl_error("OpenSSL public key conversion failed");
+        goto out;
+    }
+
+    result = true;
+
+out:
+    if (x) {
+        BN_free(x);
+    }
+    if (y) {
+        BN_free(y);
+    }
+    if (point) {
+        EC_POINT_free(point);
+    }
+    if (key) {
+        EC_KEY_free(key);
+    }
+
+    return result;
+}
+
+static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path) {
+
+    bool result = false;
+
+    ERR_load_crypto_strings();
+
+    FILE *fp = fopen(path, "wb");
+    if (!fp) {
+        LOG_ERR("Failed to open public key output file '%s': %s",
+            path, strerror(errno));
+        goto out;
+    }
+
+    switch(public->type) {
+    case TPM2_ALG_RSA:
+        result = convert_pubkey_RSA(public, format, fp);
+        break;
+    case TPM2_ALG_ECC:
+        result = convert_pubkey_ECC(public, format, fp);
+        break;
+    default:
+        LOG_ERR("Unsupported key type for requested output format. Only RSA is supported.");
+    }
+
+    fclose(fp);
+
+out:
+    ERR_free_strings();
+    return result;
 }
 
 bool tpm2_convert_sig_save(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, const char *path) {

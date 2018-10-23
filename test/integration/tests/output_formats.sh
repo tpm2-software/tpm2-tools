@@ -67,6 +67,7 @@ cleanup() {
     rm -f "$file_pubak_tss" "$file_pubak_name" "$file_pubak_pem"
     rm -f "$file_hash_ticket" "$file_hash_result" "$file_sig_base".*
     rm -f "$file_quote_msg" "$file_quote_sig_base".* $file_hash_input
+    rm -f primary.ctx ecc.ctx ecc.pub ecc.priv ecc.fmt.pub
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -120,6 +121,20 @@ for fmt in tss plain; do
     if [ "$fmt" = plain ]; then
         openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} -signature "$this_sig" "$file_quote_msg" > /dev/null
     fi
+done
+
+#
+# Test ECC keys
+#
+tpm2_createprimary -o primary.ctx
+tpm2_create -Q -C primary.ctx -G ecc -u ecc.pub -r ecc.priv
+tpm2_load -C primary.ctx -u ecc.pub -r ecc.priv -o ecc.ctx
+
+for fmt in pem der; do
+
+    tpm2_readpublic -Q -c ecc.ctx -f "$fmt" -o ecc.fmt.pub
+
+    openssl ec -pubin -inform "$fmt" -text -in ecc.fmt.pub &> /dev/null
 done
 
 exit 0
