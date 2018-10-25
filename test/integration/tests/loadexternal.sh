@@ -115,7 +115,7 @@ run_rsa_test() {
     # try encrypting with the public key and decrypting with the private
     tpm2_loadexternal -G rsa -a n -p foo -u public.pem -o key.ctx
 
-    tpm2_rsaencrypt -Tmssim -c key.ctx plain.txt -o plain.rsa.enc
+    tpm2_rsaencrypt -c key.ctx plain.txt -o plain.rsa.enc
 
     openssl rsautl -decrypt -inkey private.pem -in plain.rsa.enc -out plain.rsa.dec
 
