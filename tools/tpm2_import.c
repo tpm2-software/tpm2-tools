@@ -709,6 +709,12 @@ static int check_options(void) {
         rc = -1;
     }
 
+    if (!ctx.parent_ctx_arg) {
+        LOG_ERR("Expected parent key to be specified via \"-C\","
+                " missing option.");
+        rc = -1;
+    }
+
     return rc;
 }
 
