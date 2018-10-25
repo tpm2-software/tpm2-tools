@@ -99,6 +99,11 @@ name: 0x000b44e59fa5658ab443834a069a488ecc1f6d7deb47c40c6ec49871ef57d7036b43
     An optional file to save the object name, which is in a binary hash format. The size of the hash is
     based on name algorithm or the **-g** option.
 
+  * **--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
+    An optional password for an Open SSL (OSSL) provided input file. It mirrors the -passin option of
+    OSSL and is known to support the pass, file, env, fd and plain password formats of openssl.
+    (see *man(1) openssl*) for more.
+
 # Notes
 
 * If the hierarchy is *null* or the name hashing algorithm is *null*, tickets produced using the object

@@ -26,6 +26,7 @@
 //**********************************************************************
 
 #include <errno.h>
+#include <stdint.h>
 #include <string.h>
 
 #include <openssl/aes.h>
@@ -184,6 +185,178 @@ digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
     }
 
     return NULL;
+}
+
+/*
+ * Per man openssl(1), handle the following --passin formats:
+ *     pass:password
+ *             the actual password is password. Since the password is visible to utilities (like 'ps' under Unix) this form should only be used where security is not
+ *             important.
+ *
+ *   env:var   obtain the password from the environment variable var. Since the environment of other processes is visible on certain platforms (e.g. ps under certain
+ *             Unix OSes) this option should be used with caution.
+ *
+ *   file:pathname
+ *             the first line of pathname is the password. If the same pathname argument is supplied to -passin and -passout arguments then the first line will be used
+ *             for the input password and the next line for the output password. pathname need not refer to a regular file: it could for example refer to a device or
+ *             named pipe.
+ *
+ *   fd:number read the password from the file descriptor number. This can be used to send the data via a pipe for example.
+ *
+ *   stdin     read the password from standard input.
+ *
+ */
+
+typedef bool (*pfn_ossl_pw_handler)(const char *passin, char **pass);
+
+static bool do_pass(const char *passin, char **pass) {
+
+    char *tmp = strdup(passin);
+    if (!tmp) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    *pass = tmp;
+    return true;
+}
+
+static bool do_env(const char *envvar, char **pass) {
+
+    char *tmp = getenv(envvar);
+    if (!tmp) {
+        LOG_ERR("Environment variable \"%s\" not found", envvar);
+        return false;
+    }
+
+    tmp = strdup(tmp);
+    if (!tmp) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    *pass = tmp;
+    return true;
+}
+
+static bool do_open_file(FILE *f, const char *path, char **pass) {
+
+    bool rc = false;
+
+    unsigned long file_size = 0;
+    bool result = files_get_file_size(f, &file_size, path);
+    if (!result) {
+        goto out;
+    }
+
+    if (file_size + 1 <= file_size) {
+        LOG_ERR("overflow: file_size too large");
+        goto out;
+    }
+
+    char *tmp = calloc(sizeof(char), file_size + 1);
+    if (!tmp) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    result = files_read_bytes(f, (UINT8 *)tmp, file_size);
+    if (!result) {
+        goto out;
+    }
+
+    *pass = tmp;
+
+    rc = true;
+
+out:
+    fclose(f);
+
+    return rc;
+}
+
+static bool do_file(const char *path, char **pass) {
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("could not open file \"%s\" error: %s",
+                path, strerror(errno));
+        return false;
+    }
+
+    return do_open_file(f, path, pass);
+}
+
+static bool do_fd(const char *passin, char **pass) {
+
+    char *end_ptr = NULL;
+    int fd = strtoul(passin, &end_ptr, 0);
+    if (passin[0] != '\0' && end_ptr[0] != '\0') {
+        LOG_ERR("Invalid fd, got: \"%s\"", passin);
+        return false;
+    }
+
+    FILE *f = fdopen(fd, "rb");
+    if (!f) {
+        LOG_ERR("could not open fd \"%d\" error: %s",
+                fd, strerror(errno));
+        return false;
+    }
+
+    return do_open_file(f, "fd", pass);
+}
+
+static bool do_stdin(const char *passin, char **pass) {
+
+    UNUSED(passin);
+
+    void *buf = calloc(sizeof(BYTE), UINT16_MAX + 1);
+    if (!buf) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    UINT16 size = UINT16_MAX;
+
+    bool result = files_load_bytes_from_file_or_stdin(NULL, &size, buf);
+    if (!result) {
+        free(buf);
+        return false;
+    }
+
+    *pass = buf;
+    return true;
+}
+
+static bool handle_ossl_pass(const char *passin, char **pass) {
+
+    pfn_ossl_pw_handler pfn = NULL;
+
+    if (!passin) {
+        *pass = NULL;
+        return true;
+    }
+
+    if (!strncmp("pass:", passin, 5)) {
+        passin += 5;
+        pfn = do_pass;
+    } else if (!strncmp("env:", passin, 4)) {
+        pfn = do_env;
+        passin += 4;
+    } else if (!strncmp("file:", passin, 5)) {
+        pfn = do_file;
+        passin += 5;
+    } else if (!strncmp("fd:", passin, 3)) {
+        pfn = do_fd;
+        passin += 3;
+    } else if (!strcmp("stdin", passin)) {
+        pfn = do_stdin;
+    } else {
+        LOG_ERR("Unknown OSSL style password argument, got: \"%s\"", passin);
+        return false;
+    }
+
+    return pfn(passin, pass);
 }
 
 static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
@@ -585,12 +758,19 @@ bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLI
      return true;
 }
 
-static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path, const char *passin, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     tpm2_openssl_load_rc rc = lprc_error;
 
+    char *pass = NULL;
+    bool result = handle_ossl_pass(passin, &pass);
+    if (!result) {
+        return lprc_error;
+    }
+
     EC_KEY *k = PEM_read_ECPrivateKey(f, NULL,
-        NULL, NULL);
+        NULL, (void *)pass);
+    free(pass);
     fclose(f);
     if (!k) {
          ERR_print_errors_fp (stderr);
@@ -598,7 +778,7 @@ static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path,
          return lprc_error;
     }
 
-    bool result = load_private_ECC_from_key(k, priv);
+    result = load_private_ECC_from_key(k, priv);
     if (!result) {
         rc = lprc_error;
         goto out;
@@ -619,14 +799,22 @@ out:
     return rc;
 }
 
-static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path, const char *passin,
+        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     RSA *k = NULL;
 
     tpm2_openssl_load_rc rc = lprc_error;
 
+    char *pass = NULL;
+    bool result = handle_ossl_pass(passin, &pass);
+    if (!result) {
+        return lprc_error;
+    }
+
     k = PEM_read_RSAPrivateKey(f, NULL,
-        NULL, NULL);
+        NULL, (void *)pass);
+    free(pass);
     fclose(f);
     if (!k) {
          ERR_print_errors_fp (stderr);
@@ -700,7 +888,7 @@ static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f, const char *path
  * @returns
  *  A private object loading status
  */
-tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pass, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     FILE *f = fopen(path, "r");
     if (!f) {
@@ -718,13 +906,17 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC
 
     switch (alg) {
     case TPM2_ALG_RSA:
-        rc = load_private_RSA_from_pem(f, path, pub, priv);
+        rc = load_private_RSA_from_pem(f, path, pass, pub, priv);
         break;
     case TPM2_ALG_AES:
+        if (pass) {
+            LOG_ERR("No password can be used for protecting AES key");
+            return lprc_error;
+        }
         rc = load_private_AES_from_file(f, path, pub, priv);
         break;
     case TPM2_ALG_ECC:
-        rc =load_private_ECC_from_pem(f, path, pub, priv);
+        rc =load_private_ECC_from_pem(f, path, pass, pub, priv);
         break;
     default:
         LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,

@@ -40,7 +40,8 @@ cleanup() {
           import_rsa_key.pub import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name \
           private.pem public.pem plain.rsa.enc plain.rsa.dec \
           public.pem data.in.raw data.in.digest data.out.signed ticket.out \
-          ecc.pub ecc.priv ecc.name ecc.ctx private.ecc.pem public.ecc.pem
+          ecc.pub ecc.priv ecc.name ecc.ctx private.ecc.pem public.ecc.pem \
+          passfile
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -56,7 +57,7 @@ run_aes_import_test() {
 
 	#Symmetric Key Import Test
 	echo "tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C $1 -u import_key.pub -r import_key.priv"
-	
+
 	tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C $1 -u import_key.pub \
 	-r import_key.priv
 
@@ -138,6 +139,19 @@ run_ecc_import_test() {
 	tpm2_verifysignature -Q -c ecc.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
 }
 
+run_rsa_import_passin_test() {
+
+    if [ "$3" != "stdin" ]; then
+        tpm2_import -Q -G rsa -k "$2" -C "$1" \
+            -u "import_rsa_key.pub" -r "import_rsa_key.priv" \
+            --passin "$3"
+    else
+        tpm2_import -Q -G rsa -k "$2" -C "$1" \
+            -u "import_rsa_key.pub" -r "import_rsa_key.priv" \
+            --passin "$3" < "$4"
+    fi;
+}
+
 run_test() {
 
 	cleanup "no-shut-down"
@@ -154,7 +168,7 @@ run_test() {
 
 	run_rsa_import_test parent.ctx 1024
     run_rsa_import_test parent.ctx 2048
-    
+
     run_ecc_import_test parent.ctx prime256v1
 }
 
@@ -172,5 +186,26 @@ for pa in "${parent_algs[@]}"; do
     run_test "$pa" "$name"
   done;
 done;
+
+#
+# Test the passin options
+#
+
+tpm2_createprimary -Q -o parent.ctx
+
+openssl genrsa -aes128 -passout "pass:mypassword" -out "private.pem" 1024
+
+run_rsa_import_passin_test "parent.ctx" "private.pem" "pass:mypassword"
+
+export envvar="mypassword"
+run_rsa_import_passin_test "parent.ctx" "private.pem" "env:envvar"
+
+echo -n "mypassword" > "passfile"
+run_rsa_import_passin_test "parent.ctx" "private.pem" "file:passfile"
+
+exec 42<> passfile
+run_rsa_import_passin_test "parent.ctx" "private.pem" "fd:42"
+
+run_rsa_import_passin_test "parent.ctx" "private.pem" "stdin" "passfile"
 
 exit 0
