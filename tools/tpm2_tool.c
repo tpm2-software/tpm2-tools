@@ -33,6 +33,9 @@
 
 #include <unistd.h>
 
+#include <openssl/evp.h>
+#include <openssl/err.h>
+
 #include "log.h"
 #include "tpm2_tcti_ldr.h"
 #include "tpm2_options.h"
@@ -153,6 +156,14 @@ int main(int argc, char *argv[]) {
     if (flags.enable_errata) {
         tpm2_errata_init(sapi_context);
     }
+
+    /*
+     * Load the openssl error strings and algorithms
+     * so library routines work as expected.
+     */
+    OpenSSL_add_all_algorithms();
+    OpenSSL_add_all_ciphers();
+    ERR_load_crypto_strings();
 
     /*
      * Call the specific tool, all tools implement this function instead of
