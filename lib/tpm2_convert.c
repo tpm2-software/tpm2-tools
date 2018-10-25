@@ -283,8 +283,6 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt
 
     bool result = false;
 
-    ERR_load_crypto_strings();
-
     FILE *fp = fopen(path, "wb");
     if (!fp) {
         LOG_ERR("Failed to open public key output file '%s': %s",

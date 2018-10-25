@@ -725,10 +725,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
-    OpenSSL_add_all_algorithms();
-    OpenSSL_add_all_ciphers();
-    ERR_load_crypto_strings();
-
     tpm2_loaded_object parent_ctx;
 
     rc = check_options();
