@@ -562,12 +562,12 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
         *size = fread(buf, 1,
                 *size, file);
         if (!feof(file)) {
-            LOG_ERR("Data to be sealed larger than expected. Got %u expected %u",
+            LOG_ERR("Data larger than expected. Got %u expected %u",
                     original_size, res);
             res = false;
         }
         else if (ferror(file)) {
-            LOG_ERR("Error reading sealed data from \"<stdin>\"");
+            LOG_ERR("Error reading data from \"<stdin>\"");
             res = false;
         }
     }
