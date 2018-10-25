@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_loadexternal: support OSSL style -passin argument as --passin for PEM file passwords.
+  * tpm2_import: support OSSL style -passin argument as --passin for PEM file passwords.
   * tpm2_readpublic: supports ECC pem and der file generation.
   * tpm2_activatecredential: Option `--endorse-passwd` changes to `--auth-endorse`.
   * tpm2_loadexternal: name output to file and stdout. Changes YAML stdout output.

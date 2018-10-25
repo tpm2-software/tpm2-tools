@@ -56,6 +56,11 @@ These options control the key importation process:
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
     The object attributes, optional.
 
+  * **--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
+    An optional password for an Open SSL (OSSL) provided input file. It mirrors the -passin option of
+    OSSL and is known to support the pass, file, env, fd and plain password formats of openssl.
+    (see *man(1) openssl*) for more.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
