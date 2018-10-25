@@ -643,11 +643,12 @@ static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path,
 
     bool loaded_pub = load_public_RSA_from_key(k, pub);
     if (!loaded_pub) {
-        return lprc_error;
+        goto out;
     } else {
         rc |= lprc_public;
     }
-
+out:
+    RSA_free(k);
     return rc;
 }
 
