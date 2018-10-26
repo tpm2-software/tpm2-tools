@@ -39,7 +39,7 @@ The key referenced by key-context is **required** to be:
 
 [common tcti options](common/tcti.md)
 
-[context object format](commmon/ctxobj.md)
+[context object format](common/ctxobj.md)
 
 # EXAMPLES
 

@@ -25,7 +25,7 @@
 
     The output file path, recording the public portion of the object.
 
-[context object format](commmon/ctxobj.md)
+[context object format](common/ctxobj.md)
 
 [pubkey options](common/pubkey.md)
 

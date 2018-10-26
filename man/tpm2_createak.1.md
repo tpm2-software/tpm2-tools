@@ -97,7 +97,7 @@ loaded-key:
 
 [authorization formatting](common/authorizations.md)
 
-[context object format](commmon/ctxobj.md)
+[context object format](common/ctxobj.md)
 
 [supported signing algorithms](common/sign-alg.md)
 
