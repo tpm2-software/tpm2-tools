@@ -60,7 +60,7 @@ These options control the key importation process:
 
 [common tcti options](common/tcti.md)
 
-[context object format](commmon/ctxobj.md)
+[context object format](common/ctxobj.md)
 
 [algorithm specifiers](common/alg.md)
 

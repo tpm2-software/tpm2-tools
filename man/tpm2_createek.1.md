@@ -62,7 +62,7 @@ Refer to:
 
 [common tcti options](common/tcti.md)
 
-[context object format](commmon/ctxobj.md)
+[context object format](common/ctxobj.md)
 
 [supported public object algorithms](common/object-alg.md)
 
