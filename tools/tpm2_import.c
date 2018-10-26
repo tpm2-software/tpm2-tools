@@ -51,6 +51,7 @@
 #include "log.h"
 #include "files.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm_kdfa.h"
 #include "tpm2_errata.h"
 #include "tpm2_openssl.h"
@@ -60,12 +61,15 @@
 
 typedef struct tpm_import_ctx tpm_import_ctx;
 struct tpm_import_ctx {
+    TPMS_AUTH_COMMAND session_data;
     char *input_key_file;
     char *import_key_public_file;
     char *import_key_private_file;
     char *parent_key_public_file;
     char *name_alg;
     char *attrs; /* The attributes to use */
+    char *key_auth_str;
+    char *parent_auth_str;
 
     TPMI_ALG_PUBLIC key_type;
     const char *parent_ctx_arg;
@@ -74,6 +78,7 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = { 
     .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL,
+    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 #if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
@@ -520,7 +525,7 @@ static bool do_import(TSS2_SYS_CONTEXT *sapi_context,
         TPM2B_PRIVATE *imported_private) {
 
     TSS2L_SYS_AUTH_COMMAND npsessionsData =
-            TSS2L_SYS_AUTH_COMMAND_INIT(1, {TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW)});
+            TSS2L_SYS_AUTH_COMMAND_INIT(1, { ctx.session_data });
 
     TSS2L_SYS_AUTH_RESPONSE npsessionsDataOut;
 
@@ -619,6 +624,12 @@ static bool key_import(
 static bool on_option(char key, char *value) {
 
     switch(key) {
+    case 'P':
+        ctx.parent_auth_str = value;
+        break;
+    case 'p':
+        ctx.key_auth_str = value;
+    break;
     case 'G':
         ctx.key_type = tpm2_alg_util_from_optarg(value,
                 tpm2_alg_util_flags_asymmetric
@@ -660,6 +671,8 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
+      { "auth-parent",        required_argument, NULL, 'P'},
+      { "auth-key",           required_argument, NULL, 'p'},
       { "import-key-alg",     required_argument, NULL, 'G'},
       { "input-key-file",     required_argument, NULL, 'k'},
       { "parent-key",         required_argument, NULL, 'C'},
@@ -670,7 +683,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "halg",               required_argument, NULL, 'g'},
     };
 
-    *opts = tpm2_options_new("G:k:C:K:u:r:A:g:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:p:G:k:C:K:u:r:A:g:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -809,6 +822,25 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
         tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
                           &public.publicArea.objectAttributes);
+    }
+
+    if (ctx.key_auth_str) {
+        TPMS_AUTH_COMMAND tmp;
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.key_auth_str, &tmp, NULL);
+        if (!result) {
+            LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
+            return false;
+        }
+        private.sensitiveArea.authValue = tmp.hmac;
+    }
+
+    if (ctx.parent_auth_str) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.parent_auth_str,
+            &ctx.session_data, NULL);
+        if (!result) {
+            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
+            return false;
+        }
     }
 
     /*
