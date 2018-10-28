@@ -19,10 +19,9 @@ authorization values.
 # OPTIONS
 
   * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_:
-    The new owner authorization value.
-
-    Passwords should follow the "password authorization formatting standards",
-    see section "Authorization Formatting".
+    
+    The new owner authorization value.Passwords should follow the "password 
+    authorization formatting standards", see section "Authorization Formatting".
 
   * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
 
@@ -31,9 +30,7 @@ authorization values.
 
   * **-l**, **--lockout-passwd**=_LOCKOUT\_PASSWORD_:
 
-    The new lockout authorization value.
-
-    The new endorse authorization value. Passwords should follow the same
+    The new lockout authorization value. Passwords should follow the same
     formatting requirements as the **-o** option.
 
   * **-O**, **--old-auth-owner**=_OLD\_OWNER\_AUTH_:
