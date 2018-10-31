@@ -70,6 +70,7 @@ struct tpm_import_ctx {
     char *attrs; /* The attributes to use */
     char *key_auth_str;
     char *parent_auth_str;
+    char *auth_key_file; /* an optional auth string for the input key file for OSSL */
 
     TPMI_ALG_PUBLIC key_type;
     const char *parent_ctx_arg;
@@ -660,6 +661,9 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.name_alg = value;
         break;
+    case 0:
+        ctx.auth_key_file = value;
+        break;
     default:
         LOG_ERR("Invalid option");
         return false;
@@ -681,6 +685,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "import-key-public",  required_argument, NULL, 'u'},
       { "object-attributes",  required_argument, NULL, 'A'},
       { "halg",               required_argument, NULL, 'g'},
+      { "passin",             required_argument, NULL,  0 },
     };
 
     *opts = tpm2_options_new("P:p:G:k:C:K:u:r:A:g:", ARRAY_LEN(topts), topts, on_option,
@@ -722,6 +727,12 @@ static int check_options(void) {
         rc = -1;
     }
 
+    if (!ctx.parent_ctx_arg) {
+        LOG_ERR("Expected parent key to be specified via \"-C\","
+                " missing option.");
+        rc = -1;
+    }
+
     return rc;
 }
 
@@ -731,10 +742,6 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     int rc = 1;
     bool result;
-
-    OpenSSL_add_all_algorithms();
-    OpenSSL_add_all_ciphers();
-    ERR_load_crypto_strings();
 
     tpm2_loaded_object parent_ctx;
 
@@ -846,7 +853,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     /*
      * Populate all the private and public data fields we can based on the key type and the PEM files read in.
      */
-    tpm2_openssl_load_rc status = tpm2_openssl_load_private(ctx.input_key_file, ctx.key_type, &public, &private);
+    tpm2_openssl_load_rc status = tpm2_openssl_load_private(ctx.input_key_file, ctx.auth_key_file,
+            ctx.key_type, &public, &private);
     if (status == lprc_error) {
         goto out;
     }

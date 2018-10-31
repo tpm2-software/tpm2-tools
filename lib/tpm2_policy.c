@@ -151,8 +151,8 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
         UINT32 pcr_update_counter;
         TPML_PCR_SELECTION pcr_selection_out;
         // Read PCRs
-        TSS2_RC rval = Tss2_Sys_PCR_Read(sapi_context, NULL, pcr_selections,
-                &pcr_update_counter, &pcr_selection_out, &pcr_values, NULL);
+        TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PCR_Read(sapi_context, NULL, pcr_selections,
+                &pcr_update_counter, &pcr_selection_out, &pcr_values, NULL));
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_PCR_Read, rval);
             return false;
@@ -174,8 +174,8 @@ static bool tpm2_policy_pcr_build(TSS2_SYS_CONTEXT *sapi_context,
     TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(
             policy_session);
 
-    TSS2_RC rval = Tss2_Sys_PolicyPCR(sapi_context, handle,
-    NULL, &pcr_digest, pcr_selections, NULL);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyPCR(sapi_context, handle,
+    NULL, &pcr_digest, pcr_selections, NULL));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_PolicyPCR, rval);
         return false;
@@ -286,8 +286,8 @@ bool tpm2_policy_build_policyauthorize(
 
     TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(policy_session);
 
-    TSS2_RC rval = Tss2_Sys_PolicyAuthorize(sapi_context, handle, NULL,
-        &approved_policy, &policy_qualifier, &key_sign, &check_ticket,NULL);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyAuthorize(sapi_context, handle, NULL,
+        &approved_policy, &policy_qualifier, &key_sign, &check_ticket,NULL));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_PolicyAuthorize, rval);
         return false;
@@ -301,8 +301,8 @@ bool tpm2_policy_build_policyor(TSS2_SYS_CONTEXT *sapi_context,
 
     TPMI_SH_POLICY policy_session_handle = tpm2_session_get_handle(policy_session);
 
-    TSS2_RC rval = Tss2_Sys_PolicyOR(sapi_context, policy_session_handle,
-        NULL, &policy_list, NULL);
+    TSS2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyOR(sapi_context, policy_session_handle,
+        NULL, &policy_list, NULL));
 
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_PolicyOR, rval);
@@ -318,8 +318,8 @@ bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
 
     TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(session);
 
-    TPM2_RC rval = Tss2_Sys_PolicyGetDigest(sapi_context, handle,
-    NULL, policy_digest, NULL);
+    TPM2_RC rval = TSS2_RETRY_EXP(Tss2_Sys_PolicyGetDigest(sapi_context, handle,
+    NULL, policy_digest, NULL));
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Tss2_Sys_PolicyGetDigest, rval);
         return false;

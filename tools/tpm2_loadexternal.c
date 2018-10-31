@@ -69,6 +69,7 @@ struct tpm_loadexternal_ctx {
     char *name_alg; /* name hashing algorithm */
     char *key_type; /* type of key attempting to load, defaults to an auto attempt */
     char *name_path; /* An optional path to output the loaded objects name information to */
+    char *passin; /* an optional auth string for the input key file for OSSL */
 };
 
 static tpm_loadexternal_ctx ctx = {
@@ -134,6 +135,9 @@ static bool on_option(char key, char *value) {
     case 'n':
         ctx.name_path = value;
         break;
+    case 0:
+        ctx.passin = value;
+        break;
     }
 
     return true;
@@ -152,7 +156,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "halg",               required_argument, NULL, 'g'},
       { "auth-parent",        required_argument, NULL, 'P'},
       { "key-alg",            required_argument, NULL, 'G'},
-      { "name",                 required_argument, NULL, 'n' },
+      { "name",               required_argument, NULL, 'n'},
+      { "passin",             required_argument, NULL,  0 },
     };
 
     *opts = tpm2_options_new("a:u:r:o:A:p:L:g:G:n:", ARRAY_LEN(topts), topts, on_option,
@@ -294,7 +299,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     tpm2_openssl_load_rc load_status = lprc_error;
     if (ctx.private_key_path) {
-        load_status = tpm2_openssl_load_private(ctx.private_key_path, alg, &pub, &priv);
+        load_status = tpm2_openssl_load_private(ctx.private_key_path, ctx.passin,
+                alg, &pub, &priv);
         if (load_status == lprc_error) {
             return 1;
         }

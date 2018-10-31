@@ -76,7 +76,7 @@ These options for creating the tpm entity:
 
 [common tcti options](common/tcti.md)
 
-[context object format](commmon/ctxobj.md)
+[context object format](common/ctxobj.md)
 
 [authorization formatting](common/password.md)
 

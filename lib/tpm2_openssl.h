@@ -141,12 +141,14 @@ static inline bool tpm2_openssl_did_load_public(tpm2_openssl_load_rc load_status
  * For symmetric keys, the file type is raw. For asymmetric keys, the
  * file type is a PEM file.
  *
- * This ONLY supports AES and RSA.
+ * This ONLY supports AES, ECC and RSA.
  *
  * It populates the sensitive seed with a random value for symmetric keys.
  *
  * @param path
  *  The path to load from.
+ * @param path
+ *  The passphrase for the input file.
  * @param alg
  *  algorithm type to import.
  * @param pub
@@ -157,8 +159,8 @@ static inline bool tpm2_openssl_did_load_public(tpm2_openssl_load_rc load_status
  * @returns
  *  A private object loading status
  */
-tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, TPMI_ALG_PUBLIC alg,
-        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv);
+tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pass,
+        TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv);
 
 /**
  * Loads a public portion of a key from a file. Files can be the raw key, in the case

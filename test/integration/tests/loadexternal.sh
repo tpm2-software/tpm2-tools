@@ -52,7 +52,8 @@ cleanup() {
          $file_loadexternal_key_name $file_loadexternal_key_ctx \
          $file_loadexternal_output private.pem public.pem plain.txt \
          plain.rsa.dec key.ctx public.ecc.pem private.ecc.pem \
-         data.in.digest data.out.signed ticket.out name.bin stdout.yaml
+         data.in.digest data.out.signed ticket.out name.bin stdout.yaml \
+         passfile private.pem
 
   ina "$@" "keep_handle"
   if [ $? -ne 0 ]; then
@@ -115,7 +116,7 @@ run_rsa_test() {
     # try encrypting with the public key and decrypting with the private
     tpm2_loadexternal -G rsa -a n -p foo -u public.pem -o key.ctx
 
-    tpm2_rsaencrypt -Tmssim -c key.ctx plain.txt -o plain.rsa.enc
+    tpm2_rsaencrypt -c key.ctx plain.txt -o plain.rsa.enc
 
     openssl rsautl -decrypt -inkey private.pem -in plain.rsa.enc -out plain.rsa.dec
 
@@ -179,6 +180,17 @@ run_ecc_test() {
 	tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
 }
 
+run_rsa_passin_test() {
+
+    if [ "$2" != "stdin" ]; then
+        cmd="tpm2_loadexternal -Q -G rsa -r $1 -o key.ctx --passin $2"
+    else
+        cmd="tpm2_loadexternal -Q -G rsa -r $1 -o key.ctx --passin $2 < $3"
+    fi;
+
+    eval $cmd
+}
+
 run_tss_test
 
 run_rsa_test 1024
@@ -188,5 +200,24 @@ run_aes_test 128
 run_aes_test 256
 
 run_ecc_test prime256v1
+
+#
+# Test loadexternal passin option
+#
+openssl genrsa -aes128 -passout "pass:mypassword" -out "private.pem" 1024
+
+run_rsa_passin_test "private.pem" "pass:mypassword"
+
+export envvar="mypassword"
+run_rsa_passin_test "private.pem" "env:envvar"
+
+echo -n "mypassword" > "passfile"
+run_rsa_passin_test "private.pem" "file:passfile"
+
+exec 42<> passfile
+run_rsa_passin_test "private.pem" "fd:42"
+
+run_rsa_passin_test "private.pem" "stdin" "passfile"
+
 
 exit 0

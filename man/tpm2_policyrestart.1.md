@@ -44,8 +44,8 @@ tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -f policy.dat
 tpm2_unseal -S session.dat -c unseal.key.ctx
 "Sys_Unseal failed. Error Code: 0x00000128"
 
-# restart the session, try again, pcr state must satisfy policy
-tpm2_sessionrestart -S session.dat
+# Clear the policy digest by restarting the policy session, try again, pcr state must satisfy policy
+tpm2_policyrestart -S session.dat
 
 tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -f policy.dat
 
