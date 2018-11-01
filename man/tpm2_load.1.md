@@ -26,7 +26,7 @@ defaults to *load.ctx* and can be specified with **-o**.
     See section "Context Object Format".
 
   * **-P**, **--auth-parent**=_KEY\_AUTH_:
-    Optional authorization value to use the parent object specified by **-H**.
+    Optional authorization value to use the parent object specified by **-C**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
