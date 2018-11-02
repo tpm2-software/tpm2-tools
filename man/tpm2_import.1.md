@@ -56,6 +56,16 @@ These options control the key importation process:
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
     The object attributes, optional.
 
+  * **-P**, **--auth-parent**=_PARENT\_KEY\_AUTH_:
+    The authorization value for using the parent key, optional.
+    Authorization values should follow the "authorization formatting standards",
+    see section "Authorization Formatting".
+
+  * **-p**, **--auth-key**=_KEY\_AUTH_:
+    The authorization value for the key, optional.
+    Follows the authorization formatting of the
+    "password for parent key" option: **-P**.
+
   * **--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
     An optional password for an Open SSL (OSSL) provided input file. It mirrors the -passin option of
     OSSL and is known to support the pass, file, env, fd and plain password formats of openssl.
