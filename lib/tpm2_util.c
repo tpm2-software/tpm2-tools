@@ -514,16 +514,6 @@ out:
     return result;
 }
 
-bool tpm2_util_object_save(ESYS_CONTEXT *ctx,
-        tpm2_loaded_object inobject) {
-
-    if (inobject.path) {
-        return files_save_tpm_context_to_path(ctx, inobject.handle,
-                inobject.path);
-    }
-    return false;
-}
-
 bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,
         TPM2B_DIGEST *seed, TPM2B_DIGEST *unique_data) {
 

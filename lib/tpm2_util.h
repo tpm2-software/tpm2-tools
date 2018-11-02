@@ -328,18 +328,6 @@ bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
         const char *objectstr, tpm2_loaded_object *outobject);
 
 /**
- * Saves a loaded object to the context file specified by the object's path
- * member.
- * @param ctx
- * a TSS ESAPI context.
- * @param inobject
- * A tpm2_loaded_object with a path member set to the location at which to save
- * the object context.
- */
-bool tpm2_util_object_save(ESYS_CONTEXT *ctx,
-        tpm2_loaded_object inobject);
-
-/**
  * Calculates the unique public field. The unique public field is the digest, based on name algorithm
  * of the key + protection seed (concatenated).
  *
