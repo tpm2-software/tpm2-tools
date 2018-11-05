@@ -302,12 +302,6 @@ static bool handle_asym_scheme_common(const char *ext, TPM2B_PUBLIC *public) {
         }
     }
 
-    if (is_restricted && s->scheme.scheme != TPM2_ALG_NULL) {
-        LOG_ERR("Restricted objects require a NULL scheme");
-        /* don't print another error message */
-        return false;
-    }
-
     /*
      * If the scheme is set, both the encrypt and decrypt attributes cannot be set,
      * check to see if this is the case, and turn down:
