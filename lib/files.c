@@ -555,8 +555,8 @@ bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *b
     }
 
     UINT16 original_size = *size;
-    bool res = files_load_bytes_from_path(path, buf,
-            size);
+    bool res = read_bytes_from_file(file, buf,
+            size, path);
     if (!res) {
         res = true;
         *size = fread(buf, 1,
