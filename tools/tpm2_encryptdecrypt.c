@@ -220,7 +220,8 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
     }
 
     ctx.data.size = sizeof(ctx.data.buffer);
-    result = files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.data.size, ctx.data.buffer);
+    result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
+        &ctx.data.size, ctx.data.buffer);
     if (!result) {
         return false;
     }
