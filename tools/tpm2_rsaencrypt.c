@@ -137,7 +137,8 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
     }
 
     ctx.message.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
-    return files_load_bytes_from_file_or_stdin(ctx.input_path, &ctx.message.size, ctx.message.buffer);
+    return files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
+        &ctx.message.size, ctx.message.buffer);
 }
 
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
