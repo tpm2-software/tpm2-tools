@@ -318,7 +318,8 @@ static bool do_stdin(const char *passin, char **pass) {
 
     UINT16 size = UINT16_MAX;
 
-    bool result = files_load_bytes_from_file_or_stdin(NULL, &size, buf);
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,NULL, &size,
+        buf);
     if (!result) {
         free(buf);
         return false;

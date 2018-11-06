@@ -54,7 +54,9 @@
 bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
 
 /**
- * Loads data from a file path or stdin enforcing an upper bound on size.
+ * Loads data from an input buffer or file path or stdin enforcing an upper bound on size.
+ * @param input_buffer
+ *   The buffer to read the input data from, NULL means either specified by path or stdin
  * @param path
  *  The path to load data from, NULL means stdin.
  * @param size
@@ -64,7 +66,8 @@ bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
  * @return
  *  True on success or false otherwise.
  */
-bool files_load_bytes_from_file_or_stdin(const char *path, UINT16 *size, BYTE *buf);
+bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
+	const char *path, UINT16 *size, BYTE *buf);
 
 /**
  * Similar to files_write_bytes(), in that it writes an array of bytes to disk,

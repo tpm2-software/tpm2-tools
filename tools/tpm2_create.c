@@ -215,7 +215,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static bool load_sensitive(void) {
 
     ctx.in_sensitive.sensitive.data.size = BUFFER_SIZE(typeof(ctx.in_sensitive.sensitive.data), buffer);
-    return files_load_bytes_from_file_or_stdin(ctx.input,
+    return files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input,
             &ctx.in_sensitive.sensitive.data.size, ctx.in_sensitive.sensitive.data.buffer);
 }
 
