@@ -139,7 +139,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     if (!(ctx.context_arg && ctx.flags.I && ctx.flags.o)) {
         LOG_ERR("Expected arguments I, o and c.");
-        return -1;
+        return false;
     }
 
     bool result = tpm2_util_object_load(sapi_context, ctx.context_arg,
