@@ -143,7 +143,7 @@ static bool read_pcr_values(TSS2_SYS_CONTEXT *sapi_context) {
 
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Tss2_Sys_PCR_Read, rval);
-            return -1;
+            return false;
         }
 
         //3. unmask pcrSelectionOut bits from pcrSelectionIn
