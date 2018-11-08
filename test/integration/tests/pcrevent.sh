@@ -71,7 +71,7 @@ while IFS='' read -r l || [[ -n "$l" ]]; do
   hash=`echo -n $l | awk {'print $2'}`
   check=`"$alg"sum $hash_in_file | cut -d' ' -f 1-1`
   if [ "$check" != "$hash" ]; then
-    echo "Hash check failed, got \"$hash\", expected \"$check\""
+    echo "Hash check failed for alg \"$alg\", got \"$hash\", expected \"$check\""
     exit 1
   fi
 done < $hash_out_file
