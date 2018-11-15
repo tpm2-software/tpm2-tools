@@ -134,7 +134,7 @@ class ToolConflictor(object):
             },
             {
                 "gname": "ea",
-                "tools-in-group": ["tpm2_policypcr", "tpm2_createpolicy", "tpm2_policyauthorize", "tpm2_policyor"],
+                "tools-in-group": ["tpm2_policypcr", "tpm2_createpolicy", "tpm2_policyauthorize", "tpm2_policyor", "tpm2_policypassword"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set(['S', 'session', 'q', 'qualifier', 'n', 'name', 't', 'ticket', 'L', 'policy-list', 'o', 'policy-file'])

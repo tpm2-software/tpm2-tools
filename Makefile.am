@@ -87,6 +87,7 @@ bin_PROGRAMS = \
     tools/tpm2_policypcr \
     tools/tpm2_policyauthorize \
     tools/tpm2_policyor \
+    tools/tpm2_policypassword \
     tools/tpm2_policyrestart \
     tools/tpm2_quote \
     tools/tpm2_readpublic \
@@ -154,6 +155,7 @@ tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
 tools_tpm2_policypcr_SOURCES = tools/tpm2_policypcr.c $(TOOL_SRC)
 tools_tpm2_policyauthorize_SOURCES = tools/tpm2_policyauthorize.c $(TOOL_SRC)
 tools_tpm2_policyor_SOURCES = tools/tpm2_policyor.c $(TOOL_SRC)
+tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 
 if UNIT
@@ -303,6 +305,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policyrestart.1 \
     man/man1/tpm2_policyauthorize.1 \
     man/man1/tpm2_policyor.1 \
+    man/man1/tpm2_policypassword.1 \
     man/man1/tpm2_quote.1 \
     man/man1/tpm2_rc_decode.1 \
     man/man1/tpm2_readpublic.1 \

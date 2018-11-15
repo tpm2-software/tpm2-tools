@@ -30,6 +30,7 @@
 //**********************************************************************;
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include <tss2/tss2_sys.h>
 
@@ -109,23 +110,48 @@ static bool handle_str(const char *password, TPMS_AUTH_COMMAND *auth) {
     return true;
 }
 
-bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx, const char *password, TPMS_AUTH_COMMAND *auth,
-        tpm2_session **session) {
+bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx, const char *password,
+    TPMS_AUTH_COMMAND *auth, tpm2_session **session) {
 
-    bool is_hex = !strncmp(password, HEX_PREFIX, HEX_PREFIX_LEN);
-    if (is_hex) {
-        return handle_hex(password, auth);
+    char *password_string_ptr;
+    char *password_string = strdup(password);
+    if (!password_string) {
+        LOG_ERR("OOM");
+        return false;
     }
+    password_string_ptr = password_string;
 
-    bool is_session = !strncmp(password, SESSION_PREFIX, SESSION_PREFIX_LEN);
-    if (is_session) {
-        if (!session) {
+    bool result;
+    bool is_hex;
+    bool is_session;
+
+    const char *password_token;
+
+    while( (password_token = strsep(&password_string,"+")) != NULL ) {
+        is_hex = !strncmp(password_token, HEX_PREFIX, HEX_PREFIX_LEN);
+        is_session = !strncmp(password_token, SESSION_PREFIX, SESSION_PREFIX_LEN);
+        if (is_session && !session) {
             LOG_ERR("Tool does not support sessions for this auth value");
             return false;
         }
-        return handle_session(sys_ctx, password, auth, session);
-    }
 
-    /* must be string, handle it */
-    return handle_str(password, auth);
+        if (is_hex) {
+            result = handle_hex(password_token, auth);
+        } else if (is_session) {
+            result = handle_session(sys_ctx, password_token, auth, session);
+        } else {
+            /* must be string, handle it */
+            result = handle_str(password_token, auth);
+        }
+
+        if (result) {
+            continue;
+        } else {
+            free((char*)password_string_ptr);
+            return false;
+        }
+
+    }
+    free((char*)password_string_ptr);
+    return true;
 }

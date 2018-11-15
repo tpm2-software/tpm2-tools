@@ -116,6 +116,19 @@ bool tpm2_policy_get_digest(TSS2_SYS_CONTEXT *sapi_context,
         TPM2B_DIGEST *policy_digest_path);
 
 /**
+ * Enables a policy that requires the object's authentication passphrase be
+ * provided.
+ * @param sapi_context
+ *  The system api context.
+  * @param session
+ *  The policy session which is extended with PolicyPassword command code
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_policy_build_policypassword(TSS2_SYS_CONTEXT *sapi_context,
+        tpm2_session *session);
+
+/**
  * Parses the policy digest algorithm for the list of policies specified
  *
  * @param str
