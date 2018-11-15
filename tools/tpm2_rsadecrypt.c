@@ -183,10 +183,7 @@ out:
         rc = 1;
     }
 
-    return rc;
-}
-
-void tpm2_tool_onexit(void) {
-
     tpm2_session_free(&ctx.auth.session);
+
+    return rc;
 }

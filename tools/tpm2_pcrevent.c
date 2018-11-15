@@ -364,6 +364,8 @@ out:
         rc = 1;
     }
 
+    tpm2_session_free(&ctx.auth.session);
+
     return rc;
 }
 
@@ -373,5 +375,4 @@ void tpm2_tool_onexit(void) {
         fclose(ctx.input);
     }
 
-    tpm2_session_free(&ctx.auth.session);
 }
