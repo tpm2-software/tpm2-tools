@@ -35,6 +35,7 @@
 
 #include <tss2/tss2_sys.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
@@ -59,6 +60,7 @@ struct changeauth_ctx {
         auth owner;
         auth endorse;
         auth lockout;
+        auth tpm_handle;
     } auths;
     struct {
         UINT8 o : 1;
@@ -67,7 +69,11 @@ struct changeauth_ctx {
         UINT8 O : 1;
         UINT8 E : 1;
         UINT8 L : 1;
-        UINT8 unused : 2;
+        UINT8 p : 1;
+        UINT8 P : 1;
+        UINT8 c : 1;
+        UINT8 a : 1;
+        UINT8 r : 1;
     } flags;
     char *owner_auth_str;
     char *owner_auth_old_str;
@@ -75,6 +81,17 @@ struct changeauth_ctx {
     char *endorse_auth_old_str;
     char *lockout_auth_str;
     char *lockout_auth_old_str;
+    char *tpm_handle_auth_str;
+    char *tpm_handle_auth_old_str;
+    bool is_nv;
+    bool is_transient;
+    bool is_persistent;
+    bool is_auth_policy_session_loaded;
+    const char *tpm_handle_context_arg;
+    tpm2_loaded_object tpm_handle_context_object;
+    char *opr_path;
+    const char *tpm_handle_parent_context_arg;
+    tpm2_loaded_object tpm_handle_parent_context_object;
 };
 
 static changeauth_ctx ctx = {
@@ -90,6 +107,10 @@ static changeauth_ctx ctx = {
         .lockout = {
             .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
             .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
+        },
+        .tpm_handle = {
+            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         },
     },
     .flags = { 0 },
@@ -138,6 +159,179 @@ static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
     return result;
 }
 
+
+static bool process_change_hierarchy_auth (TSS2_SYS_CONTEXT *sapi_context) {
+
+    bool result;
+
+    if (ctx.flags.o) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
+                &ctx.auths.owner.new.auth, NULL);
+        if (!result) {
+            LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
+            return false;
+        }
+    }
+
+    if (ctx.flags.e) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
+                &ctx.auths.endorse.new.auth, NULL);
+        if (!result) {
+            LOG_ERR("Invalid new endorse authorization, got\"%s\"",
+                ctx.endorse_auth_str);
+            return false;
+        }
+    }
+
+    if (ctx.flags.l) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
+                &ctx.auths.lockout.new.auth, NULL);
+        if (!result) {
+            LOG_ERR("Invalid new lockout authorization, got\"%s\"",
+                ctx.lockout_auth_str);
+            return false;
+        }
+    }
+
+    if (ctx.flags.O) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_old_str,
+                &ctx.auths.owner.old.auth, &ctx.auths.owner.old.session);
+        if (!result) {
+            LOG_ERR("Invalid current owner authorization, got\"%s\"",
+                ctx.owner_auth_old_str);
+            return false;
+        }
+    }
+
+    if (ctx.flags.E) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_old_str,
+                &ctx.auths.endorse.old.auth, &ctx.auths.endorse.old.session);
+        if (!result) {
+            LOG_ERR("Invalid current endorse authorization, got\"%s\"",
+                ctx.endorse_auth_old_str);
+            return false;
+        }
+    }
+
+    if (ctx.flags.L) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_old_str,
+                &ctx.auths.lockout.old.auth, &ctx.auths.lockout.old.session);
+        if (!result) {
+            LOG_ERR("Invalid current lockout authorization, got\"%s\"",
+                ctx.lockout_auth_old_str);
+            return false;
+        }
+    }
+
+    result = change_hierarchy_auth(sapi_context);
+    result &= tpm2_session_save(sapi_context, ctx.auths.endorse.old.session, NULL);
+    result &= tpm2_session_save(sapi_context, ctx.auths.owner.old.session, NULL);
+    result &= tpm2_session_save(sapi_context, ctx.auths.lockout.old.session, NULL);
+
+    return result;
+}
+
+static bool process_tpm_handle_auths(TSS2_SYS_CONTEXT *sapi_context) {
+
+    bool result;
+    if (ctx.flags.p) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.tpm_handle_auth_str,
+                &ctx.auths.tpm_handle.new.auth, NULL);
+        if (!result) {
+            LOG_ERR("Invalid new authorization for tpm handle, got\"%s\"",
+                ctx.tpm_handle_auth_str);
+            return false;
+        }
+    }
+
+    if (ctx.flags.P) {
+        result = tpm2_auth_util_from_optarg(sapi_context, ctx.tpm_handle_auth_old_str,
+                &ctx.auths.tpm_handle.old.auth, &ctx.auths.tpm_handle.old.session);
+        if (!result) {
+            LOG_ERR("Invalid current authorization for tpm handle, got\"%s\"",
+                ctx.tpm_handle_auth_old_str);
+            return false;
+        }
+        if(ctx.auths.tpm_handle.old.session != NULL) {
+            ctx.is_auth_policy_session_loaded = true;
+        }
+    }
+
+    return true;
+}
+
+static bool process_change_nv_handle_auth(TSS2_SYS_CONTEXT *sapi_context) {
+
+    bool result = process_tpm_handle_auths(sapi_context);
+    if (!result) {
+        return false;
+    }
+
+    if (!ctx.is_auth_policy_session_loaded) {
+        LOG_ERR("Must specify policy session containing NV Change Auth ");
+        return false;
+    }
+
+    TSS2L_SYS_AUTH_COMMAND cmd_sessions_data = {
+        .count = 1,
+        .auths = {ctx.auths.tpm_handle.old.auth},
+    };
+
+    cmd_sessions_data.auths[0].sessionHandle =
+        tpm2_session_get_handle(ctx.auths.tpm_handle.old.session);
+
+    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_NV_ChangeAuth(sapi_context,
+        ctx.tpm_handle_context_object.handle, &cmd_sessions_data,
+        &ctx.auths.tpm_handle.new.auth.hmac, NULL));
+
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_NV_ChangeAuth, rval);
+        return false;
+    }
+
+    return true;
+}
+
+static bool process_change_tpm_handle_auth(TSS2_SYS_CONTEXT *sapi_context) {
+
+    bool result = process_tpm_handle_auths(sapi_context);
+    if (!result) {
+        return false;
+    }
+
+    TSS2L_SYS_AUTH_COMMAND cmd_sessions_data = {
+        .count = 1,
+        .auths = { ctx.auths.tpm_handle.old.auth }
+    };
+
+    //Check needed to see if a policy session is being specified
+    if (ctx.is_auth_policy_session_loaded) {
+        cmd_sessions_data.auths[0].sessionHandle =
+            tpm2_session_get_handle(ctx.auths.tpm_handle.old.session);
+    }
+
+    TPM2B_PRIVATE outPrivate;
+
+    UINT32 rval = TSS2_RETRY_EXP(Tss2_Sys_ObjectChangeAuth(sapi_context,
+        ctx.tpm_handle_context_object.handle,
+        ctx.tpm_handle_parent_context_object.handle, &cmd_sessions_data,
+        &ctx.auths.tpm_handle.new.auth.hmac, &outPrivate, NULL));
+
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_ObjectChangeAuth, rval);
+        return false;
+    }
+
+    if (ctx.flags.r) {
+        bool res = files_save_private(&outPrivate, ctx.opr_path);
+        if (!res) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 static bool on_option(char key, char *value) {
 
     switch (key) {
@@ -166,6 +360,26 @@ static bool on_option(char key, char *value) {
         ctx.flags.L = 1;
         ctx.lockout_auth_old_str = value;
         break;
+    case 'c':
+        ctx.flags.c = 1;
+        ctx.tpm_handle_context_arg = value;
+        break;
+    case 'a':
+        ctx.flags.a = 1;
+        ctx.tpm_handle_parent_context_arg = value;
+        break;
+    case 'p':
+        ctx.flags.p = 1;
+        ctx.tpm_handle_auth_str = value;
+        break;
+    case 'P':
+        ctx.flags.P = 1;
+        ctx.tpm_handle_auth_old_str = value;
+        break;
+    case 'r':
+        ctx.opr_path = value;
+        ctx.flags.r = 1;
+        break;
         /*no default */
     }
 
@@ -175,88 +389,119 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
-        { "owner-passwd",       required_argument, NULL, 'o' },
-        { "endorse-passwd",     required_argument, NULL, 'e' },
-        { "lockout-passwd",     required_argument, NULL, 'l' },
-        { "old-auth-owner",     required_argument, NULL, 'O' },
-        { "old-auth-endorse",   required_argument, NULL, 'E' },
-        { "old-auth-lockout",   required_argument, NULL, 'L' },
+        //Special Permanent Handles: OWNER/ ENDORSEMENT/ LOCKOUT
+        { "new-owner-passwd",           required_argument, NULL, 'o' },
+        { "current-owner-passwd",       required_argument, NULL, 'O' },
+        { "new-endorsement-passwd",     required_argument, NULL, 'e' },
+        { "current-endorsement-passwd", required_argument, NULL, 'E' },
+        { "new-lockout-passwd",         required_argument, NULL, 'l' },
+        { "current-lockout-passwd",     required_argument, NULL, 'L' },
+        //Other TPM Handles: PERSISTENT/ TRANSIENT/ NV
+        { "new-handle-passwd",          required_argument, NULL, 'p' },
+        { "current-handle-passwd",      required_argument, NULL, 'P' },
+        { "key-context",                required_argument, NULL, 'c' },
+        //Additional parameters for PERSISTENT/ TRANSIENT Handles:
+        { "key-parent-context",         required_argument, NULL, 'a' },
+        { "privfile",                   required_argument, NULL, 'r' },
     };
 
-    *opts = tpm2_options_new("o:e:l:O:E:L:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:e:l:O:E:L:p:P:c:a:r:S:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
 }
 
+static bool is_input_option_args_valid(void) {
+
+    if (ctx.flags.c) {
+        switch((ctx.tpm_handle_context_object.handle & TPM2_HR_RANGE_MASK) >> TPM2_HR_SHIFT) {
+            case TPM2_HT_TRANSIENT:
+                ctx.is_transient = true;
+                break;
+            case TPM2_HT_PERSISTENT:
+                ctx.is_persistent = true;
+                break;
+            case TPM2_HT_NV_INDEX:
+                ctx.is_nv = true;
+                break;
+            default:
+                LOG_ERR("Unsupported handle type for auth change");
+                return false;
+        }
+    }
+
+    /*
+     * Handle specified without any intended operation
+     */
+    if (!ctx.flags.P && !ctx.flags.p && ctx.flags.c) {
+        LOG_ERR("Must specify the handle/context auths for set/modify operation.");
+        return false;
+    }
+
+    /*
+     * Clear auth value of an object --> ctx.flags.p = 0
+     * Set auth for an object that had no auth --> ctx.flags.P = 0
+     * Change old auth value to new auth value --> ctx.flags.p == ctx.flags.P = 1
+     */
+    if ((ctx.flags.P || ctx.flags.P) && !ctx.flags.c) {
+        LOG_ERR("Must specify the handle/context for auth change.");
+        return false;
+    }
+
+    if ((ctx.is_persistent || ctx.is_transient) && (!ctx.flags.a || !ctx.flags.r)) {
+        LOG_ERR("Must specify the parent handle/context of the key whose auth "
+         "is being changed along with the path to save the new sensitive data");
+        return false;
+    }
+
+    if ((ctx.is_persistent || ctx.is_transient) && ctx.is_nv) {
+        LOG_ERR("Specify a transient/persistent handle OR a NV Index, not both.");
+        return false;
+    }
+
+    return true;
+}
+
 int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
+
     bool result;
-
-    if (ctx.flags.o) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_str,
-                &ctx.auths.owner.new.auth, NULL);
+    if (ctx.flags.c) {
+        result = tpm2_util_object_load(sapi_context, ctx.tpm_handle_context_arg,
+            &ctx.tpm_handle_context_object);
         if (!result) {
-            LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
-            return 1;
+            LOG_ERR("Invalid TPM object handle");
+            return -1;
         }
     }
 
-    if (ctx.flags.e) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_str,
-                &ctx.auths.endorse.new.auth, NULL);
+    if (ctx.flags.a) {
+        result = tpm2_util_object_load(sapi_context, ctx.tpm_handle_parent_context_arg,
+            &ctx.tpm_handle_parent_context_object);
         if (!result) {
-            LOG_ERR("Invalid new endorse authorization, got\"%s\"",
-                ctx.endorse_auth_str);
-            return 1;
+            LOG_ERR("Invalid TPM object handle parent");
+            return -1;
         }
     }
 
-    if (ctx.flags.l) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_str,
-                &ctx.auths.lockout.new.auth, NULL);
-        if (!result) {
-            LOG_ERR("Invalid new lockout authorization, got\"%s\"",
-                ctx.lockout_auth_str);
-            return 1;
-        }
+    result = is_input_option_args_valid();
+    if (!result) {
+        return -1;
     }
 
-    if (ctx.flags.O) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.owner_auth_old_str,
-                &ctx.auths.owner.old.auth, &ctx.auths.owner.old.session);
-        if (!result) {
-            LOG_ERR("Invalid current owner authorization, got\"%s\"",
-                ctx.owner_auth_old_str);
-            return 1;
-        }
+    if (ctx.is_persistent || ctx.is_transient) {
+        result = process_change_tpm_handle_auth(sapi_context);
     }
 
-    if (ctx.flags.E) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.endorse_auth_old_str,
-                &ctx.auths.endorse.old.auth, &ctx.auths.endorse.old.session);
-        if (!result) {
-            LOG_ERR("Invalid current endorse authorization, got\"%s\"",
-                ctx.endorse_auth_old_str);
-            return 1;
-        }
+    if (ctx.is_nv) {
+        result = process_change_nv_handle_auth(sapi_context);
     }
 
-    if (ctx.flags.L) {
-        result = tpm2_auth_util_from_optarg(sapi_context, ctx.lockout_auth_old_str,
-                &ctx.auths.lockout.old.auth, &ctx.auths.lockout.old.session);
-        if (!result) {
-            LOG_ERR("Invalid current lockout authorization, got\"%s\"",
-                ctx.lockout_auth_old_str);
-            return 1;
-        }
+    if (ctx.flags.o || ctx.flags.e || ctx.flags.l || ctx.flags.O || ctx.flags.E
+            || ctx.flags.L) {
+        result = process_change_hierarchy_auth(sapi_context);
     }
-    result = change_hierarchy_auth(sapi_context);
-
-    result &= tpm2_session_save(sapi_context, ctx.auths.endorse.old.session, NULL);
-    result &= tpm2_session_save(sapi_context, ctx.auths.owner.old.session, NULL);
-    result &= tpm2_session_save(sapi_context, ctx.auths.lockout.old.session, NULL);
 
     /* true is success, coerce to 0 for program success */
     return result == false;
@@ -267,4 +512,5 @@ void tpm2_onexit(void) {
     tpm2_session_free(&ctx.auths.endorse.old.session);
     tpm2_session_free(&ctx.auths.owner.old.session);
     tpm2_session_free(&ctx.auths.lockout.old.session);
+    tpm2_session_free(&ctx.auths.tpm_handle.old.session);
 }
