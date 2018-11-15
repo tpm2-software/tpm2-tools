@@ -61,7 +61,7 @@ struct tpm2_session {
 
     struct {
         TPM2B_NONCE nonceNewer;
-        const char *path;
+        char *path;
     } internal;
 };
 
@@ -145,8 +145,12 @@ static bool start_auth_session(TSS2_SYS_CONTEXT *sapi_context,
 void tpm2_session_free(tpm2_session **session) {
 
     tpm2_session *s = *session;
+
     if (s) {
         free(s->input);
+        if (s->internal.path) {
+            free(s->internal.path);
+        }
         free(s);
         *session = NULL;
     }
@@ -202,10 +206,20 @@ tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path) 
 
     tpm2_session *s = NULL;
 
-    FILE *f = fopen(path, "rb");
+    /*
+     * Copy the string internally so callers need
+     * not worry about it.
+     */
+    char *dup_path = strdup(path);
+    if (!dup_path) {
+        LOG_ERR("oom");
+        return NULL;
+    }
+
+    FILE *f = fopen(dup_path, "rb");
     if (!f) {
         LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
-                path, strerror(errno));
+                dup_path, strerror(errno));
         return NULL;
     }
 
@@ -256,7 +270,7 @@ tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path) 
         s->output.session_handle = handle;
     }
 
-    s->internal.path = path;
+    s->internal.path = dup_path;
 
 out:
     fclose(f);

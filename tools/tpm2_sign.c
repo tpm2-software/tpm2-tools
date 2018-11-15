@@ -289,11 +289,12 @@ out:
         rc = 1;
     }
 
+    tpm2_session_free(&ctx.auth.session);
+
     return rc;
 }
 
 void tpm2_tool_onexit(void) {
 
     free(ctx.msg);
-    tpm2_session_free(&ctx.auth.session);
 }
