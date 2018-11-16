@@ -28,6 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
+#include <limits.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdlib.h>
@@ -48,7 +49,7 @@
 #define SESSION_PREFIX "session:"
 #define SESSION_PREFIX_LEN sizeof(SESSION_PREFIX) - 1
 
-static bool handle_hex(const char *password, TPMS_AUTH_COMMAND *auth) {
+static bool handle_hex_password(const char *password, TPMS_AUTH_COMMAND *auth) {
 
     /* if it is hex, then skip the prefix */
     password += HEX_PREFIX_LEN;
@@ -63,31 +64,7 @@ static bool handle_hex(const char *password, TPMS_AUTH_COMMAND *auth) {
     return true;
 }
 
-static bool handle_session(TSS2_SYS_CONTEXT *sys_ctx, const char *path, TPMS_AUTH_COMMAND *auth,
-        tpm2_session **session) {
-
-    /* if it is session, then skip the prefix */
-    path += SESSION_PREFIX_LEN;
-
-    *session = tpm2_session_restore(sys_ctx, path);
-    if (!*session) {
-        return false;
-    }
-
-    auth->sessionHandle = tpm2_session_get_handle(*session);
-
-    bool is_trial = tpm2_session_is_trial(*session);
-    if (is_trial) {
-        LOG_ERR("A trial session cannot be used to authenticate, "
-                "Please use an hmac or policy session");
-        tpm2_session_free(session);
-        return false;
-    }
-
-    return true;
-}
-
-static bool handle_str(const char *password, TPMS_AUTH_COMMAND *auth) {
+static bool handle_str_password(const char *password, TPMS_AUTH_COMMAND *auth) {
 
     /* str may or may not have the str: prefix */
     bool is_str_prefix = !strncmp(password, STR_PREFIX, STR_PREFIX_LEN);
@@ -110,48 +87,77 @@ static bool handle_str(const char *password, TPMS_AUTH_COMMAND *auth) {
     return true;
 }
 
+static bool handle_password(const char *password, TPMS_AUTH_COMMAND *auth) {
+
+    bool is_hex = !strncmp(password, HEX_PREFIX, HEX_PREFIX_LEN);
+    if (is_hex) {
+        return handle_hex_password(password, auth);
+    }
+
+    /* must be string, handle it */
+    return handle_str_password(password, auth);
+}
+
+static bool handle_session(TSS2_SYS_CONTEXT *sys_ctx, const char *path, TPMS_AUTH_COMMAND *auth,
+        tpm2_session **session) {
+
+    /* if it is session, then skip the prefix */
+    path += SESSION_PREFIX_LEN;
+
+    /* Make a local copy for manipulation */
+    char tmp[PATH_MAX];
+    size_t len = snprintf(tmp, sizeof(tmp), "%s", path);
+    if (len >= sizeof(tmp)) {
+        LOG_ERR("Path truncated");
+        return false;
+    }
+
+    /*
+     * Sessions can have an associated password/auth value denoted after
+     * a + sign, ie session.ctx+foo, deal with it by
+     * finding a +, splitting the string on it, and if
+     * not a NULL byte after the +, use that as a password.
+     */
+    char *password = strchr(tmp, '+');
+    if (password) {
+        *password = '\0';
+        password++;
+        if (*password) {
+            bool result = handle_password(password, auth);
+            if (!result) {
+                return false;
+            }
+        }
+    }
+
+    *session = tpm2_session_restore(sys_ctx, tmp);
+    if (!*session) {
+        return false;
+    }
+
+    auth->sessionHandle = tpm2_session_get_handle(*session);
+
+    bool is_trial = tpm2_session_is_trial(*session);
+    if (is_trial) {
+        LOG_ERR("A trial session cannot be used to authenticate, "
+                "Please use an hmac or policy session");
+        tpm2_session_free(session);
+        return false;
+    }
+
+    return true;
+}
+
 bool tpm2_auth_util_from_optarg(TSS2_SYS_CONTEXT *sys_ctx, const char *password,
     TPMS_AUTH_COMMAND *auth, tpm2_session **session) {
 
-    char *password_string_ptr;
-    char *password_string = strdup(password);
-    if (!password_string) {
-        LOG_ERR("OOM");
+    bool is_session = !strncmp(password, SESSION_PREFIX, SESSION_PREFIX_LEN);
+    if (is_session && !session) {
+        LOG_ERR("Tool does not support sessions for this auth value");
         return false;
     }
-    password_string_ptr = password_string;
 
-    bool result;
-    bool is_hex;
-    bool is_session;
-
-    const char *password_token;
-
-    while( (password_token = strsep(&password_string,"+")) != NULL ) {
-        is_hex = !strncmp(password_token, HEX_PREFIX, HEX_PREFIX_LEN);
-        is_session = !strncmp(password_token, SESSION_PREFIX, SESSION_PREFIX_LEN);
-        if (is_session && !session) {
-            LOG_ERR("Tool does not support sessions for this auth value");
-            return false;
-        }
-
-        if (is_hex) {
-            result = handle_hex(password_token, auth);
-        } else if (is_session) {
-            result = handle_session(sys_ctx, password_token, auth, session);
-        } else {
-            /* must be string, handle it */
-            result = handle_str(password_token, auth);
-        }
-
-        if (result) {
-            continue;
-        } else {
-            free((char*)password_string_ptr);
-            return false;
-        }
-
-    }
-    free((char*)password_string_ptr);
-    return true;
+    return is_session ?
+         handle_session(sys_ctx, password, auth, session) :
+         handle_password(password, auth);
 }
