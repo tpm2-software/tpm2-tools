@@ -134,10 +134,10 @@ class ToolConflictor(object):
             },
             {
                 "gname": "ea",
-                "tools-in-group": ["tpm2_policypcr", "tpm2_createpolicy", "tpm2_policyauthorize", "tpm2_policyor", "tpm2_policypassword", "tpm2_policycommandcode"],
+                "tools-in-group": ["tpm2_policypcr", "tpm2_createpolicy", "tpm2_policyauthorize", "tpm2_policyor", "tpm2_policypassword", "tpm2_policycommandcode", "tpm2_policysecret"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['S', 'session', 'q', 'qualifier', 'n', 'name', 't', 'ticket', 'L', 'policy-list', 'o', 'policy-file'])
+                "ignore": set(['S', 'session', 'q', 'qualifier', 'n', 'name', 't', 'ticket', 'L', 'policy-list', 'o', 'policy-file', 'c', 'context'])
             },
             {
                 "gname": "hierarchy",
