@@ -206,14 +206,14 @@ bool tpm2_hash_compute_data(TSS2_SYS_CONTEXT    *sapi_context,
                             TPM2B_DIGEST        *result,
                             TPMT_TK_HASHCHECK   *validation)
 {
-    return tpm2_hash_common(    sapi_context,
-                                halg,
-                                hierarchy,
-                                NULL,
-                                buffer,
-                                length,
-                                result,
-                                validation);
+    return (!!buffer) && tpm2_hash_common( sapi_context,
+                                            halg,
+                                            hierarchy,
+                                            NULL,
+                                            buffer,
+                                            length,
+                                            result,
+                                            validation);
 }
 
 bool tpm2_hash_file(TSS2_SYS_CONTEXT    *sapi_context,
@@ -223,12 +223,12 @@ bool tpm2_hash_file(TSS2_SYS_CONTEXT    *sapi_context,
                     TPM2B_DIGEST        *result,
                     TPMT_TK_HASHCHECK   *validation)
 {
-    return tpm2_hash_common(    sapi_context,
-                                halg,
-                                hierarchy,
-                                input,
-                                NULL,
-                                0,
-                                result,
-                                validation);
+    return (!!input) && tpm2_hash_common( sapi_context,
+                                            halg,
+                                            hierarchy,
+                                            input,
+                                            NULL,
+                                            0,
+                                            result,
+                                            validation);
 }
