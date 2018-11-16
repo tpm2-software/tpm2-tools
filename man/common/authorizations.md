@@ -29,4 +29,23 @@ HMAC tickets can be presented as hex escaped passwords.
 
 When using a policy session to authorize the use of an object, prefix the option argument
 with the *session* keyword.  Then indicate a path to a session file that was created
-with tpm2_startauthsession(1).
+with tpm2_startauthsession(1). Optionally, if the session requires an auth value to be
+sent with the session handle (eg policy password), then append a + and a string as described
+in the **Passwords** section.
+
+### Examples
+
+To use a session context file called *session.ctx*.
+```
+session:session.ctx
+```
+
+To use a session context file called *session.ctx* **AND** send the authvalue mypassword.
+```
+session:session.ctx+mypassword
+```
+
+To use a session context file called *session.ctx* **AND** send the *HEX* authvalue 0x11223344.
+```
+session:session.ctx+hex:11223344
+```
