@@ -45,7 +45,7 @@ AM_CFLAGS := \
 AM_LDFLAGS   := $(EXTRA_LDFLAGS) $(CODE_COVERAGE_LIBS)
 
 LDADD = \
-    $(LIB_COMMON) $(TSS2_SYS_LIBS) $(CRYPTO_LIBS) -ldl
+    $(LIB_COMMON) $(TSS2_SYS_LIBS) $(CRYPTO_LIBS) $(LIBDL_LDFLAGS)
 
 # keep me sorted
 bin_PROGRAMS = \
@@ -99,6 +99,7 @@ bin_PROGRAMS = \
     tools/tpm2_startup \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
+
 
 noinst_LIBRARIES = $(LIB_COMMON)
 lib_libcommon_a_SOURCES = $(LIB_SRC)

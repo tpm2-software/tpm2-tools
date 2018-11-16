@@ -43,6 +43,20 @@ PKG_CHECK_VAR(bashcompdir, [bash-completion], [compatdir], ,
   bashcompdir="${sysconfdir}/bash_completion.d")
 AC_SUBST(bashcompdir)
 
+AC_CANONICAL_HOST
+
+# Check OS and set library and compile flags accordingly
+case "${host_os}" in
+    *nto-qnx*)
+        EXTRA_CFLAGS="$EXTRA_CFLAGS -D_QNX_SOURCE"
+        LIBDL_LDFLAGS=""
+        ;;
+    *)
+        LIBDL_LDFLAGS="-ldl"
+        ;;
+esac
+AC_SUBST([LIBDL_LDFLAGS])
+
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
                             [build cmocka unit tests (default is no)])],

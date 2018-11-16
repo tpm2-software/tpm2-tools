@@ -38,8 +38,9 @@
 #include <fcntl.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <libgen.h>
 
-#include <linux/limits.h>
+#include <limits.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
