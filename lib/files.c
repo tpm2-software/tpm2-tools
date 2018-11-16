@@ -536,8 +536,8 @@ bool files_read_header(FILE *out, uint32_t *version) {
     return files_read_32(out, version);
 }
 
-bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer, const char *path,
-    UINT16 *size, BYTE *buf) {
+bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
+    const char *path, UINT16 *size, BYTE *buf) {
 
     if (input_buffer && path) {
         LOG_ERR("Specify either the input buffer or file path to load data, no both");

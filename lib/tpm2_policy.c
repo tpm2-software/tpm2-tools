@@ -323,6 +323,26 @@ bool tpm2_policy_build_policypassword(TSS2_SYS_CONTEXT *sapi_context,
         LOG_PERR(Tss2_Sys_PolicyPassword, rval);
         return false;
     }
+
+    return true;
+}
+
+bool tpm2_policy_build_policysecret(TSS2_SYS_CONTEXT *sapi_context,
+    tpm2_session *policy_session, TPMS_AUTH_COMMAND session_data,
+    TPM2_HANDLE handle) {
+
+    TSS2L_SYS_AUTH_COMMAND sessions_data = { 1, { session_data }};
+    TSS2L_SYS_AUTH_RESPONSE sessions_data_out;
+
+    TSS2_RC rval = Tss2_Sys_PolicySecret(sapi_context, handle,
+        tpm2_session_get_handle(policy_session), &sessions_data, NULL, NULL,
+        NULL, 0, NULL, NULL, &sessions_data_out);
+
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_PolicySecret, rval);
+        return false;
+    }
+
     return true;
 }
 

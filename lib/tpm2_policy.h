@@ -101,6 +101,25 @@ bool tpm2_policy_build_policyor(TSS2_SYS_CONTEXT *sapi_context,
     tpm2_session *policy_session, TPML_DIGEST policy_list);
 
 /**
+ * Enables secret (password/hmac) based authorization to a policy.
+ *
+ * @param sapi_context
+ *  The system api context
+ * @param policy_session into which the policy digest is extended into
+ *  The policy session
+ * @param[in] session_data
+ *  The command authentication data
+ * @param[in] handle
+ *  The handle-id of the authentication object
+ *
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_policy_build_policysecret(TSS2_SYS_CONTEXT *sapi_context,
+    tpm2_session *policy_session, TPMS_AUTH_COMMAND session_data,
+    TPM2_HANDLE handle);
+
+/**
  * Retrieves the policy digest for a session via Tss2_Sys_PolicyGetDigest.
  * @param sapi_context
  *  The system api context.
