@@ -140,4 +140,17 @@ bool tpm2_policy_build_policypassword(TSS2_SYS_CONTEXT *sapi_context,
  */
 bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list);
 
+/**
+ * Policy to restrict tpm object authorization to specific commands
+ *
+ * @param sapi_context
+ *   The system api context
+ * @param policy_session
+ *   The policy session into which the policy digest is extended into
+ * @param command_code
+ *   The command code of the command authorized to use the object
+ */
+bool tpm2_policy_build_policycommandcode(TSS2_SYS_CONTEXT *sapi_context,
+    tpm2_session *session, uint32_t command_code);
+
 #endif /* TPM2_POLICY_H_ */
