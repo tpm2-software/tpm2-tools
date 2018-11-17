@@ -48,7 +48,8 @@ static bool tpm2_hash_common(   TSS2_SYS_CONTEXT    *sapi_context,
                                 TPMT_TK_HASHCHECK   *validation)
 {
     bool res, use_left, done;
-    size_t left, bytes_read;
+    unsigned long left;
+    size_t bytes_read;
     TSS2_RC rval;
     TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
     TPMI_DH_OBJECT sequenceHandle;
