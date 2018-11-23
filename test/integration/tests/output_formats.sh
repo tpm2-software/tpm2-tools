@@ -81,7 +81,7 @@ trap cleanup EXIT
 
 start_up
 
-head -c 4096 /dev/random > $file_hash_input
+head -c 4096 /dev/urandom > $file_hash_input
 
 tpm2_createek -Q -G $alg_ek -p "$file_pubek_orig" -c $handle_ek
 
