@@ -40,7 +40,7 @@ function get_deps() {
 		git clone --depth=1 https://github.com/tpm2-software/tpm2-tss.git
 		pushd tpm2-tss
 		echo "pwd build tss: `pwd`"
-		./bootstrap
+		./bootstrap -I /usr/share/gnulib/m4
 		./configure CFLAGS=-g
 		make -j4
 		make install
