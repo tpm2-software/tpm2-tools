@@ -538,63 +538,51 @@ bool files_read_header(FILE *out, uint32_t *version) {
 
 bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
     const char *path, UINT16 *size, BYTE *buf) {
-
-    if (input_buffer && path) {
-        LOG_ERR("Specify either the input buffer or file path to load data, no both");
-    }
-
-    FILE *file;
-    if (input_buffer) {
-        file = fmemopen(input_buffer, strlen (input_buffer), "r");
-        if (file == NULL) {
-            LOG_ERR("Failed reading input buffer to file.");
-            return false;
-        }
-    }
-
-    if (!input_buffer) {
-        file =  path ? fopen(path, "rb") : stdin;
-        path = file != stdin ? path : "<stdin>";
-    }
-
-    if (!file) {
-        LOG_ERR("Could not open file: \"%s\", error: %s", path,
-                strerror(errno));
-        return false;
-    }
-
-    /*
-     * Attempt to accurately read the file based on the file size.
-     * This may fail on stdin when it's a pipe.
-     */
-    if (file == stdin) {
-        path = NULL;
-    }
-
+    bool res;
     UINT16 original_size = *size;
-    bool res = read_bytes_from_file(file, buf,
-            size, path);
-    if (!res) {
-        res = true;
-        *size = fread(buf, 1,
-                *size, file);
-        if (!feof(file)) {
-            LOG_ERR("Data larger than expected. Got %u expected %u",
-                    original_size, res);
-            res = false;
+
+    if (input_buffer) {
+        size_t input_buffer_size = strlen(input_buffer);
+        if (path) {
+            LOG_ERR("Specify either the input buffer or file path to load data, not both");
         }
-        else if (ferror(file)) {
-            LOG_ERR("Error reading data from \"<stdin>\"");
+        if (input_buffer_size != (size_t)original_size) {
+            LOG_ERR("Unexpected data size. Got %u expected %u",
+                    original_size, (unsigned)input_buffer_size);
             res = false;
+        } else {
+            memcpy(buf, input_buffer, input_buffer_size);
+            res = true;
+        }
+    } else {
+        if (path) {
+            res = files_load_bytes_from_path(path, buf, size);
+        } else {
+            /*
+             * Attempt to accurately read the file based on the file size.
+             * This may fail on stdin when it's a pipe.
+             */
+            res = read_bytes_from_file(stdin, buf, size, path);
+            if (!res) {
+                *size = fread(buf, 1, *size, stdin);
+                if (ferror(stdin)) {
+                    LOG_ERR("Error reading data from \"<stdin>\"");
+                    res = false;
+                } else {
+                    if (!feof(stdin)) {
+                        LOG_ERR("Data larger than expected. Got %u expected %u",
+                                original_size, *size);
+                        res = false;
+                    } else {
+                        res = true;
+                    }
+                }
+            }
         }
     }
-
-    if (file != stdin) {
-        fclose(file);
-    }
-
     return res;
 }
+
 
 #define SAVE_TYPE(type, name) \
     bool files_save_##name(type *name, const char *path) { \
