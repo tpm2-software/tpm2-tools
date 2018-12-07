@@ -270,9 +270,10 @@ tpm2_session *tpm2_session_restore(TSS2_SYS_CONTEXT *sys_ctx, const char *path) 
         s->output.session_handle = handle;
     }
 
-    s->internal.path = dup_path;
+    s->internal.path = strdup(dup_path);
 
 out:
+    free(dup_path);
     fclose(f);
     return s;
 }
