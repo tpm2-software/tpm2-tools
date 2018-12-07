@@ -135,6 +135,7 @@ AS_IF([test x"$hardening" != x"no"], [
   add_hardened_c_flag([-Wformat-security])
   add_hardened_c_flag([-Wstack-protector])
   add_hardened_c_flag([-fstack-protector-all])
+  add_hardened_c_flag([-Wstrict-overflow=5])
 
   add_hardened_define_flag([-U_FORTIFY_SOURCE])
   add_hardened_define_flag([-D_FORTIFY_SOURCE=2])
