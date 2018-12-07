@@ -118,8 +118,24 @@ static bool sign_and_save(TSS2_SYS_CONTEXT *sapi_context) {
 
 static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
-    if (!(ctx.context_arg && (ctx.flags.m || ctx.flags.D) && ctx.flags.s)) {
-        LOG_ERR("Expected options (k or c) and (m or D) and s");
+    bool option_fail = false;
+
+    if (!ctx.context_arg) {
+        LOG_ERR("Expected option c");
+        option_fail = true;
+    }
+
+    if (!ctx.flags.m && !ctx.flags.D) {
+        LOG_ERR("Expected options m or D");
+        option_fail = true;
+    }
+
+    if (!ctx.flags.s) {
+        LOG_ERR("Expected option s");
+        option_fail = true;
+    }
+
+    if (option_fail) {
         return false;
     }
 
