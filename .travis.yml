@@ -15,4 +15,4 @@ script:
   - ./.ci/travis.run
 
 after_failure:
-  - cat build/test-suite.log
+  - find . -name test-suite.log | xargs cat
