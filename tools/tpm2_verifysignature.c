@@ -174,7 +174,7 @@ static bool init(TSS2_SYS_CONTEXT *sapi_context) {
 
     /* If no digest is specified, compute it */
     if (!ctx.flags.digest) {
-        if (!ctx.flags.msg) {
+        if (!msg) {
             /*
              * This is a redundant check since main() checks this case, but we'll add it here to silence any
              * complainers.
