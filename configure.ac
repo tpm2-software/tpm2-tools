@@ -156,11 +156,15 @@ you should consider fixing the configure script compiler flags
 and submitting patches upstream!])
 ])
 
+AC_DEFUN([add_c_flag], [
+  AX_CHECK_COMPILE_FLAG([$1],
+    [EXTRA_CFLAGS="$EXTRA_CFLAGS $1"],
+    $2
+  )
+])
+
 # -D_GNU_SOURCE is required for execvpe() in options.c
-AX_CHECK_PREPROC_FLAG([-D_GNU_SOURCE],
-  [EXTRA_CFLAGS="$EXTRA_CFLAGS -D_GNU_SOURCE"],
-  [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])]
-)
+add_c_flag([-D_GNU_SOURCE], [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])])
 
 # Best attempt, strip unused stuff from the binary to reduce size.
 # Rather than nesting these and making them ugly just use a counter.
