@@ -171,6 +171,7 @@ add_c_flag([-D_GNU_SOURCE], [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])])
 add_c_flag([-Wstringop-overflow=4])
 add_c_flag([-Wstringop-truncation])
 add_c_flag([-Wduplicated-branches])
+add_c_flag([-Wduplicated-cond])
 
 # Best attempt, strip unused stuff from the binary to reduce size.
 # Rather than nesting these and making them ugly just use a counter.
