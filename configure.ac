@@ -166,6 +166,10 @@ AC_DEFUN([add_c_flag], [
 # -D_GNU_SOURCE is required for execvpe() in options.c
 add_c_flag([-D_GNU_SOURCE], [AC_MSG_ERROR([Cannot enable -D_GNU_SOURCE])])
 
+# Best attempt compiler options that are on newer versions of GCC that
+# we can't widely enforce without killing other peoples builds
+add_c_flag([-Wstringop-overflow=4])
+
 # Best attempt, strip unused stuff from the binary to reduce size.
 # Rather than nesting these and making them ugly just use a counter.
 AX_CHECK_COMPILE_FLAG([-fdata-sections], [strip+="y"])
