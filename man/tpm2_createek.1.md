@@ -15,6 +15,9 @@
 **tpm2_createek**(1) - Generate TCG profile compliant endorsement key (EK), which is the primary object
 of the endorsement hierarchy. If any password option is missing, assume NULL for the password.
 
+If a transient object is generated the tool outputs a context file, named either
+_ek.ctx_ or the value specified via **-c**, for future tool interactions.
+
 Refer to:
 <http://www.trustedcomputinggroup.org/files/static_page_files/7CAA5687-1A4B-B294-D04080D058E86C5F>
 
@@ -34,8 +37,8 @@ Refer to:
     Same formatting as the endorse password value or **-e** option.
 
   * **-c**, **--context**=_CONTEXT\_OBJECT_:
-    Optional, specifies a context object used to store the EK, either a path to
-    save the context of the EK or a handle used to persist EK in the TPM.
+    Specifies the name of a context object used to store the EK, either a path
+    to save the context of the EK or a handle used to persist EK in the TPM.
     See section "Context Object Format".
 
     If a value of **-** is passed the tool will find a vacant persistent handle
@@ -93,7 +96,7 @@ tpm2_createek -g rsa
 
 Create a transient Endorsement Key, flush it, and reload it.
 ```
-tpm2_createek -g rsa -p ek.pub -c ek.ctx
+tpm2_createek -g rsa -p ek.pub
 
 # Check that it is loaded in transient memory
 tpm2_getcap -c handles-transient
