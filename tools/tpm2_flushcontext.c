@@ -182,11 +182,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
             tpm2_session_free(&s);
         } else {
-            bool result;
+            tpm2_object_load_rc olrc;
 
-            result = tpm2_util_object_load(ectx, ctx.context_arg,
+            olrc = tpm2_util_object_load(ectx, ctx.context_arg,
                         &ctx.context_object);
-            if (!result) {
+            if (olrc == olrc_error) {
                 return 1;
             }
 

@@ -468,50 +468,49 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     }
 }
 
-bool object_load_pre(const char *objectstr, tpm2_loaded_object *outobject) {
+tpm2_object_load_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
+                        const char *objectstr, tpm2_loaded_object *outobject) {
 
-    bool fullyloaded = false;
+    // 0. If objecstr is NULL return error
+    if (!objectstr) {
+        LOG_ERR("tpm2_util_object_load called with empty objectstr parameter");
+        return olrc_error;
+    }
+
+    tpm2_object_load_rc olrc;
+
+    // 1. If the objectstr starts with a file: prefix, treat as a context file
     bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
-
     if (starts_with_file) {
         outobject->path = objectstr += FILE_PREFIX_LEN;
+        olrc = olrc_file;
     } else {
-        fullyloaded = tpm2_util_string_to_uint32(objectstr, &outobject->handle);
-        if (fullyloaded) {
-            // have a handle, done
+        // 2. Try to load objectstr as a TPM2_HANDLE
+        bool loaded = tpm2_util_string_to_uint32(objectstr,
+                        &outobject->handle);
+        if (loaded) {
+            // we have a handle
             outobject->path = NULL;
             outobject->tr_handle = 0;
+            olrc = olrc_handle;
         } else {
-            // assume this is a file path
+            // we must assume this is a file path
             outobject->path = objectstr;
+            olrc = olrc_file;
         }
     }
 
-    return fullyloaded;
-}
-
-bool tpm2_util_object_load(ESYS_CONTEXT *ctx, const char *objectstr,
-        tpm2_loaded_object *outobject) {
-
-    if (!objectstr) {
-        return false;
+    // 3. if we have a context file, attempt to load it into the TPM
+    if (olrc == olrc_file) {
+        bool loaded = files_load_tpm_context_from_path(ctx, &outobject->handle,
+                       &outobject->tr_handle, outobject->path);
+        if (!loaded) {
+            LOG_ERR("Could not load context file at path: \"%s\"", objectstr);
+            olrc = olrc_error;
+        }
     }
 
-    bool result;
-    result = object_load_pre(objectstr, outobject);
-    if (result) {
-        return result;
-    }
-
-    result = files_load_tpm_context_from_path(ctx, &outobject->handle,
-                &outobject->tr_handle, outobject->path);
-    if (!result) {
-        LOG_ERR("Could not load object, got: \"%s\"", objectstr);
-        goto out;
-    }
-
-out:
-    return result;
+    return olrc;
 }
 
 bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,

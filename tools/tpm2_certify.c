@@ -284,9 +284,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     /* Load input files */
-    result = tpm2_util_object_load(ectx, ctx.context_arg,
-            &ctx.context_object);
-    if (!result) {
+    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+                                    &ctx.context_object);
+    if (olrc == olrc_error) {
         tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
                 ctx.context_object.handle, ctx.context_object.path);
         goto out;
@@ -295,9 +295,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             &ctx.context_object.tr_handle);
     }
 
-    result = tpm2_util_object_load(ectx, ctx.key_context_arg,
+    olrc = tpm2_util_object_load(ectx, ctx.key_context_arg,
             &ctx.key_context_object);
-    if (!result) {
+    if (olrc == olrc_error) {
         tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
                 ctx.key_context_object.handle, ctx.key_context_object.path);
         goto out;

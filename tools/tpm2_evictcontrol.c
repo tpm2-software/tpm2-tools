@@ -129,10 +129,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     int rc = 1;
     bool result;
+    tpm2_object_load_rc olrc;
 
-    result = tpm2_util_object_load(ectx, ctx.context_arg,
+    olrc = tpm2_util_object_load(ectx, ctx.context_arg,
                 &ctx.context_object);
-    if (!result) {
+    if (olrc == olrc_error) {
         goto out;
     }
 
@@ -140,8 +141,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * associated ESYS_TR for ESAPI calls
      */
     if (!ctx.context_object.tr_handle) {
-        tpm2_util_sys_handle_to_esys_handle(ectx, ctx.context_object.handle,
-            &ctx.context_object.tr_handle);
+        result = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.context_object.handle, &ctx.context_object.tr_handle);
+        if (!result) {
+            goto out;
+        }
     }
 
     /* If we load from a saved context we won't have a TPM2_HANDLE, which we

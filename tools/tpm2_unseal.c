@@ -140,9 +140,10 @@ static bool init(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    bool retval = tpm2_util_object_load(ectx, ctx.context_arg,
-                    &ctx.context_object);
-    if (!retval) {
+    bool retval;
+    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+                                &ctx.context_object);
+    if (olrc == olrc_error) {
         return false;
     } else if (!ctx.context_object.tr_handle) {
         retval = tpm2_util_sys_handle_to_esys_handle(ectx,
