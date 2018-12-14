@@ -143,7 +143,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth-object",          required_argument, NULL, 'p' },
         { "halg",                 required_argument, NULL, 'g' },
         { "kalg",                 required_argument, NULL, 'G' },
-        { "out-context",          required_argument, NULL, 'o' },
+        { "out-context-name",     required_argument, NULL, 'o' },
         { "policy-file",          required_argument, NULL, 'L' },
         { "object-attributes",    required_argument, NULL, 'A' },
     };
@@ -159,6 +159,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     bool result;
     int rc = 1;
+
+    if (!ctx.context_file || ctx.context_file[0] == '\0') {
+        ctx.context_file = "primary.ctx";
+    }
 
     if (ctx.flags.P) {
         result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str, &ctx.auth.session_data, &ctx.auth.session);
@@ -192,21 +196,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);
 
-    TPM2_HANDLE tpm_hndl;
-    result = tpm2_util_esys_handle_to_sys_handle(ectx, ctx.objdata.out.handle,
-                &tpm_hndl);
+    result = files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
+        ctx.context_file);
     if (!result) {
         goto out;
     }
-    tpm2_tool_output("handle: 0x%X\n", tpm_hndl);
-
-    if (ctx.context_file) {
-        result = files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
-            ctx.context_file);
-        if (!result) {
-            goto out;
-        }
-    }
+    tpm2_tool_output("context-file: %s\n", ctx.context_file);
 
     rc = 0;
 

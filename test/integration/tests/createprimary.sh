@@ -37,7 +37,7 @@ start_up
 
 cleanup() {
 
-  rm -f policy.bin obj.pub pub.out
+  rm -f policy.bin obj.pub pub.out primary.ctx
 
   ina "$@" "keep-context"
   if [ $? -ne 0 ]; then
@@ -83,5 +83,9 @@ test "$policy_orig" == "$policy_new"
 
 # Test that -g/-G do not need to be specified.
 tpm2_createprimary -Q -o context.out
+
+# Test that -o does not need to be specified.
+tpm2_createprimary -Q
+test -f primary.ctx
 
 exit 0
