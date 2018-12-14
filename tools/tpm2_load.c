@@ -95,14 +95,6 @@ int load (ESYS_CONTEXT *ectx) {
         return -1;
     }
 
-    TPM2_HANDLE tpm_handle;
-    bool ok = tpm2_util_esys_handle_to_sys_handle(ectx, ctx.handle,
-                &tpm_handle);
-    if (!ok) {
-        return -1;
-    }
-    tpm2_tool_output("handle: 0x%08x\n", tpm_handle);
-
     if (ctx.out_name_file) {
 
         TPM2B_NAME *nameExt;
@@ -221,13 +213,15 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.o) {
-        result = files_save_tpm_context_to_path(ectx,
-                    ctx.handle,
-                    ctx.context_file);
-        if (!result) {
-            goto out;
-        }
+    if (!ctx.context_file || ctx.context_file[0] == '\0') {
+        ctx.context_file = "object.ctx";
+    }
+
+    result = files_save_tpm_context_to_path(ectx,
+                ctx.handle,
+                ctx.context_file);
+    if (!result) {
+        goto out;
     }
 
     rc = 0;
