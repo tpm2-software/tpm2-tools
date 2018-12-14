@@ -410,6 +410,9 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
+    // TODO: this transient object should just be dumped as a context for
+    // passing around.
+
     LOG_INFO("Loaded key handle 0x%X", loaded_key_handle);
 
     // Load the TPM2 handle so that we can print it
@@ -645,8 +648,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         tpm2_tool_output("ak-persistent-handle: 0x%x\n", ctx.ak.in.handle);
     }
 
-    ret = tpm2_util_object_load(ectx, ctx.ek.ctx_arg, &ctx.ek.ek_ctx);
-    if (!ret) {
+    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
+                                &ctx.ek.ek_ctx);
+    if (olrc == olrc_error) {
         return 1;
     }
 

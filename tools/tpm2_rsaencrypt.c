@@ -132,9 +132,9 @@ static bool init(ESYS_CONTEXT *context) {
         return false;
     }
 
-    bool result = tpm2_util_object_load(context, ctx.context_arg,
-                    &ctx.key_context);
-    if (!result) {
+    tpm2_object_load_rc olrc = tpm2_util_object_load(context,
+                                ctx.context_arg, &ctx.key_context);
+    if (olrc == olrc_error) {
         return false;
     }
 

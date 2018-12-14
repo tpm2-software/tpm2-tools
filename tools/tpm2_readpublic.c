@@ -147,9 +147,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool init(ESYS_CONTEXT *context) {
 
-    bool result = tpm2_util_object_load(context,
-                    ctx.context_arg, &ctx.context_object);
-    if (!result) {
+    tpm2_object_load_rc olrc = tpm2_util_object_load(context,
+                                ctx.context_arg, &ctx.context_object);
+    if (olrc == olrc_error) {
         return false;
     }
 

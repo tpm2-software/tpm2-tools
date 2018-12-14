@@ -286,9 +286,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.context_arg,
+    tpm2_object_load_rc olrc;
+    olrc = tpm2_util_object_load(ectx, ctx.context_arg,
             &ctx.context_object);
-    if (!result) {
+    if (olrc == olrc_error) {
         goto out;
     }
 

@@ -126,6 +126,13 @@ typedef struct {
     BYTE buffer[0];
 } TPM2B;
 
+typedef enum tpm2_object_load_rc tpm2_object_load_rc;
+enum tpm2_object_load_rc {
+    olrc_error     = 0,      /* an error has occurred */
+    olrc_handle   = 1 << 0,  /* successfully loaded a private portion of object */
+    olrc_file    = 1 << 1,   /* successfully loaded a public portion of object */
+};
+
 typedef struct tpm2_loaded_object tpm2_loaded_object;
 struct tpm2_loaded_object {
     TPM2_HANDLE handle;
@@ -324,8 +331,8 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent);
  * A *tpm2_loaded_object* with a loaded handle. The path member will also be
  * set when the *objectstr* is a context file.
  */
-bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
-        const char *objectstr, tpm2_loaded_object *outobject);
+tpm2_object_load_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
+                        const char *objectstr, tpm2_loaded_object *outobject);
 
 /**
  * Calculates the unique public field. The unique public field is the digest, based on name algorithm
