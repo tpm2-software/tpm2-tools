@@ -339,18 +339,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     }
     LOG_INFO("Esys_PolicySecret success");
 
-    // Snapshot loaded transient handles, we'll then delta this list to
-    // determine where the following Esys_Load call puts the newly loaded object
-    TPMS_CAPABILITY_DATA *pre_load_cap_data = NULL;
-    bool load = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
-                    TPM2_TRANSIENT_FIRST, TPM2_MAX_CAP_HANDLES,
-                    &pre_load_cap_data);
-    if (!load) {
-        LOG_ERR("Failed to load capability data");
-        retval = false;
-        goto out;
-    }
-
     ESYS_TR loaded_sha1_key_handle;
     rval = Esys_Load(ectx, ctx.ek.ek_ctx.tr_handle,
                 sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
@@ -360,60 +348,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         retval = false;
         goto out;
     }
-
-    // Esys_TR_GetName() gives us a TPM2B_PUBLIC, which we can't get the
-    // handle from. In lieu of a ESAPI method to get the TPM2_HANDLE for a key
-    // oject we instead iterate over the transient handles and try to find one
-    // which didn't exist before the Esys_Load() call...
-    TPMS_CAPABILITY_DATA *post_load_cap_data = NULL;
-    load = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
-                TPM2_TRANSIENT_FIRST, TPM2_MAX_CAP_HANDLES,
-                &post_load_cap_data);
-    if (!load) {
-        LOG_ERR("Failed to load capability data");
-        retval = false;
-        goto out;
-    }
-
-    bool found = false;
-    bool gothandle = false;
-    UINT32 i;
-    TPM2_HANDLE loaded_key_handle;
-    TPMU_CAPABILITIES capabilities = post_load_cap_data->data;
-    for (i = 0; i < capabilities.handles.count; ++i) {
-        char buf[10];
-        snprintf(buf, 10, "0x%X", capabilities.handles.handle[i]);
-        LOG_INFO("Checking whether %s is new", buf);
-
-        UINT32 j;
-        TPMU_CAPABILITIES caps = pre_load_cap_data->data;
-        for (j = 0; j < caps.handles.count; j++) {
-            char obuf[10];
-            snprintf(obuf, 10, "0x%X", caps.handles.handle[j]);
-            LOG_INFO("\tComparing %s to %s", buf, obuf);
-            if (!strncmp(buf, obuf, 10)) {
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            LOG_INFO("Found key handle %s", buf);
-            loaded_key_handle = capabilities.handles.handle[i];
-            gothandle = true;
-            break;
-        }
-    }
-
-    if (!gothandle) {
-        LOG_ERR("Couldn't find transient key handle that AK was created in");
-        goto out;
-    }
-
-    // TODO: this transient object should just be dumped as a context for
-    // passing around.
-
-    LOG_INFO("Loaded key handle 0x%X", loaded_key_handle);
 
     // Load the TPM2 handle so that we can print it
     TPM2B_NAME *key_name;
@@ -425,8 +359,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     }
 
     /* Output in YAML format */
-    tpm2_tool_output("loaded-key:\n");
-    tpm2_tool_output("  handle: 0x%X\n  name: ", loaded_key_handle);
+    tpm2_tool_output("loaded-key:\n  name: ");
     tpm2_util_print_tpm2b((TPM2B *)key_name);
     tpm2_tool_output("\n");
 
@@ -490,7 +423,9 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
             goto nameout;
         }
         LOG_INFO("Flush transient AK success.");
-    } else if (ctx.ak.out.ctx_file) {
+    } else {
+        // If the AK isn't persisted we always save a context file of the
+        // transient AK handle for future tool interactions, defaults to ak.ctx
         bool result = files_save_tpm_context_to_path(ectx,
                 loaded_sha1_key_handle, ctx.ak.out.ctx_file);
         if (!result) {
@@ -520,8 +455,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
 nameout:
     free(key_name);
 out:
-    free(pre_load_cap_data);
-    free(post_load_cap_data);
     free(out_public);
     free(out_private);
 
@@ -690,6 +623,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             return 1;
         }
         ctx.ak.in.inSensitive.sensitive.userAuth = tmp.hmac;
-    } 
+    }
+
+    if (!ctx.ak.out.ctx_file || ctx.ak.out.ctx_file[0] == '\0') {
+        ctx.ak.out.ctx_file = "ak.ctx";
+    }
+
     return !create_ak(ectx);
 }

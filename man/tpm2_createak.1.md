@@ -15,16 +15,17 @@ endorsement hierarchy.
 
 **tpm2_createak**(1) - Generate an attestation key (AK) with the given
 algorithm under the endorsement hierarchy. It also makes it persistent
-with given AK handle supplied via **-k**. If **-p** is specified, the
-tool outputs the public key to the path supplied as the option argument.
+with given AK handle supplied via **-k**, when **-k** isn't specified a context
+for the transient handle is saved to disk either as *ek.pub* or the filename
+specified via **-c**.
+If **-p** is specified, the tool outputs the public key to the path supplied as
+the option argument.
 
 If any password option is missing, assume NULL.
 
-The tool outputs to stdout a YAML representation of the loaded key handle
-as well as it's name, for example:
+The tool outputs to stdout a YAML representation of the loaded key's name, for example:
 ```
 loaded-key:
-  handle: 800000ff
   name: 000bac149518baa05540a0678bd9b624f8a98d042e46c60f4d098ba394d36fc49268
 ```
 
@@ -52,10 +53,12 @@ loaded-key:
     If a value of **-** is passed the tool will find a vacant persistent handle
     to use and print out the automatically selected handle.
 
-  * **-c**, **--context**=_PATH_:
-    Optional, specifies a path to save the context of the AK handle. If one saves
-    the context file via this option and the public key via the **-p** option, the
-    AK can be restored via a call to tpm2_loadexternal(1).
+  * **-c**, **--context**=_CONTEXT\_FILE\_NAME_:
+    Optional, specifies a path to save the context of the AK handle. If the AK
+    is not persisted to a handle (via **-k**) the tool defaults to saving a
+    context file to *ak.ctx* unless an alternative is specified here.
+    If one saves the context file via this option and the public key via the
+    **-p** option, the AK can be restored via a call to tpm2_loadexternal(1).
 
   * **-G**, **--algorithm**=_ALGORITHM_:
     Specifies the algorithm type of AK. Supports:
@@ -119,7 +122,7 @@ Create an Attestation Key and make it persistent:
 # create an Endorsement Key (EK)
 tpm2_createek -c 0x81010001 -g rsa -p ek.pub
 # create an Attestation Key (AK) passing the EK handle
-tpm2_createak -C 0x81010001 -k 0x81010002 -p ./ak.pub -n ./ak.name
+tpm2_createak -C 0x81010001 -k 0x81010002 -p ak.pub -n ak.name
 ```
 
 ## Without a Resource Manager (RM)
@@ -132,12 +135,11 @@ Create a transient Attestation Key, evict it, and reload it:
 ```
 # AK needs an Endorsement Key (primary object)
 tpm2_createek
-0x80000000
+transient-object-context: ek.ctx
 
 # Now create a transient AK
-tpm2_createak -C 0x80000000 -o ak.ctx -p ak.pub -n ak.name
+tpm2_createak -C ek.ctx -o ak.ctx -p ak.pub -n ak.name
 loaded-key:
-  handle: 0x80000001
   name: 000b8052c63861b1855c91edd63bca2eb3ea3ad304bb9798a9445ada12d5b5bb36e0
 
 tpm2_createek -g rsa -p ek.pub -c ek.ctx
