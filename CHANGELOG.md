@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_createprimary: now saves a context file for the generated primary's
+    handle to disk.
   * Ported all tools from SAPI to ESAPI
   * tpm2_loadexternal: support OSSL style -passin argument as --passin for PEM file passwords.
   * tpm2_import: support OSSL style -passin argument as --passin for PEM file passwords.

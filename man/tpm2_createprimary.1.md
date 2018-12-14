@@ -17,6 +17,8 @@ primary key under the **TPM_RH_NULL** hierarchy.
 one of the Primary Seeds or a Temporary Object under **TPM_RH_NULL**. The command
 uses a **TPM2B_PUBLIC** as a template for the object to be created. The command
 will create and load a Primary Object. The sensitive area is not returned.
+A context file for the created object's handle is saved to disk for future
+interactions with the created primary.
 
 # OPTIONS
 
@@ -54,8 +56,9 @@ will create and load a Primary Object. The sensitive area is not returned.
     algorithm is RSA. See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
 
-  * **-o**, **--out-context**=_CONTEXT\_FILE_:
-    An optional file used to store the object context returned.
+  * **-o**, **--out-context-name**=_CONTEXT\_FILE\_NAME_:
+    Optional file name to use for the returned object context, otherwise a
+    default of _primary.ctx_ is used.
 
   * **-L**, **--policy-file**=_POLICY\_FILE_:
     An optional file input that contains the policy digest for policy based authorization of the object.
