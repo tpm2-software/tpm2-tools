@@ -83,7 +83,7 @@ will create and load a Primary Object. The sensitive area is not returned.
 # EXAMPLES
 
 ```
-tpm2_createprimary -H o -g sha256 -G ecc -o context.out
+tpm2_createprimary -a o -g sha256 -G ecc -o context.out
 ```
 
 # RETURNS
