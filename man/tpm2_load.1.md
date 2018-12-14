@@ -14,6 +14,10 @@
 
 **tpm2_load**(1) - Load both the private and public portions of an object
 into the TPM.
+The tool outputs the name of the loaded object in a YAML format and saves a
+context file for future interactions with the object. The context file name
+defaults to *load.ctx* and can be specified with **-o**.
+
 
 # OPTIONS
 
@@ -35,8 +39,9 @@ into the TPM.
   * **-n**, **--name**=_NAME\_DATA\_FILE_:
     An optional file to save the name structure of the object.
 
-  * **-o**, **--out-context**=_CONTEXT\_FILE_:
-    An optional file to save the object context to.
+  * **-o**, **--out-context**=_CONTEXT\_FILE\_NAME_:
+    The file name of the saved object context, optional. If unspecified defaults
+    to *object.ctx*.
 
 [common options](common/options.md)
 
@@ -50,9 +55,8 @@ into the TPM.
 # EXAMPLES
 
 ```
-tpm2_load  -C 0x80000000 -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
-tpm2_load  -C parent.context -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -o object.context
-tpm2_load  -C 0x80000000 -P "hex:123abc" -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
+tpm2_load  -C parent.ctx -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -o object.context
+tpm2_load  -C parent.ctx -P "hex:123abc" -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
 
 ```
 
