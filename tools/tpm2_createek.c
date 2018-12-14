@@ -183,14 +183,18 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
         }
     }
 
-    /* If it wasn't persistent, output the transient handle */
-    if (!ctx.ctx_obj.handle) {
-        tpm2_tool_output("0x%X\n", ctx.objdata.out.handle);
+    /* If it wasn't persistent, save a context for future tool interactions */
+    if (!ctx.ctx_obj.handle && !ctx.out_file_path) {
+        ctx.out_file_path = "ek.ctx";
     }
 
     if (ctx.out_file_path) {
-        return tpm2_convert_pubkey_save(ctx.objdata.out.public,
-                ctx.format, ctx.out_file_path);
+        bool ok = tpm2_convert_pubkey_save(ctx.objdata.out.public,
+                    ctx.format, ctx.out_file_path);
+        if (!ok) {
+            return false;
+        }
+        tpm2_tool_output("transient-object-context: %s\n", ctx.out_file_path);
     }
 
     return true;
