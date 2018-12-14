@@ -100,14 +100,14 @@ tpm2_getcap -c handles-transient
 - 0x80000000
 
 # Flush the handle
-tpm2_flushcontext -H 0x80000000
+tpm2_flushcontext -c 0x80000000
 
 # Note that it is flushed
 tpm2_getcap -c handles-transient
 <null output>
 
 # Reload it via loadexternal
-tpm2_loadexternal -H o -u ek.pub -o ek.ctx
+tpm2_loadexternal -a o -u ek.pub -o ek.ctx
 
 # Check that it is re-loaded in transient memory
 tpm2_getcap -c handles-transient
