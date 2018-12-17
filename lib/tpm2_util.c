@@ -502,7 +502,7 @@ tpm2_object_load_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
 
     // 3. if we have a context file, attempt to load it into the TPM
     if (olrc == olrc_file) {
-        bool loaded = files_load_tpm_context_from_path(ctx, &outobject->handle,
+        bool loaded = files_load_tpm_context_from_path(ctx,
                        &outobject->tr_handle, outobject->path);
         if (!loaded) {
             LOG_ERR("Could not load context file at path: \"%s\"", objectstr);
