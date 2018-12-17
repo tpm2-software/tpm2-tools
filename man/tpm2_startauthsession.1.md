@@ -13,9 +13,14 @@
 # DESCRIPTION
 
 **tpm2_startauthsession**(1) Starts a session with the TPM. The default is
-to start a *trial* session unless the **-a** option is specified. It outputs
-the session handle in a yaml format to stdout as key value "session-handle"
-and the handle in hex (0x1234) format.
+to start a *trial* session unless the **-a** option is specified.
+Saves the policy session data to a file. This file can then be used in subsequent
+tools that can use a policy file for authorization or policy events. **NOTE**: That
+this will not work with resource managers (RMs) outside of tpm2-abrmd, as most RMs will
+flush session handles when a client disconnects from the IPC channel. This will work
+with direct TPM access, but note that internally this calls a *ContextSave* and a
+*ContextLoad* on the session handle, thus the session **cannot** be saved/loaded
+again.
 
 # OPTIONS
 
@@ -32,15 +37,10 @@ and the handle in hex (0x1234) format.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-S**, **--session**=_SESSION_FILE_:
+  * **-S**, **--session**=_SESSION\_FILE\_NAME_:
 
-    Saves the policy session data to a file. This file can then be used in subsequent
-    tools that can use a policy file for authorization or policy events. **NOTE**: That
-    this will not work with resource managers (RMs) outside of tpm2-abrmd, as most RMs will
-    flush session handles when a client disconnects from the IPC channel. This will work
-    with direct TPM access, but note that internally this calls a *ContextSave* and a
-    *ContextLoad* on the session handle, thus the session **cannot** be saved/loaded
-    again.
+    The name of the policy session file, optional. Defaults to *session.ctx*.
+
 
 [common options](common/options.md)
 
@@ -54,14 +54,12 @@ and the handle in hex (0x1234) format.
 
 Start a *trial* session and save the session data to a file.
 ```
-tpm2_startauthsession -S session.dat
-session-handle: 0x3000000
+tpm2_startauthsession -S mysession.ctx
 ```
 
 Start a *policy* session and save the session data to a file.
 ```
-tpm2_startauthsession -S session.dat -a
-session-handle: 0x3000000
+tpm2_startauthsession -S mysession.ctx -a
 ```
 
 # RETURNS
