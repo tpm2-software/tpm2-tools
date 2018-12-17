@@ -120,8 +120,6 @@ bool files_save_tpm_context_to_file(ESYS_CONTEXT *context,
  * Loads a ESAPI TPM object context from disk.
  * @param context
  *  The Enhanced System API (ESAPI) context
- * @param handle
- *  Optional. The TPM2 object handle that was saved.
  * @param tr_handle
  *  Optional. The Esys handle for the TPM2 object.
  * @param path
@@ -130,14 +128,12 @@ bool files_save_tpm_context_to_file(ESYS_CONTEXT *context,
  *  True on Success, false on error.
  */
 bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
-        TPM2_HANDLE *handle, ESYS_TR *tr_handle, const char *path);
+        ESYS_TR *tr_handle, const char *path);
 
 /**
  * Like files_load_tpm_context_from_path() but loads the context from a FILE stream.
  * @param context
  *  The Enhanced System API (ESAPI) context
- * @param handle
- *  Optional. The TPM2 object handle that was saved.
  * @param tr_handle
  *  Optional. The Esys handle for the TPM2 object
  * @param stream
@@ -146,7 +142,7 @@ bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
  *  True on success, False on error.
  */
 bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
-        TPM2_HANDLE *handle, ESYS_TR *tr_handle, FILE *stream);
+        ESYS_TR *tr_handle, FILE *stream);
 
 /**
  * Serializes a TPM2B_PUBLIC to the file path provided.

@@ -237,24 +237,12 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
         goto out;
     }
 
-    TPM2_HANDLE tpm_handle;
-    result = files_read_32(f, &tpm_handle);
-    if (!result) {
-        LOG_ERR("Could not read session handle");
-        goto out;
-    }
-
-    TPM2_HANDLE handle_from_context;
     ESYS_TR handle;
     result = files_load_tpm_context_from_file(ctx,
-                    &handle_from_context, &handle, f);
+                    &handle, f);
     if (!result) {
         LOG_ERR("Could not load session context");
         goto out;
-    }
-
-    if (tpm_handle != handle_from_context) {
-        LOG_WARN("Handle from tpm2_session (0x%X) disagrees with session context (0x%X)", handle_from_context, tpm_handle);
     }
 
     tpm2_session_data *d = tpm2_session_data_new(type);
@@ -329,27 +317,12 @@ bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
         goto out;
     }
 
-    // UINT32 - Handle
-    ESYS_TR handle = tpm2_session_get_handle(session);
-    TPM2_HANDLE tpm_handle;
-    result = tpm2_util_esys_handle_to_sys_handle(context, handle, &tpm_handle);
-    if (!result) {
-        LOG_ERR("Could not find underlying TPM handle");
-        goto out;
-    }
-
-    result = files_write_32(session_file, tpm_handle);
-    if (!result) {
-        LOG_ERR("Could not write handle");
-        goto out;
-    }
-
     /*
      * Save session context at end of tpm2_session. With tabrmd support it
      * can be reloaded under certain circumstances.
      */
-    result = files_save_tpm_context_to_file(context, handle,
-                                            session_file);
+    result = files_save_tpm_context_to_file(context,
+                tpm2_session_get_handle(session), session_file);
     if (!result) {
         LOG_ERR("Could not write session context");
     }

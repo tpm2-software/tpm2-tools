@@ -329,7 +329,7 @@ out:
 }
 
 bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
-        TPM2_HANDLE *handle, ESYS_TR *tr_handle, FILE *fstream) {
+        ESYS_TR *tr_handle, FILE *fstream) {
 
     bool result;
     TPMS_CONTEXT tpms_context;
@@ -348,16 +348,6 @@ bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
         goto out;
     }
 
-    TPM2_HANDLE hndl;
-    result = tpm2_util_esys_handle_to_sys_handle(context, loaded_handle, &hndl);
-    if (!result) {
-        goto out;
-    }
-
-    if (handle) {
-        *handle = hndl;
-    }
-
     if (tr_handle) {
         *tr_handle = loaded_handle;
     }
@@ -367,7 +357,7 @@ out:
 }
 
 bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
-        TPM2_HANDLE *handle, ESYS_TR *tr_handle, const char *path) {
+        ESYS_TR *tr_handle, const char *path) {
 
     FILE *f = fopen(path, "rb");
     if (!f) {
@@ -376,8 +366,7 @@ bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
         return false;
     }
 
-    bool result = files_load_tpm_context_from_file(context, handle,
-                    tr_handle, f);
+    bool result = files_load_tpm_context_from_file(context, tr_handle, f);
 
     fclose(f);
     return result;
