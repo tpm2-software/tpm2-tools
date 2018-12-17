@@ -120,21 +120,13 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    ESYS_TR session_handle = tpm2_session_get_handle(s);
-    TPMI_SH_AUTH_SESSION tpm_handle;
-    bool result = tpm2_util_esys_handle_to_sys_handle(ectx, session_handle,
-                    &tpm_handle);
-    if (!result) {
-        goto out;
+    if (!ctx.output.path || ctx.output.path[0] == '\0') {
+        ctx.output.path = "session.ctx";
     }
 
-    tpm2_tool_output("session-handle: 0x%" PRIx32 "\n", tpm_handle);
-
-    if (ctx.output.path) {
-        result = tpm2_session_save(ectx, s, ctx.output.path);
-        if (!result) {
-            goto out;
-        }
+    bool result = tpm2_session_save(ectx, s, ctx.output.path);
+    if (!result) {
+        goto out;
     }
 
     rc = 0;
