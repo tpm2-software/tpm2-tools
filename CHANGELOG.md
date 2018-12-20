@@ -1,5 +1,15 @@
 ## Changelog
 ### next
+  * tpm2_createek: now saves a context file for the generated primary's
+    handle to disk.
+  * tpm2_createak: now saves a context file for the generated primary's
+    handle to disk.
+  * tpm2_loadexternal: now saves a context file for the generated primary's
+    handle to disk.
+  * tpm2_load: now saves a context file for the generated primary's
+    handle to disk.
+  * tpm2_startauthsession: now saves a context file for the generated primary's
+    handle to disk.
   * tpm2_createprimary: now saves a context file for the generated primary's
     handle to disk.
   * Ported all tools from SAPI to ESAPI
