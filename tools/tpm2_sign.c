@@ -256,6 +256,10 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 's': {
+        bool result = files_does_file_exist(value);
+        if (result) {
+            return false;
+        }
         ctx.outFilePath = value;
         ctx.flags.s = 1;
     }
