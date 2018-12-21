@@ -248,10 +248,6 @@ static bool on_option(char key, char *value) {
 		break;
 	case 't':
 		ctx.out_file_path = value;
-
-		if (files_does_file_exist(ctx.out_file_path)) {
-			return false;
-		}
 		ctx.flags.ticket = 1;
 		break;
 		/* no default */

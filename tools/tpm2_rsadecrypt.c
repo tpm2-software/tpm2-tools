@@ -119,10 +119,6 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'o': {
-        bool result = files_does_file_exist(value);
-        if (result) {
-            return false;
-        }
         ctx.output_file_path = value;
         ctx.flags.o = 1;
         break;
