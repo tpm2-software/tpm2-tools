@@ -403,4 +403,15 @@ bool files_read_64(FILE *out, UINT64 *data);
  */
 bool files_read_bytes(FILE *out, UINT8 data[], size_t size);
 
+/**
+ * @param path
+ *  User supplied path to uniquify
+ * @param name
+ *  Uniquified allocated string with unique variant of path or NULL if the
+ *  function fails
+ * @return
+ *  True on success, False otherwise
+ */
+bool files_get_unique_name(const char *path, char **name);
+
 #endif /* FILES_H */
