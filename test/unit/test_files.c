@@ -264,6 +264,43 @@ static void test_file_exists_bad_args(void **state) {
     assert_false(res);
 }
 
+static void test_files_get_unique_name(void **state) {
+
+    test_file *tf = test_file_from_state(state);
+
+    char *unique = NULL;
+    bool ret = files_get_unique_name(tf->path, &unique);
+    assert_true(ret);
+    assert_non_null(unique);
+    assert_string_not_equal(tf->path, unique);
+    char *ext = rindex(unique, '.');
+    assert_string_equal(ext, ".test");
+    free(unique);
+    unique = NULL;
+
+    const char *multipath = "foo.bar.baz";
+    FILE *fi = fopen(multipath, "w+b");
+    fclose(fi);
+    ret = files_get_unique_name(multipath, &unique);
+    remove(multipath);
+    assert_true(ret);
+    assert_non_null(unique);
+    assert_string_equal("foo.bar1.baz", unique);
+    free(unique);
+    unique = NULL;
+
+    ret = files_get_unique_name("foo", &unique);
+    assert_true(ret);
+    assert_non_null(unique);
+    assert_string_equal("foo", unique);
+    free(unique);
+    unique = NULL;
+
+    ret = files_get_unique_name(NULL, &unique);
+    assert_false(ret);
+    assert_null(unique);
+}
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
@@ -299,6 +336,9 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test_setup_teardown(test_file_exists,
                 test_setup, test_teardown),
         cmocka_unit_test_setup_teardown(test_file_exists_bad_args,
+                test_setup, test_teardown),
+
+        cmocka_unit_test_setup_teardown(test_files_get_unique_name,
                 test_setup, test_teardown),
     };
 

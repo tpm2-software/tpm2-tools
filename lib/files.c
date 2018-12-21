@@ -30,6 +30,8 @@
 //**********************************************************************;
 #include <errno.h>
 #include <inttypes.h>
+#include <libgen.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -361,7 +363,7 @@ bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
 
     FILE *f = fopen(path, "rb");
     if (!f) {
-        LOG_ERR("Error opening file \"%s\" due to error: %s", path,
+        LOG_WARN("Error opening file \"%s\" due to error: %s", path,
                 strerror(errno));
         return false;
     }
@@ -370,6 +372,79 @@ bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
 
     fclose(f);
     return result;
+}
+
+bool files_get_unique_name(const char *path, char **name) {
+
+    if (!path || path[0] == '\0') {
+        LOG_ERR("files_get_unique_name() called with empty path");
+        *name = NULL;
+        return false;
+    }
+
+    // Already have a unique name
+    if (!files_does_file_exist(path)) {
+        *name = strdup(path);
+        return true;
+    }
+
+    // separate the path and filename components
+    /* NOTE: we have to take copies because the man pages suggest dirname
+     * and basename may modify the argument..
+     */
+    char *dirc = strdup(path);
+    char *basec = strdup(path);
+    char *filepath = dirname(dirc);
+    char *filename = basename(basec);
+
+    if (strcmp(filepath, ".") == 0) {
+        filepath = NULL;
+    }
+
+    // Look for a file extension
+    char *ext = NULL;
+    char *tmp = rindex(filename, '.');
+    /* If we have a file extension, we only want to uniquify the part of
+     * filename up to extension.
+     */
+    char *basefilename = NULL;
+    if (tmp) {
+        // we make a copy because we modify filename
+        ext = strdup(tmp);
+        char *noext = strrchr(filename, '.');
+        int offset = noext - filename;
+        filename[offset] = '\0';
+    }
+    basefilename = filename;
+
+    // Now keep trying to find a unique variant of basefilename
+    UINT32 append = 0;
+    bool found_unique = false;
+    char *uniquename = NULL;
+    while (!found_unique) {
+        append++;
+        free(uniquename);
+        uniquename = malloc(PATH_MAX);
+        if (filepath) {
+            sprintf(uniquename, "%s/%s%d%s", filepath, basefilename, append, ext);
+        } else {
+            sprintf(uniquename, "%s%d%s", basefilename, append, ext);
+        }
+
+        found_unique = !files_does_file_exist(uniquename);
+    }
+
+    if (found_unique) {
+        *name = uniquename;
+    } else {
+        *name = NULL;
+    }
+
+    free(dirc);
+    free(basec);
+    free(ext);
+
+    return found_unique;
 }
 
 bool files_does_file_exist(const char *path) {
@@ -382,7 +457,7 @@ bool files_does_file_exist(const char *path) {
     FILE *fp = fopen(path,"rb");
     if (fp) {
         fclose(fp);
-        LOG_ERR("Path: %s already exists. Please rename or delete the file!",
+        LOG_WARN("Path: %s already exists. Please rename or delete the file!",
                 path);
         return true;
     }
