@@ -189,7 +189,7 @@ static bool on_option(char key, char *value) {
          }
          break;
     case 'G':
-        ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
+        ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if(ctx.sig_hash_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
             return false;
