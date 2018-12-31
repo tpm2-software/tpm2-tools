@@ -120,7 +120,7 @@ out:
 
 HMAC_CTX *tpm2_openssl_hmac_new() {
     HMAC_CTX *ctx;
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     ctx = malloc(sizeof(*ctx));
 #else
     ctx = HMAC_CTX_new();
@@ -128,7 +128,7 @@ HMAC_CTX *tpm2_openssl_hmac_new() {
     if (!ctx)
         return NULL;
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     HMAC_CTX_init(ctx);
 #endif
 
@@ -136,7 +136,7 @@ HMAC_CTX *tpm2_openssl_hmac_new() {
 }
 
 void tpm2_openssl_hmac_free(HMAC_CTX *ctx) {
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     HMAC_CTX_cleanup(ctx);
     free(ctx);
 #else
@@ -146,7 +146,7 @@ void tpm2_openssl_hmac_free(HMAC_CTX *ctx) {
 
 EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void) {
     EVP_CIPHER_CTX *ctx;
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     ctx = malloc(sizeof(*ctx));
 #else
     ctx = EVP_CIPHER_CTX_new();
@@ -154,7 +154,7 @@ EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void) {
     if (!ctx)
         return NULL;
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     EVP_CIPHER_CTX_init(ctx);
 #endif
 
@@ -162,7 +162,7 @@ EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void) {
 }
 
 void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx) {
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     EVP_CIPHER_CTX_cleanup(ctx);
     free(ctx);
 #else
@@ -379,7 +379,7 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
     const BIGNUM *n; /* modulus */
     const BIGNUM *e; /* public key exponent */
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     n = k->n;
     e = k->e;
 #else
@@ -673,7 +673,7 @@ static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
 
     const BIGNUM *p; /* the private key exponent */
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL /* OpenSSL 1.1.0 */
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
     p = k->p;
 #else
     RSA_get0_factors(k, &p, NULL);
