@@ -29,6 +29,25 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+//**********************************************************************;
+// Copyright 1999-2018 The OpenSSL Project Authors. All Rights Reserved.
+// Licensed under the Apache License 2.0 (the "License"). You may not use
+// this file except in compliance with the License. You can obtain a copy
+// in the file LICENSE in the source distribution or at
+// https://www.openssl.org/source/license.html
+//
+// EME-OAEP as defined in RFC 2437 (PKCS #1 v2.0)
+//
+// See Victor Shoup, "OAEP reconsidered," Nov. 2000, <URL:
+// http://www.shoup.net/papers/oaep.ps.Z> for problems with the security
+// proof for the original OAEP scheme, which EME-OAEP is based on. A new
+// proof can be found in E. Fujisaki, T. Okamoto, D. Pointcheval, J. Stern,
+// "RSA-OEAP is Still Alive!", Dec. 2000, <URL:http://eprint.iacr.org/2000/061/>.
+// The new proof has stronger requirements for the underlying permutation:
+// "partial-one-wayness" instead of one-wayness. For the RSA function, this
+// is an equivalent notion.
+//**********************************************************************;
+
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -82,7 +101,7 @@ static tpm_import_ctx ctx = {
     .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
-#if OPENSSL_VERSION_NUMBER < 0x1010000fL || defined(LIBRESSL_VERSION_NUMBER) /* OpenSSL 1.1.0 */
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
 static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 
     if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
@@ -105,6 +124,71 @@ static int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
     }
 
     return 1;
+}
+#endif
+#if defined(LIBRESSL_VERSION_NUMBER)
+static int RSA_padding_add_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
+        const unsigned char *from, int flen, const unsigned char *param, int plen,
+        const EVP_MD *md, const EVP_MD *mgf1md) {
+
+    int i, emlen = tlen - 1;
+    unsigned char *db, *seed;
+    unsigned char *dbmask, seedmask[EVP_MAX_MD_SIZE];
+    int mdlen;
+
+    if (md == NULL)
+        md = EVP_sha1();
+    if (mgf1md == NULL)
+        mgf1md = md;
+
+    mdlen = EVP_MD_size(md);
+
+    if (flen > emlen - 2 * mdlen - 1) {
+        RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_OAEP,
+               RSA_R_DATA_TOO_LARGE_FOR_KEY_SIZE);
+        return 0;
+    }
+
+    if (emlen < 2 * mdlen + 1) {
+        RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_OAEP,
+               RSA_R_KEY_SIZE_TOO_SMALL);
+        return 0;
+    }
+
+    to[0] = 0;
+    seed = to + 1;
+    db = to + mdlen + 1;
+
+    if (!EVP_Digest((void *)param, plen, db, NULL, md, NULL))
+        return 0;
+    memset(db + mdlen, 0, emlen - flen - 2 * mdlen - 1);
+    db[emlen - flen - mdlen - 1] = 0x01;
+    memcpy(db + emlen - flen - mdlen, from, (unsigned int)flen);
+    if (RAND_bytes(seed, mdlen) <= 0)
+        return 0;
+
+    dbmask = OPENSSL_malloc(emlen - mdlen);
+    if (dbmask == NULL) {
+        RSAerr(RSA_F_RSA_PADDING_ADD_PKCS1_OAEP, ERR_R_MALLOC_FAILURE);
+        return 0;
+    }
+
+    if (PKCS1_MGF1(dbmask, emlen - mdlen, seed, mdlen, mgf1md) < 0)
+        goto err;
+    for (i = 0; i < emlen - mdlen; i++)
+        db[i] ^= dbmask[i];
+
+    if (PKCS1_MGF1(seedmask, mdlen, db, emlen - mdlen, mgf1md) < 0)
+        goto err;
+    for (i = 0; i < mdlen; i++)
+        seed[i] ^= seedmask[i];
+
+    OPENSSL_free(dbmask);
+    return 1;
+
+ err:
+    OPENSSL_free(dbmask);
+    return 0;
 }
 #endif
 

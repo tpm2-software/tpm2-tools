@@ -33,6 +33,10 @@
 #include <openssl/err.h>
 #include <openssl/hmac.h>
 
+#if (OPENSSL_VERSION_NUMBER < 0x1010000fL && !defined(LIBRESSL_VERSION_NUMBER)) || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L) /* OpenSSL 1.1.0 */
+#define LIB_TPM2_OPENSSL_OPENSSL_PRE11
+#endif
+
 /**
  * Function prototype for a hashing routine.
  *
