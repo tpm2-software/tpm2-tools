@@ -62,6 +62,7 @@ echo "plaintext" > $plain_txt
 tpm2_startauthsession -S $session_ctx
 tpm2_policypassword -S $session_ctx -o $policypassword
 tpm2_flushcontext -S $session_ctx
+rm $session_ctx
 
 tpm2_createprimary -a o -o $primary_key_ctx
 
@@ -76,6 +77,7 @@ tpm2_policypassword -S $session_ctx -o $policypassword
 tpm2_encryptdecrypt -c $key_ctx -I $encrypted_txt -o $decrypted_txt -D \
   -p session:$session_ctx+$testpswd
 tpm2_flushcontext -S $session_ctx
+rm $session_ctx
 
 diff $plain_txt $decrypted_txt
 

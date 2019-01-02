@@ -124,14 +124,23 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.output.path = "session.ctx";
     }
 
-    bool result = tpm2_session_save(ectx, s, ctx.output.path);
+    char *ctx_file = NULL;
+    bool result = files_get_unique_name(ctx.output.path, &ctx_file);
     if (!result) {
         goto out;
     }
 
+    result = tpm2_session_save(ectx, s, ctx_file);
+    if (!result) {
+        goto out;
+    }
+
+    tpm2_tool_output("session-context: %s\n", ctx_file);
+
     rc = 0;
 
 out:
+    free(ctx_file);
     tpm2_session_free(&s);
 
     return rc;

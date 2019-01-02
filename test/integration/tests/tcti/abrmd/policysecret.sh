@@ -65,6 +65,7 @@ tpm2_changeauth -o ownerauth
 tpm2_startauthsession -S $session_ctx
 tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -o $o_policy_digest ownerauth
 tpm2_flushcontext -S $session_ctx
+rm $session_ctx
 
 #Create and Load Object
 tpm2_createprimary -Q -a o  -o $primary_ctx -P ownerauth
@@ -77,6 +78,7 @@ tpm2_startauthsession -a -S $session_ctx
 echo -n "ownerauth" | tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -o $o_policy_digest -
 unsealed=`tpm2_unseal -p"session:$session_ctx" -c $seal_key_ctx`
 tpm2_flushcontext -S $session_ctx
+rm $session_ctx
 
 test "$unsealed" == "$SEALED_SECRET"
 

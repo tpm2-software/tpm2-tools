@@ -108,6 +108,8 @@ tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_pr
 
 tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
+rm $file_session_file
+
 # Start a REAL policy session (-a option) and perform a pcr policy event
 tpm2_startauthsession -a -S $file_session_file
 
