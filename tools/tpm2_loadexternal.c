@@ -340,12 +340,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    if (!ctx.context_file_path || ctx.context_file_path[0] == '\0') {
-        ctx.context_file_path = "object.ctx";
-    }
-
     int ret = 0;
     TPM2B_NAME *name = NULL;
+    char *ctx_file = NULL;
     result = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
                 &name);
     if (!result) {
@@ -353,14 +350,24 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = files_save_tpm_context_to_path(ectx, ctx.handle,
-                ctx.context_file_path);
+    if (!ctx.context_file_path || ctx.context_file_path[0] == '\0') {
+        ctx.context_file_path = "object.ctx";
+    }
+
+    result = files_get_unique_name(ctx.context_file_path, &ctx_file);
     if (!result) {
         ret = 1;
         goto out;
     }
 
-    tpm2_tool_output("transient-context: %s\n", ctx.context_file_path);
+    result = files_save_tpm_context_to_path(ectx, ctx.handle,
+                ctx_file);
+    if (!result) {
+        ret = 1;
+        goto out;
+    }
+
+    tpm2_tool_output("transient-context: %s\n", ctx_file);
     tpm2_tool_output("name: 0x");
     tpm2_util_hexdump(name->name, name->size);
     tpm2_tool_output("\n");
@@ -374,6 +381,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 out:
     free(name);
+    free(ctx_file);
 
     return ret;
 }
