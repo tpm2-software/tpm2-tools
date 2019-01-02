@@ -426,13 +426,24 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     } else {
         // If the AK isn't persisted we always save a context file of the
         // transient AK handle for future tool interactions, defaults to ak.ctx
-        bool result = files_save_tpm_context_to_path(ectx,
-                loaded_sha1_key_handle, ctx.ak.out.ctx_file);
+        char *ctx_file = NULL;
+        bool result = files_get_unique_name(ctx.ak.out.ctx_file, &ctx_file);
+        if (!result) {
+            retval = false;
+            free(ctx_file);
+            goto nameout;
+        }
+        result = files_save_tpm_context_to_path(ectx,
+                    loaded_sha1_key_handle, ctx_file);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
             retval = false;
+            free(ctx_file);
             goto nameout;
         }
+
+        tpm2_tool_output("transient-object-context: %s\n", ctx_file);
+        free(ctx_file);
     }
 
     if (ctx.ak.out.pub_file) {
