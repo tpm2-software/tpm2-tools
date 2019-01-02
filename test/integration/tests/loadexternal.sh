@@ -96,6 +96,8 @@ run_tss_test() {
 	tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
 
 	tpm2_loadexternal -Q -u $file_loadexternal_key_pub
+
+    cleanup "no-shut-down"
 }
 
 # Test loading an OSSL generated private key with a password
@@ -121,6 +123,8 @@ run_rsa_test() {
     openssl rsautl -decrypt -inkey private.pem -in plain.rsa.enc -out plain.rsa.dec
 
     diff plain.txt plain.rsa.dec
+
+    cleanup "no-shut-down"
 }
 
 #
@@ -149,6 +153,8 @@ run_aes_test() {
         -aes-$1-cfb
 
     diff plain.txt plain.dec.ssl
+
+    cleanup "no-shut-down"
 }
 
 run_ecc_test() {
@@ -178,6 +184,8 @@ run_ecc_test() {
 	tpm2_loadexternal -Q -G ecc -u public.ecc.pem -o key.ctx
 	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
 	tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
+
+    cleanup "no-shut-down"
 }
 
 run_rsa_passin_test() {
@@ -189,6 +197,8 @@ run_rsa_passin_test() {
     fi;
 
     eval $cmd
+
+    cleanup "no-shut-down"
 }
 
 run_tss_test

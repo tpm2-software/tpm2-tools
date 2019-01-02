@@ -83,7 +83,7 @@ cmp -s $file_unseal_output_data $file_input_data
 
 # Test -I using stdin via pipe
 
-rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
+rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
 cat $file_input_data | tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx
 
@@ -95,7 +95,7 @@ cmp -s $file_unseal_output_data $file_input_data
 
 # Test using a PCR policy for auth and use file based stdin for -I
 
-rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
+rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
@@ -136,7 +136,7 @@ fi
 
 trap onerror ERR
 
-rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name
+rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
