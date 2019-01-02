@@ -189,12 +189,23 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.out_file_path) {
-        bool ok = tpm2_convert_pubkey_save(ctx.objdata.out.public,
-                    ctx.format, ctx.out_file_path);
+        /* Ensure the context file path is unique, we don't want to clobber
+        * existing files.
+        */
+        char *filename = NULL;
+        bool ok = files_get_unique_name(ctx.out_file_path, &filename);
         if (!ok) {
             return false;
         }
-        tpm2_tool_output("transient-object-context: %s\n", ctx.out_file_path);
+
+        ok = tpm2_convert_pubkey_save(ctx.objdata.out.public,
+                ctx.format, filename);
+        if (!ok) {
+            free(filename);
+            return false;
+        }
+        tpm2_tool_output("transient-object-context: %s\n", filename);
+        free(filename);
     }
 
     return true;
