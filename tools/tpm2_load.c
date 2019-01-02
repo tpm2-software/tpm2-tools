@@ -217,12 +217,23 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.context_file = "object.ctx";
     }
 
-    result = files_save_tpm_context_to_path(ectx,
-                ctx.handle,
-                ctx.context_file);
+    char *filename = NULL;
+    result = files_get_unique_name(ctx.context_file, &filename);
     if (!result) {
+        LOG_ERR("Couldn't get unique version of %s", ctx.context_file);
         goto out;
     }
+
+    result = files_save_tpm_context_to_path(ectx,
+                ctx.handle,
+                filename);
+    if (!result) {
+        free(filename);
+        goto out;
+    }
+
+    tpm2_tool_output("transient-context: %s\n", filename);
+    free(filename);
 
     rc = 0;
 

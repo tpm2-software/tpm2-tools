@@ -93,6 +93,7 @@ cmp secret.dat secret2.dat
 
 tpm2_create -Q -G aes128cbc -u key.pub -r key.priv -C primary.ctx
 
+rm decrypt.ctx
 tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -o decrypt.ctx
 
 # We need to perform cbc on blocksize of 16

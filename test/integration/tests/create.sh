@@ -41,7 +41,7 @@ cleanup() {
     rm -f context.out
   fi
 
-  rm -f key.ctx out.yaml
+  rm -f key*.ctx out.yaml
 
   ina "$@" "no-shut-down"
   if [ $? -ne 0 ]; then
@@ -82,16 +82,16 @@ test "$policy_orig" == "$policy_new"
 # Test the extended format specifiers
 #
 tpm2_create -Q -C context.out -g sha256 -G aes256cbc -u key.pub -r key.priv
-tpm2_load -Q -C context.out -u key.pub -r key.priv -o key.ctx
-tpm2_readpublic -c key.ctx > out.yaml
+tpm2_load -Q -C context.out -u key.pub -r key.priv -o key1.ctx
+tpm2_readpublic -c key1.ctx > out.yaml
 keybits=$(yaml_get_kv out.yaml \"sym-keybits\")
 mode=$(yaml_get_kv out.yaml \"sym-mode\" \"value\")
 test "$keybits" -eq "256"
 test "$mode" == "cbc"
 
 tpm2_create -Q -C context.out -g sha256 -G aes128ofb -u key.pub -r key.priv
-tpm2_load -Q -C context.out -u key.pub -r key.priv -o key.ctx
-tpm2_readpublic -c key.ctx > out.yaml
+tpm2_load -Q -C context.out -u key.pub -r key.priv -o key2.ctx
+tpm2_readpublic -c key2.ctx > out.yaml
 keybits=$(yaml_get_kv out.yaml \"sym-keybits\")
 mode=$(yaml_get_kv out.yaml \"sym-mode\" \"value\")
 test "$keybits" -eq "128"

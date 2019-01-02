@@ -72,6 +72,8 @@ run_aes_import_test() {
 	-aes-128-cfb
 
 	diff plain.txt plain.dec.ssl
+
+	rm import_key.ctx
 }
 
 run_rsa_import_test() {
@@ -108,6 +110,8 @@ run_rsa_import_test() {
 
 	# Verify with the TPM
 	tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+
+	rm import_rsa_key.ctx
 }
 
 run_ecc_import_test() {
@@ -137,6 +141,8 @@ run_ecc_import_test() {
 	# Sign with openssl and verify with TPM.
 	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
 	tpm2_verifysignature -Q -c ecc.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
+
+	rm ecc.ctx
 }
 
 run_rsa_import_passin_test() {
