@@ -71,6 +71,8 @@ tpm2_policycommandcode -S $file_session_data -o $file_policy $TPM_CC_UNSEAL
 
 tpm2_flushcontext -S $file_session_data
 
+rm $file_session_data
+
 tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
   -r $file_unseal_key_priv -L $file_policy -I- <<< $secret
 
@@ -89,6 +91,8 @@ tpm2_policycommandcode -S $file_session_data -o $file_policy $TPM_CC_UNSEAL
 tpm2_unseal -p session:$file_session_data -c sealkey.ctx > $file_output_data
 
 tpm2_flushcontext -S $file_session_data
+
+rm $file_session_data
 
 cmp -s $file_output_data $file_input_data
 
