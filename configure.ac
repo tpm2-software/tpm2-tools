@@ -2,6 +2,7 @@ AC_INIT([tpm2-tools],
     [m4_esyscmd_s([git describe --tags --always --dirty])])
 AC_CONFIG_MACRO_DIR([m4])
 AC_PROG_CC
+AC_PROG_LN_S
 LT_INIT
 AM_INIT_AUTOMAKE([foreign
                   subdir-objects])
@@ -39,8 +40,8 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])# PKG_CHECK_VAR
 ])
-PKG_CHECK_VAR(bashcompdir, [bash-completion], [compatdir], ,
-  bashcompdir="${sysconfdir}/bash_completion.d")
+PKG_CHECK_VAR(bashcompdir, [bash-completion], [completionsdir], ,
+  bashcompdir="${datarootdir}/bash-completion/completions")
 AC_SUBST(bashcompdir)
 
 AC_CANONICAL_HOST

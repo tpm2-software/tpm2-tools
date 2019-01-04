@@ -132,14 +132,9 @@ _tpm2_tools()
 
     COMPREPLY=( $( compgen -W '$( echo ${suggestions[@]} )' -- "$cur" ) )
 
-} &&
-  #to obtain the installation path of the tools, it is necessary to know just one of them, tpm2_import was choose ramdomly
-  #and then assign the completion function to all the tools
-  tools_for_completions=( $(find $( dirname $(which tpm2_import) ) -type f -printf '%f\n' | grep 'tpm2_') )
-  for i in "${tools_for_completions[@]}"
-  do
-   complete -F _tpm2_tools $i
-  done
+}
+
+complete -F _tpm2_tools ${COMP_WORDS[0]##*/}
 
 #function used to exlude the already completed options from the suggested completions
 _exclude_completed_opts() {

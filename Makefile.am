@@ -395,3 +395,15 @@ CLEANFILES = $(man1_MANS)
 
 bashcompdir=@bashcompdir@
 dist_bashcomp_DATA=dist/bash-completion/tpm2-tools/tpm2_completion.bash
+
+install-data-hook:
+	cd $(DESTDIR)$(bashcompdir) && \
+	for tool in $(bin_PROGRAMS); do \
+		$(LN_S) -f tpm2_completion.bash $${tool##*/}; \
+	done
+
+uninstall-hook:
+	cd $(DESTDIR)$(bashcompdir) && \
+	for tool in $(bin_PROGRAMS); do \
+		[ -L $${tool##*/} ] && rm -f $${tool##*/}; \
+	done
