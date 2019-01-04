@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM debian:stable
 
 RUN apt-get update && \
     apt-get install -y \
@@ -23,8 +23,7 @@ RUN apt-get update && \
     doxygen \
     libdbus-1-dev \
     libglib2.0-dev \
-    clang-6.0 \
-    clang-tools-6.0 \
+    clang-4.0 \
     pandoc \
     lcov \
     libcurl4-openssl-dev \
@@ -32,7 +31,7 @@ RUN apt-get update && \
     python-yaml \
     xxd
 
-RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-6.0 100
+RUN update-alternatives --install /usr/bin/clang clang /usr/bin/clang-4.0 100
 
 ARG ibmtpm_name=ibmtpm1119
 WORKDIR /tmp
