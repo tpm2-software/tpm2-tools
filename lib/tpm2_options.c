@@ -291,7 +291,7 @@ static tcti_conf tcti_get_config(const char *optstr) {
             }
         }
     } else {
-        conf.name = strdup(optstr);
+        parse_env_tcti(optstr, &conf);
     }
 
     if (!conf.name) {
