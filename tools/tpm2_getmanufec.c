@@ -305,7 +305,6 @@ char *Base64Encode(const unsigned char* buffer)
     BIO_write(bio, buffer, SHA256_DIGEST_LENGTH);
     BIO_flush(bio);
     BIO_get_mem_ptr(bio, &bufferPtr);
-    BIO_set_close(bio, BIO_NOCLOSE);
 
     /* these are not NULL terminated */
     char *b64text = bufferPtr->data;
