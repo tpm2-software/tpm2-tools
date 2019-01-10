@@ -28,6 +28,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
+#include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -37,6 +38,7 @@
 #include <tss2/tss2_esys.h>
 #include <tss2/tss2_mu.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_session.h"
@@ -50,6 +52,9 @@
 
 #define SESSION_PREFIX "session:"
 #define SESSION_PREFIX_LEN sizeof(SESSION_PREFIX) - 1
+
+#define FILE_PREFIX "file:"
+#define FILE_PREFIX_LEN sizeof(FILE_PREFIX) - 1
 
 static bool handle_hex_password(const char *password, TPMS_AUTH_COMMAND *auth) {
 
@@ -156,6 +161,50 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path, TPMS_AUTH_COMMA
     return true;
 }
 
+static bool handle_file(const char *path, TPMS_AUTH_COMMAND *auth) {
+
+    bool ret = false;
+    char *tmp = NULL;
+
+    path += FILE_PREFIX_LEN;
+
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        LOG_ERR("Could not open file: \"%s\" error: %s", path, strerror(errno));
+        return false;
+    }
+
+    unsigned long file_size = 0;
+    ret = files_get_file_size(f, &file_size, path);
+    if (!ret) {
+        goto out;
+    }
+
+    if (file_size + 1 <= file_size) {
+        LOG_ERR("overflow: file_size too large");
+        goto out;
+    }
+
+    tmp = calloc(file_size + 1, sizeof(char));
+    if (!tmp) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    ret = files_read_bytes(f, (UINT8 *)tmp, file_size);
+    if (!ret) {
+        goto out;
+    }
+
+    ret = handle_password(tmp, auth);
+
+out:
+    fclose(f);
+    free(tmp);
+
+    return ret;
+}
+
 bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     TPMS_AUTH_COMMAND *auth, tpm2_session **session) {
 
@@ -163,6 +212,11 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     if (is_session && !session) {
         LOG_ERR("Tool does not support sessions for this auth value");
         return false;
+    }
+
+    bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
+    if (is_file) {
+        return handle_file(password, auth);
     }
 
     return is_session ?
