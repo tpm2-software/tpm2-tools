@@ -25,6 +25,7 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 #include <errno.h>
+#include <fcntl.h>
 #include <setjmp.h>
 #include <stdarg.h>
 #include <stddef.h>
@@ -32,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include <cmocka.h>
 #include <tss2/tss2_sys.h>
@@ -94,6 +96,26 @@ static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **st
     assert_true(res);
     assert_int_equal(dest.hmac.size, 12);
     assert_memory_equal(dest.hmac.buffer, "hex:1234abcd", 12);
+}
+
+static void test_tpm2_password_util_from_optarg_file(void **state) {
+    UNUSED(state);
+
+    const char *secret = "sekretpasswrd";
+
+    TPMS_AUTH_COMMAND dest;
+
+    int fd = open("foobar", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+    assert_int_not_equal(fd, -1);
+
+    int wrok = write(fd, secret, strlen(secret));
+    assert_int_not_equal(wrok, -1);
+    close(fd);
+
+    bool res = tpm2_auth_util_from_optarg(NULL, "file:foobar", &dest, NULL);
+    assert_true(res);
+    assert_int_equal(dest.hmac.size, wrok);
+    assert_memory_equal(dest.hmac.buffer, secret, wrok);
 }
 
 static void test_tpm2_password_util_from_optarg_raw_overlength(void **state) {
@@ -219,6 +241,7 @@ int main(int argc, char* argv[]) {
 
             cmocka_unit_test_setup_teardown(test_tpm2_auth_util_get_shandle,
                                             setup, teardown),
+            cmocka_unit_test(test_tpm2_password_util_from_optarg_file),
 
             /* negative testing */
             cmocka_unit_test(test_tpm2_password_util_from_optarg_raw_overlength),

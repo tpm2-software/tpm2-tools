@@ -33,6 +33,11 @@
 
 source helpers.sh
 
+cleanup() {
+    rm secret.txt
+}
+trap cleanup EXIT
+
 start_up
 
 ownerPasswd=abc123
@@ -49,5 +54,10 @@ tpm2_changeauth -o $ownerPasswd -e $endorsePasswd -l $lockPasswd
 tpm2_changeauth -O $ownerPasswd -E $endorsePasswd -L $lockPasswd -o $new_ownerPasswd -e $new_endorsePasswd -l $new_lockPasswd
 
 tpm2_clear -L $new_lockPasswd
+
+tpm2_changeauth -o $ownerPasswd -e $endorsePasswd -l $lockPasswd
+
+echo -n $lockPasswd > secret.txt
+tpm2_clear -L "file:secret.txt"
 
 exit 0

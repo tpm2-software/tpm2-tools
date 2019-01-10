@@ -9,10 +9,12 @@ Authorization for use of an object in TPM2.0 can come in 3 different forms:
 
 ## Passwords
 
-Passwords are interpreted in two forms, string and hex-string. A string password is not
+Passwords are interpreted in three forms; string, hex-string or a file. A string password is not
 interpreted, and is directly used for authorization. A hex-string password is converted from
 a hexidecimal form into a byte array form, thus allowing passwords with non-printable
 and/or terminal un-friendly characters.
+A file form should be the path of a file containing a password in string or hex-string format to be read by the tool.
+Storing passwords in files prevents information leakage, passwords passed as options can be read from the process list.
 
 By default passwords are assumed to be in the string form. Password form is specified
 with special prefix values, they are:
@@ -20,6 +22,8 @@ with special prefix values, they are:
   * str: - Used to indicate it is a raw string. Useful for escaping a password that starts
          with the "hex:" prefix.
   * hex: - Used when specifying a password in hex string format.
+  * file: - Used when specifying a password stored in a file. Useful to prevent leaking the
+         password to UNIX utilities (such as ps).
 
 ## HMAC
 

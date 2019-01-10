@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * Add support for reading authorisation passwords from a file
   * tpm2_createek: now saves a context file for the generated primary's
     handle to disk.
   * tpm2_createak: now saves a context file for the generated primary's
