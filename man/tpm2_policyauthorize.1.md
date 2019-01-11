@@ -100,7 +100,7 @@ verification of the signature on the pcr policy digest using **tpm2_policyauthor
 * tpm2_policypcr -Q -S session.ctx -L sha256:0 -f pcr.policy
 * tpm2_policyauthorize -S session.ctx -o authorized.policy -f pcr.policy\
  -n signing_key.name -t verification.tkt
-* tpm2_load -Q -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -o sealing_key.context
+* tpm2_load -Q -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -o sealing_key.ctx
 * unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx`
 * echo $unsealed
 * tpm2_flushcontext -S session.ctx
