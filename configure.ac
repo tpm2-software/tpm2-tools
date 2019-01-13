@@ -64,6 +64,18 @@ AC_ARG_ENABLE([unit],
             [enable_unit=no])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
 
+dnl macro that checks for specific modules in python
+AC_DEFUN([AC_PYTHON_MODULE],
+[AC_MSG_CHECKING([for module $1 in python])
+  echo "import $1" | python - 2>/dev/null
+  if test $? -ne 0 ; then
+    AC_MSG_RESULT([not found])
+    AC_MSG_WARN([System tests require the python module $1, some tests will fail!])
+  else
+    AC_MSG_RESULT(found)
+  fi
+])
+
 AC_DEFUN([unit_test_checks],[
 
     PKG_CHECK_MODULES([CMOCKA],[cmocka],
@@ -82,6 +94,26 @@ AC_DEFUN([unit_test_checks],[
     AS_IF([test "$tpm_server" != "yes"],
         [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])],
         [])
+
+    AC_CHECK_PROG([BASH_SHELL],[bash],[yes])
+    AS_IF(
+        [test "x${BASH_SHELL}" == x"yes"],
+        [],
+        [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
+
+    AC_CHECK_PROG([PYTHON],[python],[yes])
+    AS_IF(
+        [test "x${PYTHON}" == x"yes"],
+        [],
+        [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
+
+    AC_PYTHON_MODULE([yaml])
+
+    AC_CHECK_PROG([XXD],[xxd],[yes])
+    AS_IF(
+        [test "x${XXD}" == x"yes"],
+        [],
+        [AC_MSG_WARN([Required executable xxd not found, some system tests will fail!])])
 ])
 
 AS_IF([test "x$enable_unit" != xno],
@@ -185,31 +217,6 @@ AS_IF([test x"$strip" == x"yyy"], [
 ],
   AC_MSG_NOTICE([Not using compiler options to reduce binary size!])
 )
-
-AC_CHECK_PROG([BASH_SHELL],[bash],[yes])
-AS_IF(
-    [test "x${BASH_SHELL}" == x"yes"],
-    [],
-    [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
-
-AC_CHECK_PROG([PYTHON],[python],[yes])
-AS_IF(
-    [test "x${PYTHON}" == x"yes"],
-    [],
-    [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
-
-dnl macro that checks for specific modules in python
-AC_DEFUN([AC_PYTHON_MODULE],
-[AC_MSG_CHECKING([for module $1 in python])
-  echo "import $1" | python -
-  if test $? -ne 0 ; then
-    AC_MSG_RESULT([not found])
-    AC_MSG_WARN([System tests require pyyaml, some tests will fail!])
-  fi
-AC_MSG_RESULT(found)
-])
-
-AC_PYTHON_MODULE([yaml])
 
 AC_SUBST([EXTRA_CFLAGS])
 AC_SUBST([EXTRA_LDFLAGS])
