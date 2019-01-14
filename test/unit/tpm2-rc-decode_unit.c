@@ -656,6 +656,10 @@ tpm2_rc_get_tss_err_code_bad_size_from_sys (void **state)
     assert_int_equal (TSS2_BASE_RC_BAD_SIZE,
                       tpm2_rc_get_tss_err_code (rc));
 }
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
 int
 main (int argc, char* argv[])
 {
