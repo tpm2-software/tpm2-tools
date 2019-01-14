@@ -140,6 +140,11 @@ static void test_tpm_response_header(void **state) {
     assert_true(rc == 0x00);
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;

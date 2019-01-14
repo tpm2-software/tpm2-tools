@@ -101,6 +101,11 @@ TEST_ENDIAN_NTOH(16, 0xFF00, 0x00FF)
 TEST_ENDIAN_NTOH(32, 0xAABBCCDD, 0xDDCCBBAA)
 TEST_ENDIAN_NTOH(64, 0x0011223344556677, 0x7766554433221100)
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;

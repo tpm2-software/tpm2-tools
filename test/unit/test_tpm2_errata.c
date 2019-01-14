@@ -174,6 +174,11 @@ static void test_tpm2_errata_init_no_match_and_apply(void **state) {
                     TPMA_OBJECT_SIGN_ENCRYPT);
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char *argv[]) {
     UNUSED(argc);
     UNUSED(argv);

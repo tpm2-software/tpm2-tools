@@ -57,6 +57,11 @@ static void test_pcr_alg_nice_names(void **state) {
             sizeof(raw_pcr_selections));
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
