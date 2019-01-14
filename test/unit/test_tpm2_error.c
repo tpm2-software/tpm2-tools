@@ -258,6 +258,11 @@ static void test_tcti(void **state) {
     assert_string_equal(e, "tcti:Fails to connect to next lower layer");
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;

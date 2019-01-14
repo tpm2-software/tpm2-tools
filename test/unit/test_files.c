@@ -301,6 +301,11 @@ static void test_files_get_unique_name(void **state) {
     assert_null(unique);
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;

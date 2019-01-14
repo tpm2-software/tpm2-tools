@@ -367,6 +367,11 @@ static void test_tpm2_attr_util_obj_from_optarg_good(void **state) {
     assert_int_equal(TPMA_OBJECT_FIXEDTPM, objattrs);
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;
