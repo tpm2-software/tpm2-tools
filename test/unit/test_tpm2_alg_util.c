@@ -430,6 +430,11 @@ static void test_tpm2_alg_util_get_hash_size(void **state) {
     assert_int_equal(hsize, 0);
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void) argc;
     (void) argv;

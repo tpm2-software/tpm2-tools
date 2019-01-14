@@ -263,6 +263,11 @@ static void test_file_exists_bad_args(void **state) {
     assert_false(res);
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;

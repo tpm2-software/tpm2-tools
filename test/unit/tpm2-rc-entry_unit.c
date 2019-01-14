@@ -281,6 +281,10 @@ tpm2_rc_entry_warn_bad (void **state)
     (void) state;
     LOOKUP_FAILURE (0x17, tpm2_get_warn_entry);
 }
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
 int
 main (int   argc,
       char *argv[])

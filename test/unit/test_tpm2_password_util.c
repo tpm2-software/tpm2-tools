@@ -140,6 +140,11 @@ static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(void **stat
     assert_int_equal(dest.size, 0);
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
