@@ -11,7 +11,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_CONFIG_FILES([Makefile])
 AC_CHECK_PROG([PANDOC],[pandoc],[yes])
 AS_IF(
-    [test "x${PANDOC}" == x"yes"],
+    [test "x${PANDOC}" = x"yes"],
     [],
     [AC_MSG_WARN([Required executable pandoc not found, man pages will not be built])])
 AM_CONDITIONAL([HAVE_PANDOC],[test "x${PANDOC}" = "xyes"])
@@ -101,11 +101,11 @@ AX_CHECK_PREPROC_FLAG([-D_GNU_SOURCE],
 
 # Best attempt, strip unused stuff from the binary to reduce size.
 # Rather than nesting these and making them ugly just use a counter.
-AX_CHECK_COMPILE_FLAG([-fdata-sections], [strip+="y"])
-AX_CHECK_COMPILE_FLAG([-ffunction-sections], [strip+="y"])
-AX_CHECK_LINK_FLAG([[-Wl,--gc-sections]], [strip+="y"])
+AX_CHECK_COMPILE_FLAG([-fdata-sections], [strip="${strip}y"])
+AX_CHECK_COMPILE_FLAG([-ffunction-sections], [strip="${strip}y"])
+AX_CHECK_LINK_FLAG([[-Wl,--gc-sections]], [strip="${strip}y"])
 
-AS_IF([test x"$strip" == x"yyy"], [
+AS_IF([test x"$strip" = x"yyy"], [
   EXTRA_CFLAGS="$EXTRA_CFLAGS -fdata-sections -ffunction-sections"
   EXTRA_LDFLAGS="$EXTRA_LDFLAGS -Wl,--gc-sections"
 ],
@@ -114,13 +114,13 @@ AS_IF([test x"$strip" == x"yyy"], [
 
 AC_CHECK_PROG([BASH_SHELL],[bash],[yes])
 AS_IF(
-    [test "x${BASH_SHELL}" == x"yes"],
+    [test "x${BASH_SHELL}" = x"yes"],
     [],
     [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
 
 AC_CHECK_PROG([PYTHON],[python],[yes])
 AS_IF(
-    [test "x${PYTHON}" == x"yes"],
+    [test "x${PYTHON}" = x"yes"],
     [],
     [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
 
