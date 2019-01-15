@@ -84,6 +84,7 @@ bin_PROGRAMS = \
     tools/tpm2_pcrevent \
     tools/tpm2_pcrextend \
     tools/tpm2_pcrlist \
+    tools/tpm2_pcrreset \
     tools/tpm2_policypcr \
     tools/tpm2_policyauthorize \
     tools/tpm2_policyor \
@@ -153,6 +154,7 @@ tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
+tools_tpm2_pcrreset_SOURCES = tools/tpm2_pcrreset.c $(TOOL_SRC)
 tools_tpm2_import_SOURCES = tools/tpm2_import.c $(TOOL_SRC)
 tools_tpm2_flushcontext_SOURCES = tools/tpm2_flushcontext.c $(TOOL_SRC)
 tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
@@ -310,6 +312,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_pcrevent.1 \
     man/man1/tpm2_pcrextend.1 \
     man/man1/tpm2_pcrlist.1 \
+    man/man1/tpm2_pcrreset.1 \
     man/man1/tpm2_policypcr.1 \
     man/man1/tpm2_policyrestart.1 \
     man/man1/tpm2_policycommandcode.1 \
