@@ -72,26 +72,26 @@ Passwords should follow the "password authorization formatting standards", see s
 
 # EXAMPLES
 
-##Set owner, endorsement and lockout authorizations:
+## Set owner, endorsement and lockout authorizations:
 ```
 tpm2_changeauth -o newo -e newe -l newl
 ```
-##Set owner, endorsement and lockout authorizations to a new value:
+## Set owner, endorsement and lockout authorizations to a new value:
 ```
 tpm2_changeauth -o newo -e newe -l newl -O oldo -E olde -L oldl
 ```
-##Unset/Clear owner authorization which was previously set to say 'newo':
+## Unset/Clear owner authorization which was previously set to say 'newo':
 ```
 tpm2_changeauth -O newo
 ```
-##Modify authorization for a loadable transient object
+## Modify authorization for a loadable transient object
 ```
 tpm2_createprimary -Q -a o -o prim.ctx
 tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx
 tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -o key.ctx
 tpm2_changeauth -p newkeyauth -c key.ctx -a prim.ctx -r key.priv
 ```
-##Modify authorization for a NV Index - Requires Extended Session Support
+## Modify authorization for a NV Index - Requires Extended Session Support
 ```
 tpm2_startauthsession -S session.ctx
 TPM2_NV_ChangeAuth=0x13B
