@@ -106,6 +106,7 @@ bin_PROGRAMS = \
     tools/tpm2_rsadecrypt \
     tools/tpm2_rsaencrypt \
     tools/tpm2_send \
+    tools/tpm2_selftest \
     tools/tpm2_sign \
     tools/tpm2_startauthsession \
     tools/tpm2_startup \
@@ -158,6 +159,7 @@ tools_tpm2_evictcontrol_SOURCES = tools/tpm2_evictcontrol.c $(TOOL_SRC)
 tools_tpm2_loadexternal_SOURCES = tools/tpm2_loadexternal.c $(TOOL_SRC)
 tools_tpm2_rsadecrypt_SOURCES = tools/tpm2_rsadecrypt.c $(TOOL_SRC)
 tools_tpm2_rsaencrypt_SOURCES = tools/tpm2_rsaencrypt.c $(TOOL_SRC)
+tools_tpm2_selftest_SOURCES = tools/tpm2_selftest.c $(TOOL_SRC)
 tools_tpm2_sign_SOURCES = tools/tpm2_sign.c $(TOOL_SRC)
 tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
 tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
@@ -338,6 +340,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_rsadecrypt.1 \
     man/man1/tpm2_rsaencrypt.1 \
     man/man1/tpm2_send.1 \
+    man/man1/tpm2_selftest.1 \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_startauthsession.1 \
     man/man1/tpm2_startup.1 \
