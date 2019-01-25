@@ -312,6 +312,16 @@ static bool process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
         return false;
     }
 
+    if (!ctx.tpm_handle_parent_context_object.tr_handle) {
+        result = tpm2_util_sys_handle_to_esys_handle(
+                ectx,
+                ctx.tpm_handle_parent_context_object.handle,
+                &ctx.tpm_handle_parent_context_object.tr_handle);
+        if (!result) {
+            return result;
+        }
+    }
+
     TPM2B_PRIVATE *outPrivate = NULL;
     TSS2_RC rval = Esys_ObjectChangeAuth(ectx,
                         ctx.tpm_handle_context_object.tr_handle,
@@ -429,8 +439,9 @@ static bool is_input_option_args_valid(void) {
                 ctx.is_nv = true;
                 break;
             default:
-                LOG_ERR("Unsupported handle type for auth change");
-                return false;
+                // transient objects are only specified via file context and thus
+                // have no handle just an ESYS_TR
+                ctx.is_transient = true;
         }
     }
 
