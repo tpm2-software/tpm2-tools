@@ -34,7 +34,7 @@
 source helpers.sh
 
 cleanup() {
-    rm secret.txt
+    rm secret.txt key.ctx key.pub key.priv primary.ctx
 }
 trap cleanup EXIT
 
@@ -59,5 +59,12 @@ tpm2_changeauth -o $ownerPasswd -e $endorsePasswd -l $lockPasswd
 
 echo -n $lockPasswd > secret.txt
 tpm2_clear -L "file:secret.txt"
+
+# Test changing an objects auth
+tpm2_createprimary -Q -a o -o primary.ctx
+tpm2_create -Q -C primary.ctx -p foo -u key.pub -r key.priv
+tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -o key.ctx
+tpm2_changeauth -a primary.ctx -P foo -p bar -c key.ctx -r new.priv
+
 
 exit 0
