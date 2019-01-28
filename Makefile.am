@@ -39,7 +39,7 @@ else
 @CODE_COVERAGE_RULES@
 endif
 
-ACLOCAL_AMFLAGS = -I m4
+ACLOCAL_AMFLAGS = -I m4 --install
 
 INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib
 LIB_COMMON := lib/libcommon.a
