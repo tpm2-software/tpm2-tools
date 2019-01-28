@@ -35,23 +35,6 @@ set -e
 
 source $TRAVIS_BUILD_DIR/.ci/docker-prelude.sh
 
-echo "starting dbus"
-mkdir -p /var/run/dbus
-if [ -e /var/run/dbus/pid ]; then
-  rm /var/run/dbus/pid
-fi
-
-if [ -e /var/run/dbus/system_bus_socket ]; then
-  rm /var/run/dbus/system_bus_socket
-fi
-
-# start dbus
-dbus-daemon --fork --system
-echo "dbus started"
-
-# let dbus have time to start up
-sleep 5
-
 if [ -d build ]; then
   rm -rf build
 fi
@@ -122,7 +105,7 @@ fi
 
 ../configure --enable-unit $config_flags
 make -j$(nproc)
-dbus-launch make -j$(nproc) check
+make -j$(nproc) check
 
 popd
 

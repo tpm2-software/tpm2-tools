@@ -261,7 +261,8 @@ AM_TESTS_ENVIRONMENT =	\
 	TPM2_ABRMD="tpm2-abrmd" \
 	TPM2_SIM="tpm_server" \
 	PATH=$(abs_build_dir)/tools:$(abs_build_dir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH) \
-	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures
+	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures \
+	dbus-run-session
 endif
 
 check-hook:
