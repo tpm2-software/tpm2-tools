@@ -189,44 +189,44 @@ check_PROGRAMS = \
     test/unit/test_tpm2_errata
 
 test_unit_tpm2_rc_decode_unit_CFLAGS  = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_tpm2_rc_decode_unit_LDADD   = $(CMOCKA_LIBS) $(LDADD)
 test_unit_tpm2_rc_decode_unit_SOURCES = test/unit/tpm2-rc-decode_unit.c
 
 test_unit_tpm2_rc_entry_unit_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_tpm2_rc_entry_unit_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_tpm2_rc_entry_unit_SOURCES  = test/unit/tpm2-rc-entry_unit.c
 
 test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
 
 test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS)
+test_unit_test_files_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_files_SOURCES  = test/unit/test_files.c
 
 test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_tpm2_header_SOURCES  = test/unit/test_tpm2_header.c
 
 test_unit_test_tpm2_attr_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_tpm2_attr_util_SOURCES  = test/unit/test_tpm2_attr_util.c
 
 test_unit_test_tpm2_alg_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_tpm2_alg_util_SOURCES  = test/unit/test_tpm2_alg_util.c
 
 test_unit_test_pcr_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
 
 test_unit_test_tpm2_password_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_password_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_password_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_tpm2_password_util_SOURCES  = test/unit/test_tpm2_password_util.c
 
 test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Tss2_Sys_GetCapability
-test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON)
+test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
 endif
