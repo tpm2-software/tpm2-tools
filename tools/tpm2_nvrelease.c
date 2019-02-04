@@ -75,7 +75,7 @@ static bool nv_space_release(ESYS_CONTEXT *ectx) {
     }
 
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, nv_handle,
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
                             &ctx.auth.session_data, ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle");
