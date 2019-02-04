@@ -214,4 +214,9 @@ if [ $? -eq 0 ];then
  exit 1
 fi
 
+# Check using authorisation with tpm2_nvrelease
+trap onerror ERR
+
+tpm2_nvrelease -x 0x1500015 -a 0x40000001 -P "owner"
+
 exit 0
