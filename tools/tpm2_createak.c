@@ -270,7 +270,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     ESYS_TR sess_handle = tpm2_session_get_handle(session);
     tpm2_session_free(&session);
 
-    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
+    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
                         &ctx.ek.auth2.session_data, ctx.ek.auth2.session);
     if (shandle == ESYS_TR_NONE) {
         return false;
