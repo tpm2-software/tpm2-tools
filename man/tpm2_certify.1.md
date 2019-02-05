@@ -71,7 +71,7 @@ These options control the ceritifcation:
 ```
 tpm2_certify -H 0x81010002 -k 0x81010001 -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
 tpm2_certify -C obj.context -c key.context -P 0x0011 -K 0x00FF -g 0x00B -a <fileName> -s <fileName>
-tpm2_certify -H 0x81010002 -k 0x81010001 -P 0011 -K 00FF -X -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -H 0x81010002 -k 0x81010001 -P 0011 -K 00FF -g 0x00B -a <fileName> -s <fileName>
 ```
 
 # RETURNS

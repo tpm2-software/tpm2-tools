@@ -56,7 +56,7 @@ These options control the object verification:
 ```
 tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P abc123 -e abc123 -f <filePath> -o <filePath>
 tpm2_activatecredential -c ak.context -C ek.context -P abc123 -e abc123 -f <filePath> -o <filePath>
-tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P 123abc -e 1a1b1c -X -f <filePath> -o <filePath>
+tpm2_activatecredential -H 0x81010002 -k 0x81010001 -P 123abc -e 1a1b1c -f <filePath> -o <filePath>
 ```
 
 # RETURNS

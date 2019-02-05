@@ -1,5 +1,6 @@
 //**********************************************************************;
 // Copyright (c) 2015-2018, Intel Corporation
+// Copyright (c) 2019 Massachusetts Institute of Technology
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,12 +39,15 @@
 
 #include <tss2/tss2_sys.h>
 #include <tss2/tss2_mu.h>
+#include <openssl/rand.h>
 
 #include "files.h"
 #include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
-#include "tpm2_options.h"
+#include "tpm2_alg_util.h"
+#include "tpm2_openssl.h"
+#include "tpm2_identity_util.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -115,6 +119,93 @@ static bool write_cred_and_secret(const char *path, TPM2B_ID_OBJECT *cred,
 out:
     fclose(fp);
     return result;
+}
+
+static bool make_external_credential_and_save() {
+
+    /*
+     * Get name_alg from the public key
+     */
+    TPMI_ALG_HASH name_alg = ctx.public.publicArea.nameAlg;
+
+
+    /* 
+     * Generate and encrypt seed
+     */
+    TPM2B_DIGEST seed = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+    seed.size = tpm2_alg_util_get_hash_size(name_alg);
+    RAND_bytes(seed.buffer, seed.size);
+
+    TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
+    unsigned char label[10] = { 'I', 'D', 'E', 'N', 'T', 'I', 'T', 'Y', 0 };
+    bool res = tpm2_identity_util_encrypt_seed_with_public_key(&seed,
+            &ctx.public, label, 9,
+            &encrypted_seed);
+    if (!res) {
+        LOG_ERR("Failed Seed Encryption\n");
+        return false;
+    }
+
+    /* 
+     * Perform identity structure calculations (off of the TPM)
+     */
+    TPM2B_MAX_BUFFER hmac_key;
+    TPM2B_MAX_BUFFER enc_key;
+    tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
+            &ctx.public,
+            &ctx.object_name,
+            &seed,
+            &hmac_key,
+            &enc_key);
+
+    /*
+     * The ctx.credential needs to be marshalled into struct with 
+     * both size and contents together (to be encrypted as a block)
+     */
+    TPM2B_MAX_BUFFER marshalled_inner_integrity = TPM2B_EMPTY_INIT;
+    marshalled_inner_integrity.size = ctx.credential.size + sizeof(ctx.credential.size);
+    UINT16 credSize = ctx.credential.size;
+    if (!tpm2_util_is_big_endian()) {
+        credSize = tpm2_util_endian_swap_16(credSize);
+    }
+    memcpy(marshalled_inner_integrity.buffer, &credSize, sizeof(credSize));
+    memcpy(&marshalled_inner_integrity.buffer[2], ctx.credential.buffer, ctx.credential.size);
+
+    /*
+     * Perform inner encryption (encIdentity) and outer HMAC (outerHMAC)
+     */
+    TPM2B_DIGEST outer_hmac = TPM2B_EMPTY_INIT;
+    TPM2B_MAX_BUFFER encrypted_sensitive = TPM2B_EMPTY_INIT;
+    tpm2_identity_util_calculate_outer_integrity(
+            name_alg,
+            &ctx.object_name,
+            &marshalled_inner_integrity,
+            &hmac_key,
+            &enc_key,
+            &ctx.public.publicArea.parameters.rsaDetail.symmetric,
+            &encrypted_sensitive,
+            &outer_hmac);
+
+    /*
+     * Package up the info to save
+     * cred_bloc = outer_hmac || encrypted_sensitive
+     * secret = encrypted_seed (with pubEK)
+     */
+    TPM2B_ID_OBJECT cred_blob = TPM2B_TYPE_INIT(TPM2B_ID_OBJECT, credential);
+
+    UINT16 outer_hmac_size = outer_hmac.size;
+    if (!tpm2_util_is_big_endian()) {
+        outer_hmac_size = tpm2_util_endian_swap_16(outer_hmac_size);
+    }
+    int offset = 0;
+    memcpy(cred_blob.credential + offset, &outer_hmac_size, sizeof(outer_hmac.size));offset += sizeof(outer_hmac.size);
+    memcpy(cred_blob.credential + offset, outer_hmac.buffer, outer_hmac.size);offset += outer_hmac.size;
+    //NOTE: do NOT include the encrypted_sensitive size, since it is encrypted with the blob!
+    memcpy(cred_blob.credential + offset, encrypted_sensitive.buffer, encrypted_sensitive.size);
+
+    cred_blob.size = outer_hmac.size + encrypted_sensitive.size + sizeof(outer_hmac.size);
+
+    return write_cred_and_secret(ctx.out_file_path, &cred_blob, &encrypted_seed);
 }
 
 static bool make_credential_and_save(TSS2_SYS_CONTEXT *sapi_context)
@@ -198,7 +289,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts,
-            on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
+            on_option, NULL, 
+            TPM2_OPTIONS_SHOW_USAGE | TPM2_OPTIONS_OPTIONAL_SAPI);
 
     return *opts != NULL;
 }
@@ -212,5 +304,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         return false;
     }
 
-    return make_credential_and_save(sapi_context) != true;
+    printf("make credential has SAPI CTX: %p", sapi_context);
+
+    bool result = sapi_context ? make_credential_and_save(sapi_context) : 
+            make_external_credential_and_save();
+
+    return result != true;
 }
