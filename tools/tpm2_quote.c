@@ -42,9 +42,11 @@
 #include "pcr.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_openssl.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+
 
 typedef struct tpm_quote_ctx tpm_quote_ctx;
 struct tpm_quote_ctx {
@@ -55,10 +57,14 @@ struct tpm_quote_ctx {
     char *outFilePath;
     char *signature_path;
     char *message_path;
+    char *pcr_path;
+    FILE *pcr_output;
     tpm2_convert_sig_fmt sig_format;
     TPMI_ALG_HASH sig_hash_algorithm;
+    tpm2_algorithm algs;
     TPM2B_DATA qualifyingData;
     TPML_PCR_SELECTION pcrSelections;
+    TPMS_CAPABILITY_DATA cap_data;
     char *ak_auth_str;
     const char *context_arg;
     tpm2_loaded_object context_object;
@@ -68,15 +74,59 @@ struct tpm_quote_ctx {
         UINT16 o : 1;
         UINT16 G : 1;
         UINT16 P : 1;
+        UINT16 p : 1;
     } flags;
+    tpm2_pcrs pcrs;
 };
 
 static tpm_quote_ctx ctx = {
     .auth = {
         .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
     },
+    .algs = {
+        .count = 3,
+        .alg = {
+            TPM2_ALG_SHA1,
+            TPM2_ALG_SHA256,
+            TPM2_ALG_SHA384
+        }
+    },
     .qualifyingData = TPM2B_EMPTY_INIT,
 };
+
+
+// write all PCR banks according to g_pcrSelection & g_pcrs->
+static bool write_pcr_values() {
+
+    // PCR output to file wasn't requested
+    if (ctx.pcr_output == NULL) {
+        return true;
+    }
+
+    // Export TPML_PCR_SELECTION structure to pcr outfile
+    if (fwrite(&ctx.pcrSelections,
+            sizeof(TPML_PCR_SELECTION), 1,
+            ctx.pcr_output) != 1) {
+        LOG_ERR("write to output file failed: %s", strerror(errno));
+        return false;
+    }
+
+    // Export PCR digests to pcr outfile
+    if (fwrite(&ctx.pcrs.count, sizeof(UINT32), 1, ctx.pcr_output) != 1) {
+        LOG_ERR("write to output file failed: %s", strerror(errno));
+        return false;
+    }
+
+    UINT32 j;
+    for (j = 0; j < ctx.pcrs.count; j++) {
+        if (fwrite(&ctx.pcrs.pcr_values[j], sizeof(TPML_DIGEST), 1, ctx.pcr_output) != 1) {
+            LOG_ERR("write to output file failed: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    return true;
+}
 
 static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
 
@@ -91,12 +141,13 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
                 quoted->size);
     }
 
+    res &= write_pcr_values();
+
     return res;
 }
 
-static int quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
+static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
 {
-
     TPM2_RC rval;
     TPMT_SIG_SCHEME inScheme;
     TPM2B_ATTEST *quoted = NULL;
@@ -112,7 +163,7 @@ static int quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
                             &ctx.auth.session_data, ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return -1;
+        return false;
     }
 
     rval = Esys_Quote(ectx, ctx.context_object.tr_handle,
@@ -122,7 +173,7 @@ static int quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
     if(rval != TPM2_RC_SUCCESS)
     {
         LOG_PERR(Esys_Quote, rval);
-        return -1;
+        return false;
     }
 
     tpm2_tool_output( "quoted: " );
@@ -137,12 +188,57 @@ static int quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
     tpm2_tool_output("\n");
     free(sig);
 
+    if (ctx.pcr_output) {
+        // Filter out invalid/unavailable PCR selections
+        if (!pcr_check_pcr_selection(&ctx.cap_data, &ctx.pcrSelections)) {
+            LOG_ERR("Failed to filter unavailable PCR values for quote!");
+            return false;
+        }
+
+        // Gather PCR values from the TPM (the quote doesn't have them!)
+        if (!pcr_read_pcr_values(ectx, &ctx.pcrSelections, &ctx.pcrs)) {
+            LOG_ERR("Failed to retrieve PCR values related to quote!");
+            return false;
+        }
+
+        // Grab the digest from the quote
+        TPM2B_DIGEST quoteDigest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+        TPM2B_DATA extraData = TPM2B_TYPE_INIT(TPM2B_DATA, buffer);
+        if (!tpm2_util_get_digest_from_quote(quoted, &quoteDigest, &extraData)) {
+            LOG_ERR("Failed to get digest from quote!");
+            return false;
+        }
+
+        // Print out PCR values as output
+        if (!pcr_print_pcr_struct(&ctx.pcrSelections, &ctx.pcrs)) {
+            LOG_ERR("Failed to print PCR values related to quote!");
+            return false;
+        }
+
+        // Calculate the digest from our selected PCR values (to ensure correctness)
+        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+        if (!tpm2_openssl_hash_pcr_banks(ctx.sig_hash_algorithm, &ctx.pcrSelections, &ctx.pcrs, &pcr_digest)) {
+            LOG_ERR("Failed to hash PCR values related to quote!");
+            return false;
+        }
+        tpm2_tool_output("calcDigest: ");
+        tpm2_util_hexdump(pcr_digest.buffer, pcr_digest.size);
+        tpm2_tool_output("\n");
+
+        // Make sure digest from quote matches calculated PCR digest
+        if (!tpm2_util_verify_digests(&quoteDigest, &pcr_digest)) {
+            LOG_ERR("Error validating calculated PCR composite with quote");
+            return false;
+        }
+    }
+
+    // Write everything out
     bool res = write_output_files(quoted, signature);
 
     free(quoted);
     free(signature);
 
-    return res == true ? 0 : 1;
+    return res;
 }
 
 static bool on_option(char key, char *value) {
@@ -190,6 +286,10 @@ static bool on_option(char key, char *value) {
     case 'm':
          ctx.message_path = value;
          break;
+    case 'p':
+         ctx.pcr_path = value;
+         ctx.flags.p = 1;
+         break;
     case 'f':
          ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
@@ -220,11 +320,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "qualify-data",         required_argument, NULL, 'q' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
+        { "pcrs",                 required_argument, NULL, 'p' },
         { "format",               required_argument, NULL, 'f' },
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("C:P:l:L:q:s:m:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:l:L:q:s:m:p:f:G:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -252,6 +353,19 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
+    if (ctx.flags.p) {
+        if (!ctx.flags.G) {
+            LOG_ERR("Must specify -G if -p is requested.");
+            return -1;
+        }
+        ctx.pcr_output = fopen(ctx.pcr_path, "wb+");
+        if (!ctx.pcr_output) {
+            LOG_ERR("Could not open PCR output file \"%s\" error: \"%s\"",
+                    ctx.pcr_path, strerror(errno));
+            goto out;
+        }
+    }
+
     tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
     if (olrc == olrc_error) {
@@ -264,14 +378,22 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    int tmp_rc = quote(ectx, &ctx.pcrSelections);
-    if (tmp_rc) {
+    result = pcr_get_banks(ectx, &ctx.cap_data, &ctx.algs);
+    if (!result) {
+        goto out;
+    }
+
+    result = quote(ectx, &ctx.pcrSelections);
+    if (!result) {
         goto out;
     }
 
     rc = 0;
 
 out:
+    if (ctx.pcr_output) {
+        fclose(ctx.pcr_output);
+    }
 
     result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {

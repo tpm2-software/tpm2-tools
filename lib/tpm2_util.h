@@ -140,7 +140,32 @@ struct tpm2_loaded_object {
     const char *path;
 };
 
+
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer);
+
+/**
+ * Pulls the TPM2B_DIGEST out of a TPM2B_ATTEST quote.
+ * @param quoted
+ *  The attestation quote structure.
+^ * @param digest
+^ *  The digest from the quote.
+^ * @param extraData
+^ *  The extraData from the quote.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest, TPM2B_DATA *extraData);
+
+/**
+ * Compares two digests to ensure they are equal (for validation).
+ * @param quoteDigest
+ *  The digest from the quote.
+ * @param pcrDigest
+ *  The digest calculated off-TMP from the PCRs.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest, TPM2B_DIGEST *pcrDigest);
 
 /**
  * Appends a TPM2B buffer to a MAX buffer.
@@ -208,6 +233,15 @@ bool tpm2_util_hexdump_file(FILE *fd, size_t len);
 static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
 
     return tpm2_util_hexdump(buffer->buffer, buffer->size);
+}
+
+/**
+ * Determines if given PCR value is selected in TPMS_PCR_SELECTION structure.
+ * @param pcr_selection the TPMS_PCR_SELECTION structure to check pcr against.
+ * @param pcr the PCR ID to check selection status of.
+ */
+static inline bool tpm2_util_is_pcr_select_bit_set(TPMS_PCR_SELECTION *pcr_selection, UINT32 pcr) {
+    return (pcr_selection->pcrSelect[((pcr) / 8)] & (1 << ((pcr) % 8)));
 }
 
 /**

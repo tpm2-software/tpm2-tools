@@ -115,7 +115,7 @@ class ToolConflictor(object):
                 "tools-in-group": ["tpm2_certify", "tpm2_quote"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['g', 'halg', 'm', 'message', 's', 'signature'])
+                "ignore": set(['g', 'halg', 'm', 'message', 's', 'signature', 'p', 'pcrs'])
             },
             {
                 "gname": "signing",
@@ -127,10 +127,10 @@ class ToolConflictor(object):
             {
                 "gname": "integrity",
                 "tools-in-group":
-                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist", "tpm2_pcrreset"],
+                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist", "tpm2_pcrreset", "tpm2_checkquote"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['g', 'halg', 'f', 'format', 's', 'algs'])
+                "ignore": set(['g', 'G', 'halg', 'f', 'format', 's', 'algs', 'sig', 'p', 'pcrs', 'pubkey', 'm', 'message', 'c'])
             },
             {
                 "gname": "ea",
