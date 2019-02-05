@@ -174,38 +174,44 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
             LOG_PERR(Esys_FlushContext, rval);
             return false;
         }
-    } else if (ctx.ctx_obj.path) {
+    } else {
+        /* If it wasn't persistent, save a context for future tool interactions */
+        char *filename = NULL;
+
+        if (!ctx.ctx_obj.path) {
+            /* Ensure the context file path is unique, we don't want to clobber
+            * existing files.
+            */
+            bool ok = files_get_unique_name("ek.ctx", &filename);
+            if (!ok) {
+                return false;
+            }
+        } else {
+            /* Make a copy of specified path so we can free properly below */
+            filename = strdup(ctx.ctx_obj.path);
+            if (!filename) {
+                LOG_ERR("oom");
+                return false;
+            }
+        }
+
         bool result = files_save_tpm_context_to_path(ectx,
-                ctx.objdata.out.handle, ctx.ctx_obj.path);
+                ctx.objdata.out.handle, filename);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
-            return false;
-        }
-    }
-
-    /* If it wasn't persistent, save a context for future tool interactions */
-    if (!ctx.ctx_obj.handle && !ctx.out_file_path) {
-        ctx.out_file_path = "ek.ctx";
-    }
-
-    if (ctx.out_file_path) {
-        /* Ensure the context file path is unique, we don't want to clobber
-        * existing files.
-        */
-        char *filename = NULL;
-        bool ok = files_get_unique_name(ctx.out_file_path, &filename);
-        if (!ok) {
-            return false;
-        }
-
-        ok = tpm2_convert_pubkey_save(ctx.objdata.out.public,
-                ctx.format, filename);
-        if (!ok) {
             free(filename);
             return false;
         }
         tpm2_tool_output("transient-object-context: %s\n", filename);
         free(filename);
+    }
+
+    if (ctx.out_file_path) {
+        bool ok = tpm2_convert_pubkey_save(ctx.objdata.out.public,
+                ctx.format, ctx.out_file_path);
+        if (!ok) {
+            return false;
+        }
     }
 
     return true;
