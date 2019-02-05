@@ -91,9 +91,9 @@ These options for creating the tpm entity:
 # EXAMPLES
 
 ```
-tpm2_create -C 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File -o opu.File
-tpm2_create -C file:parent.context -P abc123 -p def456 -g sha256 -G keyedhash -I data.File -o opu.File
-tpm2_create -C 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File -o opu.File
+tpm2_create -C 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File
+tpm2_create -C file:parent.context -P abc123 -p def456 -g sha256 -G keyedhash -I data.File
+tpm2_create -C 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File
 ```
 
 # RETURNS
