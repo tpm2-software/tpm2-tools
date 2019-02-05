@@ -105,6 +105,7 @@ typedef bool (*tpm2_arg_handler)(int argc, char **argv);
  */
 #define TPM2_OPTIONS_SHOW_USAGE 0x1
 #define TPM2_OPTIONS_NO_SAPI 0x2
+#define TPM2_OPTIONS_OPTIONAL_SAPI 0x4
 
 struct tpm2_options {
     struct {

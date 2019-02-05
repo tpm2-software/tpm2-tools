@@ -18,6 +18,10 @@ The variables respected depend on how the software was configured.
 	* socket - Typically used with the old resource manager, or talking directly to
 	           a simulator.
 	* device - Used when talking directly to a TPM device file.
+	* none   - Do not initialize a connection with the TPM. Some tools allow for off-tpm
+               options and thus support not using a TCTI. Tools that do not support it
+               will error when attempted to be used without a TCTI connection. Does not
+               support *ANY* options and *MUST BE* presented as the exact text of "none".
 
   * _TPM2TOOLS\_DEVICE\_FILE_:
 	When using the device TCTI, specify the TPM device file. The default is

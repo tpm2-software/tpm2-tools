@@ -268,9 +268,8 @@ static char* parse_socket_tcti(void) {
 
 static tcti_conf tcti_get_config(const char *optstr) {
 
-    tcti_conf conf = {
-        .name = NULL
-    };
+    /* set up the default configuration */
+    tcti_conf conf = { 0 };
 
     /* no tcti config supplied, get it from env */
     if (!optstr) {
@@ -294,6 +293,11 @@ static tcti_conf tcti_get_config(const char *optstr) {
             }
         }
     } else {
+        /* handle case of TCTI set as "-T none" */
+        if (!strcmp(optstr, "none")) {
+            return conf;
+        }
+
         parse_env_tcti(optstr, &conf);
     }
 
@@ -400,7 +404,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
      * grep -rn case\ \'[a-zA-Z]\' | awk '{print $3}' | sed s/\'//g | sed s/\://g | sort | uniq | less
      */
     struct option long_options [] = {
-        { "tcti",          required_argument, NULL, 'T' },
+        { "tcti",          optional_argument, NULL, 'T' },
         { "help",          no_argument,       NULL, 'h' },
         { "verbose",       no_argument,       NULL, 'V' },
         { "quiet",         no_argument,       NULL, 'Q' },
@@ -492,17 +496,23 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
     if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
         tcti_conf conf = tcti_get_config(tcti_conf_option);
 
-        *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
-        if (!*tcti) {
-            LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
+        /* name can be NULL for optional SAPI tools */
+        if (conf.name) {
+            *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
+            if (!*tcti) {
+                LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
+                goto out;
+            }
+
+            if (!flags->enable_errata) {
+                flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
+            }
+            free(conf.name);
+            free(conf.opts);
+        } else if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI)) {
+            LOG_ERR("Requested no tcti, but tool requires TCTI.");
             goto out;
         }
-
-        if (!flags->enable_errata) {
-            flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
-        }
-        free(conf.name);
-        free(conf.opts);
     }
 
     rc = tpm2_option_code_continue;

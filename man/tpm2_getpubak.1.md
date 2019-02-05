@@ -80,7 +80,7 @@ loaded-key:
 
 ```
 tpm2_getpubak -e abc123 -P abc123 -o passwd -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
-tpm2_getpubak -e 1a1b1c -P 123abc -o 1a1b1c -X -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
+tpm2_getpubak -e 1a1b1c -P 123abc -o 1a1b1c -E 0x81010001 -k 0x81010002 -f ./ak.pub -n ./ak.name
 ```
 
 # RETURNS

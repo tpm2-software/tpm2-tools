@@ -48,7 +48,7 @@ specified symmetric key.
 ```
 tpm2_encryptdecrypt -k 0x81010001 -P abc123 -D NO -I <filePath> -o <filePath>
 tpm2_encryptdecrypt -c key.context -P abc123 -D NO -I <filePath> -o <filePath>
-tpm2_encryptdecrypt -k 0x81010001 -P 123abca -X -D NO -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -k 0x81010001 -P 123abca -D NO -I <filePath> -o <filePath>
 ```
 
 # RETURNS

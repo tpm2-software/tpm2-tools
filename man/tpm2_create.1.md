@@ -86,7 +86,7 @@ These options for creating the tpm entity:
 ```
 tpm2_create -H 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File
 tpm2_create -c parent.context -P abc123 -K def456 -g sha256 -G keyedhash -I data.File
-tpm2_create -H 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File
+tpm2_create -H 0x81010001 -P 123abc -K 456def -g sha256 -G keyedhash -I data.File
 ```
 
 # RETURNS
