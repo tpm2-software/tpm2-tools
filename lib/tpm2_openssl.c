@@ -64,6 +64,32 @@ const EVP_MD *tpm2_openssl_halg_from_tpmhalg(TPMI_ALG_HASH algorithm) {
     /* no return, not possible */
 }
 
+#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
+int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
+
+    if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
+        return 0;
+    }
+
+    if (n != NULL) {
+        BN_free(r->n);
+        r->n = n;
+    }
+
+    if (e != NULL) {
+        BN_free(r->e);
+        r->e = e;
+    }
+
+    if (d != NULL) {
+        BN_free(r->d);
+        r->d = d;
+    }
+
+    return 1;
+}
+#endif
+
 static inline const char *get_openssl_err(void) {
     return ERR_error_string(ERR_get_error(), NULL);
 }

@@ -338,13 +338,14 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         { "quiet",         no_argument,       NULL, 'Q' },
         { "version",       no_argument,       NULL, 'v' },
         { "enable-errata", no_argument,       NULL, 'Z' },
+        { "openssl-backend",        no_argument,       NULL, 'X' },
     };
 
     const char *tcti_conf_option = NULL;
 
 
     /* handle any options */
-    const char* common_short_opts = "T:h::vVQZ";
+    const char* common_short_opts = "T:h::vVQZX";
     tpm2_options *opts = tpm2_options_new(common_short_opts,
             ARRAY_LEN(long_options), long_options, NULL, NULL, true);
     if (!opts) {
@@ -403,6 +404,12 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
             break;
         case 'Z':
             flags->enable_errata = 1;
+            break;
+        case 'X':
+            if (tool_opts) {
+                flags->no_tpm = 1;
+                tool_opts->flags |= TPM2_OPTIONS_NO_SAPI;
+            }
             break;
         case '?':
             goto out;
