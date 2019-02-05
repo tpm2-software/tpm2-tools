@@ -30,9 +30,12 @@
 
 #include <tss2/tss2_sys.h>
 
+#include <openssl/ec.h>
 #include <openssl/err.h>
 #include <openssl/hmac.h>
 #include <openssl/rsa.h>
+
+#include "pcr.h"
 
 #if (OPENSSL_VERSION_NUMBER < 0x1010000fL && !defined(LIBRESSL_VERSION_NUMBER)) || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L) /* OpenSSL 1.1.0 */
 #define LIB_TPM2_OPENSSL_OPENSSL_PRE11
@@ -61,6 +64,15 @@ int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
 typedef unsigned char *(*digester)(const unsigned char *d, size_t n, unsigned char *md);
 
 /**
+ * Get an openssl hash algorithm ID from a tpm hashing algorithm ID.
+ * @param algorithm
+ *  The tpm algorithm to get the corresponding openssl version of.
+ * @return
+ *  The openssl hash algorithm id.
+ */
+int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm);
+
+/**
  * Get an openssl message digest from a tpm hashing algorithm.
  * @param algorithm
  *  The tpm algorithm to get the corresponding openssl version of.
@@ -84,6 +96,22 @@ HMAC_CTX *tpm2_openssl_hmac_new();
 void tpm2_openssl_hmac_free(HMAC_CTX *ctx);
 
 /**
+ * Hash a byte buffer.
+ * @param halg
+ *  The hashing algorithm to use.
+ * @param buffer
+ *  The byte buffer to be hashed.
+ * @param length
+ *  The length of the byte buffer to hash.
+^ * @param digest
+^ *  The result of hashing digests with halg.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg,
+        BYTE *buffer, UINT16 length, TPM2B_DIGEST *digest);
+
+/**
  * Hash a list of PCR digests.
  * @param halg
  *  The hashing algorithm to use.
@@ -96,6 +124,23 @@ void tpm2_openssl_hmac_free(HMAC_CTX *ctx);
  */
 bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg,
         TPML_DIGEST *digests, TPM2B_DIGEST *digest);
+
+/**
+ * Hash a list of PCR digests, supporting multiple banks.
+ * @param halg
+ *  The hashing algorithm to use.
+ * @param pcrSelect
+ *  The list that specifies which PCRs are selected.
+ * @param pcrs
+ *  The list of PCR banks, each containing a list of PCR digests to hash.
+^ * @param digest
+^ *  The result of hashing digests with halg.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg, 
+        TPML_PCR_SELECTION *pcrSelect, 
+        tpm2_pcrs *pcrs, TPM2B_DIGEST *digest);
 
 /**
  * Obtains an OpenSSL EVP_CIPHER_CTX dealing with version
@@ -187,6 +232,30 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pas
  *  True on success, false on failure.
  */
 bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub);
+
+/**
+ * Retrieves a public portion of an RSA key from a PEM file.
+ *
+ * @param f
+ *  The FILE object that is open for reading the path.
+ * @param path
+ *  The path to load from.
+ * @return
+ *  The public structure.
+ */
+RSA* tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path);
+
+/**
+ * Retrieves a public portion of an ECC key from a PEM file.
+ *
+ * @param f
+ *  The FILE object that is open for reading the path.
+ * @param path
+ *  The path to load from.
+ * @return
+ *  The public structure.
+ */
+EC_KEY* tpm2_openssl_get_public_ECC_from_pem(FILE *f, const char *path);
 
 /**
  * Maps an ECC curve to an openssl nid value.

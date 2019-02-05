@@ -47,6 +47,154 @@
 #define FILE_PREFIX "file:"
 #define FILE_PREFIX_LEN (sizeof(FILE_PREFIX) - 1)
 
+
+bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest, TPM2B_DATA *extraData) {
+    TPM2_GENERATED magic;
+    TPMI_ST_ATTEST type;
+    UINT16 nameSize = 0;
+    UINT32 i = 0;
+
+    // Ensure required headers are at least there
+    if (quoted->size < 6) {
+        LOG_ERR("Malformed TPM2B_ATTEST headers");
+        return false;
+    }
+
+    memcpy(&magic, &quoted->attestationData[i], 4);i += 4;
+    memcpy(&type, &quoted->attestationData[i], 2);i += 2;
+    if (!tpm2_util_is_big_endian()) {
+        magic = tpm2_util_endian_swap_32(magic);
+        type = tpm2_util_endian_swap_16(type);
+    }
+
+    if (magic != TPM2_GENERATED_VALUE) {
+        LOG_ERR("Malformed TPM2_GENERATED magic value");
+        return false;
+    }
+
+    if (type != TPM2_ST_ATTEST_QUOTE) {
+        LOG_ERR("Malformed TPMI_ST_ATTEST quote value");
+        return false;
+    }
+
+    // Qualified signer name (skip)
+    if (i+2 >= quoted->size) {
+        LOG_ERR("Malformed TPM2B_NAME value");
+        return false;
+    }
+    memcpy(&nameSize, &quoted->attestationData[i], 2);i += 2;
+    if (!tpm2_util_is_big_endian()) {
+        nameSize = tpm2_util_endian_swap_16(nameSize);
+    }
+    i += nameSize;
+
+    // Extra data (skip)
+    if (i+2 >= quoted->size) {
+        LOG_ERR("Malformed TPM2B_DATA value");
+        return false;
+    }
+    memcpy(&extraData->size, &quoted->attestationData[i], 2);i += 2;
+    if (!tpm2_util_is_big_endian()) {
+        extraData->size = tpm2_util_endian_swap_16(extraData->size);
+    }
+    if (extraData->size+i > quoted->size) {
+        LOG_ERR("Malformed extraData TPM2B_DATA value");
+        return false;
+    }
+    memcpy(&extraData->buffer, &quoted->attestationData[i], extraData->size);i += extraData->size;
+
+    // Clock info (skip)
+    i += 17;
+    if (i >= quoted->size) {
+        LOG_ERR("Malformed TPMS_CLOCK_INFO value");
+        return false;
+    }
+
+    // Firmware info (skip)
+    i += 8;
+    if (i >= quoted->size) {
+        LOG_ERR("Malformed firmware version value");
+        return false;
+    }
+
+    // PCR select info
+    UINT8 sos;
+    TPMI_ALG_HASH hashAlg;
+    UINT32 pcrSelCount = 0, j = 0;
+    if (i+4 >= quoted->size) {
+        LOG_ERR("Malformed TPML_PCR_SELECTION value");
+        return false;
+    }
+    memcpy(&pcrSelCount, &quoted->attestationData[i], 4);i += 4;
+    if (!tpm2_util_is_big_endian()) {
+        pcrSelCount = tpm2_util_endian_swap_32(pcrSelCount);
+    }
+    for (j = 0; j < pcrSelCount; j++) {
+        // Hash 
+        if (i+2 >= quoted->size) {
+            LOG_ERR("Malformed TPMS_PCR_SELECTION value");
+            return false;
+        }
+        memcpy(&hashAlg, &quoted->attestationData[i], 2);i += 2;
+        if (!tpm2_util_is_big_endian()) {
+            hashAlg = tpm2_util_endian_swap_16(hashAlg);
+        }
+
+        // SizeOfSelected
+        if (i+1 >= quoted->size) {
+            LOG_ERR("Malformed TPMS_PCR_SELECTION value");
+            return false;
+        }
+        memcpy(&sos, &quoted->attestationData[i], 1);i += 1;
+
+        // PCR Select (skip)
+        i += sos;
+        if (i >= quoted->size) {
+            LOG_ERR("Malformed TPMS_PCR_SELECTION value");
+            return false;
+        }
+    }
+
+    // Digest
+    if (i+2 >= quoted->size) {
+        LOG_ERR("Malformed TPM2B_DIGEST value");
+        return false;
+    }
+    memcpy(&digest->size, &quoted->attestationData[i], 2);i += 2;
+    if (!tpm2_util_is_big_endian()) {
+        digest->size = tpm2_util_endian_swap_16(digest->size);
+    }
+
+    if (digest->size+i > quoted->size) {
+        LOG_ERR("Malformed TPM2B_DIGEST value");
+        return false;
+    }
+    memcpy(&digest->buffer, &quoted->attestationData[i], digest->size);
+
+    return true;
+}
+
+// verify that the quote digest equals the digest we calculated
+bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest, TPM2B_DIGEST *pcrDigest) {
+
+    // Sanity check -- they should at least be same size!
+    if (quoteDigest->size != pcrDigest->size) {
+        LOG_ERR("FATAL ERROR: PCR values failed to match quote's digest!");
+        return false;
+    }
+
+    // Compare running digest with quote's digest
+    int k;
+    for (k = 0; k < quoteDigest->size; k++) {
+        if (quoteDigest->buffer[k] != pcrDigest->buffer[k]) {
+            LOG_ERR("FATAL ERROR: PCR values failed to match quote's digest!");
+            return false;
+        }
+    }
+
+    return true;
+}
+
 bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
 
     if (!result || !append) {

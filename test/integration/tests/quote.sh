@@ -52,11 +52,12 @@ Handle_ek_quote=0x81010017
 Handle_ak_quote2=0x81010018
 
 out=out.yaml
+toss_out=junk.out
 
 cleanup() {
     rm -f $file_primary_key_ctx $file_quote_key_pub $file_quote_key_priv \
     $file_quote_key_name $file_quote_key_ctx ek.pub2 ak.pub2 ak.name_2 \
-    $out
+    $out $toss_out
 
     tpm2_evictcontrol -Q -ao -c $Handle_ek_quote 2>/dev/null || true
     tpm2_evictcontrol -Q -ao -c $Handle_ak_quote 2>/dev/null || true
@@ -70,7 +71,7 @@ trap cleanup EXIT
 
 start_up
 
-tpm2_getcap -c properties-fixed > $out
+tpm2_getcap -c properties-fixed | tr -dc '[[:print:]]\r\n' > $out
 maxdigest=$(yaml_get_kv $out \"TPM2_PT_MAX_DIGEST\" \"value\")
 if ! [[ "$maxdigest" =~ ^(0x)*[0-9]+$ ]] ; then
  echo "error: not a number, got: \"$maxdigest\"" >&2
@@ -90,24 +91,24 @@ tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_quote_key_pub -r $
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_quote_key_pub  -r $file_quote_key_priv -n $file_quote_key_name -o $file_quote_key_ctx
 
-tpm2_quote -C $file_quote_key_ctx  -L $alg_quote:16,17,18 -q $nonce > $out
+tpm2_quote -C $file_quote_key_ctx  -L $alg_quote:16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -G $alg_primary_obj > $out
 
 yaml_verify $out
 
-tpm2_quote -Q -C $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
+tpm2_quote -Q -C $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -G $alg_primary_obj
 
 #####handle testing
 tpm2_evictcontrol -Q -a o -c $file_quote_key_ctx -p $Handle_ak_quote
 
-tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -q $nonce
+tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -G $alg_primary_obj
 
-tpm2_quote -Q -C $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce
+tpm2_quote -Q -C $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -G $alg_primary_obj
 
 #####AK
 tpm2_createek -Q -c $Handle_ek_quote -G 0x01 -p ek.pub2
 
 tpm2_createak -Q -C $Handle_ek_quote -k  $Handle_ak_quote2 -p ak.pub2 -n ak.name_2
 
-tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -l 16,17,18 -q $nonce
+tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -l 16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -G $alg_primary_obj
 
 exit 0

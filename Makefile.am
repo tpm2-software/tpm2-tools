@@ -57,6 +57,7 @@ LDADD = \
 
 # keep me sorted
 bin_PROGRAMS = \
+    tools/misc/tpm2_checkquote \
     tools/misc/tpm2_print \
     tools/misc/tpm2_rc_decode \
     tools/tpm2_activatecredential \
@@ -117,6 +118,7 @@ lib_libcommon_a_SOURCES = $(LIB_SRC)
 lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
+tools_misc_tpm2_checkquote_SOURCES = tools/misc/tpm2_checkquote.c $(TOOL_SRC)
 tools_misc_tpm2_print_SOURCES = tools/misc/tpm2_print.c $(TOOL_SRC)
 tools_misc_tpm2_rc_decode_SOURCES = tools/misc/tpm2_rc_decode.c $(TOOL_SRC)
 
@@ -291,6 +293,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
     man/man1/tpm2_changeauth.1 \
+    man/man1/tpm2_checkquote.1 \
     man/man1/tpm2_clear.1 \
     man/man1/tpm2_clearlock.1 \
     man/man1/tpm2_create.1 \

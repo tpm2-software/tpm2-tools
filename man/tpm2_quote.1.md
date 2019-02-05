@@ -39,17 +39,24 @@
 
   * **-m**, **--message**:
 
-    message output file, records the quote message that makes up the data that
+    Message output file, records the quote message that makes up the data that
     is signed by the TPM.
 
   * **-s**, **--signature**:
 
-    signature output file, records the signature in the format specified via the **-f**
+    Signature output file, records the signature in the format specified via the **-f**
     option.
 
   * **-f**, **--format**
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
+
+  * **-p**, **--pcrs**:
+
+    PCR output file, optional, records the list of PCR values as defined 
+    by **-l** or **-L**.  Note that only the digest of these values is stored in the 
+    signed quote message -- these values themselves are not signed or 
+    stored in the message.
 
   * **-q**, **--qualify-data**:
 
@@ -58,7 +65,7 @@
 
   * **-G**, **--sig-hash-algorithm**:
 
-    Hash algorithm for signature.
+    Hash algorithm for signature. Required if **-p** is given.
 
 [common options](common/options.md)
 
