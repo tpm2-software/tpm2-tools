@@ -35,6 +35,7 @@
 #include <limits.h>
 
 #include <tss2/tss2_esys.h>
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -47,6 +48,12 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 #include "tpm2_capability.h"
+#include "tpm2_nv_util.h"
+
+#define RSA_EK_NONCE_NV_INDEX 0x01c00003
+#define RSA_EK_TEMPLATE_NV_INDEX 0x01c00004
+#define ECC_EK_NONCE_NV_INDEX 0x01c0000b
+#define ECC_EK_TEMPLATE_NV_INDEX 0x01c0000c
 
 typedef struct createek_context createek_context;
 struct createek_context {
@@ -72,7 +79,8 @@ struct createek_context {
         UINT8 e : 1;
         UINT8 o : 1;
         UINT8 P : 1;
-        UINT8 unused : 4;
+        UINT8 t : 1;
+        UINT8 unused : 3;
     } flags;
     char *endorse_auth_str;
     char *owner_auth_str;
@@ -146,11 +154,92 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
     return true;
 }
 
-static bool create_ek_handle(ESYS_CONTEXT *ectx) {
+static bool set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
+    TPM2_HANDLE template_nv_index;
+    TPM2_HANDLE nonce_nv_index;
 
-    bool result = set_key_algorithm(&ctx.objdata.in.public);
-    if (!result) {
+    switch (inPublic->publicArea.type) {
+    case TPM2_ALG_RSA :
+        template_nv_index = RSA_EK_TEMPLATE_NV_INDEX;
+        nonce_nv_index = RSA_EK_NONCE_NV_INDEX;
+        break;
+    case TPM2_ALG_ECC :
+        template_nv_index = ECC_EK_TEMPLATE_NV_INDEX;
+        nonce_nv_index = ECC_EK_NONCE_NV_INDEX;
+        break;
+    default:
+        LOG_ERR("EK template and EK nonce for algorithm type input(%4.4x)"
+                " are not supported!", inPublic->publicArea.type);
         return false;
+    }
+
+    UINT8* template = NULL;
+    UINT8* nonce = NULL;
+
+    // Read EK template
+    UINT16 template_size;
+    bool result = tpm2_util_nv_read(ectx, template_nv_index, 0, 0, TPM2_RH_OWNER,
+                                    &ctx.auth.endorse.session_data, ctx.auth.endorse.session,
+                                    &template, &template_size);
+    if (!result) {
+        result = false;
+        goto out;
+    }
+
+    TSS2_RC ret = Tss2_MU_TPMT_PUBLIC_Unmarshal(template, template_size,
+                                                NULL, &inPublic->publicArea);
+    if (ret != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to unmarshal TPMT_PUBLIC from buffer 0x%p", template);
+        result = false;
+        goto out;
+    }
+
+    // Read EK nonce
+    UINT16 nonce_size;
+    result = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0, TPM2_RH_OWNER,
+                               &ctx.auth.endorse.session_data, ctx.auth.endorse.session,
+                               &nonce, &nonce_size);
+    if (!result) {
+        // EK template populated / ek nonce unpopulated is a valid state. Just return
+        result = true;
+        goto out;
+    }
+
+    if (inPublic->publicArea.type == TPM2_ALG_RSA) {
+        memcpy(&inPublic->publicArea.unique.rsa.buffer, &nonce, nonce_size);
+        inPublic->publicArea.unique.rsa.size = 256;
+    } else {
+        // ECC is only other supported algorithm
+        memcpy(&inPublic->publicArea.unique.ecc.x.buffer, &nonce, nonce_size);
+        inPublic->publicArea.unique.ecc.x.size = 32;
+        inPublic->publicArea.unique.ecc.y.size = 32;
+    }
+
+out:
+    if (template) {
+        free(template);
+    }
+
+    if (nonce) {
+        free(nonce);
+    }
+
+    return result;
+}
+
+static bool create_ek_handle(ESYS_CONTEXT *ectx) {
+    bool result;
+
+    if (ctx.flags.t) {
+        result = set_ek_template(ectx, &ctx.objdata.in.public);
+        if (!result) {
+            return false;
+        }
+    } else {
+        result = set_key_algorithm(&ctx.objdata.in.public);
+        if (!result) {
+            return false;
+        }
     }
 
     result = tpm2_hierarchy_create_primary(ectx, &ctx.auth.endorse.session_data,
@@ -251,6 +340,9 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
+    case 't':
+        ctx.flags.t = true;
+        break;
     }
 
     return true;
@@ -266,9 +358,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "file",                 required_argument, NULL, 'p' },
         { "format",               required_argument, NULL, 'f' },
         { "context",              required_argument, NULL, 'c' },
+        { "template",             required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("e:o:P:G:p:f:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:o:P:G:p:f:c:t", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
