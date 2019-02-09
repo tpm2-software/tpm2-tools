@@ -18,6 +18,10 @@
 3. Transient Handles(0x80XX_XXXX).
 4. NV Handles(0x01XX_XXXX).
 
+Note: For non-permanent objects (Transient objects and Persistent objects),
+copies of the private information (files or persistent handles) created prior
+to changing auth are not invalidated.
+
 # OPTIONS
 
 Passwords should follow the "password authorization formatting standards", see section "Authorization Formatting".
