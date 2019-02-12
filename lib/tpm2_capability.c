@@ -40,7 +40,7 @@
 
 #include "tpm2_capability.h"
 
-static size_t tpm2_get_property_data_size(TPM2_CAP capability) {
+static size_t tpm2_get_property_data_size(TPM2_CAP capability, size_t *maxSize) {
 
     size_t size;
     TPMS_CAPABILITY_DATA dummy;
@@ -48,37 +48,94 @@ static size_t tpm2_get_property_data_size(TPM2_CAP capability) {
     switch (capability) {
         case TPM2_CAP_ALGS:
             size = sizeof(dummy.data.algorithms.algProperties[0]);
+            *maxSize = TPM2_MAX_CAP_ALGS;
             break;
         case TPM2_CAP_HANDLES:
             size = sizeof(dummy.data.handles.handle[0]);
+            *maxSize = TPM2_MAX_CAP_HANDLES;
             break;
         case TPM2_CAP_COMMANDS:
             size = sizeof(dummy.data.command.commandAttributes[0]);
+            *maxSize = TPM2_MAX_CAP_CC;
             break;
         case TPM2_CAP_PP_COMMANDS:
             size = sizeof(dummy.data.ppCommands.commandCodes[0]);
+            *maxSize = TPM2_MAX_CAP_CC;
             break;
         case TPM2_CAP_AUDIT_COMMANDS:
             size = sizeof(dummy.data.auditCommands.commandCodes[0]);
+            *maxSize = TPM2_MAX_CAP_CC;
             break;
         case TPM2_CAP_PCRS:
             size = sizeof(dummy.data.assignedPCR.pcrSelections[0]);
+            *maxSize = TPM2_NUM_PCR_BANKS;
             break;
         case TPM2_CAP_TPM_PROPERTIES:
             size = sizeof(dummy.data.tpmProperties.tpmProperty[0]);
+            *maxSize = TPM2_MAX_TPM_PROPERTIES;
             break;
         case TPM2_CAP_PCR_PROPERTIES:
             size = sizeof(dummy.data.pcrProperties.pcrProperty[0]);
+            *maxSize = TPM2_MAX_PCR_PROPERTIES;
             break;
         case TPM2_CAP_ECC_CURVES:
             size = sizeof(dummy.data.eccCurves.eccCurves[0]);
+            *maxSize = TPM2_MAX_ECC_CURVES;
             break;
         case TPM2_CAP_VENDOR_PROPERTY:
             size = sizeof(dummy.data.intelPttProperty.property[0]);
+            *maxSize = TPM2_MAX_PTT_PROPERTIES;
             break;
         default:
             size = 0;
-            LOG_ERR("Unable to determine property size for capability:  %d\n", capability);
+            LOG_ERR("Unable to determine property size for capability:  %d\n",
+                capability);
+            break;
+    }
+
+    return size;
+}
+
+static size_t tpm2_get_property(TPM2_CAP capability, TPMS_CAPABILITY_DATA *cap,
+    UINT32 i) {
+
+    size_t size;
+
+    switch (capability) {
+        case TPM2_CAP_ALGS:
+            return cap->data.algorithms.algProperties[i].alg;
+            break;
+        case TPM2_CAP_HANDLES:
+            return cap->data.handles.handle[i];
+            break;
+        case TPM2_CAP_COMMANDS:
+            return cap->data.command.commandAttributes[i];
+            break;
+        case TPM2_CAP_PP_COMMANDS:
+            return cap->data.ppCommands.commandCodes[i];
+            break;
+        case TPM2_CAP_AUDIT_COMMANDS:
+            return cap->data.ppCommands.commandCodes[i];
+            break;
+        case TPM2_CAP_PCRS:
+            return cap->data.assignedPCR.pcrSelections[i].hash;
+            break;
+        case TPM2_CAP_TPM_PROPERTIES:
+            return cap->data.tpmProperties.tpmProperty[i].property;
+            break;
+        case TPM2_CAP_PCR_PROPERTIES:
+            return cap->data.pcrProperties.pcrProperty[i].tag;
+            break;
+        case TPM2_CAP_ECC_CURVES:
+            return cap->data.eccCurves.eccCurves[i];
+            break;
+        case TPM2_CAP_VENDOR_PROPERTY:
+            return cap->data.intelPttProperty.property[i];
+            break;
+        default:
+            size = 0;
+            LOG_ERR("Unable to determine property size for capability:  %d\n",
+                capability);
             break;
     }
 
@@ -93,12 +150,17 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
 
     TPMI_YES_NO more_data;
     *capability_data = NULL;
+    size_t maxSize;
 
-    size_t property_size = tpm2_get_property_data_size(capability);
+    size_t property_size = tpm2_get_property_data_size(capability, &maxSize);
 
     if (!property_size) {
         return false;
     }
+
+    *capability_data = calloc(1, sizeof(TPMS_CAPABILITY_DATA));
+    UINT32 property_idx = 0;
+    UINT32 j = 0;
 
     do {
 
@@ -108,7 +170,8 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
                             ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                             capability, property, count,
                             &more_data, &fetched_data);
-        LOG_INFO("GetCapability: capability: 0x%x, property: 0x%x", capability, property);
+        LOG_INFO("GetCapability: capability: 0x%x, property: 0x%x", capability,
+            property);
 
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
@@ -117,39 +180,23 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
             return false;
         }
 
-        /* allocate memory for consolidated capabilities list */
-        TPMS_CAPABILITY_DATA *updated = calloc(1, sizeof(TPMS_CAPABILITY_DATA));
-        if (!updated) {
-            LOG_ERR("oom");
-            free(fetched_data);
-            return false;
-        }
-
         UINT32 i;
         UINT32 existing = 0;
         /* Copy all existing results into the newly allocated area */
-        if (*capability_data) {
-            existing = (*capability_data)->data.algorithms.count;
-            for (i = 0; i < existing; i++) {
-                updated->data.algorithms.algProperties[i] =
-                    (*capability_data)->data.algorithms.algProperties[i];
+        existing = fetched_data->data.algorithms.count;
+        for (i = j; i < existing; i++) {
+            if(property_idx>maxSize){
+                LOG_ERR("Too much properties requested.");
             }
-            updated->data.algorithms.count = existing;
-
-            free(*capability_data);
-            *capability_data = NULL;
+            (*capability_data)->data.algorithms.algProperties[property_idx] = fetched_data->data.algorithms.algProperties[i];
+            property_idx += 1;
         }
-
-        /* copy the newly retrieved data in too */
-        UINT32 new_items = fetched_data->data.algorithms.count;
-        for (i = 0; i < new_items; i++) {
-            updated->data.algorithms.algProperties[i] = fetched_data->data.algorithms.algProperties[i];
-            updated->data.algorithms.count++;
+        j=1;
+        if(property_idx > 0){
+            property = tpm2_get_property(capability, *capability_data,
+                property_idx-1);
+            (*capability_data)->data.algorithms.count = property_idx;
         }
-
-        /* set the out-value */
-        *capability_data = updated;
-        (*capability_data)->capability = capability;
 
         free(fetched_data);
     } while (more_data);
@@ -205,3 +252,4 @@ out:
     free(capability_data);
     return handle_found;
 }
+
