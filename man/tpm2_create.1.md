@@ -72,6 +72,13 @@ These options for creating the tpm entity:
   * **-r**, **--privfile**=_OUTPUT\_PRIVATE\_FILE_:
     The output file which contains the sensitive portion of the object, optional.
 
+  * **-o**, **--out-context**=_OUTPUT\_CONTEXT\_FILE_:
+    The output file which contains the key context, optional. The key context is analogous to the context
+    file produced by tpm2_load(1), however is generated via a TPM CreateLoaded command. This this option
+    can be used to avoid the normal *tpm2_create* and *tpm2_load* command sequences and do it all in one
+    command, atomically.
+
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
@@ -90,10 +97,19 @@ These options for creating the tpm entity:
 
 # EXAMPLES
 
+Create an object whose parent is provided via parent.ctx:
 ```
-tpm2_create -C 0x81010001 -P abc123 -K def456 -g sha256 -G keyedhash-I data.File
-tpm2_create -C file:parent.context -P abc123 -p def456 -g sha256 -G keyedhash -I data.File
-tpm2_create -C 0x81010001 -P 123abc -K 456def -X -g sha256 -G keyedhash -I data.File
+tpm2_create -C parent.ctx -u obj.pub obj.priv
+```
+
+Create an object and seal data to it:
+```
+tpm2_create -C parent.ctx  -K def456 -G keyedhash -I seal.dat -u obj.pub -r obj.priv
+```
+
+Create an rsa2048 object and load it into the TPM:
+```
+tpm2_create -C primary.ctx -G rsa2048 -u obj.pub -r obj.priv -o obj.ctx
 ```
 
 # RETURNS

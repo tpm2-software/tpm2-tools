@@ -34,7 +34,7 @@
 source helpers.sh
 
 cleanup() {
-  rm -f key.pub key.priv policy.bin out.pub
+  rm -f key.pub key.priv policy.bin out.pub key.ctx
 
   ina "$@" "keep-context"
   if [ $? -ne 0 ]; then
@@ -104,5 +104,9 @@ test "$mode" == "ofb"
 for alg in "rsa1024:rsaes" "ecc384:ecdaa4-sha256"; do
   tpm2_create -Q -C context.out -g sha256 -G "$alg" -u key.pub -r key.priv
 done
+
+# Test createloaded support
+tpm2_create -C context.out -u key.pub -r key.priv -o key.ctx
+tpm2_readpublic -c key.ctx 2>/dev/null
 
 exit 0

@@ -39,6 +39,7 @@
 #include <string.h>
 
 #include <tss2/tss2_esys.h>
+#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -69,7 +70,8 @@ struct tpm_create_ctx {
     char *opr_path;
     char *key_auth_str;
     char *parent_auth_str;
-    const char *context_arg;
+    const char *parent_ctx_path;
+    const char *object_ctx_path;
     tpm2_loaded_object context_object;
 
     char *alg;
@@ -99,17 +101,15 @@ static tpm_create_ctx ctx = {
 };
 
 static bool create(ESYS_CONTEXT *ectx) {
+
     TSS2_RC rval;
-    bool ret = true;
+
+    bool ret = false;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION      creationPCR = { .count = 0 };
     TPM2B_PUBLIC            *outPublic;
     TPM2B_PRIVATE           *outPrivate;
-
-    TPM2B_CREATION_DATA     *creationData;
-    TPM2B_DIGEST            *creationHash;
-    TPMT_TK_CREATION        *creationTicket;
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
@@ -119,15 +119,49 @@ static bool create(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    rval = Esys_Create(ectx, ctx.context_object.tr_handle,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            &ctx.in_sensitive, &ctx.in_public, &outsideInfo, &creationPCR,
-            &outPrivate, &outPublic, &creationData, &creationHash,
-            &creationTicket);
-    if(rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_Create, rval);
-        ret = false;
-        goto out;
+    ESYS_TR object_handle = ESYS_TR_NONE;
+    if (ctx.object_ctx_path) {
+
+        size_t offset = 0;
+        TPM2B_TEMPLATE template = { .size = 0 };
+        rval = Tss2_MU_TPMT_PUBLIC_Marshal(&ctx.in_public.publicArea, &template.buffer[0],
+                                        sizeof(TPMT_PUBLIC), &offset);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Tss2_MU_TPMT_PUBLIC_Marshal, rval);
+            return false;
+        }
+
+        template.size = offset;
+
+        TSS2_RC rval = Esys_CreateLoaded(
+                ectx,
+                ctx.context_object.tr_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                &ctx.in_sensitive,
+                &template,
+                &object_handle,
+                &outPrivate,
+                &outPublic);
+        if(rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_CreateLoaded, rval);
+            return false;
+        }
+    } else {
+        TPM2B_CREATION_DATA     *creationData;
+        TPM2B_DIGEST            *creationHash;
+        TPMT_TK_CREATION        *creationTicket;
+        rval = Esys_Create(ectx, ctx.context_object.tr_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                &ctx.in_sensitive, &ctx.in_public, &outsideInfo, &creationPCR,
+                &outPrivate, &outPublic, &creationData, &creationHash,
+                &creationTicket);
+        if(rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_Create, rval);
+            return false;
+        }
+        free(creationData);
+        free(creationHash);
+        free(creationTicket);
     }
 
     tpm2_util_public_to_yaml(outPublic, NULL);
@@ -135,23 +169,31 @@ static bool create(ESYS_CONTEXT *ectx) {
     if (ctx.flags.u) {
         bool res = files_save_public(outPublic, ctx.opu_path);
         if(!res) {
-            ret = false;
+            goto out;
         }
     }
 
     if (ctx.flags.r) {
         bool res = files_save_private(outPrivate, ctx.opr_path);
         if (!res) {
-            ret = false;
+            goto out;
         }
     }
+
+    if (ctx.object_ctx_path) {
+        ret = files_save_tpm_context_to_path(ectx,
+                    object_handle,
+                    ctx.object_ctx_path);
+        if (!ret) {
+            goto out;
+        }
+    }
+
+    ret = true;
 
 out:
     free(outPrivate);
     free(outPublic);
-    free(creationData);
-    free(creationHash);
-    free(creationTicket);
 
     return ret;
 }
@@ -200,7 +242,10 @@ static bool on_option(char key, char *value) {
         ctx.flags.r = 1;
         break;
     case 'C':
-        ctx.context_arg = value;
+        ctx.parent_ctx_path = value;
+        break;
+    case 'o':
+        ctx.object_ctx_path = value;
         break;
     };
 
@@ -220,9 +265,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pubfile",              required_argument, NULL, 'u' },
       { "privfile",             required_argument, NULL, 'r' },
       { "context-parent",       required_argument, NULL, 'C' },
+      { "out-context",          required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:A:I:L:u:r:C:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:A:I:L:u:r:C:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -244,7 +290,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     TPMA_OBJECT attrs = DEFAULT_ATTRS;
 
-    if(!ctx.context_arg) {
+    if(!ctx.parent_ctx_path) {
         LOG_ERR("Must specify parent object via -C.");
         return -1;
     }
@@ -287,7 +333,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_object_load_rc olrc;
-    olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    olrc = tpm2_util_object_load(ectx, ctx.parent_ctx_path,
             &ctx.context_object);
     if (olrc == olrc_error) {
         goto out;
