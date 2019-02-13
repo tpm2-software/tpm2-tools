@@ -40,50 +40,23 @@
 
 #include "tpm2_capability.h"
 
-static size_t tpm2_get_property_data_size(TPM2_CAP capability) {
-
-    size_t size;
-    TPMS_CAPABILITY_DATA dummy;
-
-    switch (capability) {
-        case TPM2_CAP_ALGS:
-            size = sizeof(dummy.data.algorithms.algProperties[0]);
-            break;
-        case TPM2_CAP_HANDLES:
-            size = sizeof(dummy.data.handles.handle[0]);
-            break;
-        case TPM2_CAP_COMMANDS:
-            size = sizeof(dummy.data.command.commandAttributes[0]);
-            break;
-        case TPM2_CAP_PP_COMMANDS:
-            size = sizeof(dummy.data.ppCommands.commandCodes[0]);
-            break;
-        case TPM2_CAP_AUDIT_COMMANDS:
-            size = sizeof(dummy.data.auditCommands.commandCodes[0]);
-            break;
-        case TPM2_CAP_PCRS:
-            size = sizeof(dummy.data.assignedPCR.pcrSelections[0]);
-            break;
-        case TPM2_CAP_TPM_PROPERTIES:
-            size = sizeof(dummy.data.tpmProperties.tpmProperty[0]);
-            break;
-        case TPM2_CAP_PCR_PROPERTIES:
-            size = sizeof(dummy.data.pcrProperties.pcrProperty[0]);
-            break;
-        case TPM2_CAP_ECC_CURVES:
-            size = sizeof(dummy.data.eccCurves.eccCurves[0]);
-            break;
-        case TPM2_CAP_VENDOR_PROPERTY:
-            size = sizeof(dummy.data.intelPttProperty.property[0]);
-            break;
-        default:
-            size = 0;
-            LOG_ERR("Unable to determine property size for capability:  %d\n", capability);
-            break;
+#define APPEND_CAPABILITY_INFORMATION(capability, field, subfield, max_count) \
+    if (fetched_data->data.capability.count > max_count - property_count) { \
+        fetched_data->data.capability.count = max_count - property_count; \
+    } \
+\
+    memmove(&(*capability_data)->data.capability.field[property_count], \
+            fetched_data->data.capability.field, \
+            fetched_data->data.capability.count * sizeof(fetched_data->data.capability.field[0])); \
+    property_count += fetched_data->data.capability.count; \
+\
+    (*capability_data)->data.capability.count = property_count; \
+\
+    if (more_data && property_count < count && fetched_data->data.capability.count) { \
+        property = (*capability_data)->data.capability.field[property_count - 1]subfield + 1; \
+    } else { \
+        more_data = false; \
     }
-
-    return size;
-}
 
 bool tpm2_capability_get (ESYS_CONTEXT *ectx,
         TPM2_CAP capability,
@@ -92,13 +65,8 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
         TPMS_CAPABILITY_DATA **capability_data) {
 
     TPMI_YES_NO more_data;
+    UINT32 property_count = 0;
     *capability_data = NULL;
-
-    size_t property_size = tpm2_get_property_data_size(capability);
-
-    if (!property_size) {
-        return false;
-    }
 
     do {
 
@@ -106,7 +74,7 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
         TPMS_CAPABILITY_DATA *fetched_data = NULL;
         TSS2_RC rval = Esys_GetCapability (ectx,
                             ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                            capability, property, count,
+                            capability, property, count - property_count,
                             &more_data, &fetched_data);
         LOG_INFO("GetCapability: capability: 0x%x, property: 0x%x", capability, property);
 
@@ -114,44 +82,81 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
             LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
                      capability, property);
             LOG_PERR(ESys_GetCapability, rval);
-            return false;
-        }
-
-        /* allocate memory for consolidated capabilities list */
-        TPMS_CAPABILITY_DATA *updated = calloc(1, sizeof(TPMS_CAPABILITY_DATA));
-        if (!updated) {
-            LOG_ERR("oom");
-            free(fetched_data);
-            return false;
-        }
-
-        UINT32 i;
-        UINT32 existing = 0;
-        /* Copy all existing results into the newly allocated area */
-        if (*capability_data) {
-            existing = (*capability_data)->data.algorithms.count;
-            for (i = 0; i < existing; i++) {
-                updated->data.algorithms.algProperties[i] =
-                    (*capability_data)->data.algorithms.algProperties[i];
+            if (*capability_data) {
+                free(*capability_data);
+                *capability_data = NULL;
             }
-            updated->data.algorithms.count = existing;
-
-            free(*capability_data);
-            *capability_data = NULL;
+            return false;
         }
 
-        /* copy the newly retrieved data in too */
-        UINT32 new_items = fetched_data->data.algorithms.count;
-        for (i = 0; i < new_items; i++) {
-            updated->data.algorithms.algProperties[i] = fetched_data->data.algorithms.algProperties[i];
-            updated->data.algorithms.count++;
+        if (fetched_data->capability != capability) {
+            LOG_ERR("TPM returned different capability than requested: 0x%x != 0x%x",
+                     fetched_data->capability, capability);
+            free(fetched_data);
+            if (*capability_data) {
+                free(*capability_data);
+                *capability_data = NULL;
+            }
+            return false;
         }
 
-        /* set the out-value */
-        *capability_data = updated;
-        (*capability_data)->capability = capability;
+        if (*capability_data == NULL) {
+            /* reuse the TPM's result structure */
+            *capability_data = fetched_data;
 
-        free(fetched_data);
+            if (!more_data) {
+                /* there won't be another iteration of the loop, just return the result unmodified */
+                return true;
+            }
+        }
+
+        /* append the TPM's results to the initial structure, as long as there is still space left */
+        switch (capability) {
+            case TPM2_CAP_ALGS:
+                APPEND_CAPABILITY_INFORMATION(algorithms, algProperties, .alg, TPM2_MAX_CAP_ALGS);
+                break;
+            case TPM2_CAP_HANDLES:
+                APPEND_CAPABILITY_INFORMATION(handles, handle, , TPM2_MAX_CAP_HANDLES);
+                break;
+            case TPM2_CAP_COMMANDS:
+                APPEND_CAPABILITY_INFORMATION(command, commandAttributes, , TPM2_MAX_CAP_CC);
+                /* workaround because tpm2-tss does not implement attribute commandIndex for TPMA_CC */
+                property &= TPMA_CC_COMMANDINDEX_MASK;
+                break;
+            case TPM2_CAP_PP_COMMANDS:
+                APPEND_CAPABILITY_INFORMATION(ppCommands, commandCodes, , TPM2_MAX_CAP_CC);
+                break;
+            case TPM2_CAP_AUDIT_COMMANDS:
+                APPEND_CAPABILITY_INFORMATION(auditCommands, commandCodes, , TPM2_MAX_CAP_CC);
+                break;
+            case TPM2_CAP_PCRS:
+                APPEND_CAPABILITY_INFORMATION(assignedPCR, pcrSelections, .hash, TPM2_NUM_PCR_BANKS);
+                break;
+            case TPM2_CAP_TPM_PROPERTIES:
+                APPEND_CAPABILITY_INFORMATION(tpmProperties, tpmProperty, .property, TPM2_MAX_TPM_PROPERTIES);
+                break;
+            case TPM2_CAP_PCR_PROPERTIES:
+                APPEND_CAPABILITY_INFORMATION(pcrProperties, pcrProperty, .tag, TPM2_MAX_PCR_PROPERTIES);
+                break;
+            case TPM2_CAP_ECC_CURVES:
+                APPEND_CAPABILITY_INFORMATION(eccCurves, eccCurves, , TPM2_MAX_ECC_CURVES);
+                break;
+            case TPM2_CAP_VENDOR_PROPERTY:
+                APPEND_CAPABILITY_INFORMATION(intelPttProperty, property, , TPM2_MAX_PTT_PROPERTIES);
+                break;
+            default:
+                LOG_ERR("Unsupported capability: 0x%x\n", capability);
+                if (fetched_data != *capability_data) {
+                    free(fetched_data);
+                }
+                free(*capability_data);
+                *capability_data = NULL;
+                return false;
+        }
+
+        if (fetched_data != *capability_data) {
+            free(fetched_data);
+        }
     } while (more_data);
 
     return true;

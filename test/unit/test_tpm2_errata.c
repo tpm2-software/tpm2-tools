@@ -59,7 +59,6 @@ TSS2_RC __wrap_Esys_GetCapability(ESYS_CONTEXT *context,
     UNUSED(session1);
     UNUSED(session2);
     UNUSED(session3);
-    UNUSED(capability);
     UNUSED(property);
     UNUSED(propertyCount);
 
@@ -69,6 +68,7 @@ TSS2_RC __wrap_Esys_GetCapability(ESYS_CONTEXT *context,
     *moreData = TPM2_NO;
 
     *capabilityData = calloc(1, sizeof(**capabilityData));
+    (*capabilityData)->capability = capability;
     TPML_TAGGED_TPM_PROPERTY *properties = &(*capabilityData)->data.tpmProperties;
 
     properties->count = 4;
