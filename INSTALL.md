@@ -32,7 +32,7 @@ To build and install the tpm2-tools software the following software is required:
 Here we are going to satisfy tpm2-tools dependencies with:
 * tpm2-tss: <https://github.com/tpm2-software/tpm2-tss>
 * tpm2-abrmd: <https://github.com/tpm2-software/tpm2-abrmd>
-* TPM simulator: <https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm974.tar.gz>
+* TPM simulator: <https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm1332.tar.gz>
 
 Which are necessary for the build example section at the bottom of this file, we need to satisfy the dependencies for each item named above except for the simulator.
 
@@ -216,8 +216,8 @@ $ sudo make install
 * ##### TPM simulator
 ```
 $ mkdir ibmtpm && cd ibmtpm
-$ wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm974.tar.gz
-$ tar -zxvf ibmtpm974.tar.gz
+$ wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm1332.tar.gz
+$ tar -zxvf ibmtpm1332.tar.gz
 $ cd src
 $ make -j5
 ```
