@@ -49,8 +49,8 @@ your distros package manager.
 The packages in the below command can be ascertained via the package manager.
 
 ```
-sudo apt-get install autoconf automake libtool pkg-config gcc libssl-dev \
-    libcurl4-gnutls-dev
+sudo apt-get install autoconf autoconf-archive automake libtool pkg-config gcc \
+    libssl-dev libcurl4-gnutls-dev
 ```
 **Notes**:
 
