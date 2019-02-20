@@ -1,5 +1,5 @@
 //**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
+// Copyright (c) 2015-2019, Intel Corporation
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -115,6 +115,14 @@ static bool nv_list(ESYS_CONTEXT *context) {
 
     free(capabilityData);
     return true;
+}
+
+bool tpm2_tool_onstart(tpm2_options **opts) {
+
+    *opts = tpm2_options_new(NULL, 0, NULL, NULL, NULL,
+            0);
+
+    return *opts != NULL;
 }
 
 int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
