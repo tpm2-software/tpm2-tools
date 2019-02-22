@@ -136,6 +136,12 @@ static bool init(ESYS_CONTEXT *context) {
                                 ctx.context_arg, &ctx.key_context);
     if (olrc == olrc_error) {
         return false;
+    } else if (!ctx.key_context.tr_handle) {
+        bool res = tpm2_util_sys_handle_to_esys_handle(context, ctx.key_context.handle,
+                &ctx.key_context.tr_handle);
+        if (!res) {
+            return false;
+        }
     }
 
     ctx.message.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
