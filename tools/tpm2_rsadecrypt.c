@@ -154,6 +154,12 @@ static bool init(ESYS_CONTEXT *ectx) {
                                 &ctx.key_context_object);
     if (olrc == olrc_error) {
         return false;
+    } else if (!ctx.key_context_object.tr_handle) {
+        bool res = tpm2_util_sys_handle_to_esys_handle(ectx, ctx.key_context_object.handle,
+                &ctx.key_context_object.tr_handle);
+        if (!res) {
+            return false;
+        }
     }
 
    return true;
