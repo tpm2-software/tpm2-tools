@@ -72,7 +72,7 @@ Passwords should follow the "password authorization formatting standards", see s
 
 [common tcti options](common/tcti.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 # EXAMPLES
 

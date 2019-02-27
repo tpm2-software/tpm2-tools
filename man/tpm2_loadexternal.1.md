@@ -119,7 +119,7 @@ name: 0x000b44e59fa5658ab443834a069a488ecc1f6d7deb47c40c6ec49871ef57d7036b43
 
 [common tcti options](common/tcti.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [supported hash algorithms](common/hash.md)
 

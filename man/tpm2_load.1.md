@@ -49,7 +49,7 @@ defaults to *load.ctx* and can be specified with **-o**.
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 
 # EXAMPLES

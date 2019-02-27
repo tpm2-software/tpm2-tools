@@ -48,7 +48,7 @@ The key referenced by key-context is **required** to be:
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 # EXAMPLES
 

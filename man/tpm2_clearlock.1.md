@@ -37,7 +37,7 @@ is missing, assume NULL.
 
 [common tcti options](common/tcti.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 # EXAMPLES
 

@@ -55,7 +55,7 @@
 
 [nv attributes](common/nv-attrs.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 # EXAMPLES
 

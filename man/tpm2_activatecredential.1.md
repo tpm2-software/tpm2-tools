@@ -55,7 +55,7 @@ These options control the object verification:
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 # EXAMPLES
 

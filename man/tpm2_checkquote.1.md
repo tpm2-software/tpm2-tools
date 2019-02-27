@@ -66,7 +66,7 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [supported hash algorithms](common/hash.md)
 

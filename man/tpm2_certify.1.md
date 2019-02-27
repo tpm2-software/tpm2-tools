@@ -60,7 +60,7 @@ These options control the certification:
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [signature format specifiers](common/signature.md)
 
