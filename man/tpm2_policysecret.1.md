@@ -59,13 +59,14 @@ was satisfied to the unseal tool.
 
 ## Create a TPM object like a sealing object with the policy:
 * tpm2_createprimary -Q -a o -g sha256 -G rsa -o prim.ctx
-* tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -I- -C prim.ctx
+* tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.priv -I- -C prim.ctx
 -L secret.policy <<< "SEALED-SECRET"
+tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -n sealing_key.name -o sealing_key.ctx
 
 ## Satisfy the policy and unseal the secret:
 * tpm2_startauthsession -a -S session.ctx
 * tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -o secret.policy
-* unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx`
+* unsealed=`tpm2_unseal -p "session:session.ctx" -c sealing_key.ctx`
 * echo $unsealed
 * tpm2_flushcontext -S session.ctx
 
