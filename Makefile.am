@@ -274,10 +274,11 @@ test_unit_test_tpm2_util_SOURCES   = test/unit/test_tpm2_util.c
 abs_build_dir=$(abspath $(builddir))
 
 AM_TESTS_ENVIRONMENT =	\
-	TPM2_ABRMD="tpm2-abrmd" \
-	TPM2_SIM="tpm_server" \
-	PATH=$(abs_build_dir)/tools:$(abs_build_dir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH) \
-	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures
+	TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD; \
+	TPM2_SIM=tpm_server; export TPM2_SIM; \
+	PATH=$(abs_build_dir)/tools:$(abs_build_dir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
+	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
+	export TPM2_TOOLS_TEST_FIXTURES;
 
 SH_LOG_COMPILER = dbus-run-session
 AM_SH_LOG_FLAGS = --
