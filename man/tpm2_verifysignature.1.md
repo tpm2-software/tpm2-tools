@@ -69,7 +69,7 @@ symmetric key, both the public and private portions need to be loaded.
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [supported hash algorithms](common/hash.md)
 

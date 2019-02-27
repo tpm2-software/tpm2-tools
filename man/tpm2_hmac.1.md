@@ -36,7 +36,7 @@ _FILE_ is not specified, then data is read from stdin.
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [supported hash algorithms](common/hash.md)
 

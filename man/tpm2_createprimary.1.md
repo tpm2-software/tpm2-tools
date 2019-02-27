@@ -73,7 +73,7 @@ interactions with the created primary.
 
 [common tcti options](common/tcti.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [supported hash algorithms](common/hash.md)
 

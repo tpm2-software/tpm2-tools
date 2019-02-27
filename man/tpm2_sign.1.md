@@ -71,7 +71,7 @@ data and validation shall indicate that hashed data did not start with
 
 [context object format](common/ctxobj.md)
 
-[authorization formatting](common/password.md)
+[authorization formatting](common/authorizations.md)
 
 [supported hash algorithms](common/hash.md)
 
