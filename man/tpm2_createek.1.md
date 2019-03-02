@@ -59,6 +59,12 @@ Refer to:
     specification. Using the **--format** option allows one to change this
     behavior.
 
+  * **-t**, **--template**:
+    Optional: Uses the manufacturer defined EK Template and EK Nonce to populate
+    the TPM2B_PUBLIC publicArea member. See the TCG EK Credential Profile
+    specification for more information.
+    
+
 [pubkey options](common/pubkey.md)
 
 [common options](common/options.md)

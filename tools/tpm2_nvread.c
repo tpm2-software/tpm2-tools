@@ -78,119 +78,25 @@ static tpm_nvread_ctx ctx = {
 
 static bool nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    TPM2B_NV_PUBLIC *nv_public = NULL;
-    bool res = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
-    if (!res) {
-        LOG_ERR("Failed to read NVRAM public area at index 0x%X",
-                ctx.nv_index);
-        free(nv_public);
-        return false;
-    }
-
-    UINT16 data_size = nv_public->nvPublic.dataSize;
-    free(nv_public);
-
-    /* if no size was specified, assume the whole object */
-    if (ctx.size_to_read == 0) {
-        ctx.size_to_read = data_size;
-    }
-
-    if (ctx.offset > data_size) {
-        LOG_ERR(
-            "Requested offset to read from is greater than size. offset=%u"
-            ", size=%u", ctx.offset, data_size);
-        return false;
-    }
-
-    if (ctx.offset + ctx.size_to_read > data_size) {
-        LOG_WARN(
-            "Requested to read more bytes than available from offset,"
-            " truncating read! offset=%u, request-read-size=%u"
-            " actual-data-size=%u", ctx.offset, ctx.size_to_read, data_size);
-        ctx.size_to_read = data_size - ctx.offset;
-        return false;
-    }
-
-    UINT32 max_data_size;
-    res = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
-    if (!res) {
-        return false;
-    }
-
-    if (max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
-        max_data_size = TPM2_MAX_NV_BUFFER_SIZE;
-    }
-    else if (max_data_size == 0) {
-        max_data_size = NV_DEFAULT_BUFFER_SIZE;
-    }
-
-    UINT8 *data_buffer = malloc(data_size);
-    if (!data_buffer) {
-        LOG_ERR("oom");
-        return false;
-    }
-
-    bool result = false;
-    UINT16 data_offset = 0;
-    ESYS_TR nv_handle;
-
-    TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &nv_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+    UINT8* data_buffer = NULL;
+    UINT16 bytes_written;
+    bool result = tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
+                    ctx.offset, ctx.auth.hierarchy, &ctx.auth.session_data, ctx.auth.session,
+                    &data_buffer, &bytes_written);
+    if (!result) {
         goto out;
-    }
-
-
-    // Convert TPMI_RH_PROVISION in ctx.auth.hierarchy to an ESYS_TR
-    ESYS_TR hierarchy;
-    if (ctx.auth.hierarchy == ctx.nv_index) {
-        hierarchy = nv_handle;
-    } else {
-        hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
-    }
-
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                        &ctx.auth.session_data, ctx.auth.session);
-    if (shandle1 == ESYS_TR_NONE) {
-        LOG_ERR("Couldn't get session handle");
-        goto out;
-    }
-
-    while (ctx.size_to_read) {
-
-        UINT16 bytes_to_read = ctx.size_to_read > max_data_size ?
-                max_data_size : ctx.size_to_read;
-
-        TPM2B_MAX_NV_BUFFER *nv_data;
-
-        rval = Esys_NV_Read(ectx, hierarchy, nv_handle,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                    bytes_to_read, ctx.offset, &nv_data);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Failed to read NVRAM area at index 0x%X", ctx.nv_index);
-            LOG_PERR(Esys_NV_Read, rval);
-            goto out;
-        }
-
-        ctx.size_to_read -= nv_data->size;
-        ctx.offset += nv_data->size;
-
-        memcpy(data_buffer + data_offset, nv_data->buffer, nv_data->size);
-        data_offset += nv_data->size;
-
-        free(nv_data);
     }
 
     /* dump data_buffer to output file, if specified */
     if (ctx.output_file) {
-        if (!files_save_bytes_to_file(ctx.output_file, data_buffer, data_offset)) {
+        if (!files_save_bytes_to_file(ctx.output_file, data_buffer, bytes_written)) {
+            result = false;
             goto out;
         }
     /* else use stdout if quiet is not specified */
     } else if (!flags.quiet) {
-        if (!files_write_bytes(stdout, data_buffer, data_offset)) {
+        if (!files_write_bytes(stdout, data_buffer, bytes_written)) {
+            result = false;
             goto out;
         }
     }
@@ -198,7 +104,10 @@ static bool nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     result = true;
 
 out:
-    free(data_buffer);
+    if (data_buffer) {
+        free(data_buffer);
+    }
+
     return result;
 }
 
