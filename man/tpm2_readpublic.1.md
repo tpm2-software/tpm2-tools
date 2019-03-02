@@ -21,6 +21,9 @@
     Context object for the object to read. Either a file or a handle number.
     See section "Context Object Format".
 
+  * **-n**, **--name**=_NAME\_DATA\_FILE_:
+    An optional file to save the name structure of the object.
+
   * **-o**, **--out-file**=_OUT\_FILE_:
 
     The output file path, recording the public portion of the object.
