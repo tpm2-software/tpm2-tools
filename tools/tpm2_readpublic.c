@@ -50,6 +50,7 @@ struct tpm_readpub_ctx {
         UINT8 f      : 1;
     } flags;
     char *outFilePath;
+    char *out_name_file;
     tpm2_convert_pubkey_fmt format;
     tpm2_loaded_object context_object;
     const char *context_arg;
@@ -92,6 +93,15 @@ static int read_public_and_save(ESYS_CONTEXT *ectx) {
     }
     tpm2_tool_output("\n");
 
+    bool ret = true;
+    if (ctx.out_name_file) {
+        ret = files_save_bytes_to_file(ctx.out_name_file, name->name, name->size);
+        if(!ret) {
+            LOG_ERR("Can not save object name file.");
+            goto out;
+        }
+    }
+
     tpm2_tool_output("qualified name: ");
     for (i = 0; i < qualified_name->size; i++) {
         tpm2_tool_output("%02x", qualified_name->name[i]);
@@ -100,9 +110,10 @@ static int read_public_and_save(ESYS_CONTEXT *ectx) {
 
     tpm2_util_public_to_yaml(public, NULL);
 
-    bool ret = ctx.outFilePath ?
+    ret = ctx.outFilePath ?
             tpm2_convert_pubkey_save(public, ctx.format, ctx.outFilePath) : true;
 
+out:
     free(public);
     free(name);
     free(qualified_name);
@@ -126,6 +137,9 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.f = 1;
         break;
+    case 'n':
+        ctx.out_name_file = value;
+        break;
     }
 
     return true;
@@ -136,10 +150,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
         { "out-file",   required_argument, NULL, 'o' },
         { "context",    required_argument, NULL, 'c' },
-        { "format",     required_argument, NULL, 'f' }
+        { "format",     required_argument, NULL, 'f' },
+        { "name",       required_argument, NULL, 'n' }
     };
 
-    *opts = tpm2_options_new("o:c:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:c:f:n:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
