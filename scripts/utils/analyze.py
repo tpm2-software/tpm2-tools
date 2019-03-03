@@ -18,6 +18,7 @@ import glob
 import os
 import re
 import sys
+from collections import Counter
 
 class Tool(object):
     '''Represents a tool name and it's options'''
@@ -225,18 +226,19 @@ class ToolConflictor(object):
             if len(tool_group['tools']) == 1:
                 continue
 
-            option_sets = [
-                set(t.options.keys()) | set(t.options.values())
-                for t in tool_group['tools']
+            # Identify options that are only used by a single tool within the group
+            option_list = [
+                opt
+                for tool in tool_group['tools']
+                for shortopt_longopt in tool.options.items()
+                for opt in shortopt_longopt
             ]
-            diff = set()
-            for option_set in option_sets:
-                diff ^= option_set
+            conflicts = set([opt for (opt, count) in Counter(option_list).items() if count==1])
 
-            diff -= tool_group['ignore']
+            conflicts -= tool_group['ignore']
 
-            if len(diff) > 0:
-                tool_group['conflict'] = diff
+            if len(conflicts) > 0:
+                tool_group['conflict'] = conflicts
 
     def report(self):
         '''Prints a conflict report to stdout
