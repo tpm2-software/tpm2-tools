@@ -270,8 +270,7 @@ class Parser(object):
     '''Parses C files for long option style option blocks'''
 
     regx = re.compile(
-        r'^\s*{\s*"(\w+)"\s*,\s*(?:required_argument|no_argument)\s*,\s*\w+\s*,\s*\'(\w)\'\s*},+$',
-        re.MULTILINE)
+        r'{\s*"([^"]+)"\s*,\s*(?:required_argument|no_argument)\s*,\s*\w+\s*,\s*\'(\w)\'\s*}')
 
     def __init__(self, path=os.getcwd()):
         self._path = path
