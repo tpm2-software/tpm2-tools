@@ -82,4 +82,9 @@ rm $session_ctx
 
 test "$unsealed" == "$SEALED_SECRET"
 
+if [ $? != 0 ]; then
+  echo "failed policysecret integration test"
+  exit 1
+fi
+
 exit 0
