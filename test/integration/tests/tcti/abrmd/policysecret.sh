@@ -83,7 +83,24 @@ rm $session_ctx
 test "$unsealed" == "$SEALED_SECRET"
 
 if [ $? != 0 ]; then
-  echo "failed policysecret integration test"
+  echo "Failed policysecret integration test. Auth ref object password was set"
+  exit 1
+fi
+
+#Test the policy with auth reference object password not set
+unsealed=""
+tpm2_changeauth -O ownerauth
+
+tpm2_startauthsession -a -S $session_ctx
+tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -o $o_policy_digest 
+unsealed=`tpm2_unseal -p"session:$session_ctx" -c $seal_key_ctx`
+tpm2_flushcontext -S $session_ctx
+rm $session_ctx
+
+test "$unsealed" == "$SEALED_SECRET"
+
+if [ $? != 0 ]; then
+  echo "Failed policysecret integration test. Passwordless auth ref object"
   exit 1
 fi
 
