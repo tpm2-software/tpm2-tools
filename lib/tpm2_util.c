@@ -215,6 +215,23 @@ bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append) {
     return true;
 }
 
+bool tpm2_util_string_to_uint8(const char *str, uint8_t *value) {
+
+    uint32_t tmp;
+    bool result = tpm2_util_string_to_uint32(str, &tmp);
+    if (!result) {
+        return false;
+    }
+
+    /* overflow on 8 bits? */
+    if (tmp > UINT8_MAX) {
+        return false;
+    }
+
+    *value = (uint8_t) tmp;
+    return true;
+}
+
 bool tpm2_util_string_to_uint16(const char *str, uint16_t *value) {
 
     uint32_t tmp;

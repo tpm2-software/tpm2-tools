@@ -201,6 +201,17 @@ bool tpm2_util_string_to_uint32(const char *str, uint32_t *value);
 bool tpm2_util_string_to_uint16(const char *str, uint16_t *value);
 
 /**
+ * Converts a numerical string into a uint8 value.
+ * @param str
+ *  The numerical string to convert.
+ * @param value
+ *  The value to store the conversion into.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_util_string_to_uint8(const char *str, uint8_t *value);
+
+/**
  * Prints an xxd compatible hexdump to stdout if output is enabled,
  * ie no -Q option.
  *

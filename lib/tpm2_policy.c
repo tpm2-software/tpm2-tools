@@ -392,6 +392,89 @@ bool tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
     return true;
 }
 
+bool tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
+    tpm2_session *session, uint8_t locality) {
+
+    ESYS_TR handle = tpm2_session_get_handle(session);
+
+    TPM2_RC rval = Esys_PolicyLocality(ectx, handle,
+                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, locality);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyLocality, rval);
+        return false;
+    }
+    return true;
+}
+
+bool tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
+    tpm2_session *session, 
+    const char *obj_name_path,
+    const char *new_parent_name_path,
+    TPMI_YES_NO is_include_obj) {
+
+    unsigned long file_size = 0;
+
+    bool result = files_get_file_size_path(obj_name_path, &file_size);
+    if (!result) {
+        return false;
+    }
+
+    if (!file_size) {
+        LOG_ERR("Verifying object name file \"%s\", cannot be empty",
+                obj_name_path);
+        return false;
+    }
+
+    TPM2B_NAME obj_name = {
+        .size = (uint16_t)file_size
+    };
+
+    result = files_load_bytes_from_path(obj_name_path,
+            obj_name.name,
+        &obj_name.size);
+    if (!result) {
+        return false;
+    }
+
+    result = files_get_file_size_path(new_parent_name_path, &file_size);
+    if (!result) {
+        return false;
+    }
+
+    if (!file_size) {
+        LOG_ERR("Verifying new parent name file \"%s\", cannot be empty",
+                new_parent_name_path);
+        return false;
+    }
+
+    TPM2B_NAME new_parent_name = {
+        .size = (uint16_t)file_size
+    };
+
+    result = files_load_bytes_from_path(new_parent_name_path,
+            new_parent_name.name,
+        &new_parent_name.size);
+    if (!result) {
+        return false;
+    }
+
+    ESYS_TR handle = tpm2_session_get_handle(session);
+
+    TPM2_RC rval = Esys_PolicyDuplicationSelect(
+        ectx,
+        handle,
+        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+        &obj_name,
+        &new_parent_name,
+        is_include_obj);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyDuplicationSelect, rval);
+        return false;
+    }
+
+    return true;
+}
+
 static bool tpm2_policy_populate_digest_list(char *buf, TPML_DIGEST *policy_list,
     TPMI_ALG_HASH hash) {
 

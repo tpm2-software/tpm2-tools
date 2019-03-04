@@ -101,6 +101,8 @@ bin_PROGRAMS = \
     tools/tpm2_policysecret \
     tools/tpm2_policyrestart \
     tools/tpm2_policycommandcode \
+    tools/tpm2_policyduplicationselect \
+    tools/tpm2_policylocality \
     tools/tpm2_quote \
     tools/tpm2_readpublic \
     tools/tpm2_rsadecrypt \
@@ -175,6 +177,8 @@ tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
 tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC)
+tools_tpm2_policyduplicationselect_SOURCES = tools/tpm2_policyduplicationselect.c $(TOOL_SRC)
+tools_tpm2_policylocality_SOURCES = tools/tpm2_policylocality.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -328,6 +332,8 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policypcr.1 \
     man/man1/tpm2_policyrestart.1 \
     man/man1/tpm2_policycommandcode.1 \
+    man/man1/tpm2_policyduplicationselect.1 \
+    man/man1/tpm2_policylocality.1 \
     man/man1/tpm2_policyauthorize.1 \
     man/man1/tpm2_policyor.1 \
     man/man1/tpm2_policypassword.1 \
