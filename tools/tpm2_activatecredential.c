@@ -54,7 +54,7 @@ typedef struct tpm_activatecred_ctx tpm_activatecred_ctx;
 struct tpm_activatecred_ctx {
 
     struct {
-        UINT8 f : 1;
+        UINT8 i : 1;
         UINT8 o : 1;
         UINT8 P : 1;
         UINT8 E : 1;
@@ -240,14 +240,14 @@ static bool on_option(char key, char *value) {
         ctx.flags.E = 1;
         ctx.endorse_auth_str = value;
         break;
-    case 'f':
+    case 'i':
         /* logs errors */
         result = read_cert_secret(value, &ctx.credentialBlob,
                 &ctx.secret);
         if (!result) {
             return false;
         }
-        ctx.flags.f = 1;
+        ctx.flags.i = 1;
         break;
     case 'o':
         ctx.output_file = value;
@@ -265,11 +265,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"key-context",    required_argument, NULL, 'C'},
          {"auth-key",       required_argument, NULL, 'P'},
          {"auth-endorse",   required_argument, NULL, 'E'},
-         {"in-file",        required_argument, NULL, 'f'},
+         {"in-file",        required_argument, NULL, 'i'},
          {"out-file",       required_argument, NULL, 'o'},
     };
 
-    *opts = tpm2_options_new("c:C:P:E:f:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:C:P:E:i:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -282,8 +282,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if ((!ctx.ctx_arg)
             && (!ctx.key_ctx_arg)
-            && !ctx.flags.f && !ctx.flags.o) {
-        LOG_ERR("Expected options c and C and f and o.");
+            && !ctx.flags.i && !ctx.flags.o) {
+        LOG_ERR("Expected options c and C and i and o.");
         return -1;
     }
 
