@@ -1,4 +1,13 @@
 ## Changelog
+### 3.1.4-rc0 - 2019-03-06
+  * Fix various man pages
+  * tpm2_getmanufec: fix OSSL build warnings
+  * Fix broken -T option
+  * Various build compatibility fixes
+  * Fix some unit tests
+  * Update build for recent autoconf-archive versions
+  * Install m4 files
+
 ### 3.1.3 - 2018-10-15
   * Restore support for the TPM2TOOLS_* env vars for TCTI configuration, in
   addition to supporting the new unified TPM2TOOLS_ENV_TCTI
