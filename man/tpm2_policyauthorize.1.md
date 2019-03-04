@@ -90,7 +90,7 @@ verification of the signature on the pcr policy digest using **tpm2_policyauthor
 
 ## Create a TPM object like a sealing object with the authorized policy based authentication:
 * tpm2_createprimary -Q -a o -g sha256 -G rsa -o prim.ctx
-* tpm2_create -Q -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -I- -C prim.ctx\
+* tpm2_create -Q -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -i- -C prim.ctx\
  -L authorized.policy <<< "secret to seal"
 
 ## Satisfy policy and unseal the secret:
