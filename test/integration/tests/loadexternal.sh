@@ -147,7 +147,7 @@ run_aes_test() {
 
     echo "plaintext" > "plain.txt"
 
-    tpm2_encryptdecrypt -c key.ctx -I plain.txt -o plain.enc
+    tpm2_encryptdecrypt -c key.ctx -i plain.txt -o plain.enc
 
     openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
         -aes-$1-cfb

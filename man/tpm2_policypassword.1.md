@@ -61,13 +61,13 @@ tpm2_create -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx -L policy.pass \
 ## Authenticate with plaintext passphrase input:
 ```
 tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -o key.ctx
-tpm2_encryptdecrypt -c key.ctx -o encrypt.out -I plain.txt -p text
+tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt -p text
 ```
 ## Authenticate with password and the policy:
 ```
 tpm2_startauthsession -a -S session.dat
 tpm2_policypassword -S session.dat -o policy.dat
-tpm2_encryptdecrypt -c key.ctx -o encrypt.out -I plain.txt \
+tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt \
   -p session:session.dat+testpswd
 tpm2_flushcontext -S session.dat
 ```

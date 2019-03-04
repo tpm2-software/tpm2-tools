@@ -32,7 +32,7 @@ specified symmetric key.
 
     Perform a decrypt operation. Default is encryption.
 
-  * **-I**, **--in-file**=_INPUT\_FILE_:
+  * **-i**, **--in-file**=_INPUT\_FILE_:
 
     Optional. Specifies the input file path for either the encrypted or decrypted
     data, depending on option **-D**. If not specified, defaults to **stdin**.
@@ -51,7 +51,7 @@ specified symmetric key.
     See section "Supported Public Object Algorithms" for a list
     of supported object algorithms.
 
-  * **-i**, **--iv**=_IV\_INPUT\_FILE_ : [ _IV\_OUTPUT\_FILE_ ]:
+  * **-t**, **--iv**=_IV\_INPUT\_FILE_ : [ _IV\_OUTPUT\_FILE_ ]:
 
   Optional. The initialization vector to use. Defaults to 0's. The specification
   syntax allows for an input file and output file source to be specified. The input file
@@ -69,9 +69,9 @@ specified symmetric key.
 # EXAMPLES
 
 ```
-tpm2_encryptdecrypt -C 0x81010001 -p abc123 -I <filePath> -o <filePath>
-tpm2_encryptdecrypt -C key.dat -p abc123 -I <filePath> -o <filePath>
-tpm2_encryptdecrypt -C 0x81010001 -p 123abca -X -I <filePath> -o <filePath>
+tpm2_encryptdecrypt -C 0x81010001 -p abc123 -i <filePath> -o <filePath>
+tpm2_encryptdecrypt -C key.dat -p abc123 -i <filePath> -o <filePath>
+tpm2_encryptdecrypt -C 0x81010001 -p 123abca -X -i <filePath> -o <filePath>
 ```
 
 # RETURNS

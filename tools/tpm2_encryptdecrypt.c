@@ -68,7 +68,7 @@ struct tpm_encrypt_decrypt_ctx {
     struct {
         UINT8 p : 1;
         UINT8 D : 1;
-        UINT8 I : 1;
+        UINT8 i : 1;
         UINT8 X : 1;
     } flags;
     char *key_auth_str;
@@ -174,9 +174,9 @@ static bool on_option(char key, char *value) {
     case 'D':
         ctx.is_decrypt = 1;
         break;
-    case 'I':
+    case 'i':
         ctx.input_path = value;
-        ctx.flags.I = 1;
+        ctx.flags.i = 1;
         break;
     case 'o':
         ctx.out_file_path = value;
@@ -188,7 +188,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'i':
+    case 't':
         parse_iv(value);
         break;
     }
@@ -201,14 +201,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "auth-key",             required_argument, NULL, 'p' },
         { "decrypt",              no_argument,       NULL, 'D' },
-        { "in-file",              required_argument, NULL, 'I' },
-        { "iv",                   required_argument, NULL, 'i' },
+        { "in-file",              required_argument, NULL, 'i' },
+        { "iv",                   required_argument, NULL, 't' },
         { "mode",                 required_argument, NULL, 'G' },
         { "out-file",             required_argument, NULL, 'o' },
         { "key-context",          required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("p:DI:o:c:i:G:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("p:Di:o:c:i:G:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
