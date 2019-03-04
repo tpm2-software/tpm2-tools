@@ -1,6 +1,7 @@
 ## Changelog
 ### next
   * tpm2_activatecredential: -f becomes -i
+  * tpm2_create: -I becomes -i
   * tpm2_create: supports TPM command CreateLoaded.
   * Add support for reading authorisation passwords from a file
   * tpm2_createek: now saves a context file for the generated primary's

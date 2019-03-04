@@ -83,7 +83,7 @@ struct tpm_create_ctx {
         UINT16 P : 1;
         UINT16 p : 1;
         UINT16 A : 1;
-        UINT16 I : 1;
+        UINT16 i : 1;
         UINT16 L : 1;
         UINT16 u : 1;
         UINT16 r : 1;
@@ -225,9 +225,9 @@ static bool on_option(char key, char *value) {
         ctx.attrs = value;
         ctx.flags.A = 1;
     break;
-    case 'I':
+    case 'i':
         ctx.input = strcmp("-", value) ? value : NULL;
-        ctx.flags.I = 1;
+        ctx.flags.i = 1;
         break;
     case 'L':
         ctx.policy = value;
@@ -260,7 +260,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "halg",                 required_argument, NULL, 'g' },
       { "kalg",                 required_argument, NULL, 'G' },
       { "object-attributes",    required_argument, NULL, 'A' },
-      { "in-file",              required_argument, NULL, 'I' },
+      { "in-file",              required_argument, NULL, 'i' },
       { "policy-file",          required_argument, NULL, 'L' },
       { "pubfile",              required_argument, NULL, 'u' },
       { "privfile",             required_argument, NULL, 'r' },
@@ -268,7 +268,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "out-context",          required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:A:I:L:u:r:C:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:A:i:L:u:r:C:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -295,9 +295,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    if (ctx.flags.I) {
+    if (ctx.flags.i) {
         if (ctx.flags.G) {
-            LOG_ERR("Cannot specify -G and -I together.");
+            LOG_ERR("Cannot specify -G and -i together.");
             return -1;
         }
 
@@ -327,7 +327,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
     }
 
-    if (ctx.flags.I && ctx.in_public.publicArea.type != TPM2_ALG_KEYEDHASH) {
+    if (ctx.flags.i && ctx.in_public.publicArea.type != TPM2_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM2_ALG_KEYEDHASH algorithm is allowed when sealing data");
         goto out;
     }

@@ -73,7 +73,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I $file_input_data -C $file_primary_key_ctx
+tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i $file_input_data -C $file_primary_key_ctx
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
@@ -81,11 +81,11 @@ tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
-# Test -I using stdin via pipe
+# Test -i using stdin via pipe
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
-cat $file_input_data | tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx
+cat $file_input_data | tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
@@ -93,7 +93,7 @@ tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
 cmp -s $file_unseal_output_data $file_input_data
 
-# Test using a PCR policy for auth and use file based stdin for -I
+# Test using a PCR policy for auth and use file based stdin for -i
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
@@ -101,7 +101,7 @@ tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 
-tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx -L $file_policy \
+tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
   -A 'fixedtpm|fixedparent' <<< $secret
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
@@ -142,7 +142,7 @@ tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 
-tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -I- -C $file_primary_key_ctx -L $file_policy -p secretpass <<< $secret
+tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy -p secretpass <<< $secret
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 

@@ -48,7 +48,7 @@ tpm2_flushcontext -S session.dat
 ```
 tpm2_createprimary -a o -o prim.ctx
 tpm2_create -C prim.ctx -u sealkey.pub -r sealkey.priv -L policy.dat \
-  -I- <<< "SEALED-SECRET"
+  -i- <<< "SEALED-SECRET"
 ```
 
 # Try unseal operation

@@ -46,7 +46,7 @@ These options for creating the tpm entity:
     specified.
     It accepts friendly names just like -g option.
     See section "Supported Public Object Algorithms" for a list
-    of supported object algorithms. Mutually exclusive of **-I**.
+    of supported object algorithms. Mutually exclusive of **-i**.
 
   * **-A**, **--object-attributes**=_ATTRIBUTES_:
     The object attributes, optional. Object attributes follow the specifications
@@ -54,11 +54,11 @@ These options for creating the tpm entity:
 
     `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
 
-    When **-I** is specified for sealing, `TPMA_OBJECT_SIGN_ENCRYPT` and `TPMA_OBJECT_DECRYPT` are removed from the default attribute set.
+    When **-i** is specified for sealing, `TPMA_OBJECT_SIGN_ENCRYPT` and `TPMA_OBJECT_DECRYPT` are removed from the default attribute set.
     The algorithm is set in a way where the the object is only good for sealing and unsealing. Ie one cannot use an object for sealing and cryptography
     operations.
 
-  * **-I**, **--in-file**=_FILE_:
+  * **-i**, **--in-file**=_FILE_:
     The data file to be sealed, optional. If file is -, read from stdin.
     When sealing data only the _TPM_ALG_KEYEDHASH_ algorithm with a NULL scheme is allowed. Thus, **-G** cannot
     be specified.
@@ -104,7 +104,7 @@ tpm2_create -C parent.ctx -u obj.pub obj.priv
 
 Create an object and seal data to it:
 ```
-tpm2_create -C parent.ctx  -K def456 -G keyedhash -I seal.dat -u obj.pub -r obj.priv
+tpm2_create -C parent.ctx  -K def456 -G keyedhash -i seal.dat -u obj.pub -r obj.priv
 ```
 
 Create an rsa2048 object and load it into the TPM:

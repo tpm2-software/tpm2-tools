@@ -76,7 +76,7 @@ and seal a secret. Unsealing with either of the PCR sets should be successful.
 
 ## Create a TPM object like a sealing object with the compounded auth policy:
 * tpm2_createprimary -Q -a o -g sha256 -G rsa -o prim.ctx
-* tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -I- -C prim.ctx -L policy.or <<< "secret to seal"
+* tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -i- -C prim.ctx -L policy.or <<< "secret to seal"
 
 ## Satisfy the policy and unseal the secret:
 * tpm2_startauthsession -a -S session.ctx
