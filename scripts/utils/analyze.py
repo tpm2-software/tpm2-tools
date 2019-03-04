@@ -79,7 +79,7 @@ class ToolConflictor(object):
                 ],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['r', 'privfile', 'u', 'pubfile', 's', 'secret', 'g', 'halg', 'n', 'name'])
+                "ignore": set(['r', 'privfile', 'u', 'pubfile', 's', 'secret', 'g', 'halg', 'n', 'name', 'f', 'format'])
             },
             {
                 "gname": "duplication",
