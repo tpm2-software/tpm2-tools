@@ -2,6 +2,7 @@
 ### next
   * tpm2_activatecredential: -f becomes -i
   * tpm2_create: -I becomes -i
+  * tpm2_encryptdecrypt: -I becomes -i
   * tpm2_create: supports TPM command CreateLoaded.
   * Add support for reading authorisation passwords from a file
   * tpm2_createek: now saves a context file for the generated primary's
@@ -48,7 +49,7 @@
   * tpm2_createak: -E becomes -e
   * tpm2_certify: -k becomes -p
   * tpm2_hash: -g changes to -G
-  * tpm2_encryptdecrypt: Support IVs via -i and algorithm modes via -G.
+  * tpm2_encryptdecrypt: Support IVs via -t and algorithm modes via -G.
   * tpm2_hmac: drop -g, just use the algorithm associated with the object.
   * tpm2_getmanufec: -g changes to -G
   * tpm2_createek: -g changes to -G

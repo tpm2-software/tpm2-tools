@@ -76,9 +76,9 @@ tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C primary.ctx
 
 tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -o decrypt.ctx
 
-tpm2_encryptdecrypt -Q -c decrypt.ctx  -I secret.dat -o encrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx  -i secret.dat -o encrypt.out
 
-tpm2_encryptdecrypt -Q -c decrypt.ctx -D -I encrypt.out -o decrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx -D -i encrypt.out -o decrypt.out
 
 # Test using stdin/stdout
 cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx | tpm2_encryptdecrypt -c decrypt.ctx -D > secret2.dat
@@ -100,19 +100,19 @@ tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -o decrypt.ctx
 echo -n "1234567812345678" > secret.dat
 
 # specified mode
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -I secret.dat --iv=iv.dat  -o encrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -i secret.dat --iv=iv.dat  -o encrypt.out
 
 # Unspecified mode (figure out via readpublic)
-tpm2_encryptdecrypt -Q -D -c decrypt.ctx -I encrypt.out --iv iv.dat -o decrypt.out
+tpm2_encryptdecrypt -Q -D -c decrypt.ctx -i encrypt.out --iv iv.dat -o decrypt.out
 
 cmp secret.dat decrypt.out
 
 # Test that iv looping works
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -I secret.dat --iv=iv.dat:iv2.dat -o encrypt.out
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -I secret.dat --iv=iv2.dat -o encrypt2.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -i secret.dat --iv=iv.dat:iv2.dat -o encrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc -i secret.dat --iv=iv2.dat -o encrypt2.out
 
-tpm2_encryptdecrypt -Q -D -c decrypt.ctx -I encrypt.out --iv iv.dat -o decrypt.out
-tpm2_encryptdecrypt -Q -D -c decrypt.ctx -I encrypt2.out --iv iv2.dat -o decrypt2.out
+tpm2_encryptdecrypt -Q -D -c decrypt.ctx -i encrypt.out --iv iv.dat -o decrypt.out
+tpm2_encryptdecrypt -Q -D -c decrypt.ctx -i encrypt2.out --iv iv2.dat -o decrypt2.out
 
 cmp secret.dat decrypt.out
 cmp secret.dat decrypt2.out
@@ -121,6 +121,6 @@ cmp secret.dat decrypt2.out
 trap - ERR
 
 # mode CFB should fail, since the object was explicitly created with mode CBC
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cfb -I secret.dat --iv=iv.dat  -o encrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cfb -i secret.dat --iv=iv.dat  -o encrypt.out
 
 exit 0

@@ -101,7 +101,7 @@ cmp -s $file_output_data $file_input_data
 
 trap - ERR
 
-tpm2_encryptdecrypt -I $file_input_data -o $file_output_data -c $file_unseal_key_ctx
+tpm2_encryptdecrypt -i $file_input_data -o $file_output_data -c $file_unseal_key_ctx
 if [ $? != 1 ]; then
   echo "tpm2_policycommandcode: Should have failed!"
   exit 1

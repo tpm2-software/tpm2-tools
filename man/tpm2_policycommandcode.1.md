@@ -64,7 +64,7 @@ tpm2_flushcontext -S session.dat
 # Try any other operation
 ```
 echo "Encrypt Me" > plain.txt
-tpm2_encryptdecrypt -I plain.txt -o enc.txt -c sealkey.ctx
+tpm2_encryptdecrypt -i plain.txt -o enc.txt -c sealkey.ctx
 if [ $? != 0 ]; then
  echo "Expected that operations other than unsealing will fail"
 fi
