@@ -34,7 +34,7 @@ The key referenced by key-context is **required** to be:
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-I**, **--in-file**=_INPUT\FILE_:
+  * **-i**, **--in-file**=_INPUT\FILE_:
 
     Input file path, containing the data to be decrypted.
 
@@ -53,7 +53,7 @@ The key referenced by key-context is **required** to be:
 # EXAMPLES
 
 ```
-tpm2_rsadecrypt -C 0x81010001 -I encrypted.in -o plain.out
+tpm2_rsadecrypt -C 0x81010001 -i encrypted.in -o plain.out
 ```
 
 # RETURNS

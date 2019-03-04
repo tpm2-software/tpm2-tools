@@ -78,6 +78,6 @@ tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data < $fi
 
 tpm2_load -Q -C $file_primary_key_ctx -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -n $file_rsaencrypt_key_name  -o $file_rsadecrypt_key_ctx
 
-tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -I  $file_rsa_en_output_data -o  $file_rsa_de_output_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -i  $file_rsa_en_output_data -o  $file_rsa_de_output_data
 
 exit 0

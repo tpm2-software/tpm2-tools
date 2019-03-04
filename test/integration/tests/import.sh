@@ -92,7 +92,7 @@ run_rsa_import_test() {
 	openssl rsa -in private.pem -out public.pem -outform PEM -pubout
 	openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
 
-	tpm2_rsadecrypt -c import_rsa_key.ctx -I plain.rsa.enc -o plain.rsa.dec
+	tpm2_rsadecrypt -c import_rsa_key.ctx -i plain.rsa.enc -o plain.rsa.dec
 
 	diff plain.txt plain.rsa.dec
 
