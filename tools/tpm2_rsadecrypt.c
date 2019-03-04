@@ -47,7 +47,7 @@ typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;
 struct tpm_rsadecrypt_ctx {
     struct {
         UINT8 p : 1;
-        UINT8 I : 1;
+        UINT8 i : 1;
         UINT8 o : 1;
         UINT8 unused : 3;
     } flags;
@@ -108,14 +108,14 @@ static bool on_option(char key, char *value) {
         ctx.flags.p = 1;
         ctx.key_auth_str = value;
         break;
-    case 'I': {
+    case 'i': {
         ctx.cipher_text.size = sizeof(ctx.cipher_text) - 2;
         bool result = files_load_bytes_from_path(value, ctx.cipher_text.buffer,
                 &ctx.cipher_text.size);
         if (!result) {
             return false;
         }
-        ctx.flags.I = 1;
+        ctx.flags.i = 1;
     }
         break;
     case 'o': {
@@ -131,12 +131,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "auth-key",     required_argument, NULL, 'p' },
-      { "in-file",      required_argument, NULL, 'I' },
+      { "in-file",      required_argument, NULL, 'i' },
       { "out-file",     required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("p:I:o:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:i:o:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -145,8 +145,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static bool init(ESYS_CONTEXT *ectx) {
 
 
-    if (!(ctx.context_arg && ctx.flags.I && ctx.flags.o)) {
-        LOG_ERR("Expected arguments I, o and c.");
+    if (!(ctx.context_arg && ctx.flags.i && ctx.flags.o)) {
+        LOG_ERR("Expected arguments i, o and c.");
         return false;
     }
 

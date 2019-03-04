@@ -111,7 +111,7 @@ run_rsa_test() {
 
     tpm2_loadexternal -G rsa -a n -p foo -r private.pem -o key.ctx
 
-    tpm2_rsadecrypt -c key.ctx -p foo -I plain.rsa.enc -o plain.rsa.dec
+    tpm2_rsadecrypt -c key.ctx -p foo -i plain.rsa.enc -o plain.rsa.dec
 
     diff plain.txt plain.rsa.dec
 
