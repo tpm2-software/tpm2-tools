@@ -110,6 +110,7 @@ bin_PROGRAMS = \
     tools/tpm2_sign \
     tools/tpm2_startauthsession \
     tools/tpm2_startup \
+    tools/tpm2_stirrandom \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
@@ -177,6 +178,7 @@ tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
 tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC)
+tools_tpm2_stirrandom_SOURCES = tools/tpm2_stirrandom.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -344,6 +346,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_startauthsession.1 \
     man/man1/tpm2_startup.1 \
+    man/man1/tpm2_stirrandom.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1
 endif
