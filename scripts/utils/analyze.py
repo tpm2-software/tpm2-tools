@@ -105,7 +105,7 @@ class ToolConflictor(object):
             },
             {
                 "gname": "random",
-                "tools-in-group": ["tpm2_getrandom"],
+                "tools-in-group": ["tpm2_getrandom", "tpm2_stirrandom"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set()
