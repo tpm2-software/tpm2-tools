@@ -291,7 +291,7 @@ EXTRA_DIST = $(top_srcdir)/man \
 	     RELEASE.md \
 	     test/integration
 if HAVE_MAN_PAGES
-    man1_MANS := \
+    dist_man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
     man/man1/tpm2_changeauth.1 \
@@ -352,10 +352,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_verifysignature.1
 endif
 
-if HAVE_PANDOC
-# If pandoc is enabled, we want to generate the manpages for the dist tarball
-EXTRA_DIST += $(man1_MANS)
-else
+if !HAVE_PANDOC
 # If pandoc is not enabled, we want to complain that you need pandoc for make dist,
 # so hook the target and complain.
 dist-hook:
