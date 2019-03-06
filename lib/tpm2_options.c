@@ -226,6 +226,9 @@ static void parse_env_tcti(const char *optstr, tcti_conf *conf) {
 
 static char* parse_device_tcti(void) {
     const char *device = getenv(TPM2TOOLS_ENV_DEVICE);
+    if (!device) {
+        device = "";
+    }
     return strdup(device);
 }
 
