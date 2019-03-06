@@ -681,14 +681,10 @@ bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
                     LOG_ERR("Error reading data from \"<stdin>\"");
                     res = false;
                 } else {
-                    if (!feof(stdin)) {
-                        LOG_ERR("Data larger than expected. Got %u expected %u",
-                                original_size, *size);
-                        res = false;
-                    } else {
-                        res = true;
-                    }
+                    res = true;
                 }
+            } else {
+                res = true;
             }
         }
     }
