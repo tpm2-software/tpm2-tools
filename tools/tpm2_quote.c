@@ -154,7 +154,7 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
     TPMT_SIGNATURE *signature = NULL;
 
     if(!ctx.flags.G || !get_signature_scheme(ectx, ctx.context_object.tr_handle,
-                            ctx.sig_hash_algorithm, &inScheme)) {
+                            ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme)) {
         inScheme.scheme = TPM2_ALG_NULL;
     }
 

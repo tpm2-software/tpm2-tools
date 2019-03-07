@@ -158,6 +158,8 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
  *  Handle to key used in signing operation
  * @param halg
  *  Hash algorithm for message
+ * @param sig_scheme
+ *  Signature scheme (optional, use TPM2_ALG_NULL for default)
  * @param scheme
  *  Signature scheme output
  * @return
@@ -166,6 +168,7 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
  */
 bool get_signature_scheme(ESYS_CONTEXT *context,
         ESYS_TR keyHandle, TPMI_ALG_HASH halg,
+        TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme);
 
 /**

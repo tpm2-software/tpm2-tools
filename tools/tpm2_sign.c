@@ -57,6 +57,8 @@ struct tpm_sign_ctx {
         tpm2_session *session;
     } auth;
     TPMI_ALG_HASH halg;
+    TPMI_ALG_SIG_SCHEME sig_scheme;
+    TPMT_SIG_SCHEME in_scheme;
     TPM2B_DIGEST *digest;
     char *outFilePath;
     BYTE *msg;
@@ -68,9 +70,10 @@ struct tpm_sign_ctx {
     struct {
         UINT16 p : 1;
         UINT16 g : 1;
+        UINT16 s : 1;
         UINT16 m : 1;
         UINT16 t : 1;
-        UINT16 s : 1;
+        UINT16 o : 1;
         UINT16 f : 1;
         UINT16 D : 1;
     } flags;
@@ -81,12 +84,13 @@ tpm_sign_ctx ctx = {
         .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         .halg = TPM2_ALG_SHA1,
         .digest = NULL,
+        .sig_scheme = TPM2_ALG_NULL
 };
 
 static bool sign_and_save(ESYS_CONTEXT *ectx) {
 
-    TPMT_SIG_SCHEME in_scheme;
     TPMT_SIGNATURE *signature;
+    bool result;
 
     if (!ctx.flags.D) {
       bool res = tpm2_hash_compute_data(ectx, ctx.halg, TPM2_RH_NULL,
@@ -95,12 +99,6 @@ static bool sign_and_save(ESYS_CONTEXT *ectx) {
           LOG_ERR("Compute message hash failed!");
           return false;
       }
-    }
-
-    bool result = get_signature_scheme(ectx, ctx.key_context.tr_handle,
-                    ctx.halg, &in_scheme);
-    if (!result) {
-        return false;
     }
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
@@ -112,7 +110,7 @@ static bool sign_and_save(ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval = Esys_Sign(ectx, ctx.key_context.tr_handle,
                     shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                    ctx.digest, &in_scheme, &ctx.validation, &signature);
+                    ctx.digest, &ctx.in_scheme, &ctx.validation, &signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Eys_Sign, rval);
         result = false;
@@ -140,8 +138,8 @@ static bool init(ESYS_CONTEXT *ectx) {
         option_fail = true;
     }
 
-    if (!ctx.flags.s) {
-        LOG_ERR("Expected option s");
+    if (!ctx.flags.o) {
+        LOG_ERR("Expected option o");
         option_fail = true;
     }
 
@@ -173,6 +171,16 @@ static bool init(ESYS_CONTEXT *ectx) {
         if (!result) {
             return false;
         }
+    }
+
+    /*
+     * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
+     */
+    result = get_signature_scheme(ectx, ctx.key_context.tr_handle,
+                    ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
+    if (!result) {
+        LOG_ERR("bad signature scheme for key type!");
+        return false;
     }
 
     /*
@@ -233,6 +241,15 @@ static bool on_option(char key, char *value) {
         ctx.flags.g = 1;
     }
         break;
+    case 's': {
+        ctx.sig_scheme = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
+        if (ctx.sig_scheme == TPM2_ALG_ERROR) {
+            LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
+            return false;
+        }
+        ctx.flags.s = 1;
+    }
+        break;
     case 'D': {
         ctx.digest = malloc(sizeof(TPM2B_DIGEST));
         ctx.digest->size = sizeof(TPM2B_DIGEST);
@@ -255,9 +272,9 @@ static bool on_option(char key, char *value) {
         ctx.flags.t = 1;
     }
         break;
-    case 's': {
+    case 'o': {
         ctx.outFilePath = value;
-        ctx.flags.s = 1;
+        ctx.flags.o = 1;
     }
         break;
     case 'f':
@@ -278,15 +295,16 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
       { "auth-key",             required_argument, NULL, 'p' },
       { "halg",                 required_argument, NULL, 'G' },
+      { "sig-scheme",           required_argument, NULL, 's' },
       { "message",              required_argument, NULL, 'm' },
       { "digest",               required_argument, NULL, 'D' },
-      { "sig",                  required_argument, NULL, 's' },
+      { "out-sig",              required_argument, NULL, 'o' },
       { "ticket",               required_argument, NULL, 't' },
       { "key-context",          required_argument, NULL, 'c' },
       { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("p:G:m:D:t:s:c:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:G:m:D:t:o:c:f:s:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
