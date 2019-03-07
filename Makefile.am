@@ -85,6 +85,7 @@ bin_PROGRAMS = \
     tools/tpm2_loadexternal \
     tools/tpm2_makecredential \
     tools/tpm2_nvdefine \
+    tools/tpm2_nvincrement \
     tools/tpm2_nvlist \
     tools/tpm2_nvread \
     tools/tpm2_nvreadlock \
@@ -150,6 +151,7 @@ tools_tpm2_nvread_SOURCES = tools/tpm2_nvread.c $(TOOL_SRC)
 tools_tpm2_nvreadlock_SOURCES = tools/tpm2_nvreadlock.c $(TOOL_SRC)
 tools_tpm2_nvwrite_SOURCES = tools/tpm2_nvwrite.c $(TOOL_SRC)
 tools_tpm2_nvdefine_SOURCES = tools/tpm2_nvdefine.c $(TOOL_SRC)
+tools_tpm2_nvincrement_SOURCES = tools/tpm2_nvincrement.c $(TOOL_SRC)
 tools_tpm2_nvrelease_SOURCES = tools/tpm2_nvrelease.c $(TOOL_SRC)
 tools_tpm2_hmac_SOURCES = tools/tpm2_hmac.c $(TOOL_SRC)
 tools_tpm2_certify_SOURCES = tools/tpm2_certify.c $(TOOL_SRC)
@@ -320,6 +322,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_loadexternal.1 \
     man/man1/tpm2_makecredential.1 \
     man/man1/tpm2_nvdefine.1 \
+    man/man1/tpm2_nvincrement.1 \
     man/man1/tpm2_nvlist.1 \
     man/man1/tpm2_nvread.1 \
     man/man1/tpm2_nvreadlock.1 \
