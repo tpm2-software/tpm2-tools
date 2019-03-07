@@ -63,6 +63,11 @@ cleanup "no-shut-down"
 
 tpm2_clear
 
+#Test default values for the hierarchy "-a" parameter
+tpm2_nvdefine -Q -x $nv_test_index -s 32 -t "ownerread|policywrite|ownerwrite"
+tpm2_nvrelease -Q -x $nv_test_index
+
+#Test writing and reading
 tpm2_nvdefine -Q -x $nv_test_index -a o -s 32 -t "ownerread|policywrite|ownerwrite"
 
 echo "please123abc" > nv.test_w
