@@ -60,7 +60,8 @@ struct tpm_nvrelease_ctx {
 };
 
 static tpm_nvrelease_ctx ctx = {
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
+              .hierarchy = TPM2_RH_OWNER },
 };
 
 static bool nv_space_release(ESYS_CONTEXT *ectx) {
