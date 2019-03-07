@@ -157,7 +157,7 @@ class ToolConflictor(object):
                 "gname": "nv",
                 "tools-in-group": [
                     "tpm2_nvreadlock", "tpm2_nvrelease", "tpm2_nvdefine",
-                    "tpm2_nvread", "tpm2_nvwrite", "tpm2_nvlist"
+                    "tpm2_nvread", "tpm2_nvwrite", "tpm2_nvlist", "tpm2_nvincrement"
                 ],
                 "tools": [],
                 "conflict": None,
