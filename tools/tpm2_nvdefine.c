@@ -71,7 +71,7 @@ struct tpm_nvdefine_ctx {
 static tpm_nvdefine_ctx ctx = {
     .auth= {
         .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .hierarchy = ESYS_TR_RH_OWNER
+        .hierarchy = TPM2_RH_OWNER
     },
     .nvAuth = TPM2B_EMPTY_INIT,
     .size = TPM2_MAX_NV_BUFFER_SIZE,
