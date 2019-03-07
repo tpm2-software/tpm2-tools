@@ -101,7 +101,7 @@ run_rsa_import_test() {
 
 	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-	tpm2_sign -Q -c import_rsa_key.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
+	tpm2_sign -Q -c import_rsa_key.ctx -G sha256 -D data.in.digest -f plain -o data.out.signed
 
 	openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
@@ -135,7 +135,7 @@ run_ecc_import_test() {
 	tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -o ecc.ctx
 
 	# Sign in the TPM and verify with OSSL
-	tpm2_sign -Q -c ecc.ctx -G sha256 -D data.in.digest -f plain -s data.out.signed
+	tpm2_sign -Q -c ecc.ctx -G sha256 -D data.in.digest -f plain -o data.out.signed
 	openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
 	# Sign with openssl and verify with TPM.
