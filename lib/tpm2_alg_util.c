@@ -817,7 +817,7 @@ static bool get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT objectHandle,
 }
 
 bool get_signature_scheme(ESYS_CONTEXT *context,
-        ESYS_TR keyHandle, TPMI_ALG_HASH halg,
+        ESYS_TR keyHandle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme) {
 
     TPM2_ALG_ID type;
@@ -828,16 +828,33 @@ bool get_signature_scheme(ESYS_CONTEXT *context,
 
     switch (type) {
     case TPM2_ALG_RSA :
-        scheme->scheme = TPM2_ALG_RSASSA;
-        scheme->details.rsassa.hashAlg = halg;
+        if (sig_scheme == TPM2_ALG_NULL || sig_scheme == TPM2_ALG_RSASSA) {
+            scheme->scheme = TPM2_ALG_RSASSA;
+            scheme->details.rsassa.hashAlg = halg;
+        } else if (sig_scheme == TPM2_ALG_RSAPSS) {
+            scheme->scheme = TPM2_ALG_RSAPSS;
+            scheme->details.rsapss.hashAlg = halg;
+        } else {
+            return false;
+        }
         break;
     case TPM2_ALG_KEYEDHASH :
         scheme->scheme = TPM2_ALG_HMAC;
         scheme->details.hmac.hashAlg = halg;
         break;
     case TPM2_ALG_ECC :
-        scheme->scheme = TPM2_ALG_ECDSA;
-        scheme->details.ecdsa.hashAlg = halg;
+        if (sig_scheme == TPM2_ALG_NULL || sig_scheme == TPM2_ALG_ECDSA) {
+            scheme->scheme = TPM2_ALG_ECDSA;
+            scheme->details.ecdsa.hashAlg = halg;
+        } else if (sig_scheme == TPM2_ALG_ECDAA) {
+            scheme->scheme = TPM2_ALG_ECDAA;
+            scheme->details.ecdaa.hashAlg = halg;
+        } else if (sig_scheme == TPM2_ALG_ECSCHNORR) {
+            scheme->scheme = TPM2_ALG_ECSCHNORR;
+            scheme->details.ecschnorr.hashAlg = halg;
+        } else {
+            return false;
+        }
         break;
     case TPM2_ALG_SYMCIPHER :
     default:

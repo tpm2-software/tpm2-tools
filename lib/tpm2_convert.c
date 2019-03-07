@@ -542,12 +542,20 @@ UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature) {
 
     switch (signature->sigAlg) {
     case TPM2_ALG_RSASSA:
-        *size = sizeof(signature->signature.rsassa.sig.buffer);
+        *size = signature->signature.rsassa.sig.size;
         buffer = malloc(*size);
         if (!buffer) {
             goto nomem;
         }
         memcpy(buffer, signature->signature.rsassa.sig.buffer, *size);
+        break;
+    case TPM2_ALG_RSAPSS:
+        *size = signature->signature.rsapss.sig.size;
+        buffer = malloc(*size);
+        if (!buffer) {
+            goto nomem;
+        }
+        memcpy(buffer, signature->signature.rsapss.sig.buffer, *size);
         break;
     case TPM2_ALG_HMAC: {
         TPMU_HA *hmac_sig = &(signature->signature.hmac.digest);

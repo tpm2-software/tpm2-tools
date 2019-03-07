@@ -39,6 +39,16 @@ data and validation shall indicate that hashed data did not start with
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
+  * **-s**, **--sig-scheme**=_SIGNING\_SCHEME_:
+
+    The signing scheme used to sign the message. Optional.
+    Signing schemes should follow the "formatting standards", see section
+     "Algorithm Specifiers".
+    Also, see section "Supported Signing Schemes" for a list of supported
+     signature schemes.
+    If specified, the signature scheme must match the key type.
+    If left unspecified, a default signature scheme for the key type will
+     be used.
 
   * **-m**, **--message**=_MSG\_FILE_:
 
@@ -57,7 +67,7 @@ data and validation shall indicate that hashed data did not start with
 
     The ticket file, containing the validation structure, optional.
 
-  * **-s**, **--sig**=_SIGNATURE\_FILE_:
+  * **-o**, **--out-sig**=_SIGNATURE\_FILE_:
 
     The signature file, records the signature structure.
 
@@ -74,6 +84,8 @@ data and validation shall indicate that hashed data did not start with
 [authorization formatting](common/authorizations.md)
 
 [supported hash algorithms](common/hash.md)
+
+[supported signing schemes](common/sign-alg.md)
 
 [algorithm specifiers](common/alg.md)
 
