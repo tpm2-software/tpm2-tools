@@ -64,7 +64,7 @@ AC_SUBST([LIBDL_LDFLAGS])
 
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
-                            [build cmocka unit tests (default is no)])],
+                            [build cmocka unit tests])],
             [enable_unit=$enableval],
             [enable_unit=no])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
@@ -132,8 +132,8 @@ AC_ARG_ENABLE([dlclose],
  )
 
 AC_ARG_ENABLE([hardening],
-  [AS_HELP_STRING([--enable-hardening],
-    [Enable compiler and linker options to frustrate memory corruption exploits @<:@yes@:>@])],
+  [AS_HELP_STRING([--disable-hardening],
+    [Disable compiler and linker options to frustrate memory corruption exploits])],
   [hardening="$enableval"],
   [hardening="yes"])
 
