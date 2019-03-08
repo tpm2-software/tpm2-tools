@@ -1,5 +1,11 @@
 ## Changelog
 ### next
+  * tpm2_selftest: tool for invoking tpm selftest.
+  * tpm2_stirrandom: new command for injecting entropy into the TPM.
+  * tpm2_readpublic: supports saving the binary name via -n.
+  * tpm2_nvincrement: tool for incrememnting NVs configured as counters.
+  * tpm2_sign: supports rsapss.
+  * tpm2_sign: -s becomes -o and -s is for signing scheme.
   * tpm2_activatecredential: -f becomes -i
   * tpm2_create: -I becomes -i
   * tpm2_encryptdecrypt: -I becomes -i
