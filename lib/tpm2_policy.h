@@ -185,4 +185,24 @@ bool tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
 bool tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
     tpm2_session *session, TPMA_LOCALITY locality);
 
+/**
+ * Policy to restrict tpm object authorization to specific duplication target
+ *
+ * @param ectx
+ *   The Enhanced system api (ESAPI_) context.
+ * @param policy_session
+ *   The policy session into which the policy digest is extended into
+ * @param obj_name_path
+ *   The name of the tpm object to be duplicated
+ * @param new_parent_name_path
+ *   The name of the new parent to which the object is duplicated
+ * @param is_include_obj
+ *   the flag indicating whether object name is included in policyDigest
+ */
+bool tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
+    tpm2_session *session,
+    const char *obj_name_path,
+    const char *new_parent_name_path,
+    TPMI_YES_NO is_include_obj);
+
 #endif /* TPM2_POLICY_H_ */
