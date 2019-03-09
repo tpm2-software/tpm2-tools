@@ -198,7 +198,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
       { "auth-key",             required_argument, NULL, 'p' },
       { "out-file",             required_argument, NULL, 'o' },
-      { "item-context",         required_argument, NULL, 'c' },
+      { "context-object",       required_argument, NULL, 'c' },
       { "set-list",             required_argument, NULL, 'L' },
       { "pcr-input-file",       required_argument, NULL, 'F' },
     };
