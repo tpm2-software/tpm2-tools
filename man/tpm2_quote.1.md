@@ -65,7 +65,7 @@
     Data given as a Hex string to qualify the  quote, optional. This is typically
     used to add a nonce against replay attacks.
 
-  * **-G**, **--sig-hash-algorithm**:
+  * **-g**, **--halg**:
 
     Hash algorithm for signature. Required if **-p** is given.
 
