@@ -65,6 +65,7 @@ struct tpm_createprimary_ctx {
     } auth;
     tpm2_hierarchy_pdata objdata;
     char *context_file;
+    char* unique_file;
     struct {
         UINT8 P :1;
         UINT8 p :1;
@@ -123,6 +124,12 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'u':
+        ctx.unique_file = value;
+        if (ctx.unique_file == NULL || ctx.unique_file[0] == '\0') {
+            return false;
+        }
+        break;
     case 'L':
         ctx.policy=value;
     break;
@@ -146,9 +153,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "out-context-name",     required_argument, NULL, 'o' },
         { "policy-file",          required_argument, NULL, 'L' },
         { "object-attributes",    required_argument, NULL, 'A' },
+        { "unique-data",          required_argument, NULL, 'u' },
     };
 
-    *opts = tpm2_options_new("A:P:p:g:G:o:L:a:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("A:P:p:g:G:o:L:a:u:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -182,7 +190,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.objdata.in.sensitive.sensitive.userAuth = tmp.hmac;
     }
 
-    result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, DEFAULT_ATTRS,
+    result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, ctx.unique_file, DEFAULT_ATTRS,
             &ctx.objdata.in.public);
     if(!result) {
         goto out;

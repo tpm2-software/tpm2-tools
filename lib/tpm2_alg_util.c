@@ -865,8 +865,8 @@ bool get_signature_scheme(ESYS_CONTEXT *context,
     return true;
 }
 
-bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, TPMA_OBJECT def_attrs,
-        TPM2B_PUBLIC *public) {
+bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, char *unique_file,
+        TPMA_OBJECT def_attrs, TPM2B_PUBLIC *public) {
 
     memset(public, 0, sizeof(*public));
 
@@ -875,6 +875,16 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
         public->publicArea.authPolicy.size = sizeof(public->publicArea.authPolicy.buffer);
         bool res = files_load_bytes_from_path(auth_policy,
                     public->publicArea.authPolicy.buffer, &public->publicArea.authPolicy.size);
+        if (!res) {
+            return false;
+        }
+    }
+
+    /* load a policy from a path if present */
+    if (unique_file) {
+        UINT16 unique_size = sizeof(public->publicArea.unique);
+        bool res = files_load_bytes_from_path(unique_file,
+                    (UINT8*)&public->publicArea.unique, &unique_size);
         if (!res) {
             return false;
         }

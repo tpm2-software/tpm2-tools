@@ -317,8 +317,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         attrs &= ~TPMA_OBJECT_DECRYPT;
     }
 
-    result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, attrs,
-            &ctx.in_public);
+    result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, NULL,
+            attrs, &ctx.in_public);
     if(!result) {
         goto out;
     }
