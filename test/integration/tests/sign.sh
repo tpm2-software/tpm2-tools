@@ -123,6 +123,28 @@ verify_signature() {
     sign_scheme=$1
 
     if [ "$sign_scheme" = "rsapss" ] ; then
+        # Explanation:
+
+        # From TCG TPM 2.0, Part 1: Architecture, Appendix B.7
+        # "... the random salt length will be the largest size allowed by the
+        #  key size and message digest size."
+
+        # From NIST FIPS PUB 186-4, Section 5.5
+        # "... the length (in bytes) of the salt (sLen) shall satisfy
+        #  0 <= sLen <= hLen, where hLen is the length of the hash function
+        #  output block (in bytes)."
+
+        # From TCG FIPS 140-2 Guidance for TPM 2.0, Section 5.2.1.3
+        # "If the TPM implementation is required to be compliant with FIPS 186-4,
+        #  then the random salt length will be the largest size allowed by that
+        #  specification."
+
+        # Thus, if the TPM is in "FIPS mode", PSS salt is "digest" length,
+        #  otherwise PSS salt is "max" length.
+        # Either one is accepted by this test.
+        # The IBM TPM software emulator (at least the version in ibmtpm1332.tar.gz)
+        #  uses "digest".
+
         openssl pkeyutl -verify \
             -in $file_input_digest \
             -sigfile $file_output_data \
@@ -132,6 +154,17 @@ verify_signature() {
             -pkeyopt digest:$alg_hash \
             -pkeyopt rsa_padding_mode:pss \
             -pkeyopt rsa_pss_saltlen:digest \
+            |& grep -q '^Signature Verified Successfully' \
+        || \
+        openssl pkeyutl -verify \
+            -in $file_input_digest \
+            -sigfile $file_output_data \
+            -pubin \
+            -inkey $file_signing_key_pub_pem \
+            -keyform pem \
+            -pkeyopt digest:$alg_hash \
+            -pkeyopt rsa_padding_mode:pss \
+            -pkeyopt rsa_pss_saltlen:max \
             |& grep -q '^Signature Verified Successfully'
     else
         openssl pkeyutl -verify \
