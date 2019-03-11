@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_createprimary: add -u for supporting unique field when creating objects.
   * tpm2_policylocality: add tool for creating a policy restricted to a locality.
   * tpm2_policyduplicationselect: add tool for creating a policy to restrict duplication to a new parent.
   * tpm2_selftest: tool for invoking tpm selftest.
