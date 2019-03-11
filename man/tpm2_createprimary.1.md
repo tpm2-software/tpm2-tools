@@ -69,6 +69,11 @@ interactions with the created primary.
 
     `TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
 
+  * **-u**, **--unique-data**=_UNIQUE\_FILE_:
+    An optional file input that contains the binary bits of a TPMU_PUBLIC_ID union where
+    numbers (such as length words) are in little-endian format. This is passed in the
+    unique field of TPMT_PUBLIC.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
@@ -85,9 +90,22 @@ interactions with the created primary.
 
 # EXAMPLES
 
+Create an ECC primary object:
+
 ```
 tpm2_createprimary -a o -g sha256 -G ecc -o context.out
 ```
+
+Create a primary object that follows the guidance of
+https://trustedcomputinggroup.org/wp-content/uploads/TCG-TPM-v2.0-Provisioning-Guidance-Published-v1r1.pdf
+where unique.dat contains the binary-formatted data: 0x00 0x01 (0x00 * 256)
+
+```
+tpm2_createprimary -a o -G rsa2048:aes128cfb -g sha256 -o prim.ctx \
+  -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
+  -u unique.dat
+```
+
 
 # RETURNS
 

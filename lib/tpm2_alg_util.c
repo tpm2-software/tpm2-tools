@@ -880,9 +880,12 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
         }
     }
 
-    /* load a policy from a path if present */
+    /* load the unique portion of TPMT_PUBLIC from a path if present */
     if (unique_file) {
         UINT16 unique_size = sizeof(public->publicArea.unique);
+        /* loaded size may be <= unique_size; user is responsible
+         * for ensuring that that this buffer is formatted as a
+         * TPMU_PUBLIC_ID union. unique_size is max size of the union */
         bool res = files_load_bytes_from_path(unique_file,
                     (UINT8*)&public->publicArea.unique, &unique_size);
         if (!res) {
