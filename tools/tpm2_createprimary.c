@@ -65,7 +65,7 @@ struct tpm_createprimary_ctx {
     } auth;
     tpm2_hierarchy_pdata objdata;
     char *context_file;
-    char* unique_file;
+    char *unique_file;
     struct {
         UINT8 P :1;
         UINT8 p :1;

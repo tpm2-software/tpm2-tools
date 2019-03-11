@@ -81,6 +81,16 @@ policy_new=$(yaml_get_kv pub.out \"authorization\ policy\")
 
 test "$policy_orig" == "$policy_new"
 
+# Test that -u can be specified to pass a TPMU_PUBLIC_ID union
+# in this case TPM2B_PUBLIC_KEY_RSA (256 bytes of zero)
+printf '\x00\x01' > ud.1
+dd if=/dev/zero bs=256 count=1 of=ud.2
+cat ud.1 ud.2 > unique.dat
+tpm2_createprimary -a o -G rsa2048:aes128cfb -g sha256 -o prim.ctx \
+  -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
+  -u unique.dat
+test -f prim.ctx
+
 # Test that -g/-G do not need to be specified.
 tpm2_createprimary -Q -o context.out
 
