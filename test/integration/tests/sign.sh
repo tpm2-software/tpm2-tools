@@ -67,7 +67,7 @@ cleanup() {
 trap cleanup EXIT
 
 test_symmetric() {
-    alg_signing_key=$1
+    local alg_signing_key=$1
 
     echo "12345678" > $file_input_data
 
@@ -111,7 +111,7 @@ test_symmetric() {
 }
 
 create_signature() {
-    sign_scheme=$1
+    local sign_scheme=$1
     if [ "$sign_scheme" = "" ]; then
         tpm2_sign -Q -c $file_signing_key_ctx -G $alg_hash -m $file_input_data -f plain -o $file_output_data
     else
@@ -120,7 +120,7 @@ create_signature() {
 }
 
 verify_signature() {
-    sign_scheme=$1
+    local sign_scheme=$1
 
     if [ "$sign_scheme" = "rsapss" ] ; then
         # Explanation:
@@ -179,7 +179,7 @@ verify_signature() {
 }
 
 test_asymmetric() {
-    alg_signing_key=$1
+    local alg_signing_key=$1
 
     head -c30 /dev/urandom > $file_input_data
 
@@ -194,6 +194,8 @@ test_asymmetric() {
     tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
 
     tpm2_readpublic -Q -c $file_signing_key_ctx --format=pem -o $file_signing_key_pub_pem
+
+    local sign_scheme
 
     if [ "$alg_signing_key" = "$rsa_key_type" ] ; then
         for sign_scheme in "" "rsassa" "rsapss"
@@ -220,14 +222,21 @@ start_up
 
 cleanup "no-shut-down"
 
-test_symmetric "hmac"
-
-cleanup "no-shut-down"
+# make sure commands failing inside the function will cause the script to fail!
+(
+    set -e
+    test_symmetric "hmac"
+    cleanup "no-shut-down"
+)
 
 for key_type in $rsa_key_type $ecc_key_type
 do
-    test_asymmetric $key_type
-    cleanup "no-shut-down"
+    # make sure commands failing inside the function will cause the script to fail!
+    (
+        set -e
+        test_asymmetric $key_type
+        cleanup "no-shut-down"
+    )
 done
 
 exit 0
