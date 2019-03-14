@@ -1,5 +1,5 @@
 ## Changelog
-### 3.1.4-rc0 - 2019-03-06
+### 3.1.4 - 2019-03-14
   * Fix various man pages
   * tpm2_getmanufec: fix OSSL build warnings
   * Fix broken -T option
