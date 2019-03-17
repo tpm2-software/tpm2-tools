@@ -43,7 +43,6 @@
 #include "files.h"
 #include "tpm2_options.h"
 #include "log.h"
-#include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_identity_util.h"

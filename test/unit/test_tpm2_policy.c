@@ -34,7 +34,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <setjmp.h>
 #include <cmocka.h>
 
 #include <tss2/tss2_esys.h>
