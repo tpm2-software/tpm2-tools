@@ -33,7 +33,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
 
 #include <tss2/tss2_esys.h>
 #include <tss2/tss2_mu.h>
