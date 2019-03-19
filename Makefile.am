@@ -207,38 +207,30 @@ TESTS += $(ALL_SYSTEM_TESTS)
 
 test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
 
 test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS) $(LDADD)
-test_unit_test_files_SOURCES  = test/unit/test_files.c
 
 test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_header_SOURCES  = test/unit/test_tpm2_header.c
 
 test_unit_test_tpm2_attr_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_attr_util_SOURCES  = test/unit/test_tpm2_attr_util.c
 
 test_unit_test_tpm2_alg_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_alg_util_SOURCES  = test/unit/test_tpm2_alg_util.c
 
 test_unit_test_pcr_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
 
 test_unit_test_tpm2_auth_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_auth_util_LDFLAGS  = -Wl,--wrap=Esys_TR_SetAuth \
                                          -Wl,--wrap=Esys_StartAuthSession
 test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_auth_util_SOURCES  = test/unit/test_tpm2_auth_util.c
 
 test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Esys_GetCapability
 test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
 
 test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
@@ -248,7 +240,6 @@ test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
                                        -Wl,--wrap=Esys_TR_GetName
 
 test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_session_SOURCES  = test/unit/test_tpm2_session.c
 
 test_unit_test_tpm2_policy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
@@ -256,18 +247,14 @@ test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
                                       -Wl,--wrap=Esys_PCR_Read \
                                       -Wl,--wrap=Esys_PolicyGetDigest
 test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_policy_SOURCES  = test/unit/test_tpm2_policy.c
 
 test_unit_test_tpm2_hierarchy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_hierarchy_SOURCES  = test/unit/test_tpm2_hierarchy.c
 
 test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_error_SOURCES  = test/unit/test_tpm2_error.c
 test_unit_test_tpm2_util_CFLAGS	   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_util_LDADD     = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_util_SOURCES   = test/unit/test_tpm2_util.c
 
 #
 # We need absolute paths to the builddir and srcdir locations so we can
