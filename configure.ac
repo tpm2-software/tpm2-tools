@@ -64,8 +64,7 @@ AC_SUBST([LIBDL_LDFLAGS])
 
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
-                            [build cmocka unit tests])],
-            [enable_unit=$enableval],
+                            [build cmocka unit tests])],,
             [enable_unit=no])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
 
