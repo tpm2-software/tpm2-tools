@@ -26,7 +26,7 @@ symmetric key, both the public and private portions need to be loaded.
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-G**, **--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -87,7 +87,7 @@ tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -o rsa.ctx
 
 echo "my message > message.dat
 tpm2_sign -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
-tpm2_verifysignature -c rsa.ctx -G sha256 -m message.dat -s sig.rssa
+tpm2_verifysignature -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
 ```
 
 Sign with openssl and verify with the TPM
@@ -109,7 +109,7 @@ openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.sig
 
 # Sign with openssl and verify with TPM
 openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
+tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
 ```
 
 # RETURNS

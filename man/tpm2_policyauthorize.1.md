@@ -94,7 +94,7 @@ verification of the signature on the pcr policy digest using **tpm2_policyauthor
  -L authorized.policy <<< "secret to seal"
 
 ## Satisfy policy and unseal the secret:
-* tpm2_verifysignature -c signing_key.ctx -G sha256 -m pcr.policy\
+* tpm2_verifysignature -c signing_key.ctx -g sha256 -m pcr.policy\
  -s pcr.signature -t verification.tkt -f rsassa
 * tpm2_startauthsession -a -S session.ctx
 * tpm2_policypcr -Q -S session.ctx -L sha256:0 -f pcr.policy

@@ -183,7 +183,7 @@ run_ecc_test() {
 	# Sign with openssl and verify with TPM but only with the public portion of an object loaded
 	tpm2_loadexternal -Q -G ecc -u public.ecc.pem -o key.ctx
 	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-	tpm2_verifysignature -Q -c key.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
+	tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
 
     cleanup "no-shut-down"
 }

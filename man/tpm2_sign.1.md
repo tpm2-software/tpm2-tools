@@ -101,7 +101,7 @@ tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -o rsa.ctx
 
 echo "my message > message.dat
 tpm2_sign -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
-tpm2_verifysignature -c rsa.ctx -G sha256 -m message.dat -s sig.rssa
+tpm2_verifysignature -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
 ```
 
 Sign with the TPM and verify with OSSL
