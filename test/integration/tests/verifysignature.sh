@@ -77,7 +77,7 @@ tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $fil
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_signing_key_pub  -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
 
-tpm2_sign -Q -c $file_signing_key_ctx -G $alg_hash -m $file_input_data -o $file_output_data
+tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -o $file_output_data
 
 tpm2_verifysignature -Q -c $file_signing_key_ctx  -G $alg_hash -m $file_input_data  -s $file_output_data -t $file_verify_tk_data
 
