@@ -50,11 +50,15 @@ with open("$1") as f:
 pyscript
 }
 
+populate_algs() {
+    algs="$(mktemp)"
+    tpm2_getcap -c algorithms > "${algs}"
+    filter_algs_by "${algs}" "${1}" 
+    rm "${algs}"
+}
+
 populate_hash_algs() {
-	algs=`mktemp`
-	`tpm2_getcap -c algorithms > "$algs"`
-	filter_algs_by "$algs" "details['hash'] and not details['method'] and not details['symmetric'] and not details['signing'] $1"
-	rm "$algs"
+    populate_algs "details['hash'] and not details['method'] and not details['symmetric'] and not details['signing'] $1"
 }
 
 # Return alg argument if supported by TPM.
