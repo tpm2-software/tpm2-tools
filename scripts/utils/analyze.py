@@ -167,10 +167,10 @@ class ToolConflictor(object):
             },
             {
                 "gname": "capability",
-                "tools-in-group": ["tpm2_getcap"],
+                "tools-in-group": ["tpm2_getcap", "tpm2_testparms"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set()
+                "ignore": set(['capability', 'c', 'list', 'l'])
             },
             {
                 "gname": "dictionary",
