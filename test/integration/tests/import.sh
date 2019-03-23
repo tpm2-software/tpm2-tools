@@ -109,7 +109,7 @@ run_rsa_import_test() {
 	openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
 
 	# Verify with the TPM
-	tpm2_verifysignature -Q -c import_rsa_key.ctx -G sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+	tpm2_verifysignature -Q -c import_rsa_key.ctx -g sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
 
 	rm import_rsa_key.ctx
 }
@@ -140,7 +140,7 @@ run_ecc_import_test() {
 
 	# Sign with openssl and verify with TPM.
 	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-	tpm2_verifysignature -Q -c ecc.ctx -G sha256 -m data.in.raw -f ecdsa -s data.out.signed
+	tpm2_verifysignature -Q -c ecc.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
 
 	rm ecc.ctx
 }
