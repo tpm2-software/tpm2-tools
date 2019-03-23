@@ -173,6 +173,18 @@ bool get_signature_scheme(ESYS_CONTEXT *context,
 
 /**
  *
+ * @param alg_spec
+ *  Friendly specification of public algorithm set (algname:...:....)
+ * @param public
+ *  Public structure which will contain relevant information about
+ *  specified algorithm
+ * @pre public is caller allocated and must not be NULL
+ * @return
+ */
+bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public);
+
+/**
+ *
  * @param alg_details
  * @param name_halg
  * @param attrs

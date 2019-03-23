@@ -520,7 +520,7 @@ static const char *alg_spec_fixup(const char *alg_spec) {
     return alg_spec;
 }
 
-static bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
+bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
 
     /*
      * Fix up numerics, like 0x1 for rsa
