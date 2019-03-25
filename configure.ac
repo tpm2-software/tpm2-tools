@@ -82,8 +82,7 @@ AC_DEFUN([AC_PYTHON_MODULE],
 
 AC_DEFUN([unit_test_checks],[
 
-    PKG_CHECK_MODULES([CMOCKA],[cmocka],
-        [AC_DEFINE([HAVE_CMOCKA],[1])])
+    PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
     AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd],
         [yes], [no])
