@@ -37,6 +37,9 @@ command.
     * ecc-curves:
       Display data about elliptic curves.
 
+    * pcrs:
+      Display currently allocated PCRs.
+
     * handles-transient:
       Display handles about transient objects.
 
