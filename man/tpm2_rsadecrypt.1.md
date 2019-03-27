@@ -8,7 +8,7 @@
 
 # SYNOPSIS
 
-**tpm2_tpm2_rsadecrypt** [*OPTIONS*]
+**tpm2_rsadecrypt** [*OPTIONS*]
 
 # DESCRIPTION
 
