@@ -38,13 +38,13 @@
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {
     int count;
-    TPMI_ALG_HASH alg[8]; //XXX Why 8?
+    TPMI_ALG_HASH alg[TPM2_NUM_PCR_BANKS];
 };
 
 typedef struct tpm2_pcrs tpm2_pcrs;
 struct tpm2_pcrs {
     size_t count;
-    TPML_DIGEST pcr_values[24]; //XXX Why 24?
+    TPML_DIGEST pcr_values[TPM2_MAX_PCRS];
 };
 
 /**
