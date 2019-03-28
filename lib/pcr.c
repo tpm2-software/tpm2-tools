@@ -57,7 +57,7 @@ static int pcr_get_id(const char *arg, UINT32 *pcrId)
     if(!tpm2_util_string_to_uint32(arg, &n))
         return -2;
 
-    if(n > 23)
+    if(n >= TPM2_MAX_PCRS)
         return -3;
 
     *pcrId = n;
