@@ -92,6 +92,7 @@ bin_PROGRAMS = \
     tools/tpm2_nvreadlock \
     tools/tpm2_nvrelease \
     tools/tpm2_nvwrite \
+    tools/tpm2_pcrallocate \
     tools/tpm2_pcrevent \
     tools/tpm2_pcrextend \
     tools/tpm2_pcrlist \
@@ -171,6 +172,7 @@ tools_tpm2_sign_SOURCES = tools/tpm2_sign.c $(TOOL_SRC)
 tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
 tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
+tools_tpm2_pcrallocate_SOURCES = tools/tpm2_pcrallocate.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_pcrreset_SOURCES = tools/tpm2_pcrreset.c $(TOOL_SRC)
@@ -329,6 +331,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_nvreadlock.1 \
     man/man1/tpm2_nvrelease.1 \
     man/man1/tpm2_nvwrite.1 \
+    man/man1/tpm2_pcrallocate.1 \
     man/man1/tpm2_pcrevent.1 \
     man/man1/tpm2_pcrextend.1 \
     man/man1/tpm2_pcrlist.1 \
