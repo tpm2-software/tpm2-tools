@@ -80,6 +80,7 @@ bin_PROGRAMS = \
     tools/tpm2_hash \
     tools/tpm2_hmac \
     tools/tpm2_import \
+    tools/tpm2_incrementalselftest \
     tools/tpm2_listpersistent \
     tools/tpm2_load \
     tools/tpm2_loadexternal \
@@ -187,6 +188,7 @@ tools_tpm2_stirrandom_SOURCES = tools/tpm2_stirrandom.c $(TOOL_SRC)
 tools_tpm2_policyduplicationselect_SOURCES = tools/tpm2_policyduplicationselect.c $(TOOL_SRC)
 tools_tpm2_policylocality_SOURCES = tools/tpm2_policylocality.c $(TOOL_SRC)
 tools_tpm2_testparms_SOURCES = tools/tpm2_testparms.c $(TOOL_SRC)
+tools_tpm2_incrementalselftest_SOURCES = tools/tpm2_incrementalselftest.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -315,6 +317,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
     man/man1/tpm2_import.1 \
+    man/man1/tpm2_incrementalselftest.1 \
     man/man1/tpm2_listpersistent.1 \
     man/man1/tpm2_load.1 \
     man/man1/tpm2_loadexternal.1 \

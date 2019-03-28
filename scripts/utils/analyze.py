@@ -191,7 +191,7 @@ class ToolConflictor(object):
             },
             {
                 "gname": "testing",
-                "tools-in-group": ["tpm2_selftest"],
+                "tools-in-group": ["tpm2_selftest", "tpm2_incrementalselftest"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set()
