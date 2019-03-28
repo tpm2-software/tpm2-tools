@@ -80,6 +80,38 @@ AC_DEFUN([AC_PYTHON_MODULE],
   fi
 ])
 
+AC_CHECK_PROG([PYTHON],[python],[yes])
+AS_IF(
+    [test "x${PYTHON}" = x"yes"],
+    [],
+    [AS_IF(
+        [test "x$enable_unit" = x"yes"],
+        [AC_MSG_ERROR([Required executable bash not found, system tests require a python interpreter!])],
+        [AC_MSG_WARN([Python interpreter not found. System tests and some utilities will fail])]
+)])
+
+AC_CHECK_PROG([BASH_SHELL],[bash],[yes])
+AS_IF(
+    [test "x${BASH_SHELL}" = x"yes"],
+    [],
+    [AS_IF(
+        [test "x$enable_unit" = x"yes"],
+        [AC_MSG_ERROR([Required executable bash not found, system tests require a bash shell!])],
+        [AC_MSG_WARN([Bash shell not found. System test scripts will fail if executed])]
+)])
+
+AC_PYTHON_MODULE([yaml])
+
+AC_CHECK_PROG([XXD],[xxd],[yes])
+AS_IF(
+    [test "x${XXD}" = x"yes"],
+    [],
+    [AS_IF(
+        [test "x$enable_unit" = x"yes"],
+        [AC_MSG_ERROR([Required executable xxd not found, system tests require xxd!])],
+        [AC_MSG_WARN([xxd not found. Some system test scripts will fail if executed])]
+)])
+
 AC_DEFUN([unit_test_checks],[
 
     PKG_CHECK_MODULES([CMOCKA],[cmocka],
@@ -92,32 +124,12 @@ AC_DEFUN([unit_test_checks],[
         [yes], [no])
 
     AS_IF([test "$tpm2_abrmd" != "yes"],
-           [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])],
-        [])
+         [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])],
+         [])
 
     AS_IF([test "$tpm_server" != "yes"],
-        [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])],
-        [])
-
-    AC_CHECK_PROG([BASH_SHELL],[bash],[yes])
-    AS_IF(
-        [test "x${BASH_SHELL}" = x"yes"],
-        [],
-        [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
-
-    AC_CHECK_PROG([PYTHON],[python],[yes])
-    AS_IF(
-        [test "x${PYTHON}" = x"yes"],
-        [],
-        [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
-
-    AC_PYTHON_MODULE([yaml])
-
-    AC_CHECK_PROG([XXD],[xxd],[yes])
-    AS_IF(
-        [test "x${XXD}" = x"yes"],
-        [],
-        [AC_MSG_WARN([Required executable xxd not found, some system tests will fail!])])
+         [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])],
+         [])
 ])
 
 AS_IF([test "x$enable_unit" != xno],
