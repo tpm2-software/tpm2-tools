@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_testparms: new tool for querying tpm for supported algorithms.
   * tpm2_getcap: supports "pcr" option for listing hash algorithms and bank numbers.
   * tpm2_createprimary: add -u for supporting unique field when creating objects.
   * tpm2_policylocality: add tool for creating a policy restricted to a locality.
