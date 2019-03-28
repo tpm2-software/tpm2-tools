@@ -29,13 +29,15 @@
 
   * **-l**, **--id-list**=_PCR\_ID\_LIST_
 
-	The comma separated list of selected PCRs' ids, 0~23 e.g. "4,5,6".
+    The comma separated list of selected PCRs' e.g. "4,5,6".
 
   * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:
 
     The list of pcr banks and selected PCRs' ids for each bank.
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specifiers".
+
+    Also see **NOTES** section below.
 
   * **-m**, **--message**:
 
@@ -88,6 +90,14 @@ tpm2_quote -C 0x81010002 -L sha1 -l 16,17,18
 tpm2_quote -C ak.dat -L sha1 -l 16,17,18
 tpm2_quote -C 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -q 11aa22bb
 ```
+
+# NOTES
+
+The maximum number of PCR that can be quoted at once is associated
+with the maximum length of a bank.
+
+On most TPMs, it means that this tool can quote up to 24 PCRs 
+at once.
 
 # RETURNS
 

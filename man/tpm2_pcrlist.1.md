@@ -45,6 +45,8 @@ sha256 :
     _PCR\_SELECTION\_LIST_ values should follow the
     pcr bank specifiers standards, see section "PCR Bank Specifiers".
 
+    Also read **NOTES** section below.
+
   * **-s**, **--algs**:
     Output the list of supported algorithms.
 
@@ -83,6 +85,14 @@ Display the supported PCR bank algorithms and exit:
 ```
 tpm2_pcrlist -s
 ```
+
+# NOTES
+
+The maximum number of PCR that can be dumped at once is associated
+with the maximum length of a bank.
+
+On most TPMs, it means that this tool can dump up to 24 PCRs 
+at once.
 
 # RETURNS
 
