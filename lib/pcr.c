@@ -396,9 +396,9 @@ bool pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSele
         free(pcr_selection_out);
 
         //4. goto step 2 if pcrSelctionIn still has bits set
-    } while (++pcrs->count < 24 && !pcr_unset_pcr_sections(&pcr_selection_tmp));
+    } while (++pcrs->count < sizeof(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp));
 
-    if (pcrs->count >= 24 && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
+    if (pcrs->count >= sizeof(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
         LOG_ERR("too much pcrs to get! try to split into multiple calls...");
         return false;
     }
