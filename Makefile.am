@@ -72,6 +72,7 @@ bin_PROGRAMS = \
     tools/tpm2_createprimary \
     tools/tpm2_dictionarylockout \
     tools/tpm2_getcap \
+    tools/tpm2_gettestresult \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
     tools/tpm2_flushcontext \
@@ -191,6 +192,7 @@ tools_tpm2_policyduplicationselect_SOURCES = tools/tpm2_policyduplicationselect.
 tools_tpm2_policylocality_SOURCES = tools/tpm2_policylocality.c $(TOOL_SRC)
 tools_tpm2_testparms_SOURCES = tools/tpm2_testparms.c $(TOOL_SRC)
 tools_tpm2_incrementalselftest_SOURCES = tools/tpm2_incrementalselftest.c $(TOOL_SRC)
+tools_tpm2_gettestresult_SOURCES = tools/tpm2_gettestresult.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -316,6 +318,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_flushcontext.1 \
     man/man1/tpm2_getmanufec.1 \
     man/man1/tpm2_getrandom.1 \
+    man/man1/tpm2_gettestresult.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
     man/man1/tpm2_import.1 \
