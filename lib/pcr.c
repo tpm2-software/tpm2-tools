@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include <tss2/tss2_sys.h>
+#include <inttypes.h>
 #include <stdbool.h>
 
 #include "pcr.h"
@@ -305,6 +306,18 @@ bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_
     *capability_data = *capdata_ret;
 
     unsigned i;
+
+    // If the TPM support more bank algorithm that we currently
+    // able to manage, throw an error
+    if (capability_data->data.assignedPCR.count > sizeof(algs->alg)) {
+        LOG_ERR("Current implementation does not support more than %zu banks, "
+                "got %" PRIu32 " banks supported by TPM", 
+                sizeof(algs->alg), 
+                capability_data->data.assignedPCR.count);
+        free(capdata_ret);
+        return false;
+    }
+
     for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
         algs->alg[i] =
                 capability_data->data.assignedPCR.pcrSelections[i].hash;
