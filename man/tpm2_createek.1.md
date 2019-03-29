@@ -24,19 +24,23 @@ Refer to:
 # OPTIONS
 
   * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
+
     Specifies current endorsement authorization.
     authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-P**, **--auth-ek**=_EK\_AUTH_
+
     Specifies the EK authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-o**, **--auth-owner**=_OWNER\_AUTH_
+  * **-w**, **--auth-owner**=_OWNER\_AUTH_
+
     Specifies the current owner authorization.
     Same formatting as the endorse password value or **-e** option.
 
   * **-c**, **--context**=_CONTEXT\_OBJECT_:
+
     Specifies the name of a context object used to store the EK, either a path
     to save the context of the EK or a handle used to persist EK in the TPM.
     See section "Context Object Format".
@@ -45,25 +49,28 @@ Refer to:
     to use and print out the automatically selected handle.
 
     If one saves the context file via this option and the public key via the
-    **-p** option, the EK can be restored via a call to tpm2_loadexternal(1).
+    **-p** option, the EK can be restored via a call to **tpm2_loadexternal**(1).
 
   * **-G**, **--algorithm**=_ALGORITHM_:
-    specifies the algorithm type of EK. Supports:
-    * ecc - An P256 key.
-    * rsa - An RSA2048 key.
-    * keyedhash - hmac key.
+
+    Specifies the algorithm type of EK. Supports:
+    * **ecc** - An P256 key.
+    * **rsa** - An RSA2048 key.
+    * **keyedhash** - hmac key.
 
   * **-p**, **--file**=_FILE_:
+
     Optional: specifies the file used to save the public portion of EK. This defaults
-    to a binary data structure corresponding to the TPM2B_PUBLIC structure in the
+    to a binary data structure corresponding to the **TPM2B_PUBLIC** structure in the
     specification. Using the **--format** option allows one to change this
     behavior.
 
   * **-t**, **--template**:
+
     Optional: Uses the manufacturer defined EK Template and EK Nonce to populate
-    the TPM2B_PUBLIC publicArea member. See the TCG EK Credential Profile
+    the **TPM2B_PUBLIC** public area. See the TCG EK Credential Profile
     specification for more information.
-    
+
 
 [pubkey options](common/pubkey.md)
 
@@ -84,9 +91,9 @@ Resource managers will flush the TPM context when a tool exits, thus
 when using an RM, moving the created EK to persistent memory is
 required.
 
-Create an Endorsement Key and make it persistent:
+### Create an Endorsement Key and make it persistent
 ```
-tpm2_createek -e abc123 -o abc123 -P passwd -H 0x81010001 -g rsa -f ek.pub
+tpm2_createek -e abc123 -w abc123 -P passwd -H 0x81010001 -g rsa -o ek.pub
 ```
 
 ## Without a Resource Manager (RM)
@@ -95,12 +102,12 @@ The following examples will not work when an RM is in use, as the RM will
 flush the TPM context when the tool exits. In these scenarios, the created
 EK is in transient memory and thus will be flushed.
 
-Create an Endorsement Key and make it transient:
+### Create an Endorsement Key and make it transient
 ```
 tpm2_createek -g rsa
 ```
 
-Create a transient Endorsement Key, flush it, and reload it.
+### Create a transient Endorsement Key, flush it, and reload it.
 ```
 tpm2_createek -g rsa -p ek.pub
 

@@ -12,17 +12,17 @@
 
 # DESCRIPTION
 
-**tpm2_print**(1) decodes a TPM data structure and prints enclosed
+**tpm2_print**(1) - Decodes a TPM data structure and prints enclosed
 elements to stdout as YAML.
 
 # OPTIONS
 
   * **-t**, **--type**:
 
-    Required. Type of data structure. Only TPMS\_ATTEST and TPMS\_CONTEXT are
+    Required. Type of data structure. Only **TPMS_ATTEST** and **TPMS_CONTEXT** are
     presently supported.
 
-  * **-f**, **--file**:
+  * **-i**, **--in-file**:
 
     Optional. File containing TPM object. Reads from stdin if unspecified.
 
@@ -34,7 +34,9 @@ elements to stdout as YAML.
 
 ```
 tpm2_print -t TPMS_ATTEST -f /path/to/tpm/quote
+
 tpm2_print --type=TPMS_ATTEST --file=/path/to/tpm/quote
+
 cat /path/to/tpm/quote | tpm2_print --type=TPMS_ATTEST
 ```
 

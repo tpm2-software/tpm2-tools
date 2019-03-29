@@ -12,19 +12,21 @@
 
 # DESCRIPTION
 
-**tpm2_listpersistent**(1) - display all defined persistent objects.
+**tpm2_listpersistent**(1) - Display all defined persistent objects.
 
 # OPTIONS
 
 These options for listing the persistent objects:
 
   * **-g**, **--halg**=_ALGORITHM_:
+
     Only display persistent objects using this hash algorithm. Algorithms should
     follow the "formatting standards", see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
   * **-G**, **--kalg**=_KEY\_ALGORITHM_:
+
     Only display persistent objects using this key algorithm.
     See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
@@ -43,8 +45,8 @@ These options for listing the persistent objects:
 
 ```
 tpm2_listpersistent
-tpm2_listpersistent -g sha256 -G ecc
 
+tpm2_listpersistent -g sha256 -G ecc
 ```
 
 # RETURNS

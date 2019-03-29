@@ -32,7 +32,7 @@ This tool accepts no tool specific options.
 
 # EXAMPLES
 
-Get the result of the TPM testing:
+## Get the result of the TPM testing
 
 ```
 tpm2_gettestresult

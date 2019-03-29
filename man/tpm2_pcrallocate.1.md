@@ -8,21 +8,18 @@
 
 # SYNOPSIS
 
-**tpm2_pcrallocate** [*OPTIONS*] [*ALLOCATION*]
+**tpm2_pcrallocate** [*OPTIONS*] _ALLOCATION_
 
 # DESCRIPTION
 
-**tpm2_pcrallocate**(1) - allows the user to specify an allocation for the TPM.
-If no *ALLOCATION* is given, then SHA1 and SHA256 banks with PCRs 0 - 23 are
+**tpm2_pcrallocate**(1) - Allow the user to specify an allocation for the TPM.
+If no _ALLOCATION_ is given, then SHA1 and SHA256 banks with PCRs 0 - 23 are
 allocated.
 
-Note: The new allocations become effective after the next reboot.
+The new allocations become effective after the next reboot.
 
-# ALLOCATION
-
-A list of banks and selected pcrs. The _ALLOCATION_ values should 
+_ALLOCATION_ is a list of banks and selected pcrs. The values should
 follow the pcr bank specifiers standards, see section "PCR Bank Specifiers".
-
 
 # OPTIONS
 
@@ -43,10 +40,11 @@ follow the pcr bank specifiers standards, see section "PCR Bank Specifiers".
 
 # EXAMPLES
 
-## To allocate the two default banks
+## To allocate the two default banks (SHA1 and SHA256)
 ```
 tpm2_pcrallocate
 ```
+
 ## To make a custom allocation with a platform authorization
 ```
 tpm2_pcrallocate -P abc sha1:7,8,9,10,16,17,18,19+sha256:all

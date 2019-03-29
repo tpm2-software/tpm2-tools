@@ -12,8 +12,8 @@
 
 # DESCRIPTION
 
-**tpm2_rc_decode**(1) converts _RC\_CODE_ originating from the SAPI and TCTI into
-human readable errors. Analogous to strerror(3), but for the tpm2 stack.
+**tpm2_rc_decode**(1) - Converts _RC\_CODE_ originating from the SAPI and TCTI into
+human readable errors. Analogous to **strerror**(3), but for the TPM2 stack.
 
 # OPTIONS
 

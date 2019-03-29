@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_verifysignature**(1) uses loaded keys to validate a signature on a message
+**tpm2_verifysignature**(1) - Uses loaded keys to validate a signature on a message
 with the message digest passed to the TPM. If the signature check succeeds,
 then the TPM will produce a **TPMT_TK_VERIFIED**. Otherwise, the TPM shall return
 **TPM_RC_SIGNATURE**. If _KEY\_HANDLE_ references an asymmetric key, only the
@@ -79,25 +79,31 @@ symmetric key, both the public and private portions need to be loaded.
 
 # EXAMPLES
 
-Sign and verify with the TPM using the *endorsement* hierarchy
+## Sign and verify with the TPM using the *endorsement* hierarchy
 ```
 tpm2_createprimary -a e -o primary.ctx
+
 tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
+
 tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -o rsa.ctx
 
 echo "my message > message.dat
+
 tpm2_sign -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
+
 tpm2_verifysignature -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
 ```
 
-Sign with openssl and verify with the TPM
+## Sign with openssl and verify with the TPM
 ```
 # Generate an ECC key
 openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
+
 openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
 
 # Generate a hash to sign (OSSL needs the hash of the message)
 echo "data to sign" > data.in.raw
+
 sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
 # Load the private key for signing
@@ -105,10 +111,12 @@ tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
 
 # Sign in the TPM and verify with OSSL
 tpm2_sign -Q -c key.ctx -g sha256 -D data.in.digest -f plain -s data.out.signed
+
 openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
 # Sign with openssl and verify with TPM
 openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
+
 tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
 ```
 

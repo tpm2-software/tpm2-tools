@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_hash**(1) - performs a hash operation on _FILE_ and returns the results. If
+**tpm2_hash**(1) - Performs a hash operation on _FILE_ and returns the results. If
 _FILE_ is not specified, then data is read from stdin. If the results of the
 hash will be used in a signing operation that uses a restricted signing key,
 then the ticket returned by this command can indicate that the hash is safe to
@@ -21,7 +21,8 @@ sign.
 # OPTIONS
 
   * **-a**, **--hierarchy**=_HIERARCHY_:
-    hierarchy to use for the ticket. Defaults to **o**, **TPM_RH_OWNER**, when
+
+    Hierarchy to use for the ticket. Defaults to **o**, **TPM_RH_OWNER**, when
     no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
@@ -30,6 +31,7 @@ sign.
       * **n** for **TPM_RH_NULL**
 
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
+
     The hash algorithm to use.
     Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers".
@@ -37,9 +39,11 @@ sign.
     algorithms.
 
   * **-o**, **--out-file**=_OUT\_FILE_
+
     Optional file record of the hash result. Defaults to stdout in hex form.
 
   * **-t**, **--ticket**=_TICKET\_FILE_
+
     Optional file record of the ticket result. Defaults to stdout in hex form.
 
 [common options](common/options.md)
@@ -52,8 +56,7 @@ sign.
 
 # EXAMPLES
 
-Hash a file with sha1 hash algorithm and save the hash and ticket to a file:
-
+## Hash a file with sha1 hash algorithm and save the hash and ticket to a file
 ```
 tpm2_hash -H e -g sha1 -o hash.bin -t ticket.bin data.txt
 ```

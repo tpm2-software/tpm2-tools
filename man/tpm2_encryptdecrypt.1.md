@@ -4,7 +4,7 @@
 
 # NAME
 
-**tpm2_encryptdecrypt**(1) - performs symmetric encryption or decryption.
+**tpm2_encryptdecrypt**(1) - Performs symmetric encryption or decryption.
 
 # SYNOPSIS
 
@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-tpm2_encryptdecrypt(1) - performs symmetric encryption or decryption with a
+**tpm2_encryptdecrypt**(1) - Performs symmetric encryption or decryption with a
 specified symmetric key.
 
 # OPTIONS
@@ -42,18 +42,18 @@ specified symmetric key.
     Optional. Specifies the output file path for either the encrypted or decrypted
     data, depending on option **-D**. If not specified, defaults to **stdout**.
 
-  * **-G**, **--mode**=_CIPHER\_MODE_ALGORITHM_:
+  * **-G**, **--mode**=_CIPHER\_MODE\_ALGORITHM_:
 
-    The key algorithm associated with this object. It defaults to the objects
-    mode or CFB if the objects mode is not configured.
+    The key algorithm associated with this object. It defaults to the object's
+    mode or CFB if left unconfigured.
 
-    It accepts friendly names just like -g option.
+    It accepts friendly names just like **-g** option.
     See section "Supported Public Object Algorithms" for a list
     of supported object algorithms.
 
-  * **-t**, **--iv**=_IV\_INPUT\_FILE_ : [ _IV\_OUTPUT\_FILE_ ]:
+  * **-t**, **--iv**=_IV\_INPUT\_FILE_ : _IV\_OUTPUT\_FILE_:
 
-  Optional. The initialization vector to use. Defaults to 0's. The specification
+    Optional. The initialization vector to use. Defaults to 0's. The specification
   syntax allows for an input file and output file source to be specified. The input file
   path is first, optionally followed by a colon ":" and the output iv path. This the output
   iv can be saved for subsequent calls when chaining.
@@ -65,6 +65,8 @@ specified symmetric key.
 [context object format](common/ctxobj.md)
 
 [authorization formatting](common/authorizations.md)
+
+[supported public object algorithms](common/object-alg.md)
 
 # EXAMPLES
 

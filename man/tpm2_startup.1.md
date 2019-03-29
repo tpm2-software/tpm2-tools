@@ -12,11 +12,8 @@
 
 # DESCRIPTION
 
-**tpm2_startup**(1) Send a **TPM2_Startup** command with either **TPM_SU_CLEAR** or
+**tpm2_startup**(1) - Send a **TPM2_Startup** command with either **TPM_SU_CLEAR** or
 **TPM_SU_STATE**.
-
-**NOTE**: Typically a Resource Manager or low-level/boot software will
-have already sent this command.
 
 # OPTIONS
 
@@ -32,8 +29,14 @@ have already sent this command.
 
 ```
 tpm2_startup
+
 tpm2_startup -c
 ```
+
+# NOTES
+
+Typically a Resource Manager (like [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd)) or low-level/boot software will
+have already sent this command.
 
 # RETURNS
 
