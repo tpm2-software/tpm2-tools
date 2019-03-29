@@ -4,7 +4,7 @@
 
 # NAME
 
-**tpm2_rsadecrypt**(1) - Performs an RSA Decryption operation using the TPM.
+**tpm2_rsadecrypt**(1) - Performs an RSA decryption operation using the TPM.
 
 # SYNOPSIS
 
@@ -12,12 +12,12 @@
 
 # DESCRIPTION
 
-**tpm2_rsadecrypt**(1) performs RSA decryption using the indicated padding scheme according to
+**tpm2_rsadecrypt**(1) - Performs RSA decryption using the indicated padding scheme according to
 IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be **TPM_ALG_NULL**.
 
 The key referenced by key-context is **required** to be:
 
-1. an RSA key
+1. An RSA key
 2. Have the attribute *decrypt* **SET** in it's attributes.
 
 # OPTIONS

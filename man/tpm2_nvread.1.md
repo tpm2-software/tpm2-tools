@@ -17,10 +17,12 @@
 # OPTIONS
 
   * **-x**, **--index**=_NV\_INDEX_:
+
     Specifies the index to define the space at.
 
   * **-a**, **--hierarchy**=_AUTH_:
-    specifies the hierarchy used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
+
+    Specifies the hierarchy used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
@@ -29,34 +31,38 @@
 
     When **-a** isn't explicitly passed the index handle will be used to
     authorize against the index. The index auth value is set via the
-    **-p** option to tpm2_nvdefine(1).
+    **-p** option to **tpm2_nvdefine**(1).
 
-  * **-f**, **--out-file**=_FILE_:
-    file to write data
+  * **-o**, **--out-file**=_FILE_:
+
+    File to write data
 
   * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE__:
+
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-s**, **--size**=_SIZE_:
+
     Specifies the size of data to be read in bytes, starting from 0 if
     offset is not specified. If not specified, the size of the data
     as reported by the public portion of the index will be used.
 
-  * **-o**, **--offset**=_OFFSET_:
-    The offset within the NV index to start reading from.
-
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
 
-    The list of pcr banks and selected PCRs' ids.
+    The list of PCR banks and selected PCRs' ids.
     _PCR\_SELECTION\_LIST_ values should follow the
-    pcr bank specifiers standards, see section "PCR Bank Specifiers".
+    PCR bank specifiers standards, see section "PCR Bank Specifiers".
 
   * **-F**,**--pcr-input-file=_PCR\_INPUT\_FILE_
 
-    Optional Path or Name of the file containing expected pcr values for the specified index.
+    Optional Path or Name of the file containing expected PCR values for the specified index.
     Default is to read the current PCRs per the set list.
+
+  * **--offset**=_OFFSET_:
+
+    The offset within the NV index to start reading from.
 
 [common options](common/options.md)
 
@@ -64,10 +70,11 @@
 
 [authorization formatting](common/authorizations.md)
 
+[PCR bank specifiers](common/pcr.md)
+
 # EXAMPLES
 
-To read 32 bytes from an index starting at offset 0:
-
+## Read 32 bytes from an index starting at offset 0
 ```
 tpm2_nvread -x 0x1500016 -a 0x40000001 -s 32
 ```

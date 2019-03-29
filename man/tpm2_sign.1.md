@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_sign**(1) signs an externally provided hash with the specified symmetric or
+**tpm2_sign**(1) - Signs an externally provided hash with the specified symmetric or
 asymmetric signing key. If keyHandle references a restricted signing key, then
 validation shall be provided, indicating that the TPM performed the hash of the
 data and validation shall indicate that hashed data did not start with
@@ -93,24 +93,30 @@ data and validation shall indicate that hashed data did not start with
 
 # EXAMPLES
 
-Sign and verify with the TPM using the *endorsement* hierarchy
+## Sign and verify with the TPM using the *endorsement* hierarchy
 ```
 tpm2_createprimary -a e -o primary.ctx
+
 tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
+
 tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -o rsa.ctx
 
 echo "my message > message.dat
+
 tpm2_sign -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
+
 tpm2_verifysignature -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
 ```
 
-Sign with the TPM and verify with OSSL
+## Sign with the TPM and verify with OSSL
 ```
 openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
+
 openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
 
 # Generate a hash to sign
 echo "data to sign" > data.in.raw
+
 sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
 # Load the private key for signing
@@ -118,6 +124,7 @@ tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
 
 # Sign in the TPM and verify with OSSL
 tpm2_sign -Q -c key.ctx -g sha256 -D data.in.digest -f plain -s data.out.signed
+
 openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 ```
 

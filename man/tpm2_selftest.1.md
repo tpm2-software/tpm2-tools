@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_selftest**(1) Cause the TPM to execute self-test of its capabilities.
+**tpm2_selftest**(1) - Cause the TPM to execute self-test of its capabilities.
 
 Self-test can be executed in two modes :
 
@@ -29,14 +29,12 @@ Self-test can be executed in two modes :
 
 # EXAMPLES
 
-Perform a simple TPM self-test:
-
+## Perform a simple TPM self-test
 ```
 tpm2_selftest
 ```
 
-Perform a complete TPM self-test:
-
+## Perform a complete TPM self-test
 ```
 tpm2_selftest -f
 ```

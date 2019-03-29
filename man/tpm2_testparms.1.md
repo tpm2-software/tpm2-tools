@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_testparms**(1) checks that the suite specified by _ALG\_SPEC_ is available for
+**tpm2_testparms**(1) - Checks that the suite specified by _ALG\_SPEC_ is available for
 usage.
 
 Algorithms should follow the "formatting standards", see section "Algorithm Specifiers".
@@ -35,14 +35,12 @@ This tool accepts no tool specific options.
 
 # EXAMPLES
 
-Check whether if "rsa" is supported:
-
+## Check whether if "rsa" is supported
 ```
 tpm2_testparms rsa
 ```
 
-Check that ECDSA signing scheme using P-256 curve with AES 128 CTR mode is available :
-
+## Check that ECDSA using P-256 with AES-128 CTR mode is available
 ```
 tpm2_testparms ecc256:ecdsa:aes128ctr
 ```

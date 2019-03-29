@@ -4,24 +4,28 @@
 
 # NAME
 
-tpm2_clear(1) - send a clear command to the TPM.
+**tpm2_clear**(1) - Send a clear command to the TPM.
 
 # SYNOPSIS
 
-`tpm2_clear` [OPTIONS]
+**tpm2_clear** [OPTIONS]
 
 # DESCRIPTION
 
-tpm2_clear(1) - send a clear command to the TPM, i.e. clear the 3 authorization
+**tpm2_clear**(1) - Send a clear command to the TPM, i.e. clear the 3 authorization
 values. If the lockout password option is missing, assume NULL.
 
 # OPTIONS
 
   * **-p**, **--platform**:
-    specifies the tool should operate on the platform hierarchy. By default
+
+    Specifies the tool should operate on the platform hierarchy. By default
     it operates on the lockout hierarchy.
 
+    **NOTE : Operating on platform hierarchy require platform authentication.**
+
   * **-L**, **--auth-lockout**=_LOCKOUT\_AUTH_:
+
     The lockout authorization value.
 
     Authorization values should follow the "authorization formatting standards",
@@ -35,14 +39,13 @@ values. If the lockout password option is missing, assume NULL.
 
 # EXAMPLES
 
-Set owner, endorsement and lockout authorizations to an empty auth value:
+## Set owner, endorsement and lockout authorizations to an empty value
 
 ```
 tpm2_clear -L oldlockoutpasswd
 ```
 
-Clear the authorizations values on the platform hierarchy:
-
+## Clear the authorization values on the platform hierarchy
 ```
 tpm2_clear -p
 ```

@@ -4,29 +4,34 @@
 
 # NAME
 
-tpm2_clearlock(1) - lock/unlock access to the clear operation.
+**tpm2_clearlock**(1) - Lock/unlock access to the clear operation.
 
 # SYNOPSIS
 
-`tpm2_clearlock` [OPTIONS]
+**tpm2_clearlock** [OPTIONS]
 
 # DESCRIPTION
 
-tpm2_clearlock(1) - allows a user to enable (unlock) or disable (lock)
-access to the TPM2_Clear() operation. If the lockout password option
+**tpm2_clearlock**(1) - Allow a user to enable (unlock) or disable (lock)
+access to the **tpm2_clear** operation. If the lockout password option
 is missing, assume NULL.
 
 # OPTIONS
 
   * **-c**, **--clear**:
-    specifies the tool should unlock access to the clear command.
+
+    Specifies the tool should unlock access to the clear command.
     By default it will try to disable the clear command.
 
   * **-p**, **--platform**:
-    specifies the tool should operate on the platform hierarchy. By default
+
+    Specifies the tool should operate on the platform hierarchy. By default
     it operates on the lockout hierarchy.
 
+    **NOTE : Operating on platform hierarchy require platform authentication.**
+
   * **-L**, **--auth-lockout**=_LOCKOUT\_PASSWORD_:
+
     The lockout authorization value.
 
     Authorization values should follow the "authorization formatting standards",
@@ -41,14 +46,12 @@ is missing, assume NULL.
 
 # EXAMPLES
 
-Enable the clear command on the platform hierarchy.
-
+## Enable the clear command on the platform hierarchy
 ```
 tpm2_clearlock -c -p -L lockoutpasswd
 ```
 
-Disable the clear command on the lockout hierarchy
-
+## Disable the clear command on the lockout hierarchy
 ```
 tpm2_clearlock
 ```

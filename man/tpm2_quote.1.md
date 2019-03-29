@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_quote**(1) Provide quote and signature for given list of PCRs in given algorithm/banks.
+**tpm2_quote**(1) - Provide quote and signature for given list of PCRs in given algorithm/banks.
 
 # OPTIONS
 
@@ -33,9 +33,9 @@
 
   * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:
 
-    The list of pcr banks and selected PCRs' ids for each bank.
+    The list of PCR banks and selected PCRs' ids for each bank.
     _PCR\_SELECTION\_LIST_ values should follow the
-    pcr bank specifiers standards, see section "PCR Bank Specifiers".
+    PCR bank specifiers standards, see section "PCR Bank Specifiers".
 
     Also see **NOTES** section below.
 
@@ -55,9 +55,9 @@
 
   * **-p**, **--pcrs**:
 
-    PCR output file, optional, records the list of PCR values as defined 
-    by **-l** or **-L**.  Note that only the digest of these values is stored in the 
-    signed quote message -- these values themselves are not signed or 
+    PCR output file, optional, records the list of PCR values as defined
+    by **-l** or **-L**.  Note that only the digest of these values is stored in the
+    signed quote message -- these values themselves are not signed or
     stored in the message.
 
   * **-q**, **--qualify-data**:
@@ -85,9 +85,13 @@
 
 ```
 tpm2_quote -C 0x81010002 -P abc123 -L sha1 -l 16,17,18
+
 tpm2_quote -C ak.context -P "str:abc123" -L sha1 -l 16,17,18
+
 tpm2_quote -C 0x81010002 -L sha1 -l 16,17,18
+
 tpm2_quote -C ak.dat -L sha1 -l 16,17,18
+
 tpm2_quote -C 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -q 11aa22bb
 ```
 
@@ -96,7 +100,7 @@ tpm2_quote -C 0x81010002 -P "hex:123abc" -L sha1:16,17,18+sha256:16,17,18 -q 11a
 The maximum number of PCR that can be quoted at once is associated
 with the maximum length of a bank.
 
-On most TPMs, it means that this tool can quote up to 24 PCRs 
+On most TPMs, it means that this tool can quote up to 24 PCRs
 at once.
 
 # RETURNS

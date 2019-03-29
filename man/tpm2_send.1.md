@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_send**(1) Sends a TPM command to the TPM. The command is
+**tpm2_send**(1) - Sends a TPM command to the TPM. The command is
 read from a file as a binary stream and transmitted to the TPM using the TCTI
 specified by the caller. The response received from the TPM is written to
 the output file.
@@ -21,10 +21,6 @@ Likely the caller will want to redirect this to a file or into a
 program to decode and display the response in a human readable form.
 
 # OPTIONS
-
-  * **-i**, **--input**=_INPUT\FILE_:
-
-    Input file to read a command buffer from. Defaults to stdin.
 
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
@@ -36,13 +32,14 @@ program to decode and display the response in a human readable form.
 
 # EXAMPLES
 
-Send the contents of tpm2-command.bin to a device and collect the response as tpm2-response.bin.
-All examples of below accomplish this task.
+## Send and receive raw commands to TPM
+
+Send the contents of *tpm2-command.bin* to a device and collect the response as *tpm2-response.bin*.
+
 ```
-tpm2_send --tcti=device < tpm2-command.bin > tpm2-response.bin
-tpm2_send --tcti=device -i tpm2-command.bin > tpm2-response.bin
-tpm2_send --tcti=device < tpm2-command.bin -o tpm2-response.bin
-tpm2_send --tcti=device -i tpm2-command.bin -o tpm2-response.bin
+tpm2_send < tpm2-command.bin > tpm2-response.bin
+
+tpm2_send < tpm2-command.bin -o tpm2-response.bin
 ```
 
 # RETURNS
