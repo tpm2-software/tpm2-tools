@@ -413,7 +413,7 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[footer\]/d' \
 	    < $< | pandoc -s -t man > $@
 
-CLEANFILES = $(man1_MANS)
+CLEANFILES = $(dist_man1_MANS)
 
 bashcompdir=@bashcompdir@
 dist_bashcomp_DATA=dist/bash-completion/tpm2-tools/tpm2_completion.bash
