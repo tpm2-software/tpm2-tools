@@ -79,9 +79,9 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
          * Once iterated through all banks, creates an file offsets map for all pcr indices
          */
         for (k=0; k < total_indices_for_this_alg; k++) {
-            pcr_values->digests[dgst_cnt+k].size = dgst_size;
+            pcr_values->digests[dgst_cnt].size = dgst_size;
+            dgst_cnt++;
         }
-        dgst_cnt++;
 
         total_indices_for_this_alg=0;
     }
