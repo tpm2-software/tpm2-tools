@@ -418,8 +418,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-parent-context",         required_argument, NULL, 'a' },
         { "privfile",                   required_argument, NULL, 'r' },
     };
-
-    *opts = tpm2_options_new("o:e:l:O:E:L:p:P:c:a:r:S:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:e:l:O:E:L:p:P:c:a:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
