@@ -236,8 +236,8 @@ bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
 
     /* clear errno before the call, should be 0 afterwards */
     errno = 0;
-    uint32_t tmp = strtoul(str, &endptr, 0);
-    if (errno) {
+    unsigned long int tmp = strtoul(str, &endptr, 0);
+    if (errno || tmp > UINT32_MAX) {
         return false;
     }
 
@@ -250,7 +250,7 @@ bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
         return false;
     }
 
-    *value = tmp;
+    *value = (uint32_t) tmp;
     return true;
 }
 
