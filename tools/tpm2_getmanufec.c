@@ -167,7 +167,7 @@ int createEKHandle(ESYS_CONTEXT *ectx)
 {
     TPM2_RC rval;
 
-    TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
+    TPM2B_PUBLIC inPublic = TPM2B_EMPTY_INIT;
 
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION creationPCR;
