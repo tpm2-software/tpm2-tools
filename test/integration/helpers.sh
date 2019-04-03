@@ -1,3 +1,4 @@
+#!/bin/bash
 #;**********************************************************************;
 #
 # Copyright (c) 2017, Alibaba Group
@@ -65,7 +66,9 @@ populate_hash_algs() {
 hash_alg_supported() {
     local orig_alg="$1"
     local alg="$orig_alg"
-    local algs_supported="`populate_hash_algs name`"
+    local algs_supported
+    
+    algs_supported="$(populate_hash_algs name)"
     local hex2name=(
         [0x04]="sha1"
         [0x0B]="sha256"
@@ -120,10 +123,10 @@ pyscript
 #
 function yaml_get_kv() {
 
-third_arg=\"\"
-if [ $# -eq 3 ]; then
-  third_arg=$3
-fi
+    third_arg=\"\"
+    if [ $# -eq 3 ]; then
+        third_arg=$3
+    fi
 
 python << pyscript
 from __future__ import print_function
@@ -146,7 +149,7 @@ pyscript
 function recreate_info() {
     # TODO Add tmpdir location
     echo
-    echo "--- To recreate this test run the following from: `pwd` ---"
+    echo "--- To recreate this test run the following from: $(pwd) ---"
     local a="export TPM2_ABRMD=\"$TPM2_ABRMD\" TPM2_SIM=\"$TPM2_SIM\""
     local b="PATH=\"$PATH\" TPM2_SIM_NV_CHIP=\"$TPM2_SIM_NV_CHIP\""
     local c="TPM2_TOOLS_TEST_FIXTURES=\"$TPM2_TOOLS_TEST_FIXTURES\""
@@ -177,7 +180,7 @@ tpm2_tabrmd_opts=""
 tpm2_tcti_opts=""
 function start_sim() {
 
-    tpm2_sim_port=`shuf -i 2321-65535 -n 1`
+    tpm2_sim_port=$(shuf -i 2321-65535 -n 1)
 
     local max_cnt=10
 
@@ -187,8 +190,7 @@ function start_sim() {
         $TPM2_SIM -port $tpm2_sim_port &
         tpm2_sim_pid=$!
         sleep 1
-        kill -0 "$tpm2_sim_pid"
-        if [ $? -eq 0 ]; then
+        if kill -0 "$tpm2_sim_pid"; then
             local name="com.intel.tss2.Tabrmd${tpm2_sim_port}"
                         tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$tpm2_sim_port"
             echo "tpm2_tabrmd_opts: $tpm2_tabrmd_opts"
@@ -204,7 +206,7 @@ function start_sim() {
         fi
 
         echo "Shuffling port"
-        tpm2_sim_port=`shuf -i 2321-65535 -n 1`
+        tpm2_sim_port=$(shuf -i 2321-65535 -n 1)
 
         echo "Decrementing max_cnt"
         let "max_cnt=max_cnt-1"
@@ -219,26 +221,26 @@ function start_sim() {
 function start_abrmd() {
 
     if [ -z "$TPM2_SIM" ]; then
-	local tcti="device"
-	if [ -n "$TPM2_DEVICE" ]; then
-	    tcti="device:$TPM2_DEVICE"
-	fi
+        local tcti="device"
+        if [ -n "$TPM2_DEVICE" ]; then
+            tcti="device:$TPM2_DEVICE"
+        fi
 
-	local name="com.intel.tss2.Tabrmd.device"
-	tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=$tcti"
-	tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
+        local name="com.intel.tss2.Tabrmd.device"
+        tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=$tcti"
+        tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
     fi
 
     if [ $UID -eq 0 ]; then
-	tpm2_tabrmd_opts="--allow-root $tpm2_tabrmd_opts"
+        tpm2_tabrmd_opts="--allow-root $tpm2_tabrmd_opts"
     fi
 
     echo "tpm2-abrmd command: $TPM2_ABRMD $tpm2_tabrmd_opts"
     $TPM2_ABRMD $tpm2_tabrmd_opts &
     tpm2_abrmd_pid=$!
     sleep 2
-    kill -0 "$tpm2_abrmd_pid"
-    if [ $? -ne 0 ]; then
+
+    if ! kill -0 "$tpm2_abrmd_pid"; then
         (>&2 echo "Could not start tpm2-abrmd \"$TPM2_ABRMD\", exit code: $?")
         kill -9 $tpm2_abrmd_pid
         return 1
@@ -254,13 +256,10 @@ function start_up() {
     switch_to_test_dir
 
     if [ -n "$TPM2_SIM" ]; then
-	# Start the simulator
-	echo "Starting the simulator"
-	start_sim
-	if [ $? -ne 0 ]; then
-            exit 1;
-	fi
-	echo "Started the simulator"
+        # Start the simulator
+        echo "Starting the simulator"
+        start_sim || exit 1
+        echo "Started the simulator"
     fi
 
     if [ -n "$TPM2_ABRMD" ]; then
@@ -271,27 +270,26 @@ function start_up() {
         echo "Setting TCTI to use abrmd"
         echo "export TPM2TOOLS_TCTI=\"$tpm2_tcti_opts\""
         export TPM2TOOLS_TCTI="$tpm2_tcti_opts"
-    else if [ -n "$TPM2_SIM" ]; then
-             export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
-             echo "Not starting tpm2-abrmd"
-             echo "Setting TCTI to use mssim"
-             echo "export TPM2TOOLS_TCTI=\"mssim:port=$tpm2_sim_port\""
-             export TPM2TOOLS_TCTI="mssim:port=$tpm2_sim_port"
+    elif [ -n "$TPM2_SIM" ]; then
+        export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
+        echo "Not starting tpm2-abrmd"
+        echo "Setting TCTI to use mssim"
+        echo "export TPM2TOOLS_TCTI=\"mssim:port=$tpm2_sim_port\""
+        export TPM2TOOLS_TCTI="mssim:port=$tpm2_sim_port"
 
-             echo "Running tpm2_startup -c"
-             tpm2_startup -c
-	 else
-	     if [ -n "$TPM2_DEVICE" ]; then
-		 export TPM2TOOLS_TCTI="device:$TPM2_DEVICE"
-	     else
-		 export TPM2TOOLS_TCTI="device"
-	     fi
-	 fi
+        echo "Running tpm2_startup -c"
+        tpm2_startup -c
+    else
+        if [ -n "$TPM2_DEVICE" ]; then
+            export TPM2TOOLS_TCTI="device:$TPM2_DEVICE"
+        else
+            export TPM2TOOLS_TCTI="device"
+        fi
     fi
 
     echo "Running tpm2_clear"
-    tpm2_clear
-    if [ $? -ne 0 ]; then
+    
+    if ! tpm2_clear; then
         exit 1
     fi
 }
@@ -304,25 +302,27 @@ function shut_down() {
 
     fail=0
     if [ -n "$tpm2_abrmd_pid" ]; then
-        kill -9 "$tpm2_abrmd_pid"
-        if [ $? -ne 0 ]; then
-            (>&2 echo "ERROR: could not kill tpm2_abrmd on pid: $tpm2_abrmd_pid")
-            fail=1
-        fi
+        kill -0 "$tpm2_abrmd_pid" && {
+            if ! kill -9 "$tpm2_abrmd_pid"; then
+                (>&2 echo "ERROR: could not kill tpm2_abrmd on pid: $tpm2_abrmd_pid")
+                fail=1
+            fi
+        }
     fi
     tpm2_abrmd_pid=""
 
     if [ -n "$tpm2_sim_pid" ]; then
-        kill -9 "$tpm2_sim_pid"
-        if [ $? -ne 0 ]; then
-            (>&2 echo "ERROR: could not kill tpm2 simulator on pid: $tpm2_sim_pid")
-            fail=1
-        fi
+        kill -0 "$tpm2_sim_pid" && {
+            if ! kill -9 "$tpm2_sim_pid"; then
+                (>&2 echo "ERROR: could not kill tpm2 simulator on pid: $tpm2_sim_pid")
+                fail=1
+            fi
+        }
     fi
     tpm2_sim_pid=""
 
     echo "Removing sim dir: $tpm2_test_cwd"
-    rm -rf $tpm2_test_cwd 2>/dev/null
+    rm -rf "$tpm2_test_cwd" 2>/dev/null
 
     if [ $fail -ne 0 ]; then
         exit 1
