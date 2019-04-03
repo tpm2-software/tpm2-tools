@@ -245,7 +245,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC *out_public;
     TPM2B_PRIVATE *out_private;
-    TPM2B_PUBLIC inPublic = TPM2B_TYPE_INIT(TPM2B_PUBLIC, publicArea);
+    TPM2B_PUBLIC inPublic = TPM2B_EMPTY_INIT;
     bool retval = true;
 
     bool result = set_key_algorithm(&inPublic);
@@ -520,7 +520,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.e = 1;
         ctx.endorse_auth_str = value;
         break;
-    case 'P': 
+    case 'P':
         ctx.flags.P = 1;
         ctx.ak_auth_str = value;
         break;
