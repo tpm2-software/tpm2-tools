@@ -36,6 +36,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "pcr.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_errata.h"
 #include "tpm2_hash.h"
@@ -707,7 +708,7 @@ bool pcr_parse_digest_list(char **argv, int len,
         *digest_spec_str = '\0';
         digest_spec_str++;
 
-        bool result = tpm2_util_string_to_uint32(pcr_index_str, &dspec->pcr_index);
+        bool result = pcr_get_id(pcr_index_str, &dspec->pcr_index);
         if (!result) {
             LOG_ERR("Got invalid PCR Index: \"%s\", in digest spec: \"%s\"",
                     pcr_index_str, spec_str);
