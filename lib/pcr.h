@@ -51,12 +51,23 @@ struct tpm2_pcrs {
  * Echo out all PCR banks according to g_pcrSelection & g_pcrs->.
  * @param pcrSelect
  *  Description of which PCR registers are selected.
-^ * @param pcrs
-^ *  Struct containing PCR digests.
+ * @param pcrs
+ *  Struct containing PCR digests.
  * @return
  *  True on success, false otherwise.
  */
 bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs);
+
+/**
+ * Set the PCR value into pcrId if string in arg is a valid PCR index.
+ * @param arg
+ *  PCR index as string
+ * @param pcrId
+ *  Caller-allocated PCR index as integer
+ * @return
+ *  True on success, false otherwise.
+ */
+bool pcr_get_id(const char *arg, UINT32 *pcrId);
 
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels);
 bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel);

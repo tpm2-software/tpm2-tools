@@ -48,22 +48,28 @@ static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
     pcr_selection->sizeofSelect = size;
 }
 
-static int pcr_get_id(const char *arg, UINT32 *pcrId)
+bool pcr_get_id(const char *arg, UINT32 *pcrId)
 {
     UINT32 n = 0;
 
-    if(arg == NULL || pcrId == NULL)
-        return -1;
+    if(arg == NULL || pcrId == NULL){
+        LOG_ERR("arg or pcrId is NULL");
+        return false;
+    }
 
-    if(!tpm2_util_string_to_uint32(arg, &n))
-        return -2;
+    if(!tpm2_util_string_to_uint32(arg, &n)) {
+        LOG_ERR("Got invalid PCR index: \"%s\"", arg);
+        return false;
+    }
 
-    if(n >= TPM2_MAX_PCRS)
-        return -3;
+    if(n >= TPM2_MAX_PCRS) {
+        LOG_ERR("Got out of bound PCR index: \"%s\"", arg);
+        return false;
+    }
 
     *pcrId = n;
 
-    return 0;
+    return true;
 }
 
 static bool pcr_parse_selection(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
@@ -279,7 +285,7 @@ bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
 
         snprintf(buf, lenCurrent + 1, "%s", strCurrent);
 
-        if (pcr_get_id(buf, &pcr) != 0) {
+        if (!pcr_get_id(buf, &pcr)) {
             return false;
         }
 
