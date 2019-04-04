@@ -1,5 +1,6 @@
 ## Changelog
-### next
+### next 
+  * tpm2_incrementalselftest: Add tool to test support of specific algorithms. 
   * tpm2_verifysignature: Fix -G option to -g
   * tpm2_sign: Fix -G option to -g
   * tpm2_hash: Fix -G option to -g
