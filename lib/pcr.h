@@ -69,6 +69,7 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs);
  */
 bool pcr_get_id(const char *arg, UINT32 *pcrId);
 
+bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections);
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels);
 bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel);
 bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs);

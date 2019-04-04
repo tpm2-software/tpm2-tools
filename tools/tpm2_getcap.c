@@ -41,6 +41,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 #include "tpm2_capability.h"
+#include "pcr.h"
 
 /* convenience macro to convert flags into "1" / "0" strings */
 #define prop_str(val) val ? "1" : "0"
@@ -856,49 +857,6 @@ dump_handles (TPM2_HANDLE     handles[],
          tpm2_tool_output ("- 0x%X\n", handles[i]);
 }
 /*
- * Dump the TPML_PCR_SELECTION
- */
-static void
-dump_pcrselection (TPMS_PCR_SELECTION   pcrselection[],
-                   UINT32               count)
-{
-    UINT32 i;
-    int j;
-    bool first;
-    tpm2_tool_output ("activePCRs:\n");
-    for (i = 0; i < count; i++) {
-        switch(pcrselection[i].hash) {
-            case TPM2_ALG_SHA1:
-                tpm2_tool_output ("  - bank: sha1\n");
-                break;
-            case TPM2_ALG_SHA256:
-                tpm2_tool_output ("  - bank: sha256\n");
-                break;
-            case TPM2_ALG_SHA384:
-                tpm2_tool_output ("  - bank: sha384\n");
-                break;
-            case TPM2_ALG_SHA512:
-                tpm2_tool_output ("  - bank: sha512\n");
-                break;
-            default:
-                tpm2_tool_output ("  - bank: alg0x%08x\n",
-                                  pcrselection[i].hash);
-        }
-        first = true;
-        for (j = 0; j < 24; j++) {
-            if (pcrselection[i].pcrSelect[j / 8] & 1<<(j % 8)) {
-                if (first) {
-                    tpm2_tool_output ("    pcrs: [ %i", j);
-                    first = false;
-                } else {
-                    tpm2_tool_output(", %i", j);
-                }
-            }
-        }
-        tpm2_tool_output (" ]\n");
-    }
-}
-/*
  * Query the TPM for TPM capabilities.
  */
 static TSS2_RC
@@ -963,8 +921,7 @@ static bool dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
         }
         break;
     case TPM2_CAP_PCRS:
-        dump_pcrselection (capabilities->assignedPCR.pcrSelections,
-                           capabilities->assignedPCR.count);
+        pcr_print_pcr_selections(&capabilities->assignedPCR);
         break;
     default:
         return false;
