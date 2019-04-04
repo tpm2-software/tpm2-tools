@@ -70,13 +70,22 @@ tpm2_pcrextend 8:$digests
 # try extending two PCR in the same command.
 tpm2_pcrextend 8:$digests 9:$digests
 
-trap - ERR
+# Over-length hash should fail
+if tpm2_pcrextend 8:$digests,sha1=${alg_hashes["sha256"]}; then
+    echo "tpm2_pcrextend with over-length hash didn't fail!"
+    exit 1
+else
+    true
+fi
+
+oversizedspec="sha1=$(tpm2_pcrlist -g sha1 | tail +2 | cut -d':' -f2 | sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
 
 # Over-length spec should fail
-tpm2_pcrextend 8:$digests,sha1=$sha1hash 2>/dev/null
-if [ $? != 1 ]; then
-  echo "tpm2_pcrextend with over-length spec didn't fail!"
-  exit 1
+if tpm2_pcrextend 8:${oversizedspec}; then
+    echo "tpm2_pcrextend with over-length spec didn't fail!"
+    exit 1
+else
+    true
 fi
 
 exit 0
