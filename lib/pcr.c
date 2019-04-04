@@ -42,6 +42,8 @@
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"
 
+#define MAX(a,b) ((a>b)?a:b)
+
 static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
         UINT8 size) {
 
@@ -215,6 +217,46 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs) {
     }
 
     return result;
+}
+
+
+bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections) {
+    tpm2_tool_output ("selected-pcrs:\n");
+
+    /* Iterate throught the pcr banks */
+    UINT32 i;
+    for (i = 0; i < pcr_selections->count; i++) {
+        /* Print hash alg of the current bank */
+        const char *halgstr = tpm2_alg_util_algtostr(
+                pcr_selections->pcrSelections[i].hash,
+                tpm2_alg_util_flags_hash);
+        if (halgstr != NULL) {
+            tpm2_tool_output("  - %s: [", halgstr);
+        } else {
+            LOG_ERR("Unsupported hash algorithm 0x%08x", 
+                    pcr_selections->pcrSelections[i].hash);
+            return false;
+        }
+
+        /* Iterate through the PCRs of the bank */
+        bool first = true;
+        unsigned j;
+        for (j = 0; j < pcr_selections->pcrSelections[i].sizeofSelect * 8; j++)
+        {
+            if ((pcr_selections->pcrSelections[i].pcrSelect[j / 8] & 1<<(j % 8))
+                    != 0) {
+                if (first) {
+                    tpm2_tool_output (" %i", j);
+                    first = false;
+                } else {
+                    tpm2_tool_output(", %i", j);
+                }
+            }
+        }
+        tpm2_tool_output (" ]\n");
+    }
+
+    return true;
 }
 
 
