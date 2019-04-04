@@ -309,6 +309,13 @@ bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
     pcrSel->pcrSelect[1] = 0;
     pcrSel->pcrSelect[2] = 0;
 
+    if (!strncmp(str, "all", 3)) {
+        pcrSel->pcrSelect[0] = 0xff;
+        pcrSel->pcrSelect[1] = 0xff;
+        pcrSel->pcrSelect[2] = 0xff;
+        return true;
+    }
+
     do {
         strCurrent = str;
         str = memchr(strCurrent, ',', len);
