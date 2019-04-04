@@ -92,19 +92,8 @@ static bool on_arg(int argc, char** argv){
     }
 
     for(i = 0; i < argc; i++){
-        if(!tpm2_util_string_to_uint32(argv[i], &pcr)){
-            LOG_ERR("Got invalid PCR Index: \"%s\"", argv[i]);
+        if(!pcr_get_id(argv[i], &pcr))
             return false;
-        }
-
-        /*
-        * If any specified PCR index is greater than the last valid
-        * index supported in the spec, throw an error 
-        */
-        if(pcr > TPM2_MAX_PCRS - 1){
-            LOG_ERR("Got out of bound PCR Index: \"%s\"", argv[i]);
-            return false;
-        }
 
         ctx.pcr_list[pcr] = 1;
     }
