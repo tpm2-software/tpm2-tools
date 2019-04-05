@@ -1,5 +1,6 @@
 ## Changelog
-### next 
+### next
+  * tpm2_pcrallocate: new tool for changing the allocated PCRs of a TPM.
   * tpm2_incrementalselftest: Add tool to test support of specific algorithms. 
   * tpm2_verifysignature: Fix -G option to -g
   * tpm2_sign: Fix -G option to -g
