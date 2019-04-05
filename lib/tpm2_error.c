@@ -369,6 +369,7 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
             "the 7th handle in the handle area references a transient object"
             " or session that is not loaded",
             // 0x17 - EMPTY,
+            NULL,
             // 0x18 - TPM2_RC_REFERENCE_S0
             "the 1st authorization session handle references a session that"
             " is not loaded",
@@ -390,6 +391,8 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
             // 0x1E - TPM2_RC_REFERENCE_S6
             "the 7th authorization session handle references a session that"
             " is not loaded",
+            // 0x1F - EMPTY,
+            NULL,
             // 0x20 -TPM2_RC_NV_RATE
             "the TPM is rate-limiting accesses to prevent wearout of NV",
             // 0x21 - TPM2_RC_LOCKOUT
