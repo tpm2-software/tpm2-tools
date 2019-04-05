@@ -67,7 +67,7 @@ hash_alg_supported() {
     local orig_alg="$1"
     local alg="$orig_alg"
     local algs_supported
-    
+
     algs_supported="$(populate_hash_algs name)"
     local hex2name=(
         [0x04]="sha1"
@@ -174,44 +174,64 @@ function switch_back_from_test_dir() {
 
 tpm2_sim_pid=""
 tpm2_sim_port=""
-
+tpm2_mssim_tcti_expected_port=""
 tpm2_abrmd_pid=""
 tpm2_tabrmd_opts=""
 tpm2_tcti_opts=""
 function start_sim() {
-
-    tpm2_sim_port=$(shuf -i 2321-65535 -n 1)
-
     local max_cnt=10
 
+    # Do not rely on whether netstat is present or not and directly fetch
+    # data in relevent /proc file
+    tcpports="$(tail +2 /proc/net/tcp | awk '{print $2}' | cut -d':' -f2)"
+    tcpports+=" $(tail +2 /proc/net/tcp | awk '{print $3}' | cut -d':' -f2)"
+    tcpports+=" $(tail +2 /proc/net/tcp6 | awk '{print $2}' | cut -d':' -f2)"
+    tcpports+=" $(tail +2 /proc/net/tcp6 | awk '{print $3}' | cut -d':' -f2)"
+    openedtcpports=""
+
+    for i in ${tcpports}; do
+        openedtcpports+="$(printf "%d " 0x${i})"
+    done
+
+    # If either the requested simulator port or the port that will be used 
+    # by mssim TCTI which is tpm2_sim_port + 1 is occupied (ESTABLISHED, TIME_WAIT, etc...), 
+    # just continue up to 10 retries
+    # (See : https://github.com/tpm2-software/tpm2-tss/blob/master/src/tss2-tcti/tcti-mssim.c:559)
     while [ $max_cnt -gt 0 ]; do
-
-        echo "Attempting to start simulator on port: $tpm2_sim_port"
-        $TPM2_SIM -port $tpm2_sim_port &
-        tpm2_sim_pid=$!
-        sleep 1
-        if kill -0 "$tpm2_sim_pid"; then
-            local name="com.intel.tss2.Tabrmd${tpm2_sim_port}"
-                        tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$tpm2_sim_port"
-            echo "tpm2_tabrmd_opts: $tpm2_tabrmd_opts"
-
-            tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
-            echo "tpm2_tcti_opts: $tpm2_tcti_opts"
-            echo "Started simulator in tmp dir: $tpm2_test_cwd"
-            return 0
+        tpm2_sim_port="$(shuf -i 2321-65534 -n 1)"
+        tpm2_mssim_tcti_expected_port=$((tpm2_sim_port + 1))
+        if grep -qE " (${tpm2_sim_port}|${tpm2_mssim_tcti_expected_port}) " <<< "${openedtcpports}"; then
+            echo "Selected TCP port tuple (${tpm2_sim_port}, ${tpm2_mssim_tcti_expected_port}) is currently used"
+            let "max_cnt=max_cnt-1"
+            echo "Tries left: $max_cnt"
         else
-            echo "Could not start simulator at port: $tpm2_sim_port"
-            # Call wait to prevent zombies
-            wait "$tpm2_sim_pid"
+            break
         fi
+    done
 
-        echo "Shuffling port"
-        tpm2_sim_port=$(shuf -i 2321-65535 -n 1)
+    [ $max_cnt -eq 0 ] && {
+        echo "Maximum attempts reached. Aborting"
+        return 1
+    }
+    
+    echo "Attempting to start simulator on port: $tpm2_sim_port"
+    $TPM2_SIM -port $tpm2_sim_port &
+    tpm2_sim_pid=$!
+    sleep 1
+    if kill -0 "$tpm2_sim_pid"; then
+        local name="com.intel.tss2.Tabrmd${tpm2_sim_port}"
+                    tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$tpm2_sim_port"
+        echo "tpm2_tabrmd_opts: $tpm2_tabrmd_opts"
 
-        echo "Decrementing max_cnt"
-        let "max_cnt=max_cnt-1"
-        echo "Tries left: $max_cnt"
-    done;
+        tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
+        echo "tpm2_tcti_opts: $tpm2_tcti_opts"
+        echo "Started simulator in tmp dir: $tpm2_test_cwd"
+        return 0
+    else
+        echo "Could not start simulator at port: $tpm2_sim_port"
+        # Call wait to prevent zombies
+        wait "$tpm2_sim_pid"
+    fi
 
     (>&2 echo "Could not start the tpm2 simulator \"$TPM2_SIM\", exit code: $?")
 
@@ -265,7 +285,7 @@ function start_up() {
     if [ -n "$TPM2_ABRMD" ]; then
         echo "Starting tpm2-abrmd"
         # Start tpm2-abrmd
-        start_abrmd
+        start_abrmd || exit 1
         echo "Started tpm2-abrmd"
         echo "Setting TCTI to use abrmd"
         echo "export TPM2TOOLS_TCTI=\"$tpm2_tcti_opts\""
