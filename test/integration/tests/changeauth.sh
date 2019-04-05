@@ -35,6 +35,8 @@ source helpers.sh
 
 cleanup() {
     rm secret.txt key.ctx key.pub key.priv primary.ctx
+
+    shut_down
 }
 trap cleanup EXIT
 
