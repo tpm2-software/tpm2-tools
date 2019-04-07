@@ -178,11 +178,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index",                required_argument, NULL, 'x' },
-        { "hierarchy",       required_argument, NULL, 'a' },
+        { "hierarchy",            required_argument, NULL, 'a' },
         { "out-file",             required_argument, NULL, 'f' },
         { "size",                 required_argument, NULL, 's' },
         { "offset",               required_argument, NULL, 'o' },
-        { "auth-hierarchy", required_argument, NULL, 'P' },
+        { "auth-hierarchy",       required_argument, NULL, 'P' },
         { "set-list",             required_argument, NULL, 'L' },
         { "pcr-input-file",       required_argument, NULL, 'F' },
     };
