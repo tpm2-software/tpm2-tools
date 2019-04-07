@@ -262,7 +262,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
             { "digest",       required_argument, NULL, 'D' },
             { "halg",         required_argument, NULL, 'g' },
             { "message",      required_argument, NULL, 'm' },
-            { "format",      required_argument, NULL,  'f' },
+            { "format",       required_argument, NULL, 'f' },
             { "sig",          required_argument, NULL, 's' },
             { "ticket",       required_argument, NULL, 't' },
             { "key-context",  required_argument, NULL, 'c' },

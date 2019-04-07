@@ -416,7 +416,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         default:
             /* NULL on_opt handler and unknown option specified is an error */
             if (!tool_opts || !tool_opts->callbacks.on_opt) {
-                LOG_ERR("Unknown options found: %c", c);
+                LOG_ERR("Unknown option found: %c", c);
                 goto out;
             }
             result = tool_opts->callbacks.on_opt(c, optarg);
@@ -441,7 +441,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         if (!result) {
             goto out;
         }
-	}
+    }
 
     /* Only init a TCTI if the tool needs it and if the -h/--help option isn't present */
     if (!show_help){
