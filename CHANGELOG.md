@@ -1,8 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_getrandom: bound input request on max hash size per spec, allow -f to override this.
   * tpm_gettestresult: new tool for getting test results.
   * tpm2_pcrallocate: new tool for changing the allocated PCRs of a TPM.
-  * tpm2_incrementalselftest: Add tool to test support of specific algorithms. 
+  * tpm2_incrementalselftest: Add tool to test support of specific algorithms.
   * tpm2_verifysignature: Fix -G option to -g
   * tpm2_sign: Fix -G option to -g
   * tpm2_hash: Fix -G option to -g
