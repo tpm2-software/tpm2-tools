@@ -77,7 +77,7 @@ struct createek_context {
     struct {
         UINT8 f : 1;
         UINT8 e : 1;
-        UINT8 o : 1;
+        UINT8 w : 1;
         UINT8 P : 1;
         UINT8 t : 1;
         UINT8 unused : 3;
@@ -313,8 +313,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.e = 1;
         ctx.endorse_auth_str = value;
         break;
-    case 'o':
-        ctx.flags.o = 1;
+    case 'w':
+        ctx.flags.w = 1;
         ctx.owner_auth_str = value;
         break;
     case 'P':
@@ -358,7 +358,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "auth-endorse",         required_argument, NULL, 'e' },
-        { "auth-owner",           required_argument, NULL, 'o' },
+        { "auth-owner",           required_argument, NULL, 'w' },
         { "auth-ek",              required_argument, NULL, 'P' },
         { "algorithm",            required_argument, NULL, 'G' },
         { "file",                 required_argument, NULL, 'p' },
@@ -367,7 +367,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "template",             required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("e:o:P:G:p:f:c:t", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:w:P:G:p:f:c:t", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -448,7 +448,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             return 1;
         }
     }
-    if (ctx.flags.o) {
+    if (ctx.flags.w) {
         bool res = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
                 &ctx.auth.owner.session_data, &ctx.auth.owner.session);
         if (!res) {
