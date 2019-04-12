@@ -56,9 +56,9 @@ run_aes_import_test() {
 	dd if=/dev/urandom of=sym.key bs=1 count=$2 2>/dev/null
 
 	#Symmetric Key Import Test
-	echo "tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C $1 -u import_key.pub -r import_key.priv"
+	echo "tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub -r import_key.priv"
 
-	tpm2_import -Q -G aes -g "$name_alg" -k sym.key -C $1 -u import_key.pub \
+	tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub \
 	-r import_key.priv
 
 	tpm2_load -Q -C $1 -u import_key.pub -r import_key.priv -n import_key.name \
@@ -83,7 +83,7 @@ run_rsa_import_test() {
 	openssl rsa -in private.pem -pubout > public.pem
 
 	# Test an import without the parent public info data to force a readpublic
-	tpm2_import -Q -G rsa -g "$name_alg" -k private.pem -C $1 \
+	tpm2_import -Q -G rsa -g "$name_alg" -i private.pem -C $1 \
 	-u import_rsa_key.pub -r import_rsa_key.priv
 
 	tpm2_load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
@@ -130,7 +130,7 @@ run_ecc_import_test() {
 	echo "data to sign" > data.in.raw
 	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-	tpm2_import -Q -G ecc -g "$name_alg" -k private.ecc.pem -C $1 -u ecc.pub -r ecc.priv
+	tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub -r ecc.priv
 
 	tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -o ecc.ctx
 
@@ -148,11 +148,11 @@ run_ecc_import_test() {
 run_rsa_import_passin_test() {
 
     if [ "$3" != "stdin" ]; then
-        tpm2_import -Q -G rsa -k "$2" -C "$1" \
+        tpm2_import -Q -G rsa -i "$2" -C "$1" \
             -u "import_rsa_key.pub" -r "import_rsa_key.priv" \
             --passin "$3"
     else
-        tpm2_import -Q -G rsa -k "$2" -C "$1" \
+        tpm2_import -Q -G rsa -i "$2" -C "$1" \
             -u "import_rsa_key.pub" -r "import_rsa_key.priv" \
             --passin "$3" < "$4"
     fi;
