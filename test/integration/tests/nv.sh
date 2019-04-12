@@ -193,7 +193,7 @@ fi
 #
 trap onerror ERR
 
-tpm2_changeauth -o owner
+tpm2_changeauth -w owner
 
 tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
   -t "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \

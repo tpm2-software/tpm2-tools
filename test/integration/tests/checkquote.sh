@@ -54,13 +54,13 @@ output_quotepcr=quotepcr.out
 cleanup() {
   rm -f $output_ek_pub_pem \
         $output_ak_pub_pem $output_ak_pub_name \
-        $output_quote $output_quotesig $output_quotepcr rand.out 
+        $output_quote $output_quotesig $output_quotepcr rand.out
 
   tpm2_pcrreset 16
   tpm2_evictcontrol -a o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
   tpm2_evictcontrol -a o -c $handle_ak -P "$ownerpw" 2>/dev/null || true
 
-  tpm2_changeauth -O "$ownerpw" -E "$endorsepw" 2>/dev/null || true
+  tpm2_changeauth -W "$ownerpw" -E "$endorsepw" 2>/dev/null || true
 
   ina "$@" "no-shut-down"
   if [ $? -ne 0 ]; then
