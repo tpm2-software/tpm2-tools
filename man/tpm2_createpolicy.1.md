@@ -25,7 +25,7 @@ These options control creating the policy authorization session:
 
     File to save the policy digest.
 
-  * **-P**, **--policy-pcr**:
+  * **--policy-pcr**:
 
     Identifies the PCR policy type for policy creation.
 
@@ -62,7 +62,7 @@ These options control creating the policy authorization session:
 
 ## Create a authorization policy tied to a specific PCR index
 ```
-tpm2_createpolicy -P  -L 0x4:0 -o policy.file -F pcr0.bin
+tpm2_createpolicy --policy-pcr -L 0x4:0 -o policy.file -F pcr0.bin
 ```
 
 # RETURNS

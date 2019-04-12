@@ -171,7 +171,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'P':
+    case 0:
         pctx.common_policy_options.policy_type.PolicyPCR = true;
         break;
     case 'a':
@@ -189,11 +189,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "policy-digest-alg",   required_argument, NULL, 'g' },
         { "set-list",            required_argument, NULL, 'L' },
         { "pcr-input-file",      required_argument, NULL, 'F' },
-        { "policy-pcr",          no_argument,       NULL, 'P' },
+        { "policy-pcr",          no_argument,       NULL,  0  },
         { "auth-policy-session", no_argument,       NULL, 'a' },
     };
 
-    *opts = tpm2_options_new("o:g:L:F:Pa", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("o:g:L:F:a", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
