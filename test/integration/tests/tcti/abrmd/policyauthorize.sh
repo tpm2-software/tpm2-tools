@@ -67,7 +67,7 @@ cleanup "no-shutdown"
 
 generate_policy_authorize () {
     tpm2_startauthsession -Q -S $file_session_file
-    tpm2_policyauthorize -Q -S $file_session_file  -o $3 -f $1 -q $2 -n $4
+    tpm2_policyauthorize -Q -S $file_session_file  -o $3 -i $1 -q $2 -n $4
     tpm2_flushcontext -S $file_session_file
     rm $file_session_file
 }
@@ -81,7 +81,7 @@ dd if=/dev/urandom of=$file_policyref bs=1 count=32 2>/dev/null
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 tpm2_startauthsession -Q -S $file_session_file
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 tpm2_flushcontext -S $file_session_file
 rm $file_session_file
 
@@ -93,7 +93,7 @@ tpm2_pcrextend  \
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 tpm2_startauthsession -Q -S $file_session_file
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 tpm2_flushcontext -S $file_session_file
 rm $file_session_file
 

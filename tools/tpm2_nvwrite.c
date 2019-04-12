@@ -206,7 +206,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.P = 1;
         ctx.hierarchy_auth_str = value;
         break;
-    case 'o':
+    case 0:
         if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {
             LOG_ERR("Could not convert starting offset, got: \"%s\"",
                     value);
@@ -250,12 +250,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "index",                required_argument, NULL, 'x' },
         { "hierarchy",            required_argument, NULL, 'a' },
         { "auth-hierarchy",       required_argument, NULL, 'P' },
-        { "offset",               required_argument, NULL, 'o' },
+        { "offset",               required_argument, NULL,  0  },
         { "set-list",             required_argument, NULL, 'L' },
         { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("x:a:P:o:L:F:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:P:L:F:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     ctx.input_file = stdin;

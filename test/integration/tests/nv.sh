@@ -91,7 +91,7 @@ echo -n "foo" > foo.dat
 dd if=foo.dat of=nv.test_w bs=1 seek=4 conv=notrunc 2>/dev/null
 
 # Test a pipe input
-cat foo.dat | tpm2_nvwrite -Q -x $nv_test_index -a o -o 4
+cat foo.dat | tpm2_nvwrite -Q -x $nv_test_index -a o --offset 4
 
 tpm2_nvread -x $nv_test_index -a o -s 13 > cmp.dat
 
@@ -117,7 +117,7 @@ tpm2_nvrelease -x $nv_test_index -a o
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -L $file_policy -b "policyread|policywrite"
 

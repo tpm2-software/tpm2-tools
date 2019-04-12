@@ -60,7 +60,7 @@ static tpm2_policypcr_ctx ctx;
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'f':
+    case 'o':
         ctx.policy_out_path = value;
         break;
     case 'F':
@@ -83,13 +83,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "policy-file",    required_argument,  NULL,   'f' },
-        { "pcr-input-file", required_argument,  NULL,   'F' },
-        { "set-list",       required_argument,  NULL,   'L' },
-        { "session",        required_argument,  NULL,   'S' },
+        { "out-policy-file",    required_argument,  NULL,   'o' },
+        { "pcr-input-file",     required_argument,  NULL,   'F' },
+        { "set-list",           required_argument,  NULL,   'L' },
+        { "session",            required_argument,  NULL,   'S' },
     };
 
-    *opts = tpm2_options_new("f:F:L:S:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("o:F:L:S:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
