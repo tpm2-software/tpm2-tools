@@ -90,7 +90,7 @@ getrandom 20
 tpm2_quote -C $handle_ak -L sha256:15,16,22 -q $loaded_randomness -m $output_quote -s $output_quotesig -p $output_quotepcr -g $digestAlg -P "$akpw"
 
 # Verify quote
-tpm2_checkquote -c $output_ak_pub_pem -m $output_quote -s $output_quotesig -p $output_quotepcr -G $digestAlg -q $loaded_randomness
+tpm2_checkquote -u $output_ak_pub_pem -m $output_quote -s $output_quotesig -F $output_quotepcr -g $digestAlg -q $loaded_randomness
 
 exit 0
 
