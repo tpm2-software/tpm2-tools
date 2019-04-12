@@ -61,7 +61,7 @@ tpm2_create -C prim.ctx -u sealkey.pub -r sealkey.priv -L policy.dat \
 tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
   -o sealkey.ctx
 
-tpm2_startauthsession -a -S session.dat
+tpm2_startauthsession --policy-session -S session.dat
 
 tpm2_policylocality -S session.dat -o policy.dat $TPM_LOCALITY
 

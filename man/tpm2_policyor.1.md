@@ -97,7 +97,7 @@ tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -i- -C prim.ctx -
 
 ## Satisfy the policy and unseal the secret
 ```
-tpm2_startauthsession -a -S session.ctx
+tpm2_startauthsession --policy-session -S session.ctx
 
 tpm2_policypcr -Q -S session.ctx -L sha1:0 -o o_set1_pcr0.policy
 

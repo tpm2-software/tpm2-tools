@@ -45,10 +45,12 @@ These options control creating the policy authorization session:
     Optional Path or Name of the file containing expected PCR values for the
     specified index. Default is to read the current PCRs per the set list.
 
-  * **-a**, **--auth-policy-session**:
+  * **--policy-session**:
 
     Start a policy session of type **TPM_SE_POLICY**. Default without this option
     is **TPM_SE_TRIAL**.
+    **NOTE**: A *trial* session is used when building a policy and a *policy*
+    session is used when authenticating with a policy.
 
 [common options](common/options.md)
 

@@ -74,7 +74,7 @@ tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt -p text
 
 ## Authenticate with password and the policy
 ```
-tpm2_startauthsession -a -S session.dat
+tpm2_startauthsession --policy-session -S session.dat
 
 tpm2_policypassword -S session.dat -o policy.dat
 

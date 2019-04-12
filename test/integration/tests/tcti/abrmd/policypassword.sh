@@ -76,7 +76,7 @@ tpm2_create -g sha256 -G aes -u $key_pub -r $key_priv -C $primary_key_ctx \
 tpm2_load -C $primary_key_ctx -u $key_pub -r $key_priv -o $key_ctx
 tpm2_encryptdecrypt -c $key_ctx -o $encrypted_txt -i $plain_txt -p $testpswd
 
-tpm2_startauthsession -a -S $session_ctx
+tpm2_startauthsession --policy-session -S $session_ctx
 tpm2_policypassword -S $session_ctx -o $policypassword
 tpm2_encryptdecrypt -c $key_ctx -i $encrypted_txt -o $decrypted_txt -D \
   -p session:$session_ctx+$testpswd

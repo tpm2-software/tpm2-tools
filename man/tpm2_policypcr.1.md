@@ -69,7 +69,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
     ```
 3. Create an actual policy session and using a policyPCR event, update the session policy hash.
     ```
-    handle=`tpm2_startauthsession -a -S session.dat | cut -d' ' -f 2-2`
+    handle=`tpm2_startauthsession --policy-session -S session.dat | cut -d' ' -f 2-2`
 
     tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -o policy.dat
     ```

@@ -85,7 +85,7 @@ tpm2_load -C $file_primary_key_ctx -u $file_unseal_key_pub \
 
 
 # Ensure unsealing passes with proper policy
-tpm2_startauthsession -a -S $file_session_data
+tpm2_startauthsession --policy-session -S $file_session_data
 
 tpm2_policycommandcode -S $file_session_data -o $file_policy $TPM_CC_UNSEAL
 

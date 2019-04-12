@@ -24,9 +24,10 @@ This will work with direct TPM access, but note that internally this calls a *Co
 
 # OPTIONS
 
-  * **-a**, **--auth-policy-session**:
+  * **--policy-session**:
 
-    Change the policy session from a *trial* session to a *policy* session.
+    Start a policy session of type **TPM_SE_POLICY**. Default without this option
+    is **TPM_SE_TRIAL**.
     **NOTE**: A *trial* session is used when building a policy and a *policy*
     session is used when authenticating with a policy.
 
@@ -59,7 +60,7 @@ tpm2_startauthsession -S mysession.ctx
 
 ## Start a *policy* session and save the session data to a file
 ```
-tpm2_startauthsession -S mysession.ctx -a
+tpm2_startauthsession --policy-session
 ```
 
 # RETURNS
