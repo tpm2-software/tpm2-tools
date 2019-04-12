@@ -69,12 +69,12 @@ ek_template_index=0x01c00004
 
 # Define RSA EK template
 nbytes=$(wc -c $TPM2_TOOLS_TEST_FIXTURES/ek-template-default.bin | cut -f1 -d' ')
-tpm2_nvdefine -Q -x $ek_template_index -a o -s $nbytes -t "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -Q -x $ek_template_index -a o -s $nbytes -b "ownerread|policywrite|ownerwrite"
 tpm2_nvwrite -Q -x $ek_template_index -a o $TPM2_TOOLS_TEST_FIXTURES/ek-template-default.bin
 
 # Define RSA EK nonce
 echo -n -e '\0' > ek.nonce
-tpm2_nvdefine -Q -x $ek_nonce_index -a o -s 1 -t "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -Q -x $ek_nonce_index -a o -s 1 -b "ownerread|policywrite|ownerwrite"
 tpm2_nvwrite -Q -x $ek_nonce_index -a o ek.nonce
 
 tpm2_createek -t -G rsa -p ek.pub

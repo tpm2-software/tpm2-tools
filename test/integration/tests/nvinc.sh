@@ -60,7 +60,7 @@ cleanup "no-shut-down"
 
 tpm2_clear
 
-tpm2_nvdefine -Q -x $nv_test_index -a o -s 8 -t "ownerread|policywrite|ownerwrite|nt=1"
+tpm2_nvdefine -Q -x $nv_test_index -a o -s 8 -b "ownerread|policywrite|ownerwrite|nt=1"
 
 tpm2_nvincrement -Q -x $nv_test_index -a o 
 
@@ -89,7 +89,7 @@ tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
 
-tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 8 -L $file_policy -t "policyread|policywrite|nt=1"
+tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 8 -L $file_policy -b "policyread|policywrite|nt=1"
 
 # Increment with index authorization for now, since tpm2_nvincrement does not support pcr policy.
 echo -n -e '\x00\x00\x00\x00\x00\x00\x00\x03' > nv.test_inc
@@ -112,7 +112,7 @@ tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 #
 # Test NV access locked
 #
-tpm2_nvdefine -Q -x $nv_test_index -a o -s 8 -t "ownerread|policywrite|ownerwrite|read_stclear|nt=1"
+tpm2_nvdefine -Q -x $nv_test_index -a o -s 8 -b "ownerread|policywrite|ownerwrite|read_stclear|nt=1"
 
 tpm2_nvincrement -Q -x $nv_test_index -a o
 
@@ -143,7 +143,7 @@ trap onerror ERR
 tpm2_changeauth -w owner
 
 tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 8 \
-  -t "policyread|policywrite|authread|authwrite|ownerwrite|ownerread|nt=1" \
+  -b "policyread|policywrite|authread|authwrite|ownerwrite|ownerread|nt=1" \
   -p "index" -P "owner"
 
 # Use index password write/read, implicit -a
