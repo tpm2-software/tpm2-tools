@@ -303,7 +303,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         return true;
-    case 'k':
+    case 'i':
         ctx.input_key_file = value;
         break;
     case 'C':
@@ -340,18 +340,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
       { "auth-parent",        required_argument, NULL, 'P'},
       { "auth-key",           required_argument, NULL, 'p'},
-      { "import-key-alg",     required_argument, NULL, 'G'},
-      { "input-key-file",     required_argument, NULL, 'k'},
+      { "algorithm",          required_argument, NULL, 'G'},
+      { "in-file",            required_argument, NULL, 'i'},
       { "parent-key",         required_argument, NULL, 'C'},
-      { "parent-key-public",  required_argument, NULL, 'K'},
-      { "import-key-private", required_argument, NULL, 'r'},
-      { "import-key-public",  required_argument, NULL, 'u'},
+      { "parent-pubkey",      required_argument, NULL, 'K'},
+      { "privkey",            required_argument, NULL, 'r'},
+      { "pubkey",             required_argument, NULL, 'u'},
       { "object-attributes",  required_argument, NULL, 'A'},
       { "halg",               required_argument, NULL, 'g'},
       { "passin",             required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("P:p:G:k:C:K:u:r:A:g:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:A:g:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -367,7 +367,7 @@ static int check_options(void) {
     int rc = 0;
 
     if (!ctx.input_key_file) {
-        LOG_ERR("Expected to be imported key data to be specified via \"-k\","
+        LOG_ERR("Expected to be imported key data to be specified via \"-i\","
                 " missing option.");
         rc = -1;
     }
