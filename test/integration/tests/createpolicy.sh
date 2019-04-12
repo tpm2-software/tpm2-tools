@@ -60,7 +60,7 @@ do
     head -c $((${digestlengths[$halg]} - 1)) /dev/zero > pcr.in
     echo -n -e '\x03' >> pcr.in
 
-    tpm2_createpolicy -P -L $halg:0 -F pcr.in -o policy.out
+    tpm2_createpolicy --policy-pcr -L $halg:0 -F pcr.in -o policy.out
 
     # Test the policy creation hashes against expected
     if [ $(xxd -p policy.out | tr -d '\n' ) != "${expected_policy_digest[${halg}]}" ]; then
