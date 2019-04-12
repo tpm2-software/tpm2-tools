@@ -58,7 +58,7 @@ These options control the certification:
     Follows the same formatting guidelines as the object handle authorization or
     **-P** option.
 
-  * **-a**, **--attest-file**=_ATTEST\_FILE_:
+  * **-o**, **--out-attest-file**=_ATTEST\_FILE_:
 
     Output file name for the attestation data.
 

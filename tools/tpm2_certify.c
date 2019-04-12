@@ -60,7 +60,7 @@ struct tpm_certify_ctx {
         UINT16 P : 1;
         UINT16 p : 1;
         UINT16 g : 1;
-        UINT16 a : 1;
+        UINT16 o : 1;
         UINT16 s : 1;
         UINT16 f : 1;
         UINT16 unused : 6;
@@ -229,9 +229,9 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.g = 1;
         break;
-    case 'a':
+    case 'o':
         ctx.file_path.attest = value;
-        ctx.flags.a = 1;
+        ctx.flags.o = 1;
         break;
     case 's':
         ctx.file_path.sig = value;
@@ -252,17 +252,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "auth-object",   required_argument, NULL, 'P' },
-      { "auth-key",      required_argument, NULL, 'p' },
-      { "halg",          required_argument, NULL, 'g' },
-      { "attest-file",   required_argument, NULL, 'a' },
-      { "sig-file",      required_argument, NULL, 's' },
-      { "obj-context",   required_argument, NULL, 'C' },
-      { "key-context",   required_argument, NULL, 'c' },
-      { "format",        required_argument, NULL, 'f' },
+      { "auth-object",      required_argument, NULL, 'P' },
+      { "auth-key",         required_argument, NULL, 'p' },
+      { "halg",             required_argument, NULL, 'g' },
+      { "out-attest-file",  required_argument, NULL, 'o' },
+      { "sig-file",         required_argument, NULL, 's' },
+      { "obj-context",      required_argument, NULL, 'C' },
+      { "key-context",      required_argument, NULL, 'c' },
+      { "format",           required_argument, NULL, 'f' },
     };
 
-    *opts = tpm2_options_new("P:p:g:a:s:c:C:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:o:s:c:C:f:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -278,7 +278,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if ((!ctx.context_arg)
         && (!ctx.key_context_arg)
-        && (ctx.flags.g) && (ctx.flags.a)
+        && (ctx.flags.g) && (ctx.flags.o)
         && (ctx.flags.s)) {
         return -1;
     }
