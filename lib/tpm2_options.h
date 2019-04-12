@@ -146,6 +146,7 @@ tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
  * dest. The internal callbacks for tpm2_arg_handler and tpm2_option_handler
  * which were specified during tpm2_options_new() are copied from src to
  * dest, thus overwriting dest. Short and long options are concatenated.
+ * The on_arg and on_opt callbacks of dest are overwritten.
  * @param dest
  *  The tpm2_options object to append to.
  * @param src
