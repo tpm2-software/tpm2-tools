@@ -63,16 +63,16 @@ struct changeauth_ctx {
         auth tpm_handle;
     } auths;
     struct {
-        UINT8 o : 1;
+        UINT8 w : 1;
         UINT8 e : 1;
         UINT8 l : 1;
-        UINT8 O : 1;
+        UINT8 W : 1;
         UINT8 E : 1;
         UINT8 L : 1;
         UINT8 p : 1;
         UINT8 P : 1;
         UINT8 c : 1;
-        UINT8 a : 1;
+        UINT8 C : 1;
         UINT8 r : 1;
     } flags;
     char *owner_auth_str;
@@ -146,7 +146,7 @@ static bool change_hierarchy_auth(ESYS_CONTEXT *ectx) {
 
     // change owner, endorsement and lockout auth.
     bool result = true;
-    if (ctx.flags.o || ctx.flags.O) {
+    if (ctx.flags.w || ctx.flags.W) {
         result &= change_auth(ectx, &ctx.auths.owner,
                 "Owner", ESYS_TR_RH_OWNER);
     }
@@ -169,7 +169,7 @@ static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
 
     bool result;
 
-    if (ctx.flags.o) {
+    if (ctx.flags.w) {
         result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
                 &ctx.auths.owner.new.auth, NULL);
         if (!result) {
@@ -198,7 +198,7 @@ static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
         }
     }
 
-    if (ctx.flags.O) {
+    if (ctx.flags.W) {
         result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_old_str,
                 &ctx.auths.owner.old.auth, &ctx.auths.owner.old.session);
         if (!result) {
@@ -277,8 +277,8 @@ static bool process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, 
-                        ctx.tpm_handle_context_object.tr_handle, 
+    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
+                        ctx.tpm_handle_context_object.tr_handle,
                         &ctx.auths.tpm_handle.old.auth,
                         ctx.auths.tpm_handle.old.session);
     if (shandle == ESYS_TR_NONE) {
@@ -286,7 +286,7 @@ static bool process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    TSS2_RC rval = Esys_NV_ChangeAuth(ectx, 
+    TSS2_RC rval = Esys_NV_ChangeAuth(ectx,
                         ctx.tpm_handle_context_object.tr_handle,
                         shandle, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.auths.tpm_handle.new.auth.hmac);
     if (rval != TPM2_RC_SUCCESS) {
@@ -350,8 +350,8 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
 
-    case 'o':
-        ctx.flags.o = 1;
+    case 'w':
+        ctx.flags.w = 1;
         ctx.owner_auth_str = value;
         break;
     case 'e':
@@ -362,8 +362,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.l = 1;
         ctx.lockout_auth_str = value;
         break;
-    case 'O':
-        ctx.flags.O = 1;
+    case 'W':
+        ctx.flags.W = 1;
         ctx.owner_auth_old_str = value;
         break;
     case 'E':
@@ -378,8 +378,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.c = 1;
         ctx.tpm_handle_context_arg = value;
         break;
-    case 'a':
-        ctx.flags.a = 1;
+    case 'C':
+        ctx.flags.C = 1;
         ctx.tpm_handle_parent_context_arg = value;
         break;
     case 'p':
@@ -404,21 +404,21 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
         //Special Permanent Handles: OWNER/ ENDORSEMENT/ LOCKOUT
-        { "new-owner-passwd",           required_argument, NULL, 'o' },
-        { "current-owner-passwd",       required_argument, NULL, 'O' },
-        { "new-endorsement-passwd",     required_argument, NULL, 'e' },
-        { "current-endorsement-passwd", required_argument, NULL, 'E' },
-        { "new-lockout-passwd",         required_argument, NULL, 'l' },
-        { "current-lockout-passwd",     required_argument, NULL, 'L' },
+        { "new-auth-owner",             required_argument, NULL, 'w' },
+        { "current-auth-owner",         required_argument, NULL, 'W' },
+        { "new-auth-endorse",           required_argument, NULL, 'e' },
+        { "current-auth-endorse",       required_argument, NULL, 'E' },
+        { "new-auth-lockout",           required_argument, NULL, 'l' },
+        { "current-auth-lockout",       required_argument, NULL, 'L' },
         //Other TPM Handles: PERSISTENT/ TRANSIENT/ NV
-        { "new-handle-passwd",          required_argument, NULL, 'p' },
-        { "current-handle-passwd",      required_argument, NULL, 'P' },
+        { "new-auth-handle",            required_argument, NULL, 'p' },
+        { "current-auth-handle",        required_argument, NULL, 'P' },
         { "key-context",                required_argument, NULL, 'c' },
         //Additional parameters for PERSISTENT/ TRANSIENT Handles:
-        { "key-parent-context",         required_argument, NULL, 'a' },
+        { "key-parent-context",         required_argument, NULL, 'C' },
         { "privfile",                   required_argument, NULL, 'r' },
     };
-    *opts = tpm2_options_new("o:e:l:O:E:L:p:P:c:a:r:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("w:e:l:W:E:L:p:P:c:C:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -462,7 +462,7 @@ static bool is_input_option_args_valid(void) {
         return false;
     }
 
-    if ((ctx.is_persistent || ctx.is_transient) && (!ctx.flags.a || !ctx.flags.r)) {
+    if ((ctx.is_persistent || ctx.is_transient) && (!ctx.flags.C || !ctx.flags.r)) {
         LOG_ERR("Must specify the parent handle/context of the key whose auth "
          "is being changed along with the path to save the new sensitive data");
         return false;
@@ -491,7 +491,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.a) {
+    if (ctx.flags.C) {
         olrc = tpm2_util_object_load(ectx, ctx.tpm_handle_parent_context_arg,
                 &ctx.tpm_handle_parent_context_object);
         if (olrc == olrc_error) {
@@ -513,7 +513,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         result = process_change_nv_handle_auth(ectx);
     }
 
-    if (ctx.flags.o || ctx.flags.e || ctx.flags.l || ctx.flags.O || ctx.flags.E
+    if (ctx.flags.w || ctx.flags.e || ctx.flags.l || ctx.flags.W || ctx.flags.E
             || ctx.flags.L) {
         result = process_change_hierarchy_auth(ectx);
     }

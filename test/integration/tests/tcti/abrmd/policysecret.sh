@@ -62,7 +62,7 @@ cleanup "no-shutdown"
 
 tpm2_clear
 
-tpm2_changeauth -o ownerauth
+tpm2_changeauth -w ownerauth
 
 # Create Policy
 tpm2_startauthsession -S $session_ctx
