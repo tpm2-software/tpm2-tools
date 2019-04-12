@@ -1,5 +1,41 @@
 ## Changelog
 ### next
+  * tpm2_createpolicy: Remove small option -a and rename long option to "policy-session"
+  * tpm2_startauthsession: Remove small option -a and rename long option to "policy-session"
+  * tpm2_startauthsession: Fix long version of policy-digest-alg to halg
+  * tpm2_policysecret: Fix long version of policy-file to out-policy-file
+  * tpm2_policypcr: Fix long version of policy-file to out-policy-file
+  * tpm2_policypcr: Fix -f option to -o
+  * tpm2_policypassword: Fix long version of policy-file to out-policy-file
+  * tpm2_policyor: Fix long version of policy-file to out-policy-file
+  * tpm2_policylocality: Fix long version of policy-file to out-policy-file
+  * tpm2_policyduplicationselect: Fix long version of policy-file to out-policy-file
+  * tpm2_policyduplicationselect: Fix long version of obj-name to object-name
+  * tpm2_policyduplicationselect: Remove small option -i and rename long option to "include-if-exists"
+  * tpm2_policycommandcode: Fix long version of policy-file to out-policy-file
+  * tpm2_policyauthorize Fix -f option to -i
+  * tpm2_pcrlist: Remove unused -f option
+  * tpm2_nvwrite: Remove small option for --offset
+  * tpm2_nvread: Fix -f option to -o
+  * tpm2_makecredential: Fix -enc-key option to -enckey
+  * tpm2_createpolicy: Fix -f option to -o
+  * tpm2_loadexternal: Remove unused -P option
+  * tpm2_encryptdecrypt: Enable back '-t'/'--iv' support
+  * tpm2_create : Fix "-A" option to "-b" for attributes
+  * tpm2_createprimary : Fix "-A" option to "-b" for attributes
+  * tpm2_import : Fix "-A" option to "-b" for attributes
+  * tpm2_loadexternal : Fix "-A" option to "-b" for attributes
+  * tpm2_nvdefine : Fix "-A" option to "-b" for attributes
+  * tpm2_certify: Fix "-a" option to "-o"
+  * tpm2_createpolicy: Fix "-P" option to "--policy-pcr"
+  * tpm2_pcrevent: Fix "-i" option to "-x"
+  * tpm2_createek: Fix "-o" option to "-w"
+  * tpm2_createak: Fix "-o" option to "-w"
+  * tpm2_nvdefine: Fix "-t" option to "-b"
+  * tpm2_import: Fix "-k" option to "-i"
+  * tpm2_getmanufec: Fix "-o" option to "-w" and "-f" option to "-o"
+  * tpm2_changeauth: Fix "-o/-O" option to "-w/-W"
+  * tpm2_checkquote: Fix -G option to -g
   * tpm2_getrandom: bound input request on max hash size per spec, allow -f to override this.
   * tpm_gettestresult: new tool for getting test results.
   * tpm2_pcrallocate: new tool for changing the allocated PCRs of a TPM.
