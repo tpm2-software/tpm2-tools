@@ -128,7 +128,7 @@ class ToolConflictor(object):
             {
                 "gname": "integrity",
                 "tools-in-group":
-                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist", "tpm2_pcrreset", "tpm2_checkquote"],
+                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist", "tpm2_pcrreset", "tpm2_checkquote", "tpm2_pcrallocate"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set(['g', 'halg', 'f', 'format', 's', 'algs'])
@@ -209,7 +209,7 @@ class ToolConflictor(object):
                     found = True
                     break
             if not found:
-                sys.exit("Did not find group for tool: %s", tool.name)
+                sys.exit("Group not found for tool : %s" % tool.name)
 
     def process(self):
         '''Processes the tool groups and generates the conflict data'''
