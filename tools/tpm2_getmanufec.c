@@ -83,7 +83,7 @@ struct tpm_getmanufec_ctx {
     bool find_persistent_handle;
     struct {
         UINT8 e : 1;
-        UINT8 o : 1;
+        UINT8 w : 1;
         UINT8 P : 1;
         UINT8 unused : 5;
     } flags;
@@ -468,8 +468,8 @@ static bool on_option(char key, char *value) {
         ctx.flags.e = 1;
         ctx.endorse_auth_str = value;
         break;
-    case 'o':
-        ctx.flags.o = 1;
+    case 'w':
+        ctx.flags.w = 1;
         ctx.owner_auth_str = value;
         break;
     case 'P': {
@@ -483,7 +483,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'f':
+    case 'o':
         if (value == NULL ) {
             LOG_ERR("Please input the file used to save the pub ek.");
             return false;
@@ -523,19 +523,19 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
-        { "endorse-passwd",       required_argument, NULL, 'e' },
-        { "owner-passwd",         required_argument, NULL, 'o' },
-        { "ek-passwd",            required_argument, NULL, 'P' },
+        { "auth-endorse",         required_argument, NULL, 'e' },
+        { "auth-owner",           required_argument, NULL, 'w' },
+        { "auth-ek",              required_argument, NULL, 'P' },
         { "handle",               required_argument, NULL, 'H' },
         { "algorithm",            required_argument, NULL, 'G' },
-        { "out-file",             required_argument, NULL, 'f' },
+        { "out-file",             required_argument, NULL, 'o' },
         { "non-persistent",       no_argument,       NULL, 'N' },
         { "offline",              required_argument, NULL, 'O' },
         { "ec-cert",              required_argument, NULL, 'E' },
-        { "SSL-NO-VERIFY",        no_argument,       NULL, 'U' },
+        { "untrusted",            no_argument,       NULL, 'U' },
     };
 
-    *opts = tpm2_options_new("e:o:H:P:G:f:NO:E:i:U", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("e:w:H:P:G:o:NO:E:i:U", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;
@@ -563,7 +563,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.o) {
+    if (ctx.flags.w) {
         result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
                 &ctx.auth.owner.session_data, &ctx.auth.owner.session);
         if (!result) {
