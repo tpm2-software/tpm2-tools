@@ -159,7 +159,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "policy-file",        required_argument, NULL, 'L'},
       { "auth-key",           required_argument, NULL, 'p'},
       { "halg",               required_argument, NULL, 'g'},
-      { "auth-parent",        required_argument, NULL, 'P'},
       { "key-alg",            required_argument, NULL, 'G'},
       { "name",               required_argument, NULL, 'n'},
       { "passin",             required_argument, NULL,  0 },
