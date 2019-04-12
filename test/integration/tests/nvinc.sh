@@ -62,7 +62,7 @@ tpm2_clear
 
 tpm2_nvdefine -Q -x $nv_test_index -a o -s 8 -b "ownerread|policywrite|ownerwrite|nt=1"
 
-tpm2_nvincrement -Q -x $nv_test_index -a o 
+tpm2_nvincrement -Q -x $nv_test_index -a o
 
 tpm2_nvread -Q -x $nv_test_index -a o -s 8
 
@@ -76,7 +76,7 @@ yaml_get_kv nv.out $nv_test_index > /dev/null
 
 echo -n -e '\x00\x00\x00\x00\x00\x00\x00\x02' > nv.test_inc
 
-tpm2_nvincrement -Q -x $nv_test_index -a o 
+tpm2_nvincrement -Q -x $nv_test_index -a o
 
 tpm2_nvread -x $nv_test_index -a o -s 8 > cmp.dat
 
@@ -87,7 +87,7 @@ tpm2_nvrelease -x $nv_test_index -a o
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 8 -L $file_policy -b "policyread|policywrite|nt=1"
 

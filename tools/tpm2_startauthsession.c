@@ -91,7 +91,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "auth-policy-session", no_argument,       NULL, 'a'},
-        { "policy-digest-alg",   required_argument, NULL, 'g'},
+        { "halg",                required_argument, NULL, 'g'},
         { "session",             required_argument, NULL, 'S'},
     };
 

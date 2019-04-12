@@ -99,7 +99,7 @@ rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
   -A 'fixedtpm|fixedparent' <<< $secret
@@ -140,7 +140,7 @@ rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy -p secretpass <<< $secret
 

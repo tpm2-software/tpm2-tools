@@ -120,7 +120,7 @@ bool on_arg (int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "policy-file", required_argument, NULL, 'o' },
+        { "out-policy-file", required_argument, NULL, 'o' },
         { "session",     required_argument, NULL, 'S' },
         { "context",     required_argument, NULL, 'c' },
     };

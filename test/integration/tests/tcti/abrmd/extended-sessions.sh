@@ -97,7 +97,7 @@ tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_startauthsession -Q -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 tpm2_flushcontext -S $file_session_file
 
@@ -111,7 +111,7 @@ rm $file_session_file
 # Start a REAL policy session (-a option) and perform a pcr policy event
 tpm2_startauthsession -a -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 unsealed=`tpm2_unseal -p"session:$file_session_file" -c $file_unseal_key_ctx`
 
