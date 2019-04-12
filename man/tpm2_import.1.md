@@ -61,7 +61,7 @@ These options control the key importation process:
 
     Specifies the file path required to save the public portion of the object imported as key
 
-  * **-A**, **--object-attributes**=_ATTRIBUTES_:
+  * **-b**, **--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional.
 

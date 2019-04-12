@@ -53,7 +53,7 @@ These options for creating the TPM entity:
     See section "Supported Public Object Algorithms" for a list
     of supported object algorithms. Mutually exclusive of **-i**.
 
-  * **-A**, **--object-attributes**=_ATTRIBUTES_:
+  * **-b**, **--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:

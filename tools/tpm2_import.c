@@ -318,7 +318,7 @@ static bool on_option(char key, char *value) {
     case 'r':
         ctx.import_key_private_file = value;
         break;
-    case 'A':
+    case 'b':
         ctx.attrs = value;
         break;
     case 'g':
@@ -346,12 +346,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "parent-pubkey",      required_argument, NULL, 'K'},
       { "privkey",            required_argument, NULL, 'r'},
       { "pubkey",             required_argument, NULL, 'u'},
-      { "object-attributes",  required_argument, NULL, 'A'},
+      { "object-attributes",  required_argument, NULL, 'b'},
       { "halg",               required_argument, NULL, 'g'},
       { "passin",             required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:A:g:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:b:g:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;

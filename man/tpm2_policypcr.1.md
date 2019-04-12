@@ -63,7 +63,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
     ```
 2. Create an object and use the policy hash as the policy to satisfy for usage.
     ```
-    tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv -C primary.ctx -L policy.dat -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' -i- <<< "12345678"
+    tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv -C primary.ctx -L policy.dat -b 'sign|fixedtpm|fixedparent|sensitivedataorigin' -i- <<< "12345678"
 
     tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n unseal.key.name -o unseal.key.ctx
     ```

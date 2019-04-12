@@ -70,7 +70,7 @@ interactions with the created primary.
 
     An optional file input that contains the policy digest for policy based authorization of the object.
 
-  * **-A**, **--object-attributes**=_ATTRIBUTES_:
+  * **-b**, **--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
@@ -112,7 +112,7 @@ Where unique.dat contains the binary-formatted data: 0x00 0x01 (0x00 * 256)
 
 ```
 tpm2_createprimary -a o -G rsa2048:aes128cfb -g sha256 -o prim.ctx \
-  -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
+  -b 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
   -u unique.dat
 ```
 
