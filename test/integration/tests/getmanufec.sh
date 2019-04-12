@@ -68,9 +68,9 @@ cmp ECcert.bin ECcert2.bin
 
 # Test providing endorsement password to create EK and owner password to persist.
 tpm2_clear
-tpm2_changeauth -o $opass -e $epass
+tpm2_changeauth -w $opass -e $epass
 
-tpm2_getmanufec -H $handle -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass \
+tpm2_getmanufec -H $handle -U -E ECcert2.bin -o test_ek.pub -w $opass -e $epass \
                 https://ekop.intel.com/ekcertservice/
 
 tpm2_listpersistent | grep -q $handle
@@ -83,7 +83,7 @@ if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91f
 fi
 
 # Test with automatic persistent handle
-tpm2_getmanufec -H - -U -E ECcert2.bin -f test_ek.pub -o $opass -e $epass \
+tpm2_getmanufec -H - -U -E ECcert2.bin -o test_ek.pub -w $opass -e $epass \
                 https://ekop.intel.com/ekcertservice/ > man.log
 phandle=`yaml_get_kv man.log \"persistent\-handle\"`
 
