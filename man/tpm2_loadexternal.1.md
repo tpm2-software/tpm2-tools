@@ -78,7 +78,7 @@ sensitive area.
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-A**, **--object-attributes**=_ATTRIBUTES_:
+  * **-b**, **--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:

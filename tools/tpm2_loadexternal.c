@@ -122,7 +122,7 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.context_file_path = value;
         break;
-    case 'A':
+    case 'b':
         ctx.attrs = value;
         break;
     case 'p':
@@ -155,7 +155,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pubfile",            required_argument, NULL, 'u'},
       { "privfile",           required_argument, NULL, 'r'},
       { "out-context",        required_argument, NULL, 'o'},
-      { "object-attributes",  required_argument, NULL, 'A'},
+      { "object-attributes",  required_argument, NULL, 'b'},
       { "policy-file",        required_argument, NULL, 'L'},
       { "auth-key",           required_argument, NULL, 'p'},
       { "halg",               required_argument, NULL, 'g'},
@@ -165,7 +165,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "passin",             required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("a:u:r:o:A:p:L:g:G:n:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("a:u:r:o:b:p:L:g:G:n:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
