@@ -75,7 +75,7 @@ tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -n sealing_key.name
 
 ## Satisfy the policy and unseal the secret
 ```
-tpm2_startauthsession -a -S session.ctx
+tpm2_startauthsession --policy-session -S session.ctx
 
 tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -o secret.policy
 

@@ -69,7 +69,7 @@ static tpm2_startauthsession_ctx ctx = {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'a':
+    case 0:
         ctx.session.type = TPM2_SE_POLICY;
         break;
     case 'g':
@@ -90,12 +90,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "auth-policy-session", no_argument,       NULL, 'a'},
+        { "policy-session",      no_argument,       NULL,  0 },
         { "halg",                required_argument, NULL, 'g'},
         { "session",             required_argument, NULL, 'S'},
     };
 
-    *opts = tpm2_options_new("ag:S:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("g:S:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;

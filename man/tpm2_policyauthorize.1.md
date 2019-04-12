@@ -120,7 +120,7 @@ tpm2_create -Q -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -i- -C prim
 ```
 tpm2_verifysignature -c signing_key.ctx -g sha256 -m pcr.policy -s pcr.signature -t verification.tkt -f rsassa
 
-tpm2_startauthsession -a -S session.ctx
+tpm2_startauthsession --policy-session -S session.ctx
 
 tpm2_policypcr -Q -S session.ctx -L sha256:0 -o pcr.policy
 

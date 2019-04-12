@@ -36,7 +36,7 @@ state would still need to satisfy the policy
 ## Start a *policy* session and restart it, unsealing some data.
 
 ```
-tpm2_startauthsession -S session.dat -a
+tpm2_startauthsession --policy-session
 
 tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -o policy.dat
 
