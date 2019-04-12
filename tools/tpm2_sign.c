@@ -80,7 +80,7 @@ struct tpm_sign_ctx {
     char *key_auth_str;
 };
 
-tpm_sign_ctx ctx = {
+static tpm_sign_ctx ctx = {
         .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         .halg = TPM2_ALG_SHA1,
         .digest = NULL,
