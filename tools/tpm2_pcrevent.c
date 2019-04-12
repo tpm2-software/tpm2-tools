@@ -49,7 +49,7 @@
 typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
     struct {
-        UINT8 i : 1;
+        UINT8 x : 1;
         UINT8 P : 1;
     } flags;
     struct {
@@ -257,8 +257,8 @@ static bool init(void) {
 
     ctx.input = ctx.input ? ctx.input : stdin;
 
-    if ((ctx.auth.session || ctx.flags.P) && !ctx.flags.i) {
-        LOG_ERR("Must specify a PCR index via -i with the -%c option.",
+    if ((ctx.auth.session || ctx.flags.P) && !ctx.flags.x) {
+        LOG_ERR("Must specify a PCR index via -x with the -%c option.",
                 ctx.flags.P ? 'P' : 'S');
         return false;
     }
@@ -286,14 +286,14 @@ static bool on_arg(int argc, char **argv) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'i': {
+    case 'x': {
         bool result = tpm2_util_string_to_uint32(value, &ctx.pcr);
         if (!result) {
             LOG_ERR("Could not convert \"%s\", to a pcr index.", value);
             return false;
         }
     }
-        ctx.flags.i = 1;
+        ctx.flags.x = 1;
         break;
     case 'P':
         ctx.flags.P = 1;
@@ -308,11 +308,11 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "pcr-index", required_argument, NULL, 'i' },
+        { "pcr-index", required_argument, NULL, 'x' },
         { "auth-pcr",  required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("i:P:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:P:", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
 
     return *opts != NULL;
