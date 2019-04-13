@@ -46,16 +46,20 @@ decrypted_txt=dec.txt
 testpswd=testpswd
 
 cleanup() {
-  rm -f  $policypassword $session_ctx $o_policy_digest $primary_key_ctx $key_ctx\
+    rm -f  $policypassword $session_ctx $o_policy_digest $primary_key_ctx $key_ctx\
     $key_pub $key_priv $plain_txt $encrypted_txt $decrypted_txt
 
-  tpm2_flushcontext -S $session_ctx 2>/dev/null || true
+    tpm2_flushcontext -S $session_ctx 2>/dev/null || true
+
+    if [ "${1}" != "no-shutdown" ]; then
+        shut_down
+    fi
 }
 trap cleanup EXIT
 
 start_up
 
-cleanup
+cleanup "no-shutdown"
 
 echo "plaintext" > $plain_txt
 
