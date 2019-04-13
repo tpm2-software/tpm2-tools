@@ -54,7 +54,7 @@ pyscript
 populate_algs() {
     algs="$(mktemp)"
     tpm2_getcap -c algorithms > "${algs}"
-    filter_algs_by "${algs}" "${1}" 
+    filter_algs_by "${algs}" "${1}"
     rm "${algs}"
 }
 
@@ -183,18 +183,18 @@ function start_sim() {
 
     # Do not rely on whether netstat is present or not and directly fetch
     # data in relevent /proc file
-    tcpports="$(tail +2 /proc/net/tcp | awk '{print $2}' | cut -d':' -f2)"
-    tcpports+=" $(tail +2 /proc/net/tcp | awk '{print $3}' | cut -d':' -f2)"
-    tcpports+=" $(tail +2 /proc/net/tcp6 | awk '{print $2}' | cut -d':' -f2)"
-    tcpports+=" $(tail +2 /proc/net/tcp6 | awk '{print $3}' | cut -d':' -f2)"
+    tcpports="$(tail -n +2 /proc/net/tcp 2>/dev/null | awk '{print $2}' | cut -d':' -f2)"
+    tcpports+=" $(tail -n +2 /proc/net/tcp 2>/dev/null | awk '{print $3}' | cut -d':' -f2)"
+    tcpports+=" $(tail -n +2 /proc/net/tcp6 2>/dev/null | awk '{print $2}' | cut -d':' -f2)"
+    tcpports+=" $(tail -n +2 /proc/net/tcp6 2>/dev/null | awk '{print $3}' | cut -d':' -f2)"
     openedtcpports=""
 
     for i in ${tcpports}; do
-        openedtcpports+="$(printf "%d " 0x${i})"
+        openedtcpports+="$(printf "%d " 0x${i} 2>/dev/null)"
     done
 
-    # If either the requested simulator port or the port that will be used 
-    # by mssim TCTI which is tpm2_sim_port + 1 is occupied (ESTABLISHED, TIME_WAIT, etc...), 
+    # If either the requested simulator port or the port that will be used
+    # by mssim TCTI which is tpm2_sim_port + 1 is occupied (ESTABLISHED, TIME_WAIT, etc...),
     # just continue up to 10 retries
     # (See : https://github.com/tpm2-software/tpm2-tss/blob/master/src/tss2-tcti/tcti-mssim.c:559)
     while [ $max_cnt -gt 0 ]; do
@@ -213,7 +213,7 @@ function start_sim() {
         echo "Maximum attempts reached. Aborting"
         return 1
     }
-    
+
     echo "Attempting to start simulator on port: $tpm2_sim_port"
     $TPM2_SIM -port $tpm2_sim_port &
     tpm2_sim_pid=$!
@@ -308,7 +308,7 @@ function start_up() {
     fi
 
     echo "Running tpm2_clear"
-    
+
     if ! tpm2_clear; then
         exit 1
     fi
@@ -322,22 +322,26 @@ function shut_down() {
 
     fail=0
     if [ -n "$tpm2_abrmd_pid" ]; then
-        kill -0 "$tpm2_abrmd_pid" && {
+        if kill -0 "$tpm2_abrmd_pid"; then
             if ! kill -9 "$tpm2_abrmd_pid"; then
                 (>&2 echo "ERROR: could not kill tpm2_abrmd on pid: $tpm2_abrmd_pid")
                 fail=1
             fi
-        }
+        else
+            (>&2 echo "WARNING: tpm2_abrmd already stopped ($tpm2_abrmd_pid)")
+        fi
     fi
     tpm2_abrmd_pid=""
 
     if [ -n "$tpm2_sim_pid" ]; then
-        kill -0 "$tpm2_sim_pid" && {
+        if kill -0 "$tpm2_sim_pid"; then
             if ! kill -9 "$tpm2_sim_pid"; then
                 (>&2 echo "ERROR: could not kill tpm2 simulator on pid: $tpm2_sim_pid")
                 fail=1
             fi
-        }
+        else
+            (>&2 echo "WARNING: TPM simulator already stopped ($tpm2_sim_pid)")
+        fi
     fi
     tpm2_sim_pid=""
 
