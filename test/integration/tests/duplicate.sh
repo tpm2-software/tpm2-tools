@@ -24,7 +24,7 @@ create_duplication_policy() {
 }
 
 start_duplication_session() {
-    tpm2_startauthsession -Q -a -S session.dat
+    tpm2_startauthsession -Q --policy-session -S session.dat
     tpm2_policycommandcode -Q -S session.dat -o policy.dat $TPM_CC_DUPLICATE
 }
 
@@ -61,7 +61,7 @@ echo -n -e  '\x01\x1a\x00\x01\x00\x0b\x00\x03\x00\x72\x00\x00'\
 
 tpm2_createprimary -Q -a o -g sha256 -G rsa -o primary.ctx
 create_duplication_policy
-tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -A "sensitivedataorigin|sign|decrypt"
+tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -b "sensitivedataorigin|sign|decrypt"
 tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -o key.ctx
 
 tpm2_loadexternal -Q -a o -u new_parent.pub -o new_parent.ctx
