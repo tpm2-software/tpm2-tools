@@ -199,7 +199,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "duplicate-key-private", required_argument, NULL, 'r'},
       { "input-key-file",        required_argument, NULL, 'k'},
       { "output-key-file",       required_argument, NULL, 'K'},
-      { "enc-seed-file-out",     required_argument, NULL, 'S'},
+      { "output-enc-seed-file",  required_argument, NULL, 'S'},
       { "parent-key",            required_argument, NULL, 'C'},
       { "context",               required_argument, NULL, 'c'},
     };
@@ -367,45 +367,15 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         &out_key,
         &duplicate,
         &outSymSeed);
+    if (!result) {
+        goto out;
+    }
 
 
     result = tpm2_session_save(ectx, ctx.auth.session, NULL);
     if (!result) {
         goto out;
     }
-
-
-    /*** Debuggery ***/
-#if 0
-
-    if(ctx.sym_key_out) {
-    tpm2_tool_output("\nKey Out ");
-    tpm2_util_hexdump(out_key->buffer, out_key->size);
-    tpm2_tool_output("\n");
-    }
-    if(ctx.sym_key_in) {
-    tpm2_tool_output("\nKey In  ");
-    tpm2_util_hexdump(in_key.buffer, in_key.size);
-    tpm2_tool_output("\n");
-    }
-
-
-
-    tpm2_tool_output("\nDup'ed  ");
-    tpm2_util_hexdump(duplicate->buffer, duplicate->size);
-    tpm2_tool_output("\n");
-
-
-    tpm2_tool_output("\nS-Seed  ");
-    tpm2_util_hexdump(outSymSeed->secret, outSymSeed->size);
-    tpm2_tool_output("\n");
-#endif
-
-    result = files_save_private(duplicate, ctx.duplicate_key_private_file);
-    if (!result) {
-        goto out;
-    }
-
 
     if (ctx.flags.K) {
         result = files_save_bytes_to_file(ctx.sym_key_out,
