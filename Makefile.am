@@ -382,35 +382,35 @@ MARKDOWN_COMMON_DEPS = \
 man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	$(AM_V_GEN)rm -f $@ && \
 	mkdir -p man/man1 && \
-	sed -e '/\[common options\]/r man/common/options.md' \
+	sed -e '/\[common options\]/r $(top_srcdir)/man/common/options.md' \
 	    -e '/\[common options\]/d' \
-	    -e '/\[common tcti options\]/r man/common/tcti.md' \
+	    -e '/\[common tcti options\]/r $(top_srcdir)/man/common/tcti.md' \
 	    -e '/\[common tcti options\]/d' \
-	    -e '/\[authorization formatting\]/r man/common/authorizations.md' \
+	    -e '/\[authorization formatting\]/r $(top_srcdir)/man/common/authorizations.md' \
 	    -e '/\[authorization formatting\]/d' \
-	    -e '/\[context object format\]/r man/common/ctxobj.md' \
+	    -e '/\[context object format\]/r $(top_srcdir)/man/common/ctxobj.md' \
 	    -e '/\[context object format\]/d' \
-	    -e '/\[supported hash algorithms\]/r man/common/hash.md' \
+	    -e '/\[supported hash algorithms\]/r $(top_srcdir)/man/common/hash.md' \
 	    -e '/\[supported hash algorithms\]/d' \
-	    -e '/\[algorithm specifiers\]/r man/common/alg.md' \
+	    -e '/\[algorithm specifiers\]/r $(top_srcdir)/man/common/alg.md' \
 	    -e '/\[algorithm specifiers\]/d' \
-	    -e '/\[supported public object algorithms\]/r man/common/object-alg.md' \
+	    -e '/\[supported public object algorithms\]/r $(top_srcdir)/man/common/object-alg.md' \
 	    -e '/\[supported public object algorithms\]/d' \
-	    -e '/\[supported signing algorithms\]/r man/common/sign-alg.md' \
+	    -e '/\[supported signing algorithms\]/r $(top_srcdir)/man/common/sign-alg.md' \
 	    -e '/\[supported signing algorithms\]/d' \
-	    -e '/\[nv attributes\]/r man/common/nv-attrs.md' \
+	    -e '/\[nv attributes\]/r $(top_srcdir)/man/common/nv-attrs.md' \
 	    -e '/\[nv attributes\]/d' \
-	    -e '/\[pcr bank specifiers\]/r man/common/pcr.md' \
+	    -e '/\[pcr bank specifiers\]/r $(top_srcdir)/man/common/pcr.md' \
 	    -e '/\[pcr bank specifiers\]/d' \
-	    -e '/\[pubkey options\]/r man/common/pubkey.md' \
+	    -e '/\[pubkey options\]/r $(top_srcdir)/man/common/pubkey.md' \
 	    -e '/\[pubkey options\]/d' \
-	    -e '/\[signature format specifiers\]/r man/common/signature.md' \
+	    -e '/\[signature format specifiers\]/r $(top_srcdir)/man/common/signature.md' \
 	    -e '/\[signature format specifiers\]/d' \
-	    -e '/\[object attribute specifiers\]/r man/common/obj-attrs.md' \
+	    -e '/\[object attribute specifiers\]/r $(top_srcdir)/man/common/obj-attrs.md' \
 	    -e '/\[object attribute specifiers\]/d' \
-	    -e '/\[supported signing schemes\]/r man/common/signschemes.md' \
+	    -e '/\[supported signing schemes\]/r $(top_srcdir)/man/common/signschemes.md' \
 	    -e '/\[supported signing schemes\]/d' \
-	    -e '/\[footer\]/r man/common/footer.md' \
+	    -e '/\[footer\]/r $(top_srcdir)/man/common/footer.md' \
 	    -e '/\[footer\]/d' \
 	    < $< | pandoc -s -t man > $@
 
