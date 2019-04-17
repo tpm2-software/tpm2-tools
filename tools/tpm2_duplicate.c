@@ -354,7 +354,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if(ctx.sym_key_in) {
+    if(ctx.flags.k) {
         result = files_load_bytes_from_path(ctx.sym_key_in, in_key.buffer, &in_key.size);
         if(!result) {
             goto out;
@@ -362,9 +362,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     result = do_duplicate(ectx,
-        ctx.sym_key_in ? &in_key : NULL,
+        ctx.flags.k ? &in_key : NULL,
         &sym_alg,
-        &out_key,
+        ctx.flags.K ? &out_key : NULL,
         &duplicate,
         &outSymSeed);
     if (!result) {
@@ -380,6 +380,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.flags.K) {
         result = files_save_bytes_to_file(ctx.sym_key_out,
                     out_key->buffer, out_key->size);
+        free(out_key);
         if (!result) {
             LOG_ERR("Failed to save encryption key out into file \"%s\"",
                     ctx.sym_key_out);
@@ -388,6 +389,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     result = files_save_encrypted_seed(outSymSeed, ctx.enc_seed_out);
+    free(outSymSeed);
     if (!result) {
         LOG_ERR("Failed to save encryption seed into file \"%s\"",
                 ctx.enc_seed_out);
@@ -395,6 +397,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     result = files_save_private(duplicate, ctx.duplicate_key_private_file);
+    free(duplicate);
     if (!result) {
         LOG_ERR("Failed to save private key into file \"%s\"",
                 ctx.duplicate_key_private_file);
@@ -402,6 +405,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = 0;
+
 out:
     return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.auth.session);
 }
