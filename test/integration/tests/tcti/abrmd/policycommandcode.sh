@@ -47,15 +47,19 @@ file_session_data=session.dat
 secret="12345678"
 
 cleanup() {
-  rm -f  $file_primary_key_ctx $file_input_data $file_policy $file_unseal_key_pub\
+    rm -f  $file_primary_key_ctx $file_input_data $file_policy $file_unseal_key_pub\
     $file_unseal_key_priv $file_unseal_key_ctx $file_unseal_key_name\
     $file_output_data $file_session_data
+
+    if [ "${1}" != "no-shutdown" ]; then
+        shut_down
+    fi
 }
 trap cleanup EXIT
 
 start_up
 
-cleanup
+cleanup "no-shutdown"
 
 echo $secret > $file_input_data
 
@@ -81,10 +85,7 @@ tpm2_load -C $file_primary_key_ctx -u $file_unseal_key_pub \
 
 
 # Ensure unsealing passes with proper policy
-
-trap onerror ERR
-
-tpm2_startauthsession -a -S $file_session_data
+tpm2_startauthsession --policy-session -S $file_session_data
 
 tpm2_policycommandcode -S $file_session_data -o $file_policy $TPM_CC_UNSEAL
 
@@ -96,15 +97,12 @@ rm $file_session_data
 
 cmp -s $file_output_data $file_input_data
 
-
 # Test that other operations fail
-
-trap - ERR
-
-tpm2_encryptdecrypt -i $file_input_data -o $file_output_data -c $file_unseal_key_ctx
-if [ $? != 1 ]; then
-  echo "tpm2_policycommandcode: Should have failed!"
-  exit 1
+if tpm2_encryptdecrypt -i $file_input_data -o $file_output_data -c $file_unseal_key_ctx; then
+    echo "tpm2_policycommandcode: Should have failed!"
+    exit 1
+else
+    true
 fi
 
 exit 0

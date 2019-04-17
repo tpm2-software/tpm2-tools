@@ -104,8 +104,8 @@ bool on_arg (int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "session",        required_argument,  NULL,   'S' },
-        { "policy-file",    required_argument,  NULL,   'o' },
+        { "session",            required_argument,  NULL,   'S' },
+        { "out-policy-file",    required_argument,  NULL,   'o' },
     };
 
     *opts = tpm2_options_new("S:o:", ARRAY_LEN(topts), topts, on_option,

@@ -36,7 +36,6 @@
 
 #include <unistd.h>
 
-#include <setjmp.h>
 #include <cmocka.h>
 
 #include <tss2/tss2_esys.h>

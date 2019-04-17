@@ -18,7 +18,7 @@ list of known "Simple Specifiers Below".
   * aes
   * camellia
 
-### Hashing Algorithms:
+### Hashing Algorithms
   * sha1
   * sha256
   * sha384
@@ -29,8 +29,8 @@ list of known "Simple Specifiers Below".
   * sha3_512
 
 ### Keyed Hash
- * hmac
- * xor
+  * hmac
+  * xor
 
 ### Signing Schemes
   * rsassa
@@ -111,12 +111,12 @@ This field is optional, and defaults based on the *type* of object being created
 Generally, any valid **Symmetric** specifier from the **Type Specifiers** list should work. If not
 specified, an asymmetric objects symmetric details defaults to *aes128cfb*.
 
-## Examples:
+## Examples
 
-Create an rsa2048 key with an rsaes asymmetric encryption scheme:
+### Create an rsa2048 key with an rsaes asymmetric encryption scheme
 `tpm2_create -C parent.ctx -G rsa2048:rsaes -u key.pub -r key.priv`
 
-Create an ecc256 key with an ecdaa signing scheme with a count of 4 and sha384 hash:
+### Create an ecc256 key with an ecdaa signing scheme with a count of 4 and sha384 hash
 `/tpm2_create -C parent.ctx -G ecc256:ecdaa4-sha384 -u key.pub -r key.priv`
 
 

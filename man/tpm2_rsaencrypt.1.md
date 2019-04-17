@@ -4,7 +4,7 @@
 
 # NAME
 
-**tpm2_rsaencrypt**(1) - Performs an RSA Encryption operation using the TPM.
+**tpm2_rsaencrypt**(1) - Performs an RSA encryption operation using the TPM.
 
 # SYNOPSIS
 
@@ -12,13 +12,13 @@
 
 # DESCRIPTION
 
-**tpm2_rsaencrypt**(1) performs RSA encryption on the contents of _FILE_
+**tpm2_rsaencrypt**(1) - Performs RSA encryption on the contents of _FILE_
 (defaulting to stdin) using the indicated padding scheme according to
 IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be **TPM_ALG_NULL**.
 
 The key referenced by key-context is **required** to be:
 
-1. an RSA key
+1. An RSA key
 2. Have the attribute *decrypt* **SET** in it's attributes.
 
 # OPTIONS

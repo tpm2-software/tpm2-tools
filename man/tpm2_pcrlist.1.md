@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_pcrlist**(1) Displays PCR values. Without any options, **tpm2_pcrlist**
+**tpm2_pcrlist**(1) - Displays PCR values. Without any options, **tpm2_pcrlist**(1)
 outputs all pcrs and their hash banks. One can use either the **-g** or **-L**
 mutually exclusive options to filter the output.
 
@@ -30,6 +30,7 @@ sha256 :
 # OPTIONS
 
   * **-g**, **--halg**=_HASH\_ALGORITHM_:
+
     Only output PCR banks with the given algorithm.
     Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers".
@@ -37,22 +38,26 @@ sha256 :
     algorithms.
 
   * **-o**, **--out-file**=_FILE_:
+
     The output file to write the PCR values in binary format, optional.
 
   * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:
 
-    The list of pcr banks and selected PCRs' ids for each bank to display.
+    The list of PCR banks and selected PCRs' ids for each bank to display.
     _PCR\_SELECTION\_LIST_ values should follow the
-    pcr bank specifiers standards, see section "PCR Bank Specifiers".
+    PCR bank specifiers standards, see section "PCR Bank Specifiers".
+
+    Also read **NOTES** section below.
 
   * **-s**, **--algs**:
+
     Output the list of supported algorithms.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-[pcr bank specifiers](common/pcr.md)
+[PCR bank specifiers](common/pcr.md)
 
 [supported hash algorithms](common/hash.md)
 
@@ -60,29 +65,33 @@ sha256 :
 
 # EXAMPLES
 
-display all PCR values:
-
+## Display all PCR values
 ```
 tpm2_pcrlist
 ```
 
-Display the PCR values with a specified bank:
-
+## Display the PCR values with a specified bank
 ```
 tpm2_pcrlist -g sha1
 ```
 
-Display the PCR values with specified banks and store in a file:
-
+## Display the PCR values with specified banks and store in a file
 ```
 tpm2_pcrlist -L sha1:16,17,18+sha256:16,17,18 -o pcrs
 ```
 
-Display the supported PCR bank algorithms and exit:
-
+## Display the supported PCR bank algorithms and exit
 ```
 tpm2_pcrlist -s
 ```
+
+# NOTES
+
+The maximum number of PCR that can be dumped at once is associated
+with the maximum length of a bank.
+
+On most TPMs, it means that this tool can dump up to 24 PCRs
+at once.
 
 # RETURNS
 

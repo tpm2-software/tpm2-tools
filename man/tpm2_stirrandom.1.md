@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_stirrandom**(1) Inject "additional information" as bytes into TPM entropy Protected Capability pool.
+**tpm2_stirrandom**(1) - Inject "additional information" as bytes into TPM entropy Protected Capability pool.
 
 "Additional information" can be extracted from _INPUT\_FILE_ or being read from stdin
 if _INPUT\_FILE_ is not specified.
@@ -36,23 +36,22 @@ This command has no option
 
 # EXAMPLES
 
-Inject from stdin using echo:
-
+## Inject from stdin using echo
 ```
 echo -n "myrandomdata" | tpm2_stirrandom
 ```
 
-Inject 64 bytes from stdin using a file
-
+## Inject 64 bytes from stdin using a file
 ```
 dd if=/dev/urandom bs=1 count=64 > myrandom.bin
+
 tpm2_stirrandom < ./myrandom.bin
 ```
 
-Inject bytes from a file and reading up to 128 bytes
-
+## Inject bytes from a file and reading up to 128 bytes
 ```
 dd if=/dev/urandom of=./myrandom.bin bs=1 count=42
+
 tpm2_stirrandom ./myrandom.bin
 ```
 
@@ -63,7 +62,7 @@ by **tpm2_stirrandom**(1) can be entropy gathered from other DRBG
 sources, the TPM has no way of determining if the value has any entropy or not.
 As a consequence, it will just be considered as "additional input".
 
-The "additional input" is as defined in NIST SP800-90A (See 
+The "additional input" is as defined in [NIST SP800-90A](
 https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-90.pdf)
 
 # RETURNS

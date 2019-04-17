@@ -105,7 +105,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "session",        required_argument,  NULL,   'S' },
-        { "policy-file",    required_argument,  NULL,   'o' },
+        { "out-policy-file",    required_argument,  NULL,   'o' },
     };
 
     *opts = tpm2_options_new("S:o:", ARRAY_LEN(topts), topts, on_option,

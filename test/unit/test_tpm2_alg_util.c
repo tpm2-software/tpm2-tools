@@ -186,7 +186,7 @@ add_single_digest_pcr_parse_test(4, sha1, HASH_SHA1,
 add_single_digest_pcr_parse_test(9, sha256, HASH_SHA256,
         TPM2_ALG_SHA256, TPM2_SHA256_DIGEST_SIZE)
 
-add_single_digest_pcr_parse_test(67, sha384, HASH_SHA384,
+add_single_digest_pcr_parse_test(6, sha384, HASH_SHA384,
         TPM2_ALG_SHA384, TPM2_SHA384_DIGEST_SIZE)
 
 add_single_digest_pcr_parse_test(21, sha512, HASH_SHA512,

@@ -13,9 +13,9 @@ TPM commands or operations.
 
 # DESCRIPTION
 
-**tpm2_policycommandcode**(1) Restricts TPM object authorization to specific
+**tpm2_policycommandcode**(1) - Restricts TPM object authorization to specific
 TPM commands or operations. Useful when you want to allow only specific commands
-with the TPM object. As an argument it takes the _COMMAND_CODE_ as an integer
+with the TPM object. As an argument it takes the _COMMAND\_CODE_ as an integer
 value. Requires support for extended sessions with resource manager.
 
 # OPTIONS
@@ -24,9 +24,10 @@ value. Requires support for extended sessions with resource manager.
 
     A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
-   * **-o**, **--policy-file**=_POLICY\_FILE_:
+  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
 
     File to save the policy digest.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
@@ -39,34 +40,44 @@ Attempts to perform other operations would fail.
 ## Create an unseal-only policy
 ```
 TPM_CC_UNSEAL=0x15E
+
 tpm2_startauthsession -S session.dat
+
 tpm2_policycommandcode -S session.dat -o policy.dat $TPM_CC_UNSEAL
+
 tpm2_flushcontext -S session.dat
 ```
 
 ## Create the object with unseal-only auth policy
 ```
 tpm2_createprimary -a o -o prim.ctx
+
 tpm2_create -C prim.ctx -u sealkey.pub -r sealkey.priv -L policy.dat \
   -i- <<< "SEALED-SECRET"
 ```
 
-# Try unseal operation
+## Try unseal operation
 ```
 tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
   -o sealkey.ctx
-tpm2_startauthsession -a -S session.dat
+
+tpm2_startauthsession --policy-session -S session.dat
+
 tpm2_policycommandcode -S session.dat -o policy.dat $TPM_CC_UNSEAL
+
 tpm2_unseal -p session:session.dat -c sealkey.ctx
+
 tpm2_flushcontext -S session.dat
 ```
 
-# Try any other operation
+## Try any other operation
 ```
 echo "Encrypt Me" > plain.txt
+
 tpm2_encryptdecrypt -i plain.txt -o enc.txt -c sealkey.ctx
+
 if [ $? != 0 ]; then
- echo "Expected that operations other than unsealing will fail"
+    echo "Expected that operations other than unsealing will fail"
 fi
 ```
 

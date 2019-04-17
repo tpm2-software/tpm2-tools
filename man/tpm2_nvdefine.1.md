@@ -4,7 +4,7 @@
 
 # NAME
 
-**tpm2_nvdefine**(1) - define a TPM Non-Volatile (NV) index.
+**tpm2_nvdefine**(1) - Define a TPM Non-Volatile (NV) index.
 
 # SYNOPSIS
 
@@ -17,10 +17,12 @@
 # OPTIONS
 
   * **-x**, **--index**=_NV\_INDEX_:
+
     Specifies the index to define the space at.
 
   * **-a**, **--hierarchy**=_AUTH\_HIERARCHY_:
-    specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
+
+    Specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
@@ -28,25 +30,30 @@
       * **`<num>`** where a raw number can be used.
 
   * **-s**, **--size**=_SIZE_:
-    specifies the size of data area in bytes. Defaults to MAX_NV_INDEX_SIZE
+
+    Specifies the size of data area in bytes. Defaults to **MAX_NV_INDEX_SIZE**
     which is typically 2048.
 
-  * **-t**, **--attributes**=_ATTRIBUTES_
+  * **-b**, **--attributes**=_ATTRIBUTES_
+
     Specifies the attribute values for the nv region used when creating the
     entity. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
   * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
+
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-p**, **--auth-index**=_INDEX\_PASSWORD_:
+
     Specifies the password of NV Index when created.
     HMAC and Password authorization values should follow the "authorization
     formatting standards", see section "Authorization Formatting".
 
   * **-L**, **--policy-file**=_POLICY\_FILE_:
+
     Specifies the policy digest file for policy based authorizations.
 
 [common options](common/options.md)
@@ -60,8 +67,9 @@
 # EXAMPLES
 
 ```
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t 0x2000A
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -t ownerread|ownerwrite|policywrite -p 1a1b1c
+tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -b 0x2000A
+
+tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -b ownerread|ownerwrite|policywrite -p 1a1b1c
 ```
 
 # RETURNS

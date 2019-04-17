@@ -360,7 +360,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'f':
+    case 'i':
         ctx.file.path = value;
         break;
     default:
@@ -374,10 +374,10 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
         { "type",        required_argument, NULL, 't' },
-        { "file",        optional_argument, NULL, 'f' },
+        { "in-file",        optional_argument, NULL, 'i' },
     };
 
-    *opts = tpm2_options_new("t:f:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("i:t:", ARRAY_LEN(topts), topts,
         on_option, NULL, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;

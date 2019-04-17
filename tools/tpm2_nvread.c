@@ -137,7 +137,7 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.a = 1;
         break;
-    case 'f':
+    case 'o':
         ctx.output_file = value;
         break;
     case 'P':
@@ -152,7 +152,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'o':
+    case 0:
         result = tpm2_util_string_to_uint32(value, &ctx.offset);
         if (!result) {
             LOG_ERR("Could not convert offset to number, got: \"%s\"",
@@ -178,16 +178,16 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index",                required_argument, NULL, 'x' },
-        { "hierarchy",       required_argument, NULL, 'a' },
-        { "out-file",             required_argument, NULL, 'f' },
+        { "hierarchy",            required_argument, NULL, 'a' },
+        { "out-file",             required_argument, NULL, 'o' },
         { "size",                 required_argument, NULL, 's' },
-        { "offset",               required_argument, NULL, 'o' },
-        { "auth-hierarchy", required_argument, NULL, 'P' },
+        { "offset",               required_argument, NULL,  0  },
+        { "auth-hierarchy",       required_argument, NULL, 'P' },
         { "set-list",             required_argument, NULL, 'L' },
         { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("x:a:f:s:o:P:L:F:", ARRAY_LEN(topts),
+    *opts = tpm2_options_new("x:a:s:o:P:L:F:", ARRAY_LEN(topts),
                              topts, on_option, NULL, 0);
 
     return *opts != NULL;

@@ -133,7 +133,7 @@ static bool on_option(char key, char *value) {
     case 'L':
         ctx.policy=value;
     break;
-    case 'A':
+    case 'b':
         ctx.attrs = value;
     break;
     /* no default */
@@ -152,11 +152,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "kalg",                 required_argument, NULL, 'G' },
         { "out-context-name",     required_argument, NULL, 'o' },
         { "policy-file",          required_argument, NULL, 'L' },
-        { "object-attributes",    required_argument, NULL, 'A' },
+        { "object-attributes",    required_argument, NULL, 'b' },
         { "unique-data",          required_argument, NULL, 'u' },
     };
 
-    *opts = tpm2_options_new("A:P:p:g:G:o:L:a:u:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("b:P:p:g:G:o:L:a:u:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

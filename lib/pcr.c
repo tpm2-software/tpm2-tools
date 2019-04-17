@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include <tss2/tss2_sys.h>
+#include <inttypes.h>
 #include <stdbool.h>
 
 #include "pcr.h"
@@ -41,28 +42,36 @@
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"
 
+#define MAX(a,b) ((a>b)?a:b)
+
 static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
         UINT8 size) {
 
     pcr_selection->sizeofSelect = size;
 }
 
-static int pcr_get_id(const char *arg, UINT32 *pcrId)
+bool pcr_get_id(const char *arg, UINT32 *pcrId)
 {
     UINT32 n = 0;
 
-    if(arg == NULL || pcrId == NULL)
-        return -1;
+    if(arg == NULL || pcrId == NULL){
+        LOG_ERR("arg or pcrId is NULL");
+        return false;
+    }
 
-    if(!tpm2_util_string_to_uint32(arg, &n))
-        return -2;
+    if(!tpm2_util_string_to_uint32(arg, &n)) {
+        LOG_ERR("Got invalid PCR index: \"%s\"", arg);
+        return false;
+    }
 
-    if(n > 23)
-        return -3;
+    if(n >= TPM2_MAX_PCRS) {
+        LOG_ERR("Got out of bound PCR index: \"%s\"", arg);
+        return false;
+    }
 
     *pcrId = n;
 
-    return 0;
+    return true;
 }
 
 static bool pcr_parse_selection(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
@@ -211,6 +220,46 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs) {
 }
 
 
+bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections) {
+    tpm2_tool_output ("selected-pcrs:\n");
+
+    /* Iterate throught the pcr banks */
+    UINT32 i;
+    for (i = 0; i < pcr_selections->count; i++) {
+        /* Print hash alg of the current bank */
+        const char *halgstr = tpm2_alg_util_algtostr(
+                pcr_selections->pcrSelections[i].hash,
+                tpm2_alg_util_flags_hash);
+        if (halgstr != NULL) {
+            tpm2_tool_output("  - %s: [", halgstr);
+        } else {
+            LOG_ERR("Unsupported hash algorithm 0x%08x", 
+                    pcr_selections->pcrSelections[i].hash);
+            return false;
+        }
+
+        /* Iterate through the PCRs of the bank */
+        bool first = true;
+        unsigned j;
+        for (j = 0; j < pcr_selections->pcrSelections[i].sizeofSelect * 8; j++)
+        {
+            if ((pcr_selections->pcrSelections[i].pcrSelect[j / 8] & 1<<(j % 8))
+                    != 0) {
+                if (first) {
+                    tpm2_tool_output (" %i", j);
+                    first = false;
+                } else {
+                    tpm2_tool_output(", %i", j);
+                }
+            }
+        }
+        tpm2_tool_output (" ]\n");
+    }
+
+    return true;
+}
+
+
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels) {
     const char *strLeft = arg;
     const char *strCurrent = arg;
@@ -260,6 +309,13 @@ bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
     pcrSel->pcrSelect[1] = 0;
     pcrSel->pcrSelect[2] = 0;
 
+    if (!strncmp(str, "all", 3)) {
+        pcrSel->pcrSelect[0] = 0xff;
+        pcrSel->pcrSelect[1] = 0xff;
+        pcrSel->pcrSelect[2] = 0xff;
+        return true;
+    }
+
     do {
         strCurrent = str;
         str = memchr(strCurrent, ',', len);
@@ -278,7 +334,7 @@ bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
 
         snprintf(buf, lenCurrent + 1, "%s", strCurrent);
 
-        if (pcr_get_id(buf, &pcr) != 0) {
+        if (!pcr_get_id(buf, &pcr)) {
             return false;
         }
 
@@ -305,6 +361,18 @@ bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_
     *capability_data = *capdata_ret;
 
     unsigned i;
+
+    // If the TPM support more bank algorithm that we currently
+    // able to manage, throw an error
+    if (capability_data->data.assignedPCR.count > sizeof(algs->alg)) {
+        LOG_ERR("Current implementation does not support more than %zu banks, "
+                "got %" PRIu32 " banks supported by TPM", 
+                sizeof(algs->alg), 
+                capability_data->data.assignedPCR.count);
+        free(capdata_ret);
+        return false;
+    }
+
     for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
         algs->alg[i] =
                 capability_data->data.assignedPCR.pcrSelections[i].hash;
@@ -396,9 +464,9 @@ bool pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSele
         free(pcr_selection_out);
 
         //4. goto step 2 if pcrSelctionIn still has bits set
-    } while (++pcrs->count < 24 && !pcr_unset_pcr_sections(&pcr_selection_tmp));
+    } while (++pcrs->count < sizeof(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp));
 
-    if (pcrs->count >= 24 && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
+    if (pcrs->count >= sizeof(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
         LOG_ERR("too much pcrs to get! try to split into multiple calls...");
         return false;
     }

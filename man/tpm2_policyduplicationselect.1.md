@@ -4,7 +4,7 @@
 
 # NAME
 
-**tpm2_policyduplicationselect**(1) - Restricts duplication to specific New Parent.
+**tpm2_policyduplicationselect**(1) - Restricts duplication to specific new parent.
 
 # SYNOPSIS
 
@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_policyduplicationselect**(1) Restricts duplication to specific New Parent.
+**tpm2_policyduplicationselect**(1) - Restricts duplication to specific new parent.
 
 # OPTIONS
 
@@ -21,32 +21,32 @@
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-n**, **--obj-name**=_OBJ\_NAME\_FILE_:
+  * **-n**, **--object-name**=_OBJ\_NAME\_FILE_:
 
-    Input NAME file of the object to be duplicated.
+    Input name file of the object to be duplicated.
 
   * **-N**, **--new-parent-name**=_NP\_NAME\_FILE_:
 
-    Input NAME file of the new parent.
+    Input name file of the new parent.
 
-  * **-o**, **--policy-file**=_POLICY\_FILE_:
+  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
-  * **-i**, **--is-include-object**:
+  * **--include-object-if-exists**:
 
-    If exists, the objectName will be included in the value in policySession->PolicyDigest.
+    If exists, the object name will be included in the value in policy digest.
 
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
-# EXAMPLES
+# NOTES
 
-* this command usually coorperates with tpm2_duplicate, so, firstly refering to the man page of tpm2_duplicate
+* This command usually coorperates with **tpm2_duplicate**(1), so, firstly refering to the man page of **tpm2_duplicate**(1)
 is recommended.
 
-* Note: this command will set policySession->commandCode to TPM_CC_Duplicate, which enables DUP role of
+* This command will set the policy session's command code to **TPM_CC_Duplicate** which enables duplication role of
 the policy.
 
 # RETURNS

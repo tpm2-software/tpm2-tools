@@ -82,7 +82,7 @@ struct tpm_create_ctx {
     struct {
         UINT16 P : 1;
         UINT16 p : 1;
-        UINT16 A : 1;
+        UINT16 b : 1;
         UINT16 i : 1;
         UINT16 L : 1;
         UINT16 u : 1;
@@ -221,9 +221,9 @@ static bool on_option(char key, char *value) {
         ctx.alg =  value;
         ctx.flags.G = 1;
     break;
-    case 'A':
+    case 'b':
         ctx.attrs = value;
-        ctx.flags.A = 1;
+        ctx.flags.b = 1;
     break;
     case 'i':
         ctx.input = strcmp("-", value) ? value : NULL;
@@ -259,7 +259,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth-key",             required_argument, NULL, 'p' },
       { "halg",                 required_argument, NULL, 'g' },
       { "kalg",                 required_argument, NULL, 'G' },
-      { "object-attributes",    required_argument, NULL, 'A' },
+      { "object-attributes",    required_argument, NULL, 'b' },
       { "in-file",              required_argument, NULL, 'i' },
       { "policy-file",          required_argument, NULL, 'L' },
       { "pubfile",              required_argument, NULL, 'u' },
@@ -268,7 +268,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "out-context",          required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:A:i:L:u:r:C:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:b:i:L:u:r:C:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -308,12 +308,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
         ctx.alg = "keyedhash";
 
-        if (!ctx.flags.A) {
+        if (!ctx.flags.b) {
             attrs &= ~TPMA_OBJECT_SIGN_ENCRYPT;
             attrs &= ~TPMA_OBJECT_DECRYPT;
             attrs &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
         }
-    } else if (!ctx.flags.A && !strncmp("hmac", ctx.alg, 4)) {
+    } else if (!ctx.flags.b && !strncmp("hmac", ctx.alg, 4)) {
         attrs &= ~TPMA_OBJECT_DECRYPT;
     }
 

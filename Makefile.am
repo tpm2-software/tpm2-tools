@@ -73,6 +73,7 @@ bin_PROGRAMS = \
     tools/tpm2_dictionarylockout \
     tools/tpm2_duplicate \
     tools/tpm2_getcap \
+    tools/tpm2_gettestresult \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
     tools/tpm2_flushcontext \
@@ -81,6 +82,7 @@ bin_PROGRAMS = \
     tools/tpm2_hash \
     tools/tpm2_hmac \
     tools/tpm2_import \
+    tools/tpm2_incrementalselftest \
     tools/tpm2_listpersistent \
     tools/tpm2_load \
     tools/tpm2_loadexternal \
@@ -92,6 +94,7 @@ bin_PROGRAMS = \
     tools/tpm2_nvreadlock \
     tools/tpm2_nvrelease \
     tools/tpm2_nvwrite \
+    tools/tpm2_pcrallocate \
     tools/tpm2_pcrevent \
     tools/tpm2_pcrextend \
     tools/tpm2_pcrlist \
@@ -115,6 +118,7 @@ bin_PROGRAMS = \
     tools/tpm2_startauthsession \
     tools/tpm2_startup \
     tools/tpm2_stirrandom \
+    tools/tpm2_testparms \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
@@ -170,6 +174,7 @@ tools_tpm2_sign_SOURCES = tools/tpm2_sign.c $(TOOL_SRC)
 tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
 tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
+tools_tpm2_pcrallocate_SOURCES = tools/tpm2_pcrallocate.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_pcrreset_SOURCES = tools/tpm2_pcrreset.c $(TOOL_SRC)
@@ -187,6 +192,9 @@ tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC
 tools_tpm2_stirrandom_SOURCES = tools/tpm2_stirrandom.c $(TOOL_SRC)
 tools_tpm2_policyduplicationselect_SOURCES = tools/tpm2_policyduplicationselect.c $(TOOL_SRC)
 tools_tpm2_policylocality_SOURCES = tools/tpm2_policylocality.c $(TOOL_SRC)
+tools_tpm2_testparms_SOURCES = tools/tpm2_testparms.c $(TOOL_SRC)
+tools_tpm2_incrementalselftest_SOURCES = tools/tpm2_incrementalselftest.c $(TOOL_SRC)
+tools_tpm2_gettestresult_SOURCES = tools/tpm2_gettestresult.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -208,39 +216,31 @@ check_PROGRAMS = \
 TESTS += $(ALL_SYSTEM_TESTS)
 
 test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_string_bytes_SOURCES  = test/unit/test_string_bytes.c
+test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_files_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_files_LDADD    = $(LIB_COMMON) $(CMOCKA_LIBS) $(LDADD)
-test_unit_test_files_SOURCES  = test/unit/test_files.c
+test_unit_test_files_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_header_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_header_SOURCES  = test/unit/test_tpm2_header.c
+test_unit_test_tpm2_header_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_attr_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_attr_util_SOURCES  = test/unit/test_tpm2_attr_util.c
+test_unit_test_tpm2_attr_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_alg_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_alg_util_SOURCES  = test/unit/test_tpm2_alg_util.c
+test_unit_test_tpm2_alg_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_pcr_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_pcr_SOURCES  = test/unit/test_pcr.c
+test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_auth_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_auth_util_LDFLAGS  = -Wl,--wrap=Esys_TR_SetAuth \
                                          -Wl,--wrap=Esys_StartAuthSession
-test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_auth_util_SOURCES  = test/unit/test_tpm2_auth_util.c
+test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_errata_LDFLAGS  = -Wl,--wrap=Esys_GetCapability
-test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_errata_SOURCES  = test/unit/test_tpm2_errata.c
+test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
@@ -249,27 +249,22 @@ test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
                                        -Wl,--wrap=Esys_PolicyRestart \
                                        -Wl,--wrap=Esys_TR_GetName
 
-test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_session_SOURCES  = test/unit/test_tpm2_session.c
+test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_policy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
                                       -Wl,--wrap=Esys_PolicyPCR \
                                       -Wl,--wrap=Esys_PCR_Read \
                                       -Wl,--wrap=Esys_PolicyGetDigest
-test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_policy_SOURCES  = test/unit/test_tpm2_policy.c
+test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_hierarchy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_hierarchy_SOURCES  = test/unit/test_tpm2_hierarchy.c
+test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_error_SOURCES  = test/unit/test_tpm2_error.c
+test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_tpm2_util_CFLAGS	   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_util_LDADD     = $(CMOCKA_LIBS) $(LIB_COMMON) $(LDADD)
-test_unit_test_tpm2_util_SOURCES   = test/unit/test_tpm2_util.c
+test_unit_test_tpm2_util_LDADD     = $(CMOCKA_LIBS) $(LDADD)
 
 #
 # We need absolute paths to the builddir and srcdir locations so we can
@@ -306,7 +301,7 @@ EXTRA_DIST = $(top_srcdir)/man \
 	     RELEASE.md \
 	     test/integration
 if HAVE_MAN_PAGES
-    man1_MANS := \
+    dist_man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
     man/man1/tpm2_changeauth.1 \
@@ -326,9 +321,11 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_flushcontext.1 \
     man/man1/tpm2_getmanufec.1 \
     man/man1/tpm2_getrandom.1 \
+    man/man1/tpm2_gettestresult.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
     man/man1/tpm2_import.1 \
+    man/man1/tpm2_incrementalselftest.1 \
     man/man1/tpm2_listpersistent.1 \
     man/man1/tpm2_load.1 \
     man/man1/tpm2_loadexternal.1 \
@@ -340,6 +337,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_nvreadlock.1 \
     man/man1/tpm2_nvrelease.1 \
     man/man1/tpm2_nvwrite.1 \
+    man/man1/tpm2_pcrallocate.1 \
     man/man1/tpm2_pcrevent.1 \
     man/man1/tpm2_pcrextend.1 \
     man/man1/tpm2_pcrlist.1 \
@@ -364,14 +362,12 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_startauthsession.1 \
     man/man1/tpm2_startup.1 \
     man/man1/tpm2_stirrandom.1 \
+    man/man1/tpm2_testparms.1 \
     man/man1/tpm2_unseal.1 \
     man/man1/tpm2_verifysignature.1
 endif
 
-if HAVE_PANDOC
-# If pandoc is enabled, we want to generate the manpages for the dist tarball
-EXTRA_DIST += $(man1_MANS)
-else
+if !HAVE_PANDOC
 # If pandoc is not enabled, we want to complain that you need pandoc for make dist,
 # so hook the target and complain.
 dist-hook:
@@ -429,7 +425,7 @@ man/man1/%.1 : man/%.1.md $(MARKDOWN_COMMON_DEPS)
 	    -e '/\[footer\]/d' \
 	    < $< | pandoc -s -t man > $@
 
-CLEANFILES = $(man1_MANS)
+CLEANFILES = $(dist_man1_MANS)
 
 bashcompdir=@bashcompdir@
 dist_bashcomp_DATA=dist/bash-completion/tpm2-tools/tpm2_completion.bash

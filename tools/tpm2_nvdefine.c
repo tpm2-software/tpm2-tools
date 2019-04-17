@@ -166,7 +166,7 @@ static bool on_option(char key, char *value) {
                 return false;
             }
             break;
-        case 't':
+        case 'b':
             result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute);
             if (!result) {
                 result = tpm2_attr_util_nv_strtoattr(value, &ctx.nvAttribute);
@@ -195,14 +195,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "index",                  required_argument,  NULL,   'x' },
         { "hierarchy",              required_argument,  NULL,   'a' },
         { "size",                   required_argument,  NULL,   's' },
-        { "attributes",             required_argument,  NULL,   't' },
+        { "attributes",             required_argument,  NULL,   'b' },
         { "auth-hierarchy",         required_argument,  NULL,   'P' },
         { "auth-index",             required_argument,  NULL,   'p' },
         { "policy-file",            required_argument,  NULL,   'L' },
-        { "session",                required_argument,  NULL,   'S' },
     };
 
-    *opts = tpm2_options_new("x:a:s:t:P:p:L:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:s:b:P:p:L:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

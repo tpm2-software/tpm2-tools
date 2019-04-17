@@ -103,11 +103,11 @@ tpm2_createak -Q -G $alg_ak -C $handle_ek -k $handle_ak -p "$file_pubak_tss" -n 
 
 tpm2_readpublic -Q -c $handle_ak -f "pem" -o "$file_pubak_pem"
 
-tpm2_hash -Q -a e -G $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$file_hash_input"
+tpm2_hash -Q -a e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$file_hash_input"
 
 for fmt in tss plain; do
     this_sig="${file_sig_base}.${fmt}"
-    tpm2_sign -Q -c $handle_ak -G $alg_hash -m "${file_hash_input}" -f $fmt -o "${this_sig}" -t "${file_hash_ticket}"
+    tpm2_sign -Q -c $handle_ak -g $alg_hash -m "${file_hash_input}" -f $fmt -o "${this_sig}" -t "${file_hash_ticket}"
 
     if [ "$fmt" = plain ]; then
         openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} -signature "$this_sig" "$file_hash_input" > /dev/null

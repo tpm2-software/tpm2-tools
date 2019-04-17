@@ -151,7 +151,7 @@ static bool parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'f':
+    case 'o':
         pctx.common_policy_options.policy_file_flag = true;
         pctx.common_policy_options.policy_file = value;
         break;
@@ -171,10 +171,10 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'P':
+    case 0:
         pctx.common_policy_options.policy_type.PolicyPCR = true;
         break;
-    case 'a':
+    case 1:
         pctx.common_policy_options.policy_session_type = TPM2_SE_POLICY;
         break;
     }
@@ -185,15 +185,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "policy-file",         required_argument, NULL, 'f' },
+        { "out-policy-file",     required_argument, NULL, 'o' },
         { "policy-digest-alg",   required_argument, NULL, 'g' },
         { "set-list",            required_argument, NULL, 'L' },
         { "pcr-input-file",      required_argument, NULL, 'F' },
-        { "policy-pcr",          no_argument,       NULL, 'P' },
-        { "auth-policy-session", no_argument,       NULL, 'a' },
+        { "policy-pcr",          no_argument,       NULL,  0  },
+        { "policy-session",      no_argument,       NULL,  1  },
     };
 
-    *opts = tpm2_options_new("f:g:L:F:Pa", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("o:g:L:F:a", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;

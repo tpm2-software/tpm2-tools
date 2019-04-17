@@ -18,13 +18,12 @@ If _FILE_ is not specified, it defaults to stdin.
 # OPTIONS
 
   * **-x**, **--index**=_NV\_INDEX_:
+
     Specifies the index to define the space at.
 
-  * **-o**, **--offset**=_OFFSET_:
-    The offset within the NV index to start writing at.
-
   * **-a**, **--hierarchy**=_AUTH_:
-    specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
+
+    Specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
@@ -33,23 +32,28 @@ If _FILE_ is not specified, it defaults to stdin.
 
     When **-a** isn't explicitly passed the index handle will be used to
     authorize against the index. The index auth value is set via the
-    **-p** option to tpm2_nvdefine(1).
+    **-p** option to **tpm2_nvdefine**(1).
 
   * **-P**, **--auth-hierarchy**=_HIERARCHY\_AUTH_:
+
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
 
-    The list of pcr banks and selected PCRs' ids.
+    The list of PCR banks and selected PCRs' ids.
     _PCR\_SELECTION\_LIST_ values should follow the
-    pcr bank specifiers standards, see section "PCR Bank Specifiers".
+    PCR bank specifiers standards, see section "PCR Bank Specifiers".
 
   * **-F**,**--pcr-input-file**=_PCR\_INPUT\_FILE_
 
-    Optional Path or Name of the file containing expected pcr values for the specified index.
+    Optional Path or Name of the file containing expected PCR values for the specified index.
     Default is to read the current PCRs per the set list.
+
+  * **--offset**=_OFFSET_:
+
+    The offset within the NV index to start writing at.
 
 [common options](common/options.md)
 
@@ -57,10 +61,11 @@ If _FILE_ is not specified, it defaults to stdin.
 
 [authorization formatting](common/authorizations.md)
 
+[PCR bank specifiers](common/pcr.md)
+
 # EXAMPLES
 
-To write the file nv.data to index 0x150016:
-
+## Write the file nv.data to index *0x150016*
 ```
 tpm2_nvwrite -x 0x1500016 -P "index" -f nv.data
 ```

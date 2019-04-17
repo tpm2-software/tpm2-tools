@@ -141,7 +141,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'G':
+    case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.halg == TPM2_ALG_ERROR) {
             return false;
@@ -162,7 +162,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         {"hierarchy", required_argument, NULL, 'a'},
-        {"halg",      required_argument, NULL, 'G'},
+        {"halg",      required_argument, NULL, 'g'},
         {"out-file",  required_argument, NULL, 'o'},
         {"ticket",    required_argument, NULL, 't'},
     };
@@ -170,7 +170,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     /* set up non-static defaults here */
     ctx.input_file = stdin;
 
-    *opts = tpm2_options_new("a:G:o:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("a:g:o:t:", ARRAY_LEN(topts), topts, on_option,
                              on_args, 0);
 
     return *opts != NULL;

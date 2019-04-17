@@ -64,11 +64,11 @@ cleanup "no-shut-down"
 tpm2_clear
 
 #Test default values for the hierarchy "-a" parameter
-tpm2_nvdefine -Q -x $nv_test_index -s 32 -t "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -Q -x $nv_test_index -s 32 -b "ownerread|policywrite|ownerwrite"
 tpm2_nvrelease -Q -x $nv_test_index
 
 #Test writing and reading
-tpm2_nvdefine -Q -x $nv_test_index -a o -s 32 -t "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -Q -x $nv_test_index -a o -s 32 -b "ownerread|policywrite|ownerwrite"
 
 echo "please123abc" > nv.test_w
 
@@ -91,7 +91,7 @@ echo -n "foo" > foo.dat
 dd if=foo.dat of=nv.test_w bs=1 seek=4 conv=notrunc 2>/dev/null
 
 # Test a pipe input
-cat foo.dat | tpm2_nvwrite -Q -x $nv_test_index -a o -o 4
+cat foo.dat | tpm2_nvwrite -Q -x $nv_test_index -a o --offset 4
 
 tpm2_nvread -x $nv_test_index -a o -s 13 > cmp.dat
 
@@ -117,9 +117,9 @@ tpm2_nvrelease -x $nv_test_index -a o
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-tpm2_createpolicy -Q -P -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_createpolicy -Q --policy-pcr -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
-tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -L $file_policy -t "policyread|policywrite"
+tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -L $file_policy -b "policyread|policywrite"
 
 # Write with index authorization for now, since tpm2_nvwrite does not support pcr policy.
 echo -n "policy locked" | tpm2_nvwrite -Q -x 0x1500016 -a 0x1500016 -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value
@@ -144,7 +144,7 @@ large_file_size=`yaml_get_kv cap.out \"TPM2_PT_NV_INDEX_MAX\" \"value\"`
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
-tpm2_nvdefine -Q -x $nv_test_index -a o -s $large_file_size -t 0x2000A
+tpm2_nvdefine -Q -x $nv_test_index -a o -s $large_file_size -b 0x2000A
 
 base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
 
@@ -163,7 +163,7 @@ tpm2_nvrelease -Q -x $nv_test_index -a o
 #
 # Test NV access locked
 #
-tpm2_nvdefine -Q -x $nv_test_index -a o -s 32 -t "ownerread|policywrite|ownerwrite|read_stclear"
+tpm2_nvdefine -Q -x $nv_test_index -a o -s 32 -b "ownerread|policywrite|ownerwrite|read_stclear"
 
 echo "foobar" > nv.readlock
 
@@ -193,10 +193,10 @@ fi
 #
 trap onerror ERR
 
-tpm2_changeauth -o owner
+tpm2_changeauth -w owner
 
 tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
-  -t "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
+  -b "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
   -p "index" -P "owner"
 
 # Use index password write/read, implicit -a

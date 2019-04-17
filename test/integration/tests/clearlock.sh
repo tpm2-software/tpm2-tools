@@ -37,7 +37,7 @@ source helpers.sh
 cleanup() {
     tpm2_clearlock -c -p
 
-       shut_down
+    shut_down
 }
 trap cleanup EXIT
 
