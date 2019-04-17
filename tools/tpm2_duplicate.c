@@ -366,7 +366,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.K) {
+    /* Maybe a false positive from scan-build but we'll check out_key anyway */
+    if (ctx.flags.K && out_key) {
         result = files_save_bytes_to_file(ctx.sym_key_out,
                     out_key->buffer, out_key->size);
         free(out_key);
