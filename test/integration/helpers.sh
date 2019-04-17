@@ -291,7 +291,6 @@ function start_up() {
         echo "export TPM2TOOLS_TCTI=\"$tpm2_tcti_opts\""
         export TPM2TOOLS_TCTI="$tpm2_tcti_opts"
     elif [ -n "$TPM2_SIM" ]; then
-        export TPM2TOOLS_TCTI="socket:port=$tpm2_sim_port"
         echo "Not starting tpm2-abrmd"
         echo "Setting TCTI to use mssim"
         echo "export TPM2TOOLS_TCTI=\"mssim:port=$tpm2_sim_port\""
