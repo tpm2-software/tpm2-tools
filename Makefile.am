@@ -264,18 +264,10 @@ test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_tpm2_util_CFLAGS	   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_util_LDADD     = $(CMOCKA_LIBS) $(LDADD)
 
-#
-# We need absolute paths to the builddir and srcdir locations so we can
-# find the binaries to test with and the scripts/artifacts needed.
-#
-# abs_top_dir is defined, but the build dir is not, so create it.
-#
-abs_build_dir=$(abspath $(builddir))
-
 AM_TESTS_ENVIRONMENT =	\
 	TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD; \
 	TPM2_SIM=tpm_server; export TPM2_SIM; \
-	PATH=$(abs_build_dir)/tools:$(abs_build_dir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
+	PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
 	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
 	export TPM2_TOOLS_TEST_FIXTURES;
 
