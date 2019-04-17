@@ -71,6 +71,7 @@ bin_PROGRAMS = \
     tools/tpm2_createpolicy \
     tools/tpm2_createprimary \
     tools/tpm2_dictionarylockout \
+    tools/tpm2_duplicate \
     tools/tpm2_getcap \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
@@ -173,6 +174,7 @@ tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
 tools_tpm2_pcrreset_SOURCES = tools/tpm2_pcrreset.c $(TOOL_SRC)
 tools_tpm2_import_SOURCES = tools/tpm2_import.c $(TOOL_SRC)
+tools_tpm2_duplicate_SOURCES = tools/tpm2_duplicate.c $(TOOL_SRC)
 tools_tpm2_flushcontext_SOURCES = tools/tpm2_flushcontext.c $(TOOL_SRC)
 tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
 tools_tpm2_policypcr_SOURCES = tools/tpm2_policypcr.c $(TOOL_SRC)
@@ -317,6 +319,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
     man/man1/tpm2_dictionarylockout.1 \
+    man/man1/tpm2_duplicate.1 \
     man/man1/tpm2_getcap.1 \
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_evictcontrol.1 \
