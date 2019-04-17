@@ -342,8 +342,13 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if(ctx.flags.k) {
+        in_key.size = sizeof(TPMU_HA);
         result = files_load_bytes_from_path(ctx.sym_key_in, in_key.buffer, &in_key.size);
         if(!result) {
+            goto out;
+        }
+        if(in_key.size != 16) {
+            LOG_ERR("Invalid key size, got\"%d\"", in_key.size);
             goto out;
         }
     }
@@ -367,7 +372,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     /* Maybe a false positive from scan-build but we'll check out_key anyway */
-    if (ctx.flags.K && out_key) {
+    if (ctx.flags.K) {
+        if(out_key == NULL) {
+            LOG_ERR("No encryption key from TPM ");
+            goto out;
+        }
         result = files_save_bytes_to_file(ctx.sym_key_out,
                     out_key->buffer, out_key->size);
         free(out_key);
