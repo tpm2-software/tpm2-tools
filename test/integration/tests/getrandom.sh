@@ -54,4 +54,14 @@ tpm2_getrandom 4 > random.out
 
 yaml_verify random.out
 
+# negative tests
+trap - ERR
+
+# larger than any known hash size should fail
+tpm2_getrandom 2000 &> /dev/null
+if [ $? -eq 0 ]; then
+    echo "tpm2_getrandom should fail with too big of request"
+    exit 1
+fi
+
 exit 0

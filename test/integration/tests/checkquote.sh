@@ -54,13 +54,13 @@ output_quotepcr=quotepcr.out
 cleanup() {
   rm -f $output_ek_pub_pem \
         $output_ak_pub_pem $output_ak_pub_name \
-        $output_quote $output_quotesig $output_quotepcr rand.out 
+        $output_quote $output_quotesig $output_quotepcr rand.out
 
   tpm2_pcrreset 16
   tpm2_evictcontrol -a o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
   tpm2_evictcontrol -a o -c $handle_ak -P "$ownerpw" 2>/dev/null || true
 
-  tpm2_changeauth -O "$ownerpw" -E "$endorsepw" 2>/dev/null || true
+  tpm2_changeauth -W "$ownerpw" -E "$endorsepw" 2>/dev/null || true
 
   ina "$@" "no-shut-down"
   if [ $? -ne 0 ]; then
@@ -87,10 +87,10 @@ tpm2_createak -C $handle_ek -k $handle_ak -G $ak_alg -D $digestAlg -s $signAlg -
 
 # Quoting
 getrandom 20
-tpm2_quote -C $handle_ak -L sha256:15,16,22 -q $loaded_randomness -m $output_quote -s $output_quotesig -p $output_quotepcr -G $digestAlg -P "$akpw"
+tpm2_quote -C $handle_ak -L sha256:15,16,22 -q $loaded_randomness -m $output_quote -s $output_quotesig -p $output_quotepcr -g $digestAlg -P "$akpw"
 
 # Verify quote
-tpm2_checkquote -c $output_ak_pub_pem -m $output_quote -s $output_quotesig -p $output_quotepcr -G $digestAlg -q $loaded_randomness
+tpm2_checkquote -u $output_ak_pub_pem -m $output_quote -s $output_quotesig -F $output_quotepcr -g $digestAlg -q $loaded_randomness
 
 exit 0
 

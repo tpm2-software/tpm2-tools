@@ -209,7 +209,7 @@ static bool on_option(char key, char *value) {
 	case 'c':
 	    ctx.context_arg = value;
 	    break;
-	case 'G': {
+	case 'g': {
 		ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
 		if (ctx.halg == TPM2_ALG_ERROR) {
 			LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
@@ -260,16 +260,16 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
             { "digest",       required_argument, NULL, 'D' },
-            { "halg",         required_argument, NULL, 'G' },
+            { "halg",         required_argument, NULL, 'g' },
             { "message",      required_argument, NULL, 'm' },
-            { "format",      required_argument, NULL,  'f' },
+            { "format",       required_argument, NULL, 'f' },
             { "sig",          required_argument, NULL, 's' },
             { "ticket",       required_argument, NULL, 't' },
             { "key-context",  required_argument, NULL, 'c' },
     };
 
 
-    *opts = tpm2_options_new("G:m:D:f:s:t:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:m:D:f:s:t:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

@@ -53,25 +53,23 @@ file_session_file="session.dat"
 
 secret="12345678"
 
-onerror() {
-    echo "$BASH_COMMAND on line ${BASH_LINENO[0]} failed: $?"
-    exit 1
-}
-trap onerror ERR
-
 cleanup() {
-  rm -f $file_input_data $file_primary_key_ctx $file_unseal_key_pub \
+    rm -f $file_input_data $file_primary_key_ctx $file_unseal_key_pub \
         $file_unseal_key_priv $file_unseal_key_ctx $file_unseal_key_name \
         $file_unseal_output_data $file_pcr_value \
         $file_policy $file_session_file
 
-  tpm2_flushcontext -S $file_session_file 2>/dev/null || true
+    tpm2_flushcontext -S $file_session_file 2>/dev/null || true
+
+    if [ "${1}" != "no-shutdown" ]; then
+        shut_down
+    fi
 }
 trap cleanup EXIT
 
 start_up
 
-cleanup
+cleanup "no-shutdown"
 
 echo $secret > $file_input_data
 
@@ -99,21 +97,21 @@ tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_startauthsession -Q -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 tpm2_flushcontext -S $file_session_file
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
-  -A 'fixedtpm|fixedparent' <<< $secret
+  -b 'fixedtpm|fixedparent' <<< $secret
 
 tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
 rm $file_session_file
 
 # Start a REAL policy session (-a option) and perform a pcr policy event
-tpm2_startauthsession -a -S $file_session_file
+tpm2_startauthsession --policy-session -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -f $file_policy
+tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
 unsealed=`tpm2_unseal -p"session:$file_session_file" -c $file_unseal_key_ctx`
 
@@ -123,16 +121,11 @@ test "$unsealed" == "$secret"
 tpm2_policyrestart -S $file_session_file
 
 # negative test, clear the error handler
-trap - ERR
-
-tpm2_unseal -p"session:$file_session_file" -c $file_unseal_key_ctx 2>/dev/null
-rc=$?
-
-# restore the error handler
-trap onerror ERR
-if [ $rc -eq 0 ]; then
-  echo "Expected tpm2_unseal to fail after policy reset"
-  false
+if tpm2_unseal -p"session:$file_session_file" -c $file_unseal_key_ctx 2>/dev/null; then
+    echo "Expected tpm2_unseal to fail after policy reset"
+    exit 1
+else
+    true
 fi
 
 exit 0

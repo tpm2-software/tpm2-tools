@@ -118,7 +118,7 @@ static bool verify_signature() {
 
     // Verify the signature matches message digest
     int opensslHash = tpm2_openssl_halgid_from_tpmhalg(ctx.signature.signature.rsassa.hash);
-    if (!RSA_verify(opensslHash, ctx.msgHash.buffer, ctx.msgHash.size, 
+    if (!RSA_verify(opensslHash, ctx.msgHash.buffer, ctx.msgHash.size,
             sig.buffer, sig.size, pubKey)) {
         LOG_ERR("Error validating signed message with public key provided");
         goto err;
@@ -127,7 +127,7 @@ static bool verify_signature() {
     // Ensure nonce is the same as given
     if (ctx.flags.extra) {
         if (
-            ctx.quoteExtraData.size != ctx.extraData.size 
+            ctx.quoteExtraData.size != ctx.extraData.size
             || memcmp(ctx.quoteExtraData.buffer, ctx.extraData.buffer, ctx.extraData.size) != 0
         ) {
             LOG_ERR("Error validating nonce from quote");
@@ -145,7 +145,7 @@ static bool verify_signature() {
 
     result = true;
 
-err: 
+err:
     if (pubkey_input) {
         fclose(pubkey_input);
     }
@@ -183,7 +183,7 @@ static TPM2B_ATTEST *message_from_file(const char *msg_file_path) {
     return msg;
 }
 
-static bool pcrs_from_file(const char *pcr_file_path, 
+static bool pcrs_from_file(const char *pcr_file_path,
         TPML_PCR_SELECTION *pcrSel, tpm2_pcrs *pcrs) {
 
     bool result = false;
@@ -301,7 +301,7 @@ static bool init() {
     }
 
     // Figure out the digest for this message
-    bool res = tpm2_openssl_hash_compute_data(ctx.halg, msg->attestationData, 
+    bool res = tpm2_openssl_hash_compute_data(ctx.halg, msg->attestationData,
         msg->size, &ctx.msgHash);
     if (!res) {
         LOG_ERR("Compute message hash failed!");
@@ -322,10 +322,10 @@ err:
 static bool on_option(char key, char *value) {
 
 	switch (key) {
-	case 'c':
+	case 'u':
 	    ctx.pubkey_file_path = value;
 	    break;
-	case 'G': {
+	case 'g': {
 		ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
 		if (ctx.halg == TPM2_ALG_ERROR) {
 			LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
@@ -361,7 +361,7 @@ static bool on_option(char key, char *value) {
 		ctx.sig_file_path = value;
 		ctx.flags.sig = 1;
 		break;
-	case 'p':
+	case 'F':
 		ctx.pcr_file_path = value;
 		ctx.flags.pcr = 1;
 		break;
@@ -374,17 +374,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-            { "halg",         required_argument, NULL, 'G' },
-            { "message",      required_argument, NULL, 'm' },
-            { "format",       required_argument, NULL, 'f' },
-            { "sig",          required_argument, NULL, 's' },
-            { "pcrs",         required_argument, NULL, 'p' },
-            { "pubkey",       required_argument, NULL, 'c' },
-            { "qualify-data",         required_argument, NULL, 'q' },
+            { "halg",           required_argument, NULL, 'g' },
+            { "message",        required_argument, NULL, 'm' },
+            { "format",         required_argument, NULL, 'f' },
+            { "sig",            required_argument, NULL, 's' },
+            { "pcr-input-file", required_argument, NULL, 'F' },
+            { "pubfile",        required_argument, NULL, 'u' },
+            { "qualify-data",   required_argument, NULL, 'q' },
     };
 
 
-    *opts = tpm2_options_new("G:m:f:s:t:c:p:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:m:f:s:t:u:F:q:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;

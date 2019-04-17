@@ -26,6 +26,8 @@ To build and install the tpm2-tools software the following software is required:
   * To build the man pages you need [pandoc](https://github.com/jgm/pandoc)
   * To enable the new userspace resource manager, one must get tpm2-tabrmd
     (**recommended**).
+  * For the tests: tpm2-abrmd (must be on $PATH) and tpm_server
+  * Some tests pass only if xxd, bash and python with PyYAML are available
 
 ### Typical Distro Dependency Installation
 
@@ -100,21 +102,21 @@ For more detailed information about the dependencies of tpm2-tss and tmp2-abrmd,
 
 ### tpm2-tools TSS and ABRMD Dependency Version Chart
 
-| tpm2-tools version | tpm2-tss version | tpm2-abrmd version|
-|--------------------|------------------|-------------------|
-|[master](https://github.com/tpm2-software/tpm2-tools)|[master](https://github.com/tpm2-software/tpm2-tss)|[master](https://github.com/tpm2-software/tpm2-abrmd)|
-|[3.1.0](https://github.com/tpm2-software/tpm2-tools/releases/tag/3.1.0)|[2.0.0](https://github.com/tpm2-software/tpm2-tss/releases/tag/2.0.0)|[2.0.0](https://github.com/tpm2-software/tpm2-abrmd/tree/2.0.0)|
-|[2.1.0](https://github.com/tpm2-software/tpm2-tools/releases/tag/2.1.0)|[1.2.0](https://github.com/tpm2-software/tpm2-tss/releases/tag/1.2.0)|[1.1.1](https://github.com/tpm2-software/tpm2-abrmd/releases/tag/1.1.1)|
-|[df751ae](https://github.com/tpm2-software/tpm2.0-tools/tree/df751ae5bea0bb057c9ee4cb0c1176c48ff68492)(master)|[1.1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.1.0)|[1.0.0](https://github.com/tpm2-software/tpm2-abrmd/releases/tag/1.0.0)|
-|[v2.0.0](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/2.0.0)|[1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0)|old resourcemgr|
-|[v1.1.0](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.1.0)|[1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0)|old resourcemgr|
-|[v1.1-beta_1](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.1-beta_1)|[1.0-beta_1](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0-beta_1)|old resourcemgr|
-|[v1.1-beta_0](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.1-beta_0)|[v1.0-beta_0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/v1.0-beta_0)|old resourcemgr|
-|[14a7ff5](https://github.com/tpm2-software/tpm2.0-tools/tree/14a7ff527bc0411c215bd9d575f2866e1f2e71cf)|[210b770](https://github.com/tpm2-software/TPM2.0-TSS/tree/210b770c1dff47b11be623e1d1e7ffb02298fca5)|old resourcemgr|
-|[4b4cbea](https://github.com/tpm2-software/tpm2.0-tools/tree/4b4cbeafe30430f42826592dee2abafec818385f)|[d4f23cc](https://github.com/tpm2-software/TPM2.0-TSS/tree/d4f23cc25c4c0fb66dd36897d2fad8e1e37c6443)|old resourcemgr|
-|[e8150e4](https://github.com/tpm2-software/tpm2.0-tools/tree/e8150e48dd47f761dff10583631b2a0a30ee4d90)|[60ec042](https://github.com/tpm2-software/TPM2.0-TSS/tree/60ec04237b5344666435e129bd85f7496a6a9985)|old resourcemgr|
-|[84d5f26](https://github.com/tpm2-software/tpm2.0-tools/tree/84d5f262f281556c57f7ec2fba06eda3acadd26c)|[371fdbc](https://github.com/tpm2-software/TPM2.0-TSS/tree/371fdbc638c55b9ac8a0eaec9375dbca0412861c)|old resourcemgr|
-|[v1.0.1](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.0.1)|[1.0-alpha_0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0-alpha_0)|old resourcemgr|
+| tpm2-tools version | tpm2-tss version | tpm2-abrmd version | TSS API |
+|--------------------|------------------|--------------------|---------|
+|[master](https://github.com/tpm2-software/tpm2-tools)|[master](https://github.com/tpm2-software/tpm2-tss)|[master](https://github.com/tpm2-software/tpm2-abrmd)| tss2-esys (ESAPI) |
+|[3.1.0](https://github.com/tpm2-software/tpm2-tools/releases/tag/3.1.0)|[2.0.0](https://github.com/tpm2-software/tpm2-tss/releases/tag/2.0.0)|[2.0.0](https://github.com/tpm2-software/tpm2-abrmd/tree/2.0.0)| tss2-sys (SAPI) |
+|[2.1.0](https://github.com/tpm2-software/tpm2-tools/releases/tag/2.1.0)|[1.2.0](https://github.com/tpm2-software/tpm2-tss/releases/tag/1.2.0)|[1.1.1](https://github.com/tpm2-software/tpm2-abrmd/releases/tag/1.1.1)| tss2-sys (SAPI) |
+|[df751ae](https://github.com/tpm2-software/tpm2.0-tools/tree/df751ae5bea0bb057c9ee4cb0c1176c48ff68492)(master)|[1.1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.1.0)|[1.0.0](https://github.com/tpm2-software/tpm2-abrmd/releases/tag/1.0.0)| tss2-sys (SAPI) |
+|[v2.0.0](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/2.0.0)|[1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0)|old resourcemgr| tss2-sys (SAPI) |
+|[v1.1.0](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.1.0)|[1.0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0)|old resourcemgr| tss2-sys (SAPI) |
+|[v1.1-beta_1](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.1-beta_1)|[1.0-beta_1](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0-beta_1)|old resourcemgr| tss2-sys (SAPI) |
+|[v1.1-beta_0](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.1-beta_0)|[v1.0-beta_0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/v1.0-beta_0)|old resourcemgr| tss2-sys (SAPI) |
+|[14a7ff5](https://github.com/tpm2-software/tpm2.0-tools/tree/14a7ff527bc0411c215bd9d575f2866e1f2e71cf)|[210b770](https://github.com/tpm2-software/TPM2.0-TSS/tree/210b770c1dff47b11be623e1d1e7ffb02298fca5)|old resourcemgr| tss2-sys (SAPI) |
+|[4b4cbea](https://github.com/tpm2-software/tpm2.0-tools/tree/4b4cbeafe30430f42826592dee2abafec818385f)|[d4f23cc](https://github.com/tpm2-software/TPM2.0-TSS/tree/d4f23cc25c4c0fb66dd36897d2fad8e1e37c6443)|old resourcemgr| tss2-sys (SAPI) |
+|[e8150e4](https://github.com/tpm2-software/tpm2.0-tools/tree/e8150e48dd47f761dff10583631b2a0a30ee4d90)|[60ec042](https://github.com/tpm2-software/TPM2.0-TSS/tree/60ec04237b5344666435e129bd85f7496a6a9985)|old resourcemgr| tss2-sys (SAPI) |
+|[84d5f26](https://github.com/tpm2-software/tpm2.0-tools/tree/84d5f262f281556c57f7ec2fba06eda3acadd26c)|[371fdbc](https://github.com/tpm2-software/TPM2.0-TSS/tree/371fdbc638c55b9ac8a0eaec9375dbca0412861c)|old resourcemgr| tss2-sys (SAPI) |
+|[v1.0.1](https://github.com/tpm2-software/tpm2.0-tools/releases/tag/v1.0.1)|[1.0-alpha_0](https://github.com/tpm2-software/TPM2.0-TSS/releases/tag/1.0-alpha_0)|old resourcemgr| tss2-sys (SAPI) |
 
 ## Building
 

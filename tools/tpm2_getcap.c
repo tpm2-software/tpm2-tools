@@ -41,6 +41,7 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 #include "tpm2_capability.h"
+#include "pcr.h"
 
 /* convenience macro to convert flags into "1" / "0" strings */
 #define prop_str(val) val ? "1" : "0"
@@ -70,6 +71,12 @@ capability_map_entry_t capability_map[] = {
         .capability        = TPM2_CAP_COMMANDS,
         .property          = TPM2_CC_FIRST,
         .count             = TPM2_MAX_CAP_CC,
+    },
+    {
+        .capability_string = "pcrs",
+        .capability        = TPM2_CAP_PCRS,
+        .property          = 0,
+        .count             = TPM2_MAX_TPM_PROPERTIES,
     },
     {
         .capability_string = "properties-fixed",
@@ -912,6 +919,9 @@ static bool dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
         default:
             return false;
         }
+        break;
+    case TPM2_CAP_PCRS:
+        pcr_print_pcr_selections(&capabilities->assignedPCR);
         break;
     default:
         return false;

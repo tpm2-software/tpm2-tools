@@ -18,6 +18,7 @@ import glob
 import os
 import re
 import sys
+from collections import Counter
 
 class Tool(object):
     '''Represents a tool name and it's options'''
@@ -79,7 +80,7 @@ class ToolConflictor(object):
                 ],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['r', 'privfile', 'u', 'pubfile', 's', 'secret', 'g', 'halg', 'n', 'name', 'f', 'format'])
+                "ignore": set(['s', 'secret', 'f', 'format'])
             },
             {
                 "gname": "duplication",
@@ -101,7 +102,7 @@ class ToolConflictor(object):
                 ["tpm2_encryptdecrypt", "tpm2_hmac", "tpm2_hash"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['a', 'hierarchy', 'D', 'decrypt', 't', 'ticket', 'i', 'iv', 'mode', 'halg'])
+                "ignore": set(['a', 'hierarchy', 'D', 'decrypt', 't', 'ticket', 'i', 'iv', 'mode', 'halg', 'g', 'G'])
             },
             {
                 "gname": "random",
@@ -115,22 +116,22 @@ class ToolConflictor(object):
                 "tools-in-group": ["tpm2_certify", "tpm2_quote"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['g', 'halg', 'm', 'message', 's', 'signature', 'p', 'pcrs'])
+                "ignore": set(['g', 'halg', 'm', 'message', 'signature', 'pcrs'])
             },
             {
                 "gname": "signing",
                 "tools-in-group": ["tpm2_verifysignature", "tpm2_sign"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['f', 'format', 's', 'sig'])
+                "ignore": set(['s', 'sig'])
             },
             {
                 "gname": "integrity",
                 "tools-in-group":
-                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist", "tpm2_pcrreset", "tpm2_checkquote"],
+                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist", "tpm2_pcrreset", "tpm2_checkquote", "tpm2_pcrallocate"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['g', 'G', 'halg', 'f', 'format', 's', 'algs', 'sig', 'p', 'pcrs', 'pubkey', 'm', 'message', 'c'])
+                "ignore": set(['g', 'halg', 'f', 'format', 's', 'algs'])
             },
             {
                 "gname": "ea",
@@ -138,8 +139,7 @@ class ToolConflictor(object):
                     "tpm2_policycommandcode", "tpm2_policysecret", "tpm2_policylocality", "tpm2_policyduplicationselect"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['S', 'session', 'q', 'qualifier', 'n', 'name', 't', 'ticket', 'L', 'policy-list', 'o', 'policy-file', 'c', 'context',
-                    'N', 'new-parent-name', 'i', 'is-include-object'])
+                "ignore": set(['q', 'qualifier', 'n', 'name', 't', 'ticket', 'policy-list', 'c', 'context', 'N', 'new-parent-name', 'i', 'is-include-object'])
             },
             {
                 "gname": "hierarchy",
@@ -163,14 +163,14 @@ class ToolConflictor(object):
                 ],
                 "tools": [],
                 "conflict": None,
-                "ignore": set(['a', 'hierarchy', 'x', 'index', 'S', 'session', 't', 'attributes'])
+                "ignore": set(['S', 'session', 't', 'attributes'])
             },
             {
                 "gname": "capability",
-                "tools-in-group": ["tpm2_getcap"],
+                "tools-in-group": ["tpm2_getcap", "tpm2_testparms"],
                 "tools": [],
                 "conflict": None,
-                "ignore": set()
+                "ignore": set(['capability', 'c', 'list', 'l'])
             },
             {
                 "gname": "dictionary",
@@ -191,7 +191,7 @@ class ToolConflictor(object):
             },
             {
                 "gname": "testing",
-                "tools-in-group": ["tpm2_selftest"],
+                "tools-in-group": ["tpm2_selftest", "tpm2_incrementalselftest", "tpm2_gettestresult"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set()
@@ -209,7 +209,7 @@ class ToolConflictor(object):
                     found = True
                     break
             if not found:
-                sys.exit("Did not find group for tool: %s", tool.name)
+                sys.exit("Group not found for tool : %s" % tool.name)
 
     def process(self):
         '''Processes the tool groups and generates the conflict data'''
@@ -225,18 +225,19 @@ class ToolConflictor(object):
             if len(tool_group['tools']) == 1:
                 continue
 
-            option_sets = [
-                set(t.options.keys()) | set(t.options.values())
-                for t in tool_group['tools']
+            # Identify options that are only used by a single tool within the group
+            option_list = [
+                opt
+                for tool in tool_group['tools']
+                for shortopt_longopt in tool.options.items()
+                for opt in shortopt_longopt
             ]
-            diff = set()
-            for option_set in option_sets:
-                diff ^= option_set
+            conflicts = set([opt for (opt, count) in Counter(option_list).items() if count==1])
 
-            diff -= tool_group['ignore']
+            conflicts -= tool_group['ignore']
 
-            if len(diff) > 0:
-                tool_group['conflict'] = diff
+            if len(conflicts) > 0:
+                tool_group['conflict'] = conflicts
 
     def report(self):
         '''Prints a conflict report to stdout
@@ -268,8 +269,7 @@ class Parser(object):
     '''Parses C files for long option style option blocks'''
 
     regx = re.compile(
-        r'^\s*{\s*"(\w+)"\s*,\s*(?:required_argument|no_argument)\s*,\s*\w+\s*,\s*\'(\w)\'\s*},+$',
-        re.MULTILINE)
+        r'{\s*"([^"]+)"\s*,\s*(?:required_argument|no_argument)\s*,\s*\w+\s*,\s*\'(\w)\'\s*}')
 
     def __init__(self, path=os.getcwd()):
         self._path = path

@@ -254,10 +254,12 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
     tpm2_session_set_authhash(d, auth_hash);
 
     s = tpm2_session_new(NULL, d);
-    if (s) {
-        s->output.session_handle = handle;
+    if (!s) {
+    	LOG_ERR("oom new session object");
+	goto out;
     }
 
+    s->output.session_handle = handle;
     s->internal.path = strdup(dup_path);
 
 out:

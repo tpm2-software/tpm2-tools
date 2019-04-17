@@ -67,7 +67,7 @@ cleanup() {
 trap cleanup EXIT
 
 test_symmetric() {
-    alg_signing_key=$1
+    local alg_signing_key=$1
 
     echo "12345678" > $file_input_data
 
@@ -79,21 +79,21 @@ test_symmetric() {
 
     tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
 
-    tpm2_sign -Q -c $file_signing_key_ctx -G $alg_hash -m $file_input_data -o $file_output_data
+    tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -o $file_output_data
 
     rm -f $file_output_data
 
     tpm2_evictcontrol -Q -a o -c $file_signing_key_ctx -p $handle_signing_key
 
-    tpm2_sign -Q -c $handle_signing_key -G $alg_hash -m $file_input_data -o $file_output_data
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -m $file_input_data -o $file_output_data
 
     rm -f $file_output_data
 
     # generate hash and test validation
 
-    tpm2_hash -Q -a e -G $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
+    tpm2_hash -Q -a e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
 
-    tpm2_sign -Q -c $handle_signing_key -G $alg_hash -o $file_output_data -m $file_input_data -t $file_output_ticket
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data -m $file_input_data -t $file_output_ticket
 
     rm -f $file_output_data
 
@@ -101,29 +101,59 @@ test_symmetric() {
 
     sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > $file_input_digest
 
-    tpm2_sign -Q -c $handle_signing_key -G $alg_hash -D $file_input_digest -o $file_output_data
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -D $file_input_digest -o $file_output_data
 
     rm -f $file_output_data
 
     # test with digest + message/validation (warning generated)
 
-    tpm2_sign -Q -c $handle_signing_key -G $alg_hash -D $file_input_digest -o $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -D $file_input_digest -o $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
 }
 
 create_signature() {
-    sign_scheme=$1
+    local sign_scheme=$1
     if [ "$sign_scheme" = "" ]; then
-        tpm2_sign -Q -c $file_signing_key_ctx -G $alg_hash -m $file_input_data -f plain -o $file_output_data
+        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -f plain -o $file_output_data
     else
-        tpm2_sign -Q -c $file_signing_key_ctx -G $alg_hash -s $sign_scheme -m $file_input_data -f plain -o $file_output_data
+        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -s $sign_scheme -m $file_input_data -f plain -o $file_output_data
     fi
 }
 
+get_openssl_version_number() {
+    # Ubuntu 14.04, 16.04, 18.04 and 19.04:
+    # "OpenSSL 1.0.1f 6 Jan 2014"
+    # "OpenSSL 1.0.2g  1 Mar 2016"
+    # "OpenSSL 1.1.0g  2 Nov 2017"
+    # "OpenSSL 1.1.1b  26 Feb 2019"
+    if [ -z "$1" ]; then
+        local openssl_version=$(openssl version -v)
+    else
+        local openssl_version="$1"
+    fi
+    local openssl_version_parsed=$(echo "$openssl_version" | sed -r 's/^OpenSSL ([0-9]+)\.([0-9]+)\.([0-9]+).*$/\1 \2 \3/')
+    local openssl_v1=$(echo $openssl_version_parsed | cut -d ' ' -f 1)
+    local openssl_v2=$(echo $openssl_version_parsed | cut -d ' ' -f 2)
+    local openssl_v3=$(echo $openssl_version_parsed | cut -d ' ' -f 3)
+    local openssl_version_num=$(("$openssl_v1"<<16 + "$openssl_v2"<<8 + "$openssl_v3"))
+    echo "$openssl_version_num"
+}
+
 verify_signature() {
-    sign_scheme=$1
+    local sign_scheme=$1
 
     if [ "$sign_scheme" = "rsapss" ] ; then
         # Explanation:
+
+        # RSA-PSS has a parameter called salt length.
+        # You need to know what value of salt length was used to create the
+        # signature in order to verify the signature.
+        # OpenSSL can actually automatically determine the correct value, so
+        # strictly speaking we could just let it and simplify this test a lot.
+        # But, if you want to verify the signature using some other API,
+        # you might need to know the salt length used by the TPM to produce the
+        # signature.
+        # It can be either "digest" or "max". You can use openssl the check
+        # whether it's "digest", and if it's not then it's "max".
 
         # From TCG TPM 2.0, Part 1: Architecture, Appendix B.7
         # "... the random salt length will be the largest size allowed by the
@@ -139,11 +169,30 @@ verify_signature() {
         #  then the random salt length will be the largest size allowed by that
         #  specification."
 
-        # Thus, if the TPM is in "FIPS mode", PSS salt is "digest" length,
-        #  otherwise PSS salt is "max" length.
+        # Thus, if the TPM is in "FIPS mode", PSS salt length is "digest",
+        #  otherwise PSS salt length is "max".
         # Either one is accepted by this test.
         # The IBM TPM software emulator (at least the version in ibmtpm1332.tar.gz)
         #  uses "digest".
+
+        local openssl_current_version_num=$(get_openssl_version_number)
+        local openssl_1_1_1_version_num=$(get_openssl_version_number "OpenSSL 1.1.1")
+
+        # Explanation:
+        # In version 1.1.1, openssl switched from "-1","-2" (meaning "digest" and
+        # "auto" correspondingly) to "digest", "max" and "auto".
+        # See section "rsa_pss_saltlen:len" in
+        # https://github.com/openssl/openssl/blob/OpenSSL_1_1_1-stable/doc/man1/pkeyutl.pod
+        # and same section in
+        # https://github.com/openssl/openssl/blob/OpenSSL_1_1_0-stable/doc/apps/pkeyutl.pod
+        if [ "$openssl_current_version_num" -ge "$openssl_1_1_1_version_num" ] ; then
+            local pss_salt_len_arg_digest="digest"
+            local pss_salt_len_arg_max="max"
+            local pss_salt_len_arg_auto="auto"
+        else
+            local pss_salt_len_arg_digest="-1"
+            local pss_salt_len_arg_auto="-2"
+        fi
 
         openssl pkeyutl -verify \
             -in $file_input_digest \
@@ -153,7 +202,7 @@ verify_signature() {
             -keyform pem \
             -pkeyopt digest:$alg_hash \
             -pkeyopt rsa_padding_mode:pss \
-            -pkeyopt rsa_pss_saltlen:digest \
+            -pkeyopt rsa_pss_saltlen:$pss_salt_len_arg_digest \
             |& grep -q '^Signature Verified Successfully' \
         || \
         openssl pkeyutl -verify \
@@ -164,7 +213,7 @@ verify_signature() {
             -keyform pem \
             -pkeyopt digest:$alg_hash \
             -pkeyopt rsa_padding_mode:pss \
-            -pkeyopt rsa_pss_saltlen:max \
+            -pkeyopt rsa_pss_saltlen:$pss_salt_len_arg_auto \
             |& grep -q '^Signature Verified Successfully'
     else
         openssl pkeyutl -verify \
@@ -179,7 +228,7 @@ verify_signature() {
 }
 
 test_asymmetric() {
-    alg_signing_key=$1
+    local alg_signing_key=$1
 
     head -c30 /dev/urandom > $file_input_data
 
@@ -194,6 +243,8 @@ test_asymmetric() {
     tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
 
     tpm2_readpublic -Q -c $file_signing_key_ctx --format=pem -o $file_signing_key_pub_pem
+
+    local sign_scheme
 
     if [ "$alg_signing_key" = "$rsa_key_type" ] ; then
         for sign_scheme in "" "rsassa" "rsapss"
@@ -220,14 +271,21 @@ start_up
 
 cleanup "no-shut-down"
 
-test_symmetric "hmac"
-
-cleanup "no-shut-down"
+# make sure commands failing inside the function will cause the script to fail!
+(
+    set -e
+    test_symmetric "hmac"
+    cleanup "no-shut-down"
+)
 
 for key_type in $rsa_key_type $ecc_key_type
 do
-    test_asymmetric $key_type
-    cleanup "no-shut-down"
+    # make sure commands failing inside the function will cause the script to fail!
+    (
+        set -e
+        test_asymmetric $key_type
+        cleanup "no-shut-down"
+    )
 done
 
 exit 0

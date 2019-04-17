@@ -297,7 +297,7 @@ static bool on_option(char key, char *value) {
             return false;
          }
          break;
-    case 'G':
+    case 'g':
         ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if(ctx.sig_hash_algorithm == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
@@ -322,10 +322,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "message",              required_argument, NULL, 'm' },
         { "pcrs",                 required_argument, NULL, 'p' },
         { "format",               required_argument, NULL, 'f' },
-        { "sig-hash-algorithm",   required_argument, NULL, 'G' }
+        { "halg",                 required_argument, NULL, 'g' }
     };
 
-    *opts = tpm2_options_new("C:P:l:L:q:s:m:p:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:l:L:q:s:m:p:f:g:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

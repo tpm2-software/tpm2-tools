@@ -73,7 +73,7 @@ policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
 echo -n "$policy_orig" | xxd -r -p > policy.bin
 
 tpm2_createprimary -Q -a o -G rsa -g sha256 -o context.out -L policy.bin \
-  -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin'
+  -b 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin'
 
 tpm2_readpublic -c context.out > pub.out
 
@@ -87,7 +87,7 @@ printf '\x00\x01' > ud.1
 dd if=/dev/zero bs=256 count=1 of=ud.2
 cat ud.1 ud.2 > unique.dat
 tpm2_createprimary -a o -G rsa2048:aes128cfb -g sha256 -o prim.ctx \
-  -A 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
+  -b 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
   -u unique.dat
 test -f prim.ctx
 

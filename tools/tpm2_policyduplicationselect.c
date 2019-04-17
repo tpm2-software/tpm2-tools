@@ -74,7 +74,7 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.out_policy_dgst_path = value;
         break;
-    case 'i':
+    case 0:
         ctx.is_include_obj = 1;
         break;
     }
@@ -103,10 +103,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "session",            required_argument,  NULL,   'S' },
-        { "obj-name",           required_argument,  NULL,   'n' },
+        { "object-name",        required_argument,  NULL,   'n' },
         { "new-parent-name",    required_argument,  NULL,   'N' },
-        { "policy-file",        required_argument,  NULL,   'o' },
-        { "is-include-object",  no_argument,        NULL,   'i' },
+        { "out-policy-file",    required_argument,  NULL,   'o' },
+        { "include-if-exists",  no_argument,        NULL,    0  },
     };
 
     *opts = tpm2_options_new("S:n:N:o:i", ARRAY_LEN(topts), topts, on_option,

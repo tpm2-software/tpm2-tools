@@ -12,7 +12,7 @@
 
 # DESCRIPTION
 
-**tpm2_evictcontrol**(1) - allows a transient object to be made persistent or a persistent object to
+**tpm2_evictcontrol**(1) - Allows a transient object to be made persistent or a persistent object to
 be evicted.
 
 # OPTIONS
@@ -60,6 +60,7 @@ be evicted.
 ```
 tpm2_evictcontrol -a o -c object.context -p 0x81010002 -P abc123
 ```
+
 ## To evict a persistent handle
 ```
 tpm2_evictcontrol -a o -c 0x81010002 -p 0x81010002 -P abc123

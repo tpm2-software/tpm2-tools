@@ -64,8 +64,7 @@ AC_SUBST([LIBDL_LDFLAGS])
 
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
-                            [build cmocka unit tests])],
-            [enable_unit=$enableval],
+                            [build cmocka unit tests])],,
             [enable_unit=no])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
 
@@ -83,8 +82,7 @@ AC_DEFUN([AC_PYTHON_MODULE],
 
 AC_DEFUN([unit_test_checks],[
 
-    PKG_CHECK_MODULES([CMOCKA],[cmocka],
-        [AC_DEFINE([HAVE_CMOCKA],[1])])
+    PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
     AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd],
         [yes], [no])
@@ -133,14 +131,13 @@ AC_ARG_ENABLE([dlclose],
 
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--disable-hardening],
-    [Disable compiler and linker options to frustrate memory corruption exploits])],
-  [hardening="$enableval"],
-  [hardening="yes"])
+    [Disable compiler and linker options to frustrate memory corruption exploits])],,
+  [enable_hardening="yes"])
 
 # Good information on adding flags, and dealing with compilers can be found here:
 #   https://github.com/zcash/zcash/issues/1832
 #   https://github.com/kmcallister/autoharden/
-AS_IF([test x"$hardening" != x"no"], [
+AS_IF([test x"$enable_hardening" != x"no"], [
 
   AC_DEFUN([add_hardened_c_flag], [
     AX_CHECK_COMPILE_FLAG([$1],

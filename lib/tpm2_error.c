@@ -225,7 +225,7 @@ static const char *tpm2_err_handler_fmt1(TPM2_RC rc) {
         // 0x15 - TPM2_RC_SIZE
         "structure is the wrong size",
         // 0x16 - TPM2_RC_SYMMETRIC
-        "unsupported symmetric algorithm or key size, or not appropriate for"
+        "unsupported symmetric algorithm or key size or not appropriate for"
         " instance",
         // 0x17 - TPM2_RC_TAG
         "incorrect structure tag",
@@ -322,7 +322,7 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
             // 0x3 - TPM2_RC_SESSION_MEMORY
             "out of memory for session contexts",
             // 0x4 - TPM2_RC_MEMORY
-            "out of shared object/session memory or need space for internal"
+            "out of shared objectsession memory or need space for internal"
             " operations",
             // 0x5 - TPM2_RC_SESSION_HANDLES
             "out of session handles",
@@ -331,12 +331,12 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
             // 0x7 - TPM2_RC_LOCALITY
             "bad locality",
             // 0x8 - TPM2_RC_YIELDED
-            "the TPM has suspended operation on the command; forward progress"
+            "the TPM has suspended operation on the command forward progress"
             " was made and the command may be retried",
             // 0x9 - TPM2_RC_CANCELED
             "the command was canceled",
             // 0xA - TPM2_RC_TESTING
-            "TPM is performing self-tests",
+            "TPM is performing selftests",
             // 0xB - EMPTY
             NULL,
             // 0xC - EMPTY
@@ -369,6 +369,7 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
             "the 7th handle in the handle area references a transient object"
             " or session that is not loaded",
             // 0x17 - EMPTY,
+            NULL,
             // 0x18 - TPM2_RC_REFERENCE_S0
             "the 1st authorization session handle references a session that"
             " is not loaded",
@@ -382,16 +383,18 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
             "the 4th authorization session handle references a session that"
             " is not loaded",
             // 0x1C - TPM2_RC_REFERENCE_S4
-            "the 5th authorization session handle references a session that"
+            "the 5th session handle references a session that"
             " is not loaded",
             // 0x1D - TPM2_RC_REFERENCE_S5
-            "the 6th authorization session handle references a session that"
+            "the 6th session handle references a session that"
             " is not loaded",
             // 0x1E - TPM2_RC_REFERENCE_S6
             "the 7th authorization session handle references a session that"
             " is not loaded",
+            // 0x1F - EMPTY,
+            NULL,
             // 0x20 -TPM2_RC_NV_RATE
-            "the TPM is rate-limiting accesses to prevent wearout of NV",
+            "the TPM is rate limiting accesses to prevent wearout of NV",
             // 0x21 - TPM2_RC_LOCKOUT
             "authorizations for objects subject to DA protection are not"
             " allowed at this time because the TPM is in DA lockout mode",
@@ -499,17 +502,19 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
         // 0x2C - EMPTY
         NULL,
         // 0x2D - TPM2_RC_UPGRADE
-        "TPM is in field upgrade mode unless called via"
-        " TPM2_FieldUpgradeData(), then it is not in field upgrade mode",
+        "For all commands, other than TPM2_FieldUpgradeData, "
+        "this code indicates that the TPM is in field upgrade mode. "
+        "For TPM2_FieldUpgradeData, this code indicates that the TPM " 
+        "is not in field upgrade mode",
         // 0x2E - TPM2_RC_TOO_MANY_CONTEXTS
         "context ID counter is at maximum",
         // 0x2F - TPM2_RC_AUTH_UNAVAILABLE
         "authValue or authPolicy is not available for selected entity",
         // 0x30 - TPM2_RC_REBOOT
-        "a _TPM_Init and Startup(CLEAR) is required before the TPM can"
+        "a _TPM_Init and StartupCLEAR is required before the TPM can"
         " resume operation",
         // 0x31 - TPM2_RC_UNBALANCED
-        "the protection algorithms (hash and symmetric) are not reasonably"
+        "the protection algorithms hash and symmetric are not reasonably"
         " balanced. The digest size of the hash must be larger than the key"
         " size of the symmetric algorithm.",
         // 0x32 - EMPTY
@@ -546,7 +551,7 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
         NULL,
         // 0x42 - TPM2_RC_COMMAND_SIZE
         "command commandSize value is inconsistent with contents of the"
-        " command buffer; either the size is not the same as the octets"
+        " command buffer. Either the size is not the same as the octets"
         " loaded by the hardware interface layer or the value is not large"
         " enough to hold a command header",
         // 0x43 - TPM2_RC_COMMAND_CODE
@@ -567,7 +572,7 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
         "NV access authorization fails in command actions",
         // 0x4A - TPM2_RC_NV_UNINITIALIZED
         "an NV Index is used before being initialized or the state saved"
-        " by TPM2_Shutdown(STATE) could not be restored",
+        " by TPM2_ShutdownSTATE could not be restored",
         // 0x4B - TPM2_RC_NV_SPACE
         "insufficient space for NV allocation",
         // 0x4C - TPM2_RC_NV_DEFINED
@@ -579,7 +584,7 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
         // 0x4F - EMPTY
         NULL,
         // 0x50 - TPM2_RC_BAD_CONTEXT
-        "context in TPM2_ContextLoad() is not valid",
+        "context in TPM2_ContextLoad is not valid",
         // 0x51 - TPM2_RC_CPHASH
         "cpHash value already set or not correct for use",
         // 0x52 - TPM2_RC_PARENT

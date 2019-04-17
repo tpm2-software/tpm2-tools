@@ -43,7 +43,6 @@
 #include "files.h"
 #include "tpm2_options.h"
 #include "log.h"
-#include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_identity_util.h"
@@ -281,7 +280,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      {"enc-key"  ,required_argument, NULL, 'e'},
+      {"enckey"  ,required_argument, NULL, 'e'},
       {"secret"   ,required_argument, NULL, 's'},
       {"name"     ,required_argument, NULL, 'n'},
       {"out-file" ,required_argument, NULL, 'o'},

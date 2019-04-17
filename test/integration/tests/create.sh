@@ -72,7 +72,7 @@ policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
 echo "$policy_orig" | xxd -r -p > policy.bin
 
 tpm2_create -C context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv \
-  -A 'sign|fixedtpm|fixedparent|sensitivedataorigin' > out.pub
+  -b 'sign|fixedtpm|fixedparent|sensitivedataorigin' > out.pub
 
 policy_new=$(yaml_get_kv out.pub \"authorization\ policy\")
 

@@ -80,7 +80,7 @@ struct tpm_sign_ctx {
     char *key_auth_str;
 };
 
-tpm_sign_ctx ctx = {
+static tpm_sign_ctx ctx = {
         .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         .halg = TPM2_ALG_SHA1,
         .digest = NULL,
@@ -231,7 +231,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.p = 1;
         ctx.key_auth_str = value;
         break;
-    case 'G': {
+    case 'g': {
         ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
@@ -294,7 +294,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
       { "auth-key",             required_argument, NULL, 'p' },
-      { "halg",                 required_argument, NULL, 'G' },
+      { "halg",                 required_argument, NULL, 'g' },
       { "sig-scheme",           required_argument, NULL, 's' },
       { "message",              required_argument, NULL, 'm' },
       { "digest",               required_argument, NULL, 'D' },
@@ -304,7 +304,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("p:G:m:D:t:o:c:f:s:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:g:m:D:t:o:c:f:s:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
