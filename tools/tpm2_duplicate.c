@@ -48,28 +48,15 @@
 // is an equivalent notion.
 //**********************************************************************;
 
-#include <errno.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
 
-#include <limits.h>
 #include <tss2/tss2_esys.h>
-#include <tss2/tss2_mu.h>
 
 #include "log.h"
 #include "files.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
-#include "tpm2_kdfa.h"
-#include "tpm2_errata.h"
-#include "tpm2_openssl.h"
-#include "tpm2_identity_util.h"
 #include "tpm2_options.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
-#include "tpm2_policy.h"
 
 typedef struct tpm_duplicate_ctx tpm_duplicate_ctx;
 struct tpm_duplicate_ctx {
@@ -360,6 +347,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             goto out;
         }
     }
+
+    out_key = NULL;
 
     result = do_duplicate(ectx,
         ctx.flags.k ? &in_key : NULL,
