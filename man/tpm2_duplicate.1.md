@@ -24,10 +24,10 @@ These options control the key importation process:
     * null - none
 
   * **-k**, **--input-key-file**=_FILE_:
-    Specifies the filename of the symmetric key (128 bit data) to be used for the inner wrapper. 
+    Specifies the filename of the symmetric key (128 bit data) to be used for the inner wrapper. Valid only when --inner-wrapper-alg != null
 
   * **-K**, **--output-key-file**=_FILE_:
-    Specifies the filename to store the symmetric key (128 bit data) that was used for the inner wrapper. 
+    Specifies the filename to store the symmetric key (128 bit data) that was used for the inner wrapper. Valid only when --inner-wrapper-alg != null and --input-key-file is not specified
 
   * **-C**, **--parent-key**=_PARENT\_CONTEXT_:
     Specifies the context object for the parent key. Either a file or a handle number.
@@ -61,11 +61,14 @@ tpm2_policycommandcode -S session.dat -o policy.dat 0x14B
 tpm2_flushcontext -S session.dat
 
 tpm2_createprimary -a o -g sha256 -G rsa -o primary.ctxt
-tpm2_create -C primary.ctxt -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat  -A "sensitivedataorigin"
+tpm2_create -C primary.ctxt -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -b "sensitivedataorigin"
 
 tpm2_loadexternal -a o -u new_parent.pub -o new_parent.ctxt
 
+tpm2_startauthsession --policy-session -S session.dat
+tpm2_policycommandcode -S session.dat -o policy.dat 0x14B
 tpm2_duplicate -C new_parent.ctxt -c key.ctxt -G null -p "session:session.dat" -r duprv.bin -S seed.dat
+tpm2_flushcontext -S session.dat
 ```
 
 # RETURNS
