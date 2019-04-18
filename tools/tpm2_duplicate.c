@@ -47,8 +47,9 @@
 // "partial-one-wayness" instead of one-wayness. For the RSA function, this
 // is an equivalent notion.
 //**********************************************************************;
-
+#include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <tss2/tss2_esys.h>
 
@@ -298,7 +299,40 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj)
     return result;
 }
 
+static bool load_sym_key(TPM2B_DATA * in_key)
+{
+    FILE *f;
+    unsigned long file_size = 0;
+    bool result;
 
+    f = fopen(ctx.sym_key_in, "r");
+    if (!f) {
+        LOG_ERR("Could not open file \"%s\", error: %s",
+                ctx.sym_key_in, strerror(errno));
+        return false;
+    }
+    /*
+    * Get the file size and validate that it is the proper AES keysize.
+    */
+    result = files_get_file_size(f, &file_size, ctx.sym_key_in);
+    if (!result) {
+        return false;
+    }
+
+    if(file_size != 16) {
+        LOG_ERR("Invalid AES key size, got %lu bytes, expected 16",
+                file_size);
+        return false;
+    }
+
+    in_key->size = file_size;
+    result = files_read_bytes(f, in_key->buffer, in_key->size);
+    fclose(f);
+    if(!result) {
+        return false;
+    }
+    return true;
+}
 
 int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
@@ -342,13 +376,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if(ctx.flags.k) {
-        in_key.size = sizeof(TPMU_HA);
-        result = files_load_bytes_from_path(ctx.sym_key_in, in_key.buffer, &in_key.size);
+        result = load_sym_key(&in_key);
         if(!result) {
-            goto out;
-        }
-        if(in_key.size != 16) {
-            LOG_ERR("Invalid key size, got\"%d\"", in_key.size);
             goto out;
         }
     }
