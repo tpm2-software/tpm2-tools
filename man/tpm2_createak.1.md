@@ -126,7 +126,7 @@ loaded-key:
 ## With a Resource Manager (RM)
 
 Resource managers will flush the TPM context when a tool exits, thus
-when using an RM, moving the created EK to persistent memory is
+when using a RM, moving the created EK to persistent memory is
 required.
 
 ### Create an Attestation Key and make it persistent
