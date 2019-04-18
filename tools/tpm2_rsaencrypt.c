@@ -41,6 +41,7 @@
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "tpm2_alg_util.h"
 
 typedef struct tpm_rsaencrypt_ctx tpm_rsaencrypt_ctx;
 struct tpm_rsaencrypt_ctx {
@@ -49,27 +50,27 @@ struct tpm_rsaencrypt_ctx {
     TPM2B_PUBLIC_KEY_RSA message;
     char *output_path;
     char *input_path;
+    TPMT_RSA_DECRYPT scheme;
 };
 
 static tpm_rsaencrypt_ctx ctx = {
-    .context_arg = NULL
+    .context_arg = NULL,
+    .scheme = { .scheme = TPM2_ALG_RSAES }
 };
 
 static bool rsa_encrypt_and_save(ESYS_CONTEXT *context) {
 
     bool ret = true;
     // Inputs
-    TPMT_RSA_DECRYPT scheme;
     TPM2B_DATA label;
     // Outputs
     TPM2B_PUBLIC_KEY_RSA *out_data;
 
-    scheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
     TSS2_RC rval = Esys_RSA_Encrypt(context, ctx.key_context.tr_handle,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &ctx.message, &scheme, &label, &out_data);
+                        &ctx.message, &ctx.scheme, &label, &out_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Encrypt, rval);
         return false;
@@ -96,6 +97,13 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.output_path = value;
         break;
+    case 'g':
+        ctx.scheme.scheme = tpm2_alg_util_from_optarg(value, 
+                tpm2_alg_util_flags_rsa_scheme);
+        if (ctx.scheme.scheme == TPM2_ALG_ERROR) {
+            return false;
+        }
+        break;
     }
     return true;
 }
@@ -117,9 +125,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
       {"out-file",    required_argument, NULL, 'o'},
       {"key-context", required_argument, NULL, 'c'},
+      {"scheme",      required_argument, NULL, 'g'},
     };
 
-    *opts = tpm2_options_new("o:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:c:g:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;

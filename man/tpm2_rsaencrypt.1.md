@@ -35,6 +35,14 @@ The key referenced by key-context is **required** to be:
     xxd compatible hexdump to stdout. If a file is specified, raw binary
     output is performed.
 
+  * **-g**, **--scheme**=_PADDING\_SCHEME_:
+
+    Optional, set the padding scheme (defaults to rsaes). 
+    
+    * null  - TPM_ALG_NULL
+    * rsaes - TPM_ALG_RSAES
+    * oaep  - TPM_ALG_OAEP
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

@@ -49,6 +49,7 @@ enum tpm2_alg_util_flags {
     tpm2_alg_util_flags_base        = 1 << 8,
     tpm2_alg_util_flags_misc        = 1 << 9,
     tpm2_alg_util_flags_enc_scheme  = 1 << 10,
+    tpm2_alg_util_flags_rsa_scheme  = 1 << 11,
     tpm2_alg_util_flags_any         = ~0
 };
 
