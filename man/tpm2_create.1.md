@@ -63,7 +63,7 @@ These options for creating the TPM entity:
     When **-i** is specified for sealing, `TPMA_OBJECT_SIGN_ENCRYPT` and `TPMA_OBJECT_DECRYPT`
     are removed from the default attribute set.
     The algorithm is set in a way where the the object is only good for sealing and unsealing.
-    Ie one cannot use an object for sealing and cryptography
+    I.e. one cannot use an object for sealing and cryptography
     operations.
 
   * **-i**, **--in-file**=_FILE_:
@@ -87,7 +87,7 @@ These options for creating the TPM entity:
   * **-o**, **--out-context**=_OUTPUT\_CONTEXT\_FILE_:
 
     The output file which contains the key context, optional. The key context is analogous to the context
-    file produced by **tpm2_load**(1), however is generated via a **tpm2_createloaded**(1) command. This this option
+    file produced by **tpm2_load**(1), however is generated via a **tpm2_createloaded**(1) command. This option
     can be used to avoid the normal **tpm2_create**(1) and **tpm2_load**(1) command sequences and do it all in one
     command, atomically.
 
