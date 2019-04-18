@@ -84,7 +84,7 @@ class ToolConflictor(object):
             },
             {
                 "gname": "duplication",
-                "tools-in-group": ["tpm2_import"],
+                "tools-in-group": ["tpm2_import", "tpm2_duplicate"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set()

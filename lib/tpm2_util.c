@@ -47,6 +47,8 @@
 #define FILE_PREFIX "file:"
 #define FILE_PREFIX_LEN (sizeof(FILE_PREFIX) - 1)
 
+#define NULL_OBJECT "null"
+#define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
 
 bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest, TPM2B_DATA *extraData) {
     TPM2_GENERATED magic;
@@ -650,18 +652,27 @@ tpm2_object_load_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
         outobject->path = objectstr += FILE_PREFIX_LEN;
         olrc = olrc_file;
     } else {
-        // 2. Try to load objectstr as a TPM2_HANDLE
-        bool loaded = tpm2_util_string_to_uint32(objectstr,
-                        &outobject->handle);
-        if (loaded) {
-            // we have a handle
+        // 1.b. Check for 'null'
+        bool rh_null = !strncmp(objectstr, NULL_OBJECT, NULL_OBJECT_LEN);
+        if (rh_null) {
             outobject->path = NULL;
             outobject->tr_handle = 0;
+            outobject->handle = TPM2_RH_NULL;
             olrc = olrc_handle;
-        } else {
-            // we must assume this is a file path
-            outobject->path = objectstr;
-            olrc = olrc_file;
+        } else {            
+            // 2. Try to load objectstr as a TPM2_HANDLE
+            bool loaded = tpm2_util_string_to_uint32(objectstr,
+                            &outobject->handle);
+            if (loaded) {
+                // we have a handle
+                outobject->path = NULL;
+                outobject->tr_handle = 0;
+                olrc = olrc_handle;
+            } else {
+                // we must assume this is a file path
+                outobject->path = objectstr;
+                olrc = olrc_file;
+            }
         }
     }
 
@@ -704,6 +715,11 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
 
 bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle) {
+
+    if(sys_handle == TPM2_RH_NULL) {
+        *esys_handle = ESYS_TR_RH_NULL;
+        return true;
+    }
 
     TSS2_RC ret = Esys_TR_FromTPMPublic(context, sys_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, esys_handle);

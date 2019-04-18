@@ -276,6 +276,29 @@ bool files_save_private(TPM2B_PRIVATE *private, const char *path);
 bool files_load_private(const char *path, TPM2B_PRIVATE *private);
 
 /**
+ * Serializes a TPM2B_ENCRYPTED_SECRET to the file path provided.
+ * @param encrypted_seed
+ *  The TPM2B_ENCRYPTED_SECRET to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_encrypted_seed(TPM2B_ENCRYPTED_SECRET *encrypted_seed, const char *path);
+
+/**
+ * Loads a TPM2B_ENCRYPTED_SECRET from disk.
+ * @param encrypted_seed
+ *  The path to load from.
+ * @param validation
+ *  The TPM2B_ENCRYPTED_SECRET to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_encrypted_seed(const char *path, TPM2B_ENCRYPTED_SECRET *encrypted_seed);
+
+
+/**
  * Checks a file for existence.
  * @param path
  *  The file to check for existence.
