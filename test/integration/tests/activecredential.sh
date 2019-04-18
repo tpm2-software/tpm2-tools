@@ -64,7 +64,7 @@ from __future__ import print_function
 import yaml
 
 with open('ak.out', 'r') as f:
-    doc = yaml.load(f)
+    doc = yaml.safe_load(f)
     print(doc['loaded-key']['name'])
 pyscript`
 

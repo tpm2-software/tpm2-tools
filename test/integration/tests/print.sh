@@ -78,7 +78,7 @@ import re
 import yaml
 
 with open("$print_file") as fd:
-    yaml = yaml.load(fd)
+    yaml = yaml.safe_load(fd)
 
     assert(yaml["magic"] == "ff544347")
     assert(yaml["type"] == 8018)

@@ -65,7 +65,7 @@ import yaml
 
 with open("$1") as f:
     try:
-        y = yaml.load(f)
+        y = yaml.safe_load(f)
         print(len(y))
     except yaml.YAMLError as exc:
         sys.exit(exc)
