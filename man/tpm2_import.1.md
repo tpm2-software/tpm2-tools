@@ -103,9 +103,9 @@ and skip creating it.
 
 ## Import an AES 128 key
 ```
-dd if=/dev/urandom of=sym.key bs=1 count=128
+dd if=/dev/urandom of=sym.key bs=1 count=16
 
-tpm2_import -C parent.ctx -i sym.key -q key.pub -r key.priv
+tpm2_import -C parent.ctx -i sym.key -u key.pub -r key.priv
 ```
 
 ## Import an RSA key
