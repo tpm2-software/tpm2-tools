@@ -42,7 +42,7 @@ import yaml
 
 with open("$1") as f:
     try:
-        y = yaml.load(f)
+        y = yaml.safe_load(f)
         for alg, details in y.iteritems():
             if $2:
                 print(alg)
@@ -109,7 +109,7 @@ import yaml
 
 with open("$1") as f:
     try:
-        y = yaml.load(f)
+        y = yaml.safe_load(f)
     except yaml.YAMLError as exc:
         sys.exit(exc)
 pyscript
@@ -136,7 +136,7 @@ import yaml
 
 with open("$1") as f:
     try:
-        y = yaml.load(f)
+        y = yaml.safe_load(f)
         if $# == 3:
             print(y[$2][$third_arg])
         else:
