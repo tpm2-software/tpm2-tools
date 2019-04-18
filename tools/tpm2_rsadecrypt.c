@@ -42,6 +42,7 @@
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
+#include "tpm2_alg_util.h"
 
 typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;
 struct tpm_rsadecrypt_ctx {
@@ -60,19 +61,19 @@ struct tpm_rsadecrypt_ctx {
     char *key_auth_str;
     const char *context_arg;
     tpm2_loaded_object key_context_object;
+    TPMT_RSA_DECRYPT scheme;
 };
 
 tpm_rsadecrypt_ctx ctx = {
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
+    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+    .scheme = { .scheme = TPM2_ALG_RSAES }
 };
 
 static bool rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
-    TPMT_RSA_DECRYPT inScheme;
     TPM2B_DATA label;
     TPM2B_PUBLIC_KEY_RSA *message;
 
-    inScheme.scheme = TPM2_ALG_RSAES;
     label.size = 0;
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
@@ -84,7 +85,7 @@ static bool rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval = Esys_RSA_Decrypt(ectx, ctx.key_context_object.tr_handle,
                         shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &ctx.cipher_text, &inScheme, &label, &message);
+                        &ctx.cipher_text, &ctx.scheme, &label, &message);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Decrypt, rval);
         return false;
@@ -123,6 +124,13 @@ static bool on_option(char key, char *value) {
         ctx.flags.o = 1;
         break;
     }
+    case 'g':
+        ctx.scheme.scheme = tpm2_alg_util_from_optarg(value, 
+                tpm2_alg_util_flags_rsa_scheme);
+        if (ctx.scheme.scheme == TPM2_ALG_ERROR) {
+            return false;
+        }
+        break;
     }
     return true;
 }
@@ -134,9 +142,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "in-file",      required_argument, NULL, 'i' },
       { "out-file",     required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
+      { "scheme",       required_argument, NULL, 'g' },
     };
 
-    *opts = tpm2_options_new("p:i:o:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:i:o:c:g:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

@@ -80,4 +80,25 @@ tpm2_load -Q -C $file_primary_key_ctx -u $file_rsaencrypt_key_pub -r $file_rsaen
 
 tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -i  $file_rsa_en_output_data -o  $file_rsa_de_output_data
 
+# Test the diffeent padding schemes ...
+
+tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data  -g rsaes < $file_input_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -i  $file_rsa_en_output_data -o  $file_rsa_de_output_data -g rsaes
+
+tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data  -g null < $file_input_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -i  $file_rsa_en_output_data -o  $file_rsa_de_output_data -g null
+
+trap - ERR
+tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data  -g oaep < $file_input_data
+if [ $? -eq 0 ]; then
+    echo "tpm2_rsaencrypt should fail with 'hash algorithm not supported or not appropriate'"
+    exit 1
+fi
+
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -i  $file_rsa_en_output_data -o  $file_rsa_de_output_data -g oaep
+if [ $? -eq 0 ]; then
+    echo "tpm2_rsadecrypt should fail with 'hash algorithm not supported or not appropriate'"
+    exit 1
+fi
+
 exit 0
