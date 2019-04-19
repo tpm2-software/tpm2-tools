@@ -340,6 +340,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policyor.1 \
     man/man1/tpm2_policypassword.1 \
     man/man1/tpm2_policysecret.1 \
+    man/man1/tpm2_print.1 \
     man/man1/tpm2_quote.1 \
     man/man1/tpm2_rc_decode.1 \
     man/man1/tpm2_readpublic.1 \
