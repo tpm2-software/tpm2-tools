@@ -16,4 +16,3 @@ For instance, to set The fields **TPMA_OBJECT_FIXEDTPM**,
 would be:
 
 **fixedtpm|noda|sign**
-
