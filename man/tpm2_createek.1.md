@@ -93,7 +93,7 @@ required.
 
 ### Create an Endorsement Key and make it persistent
 ```
-tpm2_createek -e abc123 -w abc123 -P passwd -H 0x81010001 -g rsa -o ek.pub
+tpm2_createek -e abc123 -w abc123 -P passwd -H 0x81010001 -G rsa -o ek.pub
 ```
 
 ## Without a Resource Manager (RM)
@@ -104,12 +104,12 @@ EK is in transient memory and thus will be flushed.
 
 ### Create an Endorsement Key and make it transient
 ```
-tpm2_createek -g rsa
+tpm2_createek -G rsa
 ```
 
 ### Create a transient Endorsement Key, flush it, and reload it.
 ```
-tpm2_createek -g rsa -p ek.pub
+tpm2_createek -G rsa -p ek.pub
 
 # Check that it is loaded in transient memory
 tpm2_getcap -c handles-transient
