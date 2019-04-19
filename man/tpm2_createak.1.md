@@ -75,7 +75,7 @@ loaded-key:
 
   * **-D**, **--digest-alg**=_HASH\_ALGORITHM_:
 
-    Like **-g**, but specifies the digest algorithm used for signing.
+    Like **-G**, but specifies the digest algorithm used for signing.
     Algorithms should follow the
     "formatting standards", see section "Algorithm Specifiers".
     See section "Supported Hash Algorithms" for a list of supported hash
@@ -83,7 +83,7 @@ loaded-key:
 
   * **-s**, **--sign-alg**=_SIGN\_ALGORITHM_:
 
-    Like **-g** but specifies signing algorithm. Algorithms should follow the
+    Like **-G** but specifies signing algorithm. Algorithms should follow the
     "formatting standards", see section "Algorithm Specifiers".
     See section "Supported Signing Algorithms" for a list of supported
     signing algorithms.
@@ -132,7 +132,7 @@ required.
 ### Create an Attestation Key and make it persistent
 ```
 # create an Endorsement Key (EK)
-tpm2_createek -c 0x81010001 -g rsa -p ek.pub
+tpm2_createek -c 0x81010001 -G rsa -p ek.pub
 # create an Attestation Key (AK) passing the EK handle
 tpm2_createak -C 0x81010001 -k 0x81010002 -p ak.pub -n ak.name
 ```
@@ -154,7 +154,7 @@ tpm2_createak -C ek.ctx -w ak.ctx -p ak.pub -n ak.name
 loaded-key:
   name: 000b8052c63861b1855c91edd63bca2eb3ea3ad304bb9798a9445ada12d5b5bb36e0
 
-tpm2_createek -g rsa -p ek.pub -c ek.ctx
+tpm2_createek -G rsa -p ek.pub -c ek.ctx
 
 # Check that the AK is loaded in transient memory
 # Note the AK is at handle 0x80000001
