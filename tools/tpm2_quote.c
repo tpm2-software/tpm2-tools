@@ -50,7 +50,7 @@ typedef struct {
     UINT32 id[24];
 } PCR_LIST;
 
-static TPMS_AUTH_COMMAND sessionData;
+static TPMS_AUTH_COMMAND sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
 static char *outFilePath;
 static char *signature_path;
 static char *message_path;
@@ -60,7 +60,7 @@ static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
 static bool is_auth_session;
 static TPMI_SH_AUTH_SESSION auth_session_handle;
-static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag;
+static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag, P_flag;
 static char *contextFilePath;
 static TPM2_HANDLE akHandle;
 
@@ -94,7 +94,7 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
 {
     UINT32 rval;
     TPMT_SIG_SCHEME inScheme;
-    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, {{.sessionHandle=TPM2_RS_PW}}};
+    TSS2L_SYS_AUTH_COMMAND sessionsData = { 1, { sessionData }};
     TSS2L_SYS_AUTH_RESPONSE sessionsDataOut;
     TPM2B_ATTEST quoted = TPM2B_TYPE_INIT(TPM2B_ATTEST, attestationData);
     TPMT_SIGNATURE signature;
@@ -152,6 +152,7 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Invalid AK password, got\"%s\"", value);
             return false;
         }
+        P_flag = 1;
     } break;
     case 'l':
         if(!pcr_parse_list(value, strlen(value), &pcrSelections.pcrSelections[0]))
@@ -263,6 +264,10 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
         if (!result) {
             return 1;
         }
+    }
+
+    if (P_flag == 0) {
+        sessionData.hmac.size = 0;
     }
 
     return quote(sapi_context, akHandle, &pcrSelections);

@@ -50,6 +50,7 @@ file_quote_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_crea
 Handle_ak_quote=0x81010016
 Handle_ek_quote=0x81010017
 Handle_ak_quote2=0x81010018
+Handle_ak_quote3=0x81010019
 
 maxdigest=$(tpm2_getcap -c properties-fixed | grep TPM_PT_MAX_DIGEST | sed -r -e 's/.*(0x[0-9a-f]+)/\1/g')
 if ! [[ "$maxdigest" =~ ^(0x)*[0-9]+$ ]] ; then
@@ -73,6 +74,7 @@ cleanup() {
     tpm2_evictcontrol -Q -Ao -H $Handle_ek_quote 2>/dev/null || true
     tpm2_evictcontrol -Q -Ao -H $Handle_ak_quote 2>/dev/null || true
     tpm2_evictcontrol -Q -Ao -H $Handle_ak_quote2 2>/dev/null || true
+    tpm2_evictcontrol -Q -Ao -H $Handle_ak_quote3 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -103,5 +105,10 @@ tpm2_getpubek -Q -H  $Handle_ek_quote -g 0x01 -f ek.pub2
 tpm2_getpubak -Q -E  $Handle_ek_quote -k  $Handle_ak_quote2 -f ak.pub2 -n ak.name_2
 
 tpm2_quote -Q -k $Handle_ak_quote -g $alg_quote -l 16,17,18 -q $nonce
+
+#####AK with password
+tpm2_getpubak -Q -E  $Handle_ek_quote -k  $Handle_ak_quote3 -f ak.pub2 -n ak.name_2 -P abc123
+
+tpm2_quote -Q -k $Handle_ak_quote3 -g $alg_quote -l 16,17,18 -q $nonce -P abc123
 
 exit 0
