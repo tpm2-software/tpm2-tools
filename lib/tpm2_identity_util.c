@@ -350,7 +350,7 @@ static bool aes_encrypt_buffers(TPMT_SYM_DEF_OBJECT *sym, uint8_t *encryption_ke
 
         int output_len = total_len - offset;
 
-        rc = EVP_EncryptUpdate(ctx, &cipher_text->buffer[offset], &output_len - offset, b, l);
+        rc = EVP_EncryptUpdate(ctx, &cipher_text->buffer[offset], &output_len, b, l);
         if (!rc) {
             LOG_ERR("Encrypt failed");
             goto out;
