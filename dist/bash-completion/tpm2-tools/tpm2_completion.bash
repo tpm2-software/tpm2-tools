@@ -7,7 +7,7 @@ _tpm2_tools()
     local common_options=(-h --help -v --version -V --verbose -Q --quiet -Z --enable-errata -T --tcti=)
     local aux1=$( ${COMP_WORDS[0]} -h no-man 2>/dev/null )
     local aux2=$( echo "${aux1}" | tr "[]|" " " | awk '{if(NR>2)print}' | tr " " "\n" | sed 's/=<value>//')
-    suggestions=("${aux2[@]}" "${common_options[@]}") #generate all the opts for the tool
+    local suggestions=("${aux2[@]}" "${common_options[@]}") #generate all the opts for the tool
     local halg=(sha1 sha256 sha384 sha512 sm3_256)
     local public_object_alg=(rsa keyedhash ecc 0x25 symcipher)
     local signing_alg=(hmac rsassa rsapss ecdsa ecdaa sm2 ecschnorr)
@@ -119,7 +119,17 @@ _tpm2_tools()
     $split && return
 
     if [[ "$cur" == -* ]]; then #start completion
-        _exclude_completed_opts
+        # exclude the already completed options from the suggested completions
+        # e.g. if -T is already provided, the system will offer you --tcti=, but no -T
+        local len=$(($COMP_CWORD - 1))
+        local i
+        for ((i=1 ; i<=len; i++)) ; do
+            local aux="${COMP_WORDS[$i]}"
+            if [[ $aux == -* ]] ; then
+                (( i<len )) && [[ ${COMP_WORDS[$(( i + 1))]} == '=' ]] && aux="$aux="
+                suggestions=( "${suggestions[@]/$aux}" )
+            fi
+        done
         COMPREPLY=( $( compgen -W '$( echo ${suggestions[@]} )' -- "$cur" ) )
         [[ $COMPREPLY == *= ]] && compopt -o nospace
         return
@@ -128,18 +138,5 @@ _tpm2_tools()
     COMPREPLY=( $( compgen -W '$( echo ${suggestions[@]} )' -- "$cur" ) )
 } &&
 complete -F _tpm2_tools ${COMP_WORDS[0]##*/}
-
-#function used to exlude the already completed options from the suggested completions
-_exclude_completed_opts() {
-  local len=$(($COMP_CWORD - 1))
-  local i
-  for ((i=1 ; i<=len; i++)) ; do
-      local aux="${COMP_WORDS[$i]}"
-      if [[ $aux == -* ]] ; then
-          (( i<len )) && [[ ${COMP_WORDS[$(( i + 1))]} == '=' ]] && aux="$aux="
-          suggestions=( "${suggestions[@]/$aux}" )
-      fi
-  done
-}
 
 # ex: filetype=sh
