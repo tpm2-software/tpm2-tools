@@ -5,9 +5,6 @@ _tpm2_tools()
     local cur prev words cword split
     _init_completion -s || return
     local common_options=(-h --help -v --version -V --verbose -Q --quiet -Z --enable-errata -T --tcti=)
-    local aux1=$( ${COMP_WORDS[0]} -h no-man 2>/dev/null )
-    local aux2=$( echo "${aux1}" | tr "[]|" " " | awk '{if(NR>2)print}' | tr " " "\n" | sed 's/=<value>//')
-    local suggestions=("${aux2[@]}" "${common_options[@]}") #generate all the opts for the tool
     local halg=(sha1 sha256 sha384 sha512 sm3_256)
     local public_object_alg=(rsa keyedhash ecc 0x25 symcipher)
     local signing_alg=(hmac rsassa rsapss ecdsa ecdaa sm2 ecschnorr)
@@ -117,6 +114,10 @@ _tpm2_tools()
 
     esac
     $split && return
+
+    local aux1=$( ${COMP_WORDS[0]} -h no-man 2>/dev/null )
+    local aux2=$( echo "${aux1}" | tr "[]|" " " | awk '{if(NR>2)print}' | tr " " "\n" | sed 's/=<value>//')
+    local suggestions=("${aux2[@]}" "${common_options[@]}") #generate all the opts for the tool
 
     if [[ "$cur" == -* ]]; then #start completion
         # exclude the already completed options from the suggested completions
