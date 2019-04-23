@@ -14,55 +14,45 @@ _tpm2_tools()
     case $prev in
       -g | --halg)
           if [[ "${COMP_WORDS[0]}" != "tpm2_createek" && "${COMP_WORDS[0]}" != "tpm2_getmanufec" && "${COMP_WORDS[0]}" != "tpm2_createak" ]]; then
-            suggestions=( $( compgen -W "${halg[*]}" -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W "${halg[*]}" -- "$cur") )
           else
-            suggestions=( $( compgen -W "${public_object_alg[*]}" -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W "${public_object_alg[*]}" -- "$cur") )
           fi
           return;;
       -G | --kalg)
           if [[  "${COMP_WORDS[0]}" != "tpm2_import"  && "${COMP_WORDS[0]}" != "tpm2_quote" ]]; then
-            suggestions=( $( compgen -W "${public_object_alg[*]}" -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W "${public_object_alg[*]}" -- "$cur") )
           else
-            suggestions=( $( compgen -W "${halg[*]}" -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W "${halg[*]}" -- "$cur") )
           fi
           return;;
       -D | --digest-alg)
           if [[  "${COMP_WORDS[0]}" == "tpm2_createak" ]]; then
-            suggestions=( $( compgen -W "${halg[*]}" -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W "${halg[*]}" -- "$cur") )
           else
             _filedir
           fi
           return;;
 
       -h | --help)
-          suggestions=( $( compgen -W 'man no-man' -- "$cur" ) )
-          COMPREPLY=("${suggestions[@]}")
+          COMPREPLY=( $(compgen -W 'man no-man' -- "$cur") )
           return;;
       -T | --tcti)
-          suggestions=( $( compgen -W "${tcti_opts[*]}" -- "$cur" ) )
-          COMPREPLY=("${suggestions[@]}")
+          COMPREPLY=( $(compgen -W "${tcti_opts[*]}" -- "$cur") )
           [[ $COMPREPLY == *: ]] && compopt -o nospace
           return;;
       -f)
           if [[ "${COMP_WORDS[0]}" == "tpm2_activatecredential" || "${COMP_WORDS[0]}" == "print" ]]; then
             _filedir
           elif [[ "${COMP_WORDS[0]}" == "tpm2_quote" || "${COMP_WORDS[0]}" == "tpm2_sign" ]]; then
-            suggestions=( $( compgen -W 'plain tss' -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W 'plain tss' -- "$cur") )
           elif [[ "${COMP_WORDS[0]}" == "tpm2_verifysignature" ]]; then
-            suggestions=( $( compgen -W "${signing_schemes[*]}" -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W "${signing_schemes[*]}" -- "$cur") )
           fi
           return;;
       -s)
           if [[ "${COMP_WORDS[0]}" == "tpm2_createak" ]]; then
-            suggestions=( $( compgen -W "${signing_alg[*]}" -- "$cur" ) )
-            COMPREPLY=("${suggestions[@]}")
+            COMPREPLY=( $(compgen -W "${signing_alg[*]}" -- "$cur") )
           elif [["${COMP_WORDS[0]}" == "tpm2_verifysignature" ]];then
             _filedir
           fi
@@ -131,7 +121,7 @@ _tpm2_tools()
                 suggestions=( "${suggestions[@]/$aux}" )
             fi
         done
-        COMPREPLY=( $( compgen -W '$( echo ${suggestions[@]} )' -- "$cur" ) )
+        COMPREPLY=( $(compgen -W '$( echo ${suggestions[@]} )' -- "$cur") )
         [[ $COMPREPLY == *= ]] && compopt -o nospace
         return
     fi
