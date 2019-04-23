@@ -114,25 +114,6 @@ bool tpm2_hierarchy_from_optarg(const char *value,
     return result;
 }
 
-ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh) {
-
-    switch (inh) {
-    case TPM2_RH_OWNER:
-        return ESYS_TR_RH_OWNER;
-        break;
-    case TPM2_RH_PLATFORM:
-        return ESYS_TR_RH_PLATFORM;
-        break;
-    case TPM2_RH_ENDORSEMENT:
-        return ESYS_TR_RH_ENDORSEMENT;
-        break;
-    case TPM2_RH_NULL:
-        return ESYS_TR_RH_NULL;
-        break;
-    }
-    return ESYS_TR_NONE;
-}
-
 bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
         TPMS_AUTH_COMMAND *sdata,
         tpm2_session *sess,

@@ -592,9 +592,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         tpm2_tool_output("ak-persistent-handle: 0x%x\n", ctx.ak.in.handle);
     }
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
                                 &ctx.ek.ek_ctx);
-    if (olrc == olrc_error) {
+    if (!result) {
         return 1;
     }
 

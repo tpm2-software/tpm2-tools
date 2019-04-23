@@ -195,17 +195,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx,
+    result = tpm2_util_object_load(ectx,
                                 ctx.context_arg, &ctx.context_object);
-    if (olrc == olrc_error) {
+    if (!result) {
         goto out;
-    } else if (!ctx.context_object.tr_handle) {
-        result = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.context_object.handle,
-                    &ctx.context_object.tr_handle);
-        if (!result) {
-            goto out;
-        }
     }
 
     int tmp_rc = load(ectx);

@@ -162,13 +162,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool init(ESYS_CONTEXT *context) {
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(context,
+    return tpm2_util_object_load(context,
                                 ctx.context_arg, &ctx.context_object);
-    if (olrc == olrc_error) {
-        return false;
-    }
-
-    return true;
 }
 
 int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {

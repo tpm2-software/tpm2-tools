@@ -160,17 +160,10 @@ static bool init(ESYS_CONTEXT *ectx) {
     /*
      * load tpm context from a file if -c is provided
      */
-    bool result;
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.key_context);
-    if (olrc == olrc_error) {
+    if (!result) {
         return false;
-    } else if (!ctx.key_context.tr_handle) {
-        result = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.key_context.handle, &ctx.key_context.tr_handle);
-        if (!result) {
-            return false;
-        }
     }
 
     /*

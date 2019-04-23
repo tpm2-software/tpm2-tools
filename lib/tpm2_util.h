@@ -126,13 +126,6 @@ typedef struct {
     BYTE buffer[0];
 } TPM2B;
 
-typedef enum tpm2_object_load_rc tpm2_object_load_rc;
-enum tpm2_object_load_rc {
-    olrc_error     = 0,      /* an error has occurred */
-    olrc_handle   = 1 << 0,  /* successfully loaded a private portion of object */
-    olrc_file    = 1 << 1,   /* successfully loaded a public portion of object */
-};
-
 typedef struct tpm2_loaded_object tpm2_loaded_object;
 struct tpm2_loaded_object {
     TPM2_HANDLE handle;
@@ -375,8 +368,11 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent);
  * @param outobject
  * A *tpm2_loaded_object* with a loaded handle. The path member will also be
  * set when the *objectstr* is a context file.
+ * @return
+ *  True on success false on error.
+ *
  */
-tpm2_object_load_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
+bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
                         const char *objectstr, tpm2_loaded_object *outobject);
 
 /**
@@ -423,5 +419,12 @@ bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
  */
 bool tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
         ESYS_TR esys_handle, TPM2_HANDLE *sys_handle);
+
+/**
+ * Map a TPMI_RH_PROVISION to the corresponding ESYS_TR constant
+ * @param inh
+ *  The hierarchy to map
+ */
+ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh);
 
 #endif /* STRING_BYTES_H */

@@ -154,9 +154,9 @@ static bool init(ESYS_CONTEXT *context) {
     TPM2B *msg = NULL;
     bool return_value = false;
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(context, ctx.context_arg,
+    bool result = tpm2_util_object_load(context, ctx.context_arg,
                                 &ctx.key_context_object);
-    if (olrc == olrc_error) {
+    if (!result) {
         return false;
     }
 

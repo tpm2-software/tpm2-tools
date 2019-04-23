@@ -47,6 +47,8 @@
 #define FILE_PREFIX "file:"
 #define FILE_PREFIX_LEN (sizeof(FILE_PREFIX) - 1)
 
+#define NULL_OBJECT "null"
+#define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
 
 bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest, TPM2B_DATA *extraData) {
     TPM2_GENERATED magic;
@@ -633,49 +635,46 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     }
 }
 
-tpm2_object_load_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
+bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
                         const char *objectstr, tpm2_loaded_object *outobject) {
 
     // 0. If objecstr is NULL return error
     if (!objectstr) {
         LOG_ERR("tpm2_util_object_load called with empty objectstr parameter");
-        return olrc_error;
+        return false;
     }
-
-    tpm2_object_load_rc olrc;
 
     // 1. If the objectstr starts with a file: prefix, treat as a context file
     bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
     if (starts_with_file) {
+        outobject->handle = 0;
         outobject->path = objectstr += FILE_PREFIX_LEN;
-        olrc = olrc_file;
-    } else {
-        // 2. Try to load objectstr as a TPM2_HANDLE
-        bool loaded = tpm2_util_string_to_uint32(objectstr,
-                        &outobject->handle);
-        if (loaded) {
-            // we have a handle
-            outobject->path = NULL;
-            outobject->tr_handle = 0;
-            olrc = olrc_handle;
-        } else {
-            // we must assume this is a file path
-            outobject->path = objectstr;
-            olrc = olrc_file;
-        }
+        return files_load_tpm_context_from_path(ctx,
+                &outobject->tr_handle, outobject->path);
     }
 
-    // 3. if we have a context file, attempt to load it into the TPM
-    if (olrc == olrc_file) {
-        bool loaded = files_load_tpm_context_from_path(ctx,
-                       &outobject->tr_handle, outobject->path);
-        if (!loaded) {
-            LOG_ERR("Could not load context file at path: \"%s\"", objectstr);
-            olrc = olrc_error;
-        }
+    // 2. If the objstr is NULL set the handle to RH_NULL
+    bool is_rh_null = !strncmp(objectstr, NULL_OBJECT, NULL_OBJECT_LEN);
+    if (is_rh_null){
+        outobject->path = NULL;
+        outobject->tr_handle = ESYS_TR_RH_NULL;
+        outobject->handle = TPM2_RH_NULL;
+        return true;
     }
 
-    return olrc;
+    // 3. Try to load objectstr as a TPM2_HANDLE
+    bool result = tpm2_util_string_to_uint32(objectstr,
+                    &outobject->handle);
+    if (result) {
+        outobject->path = NULL;
+        return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle, &outobject->tr_handle);
+    }
+
+    // 4. we must assume the whole value is a file path
+    outobject->handle = 0;
+    outobject->path = objectstr;
+    return files_load_tpm_context_from_path(ctx,
+            &outobject->tr_handle, outobject->path);
 }
 
 bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,
@@ -702,8 +701,33 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
     return true;
 }
 
+ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh) {
+
+    switch (inh) {
+    case TPM2_RH_OWNER:
+        return ESYS_TR_RH_OWNER;
+        break;
+    case TPM2_RH_PLATFORM:
+        return ESYS_TR_RH_PLATFORM;
+        break;
+    case TPM2_RH_ENDORSEMENT:
+        return ESYS_TR_RH_ENDORSEMENT;
+        break;
+    case TPM2_RH_NULL:
+        return ESYS_TR_RH_NULL;
+        break;
+    }
+    return ESYS_TR_NONE;
+}
+
 bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle) {
+
+    ESYS_TR h = tpm2_tpmi_hierarchy_to_esys_tr(sys_handle);
+    if (h != ESYS_TR_NONE) {
+        *esys_handle = h;
+        return true;
+    }
 
     TSS2_RC ret = Esys_TR_FromTPMPublic(context, sys_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, esys_handle);

@@ -125,13 +125,6 @@ bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *context,
         tpm2_hierarchy_pdata *objdata);
 
 /**
- * Map a TPMI_RH_PROVISION to the corresponding ESYS_TR constant
- * @param inh
- *  The hierarchy to map
- */
-ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh);
-
-/**
  * Free allocated memory in a tpm2_hierarchy_pdata structure
  *
  * @param objdata

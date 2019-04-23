@@ -290,17 +290,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.key_context_object);
-    if (olrc == olrc_error) {
+    if (!result) {
         goto out;
-    } else if (!ctx.key_context_object.tr_handle) {
-        result = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.key_context_object.handle, 
-                    &ctx.key_context_object.tr_handle);
-        if (!result) {
-            goto out;
-        }
     }
 
     result = do_hmac_and_output(ectx);
