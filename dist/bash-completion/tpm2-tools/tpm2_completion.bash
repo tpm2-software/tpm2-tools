@@ -1,14 +1,9 @@
-#!/bin/sh
-# bash completion for tmp2-tools                                 -*- shell-script -*-
-
+# bash completion for tmp2-tools                           -*- shell-script -*-
 
 _tpm2_tools()
 {
-
-
-
-    local cur prev words cword
-    _init_completion || return
+    local cur prev words cword split
+    _init_completion -s || return
     local common_options=(-h --help -v --version -V --verbose -Q --quiet -Z --enable-errata -T --tcti=)
     local aux1=$( ${COMP_WORDS[0]} -h no-man 2>/dev/null )
     local aux2=$( echo "${aux1}" | tr "[]|" " " | awk '{if(NR>2)print}' | tr " " "\n" | sed 's/=<value>//')
@@ -18,7 +13,6 @@ _tpm2_tools()
     local signing_alg=(hmac rsassa rsapss ecdsa ecdaa sm2 ecschnorr)
     local signing_schemes=(hmac rsassa rsaes rsapss oeap)
     local tcti_opts=(device: mssim: abrmd:)
-
 
     case $prev in
       -g | --halg)
@@ -49,7 +43,7 @@ _tpm2_tools()
           return;;
 
       -h | --help)
-          suggestions=( $( compgen -W 'summary manpage' -- "$cur" ) )
+          suggestions=( $( compgen -W 'man no-man' -- "$cur" ) )
           COMPREPLY=("${suggestions[@]}")
           return;;
       -T | --tcti)
@@ -122,6 +116,7 @@ _tpm2_tools()
          return;;
 
     esac
+    $split && return
 
     if [[ "$cur" == -* ]]; then #start completion
         _exclude_completed_opts
@@ -131,9 +126,7 @@ _tpm2_tools()
     fi
 
     COMPREPLY=( $( compgen -W '$( echo ${suggestions[@]} )' -- "$cur" ) )
-
-}
-
+} &&
 complete -F _tpm2_tools ${COMP_WORDS[0]##*/}
 
 #function used to exlude the already completed options from the suggested completions
@@ -148,3 +141,5 @@ _exclude_completed_opts() {
       fi
   done
 }
+
+# ex: filetype=sh
