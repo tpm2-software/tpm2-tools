@@ -128,12 +128,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int rc = 1;
-    bool result;
-    tpm2_object_load_rc olrc;
 
-    olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
                 &ctx.context_object);
-    if (olrc == olrc_error) {
+    if (!result) {
         goto out;
     }
 

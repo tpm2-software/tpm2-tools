@@ -420,16 +420,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * Load the parent public file, or read it from the TPM if not specified.
      * We need this information for encrypting the protection seed.
      */
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
+    result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
                                 &parent_ctx);
-    if (olrc == olrc_error) {
+    if (!result) {
       goto out;
-    } else if (!parent_ctx.tr_handle) {
-        result = tpm2_util_sys_handle_to_esys_handle(ectx, parent_ctx.handle,
-                    &parent_ctx.tr_handle);
-        if (!result) {
-            goto out;
-        }
     }
 
     TPM2B_PUBLIC ppub = TPM2B_EMPTY_INIT;

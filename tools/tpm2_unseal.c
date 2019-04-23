@@ -140,22 +140,14 @@ static bool init(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    bool retval;
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
-    if (olrc == olrc_error) {
+    if (!result) {
         return false;
-    } else if (!ctx.context_object.tr_handle) {
-        retval = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.context_object.handle,
-                    &ctx.context_object.tr_handle);
-        if (!retval) {
-            return false;
-        }
     }
 
     if (ctx.flags.L) {
-        bool result = start_auth_session(ectx);
+        result = start_auth_session(ectx);
         if (!result) {
             return false;
         }

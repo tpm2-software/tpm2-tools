@@ -432,9 +432,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.ctx_obj.handle);
     } else if (ctx.context_arg) {
-        tpm2_object_load_rc olrc = tpm2_util_object_load(ectx,
-                                    ctx.context_arg, &ctx.ctx_obj);
-        if (olrc == olrc_error) {
+        ret = tpm2_util_string_to_uint32(ctx.context_arg,
+                        &ctx.ctx_obj.handle);
+        if (!ret) {
             goto out;
         }
     }

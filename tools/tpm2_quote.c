@@ -366,16 +366,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
-    if (olrc == olrc_error) {
+    if (!result) {
         goto out;
-    } else if (!ctx.context_object.tr_handle) {
-        bool ok = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.context_object.handle, &ctx.context_object.tr_handle);
-        if (!ok) {
-            goto out;
-        }
     }
 
     result = pcr_get_banks(ectx, &ctx.cap_data, &ctx.algs);

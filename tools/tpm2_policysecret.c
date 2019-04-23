@@ -163,23 +163,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
-    if (olrc == olrc_error) {
+    if (!result) {
         goto out;
-    }
-    if (!ctx.context_object.tr_handle) {
-        // the handle can be a hierarchy
-        ctx.context_object.tr_handle =
-            tpm2_tpmi_hierarchy_to_esys_tr(ctx.context_object.handle);
-        if (ctx.context_object.tr_handle == ESYS_TR_NONE) {
-            result = tpm2_util_sys_handle_to_esys_handle(ectx,
-                        ctx.context_object.handle,
-                        &ctx.context_object.tr_handle);
-            if (!result) {
-                goto out;
-            }
-        }
     }
 
     if (ctx.flags.p) {

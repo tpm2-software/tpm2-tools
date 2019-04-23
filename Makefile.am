@@ -208,8 +208,7 @@ check_PROGRAMS = \
     test/unit/test_tpm2_session \
     test/unit/test_tpm2_policy \
     test/unit/test_tpm2_hierarchy \
-    test/unit/test_tpm2_error \
-    test/unit/test_tpm2_util
+    test/unit/test_tpm2_error
 
 TESTS += $(ALL_SYSTEM_TESTS)
 
@@ -261,8 +260,6 @@ test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LDADD)
-test_unit_test_tpm2_util_CFLAGS	   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_util_LDADD     = $(CMOCKA_LIBS) $(LDADD)
 
 AM_TESTS_ENVIRONMENT =	\
 	TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD; \

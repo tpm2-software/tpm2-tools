@@ -287,29 +287,16 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    bool res;
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.ctx_arg,
+    bool res = tpm2_util_object_load(ectx, ctx.ctx_arg,
                                 &ctx.ctx_obj);
-    if (olrc == olrc_error) {
+    if (!res) {
         return 1;
-    } else if (!ctx.ctx_obj.tr_handle) {
-        res = tpm2_util_sys_handle_to_esys_handle(ectx, ctx.ctx_obj.handle,
-                &ctx.ctx_obj.tr_handle);
-        if (!res) {
-            return 1;
-        }
     }
 
-    olrc = tpm2_util_object_load(ectx, ctx.key_ctx_arg,
+    res = tpm2_util_object_load(ectx, ctx.key_ctx_arg,
                 &ctx.key_ctx_obj);
-    if (olrc == olrc_error) {
+    if (!res) {
         return 1;
-    } else if (!ctx.key_ctx_obj.tr_handle) {
-        res = tpm2_util_sys_handle_to_esys_handle(ectx, ctx.key_ctx_obj.handle,
-                &ctx.key_ctx_obj.tr_handle);
-        if (!res) {
-            return 1;
-        }
     }
 
     if (ctx.flags.P) {

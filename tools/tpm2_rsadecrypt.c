@@ -159,19 +159,8 @@ static bool init(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    tpm2_object_load_rc olrc = tpm2_util_object_load(ectx, ctx.context_arg,
+    return tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.key_context_object);
-    if (olrc == olrc_error) {
-        return false;
-    } else if (!ctx.key_context_object.tr_handle) {
-        bool res = tpm2_util_sys_handle_to_esys_handle(ectx, ctx.key_context_object.handle,
-                &ctx.key_context_object.tr_handle);
-        if (!res) {
-            return false;
-        }
-    }
-
-   return true;
 }
 
 int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
