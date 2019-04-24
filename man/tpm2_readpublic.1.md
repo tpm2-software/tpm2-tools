@@ -16,7 +16,7 @@
 
 # OPTIONS
 
-  * **-c**, **--context-object**=_OBJECT\_CONTEXT_:
+  * **-c**, **--context**=_OBJECT\_CONTEXT_:
 
     Context object for the object to read. Either a file or a handle number.
     See section "Context Object Format".
