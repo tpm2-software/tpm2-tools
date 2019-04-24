@@ -77,15 +77,18 @@ struct tpm_import_ctx {
         tpm2_session *session;
     } auth;
     char *input_key_file;
-    char *import_key_public_file;
-    char *import_key_private_file;
+    char *public_key_file;
+    char *private_key_file;
     char *parent_key_public_file;
     char *name_alg;
     char *attrs; /* The attributes to use */
     char *key_auth_str;
     char *parent_auth_str;
     char *auth_key_file; /* an optional auth string for the input key file for OSSL */
-
+    char *input_seed_file;
+    char *input_enc_key_file;
+    char *policy;
+    bool import_tpm; /* Any param that is exclusively used by import tpm object sets this flag */
     TPMI_ALG_PUBLIC key_type;
     const char *parent_ctx_arg;
 };
@@ -193,7 +196,8 @@ static bool do_import(ESYS_CONTEXT *ectx,
 
     TSS2_RC rval = Esys_Import(ectx, phandle,
                     shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                    enc_sensitive_key, public, private, encrypted_seed, sym_alg,
+                    enc_sensitive_key,
+                    public, private, encrypted_seed, sym_alg,
                     imported_private);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Import, rval);
@@ -312,17 +316,29 @@ static bool on_option(char key, char *value) {
     case 'K':
         ctx.parent_key_public_file = value;
         break;
+    case 'k':
+        ctx.import_tpm = true;
+        ctx.input_enc_key_file = value;
+        break;
     case 'u':
-        ctx.import_key_public_file = value;
+        ctx.public_key_file = value;
         break;
     case 'r':
-        ctx.import_key_private_file = value;
+        ctx.private_key_file = value;
         break;
     case 'b':
         ctx.attrs = value;
         break;
     case 'g':
         ctx.name_alg = value;
+        break;
+    case 's':
+        ctx.import_tpm = true;
+        ctx.input_seed_file = value;
+        break;
+    case 'L':
+        ctx.import_tpm = true;
+        ctx.policy = value;
         break;
     case 0:
         ctx.auth_key_file = value;
@@ -348,10 +364,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "pubkey",             required_argument, NULL, 'u'},
       { "object-attributes",  required_argument, NULL, 'b'},
       { "halg",               required_argument, NULL, 'g'},
+      { "seed",               required_argument, NULL, 's'},
+      { "policy-file",        required_argument, NULL, 'L'},
+      { "sym-alg-file",       required_argument, NULL, 'k'},
       { "passin",             required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:b:g:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:b:g:s:L:k:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -366,26 +385,53 @@ static int check_options(void) {
 
     int rc = 0;
 
+    /* Check the tpm import specific options */
+    if(ctx.import_tpm) {
+
+        if(!ctx.policy) {
+            LOG_ERR("Expected imported key policy to be specified via \"-L\","
+                    " missing option.");
+            rc = -1;
+        }
+
+        if(!ctx.input_seed_file) {
+            LOG_ERR("Expected SymSeed to be specified via \"-s\","
+                    " missing option.");
+            rc = -1;
+        }
+
+        /* If a key file is specified we choose aes else null
+        for symmetricAlgdefinition */
+        if(!ctx.input_enc_key_file) {
+            ctx.key_type = TPM2_ALG_NULL;
+        } else {
+            ctx.key_type = TPM2_ALG_AES;
+        }
+
+    } else {    /* Openssl specific option(s) */
+
+        if (!ctx.key_type) {
+            LOG_ERR("Expected key type to be specified via \"-G\","
+                    " missing option.");
+            rc = -1;
+        }
+    }
+
+    /* Common options */
     if (!ctx.input_key_file) {
         LOG_ERR("Expected to be imported key data to be specified via \"-i\","
                 " missing option.");
         rc = -1;
     }
 
-    if (!ctx.import_key_public_file) {
+    if (!ctx.public_key_file) {
         LOG_ERR("Expected output public file missing, specify \"-u\","
                 " missing option.");
         rc = -1;
     }
 
-    if (!ctx.import_key_private_file) {
+    if (!ctx.private_key_file) {
         LOG_ERR("Expected output private file missing, specify \"-r\","
-                " missing option.");
-        rc = -1;
-    }
-
-    if (!ctx.key_type) {
-        LOG_ERR("Expected key type to be specified via \"-G\","
                 " missing option.");
         rc = -1;
     }
@@ -399,22 +445,13 @@ static int check_options(void) {
     return rc;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static int openssl_import(ESYS_CONTEXT *ectx) {
 
-    UNUSED(flags);
-
-    int rc = 1;
     bool result;
     bool free_ppub = false;
 
     tpm2_loaded_object parent_ctx;
-
-    rc = check_options();
-    if (rc) {
-        goto out;
-    }
-
-    rc = 1;
+    int rc = 1;
 
     /*
      * Load the parent public file, or read it from the TPM if not specified.
@@ -542,12 +579,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * Save the public and imported_private structure to disk
      */
-    bool res = files_save_public(&public, ctx.import_key_public_file);
+    bool res = files_save_public(&public, ctx.public_key_file);
     if(!res) {
         goto keyout;
     }
 
-    res = files_save_private(imported_private, ctx.import_key_private_file);
+    res = files_save_private(imported_private, ctx.private_key_file);
     if (!res) {
         goto keyout;
     }
@@ -566,3 +603,138 @@ out:
     }
     return rc;
 }
+
+static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
+    bool result = true;
+    switch (alg) {
+    case TPM2_ALG_AES :
+        obj->algorithm = TPM2_ALG_AES;
+        obj->keyBits.aes = 128;
+        obj->mode.aes = TPM2_ALG_CFB;
+        break;
+    case TPM2_ALG_NULL :
+        obj->algorithm = TPM2_ALG_NULL;
+        break;
+    default:
+        LOG_ERR("The algorithm type input(0x%x) is not supported!", alg);
+        result = false;
+        break;
+    }
+    return result;
+}
+
+static int tpm_import(ESYS_CONTEXT *ectx) {
+    bool result;
+    TPM2B_DATA enc_key = TPM2B_EMPTY_INIT;
+    TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
+    TPM2B_PRIVATE duplicate;
+    TPM2B_ENCRYPTED_SECRET encrypted_seed;
+    TPM2B_PRIVATE *imported_private;
+    tpm2_loaded_object parent_object_context;
+    TPMT_SYM_DEF_OBJECT sym_alg;
+
+    result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
+                                &parent_object_context);
+    if (!result) {
+      return 1;
+    }
+
+    if (ctx.parent_auth_str) {
+        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
+            &ctx.auth.session_data, &ctx.auth.session);
+        if (!result) {
+            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
+            return 1;
+        }
+    }
+
+    result = set_key_algorithm(ctx.key_type, &sym_alg);
+    if(!result) {
+        return 1;
+    }
+
+    /* Symmetric key */
+    if(ctx.input_enc_key_file) {
+        enc_key.size = 16;
+        result = files_load_bytes_from_path(ctx.input_enc_key_file, enc_key.buffer, &enc_key.size);
+        if(!result) {
+            LOG_ERR("Failed to load symmetric encryption key\"%s\"", ctx.input_enc_key_file);
+            return 1;
+        }
+        if(enc_key.size != 16) {
+            LOG_ERR("Invalid AES key size, got %u bytes, expected 16", enc_key.size);
+            return 1;
+        }
+    }
+
+    /* Private key */
+    result = files_load_private(ctx.input_key_file, &duplicate);
+    if(!result) {
+        LOG_ERR("Failed to load duplicate \"%s\"", ctx.input_key_file);
+        return 1;
+    }
+
+    /* Encrypted seed */
+    result = files_load_encrypted_seed(ctx.input_seed_file, &encrypted_seed);
+    if(!result) {
+        LOG_ERR("Failed to load encrypted seed \"%s\"", ctx.input_seed_file);
+        return 1;
+    }
+
+    /* Public key */
+    result = files_load_public(ctx.public_key_file, &public);
+    if(!result) {
+        LOG_ERR(":( Failed to load public key \"%s\"", ctx.public_key_file);
+        return 1;
+    }
+
+    public.publicArea.authPolicy.size = sizeof(public.publicArea.authPolicy.buffer);
+    result = files_load_bytes_from_path(ctx.policy,
+                public.publicArea.authPolicy.buffer, &public.publicArea.authPolicy.size);
+    if (!result) {
+        return 1;
+    }
+
+    result = do_import(
+            ectx,
+            parent_object_context.tr_handle,
+            &encrypted_seed,
+            &enc_key,
+            &duplicate,
+            &public,
+            &sym_alg,
+            &imported_private);
+
+    if (!result) {
+        return 1;
+    }
+
+    result = files_save_private(imported_private, ctx.private_key_file);
+    free(imported_private);
+    if (!result) {
+        LOG_ERR("Failed to save private key into file \"%s\"",
+                ctx.private_key_file);
+        return 1;
+    }
+
+
+    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+
+    return result ? 0 : 1;
+}
+
+int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+    int rc;
+    UNUSED(flags);
+
+    rc = check_options();
+    if (rc) {
+        return 1;
+    }
+
+    if(!ctx.import_tpm) {
+        return openssl_import(ectx);
+    }
+    return tpm_import(ectx);
+}
+
