@@ -55,7 +55,7 @@
     |TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT \
     |TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH
 
-#define DEFAULT_PRIMARY_KEY_ALG "rsa2048:aes256"
+#define DEFAULT_PRIMARY_KEY_ALG "rsa2048:null:aes128cfb"
 
 typedef struct tpm_createprimary_ctx tpm_createprimary_ctx;
 struct tpm_createprimary_ctx {
