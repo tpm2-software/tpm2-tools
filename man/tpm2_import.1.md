@@ -13,7 +13,8 @@
 # DESCRIPTION
 
 **tpm2_import**(1) - Imports an external generated key as TPM managed key object.
-It requires that the parent key object be a RSA key.
+It requires that the parent key object be a RSA key. Can also import a TPM managed 
+key object created by the tpm2_duplicate tool.
 
 # OPTIONS
 
@@ -40,6 +41,8 @@ These options control the key importation process:
     Specifies the filename for the RSA2048 private key file in PEM and PKCS#1
     format. A typical file is generated with `openssl genrsa`.
 
+    When importing a duplicated object this specifies the filename of the 'duplicate' part
+
   * **-C**, **--parent-key**=_PARENT\_CONTEXT_:
 
     Specifies the context object for the parent key. Either a file or a handle number.
@@ -52,14 +55,26 @@ These options control the key importation process:
     **tpm2_readpublic**(1) tool. If not specified, the tool invokes a tpm2_readpublic on the parent
     object.
 
+  * **-k**, **sym-alg-file**=_FILE_:
+
+    Optional. Specifies the file containing the symmetric algorithm key that was used for the 
+    inner wrapper. If the file is specified the tool assumes the algorithm is AES 128 in CFB mode 
+    otherwise none.
+
   * **-r**, **--privfile**=_FILE_:
 
     Specifies the file path required to save the encrypted private portion of
     the object imported as key.
 
+    When importing a duplicated object this option specifies the file containing the 
+    private portion of the object to be imported.
+
   * **-u**, **--pubfile**=_FILE_:
 
     Specifies the file path required to save the public portion of the object imported as key
+
+    When importing a duplicated object this option specifies the file containing the 
+    public portion of the object to be imported.
 
   * **-b**, **--object-attributes**=_ATTRIBUTES_:
 
@@ -76,6 +91,14 @@ These options control the key importation process:
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
+
+  * **-L**, **--policy-file**=_POLICY\_FILE_:
+
+    The policy file.
+
+  * **-s**, **--seed**=_FILE_:
+
+    Specifies the file containing the encrypted seed of the duplicated object.
 
   * **--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
 
@@ -120,6 +143,11 @@ tpm2_import -C parent.ctx -G rsa -i private.pem -u key.pub -r key.priv
 openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
 
 tpm2_import -C parent.ctx -G ecc -i private.ecc.pem -u key.pub -r key.priv
+```
+
+## Import a duplicated key
+```
+tpm2_import -C parent.ctx -i key.dup -u key.pub -r key.priv -L policy.dat
 ```
 
 # LIMITATIONS
