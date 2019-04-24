@@ -58,7 +58,7 @@ interactions with the created primary.
   * **-G**, **\--kalg**=_KEY\_ALGORITHM_:
 
     Algorithm type for generated key. If not specified, the default key
-    algorithm is RSA. See section "Supported Public Object Algorithms"
+    algorithm is rsa2048:null:aes128cfb. See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
 
   * **-o**, **\--out-context-name**=_CONTEXT\_FILE\_NAME_:
