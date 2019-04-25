@@ -52,7 +52,7 @@ sleep 5
 
 echo "starting tpm server"
 # start the tpm server
-/ibmtpm974/src/tpm_server &
+tpm_server &
 echo "tpm server started"
 
 # start tpm2-abrmd
