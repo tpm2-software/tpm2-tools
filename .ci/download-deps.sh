@@ -51,7 +51,7 @@ function get_deps() {
 	pushd tpm2-abrmd
 	echo "pwd build abrmd: `pwd`"
 	./bootstrap
-	./configure
+	./configure --with-dbuspolicydir=/etc/dbus-1/system.d
 	make -j4
 	make install
 	popd
