@@ -55,7 +55,7 @@ function get_deps() {
 	git checkout 2.0.1 -b release-2.0.1
 	echo "pwd build abrmd: `pwd`"
 	./bootstrap
-	./configure
+	./configure --with-dbuspolicydir=/etc/dbus-1/system.d
 	make -j$(nproc)
 	make install
 	popd
