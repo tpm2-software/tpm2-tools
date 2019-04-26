@@ -58,6 +58,7 @@ typedef struct changeauth_ctx changeauth_ctx;
 struct changeauth_ctx {
     struct {
         auth owner;
+        auth platform;
         auth endorse;
         auth lockout;
         auth tpm_handle;
@@ -556,8 +557,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         result = process_change_nv_handle_auth(ectx);
     }
 
-    if (ctx.flags.w || ctx.flags.e || ctx.flags.l || ctx.flags.W || ctx.flags.E
-            || ctx.flags.L) {
+    if (ctx.flags.w || ctx.flags.s || ctx.flags.e || ctx.flags.l || ctx.flags.W
+            || ctx.flags.S || ctx.flags.E || ctx.flags.L) {
         result = process_change_hierarchy_auth(ectx);
     }
 
