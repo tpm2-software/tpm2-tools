@@ -64,9 +64,11 @@ struct changeauth_ctx {
     } auths;
     struct {
         UINT8 w : 1;
+        UINT8 s : 1;
         UINT8 e : 1;
         UINT8 l : 1;
         UINT8 W : 1;
+        UINT8 S : 1;
         UINT8 E : 1;
         UINT8 L : 1;
         UINT8 p : 1;
@@ -77,6 +79,8 @@ struct changeauth_ctx {
     } flags;
     char *owner_auth_str;
     char *owner_auth_old_str;
+    char *platform_auth_str;
+    char *platform_auth_old_str;
     char *endorse_auth_str;
     char *endorse_auth_old_str;
     char *lockout_auth_str;
@@ -97,6 +101,10 @@ struct changeauth_ctx {
 static changeauth_ctx ctx = {
     .auths = {
         .owner = {
+            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
+        },
+        .platform = {
             .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
             .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         },
@@ -151,6 +159,11 @@ static bool change_hierarchy_auth(ESYS_CONTEXT *ectx) {
                 "Owner", ESYS_TR_RH_OWNER);
     }
 
+    if (ctx.flags.s || ctx.flags.S) {
+        result &= change_auth(ectx, &ctx.auths.platform,
+                "Platform", ESYS_TR_RH_PLATFORM);
+    }
+
     if (ctx.flags.e || ctx.flags.E) {
         result &= change_auth(ectx, &ctx.auths.endorse,
                 "Endorsement", ESYS_TR_RH_ENDORSEMENT);
@@ -174,6 +187,16 @@ static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
                 &ctx.auths.owner.new.auth, NULL);
         if (!result) {
             LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
+            return false;
+        }
+    }
+
+    if (ctx.flags.s) {
+        result = tpm2_auth_util_from_optarg(ectx, ctx.platform_auth_str,
+                &ctx.auths.platform.new.auth, NULL);
+        if (!result) {
+            LOG_ERR("Invalid new platform authorization, got\"%s\"",
+                ctx.platform_auth_str);
             return false;
         }
     }
@@ -208,6 +231,16 @@ static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
         }
     }
 
+    if (ctx.flags.S) {
+        result = tpm2_auth_util_from_optarg(ectx, ctx.platform_auth_old_str,
+                &ctx.auths.platform.old.auth, &ctx.auths.platform.old.session);
+        if (!result) {
+            LOG_ERR("Invalid current platform authorization, got\"%s\"",
+                ctx.platform_auth_old_str);
+            return false;
+        }
+    }
+
     if (ctx.flags.E) {
         result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_old_str,
                 &ctx.auths.endorse.old.auth, &ctx.auths.endorse.old.session);
@@ -231,6 +264,7 @@ static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
     result = change_hierarchy_auth(ectx);
     result &= tpm2_session_save(ectx, ctx.auths.endorse.old.session, NULL);
     result &= tpm2_session_save(ectx, ctx.auths.owner.old.session, NULL);
+    result &= tpm2_session_save(ectx, ctx.auths.platform.old.session, NULL);
     result &= tpm2_session_save(ectx, ctx.auths.lockout.old.session, NULL);
 
     return result;
@@ -354,6 +388,10 @@ static bool on_option(char key, char *value) {
         ctx.flags.w = 1;
         ctx.owner_auth_str = value;
         break;
+    case 's':
+        ctx.flags.s = 1;
+        ctx.platform_auth_str = value;
+        break;
     case 'e':
         ctx.flags.e = 1;
         ctx.endorse_auth_str = value;
@@ -365,6 +403,10 @@ static bool on_option(char key, char *value) {
     case 'W':
         ctx.flags.W = 1;
         ctx.owner_auth_old_str = value;
+        break;
+    case 'S':
+        ctx.flags.S = 1;
+        ctx.platform_auth_old_str = value;
         break;
     case 'E':
         ctx.flags.E = 1;
@@ -406,6 +448,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         //Special Permanent Handles: OWNER/ ENDORSEMENT/ LOCKOUT
         { "new-auth-owner",             required_argument, NULL, 'w' },
         { "current-auth-owner",         required_argument, NULL, 'W' },
+        { "new-platform-passwd",        required_argument, NULL, 's' },
+        { "current-platform-passwd",    required_argument, NULL, 'S' },
         { "new-auth-endorse",           required_argument, NULL, 'e' },
         { "current-auth-endorse",       required_argument, NULL, 'E' },
         { "new-auth-lockout",           required_argument, NULL, 'l' },
@@ -418,7 +462,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-parent-context",         required_argument, NULL, 'C' },
         { "privfile",                   required_argument, NULL, 'r' },
     };
-    *opts = tpm2_options_new("w:e:l:W:E:L:p:P:c:C:r:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("w:s:e:l:W:S:E:L:p:P:c:C:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -525,6 +569,7 @@ void tpm2_onexit(void) {
 
     tpm2_session_free(&ctx.auths.endorse.old.session);
     tpm2_session_free(&ctx.auths.owner.old.session);
+    tpm2_session_free(&ctx.auths.platform.old.session);
     tpm2_session_free(&ctx.auths.lockout.old.session);
     tpm2_session_free(&ctx.auths.tpm_handle.old.session);
 }
