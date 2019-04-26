@@ -4,7 +4,7 @@
 
 # NAME
 
-**tpm2_changeauth**(1) - Configuring authorization for TPM OWNER/ENDORSEMENT/LOCKOUT hierarchies,
+**tpm2_changeauth**(1) - Configuring authorization for TPM OWNER/PLATFORM/ENDORSEMENT/LOCKOUT hierarchies,
 NV Handles and Transient & Persistent object handles.
 
 # SYNOPSIS
@@ -32,6 +32,10 @@ see section "Authorization Formatting".
 
     The new authorization value for the owner hierarchy.
 
+  * **-s**, **--new-platform-passwd**=_PLATFORM\_PASSWORD_:
+
+    The new authorization value for the platform hierarchy.
+
   * **-e**, **--new-endorsement-passwd**=_ENDORSEMENT\_PASSWORD_:
 
     The new authorization value for the endorsement hierarchy.
@@ -43,6 +47,10 @@ see section "Authorization Formatting".
   * **-W**, **--current-owner-passwd**=_CURRENT\_OWNER\_AUTH_:
 
     The current authorization value for the owner hierarchy .
+
+  * **-S**, **--current-platform-passwd**=_CURRENT\_PLATFORM\_AUTH_:
+
+    The current authorization value for the platform hierarchy .
 
   * **-E**, **--current-endorsement-passwd**=_CURRENT\_ENDORSEMENT\_AUTH_:
 
@@ -94,6 +102,11 @@ tpm2_changeauth -o newo -e newe -l newl -O oldo -E olde -L oldl
 ## Unset/Clear owner authorization which was previously set to value newo
 ```
 tpm2_changeauth -O newo
+```
+
+## Change platform authorization to a new value
+```
+tpm2_changeauth -s newplatform -S oldplatform
 ```
 
 ## Modify authorization for a loadable transient object
