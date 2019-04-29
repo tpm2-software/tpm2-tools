@@ -17,7 +17,7 @@
 
 # OPTIONS
 
-  * **-c**, **--clear**:
+  * **-c**, **\--clear**:
 
     Startup type sent will be **TPM_SU_CLEAR** instead of **TPM2_SU_STATE**.
 

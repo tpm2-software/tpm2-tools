@@ -1,4 +1,4 @@
-  * **-f**, **--format**:
+  * **-f**, **\--format**:
 
     Format selection for the public key output file. 'tss' (the default) will
     output a binary blob according to the TPM 2.0 Specification. 'pem' will

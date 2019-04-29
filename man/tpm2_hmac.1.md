@@ -17,18 +17,18 @@ _FILE_ is not specified, then data is read from stdin.
 
 # OPTIONS
 
-  * **-C**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-C**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     The context object of the symmetric signing key providing the HMAC key.
     Either a file or a handle number. See section "Context Object Format".
 
-  * **-P**, **--auth-key**=_KEY\_AUTH_:
+  * **-P**, **\--auth-key**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-k**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-o**, **--out-file**=_OUT\_FILE_
+  * **-o**, **\--out-file**=_OUT\_FILE_
 
     Optional file record of the HMAC result. Defaults to stdout.
 

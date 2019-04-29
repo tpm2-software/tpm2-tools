@@ -17,14 +17,14 @@ values. If the lockout password option is missing, assume NULL.
 
 # OPTIONS
 
-  * **-p**, **--platform**:
+  * **-p**, **\--platform**:
 
     Specifies the tool should operate on the platform hierarchy. By default
     it operates on the lockout hierarchy.
 
     **NOTE : Operating on platform hierarchy require platform authentication.**
 
-  * **-L**, **--auth-lockout**=_LOCKOUT\_AUTH_:
+  * **-L**, **\--auth-lockout**=_LOCKOUT\_AUTH_:
 
     The lockout authorization value.
 

@@ -23,11 +23,11 @@ If using a resource manager (RM), then one supporting extended sessions, like
 
 # OPTIONS
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
 
     File to save the compounded policy digest.
 
-  * **-S**, **--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_SESSION_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
@@ -74,7 +74,7 @@ tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt -p text
 
 ## Authenticate with password and the policy
 ```
-tpm2_startauthsession --policy-session -S session.dat
+tpm2_startauthsession \--policy-session -S session.dat
 
 tpm2_policypassword -S session.dat -o policy.dat
 

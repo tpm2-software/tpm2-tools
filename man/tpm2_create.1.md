@@ -20,24 +20,24 @@ The object will need to be loaded before it may be used.
 
 These options for creating the TPM entity:
 
-  * **-C**, **--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
+  * **-C**, **\--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
 
     Context object for the created object's parent. Either a file or a handle
     number. See section "Context Object Format".
 
-  * **-P**, **--auth-parent**=_PARENT\_KEY\_AUTH_:
+  * **-P**, **\--auth-parent**=_PARENT\_KEY\_AUTH_:
 
     The authorization value for using the parent key, optional.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-p**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth-key**=_KEY\_AUTH_:
 
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
 
-  * **-g**, **--halg**=_ALGORITHM_:
+  * **-g**, **\--halg**=_ALGORITHM_:
 
     The hash algorithm for generating the objects name. This is optional
     and defaults to sha256 when not specified. Algorithms should follow the
@@ -45,7 +45,7 @@ These options for creating the TPM entity:
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-G**, **--kalg**=_KEY\_ALGORITHM_:
+  * **-G**, **\--kalg**=_KEY\_ALGORITHM_:
 
     The key algorithm associated with this object. It defaults to "rsa" if not
     specified.
@@ -53,7 +53,7 @@ These options for creating the TPM entity:
     See section "Supported Public Object Algorithms" for a list
     of supported object algorithms. Mutually exclusive of **-i**.
 
-  * **-b**, **--object-attributes**=_ATTRIBUTES_:
+  * **-b**, **\--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
@@ -66,25 +66,25 @@ These options for creating the TPM entity:
     I.e. one cannot use an object for sealing and cryptography
     operations.
 
-  * **-i**, **--in-file**=_FILE_:
+  * **-i**, **\--in-file**=_FILE_:
 
     The data file to be sealed, optional. If file is -, read from stdin.
     When sealing data only the _TPM\_ALG\_KEYEDHASH_ algorithm with a NULL scheme is allowed.
     Thus, **-G** cannot be specified.
 
-  * **-L**, **--policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy-file**=_POLICY\_FILE_:
 
     The input policy file, optional.
 
-  * **-u**, **--pubfile**=_OUTPUT\_PUBLIC\_FILE_:
+  * **-u**, **\--pubfile**=_OUTPUT\_PUBLIC\_FILE_:
 
     The output file which contains the public portion of the created object, optional.
 
-  * **-r**, **--privfile**=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **\--privfile**=_OUTPUT\_PRIVATE\_FILE_:
 
     The output file which contains the sensitive portion of the object, optional.
 
-  * **-o**, **--out-context**=_OUTPUT\_CONTEXT\_FILE_:
+  * **-o**, **\--out-context**=_OUTPUT\_CONTEXT\_FILE_:
 
     The output file which contains the key context, optional. The key context is analogous to the context
     file produced by **tpm2_load**(1), however is generated via a **tpm2_createloaded**(1) command. This option

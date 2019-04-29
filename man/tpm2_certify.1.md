@@ -26,24 +26,24 @@ An object that only has its public area loaded cannot be certified.
 
 These options control the certification:
 
-  * **-C**, **--obj-context**=_CONTEXT\_OBJECT_:
+  * **-C**, **\--obj-context**=_CONTEXT\_OBJECT_:
 
     Context object for the object to be certified. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT_:
 
     Context object for the key used to sign the attestation structure.
     See section "Context Object Format".
 
-  * **-P**, **--auth-object**=_OBJECT\_AUTH_:
+  * **-P**, **\--auth-object**=_OBJECT\_AUTH_:
 
     Use _OBJECT\_AUTH_ for providing an authorization value for the object specified
     in _CONTEXT\_OBJECT_.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm to use.
     Algorithms should follow the "formatting standards", see section
@@ -51,22 +51,22 @@ These options control the certification:
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-p**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth-key**=_KEY\_AUTH_:
 
     Use _KEY\_AUTH_ for providing an authorization value for the key specified
     in _KEY\_CONTEXT_.
     Follows the same formatting guidelines as the object handle authorization or
     **-P** option.
 
-  * **-o**, **--out-attest-file**=_ATTEST\_FILE_:
+  * **-o**, **\--out-attest-file**=_ATTEST\_FILE_:
 
     Output file name for the attestation data.
 
-  * **-s**, **--sig-file**=_SIG\_FILE_:
+  * **-s**, **\--sig-file**=_SIG\_FILE_:
 
     Output file name for the signature data.
 
-  * **-f**, **--format**
+  * **-f**, **\--format**
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 

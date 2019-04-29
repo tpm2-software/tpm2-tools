@@ -24,17 +24,17 @@ at least one of the policy events are true.
 
 # OPTIONS
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
 
     File to save the compounded policy digest.
 
-  * **-L**, **--policy-list**=_POLICY\_FILE_\_LIST:
+  * **-L**, **\--policy-list**=_POLICY\_FILE_\_LIST:
 
     The list of files for the policy digests that has to be compounded resulting
     in individual policies being added to final policy digest that can
     authenticate the object. The list begins with the policy digest hash alg.
 
-  * **-S**, **--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_SESSION_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
@@ -97,7 +97,7 @@ tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -i- -C prim.ctx -
 
 ## Satisfy the policy and unseal the secret
 ```
-tpm2_startauthsession --policy-session -S session.ctx
+tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policypcr -Q -S session.ctx -L sha1:0 -o o_set1_pcr0.policy
 

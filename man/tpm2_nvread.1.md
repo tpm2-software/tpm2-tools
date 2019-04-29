@@ -16,11 +16,11 @@
 
 # OPTIONS
 
-  * **-x**, **--index**=_NV\_INDEX_:
+  * **-x**, **\--index**=_NV\_INDEX_:
 
     Specifies the index to define the space at.
 
-  * **-a**, **--hierarchy**=_AUTH_:
+  * **-a**, **\--hierarchy**=_AUTH_:
 
     Specifies the hierarchy used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
@@ -33,34 +33,34 @@
     authorize against the index. The index auth value is set via the
     **-p** option to **tpm2_nvdefine**(1).
 
-  * **-o**, **--out-file**=_FILE_:
+  * **-o**, **\--out-file**=_FILE_:
 
     File to write data
 
-  * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE__:
+  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE__:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-s**, **--size**=_SIZE_:
+  * **-s**, **\--size**=_SIZE_:
 
     Specifies the size of data to be read in bytes, starting from 0 if
     offset is not specified. If not specified, the size of the data
     as reported by the public portion of the index will be used.
 
-  * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
+  * **-L**, **\--set-list**==_PCR\_SELECTION\_LIST_:
 
     The list of PCR banks and selected PCRs' ids.
     _PCR\_SELECTION\_LIST_ values should follow the
     PCR bank specifiers standards, see section "PCR Bank Specifiers".
 
-  * **-F**,**--pcr-input-file=_PCR\_INPUT\_FILE_
+  * **-F**,**\--pcr-input-file=_PCR\_INPUT\_FILE_
 
     Optional Path or Name of the file containing expected PCR values for the specified index.
     Default is to read the current PCRs per the set list.
 
-  * **--offset**=_OFFSET_:
+  * **\--offset**=_OFFSET_:
 
     The offset within the NV index to start reading from.
 

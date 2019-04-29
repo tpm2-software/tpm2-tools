@@ -20,7 +20,7 @@ sensitive area.
 
 # OPTIONS
 
-  * **-a**, **--hierarchy**=_HIERARCHY_:
+  * **-a**, **\--hierarchy**=_HIERARCHY_:
 
     Hierarchy to use for the ticket, optional. Defaults to **n**, **null**.
     Supported options are:
@@ -29,14 +29,14 @@ sensitive area.
       * **e** for the **endorsement** hierarchy.
       * **n** for the **null** hierarchy.
 
-  * **-G**, **--key-alg**=_ALGORITHM_:
+  * **-G**, **\--key-alg**=_ALGORITHM_:
 
     The algorithm used by the key to be imported. Supports:
     * **aes** - AES 128,192 or 256 key.
     * **rsa** - RSA 1024 or 2048 key.
     * **ecc** - ECC NIST P192, P224, P256, P384 or P521 public and private key.
 
-  * **-u**, **--pubfile**=_PUBLIC\_FILE_:
+  * **-u**, **\--pubfile**=_PUBLIC\_FILE_:
 
     The public portion of the object, this can be one of the following file formats:
       * TSS - The TSS/TPM format. For example from option `-u` of command **tpm2_create**(1).
@@ -45,7 +45,7 @@ sensitive area.
       * ECC - OSSL PEM formats. For example `public.pem` from the command
         `openssl ec -in private.ecc.pem -out public.ecc.pem -pubout`
 
-  * **-r**, **--privfile**=_PRIVATE\_FILE_:
+  * **-r**, **\--privfile**=_PRIVATE\_FILE_:
 
     The sensitive portion of the object, optional. If one wishes to use the private portion
     of a key, this must be specified. Like option **-u**, this command takes files in the
@@ -57,18 +57,18 @@ sensitive area.
 
     *Note*: The private portion does not respect TSS formats as it's impossible to get a **TPM2B_SENSITIVE** output from a previous command.
 
-  * **-p**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth-key**=_KEY\_AUTH_:
 
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
 
-  * **-L**, **--policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy-file**=_POLICY\_FILE_:
 
     The input policy file, optional. A file containing the hash of a policy derived from
     `tpm2_createpolicy`.
 
-  * **-g**, **--halg**=_NAME\_ALGORITHM_:
+  * **-g**, **\--halg**=_NAME\_ALGORITHM_:
 
     The hash algorithm for generating the objects name. This is optional
     and defaults to sha256 when not specified. However, load external supports
@@ -78,7 +78,7 @@ sensitive area.
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-b**, **--object-attributes**=_ATTRIBUTES_:
+  * **-b**, **\--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
@@ -89,17 +89,17 @@ sensitive area.
     *Note*: If specifying attributes, the TPM will reject certain attributes like
     **TPMA_OBJECT_FIXEDTPM**, as those guarantees cannot be made.
 
-  * **-o**, **--out-context**=_CONTEXT\_FILE_
+  * **-o**, **\--out-context**=_CONTEXT\_FILE_
 
     The file name of the saved object context, optional. If unspecified defaults
     to *external.ctx*.
 
-  * **-n**, **--name**=_NAME\_DATA\_FILE_:
+  * **-n**, **\--name**=_NAME\_DATA\_FILE_:
 
     An optional file to save the object name, which is in a binary hash format.
     The size of the hash is based on name algorithm or the **-g** option.
 
-  * **--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
+  * **\--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
 
     An optional password for an Open SSL (OSSL) provided input file.
     It mirrors the -passin option of OSSL and is known to support the pass,

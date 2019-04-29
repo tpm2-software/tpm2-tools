@@ -18,19 +18,19 @@ is missing, assume NULL.
 
 # OPTIONS
 
-  * **-c**, **--clear**:
+  * **-c**, **\--clear**:
 
     Specifies the tool should unlock access to the clear command.
     By default it will try to disable the clear command.
 
-  * **-p**, **--platform**:
+  * **-p**, **\--platform**:
 
     Specifies the tool should operate on the platform hierarchy. By default
     it operates on the lockout hierarchy.
 
     **NOTE : Operating on platform hierarchy require platform authentication.**
 
-  * **-L**, **--auth-lockout**=_LOCKOUT\_PASSWORD_:
+  * **-L**, **\--auth-lockout**=_LOCKOUT\_PASSWORD_:
 
     The lockout authorization value.
 

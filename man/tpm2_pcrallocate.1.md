@@ -23,7 +23,7 @@ follow the pcr bank specifiers standards, see section "PCR Bank Specifiers".
 
 # OPTIONS
 
-  * **-P**, **--auth-platform**=_AUTH\_HIERARCHY_\VALUE_:
+  * **-P**, **\--auth-platform**=_AUTH\_HIERARCHY_\VALUE_:
 
     Optional authorization value. Authorization values should follow the
     "authorization formatting standards", see section "Authorization Formatting".

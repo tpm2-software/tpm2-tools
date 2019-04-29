@@ -23,19 +23,19 @@ The key referenced by key-context is **required** to be:
 
 # OPTIONS
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object pointing to the the public portion of RSA key to use for
     encryption. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-o**, **--out-file**=_OUTPUT\_FILE_:
+  * **-o**, **\--out-file**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data. The default is to print an
     xxd compatible hexdump to stdout. If a file is specified, raw binary
     output is performed.
 
-  * **-g**, **--scheme**=_PADDING\_SCHEME_:
+  * **-g**, **\--scheme**=_PADDING\_SCHEME_:
 
     Optional, set the padding scheme (defaults to rsaes). 
     

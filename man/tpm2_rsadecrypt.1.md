@@ -22,27 +22,27 @@ The key referenced by key-context is **required** to be:
 
 # OPTIONS
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object pointing to the the public portion of RSA key to use for
     decryption. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-p**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth-key**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-k**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-i**, **--in-file**=_INPUT\FILE_:
+  * **-i**, **\--in-file**=_INPUT\FILE_:
 
     Input file path, containing the data to be decrypted.
 
-  * **-o**, **--out-file**=_OUTPUT\_FILE_:
+  * **-o**, **\--out-file**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data.
 
-  * **-g**, **--scheme**=_PADDING\_SCHEME_:
+  * **-g**, **\--scheme**=_PADDING\_SCHEME_:
 
     Optional, set the padding scheme (defaults to rsaes). 
     

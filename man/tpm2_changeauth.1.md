@@ -28,49 +28,49 @@ to changing auth are not invalidated.
 Passwords should follow the "password authorization formatting standards",
 see section "Authorization Formatting".
 
-  * **-w**, **--new-owner-passwd**=_OWNER\_PASSWORD_:
+  * **-w**, **\--new-owner-passwd**=_OWNER\_PASSWORD_:
 
     The new authorization value for the owner hierarchy.
 
-  * **-e**, **--new-endorsement-passwd**=_ENDORSEMENT\_PASSWORD_:
+  * **-e**, **\--new-endorsement-passwd**=_ENDORSEMENT\_PASSWORD_:
 
     The new authorization value for the endorsement hierarchy.
 
-  * **-l**, **--new-lockout-passwd**=_LOCKOUT\_PASSWORD_:
+  * **-l**, **\--new-lockout-passwd**=_LOCKOUT\_PASSWORD_:
 
     The new authorization value for the dictionary lockout.
 
-  * **-W**, **--current-owner-passwd**=_CURRENT\_OWNER\_AUTH_:
+  * **-W**, **\--current-owner-passwd**=_CURRENT\_OWNER\_AUTH_:
 
     The current authorization value for the owner hierarchy .
 
-  * **-E**, **--current-endorsement-passwd**=_CURRENT\_ENDORSEMENT\_AUTH_:
+  * **-E**, **\--current-endorsement-passwd**=_CURRENT\_ENDORSEMENT\_AUTH_:
 
     The current authorization value for the endorsement hierarchy.
 
-  * **-L**, **--current-lockout-passwd**=_CURRENT\_LOCKOUT\_AUTH_:
+  * **-L**, **\--current-lockout-passwd**=_CURRENT\_LOCKOUT\_AUTH_:
 
     The current authorization value for the dictionary lockout authority.
 
-  * **-p**, **--new-handle-passwd**=_TPM\_HANDLE\_PASSWORD_:
+  * **-p**, **\--new-handle-passwd**=_TPM\_HANDLE\_PASSWORD_:
 
     The new authorization value for the TPM handle.
 
-  * **-P**, **--current-handle-passwd**=_CURRENT\_TPM\_HANDLE\_PASSWORD_:
+  * **-P**, **\--current-handle-passwd**=_CURRENT\_TPM\_HANDLE\_PASSWORD_:
 
     The current authorization value for the TPM handle .
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     Name of the key context object to be used for the operation.
     Either a file or a handle number. See section "Context Object Format".
 
-  * **-C**, **--parent-context**=_PARENT\_CONTEXT\_OBJECT_:
+  * **-C**, **\--parent-context**=_PARENT\_CONTEXT\_OBJECT_:
     Name of the parent context object specified either with a file or a handle number
     (see section "Context Object Format").
-    This is the parent of the object whose auth is being modified with **--key-context** option.
+    This is the parent of the object whose auth is being modified with **\--key-context** option.
 
-  * **-r**, **--privfile**=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **\--privfile**=_OUTPUT\_PRIVATE\_FILE_:
     The output file which contains the new sensitive portion of the object whose auth was being changed.
 
 [common options](common/options.md)
@@ -117,7 +117,7 @@ tpm2_flushcontext -S session.ctx
 
 NVIndex=0x1500015
 tpm2_nvdefine -x $NVIndex -a o -s 32 -t "authread|authwrite" -L policy.nvchange
-tpm2_startauthsession --policy-session -S session.ctx
+tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policycommandcode -S session.ctx -c $TPM2_NV_ChangeAuth -o policy.nvchange
 

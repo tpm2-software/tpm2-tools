@@ -20,11 +20,11 @@ value. Requires support for extended sessions with resource manager.
 
 # OPTIONS
 
-  * **-S**, **--session**=_SESSION\_FILE_:
+  * **-S**, **\--session**=_SESSION\_FILE_:
 
     A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
@@ -61,7 +61,7 @@ tpm2_create -C prim.ctx -u sealkey.pub -r sealkey.priv -L policy.dat \
 tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
   -o sealkey.ctx
 
-tpm2_startauthsession --policy-session -S session.dat
+tpm2_startauthsession \--policy-session -S session.dat
 
 tpm2_policycommandcode -S session.dat -o policy.dat $TPM_CC_UNSEAL
 

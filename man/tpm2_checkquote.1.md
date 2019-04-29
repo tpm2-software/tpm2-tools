@@ -18,12 +18,12 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
 # OPTIONS
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-G**, **--halg**=_HASH\_ALGORITHM_:
+  * **-G**, **\--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -31,15 +31,15 @@ provided, verify that the qualifying data and PCR values match those in the quot
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-m**, **--message**=_MSG\_FILE_:
+  * **-m**, **\--message**=_MSG\_FILE_:
 
     The quote message that makes up the data that is signed by the TPM.
 
-  * **-s**, **--sig**=_SIG\_FILE_:
+  * **-s**, **\--sig**=_SIG\_FILE_:
 
     The input signature file of the signature to be validated.
 
-  * **-f**, **--format**:
+  * **-f**, **\--format**:
 
     Set the input signature file to a specified format. The default is the TPM2.0 **TPMT_SIGNATURE**
     data format, however different schemes can be selected if the data came from an external
@@ -50,12 +50,12 @@ provided, verify that the qualifying data and PCR values match those in the quot
     Also, see section "Supported Signing Schemes" for a list of supported hash
     algorithms.
 
-  * **-p**, **--pcrs**:
+  * **-p**, **\--pcrs**:
 
     PCR output file, optional, records the list of PCR values that were included
     in the quote.
 
-  * **-q**, **--qualify-data**:
+  * **-q**, **\--qualify-data**:
 
     Data given as a hex string that was used to qualify the quote. This is typically
     used to add a nonce against replay attacks.

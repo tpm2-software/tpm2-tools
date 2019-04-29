@@ -18,20 +18,20 @@ established via **tpm2_startauthsession**(1).
 
 # OPTIONS
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
     
     File to save the policy digest.
 
-  * **-F**, **--pcr-input-file**=_PCR\_FILE_:
+  * **-F**, **\--pcr-input-file**=_PCR\_FILE_:
     
     Optional Path or Name of the file containing expected PCR values for the
     specified index. Default is to read the current PCRs per the set list.
 
-  * **-L**, **--set-list**=_PCR\_LIST_:
+  * **-L**, **\--set-list**=_PCR\_LIST_:
     
     The list of PCR banks and selected PCRs' ids for each bank.
 
-  * **-S**, **--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_SESSION_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
@@ -69,7 +69,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
     ```
 3. Create an actual policy session and using a policyPCR event, update the session policy hash.
     ```
-    handle=`tpm2_startauthsession --policy-session -S session.dat | cut -d' ' -f 2-2`
+    handle=`tpm2_startauthsession \--policy-session -S session.dat | cut -d' ' -f 2-2`
 
     tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -o policy.dat
     ```

@@ -16,11 +16,11 @@
 
 # OPTIONS
 
-  * **-x**, **--index**=_NV\_INDEX_:
+  * **-x**, **\--index**=_NV\_INDEX_:
 
     Specifies the index to define the space at.
 
-  * **-a**, **--hierarchy**=_AUTH\_HIERARCHY_:
+  * **-a**, **\--hierarchy**=_AUTH\_HIERARCHY_:
 
     Specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
@@ -29,30 +29,30 @@
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-  * **-s**, **--size**=_SIZE_:
+  * **-s**, **\--size**=_SIZE_:
 
     Specifies the size of data area in bytes. Defaults to **MAX_NV_INDEX_SIZE**
     which is typically 2048.
 
-  * **-b**, **--attributes**=_ATTRIBUTES_
+  * **-b**, **\--attributes**=_ATTRIBUTES_
 
     Specifies the attribute values for the nv region used when creating the
     entity. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
-  * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
+  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-p**, **--auth-index**=_INDEX\_PASSWORD_:
+  * **-p**, **\--auth-index**=_INDEX\_PASSWORD_:
 
     Specifies the password of NV Index when created.
     HMAC and Password authorization values should follow the "authorization
     formatting standards", see section "Authorization Formatting".
 
-  * **-L**, **--policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy-file**=_POLICY\_FILE_:
 
     Specifies the policy digest file for policy based authorizations.
 

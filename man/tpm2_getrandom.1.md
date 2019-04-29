@@ -23,12 +23,12 @@ Most TPMs do this, and thus the tool verifies that input size is bounded by prop
 
 # OPTIONS
 
-  * **-o**, **--out-file**=_FILE_
+  * **-o**, **\--out-file**=_FILE_
 
     Specifies the filename to output the raw bytes to. Defaults to stdout as a hex
     string.
 
-  * **-f**, **--force**
+  * **-f**, **\--force**
 
     Override checking that the:
     - Requested size is within the hash size limit of the TPM.

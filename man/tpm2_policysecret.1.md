@@ -19,7 +19,7 @@ a policy.
 
 # OPTIONS
 
-  * **-c**, **--context**=_OBJECT_CONTEXT_:
+  * **-c**, **\--context**=_OBJECT_CONTEXT_:
 
     A context object specifier of a transient/permanent/persistent object. Either
     a file path of a object context blob or a loaded/persistent/permanent handle
@@ -28,12 +28,12 @@ a policy.
     auth value from stdin. The argument follows the "authorization formatting
     standards", see section "Authorization Formatting".
 
-  * **-S**, **--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_SESSION_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
@@ -75,7 +75,7 @@ tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -n sealing_key.name
 
 ## Satisfy the policy and unseal the secret
 ```
-tpm2_startauthsession --policy-session -S session.ctx
+tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -o secret.policy
 

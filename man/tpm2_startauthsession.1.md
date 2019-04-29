@@ -24,21 +24,21 @@ This will work with direct TPM access, but note that internally this calls a *Co
 
 # OPTIONS
 
-  * **--policy-session**:
+  * **\--policy-session**:
 
     Start a policy session of type **TPM_SE_POLICY**. Default without this option
     is **TPM_SE_TRIAL**.
     **NOTE**: A *trial* session is used when building a policy and a *policy*
     session is used when authenticating with a policy.
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used in computation of the policy digest. Algorithms
     should follow the "formatting standards", see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-S**, **--session**=_SESSION\_FILE\_NAME_:
+  * **-S**, **\--session**=_SESSION\_FILE\_NAME_:
 
     The name of the policy session file, optional. Defaults to *session.ctx*.
 
@@ -60,7 +60,7 @@ tpm2_startauthsession -S mysession.ctx
 
 ## Start a *policy* session and save the session data to a file
 ```
-tpm2_startauthsession --policy-session
+tpm2_startauthsession \--policy-session
 ```
 
 # RETURNS

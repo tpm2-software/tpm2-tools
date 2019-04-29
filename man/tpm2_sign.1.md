@@ -20,18 +20,18 @@ data and validation shall indicate that hashed data did not start with
 
 # OPTIONS
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object pointing to the the key used for signing. Either a file or a
     handle number. See section "Context Object Format".
 
-  * **-p**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth-key**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -39,7 +39,7 @@ data and validation shall indicate that hashed data did not start with
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-s**, **--sig-scheme**=_SIGNING\_SCHEME_:
+  * **-s**, **\--sig-scheme**=_SIGNING\_SCHEME_:
 
     The signing scheme used to sign the message. Optional.
     Signing schemes should follow the "formatting standards", see section
@@ -50,11 +50,11 @@ data and validation shall indicate that hashed data did not start with
     If left unspecified, a default signature scheme for the key type will
      be used.
 
-  * **-m**, **--message**=_MSG\_FILE_:
+  * **-m**, **\--message**=_MSG\_FILE_:
 
     The message file, containing the content to be  digested.
 
-  * **-D**, **--digest**=_DIGEST\_FILE_:
+  * **-D**, **\--digest**=_DIGEST\_FILE_:
 
     The digest file that shall be computed using the correct hash
     algorithm. When this option is specified, a warning is generated and
@@ -63,15 +63,15 @@ data and validation shall indicate that hashed data did not start with
     You cannot use this option to sign a digest against a restricted
     signing key.
 
-  * **-t**, **--ticket**=_TICKET\_FILE_:
+  * **-t**, **\--ticket**=_TICKET\_FILE_:
 
     The ticket file, containing the validation structure, optional.
 
-  * **-o**, **--out-sig**=_SIGNATURE\_FILE_:
+  * **-o**, **\--out-sig**=_SIGNATURE\_FILE_:
 
     The signature file, records the signature structure.
 
-  * **-f**, **--format**
+  * **-f**, **\--format**
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 

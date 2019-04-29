@@ -31,12 +31,12 @@ See sections 23.1 and sections 17 of the [TPM2.0 Specification](https://trustedc
 
 These options control extending the pcr:
 
-  * **-x**, **--pcr-index**=_INDEX_:
+  * **-x**, **\--pcr-index**=_INDEX_:
 
     Not only compute the hash digests on _FILE_, also extend the PCR given by
     _INDEX_ for all supported hash algorithms.
 
-  * **-P**, **--auth-pcr**=_PCR\_AUTH_:
+  * **-P**, **\--auth-pcr**=_PCR\_AUTH_:
 
     Specifies the authorization value for PCR. Authorization values
     should follow the "authorization formatting standards", see section
