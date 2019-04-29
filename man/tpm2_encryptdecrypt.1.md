@@ -73,7 +73,7 @@ specified symmetric key.
 ```
 tpm2_encryptdecrypt -C 0x81010001 -p abc123 -i <filePath> -o <filePath>
 tpm2_encryptdecrypt -C key.dat -p abc123 -i <filePath> -o <filePath>
-tpm2_encryptdecrypt -C 0x81010001 -p 123abca -X -i <filePath> -o <filePath>
+tpm2_encryptdecrypt -C 0x81010001 -p 123abca  -i <filePath> -o <filePath>
 ```
 
 # RETURNS
