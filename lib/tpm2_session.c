@@ -58,7 +58,6 @@ struct tpm2_session {
     } output;
 
     struct {
-        TPM2B_NONCE nonceNewer;
         char *path;
     } internal;
 };
@@ -160,8 +159,6 @@ tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
     }
 
     session->input = data;
-
-    session->internal.nonceNewer.size = session->input->nonce_caller.size;
 
     if (!context) {
         return session;
