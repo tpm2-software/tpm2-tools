@@ -42,12 +42,11 @@
 typedef union tpm2_option_flags tpm2_option_flags;
 union tpm2_option_flags {
     struct {
-        UINT8 verbose : 1;
-        UINT8 quiet   : 1;
-        UINT8 enable_errata  : 1;
-        UINT8 no_tpm  : 1;
+        uint8_t verbose : 1;
+        uint8_t quiet   : 1;
+        uint8_t enable_errata  : 1;
     };
-    UINT8 all;
+    uint8_t all;
 };
 
 /**
@@ -111,7 +110,7 @@ struct tpm2_options {
     } callbacks;
     char *short_opts;
     size_t len;
-    UINT32 flags;
+    uint32_t flags;
     struct option long_opts[];
 };
 
@@ -139,7 +138,7 @@ typedef struct tpm2_options tpm2_options;
  */
 tpm2_options *tpm2_options_new(const char *short_opts, size_t len,
         const struct option *long_opts, tpm2_option_handler on_opt,
-        tpm2_arg_handler on_arg, UINT32 flags);
+        tpm2_arg_handler on_arg, uint32_t flags);
 
 /**
  * Concatenates two tpm2_options objects, with src appended on
