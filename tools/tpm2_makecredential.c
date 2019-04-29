@@ -287,7 +287,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+                             NULL, TPM2_OPTIONS_OPTIONAL_SAPI);
 
     return *opts != NULL;
 }
@@ -301,10 +301,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -11;
     }
 
-    // Run it outside of a TPM
-    if (flags.no_tpm) {
-        return make_external_credential_and_save() != true;
-    }
+    printf("make credential has ESAPI CTX: %p", ectx);
 
-    return make_credential_and_save(ectx) != true;
+    // Run it outside of a TPM
+    bool result = ectx ? make_credential_and_save(ectx) :
+            make_external_credential_and_save();
+
+    return result != true;
 }

@@ -75,6 +75,7 @@ Loadkeyname=`cat $output_ak_pub_name | xxd -p -c $file_size`
 
 tpm2_makecredential -Q -e $output_ek_pub  -s $file_input_data  -n $Loadkeyname -o $output_mkcredential
 
-tpm2_makecredential -Q -e $output_ek_pub  -s $file_input_data  -n $Loadkeyname -o $output_mkcredential --openssl-backend
+# use no tpm backend
+tpm2_makecredential -T none -Q -e $output_ek_pub  -s $file_input_data  -n $Loadkeyname -o $output_mkcredential
 
 exit 0
