@@ -33,7 +33,9 @@ static inline void set_expected(ESYS_TR key, ESYS_TR bind,
     e->input.session_type = session_type;
     e->input.symmetric = *symmetric;
     e->input.auth_hash = auth_hash;
-    e->input.nonce_caller = *nonce_caller;
+    if (nonce_caller) {
+        e->input.nonce_caller = *nonce_caller;
+    }
 
     e->output.handle = handle;
     e->output.rc = rc;
@@ -77,8 +79,10 @@ TSS2_RC __wrap_Esys_StartAuthSession(ESYS_CONTEXT *esysContext,
 
     assert_int_equal(bind, e->input.bind);
 
-    assert_memory_equal(nonceCaller, &e->input.nonce_caller,
-            sizeof(*nonceCaller));
+    if (nonceCaller) {
+        assert_int_equal(e->input.nonce_caller.size, nonceCaller->size);
+        assert_memory_equal(e->input.nonce_caller.buffer, nonceCaller->buffer, nonceCaller->size);
+    }
 
     assert_int_equal(sessionType, e->input.session_type);
 
