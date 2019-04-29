@@ -170,20 +170,31 @@ static const char *find_default_tcti(void) {
     return NULL;
 }
 
-static tcti_conf tcti_get_config(const char *optstr) {
+static tcti_conf tcti_get_default_conf(void) {
 
-    /* set up the default configuration */
     tcti_conf conf = {
         .name = find_default_tcti()
     };
+
+    return conf;
+}
+
+static tcti_conf tcti_get_config(const char *optstr) {
+
+    /* set up the default configuration */
+    tcti_conf conf = { 0 };
 
     /* no tcti config supplied, get it from env */
     if (!optstr) {
         optstr = getenv (TPM2TOOLS_ENV_TCTI);
         if (!optstr) {
             /* nothing user supplied, use default */
-            return conf;
+            return tcti_get_default_conf();
         }
+    }
+
+    if (!strcmp(optstr, "none")) {
+        return conf;
     }
 
     char *split = strchr(optstr, ':');
@@ -205,11 +216,12 @@ static tcti_conf tcti_get_config(const char *optstr) {
 
     /* Case A */
     if (!optstr[0] && !split[1]) {
-        return conf;
+        return tcti_get_default_conf();
     }
 
     /* Case B */
     if (!optstr[0]) {
+        conf = tcti_get_default_conf();
         conf.opts = &split[1];
         return conf;
     }
@@ -332,7 +344,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
      * grep -rn case\ \'[a-zA-Z]\' | awk '{print $3}' | sed s/\'//g | sed s/\://g | sort | uniq | less
      */
     struct option long_options [] = {
-        { "tcti",          required_argument, NULL, 'T' },
+        { "tcti",          optional_argument, NULL, 'T' },
         { "help",          optional_argument, NULL, 'h' },
         { "verbose",       no_argument,       NULL, 'V' },
         { "quiet",         no_argument,       NULL, 'Q' },
@@ -405,12 +417,6 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         case 'Z':
             flags->enable_errata = 1;
             break;
-        case 'X':
-            if (tool_opts) {
-                flags->no_tpm = 1;
-                tool_opts->flags |= TPM2_OPTIONS_NO_SAPI;
-            }
-            break;
         case '?':
             goto out;
         default:
@@ -444,20 +450,33 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
     }
 
     /* Only init a TCTI if the tool needs it and if the -h/--help option isn't present */
-    if (!show_help){
-      if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
-          tcti_conf conf = tcti_get_config(tcti_conf_option);
+    if (!show_help) {
 
-          *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
-          if (!*tcti) {
-              LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
-              goto out;
-          }
+        /* tool doesn't request a sapi, don't initialize one */
+        if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
 
-          if (!flags->enable_errata) {
-              flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
-          }
-      }
+            tcti_conf conf = tcti_get_config(tcti_conf_option);
+
+            /* name can be NULL for optional SAPI tools */
+            if (conf.name) {
+                *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
+                if (!*tcti) {
+                  LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
+                  goto out;
+                }
+
+                if (!flags->enable_errata) {
+                  flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
+                }
+                /*
+                 * no loader requested ie --tcti=none is an error if tool
+                 * doesn't indicate an optional SAPI
+                 */
+            } else if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI)) {
+                LOG_ERR("Requested no tcti, but tool requires TCTI.");
+                goto out;
+            }
+        }
     }
 
     rc = tpm2_option_code_continue;

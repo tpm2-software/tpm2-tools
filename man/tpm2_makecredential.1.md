@@ -15,7 +15,7 @@ TPM.
 
 **tpm2_makecredential**(1) - Use a TPM public key to protect a secret that is used
 to encrypt the AK certificate.  This can be used without a TPM by using
-the **--openssl-backend** option.
+the **none** TCTI option.
 
 # OPTIONS
 

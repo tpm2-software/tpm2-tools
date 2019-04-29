@@ -21,6 +21,11 @@ The current known TCTIs are:
 
   * device - Used when talking directly to a TPM device file.
 
+  * none - Do not initalize a connection with the TPM. Some tools allow for off-tpm
+           options and thus support not using a TCTI. Tools that do not support it
+           will error when attempted to be used without a TCTI connection. Does not
+           support *ANY* options and *MUST BE* presented as the exact text of "none".
+
 The arguments to either the command line option or the environment variable are
 in the form:
 
