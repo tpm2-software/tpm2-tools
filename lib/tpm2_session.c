@@ -70,7 +70,6 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
         d->bind = ESYS_TR_NONE;
         d->session_type = type;
         d->authHash = TPM2_ALG_SHA256;
-        d->nonce_caller.size = tpm2_alg_util_get_hash_size(TPM2_ALG_SHA1);
     }
     return d;
 }
@@ -122,9 +121,12 @@ static bool start_auth_session(ESYS_CONTEXT *context,
 
     tpm2_session_data *d = session->input;
 
+    TPM2B_NONCE *nonce = session->input->nonce_caller.size > 0 ?
+            &session->input->nonce_caller : NULL;
+
     TSS2_RC rval = Esys_StartAuthSession(context, d->key, d->bind,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &session->input->nonce_caller, d->session_type,
+                        nonce, d->session_type,
                         &d->symmetric, d->authHash,
                         &session->output.session_handle);
     if (rval != TPM2_RC_SUCCESS) {
