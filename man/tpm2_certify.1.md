@@ -87,7 +87,7 @@ tpm2_certify -H 0x81010002 -P 0x0011 -p 0x00FF -g 0x00B -a <fileName> -s <fileNa
 
 tpm2_certify -C obj.context -c key.context -P 0x0011 -p 0x00FF -g 0x00B -a <fileName> -s <fileName>
 
-tpm2_certify -H 0x81010002 -P 0011 -p 00FF -X -g 0x00B -a <fileName> -s <fileName>
+tpm2_certify -H 0x81010002 -P 0011 -p 00FF  -g 0x00B -a <fileName> -s <fileName>
 ```
 
 # RETURNS

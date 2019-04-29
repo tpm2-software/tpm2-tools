@@ -70,7 +70,7 @@ tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P abc123 -E abc123 -i <file
 
 tpm2_activatecredential -c ak.dat -C ek.dat -P abc123 -E abc123 -i <filePath> -o <filePath>
 
-tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P 123abc -E 1a1b1c -X -i <filePath> -o <filePath>
+tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P 123abc -E 1a1b1c  -i <filePath> -o <filePath>
 ```
 
 # RETURNS
