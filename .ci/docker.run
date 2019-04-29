@@ -109,6 +109,12 @@ make -j$(nproc) check
 
 popd
 
+# back in root git directory, check for whitespace errors. We do this post CI
+# so people can verify the rest of their patch works in CI before dying.
+# git diff --check fails with a non-zero return code causing the shell to die
+# as it has a set -e executed.
+git diff --check origin/master
+
 # upload coveralls results
 ./.ci/coveralls-upload.sh
 
