@@ -22,36 +22,36 @@ TCG profile compliant EK as the key handle.
 
 These options control the object verification:
 
-  * **-c**, **--context**=_OBJ\_CTX\_OR\_HANDLE_:
+  * **-c**, **\--context**=_OBJ\_CTX\_OR\_HANDLE_:
 
     _CONTEXT\_OBJECT_ of the content object associated with the created
     certificate by CA.
     Either a file or a handle number. See section "Context Object Format".
 
-  * **-C**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-C**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     The _KEY\_CONTEXT\_OBJECT_ of the loaded key used to decrypt the random seed.
     Either a file or a handle number. See section "Context Object Format".
 
-  * **-P**, **--auth-key**=_AUTH\_VALUE_:
+  * **-P**, **\--auth-key**=_AUTH\_VALUE_:
 
     Use _AUTH\_VALUE_ for providing an authorization value for the
     _KEY\_CONTEXT\_OBJECT_.
     Passwords should follow the "authorization formatting standards", see
     section "Authorization Formatting".
 
-  * **-E**, **--auth-endorse**=_ENDORSE\_PASSWORD_:
+  * **-E**, **\--auth-endorse**=_ENDORSE\_PASSWORD_:
 
     The endorsement authorization value, optional. Follows the same formatting
     guidelines as the key authorization option **-P**.
 
-  * **-i**, **--in-file**=_INPUT\_FILE_:
+  * **-i**, **\--in-file**=_INPUT\_FILE_:
 
     Input file path, containing the two structures needed by
     **tpm2_activatecredential**(1) function. This is created via the
     **tpm2_makecredential**(1) command.
 
-  * **-o**, **--out-file**=_OUTPUT\_FILE_:
+  * **-o**, **\--out-file**=_OUTPUT\_FILE_:
 
     Output file path, record the secret to decrypt the certificate.
 

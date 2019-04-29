@@ -17,11 +17,11 @@ is released on subsequent restart of the machine.
 
 # OPTIONS
 
-  * **-x**, **--index**=_NV\_INDEX_:
+  * **-x**, **\--index**=_NV\_INDEX_:
 
     Specifies the index to define the space at.
 
-  * **-a**, **--hierarchy**=_AUTH_:
+  * **-a**, **\--hierarchy**=_AUTH_:
 
     Specifies the hierarchy used to authorize:
     * **o** for **TPM_RH_OWNER**
@@ -29,7 +29,7 @@ is released on subsequent restart of the machine.
     Defaults to **o**, **TPM_RH_OWNER**, when no value has been
     specified.
 
-  * **-P**, **--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
+  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section

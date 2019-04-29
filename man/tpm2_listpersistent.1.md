@@ -18,14 +18,14 @@
 
 These options for listing the persistent objects:
 
-  * **-g**, **--halg**=_ALGORITHM_:
+  * **-g**, **\--halg**=_ALGORITHM_:
 
     Only display persistent objects using this hash algorithm. Algorithms should
     follow the "formatting standards", see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-G**, **--kalg**=_KEY\_ALGORITHM_:
+  * **-G**, **\--kalg**=_KEY\_ALGORITHM_:
 
     Only display persistent objects using this key algorithm.
     See section "Supported Public Object Algorithms"

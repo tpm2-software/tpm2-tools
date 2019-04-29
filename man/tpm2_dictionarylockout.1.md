@@ -17,12 +17,12 @@ dictionary-attack-lockout state. If any password option is missing, assume NULL.
 
 # OPTIONS
 
-  * **-s**, **--setup-parameters**:
+  * **-s**, **\--setup-parameters**:
 
     Specifies the tool should operate to setup dictionary-attack-lockout
     parameters.
 
-  * **-c**, **--clear-lockout**:
+  * **-c**, **\--clear-lockout**:
 
     Specifies the tool should operate to clear dictionary-attack-lockout state.
 
@@ -31,18 +31,18 @@ dictionary-attack-lockout state. If any password option is missing, assume NULL.
     Specifies the wait time in seconds before another **TPM_RH_LOCKOUT**
     authentication attempt can be made after a failed authentication.
 
-  * **-t**, **--recovery-time**=_RECOVERY\_TIME_:
+  * **-t**, **\--recovery-time**=_RECOVERY\_TIME_:
 
     Specifies the wait time in seconds before another DA-protected-object
     authentication attempt can be made after max-tries number of failed
     authentications.
 
-  * **-n**, **--max-tries**=_MAX\_TRYS_:
+  * **-n**, **\--max-tries**=_MAX\_TRYS_:
 
     Specifies the maximum number of allowed authentication attempts on
     DA-protected-object; after which DA is activated.
 
-  * **-p**, **--auth-lockout**=_LOCKOUT\_AUTH_:
+  * **-p**, **\--auth-lockout**=_LOCKOUT\_AUTH_:
 
     The lockout authorization value.
 

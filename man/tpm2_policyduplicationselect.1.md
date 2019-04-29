@@ -16,24 +16,24 @@
 
 # OPTIONS
 
-  * **-S**, **--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_SESSION_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-n**, **--object-name**=_OBJ\_NAME\_FILE_:
+  * **-n**, **\--object-name**=_OBJ\_NAME\_FILE_:
 
     Input name file of the object to be duplicated.
 
-  * **-N**, **--new-parent-name**=_NP\_NAME\_FILE_:
+  * **-N**, **\--new-parent-name**=_NP\_NAME\_FILE_:
 
     Input name file of the new parent.
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
-  * **--include-object-if-exists**:
+  * **\--include-object-if-exists**:
 
     If exists, the object name will be included in the value in policy digest.
 

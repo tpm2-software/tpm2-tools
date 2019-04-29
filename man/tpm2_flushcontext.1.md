@@ -18,24 +18,24 @@ transient object, loaded session or saved session from the TPM.
 
 # OPTIONS
 
-  * **-c**, **--context**=_CONTEXT\_OBJECT_:
+  * **-c**, **\--context**=_CONTEXT\_OBJECT_:
 
     The handle or session file of an object, loaded session or saved session to be removed.
     See section "Context Object Format".
 
-  * **-t**, **--transient-object**:
+  * **-t**, **\--transient-object**:
 
     Remove all transient objects.
 
-  * **-l**, **--loaded-session**:
+  * **-l**, **\--loaded-session**:
 
     Remove all loaded sessions.
 
-  * **-s**, **--saved-session**:
+  * **-s**, **\--saved-session**:
 
     Remove all saved sessions.
 
-  * **-S**, **--session**=_SESSION\_FILE_:
+  * **-S**, **\--session**=_SESSION\_FILE_:
 
     Obtain handle to flush from a session file. A session file is generated from **tpm2_startauthsession**(1)'s **-S** option.
 
@@ -54,7 +54,7 @@ tpm2_flushcontext -c 0x80000000
 
 ## Flush all the transient objects loaded
 ```
-tpm2_flushcontext --transient-object
+tpm2_flushcontext \--transient-object
 ```
 
 ## Flush a context via a session file

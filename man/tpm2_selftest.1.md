@@ -21,7 +21,7 @@ Self-test can be executed in two modes :
 
 # OPTIONS
 
-* **-f**, **--fulltest** : Run self-test in full mode
+* **-f**, **\--fulltest** : Run self-test in full mode
 
 [common options](common/options.md)
 

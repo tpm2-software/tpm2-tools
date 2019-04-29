@@ -20,55 +20,55 @@ server.
 
 # OPTIONS
 
-  * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
 
     Specifies current endorsement authorization.
     Authorizations should follow the "authorization formatting standards", see
     section "Authorization Formatting".
 
-  * **-P**, **--auth-ek**=_EK\_AUTH_
+  * **-P**, **\--auth-ek**=_EK\_AUTH_
 
     Specifies the EK authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-w**, **--auth-owner**=_OWNER\_AUTH_
+  * **-w**, **\--auth-owner**=_OWNER\_AUTH_
 
     Specifies the current owner authorization.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-H**, **--handle**=_HANDLE_:
+  * **-H**, **\--handle**=_HANDLE_:
 
     Specifies the handle used to make EK  persistent.
     If a value of **-** is passed the tool will find a vacant persistent handle
     to use and print out the automatically selected handle.
 
-  * **-G**, **--algorithm**=_ALGORITHM_:
+  * **-G**, **\--algorithm**=_ALGORITHM_:
 
     Specifies the algorithm type of EK.
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms. See section "Algorithm Specifiers" on how to specify
     an algorithm argument.
 
-  * **-o**, **--out-file**=_FILE_:
+  * **-o**, **\--out-file**=_FILE_:
 
     Specifies the file used to save the public portion of EK.
 
-  * **-N**, **--non-persistent**:
+  * **-N**, **\--non-persistent**:
 
     Specifies to readout the EK public without making it persistent.
 
-  * **-O**, **--offline**=_FILE_:
+  * **-O**, **\--offline**=_FILE_:
 
     Specifies the file that contains an EK retrieved from offline
     platform that needs to be provisioned.
 
-  * **-E**, **--ec-cert**=_EC\_CERT\_FILE_:
+  * **-E**, **\--ec-cert**=_EC\_CERT\_FILE_:
 
     Specifies the file used to save the Endorsement Credentials retrieved from
     the TPM manufacturer provisioning server. Defaults to stdout if not
     specified.
 
-  * **-U**, **--untrusted**:
+  * **-U**, **\--untrusted**:
 
     Specifies to attempt connecting with the TPM manufacturer provisioning server
     without verifying server certificate.

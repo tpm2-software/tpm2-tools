@@ -21,31 +21,31 @@ object creation and or tools using the object.
 
 These options control creating the policy authorization session:
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
-  * **--policy-pcr**:
+  * **\--policy-pcr**:
 
     Identifies the PCR policy type for policy creation.
 
-  * **-g**, **--policy-digest-alg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--policy-digest-alg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used in computation of the policy digest. Algorithms
     should follow the "formatting standards", see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-L**, **--set-list**=_PCR\_LIST_:
+  * **-L**, **\--set-list**=_PCR\_LIST_:
 
     The list of PCR banks and selected PCRs' ids for each bank.
 
-  * **-F**, **--pcr-input-file**=_PCR\_FILE_:
+  * **-F**, **\--pcr-input-file**=_PCR\_FILE_:
 
     Optional Path or Name of the file containing expected PCR values for the
     specified index. Default is to read the current PCRs per the set list.
 
-  * **--policy-session**:
+  * **\--policy-session**:
 
     Start a policy session of type **TPM_SE_POLICY**. Default without this option
     is **TPM_SE_TRIAL**.
@@ -64,7 +64,7 @@ These options control creating the policy authorization session:
 
 ## Create a authorization policy tied to a specific PCR index
 ```
-tpm2_createpolicy --policy-pcr -L 0x4:0 -o policy.file -F pcr0.bin
+tpm2_createpolicy \--policy-pcr -L 0x4:0 -o policy.file -F pcr0.bin
 ```
 
 # RETURNS

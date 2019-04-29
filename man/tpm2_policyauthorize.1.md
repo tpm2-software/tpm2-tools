@@ -28,30 +28,30 @@ in the policy digest.
 
 # OPTIONS
 
-  * **-o**, **--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
-  * **-S**, **--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_SESSION_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-i**, **--in-policy-file**=_POLICY\_FILE_:
+  * **-i**, **\--in-policy-file**=_POLICY\_FILE_:
 
     The policy digest that has to be authorized.
 
-  * **-q**, **--qualify-data**=_DATA_FILE_:
+  * **-q**, **\--qualify-data**=_DATA_FILE_:
 
     The policy qualifier data signed in conjunction with the input policy digest.
     This is a unique data that the signer can choose to include in the signature.
 
-  * **-n**, **--name**=_NAME\_DATA\_FILE_:
+  * **-n**, **\--name**=_NAME\_DATA\_FILE_:
 
     File containing the name of the verifying public key. This ties the final
     policy digest with a signer. This can be retrieved with **tpm2_readpublic**(1)
 
-  * **-t**, **--ticket**=_TICKET\_FILE_:
+  * **-t**, **\--ticket**=_TICKET\_FILE_:
 
     The ticket file to record the validation structure. This is generated with
     **tpm2_verifysignature**(1).
@@ -120,7 +120,7 @@ tpm2_create -Q -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -i- -C prim
 ```
 tpm2_verifysignature -c signing_key.ctx -g sha256 -m pcr.policy -s pcr.signature -t verification.tkt -f rsassa
 
-tpm2_startauthsession --policy-session -S session.ctx
+tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policypcr -Q -S session.ctx -L sha256:0 -o pcr.policy
 

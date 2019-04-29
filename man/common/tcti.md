@@ -6,7 +6,7 @@ mediums.
 
 To control the TCTI, the tools respect:
 
-  1. The command line option **-T** or **--tcti**
+  1. The command line option **-T** or **\--tcti**
   2. The environment variable: _TPM2TOOLS\_TCTI_.
 
 **Note:** The command line option always overrides the environment variable.
@@ -86,14 +86,14 @@ available:
       ```bus_name=com.example.FooBar```:
 
       ```
-      --tcti=tabrmd:bus_name=com.example.FooBar
+      \--tcti=tabrmd:bus_name=com.example.FooBar
       ```
 
       Specify the default (abrmd) tcti and a config string of
       ```bus_type=session```:
 
       ```
-      --tcti:bus_type=session
+      \--tcti:bus_type=session
       ```
 
       **NOTE**: abrmd and tabrmd are synonymous.

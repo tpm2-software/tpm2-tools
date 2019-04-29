@@ -16,7 +16,7 @@
 
 # OPTIONS
 
-  * **-c**, **--capability**=_CAPABILITY\_NAME_:
+  * **-c**, **\--capability**=_CAPABILITY\_NAME_:
 
     The name of the capability group to query.
     Currently supported capability groups are:
@@ -60,7 +60,7 @@
     * **handles-saved-session**:
       Display handles about saved sessions.
 
-  * **-l**, **--list**:
+  * **-l**, **\--list**:
 
     List known supported capability names. These names can be
     supplied as the argument to the **-c** option. Output is in a
@@ -82,7 +82,7 @@
 
 ## To list the fixed properties of the TPM
 ```
-tpm2_getcap --capability properties-fixed
+tpm2_getcap \--capability properties-fixed
 ```
 
 ## To list the supported capability arguments to **-c**

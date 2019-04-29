@@ -31,34 +31,34 @@ loaded-key:
 
 # OPTIONS
 
-  * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
 
     Specifies current endorsement authorization.
     Authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-P**, **--auth-ak**=_AK\_AUTH_
+  * **-P**, **\--auth-ak**=_AK\_AUTH_
 
     Specifies the AK authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-w**, **--auth-owner**=_OWNER\_AUTH_
+  * **-w**, **\--auth-owner**=_OWNER\_AUTH_
 
     Specifies the current owner authorization.
     Same formatting as the endorse password value or **-e** option.
 
-  * **-C**, **--ek-context**=_EK\_CONTEXT\_OBJECT_:
+  * **-C**, **\--ek-context**=_EK\_CONTEXT\_OBJECT_:
 
     Specifies the object context of the EK. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-k**, **--ak-handle**=_AK\_HANDLE_:
+  * **-k**, **\--ak-handle**=_AK\_HANDLE_:
 
     Specifies the handle used to make AK persistent.
     If a value of **-** is passed the tool will find a vacant persistent handle
     to use and print out the automatically selected handle.
 
-  * **-c**, **--context**=_CONTEXT\_FILE\_NAME_:
+  * **-c**, **\--context**=_CONTEXT\_FILE\_NAME_:
 
     Optional, specifies a path to save the context of the AK handle. If the AK
     is not persisted to a handle (via **-k**) the tool defaults to saving a
@@ -66,14 +66,14 @@ loaded-key:
     If one saves the context file via this option and the public key via the
     **-p** option, the AK can be restored via a call to **tpm2_loadexternal**(1).
 
-  * **-G**, **--algorithm**=_ALGORITHM_:
+  * **-G**, **\--algorithm**=_ALGORITHM_:
 
     Specifies the algorithm type of AK. Supports:
     * ecc - An P256 key.
     * rsa - An RSA2048 key.
     * keyedhash - hmac key.
 
-  * **-D**, **--digest-alg**=_HASH\_ALGORITHM_:
+  * **-D**, **\--digest-alg**=_HASH\_ALGORITHM_:
 
     Like **-G**, but specifies the digest algorithm used for signing.
     Algorithms should follow the
@@ -81,25 +81,25 @@ loaded-key:
     See section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-s**, **--sign-alg**=_SIGN\_ALGORITHM_:
+  * **-s**, **\--sign-alg**=_SIGN\_ALGORITHM_:
 
     Like **-G** but specifies signing algorithm. Algorithms should follow the
     "formatting standards", see section "Algorithm Specifiers".
     See section "Supported Signing Algorithms" for a list of supported
     signing algorithms.
 
-  * **-p**, **--file**=_FILE_:
+  * **-p**, **\--file**=_FILE_:
 
     Specifies the file used to save the public portion of AK. This will be a
     binary data structure corresponding to the **TPM2B_PUBLIC** struct in the
     specification. One can control the output to other formats via the
-    **--format** option.
+    **\--format** option.
 
-  * **-n**, **--ak-name**=_NAME_:
+  * **-n**, **\--ak-name**=_NAME_:
 
     Specifies the file used to save the ak name, optional.
 
-  * **-r**, **--privfile**=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **\--privfile**=_OUTPUT\_PRIVATE\_FILE_:
 
     The output file which contains the sensitive portion of the object, optional.
     If the object is an asymmetric key-pair, then this is the private key.

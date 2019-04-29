@@ -21,12 +21,12 @@ symmetric key, both the public and private portions need to be loaded.
 
 # OPTIONS
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-g**, **--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -34,21 +34,21 @@ symmetric key, both the public and private portions need to be loaded.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-m**, **--message**=_MSG\_FILE_:
+  * **-m**, **\--message**=_MSG\_FILE_:
 
     The message file, containing the content to be  digested.
 
-  * **-D**, **--digest**=_DIGEST\_FILE_:
+  * **-D**, **\--digest**=_DIGEST\_FILE_:
 
     The input hash file, containing the hash of the message. If this option is
     selected, then the message (**-m**) and algorithm (**-g**) options do not need
     to be specified.
 
-  * **-s**, **--sig**=_SIG\_FILE_:
+  * **-s**, **\--sig**=_SIG\_FILE_:
 
     The input signature file of the signature to be validated.
 
-  * **-f**, **--format**:
+  * **-f**, **\--format**:
 
     Set the input signature file to a specified format. The default is the tpm2.0 TPMT_SIGNATURE
     data format, however different schemes can be selected if the data came from an external
@@ -59,7 +59,7 @@ symmetric key, both the public and private portions need to be loaded.
     Also, see section "Supported Signing Schemes" for a list of supported hash
     algorithms.
 
-  * **-t**, **--ticket**=_TICKET\_FILE_:
+  * **-t**, **\--ticket**=_TICKET\_FILE_:
 
     The ticket file to record the validation structure.
 

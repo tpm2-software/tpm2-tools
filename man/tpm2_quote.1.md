@@ -16,22 +16,22 @@
 
 # OPTIONS
 
-  * **-C**, **--ak-context**=_AK\_CONTEXT\_OBJECT_:
+  * **-C**, **\--ak-context**=_AK\_CONTEXT\_OBJECT_:
 
     Context object for the existing AK's context. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-P**, **--auth-ak**=_AK\_AUTH_:
+  * **-P**, **\--auth-ak**=_AK\_AUTH_:
 
     Specifies the authorization value for AK specified by option **-C**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-l**, **--id-list**=_PCR\_ID\_LIST_
+  * **-l**, **\--id-list**=_PCR\_ID\_LIST_
 
     The comma separated list of selected PCRs' e.g. "4,5,6".
 
-  * **-L**, **--sel-list**=_PCR\_SELECTION\_LIST_:
+  * **-L**, **\--sel-list**=_PCR\_SELECTION\_LIST_:
 
     The list of PCR banks and selected PCRs' ids for each bank.
     _PCR\_SELECTION\_LIST_ values should follow the
@@ -39,33 +39,33 @@
 
     Also see **NOTES** section below.
 
-  * **-m**, **--message**:
+  * **-m**, **\--message**:
 
     Message output file, records the quote message that makes up the data that
     is signed by the TPM.
 
-  * **-s**, **--signature**:
+  * **-s**, **\--signature**:
 
     Signature output file, records the signature in the format specified via the **-f**
     option.
 
-  * **-f**, **--format**
+  * **-f**, **\--format**
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 
-  * **-p**, **--pcrs**:
+  * **-p**, **\--pcrs**:
 
     PCR output file, optional, records the list of PCR values as defined
     by **-l** or **-L**.  Note that only the digest of these values is stored in the
-    signed quote message -- these values themselves are not signed or
+    signed quote message \-- these values themselves are not signed or
     stored in the message.
 
-  * **-q**, **--qualify-data**:
+  * **-q**, **\--qualify-data**:
 
     Data given as a Hex string to qualify the  quote, optional. This is typically
     used to add a nonce against replay attacks.
 
-  * **-g**, **--halg**:
+  * **-g**, **\--halg**:
 
     Hash algorithm for signature. Required if **-p** is given.
 

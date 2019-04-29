@@ -22,7 +22,7 @@ interactions with the created primary.
 
 # OPTIONS
 
-  * **-a**, **--hierarchy**=_HIERARCHY_:
+  * **-a**, **\--hierarchy**=_HIERARCHY_:
 
     Specify the hierarchy under which the object is created. This will also
     dictate which authorization secret (if any) must be supplied. Defaults to
@@ -34,20 +34,20 @@ interactions with the created primary.
       * **n** for **TPM_RH_NULL**
       * **`<num>`** where a raw number can be used.
 
-  * **-P**, **--auth-hierarchy**=_HIERARCHY\_\_AUTH\_VALUE_:
+  * **-P**, **\--auth-hierarchy**=_HIERARCHY\_\_AUTH\_VALUE_:
 
     Optional authorization value when authorization is required to create object
     under the specified hierarchy given via the **-a** option. Authorization
     values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-p**, **--auth-object**=_OBJECT\_AUTH_:
+  * **-p**, **\--auth-object**=_OBJECT\_AUTH_:
 
     Optional authorization password for the newly created object. Password
     values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-g**, **--halg**=_ALGORITHM_:
+  * **-g**, **\--halg**=_ALGORITHM_:
 
     The hash algorithm to use for generating the objects name.
     If not specified, the default name algorithm is SHA256.
@@ -55,29 +55,29 @@ interactions with the created primary.
     "Algorithm Specifiers". Also, see section
     "Supported Hash Algorithms" for a list of supported hash algorithms.
 
-  * **-G**, **--kalg**=_KEY\_ALGORITHM_:
+  * **-G**, **\--kalg**=_KEY\_ALGORITHM_:
 
     Algorithm type for generated key. If not specified, the default key
     algorithm is RSA. See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
 
-  * **-o**, **--out-context-name**=_CONTEXT\_FILE\_NAME_:
+  * **-o**, **\--out-context-name**=_CONTEXT\_FILE\_NAME_:
 
     Optional file name to use for the returned object context, otherwise a
     default of _primary.ctx_ is used.
 
-  * **-L**, **--policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy-file**=_POLICY\_FILE_:
 
     An optional file input that contains the policy digest for policy based authorization of the object.
 
-  * **-b**, **--object-attributes**=_ATTRIBUTES_:
+  * **-b**, **\--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
 
     `TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
 
-  * **-u**, **--unique-data**=_UNIQUE\_FILE_:
+  * **-u**, **\--unique-data**=_UNIQUE\_FILE_:
 
     An optional file input that contains the binary bits of a **TPMU_PUBLIC_ID** union where
     numbers (such as length words) are in little-endian format. This is passed in the

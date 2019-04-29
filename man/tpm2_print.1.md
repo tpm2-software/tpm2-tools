@@ -17,12 +17,12 @@ elements to stdout as YAML.
 
 # OPTIONS
 
-  * **-t**, **--type**:
+  * **-t**, **\--type**:
 
     Required. Type of data structure. Only **TPMS_ATTEST** and **TPMS_CONTEXT** are
     presently supported.
 
-  * **-i**, **--in-file**:
+  * **-i**, **\--in-file**:
 
     Optional. File containing TPM object. Reads from stdin if unspecified.
 
@@ -35,9 +35,9 @@ elements to stdout as YAML.
 ```
 tpm2_print -t TPMS_ATTEST -f /path/to/tpm/quote
 
-tpm2_print --type=TPMS_ATTEST --file=/path/to/tpm/quote
+tpm2_print \--type=TPMS_ATTEST \--file=/path/to/tpm/quote
 
-cat /path/to/tpm/quote | tpm2_print --type=TPMS_ATTEST
+cat /path/to/tpm/quote | tpm2_print \--type=TPMS_ATTEST
 ```
 
 # RETURNS

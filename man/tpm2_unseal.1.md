@@ -16,18 +16,18 @@
 
 # OPTIONS
 
-  * **-c**, **--context-object**=_CONTEXT\_OBJECT_:
+  * **-c**, **\--context-object**=_CONTEXT\_OBJECT_:
 
     Context object for the loaded object. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-p**, **--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth-key**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-o**, **--out-file**=_OUT\_FILE_:
+  * **-o**, **\--out-file**=_OUT\_FILE_:
 
     Output file name, containing the unsealed data. Defaults to stdout if not specified.
 
@@ -36,14 +36,14 @@
   Options used for internally controlling sessions and policy events. These
   are exclusive of **-P**.
 
-  * **-L**, **--set-list**==_PCR\_SELECTION\_LIST_:
+  * **-L**, **\--set-list**==_PCR\_SELECTION\_LIST_:
 
     The list of PCR banks and selected PCRs' ids.
     _PCR\_SELECTION\_LIST_ values should follow the
     PCR bank specifiers standards, see section "PCR Bank Specifiers".
     **-S** is mutually exclusive of this option.
 
-  * **-F**,**--pcr-input-file**=_PCR\_INPUT\_FILE_
+  * **-F**,**\--pcr-input-file**=_PCR\_INPUT\_FILE_
 
     Optional Path or Name of the file containing expected PCR values for the specified index.
     Default is to read the current PCRs per the set list.
@@ -72,10 +72,10 @@ tpm2_unseal -c item.context -L sha1:0,1,2 -F out.dat
 
 # NOTES
 
-The **--set-list** and **--pcr-input-file** options should only be
+The **\--set-list** and **\--pcr-input-file** options should only be
 used for simple PCR authentication policies. For more complex policies the
 tools should be run in an execution environment that keeps the session context
-alive and pass that session using the **--input-session-handle** option.
+alive and pass that session using the **\--input-session-handle** option.
 
 # RETURNS
 

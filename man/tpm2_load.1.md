@@ -20,30 +20,30 @@ defaults to *load.ctx* and can be specified with **-o**.
 
 # OPTIONS
 
-  * **-C**, **--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
+  * **-C**, **\--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
 
     Context object loaded object's parent. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-P**, **--auth-parent**=_KEY\_AUTH_:
+  * **-P**, **\--auth-parent**=_KEY\_AUTH_:
 
     Optional authorization value to use the parent object specified by **-C**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-u**, **--pubfile**=_PUBLIC\_OBJECT\_DATA\_FILE_:
+  * **-u**, **\--pubfile**=_PUBLIC\_OBJECT\_DATA\_FILE_:
 
     A file containing the public portion of the object.
 
-  * **-r**, **--privfile**=_PRIVATE\_OBJECT\_DATA\_FILE_:
+  * **-r**, **\--privfile**=_PRIVATE\_OBJECT\_DATA\_FILE_:
 
     A file containing the sensitive portion of the object.
 
-  * **-n**, **--name**=_NAME\_DATA\_FILE_:
+  * **-n**, **\--name**=_NAME\_DATA\_FILE_:
 
     An optional file to save the name structure of the object.
 
-  * **-o**, **--out-context**=_CONTEXT\_FILE\_NAME_:
+  * **-o**, **\--out-context**=_CONTEXT\_FILE\_NAME_:
 
     The file name of the saved object context, optional. If unspecified defaults
     to *object.ctx*.

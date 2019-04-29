@@ -23,23 +23,23 @@ Refer to:
 
 # OPTIONS
 
-  * **-e**, **--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
 
     Specifies current endorsement authorization.
     authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-P**, **--auth-ek**=_EK\_AUTH_
+  * **-P**, **\--auth-ek**=_EK\_AUTH_
 
     Specifies the EK authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-w**, **--auth-owner**=_OWNER\_AUTH_
+  * **-w**, **\--auth-owner**=_OWNER\_AUTH_
 
     Specifies the current owner authorization.
     Same formatting as the endorse password value or **-e** option.
 
-  * **-c**, **--context**=_CONTEXT\_OBJECT_:
+  * **-c**, **\--context**=_CONTEXT\_OBJECT_:
 
     Specifies the name of a context object used to store the EK, either a path
     to save the context of the EK or a handle used to persist EK in the TPM.
@@ -51,21 +51,21 @@ Refer to:
     If one saves the context file via this option and the public key via the
     **-p** option, the EK can be restored via a call to **tpm2_loadexternal**(1).
 
-  * **-G**, **--algorithm**=_ALGORITHM_:
+  * **-G**, **\--algorithm**=_ALGORITHM_:
 
     Specifies the algorithm type of EK. Supports:
     * **ecc** - An P256 key.
     * **rsa** - An RSA2048 key.
     * **keyedhash** - hmac key.
 
-  * **-p**, **--file**=_FILE_:
+  * **-p**, **\--file**=_FILE_:
 
     Optional: specifies the file used to save the public portion of EK. This defaults
     to a binary data structure corresponding to the **TPM2B_PUBLIC** structure in the
-    specification. Using the **--format** option allows one to change this
+    specification. Using the **\--format** option allows one to change this
     behavior.
 
-  * **-t**, **--template**:
+  * **-t**, **\--template**:
 
     Optional: Uses the manufacturer defined EK Template and EK Nonce to populate
     the **TPM2B_PUBLIC** public area. See the TCG EK Credential Profile
