@@ -9,7 +9,7 @@ The AES cipher has a bitsize and a mode. When the mode is not specified, ie a
 mode is specified during object creation, only that mode is allowed in
 subsequent use cases.
 
-  * **aes** - Default AES selection. The default AES Selection is AES 256 with
+  * **aes** - Default AES selection. The default AES Selection is AES 128 with
     a NULL mode.
 
   * **aes[128|192|256]** - AES with a key size of 128, 192 and 256 respectively
@@ -40,7 +40,7 @@ on an RSA scheme, like RSAES_OAEP.
 
     * restricted object - scheme of null and a NULL symmetric algorithm.
 
-    * non-restricted object - scheme of null and an aes256cfb symmetric algorithm.
+    * non-restricted object - scheme of null and an aes128cfb symmetric algorithm.
 
   * **rsa[1024|2048]** -
     Similar to **rsa** option, but provides control over the key
@@ -49,7 +49,7 @@ on an RSA scheme, like RSAES_OAEP.
   * **rsa[1024|2048|4096]:[oaep|rsaes]** -
     Similar to **rsa[1024|2048|4096]** option, but provides the ability
     to control the scheme. The algorithms encryption options will default to:
-    aes256cfb.
+    aes128cfb.
 
   * **rsa[1024|2048]:[oaep|rsaes]:[aes]**
     Similar to **rsa[1024|2048]:[oaep|rsaes]** option, but provides
@@ -76,7 +76,7 @@ on an asymmetric encryption scheme, like RSAES_OAEP.
 
     * restricted object - scheme of null and a NULL symmetric algorithm.
 
-    * non-restricted object - scheme of null and an aes256cfb symmetric algorithm.
+    * non-restricted object - scheme of null and an aes128cfb symmetric algorithm.
 
   * **ecc[224|256|384|521]** -
     Similar to **ecc** option, but provides control over the curve
@@ -85,7 +85,7 @@ on an asymmetric encryption scheme, like RSAES_OAEP.
   * **ecc[224|256|384|521]:[oaep|rsaes]** -
     Similar to **ecc[224|256|384|521]** option, but provides the ability
     to control the scheme. The algorithms encryption options will default to:
-    aes256cfb.
+    aes128cfb.
 
   * **ecc[224|256|384|521]:[oaep|rsaes]:[aes]**
     Similar to **ecc[224|256|384|521]:[oaep|rsaes]** option, but provides
