@@ -199,15 +199,10 @@ bool tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s);
  */
 void tpm2_session_free(tpm2_session **session);
 
-/**
- * Sets the TPMA_SESSION_CONTINUESESSION attribute for the session.
- * @param ectx
- *  The Enhanced System API (ESAPI) context
- * @param s
- *  The tpm2_session for which attributes will be modified
- * @return
- *  true on success, false otherwise.
- */
-bool tpm2_session_set_continuesession(ESYS_CONTEXT *ectx, tpm2_session *s);
+tpm2_session_data *tpm2_password_session_data_new(TPM2B_AUTH *auth_value);
+
+void tpm2_session_set_auth_value(tpm2_session *session, TPM2B_AUTH *auth_value);
+
+const TPM2B_AUTH *tpm2_session_get_auth_value(tpm2_session *session);
 
 #endif /* SRC_TPM2_SESSION_H_ */

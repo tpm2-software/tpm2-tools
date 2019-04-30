@@ -21,13 +21,8 @@
 
 typedef struct auth auth;
 struct auth {
-    struct {
-        TPMS_AUTH_COMMAND auth;
-        tpm2_session *session;
-    } old;
-    struct {
-        TPMS_AUTH_COMMAND auth;
-    } new;
+    tpm2_session *old;
+    tpm2_session *new;
 };
 
 typedef struct changeauth_ctx changeauth_ctx;
@@ -62,7 +57,6 @@ struct changeauth_ctx {
     bool is_nv;
     bool is_transient;
     bool is_persistent;
-    bool is_auth_policy_session_loaded;
     const char *tpm_handle_context_arg;
     tpm2_loaded_object tpm_handle_context_object;
     char *opr_path;
@@ -70,27 +64,7 @@ struct changeauth_ctx {
     tpm2_loaded_object tpm_handle_parent_context_object;
 };
 
-static changeauth_ctx ctx = {
-    .auths = {
-        .owner = {
-            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-        },
-        .endorse = {
-            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-        },
-        .lockout = {
-            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
-        },
-        .tpm_handle = {
-            .old = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-            .new = { .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-        },
-    },
-    .flags = { 0 },
-};
+static changeauth_ctx ctx;
 
 static bool change_auth(ESYS_CONTEXT *ectx,
         struct auth *pwd, const char *desc,
@@ -99,15 +73,17 @@ static bool change_auth(ESYS_CONTEXT *ectx,
     TSS2_RC rval;
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, auth_handle,
-                            &pwd->old.auth, pwd->old.session);
+                            pwd->old);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle for auth");
         return false;
     }
 
+    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(pwd->new);
+
     rval = Esys_HierarchyChangeAuth(ectx, auth_handle,
                 shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                &pwd->new.auth.hmac);
+                new_auth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HierarchyChangeAuth, rval);
         return false;
@@ -143,99 +119,79 @@ static bool change_hierarchy_auth(ESYS_CONTEXT *ectx) {
 
 static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
 
-    bool result;
-
-    if (ctx.flags.w) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
-                &ctx.auths.owner.new.auth, NULL);
-        if (!result) {
-            LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
-            return false;
-        }
+    /* always run this, so we pick up the default empty password session */
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
+            &ctx.auths.owner.new, false);
+    if (!result) {
+        LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
+        return false;
     }
 
-    if (ctx.flags.e) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
-                &ctx.auths.endorse.new.auth, NULL);
-        if (!result) {
-            LOG_ERR("Invalid new endorse authorization, got\"%s\"",
-                ctx.endorse_auth_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
+            &ctx.auths.endorse.new, false);
+    if (!result) {
+        LOG_ERR("Invalid new endorse authorization, got\"%s\"",
+            ctx.endorse_auth_str);
+        return false;
     }
 
-    if (ctx.flags.l) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
-                &ctx.auths.lockout.new.auth, NULL);
-        if (!result) {
-            LOG_ERR("Invalid new lockout authorization, got\"%s\"",
-                ctx.lockout_auth_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
+            &ctx.auths.lockout.new, false);
+    if (!result) {
+        LOG_ERR("Invalid new lockout authorization, got\"%s\"",
+            ctx.lockout_auth_str);
+        return false;
     }
 
-    if (ctx.flags.W) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_old_str,
-                &ctx.auths.owner.old.auth, &ctx.auths.owner.old.session);
-        if (!result) {
-            LOG_ERR("Invalid current owner authorization, got\"%s\"",
-                ctx.owner_auth_old_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_old_str,
+            &ctx.auths.owner.old, true);
+    if (!result) {
+        LOG_ERR("Invalid current owner authorization, got\"%s\"",
+            ctx.owner_auth_old_str);
+        return false;
     }
 
-    if (ctx.flags.E) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_old_str,
-                &ctx.auths.endorse.old.auth, &ctx.auths.endorse.old.session);
-        if (!result) {
-            LOG_ERR("Invalid current endorse authorization, got\"%s\"",
-                ctx.endorse_auth_old_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_old_str,
+            &ctx.auths.endorse.old, true);
+    if (!result) {
+        LOG_ERR("Invalid current endorse authorization, got\"%s\"",
+            ctx.endorse_auth_old_str);
+        return false;
     }
 
-    if (ctx.flags.L) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_old_str,
-                &ctx.auths.lockout.old.auth, &ctx.auths.lockout.old.session);
-        if (!result) {
-            LOG_ERR("Invalid current lockout authorization, got\"%s\"",
-                ctx.lockout_auth_old_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_old_str,
+            &ctx.auths.lockout.old, true);
+    if (!result) {
+        LOG_ERR("Invalid current lockout authorization, got\"%s\"",
+            ctx.lockout_auth_old_str);
+        return false;
     }
 
     result = change_hierarchy_auth(ectx);
-    result &= tpm2_session_save(ectx, ctx.auths.endorse.old.session, NULL);
-    result &= tpm2_session_save(ectx, ctx.auths.owner.old.session, NULL);
-    result &= tpm2_session_save(ectx, ctx.auths.lockout.old.session, NULL);
+    result &= tpm2_session_save(ectx, ctx.auths.endorse.old, NULL);
+    result &= tpm2_session_save(ectx, ctx.auths.owner.old, NULL);
+    result &= tpm2_session_save(ectx, ctx.auths.lockout.old, NULL);
 
     return result;
 }
 
 static bool process_tpm_handle_auths(ESYS_CONTEXT *ectx) {
 
-    bool result;
-    if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_str,
-                &ctx.auths.tpm_handle.new.auth, NULL);
-        if (!result) {
-            LOG_ERR("Invalid new authorization for tpm handle, got\"%s\"",
-                ctx.tpm_handle_auth_str);
-            return false;
-        }
+    /* always run this, so we pick up the default empty password session */
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_str,
+                &ctx.auths.tpm_handle.new, true);
+    if (!result) {
+        LOG_ERR("Invalid new authorization for tpm handle, got\"%s\"",
+            ctx.tpm_handle_auth_str);
+        return false;
     }
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_old_str,
-                &ctx.auths.tpm_handle.old.auth, &ctx.auths.tpm_handle.old.session);
-        if (!result) {
-            LOG_ERR("Invalid current authorization for tpm handle, got\"%s\"",
-                ctx.tpm_handle_auth_old_str);
-            return false;
-        }
-        if(ctx.auths.tpm_handle.old.session != NULL) {
-            ctx.is_auth_policy_session_loaded = true;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_old_str,
+            &ctx.auths.tpm_handle.old, false);
+    if (!result) {
+        LOG_ERR("Invalid current authorization for tpm handle, got\"%s\"",
+            ctx.tpm_handle_auth_old_str);
+        return false;
     }
 
     return true;
@@ -248,23 +204,19 @@ static bool process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    if (!ctx.is_auth_policy_session_loaded) {
-        LOG_ERR("Must specify policy session containing NV Change Auth ");
-        return false;
-    }
-
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
                         ctx.tpm_handle_context_object.tr_handle,
-                        &ctx.auths.tpm_handle.old.auth,
-                        ctx.auths.tpm_handle.old.session);
+                        ctx.auths.tpm_handle.old);
     if (shandle == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
     }
 
+    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(ctx.auths.tpm_handle.new);
+
     TSS2_RC rval = Esys_NV_ChangeAuth(ectx,
-                        ctx.tpm_handle_context_object.tr_handle,
-                        shandle, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.auths.tpm_handle.new.auth.hmac);
+                    ctx.tpm_handle_context_object.tr_handle,
+                    shandle, ESYS_TR_NONE, ESYS_TR_NONE, new_auth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ChangeAuth, rval);
         return false;
@@ -282,18 +234,29 @@ static bool process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
 
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
                         ctx.tpm_handle_context_object.tr_handle,
-                        &ctx.auths.tpm_handle.old.auth,
-                        ctx.auths.tpm_handle.old.session);
+                        ctx.auths.tpm_handle.old);
     if (shandle == ESYS_TR_NONE) {
         return false;
     }
+
+    if (!ctx.tpm_handle_parent_context_object.tr_handle) {
+        result = tpm2_util_sys_handle_to_esys_handle(
+                ectx,
+                ctx.tpm_handle_parent_context_object.handle,
+                &ctx.tpm_handle_parent_context_object.tr_handle);
+        if (!result) {
+            return result;
+        }
+    }
+
+    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(ctx.auths.tpm_handle.new);
 
     TPM2B_PRIVATE *outPrivate = NULL;
     TSS2_RC rval = Esys_ObjectChangeAuth(ectx,
                         ctx.tpm_handle_context_object.tr_handle,
                         ctx.tpm_handle_parent_context_object.tr_handle,
                         shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &ctx.auths.tpm_handle.new.auth.hmac, &outPrivate);
+                        new_auth, &outPrivate);
 
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ObjectChangeAuth, rval);
@@ -489,8 +452,13 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 void tpm2_onexit(void) {
 
-    tpm2_session_free(&ctx.auths.endorse.old.session);
-    tpm2_session_free(&ctx.auths.owner.old.session);
-    tpm2_session_free(&ctx.auths.lockout.old.session);
-    tpm2_session_free(&ctx.auths.tpm_handle.old.session);
+    tpm2_session_free(&ctx.auths.endorse.old);
+    tpm2_session_free(&ctx.auths.owner.old);
+    tpm2_session_free(&ctx.auths.lockout.old);
+    tpm2_session_free(&ctx.auths.tpm_handle.old);
+
+    tpm2_session_free(&ctx.auths.endorse.new);
+    tpm2_session_free(&ctx.auths.owner.new);
+    tpm2_session_free(&ctx.auths.lockout.new);
+    tpm2_session_free(&ctx.auths.tpm_handle.new);
 }

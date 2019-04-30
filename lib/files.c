@@ -186,6 +186,7 @@ bool files_save_context(TPMS_CONTEXT *context, FILE *stream) {
         LOG_ERR("Could not write savedHandle");
         goto out;
     }
+    LOG_INFO("Save TPMS_CONTEXT->savedHandle: 0x%x", context->savedHandle);
 
     // UINT64
     result = files_write_64(stream, context->sequence);
@@ -289,6 +290,7 @@ static bool load_tpm_context_file(FILE *fstream, TPMS_CONTEXT *context) {
         LOG_ERR("Error reading savedHandle!");
         goto out;
     }
+    LOG_INFO("load: TPMS_CONTEXT->savedHandle: 0x%x", context->savedHandle);
 
     result = files_read_64(fstream, &context->sequence);
     if (!result) {

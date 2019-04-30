@@ -27,37 +27,35 @@
 typedef struct tpm_encrypt_decrypt_ctx tpm_encrypt_decrypt_ctx;
 struct tpm_encrypt_decrypt_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
-    } auth;
+        char *auth_str;
+        const char *context_arg;
+        tpm2_loaded_object context;
+    } object;
+
     TPMI_YES_NO is_decrypt;
     TPM2B_MAX_BUFFER data;
     char *input_path;
     char *out_file_path;
-    const char *context_arg;
-    tpm2_loaded_object key_context_object;
     TPMI_ALG_SYM_MODE mode;
     struct {
         char *in;
         char *out;
     } iv;
     struct {
-        UINT8 p : 1;
         UINT8 D : 1;
         UINT8 i : 1;
         UINT8 X : 1;
     } flags;
-    char *key_auth_str;
 };
 
 static tpm_encrypt_decrypt_ctx ctx = {
     .mode = TPM2_ALG_NULL,
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
 };
 
 static bool readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
 
-    TSS2_RC rval = Esys_ReadPublic(ectx, ctx.key_context_object.tr_handle,
+    TSS2_RC rval = Esys_ReadPublic(ectx, ctx.object.context.tr_handle,
                       ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                       public, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
@@ -81,20 +79,20 @@ static bool encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
     unsigned version = 2;
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
-                            ctx.key_context_object.tr_handle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.object.context.tr_handle,
+                            ctx.object.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
     }
 
-    TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.key_context_object.tr_handle,
+    TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.object.context.tr_handle,
                       shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                       &ctx.data, ctx.is_decrypt, ctx.mode, iv_in,
                       &out_data, &iv_out);
     if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
         version = 1;
-        rval = Esys_EncryptDecrypt(ectx, ctx.key_context_object.tr_handle,
+        rval = Esys_EncryptDecrypt(ectx, ctx.object.context.tr_handle,
                   shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                   ctx.is_decrypt, ctx.mode, iv_in, &ctx.data,
                   &out_data, &iv_out);
@@ -141,11 +139,10 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'c':
-        ctx.context_arg = value;
+        ctx.object.context_arg = value;
         break;
     case 'p':
-        ctx.flags.p = 1;
-        ctx.key_auth_str = value;
+        ctx.object.auth_str = value;
         break;
     case 'D':
         ctx.is_decrypt = 1;
@@ -197,7 +194,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool result;
     int rc = 1;
 
-    if (!ctx.context_arg) {
+    if (!ctx.object.context_arg) {
         LOG_ERR("Expected a context file or handle, got none.");
         return -1;
     }
@@ -209,20 +206,18 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return false;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.context_arg,
-                                &ctx.key_context_object);
+    result = tpm2_util_object_load(ectx, ctx.object.context_arg,
+                                &ctx.object.context);
     if (!result) {
         goto out;
     }
 
-    if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid object key authorization, got\"%s\"",
-                ctx.key_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
+            &ctx.object.session, false);
+    if (!result) {
+        LOG_ERR("Invalid object key authorization, got\"%s\"",
+            ctx.object.auth_str);
+        goto out;
     }
 
     /*
@@ -280,7 +275,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     rc = 0;
 out:
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.object.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -290,5 +285,5 @@ out:
 
 void tpm2_onexit(void) {
 
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.object.session);
 }

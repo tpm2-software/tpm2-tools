@@ -27,9 +27,9 @@
 typedef struct tpm_quote_ctx tpm_quote_ctx;
 struct tpm_quote_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        const char *auth_str;
         tpm2_session *session;
-    } auth;
+    } ak;
     char *outFilePath;
     char *signature_path;
     char *message_path;
@@ -41,24 +41,19 @@ struct tpm_quote_ctx {
     TPM2B_DATA qualifyingData;
     TPML_PCR_SELECTION pcrSelections;
     TPMS_CAPABILITY_DATA cap_data;
-    char *ak_auth_str;
     const char *context_arg;
     tpm2_loaded_object context_object;
     struct {
-        UINT16 l : 1;
-        UINT16 L : 1;
-        UINT16 o : 1;
-        UINT16 G : 1;
-        UINT16 P : 1;
-        UINT16 p : 1;
+        UINT8  p : 1;
+        UINT8 l : 1;
+        UINT8 L : 1;
+        UINT8 o : 1;
+        UINT8 G : 1;
     } flags;
     tpm2_pcrs pcrs;
 };
 
 static tpm_quote_ctx ctx = {
-    .auth = {
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-    },
     .algs = {
         .count = 3,
         .alg = {
@@ -136,7 +131,7 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.ak.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
@@ -225,8 +220,7 @@ static bool on_option(char key, char *value) {
         ctx.context_arg = value;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.ak_auth_str = value;
+        ctx.ak.auth_str = value;
         break;
     case 'l':
         if(!pcr_parse_list(value, strlen(value), &ctx.pcrSelections.pcrSelections[0]))
@@ -320,13 +314,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.ak_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
+            &ctx.ak.session, false);
+    if (!result) {
+        LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
+        goto out;
     }
 
     if (ctx.flags.p) {
@@ -365,12 +357,12 @@ out:
         fclose(ctx.pcr_output);
     }
 
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.ak.session, NULL);
     if (!result) {
         rc = 1;
     }
 
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.ak.session);
 
     return rc;
 }

@@ -31,22 +31,22 @@
 #define FILE_PREFIX "file:"
 #define FILE_PREFIX_LEN sizeof(FILE_PREFIX) - 1
 
-static bool handle_hex_password(const char *password, TPMS_AUTH_COMMAND *auth) {
+static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
 
     /* if it is hex, then skip the prefix */
     password += HEX_PREFIX_LEN;
 
-    auth->hmac.size = BUFFER_SIZE(typeof(auth->hmac), buffer);
-    int rc = tpm2_util_hex_to_byte_structure(password, &auth->hmac.size, auth->hmac.buffer);
+    auth->size = BUFFER_SIZE(typeof(*auth), buffer);
+    int rc = tpm2_util_hex_to_byte_structure(password, &auth->size, auth->buffer);
     if (rc) {
-        auth->hmac.size = 0;
+        auth->size = 0;
         return false;
     }
 
     return true;
 }
 
-static bool handle_str_password(const char *password, TPMS_AUTH_COMMAND *auth) {
+static bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
 
     /* str may or may not have the str: prefix */
     bool is_str_prefix = !strncmp(password, STR_PREFIX, STR_PREFIX_LEN);
@@ -58,18 +58,18 @@ static bool handle_str_password(const char *password, TPMS_AUTH_COMMAND *auth) {
      * Per the man page:
      * "a return value of size or more means that the output was truncated."
      */
-    size_t wrote = snprintf((char *)&auth->hmac.buffer, BUFFER_SIZE(typeof(auth->hmac), buffer), "%s", password);
-    if (wrote >= BUFFER_SIZE(typeof(auth->hmac), buffer)) {
-        auth->hmac.size = 0;
+    size_t wrote = snprintf((char *)&auth->buffer, BUFFER_SIZE(typeof(*auth), buffer), "%s", password);
+    if (wrote >= BUFFER_SIZE(typeof(*auth), buffer)) {
+        auth->size = 0;
         return false;
     }
 
-    auth->hmac.size = wrote;
+    auth->size = wrote;
 
     return true;
 }
 
-static bool handle_password(const char *password, TPMS_AUTH_COMMAND *auth) {
+static bool handle_password(const char *password, TPM2B_AUTH *auth) {
 
     bool is_hex = !strncmp(password, HEX_PREFIX, HEX_PREFIX_LEN);
     if (is_hex) {
@@ -80,8 +80,28 @@ static bool handle_password(const char *password, TPMS_AUTH_COMMAND *auth) {
     return handle_str_password(password, auth);
 }
 
-static bool handle_session(ESYS_CONTEXT *ectx, const char *path, TPMS_AUTH_COMMAND *auth,
+static bool handle_password_session(const char *password, tpm2_session **session) {
+
+    TPM2B_AUTH auth = { 0 };
+    bool result = handle_password(password, &auth);
+    if (!result) {
+        return result;
+    }
+
+    tpm2_session_data *sdata = tpm2_password_session_data_new(&auth);
+    if (!sdata) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    *session = tpm2_session_new(NULL, sdata);
+    return *session != NULL;
+}
+
+static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
         tpm2_session **session) {
+
+    TPM2B_AUTH auth = { 0 };
 
     /* if it is session, then skip the prefix */
     path += SESSION_PREFIX_LEN;
@@ -105,7 +125,7 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path, TPMS_AUTH_COMMA
         *password = '\0';
         password++;
         if (*password) {
-            bool result = handle_password(password, auth);
+            bool result = handle_password(password, &auth);
             if (!result) {
                 return false;
             }
@@ -117,13 +137,7 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path, TPMS_AUTH_COMMA
         return false;
     }
 
-    // TODO: is setting this necessary?
-    ESYS_TR sessiontr = tpm2_session_get_handle(*session);
-    bool ok = tpm2_util_esys_handle_to_sys_handle(ectx, sessiontr,
-                &auth->sessionHandle);
-    if (!ok) {
-        LOG_WARN("Failed to set sessionHandle for auth");
-    }
+    tpm2_session_set_auth_value(*session, &auth);
 
     bool is_trial = tpm2_session_is_trial(*session);
     if (is_trial) {
@@ -136,87 +150,101 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path, TPMS_AUTH_COMMA
     return true;
 }
 
-static bool handle_file(const char *path, TPMS_AUTH_COMMAND *auth) {
+static bool handle_file(const char *path, tpm2_session **session) {
 
     bool ret = false;
-    char *tmp = NULL;
+
+    TPM2B_AUTH auth = { 0 };
+
+    UINT8 buffer[(sizeof(auth.buffer) * 2) + HEX_PREFIX_LEN + 1] = { 0 };
+    UINT16 size = sizeof(buffer) - 1;
 
     path += FILE_PREFIX_LEN;
 
-    FILE *f = fopen(path, "rb");
-    if (!f) {
-        LOG_ERR("Could not open file: \"%s\" error: %s", path, strerror(errno));
+    path = strcmp("-", path) ? path : NULL;
+
+    ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL, path,
+            &size, buffer);
+    if (!ret) {
         return false;
     }
 
-    unsigned long file_size = 0;
-    ret = files_get_file_size(f, &file_size, path);
+    ret = handle_password((char *)buffer, &auth);
     if (!ret) {
-        goto out;
+        return false;
     }
 
-    if (file_size + 1 <= file_size) {
-        LOG_ERR("overflow: file_size too large");
-        goto out;
-    }
-
-    tmp = calloc(file_size + 1, sizeof(char));
-    if (!tmp) {
+    tpm2_session_data *sdata = tpm2_password_session_data_new(&auth);
+    if (!sdata) {
         LOG_ERR("oom");
-        goto out;
+        return false;
     }
 
-    ret = files_read_bytes(f, (UINT8 *)tmp, file_size);
-    if (!ret) {
-        goto out;
+    *session = tpm2_session_new(NULL, sdata);
+    if (!sdata) {
+        free(sdata);
+        LOG_ERR("oom");
+        return false;
     }
 
-    ret = handle_password(tmp, auth);
-
-out:
-    fclose(f);
-    free(tmp);
-
-    return ret;
+    return true;
 }
 
 bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
-    TPMS_AUTH_COMMAND *auth, tpm2_session **session) {
+    tpm2_session **session, bool is_restricted) {
 
+    bool result;
+
+    password = password ? password : "";
+
+    /* starts with session: */
     bool is_session = !strncmp(password, SESSION_PREFIX, SESSION_PREFIX_LEN);
-    if (is_session && !session) {
-        LOG_ERR("Tool does not support sessions for this auth value");
+    if (is_session) {
+
+        if (is_restricted) {
+            LOG_ERR("cannot specify %s", password);
+            return false;
+        }
+
+        result = handle_session(ectx, password, session);
+        if (!result) {
+            return false;
+        }
+        goto handled;
+    }
+
+    /* starts with "file:" */
+    bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
+    if (is_file) {
+        result = handle_file(password, session);
+        if (!result) {
+            return false;
+        }
+        goto handled;
+    }
+
+    /* must be a password */
+    result = handle_password_session(password, session);
+    if (!result) {
         return false;
     }
 
-    bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
-    if (is_file) {
-        return handle_file(password, auth);
-    }
+handled:
 
-    return is_session ?
-         handle_session(ectx, password, auth, session) :
-         handle_password(password, auth);
+    return true;
 }
 
-ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
-            TPMS_AUTH_COMMAND *auth, tpm2_session *session) {
+ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,
+            tpm2_session *session) {
 
-    // If we have a valid auth value, prefer it
-    if (auth->hmac.size > 0) {
-        TPM2_RC rval = Esys_TR_SetAuth(ectx, for_auth, &auth->hmac);
-        if (rval != TPM2_RC_SUCCESS) {
-            return ESYS_TR_NONE;
-        }
+    ESYS_TR handle = tpm2_session_get_handle(session);
 
-        return ESYS_TR_PASSWORD;
+    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
+
+    TPM2_RC rval = Esys_TR_SetAuth(ectx, object, auth);
+    if (rval != TPM2_RC_SUCCESS) {
+        return ESYS_TR_NONE;
     }
 
-    // If we have a valid session, use that
-    if (session) {
-        return tpm2_session_get_handle(session);
-    }
-
-    // For an empty auth and no session use ESYS_TR_PASSWORD
-    return ESYS_TR_PASSWORD;
+    return handle;
 }

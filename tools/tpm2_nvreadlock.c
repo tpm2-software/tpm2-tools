@@ -24,26 +24,20 @@
 
 typedef struct tpm_nvreadlock_ctx tpm_nvreadlock_ctx;
 struct tpm_nvreadlock_ctx {
-    UINT32 nv_index;
+    TPM2_HANDLE nv_index;
+    TPMI_RH_PROVISION hierarchy;
+
     UINT32 size_to_read;
     UINT32 offset;
+
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
-        TPMI_RH_PROVISION hierarchy;
     } auth;
-    struct {
-        UINT8 P : 1;
-        UINT8 unused : 7;
-    } flags;
-    char *passwd_auth_str;
 };
 
 static tpm_nvreadlock_ctx ctx = {
-    .auth = {
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .hierarchy = TPM2_RH_OWNER
-    }
+    .hierarchy = TPM2_RH_OWNER
 };
 
 static bool nv_readlock(ESYS_CONTEXT *ectx) {
@@ -57,9 +51,9 @@ static bool nv_readlock(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
+    ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
@@ -95,15 +89,14 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.auth.hierarchy,
+        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
                 TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
             return false;
         }
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.passwd_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     }
 
@@ -131,14 +124,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.passwd_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid handle authorization, got \"%s\"",
-                ctx.passwd_auth_str);
-           goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid handle authorization, got \"%s\"",
+            ctx.auth.auth_str);
+       goto out;
     }
 
     result = nv_readlock(ectx);

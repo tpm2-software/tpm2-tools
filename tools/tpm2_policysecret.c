@@ -29,20 +29,12 @@ struct tpm2_policysecret_ctx {
     tpm2_loaded_object context_object;
     //Auth value of the auth object
     char *auth_str;
-    //Auth value length
-    UINT16 auth_str_size;
     struct {
         UINT8 c : 1;
-        UINT8 p : 1;
     } flags;
-    TPMS_AUTH_COMMAND session_data;
 };
 
-static tpm2_policysecret_ctx ctx = {
-    .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-    .auth_str_size = UINT16_MAX,
-    .auth_str = NULL,
-};
+static tpm2_policysecret_ctx ctx;
 
 static bool on_option(char key, char *value) {
 
@@ -76,19 +68,7 @@ bool on_arg (int argc, char **argv) {
         return true;
     }
 
-    bool result;
-    if (!strcmp(argv[0], "-")) {
-        //auth data from stdin
-        result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,NULL,
-                &ctx.auth_str_size, ctx.session_data.hmac.buffer);
-        if (!result) {
-            return false;
-        }
-        ctx.session_data.hmac.size = ctx.auth_str_size;
-    } else {
-        ctx.flags.p = 1;
-        ctx.auth_str = argv[0];
-    }
+    ctx.auth_str = argv[0];
 
     return true;
 }
@@ -145,16 +125,16 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
-            &ctx.session_data, NULL);
-    }
+    tpm2_session *pwd_session;
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
+        &pwd_session, false);
     if (!result) {
         goto out;
     }
 
     result = tpm2_policy_build_policysecret(ectx, s,
-        ctx.session_data, ctx.context_object.tr_handle);
+        pwd_session, ctx.context_object.tr_handle);
+    tpm2_session_free(&pwd_session);
     if (!result) {
         LOG_ERR("Could not build policysecret ");
         goto out;

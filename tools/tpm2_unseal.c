@@ -25,25 +25,21 @@
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        const char *auth_str;
         tpm2_session *session;
-    } auth;
+    } parent;
     char *outFilePath;
     char *raw_pcrs_file;
     char *session_file;
-    char *parent_auth_str;
     TPML_PCR_SELECTION pcr_selection;
     const char *context_arg;
     tpm2_loaded_object context_object;
     struct {
-        UINT8 p : 1;
         UINT8 L : 1;
     } flags;
 };
 
-static tpm_unseal_ctx ctx = {
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-};
+static tpm_unseal_ctx ctx;
 
 bool unseal_and_save(ESYS_CONTEXT *ectx) {
 
@@ -54,7 +50,7 @@ bool unseal_and_save(ESYS_CONTEXT *ectx) {
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.parent.session);
     if (shandle1 == ESYS_TR_NONE) {
         ret = false;
         goto out;
@@ -92,14 +88,14 @@ static bool start_auth_session(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    ctx.auth.session = tpm2_session_new(ectx,
+    ctx.parent.session = tpm2_session_new(ectx,
             session_data);
-    if (!ctx.auth.session) {
+    if (!ctx.parent.session) {
         LOG_ERR("Could not start tpm session");
         return false;
     }
 
-    bool result = tpm2_policy_build_pcr(ectx, ctx.auth.session,
+    bool result = tpm2_policy_build_pcr(ectx, ctx.parent.session,
                     ctx.raw_pcrs_file, &ctx.pcr_selection);
     if (!result) {
         LOG_ERR("Could not build a pcr policy");
@@ -123,8 +119,12 @@ static bool init(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.flags.L) {
-        result = start_auth_session(ectx);
+        return start_auth_session(ectx);
+    } else {
+        result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+                &ctx.parent.session, false);
         if (!result) {
+            LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.parent.auth_str);
             return false;
         }
     }
@@ -139,8 +139,7 @@ static bool on_option(char key, char *value) {
         ctx.context_arg = value;
         break;
     case 'p': {
-        ctx.flags.p = 1;
-        ctx.parent_auth_str = value;
+        ctx.parent.auth_str = value;
     }
         break;
     case 'o':
@@ -187,15 +186,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.parent_auth_str);
-            goto out;
-        }
-    }
-
     result = unseal_and_save(ectx);
     if (!result) {
         LOG_ERR("Unseal failed!");
@@ -209,20 +199,23 @@ out:
         /*
          * Only flush sessions started internally by the tool.
          */
-        ESYS_TR handle = tpm2_session_get_handle(ctx.auth.session);
+        ESYS_TR handle = tpm2_session_get_handle(ctx.parent.session);
         TSS2_RC rval = Esys_FlushContext(ectx, handle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_FlushContext, rval);
             rc = 1;
         }
     } else {
-        result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+        result = tpm2_session_save(ectx, ctx.parent.session, NULL);
         if (!result) {
             rc = 1;
         }
     }
 
-    tpm2_session_free(&ctx.auth.session);
-
     return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.parent.session);
 }

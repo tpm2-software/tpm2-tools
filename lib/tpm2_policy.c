@@ -317,12 +317,13 @@ bool tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
 }
 
 bool tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, TPMS_AUTH_COMMAND session_data,
+    tpm2_session *policy_session, tpm2_session *secret_session,
     ESYS_TR handle) {
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
+
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, handle,
-                        &session_data, policy_session);
+                        secret_session);
     if (shandle == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;

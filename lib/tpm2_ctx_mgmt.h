@@ -22,12 +22,11 @@
  *  True on success, False on error.
  *  Use LOG_PERR() to output error information.
  */
-bool tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *ectx,
+bool tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *context,
         ESYS_TR auth,
-        TPMS_AUTH_COMMAND *sdata,
         tpm2_session *sess,
         ESYS_TR objhandle,
         TPMI_DH_PERSISTENT phandle,
-        ESYS_TR *out_tr);
+	ESYS_TR *out_tr);
 
 #endif /* LIB_TPM2_CTX_MGMT_H_ */

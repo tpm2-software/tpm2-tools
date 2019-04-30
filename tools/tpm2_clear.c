@@ -16,23 +16,13 @@
 typedef struct clear_ctx clear_ctx;
 struct clear_ctx {
     bool platform;
-    char *lockout_auth_str;
     struct {
-        UINT8 L : 1;
-        UINT8 unused : 7;
-    } flags;
-    struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
     } auth;
 };
 
-static clear_ctx ctx = {
-    .platform = false,
-    .auth = {
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-    },
-};
+static clear_ctx ctx;
 
 static bool clear(ESYS_CONTEXT *ectx) {
 
@@ -44,7 +34,6 @@ static bool clear(ESYS_CONTEXT *ectx) {
         rh = ESYS_TR_RH_PLATFORM;
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, rh,
-                            &ctx.auth.session_data,
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle for hierarchy");
@@ -69,8 +58,7 @@ static bool on_option(char key, char *value) {
         ctx.platform = true;
         break;
     case 'L':
-        ctx.flags.L = 1;
-        ctx.lockout_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     }
 
@@ -95,13 +83,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
     bool result = false;;
 
-    if (ctx.flags.L) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.lockout_auth_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.auth.auth_str);
+        return false;
     }
 
     result = clear(ectx);

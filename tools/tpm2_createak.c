@@ -30,10 +30,8 @@ struct createak_context {
     struct {
         const char *ctx_arg;
         tpm2_loaded_object ek_ctx;
-        struct {
-            TPMS_AUTH_COMMAND session_data;
-            tpm2_session *session;
-        } auth2;
+        tpm2_session *session;
+        char *auth_str;
     } ek;
     struct {
         struct {
@@ -52,23 +50,16 @@ struct createak_context {
             const char *name_file;
             const char *priv_file;
         } out;
+        char *auth_str;
     } ak;
     struct {
-        struct {
-            TPMS_AUTH_COMMAND session_data;
-            tpm2_session *session;
-        } auth2;
+        char *auth_str;
+        tpm2_session *session;
     } owner;
     struct {
         UINT8 f : 1;
-        UINT8 w : 1;
-        UINT8 e : 1;
-        UINT8 P : 1;
-        UINT8 unused : 4;
     } flags;
-    char *owner_auth_str;
-    char *endorse_auth_str;
-    char *ak_auth_str;
+
     bool find_persistent_ak;
 };
 
@@ -84,12 +75,6 @@ static createak_context ctx = {
         .out = {
             .pub_fmt = pubkey_format_tss
         },
-    },
-    .ek = {
-        .auth2 = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-    },
-    .owner = {
-        .auth2 = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     },
     .flags = { 0 },
     .find_persistent_ak = false
@@ -247,7 +232,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     tpm2_session_free(&session);
 
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
-                        &ctx.ek.auth2.session_data, ctx.ek.auth2.session);
+                        ctx.ek.session);
     if (shandle == ESYS_TR_NONE) {
         return false;
     }
@@ -300,7 +285,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     tpm2_session_free(&session);
 
     shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
-                &ctx.ek.auth2.session_data, ctx.ek.auth2.session);
+                ctx.ek.session);
     if (shandle == ESYS_TR_NONE) {
         goto out;
     }
@@ -362,7 +347,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     if (ctx.ak.in.handle) {
         // use the owner auth here.
         shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
-                    &ctx.owner.auth2.session_data, ctx.owner.auth2.session);
+                    ctx.owner.session);
         if (shandle == ESYS_TR_NONE) {
             retval = false;
             goto nameout;
@@ -489,16 +474,13 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'w':
-        ctx.flags.w = 1;
-        ctx.owner_auth_str = value;
+        ctx.owner.auth_str = value;
         break;
     case 'e':
-        ctx.flags.e = 1;
-        ctx.endorse_auth_str = value;
+        ctx.ek.auth_str = value;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.ak_auth_str = value;
+        ctx.ak.auth_str = value;
         break;
     case 'p':
         ctx.ak.out.pub_file = value;
@@ -574,34 +556,42 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
-    if (ctx.flags.w) {
-        bool res = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
-                &ctx.owner.auth2.session_data, &ctx.owner.auth2.session);
+    if (!ctx.ek.ek_ctx.tr_handle) {
+        bool res = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.ek.ek_ctx.handle, &ctx.ek.ek_ctx.tr_handle);
         if (!res) {
-            LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner_auth_str);
+            LOG_ERR("Converting ek_ctx TPM2_HANDLE to ESYS_TR");
             return 1;
         }
     }
 
-    if (ctx.flags.e) {
-        bool res = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
-                &ctx.ek.auth2.session_data, &ctx.ek.auth2.session);
-        if (!res) {
-            LOG_ERR("Invalid endorse authorization, got\"%s\"",
-                ctx.endorse_auth_str);
-            return 1;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.owner.auth_str,
+            &ctx.owner.session, false);
+    if (!result) {
+        LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner.auth_str);
+        return 1;
     }
-    if (ctx.flags.P) {
-        TPMS_AUTH_COMMAND tmp;
-        bool res = tpm2_auth_util_from_optarg(ectx, ctx.ak_auth_str,
-                &tmp, NULL);
-        if (!res) {
-            LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak_auth_str);
-            return 1;
-        }
-        ctx.ak.in.inSensitive.sensitive.userAuth = tmp.hmac;
+
+    result = tpm2_auth_util_from_optarg(ectx, ctx.ek.auth_str,
+            &ctx.ek.session, false);
+    if (!result) {
+        LOG_ERR("Invalid endorse authorization, got\"%s\"",
+            ctx.ek.auth_str);
+        return 1;
     }
+
+    tpm2_session *tmp;
+    result = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
+            &tmp, true);
+    if (!result) {
+        LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
+        return 1;
+    }
+
+    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+    ctx.ak.in.inSensitive.sensitive.userAuth = *auth;
+
+    tpm2_session_free(&tmp);
 
     if (!ctx.ak.out.ctx_file || ctx.ak.out.ctx_file[0] == '\0') {
         ctx.ak.out.ctx_file = "ak.ctx";

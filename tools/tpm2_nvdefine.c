@@ -30,24 +30,17 @@ struct tpm_nvdefine_ctx {
     TPMA_NV nvAttribute;
     TPM2B_AUTH nvAuth;
     struct {
-        TPMI_RH_PROVISION hierarchy;
-        TPMS_AUTH_COMMAND session_data;
+        TPMI_RH_PROVISION handle;
+        char *auth_str;
         tpm2_session *session;
-    } auth;
+    } hierarchy;
     char *policy_file;
-    struct {
-        UINT8 P : 1;
-        UINT8 p : 1;
-        UINT8 unused : 6;
-    } flags;
-    char *hierarchy_auth_str;
     char *index_auth_str;
 };
 
 static tpm_nvdefine_ctx ctx = {
-    .auth= {
-        .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .hierarchy = TPM2_RH_OWNER
+    .hierarchy = {
+        .handle = TPM2_RH_OWNER
     },
     .nvAuth = TPM2B_EMPTY_INIT,
     .size = TPM2_MAX_NV_BUFFER_SIZE,
@@ -79,12 +72,12 @@ static int nv_space_define(ESYS_CONTEXT *ectx) {
     public_info.nvPublic.dataSize = ctx.size;
 
     ESYS_TR nvHandle;
-    ESYS_TR auth_handle = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
+    ESYS_TR auth_handle = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy.handle);
     ESYS_TR shandle1;
     TSS2_RC rval;
 
     shandle1 = tpm2_auth_util_get_shandle(ectx, auth_handle,
-                    &ctx.auth.session_data, ctx.auth.session);
+                    ctx.hierarchy.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
@@ -123,7 +116,7 @@ static bool on_option(char key, char *value) {
         }
         break;
         case 'a':
-            result = tpm2_hierarchy_from_optarg(value, &ctx.auth.hierarchy,
+            result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy.handle,
                     TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
             if (!result) {
                 LOG_ERR("get h failed");
@@ -131,8 +124,7 @@ static bool on_option(char key, char *value) {
             }
         break;
         case 'P':
-            ctx.flags.P = 1;
-            ctx.hierarchy_auth_str = value;
+            ctx.hierarchy.auth_str = value;
         break;
         case 's':
             result = tpm2_util_string_to_uint16(value, &ctx.size);
@@ -154,7 +146,6 @@ static bool on_option(char key, char *value) {
             }
             break;
         case 'p':
-            ctx.flags.p = 1;
             ctx.index_auth_str = value;
             break;
         case 'L':
@@ -190,25 +181,25 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool result;
     int rc = 1;
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid handle authorization, got \"%s\"", ctx.hierarchy_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy.auth_str,
+            &ctx.hierarchy.session, false);
+    if (!result) {
+        LOG_ERR("Invalid handle authorization, got \"%s\"", ctx.hierarchy.auth_str);
+        goto out;
     }
 
-    if (ctx.flags.p) {
-        TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(ectx, ctx.index_auth_str,
-                &tmp, NULL);
-        if (!result) {
-            LOG_ERR("Invalid index authorization, got\"%s\"", ctx.index_auth_str);
-            goto out;
-        }
-        ctx.nvAuth = tmp.hmac;
+    tpm2_session *tmp;
+    result = tpm2_auth_util_from_optarg(ectx, ctx.index_auth_str,
+            &tmp, true);
+    if (!result) {
+        LOG_ERR("Invalid index authorization, got\"%s\"", ctx.index_auth_str);
+        goto out;
     }
+
+    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+    ctx.nvAuth = *auth;
+
+    tpm2_session_free(&tmp);
 
     result = nv_space_define(ectx);
     if (!result) {
@@ -218,7 +209,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.hierarchy.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -228,5 +219,5 @@ out:
 
 void tpm2_onexit(void) {
 
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.hierarchy.session);
 }

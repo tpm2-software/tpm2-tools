@@ -19,9 +19,12 @@
 typedef struct tpm_duplicate_ctx tpm_duplicate_ctx;
 struct tpm_duplicate_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
-    } auth;
+        const char *object_arg;
+        tpm2_loaded_object object;
+    } object;
+
     char *duplicate_key_public_file;
     char *duplicate_key_private_file;
 
@@ -34,17 +37,12 @@ struct tpm_duplicate_ctx {
     const char *new_parent_object_arg;
     tpm2_loaded_object new_parent_object_context;
 
-    char *object_auth_str;
-    const char *object_arg;
-    tpm2_loaded_object object_context;
-
     struct {
         UINT16 c : 1;
         UINT16 C : 1;
         UINT16 g : 1;
         UINT16 i : 1;
         UINT16 o : 1;
-        UINT16 p : 1;
         UINT16 r : 1;
         UINT16 s : 1;
     } flags;
@@ -53,7 +51,6 @@ struct tpm_duplicate_ctx {
 
 static tpm_duplicate_ctx ctx = {
     .key_type = TPM2_ALG_ERROR,
-    .auth.session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 static bool do_duplicate(ESYS_CONTEXT *ectx,
@@ -64,21 +61,21 @@ static bool do_duplicate(ESYS_CONTEXT *ectx,
         TPM2B_ENCRYPTED_SECRET **encrypted_seed) {
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
-                            ctx.object_context.tr_handle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.object.object.tr_handle,
+                            ctx.object.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        tpm2_session_free(&ctx.auth.session);
+        tpm2_session_free(&ctx.object.session);
         return false;
     }
 
     TSS2_RC rval = Esys_Duplicate(ectx,
-                        ctx.object_context.tr_handle, ctx.new_parent_object_context.tr_handle,
+                        ctx.object.object.tr_handle, ctx.new_parent_object_context.tr_handle,
                         shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                         in_key, sym_alg, out_key, duplicate, encrypted_seed);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Duplicate, rval);
-        tpm2_session_free(&ctx.auth.session);
+        tpm2_session_free(&ctx.object.session);
         return false;
     }
 
@@ -89,8 +86,7 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'p':
-        ctx.object_auth_str = value;
-        ctx.flags.p = 1;
+        ctx.object.auth_str = value;
         break;
     case 'g':
         ctx.key_type = tpm2_alg_util_from_optarg(value,
@@ -113,7 +109,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.C = 1;
         break;
     case 'c':
-        ctx.object_arg = value;
+        ctx.object.object_arg = value;
         ctx.flags.c = 1;
         break;
     case 'r':
@@ -248,8 +244,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.object_arg,
-		    &ctx.object_context);
+    result = tpm2_util_object_load(ectx, ctx.object.object_arg,
+		    &ctx.object.object);
     if(!result) {
         goto out;
     }
@@ -260,13 +256,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.object_auth_str,
-            &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid authorization, got\"%s\"", ctx.object_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
+        &ctx.object.session, false);
+    if (!result) {
+        LOG_ERR("Invalid authorization, got\"%s\"", ctx.object.auth_str);
+        goto out;
     }
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
@@ -296,7 +290,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.object.session, NULL);
     if (!result) {
         goto free_out;
     }
@@ -341,5 +335,5 @@ out:
 }
 
 void tpm2_onexit(void) {
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.object.session);
 }

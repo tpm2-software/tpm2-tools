@@ -35,15 +35,15 @@ typedef struct createek_context createek_context;
 struct createek_context {
     struct {
         struct {
-            TPMS_AUTH_COMMAND session_data;
+            char *auth_str;
             tpm2_session *session;
         } owner;
         struct {
-            TPMS_AUTH_COMMAND session_data;
+            char *auth_str;
             tpm2_session *session;
         } endorse;
         struct {
-            TPMS_AUTH_COMMAND session_data;
+            char *auth_str;
             tpm2_session *session;
         } ek;
     } auth;
@@ -52,26 +52,14 @@ struct createek_context {
     tpm2_convert_pubkey_fmt format;
     struct {
         UINT8 f : 1;
-        UINT8 e : 1;
-        UINT8 w : 1;
-        UINT8 P : 1;
         UINT8 t : 1;
-        UINT8 unused : 3;
     } flags;
-    char *endorse_auth_str;
-    char *owner_auth_str;
-    char *ek_auth_str;
     bool find_persistent_handle;
     const char *context_arg;
     tpm2_loaded_object ctx_obj;
 };
 
 static createek_context ctx = {
-    .auth = {
-        .owner =   { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-        .endorse = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-        .ek =      { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-    },
     .format = pubkey_format_tss,
     .objdata = TPM2_HIERARCHY_DATA_INIT,
     .flags = { 0 },
@@ -155,8 +143,7 @@ static bool set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     // Read EK template
     UINT16 template_size;
     bool result = tpm2_util_nv_read(ectx, template_nv_index, 0, 0, TPM2_RH_OWNER,
-                                    &ctx.auth.endorse.session_data, ctx.auth.endorse.session,
-                                    &template, &template_size);
+            ctx.auth.endorse.session, &template, &template_size);
     if (!result) {
         result = false;
         goto out;
@@ -173,8 +160,7 @@ static bool set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     // Read EK nonce
     UINT16 nonce_size;
     result = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0, TPM2_RH_OWNER,
-                               &ctx.auth.endorse.session_data, ctx.auth.endorse.session,
-                               &nonce, &nonce_size);
+           ctx.auth.endorse.session, &nonce, &nonce_size);
     if (!result) {
         // EK template populated / ek nonce unpopulated is a valid state. Just return
         result = true;
@@ -218,7 +204,7 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
         }
     }
 
-    result = tpm2_hierarchy_create_primary(ectx, &ctx.auth.endorse.session_data,
+    result = tpm2_hierarchy_create_primary(ectx,
             ctx.auth.endorse.session, &ctx.objdata);
     if (!result) {
         return false;
@@ -227,7 +213,7 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
     if (ctx.ctx_obj.handle) {
 
         result = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
-                &ctx.auth.owner.session_data, ctx.auth.owner.session,
+                ctx.auth.owner.session,
                 ctx.objdata.out.handle,
                 ctx.ctx_obj.handle, NULL);
         if (!result) {
@@ -286,16 +272,13 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'e':
-        ctx.flags.e = 1;
-        ctx.endorse_auth_str = value;
+        ctx.auth.endorse.auth_str = value;
         break;
     case 'w':
-        ctx.flags.w = 1;
-        ctx.owner_auth_str = value;
+        ctx.auth.owner.auth_str = value;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.ek_auth_str = value;
+        ctx.auth.ek.auth_str = value;
         break;
     case 'G': {
         TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
@@ -415,30 +398,26 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    if (ctx.flags.e) {
-        bool res = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
-                &ctx.auth.endorse.session_data, &ctx.auth.endorse.session);
-        if (!res) {
-            LOG_ERR("Invalid endorse authorization, got\"%s\"",
-                ctx.endorse_auth_str);
-            return 1;
-        }
+    ret = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
+            &ctx.auth.endorse.session, false);
+    if (!ret) {
+        LOG_ERR("Invalid endorse authorization, got\"%s\"",
+            ctx.auth.endorse.auth_str);
+        return 1;
     }
-    if (ctx.flags.w) {
-        bool res = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
-                &ctx.auth.owner.session_data, &ctx.auth.owner.session);
-        if (!res) {
-            LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner_auth_str);
-            return 1;
-        }
+
+    ret = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
+            &ctx.auth.owner.session, false);
+    if (!ret) {
+        LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.auth.owner.auth_str);
+        return 1;
     }
-    if (ctx.flags.P) {
-        bool res = tpm2_auth_util_from_optarg(ectx, ctx.ek_auth_str,
-                &ctx.auth.ek.session_data, &ctx.auth.ek.session);
-        if (!res) {
-            LOG_ERR("Invalid EK authorization, got\"%s\"", ctx.ek_auth_str);
-            return 1;
-        }
+
+    ret = tpm2_auth_util_from_optarg(ectx, ctx.auth.ek.auth_str,
+            &ctx.auth.ek.session, false);
+    if (!ret) {
+        LOG_ERR("Invalid EK authorization, got\"%s\"", ctx.auth.ek.auth_str);
+        return 1;
     }
 
     /* override the default attrs */

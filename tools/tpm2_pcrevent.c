@@ -26,20 +26,17 @@ typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
     struct {
         UINT8 x : 1;
-        UINT8 P : 1;
     } flags;
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        const char *auth_str;
         tpm2_session *session;
     } auth;
     ESYS_TR pcr;
     FILE *input;
-    char *pcr_auth_str;
 };
 
 static tpm_pcrevent_ctx ctx = {
         .pcr = ESYS_TR_RH_NULL,
-        .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) }
 };
 
 static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
@@ -64,7 +61,7 @@ static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         }
 
         ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
-                                &ctx.auth.session_data, ctx.auth.session);
+                                ctx.auth.session);
         if (shandle1 == ESYS_TR_NONE) {
             return false;
         }
@@ -154,7 +151,7 @@ static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
     }
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         return false;
     }
@@ -229,19 +226,6 @@ static bool do_hmac_and_output(ESYS_CONTEXT *ectx) {
     return true;
 }
 
-static bool init(void) {
-
-    ctx.input = ctx.input ? ctx.input : stdin;
-
-    if ((ctx.auth.session || ctx.flags.P) && !ctx.flags.x) {
-        LOG_ERR("Must specify a PCR index via -x with the -%c option.",
-                ctx.flags.P ? 'P' : 'S');
-        return false;
-    }
-
-    return true;
-}
-
 static bool on_arg(int argc, char **argv) {
 
     if (argc > 1) {
@@ -272,8 +256,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.x = 1;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.pcr_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
         /* no default */
     }
@@ -299,19 +282,15 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int rc = 1;
-    bool result = init();
-    if (!result) {
-        goto out;
-    }
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.pcr_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid key handle authorization, got\"%s\"",
-                ctx.pcr_auth_str);
-            goto out;
-        }
+    ctx.input = ctx.input ? ctx.input : stdin;
+
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid key handle authorization, got\"%s\"",
+            ctx.auth.auth_str);
+        goto out;
     }
 
     result = do_hmac_and_output(ectx);

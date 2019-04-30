@@ -29,9 +29,9 @@ typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
     TPMT_TK_HASHCHECK validation;
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        const char *auth_str;
         tpm2_session *session;
-    } auth;
+    } key;
     TPMI_ALG_HASH halg;
     TPMI_ALG_SIG_SCHEME sig_scheme;
     TPMT_SIG_SCHEME in_scheme;
@@ -44,20 +44,17 @@ struct tpm_sign_ctx {
     char *inMsgFileName;
     tpm2_convert_sig_fmt sig_format;
     struct {
-        UINT16 p : 1;
-        UINT16 g : 1;
-        UINT16 s : 1;
-        UINT16 m : 1;
-        UINT16 t : 1;
-        UINT16 o : 1;
-        UINT16 f : 1;
-        UINT16 D : 1;
+        UINT8 g : 1;
+        UINT8 s : 1;
+        UINT8 m : 1;
+        UINT8 t : 1;
+        UINT8 o : 1;
+        UINT8 f : 1;
+        UINT8 D : 1;
     } flags;
-    char *key_auth_str;
 };
 
 static tpm_sign_ctx ctx = {
-        .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
         .halg = TPM2_ALG_SHA1,
         .digest = NULL,
         .sig_scheme = TPM2_ALG_NULL
@@ -78,8 +75,8 @@ static bool sign_and_save(ESYS_CONTEXT *ectx) {
     }
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
-                            ctx.key_context.tr_handle, &ctx.auth.session_data,
-                            ctx.auth.session);
+                            ctx.key_context.tr_handle,
+                            ctx.key.session);
     if (shandle1 == ESYS_TR_NONE) {
         return false;
     }
@@ -197,8 +194,7 @@ static bool on_option(char key, char *value) {
         ctx.context_arg = value;
         break;
     case 'p':
-        ctx.flags.p = 1;
-        ctx.key_auth_str = value;
+        ctx.key.auth_str = value;
         break;
     case 'g': {
         ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
@@ -262,7 +258,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "auth-key",             required_argument, NULL, 'p' },
+      { "key-key",             required_argument, NULL, 'p' },
       { "halg",                 required_argument, NULL, 'g' },
       { "sig-scheme",           required_argument, NULL, 's' },
       { "message",              required_argument, NULL, 'm' },
@@ -289,13 +285,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
+            &ctx.key.session, false);
+    if (!result) {
+        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key.auth_str);
+        goto out;
     }
 
     result = sign_and_save(ectx);
@@ -306,12 +300,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 out:
 
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.key.session, NULL);
     if (!result) {
         rc = 1;
     }
 
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.key.session);
 
     return rc;
 }

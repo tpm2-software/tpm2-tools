@@ -32,33 +32,29 @@ struct tpm_activatecred_ctx {
     struct {
         UINT8 i : 1;
         UINT8 o : 1;
-        UINT8 P : 1;
-        UINT8 E : 1;
     } flags;
 
-    char *passwd_auth_str;
-    char *endorse_auth_str;
+    struct {
+        char *auth_str;
+        tpm2_session *session;
+        const char *ctx_arg;
+    } key;
+
+    struct {
+        char *auth_str;
+        tpm2_session *session;
+    } endorse;
 
     TPM2B_ID_OBJECT credentialBlob;
     TPM2B_ENCRYPTED_SECRET secret;
 
-    TPMS_AUTH_COMMAND auth;
-    tpm2_session *auth_session;
-
-    TPMS_AUTH_COMMAND endorse_auth;
-    tpm2_session *endorse_session;
-
     const char *output_file;
     const char *ctx_arg;
-    const char *key_ctx_arg;
     tpm2_loaded_object ctx_obj;
     tpm2_loaded_object key_ctx_obj;
 };
 
-static tpm_activatecred_ctx ctx = {
-        .auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-        .endorse_auth = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-};
+static tpm_activatecred_ctx ctx;
 
 static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *cred,
         TPM2B_ENCRYPTED_SECRET *secret) {
@@ -149,7 +145,7 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
     tpm2_session_free(&session);
 
     ESYS_TR endorse_shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
-                                &ctx.endorse_auth, ctx.endorse_session);
+                                ctx.endorse.session);
     if (endorse_shandle == ESYS_TR_NONE) {
         return false;
     }
@@ -163,8 +159,8 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
     }
 
     ESYS_TR key_shandle = tpm2_auth_util_get_shandle(ectx,
-                            ctx.key_ctx_obj.tr_handle, &ctx.auth,
-                            ctx.auth_session);
+                            ctx.key_ctx_obj.tr_handle,
+                            ctx.key.session);
     if (key_shandle == ESYS_TR_NONE) {
         return false;
     }
@@ -206,15 +202,13 @@ static bool on_option(char key, char *value) {
         ctx.ctx_arg = value;
         break;
     case 'C':
-        ctx.key_ctx_arg = value;
+        ctx.key.ctx_arg = value;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.passwd_auth_str = value;
+        ctx.key.auth_str = value;
         break;
     case 'E':
-        ctx.flags.E = 1;
-        ctx.endorse_auth_str = value;
+        ctx.endorse.auth_str = value;
         break;
     case 'i':
         /* logs errors */
@@ -257,7 +251,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     if ((!ctx.ctx_arg)
-            && (!ctx.key_ctx_arg)
+            && (!ctx.key.ctx_arg)
             && !ctx.flags.i && !ctx.flags.o) {
         LOG_ERR("Expected options c and C and i and o.");
         return -1;
@@ -269,28 +263,24 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
-    res = tpm2_util_object_load(ectx, ctx.key_ctx_arg,
+    res = tpm2_util_object_load(ectx, ctx.key.ctx_arg,
                 &ctx.key_ctx_obj);
     if (!res) {
         return 1;
     }
 
-    if (ctx.flags.P) {
-        res = tpm2_auth_util_from_optarg(ectx, ctx.passwd_auth_str,
-                &ctx.auth, &ctx.auth_session);
-        if (!res) {
-            LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.passwd_auth_str);
-            return 1;
-        }
+    res = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
+            &ctx.key.session, false);
+    if (!res) {
+        LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.key.auth_str);
+        return 1;
     }
 
-    if (ctx.flags.E) {
-        res = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_str,
-                &ctx.endorse_auth, &ctx.endorse_session);
-        if (!res) {
-            LOG_ERR("Invalid endorse authorization, got\"%s\"", ctx.endorse_auth_str);
-            return 1;
-        }
+    res = tpm2_auth_util_from_optarg(ectx, ctx.endorse.auth_str,
+            &ctx.endorse.session, false);
+    if (!res) {
+        LOG_ERR("Invalid endorse authorization, got\"%s\"", ctx.endorse.auth_str);
+        return 1;
     }
 
     int rc = 0;
@@ -302,23 +292,17 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 out:
 
-    if (ctx.auth_session) {
-        res = tpm2_session_save(ectx, ctx.auth_session, NULL);
-        if (!res) {
-            rc = 1;
-        }
-
-        tpm2_session_free(&ctx.auth_session);
-    }
-
-    if (ctx.endorse_session) {
-        res = tpm2_session_save(ectx, ctx.endorse_session, NULL);
-        if (!res) {
-            rc = 1;
-        }
-
-        tpm2_session_free(&ctx.endorse_session);
+    res = tpm2_session_save(ectx, ctx.key.session, NULL);
+    res &= tpm2_session_save(ectx, ctx.endorse.session, NULL);
+    if (!res) {
+        rc = 1;
     }
 
     return rc;
+}
+
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.endorse.session);
+    tpm2_session_free(&ctx.key.session);
 }

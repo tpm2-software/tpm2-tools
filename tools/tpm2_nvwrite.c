@@ -29,12 +29,13 @@
 typedef struct tpm_nvwrite_ctx tpm_nvwrite_ctx;
 struct tpm_nvwrite_ctx {
     TPM2_HANDLE nv_index;
+    TPMI_RH_PROVISION hierarchy;
+
     UINT16 data_size;
     UINT8 nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
     struct {
-        TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
-        TPMI_RH_PROVISION hierarchy;
+        char *auth_str;
     } auth;
     FILE *input_file;
     UINT16 offset;
@@ -43,17 +44,12 @@ struct tpm_nvwrite_ctx {
     TPML_PCR_SELECTION pcr_selection;
     struct {
         UINT8 L : 1;
-        UINT8 P : 1;
         UINT8 a : 1;
     } flags;
-    char *hierarchy_auth_str;
 };
 
 static tpm_nvwrite_ctx ctx = {
-    .auth = {
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-            .hierarchy = TPM2_RH_OWNER
-    }
+    .hierarchy = TPM2_RH_OWNER
 };
 
 static bool nv_write(ESYS_CONTEXT *ectx) {
@@ -109,20 +105,22 @@ static bool nv_write(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    // Convert TPMI_RH_PROVISION ctx.auth.hierarchy to an ESYS_TR
+    // Convert TPMI_RH_PROVISION ctx.hierarchy to an ESYS_TR
     ESYS_TR hierarchy;
-    if (ctx.auth.hierarchy == ctx.nv_index) {
+    if (ctx.hierarchy == ctx.nv_index) {
         hierarchy = nv_index;
     } else {
-        hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
+        hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
     }
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
     }
+
+    printf("shandle1: 0x%X\n", shandle1);
 
     while (ctx.data_size > 0) {
 
@@ -171,7 +169,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.auth.hierarchy,
+        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
                 TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
             return false;
@@ -179,8 +177,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.a = 1;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.hierarchy_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     case 0:
         if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {
@@ -274,47 +271,47 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
-    if (ctx.flags.L && ctx.auth.session) {
+    if (ctx.flags.L && ctx.auth.auth_str) {
         LOG_ERR("Can only use either existing session or a new session,"
                 " not both!");
         goto out;
-    }
-
-    if (ctx.flags.L) {
-        result = start_auth_session(ectx);
-        if (!result) {
-            goto out;
-        }
     }
 
     /* If the users doesn't specify an authorisation hierarchy use the index
      * passed to -x/--index for the authorisation index.
      */
     if (!ctx.flags.a) {
-        ctx.auth.hierarchy = ctx.nv_index;
+        ctx.hierarchy = ctx.nv_index;
+    }
+
+    if (ctx.flags.L) {
+        printf("Starting internal auth session");
+        result = start_auth_session(ectx);
+        if (!result) {
+            goto out;
+        }
+    } else {
+        result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+                &ctx.auth.session, false);
+        if (!result) {
+            LOG_ERR("Invalid handle authorization, got \"%s\"",
+                ctx.auth.auth_str);
+            goto out;
+        }
     }
 
     /* Suppress error reporting with NULL path */
     unsigned long file_size;
     result = files_get_file_size(ctx.input_file, &file_size, NULL);
 
-    if (result && file_size > TPM2_MAX_NV_BUFFER_SIZE) {
-        LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE, got %lu expected %u", file_size,
-                TPM2_MAX_NV_BUFFER_SIZE);
-        goto out;
-    }
+    if (result) {
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid handle authorization, got \"%s\"",
-                ctx.hierarchy_auth_str);
+        if (file_size > TPM2_MAX_NV_BUFFER_SIZE) {
+            LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE, got %lu expected %u", file_size,
+                    TPM2_MAX_NV_BUFFER_SIZE);
             goto out;
         }
-    }
 
-    if (result) {
         /*
          * We know the size upfront, read it. Note that the size was already
          * bounded by TPM2_MAX_NV_BUFFER_SIZE

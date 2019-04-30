@@ -46,19 +46,6 @@
             } \
     }
 
-#define TPMS_AUTH_COMMAND_INIT(session_handle) \
-        TPMS_AUTH_COMMAND_INIT_ATTRS(session_handle, TPMA_SESSION_CONTINUESESSION)
-
-#define TPMS_AUTH_COMMAND_INIT_ATTRS(session_handle, attrs) { \
-        .sessionHandle = session_handle,\
-        .nonce = TPM2B_EMPTY_INIT, \
-        .sessionAttributes = attrs, \
-        .hmac = TPM2B_EMPTY_INIT \
-    }
-
-#define TPMS_AUTH_COMMAND_EMPTY_INIT TPMS_AUTH_COMMAND_INIT(0)
-
-
 #define TPMT_TK_CREATION_EMPTY_INIT { \
         .tag = 0, \
 		.hierarchy = 0, \

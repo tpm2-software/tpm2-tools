@@ -26,27 +26,20 @@ struct dictionarylockout_ctx {
     UINT32 lockout_recovery_time;
     bool clear_lockout;
     bool setup_parameters;
+
     struct {
-        TPMS_AUTH_COMMAND session_data;
         tpm2_session *session;
+        char *auth_str;
     } auth;
-    struct {
-        UINT8 p : 1;
-        UINT8 unused : 7;
-    } flags;
-    char *lockout_auth_str;
 };
 
-static dictionarylockout_ctx ctx = {
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-    .flags = { 0 },
-};
+static dictionarylockout_ctx ctx;
 
 bool dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
 
     TPM2_RC rval;
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_LOCKOUT,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for lockout hierarchy");
         return false;
@@ -94,8 +87,7 @@ static bool on_option(char key, char *value) {
         ctx.setup_parameters = true;
         break;
     case 'p':
-        ctx.flags.p = 1;
-        ctx.lockout_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     case 'n':
         result = tpm2_util_string_to_uint32(value, &ctx.max_tries);
@@ -159,14 +151,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    if (ctx.flags.p) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid lockout authorization, got\"%s\"",
-                ctx.lockout_auth_str);
-            return 1;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid lockout authorization, got\"%s\"",
+            ctx.auth.auth_str);
+        return 1;
     }
 
     result = dictionary_lockout_reset_and_parameter_setup(ectx);
