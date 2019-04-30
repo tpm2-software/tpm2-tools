@@ -25,9 +25,8 @@
 
 static struct {
     TPML_PCR_SELECTION pcrSelection;
-    const char *platform_auth_str;
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        const char *auth_str;
         tpm2_session *session;
     } auth;
 } ctx = {
@@ -53,7 +52,7 @@ static bool pcr_allocate(ESYS_CONTEXT *ectx) {
     UINT32 sizeAvailable;
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_PLATFORM,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for lockout hierarchy");
         return false;
@@ -99,7 +98,7 @@ static bool on_arg(int argc, char **argv){
 static bool on_option(char key, char *value) {
     switch (key) {
     case 'P':
-        ctx.platform_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     }
 
@@ -119,14 +118,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
-    bool result;
 
-    if (ctx.platform_auth_str) {
-        if (!tpm2_auth_util_from_optarg(ectx, ctx.platform_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session)) {
-            LOG_ERR("Invalid platform authorization format");
-            return 1;
-        }
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+                &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid platform authorization format");
+        return 1;
     }
     
     result = pcr_allocate(ectx);

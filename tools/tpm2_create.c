@@ -36,16 +36,16 @@
 typedef struct tpm_create_ctx tpm_create_ctx;
 struct tpm_create_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
-    } auth;
+    } parent;
+
     TPM2B_SENSITIVE_CREATE in_sensitive;
     TPM2B_PUBLIC in_public;
     char *input;
     char *opu_path;
     char *opr_path;
     char *key_auth_str;
-    char *parent_auth_str;
     const char *parent_ctx_path;
     const char *object_ctx_path;
     tpm2_loaded_object context_object;
@@ -56,8 +56,6 @@ struct tpm_create_ctx {
     char *policy;
 
     struct {
-        UINT16 P : 1;
-        UINT16 p : 1;
         UINT16 b : 1;
         UINT16 i : 1;
         UINT16 L : 1;
@@ -71,9 +69,6 @@ struct tpm_create_ctx {
 
 static tpm_create_ctx ctx = {
         .alg = DEFAULT_KEY_ALG,
-    .auth = {
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-    },
 };
 
 static bool create(ESYS_CONTEXT *ectx) {
@@ -89,7 +84,7 @@ static bool create(ESYS_CONTEXT *ectx) {
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.parent.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle");
         return false;
@@ -178,16 +173,9 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'P':
-        /*
-         * since the auth for the parent key may be a session, we need to
-         * move this call to tpm2_auth_util_from_optarg to the
-         * tpm2_tool_onrun function.
-         */
-        ctx.flags.P = 1;
-        ctx.parent_auth_str = value;
+        ctx.parent.auth_str = value;
         break;
     case 'p':
-        ctx.flags.p = 1;
         ctx.key_auth_str = value;
     break;
     case 'g':
@@ -299,7 +287,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.L && !ctx.flags.p) {
+    if (ctx.flags.L && !ctx.key_auth_str) {
         ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
     }
 
@@ -314,23 +302,23 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    if (ctx.flags.p) {
-        TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, NULL);
-        if (!result) {
-            LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
-            goto out;
-        }
-        ctx.in_sensitive.sensitive.userAuth = tmp.hmac;
+    tpm2_session *tmp;
+    result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, true);
+    if (!result) {
+        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
+        goto out;
     }
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
-            &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-            goto out;
-        }
+    TPM2B_AUTH const *auth = tpm2_session_get_auth_value(tmp);
+    ctx.in_sensitive.sensitive.userAuth = *auth;
+
+    tpm2_session_free(&tmp);
+
+    result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+        &ctx.parent.session, false);
+    if (!result) {
+        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
+        goto out;
     }
 
     result = create(ectx);
@@ -341,7 +329,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save (ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.parent.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -351,5 +339,5 @@ out:
 
 void tpm2_onexit(void) {
 
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.parent.session);
 }

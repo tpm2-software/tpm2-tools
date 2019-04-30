@@ -6,7 +6,6 @@
 //**********************************************************************;
 
 #include <errno.h>
-#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,6 +28,8 @@ struct tpm2_session_data {
     TPMI_ALG_HASH authHash;
     TPM2B_NONCE nonce_caller;
     TPMA_SESSION attrs;
+    bool is_password;
+    TPM2B_AUTH auth_data;
 };
 
 struct tpm2_session {
@@ -56,12 +57,33 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
     return d;
 }
 
+tpm2_session_data *tpm2_password_session_data_new(TPM2B_AUTH *auth_data) {
+    tpm2_session_data * d = calloc(1, sizeof(tpm2_session_data));
+    if (d) {
+        d->is_password = true;
+        memcpy(&d->auth_data, auth_data, sizeof(*auth_data));
+    }
+    return d;
+}
+
 void tpm2_session_set_key(tpm2_session_data *data, ESYS_TR key) {
     data->key = key;
 }
 
 void tpm2_session_set_attrs(tpm2_session_data *data, TPMA_SESSION attrs) {
     data->attrs = attrs;
+}
+
+void tpm2_session_set_auth_value(tpm2_session *session, TPM2B_AUTH *auth) {
+
+    if (auth == NULL) {
+        session->input->auth_data.size = 0;
+        memset(session->input->auth_data.buffer, 0xBA,
+                sizeof(session->input->auth_data.buffer));
+    }
+    else {
+        memcpy(&session->input->auth_data, auth, sizeof(*auth));
+    }
 }
 
 void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce) {
@@ -95,6 +117,10 @@ ESYS_TR tpm2_session_get_handle(tpm2_session *session) {
 
 TPM2_SE tpm2_session_get_type(tpm2_session *session) {
     return session->input->session_type;
+}
+
+const TPM2B_AUTH *tpm2_session_get_auth_value(tpm2_session *session) {
+    return &session->input->auth_data;
 }
 
 //
@@ -162,14 +188,23 @@ tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
 
     session->input = data;
 
+    if (session->input->is_password) {
+        session->output.session_handle = ESYS_TR_PASSWORD;
+    }
+
     if (!context) {
         return session;
     }
 
-    bool result = start_auth_session(context, session);
-    if (!result) {
-        tpm2_session_free(&session);
-        return NULL;
+    if (session->input->is_password) {
+        session->output.session_handle = ESYS_TR_PASSWORD;
+    } else {
+
+        bool result = start_auth_session(context, session);
+        if (!result) {
+            tpm2_session_free(&session);
+            return NULL;
+        }
     }
 
     return session;
@@ -177,8 +212,7 @@ tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
 
 /* SESSION_VERSION 1 was used prior to the switch to ESAPI. As the types of
  * several of the tpm2_session_data object members have changed the version is
- * bumped. Since sessions are transient things,make sure the SESSION_VERSION
- * matches
+ * bumped.
  */
 #define SESSION_VERSION 2
 
@@ -217,17 +251,11 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
     if (!f) {
         LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
                 dup_path, strerror(errno));
-        goto out;
+        return NULL;
     }
 
     uint32_t version;
     bool result = files_read_header(f, &version);
-
-    if (version != SESSION_VERSION) {
-        LOG_ERR("Session version mismatch, got \"%"PRIu32"\", expected \"%u\"",
-                version, SESSION_VERSION);
-        goto out;
-    }
 
     TPM2_SE type;
     result = files_read_bytes(f, &type, sizeof(type));
@@ -269,6 +297,26 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
     s->internal.path = dup_path;
     dup_path = NULL;
 
+    TPM2_HANDLE sapi_handle = 0;
+    TPMA_SESSION attrs = 0;
+
+    if (ctx) {
+        tpm2_util_esys_handle_to_sys_handle(ctx, handle,
+                    &sapi_handle);
+
+        /* hack this in here, should be done when starting the session */
+        TSS2_RC rc =
+            Esys_TRSess_GetAttributes(
+                ctx,
+                handle,
+                &attrs);
+        if (rc != TSS2_RC_SUCCESS) {
+            LOG_WARN("Esys_TRSess_GetAttributes: 0x%x", rc);
+        }
+    }
+
+    LOG_INFO("Restored session: ESYS_TR(0x%x) SAPI(0x%x) attrs(0x%x)", handle, sapi_handle, attrs);
+
 out:
     free(dup_path);
     if (f) {
@@ -281,6 +329,11 @@ bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
         const char *path) {
 
     if (!session) {
+        return true;
+    }
+
+    /* password sessions are implicit and thus do not need to be backed up */
+    if (session->output.session_handle == ESYS_TR_PASSWORD) {
         return true;
     }
 
@@ -332,6 +385,15 @@ bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
      * Save session context at end of tpm2_session. With tabrmd support it
      * can be reloaded under certain circumstances.
      */
+
+    ESYS_TR handle = tpm2_session_get_handle(session);
+
+    TPM2_HANDLE sapi_handle = 0;
+    tpm2_util_esys_handle_to_sys_handle(context, handle,
+                &sapi_handle);
+
+    LOG_INFO("Saved session: ESYS_TR(0x%x) SAPI(0x%x)", handle, sapi_handle);
+
     result = files_save_tpm_context_to_file(context,
                 tpm2_session_get_handle(session), session_file);
     if (!result) {

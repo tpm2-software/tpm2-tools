@@ -27,9 +27,9 @@
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
-    } auth;
+    } parent;
     TPM2B_PUBLIC  in_public;
     TPM2B_PRIVATE in_private;
     char *out_name_file;
@@ -40,15 +40,12 @@ struct tpm_load_ctx {
     struct {
         UINT8 u : 1;
         UINT8 r : 1;
-        UINT8 P : 1;
         UINT8 o : 1;
     } flags;
     ESYS_TR handle;
 };
 
-static tpm_load_ctx ctx = {
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-};
+static tpm_load_ctx ctx;
 
 int load (ESYS_CONTEXT *ectx) {
 
@@ -56,7 +53,7 @@ int load (ESYS_CONTEXT *ectx) {
     TPM2_RC rval;
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.parent.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return -1;
@@ -99,7 +96,6 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'P':
-        ctx.flags.P = 1;
         ctx.parent_auth_str = value;
         break;
     case 'u':
@@ -162,13 +158,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    if(ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
+            &ctx.parent.session, false);
+    if (!result) {
+        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
+        goto out;
     }
 
     result = tpm2_util_object_load(ectx,
@@ -207,7 +201,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.parent.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -217,5 +211,5 @@ out:
 
 void tpm2_onexit(void) {
 
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.parent.session);
 }

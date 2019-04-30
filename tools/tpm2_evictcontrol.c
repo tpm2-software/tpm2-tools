@@ -30,7 +30,7 @@
 typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
 struct tpm_evictcontrol_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
     } auth;
     TPMI_RH_PROVISION hierarchy;
@@ -39,7 +39,6 @@ struct tpm_evictcontrol_ctx {
     const char *context_arg;
     struct {
         UINT8 p : 1;
-        UINT8 P : 1;
         UINT8 c : 1;
         UINT8 o : 1;
     } flags;
@@ -48,7 +47,6 @@ struct tpm_evictcontrol_ctx {
 };
 
 static tpm_evictcontrol_ctx ctx = {
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     .hierarchy = TPM2_RH_OWNER,
 };
 
@@ -74,8 +72,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.p = 1;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.hierarchy_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     case 'c':
         ctx.context_arg = value;
@@ -97,7 +94,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "persistent",     required_argument, NULL, 'p' },
       { "auth-hierarchy", required_argument, NULL, 'P' },
       { "context",        required_argument, NULL, 'c' },
-      { "output",         required_argument, NULL, 'o'  },
+      { "output",         required_argument, NULL, 'o' },
     };
 
     *opts = tpm2_options_new("a:p:P:c:o:", ARRAY_LEN(topts), topts, on_option,
@@ -119,12 +116,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    /* If we load from a saved context we won't have a TPM2_HANDLE, which we
-     * need to determine whether the object is persistent
+    /* If we loaded the object from a hex handle we need to also load the
+     * associated ESYS_TR for ESAPI calls
      */
-    if (!ctx.context_object.handle) {
-        result = tpm2_util_esys_handle_to_sys_handle(ectx,
-                    ctx.context_object.tr_handle, &ctx.context_object.handle);
+    if (!ctx.context_object.tr_handle) {
+        result = tpm2_util_sys_handle_to_esys_handle(ectx,
+                    ctx.context_object.handle, &ctx.context_object.tr_handle);
         if (!result) {
             goto out;
         }
@@ -151,25 +148,25 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.flags.p = 1;
     }
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy_auth_str,
-               &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid authorization authorization, got\"%s\"",
-                ctx.hierarchy_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+           &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid authorization authorization, got\"%s\"",
+            ctx.auth.auth_str);
+        goto out;
     }
 
     if (ctx.flags.o && !ctx.flags.p) {
         LOG_ERR("Cannot specify -o without using a persistent handle");
+        goto out;
     }
+
+    tpm2_tool_output("persistentHandle: 0x%x\n", ctx.persist_handle);
 
     ESYS_TR out_tr;
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
     result = tpm2_ctx_mgmt_evictcontrol(ectx,
             hierarchy,
-            &ctx.auth.session_data,
             ctx.auth.session,
             ctx.context_object.tr_handle,
             ctx.persist_handle,

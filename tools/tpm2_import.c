@@ -49,9 +49,10 @@
 typedef struct tpm_import_ctx tpm_import_ctx;
 struct tpm_import_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
-    } auth;
+    } parent;
+
     char *input_key_file;
     char *public_key_file;
     char *private_key_file;
@@ -59,7 +60,6 @@ struct tpm_import_ctx {
     char *name_alg;
     char *attrs; /* The attributes to use */
     char *key_auth_str;
-    char *parent_auth_str;
     char *auth_key_file; /* an optional auth string for the input key file for OSSL */
     char *input_seed_file;
     char *input_enc_key_file;
@@ -72,7 +72,6 @@ struct tpm_import_ctx {
 static tpm_import_ctx ctx = {
     .key_type = TPM2_ALG_ERROR,
     .input_key_file = NULL,
-    .auth.session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
 };
 
 
@@ -164,7 +163,7 @@ static bool do_import(ESYS_CONTEXT *ectx,
         TPM2B_PRIVATE **imported_private) {
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, phandle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.parent.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for phandle");
         return false;
@@ -269,7 +268,7 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'P':
-        ctx.parent_auth_str = value;
+        ctx.parent.auth_str = value;
         break;
     case 'p':
         ctx.key_auth_str = value;
@@ -514,23 +513,26 @@ static int openssl_import(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.key_auth_str) {
-        TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, NULL);
+        tpm2_session *tmp;
+        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, true);
         if (!result) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
             return false;
         }
-        private.sensitiveArea.authValue = tmp.hmac;
+
+        const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+        private.sensitiveArea.authValue = *auth;
+
+        tpm2_session_free(&tmp);
     }
 
-    if (ctx.parent_auth_str) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
-            &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+        &ctx.parent.session, false);
+    if (!result) {
+        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
+        return false;
     }
+
     /*
      * Populate all the private and public data fields we can based on the key type and the PEM files read in.
      */
@@ -615,13 +617,11 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
       return 1;
     }
 
-    if (ctx.parent_auth_str) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
-            &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-            return 1;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+        &ctx.parent.session, false);
+    if (!result) {
+        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
+        return 1;
     }
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
@@ -694,7 +694,7 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
     }
 
 
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.parent.session, NULL);
 
     return result ? 0 : 1;
 }
@@ -714,3 +714,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     return tpm_import(ectx);
 }
 
+void tpm2_onexit(void) {
+
+    tpm2_session_free(&ctx.parent.session);
+}

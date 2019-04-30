@@ -26,22 +26,16 @@
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
 struct tpm_hmac_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
     } auth;
     char *hmac_output_file_path;
     const char *context_arg;
     tpm2_loaded_object key_context_object;
     FILE *input;
-    struct {
-        UINT8 P : 1;
-    } flags;
-    char *key_auth_str;
 };
 
-static tpm_hmac_ctx ctx = {
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
-};
+static tpm_hmac_ctx ctx;
 
 static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
 
@@ -50,7 +44,7 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
     FILE *input = ctx.input;
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.key_context_object.tr_handle,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
@@ -197,8 +191,7 @@ static bool on_option(char key, char *value) {
         ctx.context_arg = value;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.key_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     case 'o':
         ctx.hmac_output_file_path = value;
@@ -256,14 +249,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid key handle authorization, got\"%s\"",
-                ctx.key_auth_str);
-            return rc;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid key handle authorization, got\"%s\"",
+            ctx.auth.auth_str);
+        return rc;
     }
 
     result = tpm2_util_object_load(ectx, ctx.context_arg,

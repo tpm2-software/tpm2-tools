@@ -127,7 +127,6 @@ static inline bool tpm2_util_nv_read(
         UINT16 size,
         UINT16 offset,
         TPMI_RH_PROVISION hierarchy,
-        TPMS_AUTH_COMMAND *sdata,
         tpm2_session *sess,
         UINT8 **data_buffer,
         UINT16 *bytes_written) {
@@ -202,7 +201,7 @@ static inline bool tpm2_util_nv_read(
         tr_hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(hierarchy);
     }
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, tr_hierarchy, sdata, sess);
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, tr_hierarchy, sess);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for hierarchy");
         res = false;

@@ -83,8 +83,9 @@ bool tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
  *  The Enhanced system api (ESAPI) context
  * @param policy_session into which the policy digest is extended into
  *  The policy session
- * @param[in] session_data
- *  The command authentication data
+ * @param[in] secret_session
+ *  The secret authentication data to update the policy session with.
+ *  Must be a password session.
  * @param[in] handle
  *  The handle-id of the authentication object
  *
@@ -92,7 +93,7 @@ bool tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
  *  true on success, false otherwise.
  */
 bool tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, TPMS_AUTH_COMMAND session_data,
+    tpm2_session *policy_session, tpm2_session *secret_session,
     TPM2_HANDLE handle);
 
 /**

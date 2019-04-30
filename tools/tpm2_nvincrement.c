@@ -28,28 +28,26 @@
 
 typedef struct tpm_nvincrement_ctx tpm_nvincrement_ctx;
 struct tpm_nvincrement_ctx {
+
     TPM2_HANDLE nv_index;
+    TPMI_RH_PROVISION hierarchy;
+
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
-        TPMI_RH_PROVISION hierarchy;
     } auth;
+
     char *raw_pcrs_file;
     tpm2_session *policy_session;
     TPML_PCR_SELECTION pcr_selection;
     struct {
         UINT8 L : 1;
-        UINT8 P : 1;
         UINT8 a : 1;
     } flags;
-    char *hierarchy_auth_str;
 };
 
 static tpm_nvincrement_ctx ctx = {
-    .auth = {
-            .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW),
-            .hierarchy = TPM2_RH_OWNER
-    }
+    .hierarchy = TPM2_RH_OWNER
 };
 
 static bool nv_increment(ESYS_CONTEXT *ectx) {
@@ -64,14 +62,14 @@ static bool nv_increment(ESYS_CONTEXT *ectx) {
 
     // Convert TPMI_RH_PROVISION ctx.auth.hierarchy to an ESYS_TR
     ESYS_TR hierarchy;
-    if (ctx.auth.hierarchy == ctx.nv_index) {
+    if (ctx.hierarchy == ctx.nv_index) {
         hierarchy = nv_index;
     } else {
-        hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.auth.hierarchy);
+        hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
     }
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                            &ctx.auth.session_data, ctx.auth.session);
+                            ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
         return false;
@@ -106,7 +104,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.auth.hierarchy,
+        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
                 TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
         if (!result) {
             return false;
@@ -114,8 +112,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.a = 1;
         break;
     case 'P':
-        ctx.flags.P = 1;
-        ctx.hierarchy_auth_str = value;
+        ctx.auth.auth_str = value;
         break;
     case 'L':
         if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
@@ -183,10 +180,17 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
-    if (ctx.flags.L && ctx.auth.session) {
+    if (ctx.flags.L && ctx.auth.auth_str) {
         LOG_ERR("Can only use either existing session or a new session,"
                 " not both!");
         goto out;
+    }
+
+    /* If the users doesn't specify an authorisation hierarchy use the index
+     * passed to -x/--index for the authorisation index.
+     */
+    if (!ctx.flags.a) {
+        ctx.hierarchy = ctx.nv_index;
     }
 
     if (ctx.flags.L) {
@@ -194,21 +198,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (!result) {
             goto out;
         }
-    }
-
-    /* If the users doesn't specify an authorisation hierarchy use the index
-     * passed to -x/--index for the authorisation index.
-     */
-    if (!ctx.flags.a) {
-        ctx.auth.hierarchy = ctx.nv_index;
-    }
-
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy_auth_str,
-                &ctx.auth.session_data, &ctx.auth.session);
+    } else {
+        result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+                &ctx.auth.session, false);
         if (!result) {
             LOG_ERR("Invalid handle authorization, got \"%s\"",
-                ctx.hierarchy_auth_str);
+                ctx.auth.auth_str);
             goto out;
         }
     }

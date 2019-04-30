@@ -84,9 +84,6 @@ struct tpm2_hierarchy_pdata {
  * Creates a primary object.
  * @param context
  *  The Enhanced System API (ESAPI) context
- * @param sdata
- *  The authorization data for the hierarchy the primary object
- *  is associated with.
  * @param session
  *  The authorised session for accessing the primary object
  * @param objdata
@@ -96,7 +93,6 @@ struct tpm2_hierarchy_pdata {
  *  Logs errors via LOG_ERR().
  */
 bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *context,
-        TPMS_AUTH_COMMAND *sdata,
         tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata);
 

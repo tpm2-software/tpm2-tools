@@ -91,7 +91,6 @@ bool tpm2_hierarchy_from_optarg(const char *value,
 }
 
 bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
-        TPMS_AUTH_COMMAND *sdata,
         tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata) {
 
@@ -100,7 +99,7 @@ bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
     hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(objdata->in.hierarchy);
 
     TSS2_RC rval;
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy, sdata, sess);
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy, sess);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for hierarchy");
         return false;

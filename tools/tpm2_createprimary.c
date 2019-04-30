@@ -36,17 +36,13 @@
 typedef struct tpm_createprimary_ctx tpm_createprimary_ctx;
 struct tpm_createprimary_ctx {
     struct {
-        TPMS_AUTH_COMMAND session_data;
+        char *auth_str;
         tpm2_session *session;
-    } auth;
+    } parent;
+
     tpm2_hierarchy_pdata objdata;
     char *context_file;
     char *unique_file;
-    struct {
-        UINT8 P :1;
-        UINT8 p :1;
-    } flags;
-    char *parent_auth_str;
     char *key_auth_str;
 
     char *alg;
@@ -57,7 +53,6 @@ struct tpm_createprimary_ctx {
 
 static tpm_createprimary_ctx ctx = {
     .alg = DEFAULT_PRIMARY_KEY_ALG,
-    .auth = { .session_data = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW) },
     .objdata = {
         .in = {
             .sensitive = TPM2B_SENSITIVE_CREATE_EMPTY_INIT,
@@ -81,11 +76,9 @@ static bool on_option(char key, char *value) {
         break;
     }
     case 'P':
-        ctx.flags.P = 1;
-        ctx.parent_auth_str = value;
+        ctx.parent.auth_str = value;
         break;
     case 'p':
-        ctx.flags.p = 1;
         ctx.key_auth_str = value;
         break;
     case 'g':
@@ -148,23 +141,23 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.context_file = "primary.ctx";
     }
 
-    if (ctx.flags.P) {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str, &ctx.auth.session_data, &ctx.auth.session);
-        if (!result) {
-            LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-            goto out;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str, &ctx.parent.session, false);
+    if (!result) {
+        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
+        goto out;
     }
 
-    if (ctx.flags.p) {
-        TPMS_AUTH_COMMAND tmp;
-        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, NULL);
-        if (!result) {
-            LOG_ERR("Invalid new key authorization, got\"%s\"", ctx.key_auth_str);
-            goto out;
-        }
-        ctx.objdata.in.sensitive.sensitive.userAuth = tmp.hmac;
+    tpm2_session *tmp;
+    result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, true);
+    if (!result) {
+        LOG_ERR("Invalid new key authorization, got\"%s\"", ctx.key_auth_str);
+        goto out;
     }
+
+    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+    ctx.objdata.in.sensitive.sensitive.userAuth = *auth;
+
+    tpm2_session_free(&tmp);
 
     result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, ctx.unique_file, DEFAULT_ATTRS,
             &ctx.objdata.in.public);
@@ -172,8 +165,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_hierarchy_create_primary(ectx, &ctx.auth.session_data,
-                ctx.auth.session, &ctx.objdata);
+    result = tpm2_hierarchy_create_primary(ectx,
+                ctx.parent.session, &ctx.objdata);
     if (!result) {
         goto out;
     }
@@ -190,7 +183,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_save(ectx, ctx.parent.session, NULL);
     if (!result) {
         rc = 1;
     }
@@ -200,6 +193,6 @@ out:
 
 void tpm2_onexit(void) {
 
-    tpm2_session_free(&ctx.auth.session);
+    tpm2_session_free(&ctx.parent.session);
     tpm2_hierarchy_pdata_free(&ctx.objdata);
 }

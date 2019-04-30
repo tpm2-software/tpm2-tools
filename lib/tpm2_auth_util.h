@@ -38,14 +38,15 @@
  *  The optarg containing the password string.
  * @param dest
  *  The TPM2B_AUTH structure to copy the string into.
- * @param session
- *  If a session is used, returns the session data.
+ *  @ is_restricted
+ *   True if it is restricted to only password session data.
  * @return
  *  true on success, false on failure.
  */
 bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
-        const char *password, TPMS_AUTH_COMMAND *auth,
-        tpm2_session **session);
+        const char *password,
+        tpm2_session **session,
+        bool is_restricted);
 
 /**
  * Set up authorisation for a handle and return a session handle for use in
@@ -54,15 +55,15 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
  * @param ectx
  *  Enhanced System API (ESAPI) context
  * @param for_auth
- *  The target handle which needs authorisation setting up
+ *  The target handle which needs authorization setting up
  * @param auth
  *  Auth command for the handle
  * @param session
  *  Session for the handle
  * @return
- *  The authorised session handle of type ESYS_TR for the target handle
+ *  The authorized session handle of type ESYS_TR for the target handle
  */
 ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
-                TPMS_AUTH_COMMAND *auth, tpm2_session *session);
+                tpm2_session *session);
 
 #endif /* SRC_PASSWORD_UTIL_H_ */
