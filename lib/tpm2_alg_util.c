@@ -141,7 +141,7 @@ static bool handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
     s->algorithm = TPM2_ALG_AES;
 
     if (*ext == '\0') {
-        ext = "256";
+        ext = "128";
     }
 
     if (!strncmp(ext, "128", 3)) {
