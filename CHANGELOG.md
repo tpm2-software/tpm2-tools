@@ -1,4 +1,9 @@
 ## Changelog
+### 3.2.0 - next
+* tpm2_makecredential: add support for executing tool off-TPM.
+* tpm2_pcrreset: introduce new tool for resetting PCRs.
+* tpm2_quote: Fix AK auth password not being used.
+
 ### 3.1.4 - 2019-03-14
   * Fix various man pages
   * tpm2_getmanufec: fix OSSL build warnings
