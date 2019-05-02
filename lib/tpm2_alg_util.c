@@ -146,12 +146,10 @@ static bool handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
 
     if (!strncmp(ext, "128", 3)) {
         s->keyBits.aes = 128;
+    } else if (!strncmp(ext, "192", 3)) {
+        s->keyBits.aes = 192;
     } else if (!strncmp(ext, "256", 3)) {
         s->keyBits.aes = 256;
-    } else if (!strncmp(ext, "384", 3)) {
-        s->keyBits.aes = 384;
-    } else if (!strncmp(ext, "512", 3)) {
-        s->keyBits.aes = 512;
     } else {
         return false;
     }

@@ -68,6 +68,7 @@ general format for specifying this data:
   * aes - Default AES: aes128
   * aes128`<mode>` - 128 bit AES with optional mode (*ctr*|*ofb*|*cbc*|*cfb*|*ecb*). If mode is not
       specified, defaults to *null*.
+  * aes192`<mode>` - Same as aes128`<mode>`, except for a 192 bit key size.
   * aes256`<mode>` - Same as aes128`<mode>`, except for a 256 bit key size.
   * ecc - Elliptical Curve, defaults to ecc256.
   * ecc192 - 192 bit ECC
