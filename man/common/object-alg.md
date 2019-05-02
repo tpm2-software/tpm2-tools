@@ -42,16 +42,16 @@ on an RSA scheme, like RSAES_OAEP.
 
     * non-restricted object - scheme of null and an aes128cfb symmetric algorithm.
 
-  * **rsa[1024|2048]** -
+  * **rsa[1024|2048|4096]** -
     Similar to **rsa** option, but provides control over the key
-    size to either 1024 or 2048 respectively.
+    size to either 1024, 2048 or 4096 respectively.
 
   * **rsa[1024|2048|4096]:[oaep|rsaes]** -
     Similar to **rsa[1024|2048|4096]** option, but provides the ability
     to control the scheme. The algorithms encryption options will default to:
     aes128cfb.
 
-  * **rsa[1024|2048]:[oaep|rsaes]:[aes]**
+  * **rsa[1024|2048|4096]:[oaep|rsaes]:[aes]**
     Similar to **rsa[1024|2048]:[oaep|rsaes]** option, but provides
     full control over the aes key options. See the section **AES**
     for details of these AES strings.
