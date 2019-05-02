@@ -65,9 +65,9 @@ general format for specifying this data:
    This portion of the complex algorithm specifier is required. The remaining scheme and symmetric details
    will default based on the type specified and the type of the object being created.
 
-  * aes - Default AES: aes128cfb
+  * aes - Default AES: aes128
   * aes128`<mode>` - 128 bit AES with optional mode (*ctr*|*ofb*|*cbc*|*cfb*|*ecb*). If mode is not
-      specified, defaults to *cfb*.
+      specified, defaults to *null*.
   * aes256`<mode>` - Same as aes128`<mode>`, except for a 256 bit key size.
   * ecc - Elliptical Curve, defaults to ecc256.
   * ecc192 - 192 bit ECC
