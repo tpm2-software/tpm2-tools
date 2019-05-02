@@ -347,16 +347,6 @@ static bool handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
     TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
     r->exponent = 0;
 
-    /*
-     * Deal with normalizing the input strings.
-     *
-     * "rsa --> maps to rsa2048:aes128cbc
-     * "rsa:aes --> maps to rsa2048:aes128cbc
-     * "rsa:null" -- maps to rsa2048:null
-     *
-     * This function is invoked with rsa removed.
-     */
-
     bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
 
     size_t len = strlen(ext);
