@@ -41,12 +41,12 @@
 
   * **-m**, **--message**:
 
-    message output file, records the quote message that makes up the data that
+    Message output file, records the quote message that makes up the data that
     is signed by the TPM.
 
   * **-s**, **--signature**:
 
-    signature output file, records the signature in the format specified via the **-f**
+    Signature output file, records the signature in the format specified via the **-f**
     option.
 
   * **-f**, **--format**
