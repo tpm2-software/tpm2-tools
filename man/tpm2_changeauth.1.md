@@ -83,12 +83,12 @@ see section "Authorization Formatting".
 
 ## Set owner, endorsement and lockout authorizations
 ```
-tpm2_changeauth -o newo -e newe -l newl
+tpm2_changeauth -w neww -e newe -l newl
 ```
 
 ## Set owner, endorsement and lockout authorizations to a new value
 ```
-tpm2_changeauth -o newo -e newe -l newl -O oldo -E olde -L oldl
+tpm2_changeauth -w neww -e newe -l newl -O oldw -E olde -L oldl
 ```
 
 ## Unset/Clear owner authorization which was previously set to value newo
