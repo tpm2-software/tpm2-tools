@@ -104,7 +104,7 @@ tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx
 
 tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -o key.ctx
 
-tpm2_changeauth -p newkeyauth -c key.ctx -a prim.ctx -r key.priv
+tpm2_changeauth -p newkeyauth -c key.ctx -C prim.ctx -r key.priv
 ```
 
 ## Modify authorization for a NV Index - Requires Extended Session Support
