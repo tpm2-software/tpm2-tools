@@ -53,6 +53,13 @@
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 
+  * **-p**, **--pcrs**:
+
+    PCR output file, optional, records the list of PCR values as defined
+    by **-l** or **-L**.  Note that only the digest of these values is stored in the
+    signed quote message -- these values themselves are not signed or
+    stored in the message.
+
   * **-q**, **--qualify-data**:
 
     Data given as a Hex string to qualify the  quote, optional. This is typically
@@ -63,7 +70,7 @@
 
   * **-G**, **--sig-hash-algorithm**:
 
-    Hash algorithm for signature.
+    Hash algorithm for signature. Required if **-p** is given.
 
 [common options](common/options.md)
 

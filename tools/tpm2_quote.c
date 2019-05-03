@@ -42,6 +42,7 @@
 #include "conversion.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_password_util.h"
+#include "tpm2_openssl.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -54,15 +55,27 @@ static TPMS_AUTH_COMMAND sessionData = TPMS_AUTH_COMMAND_INIT(TPM2_RS_PW);
 static char *outFilePath;
 static char *signature_path;
 static char *message_path;
+static char *pcr_path;
+static FILE *pcr_output;
+static TPMS_CAPABILITY_DATA cap_data;
 static signature_format sig_format;
 static TPMI_ALG_HASH sig_hash_algorithm;
+static tpm2_algorithm algs = {
+    .count = 3,
+    .alg = {
+        TPM2_ALG_SHA1,
+        TPM2_ALG_SHA256,
+        TPM2_ALG_SHA384
+    }
+};
 static TPM2B_DATA qualifyingData = TPM2B_EMPTY_INIT;
 static TPML_PCR_SELECTION  pcrSelections;
 static bool is_auth_session;
 static TPMI_SH_AUTH_SESSION auth_session_handle;
-static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag, P_flag;
+static int k_flag, c_flag, l_flag, g_flag, L_flag, o_flag, G_flag, P_flag, p_flag;
 static char *contextFilePath;
 static TPM2_HANDLE akHandle;
+static tpm2_pcrs pcrs;
 
 static void PrintBuffer( UINT8 *buffer, UINT32 size )
 {
@@ -72,6 +85,40 @@ static void PrintBuffer( UINT8 *buffer, UINT32 size )
         tpm2_tool_output("%2.2x", buffer[i]);
     }
     tpm2_tool_output("\n");
+}
+
+
+// write all PCR banks according to g_pcrSelection & g_pcrs->
+static bool write_pcr_values() {
+
+    // PCR output to file wasn't requested
+    if (pcr_output == NULL) {
+        return true;
+    }
+
+    // Export TPML_PCR_SELECTION structure to pcr outfile
+    if (fwrite(&pcrSelections,
+            sizeof(TPML_PCR_SELECTION), 1,
+            pcr_output) != 1) {
+        LOG_ERR("write to output file failed: %s", strerror(errno));
+        return false;
+    }
+
+    // Export PCR digests to pcr outfile
+    if (fwrite(&pcrs.count, sizeof(UINT32), 1, pcr_output) != 1) {
+        LOG_ERR("write to output file failed: %s", strerror(errno));
+        return false;
+    }
+
+    UINT32 j;
+    for (j = 0; j < pcrs.count; j++) {
+        if (fwrite(&pcrs.pcr_values[j], sizeof(TPML_DIGEST), 1, pcr_output) != 1) {
+            LOG_ERR("write to output file failed: %s", strerror(errno));
+            return false;
+        }
+    }
+
+    return true;
 }
 
 static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) {
@@ -86,6 +133,8 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
                 (UINT8*)quoted->attestationData,
                 quoted->size);
     }
+
+    res &= write_pcr_values();
 
     return res;
 }
@@ -125,7 +174,53 @@ static int quote(TSS2_SYS_CONTEXT *sapi_context, TPM2_HANDLE akHandle, TPML_PCR_
     PrintBuffer( (UINT8 *)&signature, sizeof(signature) );
     //PrintTPMT_SIGNATURE(&signature);
 
+    if (pcr_output) {
+        // Filter out invalid/unavailable PCR selections
+        if (!pcr_check_pcr_selection(&cap_data, &pcrSelections)) {
+            LOG_ERR("Failed to filter unavailable PCR values for quote!");
+            return false;
+        }
+
+        // Gather PCR values from the TPM (the quote doesn't have them!)
+        if (!pcr_read_pcr_values(sapi_context, &pcrSelections, &pcrs)) {
+            LOG_ERR("Failed to retrieve PCR values related to quote!");
+            return false;
+        }
+
+        // Grab the digest from the quote
+        TPM2B_DIGEST quoteDigest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+        TPM2B_DATA extraData = TPM2B_TYPE_INIT(TPM2B_DATA, buffer);
+        if (!tpm2_util_get_digest_from_quote(&quoted, &quoteDigest, &extraData)) {
+            LOG_ERR("Failed to get digest from quote!");
+            return false;
+        }
+
+        // Print out PCR values as output
+        if (!pcr_print_pcr_struct(&pcrSelections, &pcrs)) {
+            LOG_ERR("Failed to print PCR values related to quote!");
+            return false;
+        }
+
+        // Calculate the digest from our selected PCR values (to ensure correctness)
+        TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+        if (!tpm2_openssl_hash_pcr_banks(sig_hash_algorithm, &pcrSelections, &pcrs, &pcr_digest)) {
+            LOG_ERR("Failed to hash PCR values related to quote!");
+            return false;
+        }
+        tpm2_tool_output("calcDigest: ");
+        tpm2_util_hexdump(pcr_digest.buffer, pcr_digest.size, true);
+        tpm2_tool_output("\n");
+
+        // Make sure digest from quote matches calculated PCR digest
+        if (!tpm2_util_verify_digests(&quoteDigest, &pcr_digest)) {
+            LOG_ERR("Error validating calculated PCR composite with quote");
+            return false;
+        }
+    }
+
+    // Write everything out
     bool res = write_output_files(&quoted, &signature);
+
     return res == true ? 0 : 1;
 }
 
@@ -206,6 +301,10 @@ static bool on_option(char key, char *value) {
     case 'm':
          message_path = optarg;
          break;
+    case 'p':
+         pcr_path = optarg;
+         p_flag = 1;
+         break;
     case 'f':
          sig_format = tpm2_parse_signature_format(optarg);
 
@@ -239,11 +338,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "input-session-handle", required_argument, NULL, 'S' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
+        { "pcrs",                 required_argument, NULL, 'p' },
         { "format",               required_argument, NULL, 'f' },
         { "sig-hash-algorithm",   required_argument, NULL, 'G' }
     };
 
-    *opts = tpm2_options_new("k:c:P:l:g:L:S:q:s:m:f:G:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("k:c:P:l:g:L:S:q:s:m:p:f:G:", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
@@ -268,6 +368,26 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     if (P_flag == 0) {
         sessionData.hmac.size = 0;
+    }
+
+    if (p_flag) {
+        if (!G_flag) {
+            LOG_ERR("Must specify -G if -p is requested.");
+            return -1;
+        }
+        pcr_output = fopen(pcr_path, "wb+");
+        if (!pcr_output) {
+            LOG_ERR("Could not open PCR output file \"%s\" error: \"%s\"",
+                    pcr_path, strerror(errno));
+            return 1;
+        }
+    }
+
+    if (!pcr_get_banks(sapi_context, &cap_data, &algs)) {
+        if (pcr_output) {
+            fclose(pcr_output);
+        }
+        return 1;
     }
 
     return quote(sapi_context, akHandle, &pcrSelections);

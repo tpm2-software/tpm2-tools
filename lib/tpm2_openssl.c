@@ -44,9 +44,26 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm_kdfa.h"
 #include "tpm2_openssl.h"
 #include "tpm2_util.h"
 
+int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm) {
+
+    switch (algorithm) {
+    case TPM2_ALG_SHA1:
+        return NID_sha1;
+    case TPM2_ALG_SHA256:
+        return NID_sha256;
+    case TPM2_ALG_SHA384:
+        return NID_sha384;
+    case TPM2_ALG_SHA512:
+        return NID_sha512;
+    default:
+        return NID_sha256;
+    }
+    /* no return, not possible */
+}
 
 const EVP_MD *tpm2_openssl_halg_from_tpmhalg(TPMI_ALG_HASH algorithm) {
 
@@ -122,6 +139,127 @@ void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx) {
 #endif
 }
 
+bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg,
+        BYTE *buffer, UINT16 length, TPM2B_DIGEST *digest) {
+
+    bool result = false;
+
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(halg);
+    if (!md) {
+        return false;
+    }
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
+    if (!mdctx) {
+        LOG_ERR("%s", get_openssl_err());
+        return false;
+    }
+
+    int rc = EVP_DigestInit_ex(mdctx, md, NULL);
+    if (!rc) {
+        LOG_ERR("%s", get_openssl_err());
+        goto out;
+    }
+
+    rc = EVP_DigestUpdate(mdctx, buffer, length);
+    if (!rc) {
+        LOG_ERR("%s", get_openssl_err());
+        goto out;
+    }
+
+    unsigned size = EVP_MD_size(md);
+    rc = EVP_DigestFinal_ex(mdctx, digest->buffer, &size);
+    if (!rc) {
+        LOG_ERR("%s", get_openssl_err());
+        goto out;
+    }
+
+    digest->size = size;
+
+    result = true;
+
+out:
+    EVP_MD_CTX_destroy(mdctx);
+    return result;
+}
+
+// show all PCR banks according to g_pcrSelection & g_pcrs->
+bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg, 
+                TPML_PCR_SELECTION *pcrSelect, 
+                tpm2_pcrs *pcrs, TPM2B_DIGEST *digest) {
+
+    UINT32 vi = 0, di = 0, i;
+    bool result = false;
+
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hashAlg);
+    if (!md) {
+        return false;
+    }
+
+    EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
+    if (!mdctx) {
+        LOG_ERR("%s", get_openssl_err());
+        return false;
+    }
+
+    int rc = EVP_DigestInit_ex(mdctx, md, NULL);
+    if (!rc) {
+        LOG_ERR("%s", get_openssl_err());
+        goto out;
+    }
+
+    // Loop through all PCR/hash banks 
+    for (i = 0; i < pcrSelect->count; i++) {
+
+        // Loop through all PCRs in this bank
+        UINT8 pcr_id;
+        for (pcr_id = 0; pcr_id < pcrSelect->pcrSelections[i].sizeofSelect * 8; pcr_id++) {
+            if (!tpm2_util_is_pcr_select_bit_set(&pcrSelect->pcrSelections[i],
+                    pcr_id)) {
+                // skip non-selected banks
+                continue;
+            }
+            if (vi >= pcrs->count || di >= pcrs->pcr_values[vi].count) {
+                LOG_ERR("Something wrong, trying to print but nothing more");
+                goto out;
+            }
+
+            // Update running digest (to compare with quote)
+            TPM2B_DIGEST *b = &pcrs->pcr_values[vi].digests[di];
+            rc = EVP_DigestUpdate(mdctx, b->buffer, b->size);
+            if (!rc) {
+                LOG_ERR("%s", get_openssl_err());
+                goto out;
+            }
+
+            if (++di < pcrs->pcr_values[vi].count) {
+                continue;
+            }
+
+            di = 0;
+            if (++vi < pcrs->count) {
+                continue;
+            }
+        }
+    }
+
+    // Finalize running digest
+    unsigned size = EVP_MD_size(md);
+    rc = EVP_DigestFinal_ex(mdctx, digest->buffer, &size);
+    if (!rc) {
+        LOG_ERR("%s", get_openssl_err());
+        goto out;
+    }
+
+    digest->size = size;
+
+    result = true;
+
+out:
+    EVP_MD_CTX_destroy(mdctx);
+    return result;
+}
+
 digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
 
     switch(halg) {
@@ -160,3 +298,28 @@ digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
  */
 
 typedef bool (*pfn_ossl_pw_handler)(const char *passin, char **pass);
+
+
+RSA *tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path) {
+
+    /*
+     * Public PEM files appear in two formats:
+     * 1. PEM format, read with PEM_read_RSA_PUBKEY
+     * 2. PKCS#1 format, read with PEM_read_RSAPublicKey
+     *
+     * See:
+     *  - https://stackoverflow.com/questions/7818117/why-i-cant-read-openssl-generated-rsa-pub-key-with-pem-read-rsapublickey
+     */
+    RSA *pub = PEM_read_RSA_PUBKEY(f, NULL, NULL, NULL);
+    if (!pub) {
+        pub = PEM_read_RSAPublicKey(f, NULL, NULL, NULL);
+    }
+
+    if (!pub) {
+         ERR_print_errors_fp (stderr);
+         LOG_ERR("Reading public PEM file \"%s\" failed", path);
+         return NULL;
+    }
+
+    return pub;
+}

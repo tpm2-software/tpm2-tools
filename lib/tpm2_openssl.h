@@ -34,6 +34,8 @@
 #include <openssl/hmac.h>
 #include <openssl/rsa.h>
 
+#include "pcr.h"
+
 #if (OPENSSL_VERSION_NUMBER < 0x1010000fL && !defined(LIBRESSL_VERSION_NUMBER)) || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L) /* OpenSSL 1.1.0 */
 #define LIB_TPM2_OPENSSL_OPENSSL_PRE11
 #endif
@@ -59,6 +61,16 @@ int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
  * A pointer to the digest or NULL on error.
  */
 typedef unsigned char *(*digester)(const unsigned char *d, size_t n, unsigned char *md);
+
+/**
+
+ * Get an openssl hash algorithm ID from a tpm hashing algorithm ID.
+ * @param algorithm
+ *  The tpm algorithm to get the corresponding openssl version of.
+ * @return
+ *  The openssl hash algorithm id.
+ */
+int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm);
 
 /**
  * Get an openssl message digest from a tpm hashing algorithm.
@@ -87,6 +99,39 @@ EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void);
 void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx);
 
 /**
+ * Hash a byte buffer.
+ * @param halg
+ *  The hashing algorithm to use.
+ * @param buffer
+ *  The byte buffer to be hashed.
+ * @param length
+ *  The length of the byte buffer to hash.
+^ * @param digest
+^ *  The result of hashing digests with halg.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg,
+        BYTE *buffer, UINT16 length, TPM2B_DIGEST *digest);
+
+/**
+ * Hash a list of PCR digests, supporting multiple banks.
+ * @param halg
+ *  The hashing algorithm to use.
+ * @param pcrSelect
+ *  The list that specifies which PCRs are selected.
+ * @param pcrs
+ *  The list of PCR banks, each containing a list of PCR digests to hash.
+^ * @param digest
+^ *  The result of hashing digests with halg.
+ * @return
+ *  true on success, false on error.
+ */
+bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg, 
+        TPML_PCR_SELECTION *pcrSelect, 
+        tpm2_pcrs *pcrs, TPM2B_DIGEST *digest);
+
+/**
  * Returns a function pointer capable of performing the
  * given digest from a TPMI_HASH_ALG.
  *
@@ -104,5 +149,17 @@ enum tpm2_openssl_load_rc {
     lprc_public    = 1 << 1, /* successfully loaded a public portion of object */
 };
 
+
+/**
+ * Retrieves a public portion of an RSA key from a PEM file.
+ *
+ * @param f
+ *  The FILE object that is open for reading the path.
+ * @param path
+ *  The path to load from.
+ * @return
+ *  The public structure.
+ */
+RSA* tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path);
 
 #endif /* LIB_TPM2_OPENSSL_H_ */
