@@ -1,5 +1,7 @@
 ## Changelog
 ### 3.2.0 - next
+* tpm2_checkquote: Introduce new tool for checking validity of quotes.
+* tpm2_quote: Add ability to output PCR values for quotes.
 * tpm2_makecredential: add support for executing tool off-TPM.
 * tpm2_pcrreset: introduce new tool for resetting PCRs.
 * tpm2_quote: Fix AK auth password not being used.

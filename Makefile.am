@@ -59,6 +59,7 @@ LDADD = \
 
 # keep me sorted
 bin_PROGRAMS = \
+    tools/tpm2_checkquote \
     tools/tpm2_activatecredential \
     tools/tpm2_certify \
     tools/tpm2_create \
@@ -145,6 +146,7 @@ lib_libcommon_a_SOURCES = \
 
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
+tools_tpm2_checkquote_SOURCES = tools/tpm2_checkquote.c $(TOOL_SRC)
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
 tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
@@ -259,6 +261,7 @@ if HAVE_MAN_PAGES
     man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
+    man/man1/tpm2_checkquote.1 \
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createpolicy.1 \
     man/man1/tpm2_createprimary.1 \
