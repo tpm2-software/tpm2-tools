@@ -88,12 +88,12 @@ tpm2_changeauth -w neww -e newe -l newl
 
 ## Set owner, endorsement and lockout authorizations to a new value
 ```
-tpm2_changeauth -w neww -e newe -l newl -O oldw -E olde -L oldl
+tpm2_changeauth -w neww -e newe -l newl -W oldw -E olde -L oldl
 ```
 
 ## Unset/Clear owner authorization which was previously set to value newo
 ```
-tpm2_changeauth -O newo
+tpm2_changeauth -W neww
 ```
 
 ## Modify authorization for a loadable transient object
