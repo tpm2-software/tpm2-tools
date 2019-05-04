@@ -40,13 +40,13 @@ If _FILE_ is not specified, it defaults to stdin.
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-L**, **\--set-list**==_PCR\_SELECTION\_LIST_:
+  * **-L**, **\--set-list**=_PCR\_SELECTION\_LIST_:
 
     The list of PCR banks and selected PCRs' ids.
     _PCR\_SELECTION\_LIST_ values should follow the
     PCR bank specifiers standards, see section "PCR Bank Specifiers".
 
-  * **-F**,**\--pcr-input-file**=_PCR\_INPUT\_FILE_
+  * **-F**, **\--pcr-input-file**=_PCR\_INPUT\_FILE_:
 
     Optional Path or Name of the file containing expected PCR values for the specified index.
     Default is to read the current PCRs per the set list.
