@@ -226,7 +226,7 @@
     respective man pages for more details.
   * tpm2_nvread: Has an output file option, -f.
   * manpages: Are now in Markdown and converted to roff using pandoc.
-  * tpm2_create - options 'o' and 'O' changed to 'u' and 'r' respectively. 
+  * tpm2_create - options 'o' and 'O' changed to 'u' and 'r' respectively.
   * tpm2_pcrlist: support yaml output for parsing.
   * tpm2_pcrevent: new tool for hashing and extending pcrs.
   * Make tpm2_{createprimary,create,load,pcrlist,hmac} tools to support the --quiet option.
