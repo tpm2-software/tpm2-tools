@@ -42,18 +42,6 @@ static int read_public_and_save(ESYS_CONTEXT *ectx) {
     TPM2B_NAME *name;
     TPM2B_NAME *qualified_name;
 
-    // If we loaded a context file tr_handle is set, whereas if we loaded a
-    // UINT as handle we need to convert it to an ESYS_TR
-    if (!ctx.context_object.tr_handle) {
-        bool ok = tpm2_util_sys_handle_to_esys_handle(ectx,
-                        ctx.context_object.handle,
-                        &ctx.context_object.tr_handle);
-        if (!ok) {
-            LOG_ERR("Failed to get an ESYS handle for the given SYS handle");
-            return false;
-        }
-    }
-
     TSS2_RC rval = Esys_ReadPublic(ectx, ctx.context_object.tr_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     &public, &name, &qualified_name);
