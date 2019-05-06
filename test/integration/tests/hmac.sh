@@ -21,19 +21,23 @@ file_hmac_key_priv=key.priv
 file_hmac_key_name=name.dat
 file_hmac_key_ctx=key.ctx
 file_hmac_output=hmac.out
+file_hmac_key_handle=key.handle
 
 file_input_data=secret.data
 
 cleanup() {
   rm -f $file_primary_key_ctx $file_hmac_key_pub $file_hmac_key_priv \
-        $file_hmac_key_name $file_hmac_output evict.log
+        $file_hmac_key_name $file_hmac_output
 
   ina "$@" "keep-context"
   if [ $? -ne 0 ]; then
     rm -f $file_hmac_key_ctx $file_input_data
+    # attempt to evict the hmac persistent key handle, but don't cause failures if this fails
+    # as it may not be loaded.
+    tpm2_evictcontrol -c $file_hmac_key_handle 2>/dev/null || true
   fi
 
-   ina "$@" "no-shut-down"
+  ina "$@" "no-shut-down"
   if [ $? -ne 0 ]; then
     shut_down
   fi
@@ -54,7 +58,10 @@ tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
-cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_ctx -o $file_hmac_output
+# verify that persistent object can be used via a serialized handle
+tpm2_evictcontrol -a o -c $file_hmac_key_ctx -o $file_hmac_key_handle
+
+cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_handle -o $file_hmac_output
 
 cleanup "keep-context" "no-shut-down"
 
@@ -64,9 +71,6 @@ tpm2_hmac -Q -C $file_hmac_key_ctx -o $file_hmac_output $file_input_data
 
 ####handle test
 rm -f $file_hmac_output
-
-tpm2_evictcontrol -a o -c $file_hmac_key_ctx -p $handle_hmac_key > evict.log
-grep -q "persistentHandle: "$handle_hmac_key"" evict.log
 
 cleanup "no-shut-down"
 

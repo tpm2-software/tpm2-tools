@@ -229,7 +229,7 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
         result = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
                 &ctx.auth.owner.session_data, ctx.auth.owner.session,
                 ctx.objdata.out.handle,
-                ctx.ctx_obj.handle);
+                ctx.ctx_obj.handle, NULL);
         if (!result) {
             return false;
         }
