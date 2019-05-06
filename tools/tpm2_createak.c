@@ -574,15 +574,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
-    if (!ctx.ek.ek_ctx.tr_handle) {
-        bool res = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.ek.ek_ctx.handle, &ctx.ek.ek_ctx.tr_handle);
-        if (!res) {
-            LOG_ERR("Converting ek_ctx TPM2_HANDLE to ESYS_TR");
-            return 1;
-        }
-    }
-
     if (ctx.flags.w) {
         bool res = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_str,
                 &ctx.owner.auth2.session_data, &ctx.owner.auth2.session);
