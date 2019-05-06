@@ -80,8 +80,7 @@ AC_DEFUN([AC_PYTHON_MODULE],
   fi
 ])
 
-AC_DEFUN([unit_test_checks],[
-
+AS_IF([test "x$enable_unit" != xno], [
     PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
     AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd],
@@ -90,38 +89,26 @@ AC_DEFUN([unit_test_checks],[
     AC_CHECK_PROG([tpm_server], [tpm_server],
         [yes], [no])
 
-    AS_IF([test "$tpm2_abrmd" != "yes"],
-           [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])],
-        [])
+    AS_IF([test "$tpm2_abrmd" = no],
+          [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])])
 
-    AS_IF([test "$tpm_server" != "yes"],
-        [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])],
-        [])
+    AS_IF([test "$tpm_server" = no],
+          [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])])
 
     AC_CHECK_PROG([BASH_SHELL],[bash],[yes])
-    AS_IF(
-        [test "x${BASH_SHELL}" = x"yes"],
-        [],
-        [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
+    AS_IF([test "x${BASH_SHELL}" != xyes],
+          [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
 
     AC_CHECK_PROG([PYTHON],[python],[yes])
-    AS_IF(
-        [test "x${PYTHON}" = x"yes"],
-        [],
-        [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
+    AS_IF([test "x${PYTHON}" != xyes],
+          [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
 
     AC_PYTHON_MODULE([yaml])
 
     AC_CHECK_PROG([XXD],[xxd],[yes])
-    AS_IF(
-        [test "x${XXD}" = x"yes"],
-        [],
-        [AC_MSG_WARN([Required executable xxd not found, some system tests will fail!])])
+    AS_IF([test "x${XXD}" != xyes],
+          [AC_MSG_WARN([Required executable xxd not found, some system tests will fail!])])
 ])
-
-AS_IF([test "x$enable_unit" != xno],
-       [unit_test_checks],
-       [])
 
 AC_ARG_ENABLE([dlclose],
   [AS_HELP_STRING([--disable-dlclose],
