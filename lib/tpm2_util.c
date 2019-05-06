@@ -699,6 +699,11 @@ ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh) {
 bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle) {
 
+    bool is_persistent = ((sys_handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT);
+    if (is_persistent) {
+        LOG_WARN("Using persistent handles directly is bad, serialize your handle.");
+    }
+
     ESYS_TR h = tpm2_tpmi_hierarchy_to_esys_tr(sys_handle);
     if (h != ESYS_TR_NONE) {
         *esys_handle = h;
