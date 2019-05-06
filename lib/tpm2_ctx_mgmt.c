@@ -11,7 +11,9 @@ bool tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *ectx,
         TPMS_AUTH_COMMAND *sdata,
         tpm2_session *sess,
         ESYS_TR objhandle,
-        TPMI_DH_PERSISTENT phandle) {
+        TPMI_DH_PERSISTENT phandle,
+        ESYS_TR *out_tr) {
+
 
     TSS2_RC rval;
 
@@ -38,9 +40,13 @@ bool tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *ectx,
         return false;
     }
 
-    rval = Esys_TR_Close(ectx, &outHandle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_Close, rval);
+    if (out_tr) {
+        *out_tr = outHandle;
+    } else {
+        rval = Esys_TR_Close(ectx, &outHandle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_TR_Close, rval);
+        }
     }
 
     return true;

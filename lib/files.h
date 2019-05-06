@@ -93,7 +93,7 @@ bool files_save_tpm_context_to_file(ESYS_CONTEXT *context,
         FILE *stream);
 
 /**
- * Loads a ESAPI TPM object context from disk.
+ * Loads a ESAPI TPM object context from disk or an ESAPI serialized ESYS_TR object.
  * @param context
  *  The Enhanced System API (ESAPI) context
  * @param tr_handle

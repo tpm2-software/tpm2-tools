@@ -20,6 +20,22 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
+/**
+ * This is the magic for the file header. The header is organized
+ * as a big endian U32 (BEU32) of MAGIC followed by a BEU32 of the
+ * version number. Tools can define their own, individual file
+ * formats as they make sense, but they should always have the header.
+ */
+static const UINT32 MAGIC = 0xBADCC0DE;
+
+#define BAIL_ON_NULL(param, x) \
+    do { \
+        if (!x) { \
+            LOG_ERR(param" must be specified"); \
+            return false; \
+        } \
+    } while(0)
+
 bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
 
     long current = ftell(fp);
@@ -228,7 +244,7 @@ bool files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
     return result;
 }
 
-bool load_tpm_context_file(FILE *fstream, TPMS_CONTEXT *context) {
+static bool load_tpm_context_file(FILE *fstream, TPMS_CONTEXT *context) {
 
     /*
      * Reading the TPMS_CONTEXT structure to disk, format:
@@ -306,29 +322,98 @@ out:
     return result;
 }
 
+static bool check_magic(FILE *fstream, bool seek_reset) {
+
+    BAIL_ON_NULL("FILE", fstream);
+    UINT32 magic = 0;
+    bool res = files_read_32(fstream, &magic);
+    if (!res) {
+        return false;
+    }
+
+    bool match = magic == MAGIC;
+
+    if (seek_reset) {
+        fseek(fstream, -sizeof(magic), SEEK_CUR);
+        return match;
+    }
+
+    if (!match) {
+        LOG_ERR("Found magic 0x%x did not match expected magic of 0x%x!",
+                magic, MAGIC);
+    }
+
+    return match;
+}
+
 bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
         ESYS_TR *tr_handle, FILE *fstream) {
 
-    bool result;
     TPMS_CONTEXT tpms_context;
     ESYS_TR loaded_handle;
 
-    result = load_tpm_context_file(fstream, &tpms_context);
-    if (!result) {
-        LOG_ERR("Failed to load_tpm_context_file()");
-        goto out;
-    }
+    bool result = check_magic(fstream, true);
+    if (result) {
+        LOG_INFO("Assuming tpm context file");
+        result = load_tpm_context_file(fstream, &tpms_context);
+        if (!result) {
+            LOG_ERR("Failed to load_tpm_context_file()");
+            goto out;
+        }
 
-    TSS2_RC rval = Esys_ContextLoad(context, &tpms_context, &loaded_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_ContextLoad, rval);
-        result = false;
-        goto out;
+        TSS2_RC rval = Esys_ContextLoad(context, &tpms_context, &loaded_handle);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_ContextLoad, rval);
+            result = false;
+            goto out;
+        }
+
+    } else {
+        LOG_INFO("Assuming tpm context file");
+        /* try ESYS TR deserialize */
+        unsigned long size = 0;
+        result = files_get_file_size(fstream, &size, NULL);
+        if (!result) {
+            LOG_ERR("Failed to get file size: %s", strerror(ferror(fstream)));
+            goto out;
+        }
+
+        if (size < 1) {
+            LOG_ERR("Invalid serialized ESYS_TR size, got: %lu", size);
+            goto out;
+        }
+
+        uint8_t *buffer = calloc(1, size);
+        if (!buffer) {
+            LOG_ERR("oom");
+            goto out;
+        }
+
+        result = files_read_bytes(fstream, buffer, size);
+        if (!result) {
+            LOG_ERR("Could not read serialized ESYS_TR from disk");
+            free(buffer);
+            goto out;
+        }
+
+        TSS2_RC rval = Esys_TR_Deserialize(
+            context,
+            buffer,
+            size,
+            &loaded_handle);
+        free(buffer);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_TR_Deserialize, rval);
+            result = false;
+            goto out;
+        }
     }
 
     if (tr_handle) {
         *tr_handle = loaded_handle;
     }
+
+    result = true;
 
 out:
     return result;
@@ -467,14 +552,6 @@ bool files_get_file_size_path(const char *path, unsigned long *file_size) {
 }
 
 /**
- * This is the magic for the file header. The header is organized
- * as a big endian U32 (BEU32) of MAGIC followed by a BEU32 of the
- * version number. Tools can define their own, individual file
- * formats as they make sense, but they should always have the header.
- */
-static const UINT32 MAGIC = 0xBADCC0DE;
-
-/**
  * Writes size bytes to a file, continuing on EINTR short writes.
  * @param f
  *  The file to write to.
@@ -533,14 +610,6 @@ static bool readx(FILE *f, UINT8 *data, size_t size) {
 
     return true;
 }
-
-#define BAIL_ON_NULL(param, x) \
-    do { \
-        if (!x) { \
-            LOG_ERR(param" must be specified"); \
-            return false; \
-        } \
-    } while(0)
 
 #define BE_CONVERT(value, size) \
     do { \
@@ -609,15 +678,8 @@ bool files_read_header(FILE *out, uint32_t *version) {
     BAIL_ON_NULL("FILE", out);
     BAIL_ON_NULL("version", version);
 
-    UINT32 magic;
-    bool res = files_read_32(out, &magic);
-    if (!res) {
-        return false;
-    }
-
-    if (magic != MAGIC) {
-        LOG_ERR("Found magic 0x%x did not match expected magic of 0x%x!",
-                magic, MAGIC);
+    bool result = check_magic(out, false);
+    if (!result) {
         return false;
     }
 
