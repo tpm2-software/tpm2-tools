@@ -84,6 +84,15 @@ void tpm2_session_set_symmetric(tpm2_session_data *data,
 void tpm2_session_set_authhash(tpm2_session_data *data, TPMI_ALG_HASH auth_hash);
 
 /**
+ * Set the session attributes
+ * @param data
+ *  The session data to set
+ * @param attrs
+ *  The session attributes to use.
+ */
+void tpm2_session_set_attrs(tpm2_session_data *data, TPMA_SESSION attrs);
+
+/**
  * Retrieves the authHash parameter used to start the authorization session.
  * @param session
  *  The tpm2_session started with tpm2_session_new().

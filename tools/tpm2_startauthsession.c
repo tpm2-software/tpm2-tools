@@ -29,6 +29,8 @@ struct tpm2_startauthsession_ctx {
     struct {
         TPM2_SE type;
         TPMI_ALG_HASH halg;
+        const char *key_context_arg_str;
+        tpm2_loaded_object key_context_object;
     } session;
     struct {
         const char *path;
@@ -58,6 +60,9 @@ static bool on_option(char key, char *value) {
     case 'S':
         ctx.output.path = value;
         break;
+    case 'k':
+        ctx.session.key_context_arg_str = value;
+        break;
     }
 
     return true;
@@ -67,11 +72,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "policy-session",      no_argument,       NULL,  0 },
+        { "key",                 required_argument, NULL, 'k'},
         { "halg",                required_argument, NULL, 'g'},
         { "session",             required_argument, NULL, 'S'},
     };
 
-    *opts = tpm2_options_new("g:S:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("g:S:k:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -82,6 +88,37 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int rc = 1;
+
+    /*
+     * attempt to set up the encryption parameters for this, we load an ESYS_TR from disk for
+     * transient objects and we load from tpm public for persistent objects. Deserialized ESYS TR
+     * objects are checked.
+     */
+    bool has_key = false;
+
+    if (ctx.session.key_context_arg_str) {
+        bool result = tpm2_util_object_load(ectx, ctx.session.key_context_arg_str,
+                                    &ctx.session.key_context_object);
+        if (!result) {
+            return rc;
+        }
+
+        bool is_persistent = false;
+        /* if the loaded object has a handle then it must be a persistent object */
+        if (ctx.session.key_context_object.handle) {
+
+            is_persistent = (ctx.session.key_context_object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT;
+            if (!is_persistent) {
+                LOG_ERR("Specified encryption key not a persistent object, got: %s", ctx.session.key_context_arg_str);
+                return rc;
+            }
+
+            LOG_WARN("check public key portion");
+        }
+
+        has_key = true;
+    }
+
     tpm2_session_data *session_data = tpm2_session_data_new(ctx.session.type);
     if (!session_data) {
         LOG_ERR("oom");
@@ -89,6 +126,27 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session_set_authhash(session_data, ctx.session.halg);
+
+    /* if it has an encryption key, set it as both the encryption key and bind key */
+    if (has_key) {
+        tpm2_session_set_key(session_data, ctx.session.key_context_object.tr_handle);
+        tpm2_session_set_bind(session_data, ctx.session.key_context_object.tr_handle);
+
+        TPMT_SYM_DEF sym = {
+            .algorithm = TPM2_ALG_AES,
+            .keyBits = { .aes = 128 },
+            .mode = { .aes = TPM2_ALG_CFB }
+        };
+
+        tpm2_session_set_symmetric(session_data, &sym);
+
+        TPMA_SESSION attrs =
+            TPMA_SESSION_CONTINUESESSION
+          | TPMA_SESSION_DECRYPT
+          | TPMA_SESSION_ENCRYPT;
+
+        tpm2_session_set_attrs(session_data, attrs);
+    }
 
     tpm2_session *s = tpm2_session_new(ectx,
             session_data);
