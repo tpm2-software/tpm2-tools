@@ -28,6 +28,7 @@ struct tpm2_session_data {
     TPMT_SYM_DEF symmetric;
     TPMI_ALG_HASH authHash;
     TPM2B_NONCE nonce_caller;
+    TPMA_SESSION attrs;
 };
 
 struct tpm2_session {
@@ -57,6 +58,10 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
 
 void tpm2_session_set_key(tpm2_session_data *data, ESYS_TR key) {
     data->key = key;
+}
+
+void tpm2_session_set_attrs(tpm2_session_data *data, TPMA_SESSION attrs) {
+    data->attrs = attrs;
 }
 
 void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce) {
@@ -112,9 +117,23 @@ static bool start_auth_session(ESYS_CONTEXT *context,
                         &session->output.session_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_StartAuthSession, rval);
+        return false;
     }
 
-    return rval == TPM2_RC_SUCCESS;
+    if (d->attrs) {
+        rval = Esys_TRSess_SetAttributes(context, session->output.session_handle, d->attrs,
+                                          0xff);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_TRSess_SetAttributes, rval);
+            rval = Esys_FlushContext(context, session->output.session_handle);
+            if (rval != TSS2_RC_SUCCESS) {
+                LOG_WARN("Esys_FlushContext: 0x%x", rval);
+            }
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void tpm2_session_free(tpm2_session **session) {

@@ -38,6 +38,12 @@ This will work with direct TPM access, but note that internally this calls a *Co
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
+  * **-k**, **\--key**=_SESSION\_ENCRYPTION\_KEY_:
+
+    Set the session encryption and bind key. When using this, sensitive data transmitted to
+    the TPM will be encrypted with AES128CFB. **This prevents bus snooping attacks.**
+    See section "Context Object Format" for details on key formats.
+
   * **-S**, **\--session**=_SESSION\_FILE\_NAME_:
 
     The name of the policy session file, optional. Defaults to *session.ctx*.
@@ -51,6 +57,8 @@ This will work with direct TPM access, but note that internally this calls a *Co
 
 [algorithm specifiers](common/alg.md)
 
+[context object format](common/ctxobj.md)
+
 # EXAMPLES
 
 ## Start a *trial* session and save the session data to a file
@@ -60,7 +68,13 @@ tpm2_startauthsession -S mysession.ctx
 
 ## Start a *policy* session and save the session data to a file
 ```
-tpm2_startauthsession \--policy-session
+tpm2_startauthsession \--policy-session -S mysession.ctx
+```
+
+## Start an encrypted and bound *policy* session and save the session data to a file
+```
+tpm2_createprimary -o primary.ctx
+tpm2_startauthsession \--policy-session -k primary.ctx -S mysession.ctx
 ```
 
 # RETURNS
