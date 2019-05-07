@@ -203,15 +203,10 @@ out:
         }
     }
 
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_close(&ctx.auth.session);
     if (!result) {
         rc = 1;
     }
 
     return rc;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.auth.session);
 }

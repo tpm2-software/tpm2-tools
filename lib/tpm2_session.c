@@ -28,8 +28,8 @@ struct tpm2_session_data {
     TPMI_ALG_HASH authHash;
     TPM2B_NONCE nonce_caller;
     TPMA_SESSION attrs;
-    bool is_password;
     TPM2B_AUTH auth_data;
+    const char *path;
 };
 
 struct tpm2_session {
@@ -42,6 +42,8 @@ struct tpm2_session {
 
     struct {
         char *path;
+        ESYS_CONTEXT *ectx;
+        bool is_final;
     } internal;
 };
 
@@ -53,15 +55,6 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
         d->bind = ESYS_TR_NONE;
         d->session_type = type;
         d->authHash = TPM2_ALG_SHA256;
-    }
-    return d;
-}
-
-tpm2_session_data *tpm2_password_session_data_new(TPM2B_AUTH *auth_data) {
-    tpm2_session_data * d = calloc(1, sizeof(tpm2_session_data));
-    if (d) {
-        d->is_password = true;
-        memcpy(&d->auth_data, auth_data, sizeof(*auth_data));
     }
     return d;
 }
@@ -107,6 +100,10 @@ void tpm2_session_set_authhash(tpm2_session_data *data, TPMI_ALG_HASH auth_hash)
     data->authHash = auth_hash;
 }
 
+void tpm2_session_set_path(tpm2_session_data *data, const char *path) {
+    data->path = path;
+}
+
 TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session) {
     return session->input->authHash;
 }
@@ -128,15 +125,14 @@ const TPM2B_AUTH *tpm2_session_get_auth_value(tpm2_session *session) {
 // It performs the command, calculates the session key, and updates a
 // SESSION structure.
 //
-static bool start_auth_session(ESYS_CONTEXT *context,
-        tpm2_session *session) {
+static bool start_auth_session(tpm2_session *session) {
 
     tpm2_session_data *d = session->input;
 
     TPM2B_NONCE *nonce = session->input->nonce_caller.size > 0 ?
             &session->input->nonce_caller : NULL;
 
-    TSS2_RC rval = Esys_StartAuthSession(context, d->key, d->bind,
+    TSS2_RC rval = Esys_StartAuthSession(session->internal.ectx, d->key, d->bind,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                         nonce, d->session_type,
                         &d->symmetric, d->authHash,
@@ -147,11 +143,11 @@ static bool start_auth_session(ESYS_CONTEXT *context,
     }
 
     if (d->attrs) {
-        rval = Esys_TRSess_SetAttributes(context, session->output.session_handle, d->attrs,
+        rval = Esys_TRSess_SetAttributes(session->internal.ectx, session->output.session_handle, d->attrs,
                                           0xff);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Esys_TRSess_SetAttributes, rval);
-            rval = Esys_FlushContext(context, session->output.session_handle);
+            rval = Esys_FlushContext(session->internal.ectx, session->output.session_handle);
             if (rval != TSS2_RC_SUCCESS) {
                 LOG_WARN("Esys_FlushContext: 0x%x", rval);
             }
@@ -162,7 +158,7 @@ static bool start_auth_session(ESYS_CONTEXT *context,
     return true;
 }
 
-void tpm2_session_free(tpm2_session **session) {
+static void tpm2_session_free(tpm2_session **session) {
 
     tpm2_session *s = *session;
 
@@ -176,7 +172,7 @@ void tpm2_session_free(tpm2_session **session) {
     }
 }
 
-tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
+tpm2_session *tpm2_session_open(ESYS_CONTEXT *context,
         tpm2_session_data *data) {
 
     tpm2_session *session = calloc(1, sizeof(tpm2_session));
@@ -186,25 +182,27 @@ tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
         return NULL;
     }
 
-    session->input = data;
-
-    if (session->input->is_password) {
-        session->output.session_handle = ESYS_TR_PASSWORD;
-    }
-
-    if (!context) {
-        return session;
-    }
-
-    if (session->input->is_password) {
-        session->output.session_handle = ESYS_TR_PASSWORD;
-    } else {
-
-        bool result = start_auth_session(context, session);
-        if (!result) {
+    if (data->path) {
+        session->internal.path = strdup(data->path);
+        if (!session->internal.path) {
+            LOG_ERR("oom");
             tpm2_session_free(&session);
             return NULL;
         }
+    }
+
+    session->input = data;
+    session->internal.ectx = context;
+
+    if (!context) {
+        session->output.session_handle = ESYS_TR_PASSWORD;
+        return session;
+    }
+
+    bool result = start_auth_session(session);
+    if (!result) {
+        tpm2_session_free(&session);
+        return NULL;
     }
 
     return session;
@@ -233,7 +231,7 @@ COMPILE_ASSERT_SIZE(ESYS_TR, UINT32);
 COMPILE_ASSERT_SIZE(TPMI_ALG_HASH, UINT16);
 COMPILE_ASSERT_SIZE(TPM2_SE, UINT8);
 
-tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
+tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final) {
 
     tpm2_session *s = NULL;
 
@@ -287,7 +285,7 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
 
     tpm2_session_set_authhash(d, auth_hash);
 
-    s = tpm2_session_new(NULL, d);
+    s = tpm2_session_open(NULL, d);
     if (!s) {
         LOG_ERR("oom new session object");
         goto out;
@@ -295,6 +293,7 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
 
     s->output.session_handle = handle;
     s->internal.path = dup_path;
+    s->internal.ectx = ctx;
     dup_path = NULL;
 
     TPM2_HANDLE sapi_handle = 0;
@@ -315,6 +314,8 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
         }
     }
 
+    s->internal.is_final = is_final;
+
     LOG_INFO("Restored session: ESYS_TR(0x%x) SAPI(0x%x) attrs(0x%x)", handle, sapi_handle, attrs);
 
 out:
@@ -325,33 +326,50 @@ out:
     return s;
 }
 
-bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
-        const char *path) {
+bool tpm2_session_close(tpm2_session **s) {
+
+    bool result = false;
+
+    tpm2_session *session = *s;
+
+    FILE *session_file = NULL;
 
     if (!session) {
         return true;
     }
 
-    /* password sessions are implicit and thus do not need to be backed up */
-    if (session->output.session_handle == ESYS_TR_PASSWORD) {
-        return true;
+    /*
+     * Do not back up:
+     *   - password sessions are implicit
+     *   - hmac sessions live the life of the tool
+     */
+    if (session->output.session_handle == ESYS_TR_PASSWORD
+            || session->input->session_type == TPM2_SE_HMAC) {
+        result = true;
+        goto out;
     }
 
-    bool result = false;
-    FILE *session_file = NULL;
-
-    if (!path) {
-        path = session->internal.path;
-        if (!path) {
-            LOG_ERR("Unknown path to save to");
-            return false;
+    bool flush = session->internal.is_final;
+    const char *path = session->internal.path;
+    if (path) {
+        session_file = fopen(path, "w+b");
+        if (!session_file) {
+            LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
+                    path, strerror(errno));
+            goto out;
         }
+    } else {
+        flush = true;
     }
 
-    session_file = fopen(path, "w+b");
-    if (!session_file) {
-        LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
-                path, strerror(errno));
+    if (flush) {
+
+        TSS2_RC rval = Esys_FlushContext(session->internal.ectx, session->output.session_handle);
+        if (rval != TSS2_RC_SUCCESS) {
+            LOG_PERR(Esys_FlushContext, rval);
+        } else {
+            result = true;
+        }
         goto out;
     }
 
@@ -389,12 +407,12 @@ bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
     ESYS_TR handle = tpm2_session_get_handle(session);
 
     TPM2_HANDLE sapi_handle = 0;
-    tpm2_util_esys_handle_to_sys_handle(context, handle,
+    tpm2_util_esys_handle_to_sys_handle(session->internal.ectx, handle,
                 &sapi_handle);
 
     LOG_INFO("Saved session: ESYS_TR(0x%x) SAPI(0x%x)", handle, sapi_handle);
 
-    result = files_save_tpm_context_to_file(context,
+    result = files_save_tpm_context_to_file(session->internal.ectx,
                 tpm2_session_get_handle(session), session_file);
     if (!result) {
         LOG_ERR("Could not write session context");
@@ -404,6 +422,8 @@ out:
     if (session_file) {
         fclose(session_file);
     }
+
+    tpm2_session_free(s);
 
     return result;
 }

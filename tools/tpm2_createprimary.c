@@ -148,7 +148,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, true);
+    result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
     if (!result) {
         LOG_ERR("Invalid new key authorization, got\"%s\"", ctx.key_auth_str);
         goto out;
@@ -157,7 +157,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
     ctx.objdata.in.sensitive.sensitive.userAuth = *auth;
 
-    tpm2_session_free(&tmp);
+    tpm2_session_close(&tmp);
 
     result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, ctx.unique_file, DEFAULT_ATTRS,
             &ctx.objdata.in.public);
@@ -183,7 +183,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(ectx, ctx.parent.session, NULL);
+    result = tpm2_session_close(&ctx.parent.session);
     if (!result) {
         rc = 1;
     }
@@ -193,6 +193,5 @@ out:
 
 void tpm2_onexit(void) {
 
-    tpm2_session_free(&ctx.parent.session);
     tpm2_hierarchy_pdata_free(&ctx.objdata);
 }

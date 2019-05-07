@@ -529,7 +529,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(ectx, ctx.ek_auth_str,
+    result = tpm2_auth_util_from_optarg(NULL, ctx.ek_auth_str,
             &tmp, true);
     if (!result) {
         LOG_ERR("Invalid EK auth");
@@ -538,7 +538,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
     ctx.inSensitive.sensitive.userAuth = *auth;
 
-    tpm2_session_free(&tmp);
+    tpm2_session_close(&tmp);
 
     if (ctx.find_persistent_handle) {
         bool ret = tpm2_capability_find_vacant_persistent_handle(ectx,
@@ -587,19 +587,11 @@ out:
         fclose(ctx.ec_cert_file);
     }
 
-    result = tpm2_session_save(ectx, ctx.auth.owner.session, NULL);
-    result &= tpm2_session_save(ectx, ctx.auth.endorse.session, NULL);
+    result = tpm2_session_close(&ctx.auth.owner.session);
+    result &= tpm2_session_close(&ctx.auth.endorse.session);
     if (!result) {
         rc = 1;
     }
 
     return rc;
-}
-
-
-void tpm2_onexit(void) {
-
-    free(ctx.outPublic);
-    tpm2_session_free(&ctx.auth.owner.session);
-    tpm2_session_free(&ctx.auth.endorse.session);
 }

@@ -36,16 +36,10 @@ static bool clearlock(ESYS_CONTEXT *ectx) {
             ctx.clear ? "CLEAR" : "SET",
             ctx.platform ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
 
-    TPM2B_AUTH const *auth = tpm2_session_get_auth_value(ctx.auth.session);
-
-    TSS2_RC rval = Esys_TR_SetAuth(ectx, rh, auth);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_SetAuth, rval);
-        return false;
-    }
+    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, rh, ctx.auth.session);
     
-    rval = Esys_ClearControl(ectx, rh,
-                ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE, disable);
+    TSS2_RC rval = Esys_ClearControl(ectx, rh,
+                shandle, ESYS_TR_NONE, ESYS_TR_NONE, disable);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
         LOG_PERR(Esys_ClearControl, rval);
         return false;
@@ -91,7 +85,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     bool res = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, false);
+            &ctx.auth.session, true);
     if (!res) {
         LOG_ERR("Invalid lockout authorization, got\"%s\"",
             ctx.auth.auth_str);

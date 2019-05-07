@@ -93,7 +93,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    s = tpm2_session_restore(ectx, ctx.session_path);
+    s = tpm2_session_restore(ectx, ctx.session_path, false);
     if (!s) {
         return rc;
     }
@@ -132,16 +132,16 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             goto out_policy;
         }
     }
-    result = tpm2_session_save(ectx, s, ctx.session_path);
-    if (!result) {
-        LOG_ERR("Failed to save policy to file \"%s\"", ctx.session_path);
-    }
 
     rc = 0;
 
 out_policy:
     free(policy_digest);
 out:
-    tpm2_session_free(&s);
+    result = tpm2_session_close(&s);
+    if (!result) {
+        rc = 1;
+    }
+
     return rc;
 }

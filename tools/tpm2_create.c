@@ -303,7 +303,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, true);
+    result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
     if (!result) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
         goto out;
@@ -312,7 +312,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_AUTH const *auth = tpm2_session_get_auth_value(tmp);
     ctx.in_sensitive.sensitive.userAuth = *auth;
 
-    tpm2_session_free(&tmp);
+    tpm2_session_close(&tmp);
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
         &ctx.parent.session, false);
@@ -329,15 +329,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(ectx, ctx.parent.session, NULL);
+    result = tpm2_session_close(&ctx.parent.session);
     if (!result) {
         rc = 1;
     }
 
     return rc;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.parent.session);
 }

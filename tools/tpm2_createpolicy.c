@@ -79,7 +79,7 @@ static bool parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
     tpm2_session_set_authhash(session_data,
             pctx.common_policy_options.policy_digest_hash_alg);
 
-    pctx.common_policy_options.policy_session = tpm2_session_new(ectx,
+    pctx.common_policy_options.policy_session = tpm2_session_open(ectx,
             session_data);
 
     bool result = tpm2_policy_build_pcr(ectx, pctx.common_policy_options.policy_session,

@@ -45,7 +45,7 @@ static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {
     assert_int_equal(auth->size, 4);
     assert_memory_equal(auth->buffer, "abcd", 4);
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
@@ -60,7 +60,7 @@ static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
     assert_int_equal(auth->size, 4);
     assert_memory_equal(auth->buffer, "abcd", 4);
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
@@ -79,7 +79,7 @@ static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
     assert_int_equal(auth->size, sizeof(expected));
     assert_memory_equal(auth->buffer, expected, sizeof(expected));
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **state) {
@@ -95,7 +95,7 @@ static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **st
     assert_int_equal(auth->size, 12);
     assert_memory_equal(auth->buffer, "hex:1234abcd", 12);
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 static void test_tpm2_password_util_from_optarg_file(void **state) {
@@ -120,7 +120,7 @@ static void test_tpm2_password_util_from_optarg_file(void **state) {
     assert_int_equal(auth->size, wrok);
     assert_memory_equal(auth->buffer, secret, wrok);
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 static void test_tpm2_password_util_from_optarg_raw_overlength(void **state) {
@@ -158,7 +158,7 @@ static void test_tpm2_password_util_from_optarg_empty_str(void **state) {
 
     assert_int_equal(auth->size, 0);
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(void **state) {
@@ -173,7 +173,7 @@ static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(void **stat
 
     assert_int_equal(auth->size, 0);
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 
@@ -189,7 +189,7 @@ static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(void **stat
 
     assert_int_equal(auth->size, 0);
 
-    tpm2_session_free(&session);
+    tpm2_session_close(&session);
 }
 
 static int setup(void **state) {
@@ -216,21 +216,21 @@ static int teardown(void **state) {
     return 0;
 }
 
-static void test_tpm2_auth_util_get_shandle(void **state) {
+static void test_tpm2_auth_util_get_pw_shandle(void **state) {
 
     ESYS_CONTEXT *ectx = (ESYS_CONTEXT *)*state;
     ESYS_TR auth_handle = ESYS_TR_NONE;
     ESYS_TR shandle;
 
     tpm2_session *s;
-    bool result = tpm2_auth_util_from_optarg(ectx, "fakepass",
-            &s, false);
+    bool result = tpm2_auth_util_from_optarg(NULL, "fakepass",
+            &s, true);
     assert_true(result);
     assert_non_null(s);
 
     shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, s);
     assert_true(shandle == ESYS_TR_PASSWORD);
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 
     set_expected_defaults(TPM2_SE_POLICY, SESSION_HANDLE, TPM2_RC_SUCCESS);
@@ -238,13 +238,13 @@ static void test_tpm2_auth_util_get_shandle(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    s = tpm2_session_new(ectx, d);
+    s = tpm2_session_open(ectx, d);
     assert_non_null(s);
 
     shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, s);
     assert_int_equal(SESSION_HANDLE, shandle);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 }
 
@@ -263,7 +263,7 @@ int main(int argc, char* argv[]) {
             cmocka_unit_test(test_tpm2_password_util_from_optarg_hex_prefix),
             cmocka_unit_test(test_tpm2_password_util_from_optarg_str_escaped_hex_prefix),
 
-            cmocka_unit_test_setup_teardown(test_tpm2_auth_util_get_shandle,
+            cmocka_unit_test_setup_teardown(test_tpm2_auth_util_get_pw_shandle,
                                             setup, teardown),
             cmocka_unit_test(test_tpm2_password_util_from_optarg_file),
 

@@ -302,12 +302,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 out:
 
-    result = tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result = tpm2_session_close(&ctx.auth.session);
     if (!result) {
         rc = 1;
     }
-
-    tpm2_session_free(&ctx.auth.session);
 
     return rc;
 }
