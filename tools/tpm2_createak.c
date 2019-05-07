@@ -207,7 +207,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     TPM2B_PUBLIC *out_public;
     TPM2B_PRIVATE *out_private;
     TPM2B_PUBLIC inPublic = TPM2B_EMPTY_INIT;
-    bool retval = true;
+    bool retval = false;
 
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
@@ -220,7 +220,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    tpm2_session *session = tpm2_session_new(ectx, data);
+    tpm2_session *session = tpm2_session_open(ectx, data);
     if (!session) {
         LOG_ERR("Could not start tpm session");
         return false;
@@ -229,12 +229,11 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
     ESYS_TR sess_handle = tpm2_session_get_handle(session);
-    tpm2_session_free(&session);
 
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
                         ctx.ek.session);
     if (shandle == ESYS_TR_NONE) {
-        return false;
+        goto out_session;
     }
 
     TPM2_RC rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
@@ -242,8 +241,9 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
                     NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
-        return false;
+        goto out_session;
     }
+
     LOG_INFO("Esys_PolicySecret success");
 
     rval = Esys_Create(ectx, ctx.ek.ek_ctx.tr_handle,
@@ -252,37 +252,30 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
                 &creation_pcr, &out_private, &out_public, NULL, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Create, rval);
-        retval = false;
         goto out;
     }
     LOG_INFO("Esys_Create success");
 
-    // Need to flush the session here.
-    rval = Esys_FlushContext(ectx, sess_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_FlushContext, rval);
-        retval = false;
+    result = tpm2_session_close(&session);
+    if (!result) {
         goto out;
     }
 
     data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
         LOG_ERR("oom");
-        retval = false;
         goto out;
     }
 
-    session = tpm2_session_new(ectx, data);
+    session = tpm2_session_open(ectx, data);
     if (!session) {
         LOG_ERR("Could not start tpm session");
-        retval = false;
         goto out;
     }
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
 
     sess_handle = tpm2_session_get_handle(session);
-    tpm2_session_free(&session);
 
     shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
                 ctx.ek.session);
@@ -295,7 +288,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
                 NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
-        retval = false;
         goto out;
     }
     LOG_INFO("Esys_PolicySecret success");
@@ -306,7 +298,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
                 out_private, out_public, &loaded_sha1_key_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Load, rval);
-        retval = false;
         goto out;
     }
 
@@ -315,8 +306,12 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     rval = Esys_TR_GetName(ectx, loaded_sha1_key_handle, &key_name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_GetName, rval);
-        retval = false;
         goto nameout;
+    }
+
+    result = tpm2_session_close(&session);
+    if (!result) {
+        goto out;
     }
 
     /* Output in YAML format */
@@ -331,17 +326,8 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         if (!result) {
             LOG_ERR("Failed to save AK name into file \"%s\"",
                         ctx.ak.out.name_file);
-            retval = false;
             goto nameout;
         }
-    }
-
-    // Need to flush the session here.
-    rval = Esys_FlushContext(ectx, sess_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_FlushContext, rval);
-        retval = false;
-        goto nameout;
     }
 
     if (ctx.ak.in.handle) {
@@ -349,7 +335,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
                     ctx.owner.session);
         if (shandle == ESYS_TR_NONE) {
-            retval = false;
             goto nameout;
         }
 
@@ -360,7 +345,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
                     ctx.ak.in.handle, &ak_handle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_EvictControl, rval);
-            retval = false;
             goto nameout;
         }
         LOG_INFO("EvictControl: Make AK persistent success.");
@@ -380,7 +364,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         rval = Esys_FlushContext(ectx, loaded_sha1_key_handle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_FlushContext, rval);
-            retval = false;
             goto nameout;
         }
         LOG_INFO("Flush transient AK success.");
@@ -390,7 +373,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         char *ctx_file = NULL;
         bool result = files_get_unique_name(ctx.ak.out.ctx_file, &ctx_file);
         if (!result) {
-            retval = false;
             free(ctx_file);
             goto nameout;
         }
@@ -398,7 +380,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
                     loaded_sha1_key_handle, ctx_file);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
-            retval = false;
             free(ctx_file);
             goto nameout;
         }
@@ -411,7 +392,6 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         result = tpm2_convert_pubkey_save(out_public, ctx.ak.out.pub_fmt,
                 ctx.ak.out.pub_file);
         if (!result) {
-            retval = false;
             goto nameout;
         }
     }
@@ -419,16 +399,19 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     if (ctx.ak.out.priv_file) {
         result = files_save_private(out_private, ctx.ak.out.priv_file);
         if (!result) {
-            retval = false;
             goto nameout;
         }
     }
+
+    retval = true;
 
 nameout:
     free(key_name);
 out:
     free(out_public);
     free(out_private);
+out_session:
+    tpm2_session_close(&session);
 
     return retval;
 }
@@ -572,8 +555,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.ek.auth_str,
-            &ctx.ek.session, false);
+    result = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str,
+            &ctx.ek.session, true);
     if (!result) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"",
             ctx.ek.auth_str);
@@ -581,7 +564,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
+    result = tpm2_auth_util_from_optarg(NULL, ctx.ak.auth_str,
             &tmp, true);
     if (!result) {
         LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
@@ -591,7 +574,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
     ctx.ak.in.inSensitive.sensitive.userAuth = *auth;
 
-    tpm2_session_free(&tmp);
+    tpm2_session_close(&tmp);
 
     if (!ctx.ak.out.ctx_file || ctx.ak.out.ctx_file[0] == '\0') {
         ctx.ak.out.ctx_file = "ak.ctx";

@@ -296,17 +296,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 out:
 
-    result = tpm2_session_save(ectx, ctx.key.session, NULL);
-    result &= tpm2_session_save(ectx, ctx.object.session, NULL);
+    result = tpm2_session_close(&ctx.key.session);
+    result &= tpm2_session_close(&ctx.object.session);
     if (!result) {
         rc = 1;
     }
 
     return rc;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.object.session);
-    tpm2_session_free(&ctx.key.session);
 }

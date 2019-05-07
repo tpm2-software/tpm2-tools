@@ -88,7 +88,7 @@ static bool start_auth_session(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    ctx.parent.session = tpm2_session_new(ectx,
+    ctx.parent.session = tpm2_session_open(ectx,
             session_data);
     if (!ctx.parent.session) {
         LOG_ERR("Could not start tpm session");
@@ -195,27 +195,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 out:
 
-    if (ctx.flags.L) {
-        /*
-         * Only flush sessions started internally by the tool.
-         */
-        ESYS_TR handle = tpm2_session_get_handle(ctx.parent.session);
-        TSS2_RC rval = Esys_FlushContext(ectx, handle);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_FlushContext, rval);
-            rc = 1;
-        }
-    } else {
-        result = tpm2_session_save(ectx, ctx.parent.session, NULL);
-        if (!result) {
-            rc = 1;
-        }
+    result = tpm2_session_close(&ctx.parent.session);
+    if (!result) {
+        rc = 1;
     }
 
     return rc;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.parent.session);
 }

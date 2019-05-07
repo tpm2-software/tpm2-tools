@@ -65,7 +65,6 @@ static bool do_duplicate(ESYS_CONTEXT *ectx,
                             ctx.object.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        tpm2_session_free(&ctx.object.session);
         return false;
     }
 
@@ -75,7 +74,6 @@ static bool do_duplicate(ESYS_CONTEXT *ectx,
                         in_key, sym_alg, out_key, duplicate, encrypted_seed);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Duplicate, rval);
-        tpm2_session_free(&ctx.object.session);
         return false;
     }
 
@@ -290,11 +288,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_session_save(ectx, ctx.object.session, NULL);
-    if (!result) {
-        goto free_out;
-    }
-
     /* Maybe a false positive from scan-build but we'll check out_key anyway */
     if (ctx.flags.o) {
         if(out_key == NULL) {
@@ -331,9 +324,11 @@ free_out:
     free(outSymSeed);
     free(duplicate);
 out:
-    return rc;
-}
 
-void tpm2_onexit(void) {
-    tpm2_session_free(&ctx.object.session);
+    result = tpm2_session_close(&ctx.object.session);
+    if (!result) {
+        rc = 1;
+    }
+
+    return rc;
 }

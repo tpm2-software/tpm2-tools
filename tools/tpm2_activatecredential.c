@@ -126,6 +126,8 @@ static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
 
 static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
+    bool retval = false;
+
     TPM2B_DIGEST *certInfoData;
 
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
@@ -134,7 +136,7 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    tpm2_session *session = tpm2_session_new(ectx, d);
+    tpm2_session *session = tpm2_session_open(ectx, d);
     if (!session) {
         LOG_ERR("Could not start tpm session");
         return false;
@@ -142,12 +144,11 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
     // Set session up
     ESYS_TR sess_handle = tpm2_session_get_handle(session);
-    tpm2_session_free(&session);
 
     ESYS_TR endorse_shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
                                 ctx.endorse.session);
     if (endorse_shandle == ESYS_TR_NONE) {
-        return false;
+        goto out_session;
     }
 
     TSS2_RC rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
@@ -155,17 +156,16 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
                     NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
-        return false;
+        goto out_session;
     }
 
     ESYS_TR key_shandle = tpm2_auth_util_get_shandle(ectx,
                             ctx.key_ctx_obj.tr_handle,
                             ctx.key.session);
     if (key_shandle == ESYS_TR_NONE) {
-        return false;
+        goto out_session;
     }
 
-    bool retval = true;
     // NOTE: key_shandle and sess_handle don't seem to match docs
     rval = Esys_ActivateCredential(ectx, ctx.ctx_obj.tr_handle,
             ctx.key_ctx_obj.tr_handle,
@@ -173,22 +173,15 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
             &ctx.credentialBlob, &ctx.secret, &certInfoData);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ActivateCredential, rval);
-        retval = false;
-        goto out;
-    }
-
-    // Need to flush the session here.
-    rval = Esys_FlushContext(ectx, sess_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_FlushContext, rval);
-        retval = false;
-        goto out;
+        goto out_all;
     }
 
     retval = output_and_save(certInfoData, ctx.output_file);
 
-out:
+out_all:
     free(certInfoData);
+out_session:
+    tpm2_session_close(&session);
 
     return retval;
 }
@@ -247,6 +240,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
+    int rc = 1;
+
     /* opts is unused, avoid compiler warning */
     UNUSED(flags);
 
@@ -276,33 +271,30 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
-    res = tpm2_auth_util_from_optarg(ectx, ctx.endorse.auth_str,
-            &ctx.endorse.session, false);
+    res = tpm2_auth_util_from_optarg(NULL, ctx.endorse.auth_str,
+            &ctx.endorse.session, true);
     if (!res) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"", ctx.endorse.auth_str);
-        return 1;
-    }
-
-    int rc = 0;
-    res = activate_credential_and_output(ectx);
-    if (!res) {
-        rc = 1;
         goto out;
     }
 
-out:
+    res = activate_credential_and_output(ectx);
+    if (!res) {
+        goto out;
+    }
 
-    res = tpm2_session_save(ectx, ctx.key.session, NULL);
-    res &= tpm2_session_save(ectx, ctx.endorse.session, NULL);
+    rc = 0;
+
+out:
+    res = tpm2_session_close(&ctx.key.session);
+    if (!res) {
+        rc = 1;
+    }
+
+    res = tpm2_session_close(&ctx.endorse.session);
     if (!res) {
         rc = 1;
     }
 
     return rc;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.endorse.session);
-    tpm2_session_free(&ctx.key.session);
 }

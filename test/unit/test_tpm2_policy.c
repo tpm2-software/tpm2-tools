@@ -167,13 +167,20 @@ TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext,
     return TPM2_RC_SUCCESS;
 }
 
+TSS2_RC __wrap_Esys_FlushContext(ESYS_CONTEXT *esysContext, ESYS_TR flushHandle) {
+    UNUSED(esysContext);
+    UNUSED(flushHandle);
+
+    return TSS2_RC_SUCCESS;
+}
+
 static void test_tpm2_policy_build_pcr_good(void **state) {
     UNUSED(state);
 
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(ESAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(ESAPI_CONTEXT, d);
     assert_non_null(s);
 
     TPML_PCR_SELECTION pcr_selections;
@@ -191,7 +198,7 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     assert_memory_equal(policy_digest->buffer, expected_policy_digest.buffer,
             expected_policy_digest.size);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 }
 
@@ -288,7 +295,7 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(ESAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(ESAPI_CONTEXT, d);
     assert_non_null(s);
 
     bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
@@ -303,7 +310,7 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     assert_memory_equal(policy_digest->buffer, expected_policy_digest.buffer,
             expected_policy_digest.size);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 }
 
@@ -344,12 +351,12 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(ESAPI_CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(ESAPI_CONTEXT, d);
     assert_non_null(s);
 
     bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
             &pcr_selections);
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
     assert_false(result);
 }

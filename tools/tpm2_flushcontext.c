@@ -142,32 +142,27 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                                     handles->count) != true;
         free(capability_data);
         return retval;
-    } else {
+    }
 
-        ESYS_TR handles[1];
-        /* handle from a session file */
-        if (ctx.session.path) {
-            tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path);
-            if (!s) {
-                LOG_ERR("Failed to load session from path: %s",
-                        ctx.session.path);
-                return 1;
-            }
-
-            handles[0] = tpm2_session_get_handle(s);
-
-            tpm2_session_free(&s);
-        } else {
-            bool result = tpm2_util_object_load(ectx, ctx.context_arg,
-                        &ctx.context_object);
-            if (!result) {
-                return 1;
-            }
-
-            handles[0] = ctx.context_object.tr_handle;
+    /* handle from a session file */
+    if (ctx.session.path) {
+        tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path, true);
+        if (!s) {
+            LOG_ERR("Failed to load session from path: %s",
+                    ctx.session.path);
+            return 1;
         }
 
-        int retval = flush_contexts_tr(ectx, handles, 1) != true;
-        return retval;
+        tpm2_session_close(&s);
+
+        return 0;
     }
+
+    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
+                &ctx.context_object);
+    if (!result) {
+        return 1;
+    }
+
+    return flush_contexts_tr(ectx, &ctx.context_object.tr_handle, 1) != true;
 }

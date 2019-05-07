@@ -89,6 +89,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     int rc = 1;
 
+    tpm2_session *s = NULL;
+
     /*
      * attempt to set up the encryption parameters for this, we load an ESYS_TR from disk for
      * transient objects and we load from tpm public for persistent objects. Deserialized ESYS TR
@@ -125,6 +127,8 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    tpm2_session_set_path(session_data, ctx.output.path);
+
     tpm2_session_set_authhash(session_data, ctx.session.halg);
 
     /* if it has an encryption key, set it as both the encryption key and bind key */
@@ -148,7 +152,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         tpm2_session_set_attrs(session_data, attrs);
     }
 
-    tpm2_session *s = tpm2_session_new(ectx,
+    s = tpm2_session_open(ectx,
             session_data);
     if (!s) {
         return rc;
@@ -164,18 +168,17 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = tpm2_session_save(ectx, s, ctx_file);
-    if (!result) {
-        goto out;
-    }
-
     tpm2_tool_output("session-context: %s\n", ctx_file);
 
     rc = 0;
 
 out:
     free(ctx_file);
-    tpm2_session_free(&s);
+
+    result = tpm2_session_close(&s);
+    if (!result) {
+        rc = 1;
+    }
 
     return rc;
 }

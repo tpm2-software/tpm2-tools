@@ -514,7 +514,7 @@ static int openssl_import(ESYS_CONTEXT *ectx) {
 
     if (ctx.key_auth_str) {
         tpm2_session *tmp;
-        result = tpm2_auth_util_from_optarg(ectx, ctx.key_auth_str, &tmp, true);
+        result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
         if (!result) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
             return false;
@@ -523,7 +523,7 @@ static int openssl_import(ESYS_CONTEXT *ectx) {
         const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
         private.sensitiveArea.authValue = *auth;
 
-        tpm2_session_free(&tmp);
+        tpm2_session_close(&tmp);
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
@@ -602,7 +602,9 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
 }
 
 static int tpm_import(ESYS_CONTEXT *ectx) {
-    bool result;
+
+    bool result = false;
+
     TPM2B_DATA enc_key = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE duplicate;
@@ -626,7 +628,7 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
     if(!result) {
-        return 1;
+        goto out;
     }
 
     /* Symmetric key */
@@ -635,11 +637,11 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
         result = files_load_bytes_from_path(ctx.input_enc_key_file, enc_key.buffer, &enc_key.size);
         if(!result) {
             LOG_ERR("Failed to load symmetric encryption key\"%s\"", ctx.input_enc_key_file);
-            return 1;
+            goto out;
         }
         if(enc_key.size != 16) {
             LOG_ERR("Invalid AES key size, got %u bytes, expected 16", enc_key.size);
-            return 1;
+            goto out;
         }
     }
 
@@ -647,28 +649,28 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
     result = files_load_private(ctx.input_key_file, &duplicate);
     if(!result) {
         LOG_ERR("Failed to load duplicate \"%s\"", ctx.input_key_file);
-        return 1;
+        goto out;
     }
 
     /* Encrypted seed */
     result = files_load_encrypted_seed(ctx.input_seed_file, &encrypted_seed);
     if(!result) {
         LOG_ERR("Failed to load encrypted seed \"%s\"", ctx.input_seed_file);
-        return 1;
+        goto out;
     }
 
     /* Public key */
     result = files_load_public(ctx.public_key_file, &public);
     if(!result) {
         LOG_ERR(":( Failed to load public key \"%s\"", ctx.public_key_file);
-        return 1;
+        goto out;
     }
 
     public.publicArea.authPolicy.size = sizeof(public.publicArea.authPolicy.buffer);
     result = files_load_bytes_from_path(ctx.policy,
                 public.publicArea.authPolicy.buffer, &public.publicArea.authPolicy.size);
     if (!result) {
-        return 1;
+        goto out;
     }
 
     result = do_import(
@@ -682,7 +684,7 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
             &imported_private);
 
     if (!result) {
-        return 1;
+        goto out;
     }
 
     result = files_save_private(imported_private, ctx.private_key_file);
@@ -690,11 +692,11 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
     if (!result) {
         LOG_ERR("Failed to save private key into file \"%s\"",
                 ctx.private_key_file);
-        return 1;
+        goto out;
     }
 
-
-    result = tpm2_session_save(ectx, ctx.parent.session, NULL);
+out:
+    result = tpm2_session_close(&ctx.parent.session);
 
     return result ? 0 : 1;
 }
@@ -712,9 +714,4 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return openssl_import(ectx);
     }
     return tpm_import(ectx);
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.parent.session);
 }

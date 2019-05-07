@@ -79,7 +79,7 @@ TSS2_RC __wrap_Esys_PolicyRestart(ESYS_CONTEXT *esysContext,
     return policy_restart_return();
 }
 
-#define CONTEXT   ((ESYS_CONTEXT *)0xDEADBEEF)
+static ESYS_CONTEXT *CONTEXT = ((ESYS_CONTEXT *)0xDEADBEEF);
 
 TSS2_RC __wrap_Esys_TR_GetName(ESYS_CONTEXT *esysContext, ESYS_TR handle,
             TPM2B_NAME **name) {
@@ -96,6 +96,12 @@ TSS2_RC __wrap_Esys_TR_GetName(ESYS_CONTEXT *esysContext, ESYS_TR handle,
     return rc;
 }
 
+TSS2_RC __wrap_Esys_FlushContext(ESYS_CONTEXT *esysContext, ESYS_TR flushHandle) {
+    UNUSED(esysContext);
+    UNUSED(flushHandle);
+
+    return TSS2_RC_SUCCESS;
+}
 
 static void test_tpm2_session_defaults_good(void **state) {
     UNUSED(state);
@@ -105,7 +111,7 @@ static void test_tpm2_session_defaults_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(CONTEXT, d);
     assert_non_null(s);
 
     ESYS_TR handle = tpm2_session_get_handle(s);
@@ -114,7 +120,7 @@ static void test_tpm2_session_defaults_good(void **state) {
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(s);
     assert_int_equal(auth_hash, TPM2_ALG_SHA256);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 }
 
@@ -158,7 +164,7 @@ static void test_tpm2_session_setters_good(void **state) {
     SESSION_HANDLE,
     TPM2_RC_SUCCESS);
 
-    tpm2_session *s = tpm2_session_new(CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(CONTEXT, d);
     assert_non_null(s);
 
     TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
@@ -167,7 +173,7 @@ static void test_tpm2_session_setters_good(void **state) {
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(s);
     assert_int_equal(auth_hash, TPM2_ALG_SHA512);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 }
 
@@ -179,7 +185,7 @@ static void test_tpm2_session_defaults_bad(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(CONTEXT, d);
     assert_null(s);
 }
 
@@ -202,7 +208,9 @@ static void test_tpm2_session_save(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(CONTEXT, d);
+    tpm2_session_set_path(d, (char *)*state);
+
+    tpm2_session *s = tpm2_session_open(CONTEXT, d);
     assert_non_null(s);
 
     ESYS_TR handle1 = tpm2_session_get_handle(s);
@@ -211,13 +219,11 @@ static void test_tpm2_session_save(void **state) {
                     &tpm_handle1);
     assert_true(result);
 
-    result = tpm2_session_save(CONTEXT, s, (char *)*state);
+    result = tpm2_session_close(&s);
     assert_true(result);
-
-    tpm2_session_free(&s);
     assert_null(s);
 
-    s = tpm2_session_restore(NULL, (char *)*state);
+    s = tpm2_session_restore(NULL, (char *)*state, false);
     assert_non_null(s);
 
     ESYS_TR handle2 = tpm2_session_get_handle(s);
@@ -228,7 +234,7 @@ static void test_tpm2_session_save(void **state) {
 
     assert_int_equal(tpm_handle1, tpm_handle2);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 }
 
@@ -240,7 +246,7 @@ static void test_tpm2_session_restart(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(CONTEXT, d);
     assert_non_null(s);
 
     will_return(policy_restart_return, TPM2_RC_SUCCESS);
@@ -251,7 +257,7 @@ static void test_tpm2_session_restart(void **state) {
     result = tpm2_session_restart(CONTEXT, s);
     assert_false(result);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
     assert_null(s);
 }
 
@@ -263,7 +269,7 @@ static void test_tpm2_session_is_trial_test(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_TRIAL);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_new(CONTEXT, d);
+    tpm2_session *s = tpm2_session_open(CONTEXT, d);
     assert_non_null(s);
 
     TPM2_SE type = tpm2_session_get_type(s);
@@ -272,7 +278,7 @@ static void test_tpm2_session_is_trial_test(void **state) {
     bool is_trial = tpm2_session_is_trial(s);
     assert_true(is_trial);
 
-    tpm2_session_free(&s);
+    tpm2_session_close(&s);
 }
 
 /* link required symbol, but tpm2_tool.c declares it AND main, which

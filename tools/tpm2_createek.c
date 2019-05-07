@@ -403,21 +403,21 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!ret) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"",
             ctx.auth.endorse.auth_str);
-        return 1;
+        goto out;
     }
 
     ret = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
             &ctx.auth.owner.session, false);
     if (!ret) {
         LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.auth.owner.auth_str);
-        return 1;
+        goto out;
     }
 
     ret = tpm2_auth_util_from_optarg(ectx, ctx.auth.ek.auth_str,
             &ctx.auth.ek.session, false);
     if (!ret) {
         LOG_ERR("Invalid EK authorization, got\"%s\"", ctx.auth.ek.auth_str);
-        return 1;
+        goto out;
     }
 
     /* override the default attrs */
@@ -441,7 +441,7 @@ out:
 
     for(i=0; i < ARRAY_LEN(sessions); i++) {
         tpm2_session *s = *sessions[i];
-        result = tpm2_session_save (ectx, s, NULL);
+        result = tpm2_session_close(&s);
         if (!result) {
             rc = 1;
         }
@@ -451,18 +451,6 @@ out:
 }
 
 void tpm2_onexit(void) {
-
-    tpm2_session **sessions[] = {
-       &ctx.auth.ek.session,
-       &ctx.auth.endorse.session,
-       &ctx.auth.owner.session,
-    };
-
-    size_t i;
-    for(i=0; i < ARRAY_LEN(sessions); i++) {
-        tpm2_session **s = sessions[i];
-        tpm2_session_free(s);
-    }
 
     tpm2_hierarchy_pdata_free(&ctx.objdata);
 }

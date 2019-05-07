@@ -59,12 +59,14 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     int rc = 1;
-    tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path);
+    bool result;
+
+    tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path, false);
     if (!s) {
         return rc;
     }
 
-    bool result = tpm2_session_restart(ectx, s);
+    result = tpm2_session_restart(ectx, s);
     if (!result) {
         goto out;
     }
@@ -72,6 +74,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    tpm2_session_free(&s);
+    result = tpm2_session_close(&s);
+    if (!result) {
+        rc = 1;
+    }
+
     return rc;
 }

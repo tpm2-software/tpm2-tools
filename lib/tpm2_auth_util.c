@@ -80,7 +80,26 @@ static bool handle_password(const char *password, TPM2B_AUTH *auth) {
     return handle_str_password(password, auth);
 }
 
-static bool handle_password_session(const char *password, tpm2_session **session) {
+static tpm2_session *start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth) {
+
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_HMAC);
+    if (!d) {
+        LOG_ERR("oom");
+        return NULL;
+    }
+
+    tpm2_session *s = tpm2_session_open(ectx, d);
+    if (!s) {
+        LOG_ERR("oom");
+        return NULL;
+    }
+
+    tpm2_session_set_auth_value(s, auth);
+
+    return s;
+}
+
+static bool handle_password_session(ESYS_CONTEXT *ectx, const char *password, tpm2_session **session) {
 
     TPM2B_AUTH auth = { 0 };
     bool result = handle_password(password, &auth);
@@ -88,13 +107,8 @@ static bool handle_password_session(const char *password, tpm2_session **session
         return result;
     }
 
-    tpm2_session_data *sdata = tpm2_password_session_data_new(&auth);
-    if (!sdata) {
-        LOG_ERR("oom");
-        return false;
-    }
+    *session = start_hmac_session(ectx, &auth);
 
-    *session = tpm2_session_new(NULL, sdata);
     return *session != NULL;
 }
 
@@ -132,7 +146,7 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
         }
     }
 
-    *session = tpm2_session_restore(ectx, tmp);
+    *session = tpm2_session_restore(ectx, tmp, false);
     if (!*session) {
         return false;
     }
@@ -143,14 +157,14 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
     if (is_trial) {
         LOG_ERR("A trial session cannot be used to authenticate, "
                 "Please use an hmac or policy session");
-        tpm2_session_free(session);
+        tpm2_session_close(session);
         return false;
     }
 
     return true;
 }
 
-static bool handle_file(const char *path, tpm2_session **session) {
+static bool handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **session) {
 
     bool ret = false;
 
@@ -174,20 +188,9 @@ static bool handle_file(const char *path, tpm2_session **session) {
         return false;
     }
 
-    tpm2_session_data *sdata = tpm2_password_session_data_new(&auth);
-    if (!sdata) {
-        LOG_ERR("oom");
-        return false;
-    }
+    *session = start_hmac_session(ectx, &auth);
 
-    *session = tpm2_session_new(NULL, sdata);
-    if (!sdata) {
-        free(sdata);
-        LOG_ERR("oom");
-        return false;
-    }
-
-    return true;
+    return *session != NULL;
 }
 
 bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
@@ -216,7 +219,7 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     /* starts with "file:" */
     bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
     if (is_file) {
-        result = handle_file(password, session);
+        result = handle_file(ectx, password, session);
         if (!result) {
             return false;
         }
@@ -224,7 +227,7 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     }
 
     /* must be a password */
-    result = handle_password_session(password, session);
+    result = handle_password_session(ectx, password, session);
     if (!result) {
         return false;
     }

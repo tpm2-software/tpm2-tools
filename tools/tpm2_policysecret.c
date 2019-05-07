@@ -114,7 +114,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     int rc = 1;
-    tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path);
+    tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path, false);
     if (!s) {
         return rc;
     }
@@ -126,17 +126,20 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session *pwd_session;
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
-        &pwd_session, false);
+    result = tpm2_auth_util_from_optarg(NULL, ctx.auth_str,
+        &pwd_session, true);
     if (!result) {
         goto out;
     }
 
     result = tpm2_policy_build_policysecret(ectx, s,
         pwd_session, ctx.context_object.tr_handle);
-    tpm2_session_free(&pwd_session);
     if (!result) {
         LOG_ERR("Could not build policysecret ");
+    }
+
+    result &= tpm2_session_close(&pwd_session);
+    if (!result) {
         goto out;
     }
 
@@ -159,16 +162,15 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    result = tpm2_session_save(ectx, s, ctx.session_path);
-    if (!result) {
-        LOG_ERR("Failed to save policy to file \"%s\"", ctx.session_path);
-        goto out;
-    }
-
     rc = 0;
 
 out:
     free(policy_digest);
-    tpm2_session_free(&s);
+
+    result = tpm2_session_close(&s);
+    if (!result) {
+        rc = 1;
+    }
+
     return rc;
 }

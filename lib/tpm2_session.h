@@ -83,6 +83,8 @@ void tpm2_session_set_symmetric(tpm2_session_data *data,
  */
 void tpm2_session_set_authhash(tpm2_session_data *data, TPMI_ALG_HASH auth_hash);
 
+void tpm2_session_set_path(tpm2_session_data *data, const char *path);
+
 /**
  * Set the session attributes
  * @param data
@@ -143,12 +145,12 @@ static inline bool tpm2_session_is_trial(tpm2_session *session) {
  * @return
  *  A tpm2_session object and a started tpm session or NULL on failure.
  */
-tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
+tpm2_session *tpm2_session_open(ESYS_CONTEXT *context,
         tpm2_session_data *data);
 
 /**
  * Saves session data to disk allowing tpm2_session_from_file() to
- * restore the session.
+ * restore the session if applicable and frees resources.
  *
  * @Note
  * This is accomplished by calling:
@@ -156,17 +158,12 @@ tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
  *                            handle on client disconnection.
  *   - Eys_ContextLoad - restores the session so it can be used.
  *   - Saving a custom file format at path - records the handle and algorithm.
- * @param context
- *  The Enhanced System API (ESAPI) context
  * @param session
  *  The session context to save
- * @param path
- *  The path to save the session context too.
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
-        const char *path);
+bool tpm2_session_close(tpm2_session **session);
 
 /**
  * Restores a session saved with tpm2_session_save().
@@ -174,10 +171,12 @@ bool tpm2_session_save(ESYS_CONTEXT *context, tpm2_session *session,
  *  The Enhanced System API (ESAPI) context
  * @param path
  *  The path to restore from.
+ * @param is_final
+ *  True if this is is the last tool to use the session, causes a flush.
  * @return
  *  NULL on failure or a session pointer on success.
  */
-tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path);
+tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final);
 
 /**
  * restarts the session to it's initial state via a call to
@@ -191,15 +190,7 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path);
  */
 bool tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s);
 
-/**
- * Frees a tpm2_session but DOES NOT FLUSH the handle. Frees the associated
- * tpm2_session_data object as well.
- * @param session
- *  The tpm2_session to free and set to NULL.
- */
-void tpm2_session_free(tpm2_session **session);
-
-tpm2_session_data *tpm2_password_session_data_new(TPM2B_AUTH *auth_value);
+tpm2_session_data *tpm2_hmac_session_data_new(TPM2B_AUTH *auth_value);
 
 void tpm2_session_set_auth_value(tpm2_session *session, TPM2B_AUTH *auth_value);
 

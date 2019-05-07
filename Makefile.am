@@ -226,7 +226,8 @@ test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
                                        -Wl,--wrap=Esys_ContextSave \
                                        -Wl,--wrap=Esys_ContextLoad \
                                        -Wl,--wrap=Esys_PolicyRestart \
-                                       -Wl,--wrap=Esys_TR_GetName
+                                       -Wl,--wrap=Esys_TR_GetName \
+                                       -Wl,--wrap=Esys_FlushContext
 
 test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
@@ -234,7 +235,9 @@ test_unit_test_tpm2_policy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
                                       -Wl,--wrap=Esys_PolicyPCR \
                                       -Wl,--wrap=Esys_PCR_Read \
-                                      -Wl,--wrap=Esys_PolicyGetDigest
+                                      -Wl,--wrap=Esys_PolicyGetDigest \
+                                      -Wl,--wrap=Esys_FlushContext
+
 test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_hierarchy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)

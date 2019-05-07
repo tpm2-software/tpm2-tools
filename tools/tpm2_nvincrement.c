@@ -154,7 +154,7 @@ static bool start_auth_session(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    ctx.auth.session = tpm2_session_new(ectx,
+    ctx.auth.session = tpm2_session_open(ectx,
             session_data);
     if (!ctx.auth.session) {
         LOG_ERR("Could not start tpm session");
@@ -217,24 +217,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 out:
 
-    if (ctx.flags.L) {
-        ESYS_TR sess_handle = tpm2_session_get_handle(ctx.auth.session);
-        TSS2_RC rval = Esys_FlushContext(ectx, sess_handle);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_FlushContext, rval);
-            rc = 1;
-        }
-    } else {
-        result = tpm2_session_save(ectx, ctx.auth.session, NULL);
-        if (!result) {
-            rc = 1;
-        }
+    result = tpm2_session_close(&ctx.auth.session);
+    if (!result) {
+        rc = 1;
     }
 
     return rc;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.auth.session);
 }

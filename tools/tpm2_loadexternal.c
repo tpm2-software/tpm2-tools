@@ -267,7 +267,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     };
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth, &tmp, true);
+    result = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
     if (!result) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.auth);
         return 1;
@@ -276,7 +276,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
     priv.sensitiveArea.authValue = *auth;
 
-    tpm2_session_free(&tmp);
+    tpm2_session_close(&tmp);
 
     tpm2_openssl_load_rc load_status = lprc_error;
     if (ctx.private_key_path) {

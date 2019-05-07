@@ -357,12 +357,10 @@ out:
         fclose(ctx.pcr_output);
     }
 
-    result = tpm2_session_save(ectx, ctx.ak.session, NULL);
+    result = tpm2_session_close(&ctx.ak.session);
     if (!result) {
         rc = 1;
     }
-
-    tpm2_session_free(&ctx.ak.session);
 
     return rc;
 }

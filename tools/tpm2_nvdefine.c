@@ -189,7 +189,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(ectx, ctx.index_auth_str,
+    result = tpm2_auth_util_from_optarg(NULL, ctx.index_auth_str,
             &tmp, true);
     if (!result) {
         LOG_ERR("Invalid index authorization, got\"%s\"", ctx.index_auth_str);
@@ -199,7 +199,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
     ctx.nvAuth = *auth;
 
-    tpm2_session_free(&tmp);
+    tpm2_session_close(&tmp);
 
     result = nv_space_define(ectx);
     if (!result) {
@@ -209,15 +209,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 
 out:
-    result = tpm2_session_save(ectx, ctx.hierarchy.session, NULL);
+    result = tpm2_session_close(&ctx.hierarchy.session);
     if (!result) {
         rc = 1;
     }
 
     return rc;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.hierarchy.session);
 }

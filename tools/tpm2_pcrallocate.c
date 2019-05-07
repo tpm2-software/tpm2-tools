@@ -128,14 +128,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     
     result = pcr_allocate(ectx);
 
-    if (!tpm2_session_save(ectx, ctx.auth.session, NULL)) {
-        LOG_ERR("Error saving sessions after command execution");
-        return 1;
-    }
+    result &= tpm2_session_close(&ctx.auth.session);
 
     return (result == true)? 0 : 1;
-}
-
-void tpm2_tool_onexit(void) {
-    tpm2_session_free(&ctx.auth.session);
 }

@@ -81,10 +81,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
-    bool result = false;;
+    bool result = false;
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, false);
+    result = tpm2_auth_util_from_optarg(NULL, ctx.auth.auth_str,
+            &ctx.auth.session, true);
     if (!result) {
         LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.auth.auth_str);
         return false;
@@ -92,12 +92,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     result = clear(ectx);
 
-    result &= tpm2_session_save(ectx, ctx.auth.session, NULL);
+    result &= tpm2_session_close(&ctx.auth.session);
 
     return result == false;
-}
-
-void tpm2_onexit(void) {
-
-    tpm2_session_free(&ctx.auth.session);
 }
