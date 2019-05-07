@@ -121,6 +121,19 @@ bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
         ESYS_TR *tr_handle, FILE *stream);
 
 /**
+ * Save an ESYS_TR to disk.
+ * @param ectx
+ *  The ESAPI context
+ * @param handle
+ *  The handle to serialize.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path);
+
+/**
  * Serializes a TPM2B_PUBLIC to the file path provided.
  * @param public
  *  The TPM2B_PUBLIC to save to disk.
