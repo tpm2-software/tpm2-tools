@@ -6,6 +6,7 @@
 //**********************************************************************;
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -157,7 +158,8 @@ tpm2_session *tpm2_session_new(ESYS_CONTEXT *context,
 
 /* SESSION_VERSION 1 was used prior to the switch to ESAPI. As the types of
  * several of the tpm2_session_data object members have changed the version is
- * bumped.
+ * bumped. Since sessions are transient things,make sure the SESSION_VERSION
+ * matches
  */
 #define SESSION_VERSION 2
 
@@ -196,11 +198,17 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
     if (!f) {
         LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
                 dup_path, strerror(errno));
-        return NULL;
+        goto out;
     }
 
     uint32_t version;
     bool result = files_read_header(f, &version);
+
+    if (version != SESSION_VERSION) {
+        LOG_ERR("Session version mismatch, got \"%"PRIu32"\", expected \"%u\"",
+                version, SESSION_VERSION);
+        goto out;
+    }
 
     TPM2_SE type;
     result = files_read_bytes(f, &type, sizeof(type));
@@ -234,16 +242,19 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path) {
 
     s = tpm2_session_new(NULL, d);
     if (!s) {
-    	LOG_ERR("oom new session object");
-	goto out;
+        LOG_ERR("oom new session object");
+        goto out;
     }
 
     s->output.session_handle = handle;
-    s->internal.path = strdup(dup_path);
+    s->internal.path = dup_path;
+    dup_path = NULL;
 
 out:
     free(dup_path);
-    fclose(f);
+    if (f) {
+        fclose(f);
+    }
     return s;
 }
 
