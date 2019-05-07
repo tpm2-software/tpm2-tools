@@ -30,6 +30,7 @@ struct tpm_readpub_ctx {
     tpm2_convert_pubkey_fmt format;
     tpm2_loaded_object context_object;
     const char *context_arg;
+    const char *out_tr_file;
 };
 
 static tpm_readpub_ctx ctx = {
@@ -76,6 +77,14 @@ static int read_public_and_save(ESYS_CONTEXT *ectx) {
 
     ret = ctx.outFilePath ?
             tpm2_convert_pubkey_save(public, ctx.format, ctx.outFilePath) : true;
+    if (!ret) {
+        goto out;
+    }
+
+    if (ctx.out_tr_file) {
+        ret = files_save_ESYS_TR(ectx, ctx.context_object.tr_handle,
+            ctx.out_tr_file);
+    }
 
 out:
     free(public);
@@ -104,6 +113,9 @@ static bool on_option(char key, char *value) {
     case 'n':
         ctx.out_name_file = value;
         break;
+    case 't':
+        ctx.out_tr_file = value;
+        break;
     }
 
     return true;
@@ -115,10 +127,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "out-file",   required_argument, NULL, 'o' },
         { "context",    required_argument, NULL, 'c' },
         { "format",     required_argument, NULL, 'f' },
-        { "name",       required_argument, NULL, 'n' }
+        { "name",       required_argument, NULL, 'n' },
+        { "handle",     required_argument, NULL, 't' }
     };
 
-    *opts = tpm2_options_new("o:c:f:n:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:c:f:n:t:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -126,8 +139,20 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool init(ESYS_CONTEXT *context) {
 
-    return tpm2_util_object_load(context,
+    bool result = tpm2_util_object_load(context,
                                 ctx.context_arg, &ctx.context_object);
+    if (!result) {
+        return false;
+    }
+
+    bool is_persistent = ctx.context_object.handle
+            && ((ctx.context_object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT);
+    if (ctx.out_tr_file && !is_persistent) {
+        LOG_ERR("Can only output a serialized handle for persistent object handles");
+        return false;
+    }
+
+    return true;
 }
 
 int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {

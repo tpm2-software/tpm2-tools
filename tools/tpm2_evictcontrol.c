@@ -199,17 +199,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_tool_output("action: %s\n", evicted ? "evicted" : "persisted");
 
     if (ctx.output_arg) {
-        size_t size;
-        uint8_t *buffer;
-        TSS2_RC rc = Esys_TR_Serialize(ectx,
-                          out_tr, &buffer, &size);
-        if (rc != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_TR_Serialize, rc);
-            goto out;
-        }
-
-        result = files_save_bytes_to_file(ctx.output_arg, buffer, size);
-        free(buffer);
+        result = files_save_ESYS_TR(ectx, out_tr, ctx.output_arg);
         if (!result) {
             goto out;
         }

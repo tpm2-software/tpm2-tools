@@ -729,6 +729,21 @@ bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
     return res;
 }
 
+bool files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path) {
+
+    size_t size;
+    uint8_t *buffer;
+    TSS2_RC rc = Esys_TR_Serialize(ectx,
+                      handle, &buffer, &size);
+    if (rc != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_Serialize, rc);
+        return false;
+    }
+
+    bool result = files_save_bytes_to_file(path, buffer, size);
+    free(buffer);
+    return result;
+}
 
 #define SAVE_TYPE(type, name) \
     bool files_save_##name(type *name, const char *path) { \
