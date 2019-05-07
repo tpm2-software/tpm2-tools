@@ -190,6 +190,10 @@ check_PROGRAMS = \
 
 TESTS += $(ALL_SYSTEM_TESTS)
 
+XFAIL_TESTS = \
+    test/integration/tests/tcti/abrmd/policysecret.sh \
+    test/integration/tests/tcti/abrmd/policypassword.sh
+
 test_unit_test_string_bytes_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_string_bytes_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
