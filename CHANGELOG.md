@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_evictcontrol: support serializing ESYS_TR handle to disk.
+  * tpm2_readpublic: support serializing ESYS_TR handle to disk.
+  * tpm2_startauthsession: support encrypted and bound sessions.
   * tpm2_duplicate: add new tool for duplicating TPM objects.
   * tpm2_createpolicy: Remove small option -a and rename long option to "policy-session"
   * tpm2_startauthsession: Remove small option -a and rename long option to "policy-session"
