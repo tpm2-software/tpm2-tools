@@ -629,7 +629,7 @@ bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
                 &outobject->tr_handle, outobject->path);
     }
 
-    // 2. If the objstr is NULL set the handle to RH_NULL
+    // 2. If the objstr is "null" set the handle to RH_NULL
     bool is_rh_null = !strncmp(objectstr, NULL_OBJECT, NULL_OBJECT_LEN);
     if (is_rh_null){
         outobject->path = NULL;
