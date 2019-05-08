@@ -65,7 +65,7 @@ available:
     **export _TPM2TOOLS\_TCTI_="device:/dev/tpm0"**
 
   * **mssim**:
-  * For the mssim TCTI, the domain name or IP address and port number used by
+    For the mssim TCTI, the domain name or IP address and port number used by
     the simulator can be specified. The default are 127.0.0.1 and 2321.
 
     Example: **-T mssim:host=localhost,port=2321** or
