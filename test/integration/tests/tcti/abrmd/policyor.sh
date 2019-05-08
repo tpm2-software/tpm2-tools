@@ -7,6 +7,7 @@
 #
 #;**********************************************************************;
 
+if [ ! $(which xxd) ]; then exit 77; fi
 source helpers.sh
 
 policy_1=policy.1

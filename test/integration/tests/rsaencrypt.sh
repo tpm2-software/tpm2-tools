@@ -7,6 +7,7 @@
 #
 #;**********************************************************************;
 
+if [ ! $(which xxd) ]; then exit 77; fi
 source helpers.sh
 
 file_primary_key_ctx=context.p_B1

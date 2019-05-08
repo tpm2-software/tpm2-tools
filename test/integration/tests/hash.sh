@@ -9,6 +9,7 @@
 
 #this script is for hash case testing
 
+if [ ! $(which xxd) ]; then exit 77; fi
 source helpers.sh
 
 ticket_file=ticket.out

@@ -107,7 +107,7 @@ AS_IF([test "x$enable_unit" != xno], [
 
     AC_CHECK_PROG([XXD],[xxd],[yes])
     AS_IF([test "x${XXD}" != xyes],
-          [AC_MSG_WARN([Required executable xxd not found, some system tests will fail!])])
+          [AC_MSG_WARN([Executable xxd not found, some system tests will be skipped])])
 ])
 
 AC_ARG_ENABLE([dlclose],
