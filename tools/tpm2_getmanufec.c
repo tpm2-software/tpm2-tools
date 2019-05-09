@@ -277,7 +277,7 @@ char *Base64Encode(const unsigned char* buffer)
     bio = BIO_push(b64, bio);
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     BIO_write(bio, buffer, SHA256_DIGEST_LENGTH);
-    BIO_flush(bio);
+    UNUSED(BIO_flush(bio));
     BIO_get_mem_ptr(bio, &bufferPtr);
 
     /* these are not NULL terminated */
