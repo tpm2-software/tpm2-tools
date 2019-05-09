@@ -74,4 +74,10 @@ tpm2_createprimary -Q -o context.out
 tpm2_createprimary -Q
 test -f primary.ctx
 
+# Test for session leaks
+BEFORE=$(tpm2_getcap -c handles-loaded-session; tpm2_getcap -c handles-saved-session)
+tpm2_createprimary -Q
+AFTER=$(tpm2_getcap -c handles-loaded-session; tpm2_getcap -c handles-saved-session)
+test "${BEFORE}" = "${AFTER}"
+
 exit 0
