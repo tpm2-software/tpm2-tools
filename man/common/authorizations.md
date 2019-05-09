@@ -47,6 +47,21 @@ The `raw-pcr-file` is an **optional** the output of the raw PCR contents as retu
 
 ### Examples
 
+To use the password `mypassword`:
+```
+mypassword
+```
+
+To use a raw binary password of 0x112233 in hex string format:
+```
+hex:112233
+```
+
+To use a password of `hex:` use the str escape:
+```
+str:hex:
+```
+
 To satisfy a PCR policy of sha256 on banks 0, 1, 2 and 3 use a specifier of:
 ```
 pcr:sha256:0,1,2,3
