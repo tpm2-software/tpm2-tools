@@ -343,8 +343,7 @@ bool tpm2_session_close(tpm2_session **s) {
      *   - password sessions are implicit
      *   - hmac sessions live the life of the tool
      */
-    if (session->output.session_handle == ESYS_TR_PASSWORD
-            || session->input->session_type == TPM2_SE_HMAC) {
+    if (session->output.session_handle == ESYS_TR_PASSWORD) {
         result = true;
         goto out;
     }
