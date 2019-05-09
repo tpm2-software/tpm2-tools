@@ -25,10 +25,6 @@ with special prefix values, they are:
   * file: - Used when specifying a password stored in a file. Useful to prevent leaking the
          password to UNIX utilities (such as ps).
 
-## HMAC
-
-HMAC tickets can be presented as hex escaped passwords.
-
 ## Sessions
 
 When using a policy session to authorize the use of an object, prefix the option argument
@@ -36,6 +32,18 @@ with the *session* keyword.  Then indicate a path to a session file that was cre
 with tpm2_startauthsession(1). Optionally, if the session requires an auth value to be
 sent with the session handle (eg policy password), then append a + and a string as described
 in the **Passwords** section.
+
+## PCR Authorizations
+
+You can satisfy a PCR policy using the "pcr:" prefix and the PCR minilanguage. The PCR
+minilanguage is as follows:
+`<pcr-spec>+<raw-pcr-file>`
+
+The PCR spec is documented in in the section "PCR bank specifiers".
+
+The `raw-pcr-file` is an **optional** the output of the raw PCR contents as returned by *tpm2_pcrlist(1)*.
+
+[PCR bank specifiers](common/pcr.md)
 
 ### Examples
 
