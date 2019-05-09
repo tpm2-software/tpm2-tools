@@ -195,13 +195,15 @@ function start_sim() {
     tpm2_sim_pid=$!
     sleep 1
     if kill -0 "$tpm2_sim_pid"; then
-        local name="com.intel.tss2.Tabrmd${tpm2_sim_port}"
-                    tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$tpm2_sim_port"
-        echo "tpm2_tabrmd_opts: $tpm2_tabrmd_opts"
+        if [ "${TPM2_ABRMD:+set}" = set ]; then
+            local name="com.intel.tss2.Tabrmd${tpm2_sim_port}"
+            tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$tpm2_sim_port"
+            echo "tpm2_tabrmd_opts: $tpm2_tabrmd_opts"
 
-        tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
-        echo "tpm2_tcti_opts: $tpm2_tcti_opts"
-        echo "Started simulator in tmp dir: $tpm2_test_cwd"
+            tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
+            echo "tpm2_tcti_opts: $tpm2_tcti_opts"
+            echo "Started simulator in tmp dir: $tpm2_test_cwd"
+	fi
         return 0
     else
         echo "Could not start simulator at port: $tpm2_sim_port"
@@ -258,7 +260,7 @@ function start_up() {
         echo "Started the simulator"
     fi
 
-    if [ -n "$TPM2_ABRMD" ]; then
+    if [ "${TPM2_ABRMD:+set}" = set ]; then
         echo "Starting tpm2-abrmd"
         # Start tpm2-abrmd
         start_abrmd || exit 1

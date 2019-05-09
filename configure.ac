@@ -63,10 +63,16 @@ esac
 AC_SUBST([LIBDL_LDFLAGS])
 
 AC_ARG_ENABLE([unit],
-            [AS_HELP_STRING([--enable-unit],
-                            [build cmocka unit tests])],,
+            [AS_HELP_STRING([--enable-unit=[abrmd|mssim]],
+                            [build cmocka unit tests (yes|no|*abrmd*|mssim)])],,
             [enable_unit=no])
+case "$enable_unit" in
+  yes) enable_unit=abrmd;;
+  no|mssim|abrmd) ;;
+  *) AC_MSG_ERROR([Invalid value for --enable-unit, use one of no, abrmd or mssim])
+esac
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
+AM_CONDITIONAL([UNIT_ABRMD], [test "$enable_unit" = abrmd])
 
 dnl macro that checks for specific modules in python
 AC_DEFUN([AC_PYTHON_MODULE],
@@ -83,14 +89,14 @@ AC_DEFUN([AC_PYTHON_MODULE],
 AS_IF([test "x$enable_unit" != xno], [
     PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
-    AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd],
-        [yes], [no])
-
     AC_CHECK_PROG([tpm_server], [tpm_server],
         [yes], [no])
 
-    AS_IF([test "$tpm2_abrmd" = no],
-          [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])])
+    AS_IF([test "$enable_unit" = abrmd],
+          [AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd], yes, no)
+           AS_IF([test "$tpm2_abrmd" = no],
+                 [AC_MSG_ERROR([Required executable tpm2-abrmd not found, try setting \$PATH])])
+          ])
 
     AS_IF([test "$tpm_server" = no],
           [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])])

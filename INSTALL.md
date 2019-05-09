@@ -26,7 +26,11 @@ To build and install the tpm2-tools software the following software is required:
   * To build the man pages you need [pandoc](https://github.com/jgm/pandoc)
   * To enable the new userspace resource manager, one must get tpm2-tabrmd
     (**recommended**).
-  * For the tests: tpm2-abrmd (must be on $PATH) and tpm_server
+  * When ./configure is invoked with --enable-unit or --enable-unit=abrmd,
+    the tests are run towards a resource manager, tpm2-abrmd, which must be on $PATH.
+  * When ./configure is invoked with --enable-unit=mssim, the tests are run directly
+    towards tpm_server, without resource manager.
+  * For the tests, with or without resource manager, tpm_server must be installed.
   * Some tests pass only if xxd, bash and python with PyYAML are available
 
 ### Typical Distro Dependency Installation

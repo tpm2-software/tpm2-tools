@@ -247,11 +247,14 @@ test_unit_test_tpm2_error_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_error_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 AM_TESTS_ENVIRONMENT =	\
-	TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD; \
 	TPM2_SIM=tpm_server; export TPM2_SIM; \
 	PATH=$(abs_builddir)/tools:$(abs_builddir)/tools/misc:$(abs_top_srcdir)/test/integration:$(PATH); \
 	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
 	export TPM2_TOOLS_TEST_FIXTURES;
+
+if UNIT_ABRMD
+AM_TESTS_ENVIRONMENT += TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD;
+endif
 
 SH_LOG_COMPILER = dbus-run-session
 AM_SH_LOG_FLAGS = --
