@@ -69,6 +69,7 @@ bin_PROGRAMS = \
     tools/tpm2_getcap \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
+    tools/tpm2_flushcontext \
     tools/tpm2_getmanufec \
     tools/tpm2_getpubak \
     tools/tpm2_getpubek \
@@ -178,6 +179,7 @@ tools_tpm2_readpublic_SOURCES = tools/tpm2_readpublic.c $(TOOL_SRC)
 tools_tpm2_getrandom_SOURCES = tools/tpm2_getrandom.c $(TOOL_SRC)
 tools_tpm2_encryptdecrypt_SOURCES = tools/tpm2_encryptdecrypt.c $(TOOL_SRC)
 tools_tpm2_evictcontrol_SOURCES = tools/tpm2_evictcontrol.c $(TOOL_SRC)
+tools_tpm2_flushcontext_SOURCES = tools/tpm2_flushcontext.c $(TOOL_SRC)
 tools_tpm2_loadexternal_SOURCES = tools/tpm2_loadexternal.c $(TOOL_SRC)
 tools_tpm2_rsadecrypt_SOURCES = tools/tpm2_rsadecrypt.c $(TOOL_SRC)
 tools_tpm2_rsaencrypt_SOURCES = tools/tpm2_rsaencrypt.c $(TOOL_SRC)
@@ -269,6 +271,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_getcap.1 \
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_evictcontrol.1 \
+    man/man1/tpm2_flushcontext.1 \
     man/man1/tpm2_getmanufec.1 \
     man/man1/tpm2_getpubak.1 \
     man/man1/tpm2_getpubek.1 \
