@@ -39,6 +39,11 @@ in the **Passwords** section.
 
 ### Examples
 
+To satisfy a PCR policy of sha256 on banks 0, 1, 2 and 3 use a specifier of:
+```
+pcr:sha256:0,1,2,3
+```
+
 To use a session context file called *session.ctx*.
 ```
 session:session.ctx

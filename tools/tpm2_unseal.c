@@ -24,19 +24,11 @@
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
-    struct {
-        const char *auth_str;
-        tpm2_session *session;
-    } parent;
+    const char *auth_str;
+    tpm2_session *session;
     char *outFilePath;
-    char *raw_pcrs_file;
-    char *session_file;
-    TPML_PCR_SELECTION pcr_selection;
     const char *context_arg;
     tpm2_loaded_object context_object;
-    struct {
-        UINT8 L : 1;
-    } flags;
 };
 
 static tpm_unseal_ctx ctx;
@@ -50,7 +42,7 @@ bool unseal_and_save(ESYS_CONTEXT *ectx) {
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            ctx.parent.session);
+                            ctx.session);
     if (shandle1 == ESYS_TR_NONE) {
         ret = false;
         goto out;
@@ -79,32 +71,6 @@ out:
     return ret;
 }
 
-static bool start_auth_session(ESYS_CONTEXT *ectx) {
-
-    tpm2_session_data *session_data =
-            tpm2_session_data_new(TPM2_SE_POLICY);
-    if (!session_data) {
-        LOG_ERR("oom");
-        return false;
-    }
-
-    ctx.parent.session = tpm2_session_open(ectx,
-            session_data);
-    if (!ctx.parent.session) {
-        LOG_ERR("Could not start tpm session");
-        return false;
-    }
-
-    bool result = tpm2_policy_build_pcr(ectx, ctx.parent.session,
-                    ctx.raw_pcrs_file, &ctx.pcr_selection);
-    if (!result) {
-        LOG_ERR("Could not build a pcr policy");
-        return false;
-    }
-
-    return true;
-}
-
 static bool init(ESYS_CONTEXT *ectx) {
 
     if (!ctx.context_arg) {
@@ -118,15 +84,11 @@ static bool init(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    if (ctx.flags.L) {
-        return start_auth_session(ectx);
-    } else {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
-                &ctx.parent.session, false);
-        if (!result) {
-            LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.parent.auth_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
+            &ctx.session, false);
+    if (!result) {
+        LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.auth_str);
+        return false;
     }
 
     return true;
@@ -139,20 +101,11 @@ static bool on_option(char key, char *value) {
         ctx.context_arg = value;
         break;
     case 'p': {
-        ctx.parent.auth_str = value;
+        ctx.auth_str = value;
     }
         break;
     case 'o':
         ctx.outFilePath = value;
-        break;
-    case 'L':
-        if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
-            return false;
-        }
-        ctx.flags.L = 1;
-        break;
-    case 'F':
-        ctx.raw_pcrs_file = value;
         break;
         /* no default */
     }
@@ -166,11 +119,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth-key",             required_argument, NULL, 'p' },
       { "out-file",             required_argument, NULL, 'o' },
       { "context-object",       required_argument, NULL, 'c' },
-      { "set-list",             required_argument, NULL, 'L' },
-      { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("p:o:c:L:F:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:o:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -195,7 +146,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = 0;
 out:
 
-    result = tpm2_session_close(&ctx.parent.session);
+    result = tpm2_session_close(&ctx.session);
     if (!result) {
         rc = 1;
     }

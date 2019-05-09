@@ -82,7 +82,7 @@ tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_pr
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
 
-unsealed=`tpm2_unseal --context-object $file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value`
+unsealed=`tpm2_unseal -V --context-object $file_unseal_key_ctx -p pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value`
 
 test "$unsealed" == "$secret"
 
@@ -102,7 +102,7 @@ pcr_extend=$(echo $pcr_ids | cut -d ',' -f1)
 
 tpm2_pcrextend $pcr_extend:sha1=6c10289a8da7f774cf67bd2fc8502cd4b585346a
 
-tpm2_unseal -c $file_unseal_key_ctx -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value 2> /dev/null
+tpm2_unseal -c $file_unseal_key_ctx -p pcr:${alg_pcr_policy}:${pcr_ids} 2> /dev/null
 if [ $? != 1 ]; then
   echo "tpm2_unseal didn't fail with a PCR state different than the policy!"
   exit 1

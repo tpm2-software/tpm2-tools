@@ -15,7 +15,9 @@
 
 #include "files.h"
 #include "log.h"
+#include "pcr.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_policy.h"
 #include "tpm2_session.h"
 #include "tpm2_util.h"
 
@@ -30,6 +32,10 @@
 
 #define FILE_PREFIX "file:"
 #define FILE_PREFIX_LEN sizeof(FILE_PREFIX) - 1
+
+#define PCR_PREFIX "pcr:"
+#define PCR_PREFIX_LEN sizeof(PCR_PREFIX) - 1
+
 
 static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
 
@@ -193,6 +199,68 @@ static bool handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **ses
     return *session != NULL;
 }
 
+static bool handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session **session) {
+
+    policy += PCR_PREFIX_LEN;
+
+    bool result = false;
+
+    tpm2_session *s = NULL;
+
+    char *dup = strdup(policy);
+    if (!dup) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    const char *pcr_str = dup;
+    const char *raw_path = NULL;
+    char *split = strchr(dup, '+');
+    if (split) {
+        *split = '\0';
+        raw_path = split + 1;
+        raw_path = raw_path[0] == '\0' ? NULL : raw_path;
+    }
+
+    TPML_PCR_SELECTION pcrs;
+    bool ret = pcr_parse_selections(pcr_str, &pcrs);
+    if (!ret) {
+        goto out;
+    }
+
+    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
+    if (!d) {
+        LOG_ERR("oom");
+        goto out;
+    }
+
+    s = tpm2_session_open(ectx, d);
+    if (!s) {
+        LOG_ERR("Could not start tpm session");
+        goto out;
+    }
+
+    ret = tpm2_policy_build_pcr(ectx, s,
+            raw_path, &pcrs);
+    if (!ret) {
+        goto out;
+    }
+
+    *session = s;
+
+    result = true;
+
+out:
+    free(dup);
+
+    /* if fail close session */
+    if (!result) {
+        tpm2_session_close(&s);
+    }
+
+    return result;
+}
+
 bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     tpm2_session **session, bool is_restricted) {
 
@@ -220,6 +288,16 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
     if (is_file) {
         result = handle_file(ectx, password, session);
+        if (!result) {
+            return false;
+        }
+        goto handled;
+    }
+
+    /* starts with pcr: */
+    bool is_pcr = !strncmp(password, PCR_PREFIX, PCR_PREFIX_LEN);
+    if (is_pcr) {
+        result = handle_pcr(ectx, password, session);
         if (!result) {
             return false;
         }
