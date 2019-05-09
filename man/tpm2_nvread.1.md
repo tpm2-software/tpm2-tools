@@ -49,17 +49,6 @@
     offset is not specified. If not specified, the size of the data
     as reported by the public portion of the index will be used.
 
-  * **-L**, **\--set-list**=_PCR\_SELECTION\_LIST_:
-
-    The list of PCR banks and selected PCRs' ids.
-    _PCR\_SELECTION\_LIST_ values should follow the
-    PCR bank specifiers standards, see section "PCR Bank Specifiers".
-
-  * **-F**, **\--pcr-input-file=_PCR\_INPUT\_FILE_:
-
-    Optional Path or Name of the file containing expected PCR values for the specified index.
-    Default is to read the current PCRs per the set list.
-
   * **\--offset**=_OFFSET_:
 
     The offset within the NV index to start reading from.

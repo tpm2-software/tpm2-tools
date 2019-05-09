@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_nvincrement: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
+  * tpm2_nvwrite: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
+  * tpm2_nvread: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
+  * tpm2_unseal: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
   * tpm2_evictcontrol: support serializing ESYS_TR handle to disk.
   * tpm2_readpublic: support serializing ESYS_TR handle to disk.
   * tpm2_startauthsession: support encrypted and bound sessions.

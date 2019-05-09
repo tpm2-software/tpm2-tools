@@ -36,10 +36,7 @@ struct tpm_nvread_ctx {
         tpm2_session *session;
     } auth;
     char *output_file;
-    char *raw_pcrs_file;
-    TPML_PCR_SELECTION pcr_selection;
     struct {
-        UINT8 L : 1;
         UINT8 a : 1;
     } flags;
 };
@@ -131,15 +128,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'L':
-        if (!pcr_parse_selections(value, &ctx.pcr_selection)) {
-            return false;
-        }
-        ctx.flags.L = 1;
-        break;
-    case 'F':
-        ctx.raw_pcrs_file = value;
-        break;
         /* no default */
     }
     return true;
@@ -154,41 +142,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "size",                 required_argument, NULL, 's' },
         { "offset",               required_argument, NULL,  0  },
         { "auth-hierarchy",       required_argument, NULL, 'P' },
-        { "set-list",             required_argument, NULL, 'L' },
-        { "pcr-input-file",       required_argument, NULL, 'F' },
     };
 
-    *opts = tpm2_options_new("x:a:s:o:P:L:F:", ARRAY_LEN(topts),
+    *opts = tpm2_options_new("x:a:s:o:P:", ARRAY_LEN(topts),
                              topts, on_option, NULL, 0);
 
     return *opts != NULL;
-}
-
-static bool start_auth_session(ESYS_CONTEXT *ectx) {
-
-    tpm2_session_data *session_data =
-            tpm2_session_data_new(TPM2_SE_POLICY);
-    if (!session_data) {
-        LOG_ERR("oom");
-        return false;
-    }
-
-    ctx.auth.session = tpm2_session_open(ectx,
-            session_data);
-    if (!ctx.auth.session) {
-        LOG_ERR("Could not start tpm session");
-        return false;
-    }
-
-    bool result = tpm2_policy_build_pcr(ectx, ctx.auth.session,
-            ctx.raw_pcrs_file,
-            &ctx.pcr_selection);
-    if (!result) {
-        LOG_ERR("Could not build a pcr policy");
-        return false;
-    }
-
-    return true;
 }
 
 int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -198,12 +157,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     int rc = 1;
     bool result;
 
-    if (ctx.flags.L && ctx.auth.auth_str) {
-        LOG_ERR("Can only use either existing session or a new session,"
-                " not both!");
-        goto out;
-    }
-
     /* If the users doesn't specify an authorisation hierarchy use the index
      * passed to -x/--index for the authorisation index.
      */
@@ -211,19 +164,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.hierarchy = ctx.nv_index;
     }
 
-    if (ctx.flags.L) {
-        result = start_auth_session(ectx);
-        if (!result) {
-            goto out;
-        }
-    } else {
-        result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-                &ctx.auth.session, false);
-        if (!result) {
-            LOG_ERR("Invalid handle authorization, got \"%s\"",
-                ctx.auth.auth_str);
-            return false;
-        }
+    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+            &ctx.auth.session, false);
+    if (!result) {
+        LOG_ERR("Invalid handle authorization, got \"%s\"",
+            ctx.auth.auth_str);
+        return false;
     }
 
     result = nv_read(ectx, flags);
