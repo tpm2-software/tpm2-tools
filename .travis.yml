@@ -5,6 +5,7 @@ services:
 compiler:
 - gcc
 - clang
+cache: ccache
 env:
   matrix:
   - coverity_scan_run_condition='"$CC" = gcc'
