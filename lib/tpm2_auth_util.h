@@ -1,9 +1,5 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2017, Intel Corporation
-// All rights reserved.
-//
-//**********************************************************************;
+
 #ifndef SRC_PASSWORD_UTIL_H_
 #define SRC_PASSWORD_UTIL_H_
 

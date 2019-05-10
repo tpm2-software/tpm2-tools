@@ -1,10 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2017, SUSE Linux GmbH
-// Copyright (c) 2018, Intel Corporation
-// All rights reserved.
-//
-//**********************************************************************;
 
 #include <string.h>
 #include <errno.h>

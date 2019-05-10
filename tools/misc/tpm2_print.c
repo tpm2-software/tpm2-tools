@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2017, National Instruments
-// All rights reserved.
-//
-//**********************************************************************;
 
 #include <stdio.h>
 #include <string.h>

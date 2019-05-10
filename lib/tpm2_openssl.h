@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2017, Intel Corporation
-// All rights reserved.
-//
-//**********************************************************************
 
 #ifndef LIB_TPM2_OPENSSL_H_
 #define LIB_TPM2_OPENSSL_H_

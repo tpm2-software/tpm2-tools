@@ -1,9 +1,5 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-/*
- * Copyright (c) 2016, Intel Corporation
- * All rights reserved.
- *
- */
+
 #ifndef TPM2_HEADER_H
 #define TPM2_HEADER_H
 

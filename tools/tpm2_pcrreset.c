@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2019, Sebastien LE STUM
-// All rights reserved.
-//
-//**********************************************************************;
 
 #include <ctype.h>
 #include <errno.h>

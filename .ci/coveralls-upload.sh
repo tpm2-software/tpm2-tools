@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: BSD-3-Clause
-#;**********************************************************************;
-#
-# Copyright (c) 2017, Intel Corporation
-# All rights reserved.
-#
-#;**********************************************************************;
 
 if [ "$ENABLE_COVERAGE" != "true" ]; then
   echo "ENABLE_COVERAGE not true, got "$ENABLE_COVERAGE""

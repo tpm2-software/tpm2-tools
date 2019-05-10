@@ -1,10 +1,4 @@
 # SPDX-License-Identifier: BSD-3-Clause
-#;**********************************************************************;
-#
-# Copyright (c) 2018, Intel Corporation
-# All rights reserved.
-#
-#;**********************************************************************;
 
 # ax_code_coverage
 if AUTOCONF_CODE_COVERAGE_2019_01_06

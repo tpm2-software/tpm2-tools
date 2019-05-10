@@ -1,12 +1,5 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
-#;**********************************************************************;
-#
-# Copyright (c) 2017, Alibaba Group
-# Copyright (c) 2018, Intel Corporation
-# All rights reserved.
-#
-#;**********************************************************************;
 
 function filter_algs_by() {
 
