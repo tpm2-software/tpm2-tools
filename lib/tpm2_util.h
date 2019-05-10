@@ -1,9 +1,5 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2017-2018, Intel Corporation
-// All rights reserved.
-//
-//**********************************************************************;
+
 #ifndef STRING_BYTES_H
 #define STRING_BYTES_H
 

@@ -1,11 +1,5 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
-#;**********************************************************************;
-#
-# Copyright (c) 2016, Intel Corporation
-# All rights reserved.
-#
-#;**********************************************************************;
 
 echo 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA' | base64 -d > header.bin
 echo '02 03' | xxd -r -p >mid-header.bin

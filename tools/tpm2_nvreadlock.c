@@ -1,10 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2015-2018, Intel Corporation
-// Copyright (c) 2016, Atom Software Studios
-// All rights reserved.
-//
-//**********************************************************************;
 
 #include <stdbool.h>
 

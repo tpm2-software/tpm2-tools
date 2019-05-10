@@ -1,12 +1,5 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
-#;**********************************************************************;
-#
-# Copyright (c) 2016-2018, Intel Corporation
-# Copyright (c) 2019, Fraunhofer SIT
-# All rights reserved.
-#
-#;**********************************************************************;
 
 source helpers.sh
 

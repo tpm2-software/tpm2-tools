@@ -1,11 +1,5 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
-#;**********************************************************************;
-#
-# Copyright (c) 2019 Massachusetts Institute of Technology.
-# All rights reserved.
-#
-#;**********************************************************************;
 
 source helpers.sh
 

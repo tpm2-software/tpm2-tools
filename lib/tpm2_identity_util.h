@@ -1,10 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2017, Intel Corporation
-// Copyright (c) 2019 Massachusetts Institute of Technology
-// All rights reserved.
-//
-//**********************************************************************
 
 #ifndef LIB_TPM2_IDENTITY_UTIL_H_
 #define LIB_TPM2_IDENTITY_UTIL_H_

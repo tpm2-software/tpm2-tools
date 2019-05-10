@@ -1,9 +1,5 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2017, Alibaba Group
-// All rights reserved.
-//
-//**********************************************************************;
+
 #ifndef TPM2_ERRATA_H
 #define TPM2_ERRATA_H
 

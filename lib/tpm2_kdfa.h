@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
-// All rights reserved.
-//
-//**********************************************************************;
 
 #ifndef SRC_TPM_KDFA_H_
 #define SRC_TPM_KDFA_H_

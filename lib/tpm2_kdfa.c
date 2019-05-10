@@ -1,9 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
-// All rights reserved.
-//
-//**********************************************************************;
 
 #include <tss2/tss2_sys.h>
 

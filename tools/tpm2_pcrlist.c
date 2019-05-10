@@ -1,10 +1,4 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-//**********************************************************************;
-// Copyright (c) 2015, Intel Corporation
-// Copyright (c) 2018, Fraunhofer SIT
-// All rights reserved.
-//
-//**********************************************************************;
 
 #include <errno.h>
 #include <stdbool.h>
