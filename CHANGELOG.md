@@ -1,5 +1,6 @@
 ## Changelog
 ### 3.2.0 - next
+* tpm2_flushcontext: Introduce new tool for flushing handles from the TPM.
 * tpm2_checkquote: Introduce new tool for checking validity of quotes.
 * tpm2_quote: Add ability to output PCR values for quotes.
 * tpm2_makecredential: add support for executing tool off-TPM.
