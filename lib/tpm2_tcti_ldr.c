@@ -7,6 +7,7 @@
 
 #include <tss2/tss2_sys.h>
 
+#include "config.h"
 #include "log.h"
 #include "tpm2_tcti_ldr.h"
 

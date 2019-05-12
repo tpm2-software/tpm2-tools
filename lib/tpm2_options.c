@@ -17,6 +17,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 
+#include "config.h"
 #include "log.h"
 #include "tpm2_options.h"
 #include "tpm2_tcti_ldr.h"

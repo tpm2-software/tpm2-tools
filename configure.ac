@@ -1,6 +1,10 @@
 AC_INIT([tpm2-tools],
     [m4_esyscmd_s([git describe --tags --always --dirty])])
 AC_CONFIG_MACRO_DIR([m4])
+
+AX_IS_RELEASE([dash-version])
+AX_CHECK_ENABLE_DEBUG([yes])
+
 AC_PROG_CC
 AC_PROG_LN_S
 LT_INIT
@@ -14,6 +18,10 @@ m4_ifdef([_AX_CODE_COVERAGE_RULES],
          [AM_CONDITIONAL(AUTOCONF_CODE_COVERAGE_2019_01_06, [false])])
 AX_ADD_AM_MACRO_STATIC([])
 AC_CONFIG_FILES([Makefile])
+
+# enable autoheader config.h file
+AC_CONFIG_HEADERS([lib/config.h])
+
 AC_CHECK_PROG([PANDOC],[pandoc],[yes])
 AS_IF(
     [test "x${PANDOC}" = x"yes"],
@@ -113,7 +121,9 @@ AS_IF([test "x$enable_unit" != xno], [
 AC_ARG_ENABLE([dlclose],
   [AS_HELP_STRING([--disable-dlclose],
                             [Some versions of libc cause a sigsegv on exit, this disables the dlclose and works around that bug])],
-  [AC_DEFINE([DISABLE_DLCLOSE], [1])]
+  [AC_DEFINE([DISABLE_DLCLOSE], [1],
+  [Some versions of libc cause a sigsegv on exit with dlclose(), this disables the dlclose()
+  and works around that bug])]
  )
 
 AC_ARG_ENABLE([hardening],
