@@ -156,8 +156,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    tpm2_tool_output("persistentHandle: 0x%x\n", ctx.persist_handle);
-
     ESYS_TR out_tr;
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
     result = tpm2_ctx_mgmt_evictcontrol(ectx,
