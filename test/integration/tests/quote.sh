@@ -20,6 +20,7 @@ file_quote_key_ctx=ctx_load_out_"$alg_primary_obj"_"$alg_primary_key"-"$alg_crea
 Handle_ak_quote=0x81010016
 Handle_ek_quote=0x81010017
 Handle_ak_quote2=0x81010018
+ak2_ctx=ak2.ctx
 
 out=out.yaml
 toss_out=junk.out
@@ -27,7 +28,7 @@ toss_out=junk.out
 cleanup() {
     rm -f $file_primary_key_ctx $file_quote_key_pub $file_quote_key_priv \
     $file_quote_key_name $file_quote_key_ctx ek.pub2 ak.pub2 ak.name_2 \
-    $out $toss_out
+    $out $toss_out $ak2_ctx
 
     tpm2_evictcontrol -Q -ao -c $Handle_ek_quote 2>/dev/null || true
     tpm2_evictcontrol -Q -ao -c $Handle_ak_quote 2>/dev/null || true
@@ -77,7 +78,8 @@ tpm2_quote -Q -C $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -
 #####AK
 tpm2_createek -Q -c $Handle_ek_quote -G 0x01 -p ek.pub2
 
-tpm2_createak -Q -C $Handle_ek_quote -k  $Handle_ak_quote2 -p ak.pub2 -n ak.name_2
+tpm2_createak -Q -C $Handle_ek_quote -c $ak2_ctx -p ak.pub2 -n ak.name_2
+tpm2_evictcontrol -Q -a o -c $ak2_ctx -p $Handle_ak_quote2
 
 tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -l 16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -g $alg_primary_obj
 

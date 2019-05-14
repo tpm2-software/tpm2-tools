@@ -42,21 +42,10 @@ loaded-key:
     Specifies the AK authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-w**, **\--auth-owner**=_OWNER\_AUTH_
-
-    Specifies the current owner authorization.
-    Same formatting as the endorse password value or **-e** option.
-
   * **-C**, **\--ek-context**=_EK\_CONTEXT\_OBJECT_:
 
     Specifies the object context of the EK. Either a file or a handle number.
     See section "Context Object Format".
-
-  * **-k**, **\--ak-handle**=_AK\_HANDLE_:
-
-    Specifies the handle used to make AK persistent.
-    If a value of **-** is passed the tool will find a vacant persistent handle
-    to use and print out the automatically selected handle.
 
   * **-c**, **\--context**=_CONTEXT\_FILE\_NAME_:
 
@@ -127,52 +116,15 @@ when using a RM, moving the created EK to persistent memory is
 required.
 
 ### Create an Attestation Key and make it persistent
+
+Create an Endorsement Key (EK) and persist it to handle
+0x81010002.
+
 ```
-# create an Endorsement Key (EK)
 tpm2_createek -c 0x81010001 -G rsa -p ek.pub
 # create an Attestation Key (AK) passing the EK handle
-tpm2_createak -C 0x81010001 -k 0x81010002 -p ak.pub -n ak.name
-```
-
-## Without a Resource Manager (RM)
-
-The following examples will not work when an RM is in use, as the RM will
-flush the TPM context when the tool exits. In these scenarios, the created
-AK is in transient memory and thus will be flushed.
-
-### Create a transient Attestation Key, evict it, and reload it
-```
-# AK needs an Endorsement Key (primary object)
-tpm2_createek
-transient-object-context: ek.ctx
-
-# Now create a transient AK
-tpm2_createak -C ek.ctx -w ak.ctx -p ak.pub -n ak.name
-loaded-key:
-  name: 000b8052c63861b1855c91edd63bca2eb3ea3ad304bb9798a9445ada12d5b5bb36e0
-
-tpm2_createek -G rsa -p ek.pub -c ek.ctx
-
-# Check that the AK is loaded in transient memory
-# Note the AK is at handle 0x80000001
-tpm2_getcap -c handles-transient
-- 0x80000000
-- 0x80000001
-
-# Flush the AK handle
-tpm2_flushcontext -H 0x80000000
-
-# Note that it is flushed
-tpm2_getcap -c handles-transient
-- 0x80000000
-
-# Reload it via loadexternal
-tpm2_loadexternal -a o -u ak.pub -o ak.ctx
-
-# Check that it is re-loaded in transient memory
-$ tpm2_getcap -c handles-transient
-- 0x80000000
-- 0x80000001
+tpm2_createak -C 0x81010001 -k ak.ctx -p ak.pub -n ak.name
+tpm2_evictcontrol -c 0x81010002 -o ek.handle
 ```
 
 # RETURNS

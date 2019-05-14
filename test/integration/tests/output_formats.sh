@@ -21,6 +21,8 @@ file_pubak_name="ak.${alg_ak}.name"
 file_pubak_tss="ak.${alg_ak}.tss"
 file_pubak_pem="ak.${alg_ak}.pem"
 handle_ak=0x81010016
+handle_ak_file=ak.handle
+ak_ctx=ak.ctx
 
 file_hash_input="hash.in"
 file_hash_ticket=hash.ticket
@@ -36,7 +38,7 @@ cleanup() {
     rm -f "$file_pubak_tss" "$file_pubak_name" "$file_pubak_pem"
     rm -f "$file_hash_ticket" "$file_hash_result" "$file_sig_base".*
     rm -f "$file_quote_msg" "$file_quote_sig_base".* $file_hash_input
-    rm -f primary.ctx ecc.ctx ecc.pub ecc.priv ecc.fmt.pub
+    rm -f primary.ctx ecc.ctx ecc.pub ecc.priv ecc.fmt.pub $ak_ctx
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -68,9 +70,11 @@ for fmt in tss pem der; do
 
 done
 
-tpm2_createak -Q -G $alg_ak -C $handle_ek -k $handle_ak -p "$file_pubak_tss" -n "$file_pubak_name"
+tpm2_createak -Q -G $alg_ak -C $handle_ek -c $ak_ctx -p "$file_pubak_tss" -n "$file_pubak_name"
+echo "tpm2_evictcontrol -Q -c $ak_ctx -p $handle_ak -o $handle_ak_file"
+tpm2_evictcontrol -Q -c $ak_ctx -p $handle_ak -o $handle_ak_file
 
-tpm2_readpublic -Q -c $handle_ak -f "pem" -o "$file_pubak_pem"
+tpm2_readpublic -Q -c $handle_ak_file -f "pem" -o "$file_pubak_pem"
 
 tpm2_hash -Q -a e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$file_hash_input"
 
