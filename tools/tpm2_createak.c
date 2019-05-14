@@ -364,23 +364,13 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         LOG_INFO("Flush transient AK success.");
     } else {
         // If the AK isn't persisted we always save a context file of the
-        // transient AK handle for future tool interactions, defaults to ak.ctx
-        char *ctx_file = NULL;
-        bool result = files_get_unique_name(ctx.ak.out.ctx_file, &ctx_file);
-        if (!result) {
-            free(ctx_file);
-            goto nameout;
-        }
+        // transient AK handle for future tool interactions.
         result = files_save_tpm_context_to_path(ectx,
-                    loaded_sha1_key_handle, ctx_file);
+                    loaded_sha1_key_handle, ctx.ak.out.ctx_file);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
-            free(ctx_file);
             goto nameout;
         }
-
-        tpm2_tool_output("transient-object-context: %s\n", ctx_file);
-        free(ctx_file);
     }
 
     if (ctx.ak.out.pub_file) {
@@ -517,6 +507,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
+    if (!ctx.find_persistent_ak && !ctx.ak.in.handle && !ctx.ak.out.ctx_file) {
+        LOG_ERR("Expected option -k or -h");
+        return -1;
+    }
+
     if (ctx.find_persistent_ak) {
         bool res = tpm2_capability_find_vacant_persistent_handle(ectx,
                         &ctx.ak.in.handle);
@@ -570,10 +565,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     ctx.ak.in.inSensitive.sensitive.userAuth = *auth;
 
     tpm2_session_close(&tmp);
-
-    if (!ctx.ak.out.ctx_file || ctx.ak.out.ctx_file[0] == '\0') {
-        ctx.ak.out.ctx_file = "ak.ctx";
-    }
 
     return !create_ak(ectx);
 }

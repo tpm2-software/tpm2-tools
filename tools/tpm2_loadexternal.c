@@ -152,6 +152,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
+    if (!ctx.context_file_path) {
+        LOG_ERR("Expected -o option");
+        return 1;
+    }
+
     /*
      * We only load a TSS format for the public portion, so if
      * someone hands us a public file, we'll assume the TSS format when

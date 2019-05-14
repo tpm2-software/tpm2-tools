@@ -61,10 +61,7 @@ loaded-key:
   * **-c**, **\--context**=_CONTEXT\_FILE\_NAME_:
 
     Optional, specifies a path to save the context of the AK handle. If the AK
-    is not persisted to a handle (via **-k**) the tool defaults to saving a
-    context file to *ak.ctx* unless an alternative is specified here.
-    If one saves the context file via this option and the public key via the
-    **-p** option, the AK can be restored via a call to **tpm2_loadexternal**(1).
+    is not persisted to a handle (via **-k**) then this option is required.
 
   * **-G**, **\--algorithm**=_ALGORITHM_:
 

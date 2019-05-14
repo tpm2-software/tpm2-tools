@@ -63,8 +63,7 @@ interactions with the created primary.
 
   * **-o**, **\--out-context-name**=_CONTEXT\_FILE\_NAME_:
 
-    Optional file name to use for the returned object context, otherwise a
-    default of _primary.ctx_ is used.
+    File name to use for the returned object context, required.
 
   * **-L**, **\--policy-file**=_POLICY\_FILE_:
 
