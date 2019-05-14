@@ -13,6 +13,7 @@ ownerpw=ownerpass
 endorsepw=endorsepass
 ekpw=ekpass
 akpw=akpass
+ak_ctx=ak.ctx
 
 output_ek_pub_pem=ekpub.pem
 output_ak_pub_pem=akpub.pem
@@ -24,7 +25,8 @@ output_quotepcr=quotepcr.out
 cleanup() {
   rm -f $output_ek_pub_pem \
         $output_ak_pub_pem $output_ak_pub_name \
-        $output_quote $output_quotesig $output_quotepcr rand.out
+        $output_quote $output_quotesig $output_quotepcr rand.out \
+	    $ak_ctx
 
   tpm2_pcrreset 16
   tpm2_evictcontrol -a o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
@@ -53,7 +55,8 @@ getrandom() {
 # Key generation
 tpm2_createek -c $handle_ek -G $ek_alg -p $output_ek_pub_pem -f pem -P "$ekpw"
 
-tpm2_createak -C $handle_ek -k $handle_ak -G $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub_pem -f pem -n $output_ak_pub_name -P "$akpw"
+tpm2_createak -C $handle_ek -c $ak_ctx -G $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub_pem -f pem -n $output_ak_pub_name -P "$akpw"
+tpm2_evictcontrol -Q -c $ak_ctx -p $handle_ak
 
 # Quoting
 getrandom 20

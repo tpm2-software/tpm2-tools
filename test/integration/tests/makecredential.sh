@@ -4,7 +4,7 @@
 source helpers.sh
 
 handle_ek=0x81010007
-handle_ak=0x81010008
+ak_ctx=ak.ctx
 ek_alg=rsa
 ak_alg=rsa
 digestAlg=sha256
@@ -18,10 +18,9 @@ output_mkcredential=mkcredential.out
 
 cleanup() {
     rm -f $output_ek_pub $output_ak_pub $output_ak_pub_name $output_mkcredential \
-          $file_input_data output_ak grep.txt
+          $file_input_data output_ak grep.txt $ak_ctx
 
     tpm2_evictcontrol -Q -ao -c $handle_ek 2>/dev/null || true
-    tpm2_evictcontrol -Q -ao -c $handle_ak 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -37,7 +36,7 @@ echo "12345678" > $file_input_data
 
 tpm2_createek -Q -c $handle_ek -G $ek_alg -p $output_ek_pub
 
-tpm2_createak -Q -C $handle_ek  -k $handle_ak -G $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub -n $output_ak_pub_name
+tpm2_createak -Q -C $handle_ek -c $ak_ctx -G $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub -n $output_ak_pub_name
 
 # Use -c in xxd so there is no line wrapping
 file_size=`stat --printf="%s" $output_ak_pub_name`

@@ -3,7 +3,7 @@
 
 source helpers.sh
 
-ak_handle=0x81010016
+ak_ctx=ak.ctx
 ek_handle=0x81010017
 
 ak_name_file=ak.name
@@ -15,7 +15,7 @@ print_file=quote.yaml
 
 cleanup() {
     rm -f $ak_name_file $ak_pubkey_file $ek_pubkey_file \
-          $quote_file $print_file
+          $quote_file $print_file $ak_ctx
 
     if [ "$1" != "no-shut-down" ]; then
        shut_down
@@ -31,10 +31,10 @@ tpm2_clear
 
 # Create signing key
 tpm2_createek -Q -G rsa -c $ek_handle -p $ek_pubkey_file
-tpm2_createak -Q -G rsa -D sha256 -s rsassa -C $ek_handle -k $ak_handle -p $ak_pubkey_file -n $ak_name_file
+tpm2_createak -Q -G rsa -D sha256 -s rsassa -C $ek_handle -c $ak_ctx -p $ak_pubkey_file -n $ak_name_file
 
 # Take PCR quote
-tpm2_quote -Q -C $ak_handle -L "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" -m $quote_file
+tpm2_quote -Q -C $ak_ctx -L "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" -m $quote_file
 
 # Print TPM's quote file
 tpm2_print -t TPMS_ATTEST -i $quote_file > $print_file

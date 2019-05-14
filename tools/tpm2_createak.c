@@ -31,7 +31,6 @@ struct createak_context {
     struct {
         struct {
             TPM2B_SENSITIVE_CREATE inSensitive;
-            TPM2_HANDLE handle;
             struct {
                 TPM2_ALG_ID type;
                 TPM2_ALG_ID digest;
@@ -48,14 +47,8 @@ struct createak_context {
         char *auth_str;
     } ak;
     struct {
-        char *auth_str;
-        tpm2_session *session;
-    } owner;
-    struct {
         UINT8 f : 1;
     } flags;
-
-    bool find_persistent_ak;
 };
 
 static createak_context ctx = {
@@ -72,7 +65,6 @@ static createak_context ctx = {
         },
     },
     .flags = { 0 },
-    .find_persistent_ak = false
 };
 
 /*
@@ -325,52 +317,13 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         }
     }
 
-    if (ctx.ak.in.handle) {
-        // use the owner auth here.
-        shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
-                    ctx.owner.session);
-        if (shandle == ESYS_TR_NONE) {
-            goto nameout;
-        }
-
-        ESYS_TR ak_handle;
-        rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER,
-                    loaded_sha1_key_handle,
-                    shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                    ctx.ak.in.handle, &ak_handle);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_EvictControl, rval);
-            goto nameout;
-        }
-        LOG_INFO("EvictControl: Make AK persistent success.");
-
-        // Free up resources used by the persistent handle, whilst leaving it
-        // loaded in the TPM
-        rval = Esys_TR_Close(ectx, &ak_handle);
-        if (rval != TPM2_RC_SUCCESS) {
-            // Not being able to close the handle shouldn't prevent us from
-            // proceeding
-            LOG_PERR(Esys_TR_Close, rval);
-        } else {
-            LOG_INFO("Close persistent AK success.");
-        }
-
-        // Free up resources used by the transient object
-        rval = Esys_FlushContext(ectx, loaded_sha1_key_handle);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_FlushContext, rval);
-            goto nameout;
-        }
-        LOG_INFO("Flush transient AK success.");
-    } else {
-        // If the AK isn't persisted we always save a context file of the
-        // transient AK handle for future tool interactions.
-        result = files_save_tpm_context_to_path(ectx,
-                    loaded_sha1_key_handle, ctx.ak.out.ctx_file);
-        if (!result) {
-            LOG_ERR("Error saving tpm context for handle");
-            goto nameout;
-        }
+    // If the AK isn't persisted we always save a context file of the
+    // transient AK handle for future tool interactions.
+    result = files_save_tpm_context_to_path(ectx,
+                loaded_sha1_key_handle, ctx.ak.out.ctx_file);
+    if (!result) {
+        LOG_ERR("Error saving tpm context for handle");
+        goto nameout;
     }
 
     if (ctx.ak.out.pub_file) {
@@ -403,22 +356,9 @@ out_session:
 
 static bool on_option(char key, char *value) {
 
-    bool result;
-
     switch (key) {
     case 'C':
         ctx.ek.ctx_arg = value;
-        break;
-    case 'k':
-        if (!strcmp(value, "-")) {
-            ctx.find_persistent_ak = true;
-        } else {
-            result = tpm2_util_string_to_uint32(value, &ctx.ak.in.handle);
-            if (!result) {
-                LOG_ERR("Could not convert persistent AK handle.");
-                return false;
-            }
-        }
         break;
     case 'G':
         ctx.ak.in.alg.type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
@@ -440,9 +380,6 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Could not convert signing algorithm.");
             return false;
         }
-        break;
-    case 'w':
-        ctx.owner.auth_str = value;
         break;
     case 'e':
         ctx.ek.auth_str = value;
@@ -477,11 +414,9 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth-owner",     required_argument, NULL, 'w' },
         { "auth-endorse",   required_argument, NULL, 'e' },
         { "auth-ak",        required_argument, NULL, 'P' },
         { "ek-context",     required_argument, NULL, 'C' },
-        { "ak-handle",      required_argument, NULL, 'k' },
         { "algorithm",      required_argument, NULL, 'G' },
         { "digest-alg",     required_argument, NULL, 'D' },
         { "sign-alg",       required_argument, NULL, 's' },
@@ -492,7 +427,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "privfile",       required_argument, NULL, 'r'},
     };
 
-    *opts = tpm2_options_new("w:C:e:k:G:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:e:G:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -507,20 +442,9 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return -1;
     }
 
-    if (!ctx.find_persistent_ak && !ctx.ak.in.handle && !ctx.ak.out.ctx_file) {
-        LOG_ERR("Expected option -k or -h");
+    if (!ctx.ak.out.ctx_file) {
+        LOG_ERR("Expected option -c");
         return -1;
-    }
-
-    if (ctx.find_persistent_ak) {
-        bool res = tpm2_capability_find_vacant_persistent_handle(ectx,
-                        &ctx.ak.in.handle);
-        if (!res) {
-            LOG_ERR("ak-handle/k passed with a value of '-' but unable to find"
-                    " a vacant persistent handle!");
-            return 1;
-        }
-        tpm2_tool_output("ak-persistent-handle: 0x%x\n", ctx.ak.in.handle);
     }
 
     bool result = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
@@ -536,13 +460,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             LOG_ERR("Converting ek_ctx TPM2_HANDLE to ESYS_TR");
             return 1;
         }
-    }
-
-    result = tpm2_auth_util_from_optarg(ectx, ctx.owner.auth_str,
-            &ctx.owner.session, false);
-    if (!result) {
-        LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.owner.auth_str);
-        return 1;
     }
 
     result = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str,
