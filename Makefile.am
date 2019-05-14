@@ -255,16 +255,24 @@ TEST_EXTENSIONS = .sh
 check-hook:
 	rm -rf .lock_file
 
-EXTRA_DIST = $(top_srcdir)/man \
-	     AUTHORS.md \
-	     CHANGELOG.md \
-	     CONTRIBUTING.md \
-	     INSTALL.md \
-	     LICENSE \
-	     MAINTAINERS.md \
-	     README.md \
-	     RELEASE.md \
-	     test/integration
+EXTRA_DIST_IGNORE = \
+    .gitignore \
+    .deps
+
+EXTRA_DIST = \
+    bootstrap \
+    AUTHORS.md \
+    CHANGELOG.md \
+    CONTRIBUTING.md \
+    INSTALL.md \
+    LICENSE \
+    MAINTAINERS.md \
+    README.md \
+    RELEASE.md \
+    man \
+    scripts \
+    test
+
 if HAVE_MAN_PAGES
     dist_man1_MANS := \
     man/man1/tpm2_activatecredential.1 \
@@ -407,3 +415,8 @@ uninstall-hook:
 	for tool in $(bin_PROGRAMS); do \
 		[ -L $${tool##*/} ] && rm -f $${tool##*/}; \
 	done
+
+dist-hook:
+	for f in $(EXTRA_DIST_IGNORE); do \
+		rm -rf `find $(distdir) -name $$f`; \
+	done;
