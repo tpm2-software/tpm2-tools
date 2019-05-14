@@ -3,3 +3,4 @@
 !.gitignore
 !*.c
 !*.h
+config.h
