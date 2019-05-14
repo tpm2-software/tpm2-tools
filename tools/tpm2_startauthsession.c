@@ -93,6 +93,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      */
     bool has_key = false;
 
+    if (!ctx.output.path) {
+        LOG_ERR("Expected option -S");
+        return -1;
+    }
+
     if (ctx.session.key_context_arg_str) {
         bool result = tpm2_util_object_load(ectx, ctx.session.key_context_arg_str,
                                     &ctx.session.key_context_object);
@@ -153,27 +158,5 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    if (!ctx.output.path || ctx.output.path[0] == '\0') {
-        ctx.output.path = "session.ctx";
-    }
-
-    char *ctx_file = NULL;
-    bool result = files_get_unique_name(ctx.output.path, &ctx_file);
-    if (!result) {
-        goto out;
-    }
-
-    tpm2_tool_output("session-context: %s\n", ctx_file);
-
-    rc = 0;
-
-out:
-    free(ctx_file);
-
-    result = tpm2_session_close(&s);
-    if (!result) {
-        rc = 1;
-    }
-
-    return rc;
+    return tpm2_session_close(&s) != true;
 }

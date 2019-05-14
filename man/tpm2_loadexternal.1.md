@@ -91,8 +91,7 @@ sensitive area.
 
   * **-o**, **\--out-context**=_CONTEXT\_FILE_
 
-    The file name of the saved object context, optional. If unspecified defaults
-    to *external.ctx*.
+    The file name of the saved object context, required.
 
   * **-n**, **\--name**=_NAME\_DATA\_FILE_:
 

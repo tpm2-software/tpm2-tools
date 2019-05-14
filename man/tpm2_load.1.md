@@ -15,8 +15,7 @@
 **tpm2_load**(1) - Load both the private and public portions of an object
 into the TPM.
 The tool outputs the name of the loaded object in a YAML format and saves a
-context file for future interactions with the object. The context file name
-defaults to *load.ctx* and can be specified with **-o**.
+context file for future interactions with the object.
 
 # OPTIONS
 
@@ -45,8 +44,7 @@ defaults to *load.ctx* and can be specified with **-o**.
 
   * **-o**, **\--out-context**=_CONTEXT\_FILE\_NAME_:
 
-    The file name of the saved object context, optional. If unspecified defaults
-    to *object.ctx*.
+    The file name of the saved object context, required.
 
 [common options](common/options.md)
 

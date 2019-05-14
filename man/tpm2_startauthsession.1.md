@@ -46,7 +46,7 @@ This will work with direct TPM access, but note that internally this calls a *Co
 
   * **-S**, **\--session**=_SESSION\_FILE\_NAME_:
 
-    The name of the policy session file, optional. Defaults to *session.ctx*.
+    The name of the policy session file, required.
 
 
 [common options](common/options.md)
