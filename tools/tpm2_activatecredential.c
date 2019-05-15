@@ -155,7 +155,7 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
     }
 
     ESYS_TR key_shandle = tpm2_auth_util_get_shandle(ectx,
-                            ctx.key_ctx_obj.tr_handle,
+                            ctx.ctx_obj.tr_handle,
                             ctx.key.session);
     if (key_shandle == ESYS_TR_NONE) {
         goto out_session;
