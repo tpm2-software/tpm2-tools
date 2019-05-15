@@ -51,6 +51,7 @@ typedef struct takeownership_ctx takeownership_ctx;
 struct takeownership_ctx {
     struct {
         password owner;
+        password platform;
         password endorse;
         password lockout;
     } passwords;
@@ -62,9 +63,11 @@ struct takeownership_ctx {
 
     struct {
         UINT8 o : 1;
+        UINT8 p : 1;
         UINT8 e : 1;
         UINT8 l : 1;
         UINT8 O : 1;
+        UINT8 P : 1;
         UINT8 E : 1;
         UINT8 L : 1;
     } flags;
@@ -126,6 +129,11 @@ static bool change_hierarchy_auth(TSS2_SYS_CONTEXT *sapi_context) {
                         "Owner", TPM2_RH_OWNER);
     }
 
+    if (ctx.flags.p || ctx.flags.P) {
+        result &= change_auth(sapi_context, &ctx.passwords.platform,
+                        "Platform", TPM2_RH_PLATFORM);
+    }
+
     if (ctx.flags.e || ctx.flags.E) {
         result &= change_auth(sapi_context, &ctx.passwords.endorse,
                         "Endorsement", TPM2_RH_ENDORSEMENT);
@@ -156,6 +164,14 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.o = 1;
         break;
+    case 'p':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.platform.new);
+        if (!result) {
+            LOG_ERR("Invalid new platform password, got\"%s\"", optarg);
+            return false;
+        }
+        ctx.flags.p = 1;
+        break;
     case 'e':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.new);
         if (!result) {
@@ -179,6 +195,14 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.O = 1;
+        break;
+    case 'P':
+        result = tpm2_password_util_from_optarg(value, &ctx.passwords.platform.old);
+        if (!result) {
+            LOG_ERR("Invalid current platform password, got\"%s\"", optarg);
+            return false;
+        }
+        ctx.flags.P = 1;
         break;
     case 'E':
         result = tpm2_password_util_from_optarg(value, &ctx.passwords.endorse.old);
@@ -206,15 +230,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
         { "owner-passwd",      required_argument, NULL, 'o' },
+        { "platform-passwd",   required_argument, NULL, 'p' },
         {"endorse-passwd",     required_argument, NULL, 'e' },
         { "lock-passwd",       required_argument, NULL, 'l' },
         { "oldOwnerPasswd",   required_argument, NULL, 'O' },
+        { "oldPlatfromPasswd",required_argument, NULL, 'P' },
         { "oldEndorsePasswd", required_argument, NULL, 'E' },
         { "oldLockPasswd",    required_argument, NULL, 'L' },
         { "clear",            no_argument,       NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("o:e:l:O:E:L:c", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:p:e:l:O:P:E:L:c", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
