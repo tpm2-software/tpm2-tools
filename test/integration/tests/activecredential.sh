@@ -24,7 +24,8 @@ echo "12345678" > secret.data
 
 tpm2_createek -Q -c 0x81010009 -G rsa -p ek.pub
 
-tpm2_createak -C 0x81010009 -c ak.ctx -G rsa -D sha256 -s rsassa -p ak.pub -n ak.name > ak.out
+tpm2_createak -C 0x81010009 -c ak.ctx -G rsa -D sha256 -s rsassa -p ak.pub\
+	-n ak.name -P akpass> ak.out
 
 # Capture the yaml output and verify that its the same as the name output
 loaded_key_name_yaml=`python << pyscript
@@ -45,6 +46,7 @@ test "$loaded_key_name_yaml" == "$loaded_key_name"
 
 tpm2_makecredential -Q -e ek.pub  -s secret.data -n $loaded_key_name -o mkcred.out
 
-tpm2_activatecredential -Q -c ak.ctx -C 0x81010009 -i mkcred.out -o actcred.out
+tpm2_activatecredential -Q -c ak.ctx -C 0x81010009 -i mkcred.out -o actcred.out\
+	-P akpass
 
 exit 0
