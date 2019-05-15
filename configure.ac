@@ -3,7 +3,7 @@ AC_INIT([tpm2-tools],
 AC_CONFIG_MACRO_DIR([m4])
 
 AX_IS_RELEASE([dash-version])
-AX_CHECK_ENABLE_DEBUG([yes])
+AX_CHECK_ENABLE_DEBUG([info])
 
 AC_PROG_CC
 AC_PROG_LN_S
