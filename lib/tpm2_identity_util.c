@@ -26,31 +26,15 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************
 
-#include <errno.h>
-#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
-
-#include <openssl/aes.h>
-#include <openssl/bn.h>
-#include <openssl/evp.h>
-#include <openssl/err.h>
-#include <openssl/hmac.h>
-#include <openssl/obj_mac.h>
-#include <openssl/pem.h>
-#include <openssl/rand.h>
-#include <openssl/rsa.h>
-
 #include <tss2/tss2_mu.h>
-#include <tss2/tss2_sys.h>
 
-#include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm_kdfa.h"
 #include "tpm2_openssl.h"
-#include "tpm2_identity_util.h"
-#include "tpm2_util.h"
-
 
 // Identity-related functionality that the TPM normally does, but using OpenSSL
 

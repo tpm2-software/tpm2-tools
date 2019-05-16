@@ -29,14 +29,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <strings.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-
-#include <tss2/tss2_mu.h>
-
-#include <openssl/rsa.h>
 #include <openssl/pem.h>
-#include <openssl/bn.h>
 #include <openssl/err.h>
 
 #include "conversion.h"

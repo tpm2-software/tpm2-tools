@@ -25,14 +25,13 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <stdlib.h>
 #include <tss2/tss2_sys.h>
-
- #include <openssl/err.h>
+#include <openssl/err.h>
 #include <openssl/hmac.h>
 
 #include "tpm_hmac.h"
 #include "log.h"
-#include "tpm2_util.h"
 
 static const EVP_MD *tpm_algorithm_to_openssl_digest(TPMI_ALG_HASH algorithm) {
 
