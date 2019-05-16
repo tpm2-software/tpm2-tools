@@ -25,15 +25,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
-
-#include <stdio.h>
-
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <tss2/tss2_sys.h>
 #include "rc-decode.h"
 
 /* Lookup an error code using the provided function. Assert that the returned
