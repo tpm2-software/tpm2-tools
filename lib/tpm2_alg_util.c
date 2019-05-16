@@ -28,15 +28,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-#include <stdbool.h>
+
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
-
-#include "files.h"
 #include "log.h"
-#include "tpm_hash.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_util.h"
 

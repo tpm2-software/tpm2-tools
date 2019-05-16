@@ -29,11 +29,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <dlfcn.h>
-
 #include <tss2/tss2_sys.h>
 
 #include "log.h"
-#include "tpm2_tcti_ldr.h"
 
 #define TSS2_TCTI_SO_FORMAT "libtss2-tcti-%s.so.0"
 

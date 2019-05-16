@@ -25,17 +25,13 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "tpm_kdfa.h"
 #include "tpm_session.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_util.h"
 
 //
 // This is a wrapper function around the TPM2_StartAuthSession command.
