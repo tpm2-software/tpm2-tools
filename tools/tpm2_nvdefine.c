@@ -62,7 +62,7 @@ static int nv_space_define(ESYS_CONTEXT *ectx) {
         if(!files_load_bytes_from_path(ctx.policy_file, public_info.nvPublic.authPolicy.buffer, &public_info.nvPublic.authPolicy.size )) {
             return false;
         }
-    } 
+    }
 
     public_info.nvPublic.dataSize = ctx.size;
 

@@ -92,7 +92,7 @@ Some distros have the dependencies already packaged, you can simply install the 
 ```
 $ sudo dnf builddep tpm2-tools
 
-```   
+```
 
 The package installed above contains all the dependencies for tpm2-tools included the projects mentioned at the beginning of this section (tpm2-tss and tpm2-abrmd)
 

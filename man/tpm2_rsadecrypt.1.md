@@ -44,12 +44,12 @@ The key referenced by key-context is **required** to be:
 
   * **-g**, **\--scheme**=_PADDING\_SCHEME_:
 
-    Optional, set the padding scheme (defaults to rsaes). 
-    
+    Optional, set the padding scheme (defaults to rsaes).
+
     * null  - TPM_ALG_NULL
     * rsaes - TPM_ALG_RSAES
     * oaep  - TPM_ALG_OAEP
-    
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

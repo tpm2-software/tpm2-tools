@@ -56,7 +56,7 @@ Abbreviated words in variable names should be avoided.  Exceptions are:
 “pos” = position
 “rem” = remainder
 
-Function names should follow the naming conventions of variables and clearly imply not only what the function does, but also the nature of what it returns (if anything).  Functions that return boolean integers should be named to reflect the true condition... even if they are created to detect false conditions. Functions should never be hidden in conditional statements, with the exception of loops where it makes the code simpler. 
+Function names should follow the naming conventions of variables and clearly imply not only what the function does, but also the nature of what it returns (if anything).  Functions that return boolean integers should be named to reflect the true condition... even if they are created to detect false conditions. Functions should never be hidden in conditional statements, with the exception of loops where it makes the code simpler.
 
 bool is_number_prime = is_prime(i);
 if(is_number_prime) {

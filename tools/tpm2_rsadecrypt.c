@@ -91,7 +91,7 @@ static bool on_option(char key, char *value) {
         break;
     }
     case 'g':
-        ctx.scheme.scheme = tpm2_alg_util_from_optarg(value, 
+        ctx.scheme.scheme = tpm2_alg_util_from_optarg(value,
                 tpm2_alg_util_flags_rsa_scheme);
         if (ctx.scheme.scheme == TPM2_ALG_ERROR) {
             return false;

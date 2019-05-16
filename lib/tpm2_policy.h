@@ -61,9 +61,9 @@ bool tpm2_policy_build_policyauthorize(
  *
  * @param ectx
  *   The Enhanced system api context
- * @param policy_session 
+ * @param policy_session
  *   The policy session into which the policy digest is extended into
- * @param policy_list 
+ * @param policy_list
  *   The list of policy policy digests
  *
  * @return

@@ -479,7 +479,7 @@ static const char *tpm2_err_handler_fmt0(TSS2_RC rc) {
         // 0x2D - TPM2_RC_UPGRADE
         "For all commands, other than TPM2_FieldUpgradeData, "
         "this code indicates that the TPM is in field upgrade mode. "
-        "For TPM2_FieldUpgradeData, this code indicates that the TPM " 
+        "For TPM2_FieldUpgradeData, this code indicates that the TPM "
         "is not in field upgrade mode",
         // 0x2E - TPM2_RC_TOO_MANY_CONTEXTS
         "context ID counter is at maximum",

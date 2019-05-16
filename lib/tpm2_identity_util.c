@@ -225,10 +225,10 @@ bool tpm2_identity_util_encrypt_seed_with_public_key(TPM2B_DIGEST *protection_se
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
     bool result = false;
     TPMI_ALG_PUBLIC alg = parent_pub->publicArea.type;
-    
+
     switch (alg) {
     case TPM2_ALG_RSA:
-        result = encrypt_seed_with_tpm2_rsa_public_key(protection_seed, 
+        result = encrypt_seed_with_tpm2_rsa_public_key(protection_seed,
                 parent_pub, label, labelLen, encrypted_protection_seed);
         break;
     case TPM2_ALG_ECC:
@@ -241,7 +241,7 @@ bool tpm2_identity_util_encrypt_seed_with_public_key(TPM2B_DIGEST *protection_se
             tpm2_alg_util_flags_any));
         return false;
     }
-    
+
     return result;
 }
 
@@ -369,9 +369,9 @@ static void hmac_outer_integrity(
 }
 
 bool tpm2_identity_util_calculate_inner_integrity(
-        TPMI_ALG_HASH name_alg, 
-        TPM2B_SENSITIVE *sensitive, 
-        TPM2B_NAME *pubname, 
+        TPMI_ALG_HASH name_alg,
+        TPM2B_SENSITIVE *sensitive,
+        TPM2B_NAME *pubname,
         TPM2B_DATA *enc_sensitive_key,
         TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_MAX_BUFFER *encrypted_inner_integrity) {
@@ -416,9 +416,9 @@ bool tpm2_identity_util_calculate_inner_integrity(
     return aes_encrypt_buffers(
             sym_alg,
             enc_sensitive_key->buffer,
-            marshalled_sensitive_and_name_digest, 
+            marshalled_sensitive_and_name_digest,
             hash_size + digest_size_info,
-            buffer_marshalled_sensitiveArea, 
+            buffer_marshalled_sensitiveArea,
             marshalled_sensitive_size_info + marshalled_sensitive_size,
             encrypted_inner_integrity);
 }
@@ -450,7 +450,7 @@ void tpm2_identity_util_calculate_outer_integrity(
             encrypted_duplicate_sensitive->buffer,
             encrypted_duplicate_sensitive->size,
             pubname->name,
-            pubname->size, 
+            pubname->size,
             protection_hmac_key->buffer,
             outer_hmac);
 }

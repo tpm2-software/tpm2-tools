@@ -936,4 +936,3 @@ bool tpm2_alg_util_is_aes_size_valid(UINT16 size_in_bytes) {
         return false;
     }
 }
-

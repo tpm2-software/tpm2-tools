@@ -56,7 +56,7 @@ static bool nv_list(ESYS_CONTEXT *context) {
 
     TPMS_CAPABILITY_DATA *capabilityData;
     UINT32 property = tpm2_util_hton_32(TPM2_HT_NV_INDEX);
-    TSS2_RC rval = Esys_GetCapability(context, 
+    TSS2_RC rval = Esys_GetCapability(context,
                                       ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                                       TPM2_CAP_HANDLES, property,
                                       TPM2_PT_NV_INDEX_MAX,
