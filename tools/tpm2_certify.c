@@ -135,7 +135,7 @@ static bool certify_and_save_data(ESYS_CONTEXT *ectx) {
     TPM2B_ATTEST *certify_info;
     TPMT_SIGNATURE *signature;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, 
+    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.object.object.tr_handle,
                             ctx.object.session);
     if (shandle1 == ESYS_TR_NONE) {

@@ -824,7 +824,7 @@ dump_handles (TPM2_HANDLE     handles[],
               UINT32         count)
 {
     UINT32 i;
-    
+
     for (i = 0; i < count; ++i)
          tpm2_tool_output ("- 0x%X\n", handles[i]);
 }

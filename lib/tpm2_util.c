@@ -104,7 +104,7 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
         pcrSelCount = tpm2_util_endian_swap_32(pcrSelCount);
     }
     for (j = 0; j < pcrSelCount; j++) {
-        // Hash 
+        // Hash
         if (i+2 >= quoted->size) {
             LOG_ERR("Malformed TPMS_PCR_SELECTION value");
             return false;

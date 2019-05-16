@@ -77,4 +77,3 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
     return tpm_gettestresult(ectx);
 }
-

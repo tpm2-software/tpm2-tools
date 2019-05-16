@@ -15,7 +15,7 @@ toolsdir="$(readlink -e "${srcdir}"/../../../tools)"
 #
 # On failure, the function will print the information
 # linked : toggle, filename, getopts string and case
-# 
+#
 # Line header help in guessing what is wrong :
 #   - <Y,!> : Getopt string is OK but no "case" was found
 #   - <!,Y> : Getopt string do not contain toggle but "case" exist
@@ -31,12 +31,12 @@ function check_toggle() {
         exit 254
     fi
 
-    for i in $(grep -R "'${toggle}'[[:space:]]*}" | sed "s%[[:space:]]*%%g"); do 
+    for i in $(grep -R "'${toggle}'[[:space:]]*}" | sed "s%[[:space:]]*%%g"); do
         optionnotfound=0
         casenotfound=0
 
-        filename=${i%%:*}; 
-        match=${i##*:}; 
+        filename=${i%%:*};
+        match=${i##*:};
         option="$(sed -r "s%.*'([^'])'.*%\1%g" <<< "${match}")"
         optionlist="$(grep -R "tpm2_options_new" "${filename}" | sed -r 's%.*("[^"]+").*%\1%g')"
         getcase="$(grep "case '${option}'" "${filename}" | sed "s%[[:space:]]*%%g")"
@@ -70,7 +70,7 @@ function check_toggle() {
 fail=0
 
 # For each detected option toggle, check if it is actually declared to be used
-for i in $(grep -rn "case '.'" "${toolsdir}"/*.c | cut -d"'" -f2-2 | sort | uniq); do 
+for i in $(grep -rn "case '.'" "${toolsdir}"/*.c | cut -d"'" -f2-2 | sort | uniq); do
     check_toggle "${i}"
 done
 

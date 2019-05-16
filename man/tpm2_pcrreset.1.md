@@ -19,7 +19,7 @@ The reset value is manufacturer-dependent and is either sequence of 00 or FF
 on the length of the hash algorithm for each supported bank
 
 _PCR\_INDEX_ is a space separated list of PCR indexes to be reset when issuing
-the command. 
+the command.
 
 # OPTIONS
 

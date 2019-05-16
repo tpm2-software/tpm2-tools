@@ -96,7 +96,7 @@ static bool make_external_credential_and_save() {
     TPMI_ALG_HASH name_alg = ctx.public.publicArea.nameAlg;
 
 
-    /* 
+    /*
      * Generate and encrypt seed
      */
     TPM2B_DIGEST seed = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
@@ -113,7 +113,7 @@ static bool make_external_credential_and_save() {
         return false;
     }
 
-    /* 
+    /*
      * Perform identity structure calculations (off of the TPM)
      */
     TPM2B_MAX_BUFFER hmac_key;
@@ -126,7 +126,7 @@ static bool make_external_credential_and_save() {
             &enc_key);
 
     /*
-     * The ctx.credential needs to be marshalled into struct with 
+     * The ctx.credential needs to be marshalled into struct with
      * both size and contents together (to be encrypted as a block)
      */
     TPM2B_MAX_BUFFER marshalled_inner_integrity = TPM2B_EMPTY_INIT;

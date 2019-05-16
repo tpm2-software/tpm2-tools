@@ -44,7 +44,7 @@ static inline bool tpm2_util_nv_read_public(ESYS_CONTEXT *context,
     }
 
     rval = Esys_NV_ReadPublic(context, tr_object,
-                              ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, 
+                              ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                               nv_public, NULL);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ReadPublic, rval);
@@ -144,7 +144,7 @@ static inline bool tpm2_util_nv_read(
     // later
     TPM2B_NV_PUBLIC *nv_public = NULL;
     rval = Esys_NV_ReadPublic(ectx, nv_handle,
-                              ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, 
+                              ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                               &nv_public, NULL);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ReadPublic, rval);

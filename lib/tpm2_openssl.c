@@ -184,8 +184,8 @@ out:
 }
 
 // show all PCR banks according to g_pcrSelection & g_pcrs->
-bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg, 
-                TPML_PCR_SELECTION *pcrSelect, 
+bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
+                TPML_PCR_SELECTION *pcrSelect,
                 tpm2_pcrs *pcrs, TPM2B_DIGEST *digest) {
 
     UINT32 vi = 0, di = 0, i;
@@ -208,7 +208,7 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
         goto out;
     }
 
-    // Loop through all PCR/hash banks 
+    // Loop through all PCR/hash banks
     for (i = 0; i < pcrSelect->count; i++) {
 
         // Loop through all PCRs in this bank

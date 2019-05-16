@@ -54,7 +54,7 @@ static bool pcr_allocate(ESYS_CONTEXT *ectx) {
 
     pcr_print_pcr_selections(&ctx.pcrSelection);
 
-    rval = Esys_PCR_Allocate(ectx, ESYS_TR_RH_PLATFORM, 
+    rval = Esys_PCR_Allocate(ectx, ESYS_TR_RH_PLATFORM,
                              shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                              &ctx.pcrSelection, &allocationSuccess,
                              &maxPCR, &sizeNeeded, &sizeAvailable);
@@ -103,7 +103,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "auth-platform",     required_argument, NULL, 'P' },
     };
- 
+
     *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,
                              0);
 
@@ -119,7 +119,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_ERR("Invalid platform authorization format");
         return 1;
     }
-    
+
     result = pcr_allocate(ectx);
 
     result &= tpm2_session_close(&ctx.auth.session);

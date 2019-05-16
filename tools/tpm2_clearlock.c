@@ -32,7 +32,7 @@ static bool clearlock(ESYS_CONTEXT *ectx) {
             ctx.platform ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
 
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, rh, ctx.auth.session);
-    
+
     TSS2_RC rval = Esys_ClearControl(ectx, rh,
                 shandle, ESYS_TR_NONE, ESYS_TR_NONE, disable);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {

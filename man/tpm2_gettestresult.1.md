@@ -44,7 +44,7 @@ This command is the one of the few commands authorized to be submitted to TPM wh
 
 # RETURNS
 
-- 0 on success 
+- 0 on success
 - 1 on failure
 - 2 on testing
 - 3 on TPM failure

@@ -55,7 +55,7 @@ static bool on_arg(int argc, char** argv){
     uint32_t pcr;
 
     memset(ctx.pcr_list, 0, TPM2_MAX_PCRS);
-    
+
     if (argc < 1) {
         LOG_ERR("Expected at least one PCR index"
                 "ie: <pcr index>, got: 0");

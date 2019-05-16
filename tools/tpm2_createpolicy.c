@@ -187,7 +187,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
-    return 0; 
+    return 0;
 }
 
 void tpm2_onexit(void) {

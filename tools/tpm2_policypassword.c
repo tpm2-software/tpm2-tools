@@ -89,7 +89,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_util_hexdump(policy_digest->buffer, policy_digest->size);
     tpm2_tool_output("\n");
-   
+
     if (ctx.out_policy_dgst_path) {
         result = files_save_bytes_to_file(ctx.out_policy_dgst_path,
                     policy_digest->buffer, policy_digest->size);

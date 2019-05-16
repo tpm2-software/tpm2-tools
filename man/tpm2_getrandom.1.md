@@ -15,10 +15,10 @@
 **tpm2_getrandom**(1) - Returns the next _SIZE_ octets from the random number
 generator. The _SIZE_ parameter is expected as the only argument to the tool.
 
-Note that the TPM specification recommends that TPM's fix the number of 
-available entry to the maximum size of a hash algorithm output in bytes. 
+Note that the TPM specification recommends that TPM's fix the number of
+available entry to the maximum size of a hash algorithm output in bytes.
 
-Most TPMs do this, and thus the tool verifies that input size is bounded by property 
+Most TPMs do this, and thus the tool verifies that input size is bounded by property
 **TPM2_PT_MAX_DIGEST** and issues an error if it is too large.
 
 # OPTIONS

@@ -145,10 +145,10 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs) {
 
     tpm2_tool_output("pcrs:\n");
 
-    // Loop through all PCR/hash banks 
+    // Loop through all PCR/hash banks
     for (i = 0; i < pcrSelect->count; i++) {
         const char *alg_name = tpm2_alg_util_algtostr(
-                pcrSelect->pcrSelections[i].hash, 
+                pcrSelect->pcrSelections[i].hash,
                 tpm2_alg_util_flags_hash);
 
         tpm2_tool_output("  %s:\n", alg_name);
@@ -205,7 +205,7 @@ bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections) {
         if (halgstr != NULL) {
             tpm2_tool_output("  - %s: [", halgstr);
         } else {
-            LOG_ERR("Unsupported hash algorithm 0x%08x", 
+            LOG_ERR("Unsupported hash algorithm 0x%08x",
                     pcr_selections->pcrSelections[i].hash);
             return false;
         }
@@ -329,7 +329,7 @@ bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_
         LOG_PERR(Esys_GetCapability, rval);
         return false;
     }
-    
+
     *capability_data = *capdata_ret;
 
     unsigned i;
@@ -338,8 +338,8 @@ bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_
     // able to manage, throw an error
     if (capability_data->data.assignedPCR.count > sizeof(algs->alg)) {
         LOG_ERR("Current implementation does not support more than %zu banks, "
-                "got %" PRIu32 " banks supported by TPM", 
-                sizeof(algs->alg), 
+                "got %" PRIu32 " banks supported by TPM",
+                sizeof(algs->alg),
                 capability_data->data.assignedPCR.count);
         free(capdata_ret);
         return false;

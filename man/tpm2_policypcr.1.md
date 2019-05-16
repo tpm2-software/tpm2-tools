@@ -19,16 +19,16 @@ established via **tpm2_startauthsession**(1).
 # OPTIONS
 
   * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
-    
+
     File to save the policy digest.
 
   * **-F**, **\--pcr-input-file**=_PCR\_FILE_:
-    
+
     Optional Path or Name of the file containing expected PCR values for the
     specified index. Default is to read the current PCRs per the set list.
 
   * **-L**, **\--set-list**=_PCR\_LIST_:
-    
+
     The list of PCR banks and selected PCRs' ids for each bank.
 
   * **-S**, **\--session**=_SESSION_FILE_:

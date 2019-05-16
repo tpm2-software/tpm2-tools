@@ -450,7 +450,7 @@ static bool tpm2_policy_populate_digest_list(char *buf, TPML_DIGEST *policy_list
         }
 
         uint16_t policy_digest_size = hash_len;
-        retval = files_load_bytes_from_path(buf, 
+        retval = files_load_bytes_from_path(buf,
             policy_list->digests[policy_list->count].buffer, &policy_digest_size);
         if (!retval) {
             return false;
@@ -489,7 +489,7 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
             if (subtoken == NULL) {
                 break;
             }
-            
+
             //Expecting one policy digest of same hash alg type for all policies
             if (j == 1) {
                 hash = tpm2_alg_util_from_optarg(subtoken, tpm2_alg_util_flags_hash);

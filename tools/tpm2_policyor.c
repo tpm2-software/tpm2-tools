@@ -102,7 +102,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     /* Policy digest hash alg should match that of the session */
-    if (ctx.policy_list.digests[0].size != 
+    if (ctx.policy_list.digests[0].size !=
         tpm2_alg_util_get_hash_size(tpm2_session_get_authhash(s))) {
         LOG_ERR("Policy digest hash alg should match that of the session.");
         return rc;

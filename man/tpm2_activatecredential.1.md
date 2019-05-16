@@ -14,8 +14,8 @@ key.
 # DESCRIPTION
 
 **tpm2_activatecredential**(1) -  Verify that the given content is protected
-with given key handle for given handle, and then decrypt and return the secret, 
-if any password option is missing, assume NULL. Currently only support using 
+with given key handle for given handle, and then decrypt and return the secret,
+if any password option is missing, assume NULL. Currently only support using
 TCG profile compliant EK as the key handle.
 
 # OPTIONS

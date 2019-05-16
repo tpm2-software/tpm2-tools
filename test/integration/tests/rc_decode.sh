@@ -51,8 +51,8 @@ for key in "${!codes[@]}"; do
     value="$(printf '0x%03x' "$(eval echo ${codes[$key]%%:*})")"
     expected_msg="${codes[$key]##*:}"
     received_msg="$(tpm2_rc_decode ${value} | cut -d':' -f3)"
-    
-    if ! grep -iq "${received_msg# }" <<< "${expected_msg}"; then  
+
+    if ! grep -iq "${received_msg# }" <<< "${expected_msg}"; then
         echo "$value raised an invalid error message"
         echo "      - Expected : ${expected_msg}"
         echo "      - Seen     : ${received_msg# }"

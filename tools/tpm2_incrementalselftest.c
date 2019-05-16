@@ -34,7 +34,7 @@ static bool tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
     print_yaml_indent(1);
 
     /*
-    * According to TSS2 ESAPI, toTest is callee-allocated and 
+    * According to TSS2 ESAPI, toTest is callee-allocated and
     * might be empty but not NULL
     */
     if(ctx.totest == NULL){
