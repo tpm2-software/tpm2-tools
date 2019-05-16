@@ -9,8 +9,8 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct clearlock_ctx clearlock_ctx;
-struct clearlock_ctx {
+typedef struct clearcontrol_ctx clearcontrol_ctx;
+struct clearcontrol_ctx {
     bool clear;
     bool platform;
 
@@ -20,9 +20,9 @@ struct clearlock_ctx {
     } auth;
 };
 
-static clearlock_ctx ctx;
+static clearcontrol_ctx ctx;
 
-static bool clearlock(ESYS_CONTEXT *ectx) {
+static bool clearcontrol(ESYS_CONTEXT *ectx) {
 
     ESYS_TR rh = ctx.platform ? ESYS_TR_RH_PLATFORM : ESYS_TR_RH_LOCKOUT;
     TPMI_YES_NO disable = ctx.clear ? 0 : 1;
@@ -87,5 +87,5 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return 1;
     }
 
-    return clearlock(ectx) != true;
+    return clearcontrol(ectx) != true;
 }

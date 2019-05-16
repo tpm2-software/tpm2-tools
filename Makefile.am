@@ -34,7 +34,7 @@ bin_PROGRAMS = \
     tools/tpm2_certify \
     tools/tpm2_changeauth \
     tools/tpm2_clear \
-    tools/tpm2_clearlock \
+    tools/tpm2_clearcontrol \
     tools/tpm2_create \
     tools/tpm2_createak \
     tools/tpm2_createek \
@@ -103,7 +103,7 @@ tools_misc_tpm2_print_SOURCES = tools/misc/tpm2_print.c $(TOOL_SRC)
 tools_misc_tpm2_rc_decode_SOURCES = tools/misc/tpm2_rc_decode.c $(TOOL_SRC)
 
 tools_tpm2_clear_SOURCES = tools/tpm2_clear.c $(TOOL_SRC)
-tools_tpm2_clearlock_SOURCES = tools/tpm2_clearlock.c $(TOOL_SRC)
+tools_tpm2_clearcontrol_SOURCES = tools/tpm2_clearcontrol.c $(TOOL_SRC)
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
 tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
@@ -277,7 +277,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_changeauth.1 \
     man/man1/tpm2_checkquote.1 \
     man/man1/tpm2_clear.1 \
-    man/man1/tpm2_clearlock.1 \
+    man/man1/tpm2_clearcontrol.1 \
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createak.1 \
     man/man1/tpm2_createek.1 \
