@@ -24,17 +24,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-#include <errno.h>
+
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <setjmp.h>
-
 #include <cmocka.h>
-#include <tss2/tss2_sys.h>
 
-#include "tpm2_util.h"
 #include "tpm2_password_util.h"
 
 static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {

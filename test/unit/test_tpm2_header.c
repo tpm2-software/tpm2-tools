@@ -24,12 +24,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
+
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <setjmp.h>
-
 #include <cmocka.h>
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_header.h"
 

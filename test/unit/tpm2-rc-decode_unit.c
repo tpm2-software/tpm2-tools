@@ -25,13 +25,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stddef.h>
-
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <tss2/tss2_sys.h>
 #include "rc-decode.h"
 
 #define TPM2_RC_ALL_1 0xffffffff
