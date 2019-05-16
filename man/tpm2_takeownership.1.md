@@ -27,6 +27,12 @@ sign.
     Passwords should follow the password formatting standards, see section
     "Password Formatting".
 
+  * **-p**, **--platform-passwd**=_PLATFORM\_PASSWORD_:
+    The new platform authorization value.
+
+    The new endorse authorization value. Passwords should follow the same
+    formatting requirements as the -o option.
+
   * **-e**, **--endorse-password**=_ENDORSE\_PASSWORD_:
 
     The new endorse authorization value. Passwords should follow the same
@@ -42,6 +48,11 @@ sign.
   * **-O**, **--old-ownerPassword**=_OLD\_OWNER\_PASSWORD_:
 
     The old owner authorization value. Passwords should follow the same
+    formatting requirements as the -o option.
+
+  * **-P**, **--oldPlatfromPasswd**=_OLD\_PLATFORM\_PASSWORD_:
+
+    The old platform authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
   * **-E**, **--old-endorsePassword**=_OLD\_ENDORSE\_PASSWORD_:
@@ -73,10 +84,10 @@ Set owner, endorsement and lockout authorizations to an empty auth value:
 tpm2_takeownership -c -L oldlockoutpasswd
 ```
 
-Set owner, endorsement and lockout authorizations to a new value:
+Set owner, platform, endorsement and lockout authorizations to a new value:
 
 ```
-tpm2_takeownership -o newo -e newe -l newl -O oldo -E olde -L oldl
+tpm2_takeownership -o newo -p newp -e newe -l newl -O oldo -P oldP -E olde -L oldl
 ```
 
 # RETURNS
