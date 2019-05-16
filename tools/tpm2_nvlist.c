@@ -29,18 +29,11 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_nv_util.h"
-#include "tpm2_options.h"
-#include "tpm2_util.h"
-#include "log.h"
 #include "tpm2_tool.h"
 
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {

@@ -30,12 +30,6 @@
 //**********************************************************************;
 
 #include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <limits.h>
-#include <tss2/tss2_sys.h>
 
 #include "conversion.h"
 #include "tpm2_options.h"
@@ -44,7 +38,6 @@
 #include "log.h"
 #include "files.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_tool.h"
 
 typedef struct tpm_certify_ctx tpm_certify_ctx;
 struct tpm_certify_ctx {

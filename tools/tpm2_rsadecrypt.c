@@ -30,16 +30,11 @@
 //**********************************************************************;
 
 #include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"
-#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;

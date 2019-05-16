@@ -30,19 +30,13 @@
 //**********************************************************************;
 
 #include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm_hash.h"
-#include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 

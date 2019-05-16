@@ -29,18 +29,9 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-
 #include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include <strings.h>
 
-#include <limits.h>
-#include <ctype.h>
-
-#include <tss2/tss2_sys.h>
-
-#include "tpm2_options.h"
 #include "tpm2_password_util.h"
 #include "files.h"
 #include "log.h"

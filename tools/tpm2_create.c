@@ -29,16 +29,9 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdarg.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
@@ -47,7 +40,6 @@
 #include "tpm2_errata.h"
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
-#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_create_ctx tpm_create_ctx;

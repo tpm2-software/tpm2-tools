@@ -28,14 +28,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-#include <limits.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include <tss2/tss2_sys.h>
+#include <stdbool.h>
 
-#include "tpm2_options.h"
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
