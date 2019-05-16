@@ -28,30 +28,22 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdarg.h>
+
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <curl/curl.h>
-#include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "log.h"
 #include "files.h"
-#include "tpm_hash.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_password_util.h"
-#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_getmanufec_ctx tpm_getmanufec_ctx;

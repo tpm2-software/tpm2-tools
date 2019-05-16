@@ -29,18 +29,11 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <ctype.h>
-#include <errno.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
-
 #include "log.h"
-#include "pcr.h"
 #include "tpm2_options.h"
-#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_pcr_reset_ctx tpm_pcr_reset_ctx;

@@ -27,13 +27,9 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-#include <stdlib.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "rc-decode.h"
-#include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 

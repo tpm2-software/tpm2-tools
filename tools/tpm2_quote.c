@@ -29,16 +29,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
+#include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "files.h"
 #include "log.h"
-#include "pcr.h"
 #include "conversion.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_password_util.h"

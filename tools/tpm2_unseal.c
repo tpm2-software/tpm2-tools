@@ -29,22 +29,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <tss2/tss2_sys.h>
-
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
-#include "tpm_hash.h"
-#include "tpm_session.h"
 #include "tpm2_password_util.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {

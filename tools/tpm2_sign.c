@@ -29,14 +29,8 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <getopt.h>
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "tpm2_password_util.h"
@@ -45,7 +39,6 @@
 #include "tpm2_util.h"
 #include "tpm_hash.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_tool.h"
 #include "conversion.h"
 
 typedef struct tpm_sign_ctx tpm_sign_ctx;

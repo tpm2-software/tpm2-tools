@@ -29,18 +29,12 @@
 // THE POSSIBILITY OF SUCH DAMAGE.
 //**********************************************************************;
 
-#include <limits.h>
 #include <stdbool.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_options.h"
 #include "files.h"
 #include "log.h"
-#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 typedef struct tpm_loadexternal_ctx tpm_loadexternal_ctx;
