@@ -143,7 +143,7 @@ class ToolConflictor(object):
             },
             {
                 "gname": "hierarchy",
-                "tools-in-group": ["tpm2_clear", "tpm2_clearlock"],
+                "tools-in-group": ["tpm2_clear", "tpm2_clearcontrol"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set(['c', 'clear'])

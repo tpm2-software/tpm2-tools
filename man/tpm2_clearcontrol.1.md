@@ -1,18 +1,18 @@
-% tpm2_clearlock(1) tpm2-tools | General Commands Manual
+% tpm2_clearcontrol(1) tpm2-tools | General Commands Manual
 %
 % DECEMBER 2017
 
 # NAME
 
-**tpm2_clearlock**(1) - Lock/unlock access to the clear operation.
+**tpm2_clearcontrol**(1) - Lock/unlock access to the clear operation.
 
 # SYNOPSIS
 
-**tpm2_clearlock** [OPTIONS]
+**tpm2_clearcontrol** [OPTIONS]
 
 # DESCRIPTION
 
-**tpm2_clearlock**(1) - Allow a user to enable (unlock) or disable (lock)
+**tpm2_clearcontrol**(1) - Allow a user to enable (unlock) or disable (lock)
 access to the **tpm2_clear** operation. If the lockout password option
 is missing, assume NULL.
 
@@ -48,12 +48,12 @@ is missing, assume NULL.
 
 ## Enable the clear command on the platform hierarchy
 ```
-tpm2_clearlock -c -p -L lockoutpasswd
+tpm2_clearcontrol -c -p -L lockoutpasswd
 ```
 
 ## Disable the clear command on the lockout hierarchy
 ```
-tpm2_clearlock
+tpm2_clearcontrol
 ```
 
 # RETURNS
