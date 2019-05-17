@@ -56,7 +56,7 @@ server.
     the TPM manufacturer provisioning server. Defaults to stdout if not
     specified.
 
-  * **-U**, **--SSL_NO_VERIFY**:
+  * **-U**, **--SSL-NO-VERIFY**:
     specifies to attempt connecting with the  TPM manufacturer provisioning server
     with SSL_NO_VERIFY option.
 
