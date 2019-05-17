@@ -28,7 +28,7 @@
     specifies the size of data area in bytes. Defaults to MAX_NV_INDEX_SIZE
     which is typically 2048.
 
-  * **-t**, **--attributes**=_ATTRIBUTES_
+  * **-t**, **--attribute**=_ATTRIBUTES_
     Specifies the attribute values for the nv region used when creating the
     entitiy. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
