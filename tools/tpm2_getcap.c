@@ -274,7 +274,7 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             break;
         case TPM2_PT_LEVEL:
             tpm2_tool_output ("TPM2_PT_LEVEL:\n"
-                    "  value: %d\n", value);
+                    "  raw: %d\n", value);
             break;
         case TPM2_PT_REVISION:
             tpm2_tool_output ("TPM2_PT_REVISION:\n"
@@ -282,11 +282,11 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             break;
         case TPM2_PT_DAY_OF_YEAR:
             tpm2_tool_output ("TPM2_PT_DAY_OF_YEAR:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_YEAR:
             tpm2_tool_output ("TPM2_PT_YEAR:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MANUFACTURER: {
             UINT32 he_value = tpm2_util_ntoh_32(value);
@@ -330,139 +330,139 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             break;
         case TPM2_PT_VENDOR_TPM_TYPE:
             tpm2_tool_output ("TPM2_PT_VENDOR_TPM_TYPE:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_FIRMWARE_VERSION_1:
             tpm2_tool_output ("TPM2_PT_FIRMWARE_VERSION_1:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_FIRMWARE_VERSION_2:
             tpm2_tool_output ("TPM2_PT_FIRMWARE_VERSION_2:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_INPUT_BUFFER:
             tpm2_tool_output ("TPM2_PT_INPUT_BUFFER:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_TPM2_HR_TRANSIENT_MIN:
             tpm2_tool_output ("TPM2_PT_TPM2_HR_TRANSIENT_MIN:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_TPM2_HR_PERSISTENT_MIN:
             tpm2_tool_output ("TPM2_PT_TPM2_HR_PERSISTENT_MIN:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_HR_LOADED_MIN:
             tpm2_tool_output ("TPM2_PT_HR_LOADED_MIN:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_ACTIVE_SESSIONS_MAX:
             tpm2_tool_output ("TPM2_PT_ACTIVE_SESSIONS_MAX:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_PCR_COUNT:
             tpm2_tool_output ("TPM2_PT_PCR_COUNT:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_PCR_SELECT_MIN:
             tpm2_tool_output ("TPM2_PT_PCR_SELECT_MIN:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_GAP_MAX:
             tpm2_tool_output ("TPM2_PT_CONTEXT_GAP_MAX:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_NV_COUNTERS_MAX:
             tpm2_tool_output ("TPM2_PT_NV_COUNTERS_MAX:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_NV_INDEX_MAX:
             tpm2_tool_output ("TPM2_PT_NV_INDEX_MAX:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MEMORY:
             tpm2_tool_output ("TPM2_PT_MEMORY:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_CLOCK_UPDATE:
             tpm2_tool_output ("TPM2_PT_CLOCK_UPDATE:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_HASH: /* this may be a TPM2_ALG_ID type */
             tpm2_tool_output ("TPM2_PT_CONTEXT_HASH:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_SYM: /* this is a TPM2_ALG_ID type */
             tpm2_tool_output ("TPM2_PT_CONTEXT_SYM:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_CONTEXT_SYM_SIZE:
             tpm2_tool_output ("TPM2_PT_CONTEXT_SYM_SIZE:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_ORDERLY_COUNT:
             tpm2_tool_output ("TPM2_PT_ORDERLY_COUNT:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_COMMAND_SIZE:
             tpm2_tool_output ("TPM2_PT_MAX_COMMAND_SIZE:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_RESPONSE_SIZE:
             tpm2_tool_output ("TPM2_PT_MAX_RESPONSE_SIZE:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_DIGEST:
             tpm2_tool_output ("TPM2_PT_MAX_DIGEST:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_OBJECT_CONTEXT:
             tpm2_tool_output ("TPM2_PT_MAX_OBJECT_CONTEXT:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MAX_SESSION_CONTEXT:
             tpm2_tool_output ("TPM2_PT_MAX_SESSION_CONTEXT:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_PS_FAMILY_INDICATOR:
             tpm2_tool_output ("TPM2_PT_PS_FAMILY_INDICATOR:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_PS_LEVEL:
             tpm2_tool_output ("TPM2_PT_PS_LEVEL:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_PS_REVISION:
             tpm2_tool_output ("TPM2_PT_PS_REVISION:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_PS_DAY_OF_YEAR:
             tpm2_tool_output ("TPM2_PT_PS_DAY_OF_YEAR:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_PS_YEAR:
             tpm2_tool_output ("TPM2_PT_PS_YEAR:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_SPLIT_MAX:
             tpm2_tool_output ("TPM2_PT_SPLIT_MAX:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_TOTAL_COMMANDS:
             tpm2_tool_output ("TPM2_PT_TOTAL_COMMANDS:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_LIBRARY_COMMANDS:
             tpm2_tool_output ("TPM2_PT_LIBRARY_COMMANDS:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_VENDOR_COMMANDS:
             tpm2_tool_output ("TPM2_PT_VENDOR_COMMANDS:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_NV_BUFFER_MAX:
             tpm2_tool_output ("TPM2_PT_NV_BUFFER_MAX:\n"
-                    "  value: 0x%X\n", value);
+                    "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_MODES:
             tpm2_tool_output_tpma_modes ((TPMA_MODES)value);

@@ -110,7 +110,7 @@ tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 #
 
 tpm2_getcap -c properties-fixed > cap.out
-large_file_size=`yaml_get_kv cap.out \"TPM2_PT_NV_INDEX_MAX\" \"value\"`
+large_file_size=`yaml_get_kv cap.out \"TPM2_PT_NV_INDEX_MAX\" \"raw\"`
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
