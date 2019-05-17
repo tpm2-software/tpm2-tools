@@ -4,7 +4,9 @@
 source helpers.sh
 
 cleanup() {
-    tpm2_clearcontrol -c -p
+    tpm2_clearcontrol
+
+    tpm2_clear
 
     shut_down
 }
@@ -12,10 +14,12 @@ trap cleanup EXIT
 
 start_up
 
+tpm2_clearcontrol -a l s
+trap - ERR
+tpm2_clear
+
+trap onerror ERR
 tpm2_clearcontrol
-
-tpm2_clearcontrol -c -p
-
 tpm2_clear
 
 exit 0
