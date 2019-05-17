@@ -34,6 +34,9 @@ specified symmetric key.
   * **-I**, **--in-file**=_INPUT\_FILE_:
     Input file path containing data for decrypt or encrypt operation.
 
+  * **-o**, **--out-file**=_OUTPUT\_FILE_:
+    Output file path containing data for decrypt or encrypt operation.
+
   * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
     Optional Input session handle from a policy session for authorization.
 
