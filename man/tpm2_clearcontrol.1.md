@@ -4,35 +4,37 @@
 
 # NAME
 
-**tpm2_clearcontrol**(1) - Lock/unlock access to the clear operation.
+**tpm2_clearcontrol**(1) - Set/ Clear TPMA_PERMANENT.disableClear attribute to
+effectively block/ unblock lockout authorization handle for issuing TPM clear.
 
 # SYNOPSIS
 
-**tpm2_clearcontrol** [OPTIONS]
+**tpm2_clearcontrol** [*OPTIONS*] _OPERATION_
 
 # DESCRIPTION
 
-**tpm2_clearcontrol**(1) - Allow a user to enable (unlock) or disable (lock)
-access to the **tpm2_clear** operation. If the lockout password option
-is missing, assume NULL.
+**tpm2_clearcontrol**(1) - Allows user with knowledge of either lockout auth
+and or platform hierarchy auth to set disableClear which prevents the lockout
+authorization's capability to execute tpm2_clear. Only user with authorization
+knowledge of the platform hierarchy can clear the disableClear. ** As an argument
+the tool takes the _OPERATION_ as an integer 0|1 or string c|s to clear or set
+the disableClear attribute. By default it attempts a CLEAR operation**
+Note: Platform hierarchy auth handle can always be used to clear the TPM with
+tpm2_clear command. If password option is missing, assume NULL.
 
 # OPTIONS
 
-  * **-c**, **\--clear**:
+  * **-a**, **\--auth-handle**=_TPM\_HANDLE:
 
-    Specifies the tool should unlock access to the clear command.
-    By default it will try to disable the clear command.
-
-  * **-p**, **\--platform**:
-
-    Specifies the tool should operate on the platform hierarchy. By default
-    it operates on the lockout hierarchy.
+    Specifies what auth handle, either platform hierarchy or lockout the tool
+    should operate on. By default it operates on the platform hierarchy handle.
+    Specify the handle as p|l|platform|lockout.
 
     **NOTE : Operating on platform hierarchy require platform authentication.**
 
-  * **-L**, **\--auth-lockout**=_LOCKOUT\_PASSWORD_:
+  * **-p**, **\--auth**=_HANDLE\_PASSWORD:
 
-    The lockout authorization value.
+    The handle's authorization value.
 
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
@@ -46,14 +48,14 @@ is missing, assume NULL.
 
 # EXAMPLES
 
-## Enable the clear command on the platform hierarchy
+## Set the disableClear to block the lockout authorization's access to TPM clear
 ```
-tpm2_clearcontrol -c -p -L lockoutpasswd
+tpm2_clearcontrol -a l s
 ```
 
-## Disable the clear command on the lockout hierarchy
+## Clear the disableClear to unblock lockout authorization for TPM clear operation
 ```
-tpm2_clearcontrol
+tpm2_clearcontrol -a p c
 ```
 
 # RETURNS
