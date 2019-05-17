@@ -24,9 +24,13 @@ dictionary-attack-lockout state, if any passwd option is missing, assume NULL.
   * **-c**, **--clear-lockout**:
     specifies the tool should operate to clear dictionary-attack-lockout state.
 
-  * **-l**, **-lockout-recovery-time**=_LOCKOUT\_TIME_:
+  * **-l**, **--lockout-recovery-time**=_LOCKOUT\_TIME_:
     specifies the wait time in seconds before another TPM_RH_LOCKOUT
     authentication attempt can be made after a failed authentication.
+
+  * **-P** ,**--lockout-passwd**=_LOCKOUT\_PASSWORD_:
+    specifies the password of TPM_RH_LOCKOUT required for both setting up
+    parameters / clearing dictionary-attack-lockout state.
 
   * **-t**, **--recovery-time**=_RECOVERY\_TIME_:
     specifies the wait time in seconds before another DA-protected-object
