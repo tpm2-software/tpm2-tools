@@ -43,7 +43,7 @@ trap cleanup EXIT
 start_up
 
 tpm2_getcap -c properties-fixed | tr -dc '[[:print:]]\r\n' > $out
-maxdigest=$(yaml_get_kv $out \"TPM2_PT_MAX_DIGEST\" \"value\")
+maxdigest=$(yaml_get_kv $out \"TPM2_PT_MAX_DIGEST\" \"raw\")
 if ! [[ "$maxdigest" =~ ^(0x)*[0-9]+$ ]] ; then
  echo "error: not a number, got: \"$maxdigest\"" >&2
  exit 1
