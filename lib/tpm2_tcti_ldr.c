@@ -71,7 +71,7 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
 
         handle = tpm2_tcti_ldr_dlopen(path);
         if (!handle) {
-            LOG_ERR("Could not dlopen library: \"%s\"", path);
+            LOG_ERR("Could not dlopen library: \"%s\"", PSTR(path));
             return NULL;
         }
     }
@@ -91,7 +91,7 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
     TSS2_RC rc = init(NULL, &size, opts);
     if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("tcti init setup routine failed for library: \"%s\""
-                " options: \"%s\"", path, opts);
+                " options: \"%s\"", path, PSTR(opts));
         goto err;
     }
 
@@ -104,7 +104,7 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
     rc = init(tcti_ctx, &size, opts);
     if (rc != TPM2_RC_SUCCESS) {
         LOG_ERR("tcti init allocation routine failed for library: \"%s\""
-                " options: \"%s\"", path, opts);
+                " options: \"%s\"", path, PSTR(opts));
         goto err;
     }
 

@@ -24,6 +24,8 @@
 
 #define ARRAY_LEN(x) (sizeof(x)/sizeof(x[0]))
 
+#define PSTR(x) x ? x : "(null)"
+
 #define BUFFER_SIZE(type, field) (sizeof((((type *)NULL)->field)))
 
 #define TSS2_APP_RC_LAYER TSS2_RC_LAYER(5)
