@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_getcap: TPM2_PT_MANUFACTURER displays string value and raw value.
   * tpm2_createak: remove -k persistant option. Use tpm2_evictcontrol.
   * tpm2_nvincrement: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
   * tpm2_nvwrite: -L and -F pcr policy options go away, replaced with pcr password minilanguage.

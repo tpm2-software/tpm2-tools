@@ -288,10 +288,14 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
             tpm2_tool_output ("TPM2_PT_YEAR:\n"
                     "  value: 0x%X\n", value);
             break;
-        case TPM2_PT_MANUFACTURER:
+        case TPM2_PT_MANUFACTURER: {
+            UINT32 he_value = tpm2_util_ntoh_32(value);
             tpm2_tool_output ("TPM2_PT_MANUFACTURER:\n"
-                    " value        0x%X\n", value);
-            break;
+                    "  raw: 0x%X\n"
+                    "  value: \"%.*s\"\n", value,
+                    (int)sizeof(value),
+                    (char *)&he_value);
+        }   break;
         case TPM2_PT_VENDOR_STRING_1:
             buf = get_uint32_as_chars (value);
             tpm2_tool_output ("TPM2_PT_VENDOR_STRING_1:\n"
