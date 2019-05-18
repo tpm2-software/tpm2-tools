@@ -20,7 +20,7 @@ struct clear_ctx {
 
 static clear_ctx ctx;
 
-static bool clear(ESYS_CONTEXT *ectx) {
+static tool_rc clear(ESYS_CONTEXT *ectx) {
 
     ESYS_TR rh = ESYS_TR_RH_LOCKOUT;
 
@@ -40,11 +40,10 @@ static bool clear(ESYS_CONTEXT *ectx) {
                     shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
         LOG_PERR(Esys_Clear, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    LOG_INFO ("Success. TSS2_RC: 0x%x", rval);
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -83,12 +82,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             &ctx.auth.session, true);
     if (!result) {
         LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.auth.auth_str);
-        return false;
+        return tool_rc_general_error;
     }
 
-    result = clear(ectx);
+    tool_rc rc = clear(ectx);
 
-    result &= tpm2_session_close(&ctx.auth.session);
+    result = tpm2_session_close(&ctx.auth.session);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
 
-    return result ? tool_rc_success : tool_rc_general_error;
+    return rc;
 }

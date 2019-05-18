@@ -36,7 +36,7 @@ tpm_rsadecrypt_ctx ctx = {
     .scheme = { .scheme = TPM2_ALG_RSAES }
 };
 
-static bool rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
+static tool_rc rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_DATA label;
     TPM2B_PUBLIC_KEY_RSA *message;
@@ -47,7 +47,7 @@ static bool rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
                             ctx.key.object.tr_handle,
                             ctx.key.session);
     if (shandle1 == ESYS_TR_NONE) {
-        return false;
+        return tool_rc_general_error;
     }
 
     TSS2_RC rval = Esys_RSA_Decrypt(ectx, ctx.key.object.tr_handle,
@@ -55,7 +55,7 @@ static bool rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
                         &ctx.cipher_text, &ctx.scheme, &label, &message);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Decrypt, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     bool ret = files_save_bytes_to_file(ctx.output_file_path, message->buffer,
@@ -63,7 +63,7 @@ static bool rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     free(message);
 
-    return ret;
+    return ret ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
@@ -146,12 +146,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = rsa_decrypt_and_save(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = rsa_decrypt_and_save(ectx);
 out:
 
     result = tpm2_session_close(&ctx.key.session);

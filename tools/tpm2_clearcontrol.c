@@ -25,7 +25,7 @@ static clearcontrol_ctx ctx = {
     .disable_clear = 0,
 };
 
-static bool clearcontrol(ESYS_CONTEXT *ectx) {
+static tool_rc clearcontrol(ESYS_CONTEXT *ectx) {
 
     LOG_INFO ("Sending TPM2_ClearControl(%s) disableClear command with auth handle %s",
             ctx.disable_clear ? "SET" : "CLEAR",
@@ -37,11 +37,10 @@ static bool clearcontrol(ESYS_CONTEXT *ectx) {
                 shandle, ESYS_TR_NONE, ESYS_TR_NONE, ctx.disable_clear);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
         LOG_PERR(Esys_ClearControl, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    LOG_INFO ("Success. TSS2_RC: 0x%x", rval);
-    return true;
+    return tool_rc_success;
 }
 
 static bool set_clearcontrol_auth_handle(const char *value) {
@@ -149,5 +148,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    return clearcontrol(ectx) ? tool_rc_success : tool_rc_general_error;
+    return clearcontrol(ectx);
 }

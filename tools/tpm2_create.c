@@ -66,10 +66,11 @@ static tpm_create_ctx ctx = {
         .alg = DEFAULT_KEY_ALG,
 };
 
-static bool create(ESYS_CONTEXT *ectx) {
+static tool_rc create(ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval;
 
+    tool_rc rc = tool_rc_general_error;
     bool ret = false;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
@@ -110,7 +111,7 @@ static bool create(ESYS_CONTEXT *ectx) {
                 &outPublic);
         if(rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_CreateLoaded, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
     } else {
         TPM2B_CREATION_DATA     *creationData;
@@ -123,7 +124,7 @@ static bool create(ESYS_CONTEXT *ectx) {
                 &creationTicket);
         if(rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_Create, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
         free(creationData);
         free(creationHash);
@@ -155,13 +156,13 @@ static bool create(ESYS_CONTEXT *ectx) {
         }
     }
 
-    ret = true;
+    rc = tool_rc_success;
 
 out:
     free(outPrivate);
     free(outPublic);
 
-    return ret;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -316,12 +317,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = create(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = create(ectx);
 
 out:
     result = tpm2_session_close(&ctx.parent.session);

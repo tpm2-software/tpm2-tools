@@ -20,15 +20,15 @@ struct tpm_selftest_ctx {
 
 static tpm_selftest_ctx ctx;
 
-static bool tpm_selftest(ESYS_CONTEXT *ectx) {
+static tool_rc tpm_selftest(ESYS_CONTEXT *ectx) {
     TSS2_RC rval = Esys_SelfTest(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, ctx.fulltest);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("TPM SelfTest failed !");
         LOG_PERR(Esys_SelfTest, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -61,8 +61,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return tpm_selftest(ectx) ?
-            tool_rc_success : tool_rc_general_error;
+    return tpm_selftest(ectx);
 }
 
 void tpm2_tool_onexit(void) {

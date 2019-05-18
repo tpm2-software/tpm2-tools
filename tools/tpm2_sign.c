@@ -55,17 +55,19 @@ static tpm_sign_ctx ctx = {
         .sig_scheme = TPM2_ALG_NULL
 };
 
-static bool sign_and_save(ESYS_CONTEXT *ectx) {
+static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
 
     TPMT_SIGNATURE *signature;
     bool result;
+
+    tool_rc rc = tool_rc_general_error;
 
     if (!ctx.flags.D) {
       bool res = tpm2_hash_compute_data(ectx, ctx.halg, TPM2_RH_NULL,
               ctx.msg, ctx.length, &ctx.digest, NULL);
       if (!res) {
           LOG_ERR("Compute message hash failed!");
-          return false;
+          return rc;
       }
     }
 
@@ -73,7 +75,7 @@ static bool sign_and_save(ESYS_CONTEXT *ectx) {
                             ctx.key_context.tr_handle,
                             ctx.key.session);
     if (shandle1 == ESYS_TR_NONE) {
-        return false;
+        return rc;
     }
 
     TSS2_RC rval = Esys_Sign(ectx, ctx.key_context.tr_handle,
@@ -81,15 +83,20 @@ static bool sign_and_save(ESYS_CONTEXT *ectx) {
                     ctx.digest, &ctx.in_scheme, &ctx.validation, &signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Eys_Sign, rval);
-        result = false;
-    } else {
-        result = tpm2_convert_sig_save(signature, ctx.sig_format,
-                    ctx.outFilePath);
+        rc = tool_rc_from_tpm(rval);
+        return rc;
+    }
+    result = tpm2_convert_sig_save(signature, ctx.sig_format,
+                ctx.outFilePath);
+    if (!result) {
+        goto out;
     }
 
-    free(signature);
+    rc = tool_rc_success;
 
-    return result;
+out:
+    free(signature);
+    return rc;
 }
 
 static bool init(ESYS_CONTEXT *ectx) {
@@ -287,12 +294,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = sign_and_save(ectx);
-    if (!result) {
-        goto out;
-    }
+    rc = sign_and_save(ectx);
 
-    rc = tool_rc_success;
 out:
 
     result = tpm2_session_close(&ctx.key.session);

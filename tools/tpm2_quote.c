@@ -112,7 +112,7 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
     return res;
 }
 
-static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
+static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
 {
     TPM2_RC rval;
     TPMT_SIG_SCHEME inScheme;
@@ -129,7 +129,7 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
                             ctx.ak.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     rval = Esys_Quote(ectx, ctx.context_object.tr_handle,
@@ -139,7 +139,7 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
     if(rval != TPM2_RC_SUCCESS)
     {
         LOG_PERR(Esys_Quote, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     tpm2_tool_output( "quoted: " );
@@ -158,13 +158,13 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
         // Filter out invalid/unavailable PCR selections
         if (!pcr_check_pcr_selection(&ctx.cap_data, &ctx.pcrSelections)) {
             LOG_ERR("Failed to filter unavailable PCR values for quote!");
-            return false;
+            return tool_rc_general_error;
         }
 
         // Gather PCR values from the TPM (the quote doesn't have them!)
         if (!pcr_read_pcr_values(ectx, &ctx.pcrSelections, &ctx.pcrs)) {
             LOG_ERR("Failed to retrieve PCR values related to quote!");
-            return false;
+            return tool_rc_general_error;
         }
 
         // Grab the digest from the quote
@@ -172,20 +172,20 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
         TPM2B_DATA extraData = TPM2B_TYPE_INIT(TPM2B_DATA, buffer);
         if (!tpm2_util_get_digest_from_quote(quoted, &quoteDigest, &extraData)) {
             LOG_ERR("Failed to get digest from quote!");
-            return false;
+            return tool_rc_general_error;
         }
 
         // Print out PCR values as output
         if (!pcr_print_pcr_struct(&ctx.pcrSelections, &ctx.pcrs)) {
             LOG_ERR("Failed to print PCR values related to quote!");
-            return false;
+            return tool_rc_general_error;
         }
 
         // Calculate the digest from our selected PCR values (to ensure correctness)
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
         if (!tpm2_openssl_hash_pcr_banks(ctx.sig_hash_algorithm, &ctx.pcrSelections, &ctx.pcrs, &pcr_digest)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
-            return false;
+            return tool_rc_general_error;
         }
         tpm2_tool_output("calcDigest: ");
         tpm2_util_hexdump(pcr_digest.buffer, pcr_digest.size);
@@ -194,7 +194,7 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
         // Make sure digest from quote matches calculated PCR digest
         if (!tpm2_util_verify_digests(&quoteDigest, &pcr_digest)) {
             LOG_ERR("Error validating calculated PCR composite with quote");
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -204,7 +204,7 @@ static bool quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
     free(quoted);
     free(signature);
 
-    return res;
+    return res ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
@@ -340,12 +340,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = quote(ectx, &ctx.pcrSelections);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = quote(ectx, &ctx.pcrSelections);
 
 out:
     if (ctx.pcr_output) {

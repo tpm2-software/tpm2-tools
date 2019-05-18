@@ -88,7 +88,7 @@ out:
     return result;
 }
 
-static bool make_external_credential_and_save() {
+static tool_rc make_external_credential_and_save(void) {
 
     /*
      * Get name_alg from the public key
@@ -110,7 +110,7 @@ static bool make_external_credential_and_save() {
             &encrypted_seed);
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");
-        return false;
+        return tool_rc_general_error;
     }
 
     /*
@@ -172,10 +172,11 @@ static bool make_external_credential_and_save() {
 
     cred_blob.size = outer_hmac.size + encrypted_sensitive.size + sizeof(outer_hmac.size);
 
-    return write_cred_and_secret(ctx.out_file_path, &cred_blob, &encrypted_seed);
+    return write_cred_and_secret(ctx.out_file_path, &cred_blob, &encrypted_seed)
+            ? tool_rc_success : tool_rc_general_error;
 }
 
-static bool make_credential_and_save(ESYS_CONTEXT *ectx)
+static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx)
 {
     TPM2B_ID_OBJECT *cred_blob;
     TPM2B_ENCRYPTED_SECRET *secret;
@@ -187,7 +188,7 @@ static bool make_credential_and_save(ESYS_CONTEXT *ectx)
                         &tr_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_LoadExternal, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_MakeCredential(ectx, tr_handle, ESYS_TR_NONE,
@@ -195,19 +196,19 @@ static bool make_credential_and_save(ESYS_CONTEXT *ectx)
                         &ctx.object_name, &cred_blob, &secret);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_MakeCredential, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_FlushContext(ectx, tr_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_FlushContext, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     bool ret = write_cred_and_secret(ctx.out_file_path, cred_blob, secret);
     free(cred_blob);
     free(secret);
-    return ret;
+    return ret ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
@@ -272,8 +273,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     // Run it outside of a TPM
-    bool result = ectx ? make_credential_and_save(ectx) :
+    return ectx ? make_credential_and_save(ectx) :
             make_external_credential_and_save();
-
-    return result ? tool_rc_success : tool_rc_general_error;
 }

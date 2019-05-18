@@ -21,33 +21,33 @@ struct tpm_pcr_reset_ctx {
 
 static tpm_pcr_reset_ctx ctx;
 
-static bool pcr_reset_one(ESYS_CONTEXT *ectx,
+static tool_rc pcr_reset_one(ESYS_CONTEXT *ectx,
                           TPMI_DH_PCR pcr_index) {
 
     TSS2_RC rval = Esys_PCR_Reset(ectx, pcr_index, ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Could not reset PCR index: %d", pcr_index);
         LOG_PERR(Esys_PCR_Reset, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool pcr_reset(ESYS_CONTEXT *ectx) {
+static tool_rc pcr_reset(ESYS_CONTEXT *ectx) {
     size_t i;
 
     for (i = 0; i < TPM2_MAX_PCRS; i++) {
         if(!ctx.pcr_list[i])
             continue;
 
-        bool result = pcr_reset_one(ectx, i);
-        if (!result) {
-            return false;
+        tool_rc rc = pcr_reset_one(ectx, i);
+        if (rc != tool_rc_success) {
+            return rc;
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_arg(int argc, char** argv){
@@ -82,7 +82,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return pcr_reset(ectx) ? tool_rc_success : tool_rc_general_error;
+    return pcr_reset(ectx);
 }
 
 void tpm2_tool_onexit(void) {

@@ -38,7 +38,7 @@ static struct {
     },
 };
 
-static bool pcr_allocate(ESYS_CONTEXT *ectx) {
+static tool_rc pcr_allocate(ESYS_CONTEXT *ectx) {
     TSS2_RC rval;
     TPMI_YES_NO allocationSuccess;
     UINT32 maxPCR;
@@ -49,7 +49,7 @@ static bool pcr_allocate(ESYS_CONTEXT *ectx) {
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for lockout hierarchy");
-        return false;
+        return tool_rc_general_error;
     }
 
     pcr_print_pcr_selections(&ctx.pcrSelection);
@@ -61,17 +61,17 @@ static bool pcr_allocate(ESYS_CONTEXT *ectx) {
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Could not allocate PCRs.");
         LOG_PERR(Esys_PCR_Allocate, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     if (!allocationSuccess) {
         LOG_ERR("Allocation failed. "
                 "MaxPCR: %i, Size Needed: %i, Size available: %i",
                 maxPCR, sizeNeeded, sizeAvailable);
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_arg(int argc, char **argv){
@@ -120,9 +120,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    result = pcr_allocate(ectx);
+    tool_rc rc = pcr_allocate(ectx);
 
-    result &= tpm2_session_close(&ctx.auth.session);
+    result = tpm2_session_close(&ctx.auth.session);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
 
-    return result ? tool_rc_success : tool_rc_general_error;
+    return rc;
 }

@@ -119,9 +119,9 @@ static bool output_and_save(TPM2B_DIGEST *digest, const char *path) {
     return files_save_bytes_to_file(path, digest->buffer, digest->size);
 }
 
-static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
+static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
-    bool retval = false;
+    tool_rc rc = tool_rc_general_error;
 
     TPM2B_DIGEST *certInfoData;
 
@@ -151,6 +151,7 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
                     NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
+        rc = tool_rc_from_tpm(rval);
         goto out_session;
     }
 
@@ -167,17 +168,23 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
             &ctx.credentialBlob, &ctx.secret, &certInfoData);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ActivateCredential, rval);
+        rc = tool_rc_from_tpm(rval);
         goto out_all;
     }
 
-    retval = output_and_save(certInfoData, ctx.output_file);
+    bool result = output_and_save(certInfoData, ctx.output_file);
+    if (!result) {
+        goto out_all;
+    }
+
+    rc = tool_rc_success;
 
 out_all:
     free(certInfoData);
 out_session:
     tpm2_session_close(&session);
 
-    return retval;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -272,12 +279,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    res = activate_credential_and_output(ectx);
-    if (!res) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = activate_credential_and_output(ectx);
 
 out:
     res = tpm2_session_close(&ctx.key.session);

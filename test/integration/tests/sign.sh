@@ -258,4 +258,22 @@ do
     )
 done
 
+# Test that invalid password returns the proper code
+cleanup "no-shut-down"
+
+echo "12345678" > $file_input_data
+
+tpm2_createprimary -Q -o $file_primary_key_ctx
+tpm2_create -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -p "mypassword"
+tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
+
+# Negative test, remove error handler
+trap - ERR
+
+tpm2_sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -o $file_output_data
+if [ $? != 3]; then
+	echo "Expected RC 3, got: $?" 1>&2
+fi
+trap onerror ERR
+
 exit 0

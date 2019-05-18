@@ -32,7 +32,7 @@ static tpm_readpub_ctx ctx = {
     .format = pubkey_format_tss,
 };
 
-static int read_public_and_save(ESYS_CONTEXT *ectx) {
+static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_PUBLIC *public;
     TPM2B_NAME *name;
@@ -43,7 +43,7 @@ static int read_public_and_save(ESYS_CONTEXT *ectx) {
                     &public, &name, &qualified_name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Eys_ReadPublic, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     tpm2_tool_output("name: ");
@@ -86,7 +86,7 @@ out:
     free(name);
     free(qualified_name);
 
-    return ret;
+    return ret ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
@@ -159,6 +159,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    return read_public_and_save(context) ?
-           tool_rc_success : tool_rc_general_error;
+    return read_public_and_save(context);
 }

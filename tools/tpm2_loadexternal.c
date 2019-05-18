@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
@@ -51,7 +52,7 @@ static tpm_loadexternal_ctx ctx = {
     .hierarchy_value = TPM2_RH_NULL,
 };
 
-static bool load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
+static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
                 TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME **name) {
 
     TSS2_RC rval = Esys_LoadExternal(ectx,
@@ -60,16 +61,16 @@ static bool load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
                     &ctx.handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_LoadExternal, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_TR_GetName(ectx, ctx.handle, name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_GetName, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -317,11 +318,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     int rc = tool_rc_general_error;
     TPM2B_NAME *name = NULL;
     char *ctx_file = NULL;
-    result = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
+    tool_rc tmp_rc = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
                 &name);
     if (!result) {
+        rc = tmp_rc;
         goto out;
     }
+
+    assert(name);
 
     if (!ctx.context_file_path || ctx.context_file_path[0] == '\0') {
         ctx.context_file_path = "object.ctx";

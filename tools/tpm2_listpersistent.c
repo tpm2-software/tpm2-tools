@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
-
+#include <assert.h>
 #include <stdarg.h>
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -66,7 +65,7 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-static int read_public(ESYS_CONTEXT *ectx,
+static tool_rc read_public(ESYS_CONTEXT *ectx,
         TPM2_HANDLE objectHandle, TPM2B_PUBLIC **outPublic) {
 
     TSS2_RC rval;
@@ -77,7 +76,7 @@ static int read_public(ESYS_CONTEXT *ectx,
                     &objHandle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return -1;
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_ReadPublic(ectx, objHandle,
@@ -85,10 +84,10 @@ static int read_public(ESYS_CONTEXT *ectx,
                         outPublic, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ReadPublic, rval);
-        return -1;
+        return tool_rc_from_tpm(rval);
     }
 
-    return 0;
+    return tool_rc_success;
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
@@ -122,10 +121,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     for (i = 0; i < capabilityData->data.handles.count; i++) {
         TPM2B_PUBLIC *outPublic = NULL;
         TPM2_HANDLE objectHandle = capabilityData->data.handles.handle[i];
-        if (read_public(ectx, objectHandle, &outPublic)) {
+        tool_rc tmp_rc = read_public(ectx, objectHandle, &outPublic);
+        if (tmp_rc != tool_rc_success) {
             free(outPublic);
+            rc = tmp_rc;
             goto out;
         }
+
+        assert(outPublic);
 
         TPMI_ALG_KEYEDHASH_SCHEME kh_scheme = outPublic->publicArea.parameters.keyedHashDetail.scheme.scheme;
         TPMI_ALG_KEYEDHASH_SCHEME sym_scheme = outPublic->publicArea.parameters.symDetail.sym.algorithm;

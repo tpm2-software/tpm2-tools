@@ -18,7 +18,7 @@ struct tpm_pcr_extend_ctx {
 
 static tpm_pcr_extend_ctx ctx;
 
-static bool pcr_extend_one(ESYS_CONTEXT *ectx,
+static tool_rc pcr_extend_one(ESYS_CONTEXT *ectx,
         TPMI_DH_PCR pcr_index, TPML_DIGEST_VALUES *digests) {;
 
     TSS2_RC rval = Esys_PCR_Extend(ectx, pcr_index,
@@ -27,25 +27,25 @@ static bool pcr_extend_one(ESYS_CONTEXT *ectx,
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Could not extend pcr index: 0x%X", pcr_index);
         LOG_PERR(Esys_PCR_Extend, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool pcr_extend(ESYS_CONTEXT *ectx) {
+static tool_rc pcr_extend(ESYS_CONTEXT *ectx) {
 
     size_t i;
     for (i = 0; i < ctx.digest_spec_len; i++) {
         tpm2_pcr_digest_spec *dspec = &ctx.digest_spec[i];
-        bool result = pcr_extend_one(ectx, dspec->pcr_index,
+        tool_rc rc = pcr_extend_one(ectx, dspec->pcr_index,
                 &dspec->digests);
-        if (!result) {
-            return false;
+        if (rc != tool_rc_success) {
+            return rc;
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_arg(int argc, char **argv) {
@@ -79,8 +79,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return pcr_extend(ectx) ?
-            tool_rc_success : tool_rc_general_error;
+    return pcr_extend(ectx);
 }
 
 void tpm2_tool_onexit(void) {

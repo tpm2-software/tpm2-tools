@@ -184,25 +184,24 @@ out:
     return result;
 }
 
-static bool create_ek_handle(ESYS_CONTEXT *ectx) {
-    bool result;
+static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
 
     if (ctx.flags.t) {
-        result = set_ek_template(ectx, &ctx.objdata.in.public);
+        bool result = set_ek_template(ectx, &ctx.objdata.in.public);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
     } else {
-        result = set_key_algorithm(&ctx.objdata.in.public);
+        bool result = set_key_algorithm(&ctx.objdata.in.public);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
-    result = tpm2_hierarchy_create_primary(ectx,
+    bool result = tpm2_hierarchy_create_primary(ectx,
             ctx.auth.endorse.session, &ctx.objdata);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     if (ctx.ctx_obj.handle) {
@@ -212,13 +211,13 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
                 ctx.objdata.out.handle,
                 ctx.ctx_obj.handle, NULL);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
 
         TSS2_RC rval = Esys_FlushContext(ectx, ctx.objdata.out.handle);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Esys_FlushContext, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
     } else {
         /* If it wasn't persistent, save a context for future tool interactions */
@@ -230,14 +229,14 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
             */
             bool ok = files_get_unique_name("ek.ctx", &filename);
             if (!ok) {
-                return false;
+                return tool_rc_general_error;
             }
         } else {
             /* Make a copy of specified path so we can free properly below */
             filename = strdup(ctx.ctx_obj.path);
             if (!filename) {
                 LOG_ERR("oom");
-                return false;
+                return tool_rc_general_error;
             }
         }
 
@@ -246,7 +245,7 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
             free(filename);
-            return false;
+            return tool_rc_general_error;
         }
         tpm2_tool_output("transient-object-context: %s\n", filename);
         free(filename);
@@ -256,11 +255,11 @@ static bool create_ek_handle(ESYS_CONTEXT *ectx) {
         bool ok = tpm2_convert_pubkey_save(ctx.objdata.out.public,
                 ctx.format, ctx.out_file_path);
         if (!ok) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -425,18 +424,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     set_default_hierarchy();
 
     /* normalize 0 success 1 failure */
-    bool result = create_ek_handle(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
-
+    rc = create_ek_handle(ectx);
 out:
 
     for(i=0; i < ARRAY_LEN(sessions); i++) {
         tpm2_session *s = *sessions[i];
-        result = tpm2_session_close(&s);
+        bool result = tpm2_session_close(&s);
         if (!result) {
             rc = tool_rc_success;
         }

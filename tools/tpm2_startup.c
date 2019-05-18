@@ -60,7 +60,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     TSS2_RC rval = Esys_Startup (context, startup_type);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
         LOG_PERR(Esys_Startup, rval);
-        return tool_rc_general_error;
+        return tool_rc_from_tpm(rval);
     }
 
     LOG_INFO ("Success. TSS2_RC: 0x%x", rval);

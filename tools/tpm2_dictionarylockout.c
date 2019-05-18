@@ -30,14 +30,14 @@ struct dictionarylockout_ctx {
 
 static dictionarylockout_ctx ctx;
 
-bool dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
+tool_rc dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
 
     TPM2_RC rval;
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_LOCKOUT,
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for lockout hierarchy");
-        return false;
+        return tool_rc_general_error;
     }
 
     /*
@@ -51,7 +51,7 @@ bool dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
                     shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_DictionaryAttackLockReset, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
     }
 
@@ -63,11 +63,11 @@ bool dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
                     ctx.lockout_recovery_time);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_DictionaryAttackParameters, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -154,14 +154,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    result = dictionary_lockout_reset_and_parameter_setup(ectx);
-    if (!result) {
-        goto out;
-    }
+    rc = dictionary_lockout_reset_and_parameter_setup(ectx);
 
-    rc = tool_rc_success;
-
-out:
     result = tpm2_session_close(&ctx.auth.session);
     if (!result) {
         rc = tool_rc_general_error;

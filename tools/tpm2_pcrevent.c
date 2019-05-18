@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -34,7 +35,7 @@ static tpm_pcrevent_ctx ctx = {
         .pcr = ESYS_TR_RH_NULL,
 };
 
-static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
+static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         TPML_DIGEST_VALUES **result) {
 
     TSS2_RC rval;
@@ -66,10 +67,10 @@ static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                     &buffer, result);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Esys_PCR_Event, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
 
-        return true;
+        return tool_rc_success;
     }
 
     ESYS_TR sequence_handle;
@@ -85,13 +86,13 @@ static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                 &nullAuth, TPM2_ALG_NULL, &sequence_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HashSequenceStart, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_TR_SetAuth(ectx, sequence_handle, &nullAuth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_SetAuth, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     /* If we know the file size, we decrement the amount read and terminate the
@@ -120,7 +121,7 @@ static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                     &data);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_SequenceUpdate, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
 
         if (use_left) {
@@ -139,7 +140,7 @@ static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
-            return false;
+            return tool_rc_general_error;
         }
     } else {
         data.size = 0;
@@ -148,26 +149,28 @@ static bool tpm_pcrevent_file(ESYS_CONTEXT *ectx,
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
-        return false;
+        return tool_rc_general_error;
     }
     rval = Esys_EventSequenceComplete(ectx, ctx.pcr, sequence_handle,
                 shandle1, ESYS_TR_PASSWORD, ESYS_TR_NONE,
                 &data, result);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_EventSequenceComplete, rval);
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool do_hmac_and_output(ESYS_CONTEXT *ectx) {
+static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
 
     TPML_DIGEST_VALUES *digests = NULL;
-    bool res = tpm_pcrevent_file(ectx, &digests);
-    if (!res) {
-        return false;
+    tool_rc rc = tpm_pcrevent_file(ectx, &digests);
+    if (rc != tool_rc_success) {
+        return rc;
     }
+
+    assert(digests);
 
     UINT32 i;
     for (i = 0; i < digests->count; i++) {
@@ -218,7 +221,7 @@ static bool do_hmac_and_output(ESYS_CONTEXT *ectx) {
     }
 
     free(digests);
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_arg(int argc, char **argv) {
@@ -288,12 +291,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = do_hmac_and_output(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = do_pcrevent_and_output(ectx);
 
 out:
 
