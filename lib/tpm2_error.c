@@ -849,3 +849,24 @@ const char * tpm2_error_str(TSS2_RC rc) {
 
     return buf;
 }
+
+static tool_rc flatten_fmt1(TSS2_RC rc) {
+
+    UINT8 errnum = tpm2_rc_fmt1_error_get(rc);
+    switch(errnum) {
+    case TPM2_RC_AUTH_FAIL:
+        return tool_rc_auth_error;
+    default:
+        return tool_rc_general_error;
+    }
+}
+
+tool_rc tool_rc_from_tpm(TSS2_RC rc) {
+
+    bool is_fmt_1 = tss2_rc_layer_format_get(rc);
+    if (is_fmt_1) {
+        return flatten_fmt1(rc);
+    }
+
+    return tool_rc_general_error;
+}
