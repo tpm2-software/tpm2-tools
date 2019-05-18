@@ -26,7 +26,7 @@ struct tpm_random_ctx {
 
 static tpm_random_ctx ctx;
 
-static bool get_random_and_save(ESYS_CONTEXT *ectx) {
+static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *random_bytes;
 
@@ -35,7 +35,7 @@ static bool get_random_and_save(ESYS_CONTEXT *ectx) {
                                   ctx.num_of_bytes, &random_bytes);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetRandom, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     /* ensure we got the expected number of bytes unless force is set */
@@ -44,7 +44,7 @@ static bool get_random_and_save(ESYS_CONTEXT *ectx) {
                 "Lower your requested amount or"
                 " use --force to override this behavior", random_bytes->size,
                 ctx.num_of_bytes);
-        return false;
+        return tool_rc_general_error;
     }
 
     if (!ctx.output_file_specified) {
@@ -54,7 +54,7 @@ static bool get_random_and_save(ESYS_CONTEXT *ectx) {
         }
         tpm2_tool_output("\n");
         free(random_bytes);
-        return true;
+        return tool_rc_success;
     }
 
     rval = files_save_bytes_to_file(ctx.output_file, random_bytes->buffer,
@@ -62,11 +62,11 @@ static bool get_random_and_save(ESYS_CONTEXT *ectx) {
     if (!rval) {
         LOG_ERR("Failed to save bytes into file \"%s\"", ctx.output_file);
         free(random_bytes);
-        return false;
+        return tool_rc_general_error;
     }
 
     free(random_bytes);
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -173,5 +173,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    return get_random_and_save(ectx) ? tool_rc_success : tool_rc_general_error;
+    return get_random_and_save(ectx);
 }

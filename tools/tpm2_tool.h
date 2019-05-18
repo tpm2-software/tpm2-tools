@@ -6,19 +6,8 @@
 #include <tss2/tss2_esys.h>
 #include <stdbool.h>
 
+#include "tpm2_error.h"
 #include "tpm2_options.h"
-
-typedef enum tool_rc tool_rc;
-enum tool_rc {
-    /* do not reorder or change, part of returned codes to exit */
-    /* maps to common/returns.md */
-    tool_rc_success = 0,
-    tool_rc_general_error,
-    tool_rc_option_error,
-    tool_rc_auth_error,
-    tool_rc_tcti_error,
-    tool_rc_unsupported
-};
 
 extern bool output_enabled;
 

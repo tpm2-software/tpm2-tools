@@ -50,7 +50,7 @@ static tpm_duplicate_ctx ctx = {
     .key_type = TPM2_ALG_ERROR,
 };
 
-static bool do_duplicate(ESYS_CONTEXT *ectx,
+static tool_rc do_duplicate(ESYS_CONTEXT *ectx,
         TPM2B_DATA *in_key,
         TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_DATA **out_key,
@@ -62,7 +62,7 @@ static bool do_duplicate(ESYS_CONTEXT *ectx,
                             ctx.object.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     TSS2_RC rval = Esys_Duplicate(ectx,
@@ -71,10 +71,10 @@ static bool do_duplicate(ESYS_CONTEXT *ectx,
                         in_key, sym_alg, out_key, duplicate, encrypted_seed);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Duplicate, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -275,13 +275,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    result = do_duplicate(ectx,
+    rc = do_duplicate(ectx,
         ctx.flags.i ? &in_key : NULL,
         &sym_alg,
         ctx.flags.o ? &out_key : NULL,
         &duplicate,
         &outSymSeed);
-    if (!result) {
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -289,6 +289,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.flags.o) {
         if(out_key == NULL) {
             LOG_ERR("No encryption key from TPM ");
+            rc = tool_rc_general_error;
             goto free_out;
         }
         result = files_save_bytes_to_file(ctx.sym_key_out,
@@ -296,6 +297,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (!result) {
             LOG_ERR("Failed to save encryption key out into file \"%s\"",
                     ctx.sym_key_out);
+            rc = tool_rc_general_error;
             goto free_out;
         }
     }
@@ -304,6 +306,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!result) {
         LOG_ERR("Failed to save encryption seed into file \"%s\"",
                 ctx.enc_seed_out);
+        rc = tool_rc_general_error;
         goto free_out;
     }
 
@@ -311,6 +314,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!result) {
         LOG_ERR("Failed to save private key into file \"%s\"",
                 ctx.duplicate_key_private_file);
+        rc = tool_rc_general_error;
         goto free_out;
     }
 

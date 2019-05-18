@@ -192,7 +192,7 @@ out:
         TSS2_RC rval = Esys_TR_Close(ectx, &out_tr);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_TR_Close, rc);
-            rc = tool_rc_general_error;
+            rc = tool_rc_from_tpm(rval);
         }
     }
 

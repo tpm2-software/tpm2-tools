@@ -52,7 +52,7 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     free(attrs);
 }
 
-static bool nv_list(ESYS_CONTEXT *context) {
+static tool_rc nv_list(ESYS_CONTEXT *context) {
 
     TPMS_CAPABILITY_DATA *capabilityData;
     UINT32 property = tpm2_util_hton_32(TPM2_HT_NV_INDEX);
@@ -63,7 +63,7 @@ static bool nv_list(ESYS_CONTEXT *context) {
                                       NULL, &capabilityData);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetCapability, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     UINT32 i;
@@ -77,7 +77,7 @@ static bool nv_list(ESYS_CONTEXT *context) {
         if (!res) {
             LOG_ERR("Failed to read the public part of NV index 0x%X", index);
             free(capabilityData);
-            return false;
+            return tool_rc_general_error;
         }
         print_nv_public(nv_public);
         free(nv_public);
@@ -85,7 +85,7 @@ static bool nv_list(ESYS_CONTEXT *context) {
     }
 
     free(capabilityData);
-    return true;
+    return tool_rc_success;
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
@@ -100,5 +100,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return nv_list(context) ? tool_rc_success : tool_rc_general_error;
+    return nv_list(context);
 }

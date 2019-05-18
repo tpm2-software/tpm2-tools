@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -32,7 +33,7 @@ struct tpm_hmac_ctx {
 
 static tpm_hmac_ctx ctx;
 
-static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
+static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
 
     TSS2_RC rval;
     unsigned long file_size = 0;
@@ -42,7 +43,7 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     /* Suppress error reporting with NULL path */
@@ -56,7 +57,7 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
         res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
-            return false;
+            return tool_rc_general_error;
         }
 
         rval = Esys_HMAC(ectx, ctx.key_context_object.tr_handle,
@@ -64,10 +65,10 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
                 &buffer, TPM2_ALG_NULL, result);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Esys_HMAC, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
 
-        return true;
+        return tool_rc_success;
     }
 
     TPM2B_AUTH null_auth = { .size = 0 };
@@ -83,7 +84,7 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
             &null_auth, TPM2_ALG_NULL, &sequence_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HMAC_Start, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     /* If we know the file size, we decrement the amount read and terminate the
@@ -101,7 +102,7 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
-            return false;
+            return tool_rc_general_error;
         }
 
         data.size = bytes_read;
@@ -112,7 +113,7 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
                 &data);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Eys_SequenceUpdate, rval);
-            return rval;
+            return tool_rc_from_tpm(rval);
         }
 
         if (use_left) {
@@ -131,7 +132,7 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
         bool res = files_read_bytes(input, data.buffer, left);
         if (!res) {
             LOG_ERR("Error reading from input file.");
-            return false;
+            return tool_rc_general_error;
         }
     } else {
         data.size = 0;
@@ -142,23 +143,23 @@ static bool tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
             &data, TPM2_RH_NULL, result, NULL);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_SequenceComplete, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 
-static bool do_hmac_and_output(ESYS_CONTEXT *ectx) {
+static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *hmac_out = NULL;
-    bool res = tpm_hmac_file(ectx, &hmac_out);
-    bool retval = true;
 
-    if (!res || !hmac_out) {
-        retval = false;
+    tool_rc rc = tpm_hmac_file(ectx, &hmac_out);
+    if (rc != tool_rc_success) {
         goto out;
     }
+
+    assert(hmac_out);
 
     if (hmac_out->size) {
         UINT16 i;
@@ -169,14 +170,17 @@ static bool do_hmac_and_output(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.hmac_output_file_path) {
-        retval = files_save_bytes_to_file(ctx.hmac_output_file_path, hmac_out->buffer,
+        bool result = files_save_bytes_to_file(ctx.hmac_output_file_path, hmac_out->buffer,
             hmac_out->size);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
     }
 
 out:
     free(hmac_out);
 
-    return retval;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -258,12 +262,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = do_hmac_and_output(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = do_hmac_and_output(ectx);
 
 out:
     if (ctx.input && ctx.input != stdin) {

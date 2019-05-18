@@ -123,7 +123,7 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
     return 0;
 }
 
-int createEKHandle(ESYS_CONTEXT *ectx)
+tool_rc createEKHandle(ESYS_CONTEXT *ectx)
 {
     TPM2_RC rval;
 
@@ -143,7 +143,7 @@ int createEKHandle(ESYS_CONTEXT *ectx)
                             ctx.auth.endorse.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return 1;
+        return tool_rc_general_error;
     }
 
     rval = Esys_CreatePrimary(ectx, ESYS_TR_RH_ENDORSEMENT,
@@ -153,7 +153,7 @@ int createEKHandle(ESYS_CONTEXT *ectx)
             NULL, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS ) {
         LOG_PERR(Esys_CreatePrimary, rval);
-        return 1;
+        return tool_rc_from_tpm(rval);
     }
 
     if (!ctx.non_persistent_read) {
@@ -169,7 +169,7 @@ int createEKHandle(ESYS_CONTEXT *ectx)
                                 ctx.auth.owner.session);
         if (shandle == ESYS_TR_NONE) {
             LOG_ERR("Couldn't get shandle for owner hierarchy");
-            return 1;
+            return tool_rc_general_error;
         }
 
         rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, handle2048ek,
@@ -177,25 +177,27 @@ int createEKHandle(ESYS_CONTEXT *ectx)
                 ctx.persistent_handle, &new_handle);
         if (rval != TPM2_RC_SUCCESS ) {
             LOG_PERR(Esys_EvictControl, rval);
-            return 1;
+            return tool_rc_from_tpm(rval);
         }
         LOG_INFO("EvictControl EK persistent succ.");
 
         rval = Esys_TR_Close(ectx, &new_handle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_TR_Close, rval);
+            return tool_rc_from_tpm(rval);
         }
     }
 
     rval = Esys_FlushContext(ectx, handle2048ek);
     if (rval != TPM2_RC_SUCCESS ) {
         LOG_PERR(Esys_FlushContext, rval);
-        return 1;
+        return tool_rc_from_tpm(rval);
     }
 
     LOG_INFO("Flush transient EK succ.");
 
-    return files_save_public(ctx.outPublic, ctx.output_file) != true;
+    return files_save_public(ctx.outPublic, ctx.output_file)
+            ? tool_rc_success : tool_rc_general_error;
 }
 
 static unsigned char *HashEKPublicKey(void) {
@@ -556,8 +558,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if (!ctx.ek_path) {
-        int tmp_rc = createEKHandle(ectx);
-        if (tmp_rc) {
+        rc = createEKHandle(ectx);
+        if (rc != tool_rc_success) {
             goto out;
         }
     } else {

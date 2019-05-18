@@ -38,7 +38,7 @@ static const char *get_property_name(TPM2_HANDLE handle) {
     return "invalid";
 }
 
-static bool flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
+static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
                           UINT32 count) {
 
     UINT32 i;
@@ -49,7 +49,7 @@ static bool flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
         bool ok = tpm2_util_sys_handle_to_esys_handle(ectx, handles[i],
                     &handle);
         if (!ok) {
-            return false;
+            return tool_rc_general_error;
         }
 
         TPM2_RC rval = Esys_FlushContext(ectx, handle);
@@ -57,11 +57,11 @@ static bool flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
             LOG_ERR("Failed Flush Context for %s handle 0x%x",
                     get_property_name(handles[i]), handles[i]);
             LOG_PERR(Esys_FlushContext, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
@@ -73,11 +73,11 @@ static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
         TPM2_RC rval = Esys_FlushContext(ectx, handles[i]);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_FlushContext, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -133,10 +133,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
 
         TPML_HANDLE *handles = &capability_data->data.handles;
-        bool result = flush_contexts_tpm2(ectx, handles->handle,
+        tool_rc rc = flush_contexts_tpm2(ectx, handles->handle,
                                     handles->count);
         free(capability_data);
-        return result ? tool_rc_success : tool_rc_general_error;
+        return rc;
     }
 
     /* handle from a session file */
@@ -159,6 +159,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    result = flush_contexts_tr(ectx, &ctx.context_object.tr_handle, 1);
-    return result ? tool_rc_success : tool_rc_general_error;
+    return flush_contexts_tr(ectx, &ctx.context_object.tr_handle, 1);
 }

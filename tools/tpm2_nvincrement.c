@@ -41,14 +41,14 @@ static tpm_nvincrement_ctx ctx = {
     .hierarchy = TPM2_RH_OWNER
 };
 
-static bool nv_increment(ESYS_CONTEXT *ectx) {
+static tool_rc nv_increment(ESYS_CONTEXT *ectx) {
     // Convert TPM2_HANDLE ctx.nv_index to an ESYS_TR
     ESYS_TR nv_index;
     TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &nv_index);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     // Convert TPMI_RH_PROVISION ctx.auth.hierarchy to an ESYS_TR
@@ -63,18 +63,17 @@ static bool nv_increment(ESYS_CONTEXT *ectx) {
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     rval = Esys_NV_Increment(ectx, hierarchy, nv_index,
                     shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to increment NV counter at index 0x%X", ctx.nv_index);
-        LOG_PERR(Tss2_Sys_NV_Write, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -147,13 +146,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = nv_increment(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
-
+    rc = nv_increment(ectx);
 out:
 
     result = tpm2_session_close(&ctx.auth.session);

@@ -850,11 +850,13 @@ const char * tpm2_error_str(TSS2_RC rc) {
     return buf;
 }
 
+#define UNFMT1(x) (x - TPM2_RC_FMT1)
+
 static tool_rc flatten_fmt1(TSS2_RC rc) {
 
     UINT8 errnum = tpm2_rc_fmt1_error_get(rc);
     switch(errnum) {
-    case TPM2_RC_AUTH_FAIL:
+    case UNFMT1(TPM2_RC_AUTH_FAIL):
         return tool_rc_auth_error;
     default:
         return tool_rc_general_error;

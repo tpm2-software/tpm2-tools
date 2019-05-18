@@ -21,14 +21,14 @@ struct tpm_incrementalselftest_ctx {
 
 static tpm_incrementalselftest_ctx ctx;
 
-static bool tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
+static tool_rc tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
 
     TPML_ALG *totest = NULL;
     TSS2_RC rval = Esys_IncrementalSelfTest(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
             ESYS_TR_NONE, &(ctx.inputalgs), &totest);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_SelfTest, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     tpm2_tool_output("status: ");
@@ -52,7 +52,7 @@ static bool tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
     }
 
     free(totest);
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_arg(int argc, char **argv){
@@ -89,6 +89,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return tpm_incrementalselftest(ectx) ?
-            tool_rc_success : tool_rc_general_error;
+    return tpm_incrementalselftest(ectx);
 }

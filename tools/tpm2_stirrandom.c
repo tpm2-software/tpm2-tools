@@ -25,7 +25,7 @@ struct tpm_stirrandom_ctx {
 
 static tpm_stirrandom_ctx ctx;
 
-static bool do_stirrandom(ESYS_CONTEXT *ectx) {
+static tool_rc do_stirrandom(ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval = Esys_StirRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
                                    ESYS_TR_NONE, &ctx.in_data);
@@ -33,10 +33,10 @@ static bool do_stirrandom(ESYS_CONTEXT *ectx) {
         LOG_ERR("Error while injecting specified additionnal data into TPM "
                 "random pool");
         LOG_PERR(Esys_StirRandom, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_args(int argc, char **argv) {
@@ -87,6 +87,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    return do_stirrandom(ectx) ?
-            tool_rc_success : tool_rc_general_error;
+    return do_stirrandom(ectx);
 }

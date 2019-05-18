@@ -29,7 +29,7 @@ static tpm_rsaencrypt_ctx ctx = {
     .scheme = { .scheme = TPM2_ALG_RSAES }
 };
 
-static bool rsa_encrypt_and_save(ESYS_CONTEXT *context) {
+static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
 
     bool ret = true;
     // Inputs
@@ -44,7 +44,7 @@ static bool rsa_encrypt_and_save(ESYS_CONTEXT *context) {
                         &ctx.message, &ctx.scheme, &label, &out_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Encrypt, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     if (ctx.output_path) {
@@ -56,7 +56,7 @@ static bool rsa_encrypt_and_save(ESYS_CONTEXT *context) {
 
     free(out_data);
 
-    return ret;
+    return ret ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
@@ -132,6 +132,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    return rsa_encrypt_and_save(context) ?
-            tool_rc_success : tool_rc_general_error;
+    return rsa_encrypt_and_save(context);
 }

@@ -43,7 +43,7 @@ static tpm_nvwrite_ctx ctx = {
     .hierarchy = TPM2_RH_OWNER
 };
 
-static bool nv_write(ESYS_CONTEXT *ectx) {
+static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
     TPM2B_MAX_NV_BUFFER nv_write_data;
     UINT16 data_offset = 0;
@@ -62,7 +62,7 @@ static bool nv_write(ESYS_CONTEXT *ectx) {
         LOG_ERR("Failed to write NVRAM public area at index 0x%X",
                 ctx.nv_index);
         free(nv_public);
-        return false;
+        return tool_rc_general_error;
     }
 
     if (ctx.offset + ctx.data_size > nv_public->nvPublic.dataSize) {
@@ -70,14 +70,14 @@ static bool nv_write(ESYS_CONTEXT *ectx) {
                 " defined space: %u.",
                 ctx.offset, ctx.data_size, nv_public->nvPublic.dataSize);
         free(nv_public);
-        return false;
+        return tool_rc_general_error;
     }
     free(nv_public);
 
     UINT32 max_data_size;
     res = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
     if (!res) {
-        return false;
+        return tool_rc_general_error;
     }
 
     if (max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
@@ -93,7 +93,7 @@ static bool nv_write(ESYS_CONTEXT *ectx) {
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &nv_index);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     // Convert TPMI_RH_PROVISION ctx.hierarchy to an ESYS_TR
@@ -108,7 +108,7 @@ static bool nv_write(ESYS_CONTEXT *ectx) {
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     printf("shandle1: 0x%X\n", shandle1);
@@ -129,7 +129,7 @@ static bool nv_write(ESYS_CONTEXT *ectx) {
         if (rval != TPM2_RC_SUCCESS) {
             LOG_ERR("Failed to write NV area at index 0x%X", ctx.nv_index);
             LOG_PERR(Tss2_Sys_NV_Write, rval);
-            return false;
+            return tool_rc_from_tpm(rval);
         }
 
         LOG_INFO("Success to write NV area at index 0x%x (%d) offset 0x%x.",
@@ -139,7 +139,7 @@ static bool nv_write(ESYS_CONTEXT *ectx) {
         data_offset += nv_write_data.size;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -279,12 +279,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.data_size = (UINT16)bytes;
     }
 
-    result = nv_write(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = nv_write(ectx);
 
 out:
 

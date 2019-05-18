@@ -187,14 +187,15 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
     return true;
 }
 
-static bool create_ak(ESYS_CONTEXT *ectx) {
+static tool_rc create_ak(ESYS_CONTEXT *ectx) {
+
+    tool_rc rc = tool_rc_general_error;
 
     TPML_PCR_SELECTION creation_pcr = { .count = 0 };
     TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC *out_public;
     TPM2B_PRIVATE *out_private;
     TPM2B_PUBLIC inPublic = TPM2B_EMPTY_INIT;
-    bool retval = false;
 
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
@@ -285,6 +286,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
                 out_private, out_public, &loaded_sha1_key_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Load, rval);
+        rc = tool_rc_from_tpm(rval);
         goto out;
     }
 
@@ -293,6 +295,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
     rval = Esys_TR_GetName(ectx, loaded_sha1_key_handle, &key_name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_GetName, rval);
+        rc = tool_rc_from_tpm(rval);
         goto nameout;
     }
 
@@ -341,7 +344,7 @@ static bool create_ak(ESYS_CONTEXT *ectx) {
         }
     }
 
-    retval = true;
+    rc = tool_rc_success;
 
 nameout:
     free(key_name);
@@ -351,7 +354,7 @@ out:
 out_session:
     tpm2_session_close(&session);
 
-    return retval;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -483,5 +486,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    return create_ak(ectx) ? tool_rc_success : tool_rc_general_error;
+    return create_ak(ectx);
 }

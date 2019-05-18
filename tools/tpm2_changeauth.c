@@ -61,7 +61,7 @@ struct changeauth_ctx {
 
 static changeauth_ctx ctx;
 
-static bool change_auth(ESYS_CONTEXT *ectx,
+static tool_rc change_auth(ESYS_CONTEXT *ectx,
         struct auth *pwd, const char *desc,
         ESYS_TR auth_handle) {
 
@@ -81,30 +81,30 @@ static bool change_auth(ESYS_CONTEXT *ectx,
                 new_auth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HierarchyChangeAuth, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     LOG_INFO("Successfully changed hierarchy for %s", desc);
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool change_hierarchy_auth(ESYS_CONTEXT *ectx) {
+static tool_rc change_hierarchy_auth(ESYS_CONTEXT *ectx) {
 
     // change owner, endorsement and lockout auth.
-    bool result = true;
+    tool_rc result = tool_rc_success;
     if (ctx.flags.w || ctx.flags.W) {
-        result &= change_auth(ectx, &ctx.auths.owner,
+        result |= change_auth(ectx, &ctx.auths.owner,
                 "Owner", ESYS_TR_RH_OWNER);
     }
 
     if (ctx.flags.e || ctx.flags.E) {
-        result &= change_auth(ectx, &ctx.auths.endorse,
+        result |= change_auth(ectx, &ctx.auths.endorse,
                 "Endorsement", ESYS_TR_RH_ENDORSEMENT);
     }
 
     if (ctx.flags.l || ctx.flags.L) {
-        result &= change_auth(ectx, &ctx.auths.lockout,
+        result |= change_auth(ectx, &ctx.auths.lockout,
                 "Lockout", ESYS_TR_RH_LOCKOUT);
     }
 
@@ -112,7 +112,9 @@ static bool change_hierarchy_auth(ESYS_CONTEXT *ectx) {
 }
 
 
-static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
+static tool_rc process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
+
+    tool_rc rc = tool_rc_general_error;
 
     /* always run this, so we pick up the default empty password session */
     bool result = tpm2_auth_util_from_optarg(NULL, ctx.owner_auth_str,
@@ -162,14 +164,15 @@ static bool process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
         goto out;
     }
 
-    result = change_hierarchy_auth(ectx);
+    rc = change_hierarchy_auth(ectx);
+    /* result is true here */
 
 out:
     result &= tpm2_session_close(&ctx.auths.endorse.old);
     result &= tpm2_session_close(&ctx.auths.owner.old);
     result &= tpm2_session_close(&ctx.auths.lockout.old);
 
-    return result;
+    return result ? rc : tool_rc_general_error;
 }
 
 static bool process_tpm_handle_auths(ESYS_CONTEXT *ectx) {
@@ -194,9 +197,9 @@ static bool process_tpm_handle_auths(ESYS_CONTEXT *ectx) {
     return true;
 }
 
-static bool process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
+static tool_rc process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
 
-    bool result = false;
+    tool_rc rc = tool_rc_general_error;
 
     bool ret = process_tpm_handle_auths(ectx);
     if (!ret) {
@@ -218,20 +221,22 @@ static bool process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
                     shandle, ESYS_TR_NONE, ESYS_TR_NONE, new_auth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ChangeAuth, rval);
+        rc = tool_rc_from_tpm(rval);
         goto out;
     }
 
-    result = true;
+    rc = tool_rc_success;
 
 out:
-    result &= tpm2_session_close(&ctx.auths.tpm_handle.old);
+    ret = tpm2_session_close(&ctx.auths.tpm_handle.old);
 
-    return result;
+    return ret ? rc : tool_rc_general_error;
 }
 
-static bool process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
+static tool_rc process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
 
-    bool result = false;
+    tool_rc rc = tool_rc_success;
+
     TPM2B_PRIVATE *outPrivate = NULL;
 
     bool ret = process_tpm_handle_auths(ectx);
@@ -247,11 +252,11 @@ static bool process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
     }
 
     if (!ctx.tpm_handle_parent_context_object.tr_handle) {
-        result = tpm2_util_sys_handle_to_esys_handle(
+        ret = tpm2_util_sys_handle_to_esys_handle(
                 ectx,
                 ctx.tpm_handle_parent_context_object.handle,
                 &ctx.tpm_handle_parent_context_object.tr_handle);
-        if (!result) {
+        if (!ret) {
             goto out;
         }
     }
@@ -266,6 +271,7 @@ static bool process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
 
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ObjectChangeAuth, rval);
+        rc = tool_rc_from_tpm(rval);
         goto out;
     }
 
@@ -276,13 +282,13 @@ static bool process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
         }
     }
 
-    result = true;
+    rc = tool_rc_success;
 
 out:
-    result &= tpm2_session_close(&ctx.auths.tpm_handle.old);
+    ret = tpm2_session_close(&ctx.auths.tpm_handle.old);
     free(outPrivate);
 
-    return result;
+    return ret ? rc : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
@@ -444,17 +450,17 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if (ctx.is_persistent || ctx.is_transient) {
-        result = process_change_tpm_handle_auth(ectx);
+        return process_change_tpm_handle_auth(ectx);
     }
 
     if (ctx.is_nv) {
-        result = process_change_nv_handle_auth(ectx);
+        return process_change_nv_handle_auth(ectx);
     }
 
     if (ctx.flags.w || ctx.flags.e || ctx.flags.l || ctx.flags.W || ctx.flags.E
             || ctx.flags.L) {
-        result = process_change_hierarchy_auth(ectx);
+        return process_change_hierarchy_auth(ectx);
     }
 
-    return result ? tool_rc_success : tool_rc_general_error;
+    return tool_rc_option_error;
 }

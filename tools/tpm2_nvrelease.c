@@ -30,7 +30,7 @@ static tpm_nvrelease_ctx ctx = {
     .hierarchy = TPM2_RH_OWNER
 };
 
-static bool nv_space_release(ESYS_CONTEXT *ectx) {
+static tool_rc nv_space_release(ESYS_CONTEXT *ectx) {
 
     ESYS_TR nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
@@ -38,7 +38,7 @@ static bool nv_space_release(ESYS_CONTEXT *ectx) {
                         &nv_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
@@ -54,13 +54,13 @@ static bool nv_space_release(ESYS_CONTEXT *ectx) {
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to release NV area at index 0x%X", ctx.nv_index);
         LOG_PERR(Esys_NV_UndefineSpace, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     LOG_INFO("Success to release NV area at index 0x%x (%d).", ctx.nv_index,
             ctx.nv_index);
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -126,12 +126,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = nv_space_release(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = nv_space_release(ectx);
 
 out:
     result = tpm2_session_close(&ctx.auth.session);

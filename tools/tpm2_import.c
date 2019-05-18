@@ -19,6 +19,7 @@
 // is an equivalent notion.
 //**********************************************************************;
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -70,7 +71,7 @@ static tpm_import_ctx ctx = {
 };
 
 
-static bool tpm2_readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
+static tool_rc tpm2_readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
                 TPM2B_PUBLIC **public) {
 
     TSS2_RC rval = Esys_ReadPublic(ectx, handle,
@@ -78,10 +79,10 @@ static bool tpm2_readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
                     public, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ReadPublic, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool create_name(TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
@@ -149,7 +150,7 @@ static void create_import_key_private_data(
             encrypted_duplicate_sensitive->size);
 }
 
-static bool do_import(ESYS_CONTEXT *ectx,
+static tool_rc do_import(ESYS_CONTEXT *ectx,
         ESYS_TR phandle,
         TPM2B_ENCRYPTED_SECRET *encrypted_seed,
         TPM2B_DATA *enc_sensitive_key,
@@ -171,13 +172,13 @@ static bool do_import(ESYS_CONTEXT *ectx,
                     imported_private);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Import, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool key_import(
+static tool_rc key_import(
         ESYS_CONTEXT *ectx,
         TPM2B_PUBLIC *parent_pub,
         ESYS_TR phandle,
@@ -245,7 +246,7 @@ static bool key_import(
             &encrypted_seed);
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");
-        return false;
+        return tool_rc_general_error;
     }
 
     TPMT_SYM_DEF_OBJECT *sym_alg = &parent_pub->publicArea.parameters.rsaDetail.symmetric;
@@ -415,12 +416,12 @@ static tool_rc check_options(void) {
     return rc;
 }
 
-static bool openssl_import(ESYS_CONTEXT *ectx) {
+static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
 
     bool free_ppub = false;
+    tool_rc rc = tool_rc_general_error;
 
     tpm2_loaded_object parent_ctx;
-    bool rc = false;
 
     /*
      * Load the parent public file, or read it from the TPM if not specified.
@@ -434,16 +435,19 @@ static bool openssl_import(ESYS_CONTEXT *ectx) {
 
     TPM2B_PUBLIC ppub = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC *parent_pub = NULL;
+
+    tool_rc tmp_rc = tool_rc_general_error;
     if (ctx.parent_key_public_file) {
         result = files_load_public(ctx.parent_key_public_file, &ppub);
         parent_pub = &ppub;
     } else {
-        result = tpm2_readpublic(ectx, parent_ctx.tr_handle, &parent_pub);
+        tmp_rc = tpm2_readpublic(ectx, parent_ctx.tr_handle, &parent_pub);
         free_ppub = true;
+        result = tmp_rc == tool_rc_success;
     }
     if (!result) {
         LOG_ERR("Failed loading parent key public.");
-        return false;
+        return tmp_rc;
     }
 
     TPM2B_SENSITIVE private = TPM2B_EMPTY_INIT;
@@ -460,7 +464,7 @@ static bool openssl_import(ESYS_CONTEXT *ectx) {
                 tpm2_alg_util_flags_hash);
         if (alg == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid name hashing algorithm, got\"%s\"", ctx.name_alg);
-            return false;
+            return tool_rc_general_error;
         }
         public.publicArea.nameAlg = alg;
     } else {
@@ -499,7 +503,7 @@ static bool openssl_import(ESYS_CONTEXT *ectx) {
         result = tpm2_util_string_to_uint32(ctx.attrs, obj_attrs);
         if (!result) {
             LOG_ERR("Invalid object attribute, got\"%s\"", ctx.attrs);
-            return false;
+            return tool_rc_general_error;
         }
 
         tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
@@ -511,7 +515,7 @@ static bool openssl_import(ESYS_CONTEXT *ectx) {
         result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
         if (!result) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
-            return false;
+            return tool_rc_general_error;
         }
 
         const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -524,7 +528,7 @@ static bool openssl_import(ESYS_CONTEXT *ectx) {
         &ctx.parent.session, false);
     if (!result) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        return false;
+        return tool_rc_general_error;
     }
 
     /*
@@ -542,9 +546,10 @@ static bool openssl_import(ESYS_CONTEXT *ectx) {
     }
 
     TPM2B_PRIVATE *imported_private = NULL;
-    result = key_import(ectx, parent_pub, parent_ctx.tr_handle,
+    tmp_rc = key_import(ectx, parent_pub, parent_ctx.tr_handle,
                 &private, &public, &imported_private);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto keyout;
     }
 
@@ -566,7 +571,7 @@ static bool openssl_import(ESYS_CONTEXT *ectx) {
      */
     tpm2_util_public_to_yaml(&public, NULL);
 
-    rc = true;
+    rc = tool_rc_success;
 keyout:
     free(imported_private);
 out:
@@ -595,29 +600,29 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
     return result;
 }
 
-static bool tpm_import(ESYS_CONTEXT *ectx) {
+static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
 
-    bool result = false;
+    tool_rc rc = tool_rc_general_error;
 
     TPM2B_DATA enc_key = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE duplicate;
     TPM2B_ENCRYPTED_SECRET encrypted_seed;
-    TPM2B_PRIVATE *imported_private;
+    TPM2B_PRIVATE *imported_private = NULL;
     tpm2_loaded_object parent_object_context;
     TPMT_SYM_DEF_OBJECT sym_alg;
 
-    result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
                                 &parent_object_context);
     if (!result) {
-      return false;
+      return tool_rc_general_error;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
         &ctx.parent.session, false);
     if (!result) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        return false;
+        return tool_rc_general_error;
     }
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
@@ -667,7 +672,7 @@ static bool tpm_import(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
-    result = do_import(
+    tool_rc tmp_rc = do_import(
             ectx,
             parent_object_context.tr_handle,
             &encrypted_seed,
@@ -676,10 +681,12 @@ static bool tpm_import(ESYS_CONTEXT *ectx) {
             &public,
             &sym_alg,
             &imported_private);
-
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out;
     }
+
+    assert(imported_private);
 
     result = files_save_private(imported_private, ctx.private_key_file);
     free(imported_private);
@@ -689,8 +696,15 @@ static bool tpm_import(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
+    rc = tool_rc_success;
+
 out:
-    return tpm2_session_close(&ctx.parent.session);
+    result = tpm2_session_close(&ctx.parent.session);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -701,8 +715,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool result = !ctx.import_tpm ?
-        openssl_import(ectx) : tpm_import(ectx);
-
-    return result ? tool_rc_success : tool_rc_general_error;
+    return ctx.import_tpm ?
+        tpm_import(ectx) : openssl_import(ectx);
 }

@@ -34,7 +34,7 @@ static tpm_nvreadlock_ctx ctx = {
     .hierarchy = TPM2_RH_OWNER
 };
 
-static bool nv_readlock(ESYS_CONTEXT *ectx) {
+static tool_rc nv_readlock(ESYS_CONTEXT *ectx) {
 
     ESYS_TR nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
@@ -42,7 +42,7 @@ static bool nv_readlock(ESYS_CONTEXT *ectx) {
                         &nv_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
@@ -50,7 +50,7 @@ static bool nv_readlock(ESYS_CONTEXT *ectx) {
                             ctx.auth.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     rval = Esys_NV_ReadLock(ectx, hierarchy, nv_handle,
@@ -58,10 +58,10 @@ static bool nv_readlock(ESYS_CONTEXT *ectx) {
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to lock NVRAM area at index 0x%X" , ctx.nv_index);
         LOG_PERR(Esys_NV_ReadLock, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -115,10 +115,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int rc = tool_rc_general_error;
-    bool result;
+    tool_rc rc = tool_rc_general_error;
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
             &ctx.auth.session, false);
     if (!result) {
         LOG_ERR("Invalid handle authorization, got \"%s\"",
@@ -126,12 +125,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
        goto out;
     }
 
-    result = nv_readlock(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = nv_readlock(ectx);
 
 out:
     result = tpm2_session_close(&ctx.auth.session);

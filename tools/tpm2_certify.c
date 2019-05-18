@@ -55,11 +55,11 @@ static tpm_certify_ctx ctx = {
     .sig_fmt = signature_format_tss,
 };
 
-static bool get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
+static tool_rc get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
                             TPMI_ALG_PUBLIC *type) {
 
     TSS2_RC rval;
-    bool ret = true;
+    tool_rc rc = tool_rc_general_error;
     TPM2B_PUBLIC *out_public;
     TPM2B_NAME *name;
     TPM2B_NAME *qualified_name;
@@ -70,27 +70,28 @@ static bool get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ReadPublic, rval);
         *type = TPM2_ALG_ERROR;
-        ret = false;
+        rc = tool_rc_from_tpm(rval);
         goto out;
     }
 
     *type = out_public->publicArea.type;
+    rc = tool_rc_success;
 
 out:
     free(out_public);
     free(name);
     free(qualified_name);
 
-    return ret;
+    return rc;
 }
 
-static bool set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
+static tool_rc set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
         TPMI_ALG_HASH halg, TPMT_SIG_SCHEME *scheme) {
 
     TPM2_ALG_ID type;
-    bool result = get_key_type(ectx, key_handle, &type);
-    if (!result) {
-        return false;
+    tool_rc rc = get_key_type(ectx, key_handle, &type);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     switch (type) {
@@ -112,10 +113,10 @@ static bool set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
         return false;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool certify_and_save_data(ESYS_CONTEXT *ectx) {
+static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval;
 
@@ -125,11 +126,11 @@ static bool certify_and_save_data(ESYS_CONTEXT *ectx) {
     };
 
     TPMT_SIG_SCHEME scheme;
-    bool result = set_scheme(ectx, ctx.key.object.tr_handle, ctx.halg,
+    tool_rc rc = set_scheme(ectx, ctx.key.object.tr_handle, ctx.halg,
                     &scheme);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("No suitable signing scheme!");
-        return false;
+        return rc;
     }
 
     TPM2B_ATTEST *certify_info;
@@ -140,7 +141,7 @@ static bool certify_and_save_data(ESYS_CONTEXT *ectx) {
                             ctx.object.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get session handle for TPM object");
-        return false;
+        return tool_rc_general_error;
     }
 
     ESYS_TR shandle2 = tpm2_auth_util_get_shandle(ectx,
@@ -148,7 +149,7 @@ static bool certify_and_save_data(ESYS_CONTEXT *ectx) {
                             ctx.key.session);
     if (shandle2 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get session handle for key");
-        return false;
+        return tool_rc_general_error;
     }
 
     rval = Esys_Certify(ectx, ctx.object.object.tr_handle,
@@ -158,23 +159,29 @@ static bool certify_and_save_data(ESYS_CONTEXT *ectx) {
                         &signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Eys_Certify, rval);
-        return false;
+        rc = tool_rc_from_tpm(rval);
+        return rc;
     }
 
     /* serialization is safe here, since it's just a byte array */
-    result = files_save_bytes_to_file(ctx.file_path.attest,
+    bool result = files_save_bytes_to_file(ctx.file_path.attest,
             certify_info->attestationData, certify_info->size);
     if (!result) {
         goto out;
     }
 
     result = tpm2_convert_sig_save(signature, ctx.sig_fmt, ctx.file_path.sig);
+    if (!result) {
+        goto out;
+    }
+
+    rc = tool_rc_success;
 
 out:
     free(certify_info);
     free(signature);
 
-    return result;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -283,12 +290,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = certify_and_save_data(ectx);
-    if (!result) {
-        goto out;
-    }
+    rc = certify_and_save_data(ectx);
 
-    rc = tool_rc_success;
 out:
 
     result = tpm2_session_close(&ctx.key.session);

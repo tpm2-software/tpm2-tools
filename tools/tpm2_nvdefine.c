@@ -41,7 +41,7 @@ static tpm_nvdefine_ctx ctx = {
     .size = TPM2_MAX_NV_BUFFER_SIZE,
 };
 
-static int nv_space_define(ESYS_CONTEXT *ectx) {
+static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
 
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
 
@@ -60,7 +60,7 @@ static int nv_space_define(ESYS_CONTEXT *ectx) {
     if (ctx.policy_file) {
         public_info.nvPublic.authPolicy.size  = BUFFER_SIZE(TPM2B_DIGEST, buffer);
         if(!files_load_bytes_from_path(ctx.policy_file, public_info.nvPublic.authPolicy.buffer, &public_info.nvPublic.authPolicy.size )) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -75,7 +75,7 @@ static int nv_space_define(ESYS_CONTEXT *ectx) {
                     ctx.hierarchy.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     rval = Esys_NV_DefineSpace(ectx, auth_handle,
@@ -84,12 +84,12 @@ static int nv_space_define(ESYS_CONTEXT *ectx) {
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to define NV area at index 0x%X", ctx.nvIndex);
         LOG_PERR(Esys_NV_DefineSpace, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     LOG_INFO("Success to define NV area at index 0x%x (%d).", ctx.nvIndex, nvHandle);
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -196,12 +196,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    result = nv_space_define(ectx);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
+    rc = nv_space_define(ectx);
 
 out:
     result = tpm2_session_close(&ctx.hierarchy.session);

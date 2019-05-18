@@ -42,16 +42,15 @@ struct tpm_load_ctx {
 
 static tpm_load_ctx ctx;
 
-int load (ESYS_CONTEXT *ectx) {
+tool_rc load (ESYS_CONTEXT *ectx) {
 
-    int ret = 0;
-    TPM2_RC rval;
+    TSS2_RC rval;
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
                             ctx.parent.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return -1;
+        return tool_rc_general_error;
     }
 
     rval = Esys_Load(ectx, ctx.context_object.tr_handle,
@@ -60,7 +59,7 @@ int load (ESYS_CONTEXT *ectx) {
     if (rval != TPM2_RC_SUCCESS)
     {
         LOG_PERR(Eys_Load, rval);
-        return -1;
+        return tool_rc_from_tpm(rval);
     }
 
     if (ctx.out_name_file) {
@@ -70,19 +69,17 @@ int load (ESYS_CONTEXT *ectx) {
         rval = Esys_TR_GetName(ectx, ctx.handle, &nameExt);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_TR_GetName, rval);
-            ret = -1;
-            goto done;
+            return tool_rc_from_tpm(rval);
         }
 
-        if(!files_save_bytes_to_file(ctx.out_name_file, nameExt->name, nameExt->size)) {
-            ret = -2;
-        }
-
-    done:
+        bool result = files_save_bytes_to_file(ctx.out_name_file, nameExt->name, nameExt->size);
         free(nameExt);
+        if (!result) {
+            return tool_rc_general_error;
+        }
     }
 
-    return ret;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -171,8 +168,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    int tmp_rc = load(ectx);
-    if (tmp_rc) {
+    tool_rc tmp_rc = load(ectx);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out;
     }
 

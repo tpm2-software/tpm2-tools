@@ -48,20 +48,22 @@ static tpm_encrypt_decrypt_ctx ctx = {
     .mode = TPM2_ALG_NULL,
 };
 
-static bool readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
+static tool_rc readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
 
     TSS2_RC rval = Esys_ReadPublic(ectx, ctx.object.context.tr_handle,
                       ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                       public, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ReadPublic, rval);
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
+static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
+
+    tool_rc rc = tool_rc_general_error;
 
     TPM2B_MAX_BUFFER *out_data;
     TPM2B_IV *iv_out;
@@ -78,7 +80,7 @@ static bool encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
                             ctx.object.session);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return tool_rc_general_error;
     }
 
     TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.object.context.tr_handle,
@@ -98,22 +100,29 @@ static bool encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
         } else {
             LOG_PERR(Esys_EncryptDecrypt, rval);
         }
-        return false;
+        return tool_rc_from_tpm(rval);
     }
 
     bool result = files_save_bytes_to_file(ctx.out_file_path, out_data->buffer,
             out_data->size);
-
-    if (result) {
-        result = ctx.iv.out ? files_save_bytes_to_file(ctx.iv.out,
-                                iv_out->buffer,
-                                iv_out->size) : true;
+    if (!result) {
+        goto out;
     }
 
+    result = ctx.iv.out ? files_save_bytes_to_file(ctx.iv.out,
+                                iv_out->buffer,
+                                iv_out->size) : true;
+    if (!result) {
+        goto out;
+    }
+
+    rc = tool_rc_success;
+
+out:
     free(out_data);
     free(iv_out);
 
-    return result;
+    return rc;
 }
 
 static void parse_iv(char *value) {
@@ -224,8 +233,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.mode == TPM2_ALG_NULL) {
 
         TPM2B_PUBLIC *public;
-        result = readpub(ectx, &public);
-        if (!result) {
+        rc = readpub(ectx, &public);
+        if (rc != tool_rc_success) {
             goto out;
         }
 
@@ -263,12 +272,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_WARN("Using a weak IV, try specifying an IV");
     }
 
-    result = encrypt_decrypt(ectx, &iv);
-    if (!result) {
-        goto out;
-    }
+    rc = encrypt_decrypt(ectx, &iv);
 
-    rc = tool_rc_success;
 out:
     result = tpm2_session_close(&ctx.object.session);
     if (!result) {
