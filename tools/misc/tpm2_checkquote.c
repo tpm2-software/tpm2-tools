@@ -206,25 +206,25 @@ out:
     return result;
 }
 
-static bool init() {
+static tool_rc init(void) {
 
     /* check flags for mismatches */
     if (!(ctx.pubkey_file_path && ctx.flags.sig && ctx.flags.msg && ctx.flags.halg)) {
         LOG_ERR(
                 "--pubkey (-c), --msg (-m), --halg (-g) and --sig (-s) are required");
-        return false;
+        return tool_rc_option_error;
     }
 
     TPM2B_ATTEST *msg = NULL;
     TPML_PCR_SELECTION pcrSel;
     tpm2_pcrs pcrs;
-    bool return_value = false;
+    tool_rc return_value = tool_rc_general_error;
 
     if (ctx.flags.msg) {
         msg = message_from_file(ctx.msg_file_path);
         if (!msg) {
             /* message_from_file() logs specific error no need to here */
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -282,7 +282,7 @@ static bool init() {
     tpm2_util_hexdump(ctx.msgHash.buffer, ctx.msgHash.size);
     tpm2_tool_output("\n");
 
-    return_value = true;
+    return_value = tool_rc_success;
 
 err:
     free(msg);
@@ -361,22 +361,22 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 	UNUSED(ectx);
 	UNUSED(flags);
 
     /* initialize and process */
-    bool res = init();
-    if (!res) {
-        return 1;
+    tool_rc rc = init();
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    res = verify_signature();
+    bool res = verify_signature();
     if (!res) {
         LOG_ERR("Verify signature failed!");
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return 0;
+    return tool_rc_success;
 }

@@ -90,8 +90,6 @@ tpm2_getcap \--capability properties-fixed
 tpm2_getcap -l
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

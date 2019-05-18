@@ -126,11 +126,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     bool result;
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
 
     if (!ctx.context_file || ctx.context_file[0] == '\0') {
         ctx.context_file = "primary.ctx";
@@ -175,12 +175,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
     tpm2_tool_output("context-file: %s\n", ctx.context_file);
 
-    rc = 0;
+    rc = tool_rc_success;
 
 out:
     result = tpm2_session_close(&ctx.parent.session);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

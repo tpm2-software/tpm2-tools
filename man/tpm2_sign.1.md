@@ -128,8 +128,6 @@ tpm2_sign -Q -c key.ctx -g sha256 -D data.in.digest -f plain -s data.out.signed
 openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

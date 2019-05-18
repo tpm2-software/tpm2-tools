@@ -50,8 +50,6 @@ tpm2_getrandom -o random.out 20
 tpm2_getrandom 8
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

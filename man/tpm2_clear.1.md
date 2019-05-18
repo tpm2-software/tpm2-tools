@@ -50,8 +50,6 @@ tpm2_clear -L oldlockoutpasswd
 tpm2_clear -p
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

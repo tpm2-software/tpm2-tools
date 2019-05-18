@@ -72,8 +72,6 @@ tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -b 0x2000A
 tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -b ownerread|ownerwrite|policywrite -p 1a1b1c
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

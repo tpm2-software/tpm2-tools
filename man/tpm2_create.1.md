@@ -125,8 +125,6 @@ tpm2_create -C parent.ctx  -K def456 -G keyedhash -i seal.dat -u obj.pub -r obj.
 tpm2_create -C primary.ctx -G rsa2048 -u obj.pub -r obj.priv -o obj.ctx
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

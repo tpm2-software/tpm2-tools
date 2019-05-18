@@ -182,23 +182,23 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     bool result;
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
 
     if (!ctx.object.context_arg) {
         LOG_ERR("Expected a context file or handle, got none.");
-        return -1;
+        return tool_rc_option_error;
     }
 
     ctx.data.size = sizeof(ctx.data.buffer);
     result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
         &ctx.data.size, ctx.data.buffer);
     if (!result) {
-        return false;
+        return rc;
     }
 
     result = tpm2_util_object_load(ectx, ctx.object.context_arg,
@@ -268,11 +268,11 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 out:
     result = tpm2_session_close(&ctx.object.session);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

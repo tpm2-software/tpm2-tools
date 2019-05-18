@@ -75,11 +75,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return pcr_extend(ectx) != true;
+    return pcr_extend(ectx) ?
+            tool_rc_success : tool_rc_general_error;
 }
 
 void tpm2_tool_onexit(void) {

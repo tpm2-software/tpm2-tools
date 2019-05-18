@@ -95,8 +95,6 @@ locality for a discrete nor firmware TPM.
 As for TPM simulator, there is no [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd) interface to change locality.
 For now, one can set locality with TPM simulator, without [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd).
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

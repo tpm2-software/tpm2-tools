@@ -120,7 +120,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -129,14 +129,14 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         bool ok = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, ctx.property,
                 TPM2_MAX_CAP_HANDLES, &capability_data);
         if (!ok) {
-            return 1;
+            return tool_rc_general_error;
         }
 
         TPML_HANDLE *handles = &capability_data->data.handles;
-        int retval = flush_contexts_tpm2(ectx, handles->handle,
-                                    handles->count) != true;
+        bool result = flush_contexts_tpm2(ectx, handles->handle,
+                                    handles->count);
         free(capability_data);
-        return retval;
+        return result ? tool_rc_success : tool_rc_general_error;
     }
 
     /* handle from a session file */
@@ -145,19 +145,20 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (!s) {
             LOG_ERR("Failed to load session from path: %s",
                     ctx.session.path);
-            return 1;
+            return tool_rc_general_error;
         }
 
         tpm2_session_close(&s);
 
-        return 0;
+        return tool_rc_success;
     }
 
     bool result = tpm2_util_object_load(ectx, ctx.context_arg,
                 &ctx.context_object);
     if (!result) {
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return flush_contexts_tr(ectx, &ctx.context_object.tr_handle, 1) != true;
+    result = flush_contexts_tr(ectx, &ctx.context_object.tr_handle, 1);
+    return result ? tool_rc_success : tool_rc_general_error;
 }

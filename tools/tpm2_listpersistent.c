@@ -104,18 +104,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     TPMS_CAPABILITY_DATA *capabilityData = NULL;
-    int rc = 0;
+    tool_rc rc = tool_rc_general_error;
     bool ret = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
                                 TPM2_PERSISTENT_FIRST, TPM2_MAX_CAP_HANDLES,
                                 &capabilityData);
     if (!ret) {
         LOG_ERR("Failed to read TPM capabilities.");
-        rc = 1;
         goto out;
     }
 
@@ -125,7 +124,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         TPM2_HANDLE objectHandle = capabilityData->data.handles.handle[i];
         if (read_public(ectx, objectHandle, &outPublic)) {
             free(outPublic);
-            rc = 2;
             goto out;
         }
 
@@ -138,15 +136,17 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                 || (ctx.type == TPM2_ALG_KEYEDHASH && kh_scheme != ctx.scheme)
                 || (ctx.type == TPM2_ALG_SYMCIPHER && sym_scheme != ctx.scheme)) {
             /* Skip, filter me out */
-            goto cont;
+            free(outPublic);
+            continue;
         }
 
         tpm2_tool_output("- handle: 0x%x\n", objectHandle);
         tpm2_util_public_to_yaml(outPublic, "  ");
         tpm2_tool_output("\n");
-    cont:
         free(outPublic);
     }
+
+    rc = tool_rc_success;
 
 out:
     free(capabilityData);

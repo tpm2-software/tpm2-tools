@@ -63,8 +63,6 @@ tpm2_pcrextend 4:sha=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15,sha256:b5bb9d8014a
 tpm2_pcrextend 4:sha=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15 7:sha256:b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

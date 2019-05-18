@@ -99,8 +99,6 @@ tpm2_getmanufec -e abc123 -w abc123 -P passwd -H 0x81010001 -G rsa -O -N -U -E E
 tpm2_getmanufec -e 1a1b1c -w 1a1b1c -P 123abc -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

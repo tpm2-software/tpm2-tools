@@ -349,11 +349,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 /**
  * Check all options and report as many errors as possible via LOG_ERR.
  * @return
- *  0 on success, -1 on failure.
+ *  tool_rc indicating error.
  */
-static int check_options(void) {
+static tool_rc check_options(void) {
 
-    int rc = 0;
+    tool_rc rc = tool_rc_success;
 
     /* Check the tpm import specific options */
     if(ctx.import_tpm) {
@@ -361,13 +361,13 @@ static int check_options(void) {
         if(!ctx.policy) {
             LOG_ERR("Expected imported key policy to be specified via \"-L\","
                     " missing option.");
-            rc = -1;
+            rc = tool_rc_option_error;
         }
 
         if(!ctx.input_seed_file) {
             LOG_ERR("Expected SymSeed to be specified via \"-s\","
                     " missing option.");
-            rc = -1;
+            rc = tool_rc_option_error;
         }
 
         /* If a key file is specified we choose aes else null
@@ -383,7 +383,7 @@ static int check_options(void) {
         if (!ctx.key_type) {
             LOG_ERR("Expected key type to be specified via \"-G\","
                     " missing option.");
-            rc = -1;
+            rc = tool_rc_option_error;
         }
     }
 
@@ -391,43 +391,42 @@ static int check_options(void) {
     if (!ctx.input_key_file) {
         LOG_ERR("Expected to be imported key data to be specified via \"-i\","
                 " missing option.");
-        rc = -1;
+        rc = tool_rc_option_error;
     }
 
     if (!ctx.public_key_file) {
         LOG_ERR("Expected output public file missing, specify \"-u\","
                 " missing option.");
-        rc = -1;
+        rc = tool_rc_option_error;
     }
 
     if (!ctx.private_key_file) {
         LOG_ERR("Expected output private file missing, specify \"-r\","
                 " missing option.");
-        rc = -1;
+        rc = tool_rc_option_error;
     }
 
     if (!ctx.parent_ctx_arg) {
         LOG_ERR("Expected parent key to be specified via \"-C\","
                 " missing option.");
-        rc = -1;
+        rc = tool_rc_option_error;
     }
 
     return rc;
 }
 
-static int openssl_import(ESYS_CONTEXT *ectx) {
+static bool openssl_import(ESYS_CONTEXT *ectx) {
 
-    bool result;
     bool free_ppub = false;
 
     tpm2_loaded_object parent_ctx;
-    int rc = 1;
+    bool rc = false;
 
     /*
      * Load the parent public file, or read it from the TPM if not specified.
      * We need this information for encrypting the protection seed.
      */
-    result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
                                 &parent_ctx);
     if (!result) {
       goto out;
@@ -567,7 +566,7 @@ static int openssl_import(ESYS_CONTEXT *ectx) {
      */
     tpm2_util_public_to_yaml(&public, NULL);
 
-    rc = 0;
+    rc = true;
 keyout:
     free(imported_private);
 out:
@@ -596,7 +595,7 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
     return result;
 }
 
-static int tpm_import(ESYS_CONTEXT *ectx) {
+static bool tpm_import(ESYS_CONTEXT *ectx) {
 
     bool result = false;
 
@@ -611,14 +610,14 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
     result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
                                 &parent_object_context);
     if (!result) {
-      return 1;
+      return false;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
         &ctx.parent.session, false);
     if (!result) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        return 1;
+        return false;
     }
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
@@ -691,22 +690,19 @@ static int tpm_import(ESYS_CONTEXT *ectx) {
     }
 
 out:
-    result = tpm2_session_close(&ctx.parent.session);
-
-    return result ? 0 : 1;
+    return tpm2_session_close(&ctx.parent.session);
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
-    int rc;
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    rc = check_options();
+    tool_rc rc = check_options();
     if (rc) {
-        return 1;
+        return rc;
     }
 
-    if(!ctx.import_tpm) {
-        return openssl_import(ectx);
-    }
-    return tpm_import(ectx);
+    bool result = !ctx.import_tpm ?
+        openssl_import(ectx) : tpm_import(ectx);
+
+    return result ? tool_rc_success : tool_rc_general_error;
 }

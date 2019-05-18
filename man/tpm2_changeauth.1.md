@@ -124,8 +124,6 @@ tpm2_policycommandcode -S session.ctx -c $TPM2_NV_ChangeAuth -o policy.nvchange
 tpm2_changeauth -P session:session.ctx -p newindexauth -c $NVIndex
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

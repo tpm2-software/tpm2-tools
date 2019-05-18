@@ -84,8 +84,6 @@ tpm2_startauthsession --policy-session -S session.ctx -k primary.handle
 
 For new objects, its best to use all serialized handles.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

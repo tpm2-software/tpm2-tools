@@ -150,14 +150,15 @@ static bool init(ESYS_CONTEXT *context) {
     return true;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     bool result = init(context);
     if (!result) {
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return read_public_and_save(context) != true;
+    return read_public_and_save(context) ?
+           tool_rc_success : tool_rc_general_error;
 }

@@ -116,8 +116,6 @@ tpm2_createprimary -a o -G rsa2048:aes128cfb -g sha256 -o prim.ctx \
 ```
 
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

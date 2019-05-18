@@ -246,23 +246,23 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
 	UNUSED(flags);
 
     /* initialize and process */
     bool res = init(context);
     if (!res) {
-        return 1;
+        return tool_rc_general_error;
     }
 
     res = verify_signature(context);
     if (!res) {
         LOG_ERR("Verify signature failed!");
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return 0;
+    return tool_rc_success;
 }
 
 void tpm2_tool_onexit(void) {

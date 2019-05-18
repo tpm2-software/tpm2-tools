@@ -270,7 +270,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -292,12 +292,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 out:
 
     result = tpm2_session_close(&ctx.key.session);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

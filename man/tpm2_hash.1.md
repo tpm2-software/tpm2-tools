@@ -61,8 +61,6 @@ sign.
 tpm2_hash -H e -g sha1 -o hash.bin -t ticket.bin data.txt
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

@@ -59,17 +59,17 @@ bool is_input_option_args_valid(void) {
     return true;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     TPM2B_DIGEST *policy_digest = NULL;
     bool retval = is_input_option_args_valid();
     if (!retval) {
-        return -1;
+        return tool_rc_option_error;
     }
 
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
     tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path, false);
     if (!s) {
         return rc;
@@ -100,13 +100,13 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 
 out:
 
     result = tpm2_session_close(&s);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     free(policy_digest);

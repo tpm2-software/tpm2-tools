@@ -232,9 +232,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
 
     /* opts is unused, avoid compiler warning */
     UNUSED(flags);
@@ -243,26 +243,26 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             && (!ctx.key.ctx_arg)
             && !ctx.flags.i && !ctx.flags.o) {
         LOG_ERR("Expected options c and C and i and o.");
-        return -1;
+        return tool_rc_option_error;
     }
 
     bool res = tpm2_util_object_load(ectx, ctx.ctx_arg,
                                 &ctx.ctx_obj);
     if (!res) {
-        return 1;
+        return tool_rc_general_error;
     }
 
     res = tpm2_util_object_load(ectx, ctx.key.ctx_arg,
                 &ctx.key_ctx_obj);
     if (!res) {
-        return 1;
+        return tool_rc_general_error;
     }
 
     res = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
             &ctx.key.session, false);
     if (!res) {
         LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.key.auth_str);
-        return 1;
+        return tool_rc_general_error;
     }
 
     res = tpm2_auth_util_from_optarg(NULL, ctx.endorse.auth_str,
@@ -277,17 +277,17 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 
 out:
     res = tpm2_session_close(&ctx.key.session);
     if (!res) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     res = tpm2_session_close(&ctx.endorse.session);
     if (!res) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

@@ -147,23 +147,15 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int rc = 1;
-
     bool res = hash_and_save(context);
-    if (!res) {
-        goto out;
-    }
 
-    rc = 0;
-
-out:
     if (ctx.input_file) {
         fclose(ctx.input_file);
     }
 
-    return rc;
+    return res ? tool_rc_success : tool_rc_general_error;
 }

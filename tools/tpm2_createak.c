@@ -433,24 +433,24 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     if (ctx.flags.f && !ctx.ak.out.pub_file) {
         LOG_ERR("Please specify an output file name when specifying a format");
-        return -1;
+        return tool_rc_option_error;
     }
 
     if (!ctx.ak.out.ctx_file) {
         LOG_ERR("Expected option -c");
-        return -1;
+        return tool_rc_option_error;
     }
 
     bool result = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
                                 &ctx.ek.ek_ctx);
     if (!result) {
-        return 1;
+        return tool_rc_general_error;
     }
 
     if (!ctx.ek.ek_ctx.tr_handle) {
@@ -458,7 +458,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                     ctx.ek.ek_ctx.handle, &ctx.ek.ek_ctx.tr_handle);
         if (!res) {
             LOG_ERR("Converting ek_ctx TPM2_HANDLE to ESYS_TR");
-            return 1;
+            return tool_rc_general_error;
         }
     }
 
@@ -467,7 +467,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!result) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"",
             ctx.ek.auth_str);
-        return 1;
+        return tool_rc_general_error;
     }
 
     tpm2_session *tmp;
@@ -475,7 +475,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             &tmp, true);
     if (!result) {
         LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
-        return 1;
+        return tool_rc_general_error;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -483,5 +483,5 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    return !create_ak(ectx);
+    return create_ak(ectx) ? tool_rc_success : tool_rc_general_error;
 }

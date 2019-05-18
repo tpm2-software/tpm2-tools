@@ -11,6 +11,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_duplicate_ctx tpm_duplicate_ctx;
 struct tpm_duplicate_ctx {
@@ -222,10 +223,10 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
     return result;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
     bool result;
     TPMT_SYM_DEF_OBJECT sym_alg;
     TPM2B_DATA in_key;
@@ -313,7 +314,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto free_out;
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 
 free_out:
     free(out_key);
@@ -323,7 +324,7 @@ out:
 
     result = tpm2_session_close(&ctx.object.session);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

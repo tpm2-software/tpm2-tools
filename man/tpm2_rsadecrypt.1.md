@@ -64,8 +64,6 @@ The key referenced by key-context is **required** to be:
 tpm2_rsadecrypt -C 0x81010001 -i encrypted.in -o plain.out
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

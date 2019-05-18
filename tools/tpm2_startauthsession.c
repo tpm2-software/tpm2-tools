@@ -78,11 +78,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
 
     tpm2_session *s = NULL;
 
@@ -95,7 +95,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (!ctx.output.path) {
         LOG_ERR("Expected option -S");
-        return -1;
+        return tool_rc_option_error;
     }
 
     if (ctx.session.key_context_arg_str) {
@@ -158,5 +158,6 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return tpm2_session_close(&s) != true;
+    return tpm2_session_close(&s) ?
+            tool_rc_success : tool_rc_general_error;
 }

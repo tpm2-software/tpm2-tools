@@ -932,19 +932,19 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     if (options.list && options.capability_string) {
         LOG_ERR("Cannot specify -l with -c.");
-        return -1;
+        return tool_rc_option_error;
     }
 
     /* list known capabilities, ie -l option */
     if (options.list) {
         print_cap_map();
-        return 0;
+        return tool_rc_success;
     }
 
     /* List a capability, ie -c <arg> option */
@@ -954,13 +954,13 @@ int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     ret = sanity_check_capability_opts();
     if (ret == 1) {
         LOG_ERR("Invalid capability string. See --help.\n");
-        return -1;
+        return tool_rc_option_error;
     }
     /* get requested capability from TPM, dump it to stdout */
     if (!get_tpm_capability_all(context, &capability_data))
-        return 1;
+        return tool_rc_general_error;
 
     bool result = dump_tpm_capability(&capability_data->data);
     free(capability_data);
-    return !result;
+    return result ? tool_rc_success : tool_rc_general_error;
 }

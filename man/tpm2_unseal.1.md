@@ -77,8 +77,6 @@ used for simple PCR authentication policies. For more complex policies the
 tools should be run in an execution environment that keeps the session context
 alive and pass that session using the **\--input-session-handle** option.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

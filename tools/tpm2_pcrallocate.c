@@ -110,19 +110,19 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
                 &ctx.auth.session, false);
     if (!result) {
         LOG_ERR("Invalid platform authorization format");
-        return 1;
+        return tool_rc_general_error;
     }
 
     result = pcr_allocate(ectx);
 
     result &= tpm2_session_close(&ctx.auth.session);
 
-    return (result == true)? 0 : 1;
+    return result ? tool_rc_success : tool_rc_general_error;
 }

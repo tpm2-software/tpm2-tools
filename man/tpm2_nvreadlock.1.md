@@ -48,8 +48,6 @@ is released on subsequent restart of the machine.
 tpm2_nvreadlock -x 0x1500016 -a 0x40000001 -P passwd
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

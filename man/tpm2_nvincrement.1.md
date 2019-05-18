@@ -55,8 +55,6 @@
 tpm2_nvincrement -x 0x1500016 -P "index"
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

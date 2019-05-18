@@ -120,8 +120,6 @@ openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
 tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

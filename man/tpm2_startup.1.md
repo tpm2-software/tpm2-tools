@@ -38,8 +38,6 @@ tpm2_startup -c
 Typically a Resource Manager (like [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd)) or low-level/boot software will
 have already sent this command.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

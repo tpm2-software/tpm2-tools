@@ -167,8 +167,6 @@ dd if=/dev/urandom of=sym.key bs=1 count=16
 tpm2_loadexternal -a n -Gaes -r sym.key
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

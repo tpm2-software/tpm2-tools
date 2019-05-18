@@ -60,8 +60,6 @@ tpm2_pcrevent data
 tpm2_pcrevent -x 8 data
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

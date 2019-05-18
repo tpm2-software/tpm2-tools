@@ -50,8 +50,6 @@ tpm2_pcrallocate
 tpm2_pcrallocate -P abc sha1:7,8,9,10,16,17,18,19+sha256:all
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

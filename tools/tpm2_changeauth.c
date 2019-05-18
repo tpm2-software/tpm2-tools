@@ -415,7 +415,7 @@ static bool is_input_option_args_valid(void) {
     return true;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -425,7 +425,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                 &ctx.tpm_handle_context_object);
         if (!result) {
             LOG_ERR("Invalid TPM object handle");
-            return -1;
+            return tool_rc_option_error;
         }
     }
 
@@ -434,13 +434,13 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                 &ctx.tpm_handle_parent_context_object);
         if (!result) {
             LOG_ERR("Invalid TPM object handle parent");
-            return -1;
+            return tool_rc_option_error;
         }
     }
 
     result = is_input_option_args_valid();
     if (!result) {
-        return -1;
+        return tool_rc_option_error;
     }
 
     if (ctx.is_persistent || ctx.is_transient) {
@@ -456,6 +456,5 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         result = process_change_hierarchy_auth(ectx);
     }
 
-    /* true is success, coerce to 0 for program success */
-    return result == false;
+    return result ? tool_rc_success : tool_rc_general_error;
 }

@@ -49,8 +49,6 @@ tpm2_listpersistent
 tpm2_listpersistent -g sha256 -G ecc
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

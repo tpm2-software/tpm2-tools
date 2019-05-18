@@ -51,8 +51,6 @@ PCR 0 to 15 are not resettable (being part of SRTM). PCR 16 to 22 are mostly
 reserved for DRTM or dedicated to specific localities and might not
 be resettable depending on current TPM locality.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

@@ -65,8 +65,6 @@ As a consequence, it will just be considered as "additional input".
 The "additional input" is as defined in [NIST SP800-90A](
 https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-90.pdf)
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

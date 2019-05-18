@@ -49,8 +49,6 @@ is recommended.
 * This command will set the policy session's command code to **TPM_CC_Duplicate** which enables duplication role of
 the policy.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

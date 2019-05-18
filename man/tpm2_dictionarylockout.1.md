@@ -62,8 +62,6 @@ tpm2_dictionarylockout -c -p passwd
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7 -p passwd
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

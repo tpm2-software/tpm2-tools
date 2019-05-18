@@ -77,8 +77,6 @@ tpm2_createprimary -o primary.ctx
 tpm2_startauthsession \--policy-session -k primary.ctx -S mysession.ctx
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)
