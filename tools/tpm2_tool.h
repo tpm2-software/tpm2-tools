@@ -8,6 +8,18 @@
 
 #include "tpm2_options.h"
 
+typedef enum tool_rc tool_rc;
+enum tool_rc {
+    /* do not reorder or change, part of returned codes to exit */
+    /* maps to common/returns.md */
+    tool_rc_success = 0,
+    tool_rc_general_error,
+    tool_rc_option_error,
+    tool_rc_auth_error,
+    tool_rc_tcti_error,
+    tool_rc_unsupported
+};
+
 extern bool output_enabled;
 
 /**
@@ -31,11 +43,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
  * @param flags
  *  Flags that tools may wish to respect.
  * @return
- *  0 on success
- *  1 on failure
- * -1 to show usage
+ *  A tool_rc indicating status.
  */
-int tpm2_tool_onrun (ESYS_CONTEXT *ectx, tpm2_option_flags flags) __attribute__((weak));
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) __attribute__((weak));
 
 /**
  * Called when the tool is exiting, useful for cleanup.

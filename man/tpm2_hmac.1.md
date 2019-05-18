@@ -61,8 +61,6 @@ tpm2_hmac -C key.context -P abc123 -o hash.out << data.in
 cat data.in | tpm2_hmac -C 0x81010002 -o hash.out
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

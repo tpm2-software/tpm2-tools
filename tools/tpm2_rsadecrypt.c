@@ -129,11 +129,11 @@ static bool init(ESYS_CONTEXT *ectx) {
                                 &ctx.key.object);
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
     bool result = init(ectx);
     if (!result) {
         goto out;
@@ -151,12 +151,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 out:
 
     result = tpm2_session_close(&ctx.key.session);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

@@ -13,67 +13,64 @@
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
 
-typedef struct tpm_gettestresult_ctx tpm_gettestresult_ctx;
-
-struct tpm_gettestresult_ctx {
-    TPM2B_MAX_BUFFER*    output;
-    TPM2_RC              status;
-};
-
-static tpm_gettestresult_ctx ctx;
-
-static int tpm_gettestresult(ESYS_CONTEXT *ectx) {
-    TSS2_RC rval = Esys_GetTestResult(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &(ctx.output), &(ctx.status));
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_SelfTest, rval);
-        return 3;
-    }
-    int retcode;
-
-    tpm2_tool_output("status: ");
-    print_yaml_indent(1);
-    if(ctx.status){
-        if((ctx.status & TPM2_RC_TESTING) == TPM2_RC_TESTING) {
-            tpm2_tool_output("testing");
-            retcode = 2;
-        } else {
-            tpm2_tool_output("failed");
-            retcode = 1;
-        }
-    } else {
-        tpm2_tool_output("success");
-        retcode = 0;
-    }
-
-    if(ctx.output->size > 0){
-        tpm2_tool_output("\ndata: ");
-        print_yaml_indent(1);
-        tpm2_util_hexdump(ctx.output->buffer, ctx.output->size);
-    }
-    tpm2_tool_output("\n");
-
-    free(ctx.output);
-
-    return retcode;
-}
-
-static bool on_arg(int argc, char **argv){
-    UNUSED(argv);
-    if (argc > 0) {
-        LOG_ERR("No argument expected, got: %d", argc);
-        return false;
-    }
-
-    return true;
-}
-
 bool tpm2_tool_onstart(tpm2_options **opts) {
-    *opts = tpm2_options_new(NULL, 0, NULL, NULL, on_arg, 0);
+
+    *opts = tpm2_options_new(NULL, 0, NULL, NULL, NULL, 0);
 
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
-    return tpm_gettestresult(ectx);
+
+    tool_rc rc = tool_rc_general_error;
+
+    TPM2_RC status;
+    TPM2B_MAX_BUFFER *output = NULL;
+
+    /*
+     * If TPM2_SelfTest() has not been executed and a testable function has not been tested, testResult will be
+     * TPM_RC_NEEDS_TEST. If TPM2_SelfTest() has been received and the tests are not complete,
+     * testResult will be TPM_RC_TESTING. If testing of all functions is complete without functional failures,
+     * testResult will be TPM_RC_SUCCESS. If any test failed, testResult will be TPM_RC_FAILURE.
+     */
+    TSS2_RC rval = Esys_GetTestResult(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &output, &status);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_SelfTest, rval);
+        return tool_rc_general_error;
+    }
+
+    tpm2_tool_output("status: ");
+    print_yaml_indent(1);
+
+    status &= TPM2_RC_TESTING;
+
+    switch (status) {
+        case TPM2_RC_SUCCESS:
+            tpm2_tool_output("success");
+            break;
+        case TPM2_RC_TESTING:
+            tpm2_tool_output("testing");
+            break;
+        case TPM2_RC_NEEDS_TEST:
+            tpm2_tool_output("needs-test");
+            break;
+        default:
+            LOG_ERR("Unknown testing result, got: 0x%x", status);
+            goto out;
+    }
+
+    if(output->size > 0){
+        tpm2_tool_output("\ndata: ");
+        print_yaml_indent(1);
+        tpm2_util_hexdump(output->buffer, output->size);
+    }
+    tpm2_tool_output("\n");
+
+    rc = tool_rc_success;
+out:
+    free(output);
+
+    return rc;
 }

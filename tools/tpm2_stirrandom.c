@@ -79,13 +79,14 @@ static bool load_sensitive(void) {
     return true;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     if (!load_sensitive()) {
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return do_stirrandom(ectx) != true;
+    return do_stirrandom(ectx) ?
+            tool_rc_success : tool_rc_general_error;
 }

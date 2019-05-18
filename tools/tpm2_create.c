@@ -240,24 +240,24 @@ static bool load_sensitive(void) {
             &ctx.in_sensitive.sensitive.data.size, ctx.in_sensitive.sensitive.data.buffer);
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
     bool result;
 
     TPMA_OBJECT attrs = DEFAULT_ATTRS;
 
     if(!ctx.parent_ctx_path) {
         LOG_ERR("Must specify parent object via -C.");
-        return -1;
+        return tool_rc_option_error;
     }
 
     if (ctx.flags.i) {
         if (ctx.flags.G) {
             LOG_ERR("Cannot specify -G and -i together.");
-            return -1;
+            return tool_rc_option_error;
         }
 
         bool res = load_sensitive();
@@ -321,12 +321,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 
 out:
     result = tpm2_session_close(&ctx.parent.session);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

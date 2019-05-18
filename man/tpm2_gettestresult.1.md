@@ -42,11 +42,6 @@ tpm2_gettestresult
 
 This command is the one of the few commands authorized to be submitted to TPM when in failure mode.
 
-# RETURNS
-
-- 0 on success
-- 1 on failure
-- 2 on testing
-- 3 on TPM failure
+[returns](common/returns.md)
 
 [footer](common/footer.md)

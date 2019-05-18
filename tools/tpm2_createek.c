@@ -354,12 +354,12 @@ static void set_default_hierarchy(void) {
     ctx.objdata.in.hierarchy = TPM2_RH_ENDORSEMENT;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     size_t i;
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
 
     tpm2_session **sessions[] = {
        &ctx.auth.ek.session,
@@ -369,7 +369,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.flags.f && !ctx.out_file_path) {
         LOG_ERR("Please specify an output file name when specifying a format");
-        return -1;
+        return tool_rc_option_error;
     }
 
     bool ret;
@@ -430,7 +430,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 
 out:
 
@@ -438,7 +438,7 @@ out:
         tpm2_session *s = *sessions[i];
         result = tpm2_session_close(&s);
         if (!result) {
-            rc = 1;
+            rc = tool_rc_success;
         }
     }
 

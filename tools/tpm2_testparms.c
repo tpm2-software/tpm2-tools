@@ -21,7 +21,8 @@ struct tpm_testparms_ctx {
 
 static tpm_testparms_ctx ctx;
 
-static int tpm_testparms(ESYS_CONTEXT *ectx) {
+static tool_rc tpm_testparms(ESYS_CONTEXT *ectx) {
+
     TSS2_RC rval = Esys_TestParms(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &(ctx.inputalg));
     if (rval != TSS2_RC_SUCCESS) {
         if ((rval & (TPM2_RC_P | TPM2_RC_1)) == (TPM2_RC_P | TPM2_RC_1)){
@@ -59,13 +60,13 @@ static int tpm_testparms(ESYS_CONTEXT *ectx) {
                     LOG_ERR("Unsupported algorithm specification");
                     break;
             }
-            return 2;
+            return tool_rc_unsupported;
         }
         LOG_PERR(Esys_TestParms, rval);
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return 0;
+    return tool_rc_success;
 }
 
 static bool on_arg(int argc, char **argv){
@@ -93,7 +94,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 

@@ -171,7 +171,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -179,15 +179,15 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         pctx.common_policy_options.policy_session_type == TPM2_SE_TRIAL) {
         LOG_ERR("Provide the file name to store the resulting "
                 "policy digest");
-        return 1;
+        return tool_rc_option_error;
     }
 
     bool result = parse_policy_type_specific_command(ectx);
     if (!result) {
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return 0;
+    return tool_rc_success;
 }
 
 void tpm2_onexit(void) {

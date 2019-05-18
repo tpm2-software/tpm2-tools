@@ -67,8 +67,6 @@ These options control creating the policy authorization session:
 tpm2_createpolicy \--policy-pcr -L 0x4:0 -o policy.file -F pcr0.bin
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

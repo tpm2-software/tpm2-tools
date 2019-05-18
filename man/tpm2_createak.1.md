@@ -127,8 +127,6 @@ tpm2_createak -C 0x81010001 -k ak.ctx -p ak.pub -n ak.name
 tpm2_evictcontrol -c 0x81010002 -o ek.handle
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

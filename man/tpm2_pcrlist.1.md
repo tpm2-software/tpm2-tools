@@ -93,8 +93,6 @@ with the maximum length of a bank.
 On most TPMs, it means that this tool can dump up to 24 PCRs
 at once.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

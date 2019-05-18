@@ -82,8 +82,6 @@ Then, it uses a *policy* session to unseal some data stored in the object.
     tpm2_flushcontext -H "$handle"
     ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

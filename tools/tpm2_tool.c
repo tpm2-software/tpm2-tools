@@ -77,14 +77,14 @@ static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
  */
 int main(int argc, char *argv[]) {
 
-    int ret = 1;
+    int ret = tool_rc_general_error;
 
     tpm2_options *tool_opts = NULL;
     if (tpm2_tool_onstart) {
         bool res = tpm2_tool_onstart(&tool_opts);
         if (!res) {
             LOG_ERR("retrieving tool options");
-            return 1;
+            return tool_rc_general_error;
         }
     }
 
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     TSS2_TCTI_CONTEXT *tcti = NULL;
     tpm2_option_code rc = tpm2_handle_options(argc, argv, tool_opts, &flags, &tcti);
     if (rc != tpm2_option_code_continue) {
-        ret = rc == tpm2_option_code_err ? 1 : 0;
+        ret = rc == tpm2_option_code_err ? tool_rc_general_error : tool_rc_success;
         goto free_opts;
     }
 
@@ -115,6 +115,7 @@ int main(int argc, char *argv[]) {
     if (tcti) {
         ectx = ctx_init(tcti);
         if (!ectx) {
+            ret = tool_rc_tcti_error;
             goto free_opts;
         }
     }
@@ -134,16 +135,17 @@ int main(int argc, char *argv[]) {
     /*
      * Call the specific tool, all tools implement this function instead of
      * 'main'.
-     * rc 1 = failure
-     * rc 0 = success
-     * rc -1 = show usage
      */
     ret = tpm2_tool_onrun(ectx, flags);
-    if (ret > 0) {
-        LOG_ERR("Unable to run %s", argv[0]);
-    } else if (ret < 0) {
-        tpm2_print_usage(argv[0], tool_opts);
-        ret = 0;
+    switch(ret) {
+        case tool_rc_success:
+            /* nothing to do here */
+            break;
+        case tool_rc_option_error:
+            tpm2_print_usage(argv[0], tool_opts);
+            break;
+        default:
+            LOG_ERR("Unable to run %s", argv[0]);
     }
 
     /*

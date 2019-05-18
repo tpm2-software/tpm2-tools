@@ -90,8 +90,6 @@ tpm2_createprimary -o primary.ctx
 tpm2_evictcontrol -a o -c primary.ctx -o primary.handle
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

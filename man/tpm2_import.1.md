@@ -153,8 +153,6 @@ tpm2_import -C parent.ctx -i key.dup -u key.pub -r key.priv -L policy.dat
   * Parents with a SHA1 hash algorithm currently fail. See bug
     [#119](https://github.com/tpm2-software/tpm2-tools/issues/1119) for details.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

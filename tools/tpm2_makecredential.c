@@ -262,20 +262,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
     if (!ctx.flags.e || !ctx.flags.n || !ctx.flags.o || !ctx.flags.s) {
         LOG_ERR("Expected options e, n, o and s.");
-        return -11;
+        return tool_rc_option_error;
     }
-
-    printf("make credential has ESAPI CTX: %p", ectx);
 
     // Run it outside of a TPM
     bool result = ectx ? make_credential_and_save(ectx) :
             make_external_credential_and_save();
 
-    return result != true;
+    return result ? tool_rc_success : tool_rc_general_error;
 }

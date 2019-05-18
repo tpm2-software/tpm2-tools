@@ -59,8 +59,6 @@ If _FILE_ is not specified, it defaults to stdin.
 tpm2_nvwrite -x 0x1500016 -P "index" -f nv.data
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

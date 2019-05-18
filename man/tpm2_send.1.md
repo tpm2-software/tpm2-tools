@@ -42,8 +42,6 @@ tpm2_send < tpm2-command.bin > tpm2-response.bin
 tpm2_send < tpm2-command.bin -o tpm2-response.bin
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

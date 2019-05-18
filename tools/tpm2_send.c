@@ -144,11 +144,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
  * in network byte order (big-endian). We output the response in the same
  * form.
  */
-int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int ret = 1;
+    tool_rc ret = tool_rc_general_error;
 
     UINT32 size;
     tpm2_command_header *command;
@@ -188,7 +188,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         LOG_ERR("Failed writing response to output file.");
     }
 
-    ret = 0;
+    ret = tool_rc_success;
 
 out:
     free(command);

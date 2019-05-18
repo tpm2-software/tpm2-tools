@@ -45,8 +45,6 @@ tpm2_testparms rsa
 tpm2_testparms ecc256:ecdsa:aes128ctr
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

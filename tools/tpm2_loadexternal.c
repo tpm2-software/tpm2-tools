@@ -141,20 +141,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result;
-
     if (!ctx.public_key_path && !ctx.private_key_path) {
         LOG_ERR("Expected either -r or -u options");
-        return 1;
+        return tool_rc_option_error;
     }
 
     if (!ctx.context_file_path) {
         LOG_ERR("Expected -o option");
-        return 1;
+        return tool_rc_option_error;
     }
 
     /*
@@ -170,7 +168,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!ctx.key_type && ctx.private_key_path) {
         LOG_ERR("Expected key type via -G option when specifying private"
                 " portion of object");
-        return 1;
+        return tool_rc_option_error;
     }
 
     TPMI_ALG_PUBLIC alg = TPM2_ALG_NULL;
@@ -182,7 +180,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (alg == TPM2_ALG_ERROR) {
             LOG_ERR("Unsupported key type, got: \"%s\"",
                     ctx.key_type);
-            return 1;
+            return tool_rc_general_error;
         }
     }
 
@@ -204,10 +202,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * object is provided.
      */
     if (ctx.attrs) {
-        result = tpm2_attr_util_obj_from_optarg(ctx.attrs,
+        bool result = tpm2_attr_util_obj_from_optarg(ctx.attrs,
             &pub.publicArea.objectAttributes);
         if (!result) {
-            return 1;
+            return tool_rc_general_error;
         }
     } else {
         /*
@@ -267,10 +265,10 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     };
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
+    bool result = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
     if (!result) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.auth);
-        return 1;
+        return tool_rc_general_error;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -283,7 +281,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         load_status = tpm2_openssl_load_private(ctx.private_key_path, ctx.passin,
                 alg, &pub, &priv);
         if (load_status == lprc_error) {
-            return 1;
+            return tool_rc_general_error;
         }
     }
 
@@ -298,7 +296,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!tpm2_openssl_did_load_public(load_status) && !ctx.public_key_path) {
         LOG_ERR("Only loaded a private key, expected public key in either"
                 " private PEM or -r option");
-        return 1;
+        return tool_rc_general_error;
 
     } else if(tpm2_openssl_did_load_public(load_status) && ctx.public_key_path) {
         LOG_WARN("Loaded a public key from the private portion"
@@ -312,17 +310,16 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.public_key_path) {
         result = tpm2_openssl_load_public(ctx.public_key_path, alg, &pub);
         if (!result) {
-            return 1;
+            return tool_rc_general_error;
         }
     }
 
-    int ret = 0;
+    int rc = tool_rc_general_error;
     TPM2B_NAME *name = NULL;
     char *ctx_file = NULL;
     result = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
                 &name);
     if (!result) {
-        ret = 1;
         goto out;
     }
 
@@ -332,14 +329,12 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     result = files_get_unique_name(ctx.context_file_path, &ctx_file);
     if (!result) {
-        ret = 1;
         goto out;
     }
 
     result = files_save_tpm_context_to_path(ectx, ctx.handle,
                 ctx_file);
     if (!result) {
-        ret = 1;
         goto out;
     }
 
@@ -352,12 +347,15 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         result = files_save_bytes_to_file(ctx.name_path, name->name,
                     name->size);
         if(!result) {
-            ret = 1;
+            goto out;
         }
     }
+
+    rc = tool_rc_success;
+
 out:
     free(name);
     free(ctx_file);
 
-    return ret;
+    return rc;
 }

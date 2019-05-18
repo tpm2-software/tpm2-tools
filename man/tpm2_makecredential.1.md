@@ -46,8 +46,6 @@ the **none** TCTI option.
 tpm2_makecredential -e <keyFile> -s <secFile> -n <hexString> -o <outFile>
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

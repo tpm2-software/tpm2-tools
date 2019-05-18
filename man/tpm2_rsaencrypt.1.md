@@ -55,8 +55,6 @@ The key referenced by key-context is **required** to be:
 tpm2_rsaencrypt -C 0x81010001 -o encrypted.out
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

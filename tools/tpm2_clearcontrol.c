@@ -131,7 +131,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -140,14 +140,14 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!res) {
         LOG_ERR("Invalid authorization, got\"%s\"",
             ctx.auth.auth_str);
-        return 1;
+        return tool_rc_general_error;
     }
 
     if (!ctx.disable_clear && ctx.rh == ESYS_TR_RH_LOCKOUT) {
         LOG_ERR("Only platform hierarchy handle can be specified"
             " for CLEAR operation on disableClear");
-        return 1;
+        return tool_rc_general_error;
     }
 
-    return clearcontrol(ectx) != true;
+    return clearcontrol(ectx) ? tool_rc_success : tool_rc_general_error;
 }

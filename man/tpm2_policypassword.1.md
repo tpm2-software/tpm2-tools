@@ -84,8 +84,6 @@ tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt \
 tpm2_flushcontext -S session.dat
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

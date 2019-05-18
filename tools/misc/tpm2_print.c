@@ -354,7 +354,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(ectx);
     UNUSED(flags);
 
@@ -369,7 +369,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         break;
     default:
         LOG_ERR("Must specify a file type with -t option");
-        return 1;
+        return tool_rc_option_error;
     }
 
     FILE* fd = stdin;
@@ -379,7 +379,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         fd = fopen(ctx.file.path, "rb");
         if(!fd) {
             LOG_ERR("Could not open file %s", ctx.file.path);
-            return 1;
+            return tool_rc_general_error;
         }
     }
     else {
@@ -394,5 +394,5 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         fclose(fd);
     }
 
-    return res ? 0 : 1;
+    return res ? tool_rc_success : tool_rc_general_error;
 }

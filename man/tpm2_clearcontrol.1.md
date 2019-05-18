@@ -58,8 +58,6 @@ tpm2_clearcontrol -a l s
 tpm2_clearcontrol -a p c
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

@@ -68,8 +68,6 @@ tpm2_flushcontext -S session.dat
 
 If multiple options are specified (**-t**, **-s** or **-l**), only the last option will be taken into account.
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

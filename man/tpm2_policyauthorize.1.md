@@ -135,8 +135,6 @@ echo $unsealed
 tpm2_flushcontext -S session.ctx
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

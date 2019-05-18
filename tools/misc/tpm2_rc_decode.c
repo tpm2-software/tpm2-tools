@@ -54,7 +54,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
     UNUSED(ectx);
@@ -62,5 +62,5 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     const char *e = tpm2_error_str(ctx.rc);
     tpm2_tool_output("%s\n", e);
 
-    return 0;
+    return tool_rc_success;
 }

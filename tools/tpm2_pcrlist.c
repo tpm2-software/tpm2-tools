@@ -186,7 +186,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
@@ -199,7 +199,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
                 ctx.flags.L ? "-L" : "",
                 ctx.flags.s ? "-s" : ""
         );
-        return -1;
+        return tool_rc_option_error;
     }
 
     if (ctx.flags.o) {
@@ -231,6 +231,5 @@ error:
         fclose(ctx.output_file);
     }
 
-    /* 0 on success 1 otherwise */
-    return !success;
+    return success ? tool_rc_success : tool_rc_general_error;
 }

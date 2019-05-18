@@ -98,11 +98,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int rc = 1;
+    tool_rc rc = tool_rc_general_error;
     bool evicted = false;
 
     bool result = tpm2_util_object_load(ectx, ctx.context_arg,
@@ -184,7 +184,7 @@ int tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    rc = 0;
+    rc = tool_rc_success;
 
 out:
 
@@ -192,13 +192,13 @@ out:
         TSS2_RC rval = Esys_TR_Close(ectx, &out_tr);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_TR_Close, rc);
-            rc = 1;
+            rc = tool_rc_general_error;
         }
     }
 
     result = tpm2_session_close(&ctx.auth.session);
     if (!result) {
-        rc = 1;
+        rc = tool_rc_general_error;
     }
 
     return rc;

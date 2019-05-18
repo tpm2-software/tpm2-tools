@@ -40,8 +40,6 @@ tpm2_print \--type=TPMS_ATTEST \--file=/path/to/tpm/quote
 cat /path/to/tpm/quote | tpm2_print \--type=TPMS_ATTEST
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

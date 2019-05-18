@@ -87,8 +87,6 @@ tpm2_quote -C 0x8101000a -L sha256:15,16,22 -q abc123 -m quote.out -s sig.out -p
 tpm2_checkquote -c akpub.pem -m quote.out -s sig.out -p pcrs.out -G sha256 -q abc123
 ```
 
-# RETURNS
-
-0 on success or 1 on failure.
+[returns](common/returns.md)
 
 [footer](common/footer.md)

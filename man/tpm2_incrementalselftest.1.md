@@ -34,6 +34,13 @@ algorithms that remains to be tested. This list contains algorithms scheduled fo
 AND algorithms that remains to be tested and not yet scheduled. This can occur for
 instance if all AES mode have not been already tested yet.
 
+# Output
+List of algorithms to be tested (implying scheduled) or remain to be tested (not scheduled) is
+also printed in YAML format.
+
+If none of the specified algorithm is printed, that means both that they are already tested
+AND that these algorithms won't be tested again.
+
 # OPTIONS
 
 This tool accepts no tool specific options.
@@ -69,14 +76,6 @@ also test complete AES mode list AND test ctr mode.
 If an algorithm has already been tested, this command won't permit re-executing the test. Only
 issuing **tpm2_selftest**(1) in full-test mode enabled will force retesting.
 
-# RETURNS
-
-0 on success or 1 on failure.
-
-List of algorithms to be tested (implying scheduled) or remain to be tested (not scheduled) is
-also printed in YAML format.
-
-If none of the specified algorithm is printed, that means both that they are already tested
-AND that these algorithms won't be tested again.
+[returns](common/returns.md)
 
 [footer](common/footer.md)
