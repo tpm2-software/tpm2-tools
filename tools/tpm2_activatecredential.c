@@ -140,7 +140,7 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
     // Set session up
     ESYS_TR sess_handle = tpm2_session_get_handle(session);
 
-    ESYS_TR endorse_shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
+    ESYS_TR endorse_shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
                                 ctx.endorse.session);
     if (endorse_shandle == ESYS_TR_NONE) {
         goto out_session;
@@ -161,7 +161,6 @@ static bool activate_credential_and_output(ESYS_CONTEXT *ectx) {
         goto out_session;
     }
 
-    // NOTE: key_shandle and sess_handle don't seem to match docs
     rval = Esys_ActivateCredential(ectx, ctx.ctx_obj.tr_handle,
             ctx.key_ctx_obj.tr_handle,
             key_shandle, sess_handle, ESYS_TR_NONE,
