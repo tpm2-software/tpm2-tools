@@ -149,7 +149,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"persistent",  required_argument, NULL, 'S'},
       {"pwda",        required_argument, NULL, 'P'},
       {"context",     required_argument, NULL, 'c'},
-      {"input-session-handle",1,         NULL, 'i'},
+      {"input-session-handle", required_argument, NULL, 'i'},
       {NULL,          no_argument,       NULL, '\0'}
     };
 

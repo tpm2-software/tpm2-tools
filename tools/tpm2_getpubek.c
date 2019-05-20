@@ -292,7 +292,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ek-passwd"     , required_argument, NULL, 'P' },
         { "alg"          , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
-        {"input-session-handle",1,            NULL, 'S' },
+        { "input-session-handle", required_argument, NULL, 'S' },
         { "dbg"          , required_argument, NULL, 'd' },
         { "help"         , no_argument,       NULL, 'h' },
     };

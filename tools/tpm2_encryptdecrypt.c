@@ -167,7 +167,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"in-file",      required_argument, NULL, 'I'},
         {"out-file",     required_argument, NULL, 'o'},
         {"key-context",  required_argument, NULL, 'c'},
-        {"input-session-handle",1,         NULL, 'S'},
+        {"input-session-handle", required_argument, NULL, 'S'},
     };
 
     ctx.session_data.sessionHandle = TPM2_RS_PW;

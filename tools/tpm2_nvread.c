@@ -248,7 +248,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "size"        , required_argument, NULL, 's' },
         { "offset"      , required_argument, NULL, 'o' },
         { "handle-passwd", required_argument, NULL, 'P' },
-        { "input-session-handle",1,          NULL, 'S' },
+        { "input-session-handle", required_argument, NULL, 'S' },
         {"set-list",       required_argument, NULL, 'L' },
         {"pcr-input-file", required_argument, NULL, 'F' },
     };

@@ -148,7 +148,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "in-file",      required_argument, NULL, 'I'},
       { "out-file",     required_argument, NULL, 'o'},
       { "key-context",  required_argument, NULL, 'c'},
-      { "input-session-handle",1,         NULL, 'S' },
+      { "input-session-handle", required_argument, NULL, 'S' },
     };
 
     *opts = tpm2_options_new("k:P:I:o:c:S:", ARRAY_LEN(topts), topts,
