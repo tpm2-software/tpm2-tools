@@ -150,7 +150,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"pwda",        required_argument, NULL, 'P'},
       {"context",     required_argument, NULL, 'c'},
       {"input-session-handle", required_argument, NULL, 'i'},
-      {NULL,          no_argument,       NULL, '\0'}
     };
 
     ctx.session_data.sessionHandle = TPM2_RS_PW;
