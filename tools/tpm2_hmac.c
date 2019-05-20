@@ -273,7 +273,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"pwdk",        required_argument, NULL, 'P'},
         {"algorithm",   required_argument, NULL, 'g'},
         {"outfile",     required_argument, NULL, 'o'},
-        {"input-session-handle",1,         NULL, 'S'},
+        {"input-session-handle", required_argument, NULL, 'S'},
     };
 
     ctx.input = stdin;

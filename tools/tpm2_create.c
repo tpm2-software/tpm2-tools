@@ -314,18 +314,18 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      {"parent",1,NULL,'H'},
-      {"pwdp",1,NULL,'P'},
-      {"pwdk",1,NULL,'K'},
-      {"halg",1,NULL,'g'},
-      {"kalg",1,NULL,'G'},
-      {"object-attributes",1,NULL,'A'},
-      {"in-file",1,NULL,'I'},
-      {"policy-file",1,NULL,'L'},
-      {"pubfile",1,NULL,'u'},
-      {"privfile",1,NULL,'r'},
-      {"context-parent",1,NULL,'c'},
-      {"input-session-handle",1,NULL,'S'},
+      { "parent", required_argument, NULL, 'H'},
+      { "pwdp", required_argument, NULL, 'P'},
+      { "pwdk", required_argument, NULL, 'K'},
+      { "halg", required_argument, NULL, 'g'},
+      { "kalg", required_argument, NULL, 'G'},
+      { "object-attributes", required_argument, NULL, 'A'},
+      { "in-file", required_argument, NULL, 'I'},
+      { "policy-file", required_argument, NULL, 'L'},
+      { "pubfile", required_argument, NULL,'u'},
+      { "privfile", required_argument, NULL, 'r'},
+      { "context-parent", required_argument, NULL, 'c'},
+      { "input-session-handle", required_argument, NULL, 'S'},
     };
 
     setbuf(stdout, NULL);
