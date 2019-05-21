@@ -30,7 +30,7 @@ Refer to:
     Specifies the current owner password, defaults to NULL.
     Same formatting as the endorse password value or -e option.
 
-  * **-P**, **--eKPasswd**=_EK\_PASSWORD_
+  * **-P**, **--ek-passwd**=_EK\_PASSWORD_
     Specifies the EK password when created, defaults to NULL.
     Same formatting as the endorse password value or -e option.
 
