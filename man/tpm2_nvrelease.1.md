@@ -25,9 +25,6 @@ defined with tpm2_nvdefine(1).
     * **0x40000001** for **TPM_RH_OWNER**
     * **0x4000000C** for **TPM_RH_PLATFORM**
 
-  * **-s**, **--size**=_SIZE_:
-    specifies the size of data area in bytes.
-
   * **-P**, **--handle-passwd**=_HANDLE\_PASSWORD_:
     specifies the password of authHandle. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
