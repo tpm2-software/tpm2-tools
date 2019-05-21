@@ -48,6 +48,13 @@ These options control the ceritifcation:
     Follows the same formatting guidelines as the object handle password or
     -P option.
 
+  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+    The hash algorithm to use.
+    Algorithms should follow the "formatting standards", see section
+    "Algorithm Specifiers".
+    Also, see section "Supported Hash Algorithms" for a list of supported hash
+    algorithms.
+
   * **-a**, **--attest-file**=_ATTEST\_FILE_:
     Output file name for the attestation data.
 
