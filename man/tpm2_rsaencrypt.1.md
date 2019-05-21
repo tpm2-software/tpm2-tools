@@ -31,20 +31,11 @@ The key referenced by keyHandle is **required** to be:
 
     filename of the key context used for the operation.
 
-  * **-P**, **--pwdk**=_KEY\_PASSWORD_:
-
-    specifies the password of _KEY\_HANDLE_. Passwords should follow the
-    password formatting standards, see section "Password Formatting".
-
   * **-o**, **--out-file**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data. The default is to print an
     xxd compatible hexdump to stdout. If a file is specified, raw binary
     output is performed.
-
-  * **-S**, **--input-session-handle**=_SESSION\_HANDLE_:
-
-    Optional Input session handle from a policy session for authorization.
 
 [common options](common/options.md)
 
