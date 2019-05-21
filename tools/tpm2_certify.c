@@ -267,7 +267,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      {"object-handle", required_argument, NULL, 'H'},
+      {"obj-handle",    required_argument, NULL, 'H'},
       {"key-handle",    required_argument, NULL, 'k'},
       {"pwdo",         required_argument, NULL, 'P'},
       {"pwdk",         required_argument, NULL, 'K'},
