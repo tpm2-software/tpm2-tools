@@ -28,6 +28,11 @@
 
     The output file path, recording the public portion of the object.
 
+  * **-f**, **--format**=_FORMAT_:
+
+    Specify the output format. Valid output formats are:
+    * yaml - output in the YAML file format.
+
 [pubkey options](common/pubkey.md)
 
 [common options](common/options.md)
