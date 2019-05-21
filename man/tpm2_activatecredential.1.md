@@ -35,7 +35,7 @@ These options control the object verification:
     Use _PASSWORD_ for providing an authorization value for the _KEY\_HANDLE_.
     Passwords should follow the "password formatting standards, see section "Password Formatting".
 
-  * **-e**, **--endorse-password**=_ENDORSE\_PASSWORD_:
+  * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
     The endorsement password, optional. Follows the same formating guidelines as the handle password option -P.
 
   * **-f**, **--in-file**=_INPUT\_FILE_:
