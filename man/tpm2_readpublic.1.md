@@ -20,7 +20,7 @@
 
     The loaded object handle to read the public data of.
 
-  * **-c**, **--ak-context**=_OBJECT\_CONTEXT\_FILE_:
+  * **-c**, **--context-object**=_OBJECT\_CONTEXT\_FILE_:
 
     Filename for object context.
 
