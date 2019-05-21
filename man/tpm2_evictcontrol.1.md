@@ -41,6 +41,9 @@ be evicted.
     authorization password, optional. Passwords should follow the
     "password formatting standards, see section "Password Formatting".
 
+  * **-i**, **--input-session-handle**=_SESSION\_HANDLE_:
+    Optional Input session handle from a policy session for authorization.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
