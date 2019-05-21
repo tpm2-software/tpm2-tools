@@ -293,7 +293,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "alg"          , required_argument, NULL, 'g' },
         { "file"         , required_argument, NULL, 'f' },
         { "input-session-handle", required_argument, NULL, 'S' },
-        { "dbg"          , required_argument, NULL, 'd' },
     };
 
     *opts = tpm2_options_new("e:o:H:P:g:f:p:S:d:", ARRAY_LEN(topts), topts,
