@@ -22,6 +22,9 @@ the keyHandle.
 
 These options control the object verification:
 
+  * **-c**, **--context**=_OBJ\_CTX_:
+    _CONTEXT_ of the object associated with the created certificate by CA.
+
   * **-H**, **--handle**=_HANDLE_:
     _HANDLE_ of the object associated with the created certificate by CA.
 
