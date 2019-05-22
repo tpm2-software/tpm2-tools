@@ -204,7 +204,12 @@ test_unit_test_pcr_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_auth_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_auth_util_LDFLAGS  = -Wl,--wrap=Esys_TR_SetAuth \
-                                         -Wl,--wrap=Esys_StartAuthSession
+                                         -Wl,--wrap=Esys_StartAuthSession \
+                                         -Wl,--wrap=fopen \
+                                         -Wl,--wrap=fread \
+                                         -Wl,--wrap=fseek \
+                                         -Wl,--wrap=ftell \
+                                         -Wl,--wrap=fclose
 test_unit_test_tpm2_auth_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_errata_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
