@@ -18,7 +18,7 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
 # OPTIONS
 
-  * **-c**, **--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **--pubkey**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
