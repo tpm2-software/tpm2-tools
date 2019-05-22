@@ -44,7 +44,7 @@ tpm2_pcrreset 16 23
 # NOTES
 
 On operating system's locality (generally locality 0), only PCR 23 can be reset.
-PCR-16 can also be reset on this locality, depending on TPM manufacturers
+PCR 16 can also be reset on this locality, depending on TPM manufacturers
 which could define this PCR as resettable.
 
 PCR 0 to 15 are not resettable (being part of SRTM). PCR 16 to 22 are mostly
