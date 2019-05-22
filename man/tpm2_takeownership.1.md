@@ -4,8 +4,8 @@
 
 # NAME
 
-**tpm2_takeownership**(1) - Insert authorization values for the owner, endorsement
-and lockout authorizations.
+**tpm2_takeownership**(1) - Insert authorization values for the owner, platform,
+endorsement and lockout authorizations.
 
 # SYNOPSIS
 
@@ -22,15 +22,13 @@ sign.
 # OPTIONS
 
   * **-o**, **--owner-passwd**=_OWNER\_PASSWORD_:
-    The new owner authorization value.
 
-    Passwords should follow the password formatting standards, see section
-    "Password Formatting".
+    The new owner authorization value. Passwords should follow the password
+    formatting standards, see section "Password Formatting".
 
   * **-p**, **--platform-passwd**=_PLATFORM\_PASSWORD_:
-    The new platform authorization value.
 
-    The new endorse authorization value. Passwords should follow the same
+    The new platform authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
   * **-e**, **--endorse-passwd**=_ENDORSE\_PASSWORD_:
@@ -40,9 +38,7 @@ sign.
 
   * **-l**, **--lock-passwd**=_LOCKOUT\_PASSWORD_:
 
-    The new lockout authorization value.
-
-    The new endorse authorization value. Passwords should follow the same
+    The new lockout authorization value. Passwords should follow the same
     formatting requirements as the -o option.
 
   * **-O**, **--oldOwnerPasswd**=_OLD\_OWNER\_PASSWORD_:
@@ -67,7 +63,7 @@ sign.
 
   * **-c**, **--clear**:
 
-    Clears the 3 authorizations values with  lockout auth, thus one must specify
+    Clears the 3 authorizations values with lockout auth, thus one must specify
     -L.
 
 [common options](common/options.md)
@@ -78,16 +74,22 @@ sign.
 
 # EXAMPLES
 
-Set owner, endorsement and lockout authorizations to an empty auth value:
+Set owner, platform, endorsement and lockout authorizations to an empty auth value:
 
 ```
 tpm2_takeownership -c -L oldlockoutpasswd
 ```
 
+Set owner, platform, endorsement and lockout authorizations:
+
+```
+tpm2_takeownership -o oldo -p oldp -e olde -l oldl
+```
+
 Set owner, platform, endorsement and lockout authorizations to a new value:
 
 ```
-tpm2_takeownership -o newo -p newp -e newe -l newl -O oldo -P oldP -E olde -L oldl
+tpm2_takeownership -o newo -p newp -e newe -l newl -O oldo -P oldp -E olde -L oldl`
 ```
 
 # RETURNS
