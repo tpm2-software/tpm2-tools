@@ -17,7 +17,7 @@ fi
 
 echo "Performing build with Coverity Scan"
 rm -fr $TRAVIS_BUILD_DIR/cov-int
-./bootstrap && ./configure && make clean
+./bootstrap && ./configure --disable-dependency-tracking && make clean
 cov-build --dir $TRAVIS_BUILD_DIR/cov-int make -j $(nproc)
 
 echo "Collecting Coverity data for submission"

@@ -11,7 +11,7 @@ function get_deps() {
 		pushd tpm2-tss
 		echo "pwd build tss: `pwd`"
 		./bootstrap
-		./configure CFLAGS=-g
+		./configure --disable-dependency-tracking CFLAGS=-g
 		make -j4
 		make install
 		popd
@@ -26,7 +26,7 @@ function get_deps() {
 		pushd tpm2-abrmd
 		echo "pwd build abrmd: `pwd`"
 		./bootstrap
-		./configure CFLAGS=-g
+		./configure --disable-dependency-tracking CFLAGS=-g
 		make -j4
 		make install
 		popd

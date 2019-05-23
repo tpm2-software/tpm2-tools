@@ -54,7 +54,7 @@ fi
 # Do a make distcheck in the root, clear it and than
 # cd to the variant directory.
 if [ "$CC" == "gcc" ]; then
-    ./configure
+    ./configure --disable-dependency-tracking
     make distcheck
     make distclean
 fi
@@ -66,14 +66,14 @@ pushd ./build
 # Run scan-build for gcc only.
 # Scan-build does not work with clang because of asan linking errors.
 if [[ "$CC" == gcc* ]]; then
-    scan-build ../configure --enable-unit $config_flags
+    scan-build ../configure --disable-dependency-tracking --enable-unit $config_flags
     scan-build --status-bugs make -j$(nproc)
 
     # scan-build causes test_tpm2_session to fail, so
     # rebuild after running scan-build.
 fi
 
-../configure --enable-unit $config_flags
+../configure --disable-dependency-tracking --enable-unit $config_flags
 make -j$(nproc)
 make -j$(nproc) check
 
