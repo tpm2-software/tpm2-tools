@@ -190,7 +190,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "input-session-handle",   required_argument,  NULL,   'S' },
     };
 
-    *opts = tpm2_options_new("x:a:s:t:P:I:rwdL:S:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:a:s:t:P:I:L:S:", ARRAY_LEN(topts), topts,
             on_option, NULL, TPM2_OPTIONS_SHOW_USAGE);
 
     return *opts != NULL;
