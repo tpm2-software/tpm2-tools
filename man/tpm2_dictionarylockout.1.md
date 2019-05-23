@@ -13,7 +13,7 @@
 # DESCRIPTION
 
 **tpm2_dictionarylockout**(1) - setup dictionary-attack-lockout parameters or clear
-dictionary-attack-lockout state, if any passwd option is missing, assume NULL.
+dictionary-attack-lockout state, if any password option is missing, assume NULL.
 
 # OPTIONS
 
@@ -51,8 +51,8 @@ dictionary-attack-lockout state, if any passwd option is missing, assume NULL.
 # EXAMPLES
 
 ```
-tpm2_dictionarylockout -c -p passwd
-tpm2_dictionarylockout -s -n 5 -t 6 -l 7 -p passwd
+tpm2_dictionarylockout -c -P password
+tpm2_dictionarylockout -s -n 5 -t 6 -l 7 -P password
 ```
 
 # RETURNS
