@@ -267,12 +267,13 @@ function start_up() {
 
         echo "Running tpm2_startup -c"
         tpm2_startup -c
+    elif [ -n "$TPM2_DEVICE" ]; then
+        export TPM2TOOLS_TCTI="device:$TPM2_DEVICE"
+    elif [ -z "$TPM2TOOLS_TCTI" ]; then
+        echo "No TPM2TOOLS_TCTI defined"
+        exit 1
     else
-        if [ -n "$TPM2_DEVICE" ]; then
-            export TPM2TOOLS_TCTI="device:$TPM2_DEVICE"
-        else
-            export TPM2TOOLS_TCTI="device"
-        fi
+        echo "Using TPM2TOOLS_TCTI $TPM2TOOLS_TCTI"
     fi
 
     echo "Running tpm2_clear"
