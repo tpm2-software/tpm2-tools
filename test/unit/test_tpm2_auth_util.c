@@ -94,27 +94,70 @@ static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **st
     tpm2_session_close(&session);
 }
 
+FILE mocked_file_stream;
+const char *mocked_file_data = "sekretpasswrd";
+
+FILE * __real_fopen(const char *path, const char *mode);
+FILE * __wrap_fopen(const char *path, const char *mode) {
+    if (strcmp(path, "test_tpm2_auth_util_foobar")) {
+        return __real_fopen(path, mode);
+    }
+    return mock_ptr_type(FILE*);
+}
+
+size_t __real_fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+size_t __wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    if (stream != &mocked_file_stream) {
+        return __real_fread(ptr,size,nmemb,stream);
+    }
+    memcpy(ptr, mocked_file_data, size * nmemb);
+    return mock_type(size_t);
+}
+
+long __real_ftell(FILE *stream);
+long __wrap_ftell(FILE *stream) {
+    if (stream != &mocked_file_stream) {
+        return __real_ftell(stream);
+    }
+    return mock_type(long);
+}
+
+int __real_fseek(FILE *stream, long offset, int whence);
+int __wrap_fseek(FILE *stream, long offset, int whence) {
+    if (stream != &mocked_file_stream) {
+        return __real_fseek(stream, offset, whence);
+    }
+    return 0;
+}
+
+int __real_fclose(FILE *stream);
+int __wrap_fclose(FILE *stream) {
+    if (stream != &mocked_file_stream) {
+        return __real_fclose(stream);
+    }
+    return 0;
+}
+
 static void test_tpm2_password_util_from_optarg_file(void **state) {
     UNUSED(state);
 
-    const char *secret = "sekretpasswrd";
-
     tpm2_session *session;
 
-    int fd = open("foobar", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
-    assert_int_not_equal(fd, -1);
+    will_return(__wrap_fopen, &mocked_file_stream);
 
-    int wrok = write(fd, secret, strlen(secret));
-    assert_int_not_equal(wrok, -1);
-    close(fd);
+    will_return(__wrap_fread, (size_t)strlen(mocked_file_data));
 
-    bool res = tpm2_auth_util_from_optarg(NULL, "file:foobar", &session, true);
+    will_return(__wrap_ftell, (long)strlen(mocked_file_data));
+    will_return(__wrap_ftell, (long)strlen(mocked_file_data));
+
+    bool res = tpm2_auth_util_from_optarg(NULL,
+        "file:test_tpm2_auth_util_foobar", &session, true);
     assert_true(res);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
-    assert_int_equal(auth->size, wrok);
-    assert_memory_equal(auth->buffer, secret, wrok);
+    assert_int_equal(auth->size, strlen(mocked_file_data));
+    assert_memory_equal(auth->buffer, mocked_file_data, strlen(mocked_file_data));
 
     tpm2_session_close(&session);
 }
