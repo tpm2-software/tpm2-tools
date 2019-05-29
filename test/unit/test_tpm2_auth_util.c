@@ -100,7 +100,6 @@ const char *mocked_file_data = "sekretpasswrd";
 FILE * __real_fopen(const char *path, const char *mode);
 FILE * __wrap_fopen(const char *path, const char *mode) {
     if (strcmp (path, "test_tpm2_auth_util_foobar")) {
-        printf("REAL CALLED\n");
         return __real_fopen(path, mode);
     }
     return mock_ptr_type(FILE*);
