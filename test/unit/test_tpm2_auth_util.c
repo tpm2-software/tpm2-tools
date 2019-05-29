@@ -110,7 +110,6 @@ size_t __wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
     if (stream != &mocked_file_stream) {
         return __real_fread(ptr,size,nmemb,stream);
     }
-    UNUSED(stream);
     memcpy(ptr, mocked_file_data, size * nmemb);
     return mock_type (size_t);
 }
@@ -120,7 +119,6 @@ long __wrap_ftell(FILE *stream) {
     if (stream != &mocked_file_stream) {
         return __real_ftell(stream);
     }
-    UNUSED(stream);
     return mock_type (long);
 }
 
@@ -129,9 +127,6 @@ int __wrap_fseek(FILE *stream, long offset, int whence) {
     if (stream != &mocked_file_stream) {
         return __real_fseek(stream, offset, whence);
     }
-    UNUSED(stream);
-    UNUSED(offset);
-    UNUSED(whence);
     return 0;
 }
 
@@ -140,7 +135,6 @@ int __wrap_fclose(FILE *stream) {
     if (stream != &mocked_file_stream) {
         return __real_fclose(stream);
     }
-    UNUSED(stream);
     return 0;
 }
 
