@@ -99,7 +99,7 @@ const char *mocked_file_data = "sekretpasswrd";
 
 FILE * __real_fopen(const char *path, const char *mode);
 FILE * __wrap_fopen(const char *path, const char *mode) {
-    if (strcmp (path, "test_tpm2_auth_util_foobar")) {
+    if (strcmp(path, "test_tpm2_auth_util_foobar")) {
         return __real_fopen(path, mode);
     }
     return mock_ptr_type(FILE*);
@@ -111,7 +111,7 @@ size_t __wrap_fread(void *ptr, size_t size, size_t nmemb, FILE *stream) {
         return __real_fread(ptr,size,nmemb,stream);
     }
     memcpy(ptr, mocked_file_data, size * nmemb);
-    return mock_type (size_t);
+    return mock_type(size_t);
 }
 
 long __real_ftell(FILE *stream);
@@ -119,7 +119,7 @@ long __wrap_ftell(FILE *stream) {
     if (stream != &mocked_file_stream) {
         return __real_ftell(stream);
     }
-    return mock_type (long);
+    return mock_type(long);
 }
 
 int __real_fseek(FILE *stream, long offset, int whence);
