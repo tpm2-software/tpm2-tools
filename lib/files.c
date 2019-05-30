@@ -672,9 +672,31 @@ bool files_read_header(FILE *out, uint32_t *version) {
 
 bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
     const char *path, UINT16 *size, BYTE *buf) {
-    bool res;
-    UINT16 original_size = *size;
+    /*
+     * Read from stdin where in size is not fixed or is unknown
+     * Size however cannot be bigger than UINT16_MAX
+     */
+    bool is_stdin_read_complete = false;
+    if (!input_buffer && !path && !*size) {
+        while (!is_stdin_read_complete) {
+            *size += fread(buf, 1, UINT16_MAX, stdin);
+            if (feof(stdin)) {
+                is_stdin_read_complete = true;
+            }
+            if (ferror(stdin)) {
+                LOG_ERR("Failed read from stdin.");
+                return false;
+            }
+            if (*size >= UINT16_MAX) {
+                LOG_ERR("Stdin input bigger than UINT16_MAX");
+                return false;
+            }
+        }
+        return true;
+    }
 
+    UINT16 original_size = *size;
+    bool res;
     if (input_buffer) {
         size_t input_buffer_size = strlen(input_buffer);
         if (path) {
@@ -693,6 +715,8 @@ bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
             res = files_load_bytes_from_path(path, buf, size);
         } else {
             /*
+             * Read from stdin where in size is fixed or known
+             * Size however cannot be bigger than UINT16_MAX
              * Attempt to accurately read the file based on the file size.
              * This may fail on stdin when it's a pipe.
              */
