@@ -39,11 +39,6 @@ struct tpm_encrypt_decrypt_ctx {
         char *in;
         char *out;
     } iv;
-    struct {
-        UINT8 D : 1;
-        UINT8 i : 1;
-        UINT8 X : 1;
-    } flags;
 };
 
 static tpm_encrypt_decrypt_ctx ctx = {
@@ -150,7 +145,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'i':
         ctx.input_path = value;
-        ctx.flags.i = 1;
         break;
     case 'o':
         ctx.out_file_path = value;
