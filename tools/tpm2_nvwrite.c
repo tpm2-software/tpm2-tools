@@ -57,12 +57,12 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
      * from being partially written to the index.
      */
     TPM2B_NV_PUBLIC *nv_public = NULL;
-    bool res = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
-    if (!res) {
+    tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to write NVRAM public area at index 0x%X",
                 ctx.nv_index);
         free(nv_public);
-        return tool_rc_general_error;
+        return rc;
     }
 
     if (ctx.offset + ctx.data_size > nv_public->nvPublic.dataSize) {
@@ -75,7 +75,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
     free(nv_public);
 
     UINT32 max_data_size;
-    res = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
+    bool res = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
     if (!res) {
         return tool_rc_general_error;
     }

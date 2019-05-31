@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_capability.h"
 #include "tpm2_session.h"
 #include "tpm2_auth_util.h"
@@ -27,38 +28,30 @@
  * @param nv_public
  *  The public data structure to store the results in.
  * @return
- *  True on success, false otherwise.
+ *  tool_rc indicating status.
  */
-static inline bool tpm2_util_nv_read_public(ESYS_CONTEXT *context,
+static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
         TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC **nv_public) {
 
-    TSS2_RC rval;
     ESYS_TR tr_object;
-
-    rval = Esys_TR_FromTPMPublic(context, nv_index,
+    tool_rc rc = tpm2_from_tpm_public(context, nv_index,
                                  ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                                  &tr_object);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    rval = Esys_NV_ReadPublic(context, tr_object,
+    rc = tpm2_nv_readpublic(context, tr_object,
                               ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                               nv_public, NULL);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_NV_ReadPublic, rval);
-        return false;
+    tool_rc tmp_rc = tpm2_close(context, &tr_object);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
-    rval = Esys_TR_Close(context, &tr_object);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_NV_ReadPublic, rval);
-        return false;
-    }
-
-    return true;
+    return rc;
 }
+
 
 /**
  * Retrieves the maximum transmission size for an NV buffer by

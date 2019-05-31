@@ -73,11 +73,11 @@ static tool_rc nv_list(ESYS_CONTEXT *context) {
         tpm2_tool_output("0x%x:\n", index);
 
         TPM2B_NV_PUBLIC *nv_public;
-        bool res = tpm2_util_nv_read_public(context, index, &nv_public);
-        if (!res) {
+        tool_rc rc = tpm2_util_nv_read_public(context, index, &nv_public);
+        if (rc != tool_rc_success) {
             LOG_ERR("Failed to read the public part of NV index 0x%X", index);
             free(capabilityData);
-            return tool_rc_general_error;
+            return rc;
         }
         print_nv_public(nv_public);
         free(nv_public);
