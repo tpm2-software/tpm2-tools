@@ -343,14 +343,6 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_verifysignature.1
 endif
 
-if !HAVE_PANDOC
-# If pandoc is not enabled, we want to complain that you need pandoc for make dist,
-# so hook the target and complain.
-dist-hook:
-	@(>&2 echo "You do not have pandoc, a requirement for the distribution of manpages")
-	@exit 1
-endif
-
 MARKDOWN_COMMON_DEPS = \
 	man/common/alg.md \
 	man/common/authorizations.md \
@@ -425,3 +417,9 @@ dist-hook:
 	for f in $(EXTRA_DIST_IGNORE); do \
 		rm -rf `find $(distdir) -name $$f`; \
 	done;
+if !HAVE_PANDOC
+# If pandoc is not enabled, we want to complain that you need pandoc for make dist,
+# so hook the target and complain.
+	@(>&2 echo "You do not have pandoc, a requirement for the distribution of manpages")
+	@exit 1
+endif
