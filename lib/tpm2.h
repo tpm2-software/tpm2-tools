@@ -37,4 +37,15 @@ tool_rc tpm2_readpublic(ESYS_CONTEXT *esysContext,
         TPM2B_NAME **name,
         TPM2B_NAME **qualifiedName);
 
+tool_rc tpm2_getcap(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR shandle1,
+        ESYS_TR shandle2,
+        ESYS_TR shandle3,
+        TPM2_CAP capability,
+        UINT32 property,
+        UINT32 propertyCount,
+        TPMI_YES_NO *moreData,
+        TPMS_CAPABILITY_DATA **capabilityData);
+
 #endif /* LIB_TPM2_H_ */
