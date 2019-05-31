@@ -113,7 +113,7 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
     return true;
 }
 
-static bool set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
+static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     TPM2_HANDLE template_nv_index;
     TPM2_HANDLE nonce_nv_index;
 
@@ -129,7 +129,7 @@ static bool set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     default:
         LOG_ERR("EK template and EK nonce for algorithm type input(%4.4x)"
                 " are not supported!", inPublic->publicArea.type);
-        return false;
+        return tool_rc_general_error;
     }
 
     UINT8* template = NULL;
@@ -137,10 +137,9 @@ static bool set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
 
     // Read EK template
     UINT16 template_size;
-    bool result = tpm2_util_nv_read(ectx, template_nv_index, 0, 0, TPM2_RH_OWNER,
+    tool_rc rc = tpm2_util_nv_read(ectx, template_nv_index, 0, 0, TPM2_RH_OWNER,
             ctx.auth.endorse.session, &template, &template_size);
-    if (!result) {
-        result = false;
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -148,17 +147,15 @@ static bool set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
                                                 NULL, &inPublic->publicArea);
     if (ret != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to unmarshal TPMT_PUBLIC from buffer 0x%p", template);
-        result = false;
+        rc = tool_rc_general_error;
         goto out;
     }
 
     // Read EK nonce
     UINT16 nonce_size;
-    result = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0, TPM2_RH_OWNER,
+    rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0, TPM2_RH_OWNER,
            ctx.auth.endorse.session, &nonce, &nonce_size);
-    if (!result) {
-        // EK template populated / ek nonce unpopulated is a valid state. Just return
-        result = true;
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -181,15 +178,15 @@ out:
         free(nonce);
     }
 
-    return result;
+    return rc;
 }
 
 static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
 
     if (ctx.flags.t) {
-        bool result = set_ek_template(ectx, &ctx.objdata.in.public);
-        if (!result) {
-            return tool_rc_general_error;
+        tool_rc rc = set_ek_template(ectx, &ctx.objdata.in.public);
+        if (rc != tool_rc_success) {
+            return rc;
         }
     } else {
         bool result = set_key_algorithm(&ctx.objdata.in.public);
