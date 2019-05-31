@@ -142,9 +142,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
     if ((!ctx.context_arg) || (!ctx.flags.u || !ctx.flags.r)) {
         LOG_ERR("Expected options C, u and r.");
         return tool_rc_option_error;
@@ -155,39 +152,30 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
             &ctx.parent.session, false);
     if (!result) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx,
                                 ctx.context_arg, &ctx.context_object);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
-    tool_rc tmp_rc = load(ectx);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-        goto out;
+    tool_rc rc = load(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = files_save_tpm_context_to_path(ectx,
+    return files_save_tpm_context_to_path(ectx,
                 ctx.handle,
                 ctx.context_file);
-    if (!result) {
-        goto out;
-    }
+}
 
-    rc = tool_rc_success;
-
-out:
-    result = tpm2_session_close(&ctx.parent.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.parent.session);
 }

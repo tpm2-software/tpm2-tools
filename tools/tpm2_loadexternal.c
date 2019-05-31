@@ -336,9 +336,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    result = files_save_tpm_context_to_path(ectx, ctx.handle,
+    tmp_rc = files_save_tpm_context_to_path(ectx, ctx.handle,
                 ctx_file);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out;
     }
 

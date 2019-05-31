@@ -126,25 +126,21 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
     bool result = init(ectx);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = unseal_and_save(ectx);
     if (!result) {
         LOG_ERR("Unseal failed!");
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = tool_rc_success;
-out:
+    return tool_rc_success;
+}
 
-    result = tpm2_session_close(&ctx.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.session);
 }

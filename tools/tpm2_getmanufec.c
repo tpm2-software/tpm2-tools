@@ -500,22 +500,19 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
     if (!ctx.ek_server_addr) {
         LOG_ERR("Must specify a remote server url!");
-        goto out;
+        return tool_rc_general_error;
     }
 
     ctx.verbose = flags.verbose;
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
             &ctx.auth.endorse.session, false);
     if (!result) {
         LOG_ERR("Invalid endorsement authorization, got\"%s\"",
             ctx.auth.endorse.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
@@ -523,7 +520,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!result) {
         LOG_ERR("Invalid owner authorization, got\"%s\"",
             ctx.auth.owner.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     tpm2_session *tmp;
@@ -544,7 +541,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (!ret) {
             LOG_ERR("handle/H passed with a value of '-' but unable to find a"
                     " vacant persistent handle!");
-            goto out;
+            return tool_rc_general_error;
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persistent_handle);
     }
@@ -553,14 +550,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.ec_cert_file = fopen(ctx.ec_cert_path, "wb");
         if (!ctx.ec_cert_file) {
             LOG_ERR("Could not open file for writing: \"%s\"", ctx.ec_cert_path);
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
     if (!ctx.ek_path) {
-        rc = createEKHandle(ectx);
+        tool_rc rc = createEKHandle(ectx);
         if (rc != tool_rc_success) {
-            goto out;
+            return tool_rc_general_error;
         }
     } else {
         ctx.outPublic = malloc(sizeof(*ctx.outPublic));
@@ -569,26 +566,35 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         bool res = files_load_public(ctx.ek_path, ctx.outPublic);
         if (!res) {
             LOG_ERR("Could not load existing EK public from file");
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
-    int tmp_rc = TPMinitialProvisioning();
-    if (tmp_rc) {
-        goto out;
+    int ret = TPMinitialProvisioning();
+    if (ret) {
+        return tool_rc_general_error;
     }
 
-    rc = tool_rc_success;
+    return tool_rc_success;
+}
 
-out:
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
+    tool_rc rc = tool_rc_success;
+
+    tool_rc tmp_rc = tpm2_session_close(&ctx.auth.owner.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
+    tmp_rc = tpm2_session_close(&ctx.auth.endorse.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
     if (ctx.ec_cert_file) {
         fclose(ctx.ec_cert_file);
-    }
-
-    result = tpm2_session_close(&ctx.auth.owner.session);
-    result &= tpm2_session_close(&ctx.auth.endorse.session);
-    if (!result) {
-        rc = tool_rc_general_error;
     }
 
     return rc;

@@ -237,12 +237,12 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
             }
         }
 
-        bool result = files_save_tpm_context_to_path(ectx,
+        tool_rc rc = files_save_tpm_context_to_path(ectx,
                 ctx.objdata.out.handle, filename);
         if (!result) {
             LOG_ERR("Error saving tpm context for handle");
             free(filename);
-            return tool_rc_general_error;
+            return rc;
         }
         tpm2_tool_output("transient-object-context: %s\n", filename);
         free(filename);
@@ -426,9 +426,9 @@ out:
 
     for(i=0; i < ARRAY_LEN(sessions); i++) {
         tpm2_session *s = *sessions[i];
-        bool result = tpm2_session_close(&s);
-        if (!result) {
-            rc = tool_rc_success;
+        tool_rc tmp_rc = tpm2_session_close(&s);
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
         }
     }
 

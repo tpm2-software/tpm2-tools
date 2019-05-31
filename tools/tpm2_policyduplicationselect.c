@@ -25,6 +25,8 @@ struct tpm2_policyduplicationselect_ctx {
     const char *new_parent_name_path;
     const char *out_policy_dgst_path;
     TPMI_YES_NO is_include_obj;
+    TPM2B_DIGEST *policy_digest;
+    tpm2_session *session;
 };
 
 static tpm2_policyduplicationselect_ctx ctx;
@@ -90,53 +92,47 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    TPM2B_DIGEST *policy_digest = NULL;
     bool retval = is_input_option_args_valid();
     if (!retval) {
-        return -1;
+        return tool_rc_option_error;
     }
 
-    tool_rc rc = tool_rc_general_error;
     tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path, false);
     if (!s) {
-        return rc;
+        return tool_rc_general_error;
     }
 
     bool result = tpm2_policy_build_policyduplicationselect(ectx, s,
         ctx.obj_name_path, ctx.new_parent_name_path, ctx.is_include_obj);
     if (!result) {
         LOG_ERR("Could not build TPM policy_duplication_select");
-        goto out;
+        return tool_rc_general_error;
     }
 
-    result = tpm2_policy_get_digest(ectx, s, &policy_digest);
+    result = tpm2_policy_get_digest(ectx, s, &ctx.policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
-        goto out;
+        return tool_rc_general_error;
     }
 
-    tpm2_util_hexdump(policy_digest->buffer, policy_digest->size);
+    tpm2_util_hexdump(ctx.policy_digest->buffer, ctx.policy_digest->size);
     tpm2_tool_output("\n");
 
     if (ctx.out_policy_dgst_path) {
         result = files_save_bytes_to_file(ctx.out_policy_dgst_path,
-                    policy_digest->buffer, policy_digest->size);
+                    ctx.policy_digest->buffer, ctx.policy_digest->size);
         if (!result) {
             LOG_ERR("Failed to save policy digest into file \"%s\"",
                     ctx.out_policy_dgst_path);
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
-    rc = tool_rc_success;
+    return tool_rc_success;
+}
 
-out:
-    free(policy_digest);
-
-    result = tpm2_session_close(&s);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    free(ctx.policy_digest);
+    return tpm2_session_close(&ctx.session);
 }

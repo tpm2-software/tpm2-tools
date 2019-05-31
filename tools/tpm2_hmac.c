@@ -237,9 +237,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
     /*
      * Option C must be specified.
      */
@@ -248,31 +245,29 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
             &ctx.auth.session, false);
     if (!result) {
         LOG_ERR("Invalid key handle authorization, got\"%s\"",
             ctx.auth.auth_str);
-        return rc;
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.key_context_object);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = do_hmac_and_output(ectx);
+    return do_hmac_and_output(ectx);
+}
 
-out:
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
     if (ctx.input && ctx.input != stdin) {
         fclose(ctx.input);
     }
 
-    result = tpm2_session_close(&ctx.auth.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+    return tpm2_session_close(&ctx.auth.session);
 }

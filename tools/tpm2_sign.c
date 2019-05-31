@@ -281,29 +281,24 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    int rc = 1;
     bool result = init(ectx);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
             &ctx.key.session, false);
     if (!result) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = sign_and_save(ectx);
+    return sign_and_save(ectx);
+}
 
-out:
-
-    result = tpm2_session_close(&ctx.key.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.key.session);
 }
 
 void tpm2_tool_onexit(void) {

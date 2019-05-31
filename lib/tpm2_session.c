@@ -10,6 +10,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_kdfa.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_session.h"
@@ -321,16 +322,16 @@ out:
     return s;
 }
 
-bool tpm2_session_close(tpm2_session **s) {
-
-    bool result = false;
+tool_rc tpm2_session_close(tpm2_session **s) {
 
     tpm2_session *session = *s;
 
     FILE *session_file = NULL;
 
+    tool_rc rc = tool_rc_general_error;
+
     if (!session) {
-        return true;
+        return tool_rc_success;
     }
 
     /*
@@ -339,7 +340,7 @@ bool tpm2_session_close(tpm2_session **s) {
      *   - hmac sessions live the life of the tool
      */
     if (session->output.session_handle == ESYS_TR_PASSWORD) {
-        result = true;
+        rc = tool_rc_success;
         goto out;
     }
 
@@ -358,19 +359,15 @@ bool tpm2_session_close(tpm2_session **s) {
 
     if (flush) {
 
-        TSS2_RC rval = Esys_FlushContext(session->internal.ectx, session->output.session_handle);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_FlushContext, rval);
-        } else {
-            result = true;
-        }
+        rc = tpm2_flush_context(session->internal.ectx, session->output.session_handle);
+        /* done use rc to inidcate status */
         goto out;
     }
 
     /*
      * Now write the session_type, handle and auth hash data to disk
      */
-    result = files_write_header(session_file, SESSION_VERSION);
+    bool result = files_write_header(session_file, SESSION_VERSION);
     if (!result) {
          LOG_ERR("Could not write context file header");
          goto out;
@@ -406,9 +403,9 @@ bool tpm2_session_close(tpm2_session **s) {
 
     LOG_INFO("Saved session: ESYS_TR(0x%x) SAPI(0x%x)", handle, sapi_handle);
 
-    result = files_save_tpm_context_to_file(session->internal.ectx,
+    rc = files_save_tpm_context_to_file(session->internal.ectx,
                 tpm2_session_get_handle(session), session_file);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Could not write session context");
     }
 
@@ -419,7 +416,7 @@ out:
 
     tpm2_session_free(s);
 
-    return result;
+    return rc;
 }
 
 bool tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s) {

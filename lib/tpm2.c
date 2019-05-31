@@ -155,3 +155,35 @@ tool_rc tpm2_nv_read(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_context_save(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR saveHandle,
+        TPMS_CONTEXT **context) {
+
+    TSS2_RC rval = Esys_ContextSave(
+            esysContext,
+            saveHandle,
+            context);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_ContextSave, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_flush_context(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR flushHandle) {
+
+    TSS2_RC rval = Esys_FlushContext(
+        esysContext,
+        flushHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_FlushContext, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

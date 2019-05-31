@@ -158,6 +158,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return tpm2_session_close(&s) ?
-            tool_rc_success : tool_rc_general_error;
+    return tpm2_session_close(&s);
 }

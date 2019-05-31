@@ -85,12 +85,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    tool_rc rc = clear(ectx);
+    return clear(ectx);
+}
 
-    result = tpm2_session_close(&ctx.auth.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
 
-    return rc;
+    return tpm2_session_close(&ctx.auth.session);
 }

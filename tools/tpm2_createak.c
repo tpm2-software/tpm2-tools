@@ -244,8 +244,8 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
     }
     LOG_INFO("Esys_Create success");
 
-    result = tpm2_session_close(&session);
-    if (!result) {
+    rc = tpm2_session_close(&session);
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -299,8 +299,8 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
         goto nameout;
     }
 
-    result = tpm2_session_close(&session);
-    if (!result) {
+    rc = tpm2_session_close(&session);
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -322,9 +322,10 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     // If the AK isn't persisted we always save a context file of the
     // transient AK handle for future tool interactions.
-    result = files_save_tpm_context_to_path(ectx,
+    tool_rc tmp_rc = files_save_tpm_context_to_path(ectx,
                 loaded_sha1_key_handle, ctx.ak.out.ctx_file);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         LOG_ERR("Error saving tpm context for handle");
         goto nameout;
     }

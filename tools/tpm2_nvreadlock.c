@@ -115,23 +115,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-
     bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
             &ctx.auth.session, false);
     if (!result) {
         LOG_ERR("Invalid handle authorization, got \"%s\"",
             ctx.auth.auth_str);
-       goto out;
+       return tool_rc_general_error;
     }
 
-    rc = nv_readlock(ectx);
+    return nv_readlock(ectx);
+}
 
-out:
-    result = tpm2_session_close(&ctx.auth.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.auth.session);
 }

@@ -227,51 +227,50 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tool_rc_general_error;
-    bool result;
     TPMT_SYM_DEF_OBJECT sym_alg;
     TPM2B_DATA in_key;
     TPM2B_DATA* out_key = NULL;
     TPM2B_PRIVATE* duplicate;
     TPM2B_ENCRYPTED_SECRET* outSymSeed;
 
-    result = check_options();
+    bool result = check_options();
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx, ctx.object.object_arg,
 		    &ctx.object.object);
     if(!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx, ctx.new_parent_object_arg,
 		    &ctx.new_parent_object_context);
     if(!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
         &ctx.object.session, false);
     if (!result) {
         LOG_ERR("Invalid authorization, got\"%s\"", ctx.object.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
     if(!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     if(ctx.flags.i) {
         in_key.size = 16;
         result = files_load_bytes_from_path(ctx.sym_key_in, in_key.buffer, &in_key.size);
         if(!result) {
-            goto out;
+            return tool_rc_general_error;
         }
         if(in_key.size != 16) {
             LOG_ERR("Invalid AES key size, got %u bytes, expected 16", in_key.size);
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
@@ -282,7 +281,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         &duplicate,
         &outSymSeed);
     if (rc != tool_rc_success) {
-        goto out;
+        return rc;
     }
 
     /* Maybe a false positive from scan-build but we'll check out_key anyway */
@@ -290,7 +289,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if(out_key == NULL) {
             LOG_ERR("No encryption key from TPM ");
             rc = tool_rc_general_error;
-            goto free_out;
+            goto out;
         }
         result = files_save_bytes_to_file(ctx.sym_key_out,
                     out_key->buffer, out_key->size);
@@ -298,7 +297,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             LOG_ERR("Failed to save encryption key out into file \"%s\"",
                     ctx.sym_key_out);
             rc = tool_rc_general_error;
-            goto free_out;
+            goto out;
         }
     }
 
@@ -307,7 +306,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_ERR("Failed to save encryption seed into file \"%s\"",
                 ctx.enc_seed_out);
         rc = tool_rc_general_error;
-        goto free_out;
+        goto out;
     }
 
     result = files_save_private(duplicate, ctx.duplicate_key_private_file);
@@ -315,21 +314,21 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_ERR("Failed to save private key into file \"%s\"",
                 ctx.duplicate_key_private_file);
         rc = tool_rc_general_error;
-        goto free_out;
+        goto out;
     }
 
     rc = tool_rc_success;
 
-free_out:
+out:
     free(out_key);
     free(outSymSeed);
     free(duplicate);
-out:
-
-    result = tpm2_session_close(&ctx.object.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
 
     return rc;
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
+    return tpm2_session_close(&ctx.object.session);
 }

@@ -596,8 +596,6 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
 
 static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
 
-    tool_rc rc = tool_rc_general_error;
-
     TPM2B_DATA enc_key = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC public = TPM2B_EMPTY_INIT;
     TPM2B_PRIVATE duplicate;
@@ -621,7 +619,7 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
     if(!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     /* Symmetric key */
@@ -630,11 +628,11 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
         result = files_load_bytes_from_path(ctx.input_enc_key_file, enc_key.buffer, &enc_key.size);
         if(!result) {
             LOG_ERR("Failed to load symmetric encryption key\"%s\"", ctx.input_enc_key_file);
-            goto out;
+            return tool_rc_general_error;
         }
         if(enc_key.size != 16) {
             LOG_ERR("Invalid AES key size, got %u bytes, expected 16", enc_key.size);
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
@@ -642,31 +640,31 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
     result = files_load_private(ctx.input_key_file, &duplicate);
     if(!result) {
         LOG_ERR("Failed to load duplicate \"%s\"", ctx.input_key_file);
-        goto out;
+        return tool_rc_general_error;
     }
 
     /* Encrypted seed */
     result = files_load_encrypted_seed(ctx.input_seed_file, &encrypted_seed);
     if(!result) {
         LOG_ERR("Failed to load encrypted seed \"%s\"", ctx.input_seed_file);
-        goto out;
+        return tool_rc_general_error;
     }
 
     /* Public key */
     result = files_load_public(ctx.public_key_file, &public);
     if(!result) {
         LOG_ERR(":( Failed to load public key \"%s\"", ctx.public_key_file);
-        goto out;
+        return tool_rc_general_error;
     }
 
     public.publicArea.authPolicy.size = sizeof(public.publicArea.authPolicy.buffer);
     result = files_load_bytes_from_path(ctx.policy,
                 public.publicArea.authPolicy.buffer, &public.publicArea.authPolicy.size);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
-    tool_rc tmp_rc = do_import(
+    tool_rc rc = do_import(
             ectx,
             parent_object_context.tr_handle,
             &encrypted_seed,
@@ -675,9 +673,8 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
             &public,
             &sym_alg,
             &imported_private);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-        goto out;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     assert(imported_private);
@@ -687,18 +684,10 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
     if (!result) {
         LOG_ERR("Failed to save private key into file \"%s\"",
                 ctx.private_key_file);
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = tool_rc_success;
-
-out:
-    result = tpm2_session_close(&ctx.parent.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+    return tool_rc_success;
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -711,4 +700,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     return ctx.import_tpm ?
         tpm_import(ectx) : openssl_import(ectx);
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
+    if (!ctx.import_tpm) {
+        return tool_rc_success;
+    }
+
+    return tpm2_session_close(&ctx.parent.session);
 }

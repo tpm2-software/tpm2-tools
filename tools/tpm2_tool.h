@@ -37,6 +37,15 @@ bool tpm2_tool_onstart(tpm2_options **opts) __attribute__((weak));
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) __attribute__((weak));
 
 /**
+ * Called after tpm2_tool_onrun() is invoked. ESAPI context is still valid during this call.
+ * @param ectx
+ *  The system/esapi api context.
+ * @return
+ *  A tool_rc indicating status.
+ */
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) __attribute__((weak));
+
+/**
  * Called when the tool is exiting, useful for cleanup.
  */
 void tpm2_tool_onexit(void) __attribute__((weak));
