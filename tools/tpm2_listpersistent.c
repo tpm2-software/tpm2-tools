@@ -11,6 +11,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_capability.h"
@@ -79,15 +80,9 @@ static tool_rc read_public(ESYS_CONTEXT *ectx,
         return tool_rc_from_tpm(rval);
     }
 
-    rval = Esys_ReadPublic(ectx, objHandle,
+    return tpm2_readpublic(ectx, objHandle,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                         outPublic, NULL, NULL);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_ReadPublic, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {

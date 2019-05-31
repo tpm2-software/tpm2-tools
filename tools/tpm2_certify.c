@@ -10,6 +10,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_convert.h"
@@ -58,31 +59,19 @@ static tpm_certify_ctx ctx = {
 static tool_rc get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
                             TPMI_ALG_PUBLIC *type) {
 
-    TSS2_RC rval;
-    tool_rc rc = tool_rc_general_error;
-    TPM2B_PUBLIC *out_public;
-    TPM2B_NAME *name;
-    TPM2B_NAME *qualified_name;
-
-    rval = Esys_ReadPublic(ectx, object_handle,
+    TPM2B_PUBLIC *out_public = NULL;
+    tool_rc rc = tpm2_readpublic(ectx, object_handle,
                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                &out_public, &name, &qualified_name);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_ReadPublic, rval);
-        *type = TPM2_ALG_ERROR;
-        rc = tool_rc_from_tpm(rval);
-        goto out;
+                &out_public, NULL, NULL);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     *type = out_public->publicArea.type;
-    rc = tool_rc_success;
 
-out:
     free(out_public);
-    free(name);
-    free(qualified_name);
 
-    return rc;
+    return tool_rc_success;
 }
 
 static tool_rc set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,

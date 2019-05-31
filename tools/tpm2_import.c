@@ -32,6 +32,7 @@
 
 #include "log.h"
 #include "files.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_kdfa.h"
@@ -70,19 +71,12 @@ static tpm_import_ctx ctx = {
     .input_key_file = NULL,
 };
 
-
-static tool_rc tpm2_readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
+static tool_rc readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
                 TPM2B_PUBLIC **public) {
 
-    TSS2_RC rval = Esys_ReadPublic(ectx, handle,
+    return tpm2_readpublic(ectx, handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     public, NULL, NULL);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_ReadPublic, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
 }
 
 static bool create_name(TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
@@ -441,7 +435,7 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
         result = files_load_public(ctx.parent_key_public_file, &ppub);
         parent_pub = &ppub;
     } else {
-        tmp_rc = tpm2_readpublic(ectx, parent_ctx.tr_handle, &parent_pub);
+        tmp_rc = readpublic(ectx, parent_ctx.tr_handle, &parent_pub);
         free_ppub = true;
         result = tmp_rc == tool_rc_success;
     }
