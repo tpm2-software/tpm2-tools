@@ -59,4 +59,13 @@ tool_rc tpm2_nv_read(
         UINT16 offset,
         TPM2B_MAX_NV_BUFFER **data);
 
+tool_rc tpm2_context_save(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR saveHandle,
+        TPMS_CONTEXT **context);
+
+tool_rc tpm2_flush_context(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR flushHandle);
+
 #endif /* LIB_TPM2_H_ */

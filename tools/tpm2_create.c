@@ -71,7 +71,6 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     TSS2_RC rval;
 
     tool_rc rc = tool_rc_general_error;
-    bool ret = false;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION      creationPCR = { .count = 0 };
@@ -148,15 +147,12 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.object_ctx_path) {
-        ret = files_save_tpm_context_to_path(ectx,
+        rc = files_save_tpm_context_to_path(ectx,
                     object_handle,
                     ctx.object_ctx_path);
-        if (!ret) {
-            goto out;
-        }
+    } else {
+        rc = tool_rc_success;
     }
-
-    rc = tool_rc_success;
 
 out:
     free(outPrivate);
@@ -245,9 +241,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
     TPMA_OBJECT attrs = DEFAULT_ATTRS;
 
     if(!ctx.parent_ctx_path) {
@@ -263,7 +256,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
         bool res = load_sensitive();
         if (!res) {
-            goto out;
+            return tool_rc_general_error;
         }
 
         ctx.alg = "keyedhash";
@@ -277,10 +270,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         attrs &= ~TPMA_OBJECT_DECRYPT;
     }
 
-    result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, NULL,
+    bool result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, NULL,
             attrs, &ctx.in_public);
     if(!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     if (ctx.flags.L && !ctx.key_auth_str) {
@@ -289,20 +282,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.flags.i && ctx.in_public.publicArea.type != TPM2_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM2_ALG_KEYEDHASH algorithm is allowed when sealing data");
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx, ctx.parent_ctx_path,
             &ctx.context_object);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     tpm2_session *tmp;
     result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
     if (!result) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     TPM2B_AUTH const *auth = tpm2_session_get_auth_value(tmp);
@@ -314,16 +307,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         &ctx.parent.session, false);
     if (!result) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = create(ectx);
+    return create(ectx);
+}
 
-out:
-    result = tpm2_session_close(&ctx.parent.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
 
-    return rc;
+    return tpm2_session_close(&ctx.parent.session);
 }

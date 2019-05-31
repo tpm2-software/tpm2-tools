@@ -173,14 +173,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result;
-    tool_rc rc = tool_rc_general_error;
-
-    result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy.auth_str,
             &ctx.hierarchy.session, false);
     if (!result) {
         LOG_ERR("Invalid handle authorization, got \"%s\"", ctx.hierarchy.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     tpm2_session *tmp;
@@ -188,7 +185,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             &tmp, true);
     if (!result) {
         LOG_ERR("Invalid index authorization, got\"%s\"", ctx.index_auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -196,13 +193,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    rc = nv_space_define(ectx);
+    return nv_space_define(ectx);
+}
 
-out:
-    result = tpm2_session_close(&ctx.hierarchy.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.hierarchy.session);
 }

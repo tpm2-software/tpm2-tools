@@ -13,6 +13,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
@@ -210,35 +211,34 @@ out:
     return result;
 }
 
-bool files_save_tpm_context_to_file(ESYS_CONTEXT *ectx,
+tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *ectx,
         ESYS_TR handle, FILE *stream) {
 
     TPMS_CONTEXT *context = NULL;
 
-    TSS2_RC rval = Esys_ContextSave(ectx, handle, &context);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Eys_ContextSave, rval);
-        return false;
+    tool_rc rc = tpm2_context_save(ectx, handle, &context);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    bool ret = files_save_context(context, stream);
+    bool result = files_save_context(context, stream);
     free(context);
-    return ret;
+    return result ? tool_rc_success : tool_rc_general_error;
 }
 
-bool files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
+tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
         const char *path) {
 
     FILE *f = fopen(path, "w+b");
     if (!f) {
         LOG_ERR("Error opening file \"%s\" due to error: %s", path,
                 strerror(errno));
-        return false;
+        return tool_rc_general_error;
     }
 
-    bool result = files_save_tpm_context_to_file(context, handle, f);
+    tool_rc rc = files_save_tpm_context_to_file(context, handle, f);
     fclose(f);
-    return result;
+    return rc;
 }
 
 static bool load_tpm_context_file(FILE *fstream, TPMS_CONTEXT *context) {

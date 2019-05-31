@@ -241,8 +241,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-    tool_rc rc = tool_rc_general_error;
-
     /* opts is unused, avoid compiler warning */
     UNUSED(flags);
 
@@ -276,20 +274,25 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             &ctx.endorse.session, true);
     if (!res) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"", ctx.endorse.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = activate_credential_and_output(ectx);
+    return activate_credential_and_output(ectx);
+}
 
-out:
-    res = tpm2_session_close(&ctx.key.session);
-    if (!res) {
-        rc = tool_rc_general_error;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
+    tool_rc rc = tool_rc_success;
+
+    tool_rc tmp_rc = tpm2_session_close(&ctx.key.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
-    res = tpm2_session_close(&ctx.endorse.session);
-    if (!res) {
-        rc = tool_rc_general_error;
+    tmp_rc = tpm2_session_close(&ctx.endorse.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
     return rc;

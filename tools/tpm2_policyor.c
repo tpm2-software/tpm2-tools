@@ -21,6 +21,9 @@ struct tpm2_policyor_ctx {
    TPML_DIGEST policy_list;
    //File path for storing the policy digest output
    const char *out_policy_dgst_path;
+
+   TPM2B_DIGEST *policy_digest;
+   tpm2_session *session;
 };
 
 static tpm2_policyor_ctx ctx;
@@ -86,62 +89,53 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    TPM2B_DIGEST *policy_digest = NULL;
-
     bool retval = is_input_option_args_valid();
     if (!retval) {
         return tool_rc_option_error;
     }
 
-
-    tool_rc rc = tool_rc_general_error;
-
-    tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path, false);
-    if (!s) {
-        return rc;
+    ctx.session = tpm2_session_restore(ectx, ctx.session_path, false);
+    if (!ctx.session) {
+        return tool_rc_general_error;
     }
 
     /* Policy digest hash alg should match that of the session */
     if (ctx.policy_list.digests[0].size !=
-        tpm2_alg_util_get_hash_size(tpm2_session_get_authhash(s))) {
+        tpm2_alg_util_get_hash_size(tpm2_session_get_authhash(ctx.session))) {
         LOG_ERR("Policy digest hash alg should match that of the session.");
-        return rc;
+        return tool_rc_general_error;
     }
 
-    bool result = tpm2_policy_build_policyor(ectx, s, ctx.policy_list);
+    bool result = tpm2_policy_build_policyor(ectx, ctx.session, ctx.policy_list);
     if (!result) {
         LOG_ERR("Could not build policyor TPM");
-        goto out;
+        return tool_rc_general_error;
     }
 
-    result = tpm2_policy_get_digest(ectx, s, &policy_digest);
+    result = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
-        goto out;
+        return tool_rc_general_error;
     }
 
-    tpm2_util_hexdump(policy_digest->buffer, policy_digest->size);
+    tpm2_util_hexdump(ctx.policy_digest->buffer, ctx.policy_digest->size);
     tpm2_tool_output("\n");
 
     if (ctx.out_policy_dgst_path) {
         result = files_save_bytes_to_file(ctx.out_policy_dgst_path,
-                    policy_digest->buffer, policy_digest->size);
+                    ctx.policy_digest->buffer, ctx.policy_digest->size);
         if (!result) {
             LOG_ERR("Failed to save policy digest into file \"%s\"",
                     ctx.out_policy_dgst_path);
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
-    rc = tool_rc_success;
+    return tool_rc_success;
+}
 
-out:
-    result = tpm2_session_close(&s);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    free(policy_digest);
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    free(ctx.policy_digest);
+    return tpm2_session_close(&ctx.session);
 }

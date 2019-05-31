@@ -77,7 +77,7 @@ static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
  */
 int main(int argc, char *argv[]) {
 
-    int ret = tool_rc_general_error;
+    tool_rc ret = tool_rc_general_error;
 
     tpm2_options *tool_opts = NULL;
     if (tpm2_tool_onstart) {
@@ -137,6 +137,11 @@ int main(int argc, char *argv[]) {
      * 'main'.
      */
     ret = tpm2_tool_onrun(ectx, flags);
+    if (tpm2_tool_onstop) {
+        tool_rc tmp_rc = tpm2_tool_onstop(ectx);
+        /* if onrun() passed, the error code should come from onstop() */
+        ret = ret == tool_rc_success ? tmp_rc : ret;
+    }
     switch(ret) {
         case tool_rc_success:
             /* nothing to do here */

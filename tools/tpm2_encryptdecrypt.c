@@ -190,25 +190,22 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result;
-    tool_rc rc = tool_rc_general_error;
-
     if (!ctx.object.context_arg) {
         LOG_ERR("Expected a context file or handle, got none.");
         return tool_rc_option_error;
     }
 
     ctx.data.size = sizeof(ctx.data.buffer);
-    result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
         &ctx.data.size, ctx.data.buffer);
     if (!result) {
-        return rc;
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx, ctx.object.context_arg,
                                 &ctx.object.context);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
@@ -216,7 +213,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!result) {
         LOG_ERR("Invalid object key authorization, got\"%s\"",
             ctx.object.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     /*
@@ -228,9 +225,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.mode == TPM2_ALG_NULL) {
 
         TPM2B_PUBLIC *public;
-        rc = readpub(ectx, &public);
+        tool_rc rc = readpub(ectx, &public);
         if (rc != tool_rc_success) {
-            goto out;
+            return rc;
         }
 
         TPMI_ALG_SYM_MODE objmode = public->publicArea.parameters.symDetail.sym.mode.sym;
@@ -248,17 +245,17 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         unsigned long file_size;
         result = files_get_file_size_path(ctx.iv.in, &file_size);
         if (!result) {
-            goto out;
+            return tool_rc_general_error;
         }
 
         if (file_size != iv.size) {
             LOG_ERR("Iv should be 16 bytes, got %lu", file_size);
-            goto out;
+            return tool_rc_general_error;
         }
 
         result = files_load_bytes_from_path(ctx.iv.in, iv.buffer, &iv.size);
         if (!result) {
-            goto out;
+            return tool_rc_general_error;
         }
 
     }
@@ -267,13 +264,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         LOG_WARN("Using a weak IV, try specifying an IV");
     }
 
-    rc = encrypt_decrypt(ectx, &iv);
+    return encrypt_decrypt(ectx, &iv);
+}
 
-out:
-    result = tpm2_session_close(&ctx.object.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
 
-    return rc;
+    return tpm2_session_close(&ctx.object.session);
 }

@@ -238,9 +238,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
     if ((!ctx.object.context_arg)
         && (!ctx.key.context_arg)
         && (ctx.flags.g) && (ctx.flags.o)
@@ -249,12 +246,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     /* Load input files */
-    result = tpm2_util_object_load(ectx, ctx.object.context_arg,
+    bool result = tpm2_util_object_load(ectx, ctx.object.context_arg,
                                     &ctx.object.object);
     if (!result) {
         tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
                 ctx.object.object.handle, ctx.object.object.path);
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx, ctx.key.context_arg,
@@ -262,31 +259,39 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (!result) {
         tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
                 ctx.key.object.handle, ctx.key.object.path);
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
             &ctx.object.session, false);
     if (!result) {
         LOG_ERR("Invalid object key authorization, got\"%s\"", ctx.object.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
             &ctx.key.session, false);
     if (!result) {
         LOG_ERR("Invalid key handle authorization, got\"%s\"", ctx.key.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = certify_and_save_data(ectx);
+    return certify_and_save_data(ectx);
+}
 
-out:
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
 
-    result = tpm2_session_close(&ctx.key.session);
-    result &= tpm2_session_close(&ctx.object.session);
-    if (!result) {
-        rc = tool_rc_general_error;
+    tool_rc rc = tool_rc_success;
+
+    tool_rc tmp_rc = tpm2_session_close(&ctx.key.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
+    tmp_rc = tpm2_session_close(&ctx.object.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
     return rc;

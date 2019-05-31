@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+typedef enum tool_rc tool_rc;
+
 #include <tss2/tss2_esys.h>
 
 /**
@@ -68,9 +70,9 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
  *  The output path of the file.
  *
  * @return
- *  True on success, False on error.
+ *  tool_rc indicating status.
  */
-bool files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
+tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
         const char *path);
 
 /**
@@ -82,9 +84,9 @@ bool files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
  * @param stream
  *  The FILE stream to save too.
  * @return
- *  True on success, False on error.
+ *  tool_rc indicating status.
  */
-bool files_save_tpm_context_to_file(ESYS_CONTEXT *context,
+tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *context,
         ESYS_TR handle,
         FILE *stream);
 

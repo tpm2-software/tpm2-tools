@@ -10,6 +10,8 @@
 typedef struct tpm2_session_data tpm2_session_data;
 typedef struct tpm2_session tpm2_session;
 
+typedef enum tool_rc tool_rc;
+
 /**
  * Creates a new session data object, based around the inputs to
  * TPM2_StartAuthSession as listed in Section 11.1:
@@ -156,9 +158,9 @@ tpm2_session *tpm2_session_open(ESYS_CONTEXT *context,
  * @param session
  *  The session context to save
  * @return
- *  True on success, false otherwise.
+ *  tool_rc indicating status.
  */
-bool tpm2_session_close(tpm2_session **session);
+tool_rc tpm2_session_close(tpm2_session **session);
 
 /**
  * Restores a session saved with tpm2_session_save().

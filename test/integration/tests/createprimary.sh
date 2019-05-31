@@ -66,7 +66,6 @@ tpm2_createprimary -Q -o context.out
 
 # Test that -o does not need to be specified.
 tpm2_createprimary -Q
-test -f primary.ctx
 
 # Test for session leaks
 BEFORE=$(tpm2_getcap -c handles-loaded-session; tpm2_getcap -c handles-saved-session)

@@ -20,9 +20,8 @@
 
 typedef struct tpm2_policyreset_ctx tpm2_policyreset_ctx;
 struct tpm2_policyreset_ctx {
-   struct {
-       char *path;
-   } session;
+   char *path;
+   tpm2_session *session;
 };
 
 static tpm2_policyreset_ctx ctx;
@@ -31,7 +30,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'S':
-        ctx.session.path = value;
+        ctx.path = value;
     break;
     }
     return true;
@@ -53,26 +52,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
-    tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path, false);
-    if (!s) {
-        return rc;
+    ctx.session = tpm2_session_restore(ectx, ctx.path, false);
+    if (!ctx.session) {
+        return tool_rc_general_error;
     }
 
-    result = tpm2_session_restart(ectx, s);
+    bool result = tpm2_session_restart(ectx, ctx.session);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = tool_rc_success;
+    return tool_rc_success;
+}
 
-out:
-    result = tpm2_session_close(&s);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.session);
 }

@@ -25,6 +25,8 @@ struct tpm2_policysecret_ctx {
     tpm2_loaded_object context_object;
     //Auth value of the auth object
     char *auth_str;
+    TPM2B_DIGEST *policy_digest;
+    tpm2_session *session;
     struct {
         UINT8 c : 1;
     } flags;
@@ -102,71 +104,70 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    TPM2B_DIGEST *policy_digest = NULL;
-
     bool result = is_input_option_args_valid();
     if (!result) {
         return tool_rc_option_error;
     }
 
-    int rc = 1;
-    tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path, false);
-    if (!s) {
-        return rc;
+    ctx.session = tpm2_session_restore(ectx, ctx.session_path, false);
+    if (!ctx.session) {
+        return tool_rc_general_error;
     }
 
     result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     tpm2_session *pwd_session;
     result = tpm2_auth_util_from_optarg(NULL, ctx.auth_str,
         &pwd_session, true);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
-    result = tpm2_policy_build_policysecret(ectx, s,
+    /*
+     * Build a policysecret using the pwd session. If the event of
+     * a failure:
+     * 1. always close the pwd session.
+     * 2. log the policy secret failure and return tool_rc_general_error.
+     * 3. if the error was closing the policy secret session, return that rc.
+     */
+    result = tpm2_policy_build_policysecret(ectx, ctx.session,
         pwd_session, ctx.context_object.tr_handle);
+    tool_rc rc = tpm2_session_close(&pwd_session);
     if (!result) {
-        LOG_ERR("Could not build policysecret ");
+        LOG_ERR("Could not build policysecret");
+        return tool_rc_general_error;
     }
 
-    result &= tpm2_session_close(&pwd_session);
-    if (!result) {
-        goto out;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = tpm2_policy_get_digest(ectx, s, &policy_digest);
+    result = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
-        goto out;
+        return tool_rc_general_error;
     }
 
-    tpm2_util_hexdump(policy_digest->buffer, policy_digest->size);
+    tpm2_util_hexdump(ctx.policy_digest->buffer, ctx.policy_digest->size);
     tpm2_tool_output("\n");
 
-    if (ctx.out_policy_dgst_path) {
+    if(ctx.out_policy_dgst_path) {
         result = files_save_bytes_to_file(ctx.out_policy_dgst_path,
-                    policy_digest->buffer, policy_digest->size);
+                    ctx.policy_digest->buffer, ctx.policy_digest->size);
         if (!result) {
-            LOG_ERR("Failed to save policy digest into file \"%s\"",
-                    ctx.out_policy_dgst_path);
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
-    rc = tool_rc_success;
+    return tool_rc_success;
+}
 
-out:
-    free(policy_digest);
-
-    result = tpm2_session_close(&s);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    free(ctx.policy_digest);
+    return tpm2_session_close(&ctx.session);
 }

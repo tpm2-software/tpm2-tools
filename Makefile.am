@@ -218,11 +218,11 @@ test_unit_test_tpm2_errata_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_tpm2_session_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_tpm2_session_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
-                                       -Wl,--wrap=Esys_ContextSave \
+                                       -Wl,--wrap=tpm2_context_save \
                                        -Wl,--wrap=Esys_ContextLoad \
                                        -Wl,--wrap=Esys_PolicyRestart \
                                        -Wl,--wrap=Esys_TR_GetName \
-                                       -Wl,--wrap=Esys_FlushContext
+                                       -Wl,--wrap=tpm2_flush_context
 
 test_unit_test_tpm2_session_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 

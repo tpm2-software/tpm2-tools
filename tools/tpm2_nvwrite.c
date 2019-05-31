@@ -220,9 +220,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
     /* If the users doesn't specify an authorisation hierarchy use the index
      * passed to -x/--index for the authorisation index.
      */
@@ -230,12 +227,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.hierarchy = ctx.nv_index;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
             &ctx.auth.session, false);
     if (!result) {
         LOG_ERR("Invalid handle authorization, got \"%s\"",
             ctx.auth.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     /* Suppress error reporting with NULL path */
@@ -247,7 +244,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (file_size > TPM2_MAX_NV_BUFFER_SIZE) {
             LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE, got %lu expected %u", file_size,
                     TPM2_MAX_NV_BUFFER_SIZE);
-            goto out;
+            return tool_rc_general_error;
         }
 
         /*
@@ -258,7 +255,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         result = files_read_bytes(ctx.input_file, ctx.nv_buffer, ctx.data_size);
         if (!result)  {
             LOG_ERR("could not read input file");
-            goto out;
+            return tool_rc_general_error;
         }
     } else {
         /* we don't know the file size, ie it's a stream, read till end */
@@ -266,27 +263,23 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (bytes != TPM2_MAX_NV_BUFFER_SIZE) {
             if (ferror(ctx.input_file)) {
                 LOG_ERR("reading from input file failed: %s", strerror(errno));
-                goto out;
+                return tool_rc_general_error;
             }
 
             if (!feof(ctx.input_file)) {
                 LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE: %u",
                         TPM2_MAX_NV_BUFFER_SIZE);
-                goto out;
+                return tool_rc_general_error;
             }
         }
 
         ctx.data_size = (UINT16)bytes;
     }
 
-    rc = nv_write(ectx);
+    return nv_write(ectx);
+}
 
-out:
-
-    result = tpm2_session_close(&ctx.auth.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.auth.session);
 }

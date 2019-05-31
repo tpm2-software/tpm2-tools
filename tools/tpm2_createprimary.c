@@ -84,9 +84,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'o':
         ctx.context_file = value;
-        if (ctx.context_file == NULL || ctx.context_file[0] == '\0') {
-            return false;
-        }
         break;
     case 'u':
         ctx.unique_file = value;
@@ -129,24 +126,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    bool result;
-    tool_rc rc = tool_rc_general_error;
-
-    if (!ctx.context_file || ctx.context_file[0] == '\0') {
-        ctx.context_file = "primary.ctx";
-    }
-
-    result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str, &ctx.parent.session, false);
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str, &ctx.parent.session, false);
     if (!result) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     tpm2_session *tmp;
     result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
     if (!result) {
         LOG_ERR("Invalid new key authorization, got\"%s\"", ctx.key_auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -157,33 +147,25 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, ctx.unique_file, DEFAULT_ATTRS,
             &ctx.objdata.in.public);
     if(!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = tpm2_hierarchy_create_primary(ectx,
                 ctx.parent.session, &ctx.objdata);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);
 
-    result = files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
-        ctx.context_file);
-    if (!result) {
-        goto out;
-    }
-    tpm2_tool_output("context-file: %s\n", ctx.context_file);
+    return ctx.context_file ? files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
+        ctx.context_file) : tool_rc_success;
+}
 
-    rc = tool_rc_success;
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
 
-out:
-    result = tpm2_session_close(&ctx.parent.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+    return tpm2_session_close(&ctx.parent.session);
 }
 
 void tpm2_onexit(void) {

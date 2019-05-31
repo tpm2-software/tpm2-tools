@@ -31,7 +31,7 @@ static void test_tpm2_create_dummy_context(TPMS_CONTEXT *context) {
     memset(context->contextBlob.buffer, '\0', context->contextBlob.size);
 }
 
-TSS2_RC __wrap_Esys_ContextSave(ESYS_CONTEXT *esysContext,
+tool_rc __wrap_tpm2_context_save(ESYS_CONTEXT *esysContext,
             ESYS_TR saveHandle, TPMS_CONTEXT **context) {
 
     UNUSED(esysContext);
@@ -43,7 +43,7 @@ TSS2_RC __wrap_Esys_ContextSave(ESYS_CONTEXT *esysContext,
     *context = dummy_context;
     _save_handle = saveHandle;
 
-    return TPM2_RC_SUCCESS;
+    return tool_rc_success;
 }
 
 TSS2_RC __wrap_Esys_ContextLoad(ESYS_CONTEXT *esysContext,
@@ -91,7 +91,7 @@ TSS2_RC __wrap_Esys_TR_GetName(ESYS_CONTEXT *esysContext, ESYS_TR handle,
     return rc;
 }
 
-TSS2_RC __wrap_Esys_FlushContext(ESYS_CONTEXT *esysContext, ESYS_TR flushHandle) {
+TSS2_RC __wrap_tpm2_flush_context(ESYS_CONTEXT *esysContext, ESYS_TR flushHandle) {
     UNUSED(esysContext);
     UNUSED(flushHandle);
 
@@ -214,8 +214,8 @@ static void test_tpm2_session_save(void **state) {
                     &tpm_handle1);
     assert_true(result);
 
-    result = tpm2_session_close(&s);
-    assert_true(result);
+    tool_rc rc = tpm2_session_close(&s);
+    assert_int_equal(rc, tool_rc_success);
     assert_null(s);
 
     s = tpm2_session_restore(NULL, (char *)*state, false);

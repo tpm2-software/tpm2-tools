@@ -196,10 +196,11 @@ out:
         }
     }
 
-    result = tpm2_session_close(&ctx.auth.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
     return rc;
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
+    return tpm2_session_close(&ctx.auth.session);
 }

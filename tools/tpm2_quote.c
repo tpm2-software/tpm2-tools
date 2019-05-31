@@ -300,20 +300,17 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tool_rc_general_error;
-    bool result;
-
     /* TODO this whole file needs to be re-done, especially the option validation */
     if (!ctx.flags.l && !ctx.flags.L) {
         LOG_ERR("Expected either -l or -L to be specified.");
         return tool_rc_option_error;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
             &ctx.ak.session, false);
     if (!result) {
         LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
-        goto out;
+        return tool_rc_general_error;
     }
 
     if (ctx.flags.p) {
@@ -325,32 +322,28 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (!ctx.pcr_output) {
             LOG_ERR("Could not open PCR output file \"%s\" error: \"%s\"",
                     ctx.pcr_path, strerror(errno));
-            goto out;
+            return tool_rc_general_error;
         }
     }
 
     result = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
     result = pcr_get_banks(ectx, &ctx.cap_data, &ctx.algs);
     if (!result) {
-        goto out;
+        return tool_rc_general_error;
     }
 
-    rc = quote(ectx, &ctx.pcrSelections);
+    return quote(ectx, &ctx.pcrSelections);
+}
 
-out:
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
     if (ctx.pcr_output) {
         fclose(ctx.pcr_output);
     }
-
-    result = tpm2_session_close(&ctx.ak.session);
-    if (!result) {
-        rc = tool_rc_general_error;
-    }
-
-    return rc;
+    return tpm2_session_close(&ctx.ak.session);
 }
