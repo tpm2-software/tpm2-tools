@@ -61,30 +61,27 @@ static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
  * @param size
  *  The size of the buffer.
  * @return
- *  True on success, false otherwise.
+ *  tool_rc Indicating status.
  */
-static inline bool tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
+static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
         UINT32 *size) {
 
     /* Get the maximum read block size */
     TPMS_CAPABILITY_DATA *cap_data;
     TPMI_YES_NO more_data;
-    TSS2_RC rval = Esys_GetCapability(ectx,
+    tool_rc rc = tpm2_getcap(ectx,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                         TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX,
                         1, &more_data, &cap_data);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_GetCapability, rval);
-        LOG_ERR("Got size of %d",
-                cap_data->data.tpmProperties.tpmProperty[0].value);
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     *size = cap_data->data.tpmProperties.tpmProperty[0].value;
 
     free(cap_data);
 
-    return true;
+    return rc;
 }
 
 /**
@@ -171,8 +168,8 @@ static inline bool tpm2_util_nv_read(
     }
 
     UINT32 max_data_size;
-    res = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
-    if (!res) {
+    tool_rc rc = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
+    if (rc != tool_rc_success) {
         res = false;
         goto out;
     }

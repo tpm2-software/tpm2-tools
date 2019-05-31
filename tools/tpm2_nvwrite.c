@@ -75,9 +75,9 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
     free(nv_public);
 
     UINT32 max_data_size;
-    bool res = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
-    if (!res) {
-        return tool_rc_general_error;
+    rc = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
