@@ -48,4 +48,15 @@ tool_rc tpm2_getcap(
         TPMI_YES_NO *moreData,
         TPMS_CAPABILITY_DATA **capabilityData);
 
+tool_rc tpm2_nv_read(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR authHandle,
+        ESYS_TR nvIndex,
+        ESYS_TR shandle1,
+        ESYS_TR shandle2,
+        ESYS_TR shandle3,
+        UINT16 size,
+        UINT16 offset,
+        TPM2B_MAX_NV_BUFFER **data);
+
 #endif /* LIB_TPM2_H_ */

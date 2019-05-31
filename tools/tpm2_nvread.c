@@ -41,39 +41,37 @@ static tpm_nvread_ctx ctx = {
     .hierarchy = TPM2_RH_OWNER
 };
 
-static bool nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UINT8* data_buffer = NULL;
     UINT16 bytes_written;
-    bool result = tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
+    tool_rc rc = tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
                     ctx.offset, ctx.hierarchy, ctx.auth.session,
                     &data_buffer, &bytes_written);
-    if (!result) {
+    if (rc != tool_rc_success) {
         goto out;
     }
 
     /* dump data_buffer to output file, if specified */
     if (ctx.output_file) {
         if (!files_save_bytes_to_file(ctx.output_file, data_buffer, bytes_written)) {
-            result = false;
+            rc = tool_rc_general_error;
             goto out;
         }
     /* else use stdout if quiet is not specified */
     } else if (!flags.quiet) {
         if (!files_write_bytes(stdout, data_buffer, bytes_written)) {
-            result = false;
+            rc = tool_rc_general_error;
             goto out;
         }
     }
-
-    result = true;
 
 out:
     if (data_buffer) {
         free(data_buffer);
     }
 
-    return result;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -168,14 +166,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    result = nv_read(ectx, flags);
-    if (!result) {
-        goto out;
-    }
-
-    rc = tool_rc_success;
-
-out:
+    rc = nv_read(ectx, flags);
 
     result = tpm2_session_close(&ctx.auth.session);
     if (!result) {

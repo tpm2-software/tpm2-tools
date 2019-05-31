@@ -105,9 +105,9 @@ static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
  * @param bytes_written
  *  The number of bytes written to data_buffer
  * @return
- *  True on success, false otherwise.
+ *  tool_rc indicating status.
  */
-static inline bool tpm2_util_nv_read(
+static inline tool_rc tpm2_util_nv_read(
         ESYS_CONTEXT *ectx,
         TPMI_RH_NV_INDEX nv_index,
         UINT16 size,
@@ -117,28 +117,25 @@ static inline bool tpm2_util_nv_read(
         UINT8 **data_buffer,
         UINT16 *bytes_written) {
 
-    bool res = false;
     *data_buffer = NULL;
 
+    tool_rc tmp_rc;
+
     ESYS_TR nv_handle;
-    TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, nv_index,
+    tool_rc rc = tpm2_from_tpm_public(ectx, nv_index,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                         &nv_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        res = false;
+    if (rc != tool_rc_success) {
         goto out;
     }
 
     // Don't use tpm2_util_nv_read_public since we need to make use of nv_handle
     // later
     TPM2B_NV_PUBLIC *nv_public = NULL;
-    rval = Esys_NV_ReadPublic(ectx, nv_handle,
+    rc = tpm2_nv_readpublic(ectx, nv_handle,
                               ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                               &nv_public, NULL);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_NV_ReadPublic, rval);
-        res = false;
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -154,7 +151,7 @@ static inline bool tpm2_util_nv_read(
         LOG_ERR(
             "Requested offset to read from is greater than size. offset=%u"
             ", size=%u", offset, data_size);
-        res = false;
+        rc = tool_rc_general_error;
         goto out;
     }
 
@@ -163,14 +160,13 @@ static inline bool tpm2_util_nv_read(
             "Requested to read more bytes than available from offset,"
             " offset=%u, request-read-size=%u actual-data-size=%u",
             offset, size, data_size);
-        res = false;
+        rc = tool_rc_general_error;
         goto out;
     }
 
     UINT32 max_data_size;
-    tool_rc rc = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
+    rc = tpm2_util_nv_max_buffer_size(ectx, &max_data_size);
     if (rc != tool_rc_success) {
-        res = false;
         goto out;
     }
 
@@ -190,14 +186,14 @@ static inline bool tpm2_util_nv_read(
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, tr_hierarchy, sess);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for hierarchy");
-        res = false;
+        rc = tool_rc_general_error;
         goto out;
     }
 
     *data_buffer = malloc(data_size);
     if (!*data_buffer) {
         LOG_ERR("oom");
-        res = false;
+        rc = tool_rc_general_error;
         goto out;
     }
 
@@ -209,13 +205,11 @@ static inline bool tpm2_util_nv_read(
 
         TPM2B_MAX_NV_BUFFER *nv_data;
 
-        rval = Esys_NV_Read(ectx, tr_hierarchy, nv_handle,
+        rc = tpm2_nv_read(ectx, tr_hierarchy, nv_handle,
                     shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                     bytes_to_read, offset, &nv_data);
-        if (rval != TPM2_RC_SUCCESS) {
+        if (rc != tool_rc_success) {
             LOG_ERR("Failed to read NVRAM area at index 0x%X", nv_index);
-            LOG_PERR(Esys_NV_Read, rval);
-            res = false;
             goto out;
         }
 
@@ -228,24 +222,22 @@ static inline bool tpm2_util_nv_read(
         free(nv_data);
     }
 
-    res = true;
     if (bytes_written) {
         *bytes_written = data_offset;
     }
 
 out:
-    if (!res && *data_buffer != NULL) {
+    if (rc != tool_rc_success && *data_buffer != NULL) {
         free(*data_buffer);
         *data_buffer = NULL;
     }
 
-    rval = Esys_TR_Close(ectx, &nv_handle);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_NV_ReadPublic, rval);
-        return false;
+    tmp_rc = tpm2_close(ectx, &nv_handle);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
     }
 
-    return res;
+    return rc;
 }
 
 #endif /* LIB_TPM2_NV_UTIL_H_ */

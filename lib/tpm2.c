@@ -126,3 +126,32 @@ tool_rc tpm2_getcap(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_nv_read(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR authHandle,
+        ESYS_TR nvIndex,
+        ESYS_TR shandle1,
+        ESYS_TR shandle2,
+        ESYS_TR shandle3,
+        UINT16 size,
+        UINT16 offset,
+        TPM2B_MAX_NV_BUFFER **data) {
+
+    TSS2_RC rval = Esys_NV_Read(
+        esysContext,
+        authHandle,
+        nvIndex,
+        shandle1,
+        shandle2,
+        shandle3,
+        size,
+        offset,
+        data);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_NV_Read, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
