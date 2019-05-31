@@ -9,6 +9,7 @@
 #include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_options.h"
@@ -38,12 +39,11 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
     TPM2B_NAME *name;
     TPM2B_NAME *qualified_name;
 
-    TSS2_RC rval = Esys_ReadPublic(ectx, ctx.context_object.tr_handle,
+    tool_rc rc = tpm2_readpublic(ectx, ctx.context_object.tr_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     &public, &name, &qualified_name);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Eys_ReadPublic, rval);
-        return tool_rc_from_tpm(rval);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     tpm2_tool_output("name: ");

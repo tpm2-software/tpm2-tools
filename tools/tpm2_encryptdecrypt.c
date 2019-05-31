@@ -12,6 +12,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
@@ -50,15 +51,9 @@ static tpm_encrypt_decrypt_ctx ctx = {
 
 static tool_rc readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
 
-    TSS2_RC rval = Esys_ReadPublic(ectx, ctx.object.context.tr_handle,
+    return tpm2_readpublic(ectx, ctx.object.context.tr_handle,
                       ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                       public, NULL, NULL);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_ReadPublic, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
 }
 
 static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
