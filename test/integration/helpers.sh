@@ -12,7 +12,7 @@ import yaml
 with open("$1") as f:
     try:
         y = yaml.safe_load(f)
-        for alg, details in y.iteritems():
+        for alg, details in y.items():
             if $2:
                 print(alg)
     except yaml.YAMLError as exc:
