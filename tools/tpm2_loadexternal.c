@@ -266,10 +266,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     };
 
     tpm2_session *tmp;
-    bool result = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
-    if (!result) {
+    tool_rc tmp_rc = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.auth);
-        return tool_rc_general_error;
+        return tmp_rc;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -309,18 +309,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if (ctx.public_key_path) {
-        result = tpm2_openssl_load_public(ctx.public_key_path, alg, &pub);
+        bool result = tpm2_openssl_load_public(ctx.public_key_path, alg, &pub);
         if (!result) {
             return tool_rc_general_error;
         }
     }
 
-    int rc = tool_rc_general_error;
+    tool_rc rc = tool_rc_general_error;
     TPM2B_NAME *name = NULL;
     char *ctx_file = NULL;
-    tool_rc tmp_rc = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
+    tmp_rc = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
                 &name);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
     }
@@ -331,7 +331,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.context_file_path = "object.ctx";
     }
 
-    result = files_get_unique_name(ctx.context_file_path, &ctx_file);
+    bool result = files_get_unique_name(ctx.context_file_path, &ctx_file);
     if (!result) {
         goto out;
     }

@@ -306,11 +306,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
             &ctx.ak.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     if (ctx.flags.p) {
@@ -326,13 +326,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    tool_rc rc = tpm2_util_object_load(ectx, ctx.context_arg,
+    rc = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    result = pcr_get_banks(ectx, &ctx.cap_data, &ctx.algs);
+    bool result = pcr_get_banks(ectx, &ctx.cap_data, &ctx.algs);
     if (!result) {
         return tool_rc_general_error;
     }

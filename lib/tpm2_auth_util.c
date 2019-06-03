@@ -114,7 +114,7 @@ static bool handle_password_session(ESYS_CONTEXT *ectx, const char *password, tp
     return *session != NULL;
 }
 
-static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
+static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
         tpm2_session **session) {
 
     TPM2B_AUTH auth = { 0 };
@@ -127,7 +127,7 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
     size_t len = snprintf(tmp, sizeof(tmp), "%s", path);
     if (len >= sizeof(tmp)) {
         LOG_ERR("Path truncated");
-        return false;
+        return tool_rc_general_error;
     }
 
     /*
@@ -143,15 +143,14 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
         if (*password) {
             bool result = handle_password(password, &auth);
             if (!result) {
-                return false;
+                return tool_rc_general_error;
             }
         }
     }
 
-    // TODO plumb out
     tool_rc rc = tpm2_session_restore(ectx, tmp, false, session);
     if (rc != tool_rc_success) {
-        return false;
+        return rc;
     }
 
     tpm2_session_set_auth_value(*session, &auth);
@@ -161,10 +160,10 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
         LOG_ERR("A trial session cannot be used to authenticate, "
                 "Please use an hmac or policy session");
         tpm2_session_close(session);
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **session) {
@@ -258,7 +257,7 @@ out:
     return result;
 }
 
-bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
+tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     tpm2_session **session, bool is_restricted) {
 
     bool result;
@@ -271,12 +270,12 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
 
         if (is_restricted) {
             LOG_ERR("cannot specify %s", password);
-            return false;
+            return tool_rc_general_error;
         }
 
-        result = handle_session(ectx, password, session);
-        if (!result) {
-            return false;
+        tool_rc rc = handle_session(ectx, password, session);
+        if (rc != tool_rc_success) {
+            return rc;
         }
         goto handled;
     }
@@ -286,7 +285,7 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     if (is_file) {
         result = handle_file(ectx, password, session);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
         goto handled;
     }
@@ -296,7 +295,7 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     if (is_pcr) {
         result = handle_pcr(ectx, password, session);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
         goto handled;
     }
@@ -304,12 +303,12 @@ bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     /* must be a password */
     result = handle_password_session(ectx, password, session);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
 handled:
 
-    return true;
+    return tool_rc_success;
 }
 
 ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,

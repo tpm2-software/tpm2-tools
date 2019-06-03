@@ -73,11 +73,11 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
         return tool_rc_option_error;
     }
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
             &ctx.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     return tpm2_util_object_load(ectx, ctx.context_arg,

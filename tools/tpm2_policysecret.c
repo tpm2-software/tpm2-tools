@@ -121,10 +121,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tpm2_session *pwd_session;
-    result = tpm2_auth_util_from_optarg(NULL, ctx.auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.auth_str,
         &pwd_session, true);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /*

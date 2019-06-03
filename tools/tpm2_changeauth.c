@@ -136,51 +136,51 @@ static tool_rc process_change_hierarchy_auth_cleanup(void) {
 static tool_rc process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
 
     /* always run this, so we pick up the default empty password session */
-    bool result = tpm2_auth_util_from_optarg(NULL, ctx.owner_auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, ctx.owner_auth_str,
             &ctx.auths.owner.new, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(NULL, ctx.endorse_auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.endorse_auth_str,
             &ctx.auths.endorse.new, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid new endorse authorization, got\"%s\"",
             ctx.endorse_auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(NULL, ctx.lockout_auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.lockout_auth_str,
             &ctx.auths.lockout.new, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid new lockout authorization, got\"%s\"",
             ctx.lockout_auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_old_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_old_str,
             &ctx.auths.owner.old, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid current owner authorization, got\"%s\"",
             ctx.owner_auth_old_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_old_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_old_str,
             &ctx.auths.endorse.old, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid current endorse authorization, got\"%s\"",
             ctx.endorse_auth_old_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_old_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_old_str,
             &ctx.auths.lockout.old, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid current lockout authorization, got\"%s\"",
             ctx.lockout_auth_old_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     return change_hierarchy_auth(ectx);
@@ -189,23 +189,23 @@ static tool_rc process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
 static bool process_tpm_handle_auths(ESYS_CONTEXT *ectx) {
 
     /* always run this, so we pick up the default empty password session */
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_str,
                 &ctx.auths.tpm_handle.new, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid new authorization for tpm handle, got\"%s\"",
             ctx.tpm_handle_auth_str);
-        return false;
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_old_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_old_str,
             &ctx.auths.tpm_handle.old, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid current authorization for tpm handle, got\"%s\"",
             ctx.tpm_handle_auth_old_str);
-        return false;
+        return rc;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static tool_rc process_change_nv_handle_auth_cleanup(void) {
@@ -214,9 +214,9 @@ static tool_rc process_change_nv_handle_auth_cleanup(void) {
 
 static tool_rc process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
 
-    bool ret = process_tpm_handle_auths(ectx);
-    if (!ret) {
-        return tool_rc_general_error;
+    tool_rc rc = process_tpm_handle_auths(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
@@ -246,9 +246,9 @@ static tool_rc process_change_tpm_handle_auth_cleanup(void) {
 
 static tool_rc process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
 
-    bool ret = process_tpm_handle_auths(ectx);
-    if (!ret) {
-        return tool_rc_general_error;
+    tool_rc rc = process_tpm_handle_auths(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
@@ -259,7 +259,7 @@ static tool_rc process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
     }
 
     if (!ctx.tpm_handle_parent_context_object.tr_handle) {
-        ret = tpm2_util_sys_handle_to_esys_handle(
+        bool ret = tpm2_util_sys_handle_to_esys_handle(
                 ectx,
                 ctx.tpm_handle_parent_context_object.handle,
                 &ctx.tpm_handle_parent_context_object.tr_handle);
@@ -282,7 +282,7 @@ static tool_rc process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
         return tool_rc_from_tpm(rval);
     }
 
-    tool_rc rc = tool_rc_general_error;
+    rc = tool_rc_general_error;
     if (ctx.flags.r) {
         bool res = files_save_private(outPrivate, ctx.opr_path);
         if (res) {
