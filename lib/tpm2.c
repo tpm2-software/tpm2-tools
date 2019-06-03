@@ -173,6 +173,20 @@ tool_rc tpm2_context_save(
     return tool_rc_success;
 }
 
+tool_rc tpm2_context_load(
+        ESYS_CONTEXT *esysContext,
+        const TPMS_CONTEXT *context,
+        ESYS_TR *loadedHandle) {
+
+    TSS2_RC rval = Esys_ContextLoad(esysContext, context, loadedHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_ContextLoad, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_flush_context(
         ESYS_CONTEXT *esysContext,
         ESYS_TR flushHandle) {

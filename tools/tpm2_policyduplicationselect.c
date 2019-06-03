@@ -97,9 +97,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tpm2_session *s = tpm2_session_restore(ectx, ctx.session_path, false);
-    if (!s) {
-        return tool_rc_general_error;
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false, &s);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     bool result = tpm2_policy_build_policyduplicationselect(ectx, s,

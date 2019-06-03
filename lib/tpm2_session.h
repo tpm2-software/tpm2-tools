@@ -170,10 +170,12 @@ tool_rc tpm2_session_close(tpm2_session **session);
  *  The path to restore from.
  * @param is_final
  *  True if this is is the last tool to use the session, causes a flush.
+ * @param session
+ *  The session
  * @return
- *  NULL on failure or a session pointer on success.
+ *  tool_rc indicating status.
  */
-tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final);
+tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final, tpm2_session **session);
 
 /**
  * restarts the session to it's initial state via a call to

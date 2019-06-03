@@ -227,8 +227,9 @@ COMPILE_ASSERT_SIZE(ESYS_TR, UINT32);
 COMPILE_ASSERT_SIZE(TPMI_ALG_HASH, UINT16);
 COMPILE_ASSERT_SIZE(TPM2_SE, UINT8);
 
-tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final) {
+tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final, tpm2_session **session) {
 
+    tool_rc rc = tool_rc_general_error;
     tpm2_session *s = NULL;
 
     /*
@@ -238,14 +239,14 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_
     char *dup_path = strdup(path);
     if (!dup_path) {
         LOG_ERR("oom");
-        return NULL;
+        return tool_rc_general_error;
     }
 
     FILE *f = fopen(dup_path, "rb");
     if (!f) {
         LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
                 dup_path, strerror(errno));
-        return NULL;
+        return tool_rc_general_error;
     }
 
     uint32_t version;
@@ -266,9 +267,9 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_
     }
 
     ESYS_TR handle;
-    result = files_load_tpm_context_from_file(ctx,
+    rc = files_load_tpm_context_from_file(ctx,
                     &handle, f);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Could not load session context");
         goto out;
     }
@@ -312,14 +313,19 @@ tpm2_session *tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_
 
     s->internal.is_final = is_final;
 
+    *session = s;
+
     LOG_INFO("Restored session: ESYS_TR(0x%x) SAPI(0x%x) attrs(0x%x)", handle, sapi_handle, attrs);
+
+    rc = tool_rc_success;
 
 out:
     free(dup_path);
     if (f) {
         fclose(f);
     }
-    return s;
+
+    return rc;
 }
 
 tool_rc tpm2_session_close(tpm2_session **s) {

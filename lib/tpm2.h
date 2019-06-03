@@ -64,6 +64,11 @@ tool_rc tpm2_context_save(
         ESYS_TR saveHandle,
         TPMS_CONTEXT **context);
 
+tool_rc tpm2_context_load(
+        ESYS_CONTEXT *esysContext,
+        const TPMS_CONTEXT *context,
+        ESYS_TR *loadedHandle);
+
 tool_rc tpm2_flush_context(
         ESYS_CONTEXT *esysContext,
         ESYS_TR flushHandle);

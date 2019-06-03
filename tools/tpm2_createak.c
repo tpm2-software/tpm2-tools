@@ -451,10 +451,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    bool result = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
                                 &ctx.ek.ek_ctx);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (!ctx.ek.ek_ctx.tr_handle) {
@@ -466,7 +466,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    result = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str,
+    bool result = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str,
             &ctx.ek.session, true);
     if (!result) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"",

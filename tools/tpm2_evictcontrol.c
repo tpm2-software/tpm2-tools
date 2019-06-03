@@ -105,9 +105,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tool_rc_general_error;
     bool evicted = false;
 
-    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
+    tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.context_arg,
                 &ctx.context_object);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out;
     }
 
@@ -115,7 +116,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * associated ESYS_TR for ESAPI calls
      */
     if (!ctx.context_object.tr_handle) {
-        result = tpm2_util_sys_handle_to_esys_handle(ectx,
+        bool result = tpm2_util_sys_handle_to_esys_handle(ectx,
                     ctx.context_object.handle, &ctx.context_object.tr_handle);
         if (!result) {
             goto out;
@@ -133,7 +134,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * the persistent namespace and use that.
      */
     if (ctx.flags.c && !ctx.flags.p) {
-        result = tpm2_capability_find_vacant_persistent_handle(ectx,
+        bool result = tpm2_capability_find_vacant_persistent_handle(ectx,
                     &ctx.persist_handle);
         if (!result) {
             tpm2_tool_output("Unable to find a vacant persistent handle.\n");
@@ -143,7 +144,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.flags.p = 1;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
            &ctx.auth.session, false);
     if (!result) {
         LOG_ERR("Invalid authorization authorization, got\"%s\"",

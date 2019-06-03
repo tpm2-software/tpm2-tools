@@ -109,15 +109,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    ctx.session = tpm2_session_restore(ectx, ctx.session_path, false);
-    if (!ctx.session) {
-        return tool_rc_general_error;
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false, &ctx.session);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.context_arg,
+    rc = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     tpm2_session *pwd_session;
@@ -136,7 +136,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      */
     result = tpm2_policy_build_policysecret(ectx, ctx.session,
         pwd_session, ctx.context_object.tr_handle);
-    tool_rc rc = tpm2_session_close(&pwd_session);
+    rc = tpm2_session_close(&pwd_session);
     if (!result) {
         LOG_ERR("Could not build policysecret");
         return tool_rc_general_error;

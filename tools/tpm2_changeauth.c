@@ -433,20 +433,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     bool result;
     if (ctx.flags.c) {
-        bool result = tpm2_util_object_load(ectx, ctx.tpm_handle_context_arg,
+        tool_rc rc = tpm2_util_object_load(ectx, ctx.tpm_handle_context_arg,
                 &ctx.tpm_handle_context_object);
-        if (!result) {
+        if (rc != tool_rc_success) {
             LOG_ERR("Invalid TPM object handle");
-            return tool_rc_option_error;
+            return rc;
         }
     }
 
     if (ctx.flags.C) {
-        bool result = tpm2_util_object_load(ectx, ctx.tpm_handle_parent_context_arg,
+        tool_rc rc = tpm2_util_object_load(ectx, ctx.tpm_handle_parent_context_arg,
                 &ctx.tpm_handle_parent_context_object);
-        if (!result) {
+        if (rc != tool_rc_success) {
             LOG_ERR("Invalid TPM object handle parent");
-            return tool_rc_option_error;
+            return rc;
         }
     }
 

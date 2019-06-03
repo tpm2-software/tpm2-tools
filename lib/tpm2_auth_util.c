@@ -148,8 +148,9 @@ static bool handle_session(ESYS_CONTEXT *ectx, const char *path,
         }
     }
 
-    *session = tpm2_session_restore(ectx, tmp, false);
-    if (!*session) {
+    // TODO plumb out
+    tool_rc rc = tpm2_session_restore(ectx, tmp, false, session);
+    if (rc != tool_rc_success) {
         return false;
     }
 

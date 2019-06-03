@@ -117,12 +117,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool init(ESYS_CONTEXT *ectx) {
+static tool_rc init(ESYS_CONTEXT *ectx) {
 
 
     if (!(ctx.key.context_arg && ctx.flags.i && ctx.flags.o)) {
         LOG_ERR("Expected arguments i, o and c.");
-        return false;
+        return tool_rc_general_error;
     }
 
     return tpm2_util_object_load(ectx, ctx.key.context_arg,
@@ -133,12 +133,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = init(ectx);
-    if (!result) {
-        return tool_rc_general_error;
+    tool_rc rc = init(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
             &ctx.key.session, false);
     if (!result) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key.auth_str);

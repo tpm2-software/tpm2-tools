@@ -141,11 +141,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* handle from a session file */
     if (ctx.session.path) {
-        tpm2_session *s = tpm2_session_restore(ectx, ctx.session.path, true);
-        if (!s) {
-            LOG_ERR("Failed to load session from path: %s",
-                    ctx.session.path);
-            return tool_rc_general_error;
+        tpm2_session *s = NULL;
+        tool_rc rc = tpm2_session_restore(ectx, ctx.session.path, true, &s);
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         tpm2_session_close(&s);
@@ -153,10 +152,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_success;
     }
 
-    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.context_arg,
                 &ctx.context_object);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     return flush_contexts_tr(ectx, &ctx.context_object.tr_handle, 1);

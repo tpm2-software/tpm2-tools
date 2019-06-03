@@ -66,27 +66,22 @@ out:
     return ret;
 }
 
-static bool init(ESYS_CONTEXT *ectx) {
+static tool_rc init(ESYS_CONTEXT *ectx) {
 
     if (!ctx.context_arg) {
         LOG_ERR("Expected option c");
-        return false;
+        return tool_rc_option_error;
     }
 
-    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
-                                &ctx.context_object);
-    if (!result) {
-        return false;
-    }
-
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
             &ctx.session, false);
     if (!result) {
         LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.auth_str);
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
+    return tpm2_util_object_load(ectx, ctx.context_arg,
+            &ctx.context_object);
 }
 
 static bool on_option(char key, char *value) {
@@ -126,12 +121,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = init(ectx);
-    if (!result) {
-        return tool_rc_general_error;
+    tool_rc rc = init(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = unseal_and_save(ectx);
+    bool result = unseal_and_save(ectx);
     if (!result) {
         LOG_ERR("Unseal failed!");
         return tool_rc_general_error;

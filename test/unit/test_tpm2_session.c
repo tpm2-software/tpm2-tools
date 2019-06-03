@@ -218,7 +218,8 @@ static void test_tpm2_session_save(void **state) {
     assert_int_equal(rc, tool_rc_success);
     assert_null(s);
 
-    s = tpm2_session_restore(NULL, (char *)*state, false);
+    rc = tpm2_session_restore(NULL, (char *)*state, false, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     ESYS_TR handle2 = tpm2_session_get_handle(s);
