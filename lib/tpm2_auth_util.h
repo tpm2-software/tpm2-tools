@@ -37,9 +37,9 @@
  *  @ is_restricted
  *   True if it is restricted to only password session data.
  * @return
- *  true on success, false on failure.
+ *  tool_rc indicating status.
  */
-bool tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
+tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
         const char *password,
         tpm2_session **session,
         bool is_restricted);

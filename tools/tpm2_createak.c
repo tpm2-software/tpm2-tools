@@ -466,20 +466,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    bool result = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str,
             &ctx.ek.session, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"",
             ctx.ek.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(NULL, ctx.ak.auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.ak.auth_str,
             &tmp, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);

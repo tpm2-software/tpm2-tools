@@ -508,10 +508,10 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
 
     if (ctx.key_auth_str) {
         tpm2_session *tmp;
-        result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
-        if (!result) {
+        tmp_rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
+        if (tmp_rc != tool_rc_success) {
             LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
-            return tool_rc_general_error;
+            return tmp_rc;
         }
 
         const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -520,11 +520,11 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
         tpm2_session_close(&tmp);
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+    tmp_rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
         &ctx.parent.session, false);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        return tool_rc_general_error;
+        return tmp_rc;
     }
 
     /*
@@ -612,14 +612,14 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
       return rc;
     }
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
         &ctx.parent.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = set_key_algorithm(ctx.key_type, &sym_alg);
+    bool result = set_key_algorithm(ctx.key_type, &sym_alg);
     if(!result) {
         return tool_rc_general_error;
     }

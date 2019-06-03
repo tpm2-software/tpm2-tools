@@ -152,14 +152,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
             &ctx.parent.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    tool_rc rc = tpm2_util_object_load(ectx,
+    rc = tpm2_util_object_load(ectx,
                                 ctx.context_arg, &ctx.context_object);
     if (rc != tool_rc_success) {
         return rc;

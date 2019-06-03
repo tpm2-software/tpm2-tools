@@ -126,17 +126,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str, &ctx.parent.session, false);
-    if (!result) {
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str, &ctx.parent.session, false);
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
-    if (!result) {
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid new key authorization, got\"%s\"", ctx.key_auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
@@ -144,7 +144,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, ctx.unique_file, DEFAULT_ATTRS,
+    bool result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, ctx.unique_file, DEFAULT_ATTRS,
             &ctx.objdata.in.public);
     if(!result) {
         return tool_rc_general_error;

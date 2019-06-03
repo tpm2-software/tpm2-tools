@@ -144,11 +144,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.flags.p = 1;
     }
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
+    tmp_rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
            &ctx.auth.session, false);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Invalid authorization authorization, got\"%s\"",
             ctx.auth.auth_str);
+        rc = tmp_rc;
         goto out;
     }
 
@@ -159,7 +160,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     ESYS_TR out_tr;
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
-    result = tpm2_ctx_mgmt_evictcontrol(ectx,
+    bool result = tpm2_ctx_mgmt_evictcontrol(ectx,
             hierarchy,
             ctx.auth.session,
             ctx.context_object.tr_handle,

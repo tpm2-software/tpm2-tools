@@ -209,12 +209,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
             &ctx.object.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid object key authorization, got\"%s\"",
             ctx.object.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     /*

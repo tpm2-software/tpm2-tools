@@ -33,8 +33,8 @@ static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {
     (void)state;
 
     tpm2_session *session;
-    bool res = tpm2_auth_util_from_optarg(NULL, "abcd", &session, true);
-    assert_true(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "abcd", &session, true);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -48,8 +48,8 @@ static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
     (void)state;
 
     tpm2_session *session;
-    bool res = tpm2_auth_util_from_optarg(NULL, "str:abcd", &session, true);
-    assert_true(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "str:abcd", &session, true);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -67,8 +67,8 @@ static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
             0x12, 0x34, 0xab, 0xcd
     };
 
-    bool res = tpm2_auth_util_from_optarg(NULL, "hex:1234abcd", &session, true);
-    assert_true(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "hex:1234abcd", &session, true);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -83,8 +83,8 @@ static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(void **st
 
     tpm2_session *session;
 
-    bool res = tpm2_auth_util_from_optarg(NULL, "str:hex:1234abcd", &session, true);
-    assert_true(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "str:hex:1234abcd", &session, true);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -150,9 +150,9 @@ static void test_tpm2_password_util_from_optarg_file(void **state) {
     will_return(__wrap_ftell, (long)strlen(mocked_file_data));
     will_return(__wrap_ftell, (long)strlen(mocked_file_data));
 
-    bool res = tpm2_auth_util_from_optarg(NULL,
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL,
         "file:test_tpm2_auth_util_foobar", &session, true);
-    assert_true(res);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -167,8 +167,8 @@ static void test_tpm2_password_util_from_optarg_raw_overlength(void **state) {
 
     tpm2_session *session = NULL;
     char *overlength = "this_password_is_over_64_characters_in_length_and_should_fail_XXX";
-    bool res = tpm2_auth_util_from_optarg(NULL, overlength, &session, true);
-    assert_false(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, overlength, &session, true);
+    assert_int_equal(rc, tool_rc_general_error);
     assert_null(session);
 }
 
@@ -180,8 +180,8 @@ static void test_tpm2_password_util_from_optarg_hex_overlength(void **state) {
     char *overlength =
         "hex:ae6f6fa01589aa7b227bb6a34c7a8e0c273adbcf14195ce12391a5cc12a5c271f62088"
         "dbfcf1914fdf120da183ec3ad6cc78a2ffd91db40a560169961e3a6d26bf";
-    bool res = tpm2_auth_util_from_optarg(NULL, overlength, &session, false);
-    assert_false(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, overlength, &session, false);
+    assert_int_equal(rc, tool_rc_general_error);
     assert_null(session);
 }
 
@@ -190,8 +190,8 @@ static void test_tpm2_password_util_from_optarg_empty_str(void **state) {
 
     tpm2_session *session;
 
-    bool res = tpm2_auth_util_from_optarg(NULL, "", &session, true);
-    assert_true(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "", &session, true);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -205,8 +205,8 @@ static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(void **stat
 
     tpm2_session *session;
 
-    bool res = tpm2_auth_util_from_optarg(NULL, "str:", &session, true);
-    assert_true(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "str:", &session, true);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -221,8 +221,8 @@ static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(void **stat
 
     tpm2_session *session;
 
-    bool res = tpm2_auth_util_from_optarg(NULL, "hex:", &session, true);
-    assert_true(res);
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "hex:", &session, true);
+    assert_int_equal(rc, tool_rc_success);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
@@ -262,9 +262,9 @@ static void test_tpm2_auth_util_get_pw_shandle(void **state) {
     ESYS_TR shandle;
 
     tpm2_session *s;
-    bool result = tpm2_auth_util_from_optarg(NULL, "fakepass",
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, "fakepass",
             &s, true);
-    assert_true(result);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, s);

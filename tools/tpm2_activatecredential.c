@@ -263,18 +263,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool res = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
             &ctx.key.session, false);
-    if (!res) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization, got\"%s\"", ctx.key.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    res = tpm2_auth_util_from_optarg(NULL, ctx.endorse.auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.endorse.auth_str,
             &ctx.endorse.session, true);
-    if (!res) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid endorse authorization, got\"%s\"", ctx.endorse.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     return activate_credential_and_output(ectx);

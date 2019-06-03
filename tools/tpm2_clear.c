@@ -76,13 +76,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
-    bool result = false;
 
-    result = tpm2_auth_util_from_optarg(NULL, ctx.auth.auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(NULL, ctx.auth.auth_str,
             &ctx.auth.session, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.auth.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     return clear(ectx);

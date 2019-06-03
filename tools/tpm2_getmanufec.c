@@ -507,27 +507,28 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     ctx.verbose = flags.verbose;
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
             &ctx.auth.endorse.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid endorsement authorization, got\"%s\"",
             ctx.auth.endorse.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
             &ctx.auth.owner.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid owner authorization, got\"%s\"",
             ctx.auth.owner.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(NULL, ctx.ek_auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.ek_auth_str,
             &tmp, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid EK auth");
+        return rc;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);

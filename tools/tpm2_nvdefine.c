@@ -173,19 +173,19 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy.auth_str,
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.hierarchy.auth_str,
             &ctx.hierarchy.session, false);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization, got \"%s\"", ctx.hierarchy.auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     tpm2_session *tmp;
-    result = tpm2_auth_util_from_optarg(NULL, ctx.index_auth_str,
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.index_auth_str,
             &tmp, true);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Invalid index authorization, got\"%s\"", ctx.index_auth_str);
-        return tool_rc_general_error;
+        return rc;
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
