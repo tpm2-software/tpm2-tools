@@ -99,7 +99,7 @@ out:
     return rc;
 }
 
-static bool init(ESYS_CONTEXT *ectx) {
+static tool_rc init(ESYS_CONTEXT *ectx) {
 
     bool option_fail = false;
 
@@ -119,7 +119,7 @@ static bool init(ESYS_CONTEXT *ectx) {
     }
 
     if (option_fail) {
-        return false;
+        return tool_rc_option_error;
     }
 
     if (ctx.flags.D && (ctx.flags.t || ctx.flags.m)) {
@@ -135,20 +135,20 @@ static bool init(ESYS_CONTEXT *ectx) {
     /*
      * load tpm context from a file if -c is provided
      */
-    bool result = tpm2_util_object_load(ectx, ctx.context_arg,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.key_context);
-    if (!result) {
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /*
      * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
      */
-    result = get_signature_scheme(ectx, ctx.key_context.tr_handle,
+    bool result = get_signature_scheme(ectx, ctx.key_context.tr_handle,
                     ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
     if (!result) {
         LOG_ERR("bad signature scheme for key type!");
-        return false;
+        return tool_rc_general_error;
     }
 
     /*
@@ -158,35 +158,35 @@ static bool init(ESYS_CONTEXT *ectx) {
       unsigned long file_size;
       result = files_get_file_size_path(ctx.inMsgFileName, &file_size);
       if (!result) {
-          return false;
+          return tool_rc_general_error;
       }
       if (file_size == 0) {
           LOG_ERR("The message file \"%s\" is empty!", ctx.inMsgFileName);
-          return false;
+          return tool_rc_general_error;
       }
 
       if (file_size > UINT16_MAX) {
           LOG_ERR(
                   "The message file \"%s\" is too large, got: %lu bytes, expected less than: %u bytes!",
                   ctx.inMsgFileName, file_size, UINT16_MAX + 1);
-          return false;
+          return tool_rc_general_error;
       }
 
       ctx.msg = (BYTE*) calloc(required_argument, file_size);
       if (!ctx.msg) {
           LOG_ERR("oom");
-          return false;
+          return tool_rc_general_error;
       }
 
       ctx.length = file_size;
       result = files_load_bytes_from_path(ctx.inMsgFileName, ctx.msg, &ctx.length);
       if (!result) {
           free(ctx.msg);
-          return false;
+          return tool_rc_general_error;
       }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -281,12 +281,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = init(ectx);
-    if (!result) {
-        return tool_rc_general_error;
+    tool_rc rc = init(ectx);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
             &ctx.key.session, false);
     if (!result) {
         LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key.auth_str);

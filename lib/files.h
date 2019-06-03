@@ -99,9 +99,9 @@ tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *context,
  * @param path
  *  The path to the input file.
  * @return
- *  True on Success, false on error.
+ *  tool_rc status indicating success.
  */
-bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
+tool_rc files_load_tpm_context_from_path(ESYS_CONTEXT *context,
         ESYS_TR *tr_handle, const char *path);
 
 /**
@@ -113,9 +113,9 @@ bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
  * @param stream
  *  The FILE stream to read from.
  * @return
- *  True on success, False on error.
+ *  tool_rc status indicating success.
  */
-bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
+tool_rc files_load_tpm_context_from_file(ESYS_CONTEXT *context,
         ESYS_TR *tr_handle, FILE *stream);
 
 /**

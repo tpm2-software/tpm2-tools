@@ -607,13 +607,13 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     }
 }
 
-bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
+tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
                         const char *objectstr, tpm2_loaded_object *outobject) {
 
     // 0. If objecstr is NULL return error
     if (!objectstr) {
         LOG_ERR("tpm2_util_object_load called with empty objectstr parameter");
-        return false;
+        return tool_rc_general_error;
     }
 
     // 1. If the objectstr starts with a file: prefix, treat as a context file
@@ -622,7 +622,8 @@ bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
         outobject->handle = 0;
         outobject->path = objectstr += FILE_PREFIX_LEN;
         return files_load_tpm_context_from_path(ctx,
-                &outobject->tr_handle, outobject->path);
+                &outobject->tr_handle, outobject->path) ?
+                    tool_rc_success : tool_rc_general_error;
     }
 
     // 2. If the objstr is "null" set the handle to RH_NULL
@@ -631,7 +632,7 @@ bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
         outobject->path = NULL;
         outobject->tr_handle = ESYS_TR_RH_NULL;
         outobject->handle = TPM2_RH_NULL;
-        return true;
+        return tool_rc_success;
     }
 
     // 3. Try to load objectstr as a TPM2_HANDLE
@@ -639,7 +640,8 @@ bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
                     &outobject->handle);
     if (result) {
         outobject->path = NULL;
-        return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle, &outobject->tr_handle);
+        return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle, &outobject->tr_handle) ?
+                tool_rc_success : tool_rc_general_error;
     }
 
     // 4. we must assume the whole value is a file path

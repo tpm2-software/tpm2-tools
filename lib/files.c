@@ -344,11 +344,11 @@ static bool check_magic(FILE *fstream, bool seek_reset) {
     return match;
 }
 
-bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
+tool_rc files_load_tpm_context_from_file(ESYS_CONTEXT *context,
         ESYS_TR *tr_handle, FILE *fstream) {
 
     TPMS_CONTEXT tpms_context;
-    ESYS_TR loaded_handle;
+    tool_rc rc = tool_rc_general_error;
 
     bool result = check_magic(fstream, true);
     if (result) {
@@ -359,65 +359,59 @@ bool files_load_tpm_context_from_file(ESYS_CONTEXT *context,
             goto out;
         }
 
-        TSS2_RC rval = Esys_ContextLoad(context, &tpms_context, &loaded_handle);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_ContextLoad, rval);
-            result = false;
-            goto out;
-        }
+        return tpm2_context_load(context, &tpms_context, tr_handle);
+    }
 
-    } else {
-        LOG_INFO("Assuming tpm context file");
-        /* try ESYS TR deserialize */
-        unsigned long size = 0;
-        result = files_get_file_size(fstream, &size, NULL);
-        if (!result) {
-            LOG_ERR("Failed to get file size: %s", strerror(ferror(fstream)));
-            goto out;
-        }
+    ESYS_TR loaded_handle;
+    LOG_INFO("Assuming tpm context file");
+    /* try ESYS TR deserialize */
+    unsigned long size = 0;
+    result = files_get_file_size(fstream, &size, NULL);
+    if (!result) {
+        LOG_ERR("Failed to get file size: %s", strerror(ferror(fstream)));
+        goto out;
+    }
 
-        if (size < 1) {
-            LOG_ERR("Invalid serialized ESYS_TR size, got: %lu", size);
-            goto out;
-        }
+    if (size < 1) {
+        LOG_ERR("Invalid serialized ESYS_TR size, got: %lu", size);
+        goto out;
+    }
 
-        uint8_t *buffer = calloc(1, size);
-        if (!buffer) {
-            LOG_ERR("oom");
-            goto out;
-        }
+    uint8_t *buffer = calloc(1, size);
+    if (!buffer) {
+        LOG_ERR("oom");
+        goto out;
+    }
 
-        result = files_read_bytes(fstream, buffer, size);
-        if (!result) {
-            LOG_ERR("Could not read serialized ESYS_TR from disk");
-            free(buffer);
-            goto out;
-        }
-
-        TSS2_RC rval = Esys_TR_Deserialize(
-            context,
-            buffer,
-            size,
-            &loaded_handle);
+    result = files_read_bytes(fstream, buffer, size);
+    if (!result) {
+        LOG_ERR("Could not read serialized ESYS_TR from disk");
         free(buffer);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_TR_Deserialize, rval);
-            result = false;
-            goto out;
-        }
+        goto out;
+    }
+
+    TSS2_RC rval = Esys_TR_Deserialize(
+        context,
+        buffer,
+        size,
+        &loaded_handle);
+    free(buffer);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_Deserialize, rval);
+        goto out;
     }
 
     if (tr_handle) {
         *tr_handle = loaded_handle;
     }
 
-    result = true;
+    rc = tool_rc_success;
 
 out:
-    return result;
+    return rc;
 }
 
-bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
+tool_rc files_load_tpm_context_from_path(ESYS_CONTEXT *context,
         ESYS_TR *tr_handle, const char *path) {
 
     FILE *f = fopen(path, "rb");
@@ -427,10 +421,10 @@ bool files_load_tpm_context_from_path(ESYS_CONTEXT *context,
         return false;
     }
 
-    bool result = files_load_tpm_context_from_file(context, tr_handle, f);
+    tool_rc rc = files_load_tpm_context_from_file(context, tr_handle, f);
 
     fclose(f);
-    return result;
+    return rc;
 }
 
 bool files_get_unique_name(const char *path, char **name) {

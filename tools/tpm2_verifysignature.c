@@ -107,35 +107,36 @@ static TPM2B *message_from_file(const char *msg_file_path) {
     return msg;
 }
 
-static bool init(ESYS_CONTEXT *context) {
+static tool_rc init(ESYS_CONTEXT *context) {
+
+    tool_rc rc = tool_rc_general_error;
 
     /* check flags for mismatches */
     if (ctx.flags.digest && (ctx.flags.msg || ctx.flags.halg)) {
         LOG_ERR(
                 "Cannot specify --digest (-D) and ( --msg (-m) or --halg (-g) )");
-        return false;
+        return tool_rc_option_error;
     }
 
     if (!(ctx.context_arg && ctx.flags.sig)) {
         LOG_ERR(
                 "--key-context (-c) and --sig (-s) are required");
-        return false;
+        return tool_rc_option_error;
     }
 
     TPM2B *msg = NULL;
-    bool return_value = false;
 
-    bool result = tpm2_util_object_load(context, ctx.context_arg,
+    tool_rc tmp_rc = tpm2_util_object_load(context, ctx.context_arg,
                                 &ctx.key_context_object);
-    if (!result) {
-        return false;
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
     }
 
     if (ctx.flags.msg) {
         msg = message_from_file(ctx.msg_file_path);
         if (!msg) {
             /* message_from_file() logs specific error no need to here */
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -166,12 +167,12 @@ static bool init(ESYS_CONTEXT *context) {
             goto err;
         }
     }
-    return_value = true;
+
+    rc = tool_rc_success;
 
 err:
     free(msg);
-    return return_value;
-
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -251,12 +252,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 	UNUSED(flags);
 
     /* initialize and process */
-    bool res = init(context);
-    if (!res) {
-        return tool_rc_general_error;
+    tool_rc rc = init(context);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    res = verify_signature(context);
+    bool res = verify_signature(context);
     if (!res) {
         LOG_ERR("Verify signature failed!");
         return tool_rc_general_error;

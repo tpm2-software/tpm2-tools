@@ -202,11 +202,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.object.context_arg,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.object.context_arg,
                                 &ctx.object.context);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
+
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
             &ctx.object.session, false);

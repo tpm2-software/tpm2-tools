@@ -330,10 +330,10 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent);
  * A *tpm2_loaded_object* with a loaded handle. The path member will also be
  * set when the *objectstr* is a context file.
  * @return
- *  True on success false on error.
+ *  tool_rc indicating status.
  *
  */
-bool tpm2_util_object_load(ESYS_CONTEXT *ctx,
+tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
                         const char *objectstr, tpm2_loaded_object *outobject);
 
 /**

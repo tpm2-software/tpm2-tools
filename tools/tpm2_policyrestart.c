@@ -52,9 +52,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    ctx.session = tpm2_session_restore(ectx, ctx.path, false);
-    if (!ctx.session) {
-        return tool_rc_general_error;
+    tool_rc rc = tpm2_session_restore(ectx, ctx.path, false, &ctx.session);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     bool result = tpm2_session_restart(ectx, ctx.session);

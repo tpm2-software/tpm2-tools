@@ -105,31 +105,31 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool init(ESYS_CONTEXT *context) {
+static tool_rc init(ESYS_CONTEXT *context) {
 
     if (!ctx.context_arg) {
         LOG_ERR("Expected option C");
-        return false;
-    }
-
-    bool result = tpm2_util_object_load(context,
-                                ctx.context_arg, &ctx.key_context);
-    if (!result) {
-        return false;
+        return tool_rc_option_error;
     }
 
     ctx.message.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
-    return files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
         &ctx.message.size, ctx.message.buffer);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    return tpm2_util_object_load(context,
+                     ctx.context_arg, &ctx.key_context);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = init(context);
-    if (!result) {
-        return tool_rc_general_error;
+    tool_rc rc = init(context);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     return rsa_encrypt_and_save(context);

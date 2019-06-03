@@ -238,16 +238,16 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.object.object_arg,
+    rc = tpm2_util_object_load(ectx, ctx.object.object_arg,
 		    &ctx.object.object);
-    if(!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.new_parent_object_arg,
+    rc = tpm2_util_object_load(ectx, ctx.new_parent_object_arg,
 		    &ctx.new_parent_object_context);
-    if(!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,

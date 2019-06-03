@@ -132,31 +132,31 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
-static bool init(ESYS_CONTEXT *context) {
+static tool_rc init(ESYS_CONTEXT *context) {
 
-    bool result = tpm2_util_object_load(context,
+    tool_rc rc = tpm2_util_object_load(context,
                                 ctx.context_arg, &ctx.context_object);
-    if (!result) {
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     bool is_persistent = ctx.context_object.handle
             && ((ctx.context_object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT);
     if (ctx.out_tr_file && !is_persistent) {
         LOG_ERR("Can only output a serialized handle for persistent object handles");
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result = init(context);
-    if (!result) {
-        return tool_rc_general_error;
+    tool_rc rc = init(context);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     return read_public_and_save(context);

@@ -246,23 +246,23 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     /* Load input files */
-    bool result = tpm2_util_object_load(ectx, ctx.object.context_arg,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.object.context_arg,
                                     &ctx.object.object);
-    if (!result) {
+    if (rc != tool_rc_success) {
         tpm2_tool_output("Failed to load context object (handle: 0x%x, path: %s).\n",
                 ctx.object.object.handle, ctx.object.object.path);
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_util_object_load(ectx, ctx.key.context_arg,
+    rc = tpm2_util_object_load(ectx, ctx.key.context_arg,
             &ctx.key.object);
-    if (!result) {
+    if (rc != tool_rc_success) {
         tpm2_tool_output("Failed to load context object for key (handle: 0x%x, path: %s).\n",
                 ctx.key.object.handle, ctx.key.object.path);
         return tool_rc_general_error;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
             &ctx.object.session, false);
     if (!result) {
         LOG_ERR("Invalid object key authorization, got\"%s\"", ctx.object.auth_str);

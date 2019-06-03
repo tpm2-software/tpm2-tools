@@ -326,10 +326,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    result = tpm2_util_object_load(ectx, ctx.context_arg,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.context_arg,
                                 &ctx.context_object);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     result = pcr_get_banks(ectx, &ctx.cap_data, &ctx.algs);

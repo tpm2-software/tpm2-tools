@@ -421,16 +421,18 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
      * Load the parent public file, or read it from the TPM if not specified.
      * We need this information for encrypting the protection seed.
      */
-    bool result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
+    tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
                                 &parent_ctx);
-    if (!result) {
-      goto out;
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+        goto out;
     }
 
     TPM2B_PUBLIC ppub = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC *parent_pub = NULL;
 
-    tool_rc tmp_rc = tool_rc_general_error;
+    bool result;
+    tmp_rc = tool_rc_general_error;
     if (ctx.parent_key_public_file) {
         result = files_load_public(ctx.parent_key_public_file, &ppub);
         parent_pub = &ppub;
@@ -604,13 +606,13 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
     tpm2_loaded_object parent_object_context;
     TPMT_SYM_DEF_OBJECT sym_alg;
 
-    bool result = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.parent_ctx_arg,
                                 &parent_object_context);
-    if (!result) {
-      return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+      return rc;
     }
 
-    result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+    bool result = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
         &ctx.parent.session, false);
     if (!result) {
         LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
@@ -664,7 +666,7 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
         return tool_rc_general_error;
     }
 
-    tool_rc rc = do_import(
+    rc = do_import(
             ectx,
             parent_object_context.tr_handle,
             &encrypted_seed,
