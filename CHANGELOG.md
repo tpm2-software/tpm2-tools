@@ -1,5 +1,5 @@
 ## Changelog
-### 3.2.0 - next
+### 3.2.0-rc0 - 2019-06-03
 * tpm2_changeauth: Support changing platform hierarchy auth.
 * tpm2_flushcontext: Introduce new tool for flushing handles from the TPM.
 * tpm2_checkquote: Introduce new tool for checking validity of quotes.
