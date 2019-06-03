@@ -57,16 +57,16 @@ else
     rsamethods="$(populate_algs "details['signing'] and not details['hash'] and \"ec\" not in alg")"
 
     # Check testing of AES modes
-    tpm2_incrementalselftest ${aesmodes} | grep -q "all tested"
+    tpm2_incrementalselftest ${aesmodes} | grep -q "complete"
 
     # Check testing of Hash algorithms
-    tpm2_incrementalselftest ${hashalgs} | grep -q "all tested"
+    tpm2_incrementalselftest ${hashalgs} | grep -q "complete"
 
     # Check testing of ECC methods
-    tpm2_incrementalselftest ${eccmethods} | grep -q "all tested"
+    tpm2_incrementalselftest ${eccmethods} | grep -q "complete"
 
     # Check testing of RSA methods
-    tpm2_incrementalselftest ${rsamethods} | grep -q "all tested"
+    tpm2_incrementalselftest ${rsamethods} | grep -q "complete"
 fi
 
 exit 0
