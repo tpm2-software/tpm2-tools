@@ -87,6 +87,13 @@ tpm2_encryptdecrypt -Q -D -c decrypt.ctx -i encrypt2.out --iv iv2.dat -o decrypt
 cmp secret.dat decrypt.out
 cmp secret.dat decrypt2.out
 
+# Test that input data sizes greater than TPM2_MAX_BUFFER or 1024 work
+dd if=/dev/zero bs=1 count=2048 status=none of=secret2.dat
+cat secret2.dat | tpm2_encryptdecrypt -Q -c decrypt.ctx -o encrypt.out
+tpm2_encryptdecrypt -Q -c decrypt.ctx -i encrypt.out -D -o decrypt.out
+
+cmp secret2.dat decrypt.out
+
 # Negative that bad mode fails
 trap - ERR
 
