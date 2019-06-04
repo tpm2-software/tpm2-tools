@@ -117,7 +117,7 @@ const TPM2B_AUTH *tpm2_session_get_auth_value(tpm2_session *session) {
 }
 
 //
-// This is a wrapper function around the Esys_StartAuthSession command.
+// This is a wrapper function around the StartAuthSession command.
 // It performs the command, calculates the session key, and updates a
 // SESSION structure.
 //
