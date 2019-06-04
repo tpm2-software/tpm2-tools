@@ -26,10 +26,6 @@ rm -f "${temp}"
 # the behaviour of tpm2_incrementalselftest and see
 # each alg become scheduled and tested. If there are
 # some leftovers, just print them
-#
-# Else just verify that the command didn't «lie» to us
-# and every algorithm are effectively being already
-# tested
 if [ -n "${alglist}" ]; then
     for i in ${alglist}; do
         if ! tpm2_incrementalselftest "${i}" ; then
@@ -47,26 +43,28 @@ if [ -n "${alglist}" ]; then
     else
         true
     fi
-else
-    aesmodes="$(populate_algs "details['encrypting'] and details['symmetric']")"
-    hashalgs="$(populate_algs "details['hash'] and not details['method'] \
-                                            and not details['signing'] \
-                                            and not details['symmetric'] \
-                                            and alg is not None")"
-    eccmethods="$(populate_algs "details['signing'] and not details['hash'] and \"rsa\" not in alg")"
-    rsamethods="$(populate_algs "details['signing'] and not details['hash'] and \"ec\" not in alg")"
-
-    # Check testing of AES modes
-    tpm2_incrementalselftest ${aesmodes} | grep -q "complete"
-
-    # Check testing of Hash algorithms
-    tpm2_incrementalselftest ${hashalgs} | grep -q "complete"
-
-    # Check testing of ECC methods
-    tpm2_incrementalselftest ${eccmethods} | grep -q "complete"
-
-    # Check testing of RSA methods
-    tpm2_incrementalselftest ${rsamethods} | grep -q "complete"
 fi
+
+# Finally just verify that every algorithm are
+# effectively being already tested
+aesmodes="$(populate_algs "details['encrypting'] and details['symmetric']")"
+hashalgs="$(populate_algs "details['hash'] and not details['method'] \
+                                        and not details['signing'] \
+                                        and not details['symmetric'] \
+                                        and alg is not None")"
+eccmethods="$(populate_algs "details['signing'] and not details['hash'] and \"rsa\" not in alg")"
+rsamethods="$(populate_algs "details['signing'] and not details['hash'] and \"ec\" not in alg")"
+
+# Check testing of AES modes
+tpm2_incrementalselftest ${aesmodes} | grep -q "complete"
+
+# Check testing of Hash algorithms
+tpm2_incrementalselftest ${hashalgs} | grep -q "complete"
+
+# Check testing of ECC methods
+tpm2_incrementalselftest ${eccmethods} | grep -q "complete"
+
+# Check testing of RSA methods
+tpm2_incrementalselftest ${rsamethods} | grep -q "complete"
 
 exit 0
