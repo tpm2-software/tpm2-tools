@@ -104,4 +104,9 @@ tool_rc tpm2_sess_set_attributes(
     TPMA_SESSION flags,
     TPMA_SESSION mask);
 
+tool_rc tpm2_sess_get_attributes(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR session,
+    TPMA_SESSION *flags);
+
 #endif /* LIB_TPM2_H_ */

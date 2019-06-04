@@ -307,14 +307,12 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
                     &sapi_handle);
 
         /* hack this in here, should be done when starting the session */
-        TSS2_RC rc =
-            Esys_TRSess_GetAttributes(
+        tool_rc tmp_rc =
+                tpm2_sess_get_attributes(
                 ctx,
                 handle,
                 &attrs);
-        if (rc != TSS2_RC_SUCCESS) {
-            LOG_WARN("Esys_TRSess_GetAttributes: 0x%x", rc);
-        }
+        UNUSED(tmp_rc);
     }
 
     s->internal.is_final = is_final;
