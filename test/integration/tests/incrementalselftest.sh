@@ -52,8 +52,8 @@ hashalgs="$(populate_algs "details['hash'] and not details['method'] \
                                         and not details['signing'] \
                                         and not details['symmetric'] \
                                         and alg is not None")"
-eccmethods="$(populate_algs "details['signing'] and not details['hash'] and \"rsa\" not in alg")"
-rsamethods="$(populate_algs "details['signing'] and not details['hash'] and \"ec\" not in alg")"
+eccmethods="$(populate_algs "details['signing'] and not details['hash'] and \"ec\" in alg")"
+rsamethods="$(populate_algs "details['signing'] and not details['hash'] and \"rsa\" in alg")"
 
 # Check testing of AES modes
 tpm2_incrementalselftest ${aesmodes} | grep -q "complete"
