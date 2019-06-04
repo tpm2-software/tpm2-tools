@@ -291,3 +291,20 @@ tool_rc tpm2_sess_set_attributes(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_sess_get_attributes(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR session,
+    TPMA_SESSION *flags) {
+
+    TSS2_RC rval = Esys_TRSess_GetAttributes(
+        esysContext,
+        session,
+        flags);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TRSess_GetAttributes, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
