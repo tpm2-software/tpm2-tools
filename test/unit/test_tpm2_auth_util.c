@@ -277,7 +277,8 @@ static void test_tpm2_auth_util_get_pw_shandle(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    s = tpm2_session_open(ectx, d);
+    rc = tpm2_session_open(ectx, d, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, s);

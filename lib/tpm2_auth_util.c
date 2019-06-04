@@ -82,36 +82,33 @@ static bool handle_password(const char *password, TPM2B_AUTH *auth) {
     return handle_str_password(password, auth);
 }
 
-static tpm2_session *start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth) {
+static tool_rc start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth, tpm2_session **session) {
 
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_HMAC);
     if (!d) {
         LOG_ERR("oom");
-        return NULL;
+        return tool_rc_general_error;
     }
 
-    tpm2_session *s = tpm2_session_open(ectx, d);
-    if (!s) {
-        LOG_ERR("oom");
-        return NULL;
+    tool_rc rc = tpm2_session_open(ectx, d, session);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    tpm2_session_set_auth_value(s, auth);
+    tpm2_session_set_auth_value(*session, auth);
 
-    return s;
+    return tool_rc_success;
 }
 
-static bool handle_password_session(ESYS_CONTEXT *ectx, const char *password, tpm2_session **session) {
+static tool_rc handle_password_session(ESYS_CONTEXT *ectx, const char *password, tpm2_session **session) {
 
     TPM2B_AUTH auth = { 0 };
     bool result = handle_password(password, &auth);
     if (!result) {
-        return result;
+        return tool_rc_general_error;
     }
 
-    *session = start_hmac_session(ectx, &auth);
-
-    return *session != NULL;
+    return start_hmac_session(ectx, &auth, session);
 }
 
 static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
@@ -166,7 +163,7 @@ static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
     return tool_rc_success;
 }
 
-static bool handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **session) {
+static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **session) {
 
     bool ret = false;
 
@@ -182,31 +179,27 @@ static bool handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **ses
     ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL, path,
             &size, buffer);
     if (!ret) {
-        return false;
+        return tool_rc_general_error;
     }
 
     ret = handle_password((char *)buffer, &auth);
     if (!ret) {
-        return false;
+        return tool_rc_general_error;
     }
 
-    *session = start_hmac_session(ectx, &auth);
-
-    return *session != NULL;
+    return start_hmac_session(ectx, &auth, session);
 }
 
-static bool handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session **session) {
+static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session **session) {
 
     policy += PCR_PREFIX_LEN;
 
-    bool result = false;
-
-    tpm2_session *s = NULL;
+    tool_rc rc = tool_rc_general_error;
 
     char *dup = strdup(policy);
     if (!dup) {
         LOG_ERR("oom");
-        return false;
+        return tool_rc_general_error;
     }
 
     const char *pcr_str = dup;
@@ -230,37 +223,32 @@ static bool handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session **se
         goto out;
     }
 
-    s = tpm2_session_open(ectx, d);
-    if (!s) {
+    tpm2_session *s = NULL;
+    tool_rc tmp_rc = tpm2_session_open(ectx, d, &s);
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Could not start tpm session");
+        rc = tmp_rc;
         goto out;
     }
 
     ret = tpm2_policy_build_pcr(ectx, s,
             raw_path, &pcrs);
     if (!ret) {
+        tpm2_session_close(&s);
         goto out;
     }
 
     *session = s;
-
-    result = true;
+    rc = tool_rc_success;
 
 out:
     free(dup);
 
-    /* if fail close session */
-    if (!result) {
-        tpm2_session_close(&s);
-    }
-
-    return result;
+    return rc;
 }
 
 tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     tpm2_session **session, bool is_restricted) {
-
-    bool result;
 
     password = password ? password : "";
 
@@ -273,42 +261,23 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
             return tool_rc_general_error;
         }
 
-        tool_rc rc = handle_session(ectx, password, session);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-        goto handled;
+        return handle_session(ectx, password, session);
     }
 
     /* starts with "file:" */
     bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
     if (is_file) {
-        result = handle_file(ectx, password, session);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-        goto handled;
+        return handle_file(ectx, password, session);
     }
 
     /* starts with pcr: */
     bool is_pcr = !strncmp(password, PCR_PREFIX, PCR_PREFIX_LEN);
     if (is_pcr) {
-        result = handle_pcr(ectx, password, session);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-        goto handled;
+        return handle_pcr(ectx, password, session);
     }
 
     /* must be a password */
-    result = handle_password_session(ectx, password, session);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-handled:
-
-    return tool_rc_success;
+    return handle_password_session(ectx, password, session);
 }
 
 ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,

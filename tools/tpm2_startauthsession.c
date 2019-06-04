@@ -84,8 +84,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tool_rc rc = tool_rc_general_error;
 
-    tpm2_session *s = NULL;
-
     /*
      * attempt to set up the encryption parameters for this, we load an ESYS_TR from disk for
      * transient objects and we load from tpm public for persistent objects. Deserialized ESYS TR
@@ -152,9 +150,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         tpm2_session_set_attrs(session_data, attrs);
     }
 
-    s = tpm2_session_open(ectx,
-            session_data);
-    if (!s) {
+    tpm2_session *s = NULL;
+    rc = tpm2_session_open(ectx,
+            session_data, &s);
+    if (rc != tool_rc_success) {
         return rc;
     }
 

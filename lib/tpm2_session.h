@@ -139,11 +139,13 @@ static inline bool tpm2_session_is_trial(tpm2_session *session) {
  *  modified with the tpm2_session_data_set_*() routines.
  *  This pointer is owned by the tpm2_session object and the caller can
  *  forget about it at this point.
+ * @param session
+ *  The output session on success.
  * @return
- *  A tpm2_session object and a started tpm session or NULL on failure.
+ *  A tool_rc indicating status.
  */
-tpm2_session *tpm2_session_open(ESYS_CONTEXT *context,
-        tpm2_session_data *data);
+tool_rc tpm2_session_open(ESYS_CONTEXT *context,
+        tpm2_session_data *data, tpm2_session **session);
 
 /**
  * Saves session data to disk allowing tpm2_session_from_file() to

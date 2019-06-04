@@ -131,10 +131,10 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    tpm2_session *session = tpm2_session_open(ectx, d);
-    if (!session) {
-        LOG_ERR("Could not start tpm session");
-        return false;
+    tpm2_session *session = NULL;
+    tool_rc tmp_rc = tpm2_session_open(ectx, d, &session);
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
     }
 
     // Set session up
