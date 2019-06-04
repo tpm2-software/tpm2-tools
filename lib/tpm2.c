@@ -76,6 +76,25 @@ tool_rc tpm2_tr_deserialize(
     return tool_rc_success;
 }
 
+tool_rc tpm2_tr_serialize(
+    ESYS_CONTEXT *esys_context,
+    ESYS_TR object,
+    uint8_t **buffer,
+    size_t *buffer_size) {
+
+    TSS2_RC rval = Esys_TR_Serialize(
+            esys_context,
+            object,
+            buffer,
+            buffer_size);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_Serialize, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_close(
         ESYS_CONTEXT *esys_context,
         ESYS_TR *rsrc_handle) {

@@ -25,6 +25,12 @@ tool_rc tpm2_tr_deserialize(
     size_t buffer_size,
     ESYS_TR *esys_handle);
 
+tool_rc tpm2_tr_serialize(
+    ESYS_CONTEXT *esys_context,
+    ESYS_TR object,
+    uint8_t **buffer,
+    size_t *buffer_size);
+
 tool_rc tpm2_nv_readpublic(
         ESYS_CONTEXT *esysContext,
         ESYS_TR nvIndex,

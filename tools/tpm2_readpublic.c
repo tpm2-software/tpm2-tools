@@ -39,11 +39,13 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
     TPM2B_NAME *name;
     TPM2B_NAME *qualified_name;
 
-    tool_rc rc = tpm2_readpublic(ectx, ctx.context_object.tr_handle,
+    tool_rc rc = tool_rc_general_error;
+
+    tool_rc tmp_rc = tpm2_readpublic(ectx, ctx.context_object.tr_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     &public, &name, &qualified_name);
-    if (rc != tool_rc_success) {
-        return rc;
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
     }
 
     tpm2_tool_output("name: ");
@@ -77,8 +79,10 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.out_tr_file) {
-        ret = files_save_ESYS_TR(ectx, ctx.context_object.tr_handle,
+        rc = files_save_ESYS_TR(ectx, ctx.context_object.tr_handle,
             ctx.out_tr_file);
+    } else {
+        rc = tool_rc_success;
     }
 
 out:
@@ -86,7 +90,7 @@ out:
     free(name);
     free(qualified_name);
 
-    return ret ? tool_rc_success : tool_rc_general_error;
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
