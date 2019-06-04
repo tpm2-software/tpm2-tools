@@ -126,14 +126,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.property) {
         TPMS_CAPABILITY_DATA *capability_data;
-        bool ok = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, ctx.property,
+        tool_rc rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES, ctx.property,
                 TPM2_MAX_CAP_HANDLES, &capability_data);
-        if (!ok) {
-            return tool_rc_general_error;
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         TPML_HANDLE *handles = &capability_data->data.handles;
-        tool_rc rc = flush_contexts_tpm2(ectx, handles->handle,
+        rc = flush_contexts_tpm2(ectx, handles->handle,
                                     handles->count);
         free(capability_data);
         return rc;

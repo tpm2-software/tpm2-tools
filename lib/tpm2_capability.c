@@ -7,6 +7,7 @@
 #include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_util.h"
 
 #include "tpm2_capability.h"
@@ -29,7 +30,7 @@
         more_data = false; \
     }
 
-bool tpm2_capability_get (ESYS_CONTEXT *ectx,
+tool_rc tpm2_capability_get (ESYS_CONTEXT *ectx,
         TPM2_CAP capability,
         UINT32 property,
         UINT32 count,
@@ -43,21 +44,18 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
 
         /* fetch capability info */
         TPMS_CAPABILITY_DATA *fetched_data = NULL;
-        TSS2_RC rval = Esys_GetCapability (ectx,
+        tool_rc rc = tpm2_get_capability(ectx,
                             ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                             capability, property, count - property_count,
                             &more_data, &fetched_data);
         LOG_INFO("GetCapability: capability: 0x%x, property: 0x%x", capability, property);
 
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x",
-                     capability, property);
-            LOG_PERR(ESys_GetCapability, rval);
+        if (rc != tool_rc_success) {
             if (*capability_data) {
                 free(*capability_data);
                 *capability_data = NULL;
             }
-            return false;
+            return rc;
         }
 
         if (fetched_data->capability != capability) {
@@ -68,7 +66,7 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
                 free(*capability_data);
                 *capability_data = NULL;
             }
-            return false;
+            return tool_rc_general_error;
         }
 
         if (*capability_data == NULL) {
@@ -77,7 +75,7 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
 
             if (!more_data) {
                 /* there won't be another iteration of the loop, just return the result unmodified */
-                return true;
+                return tool_rc_success;
             }
         }
 
@@ -122,7 +120,7 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
                 }
                 free(*capability_data);
                 *capability_data = NULL;
-                return false;
+                return tool_rc_general_error;
         }
 
         if (fetched_data != *capability_data) {
@@ -130,19 +128,19 @@ bool tpm2_capability_get (ESYS_CONTEXT *ectx,
         }
     } while (more_data);
 
-    return true;
+    return tool_rc_success;
 }
 
-bool tpm2_capability_find_vacant_persistent_handle (ESYS_CONTEXT *ctx,
+tool_rc tpm2_capability_find_vacant_persistent_handle (ESYS_CONTEXT *ctx,
         UINT32 *vacant) {
 
     TPMS_CAPABILITY_DATA *capability_data;
     bool handle_found = false;
-    bool ret = tpm2_capability_get(ctx, TPM2_CAP_HANDLES,
+    tool_rc rc = tpm2_capability_get(ctx, TPM2_CAP_HANDLES,
                     TPM2_PERSISTENT_FIRST, TPM2_MAX_CAP_HANDLES,
                     &capability_data);
-    if (!ret) {
-        goto out;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     UINT32 count = capability_data->data.handles.count;
@@ -179,5 +177,5 @@ bool tpm2_capability_find_vacant_persistent_handle (ESYS_CONTEXT *ctx,
 
 out:
     free(capability_data);
-    return handle_found;
+    return handle_found ? tool_rc_success : tool_rc_general_error;
 }

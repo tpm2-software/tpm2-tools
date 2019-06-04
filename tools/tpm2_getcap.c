@@ -835,7 +835,7 @@ dump_handles (TPM2_HANDLE     handles[],
 /*
  * Query the TPM for TPM capabilities.
  */
-static TSS2_RC
+static tool_rc
 get_tpm_capability_all (ESYS_CONTEXT *context,
                         TPMS_CAPABILITY_DATA  **capability_data) {
     return tpm2_capability_get(context, options.capability, options.property,
@@ -957,8 +957,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
     /* get requested capability from TPM, dump it to stdout */
-    if (!get_tpm_capability_all(context, &capability_data))
-        return tool_rc_general_error;
+    tool_rc rc = get_tpm_capability_all(context, &capability_data);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     bool result = dump_tpm_capability(&capability_data->data);
     free(capability_data);

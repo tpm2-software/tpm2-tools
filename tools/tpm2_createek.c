@@ -373,9 +373,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         /* If user passes a handle of '-' we try and find a vacant slot for
          * to use and tell them what it is.
          */
-        ret = tpm2_capability_find_vacant_persistent_handle(ectx,
+        rc = tpm2_capability_find_vacant_persistent_handle(ectx,
                         &ctx.ctx_obj.handle);
-        if (!ret) {
+        if (rc != tool_rc_success) {
             LOG_ERR("handle/-H passed with a value '-' but unable to find a"
                     " vacant persistent handle!");
             goto out;
