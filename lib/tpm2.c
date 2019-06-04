@@ -239,3 +239,55 @@ tool_rc tpm2_flush_context(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_start_auth_session(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR tpmKey,
+    ESYS_TR bind,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_NONCE *nonceCaller,
+    TPM2_SE sessionType,
+    const TPMT_SYM_DEF *symmetric,
+    TPMI_ALG_HASH authHash,
+    ESYS_TR *sessionHandle) {
+
+    TSS2_RC rval = Esys_StartAuthSession(
+            esysContext,
+            tpmKey,
+            bind,
+            shandle1,
+            shandle2,
+            shandle3,
+            nonceCaller,
+            sessionType,
+            symmetric,
+            authHash,
+            sessionHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_StartAuthSession, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_sess_set_attributes(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR session,
+    TPMA_SESSION flags,
+    TPMA_SESSION mask) {
+
+    TSS2_RC rval = Esys_TRSess_SetAttributes(
+        esysContext,
+        session,
+        flags,
+        mask);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TRSess_SetAttributes, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

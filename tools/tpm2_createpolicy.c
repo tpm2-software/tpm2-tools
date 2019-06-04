@@ -58,32 +58,37 @@ static create_policy_ctx pctx = {
     .common_policy_options = TPM2_COMMON_POLICY_INIT
 };
 
-static bool parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
+static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
     if (!pctx.common_policy_options.policy_type.PolicyPCR){
         LOG_ERR("Only PCR policy is currently supported!");
-        return false;
+        return tool_rc_general_error;
     }
 
     tpm2_session_data *session_data =
             tpm2_session_data_new(pctx.common_policy_options.policy_session_type);
     if (!session_data) {
         LOG_ERR("oom");
-        return false;
+        return tool_rc_general_error;
     }
 
     tpm2_session_set_authhash(session_data,
             pctx.common_policy_options.policy_digest_hash_alg);
 
-    pctx.common_policy_options.policy_session = tpm2_session_open(ectx,
-            session_data);
+    tpm2_session **s = &pctx.common_policy_options.policy_session;
+
+    tool_rc rc = tpm2_session_open(ectx,
+            session_data, s);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     bool result = tpm2_policy_build_pcr(ectx, pctx.common_policy_options.policy_session,
             pctx.pcr_policy_options.raw_pcrs_file,
             &pctx.pcr_policy_options.pcr_selections);
     if (!result) {
         LOG_ERR("Could not start tpm session");
-        return false;
+        return tool_rc_general_error;
     }
 
     result = tpm2_policy_get_digest(ectx,
@@ -91,7 +96,7 @@ static bool parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
             &pctx.common_policy_options.policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
-        return false;
+        return tool_rc_general_error;
     }
 
     // Display the policy digest during real policy session.
@@ -113,11 +118,11 @@ static bool parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
         if (!result) {
             LOG_ERR("Failed to save policy digest into file \"%s\"",
                     pctx.common_policy_options.policy_file);
-            return false;
+            return tool_rc_general_error;
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
@@ -182,12 +187,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    bool result = parse_policy_type_specific_command(ectx);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-    return tool_rc_success;
+    return parse_policy_type_specific_command(ectx);
 }
 
 void tpm2_onexit(void) {

@@ -199,19 +199,20 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     bool result = set_key_algorithm(&inPublic);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     tpm2_session_data *data = tpm2_session_data_new(TPM2_SE_POLICY);
     if (!data) {
         LOG_ERR("oom");
-        return false;
+        return tool_rc_general_error;
     }
 
-    tpm2_session *session = tpm2_session_open(ectx, data);
-    if (!session) {
+    tpm2_session *session = NULL;
+    tool_rc tmp_rc = tpm2_session_open(ectx, data, &session);
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Could not start tpm session");
-        return false;
+        return tmp_rc;
     }
 
     LOG_INFO("tpm_session_start_auth_with_params succ");
@@ -255,9 +256,10 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
-    session = tpm2_session_open(ectx, data);
-    if (!session) {
+    tmp_rc = tpm2_session_open(ectx, data, &session);
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Could not start tpm session");
+        rc = tmp_rc;
         goto out;
     }
 
@@ -322,7 +324,7 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     // If the AK isn't persisted we always save a context file of the
     // transient AK handle for future tool interactions.
-    tool_rc tmp_rc = files_save_tpm_context_to_path(ectx,
+    tmp_rc = files_save_tpm_context_to_path(ectx,
                 loaded_sha1_key_handle, ctx.ak.out.ctx_file);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;

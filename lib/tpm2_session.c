@@ -121,37 +121,38 @@ const TPM2B_AUTH *tpm2_session_get_auth_value(tpm2_session *session) {
 // It performs the command, calculates the session key, and updates a
 // SESSION structure.
 //
-static bool start_auth_session(tpm2_session *session) {
+static tool_rc start_auth_session(tpm2_session *session) {
 
     tpm2_session_data *d = session->input;
 
     TPM2B_NONCE *nonce = session->input->nonce_caller.size > 0 ?
             &session->input->nonce_caller : NULL;
 
-    TSS2_RC rval = Esys_StartAuthSession(session->internal.ectx, d->key, d->bind,
+    tool_rc rc = tpm2_start_auth_session(session->internal.ectx, d->key, d->bind,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                         nonce, d->session_type,
                         &d->symmetric, d->authHash,
                         &session->output.session_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_StartAuthSession, rval);
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (d->attrs) {
-        rval = Esys_TRSess_SetAttributes(session->internal.ectx, session->output.session_handle, d->attrs,
-                                          0xff);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_TRSess_SetAttributes, rval);
-            rval = Esys_FlushContext(session->internal.ectx, session->output.session_handle);
-            if (rval != TSS2_RC_SUCCESS) {
-                LOG_WARN("Esys_FlushContext: 0x%x", rval);
-            }
-            return false;
+        rc = tpm2_sess_set_attributes(
+                session->internal.ectx,
+                session->output.session_handle,
+                d->attrs,
+                0xff);
+        if (rc != tool_rc_success) {
+            tool_rc tmp_rc = tpm2_flush_context(
+                    session->internal.ectx,
+                    session->output.session_handle);
+            UNUSED(tmp_rc);
+            return rc;
         }
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 static void tpm2_session_free(tpm2_session **session) {
@@ -168,40 +169,43 @@ static void tpm2_session_free(tpm2_session **session) {
     }
 }
 
-tpm2_session *tpm2_session_open(ESYS_CONTEXT *context,
-        tpm2_session_data *data) {
+tool_rc tpm2_session_open(ESYS_CONTEXT *context,
+        tpm2_session_data *data, tpm2_session **session) {
 
-    tpm2_session *session = calloc(1, sizeof(tpm2_session));
-    if (!session) {
+    tpm2_session *s = calloc(1, sizeof(tpm2_session));
+    if (!s) {
         free(data);
         LOG_ERR("oom");
-        return NULL;
+        return tool_rc_general_error;
     }
 
     if (data->path) {
-        session->internal.path = strdup(data->path);
-        if (!session->internal.path) {
+        s->internal.path = strdup(data->path);
+        if (!s->internal.path) {
             LOG_ERR("oom");
-            tpm2_session_free(&session);
-            return NULL;
+            tpm2_session_free(&s);
+            return tool_rc_general_error;
         }
     }
 
-    session->input = data;
-    session->internal.ectx = context;
+    s->input = data;
+    s->internal.ectx = context;
 
     if (!context) {
-        session->output.session_handle = ESYS_TR_PASSWORD;
-        return session;
+        s->output.session_handle = ESYS_TR_PASSWORD;
+        *session = s;
+        return tool_rc_success;
     }
 
-    bool result = start_auth_session(session);
-    if (!result) {
-        tpm2_session_free(&session);
-        return NULL;
+    tool_rc rc = start_auth_session(s);
+    if (rc != tool_rc_success) {
+        tpm2_session_free(&s);
+        return rc;
     }
 
-    return session;
+    *session = s;
+
+    return tool_rc_success;
 }
 
 /* SESSION_VERSION 1 was used prior to the switch to ESAPI. As the types of
@@ -267,9 +271,10 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
     }
 
     ESYS_TR handle;
-    rc = files_load_tpm_context_from_file(ctx,
+    tool_rc tmp_rc = files_load_tpm_context_from_file(ctx,
                     &handle, f);
-    if (rc != tool_rc_success) {
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         LOG_ERR("Could not load session context");
         goto out;
     }
@@ -282,8 +287,9 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
 
     tpm2_session_set_authhash(d, auth_hash);
 
-    s = tpm2_session_open(NULL, d);
-    if (!s) {
+    tmp_rc = tpm2_session_open(NULL, d, &s);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         LOG_ERR("oom new session object");
         goto out;
     }

@@ -85,4 +85,23 @@ tool_rc tpm2_flush_context(
         ESYS_CONTEXT *esysContext,
         ESYS_TR flushHandle);
 
+tool_rc tpm2_start_auth_session(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR tpmKey,
+    ESYS_TR bind,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_NONCE *nonceCaller,
+    TPM2_SE sessionType,
+    const TPMT_SYM_DEF *symmetric,
+    TPMI_ALG_HASH authHash,
+    ESYS_TR *sessionHandle);
+
+tool_rc tpm2_sess_set_attributes(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR session,
+    TPMA_SESSION flags,
+    TPMA_SESSION mask);
+
 #endif /* LIB_TPM2_H_ */

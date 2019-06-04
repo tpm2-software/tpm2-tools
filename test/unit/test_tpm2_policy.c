@@ -175,7 +175,9 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_open(ESAPI_CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_open(ESAPI_CONTEXT, d, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     TPML_PCR_SELECTION pcr_selections;
@@ -290,7 +292,9 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_open(ESAPI_CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc trc = tpm2_session_open(ESAPI_CONTEXT, d, &s);
+    assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
     bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
@@ -346,7 +350,9 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_open(ESAPI_CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc trc = tpm2_session_open(ESAPI_CONTEXT, d, &s);
+    assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
     bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,

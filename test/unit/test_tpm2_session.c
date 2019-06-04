@@ -106,7 +106,9 @@ static void test_tpm2_session_defaults_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_open(CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     ESYS_TR handle = tpm2_session_get_handle(s);
@@ -159,7 +161,9 @@ static void test_tpm2_session_setters_good(void **state) {
     SESSION_HANDLE,
     TPM2_RC_SUCCESS);
 
-    tpm2_session *s = tpm2_session_open(CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     TPMI_SH_AUTH_SESSION handle = tpm2_session_get_handle(s);
@@ -180,7 +184,9 @@ static void test_tpm2_session_defaults_bad(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_open(CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
+    assert_int_equal(rc, tool_rc_general_error);
     assert_null(s);
 }
 
@@ -205,7 +211,9 @@ static void test_tpm2_session_save(void **state) {
 
     tpm2_session_set_path(d, (char *)*state);
 
-    tpm2_session *s = tpm2_session_open(CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     ESYS_TR handle1 = tpm2_session_get_handle(s);
@@ -214,7 +222,7 @@ static void test_tpm2_session_save(void **state) {
                     &tpm_handle1);
     assert_true(result);
 
-    tool_rc rc = tpm2_session_close(&s);
+    rc = tpm2_session_close(&s);
     assert_int_equal(rc, tool_rc_success);
     assert_null(s);
 
@@ -242,7 +250,9 @@ static void test_tpm2_session_restart(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_open(CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     will_return(policy_restart_return, TPM2_RC_SUCCESS);
@@ -265,7 +275,9 @@ static void test_tpm2_session_is_trial_test(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_TRIAL);
     assert_non_null(d);
 
-    tpm2_session *s = tpm2_session_open(CONTEXT, d);
+    tpm2_session *s = NULL;
+    tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
+    assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     TPM2_SE type = tpm2_session_get_type(s);
