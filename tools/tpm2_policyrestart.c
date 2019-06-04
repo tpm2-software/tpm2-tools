@@ -57,12 +57,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool result = tpm2_session_restart(ectx, ctx.session);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-    return tool_rc_success;
+    return tpm2_session_restart(ectx, ctx.session);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

@@ -187,9 +187,9 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
  * @param s
  *  The session
  * @return
- *  true on success, false otherwise.
+ *  tool_rc indicating status.
  */
-bool tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s);
+tool_rc tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s);
 
 tpm2_session_data *tpm2_hmac_session_data_new(TPM2B_AUTH *auth_value);
 
