@@ -109,4 +109,11 @@ tool_rc tpm2_sess_get_attributes(
     ESYS_TR session,
     TPMA_SESSION *flags);
 
+tool_rc tpm2_policy_restart(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sessionHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3);
+
 #endif /* LIB_TPM2_H_ */

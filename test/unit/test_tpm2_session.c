@@ -256,12 +256,12 @@ static void test_tpm2_session_restart(void **state) {
     assert_non_null(s);
 
     will_return(policy_restart_return, TPM2_RC_SUCCESS);
-    bool result = tpm2_session_restart(CONTEXT, s);
-    assert_true(result);
+    rc = tpm2_session_restart(CONTEXT, s);
+    assert_int_equal(rc, tool_rc_success);
 
     will_return(policy_restart_return, TPM2_RC_HANDLE);
-    result = tpm2_session_restart(CONTEXT, s);
-    assert_false(result);
+    rc = tpm2_session_restart(CONTEXT, s);
+    assert_int_equal(rc, tool_rc_general_error);
 
     tpm2_session_close(&s);
     assert_null(s);

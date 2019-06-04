@@ -308,3 +308,24 @@ tool_rc tpm2_sess_get_attributes(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_restart(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sessionHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3) {
+
+    TSS2_RC rval =  Esys_PolicyRestart(
+        esysContext,
+        sessionHandle,
+        shandle1,
+        shandle2,
+        shandle3);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyRestart, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

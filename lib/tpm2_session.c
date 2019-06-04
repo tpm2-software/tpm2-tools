@@ -429,15 +429,10 @@ out:
     return rc;
 }
 
-bool tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s) {
+tool_rc tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s) {
 
     ESYS_TR handle = tpm2_session_get_handle(s);
 
-    TSS2_RC rval = Esys_PolicyRestart(context, handle,
+    return tpm2_policy_restart(context, handle,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyRestart, rval);
-    }
-
-    return rval == TPM2_RC_SUCCESS;
 }
