@@ -127,9 +127,9 @@ tool_rc files_load_tpm_context_from_file(ESYS_CONTEXT *context,
  * @param path
  *  The path to save to.
  * @return
- *  True on success, false otherwise.
+ *  A tool_rc indicating status.
  */
-bool files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path);
+tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path);
 
 /**
  * Serializes a TPM2B_PUBLIC to the file path provided.

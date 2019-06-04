@@ -180,13 +180,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_tool_output("action: %s\n", evicted ? "evicted" : "persisted");
 
     if (ctx.output_arg) {
-        result = files_save_ESYS_TR(ectx, out_tr, ctx.output_arg);
-        if (!result) {
-            goto out;
-        }
+        rc = files_save_ESYS_TR(ectx, out_tr, ctx.output_arg);
+    } else {
+        rc = tool_rc_success;
     }
-
-    rc = tool_rc_success;
 
 out:
 
