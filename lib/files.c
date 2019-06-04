@@ -390,23 +390,15 @@ tool_rc files_load_tpm_context_from_file(ESYS_CONTEXT *context,
         goto out;
     }
 
-    TSS2_RC rval = Esys_TR_Deserialize(
+    rc = tpm2_tr_deserialize(
         context,
         buffer,
         size,
         &loaded_handle);
     free(buffer);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_Deserialize, rval);
-        goto out;
-    }
-
-    if (tr_handle) {
+    if (rc == tool_rc_success) {
         *tr_handle = loaded_handle;
     }
-
-    rc = tool_rc_success;
-
 out:
     return rc;
 }
