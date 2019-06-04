@@ -134,10 +134,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * the persistent namespace and use that.
      */
     if (ctx.flags.c && !ctx.flags.p) {
-        bool result = tpm2_capability_find_vacant_persistent_handle(ectx,
+        tmp_rc = tpm2_capability_find_vacant_persistent_handle(ectx,
                     &ctx.persist_handle);
-        if (!result) {
-            tpm2_tool_output("Unable to find a vacant persistent handle.\n");
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
             goto out;
         }
         /* we searched and found a persistent handle, so mark that peristent handle valid */

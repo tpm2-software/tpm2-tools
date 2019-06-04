@@ -181,9 +181,9 @@ static void process(TPMS_CAPABILITY_DATA capability_data) {
 void tpm2_errata_init(ESYS_CONTEXT *ctx) {
 
     TPMS_CAPABILITY_DATA *capability_data;
-    bool ret = tpm2_capability_get(ctx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_LEVEL,
+    tool_rc rc = tpm2_capability_get(ctx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_LEVEL,
                     TPM2_PT_YEAR - TPM2_PT_LEVEL + 1, &capability_data);
-    if (!ret) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, ",
                 TPM2_CAP_TPM_PROPERTIES, TPM2_PT_LEVEL);
         return;

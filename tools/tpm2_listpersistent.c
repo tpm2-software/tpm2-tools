@@ -104,19 +104,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     TPMS_CAPABILITY_DATA *capabilityData = NULL;
     tool_rc rc = tool_rc_general_error;
-    bool ret = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
+
+    tool_rc tmp_rc = tpm2_capability_get(ectx, TPM2_CAP_HANDLES,
                                 TPM2_PERSISTENT_FIRST, TPM2_MAX_CAP_HANDLES,
                                 &capabilityData);
-    if (!ret) {
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Failed to read TPM capabilities.");
-        goto out;
+        return tmp_rc;
     }
 
     UINT32 i;
     for (i = 0; i < capabilityData->data.handles.count; i++) {
         TPM2B_PUBLIC *outPublic = NULL;
         TPM2_HANDLE objectHandle = capabilityData->data.handles.handle[i];
-        tool_rc tmp_rc = read_public(ectx, objectHandle, &outPublic);
+        tmp_rc = read_public(ectx, objectHandle, &outPublic);
         if (tmp_rc != tool_rc_success) {
             free(outPublic);
             rc = tmp_rc;

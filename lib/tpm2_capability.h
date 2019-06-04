@@ -19,10 +19,9 @@
  * @param capability_data
  *  capability data structure to populate
  * @return
- *  True if the capability_data structure is successfully filled, False if the
- *  call to the TPM fails.
+ *  tool_rc indicating status.
  */
-bool tpm2_capability_get (ESYS_CONTEXT *context,
+tool_rc tpm2_capability_get (ESYS_CONTEXT *context,
         TPM2_CAP capability,
         UINT32 property,
         UINT32 count,
@@ -35,9 +34,9 @@ bool tpm2_capability_get (ESYS_CONTEXT *context,
  * @param vacant
  *  the vacant handle found by the function if True returned
  * @return
- *  True if a vacant handle was found successfully, False otherwise.
+ *  tool_rc indicating status.
  */
-bool tpm2_capability_find_vacant_persistent_handle (ESYS_CONTEXT *ctx,
+tool_rc tpm2_capability_find_vacant_persistent_handle (ESYS_CONTEXT *ctx,
         UINT32 *vacant);
 
 #endif /* LIB_TPM2_CAPABILITY_H_ */

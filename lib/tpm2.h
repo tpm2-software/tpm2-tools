@@ -116,4 +116,15 @@ tool_rc tpm2_policy_restart(
     ESYS_TR shandle2,
     ESYS_TR shandle3);
 
+tool_rc tpm2_get_capability(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPM2_CAP capability,
+    UINT32 property,
+    UINT32 propertyCount,
+    TPMI_YES_NO *moreData,
+    TPMS_CAPABILITY_DATA **capabilityData);
+
 #endif /* LIB_TPM2_H_ */

@@ -537,12 +537,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_session_close(&tmp);
 
     if (ctx.find_persistent_handle) {
-        bool ret = tpm2_capability_find_vacant_persistent_handle(ectx,
+        rc = tpm2_capability_find_vacant_persistent_handle(ectx,
                         &ctx.persistent_handle);
-        if (!ret) {
+        if (rc != tool_rc_success) {
             LOG_ERR("handle/H passed with a value of '-' but unable to find a"
                     " vacant persistent handle!");
-            return tool_rc_general_error;
+            return rc;
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persistent_handle);
     }

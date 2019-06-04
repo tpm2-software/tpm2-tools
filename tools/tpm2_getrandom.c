@@ -87,16 +87,16 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-static bool get_max_random(ESYS_CONTEXT *ectx, UINT32 *value) {
+static tool_rc get_max_random(ESYS_CONTEXT *ectx, UINT32 *value) {
 
     TPMS_CAPABILITY_DATA *cap_data = NULL;
-    bool res = tpm2_capability_get (ectx,
+    tool_rc rc = tpm2_capability_get (ectx,
             TPM2_CAP_TPM_PROPERTIES,
             TPM2_PT_FIXED,
             TPM2_MAX_TPM_PROPERTIES,
             &cap_data);
-    if (!res) {
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     UINT32 i;
@@ -105,13 +105,13 @@ static bool get_max_random(ESYS_CONTEXT *ectx, UINT32 *value) {
         if (p->property == TPM2_PT_MAX_DIGEST) {
             *value = p->value;
             free(cap_data);
-            return true;
+            return tool_rc_success;
         }
     }
 
     LOG_ERR("TPM does not have property TPM2_PT_MAX_DIGEST");
     free(cap_data);
-    return false;
+    return tool_rc_general_error;
 }
 
 static bool on_args(int argc, char **argv) {
@@ -159,9 +159,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      */
     if (!ctx.force) {
         UINT32 max = 0;
-        bool res = get_max_random(ectx, &max);
-        if (!res) {
-            return tool_rc_general_error;
+        tool_rc rc = get_max_random(ectx, &max);
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         if (ctx.num_of_bytes > max) {
