@@ -57,6 +57,7 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
         // Keyed hash
         { .name = "hmac", .id = TPM2_ALG_HMAC, tpm2_alg_util_flags_keyedhash | tpm2_alg_util_flags_sig },
         { .name = "xor", .id = TPM2_ALG_XOR, tpm2_alg_util_flags_keyedhash },
+        { .name = "cmac", .id = TPM2_ALG_CMAC, .flags = tpm2_alg_util_flags_sig },
 
         // Mask Generation Functions
         { .name = "mgf1", .id = TPM2_ALG_MGF1, .flags = tpm2_alg_util_flags_mgf },
