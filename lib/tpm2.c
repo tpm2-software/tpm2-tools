@@ -522,3 +522,38 @@ tool_rc tpm2_policy_password(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_secret(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR authHandle,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_NONCE *nonceTPM,
+    const TPM2B_DIGEST *cpHashA,
+    const TPM2B_NONCE *policyRef,
+    INT32 expiration,
+    TPM2B_TIMEOUT **timeout,
+    TPMT_TK_AUTH **policyTicket) {
+
+    TSS2_RC rval = Esys_PolicySecret(
+        esysContext,
+        authHandle,
+        policySession,
+        shandle1,
+        shandle2,
+        shandle3,
+        nonceTPM,
+        cpHashA,
+        policyRef,
+        expiration,
+        timeout,
+        policyTicket);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicySecret, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

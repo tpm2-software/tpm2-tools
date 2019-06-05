@@ -271,7 +271,7 @@ tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
 }
 
-bool tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
     tpm2_session *policy_session, tpm2_session *secret_session,
     ESYS_TR handle) {
 
@@ -283,15 +283,9 @@ bool tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
         LOG_ERR("Failed to get shandle");
         return false;
     }
-    TSS2_RC rval = Esys_PolicySecret(ectx, handle, policy_session_handle,
+    return tpm2_policy_secret(ectx, handle, policy_session_handle,
                     shandle, ESYS_TR_NONE, ESYS_TR_NONE,
                     NULL, NULL, NULL, 0, NULL, NULL);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicySecret, rval);
-        return false;
-    }
-
-    return true;
 }
 
 bool tpm2_policy_get_digest(ESYS_CONTEXT *ectx,

@@ -134,12 +134,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * 2. log the policy secret failure and return tool_rc_general_error.
      * 3. if the error was closing the policy secret session, return that rc.
      */
-    result = tpm2_policy_build_policysecret(ectx, ctx.session,
+    rc = tpm2_policy_build_policysecret(ectx, ctx.session,
         pwd_session, ctx.context_object.tr_handle);
+    tool_rc rc2 = tpm2_session_close(&pwd_session);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+    if (rc2 != tool_rc_success) {
+        return rc2;
+    }
+
     rc = tpm2_session_close(&pwd_session);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysecret");
-        return tool_rc_general_error;
+        return rc;
     }
 
     if (rc != tool_rc_success) {

@@ -188,4 +188,18 @@ tool_rc tpm2_policy_password(
     ESYS_TR shandle2,
     ESYS_TR shandle3);
 
+tool_rc tpm2_policy_secret(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR authHandle,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_NONCE *nonceTPM,
+    const TPM2B_DIGEST *cpHashA,
+    const TPM2B_NONCE *policyRef,
+    INT32 expiration,
+    TPM2B_TIMEOUT **timeout,
+    TPMT_TK_AUTH **policyTicket);
+
 #endif /* LIB_TPM2_H_ */
