@@ -153,4 +153,15 @@ tool_rc tpm2_pcr_read(
     TPML_PCR_SELECTION **pcrSelectionOut,
     TPML_DIGEST **pcrValues);
 
+tool_rc tpm2_policy_authorize(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_DIGEST *approvedPolicy,
+    const TPM2B_NONCE *policyRef,
+    const TPM2B_NAME *keySign,
+    const TPMT_TK_VERIFIED *checkTicket);
+
 #endif /* LIB_TPM2_H_ */

@@ -168,7 +168,7 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
     return tool_rc_success;
 }
 
-bool tpm2_policy_build_policyauthorize(
+tool_rc tpm2_policy_build_policyauthorize(
     ESYS_CONTEXT *ectx,
     tpm2_session *policy_session,
     const char *policy_digest_path,
@@ -180,7 +180,7 @@ bool tpm2_policy_build_policyauthorize(
 
     bool result = files_get_file_size_path(policy_digest_path, &file_size);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     TPM2B_DIGEST approved_policy = {
@@ -189,7 +189,7 @@ bool tpm2_policy_build_policyauthorize(
     result = files_load_bytes_from_path(policy_digest_path,
         approved_policy.buffer, &approved_policy.size);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     /*
@@ -200,7 +200,7 @@ bool tpm2_policy_build_policyauthorize(
         result = files_get_file_size_path(policy_qualifier_path,
             &file_size);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -212,19 +212,19 @@ bool tpm2_policy_build_policyauthorize(
         result = files_load_bytes_from_path(policy_qualifier_path,
             policy_qualifier.buffer, &policy_qualifier.size);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
     result = files_get_file_size_path(verifying_pubkey_name_path, &file_size);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     if (!file_size) {
         LOG_ERR("Verifying public key name file \"%s\", cannot be empty",
                 verifying_pubkey_name_path);
-        return false;
+        return tool_rc_general_error;
     }
 
     TPM2B_NAME key_sign = {
@@ -235,7 +235,7 @@ bool tpm2_policy_build_policyauthorize(
             key_sign.name,
         &key_sign.size);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     TPMT_TK_VERIFIED  check_ticket = {
@@ -248,21 +248,15 @@ bool tpm2_policy_build_policyauthorize(
         result = files_load_ticket(ticket_path, &check_ticket);
         if (!result) {
             LOG_ERR("Could not load verification ticket file");
-            return false;
+            return tool_rc_general_error;
         }
     }
 
     ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
-    TSS2_RC rval = Esys_PolicyAuthorize(ectx, sess_handle,
+    return tpm2_policy_authorize(ectx, sess_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     &approved_policy, &policy_qualifier, &key_sign,
                     &check_ticket);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyAuthorize, rval);
-        return false;
-    }
-
-    return true;
 }
 
 bool tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,

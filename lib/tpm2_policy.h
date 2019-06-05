@@ -46,9 +46,9 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
  * @param ticket_path
  *   The verification ticket generated when TPM verifies the signature
  * @return
- *   true on success, false otherwise.
+ *   tool_rc indicating status.
  */
-bool tpm2_policy_build_policyauthorize(
+tool_rc tpm2_policy_build_policyauthorize(
     ESYS_CONTEXT *ectx,
     tpm2_session *policy_session,
     const char *policy_digest_path,
