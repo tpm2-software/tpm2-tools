@@ -501,3 +501,24 @@ tool_rc tpm2_policy_pcr(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_password(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3) {
+
+    TSS2_RC rval = Esys_PolicyPassword(
+        esysContext,
+        policySession,
+        shandle1,
+        shandle2,
+        shandle3);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyPassword, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
