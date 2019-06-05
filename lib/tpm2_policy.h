@@ -10,7 +10,7 @@
 #include "tpm2_session.h"
 
 /**
- * Build a PCR policy via Esys_PolicyPCR.
+ * Build a PCR policy via PolicyPCR.
  * @param context
  *  The Enhanced System API (ESAPI) context.
  * @param policy_session
@@ -93,7 +93,7 @@ bool tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
     TPM2_HANDLE handle);
 
 /**
- * Retrieves the policy digest for a session via Esys_PolicyGetDigest.
+ * Retrieves the policy digest for a session via PolicyGetDigest.
  * @param context
  *  The Enhanced System API (ESAPI) context.
  * @param session
