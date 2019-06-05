@@ -218,4 +218,12 @@ tool_rc tpm2_policy_command_code(
     ESYS_TR shandle3,
     TPM2_CC code);
 
+tool_rc tpm2_policy_locality(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPMA_LOCALITY locality);
+
 #endif /* LIB_TPM2_H_ */

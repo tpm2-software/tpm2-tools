@@ -308,18 +308,13 @@ tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, command_code);
 }
 
-bool tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
     tpm2_session *session, TPMA_LOCALITY locality) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    TSS2_RC rval = Esys_PolicyLocality(ectx, handle,
+    return tpm2_policy_locality(ectx, handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, locality);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyLocality, rval);
-        return false;
-    }
-    return true;
 }
 
 bool tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
