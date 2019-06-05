@@ -696,7 +696,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = check_options();
-    if (rc) {
+    if (rc != tool_rc_success) {
         return rc;
     }
 
