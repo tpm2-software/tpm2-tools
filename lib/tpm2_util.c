@@ -622,8 +622,7 @@ tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
         outobject->handle = 0;
         outobject->path = objectstr += FILE_PREFIX_LEN;
         return files_load_tpm_context_from_path(ctx,
-                &outobject->tr_handle, outobject->path) ?
-                    tool_rc_success : tool_rc_general_error;
+                &outobject->tr_handle, outobject->path);
     }
 
     // 2. If the objstr is "null" set the handle to RH_NULL
