@@ -115,9 +115,9 @@ bool tpm2_policy_get_digest(ESYS_CONTEXT *context,
   * @param session
  *  The policy session which is extended with PolicyPassword command code
  * @return
- *  true on success, false otherwise.
+ *  tool_rc indicating status.
  */
-bool tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
         tpm2_session *session);
 
 /**
