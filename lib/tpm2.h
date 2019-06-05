@@ -143,4 +143,14 @@ tool_rc tpm2_create_primary(
         TPM2B_DIGEST **creationHash,
         TPMT_TK_CREATION **creationTicket);
 
+tool_rc tpm2_pcr_read(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPML_PCR_SELECTION *pcrSelectionIn,
+    UINT32 *pcrUpdateCounter,
+    TPML_PCR_SELECTION **pcrSelectionOut,
+    TPML_DIGEST **pcrValues);
+
 #endif /* LIB_TPM2_H_ */

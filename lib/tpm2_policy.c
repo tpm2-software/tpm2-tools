@@ -9,6 +9,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_hash.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
@@ -81,7 +82,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
     return true;
 }
 
-static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, const char *raw_pcrs_file,
         TPML_PCR_SELECTION *pcr_selections) {
 
@@ -89,13 +90,13 @@ static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
 
     if (!pcr_selections->count) {
         LOG_ERR("No pcr selection data specified!");
-        return false;
+        return tool_rc_general_error;
     }
 
     bool result = evaluate_populate_pcr_digests(pcr_selections, raw_pcrs_file,
             &pcr_values);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     //If PCR input for policy is from raw pcrs file
@@ -103,7 +104,7 @@ static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
         FILE *fp = fopen(raw_pcrs_file, "rb");
         if (fp == NULL) {
             LOG_ERR("Cannot open pcr-input-file %s", raw_pcrs_file);
-            return false;
+            return tool_rc_general_error;
         }
         // Bank hashAlg values dictates the order of the list of digests
         unsigned i;
@@ -116,7 +117,7 @@ static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
                 LOG_ERR("Reading from file \"%s\" failed: %s", raw_pcrs_file,
                         msg);
                 fclose(fp);
-                return false;
+                return tool_rc_general_error;
             }
         }
         fclose(fp);
@@ -124,14 +125,12 @@ static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
         UINT32 pcr_update_counter;
         TPML_DIGEST *pcr_val = NULL;
         // Read PCRs
-        TSS2_RC rval = Esys_PCR_Read(ectx,
+        tool_rc rc = tpm2_pcr_read(ectx,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                         pcr_selections, &pcr_update_counter,
                         NULL, &pcr_val);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_PCR_Read, rval);
-            free(pcr_val);
-            return false;
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         UINT32 i;
@@ -152,7 +151,7 @@ static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
                 &pcr_values, &pcr_digest);
     if (!result) {
         LOG_ERR("Could not hash pcr values");
-        return false;
+        return tool_rc_general_error;
     }
 
     // Call the PolicyPCR command
@@ -163,26 +162,10 @@ static bool tpm2_policy_pcr_build(ESYS_CONTEXT *ectx,
                     &pcr_digest, pcr_selections);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicyPCR, rval);
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
-}
-
-bool tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
-        tpm2_session *policy_session,
-        const char *raw_pcrs_file,
-        TPML_PCR_SELECTION *pcr_selections) {
-
-    // Issue policy command.
-    bool result = tpm2_policy_pcr_build(ectx, policy_session,
-            raw_pcrs_file, pcr_selections);
-
-    if (!result) {
-        LOG_ERR("Failed parse_policy_type_and_send_command");
-    }
-
-    return result;
+    return tool_rc_success;
 }
 
 bool tpm2_policy_build_policyauthorize(

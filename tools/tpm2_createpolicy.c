@@ -83,15 +83,15 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    bool result = tpm2_policy_build_pcr(ectx, pctx.common_policy_options.policy_session,
+    rc = tpm2_policy_build_pcr(ectx, pctx.common_policy_options.policy_session,
             pctx.pcr_policy_options.raw_pcrs_file,
             &pctx.pcr_policy_options.pcr_selections);
-    if (!result) {
-        LOG_ERR("Could not start tpm session");
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not build pcr policy");
+        return rc;
     }
 
-    result = tpm2_policy_get_digest(ectx,
+    bool result = tpm2_policy_get_digest(ectx,
             pctx.common_policy_options.policy_session,
             &pctx.common_policy_options.policy_digest);
     if (!result) {

@@ -397,3 +397,30 @@ tool_rc tpm2_create_primary(
 
         return tool_rc_success;
 }
+
+tool_rc tpm2_pcr_read(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPML_PCR_SELECTION *pcrSelectionIn,
+    UINT32 *pcrUpdateCounter,
+    TPML_PCR_SELECTION **pcrSelectionOut,
+    TPML_DIGEST **pcrValues) {
+
+    TSS2_RC rval = Esys_PCR_Read(
+            esysContext,
+            shandle1,
+            shandle2,
+            shandle3,
+            pcrSelectionIn,
+            pcrUpdateCounter,
+            pcrSelectionOut,
+            pcrValues);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PCR_Read, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
