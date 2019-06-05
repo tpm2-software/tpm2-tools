@@ -23,7 +23,7 @@ start_up
 
 run_aes_import_test() {
 
-	dd if=/dev/urandom of=sym.key bs=1 count=$2 2>/dev/null
+	dd if=/dev/urandom of=sym.key bs=1 count=$3 2>/dev/null
 
 	#Symmetric Key Import Test
 	echo "tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub -r import_key.priv"
@@ -38,8 +38,7 @@ run_aes_import_test() {
 
 	tpm2_encryptdecrypt -c import_key.ctx  -i plain.txt -o plain.enc
 
-	openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
-	-aes-128-cfb
+	openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 -$2
 
 	diff plain.txt plain.dec.ssl
 
@@ -138,9 +137,9 @@ run_test() {
 	tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
 
 	# 128 bit AES is 16 bytes
-	run_aes_import_test parent.ctx 16
+	run_aes_import_test parent.ctx aes-128-cfb 16
 	# 256 bit AES is 32 bytes
-	run_aes_import_test parent.ctx 32
+	run_aes_import_test parent.ctx aes-256-cfb 32
 
 	run_rsa_import_test parent.ctx 1024
     run_rsa_import_test parent.ctx 2048
