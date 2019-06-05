@@ -259,19 +259,13 @@ tool_rc tpm2_policy_build_policyauthorize(
                     &check_ticket);
 }
 
-bool tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
     tpm2_session *policy_session, TPML_DIGEST policy_list) {
 
     ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
-    TSS2_RC rval = Esys_PolicyOR(ectx, sess_handle,
+    return tpm2_policy_or(ectx, sess_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     &policy_list);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyOR, rval);
-        return false;
-    }
-
-    return true;
 }
 
 bool tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,

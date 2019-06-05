@@ -453,3 +453,26 @@ tool_rc tpm2_policy_authorize(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_or(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPML_DIGEST *pHashList) {
+
+    TSS2_RC rval = Esys_PolicyOR(
+            esysContext,
+            policySession,
+            shandle1,
+            shandle2,
+            shandle3,
+            pHashList);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyAuthorize, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
