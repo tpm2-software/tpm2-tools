@@ -131,7 +131,7 @@ static inline bool tpm2_session_is_trial(tpm2_session *session) {
 }
 
 /**
- * Starts a session with the tpm via Esys_StartAuthSession().
+ * Starts a session with the tpm via StartAuthSession().
  * @param context
  *  The Enhanced System API (ESAPI) context.
  * @param data
@@ -181,7 +181,7 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
 
 /**
  * restarts the session to it's initial state via a call to
- * Esys_PolicyRestart().
+ * PolicyRestart().
  * @param context
  *  The Enhanced System API (ESAPI) context
  * @param s
