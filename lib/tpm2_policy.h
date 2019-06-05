@@ -86,9 +86,9 @@ tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
  *  The handle-id of the authentication object
  *
  * @return
- *  true on success, false otherwise.
+ *  tool_rc indicating status.
  */
-bool tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
     tpm2_session *policy_session, tpm2_session *secret_session,
     TPM2_HANDLE handle);
 
