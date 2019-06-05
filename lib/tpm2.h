@@ -202,4 +202,12 @@ tool_rc tpm2_policy_secret(
     TPM2B_TIMEOUT **timeout,
     TPMT_TK_AUTH **policyTicket);
 
+tool_rc tpm2_policy_getdigest(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPM2B_DIGEST **policyDigest);
+
 #endif /* LIB_TPM2_H_ */

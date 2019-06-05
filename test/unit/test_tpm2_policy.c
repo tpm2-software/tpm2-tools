@@ -188,8 +188,8 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     assert_int_equal(rc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
-    bool result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
-    assert_true(result);
+    rc = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
+    assert_int_equal(rc, tool_rc_success);
 
     assert_int_equal(policy_digest->size, expected_policy_digest.size);
     assert_memory_equal(policy_digest->buffer, expected_policy_digest.buffer,
@@ -302,8 +302,8 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     assert_int_equal(trc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
-    bool result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
-    assert_true(result);
+    trc = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
+    assert_int_equal(rc, tool_rc_success);
 
     assert_int_equal(policy_digest->size, expected_policy_digest.size);
     assert_memory_equal(policy_digest->buffer, expected_policy_digest.buffer,

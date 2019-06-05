@@ -154,10 +154,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    result = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
-    if (!result) {
+    rc = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
+    if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm policy");
-        return tool_rc_general_error;
+        return rc;
     }
 
     tpm2_util_hexdump(ctx.policy_digest->buffer, ctx.policy_digest->size);
