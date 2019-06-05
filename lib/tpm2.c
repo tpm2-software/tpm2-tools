@@ -626,3 +626,30 @@ tool_rc tpm2_policy_locality(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_duplication_select(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_NAME *objectName,
+    const TPM2B_NAME *newParentName,
+    TPMI_YES_NO includeObject) {
+
+    TSS2_RC rval = Esys_PolicyDuplicationSelect(
+        esysContext,
+        policySession,
+        shandle1,
+        shandle2,
+        shandle3,
+        objectName,
+        newParentName,
+        includeObject);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyDuplicationSelect, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

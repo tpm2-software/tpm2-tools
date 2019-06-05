@@ -226,4 +226,14 @@ tool_rc tpm2_policy_locality(
     ESYS_TR shandle3,
     TPMA_LOCALITY locality);
 
+tool_rc tpm2_policy_duplication_select(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_NAME *objectName,
+    const TPM2B_NAME *newParentName,
+    TPMI_YES_NO includeObject);
+
 #endif /* LIB_TPM2_H_ */
