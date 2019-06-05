@@ -60,7 +60,7 @@ bool files_save_bytes_to_file(const char *path, UINT8 *buf, UINT16 size);
 
 /**
  * Saves the TPM ESAPI context for an object handle to disk by calling
- * Esys_ContextSave() and serializing the resulting TPMS_CONTEXT structure
+ * ContextSave() and serializing the resulting TPMS_CONTEXT structure
  * to disk.
  * @param context
  *  The Enhances System API (ESAPI) context
