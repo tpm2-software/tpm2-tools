@@ -317,7 +317,7 @@ tool_rc tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, locality);
 }
 
-bool tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
     tpm2_session *session,
     const char *obj_name_path,
     const char *new_parent_name_path,
@@ -331,7 +331,7 @@ bool tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
             obj_name.name,
         &obj_name.size);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     TPM2B_NAME new_parent_name = {
@@ -342,24 +342,18 @@ bool tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
             new_parent_name.name,
         &new_parent_name.size);
     if (!result) {
-        return false;
+        return tool_rc_general_error;
     }
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    TSS2_RC rval = Esys_PolicyDuplicationSelect(
+    return tpm2_policy_duplication_select(
         ectx,
         handle,
         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
         &obj_name,
         &new_parent_name,
         is_include_obj);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyDuplicationSelect, rval);
-        return false;
-    }
-
-    return true;
 }
 
 static bool tpm2_policy_populate_digest_list(char *buf, TPML_DIGEST *policy_list,
