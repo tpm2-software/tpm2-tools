@@ -101,11 +101,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool result = tpm2_policy_get_digest(ectx, ctx.session,
+    rc = tpm2_policy_get_digest(ectx, ctx.session,
             &ctx.policy_digest);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm policy");
-        return tool_rc_general_error;
+        return rc;
     }
 
     tpm2_tool_output("policy-digest: 0x");
@@ -116,7 +116,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_tool_output("\n");
 
     if (ctx.policy_out_path) {
-        result = files_save_bytes_to_file(ctx.policy_out_path,
+        bool result = files_save_bytes_to_file(ctx.policy_out_path,
                     (UINT8 *) &ctx.policy_digest->buffer,
                     ctx.policy_digest->size);
         if (!result) {

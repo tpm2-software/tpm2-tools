@@ -288,20 +288,15 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
                     NULL, NULL, NULL, 0, NULL, NULL);
 }
 
-bool tpm2_policy_get_digest(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx,
         tpm2_session *session,
         TPM2B_DIGEST **policy_digest) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    TPM2_RC rval = Esys_PolicyGetDigest(ectx, handle,
+    return tpm2_policy_getdigest(ectx, handle,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                         policy_digest);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyGetDigest, rval);
-        return false;
-    }
-    return true;
 }
 
 bool tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,

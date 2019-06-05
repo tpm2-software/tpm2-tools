@@ -101,9 +101,9 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
  * @param policy_digest
  *  The retrieved digest, only valid on true returns.
  * @return
- *  true on success, false otherwise.
+ *  tool_rc indicating status.
  */
-bool tpm2_policy_get_digest(ESYS_CONTEXT *context,
+tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *context,
         tpm2_session *session,
         TPM2B_DIGEST **policy_digest);
 
