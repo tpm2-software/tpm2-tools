@@ -67,9 +67,9 @@ tool_rc tpm2_policy_build_policyauthorize(
  *   The list of policy policy digests
  *
  * @return
- *   true on success, false otherwise.
+ *   tool_rc indicating status.
  */
-bool tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
     tpm2_session *policy_session, TPML_DIGEST policy_list);
 
 /**

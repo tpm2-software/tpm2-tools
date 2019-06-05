@@ -164,4 +164,12 @@ tool_rc tpm2_policy_authorize(
     const TPM2B_NAME *keySign,
     const TPMT_TK_VERIFIED *checkTicket);
 
+tool_rc tpm2_policy_or(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPML_DIGEST *pHashList);
+
 #endif /* LIB_TPM2_H_ */
