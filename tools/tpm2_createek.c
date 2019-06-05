@@ -239,7 +239,7 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
 
         tool_rc rc = files_save_tpm_context_to_path(ectx,
                 ctx.objdata.out.handle, filename);
-        if (!result) {
+        if (!rc != tool_rc_success) {
             LOG_ERR("Error saving tpm context for handle");
             free(filename);
             return rc;
