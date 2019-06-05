@@ -580,3 +580,26 @@ tool_rc tpm2_policy_getdigest(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_command_code(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPM2_CC code) {
+
+    TSS2_RC rval = Esys_PolicyCommandCode(
+        esysContext,
+        policySession,
+        shandle1,
+        shandle2,
+        shandle3,
+        code);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyCommandCode, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

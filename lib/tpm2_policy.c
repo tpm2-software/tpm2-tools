@@ -299,18 +299,13 @@ tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx,
                         policy_digest);
 }
 
-bool tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
     tpm2_session *session, uint32_t command_code) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    TPM2_RC rval = Esys_PolicyCommandCode(ectx, handle,
+    return tpm2_policy_command_code(ectx, handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, command_code);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyCommandCode, rval);
-        return false;
-    }
-    return true;
 }
 
 bool tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
