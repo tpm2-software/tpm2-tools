@@ -7,6 +7,7 @@
 #include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_util.h"
@@ -85,7 +86,7 @@ bool tpm2_hierarchy_from_optarg(const char *value,
     return result;
 }
 
-bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
+tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
         tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata) {
 
@@ -93,26 +94,19 @@ bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
 
     hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(objdata->in.hierarchy);
 
-    TSS2_RC rval;
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy, sess);
     if (shandle1 == ESYS_TR_NONE) {
         LOG_ERR("Couldn't get shandle for hierarchy");
-        return false;
+        return tool_rc_general_error;
     }
 
-    rval = Esys_CreatePrimary(ectx, hierarchy,
+    return tpm2_create_primary(ectx, hierarchy,
             shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
             &objdata->in.sensitive, &objdata->in.public,
             &objdata->in.outside_info, &objdata->in.creation_pcr,
             &objdata->out.handle, &objdata->out.public,
             &objdata->out.creation.data, &objdata->out.hash,
             &objdata->out.creation.ticket);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_CreatePrimary, rval);
-        return false;
-    }
-
-    return true;
 }
 
 void tpm2_hierarchy_pdata_free(tpm2_hierarchy_pdata *objdata) {

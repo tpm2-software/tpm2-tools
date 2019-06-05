@@ -8,6 +8,8 @@
 #include <tss2/tss2_esys.h>
 #include "tpm2_session.h"
 
+typedef enum tool_rc tool_rc;
+
 typedef enum tpm2_hierarchy_flags tpm2_hierarchy_flags;
 
 enum tpm2_hierarchy_flags {
@@ -84,10 +86,9 @@ struct tpm2_hierarchy_pdata {
  * @param objdata
  *  The objects data configuration.
  * @return
- *  True on success, False on error.
- *  Logs errors via LOG_ERR().
+ *  tool_rc indicating status.
  */
-bool tpm2_hierarchy_create_primary(ESYS_CONTEXT *context,
+tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *context,
         tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata);
 
