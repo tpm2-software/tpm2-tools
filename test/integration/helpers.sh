@@ -337,13 +337,18 @@ onerror() {
 }
 trap onerror ERR
 
+#
+# print 0 if the list of arguments 1 to n-1 contains the last argument n
+# print 1 otherwise
+#
 function ina() {
     local n=$#
     local value=${!n}
     for ((i=1;i < $#;i++)) {
         if [ "${!i}" == "${value}" ]; then
-            return 0
+            echo 0
+            return
         fi
     }
-    return 1
+    echo 1
 }

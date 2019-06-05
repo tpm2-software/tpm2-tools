@@ -6,15 +6,13 @@ source helpers.sh
 cleanup() {
   rm -f key.pub key.priv policy.bin out.pub key.ctx
 
-  ina "$@" "keep-context"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "keep-context") -ne 0 ]; then
     rm -f context.out
   fi
 
   rm -f key*.ctx out.yaml
 
-  ina "$@" "no-shut-down"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down
   fi
 }

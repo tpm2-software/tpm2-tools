@@ -23,16 +23,14 @@ cleanup() {
   rm -f $file_primary_key_ctx $file_hmac_key_pub $file_hmac_key_priv \
         $file_hmac_key_name $file_hmac_output
 
-  ina "$@" "keep-context"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "keep-context") -ne 0 ]; then
     rm -f $file_hmac_key_ctx $file_input_data
     # attempt to evict the hmac persistent key handle, but don't cause failures if this fails
     # as it may not be loaded.
     tpm2_evictcontrol -c $file_hmac_key_handle 2>/dev/null || true
   fi
 
-  ina "$@" "no-shut-down"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down
   fi
 }
