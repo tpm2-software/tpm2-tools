@@ -142,9 +142,9 @@ run_test() {
 	run_aes_import_test parent.ctx aes-256-cfb 32
 
 	run_rsa_import_test parent.ctx 1024
-    run_rsa_import_test parent.ctx 2048
+	run_rsa_import_test parent.ctx 2048
 
-    run_ecc_import_test parent.ctx prime256v1
+	run_ecc_import_test parent.ctx prime256v1
 }
 
 #
