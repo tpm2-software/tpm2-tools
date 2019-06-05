@@ -476,3 +476,28 @@ tool_rc tpm2_policy_or(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_pcr(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_DIGEST *pcrDigest,
+    const TPML_PCR_SELECTION *pcrs) {
+
+    TSS2_RC rval = Esys_PolicyPCR(
+            esysContext,
+            policySession,
+            shandle1,
+            shandle2,
+            shandle3,
+            pcrDigest,
+            pcrs);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyPCR, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

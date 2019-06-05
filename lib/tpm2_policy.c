@@ -157,15 +157,9 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
     // Call the PolicyPCR command
     ESYS_TR handle = tpm2_session_get_handle(policy_session);
 
-    TSS2_RC rval = Esys_PolicyPCR(ectx, handle,
+    return tpm2_policy_pcr(ectx, handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     &pcr_digest, pcr_selections);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicyPCR, rval);
-        return tool_rc_general_error;
-    }
-
-    return tool_rc_success;
 }
 
 tool_rc tpm2_policy_build_policyauthorize(
