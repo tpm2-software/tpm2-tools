@@ -112,16 +112,21 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
     return res;
 }
 
-static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
-{
-    TPM2_RC rval;
-    TPMT_SIG_SCHEME inScheme;
+static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
+
+    TPMT_SIG_SCHEME inScheme = {
+        .scheme = TPM2_ALG_NULL
+    };
+
     TPM2B_ATTEST *quoted = NULL;
     TPMT_SIGNATURE *signature = NULL;
 
-    if(!ctx.flags.G || !get_signature_scheme(ectx, ctx.context_object.tr_handle,
-                            ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme)) {
-        inScheme.scheme = TPM2_ALG_NULL;
+    if(ctx.flags.G) {
+        tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.context_object.tr_handle,
+                                    ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
     }
 
     ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
@@ -132,7 +137,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection)
         return tool_rc_general_error;
     }
 
-    rval = Esys_Quote(ectx, ctx.context_object.tr_handle,
+    TSS2_RC rval = Esys_Quote(ectx, ctx.context_object.tr_handle,
                 shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                 &ctx.qualifyingData, &inScheme, pcrSelection,
                 &quoted, &signature);
