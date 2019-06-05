@@ -7,6 +7,8 @@
 
 #include <tss2/tss2_esys.h>
 
+typedef enum tool_rc tool_rc;
+
 typedef enum tpm2_alg_util_flags tpm2_alg_util_flags;
 enum tpm2_alg_util_flags {
     tpm2_alg_util_flags_none        = 0,
@@ -136,10 +138,10 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
  * @param scheme
  *  Signature scheme output
  * @return
- *  True if successful
- *  False otherwise, and scheme is left unmodified
+ *  tool_rc indicating status.
+ *  On error scheme is left unmodified.
  */
-bool get_signature_scheme(ESYS_CONTEXT *context,
+tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
         ESYS_TR keyHandle, TPMI_ALG_HASH halg,
         TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme);

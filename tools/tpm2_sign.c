@@ -144,11 +144,11 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     /*
      * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
      */
-    bool result = get_signature_scheme(ectx, ctx.key_context.tr_handle,
+    rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.key_context.tr_handle,
                     ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("bad signature scheme for key type!");
-        return tool_rc_general_error;
+        return rc;
     }
 
     /*
@@ -156,7 +156,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
      */
     if (ctx.flags.m && !ctx.flags.D) {
       unsigned long file_size;
-      result = files_get_file_size_path(ctx.inMsgFileName, &file_size);
+      bool result = files_get_file_size_path(ctx.inMsgFileName, &file_size);
       if (!result) {
           return tool_rc_general_error;
       }

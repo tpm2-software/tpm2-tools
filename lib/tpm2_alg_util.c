@@ -9,6 +9,7 @@
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
+#include "tpm2.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_errata.h"
 #include "tpm2_hash.h"
@@ -757,34 +758,33 @@ bool pcr_parse_digest_list(char **argv, int len,
     return true;
 }
 
-static bool get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT objectHandle,
+static tool_rc get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT objectHandle,
         TPMI_ALG_PUBLIC *type) {
 
     TPM2B_PUBLIC *out_public;
 
-    TSS2_RC rval = Esys_ReadPublic(ectx, objectHandle,
+    tool_rc rc = tpm2_readpublic(ectx, objectHandle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
                     &out_public, NULL, NULL);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_ReadPublic, rval);
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     *type = out_public->publicArea.type;
 
     free(out_public);
 
-    return true;
+    return tool_rc_success;
 }
 
-bool get_signature_scheme(ESYS_CONTEXT *context,
+tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
         ESYS_TR keyHandle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme) {
 
     TPM2_ALG_ID type;
-    bool result = get_key_type(context, keyHandle, &type);
-    if (!result) {
-        return false;
+    tool_rc rc = get_key_type(context, keyHandle, &type);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     switch (type) {
@@ -796,7 +796,7 @@ bool get_signature_scheme(ESYS_CONTEXT *context,
             scheme->scheme = TPM2_ALG_RSAPSS;
             scheme->details.rsapss.hashAlg = halg;
         } else {
-            return false;
+            return tool_rc_general_error;
         }
         break;
     case TPM2_ALG_KEYEDHASH :
@@ -814,16 +814,16 @@ bool get_signature_scheme(ESYS_CONTEXT *context,
             scheme->scheme = TPM2_ALG_ECSCHNORR;
             scheme->details.ecschnorr.hashAlg = halg;
         } else {
-            return false;
+            return tool_rc_general_error;
         }
         break;
     case TPM2_ALG_SYMCIPHER :
     default:
         LOG_ERR("Unknown key type, got: 0x%x", type);
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
+    return tool_rc_success;
 }
 
 bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, char *unique_file,
