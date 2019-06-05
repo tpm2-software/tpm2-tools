@@ -603,3 +603,26 @@ tool_rc tpm2_policy_command_code(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_locality(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPMA_LOCALITY locality) {
+
+    TSS2_RC rval = Esys_PolicyLocality(
+        esysContext,
+        policySession,
+        shandle1,
+        shandle2,
+        shandle3,
+        locality);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyLocality, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
