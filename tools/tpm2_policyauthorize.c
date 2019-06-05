@@ -108,15 +108,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool result = tpm2_policy_build_policyauthorize(ectx, ctx.session,
+    rc = tpm2_policy_build_policyauthorize(ectx, ctx.session,
                         ctx.policy_digest_path,
                         ctx.qualifier_data_path, ctx.verifying_pubkey_path, ctx.ticket_path);
-    if (!result) {
+    if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm authorized policy");
-        return tool_rc_general_error;
+        return rc;
     }
 
-    result = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
+    bool result = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
     if (!result) {
         LOG_ERR("Could not build tpm policy");
         return tool_rc_general_error;

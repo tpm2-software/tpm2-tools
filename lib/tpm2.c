@@ -424,3 +424,32 @@ tool_rc tpm2_pcr_read(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_policy_authorize(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_DIGEST *approvedPolicy,
+    const TPM2B_NONCE *policyRef,
+    const TPM2B_NAME *keySign,
+    const TPMT_TK_VERIFIED *checkTicket) {
+
+    TSS2_RC rval = Esys_PolicyAuthorize(
+            esysContext,
+            policySession,
+            shandle1,
+            shandle2,
+            shandle3,
+            approvedPolicy,
+            policyRef,
+            keySign,
+            checkTicket);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyAuthorize, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
