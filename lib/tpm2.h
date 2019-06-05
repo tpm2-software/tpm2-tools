@@ -210,4 +210,12 @@ tool_rc tpm2_policy_getdigest(
     ESYS_TR shandle3,
     TPM2B_DIGEST **policyDigest);
 
+tool_rc tpm2_policy_command_code(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPM2_CC code);
+
 #endif /* LIB_TPM2_H_ */

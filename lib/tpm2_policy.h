@@ -141,8 +141,10 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list);
  *   The policy session into which the policy digest is extended into
  * @param command_code
  *   The command code of the command authorized to use the object
+ * @return
+ *  A tool_rc indicating status.
  */
-bool tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
+tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
     tpm2_session *session, uint32_t command_code);
 
 /**
