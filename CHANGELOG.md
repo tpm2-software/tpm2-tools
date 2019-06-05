@@ -1,5 +1,6 @@
 ## Changelog
-### 3.2.0-rc0 - 2019-06-03
+### 3.2.0-rc1 - next
+* fix configure bug for linking against libmu.
 * tpm2_changeauth: Support changing platform hierarchy auth.
 * tpm2_flushcontext: Introduce new tool for flushing handles from the TPM.
 * tpm2_checkquote: Introduce new tool for checking validity of quotes.
