@@ -172,4 +172,13 @@ tool_rc tpm2_policy_or(
     ESYS_TR shandle3,
     const TPML_DIGEST *pHashList);
 
+tool_rc tpm2_policy_pcr(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR policySession,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_DIGEST *pcrDigest,
+    const TPML_PCR_SELECTION *pcrs);
+
 #endif /* LIB_TPM2_H_ */
