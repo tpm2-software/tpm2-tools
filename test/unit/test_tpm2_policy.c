@@ -184,11 +184,11 @@ static void test_tpm2_policy_build_pcr_good(void **state) {
     bool res = pcr_parse_selections(PCR_SEL_SPEC, &pcr_selections);
     assert_true(res);
 
-    bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections);
-    assert_true(result);
+    rc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, NULL, &pcr_selections);
+    assert_int_equal(rc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
-    result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
+    bool result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
     assert_true(result);
 
     assert_int_equal(policy_digest->size, expected_policy_digest.size);
@@ -297,12 +297,12 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
-    bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
+    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
             &pcr_selections);
-    assert_true(result);
+    assert_int_equal(trc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
-    result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
+    bool result = tpm2_policy_get_digest(ESAPI_CONTEXT, s, &policy_digest);
     assert_true(result);
 
     assert_int_equal(policy_digest->size, expected_policy_digest.size);
@@ -355,11 +355,11 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
-    bool result = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
+    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
             &pcr_selections);
     tpm2_session_close(&s);
     assert_null(s);
-    assert_false(result);
+    assert_int_equal(trc, tool_rc_general_error);
 }
 
 /* link required symbol, but tpm2_tool.c declares it AND main, which

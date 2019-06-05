@@ -231,10 +231,11 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session *
         goto out;
     }
 
-    ret = tpm2_policy_build_pcr(ectx, s,
+    tmp_rc = tpm2_policy_build_pcr(ectx, s,
             raw_path, &pcrs);
-    if (!ret) {
+    if (tmp_rc != tool_rc_success) {
         tpm2_session_close(&s);
+        rc = tmp_rc;
         goto out;
     }
 

@@ -23,9 +23,9 @@
  *  specifications in the man page for tpm2_listpcrs. If using a raw_pcrs_file, this spec
  *  must be the same as supplied to tpm2_listpcrs.
  * @return
- *  true on success, false otherwise.
+ *  tool_rc indicating status.
  */
-bool tpm2_policy_build_pcr(ESYS_CONTEXT *context,
+tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
         tpm2_session *policy_session,
         const char *raw_pcrs_file,
         TPML_PCR_SELECTION *pcr_selections);
