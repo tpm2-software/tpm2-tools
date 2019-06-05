@@ -25,13 +25,11 @@ cleanup() {
          data.in.digest data.out.signed ticket.out name.bin stdout.yaml \
          passfile private.pem
 
-  ina "$@" "keep_handle"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "keep_handle") -ne 0 ]; then
     tpm2_evictcontrol -Q -ao -c $Handle_parent 2>/dev/null || true
   fi
 
-  ina "$@" "no-shut-down"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down
   fi
 }

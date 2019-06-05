@@ -45,8 +45,7 @@ cleanup() {
 
   tpm2_changeauth -Q -W "$ownerpw" -E "$endorsepw" 2>/dev/null || true
 
-  ina "$@" "no-shut-down"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down
   fi
 }

@@ -28,13 +28,11 @@ cleanup() {
 
   tpm2_evictcontrol -Q -ao -c $Handle_parent 2>/dev/null || true
 
-  ina "$@" "keep_ctx"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "keep_ctx") -ne 0 ]; then
     rm -f $file_primary_key_ctx
   fi
 
-  ina "$@" "no-shut-down"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
           shut_down
   fi
 }

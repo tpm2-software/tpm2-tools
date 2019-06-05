@@ -9,13 +9,11 @@ cleanup() {
 
   rm -f policy.bin obj.pub pub.out primary.ctx
 
-  ina "$@" "keep-context"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "keep-context") -ne 0 ]; then
     rm -f context.out
   fi
 
-  ina "$@" "no-shut-down"
-  if [ $? -ne 0 ]; then
+  if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down
   fi
 }
