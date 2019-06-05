@@ -150,10 +150,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    result = tpm2_hierarchy_create_primary(ectx,
+    rc = tpm2_hierarchy_create_primary(ectx,
                 ctx.parent.session, &ctx.objdata);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);

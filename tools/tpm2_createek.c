@@ -195,15 +195,15 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
         }
     }
 
-    bool result = tpm2_hierarchy_create_primary(ectx,
+    tool_rc rc = tpm2_hierarchy_create_primary(ectx,
             ctx.auth.endorse.session, &ctx.objdata);
-    if (!result) {
-        return tool_rc_general_error;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (ctx.ctx_obj.handle) {
 
-        result = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
+        bool result = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
                 ctx.auth.owner.session,
                 ctx.objdata.out.handle,
                 ctx.ctx_obj.handle, NULL);
