@@ -155,6 +155,9 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
 
     UINT16 size;
     BYTE *sig = tpm2_convert_sig(&size, signature);
+    if (!sig) {
+        return tool_rc_general_error;
+    }
     tpm2_tool_output("  sig: ");
     tpm2_util_hexdump(sig, size);
     tpm2_tool_output("\n");
