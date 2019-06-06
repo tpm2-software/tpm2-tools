@@ -272,7 +272,7 @@ trap - ERR
 
 tpm2_sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -o $file_output_data
 if [ $? != 3]; then
-	echo "Expected RC 3, got: $?" 1>&2
+    echo "Expected RC 3, got: $?" 1>&2
 fi
 trap onerror ERR
 

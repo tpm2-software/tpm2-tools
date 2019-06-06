@@ -22,95 +22,95 @@ start_up
 
 run_aes_import_test() {
 
-	dd if=/dev/urandom of=sym.key bs=1 count=$3 2>/dev/null
+    dd if=/dev/urandom of=sym.key bs=1 count=$3 2>/dev/null
 
-	#Symmetric Key Import Test
-	echo "tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub -r import_key.priv"
+    #Symmetric Key Import Test
+    echo "tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub -r import_key.priv"
 
-	tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub \
-	-r import_key.priv
+    tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub \
+    -r import_key.priv
 
-	tpm2_load -Q -C $1 -u import_key.pub -r import_key.priv -n import_key.name \
-	-o import_key.ctx
+    tpm2_load -Q -C $1 -u import_key.pub -r import_key.priv -n import_key.name \
+    -o import_key.ctx
 
-	echo "plaintext" > "plain.txt"
+    echo "plaintext" > "plain.txt"
 
-	tpm2_encryptdecrypt -c import_key.ctx  -i plain.txt -o plain.enc
+    tpm2_encryptdecrypt -c import_key.ctx  -i plain.txt -o plain.enc
 
-	openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` -iv 0 -$2
+    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` -iv 0 -$2
 
-	diff plain.txt plain.dec.ssl
+    diff plain.txt plain.dec.ssl
 
-	rm import_key.ctx
+    rm import_key.ctx
 }
 
 run_rsa_import_test() {
 
-	#Asymmetric Key Import Test
-	openssl genrsa -out private.pem $2
-	openssl rsa -in private.pem -pubout > public.pem
+    #Asymmetric Key Import Test
+    openssl genrsa -out private.pem $2
+    openssl rsa -in private.pem -pubout > public.pem
 
-	# Test an import without the parent public info data to force a readpublic
-	tpm2_import -Q -G rsa -g "$name_alg" -i private.pem -C $1 \
-	-u import_rsa_key.pub -r import_rsa_key.priv
+    # Test an import without the parent public info data to force a readpublic
+    tpm2_import -Q -G rsa -g "$name_alg" -i private.pem -C $1 \
+    -u import_rsa_key.pub -r import_rsa_key.priv
 
-	tpm2_load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
-	-n import_rsa_key.name -o import_rsa_key.ctx
+    tpm2_load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
+    -n import_rsa_key.name -o import_rsa_key.ctx
 
-	openssl rsa -in private.pem -out public.pem -outform PEM -pubout
-	openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
+    openssl rsa -in private.pem -out public.pem -outform PEM -pubout
+    openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
 
-	tpm2_rsadecrypt -c import_rsa_key.ctx -i plain.rsa.enc -o plain.rsa.dec
+    tpm2_rsadecrypt -c import_rsa_key.ctx -i plain.rsa.enc -o plain.rsa.dec
 
-	diff plain.txt plain.rsa.dec
+    diff plain.txt plain.rsa.dec
 
-	# test verifying a sigature with the imported key, ie sign in tpm and verify with openssl
-	echo "data to sign" > data.in.raw
+    # test verifying a sigature with the imported key, ie sign in tpm and verify with openssl
+    echo "data to sign" > data.in.raw
 
-	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-	tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -D data.in.digest -f plain -o data.out.signed
+    tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -D data.in.digest -f plain -o data.out.signed
 
-	openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+    openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
-	# Sign with openssl and verify with TPM
-	openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
+    # Sign with openssl and verify with TPM
+    openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
 
-	# Verify with the TPM
-	tpm2_verifysignature -Q -c import_rsa_key.ctx -g sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+    # Verify with the TPM
+    tpm2_verifysignature -Q -c import_rsa_key.ctx -g sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
 
-	rm import_rsa_key.ctx
+    rm import_rsa_key.ctx
 }
 
 run_ecc_import_test() {
-	#
-	# Test loading an OSSL PEM format ECC key, and verifying a signature external
-	# to the TPM
-	#
+    #
+    # Test loading an OSSL PEM format ECC key, and verifying a signature external
+    # to the TPM
+    #
 
-	#
-	# Generate a Private and Public ECC pem file
-	#
-	openssl ecparam -name $2 -genkey -noout -out private.ecc.pem
-	openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
+    #
+    # Generate a Private and Public ECC pem file
+    #
+    openssl ecparam -name $2 -genkey -noout -out private.ecc.pem
+    openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
 
-	# Generate a hash to sign
-	echo "data to sign" > data.in.raw
-	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+    # Generate a hash to sign
+    echo "data to sign" > data.in.raw
+    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-	tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub -r ecc.priv
+    tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub -r ecc.priv
 
-	tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -o ecc.ctx
+    tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -o ecc.ctx
 
-	# Sign in the TPM and verify with OSSL
-	tpm2_sign -Q -c ecc.ctx -g sha256 -D data.in.digest -f plain -o data.out.signed
-	openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+    # Sign in the TPM and verify with OSSL
+    tpm2_sign -Q -c ecc.ctx -g sha256 -D data.in.digest -f plain -o data.out.signed
+    openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
-	# Sign with openssl and verify with TPM.
-	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-	tpm2_verifysignature -Q -c ecc.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
+    # Sign with openssl and verify with TPM.
+    openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
+    tpm2_verifysignature -Q -c ecc.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
 
-	rm ecc.ctx
+    rm ecc.ctx
 }
 
 run_rsa_import_passin_test() {
@@ -128,22 +128,22 @@ run_rsa_import_passin_test() {
 
 run_test() {
 
-	cleanup "no-shut-down"
+    cleanup "no-shut-down"
 
-	parent_alg=$1
-	name_alg=$2
+    parent_alg=$1
+    name_alg=$2
 
-	tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
+    tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
 
-	# 128 bit AES is 16 bytes
-	run_aes_import_test parent.ctx aes-128-cfb 16
-	# 256 bit AES is 32 bytes
-	run_aes_import_test parent.ctx aes-256-cfb 32
+    # 128 bit AES is 16 bytes
+    run_aes_import_test parent.ctx aes-128-cfb 16
+    # 256 bit AES is 32 bytes
+    run_aes_import_test parent.ctx aes-256-cfb 32
 
-	run_rsa_import_test parent.ctx 1024
-	run_rsa_import_test parent.ctx 2048
+    run_rsa_import_test parent.ctx 1024
+    run_rsa_import_test parent.ctx 2048
 
-	run_ecc_import_test parent.ctx prime256v1
+    run_ecc_import_test parent.ctx prime256v1
 }
 
 #
