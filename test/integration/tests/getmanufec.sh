@@ -55,7 +55,7 @@ fi
 # Test with automatic persistent handle
 tpm2_getmanufec -H - -U -E ECcert2.bin -o test_ek.pub -w $opass -e $epass \
                 https://ekop.intel.com/ekcertservice/ > man.log
-phandle=`yaml_get_kv man.log \"persistent\-handle\"`
+phandle=`yaml_get_kv man.log "persistent-handle"`
 
 tpm2_evictcontrol -Q -c $phandle -a o -P $opass
 

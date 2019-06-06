@@ -20,19 +20,19 @@ tpm2_dictionarylockout -Q -V -c &>/dev/null
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7
 
 tpm2_getcap -c properties-variable > $out
-v=$(yaml_get_kv "$out" \"TPM2_PT_MAX_AUTH_FAIL\")
+v=$(yaml_get_kv "$out" "TPM2_PT_MAX_AUTH_FAIL")
 if [ $v -ne 5 ];then
   echo "Failure: setting up the number of allowed tries in the lockout parameters"
   exit 1
 fi
 
-v=$(yaml_get_kv "$out" \"TPM2_PT_LOCKOUT_INTERVAL\")
+v=$(yaml_get_kv "$out" "TPM2_PT_LOCKOUT_INTERVAL")
 if [ $v -ne 6 ];then
   echo "Failure: setting up the lockout period in the lockout parameters"
   exit 1
 fi
 
-v=$(yaml_get_kv "$out" \"TPM2_PT_LOCKOUT_RECOVERY\")
+v=$(yaml_get_kv "$out" "TPM2_PT_LOCKOUT_RECOVERY")
 if [ $v -ne 7 ];then
   echo "Failure: setting up the lockout recovery period in the lockout parameters"
   exit 1

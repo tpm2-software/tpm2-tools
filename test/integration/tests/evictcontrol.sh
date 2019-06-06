@@ -37,7 +37,7 @@ tpm2_evictcontrol -Q -a o -c 0x81010003
 
 # Load the context into an available handle, delete it
 tpm2_evictcontrol -a o -c key.dat > evict.log
-phandle=$(yaml_get_kv evict.log \"persistent-handle\")
+phandle=$(yaml_get_kv evict.log "persistent-handle")
 tpm2_evictcontrol -Q -a o -c $phandle
 
 yaml_verify evict.log

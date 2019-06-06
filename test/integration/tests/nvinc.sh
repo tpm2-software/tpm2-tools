@@ -38,7 +38,7 @@ tpm2_nvincrement -Q -x $nv_test_index -a o
 tpm2_nvread -Q -x $nv_test_index -a o -s 8
 
 tpm2_nvlist > nv.out
-yaml_get_kv nv.out $nv_test_index > /dev/null
+yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 # Test writing to and reading from an offset by:
 # 1. incrementing the nv counter

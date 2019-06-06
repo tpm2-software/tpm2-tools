@@ -19,7 +19,7 @@ cleanup "no-shut-down"
 temp=$(mktemp)
 tpm2_incrementalselftest > "${temp}"
 cat ${temp}
-alglist="$(yaml_get_kv "${temp}" \"remaining\" || true)"
+alglist="$(yaml_get_kv "${temp}" "remaining" || true)"
 rm -f "${temp}"
 
 # If the list of remaining algs is not empty, we can test
@@ -35,7 +35,7 @@ if [ -n "${alglist}" ]; then
     done
     localtmp=$(mktemp)
     tpm2_incrementalselftest > "${localtmp}"
-    alglist="$(yaml_get_kv "${localtmp}" \"remaining\" || true)"
+    alglist="$(yaml_get_kv "${localtmp}" "remaining" || true)"
     rm -f "${localtmp}"
 
     if [ -n "${alglist}" ]; then

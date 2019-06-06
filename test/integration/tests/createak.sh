@@ -31,7 +31,7 @@ tpm2_createak -Q -C 0x8101000b -c ak.ctx -G rsa -D sha256 -s rsassa -p ak.pub -n
 # Find a vacant persistent handle
 tpm2_createak -C 0x8101000b -c ak.ctx -G rsa -D sha256 -s rsassa -p ak.pub -n ak.name
 tpm2_evictcontrol -c ak.ctx > ak.log
-phandle=`yaml_get_kv ak.log \"persistent\-handle\"`
+phandle=`yaml_get_kv ak.log "persistent-handle"`
 tpm2_evictcontrol -Q -a o -c $phandle
 
 # Test tpm2_createak with endorsement password
