@@ -10,6 +10,7 @@
 
 #include "pcr.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 #include "tpm2_alg_util.h"
@@ -316,18 +317,16 @@ bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
     return true;
 }
 
-bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs) {
+tool_rc pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs) {
 
     TPMI_YES_NO more_data;
     TPMS_CAPABILITY_DATA *capdata_ret;
-    UINT32 rval;
 
-    rval = Esys_GetCapability(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+    tool_rc rc = tpm2_get_capability(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
             ESYS_TR_NONE, TPM2_CAP_PCRS, no_argument, required_argument,
             &more_data, &capdata_ret);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_GetCapability, rval);
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     *capability_data = *capdata_ret;
@@ -342,7 +341,7 @@ bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_
                 sizeof(algs->alg),
                 capability_data->data.assignedPCR.count);
         free(capdata_ret);
-        return false;
+        return tool_rc_general_error;
     }
 
     for (i = 0; i < capability_data->data.assignedPCR.count; i++) {
@@ -352,7 +351,7 @@ bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_
     algs->count = capability_data->data.assignedPCR.count;
 
     free(capdata_ret);
-    return true;
+    return tool_rc_success;
 }
 
 bool pcr_init_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION *pcr_sel, TPMI_ALG_HASH alg_id) {

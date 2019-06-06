@@ -7,6 +7,8 @@
 
 #include <tss2/tss2_esys.h>
 
+typedef enum tool_rc tool_rc;
+
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {
     int count;
@@ -44,7 +46,7 @@ bool pcr_get_id(const char *arg, UINT32 *pcrId);
 bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections);
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels);
 bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel);
-bool pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs);
+tool_rc pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs);
 bool pcr_init_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION *pcr_sel, TPMI_ALG_HASH alg_id);
 bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION *pcr_sel);
 bool pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSelections, tpm2_pcrs *pcrs);
