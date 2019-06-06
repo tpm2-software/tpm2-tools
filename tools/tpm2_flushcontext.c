@@ -46,10 +46,10 @@ static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
     for (i = 0; i < count; ++i) {
 
         ESYS_TR handle;
-        bool ok = tpm2_util_sys_handle_to_esys_handle(ectx, handles[i],
+        tool_rc rc = tpm2_util_sys_handle_to_esys_handle(ectx, handles[i],
                     &handle);
-        if (!ok) {
-            return tool_rc_general_error;
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         TPM2_RC rval = Esys_FlushContext(ectx, handle);

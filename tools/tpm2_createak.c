@@ -460,11 +460,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if (!ctx.ek.ek_ctx.tr_handle) {
-        bool res = tpm2_util_sys_handle_to_esys_handle(ectx,
+        rc = tpm2_util_sys_handle_to_esys_handle(ectx,
                     ctx.ek.ek_ctx.handle, &ctx.ek.ek_ctx.tr_handle);
-        if (!res) {
+        if (rc != tool_rc_success) {
             LOG_ERR("Converting ek_ctx TPM2_HANDLE to ESYS_TR");
-            return tool_rc_general_error;
+            return rc;
         }
     }
 

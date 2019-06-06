@@ -259,12 +259,12 @@ static tool_rc process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
     }
 
     if (!ctx.tpm_handle_parent_context_object.tr_handle) {
-        bool ret = tpm2_util_sys_handle_to_esys_handle(
+        rc = tpm2_util_sys_handle_to_esys_handle(
                 ectx,
                 ctx.tpm_handle_parent_context_object.handle,
                 &ctx.tpm_handle_parent_context_object.tr_handle);
-        if (!ret) {
-            return tool_rc_general_error;
+        if (rc != tool_rc_success) {
+            return rc;
         }
     }
 

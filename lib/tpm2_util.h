@@ -365,8 +365,10 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
  *  the TPM2_HANDLE to construct an ESYS_TR handle for
  * @param esys_handle
  *  pointer to an ESYS_TR handle to output the found handle into
+ * @return
+ *  A tool_rc indicating status.
  */
-bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
+tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle);
 
 /**
