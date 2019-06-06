@@ -43,27 +43,27 @@ tpm2_clear
 
 run_tss_test() {
 
-	tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
+    tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
 
-	tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -C $file_primary_key_ctx
+    tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -C $file_primary_key_ctx
 
-	tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
+    tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
 
-	tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
+    tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
 
-	# Test with Handle
-	cleanup "keep_handle" "no-shut-down"
+    # Test with Handle
+    cleanup "keep_handle" "no-shut-down"
 
-	tpm2_create -Q -C $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
+    tpm2_create -Q -C $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
 
-	tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub
+    tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub
 
-	# Test with default hierarchy (and handle)
-	cleanup "keep_handle" "no-shut-down"
+    # Test with default hierarchy (and handle)
+    cleanup "keep_handle" "no-shut-down"
 
-	tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
+    tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
 
-	tpm2_loadexternal -Q -u $file_loadexternal_key_pub
+    tpm2_loadexternal -Q -u $file_loadexternal_key_pub
 
     cleanup "no-shut-down"
 }
@@ -108,10 +108,10 @@ run_aes_test() {
 
     tpm2_loadexternal -G aes -r sym.key -n name.bin -o key.ctx > stdout.yaml
 
-	local name1=`yaml_get_kv "stdout.yaml" "name"`
-	local name2=`xxd -c 256 -p name.bin`
+    local name1=`yaml_get_kv "stdout.yaml" "name"`
+    local name2=`xxd -c 256 -p name.bin`
 
-	test "$name1" == "$name2"
+    test "$name1" == "$name2"
 
     echo "plaintext" > "plain.txt"
 
@@ -126,32 +126,32 @@ run_aes_test() {
 }
 
 run_ecc_test() {
-	#
-	# Test loading an OSSL PEM format ECC key, and verifying a signature external
-	# to the TPM
-	#
+    #
+    # Test loading an OSSL PEM format ECC key, and verifying a signature external
+    # to the TPM
+    #
 
-	#
-	# Generate a NIST P256 Private and Public ECC pem file
-	#
-	openssl ecparam -name $1 -genkey -noout -out private.ecc.pem
-	openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
+    #
+    # Generate a NIST P256 Private and Public ECC pem file
+    #
+    openssl ecparam -name $1 -genkey -noout -out private.ecc.pem
+    openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
 
-	# Generate a hash to sign
-	echo "data to sign" > data.in.raw
-	sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+    # Generate a hash to sign
+    echo "data to sign" > data.in.raw
+    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-	# Load the private key for signing
+    # Load the private key for signing
     tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
 
-	# Sign in the TPM and verify with OSSL
-	tpm2_sign -Q -c key.ctx -g sha256 -D data.in.digest -f plain -o data.out.signed
-	openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+    # Sign in the TPM and verify with OSSL
+    tpm2_sign -Q -c key.ctx -g sha256 -D data.in.digest -f plain -o data.out.signed
+    openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
-	# Sign with openssl and verify with TPM but only with the public portion of an object loaded
-	tpm2_loadexternal -Q -G ecc -u public.ecc.pem -o key.ctx
-	openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-	tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
+    # Sign with openssl and verify with TPM but only with the public portion of an object loaded
+    tpm2_loadexternal -Q -G ecc -u public.ecc.pem -o key.ctx
+    openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
+    tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
 
     cleanup "no-shut-down"
 }

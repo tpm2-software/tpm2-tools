@@ -26,7 +26,7 @@ cleanup() {
   rm -f $output_ek_pub_pem \
         $output_ak_pub_pem $output_ak_pub_name \
         $output_quote $output_quotesig $output_quotepcr rand.out \
-	    $ak_ctx
+        $ak_ctx
 
   tpm2_pcrreset 16
   tpm2_evictcontrol -a o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
