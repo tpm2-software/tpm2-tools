@@ -108,8 +108,8 @@ run_aes_test() {
 
     tpm2_loadexternal -G aes -r sym.key -n name.bin -o key.ctx > stdout.yaml
 
-    local name1=`yaml_get_kv "stdout.yaml" "name"`
-    local name2=`xxd -c 256 -p name.bin`
+    local name1=$(yaml_get_kv "stdout.yaml" "name")
+    local name2="0x$(xxd -c 256 -p name.bin)"
 
     test "$name1" == "$name2"
 
