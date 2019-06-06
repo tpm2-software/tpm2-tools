@@ -56,14 +56,14 @@ run_tss_test() {
 
     tpm2_create -Q -C $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
 
-    tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub
+    tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub -o $file_loadexternal_key_ctx
 
     # Test with default hierarchy (and handle)
     cleanup "keep_handle" "no-shut-down"
 
     tpm2_create -Q -C $Handle_parent -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r  $file_loadexternal_key_priv
 
-    tpm2_loadexternal -Q -u $file_loadexternal_key_pub
+    tpm2_loadexternal -Q -u $file_loadexternal_key_pub -o $file_loadexternal_key_ctx
 
     cleanup "no-shut-down"
 }
