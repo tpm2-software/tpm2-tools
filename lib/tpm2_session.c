@@ -303,15 +303,15 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
     TPMA_SESSION attrs = 0;
 
     if (ctx) {
-        tpm2_util_esys_handle_to_sys_handle(ctx, handle,
+        tool_rc tmp_rc = tpm2_util_esys_handle_to_sys_handle(ctx, handle,
                     &sapi_handle);
+        UNUSED(tmp_rc);
 
         /* hack this in here, should be done when starting the session */
-        tool_rc tmp_rc =
-                tpm2_sess_get_attributes(
-                ctx,
-                handle,
-                &attrs);
+        tmp_rc = tpm2_sess_get_attributes(
+                     ctx,
+                     handle,
+                     &attrs);
         UNUSED(tmp_rc);
     }
 

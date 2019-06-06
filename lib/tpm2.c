@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <tss2/tss2_esys.h>
+#include <tss2/tss2_mu.h>
 
 #include "log.h"
 #include "tpm2.h"
@@ -89,6 +90,23 @@ tool_rc tpm2_tr_serialize(
             buffer_size);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_Serialize, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_tr_get_name(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR handle,
+        TPM2B_NAME **name) {
+
+    TSS2_RC rval = Esys_TR_GetName(
+        esysContext,
+        handle,
+        name);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_GetName, rval);
         return tool_rc_from_tpm(rval);
     }
 
@@ -648,6 +666,25 @@ tool_rc tpm2_policy_duplication_select(
         includeObject);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicyDuplicationSelect, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_mu_tpm2_handle_unmarshal(
+    uint8_t const   buffer[],
+    size_t          size,
+    size_t          *offset,
+    TPM2_HANDLE     *out) {
+
+    TSS2_RC rval = Tss2_MU_TPM2_HANDLE_Unmarshal(
+        buffer,
+        size,
+        offset,
+        out);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Tss2_MU_TPM2_HANDLE_Unmarshal, rval);
         return tool_rc_from_tpm(rval);
     }
 

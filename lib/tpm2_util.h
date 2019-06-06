@@ -379,8 +379,10 @@ tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
  *  the ESYS_TR for which a TPM handle is desired
  * @param sys_handle
  *  pointer to the TPM2_HANDLE in which to store the output
+ * @return
+ *  A tool_rc indicating status.
  */
-bool tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
+tool_rc tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
         ESYS_TR esys_handle, TPM2_HANDLE *sys_handle);
 
 /**
