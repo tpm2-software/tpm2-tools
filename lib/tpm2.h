@@ -247,4 +247,14 @@ tool_rc tpm2_mu_tpm2_handle_unmarshal(
     size_t          *offset,
     TPM2_HANDLE     *out);
 
+tool_rc tpm2_evictcontrol(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR auth,
+    ESYS_TR objectHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPMI_DH_PERSISTENT persistentHandle,
+    ESYS_TR *newObjectHandle);
+
 #endif /* LIB_TPM2_H_ */

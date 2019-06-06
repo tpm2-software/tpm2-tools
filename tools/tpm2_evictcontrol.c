@@ -161,16 +161,16 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     ESYS_TR out_tr;
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
-    bool result = tpm2_ctx_mgmt_evictcontrol(ectx,
+    tmp_rc = tpm2_ctx_mgmt_evictcontrol(ectx,
             hierarchy,
             ctx.auth.session,
             ctx.context_object.tr_handle,
             ctx.persist_handle,
             &out_tr);
-    if (!result) {
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out;
     }
-
 
     /*
      * Only Close a TR object if it's still resident in the TPM.

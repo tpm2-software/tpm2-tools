@@ -203,12 +203,12 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
 
     if (ctx.ctx_obj.handle) {
 
-        bool result = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
+        rc = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
                 ctx.auth.owner.session,
                 ctx.objdata.out.handle,
                 ctx.ctx_obj.handle, NULL);
-        if (!result) {
-            return tool_rc_general_error;
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         TSS2_RC rval = Esys_FlushContext(ectx, ctx.objdata.out.handle);

@@ -19,10 +19,9 @@
  * @param out_tr
  *  Optional. The ESYS_TR handle representing objhandle.
  * @return
- *  True on success, False on error.
- *  Use LOG_PERR() to output error information.
+ *  tool_rc indicating status.
  */
-bool tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *context,
+tool_rc tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *context,
         ESYS_TR auth,
         tpm2_session *sess,
         ESYS_TR objhandle,
