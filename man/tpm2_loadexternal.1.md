@@ -137,7 +137,7 @@ name: 0x000b44e59fa5658ab443834a069a488ecc1f6d7deb47c40c6ec49871ef57d7036b43
 
 # EXAMPLES
 
-## Load a TPM generateed public key into the *owner* hierarchy
+## Load a TPM generated public key into the *owner* hierarchy
 ```
 tpm2_create -G rsa -u pub.dat -r priv.dat
 
