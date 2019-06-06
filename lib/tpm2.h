@@ -257,4 +257,43 @@ tool_rc tpm2_evictcontrol(
     TPMI_DH_PERSISTENT persistentHandle,
     ESYS_TR *newObjectHandle);
 
+tool_rc tpm2_hash(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_MAX_BUFFER *data,
+    TPMI_ALG_HASH hashAlg,
+    TPMI_RH_HIERARCHY hierarchy,
+    TPM2B_DIGEST **outHash,
+    TPMT_TK_HASHCHECK **validation);
+
+tool_rc tpm2_hash_sequence_start(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_AUTH *auth,
+    TPMI_ALG_HASH hashAlg,
+    ESYS_TR *sequenceHandle);
+
+tool_rc tpm2_sequence_update(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_MAX_BUFFER *buffer);
+
+tool_rc tpm2_sequence_complete(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_MAX_BUFFER *buffer,
+    TPMI_RH_HIERARCHY hierarchy,
+    TPM2B_DIGEST **result,
+    TPMT_TK_HASHCHECK **validation);
+
 #endif /* LIB_TPM2_H_ */
