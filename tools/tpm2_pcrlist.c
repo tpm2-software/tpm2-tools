@@ -207,17 +207,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
         if (!ctx.output_file) {
             LOG_ERR("Could not open output file \"%s\" error: \"%s\"",
                     ctx.output_file_path, strerror(errno));
-            goto error;
+            return tool_rc_general_error;
         }
     }
 
-    success = pcr_get_banks(esys_context, &ctx.cap_data, &ctx.algs);
-    if (!success) {
-        goto error;
+    tool_rc rc = pcr_get_banks(esys_context, &ctx.cap_data, &ctx.algs);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (ctx.flags.s) {
         show_banks(&ctx.algs);
+        success = true;
     } else if (ctx.flags.g) {
         success = show_alg_pcr_values(esys_context);
     } else if (ctx.flags.L) {
@@ -226,10 +227,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
         success = show_all_pcr_values(esys_context);
     }
 
-error:
+    return success ? tool_rc_success : tool_rc_general_error;
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *esys_context) {
+    UNUSED(esys_context);
+
     if (ctx.output_file) {
         fclose(ctx.output_file);
     }
 
-    return success ? tool_rc_success : tool_rc_general_error;
+    return tool_rc_success;
 }
