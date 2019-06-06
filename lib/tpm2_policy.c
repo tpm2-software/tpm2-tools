@@ -277,11 +277,13 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
 
-    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, handle,
-                        secret_session);
-    if (shandle == ESYS_TR_NONE) {
+    ESYS_TR shandle = ESYS_TR_NONE;
+
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, handle,
+                        secret_session, &shandle);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return false;
+        return rc;
     }
     return tpm2_policy_secret(ectx, handle, policy_session_handle,
                     shandle, ESYS_TR_NONE, ESYS_TR_NONE,

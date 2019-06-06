@@ -56,10 +56,11 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
             return false;
         }
 
-        ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
-                                ctx.auth.session);
-        if (shandle1 == ESYS_TR_NONE) {
-            return false;
+        ESYS_TR shandle1 = ESYS_TR_NONE;
+        tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
+                                ctx.auth.session, &shandle1);
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         rval = Esys_PCR_Event(ectx, ctx.pcr,
@@ -146,11 +147,13 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         data.size = 0;
     }
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
-                            ctx.auth.session);
-    if (shandle1 == ESYS_TR_NONE) {
-        return tool_rc_general_error;
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
+                            ctx.auth.session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
     }
+
     rval = Esys_EventSequenceComplete(ectx, ctx.pcr, sequence_handle,
                 shandle1, ESYS_TR_PASSWORD, ESYS_TR_NONE,
                 &data, result);

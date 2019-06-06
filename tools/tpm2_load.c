@@ -45,12 +45,14 @@ static tpm_load_ctx ctx;
 tool_rc load (ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval;
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            ctx.parent.session);
-    if (shandle1 == ESYS_TR_NONE) {
+                            ctx.parent.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return rc;
     }
 
     rval = Esys_Load(ectx, ctx.context_object.tr_handle,

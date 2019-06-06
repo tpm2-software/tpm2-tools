@@ -77,12 +77,13 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     TPM2B_PUBLIC            *outPublic;
     TPM2B_PRIVATE           *outPrivate;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            ctx.parent.session);
-    if (shandle1 == ESYS_TR_NONE) {
+                            ctx.parent.session, &shandle1);
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Couldn't get shandle");
-        return false;
+        return rc;
     }
 
     ESYS_TR object_handle = ESYS_TR_NONE;

@@ -129,12 +129,13 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
         }
     }
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            ctx.ak.session);
-    if (shandle1 == ESYS_TR_NONE) {
+                            ctx.ak.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return rc;
     }
 
     TSS2_RC rval = Esys_Quote(ectx, ctx.context_object.tr_handle,

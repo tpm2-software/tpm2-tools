@@ -219,9 +219,11 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     ESYS_TR sess_handle = tpm2_session_get_handle(session);
 
-    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
-                        ctx.ek.session);
-    if (shandle == ESYS_TR_NONE) {
+    ESYS_TR shandle = ESYS_TR_NONE;
+    tmp_rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
+                        ctx.ek.session, &shandle);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out_session;
     }
 
@@ -267,9 +269,10 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     sess_handle = tpm2_session_get_handle(session);
 
-    shandle = tpm2_auth_util_get_shandle(ectx, sess_handle,
-                ctx.ek.session);
-    if (shandle == ESYS_TR_NONE) {
+    tmp_rc = tpm2_auth_util_get_shandle(ectx, sess_handle,
+                ctx.ek.session, &shandle);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out;
     }
 

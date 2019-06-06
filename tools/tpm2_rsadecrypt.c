@@ -43,11 +43,12 @@ static tool_rc rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     label.size = 0;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.key.object.tr_handle,
-                            ctx.key.session);
-    if (shandle1 == ESYS_TR_NONE) {
-        return tool_rc_general_error;
+                            ctx.key.session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     TSS2_RC rval = Esys_RSA_Decrypt(ectx, ctx.key.object.tr_handle,

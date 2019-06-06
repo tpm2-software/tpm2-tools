@@ -42,11 +42,13 @@ static tool_rc nv_space_release(ESYS_CONTEXT *ectx) {
     }
 
     ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                            ctx.auth.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, hierarchy,
+                            ctx.auth.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Couldn't get shandle");
-        return false;
+        return rc;
     }
 
     rval = Esys_NV_UndefineSpace(ectx, hierarchy, nv_handle,

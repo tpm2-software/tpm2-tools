@@ -94,10 +94,11 @@ tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
 
     hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(objdata->in.hierarchy);
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy, sess);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, hierarchy, sess, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Couldn't get shandle for hierarchy");
-        return tool_rc_general_error;
+        return rc;
     }
 
     return tpm2_create_primary(ectx, hierarchy,

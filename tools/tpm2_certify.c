@@ -125,20 +125,21 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
     TPM2B_ATTEST *certify_info;
     TPMT_SIGNATURE *signature;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
-                            ctx.object.object.tr_handle,
-                            ctx.object.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx, ctx.object.object.tr_handle,
+            ctx.object.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get session handle for TPM object");
-        return tool_rc_general_error;
+        return rc;
     }
 
-    ESYS_TR shandle2 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle2 = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.key.object.tr_handle,
-                            ctx.key.session);
-    if (shandle2 == ESYS_TR_NONE) {
+                            ctx.key.session, &shandle2);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get session handle for key");
-        return tool_rc_general_error;
+        return rc;
     }
 
     rval = Esys_Certify(ectx, ctx.object.object.tr_handle,

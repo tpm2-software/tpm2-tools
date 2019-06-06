@@ -70,12 +70,13 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
      */
     unsigned version = 2;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.object.context.tr_handle,
-                            ctx.object.session);
-    if (shandle1 == ESYS_TR_NONE) {
+                            ctx.object.session, &shandle1);
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return tmp_rc;
     }
 
     TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.object.context.tr_handle,

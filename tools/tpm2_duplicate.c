@@ -57,12 +57,13 @@ static tool_rc do_duplicate(ESYS_CONTEXT *ectx,
         TPM2B_PRIVATE **duplicate,
         TPM2B_ENCRYPTED_SECRET **encrypted_seed) {
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.object.object.tr_handle,
-                            ctx.object.session);
-    if (shandle1 == ESYS_TR_NONE) {
+                            ctx.object.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return rc;
     }
 
     TSS2_RC rval = Esys_Duplicate(ectx,

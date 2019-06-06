@@ -66,19 +66,18 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
 
     public_info.nvPublic.dataSize = ctx.size;
 
-    ESYS_TR nvHandle;
     ESYS_TR auth_handle = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy.handle);
-    ESYS_TR shandle1;
-    TSS2_RC rval;
 
-    shandle1 = tpm2_auth_util_get_shandle(ectx, auth_handle,
-                    ctx.hierarchy.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, auth_handle,
+                    ctx.hierarchy.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return rc;
     }
 
-    rval = Esys_NV_DefineSpace(ectx, auth_handle,
+    ESYS_TR nvHandle;
+    TSS2_RC rval = Esys_NV_DefineSpace(ectx, auth_handle,
                 shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                 &ctx.nvAuth, &public_info, &nvHandle);
     if (rval != TPM2_RC_SUCCESS) {

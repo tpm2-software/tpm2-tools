@@ -31,7 +31,12 @@ static tool_rc clearcontrol(ESYS_CONTEXT *ectx) {
             ctx.disable_clear ? "SET" : "CLEAR",
             ctx.rh == ESYS_TR_RH_PLATFORM ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
 
-    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, ctx.rh, ctx.auth.session);
+    ESYS_TR shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.rh, ctx.auth.session,
+            &shandle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     TSS2_RC rval = Esys_ClearControl(ectx, ctx.rh,
                 shandle, ESYS_TR_NONE, ESYS_TR_NONE, ctx.disable_clear);

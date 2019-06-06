@@ -152,11 +152,12 @@ static tool_rc do_import(ESYS_CONTEXT *ectx,
         TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_PRIVATE **imported_private) {
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, phandle,
-                            ctx.parent.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, phandle,
+                            ctx.parent.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Couldn't get shandle for phandle");
-        return false;
+        return rc;
     }
 
     TSS2_RC rval = Esys_Import(ectx, phandle,
