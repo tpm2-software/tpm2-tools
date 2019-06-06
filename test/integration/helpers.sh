@@ -1,6 +1,8 @@
 #!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
 
+set -E
+
 function filter_algs_by() {
 
 python << pyscript
