@@ -296,4 +296,9 @@ tool_rc tpm2_sequence_complete(
     TPM2B_DIGEST **result,
     TPMT_TK_HASHCHECK **validation);
 
+tool_rc tpm2_tr_set_auth(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR handle,
+    TPM2B_AUTH const *authValue);
+
 #endif /* LIB_TPM2_H_ */

@@ -823,3 +823,20 @@ tool_rc tpm2_sequence_complete(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_tr_set_auth(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR handle,
+    TPM2B_AUTH const *authValue) {
+
+    TSS2_RC rval = Esys_TR_SetAuth(
+        esysContext,
+        handle,
+        authValue);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_SequenceComplete, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
