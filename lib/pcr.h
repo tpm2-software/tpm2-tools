@@ -7,7 +7,7 @@
 
 #include <tss2/tss2_esys.h>
 
-typedef enum tool_rc tool_rc;
+#include "tpm2_error.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {

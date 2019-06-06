@@ -6,9 +6,9 @@
 #include <stdbool.h>
 
 #include <tss2/tss2_esys.h>
-#include "tpm2_session.h"
 
-typedef enum tool_rc tool_rc;
+#include "tpm2_error.h"
+#include "tpm2_session.h"
 
 typedef enum tpm2_hierarchy_flags tpm2_hierarchy_flags;
 

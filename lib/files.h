@@ -6,9 +6,9 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-typedef enum tool_rc tool_rc;
-
 #include <tss2/tss2_esys.h>
+
+#include "tpm2_error.h"
 
 /**
  * Reads a series of bytes from a file as a byte array. This is similar to files_read_bytes(),
