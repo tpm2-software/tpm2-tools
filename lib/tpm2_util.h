@@ -357,7 +357,7 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
 
 
 /**
- * Uses Esys_TR_FromTPMPublic() to construct the ESYS_TR object corresponding
+ * Uses TR_FromTPMPublic() to construct the ESYS_TR object corresponding
  * to the passed TPM2_HANDLE.
  * @param context
  *  an ESAPI context
