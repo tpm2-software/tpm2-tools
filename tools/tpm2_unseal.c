@@ -28,42 +28,49 @@ struct tpm_unseal_ctx {
 
 static tpm_unseal_ctx ctx;
 
-bool unseal_and_save(ESYS_CONTEXT *ectx) {
+tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
 
-    bool ret = false;
     TPM2B_SENSITIVE_DATA *outData = NULL;
 
-    TSS2_RC rval;
-
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.context_object.tr_handle,
-                            ctx.session);
-    if (shandle1 == ESYS_TR_NONE) {
-        ret = false;
-        goto out;
+                            ctx.session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    rval = Esys_Unseal(ectx, ctx.context_object.tr_handle,
+    TSS2_RC rval = Esys_Unseal(ectx, ctx.context_object.tr_handle,
                 shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                 &outData);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Unseal, rval);
-        ret = false;
+        rc = tool_rc_from_tpm(rval);
         goto out;
     }
 
     if (ctx.outFilePath) {
-        ret = files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
+        bool ret = files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
                                         outData->buffer, outData->size);
+        if (!ret) {
+            rc = tool_rc_general_error;
+            goto out;
+        }
     } else {
-        ret = files_write_bytes(stdout, (UINT8 *) outData->buffer,
+        bool ret = files_write_bytes(stdout, (UINT8 *) outData->buffer,
                                  outData->size);
+        if (!ret) {
+            rc = tool_rc_general_error;
+            goto out;
+        }
     }
+
+    rc = tool_rc_success;
 
 out:
     free(outData);
 
-    return ret;
+    return rc;
 }
 
 static tool_rc init(ESYS_CONTEXT *ectx) {
@@ -126,13 +133,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool result = unseal_and_save(ectx);
-    if (!result) {
-        LOG_ERR("Unseal failed!");
-        return tool_rc_general_error;
-    }
-
-    return tool_rc_success;
+    return unseal_and_save(ectx);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

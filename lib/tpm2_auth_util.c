@@ -12,6 +12,7 @@
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_policy.h"
 #include "tpm2_session.h"
@@ -281,17 +282,12 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     return handle_password_session(ectx, password, session);
 }
 
-ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,
-            tpm2_session *session) {
+tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,
+            tpm2_session *session, ESYS_TR *out) {
 
-    ESYS_TR handle = tpm2_session_get_handle(session);
+    *out = tpm2_session_get_handle(session);
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(session);
 
-    TPM2_RC rval = Esys_TR_SetAuth(ectx, object, auth);
-    if (rval != TPM2_RC_SUCCESS) {
-        return ESYS_TR_NONE;
-    }
-
-    return handle;
+    return tpm2_tr_set_auth(ectx, object, auth);
 }

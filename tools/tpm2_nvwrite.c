@@ -104,14 +104,13 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
         hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
     }
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                            ctx.auth.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx, hierarchy,
+                            ctx.auth.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return rc;
     }
-
-    printf("shandle1: 0x%X\n", shandle1);
 
     while (ctx.data_size > 0) {
 

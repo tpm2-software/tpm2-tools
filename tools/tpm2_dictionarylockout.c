@@ -33,11 +33,12 @@ static dictionarylockout_ctx ctx;
 tool_rc dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
 
     TPM2_RC rval;
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_LOCKOUT,
-                            ctx.auth.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_LOCKOUT,
+                            ctx.auth.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Couldn't get shandle for lockout hierarchy");
-        return tool_rc_general_error;
+        return rc;
     }
 
     /*

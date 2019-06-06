@@ -56,10 +56,12 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
  *  Auth command for the handle
  * @param session
  *  Session for the handle
+ * @param handle
+ *  The output handle for the session
  * @return
- *  The authorized session handle of type ESYS_TR for the target handle
+ *  A tool_rc indicating status.
  */
-ESYS_TR tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
-                tpm2_session *session);
+tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
+                tpm2_session *session, ESYS_TR *handle);
 
 #endif /* SRC_PASSWORD_UTIL_H_ */

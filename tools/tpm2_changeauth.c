@@ -67,11 +67,12 @@ static tool_rc change_auth(ESYS_CONTEXT *ectx,
 
     TSS2_RC rval;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, auth_handle,
-                            pwd->old);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, auth_handle,
+                            pwd->old, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle for auth");
-        return false;
+        return rc;
     }
 
     const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(pwd->new);
@@ -219,12 +220,13 @@ static tool_rc process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx,
                         ctx.tpm_handle_context_object.tr_handle,
-                        ctx.auths.tpm_handle.old);
-    if (shandle == ESYS_TR_NONE) {
+                        ctx.auths.tpm_handle.old, &shandle);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return rc;
     }
 
     const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(ctx.auths.tpm_handle.new);
@@ -251,11 +253,12 @@ static tool_rc process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx,
                         ctx.tpm_handle_context_object.tr_handle,
-                        ctx.auths.tpm_handle.old);
-    if (shandle == ESYS_TR_NONE) {
-        return tool_rc_general_error;
+                        ctx.auths.tpm_handle.old, &shandle);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (!ctx.tpm_handle_parent_context_object.tr_handle) {

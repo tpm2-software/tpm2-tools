@@ -267,7 +267,8 @@ static void test_tpm2_auth_util_get_pw_shandle(void **state) {
     assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
-    shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, s);
+    rc = tpm2_auth_util_get_shandle(ectx, auth_handle, s, &shandle);
+    assert_int_equal(rc, tool_rc_success);
     assert_true(shandle == ESYS_TR_PASSWORD);
     tpm2_session_close(&s);
     assert_null(s);
@@ -281,7 +282,8 @@ static void test_tpm2_auth_util_get_pw_shandle(void **state) {
     assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
-    shandle = tpm2_auth_util_get_shandle(ectx, auth_handle, s);
+    rc = tpm2_auth_util_get_shandle(ectx, auth_handle, s, &shandle);
+    assert_int_equal(rc, tool_rc_success);
     assert_int_equal(SESSION_HANDLE, shandle);
 
     tpm2_session_close(&s);

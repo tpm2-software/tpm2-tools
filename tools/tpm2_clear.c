@@ -29,11 +29,12 @@ static tool_rc clear(ESYS_CONTEXT *ectx) {
     if (ctx.platform)
         rh = ESYS_TR_RH_PLATFORM;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, rh,
-                            ctx.auth.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, rh,
+                            ctx.auth.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle for hierarchy");
-        return false;
+        return rc;
     }
 
     TSS2_RC rval = Esys_Clear(ectx, rh,

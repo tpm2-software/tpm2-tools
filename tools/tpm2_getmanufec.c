@@ -139,11 +139,13 @@ tool_rc createEKHandle(ESYS_CONTEXT *ectx)
 
     creationPCR.count = 0;
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
-                            ctx.auth.endorse.session);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
+                            ctx.auth.endorse.session, &shandle1);
+    if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
-        return tool_rc_general_error;
+        return rc;
     }
 
     rval = Esys_CreatePrimary(ectx, ESYS_TR_RH_ENDORSEMENT,
@@ -160,16 +162,17 @@ tool_rc createEKHandle(ESYS_CONTEXT *ectx)
 
         if (!ctx.persistent_handle) {
             LOG_ERR("Persistent handle for EK was not provided");
-            return 1;
+            return tool_rc_general_error;
         }
 
         ESYS_TR new_handle;
 
-        ESYS_TR shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
-                                ctx.auth.owner.session);
-        if (shandle == ESYS_TR_NONE) {
+        ESYS_TR shandle = ESYS_TR_NONE;
+        rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
+                                ctx.auth.owner.session, &shandle);
+        if (rc != tool_rc_success) {
             LOG_ERR("Couldn't get shandle for owner hierarchy");
-            return tool_rc_general_error;
+            return rc;
         }
 
         rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, handle2048ek,

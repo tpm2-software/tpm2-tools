@@ -17,14 +17,14 @@ tool_rc tpm2_ctx_mgmt_evictcontrol(
         TPMI_DH_PERSISTENT phandle,
         ESYS_TR *out_tr) {
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, auth, sess);
-    if (shandle1 == ESYS_TR_NONE) {
-        LOG_ERR("Couldn't get shandle for eviction target");
-        return false;
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, auth, sess, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     ESYS_TR outHandle;
-    tool_rc rc = tpm2_evictcontrol(ectx, auth, objhandle,
+    rc = tpm2_evictcontrol(ectx, auth, objhandle,
             shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
             phandle, &outHandle);
 

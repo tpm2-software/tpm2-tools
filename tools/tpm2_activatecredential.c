@@ -140,9 +140,11 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
     // Set session up
     ESYS_TR sess_handle = tpm2_session_get_handle(session);
 
-    ESYS_TR endorse_shandle = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
-                                ctx.endorse.session);
-    if (endorse_shandle == ESYS_TR_NONE) {
+    ESYS_TR endorse_shandle = ESYS_TR_NONE;
+    tmp_rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
+                                ctx.endorse.session, &endorse_shandle);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out_session;
     }
 
@@ -155,10 +157,12 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
         goto out_session;
     }
 
-    ESYS_TR key_shandle = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR key_shandle = ESYS_TR_NONE;
+    tmp_rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.ctx_obj.tr_handle,
-                            ctx.key.session);
-    if (key_shandle == ESYS_TR_NONE) {
+                            ctx.key.session, &key_shandle);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         goto out_session;
     }
 

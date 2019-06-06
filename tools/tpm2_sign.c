@@ -71,11 +71,12 @@ static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
       }
     }
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx,
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx,
                             ctx.key_context.tr_handle,
-                            ctx.key.session);
-    if (shandle1 == ESYS_TR_NONE) {
-        return rc;
+                            ctx.key.session, &shandle1);
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
     }
 
     TSS2_RC rval = Esys_Sign(ectx, ctx.key_context.tr_handle,

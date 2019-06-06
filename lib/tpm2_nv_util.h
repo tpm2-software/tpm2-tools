@@ -183,10 +183,12 @@ static inline tool_rc tpm2_util_nv_read(
         tr_hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(hierarchy);
     }
 
-    ESYS_TR shandle1 = tpm2_auth_util_get_shandle(ectx, tr_hierarchy, sess);
-    if (shandle1 == ESYS_TR_NONE) {
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+
+    tmp_rc = tpm2_auth_util_get_shandle(ectx, tr_hierarchy, sess, &shandle1);
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("Couldn't get shandle for hierarchy");
-        rc = tool_rc_general_error;
+        rc = tmp_rc;
         goto out;
     }
 

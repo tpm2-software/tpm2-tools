@@ -125,7 +125,7 @@ test "$unsealed" == "$secret"
 trap - ERR
 
 tpm2_unseal -c $file_unseal_key_ctx -p wrongpass 2> /dev/null
-if [ $? != 1 ]; then
+if [ $? != 3 ]; then
   echo "tpm2_unseal didn't fail when using a wrong object password!"
   exit 1
 fi
