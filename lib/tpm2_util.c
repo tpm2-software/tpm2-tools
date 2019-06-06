@@ -10,6 +10,7 @@
 
 #include "log.h"
 #include "files.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_openssl.h"
@@ -639,8 +640,7 @@ tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
                     &outobject->handle);
     if (result) {
         outobject->path = NULL;
-        return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle, &outobject->tr_handle) ?
-                tool_rc_success : tool_rc_general_error;
+        return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle, &outobject->tr_handle);
     }
 
     // 4. we must assume the whole value is a file path
@@ -693,7 +693,7 @@ ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh) {
     return ESYS_TR_NONE;
 }
 
-bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
+tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         TPM2_HANDLE sys_handle, ESYS_TR *esys_handle) {
 
     bool is_persistent = ((sys_handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT);
@@ -707,14 +707,8 @@ bool tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         return true;
     }
 
-    TSS2_RC ret = Esys_TR_FromTPMPublic(context, sys_handle,
+    return tpm2_from_tpm_public(context, sys_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, esys_handle);
-    if (ret != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_FromTPMPublic, ret);
-        return false;
-    }
-
-    return true;
 }
 
 bool tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,

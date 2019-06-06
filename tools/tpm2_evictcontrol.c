@@ -116,9 +116,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * associated ESYS_TR for ESAPI calls
      */
     if (!ctx.context_object.tr_handle) {
-        bool result = tpm2_util_sys_handle_to_esys_handle(ectx,
+        tmp_rc = tpm2_util_sys_handle_to_esys_handle(ectx,
                     ctx.context_object.handle, &ctx.context_object.tr_handle);
-        if (!result) {
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
             goto out;
         }
     }
