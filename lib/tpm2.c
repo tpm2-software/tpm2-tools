@@ -690,3 +690,30 @@ tool_rc tpm2_mu_tpm2_handle_unmarshal(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_evictcontrol(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR auth,
+    ESYS_TR objectHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    TPMI_DH_PERSISTENT persistentHandle,
+    ESYS_TR *newObjectHandle) {
+
+    TSS2_RC rval = Esys_EvictControl(
+            esysContext,
+            auth,
+            objectHandle,
+            shandle1,
+            shandle2,
+            shandle3,
+            persistentHandle,
+            newObjectHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_EvictControl, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
