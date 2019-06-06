@@ -47,7 +47,7 @@ tpm2_nvwrite -Q -x $nv_test_index -a o nv.test_w
 tpm2_nvread -Q -x $nv_test_index -a o -s 32 -o 0
 
 tpm2_nvlist > nv.out
-yaml_get_kv nv.out $nv_test_index > /dev/null
+yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 
 # Test writing to and reading from an offset by:
@@ -110,7 +110,7 @@ tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 #
 
 tpm2_getcap -c properties-fixed > cap.out
-large_file_size=`yaml_get_kv cap.out \"TPM2_PT_NV_INDEX_MAX\" \"raw\"`
+large_file_size=`yaml_get_kv cap.out "TPM2_PT_NV_INDEX_MAX" "raw"`
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
@@ -126,7 +126,7 @@ tpm2_nvread -x $nv_test_index -a o > $large_file_read_name
 cmp -s $large_file_read_name $large_file_name
 
 tpm2_nvlist > nv.out
-yaml_get_kv nv.out $nv_test_index > /dev/null
+yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 tpm2_nvrelease -Q -x $nv_test_index -a o
 

@@ -45,7 +45,7 @@ tpm2_createprimary -Q -a o -G rsa -g sha256 -o context.out -L policy.bin \
 
 tpm2_readpublic -c context.out > pub.out
 
-policy_new=$(yaml_get_kv pub.out \"authorization\ policy\")
+policy_new=$(yaml_get_kv pub.out "authorization policy")
 
 test "$policy_orig" == "$policy_new"
 

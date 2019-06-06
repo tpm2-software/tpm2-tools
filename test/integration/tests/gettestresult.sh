@@ -18,6 +18,6 @@ tempfile=$(mktemp)
 
 # Verify that tests have succeeded
 tpm2_gettestresult > "${tempfile}"
-yaml_get_kv "${tempfile}" \"status\" | grep "success"
+yaml_get_kv "${tempfile}" "status" | grep "success"
 
 exit 0
