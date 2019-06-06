@@ -22,7 +22,6 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
     bool use_left, done;
     unsigned long left;
     size_t bytes_read;
-    TSS2_RC rval;
     TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
     TPMI_DH_OBJECT sequenceHandle;
     TPM2B_MAX_BUFFER buffer;
@@ -66,10 +65,9 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
         return rc;
     }
 
-    rval = Esys_TR_SetAuth(ectx, sequenceHandle, &nullAuth);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_SetAuth, rval);
-        return tool_rc_general_error;
+    rc = tpm2_tr_set_auth(ectx, sequenceHandle, &nullAuth);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /* If we know the file size, we decrement the amount read and terminate
