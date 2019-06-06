@@ -117,8 +117,8 @@ run_aes_test() {
 
     tpm2_encryptdecrypt -c key.ctx -i plain.txt -o plain.enc
 
-    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -p sym.key` -iv 0 \
-        -aes-$1-cfb
+    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
+	-iv 0 -aes-$1-cfb
 
     diff plain.txt plain.dec.ssl
 
