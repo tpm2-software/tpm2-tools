@@ -158,6 +158,8 @@ run_ecc_test() {
 
 run_rsa_passin_test() {
 
+    openssl genrsa -aes128 -passout "pass:mypassword" -out "private.pem" 1024
+
     if [ "$2" != "stdin" ]; then
         cmd="tpm2_loadexternal -Q -G rsa -r $1 -o key.ctx --passin $2"
     else
@@ -182,8 +184,6 @@ run_ecc_test prime256v1
 #
 # Test loadexternal passin option
 #
-openssl genrsa -aes128 -passout "pass:mypassword" -out "private.pem" 1024
-
 run_rsa_passin_test "private.pem" "pass:mypassword"
 
 export envvar="mypassword"
@@ -192,9 +192,11 @@ run_rsa_passin_test "private.pem" "env:envvar"
 echo -n "mypassword" > "passfile"
 run_rsa_passin_test "private.pem" "file:passfile"
 
+echo -n "mypassword" > "passfile"
 exec 42<> passfile
 run_rsa_passin_test "private.pem" "fd:42"
 
+echo -n "mypassword" > "passfile"
 run_rsa_passin_test "private.pem" "stdin" "passfile"
 
 
