@@ -7,10 +7,10 @@
 
 #include <tss2/tss2_esys.h>
 
+#include "tpm2_error.h"
+
 typedef struct tpm2_session_data tpm2_session_data;
 typedef struct tpm2_session tpm2_session;
-
-typedef enum tool_rc tool_rc;
 
 /**
  * Creates a new session data object, based around the inputs to

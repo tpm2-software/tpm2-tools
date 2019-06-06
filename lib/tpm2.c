@@ -5,7 +5,7 @@
 
 #include "log.h"
 #include "tpm2.h"
-#include "tpm2_tool.h"
+#include "tpm2_error.h"
 #include "tpm2_util.h"
 
 tool_rc tpm2_readpublic(
