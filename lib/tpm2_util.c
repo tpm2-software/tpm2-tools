@@ -6,8 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_mu.h>
-
 #include "log.h"
 #include "files.h"
 #include "tpm2.h"
@@ -704,34 +702,28 @@ tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
     ESYS_TR h = tpm2_tpmi_hierarchy_to_esys_tr(sys_handle);
     if (h != ESYS_TR_NONE) {
         *esys_handle = h;
-        return true;
+        return tool_rc_success;
     }
 
     return tpm2_from_tpm_public(context, sys_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, esys_handle);
 }
 
-bool tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
+tool_rc tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
         ESYS_TR esys_handle, TPM2_HANDLE *sys_handle) {
 
-    bool result = true;
-    TPM2B_NAME *loaded_name;
-
-    TSS2_RC rval = Esys_TR_GetName(context, esys_handle, &loaded_name);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_GetName, rval);
-        result = false;
-        goto outname;
+    TPM2B_NAME *loaded_name = NULL;
+    tool_rc rc = tpm2_tr_get_name(context, esys_handle, &loaded_name);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     size_t offset = 0;
     TPM2_HANDLE hndl;
     // TODO: this doesn't produce handles that _look_ right
-    rval = Tss2_MU_TPM2_HANDLE_Unmarshal(loaded_name->name, loaded_name->size,
+    rc = tpm2_mu_tpm2_handle_unmarshal(loaded_name->name, loaded_name->size,
                 &offset, &hndl);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Tss2_MU_TPM2_HANDLE_Unmarshal, rval);
-        result = false;
+    if (rc != tool_rc_success) {
         goto outname;
     }
 
@@ -740,5 +732,5 @@ bool tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
 outname:
     free(loaded_name);
 
-    return result;
+    return rc;
 }

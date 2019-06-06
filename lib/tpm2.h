@@ -236,4 +236,15 @@ tool_rc tpm2_policy_duplication_select(
     const TPM2B_NAME *newParentName,
     TPMI_YES_NO includeObject);
 
+tool_rc tpm2_tr_get_name(
+        ESYS_CONTEXT *esysContext,
+        ESYS_TR handle,
+        TPM2B_NAME **name);
+
+tool_rc tpm2_mu_tpm2_handle_unmarshal(
+    uint8_t const   buffer[],
+    size_t          size,
+    size_t          *offset,
+    TPM2_HANDLE     *out);
+
 #endif /* LIB_TPM2_H_ */

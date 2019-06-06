@@ -218,9 +218,9 @@ static void test_tpm2_session_save(void **state) {
 
     ESYS_TR handle1 = tpm2_session_get_handle(s);
     TPMI_SH_AUTH_SESSION tpm_handle1;
-    bool result = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle1,
+    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle1,
                     &tpm_handle1);
-    assert_true(result);
+    assert_int_equal(rc, tool_rc_success);
 
     rc = tpm2_session_close(&s);
     assert_int_equal(rc, tool_rc_success);
@@ -232,9 +232,9 @@ static void test_tpm2_session_save(void **state) {
 
     ESYS_TR handle2 = tpm2_session_get_handle(s);
     TPMI_SH_AUTH_SESSION tpm_handle2;
-    result = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle2,
+    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle2,
                 &tpm_handle2);
-    assert_true(result);
+    assert_int_equal(rc, tool_rc_success);
 
     assert_int_equal(tpm_handle1, tpm_handle2);
 
