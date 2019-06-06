@@ -99,32 +99,35 @@ static bool show_pcr_values(void) {
     return true;
 }
 
-static bool show_selected_pcr_values(ESYS_CONTEXT *esys_context, bool check) {
+static tool_rc show_selected_pcr_values(ESYS_CONTEXT *esys_context, bool check) {
 
-    if (check && !pcr_check_pcr_selection(&ctx.cap_data, &ctx.pcr_selections))
-        return false;
+    if (check && !pcr_check_pcr_selection(&ctx.cap_data, &ctx.pcr_selections)) {
+        return tool_rc_general_error;
+    }
 
-    if (!pcr_read_pcr_values(esys_context, &ctx.pcr_selections, &ctx.pcrs))
-        return false;
+    tool_rc rc = pcr_read_pcr_values(esys_context, &ctx.pcr_selections, &ctx.pcrs);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
 
     if (!show_pcr_values())
-        return false;
+        return tool_rc_general_error;
 
-    return true;
+    return tool_rc_success;
 }
 
-static bool show_all_pcr_values(ESYS_CONTEXT *esys_context) {
+static tool_rc show_all_pcr_values(ESYS_CONTEXT *esys_context) {
 
     if (!pcr_init_pcr_selection(&ctx.cap_data, &ctx.pcr_selections, ctx.selected_algorithm))
-        return false;
+        return tool_rc_general_error;
 
     return show_selected_pcr_values(esys_context, false);
 }
 
-static bool show_alg_pcr_values(ESYS_CONTEXT *esys_context) {
+static tool_rc show_alg_pcr_values(ESYS_CONTEXT *esys_context) {
 
     if (!pcr_init_pcr_selection(&ctx.cap_data, &ctx.pcr_selections, ctx.selected_algorithm))
-        return false;
+        return tool_rc_general_error;
 
     return show_selected_pcr_values(esys_context, false);
 }
@@ -190,8 +193,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool success = false;
-
     int flagCnt = ctx.flags.g + ctx.flags.L + ctx.flags.s;
     if (flagCnt > 1) {
         LOG_ERR("Expected only one of -g, -L or -s options, found: \"%s%s%s\"",
@@ -218,16 +219,16 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *esys_context, tpm2_option_flags flags) {
 
     if (ctx.flags.s) {
         show_banks(&ctx.algs);
-        success = true;
+        rc = tool_rc_success;
     } else if (ctx.flags.g) {
-        success = show_alg_pcr_values(esys_context);
+        rc = show_alg_pcr_values(esys_context);
     } else if (ctx.flags.L) {
-        success = show_selected_pcr_values(esys_context, true);
+        rc = show_selected_pcr_values(esys_context, true);
     } else {
-        success = show_all_pcr_values(esys_context);
+        rc = show_all_pcr_values(esys_context);
     }
 
-    return success ? tool_rc_success : tool_rc_general_error;
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *esys_context) {
