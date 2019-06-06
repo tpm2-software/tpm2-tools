@@ -168,9 +168,10 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
         }
 
         // Gather PCR values from the TPM (the quote doesn't have them!)
-        if (!pcr_read_pcr_values(ectx, &ctx.pcrSelections, &ctx.pcrs)) {
+        rc = pcr_read_pcr_values(ectx, &ctx.pcrSelections, &ctx.pcrs);
+        if (rc != tool_rc_success) {
             LOG_ERR("Failed to retrieve PCR values related to quote!");
-            return tool_rc_general_error;
+            return rc;
         }
 
         // Grab the digest from the quote

@@ -403,7 +403,7 @@ bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION 
     return true;
 }
 
-bool pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSelections, tpm2_pcrs *pcrs) {
+tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSelections, tpm2_pcrs *pcrs) {
 
     TPML_PCR_SELECTION pcr_selection_tmp;
     TPML_PCR_SELECTION *pcr_selection_out;
@@ -416,13 +416,12 @@ bool pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSele
     pcrs->count = 0;
     do {
         TPML_DIGEST *v;
-        UINT32 rval = Esys_PCR_Read(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+        tool_rc rc = tpm2_pcr_read(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
                 ESYS_TR_NONE, &pcr_selection_tmp,
                 &pcr_update_counter, &pcr_selection_out, &v);
 
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_PCR_Read, rval);
-            return false;
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         pcrs->pcr_values[pcrs->count] = *v;
@@ -439,8 +438,8 @@ bool pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSele
 
     if (pcrs->count >= sizeof(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
         LOG_ERR("too much pcrs to get! try to split into multiple calls...");
-        return false;
+        return tool_rc_general_error;
     }
 
-    return true;
+    return tool_rc_success;
 }
