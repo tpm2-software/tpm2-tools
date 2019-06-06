@@ -32,15 +32,15 @@ static tpm_hash_ctx ctx = {
     .halg = TPM2_ALG_SHA1,
 };
 
-static bool hash_and_save(ESYS_CONTEXT *context) {
+static tool_rc hash_and_save(ESYS_CONTEXT *context) {
 
     TPM2B_DIGEST *outHash;
     TPMT_TK_HASHCHECK *validation;
 
-    bool res = tpm2_hash_file(context, ctx.halg, ctx.hierarchyValue,
+    tool_rc rc = tpm2_hash_file(context, ctx.halg, ctx.hierarchyValue,
                               ctx.input_file, &outHash, &validation);
-    if (!res) {
-        return false;
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (outHash->size) {
@@ -67,21 +67,21 @@ static bool hash_and_save(ESYS_CONTEXT *context) {
                                                &outHash->buffer[0],
                                                outHash->size);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
     if (ctx.outTicketFilePath) {
         bool result = files_save_validation(validation, ctx.outTicketFilePath);
         if (!result) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
     free(outHash);
     free(validation);
 
-    return true;
+    return tool_rc_success;
 }
 
 static bool on_args(int argc, char **argv) {
@@ -151,11 +151,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool res = hash_and_save(context);
+    return hash_and_save(context);
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *context) {
+    UNUSED(context);
 
     if (ctx.input_file) {
         fclose(ctx.input_file);
     }
 
-    return res ? tool_rc_success : tool_rc_general_error;
+    return tool_rc_success;
 }

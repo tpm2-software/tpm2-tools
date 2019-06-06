@@ -717,3 +717,109 @@ tool_rc tpm2_evictcontrol(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_hash(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_MAX_BUFFER *data,
+    TPMI_ALG_HASH hashAlg,
+    TPMI_RH_HIERARCHY hierarchy,
+    TPM2B_DIGEST **outHash,
+    TPMT_TK_HASHCHECK **validation) {
+
+    TSS2_RC rval = Esys_Hash(
+        esysContext,
+        shandle1,
+        shandle2,
+        shandle3,
+        data,
+        hashAlg,
+        hierarchy,
+        outHash,
+        validation);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_Hash, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_hash_sequence_start(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_AUTH *auth,
+    TPMI_ALG_HASH hashAlg,
+    ESYS_TR *sequenceHandle) {
+
+    TSS2_RC rval = Esys_HashSequenceStart(
+        esysContext,
+        shandle1,
+        shandle2,
+        shandle3,
+        auth,
+        hashAlg,
+        sequenceHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_HashSequenceStart, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_sequence_update(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_MAX_BUFFER *buffer) {
+
+    TSS2_RC rval = Esys_SequenceUpdate(
+        esysContext,
+        sequenceHandle,
+        shandle1,
+        shandle2,
+        shandle3,
+        buffer);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_SequenceUpdate, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_sequence_complete(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_MAX_BUFFER *buffer,
+    TPMI_RH_HIERARCHY hierarchy,
+    TPM2B_DIGEST **result,
+    TPMT_TK_HASHCHECK **validation) {
+
+    TSS2_RC rval = Esys_SequenceComplete(
+        esysContext,
+        sequenceHandle,
+        shandle1,
+        shandle2,
+        shandle3,
+        buffer,
+        hierarchy,
+        result,
+        validation);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_SequenceComplete, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

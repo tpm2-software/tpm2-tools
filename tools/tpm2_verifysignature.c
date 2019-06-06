@@ -160,9 +160,10 @@ static tool_rc init(ESYS_CONTEXT *context) {
             LOG_ERR("No digest set and no message file to compute from, cannot compute message hash!");
             goto err;
         }
-        bool res = tpm2_hash_compute_data(context, ctx.halg,
+        tmp_rc = tpm2_hash_compute_data(context, ctx.halg,
                 TPM2_RH_NULL, msg->buffer, msg->size, &ctx.msgHash, NULL);
-        if (!res) {
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
             LOG_ERR("Compute message hash failed!");
             goto err;
         }

@@ -63,11 +63,11 @@ static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
     tool_rc rc = tool_rc_general_error;
 
     if (!ctx.flags.D) {
-      bool res = tpm2_hash_compute_data(ectx, ctx.halg, TPM2_RH_NULL,
+      tool_rc tmp_rc = tpm2_hash_compute_data(ectx, ctx.halg, TPM2_RH_NULL,
               ctx.msg, ctx.length, &ctx.digest, NULL);
-      if (!res) {
+      if (tmp_rc != tool_rc_success) {
           LOG_ERR("Compute message hash failed!");
-          return rc;
+          return tmp_rc;
       }
     }
 
