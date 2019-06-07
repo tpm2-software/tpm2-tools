@@ -247,6 +247,12 @@ tool_rc tpm2_mu_tpm2_handle_unmarshal(
     size_t          *offset,
     TPM2_HANDLE     *out);
 
+tool_rc tpm2_mu_tpmt_public_marshal(
+    TPMT_PUBLIC    const *src,
+    uint8_t        buffer[],
+    size_t         buffer_size,
+    size_t         *offset);
+
 tool_rc tpm2_evictcontrol(
     ESYS_CONTEXT *esysContext,
     ESYS_TR auth,
@@ -300,5 +306,33 @@ tool_rc tpm2_tr_set_auth(
     ESYS_CONTEXT *esysContext,
     ESYS_TR handle,
     TPM2B_AUTH const *authValue);
+
+tool_rc tpm2_create(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR parentHandle,
+    ESYS_TR shandle1,
+    ESYS_TR shandle2,
+    ESYS_TR shandle3,
+    const TPM2B_SENSITIVE_CREATE *inSensitive,
+    const TPM2B_PUBLIC *inPublic,
+    const TPM2B_DATA *outsideInfo,
+    const TPML_PCR_SELECTION *creationPCR,
+    TPM2B_PRIVATE **outPrivate,
+    TPM2B_PUBLIC **outPublic,
+    TPM2B_CREATION_DATA **creationData,
+    TPM2B_DIGEST **creationHash,
+    TPMT_TK_CREATION **creationTicket);
+
+tool_rc tpm2_create_loaded(
+            ESYS_CONTEXT *esysContext,
+            ESYS_TR parentHandle,
+            ESYS_TR shandle1,
+            ESYS_TR shandle2,
+            ESYS_TR shandle3,
+            const TPM2B_SENSITIVE_CREATE *inSensitive,
+            const TPM2B_TEMPLATE *inPublic,
+            ESYS_TR *objectHandle,
+            TPM2B_PRIVATE **outPrivate,
+            TPM2B_PUBLIC **outPublic);
 
 #endif /* LIB_TPM2_H_ */

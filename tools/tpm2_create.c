@@ -14,6 +14,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_auth_util.h"
@@ -68,8 +69,6 @@ static tpm_create_ctx ctx = {
 
 static tool_rc create(ESYS_CONTEXT *ectx) {
 
-    TSS2_RC rval;
-
     tool_rc rc = tool_rc_general_error;
 
     TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
@@ -83,7 +82,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
                             ctx.parent.session, &shandle1);
     if (tmp_rc != tool_rc_success) {
         LOG_ERR("Couldn't get shandle");
-        return rc;
+        return tmp_rc;
     }
 
     ESYS_TR object_handle = ESYS_TR_NONE;
@@ -91,16 +90,15 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
         size_t offset = 0;
         TPM2B_TEMPLATE template = { .size = 0 };
-        rval = Tss2_MU_TPMT_PUBLIC_Marshal(&ctx.in_public.publicArea, &template.buffer[0],
+        tmp_rc = tpm2_mu_tpmt_public_marshal(&ctx.in_public.publicArea, &template.buffer[0],
                                         sizeof(TPMT_PUBLIC), &offset);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Tss2_MU_TPMT_PUBLIC_Marshal, rval);
-            return false;
+        if(tmp_rc != tool_rc_success) {
+            return tmp_rc;
         }
 
         template.size = offset;
 
-        TSS2_RC rval = Esys_CreateLoaded(
+        tmp_rc = tpm2_create_loaded(
                 ectx,
                 ctx.context_object.tr_handle,
                 shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
@@ -109,22 +107,20 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
                 &object_handle,
                 &outPrivate,
                 &outPublic);
-        if(rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_CreateLoaded, rval);
-            return tool_rc_from_tpm(rval);
+        if(tmp_rc != tool_rc_success) {
+            return tmp_rc;
         }
     } else {
         TPM2B_CREATION_DATA     *creationData;
         TPM2B_DIGEST            *creationHash;
         TPMT_TK_CREATION        *creationTicket;
-        rval = Esys_Create(ectx, ctx.context_object.tr_handle,
+        tmp_rc = tpm2_create(ectx, ctx.context_object.tr_handle,
                 shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
                 &ctx.in_sensitive, &ctx.in_public, &outsideInfo, &creationPCR,
                 &outPrivate, &outPublic, &creationData, &creationHash,
                 &creationTicket);
-        if(rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_Create, rval);
-            return tool_rc_from_tpm(rval);
+        if(tmp_rc != tool_rc_success) {
+            return tmp_rc;
         }
         free(creationData);
         free(creationHash);
