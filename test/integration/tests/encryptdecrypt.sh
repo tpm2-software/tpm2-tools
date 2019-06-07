@@ -94,6 +94,14 @@ tpm2_encryptdecrypt -Q -c decrypt.ctx -i encrypt.out -D -o decrypt.out
 
 cmp secret2.dat decrypt.out
 
+# Test that last block in input data shorter than block length has pkcs7 padding
+dd if=/dev/zero bs=1 count=1026 status=none of=secret2.dat
+cat secret2.dat | tpm2_encryptdecrypt -Q -c decrypt.ctx -o encrypt.out -e
+tpm2_encryptdecrypt -Q -c decrypt.ctx -i encrypt.out -D -o decrypt.out
+## Last block is short 14 or hex 0E trailing bytes
+echo "0e0e0e0e0e0e0e0e0e0e0e0e0e0e" | xxd -r -p >> secret2.dat
+cmp secret2.dat decrypt.out
+
 # Negative that bad mode fails
 trap - ERR
 
