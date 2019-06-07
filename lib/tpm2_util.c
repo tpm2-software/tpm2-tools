@@ -15,12 +15,6 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-#define FILE_PREFIX "file:"
-#define FILE_PREFIX_LEN (sizeof(FILE_PREFIX) - 1)
-
-#define NULL_OBJECT "null"
-#define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
-
 bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest, TPM2B_DATA *extraData) {
     TPM2_GENERATED magic;
     TPMI_ST_ATTEST type;
@@ -604,48 +598,6 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
                 public->publicArea.authPolicy.size);
         tpm2_tool_output("%s\n", indent);
     }
-}
-
-tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
-                        const char *objectstr, tpm2_loaded_object *outobject) {
-
-    // 0. If objecstr is NULL return error
-    if (!objectstr) {
-        LOG_ERR("tpm2_util_object_load called with empty objectstr parameter");
-        return tool_rc_general_error;
-    }
-
-    // 1. If the objectstr starts with a file: prefix, treat as a context file
-    bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
-    if (starts_with_file) {
-        outobject->handle = 0;
-        outobject->path = objectstr += FILE_PREFIX_LEN;
-        return files_load_tpm_context_from_path(ctx,
-                &outobject->tr_handle, outobject->path);
-    }
-
-    // 2. If the objstr is "null" set the handle to RH_NULL
-    bool is_rh_null = !strncmp(objectstr, NULL_OBJECT, NULL_OBJECT_LEN);
-    if (is_rh_null){
-        outobject->path = NULL;
-        outobject->tr_handle = ESYS_TR_RH_NULL;
-        outobject->handle = TPM2_RH_NULL;
-        return tool_rc_success;
-    }
-
-    // 3. Try to load objectstr as a TPM2_HANDLE
-    bool result = tpm2_util_string_to_uint32(objectstr,
-                    &outobject->handle);
-    if (result) {
-        outobject->path = NULL;
-        return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle, &outobject->tr_handle);
-    }
-
-    // 4. we must assume the whole value is a file path
-    outobject->handle = 0;
-    outobject->path = objectstr;
-    return files_load_tpm_context_from_path(ctx,
-            &outobject->tr_handle, outobject->path);
 }
 
 bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,

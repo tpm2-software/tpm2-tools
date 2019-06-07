@@ -32,8 +32,9 @@
 typedef struct tpm_create_ctx tpm_create_ctx;
 struct tpm_create_ctx {
     struct {
-        char *auth_str;
-        tpm2_session *session;
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
     } parent;
 
     TPM2B_SENSITIVE_CREATE in_sensitive;
@@ -42,9 +43,7 @@ struct tpm_create_ctx {
     char *opu_path;
     char *opr_path;
     char *key_auth_str;
-    const char *parent_ctx_path;
     const char *object_ctx_path;
-    tpm2_loaded_object context_object;
 
     char *alg;
     char *attrs;
@@ -76,21 +75,12 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     TPM2B_PUBLIC            *outPublic;
     TPM2B_PRIVATE           *outPrivate;
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.context_object.tr_handle,
-                            ctx.parent.session, &shandle1);
-    if (tmp_rc != tool_rc_success) {
-        LOG_ERR("Couldn't get shandle");
-        return tmp_rc;
-    }
-
     ESYS_TR object_handle = ESYS_TR_NONE;
     if (ctx.object_ctx_path) {
 
         size_t offset = 0;
         TPM2B_TEMPLATE template = { .size = 0 };
-        tmp_rc = tpm2_mu_tpmt_public_marshal(&ctx.in_public.publicArea, &template.buffer[0],
+        tool_rc tmp_rc = tpm2_mu_tpmt_public_marshal(&ctx.in_public.publicArea, &template.buffer[0],
                                         sizeof(TPMT_PUBLIC), &offset);
         if(tmp_rc != tool_rc_success) {
             return tmp_rc;
@@ -100,8 +90,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
         tmp_rc = tpm2_create_loaded(
                 ectx,
-                ctx.context_object.tr_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                &ctx.parent.object,
                 &ctx.in_sensitive,
                 &template,
                 &object_handle,
@@ -114,8 +103,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         TPM2B_CREATION_DATA     *creationData;
         TPM2B_DIGEST            *creationHash;
         TPMT_TK_CREATION        *creationTicket;
-        tmp_rc = tpm2_create(ectx, ctx.context_object.tr_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+        tool_rc tmp_rc = tpm2_create(ectx, &ctx.parent.object,
                 &ctx.in_sensitive, &ctx.in_public, &outsideInfo, &creationPCR,
                 &outPrivate, &outPublic, &creationData, &creationHash,
                 &creationTicket);
@@ -195,7 +183,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.r = 1;
         break;
     case 'C':
-        ctx.parent_ctx_path = value;
+        ctx.parent.ctx_path = value;
         break;
     case 'o':
         ctx.object_ctx_path = value;
@@ -240,7 +228,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     TPMA_OBJECT attrs = DEFAULT_ATTRS;
 
-    if(!ctx.parent_ctx_path) {
+    if(!ctx.parent.ctx_path) {
         LOG_ERR("Must specify parent object via -C.");
         return tool_rc_option_error;
     }
@@ -282,8 +270,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    tool_rc rc = tpm2_util_object_load(ectx, ctx.parent_ctx_path,
-            &ctx.context_object);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
+            ctx.parent.auth_str, &ctx.parent.object);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -300,18 +288,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
-        &ctx.parent.session, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
-        return rc;
-    }
-
     return create(ectx);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.parent.session);
+    return tpm2_session_close(&ctx.parent.object.session);
 }

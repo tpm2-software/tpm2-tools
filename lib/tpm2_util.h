@@ -10,6 +10,7 @@
 #include <tss2/tss2_esys.h>
 
 #include "tpm2_error.h"
+#include "tpm2_session.h"
 
 #if defined (__GNUC__)
 #define COMPILER_ATTR(...) __attribute__((__VA_ARGS__))
@@ -86,14 +87,6 @@ typedef struct {
     UINT16 size;
     BYTE buffer[0];
 } TPM2B;
-
-typedef struct tpm2_loaded_object tpm2_loaded_object;
-struct tpm2_loaded_object {
-    TPM2_HANDLE handle;
-    ESYS_TR tr_handle;
-    const char *path;
-};
-
 
 int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer);
 
@@ -314,27 +307,6 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent);
  *  The level of indentation, can be NULL
  */
 void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent);
-
-/**
- * Parses a string representation of a context object, either a file or handle,
- * and loads the context object ensuring the handle member of the out object is
- * set.
- * The objectstr will recognised as a context file when prefixed with "file:"
- * or should the value not be parsable as a handle number (as understood by
- * strtoul()).
- * @param ctx
- * a TSS ESAPI context.
- * @param objectstr
- * The string representation of the object to be loaded.
- * @param outobject
- * A *tpm2_loaded_object* with a loaded handle. The path member will also be
- * set when the *objectstr* is a context file.
- * @return
- *  tool_rc indicating status.
- *
- */
-tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
-                        const char *objectstr, tpm2_loaded_object *outobject);
 
 /**
  * Calculates the unique public field. The unique public field is the digest, based on name algorithm

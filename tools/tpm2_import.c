@@ -30,8 +30,9 @@
 #include <tss2/tss2_esys.h>
 #include <tss2/tss2_mu.h>
 
-#include "log.h"
 #include "files.h"
+#include "log.h"
+#include "object.h"
 #include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"

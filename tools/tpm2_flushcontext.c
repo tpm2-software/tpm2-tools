@@ -7,6 +7,7 @@
 #include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "object.h"
 #include "tpm2_capability.h"
 #include "tpm2_options.h"
 #include "tpm2_session.h"
