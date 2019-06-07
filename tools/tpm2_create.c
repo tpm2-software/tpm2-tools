@@ -37,33 +37,34 @@ struct tpm_create_ctx {
         tpm2_loaded_object object;
     } parent;
 
-    TPM2B_SENSITIVE_CREATE in_sensitive;
-    TPM2B_PUBLIC in_public;
-    char *input;
-    char *opu_path;
-    char *opr_path;
-    char *key_auth_str;
-    const char *object_ctx_path;
-
-    char *alg;
-    char *attrs;
-    char *halg;
-    char *policy;
+    struct {
+        TPM2B_SENSITIVE_CREATE sensitive;
+        TPM2B_PUBLIC public;
+        char *sealed_data;
+        char *public_path;
+        char *private_path;
+        char *auth_str;
+        const char *ctx_path;
+        char *alg;
+        char *attrs;
+        char *name_alg;
+        char *policy;
+    } object;
 
     struct {
-        UINT16 b : 1;
-        UINT16 i : 1;
-        UINT16 L : 1;
-        UINT16 u : 1;
-        UINT16 r : 1;
-        UINT16 G : 1;
+        UINT8 b : 1;
+        UINT8 i : 1;
+        UINT8 L : 1;
+        UINT8 u : 1;
+        UINT8 r : 1;
+        UINT8 G : 1;
     } flags;
 };
 
 #define DEFAULT_KEY_ALG "rsa2048"
 
 static tpm_create_ctx ctx = {
-        .alg = DEFAULT_KEY_ALG,
+        .object = { .alg = DEFAULT_KEY_ALG },
 };
 
 static tool_rc create(ESYS_CONTEXT *ectx) {
@@ -76,11 +77,11 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     TPM2B_PRIVATE           *outPrivate;
 
     ESYS_TR object_handle = ESYS_TR_NONE;
-    if (ctx.object_ctx_path) {
+    if (ctx.object.ctx_path) {
 
         size_t offset = 0;
         TPM2B_TEMPLATE template = { .size = 0 };
-        tool_rc tmp_rc = tpm2_mu_tpmt_public_marshal(&ctx.in_public.publicArea, &template.buffer[0],
+        tool_rc tmp_rc = tpm2_mu_tpmt_public_marshal(&ctx.object.public.publicArea, &template.buffer[0],
                                         sizeof(TPMT_PUBLIC), &offset);
         if(tmp_rc != tool_rc_success) {
             return tmp_rc;
@@ -91,7 +92,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         tmp_rc = tpm2_create_loaded(
                 ectx,
                 &ctx.parent.object,
-                &ctx.in_sensitive,
+                &ctx.object.sensitive,
                 &template,
                 &object_handle,
                 &outPrivate,
@@ -104,7 +105,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         TPM2B_DIGEST            *creationHash;
         TPMT_TK_CREATION        *creationTicket;
         tool_rc tmp_rc = tpm2_create(ectx, &ctx.parent.object,
-                &ctx.in_sensitive, &ctx.in_public, &outsideInfo, &creationPCR,
+                &ctx.object.sensitive, &ctx.object.public, &outsideInfo, &creationPCR,
                 &outPrivate, &outPublic, &creationData, &creationHash,
                 &creationTicket);
         if(tmp_rc != tool_rc_success) {
@@ -118,23 +119,23 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     tpm2_util_public_to_yaml(outPublic, NULL);
 
     if (ctx.flags.u) {
-        bool res = files_save_public(outPublic, ctx.opu_path);
+        bool res = files_save_public(outPublic, ctx.object.public_path);
         if(!res) {
             goto out;
         }
     }
 
     if (ctx.flags.r) {
-        bool res = files_save_private(outPrivate, ctx.opr_path);
+        bool res = files_save_private(outPrivate, ctx.object.private_path);
         if (!res) {
             goto out;
         }
     }
 
-    if (ctx.object_ctx_path) {
+    if (ctx.object.ctx_path) {
         rc = files_save_tpm_context_to_path(ectx,
                     object_handle,
-                    ctx.object_ctx_path);
+                    ctx.object.ctx_path);
     } else {
         rc = tool_rc_success;
     }
@@ -153,40 +154,40 @@ static bool on_option(char key, char *value) {
         ctx.parent.auth_str = value;
         break;
     case 'p':
-        ctx.key_auth_str = value;
+        ctx.object.auth_str = value;
     break;
     case 'g':
-        ctx.halg = value;
+        ctx.object.name_alg = value;
     break;
     case 'G':
-        ctx.alg =  value;
+        ctx.object.alg =  value;
         ctx.flags.G = 1;
     break;
     case 'b':
-        ctx.attrs = value;
+        ctx.object.attrs = value;
         ctx.flags.b = 1;
     break;
     case 'i':
-        ctx.input = strcmp("-", value) ? value : NULL;
+        ctx.object.sealed_data = strcmp("-", value) ? value : NULL;
         ctx.flags.i = 1;
         break;
     case 'L':
-        ctx.policy = value;
+        ctx.object.policy = value;
         ctx.flags.L = 1;
         break;
     case 'u':
-        ctx.opu_path = value;
+        ctx.object.public_path = value;
         ctx.flags.u = 1;
         break;
     case 'r':
-        ctx.opr_path = value;
+        ctx.object.private_path = value;
         ctx.flags.r = 1;
         break;
     case 'C':
         ctx.parent.ctx_path = value;
         break;
     case 'o':
-        ctx.object_ctx_path = value;
+        ctx.object.ctx_path = value;
         break;
     };
 
@@ -217,9 +218,24 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static bool load_sensitive(void) {
 
-    ctx.in_sensitive.sensitive.data.size = BUFFER_SIZE(typeof(ctx.in_sensitive.sensitive.data), buffer);
-    return files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input,
-            &ctx.in_sensitive.sensitive.data.size, ctx.in_sensitive.sensitive.data.buffer);
+    ctx.object.sensitive.sensitive.data.size = BUFFER_SIZE(typeof(ctx.object.sensitive.sensitive.data), buffer);
+    return files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.object.sealed_data,
+            &ctx.object.sensitive.sensitive.data.size, ctx.object.sensitive.sensitive.data.buffer);
+}
+
+static tool_rc check_options(void) {
+
+    if(!ctx.parent.ctx_path) {
+        LOG_ERR("Must specify parent object via -C.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.flags.i && ctx.flags.G) {
+        LOG_ERR("Cannot specify -G and -i together.");
+        return tool_rc_option_error;
+    }
+
+    return tool_rc_success;
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -228,63 +244,60 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     TPMA_OBJECT attrs = DEFAULT_ATTRS;
 
-    if(!ctx.parent.ctx_path) {
-        LOG_ERR("Must specify parent object via -C.");
-        return tool_rc_option_error;
+    tool_rc rc = check_options();
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     if (ctx.flags.i) {
-        if (ctx.flags.G) {
-            LOG_ERR("Cannot specify -G and -i together.");
-            return tool_rc_option_error;
-        }
 
         bool res = load_sensitive();
         if (!res) {
             return tool_rc_general_error;
         }
 
-        ctx.alg = "keyedhash";
+        ctx.object.alg = "keyedhash";
 
         if (!ctx.flags.b) {
             attrs &= ~TPMA_OBJECT_SIGN_ENCRYPT;
             attrs &= ~TPMA_OBJECT_DECRYPT;
             attrs &= ~TPMA_OBJECT_SENSITIVEDATAORIGIN;
         }
-    } else if (!ctx.flags.b && !strncmp("hmac", ctx.alg, 4)) {
+    } else if (!ctx.flags.b && !strncmp("hmac", ctx.object.alg, 4)) {
         attrs &= ~TPMA_OBJECT_DECRYPT;
     }
 
-    bool result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, NULL,
-            attrs, &ctx.in_public);
+    bool result = tpm2_alg_util_public_init(ctx.object.alg, ctx.object.name_alg,
+            ctx.object.attrs, ctx.object.policy, NULL, attrs,
+            &ctx.object.public);
     if(!result) {
         return tool_rc_general_error;
     }
 
-    if (ctx.flags.L && !ctx.key_auth_str) {
-        ctx.in_public.publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
+    if (ctx.flags.L && !ctx.object.auth_str) {
+        ctx.object.public.publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
     }
 
-    if (ctx.flags.i && ctx.in_public.publicArea.type != TPM2_ALG_KEYEDHASH) {
+    if (ctx.flags.i && ctx.object.public.publicArea.type != TPM2_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM2_ALG_KEYEDHASH algorithm is allowed when sealing data");
         return tool_rc_general_error;
     }
 
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
+    rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
             ctx.parent.auth_str, &ctx.parent.object);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     tpm2_session *tmp;
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.object.auth_str, &tmp, true);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
+        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.object.auth_str);
         return rc;
     }
 
     TPM2B_AUTH const *auth = tpm2_session_get_auth_value(tmp);
-    ctx.in_sensitive.sensitive.userAuth = *auth;
+    ctx.object.sensitive.sensitive.userAuth = *auth;
 
     tpm2_session_close(&tmp);
 
