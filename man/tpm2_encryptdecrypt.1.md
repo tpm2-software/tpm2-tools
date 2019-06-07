@@ -32,6 +32,12 @@ specified symmetric key.
 
     Perform a decrypt operation. Default is encryption.
 
+  * **-e**, **\--enable-pkcs7-padding**:
+
+    Enable pkcs7 padding for applicable AES encryption modes cfb/cbc/ecb.
+    Applicable only to encryption and for input data with last block shorter
+    than encryption block length.
+
   * **-i**, **\--in-file**=_INPUT\_FILE_:
 
     Optional. Specifies the input file path for either the encrypted or decrypted
@@ -74,6 +80,7 @@ specified symmetric key.
 tpm2_encryptdecrypt -C 0x81010001 -p abc123 -i <filePath> -o <filePath>
 tpm2_encryptdecrypt -C key.dat -p abc123 -i <filePath> -o <filePath>
 tpm2_encryptdecrypt -C 0x81010001 -p 123abca  -i <filePath> -o <filePath>
+tpm2_encryptdecrypt -c 0x81010001 --enable-pkcs7-padding -i <filePath> -o <filePath>
 ```
 
 [returns](common/returns.md)
