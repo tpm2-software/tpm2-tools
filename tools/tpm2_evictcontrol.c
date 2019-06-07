@@ -13,6 +13,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "object.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_capability.h"
 #include "tpm2_ctx_mgmt.h"

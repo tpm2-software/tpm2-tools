@@ -11,6 +11,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "object.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_hash.h"

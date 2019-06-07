@@ -5,7 +5,8 @@
 
 #include <tss2/tss2_esys.h>
 
-#include "tpm2_tool.h"
+#include "object.h"
+#include "tpm2_error.h"
 
 tool_rc tpm2_from_tpm_public(
             ESYS_CONTEXT *esysContext,
@@ -309,10 +310,7 @@ tool_rc tpm2_tr_set_auth(
 
 tool_rc tpm2_create(
     ESYS_CONTEXT *esysContext,
-    ESYS_TR parentHandle,
-    ESYS_TR shandle1,
-    ESYS_TR shandle2,
-    ESYS_TR shandle3,
+    tpm2_loaded_object *parent_obj,
     const TPM2B_SENSITIVE_CREATE *inSensitive,
     const TPM2B_PUBLIC *inPublic,
     const TPM2B_DATA *outsideInfo,
@@ -324,15 +322,12 @@ tool_rc tpm2_create(
     TPMT_TK_CREATION **creationTicket);
 
 tool_rc tpm2_create_loaded(
-            ESYS_CONTEXT *esysContext,
-            ESYS_TR parentHandle,
-            ESYS_TR shandle1,
-            ESYS_TR shandle2,
-            ESYS_TR shandle3,
-            const TPM2B_SENSITIVE_CREATE *inSensitive,
-            const TPM2B_TEMPLATE *inPublic,
-            ESYS_TR *objectHandle,
-            TPM2B_PRIVATE **outPrivate,
-            TPM2B_PUBLIC **outPublic);
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *parent_obj,
+    const TPM2B_SENSITIVE_CREATE *inSensitive,
+    const TPM2B_TEMPLATE *inPublic,
+    ESYS_TR *objectHandle,
+    TPM2B_PRIVATE **outPrivate,
+    TPM2B_PUBLIC **outPublic);
 
 #endif /* LIB_TPM2_H_ */

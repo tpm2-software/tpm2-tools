@@ -9,6 +9,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "object.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"

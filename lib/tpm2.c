@@ -4,9 +4,10 @@
 #include <tss2/tss2_mu.h>
 
 #include "log.h"
+#include "object.h"
 #include "tpm2.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_error.h"
-#include "tpm2_util.h"
 
 tool_rc tpm2_readpublic(
         ESYS_CONTEXT *esysContext,
@@ -862,10 +863,7 @@ tool_rc tpm2_tr_set_auth(
 
 tool_rc tpm2_create(
         ESYS_CONTEXT *esysContext,
-        ESYS_TR parentHandle,
-        ESYS_TR shandle1,
-        ESYS_TR shandle2,
-        ESYS_TR shandle3,
+        tpm2_loaded_object *parent_obj,
         const TPM2B_SENSITIVE_CREATE *inSensitive,
         const TPM2B_PUBLIC *inPublic,
         const TPM2B_DATA *outsideInfo,
@@ -876,12 +874,20 @@ tool_rc tpm2_create(
         TPM2B_DIGEST **creationHash,
         TPMT_TK_CREATION **creationTicket) {
 
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+                            parent_obj->tr_handle,
+                            parent_obj->session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
     TSS2_RC rval = Esys_Create(
         esysContext,
-        parentHandle,
+        parent_obj->tr_handle,
         shandle1,
-        shandle2,
-        shandle3,
+        ESYS_TR_NONE,
+        ESYS_TR_NONE,
         inSensitive,
         inPublic,
         outsideInfo,
@@ -901,22 +907,27 @@ tool_rc tpm2_create(
 
 tool_rc tpm2_create_loaded(
             ESYS_CONTEXT *esysContext,
-            ESYS_TR parentHandle,
-            ESYS_TR shandle1,
-            ESYS_TR shandle2,
-            ESYS_TR shandle3,
+            tpm2_loaded_object *parent_obj,
             const TPM2B_SENSITIVE_CREATE *inSensitive,
             const TPM2B_TEMPLATE *inPublic,
             ESYS_TR *objectHandle,
             TPM2B_PRIVATE **outPrivate,
             TPM2B_PUBLIC **outPublic) {
 
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+                            parent_obj->tr_handle,
+                            parent_obj->session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
     TSS2_RC rval = Esys_CreateLoaded(
         esysContext,
-        parentHandle,
+        parent_obj->tr_handle,
         shandle1,
-        shandle2,
-        shandle3,
+        ESYS_TR_NONE,
+        ESYS_TR_NONE,
         inSensitive,
         inPublic,
         objectHandle,

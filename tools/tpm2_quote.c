@@ -10,6 +10,7 @@
 #include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
+#include "object.h"
 #include "pcr.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
