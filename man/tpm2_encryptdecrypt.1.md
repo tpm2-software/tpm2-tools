@@ -77,9 +77,9 @@ specified symmetric key.
 # EXAMPLES
 
 ```
-tpm2_encryptdecrypt -C 0x81010001 -p abc123 -i <filePath> -o <filePath>
-tpm2_encryptdecrypt -C key.dat -p abc123 -i <filePath> -o <filePath>
-tpm2_encryptdecrypt -C 0x81010001 -p 123abca  -i <filePath> -o <filePath>
+tpm2_encryptdecrypt -c 0x81010001 -p abc123 -i <filePath> -o <filePath>
+tpm2_encryptdecrypt -c key.dat -p abc123 -i <filePath> -o <filePath>
+tpm2_encryptdecrypt -c 0x81010001 -p 123abca  -i <filePath> -o <filePath>
 tpm2_encryptdecrypt -c 0x81010001 --enable-pkcs7-padding -i <filePath> -o <filePath>
 ```
 
