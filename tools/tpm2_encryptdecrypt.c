@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,6 +33,8 @@ struct tpm_encrypt_decrypt_ctx {
 
     TPMI_YES_NO is_decrypt;
     TPM2B_MAX_BUFFER data;
+    uint8_t input_data[UINT16_MAX];
+    uint16_t input_data_size;
     char *input_path;
     char *out_file_path;
     TPMI_ALG_SYM_MODE mode;
@@ -52,12 +55,9 @@ static tool_rc readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
                       public, NULL, NULL);
 }
 
-static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
+static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
 
     tool_rc rc = tool_rc_general_error;
-
-    TPM2B_MAX_BUFFER *out_data;
-    TPM2B_IV *iv_out;
 
     /*
      * try EncryptDecrypt2 first, and if the command is not supported by the TPM
@@ -75,35 +75,68 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
         return tmp_rc;
     }
 
-    TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.object.context.tr_handle,
+    UINT16 data_offset = 0;
+    bool result = true;
+    FILE *out_file_ptr = ctx.out_file_path ? fopen(ctx.out_file_path, "wb+") : stdout;
+    if (!out_file_ptr) {
+        LOG_ERR("Could not open file \"%s\", error: %s", ctx.out_file_path, strerror(errno));
+        return tool_rc_general_error;
+    }
+
+    TPM2B_MAX_BUFFER *out_data = NULL;
+    TPM2B_IV *iv_out = NULL;
+    TPM2B_IV *iv_in = iv_start;
+
+    while (ctx.input_data_size > 0) {
+        ctx.data.size =
+            ctx.input_data_size > TPM2_MAX_DIGEST_BUFFER ?
+                    TPM2_MAX_DIGEST_BUFFER : ctx.input_data_size;
+
+        memcpy(ctx.data.buffer, &ctx.input_data[data_offset], ctx.data.size);
+
+        TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.object.context.tr_handle,
+                          shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                          &ctx.data, ctx.is_decrypt, ctx.mode, iv_in,
+                          &out_data, &iv_out);
+        if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
+            version = 1;
+            rval = Esys_EncryptDecrypt(ectx, ctx.object.context.tr_handle,
                       shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                      &ctx.data, ctx.is_decrypt, ctx.mode, iv_in,
+                      ctx.is_decrypt, ctx.mode, iv_in, &ctx.data,
                       &out_data, &iv_out);
-    if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
-        version = 1;
-        rval = Esys_EncryptDecrypt(ectx, ctx.object.context.tr_handle,
-                  shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                  ctx.is_decrypt, ctx.mode, iv_in, &ctx.data,
-                  &out_data, &iv_out);
-    }
-    if (rval != TPM2_RC_SUCCESS) {
-        if (version == 2) {
-            LOG_PERR(Esys_EncryptDecrypt2, rval);
-        } else {
-            LOG_PERR(Esys_EncryptDecrypt, rval);
         }
-        return tool_rc_from_tpm(rval);
+        /*
+         * Copy iv_out iv_in to use it in next loop iteration.
+         * This copy is also output from the tool for further chaining.
+         */
+        *iv_in = *iv_out;
+        free(iv_out);
+        if (rval != TPM2_RC_SUCCESS) {
+            if (version == 2) {
+                LOG_PERR(Esys_EncryptDecrypt2, rval);
+            } else {
+                LOG_PERR(Esys_EncryptDecrypt, rval);
+            }
+            rc = tool_rc_from_tpm(rval);
+            goto out;
+        }
+
+        result = files_write_bytes(out_file_ptr, out_data->buffer, out_data->size);
+        free(out_data);
+        if (!result) {
+            LOG_ERR("Failed to save output data to file");
+            goto out;
+        }
+
+        ctx.input_data_size -= ctx.data.size;
+        data_offset += ctx.data.size;
     }
 
-    bool result = files_save_bytes_to_file(ctx.out_file_path, out_data->buffer,
-            out_data->size);
-    if (!result) {
-        goto out;
-    }
-
-    result = ctx.iv.out ? files_save_bytes_to_file(ctx.iv.out,
-                                iv_out->buffer,
-                                iv_out->size) : true;
+    /*
+     * iv_in here is the copy of final iv_out from the loop above.
+     */
+    result = (ctx.iv.out) ?
+        files_save_bytes_to_file(ctx.iv.out, iv_in->buffer, iv_in->size) : true;
     if (!result) {
         goto out;
     }
@@ -111,8 +144,9 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_in) {
     rc = tool_rc_success;
 
 out:
-    free(out_data);
-    free(iv_out);
+    if (out_file_ptr != stdout) {
+        fclose(out_file_ptr);
+    }
 
     return rc;
 }
@@ -133,6 +167,9 @@ static void parse_iv(char *value) {
 
 static bool on_option(char key, char *value) {
 
+    bool result;
+    long unsigned int filesize;
+
     switch (key) {
     case 'c':
         ctx.object.context_arg = value;
@@ -145,6 +182,14 @@ static bool on_option(char key, char *value) {
         break;
     case 'i':
         ctx.input_path = value;
+        result = files_get_file_size_path(ctx.input_path, &filesize);
+        if (!result) {
+            LOG_ERR("Input file size could not be retrieved.");
+        }
+        if (filesize > UINT16_MAX) {
+            LOG_ERR("File size bigger than UINT16_MAX");
+        }
+        ctx.input_data_size = filesize;
         break;
     case 'o':
         ctx.out_file_path = value;
@@ -191,9 +236,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    ctx.data.size = sizeof(ctx.data.buffer);
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
-        &ctx.data.size, ctx.data.buffer);
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+        ctx.input_path, &ctx.input_data_size, ctx.input_data);
     if (!result) {
         return tool_rc_general_error;
     }
