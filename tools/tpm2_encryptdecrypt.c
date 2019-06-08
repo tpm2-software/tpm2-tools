@@ -37,6 +37,8 @@ struct tpm_encrypt_decrypt_ctx {
     uint16_t input_data_size;
     char *input_path;
     char *out_file_path;
+    uint8_t padded_block_len;
+    bool is_padding_option_enabled;
     TPMI_ALG_SYM_MODE mode;
     struct {
         char *in;
@@ -46,6 +48,9 @@ struct tpm_encrypt_decrypt_ctx {
 
 static tpm_encrypt_decrypt_ctx ctx = {
     .mode = TPM2_ALG_NULL,
+    .input_data_size = 0,
+    .padded_block_len = TPM2_MAX_SYM_BLOCK_SIZE,
+    .is_padding_option_enabled = false,
 };
 
 static tool_rc readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
@@ -87,12 +92,29 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
     TPM2B_IV *iv_out = NULL;
     TPM2B_IV *iv_in = iv_start;
 
+    unsigned char pad_data[1] = {0};
+    unsigned i = 0;
+
     while (ctx.input_data_size > 0) {
         ctx.data.size =
             ctx.input_data_size > TPM2_MAX_DIGEST_BUFFER ?
                     TPM2_MAX_DIGEST_BUFFER : ctx.input_data_size;
 
         memcpy(ctx.data.buffer, &ctx.input_data[data_offset], ctx.data.size);
+
+        if (ctx.is_padding_option_enabled && !ctx.is_decrypt &&
+            ctx.data.size < TPM2_MAX_DIGEST_BUFFER &&
+            (ctx.data.size % ctx.padded_block_len)) {
+
+            pad_data[0] =
+                ctx.padded_block_len -(ctx.data.size % ctx.padded_block_len);
+
+            for(i = 0; i < pad_data[0]; i++) {
+                ctx.data.buffer[ctx.data.size + i] = pad_data[0];
+            }
+
+            ctx.data.size += pad_data[0];
+        }
 
         TSS2_RC rval = Esys_EncryptDecrypt2(ectx, ctx.object.context.tr_handle,
                           shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
@@ -128,6 +150,7 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
             goto out;
         }
 
+        ctx.data.size -= pad_data[0];
         ctx.input_data_size -= ctx.data.size;
         data_offset += ctx.data.size;
     }
@@ -163,6 +186,49 @@ static void parse_iv(char *value) {
             ctx.iv.out = split;
         }
     }
+}
+
+static bool setup_alg_mode_and_padding(ESYS_CONTEXT *ectx) {
+
+    TPM2B_PUBLIC *public;
+    tool_rc rc = readpub(ectx, &public);
+    if (rc != tool_rc_success) {
+        return false;
+    }
+    /*
+     * Sym objects can have a NULL mode, which means the caller can and must determine mode.
+     * Thus if the caller doesn't specify an algorithm, and the object has a default mode, choose it,
+     * else choose CFB.
+     * If the caller specifies an invalid mode, just pass it to the TPM and let it error out.
+     */
+    if (ctx.mode == TPM2_ALG_NULL) {
+
+        TPMI_ALG_SYM_MODE objmode = public->publicArea.parameters.symDetail.sym.mode.sym;
+        if (objmode == TPM2_ALG_NULL) {
+            ctx.mode = TPM2_ALG_CFB;
+        } else {
+            ctx.mode = objmode;
+        }
+    }
+
+    if (ctx.is_padding_option_enabled && !ctx.is_decrypt &&
+        public->publicArea.parameters.symDetail.sym.algorithm == TPM2_ALG_AES &&
+        (ctx.mode == TPM2_ALG_CBC ||
+         ctx.mode == TPM2_ALG_ECB ||
+         ctx.mode == TPM2_ALG_CFB)) {
+        /*
+         * https://tools.ietf.org/html/rfc2315 section 10.3 Content-encryption
+         * The pkcs#7 requirement of 256 bit max block length for padding
+         * applies cleanly since TPM2_MAX_SYM_KEY_BYTES = 32
+         */
+        ctx.padded_block_len =
+            public->publicArea.parameters.symDetail.sym.keyBits.sym/8;
+        LOG_WARN("pkcs7 padding is required and has been applied to input data.");
+    }
+
+    free(public);
+
+    return true;
 }
 
 static bool on_option(char key, char *value) {
@@ -204,6 +270,9 @@ static bool on_option(char key, char *value) {
     case 't':
         parse_iv(value);
         break;
+    case 'e':
+        ctx.is_padding_option_enabled = true;
+        break;
     }
 
     return true;
@@ -219,9 +288,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "mode",                 required_argument, NULL, 'G' },
         { "out-file",             required_argument, NULL, 'o' },
         { "key-context",          required_argument, NULL, 'c' },
+        { "enable-pkcs7-padding", no_argument,       NULL, 'e' },
     };
 
-    *opts = tpm2_options_new("p:Di:o:c:i:G:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("p:eDi:o:c:i:G:t:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
@@ -257,28 +327,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    /*
-     * Sym objects can have a NULL mode, which means the caller can and must determine mode.
-     * Thus if the caller doesn't specify an algorithm, and the object has a default mode, choose it,
-     * else choose CFB.
-     * If the caller specifies an invalid mode, just pass it to the TPM and let it error out.
-     */
-    if (ctx.mode == TPM2_ALG_NULL) {
-
-        TPM2B_PUBLIC *public;
-        tool_rc rc = readpub(ectx, &public);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        TPMI_ALG_SYM_MODE objmode = public->publicArea.parameters.symDetail.sym.mode.sym;
-        if (objmode == TPM2_ALG_NULL) {
-            ctx.mode = TPM2_ALG_CFB;
-        } else {
-            ctx.mode = objmode;
-        }
-
-        free(public);
+    result = setup_alg_mode_and_padding(ectx);
+    if (!result) {
+        LOG_ERR("Failure to setup key mode and or pkcs7 padding scheme.");
+        return tool_rc_general_error;
     }
 
     TPM2B_IV iv = { .size = sizeof(iv.buffer), .buffer = { 0 } };
