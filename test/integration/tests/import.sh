@@ -4,7 +4,6 @@
 source helpers.sh
 
 cleanup() {
-    tpm2_evictcontrol -Q -a o -c parent.ctx 2>/dev/null
     rm -f import_key.ctx  import_key.name  import_key.priv  import_key.pub \
           parent.ctx plain.dec.ssl  plain.enc  plain.txt  sym.key \
           import_rsa_key.pub import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name \
