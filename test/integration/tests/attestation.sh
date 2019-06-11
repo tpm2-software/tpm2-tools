@@ -35,7 +35,8 @@ output_quotepcr=quotepcr.out
 cleanup() {
   rm -f $file_input_data $file_input_key $output_ek_pub $output_ek_pub_pem $output_ak_pub \
         $output_ak_pub_pem $output_ak_pub_name $output_mkcredential \
-        $output_actcredential $output_quote $output_quotesig $output_quotepcr $context_ak rand.out
+        $output_actcredential $output_quote $output_quotesig $output_quotepcr $context_ak \
+        rand.out session.ctx
 
   tpm2_pcrreset -Q $debug_pcr
   tpm2_evictcontrol -Q -a o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
@@ -78,7 +79,12 @@ tpm2_readpublic -Q -c $context_ak -o $output_ak_pub
 file_size=`stat --printf="%s" $output_ak_pub_name`
 loaded_key_name=`cat $output_ak_pub_name | xxd -p -c $file_size`
 tpm2_makecredential -Q -T none -e $output_ek_pub -s $file_input_data -n $loaded_key_name -o $output_mkcredential
-tpm2_activatecredential -Q -c $context_ak -C $handle_ek -i $output_mkcredential -o $output_actcredential -P "$akpw" -E "$endorsepw"
+
+TPM2_RH_ENDORSEMENT=0x4000000B
+tpm2_startauthsession --policy-session -S session.ctx
+tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT $endorsepw
+tpm2_activatecredential -Q -c $context_ak -C $handle_ek -i $output_mkcredential -o $output_actcredential -P "$akpw" -E "session:session.ctx"
+tpm2_flushcontext -S session.ctx
 diff $file_input_data $output_actcredential
 
 
