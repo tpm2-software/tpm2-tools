@@ -26,20 +26,20 @@ An object that only has its public area loaded cannot be certified.
 
 These options control the certification:
 
-  * **-C**, **\--obj-context**=_CONTEXT\_OBJECT_:
+  * **-C**, **\--certifiedkey-context**=_CERTIFIED\_KEY\_OBJECT\_CONTEXT_:
 
     Context object for the object to be certified. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT_:
+  * **-c**, **\--signingkey-context**=_SIGNING\_KEY\_OBJECT\_CONTEXT_:
 
     Context object for the key used to sign the attestation structure.
     See section "Context Object Format".
 
-  * **-P**, **\--auth-object**=_OBJECT\_AUTH_:
+  * **-P**, **\--certifiedkey-auth**=_CERTIFIED\_KEY\OBJECT\_AUTH_:
 
-    Use _OBJECT\_AUTH_ for providing an authorization value for the object specified
-    in _CONTEXT\_OBJECT_.
+    Use _CERTIFIED\_KEY\OBJECT\_AUTH_ for providing an authorization value for the object specified
+    in _CERTIFIED\_KEY\_OBJECT\_CONTEXT_.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
@@ -51,10 +51,10 @@ These options control the certification:
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-p**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--signingkey-auth**=_SIGNING\_KEY_:
 
-    Use _KEY\_AUTH_ for providing an authorization value for the key specified
-    in _KEY\_CONTEXT_.
+    Use _SIGNING\_KEY_ for providing an authorization value for the key specified
+    in _SIGNING\_KEY\_OBJECT\_CONTEXT_.
     Follows the same formatting guidelines as the object handle authorization or
     **-P** option.
 
