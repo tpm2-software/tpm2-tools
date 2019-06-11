@@ -356,4 +356,12 @@ tool_rc tpm2_certify(
     TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature);
 
+tool_rc tpm2_rsa_decrypt(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *keyobj,
+    const TPM2B_PUBLIC_KEY_RSA *cipherText,
+    const TPMT_RSA_DECRYPT *inScheme,
+    const TPM2B_DATA *label,
+    TPM2B_PUBLIC_KEY_RSA **message);
+
 #endif /* LIB_TPM2_H_ */
