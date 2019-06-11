@@ -308,6 +308,14 @@ tool_rc tpm2_tr_set_auth(
     ESYS_TR handle,
     TPM2B_AUTH const *authValue);
 
+tool_rc tpm2_activatecredential(
+        ESYS_CONTEXT *esysContext,
+        tpm2_loaded_object *activatehandle,
+        tpm2_loaded_object *keyhandle,
+        const TPM2B_ID_OBJECT *credentialBlob,
+        const TPM2B_ENCRYPTED_SECRET *secret,
+        TPM2B_DIGEST **certInfo);
+
 tool_rc tpm2_create(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *parent_obj,
