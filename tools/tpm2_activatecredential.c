@@ -137,50 +137,25 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *certInfoData;
 
-    tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
-    if (!d) {
-        LOG_ERR("oom");
-        return false;
-    }
-
-    tpm2_session *session = NULL;
-    tool_rc tmp_rc = tpm2_session_open(ectx, d, &session);
-    if (tmp_rc != tool_rc_success) {
-        return tmp_rc;
-    }
-
-    // Set session up
-    ESYS_TR sess_handle = tpm2_session_get_handle(session);
-
-    ESYS_TR credential_key_shandle = ESYS_TR_NONE;
-    tmp_rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
-                                ctx.credential_key.session, &credential_key_shandle);
+    ESYS_TR credential_key_session_handle = ESYS_TR_NONE;
+    tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx, ctx.credential_key_obj.tr_handle,
+        ctx.credential_key.session, &credential_key_session_handle);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out_session;
     }
 
-    TSS2_RC rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
-                    credential_key_shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                    NULL, NULL, NULL, 0, NULL, NULL);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_PolicySecret, rval);
-        rc = tool_rc_from_tpm(rval);
-        goto out_session;
-    }
-
-    ESYS_TR key_shandle = ESYS_TR_NONE;
-    tmp_rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.credentialed_key_obj.tr_handle,
-                            ctx.key.session, &key_shandle);
+    ESYS_TR credentialed_key_session_handle = ESYS_TR_NONE;
+    tmp_rc = tpm2_auth_util_get_shandle(ectx, ctx.credentialed_key_obj.tr_handle,
+        ctx.key.session, &credentialed_key_session_handle);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out_session;
     }
 
-    rval = Esys_ActivateCredential(ectx, ctx.credentialed_key_obj.tr_handle,
+    TSS2_RC rval = Esys_ActivateCredential(ectx, ctx.credentialed_key_obj.tr_handle,
             ctx.credential_key_obj.tr_handle,
-            key_shandle, sess_handle, ESYS_TR_NONE,
+            credentialed_key_session_handle, credential_key_session_handle, ESYS_TR_NONE,
             &ctx.credentialBlob, &ctx.secret, &certInfoData);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ActivateCredential, rval);
@@ -198,8 +173,6 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 out_all:
     free(certInfoData);
 out_session:
-    tpm2_session_close(&session);
-
     return rc;
 }
 
@@ -267,7 +240,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_util_object_load(ectx, ctx.credentialed_key_arg,
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.credential_key.credential_key_auth_str,
+            &ctx.credential_key.session, false);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid keyHandle authorization, got\"%s\"", ctx.credential_key.credential_key_auth_str);
+        return rc;
+    }
+
+    rc = tpm2_util_object_load(ectx, ctx.credentialed_key_arg,
                                 &ctx.credentialed_key_obj);
     if (rc != tool_rc_success) {
         return rc;
@@ -283,13 +263,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             &ctx.key.session, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid activateHandle authorization, got\"%s\"", ctx.key.credentialed_key_auth_str);
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.credential_key.credential_key_auth_str,
-            &ctx.credential_key.session, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid keyHandle authorization, got\"%s\"", ctx.credential_key.credential_key_auth_str);
         return rc;
     }
 
