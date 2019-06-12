@@ -1184,3 +1184,59 @@ tool_rc tpm2_clearcontrol(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_dictionarylockout(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy,
+    bool clear_lockout,
+    bool setup_parameters,
+    UINT32 max_tries,
+    UINT32 recovery_time,
+    UINT32 lockout_recovery_time) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        auth_hierarchy->tr_handle,auth_hierarchy->session, &shandle1);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Couldn't get shandle for lockout hierarchy");
+        return rc;
+    }
+
+    /*
+     * If setup params and clear lockout are both required, clear lockout should
+     * precede parameters setup.
+     */
+    TPM2_RC rval;
+    if (clear_lockout) {
+        LOG_INFO("Resetting dictionary lockout state.");
+        rval = Esys_DictionaryAttackLockReset(
+                esysContext,
+                auth_hierarchy->tr_handle,
+                shandle1,
+                ESYS_TR_NONE,
+                ESYS_TR_NONE);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_DictionaryAttackLockReset, rval);
+            return tool_rc_from_tpm(rval);
+        }
+    }
+
+    if (setup_parameters) {
+        LOG_INFO("Setting up Dictionary Lockout parameters.");
+        rval = Esys_DictionaryAttackParameters(
+                esysContext,
+                auth_hierarchy->tr_handle,
+                shandle1,
+                ESYS_TR_NONE,
+                ESYS_TR_NONE,
+                max_tries,
+                recovery_time,
+                lockout_recovery_time);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Esys_DictionaryAttackParameters, rval);
+            return tool_rc_from_tpm(rval);
+        }
+    }
+
+    return tool_rc_success;
+}
