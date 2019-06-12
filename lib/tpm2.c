@@ -1240,3 +1240,41 @@ tool_rc tpm2_dictionarylockout(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_duplicate(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *duplicable_key,
+    ESYS_TR new_parent_handle,
+    const TPM2B_DATA *in_key,
+    const TPMT_SYM_DEF_OBJECT *sym_alg,
+    TPM2B_DATA **out_key,
+    TPM2B_PRIVATE **duplicate,
+    TPM2B_ENCRYPTED_SECRET **encrypted_seed) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        duplicable_key->tr_handle, duplicable_key->session, &shandle1);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_Duplicate(
+                        esysContext,
+                        duplicable_key->tr_handle,
+                        new_parent_handle,
+                        shandle1,
+                        ESYS_TR_NONE,
+                        ESYS_TR_NONE,
+                        in_key,
+                        sym_alg,
+                        out_key,
+                        duplicate,
+                        encrypted_seed);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Duplicate, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

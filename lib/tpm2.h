@@ -380,4 +380,13 @@ tool_rc tpm2_dictionarylockout(
     UINT32 recovery_time,
     UINT32 lockout_recovery_time);
 
+tool_rc tpm2_duplicate(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *duplicable_key,
+    ESYS_TR new_parent_handle,
+    const TPM2B_DATA *in_key,
+    const TPMT_SYM_DEF_OBJECT *sym_alg,
+    TPM2B_DATA **out_key,
+    TPM2B_PRIVATE **duplicate,
+    TPM2B_ENCRYPTED_SECRET **encrypted_seed);
 #endif /* LIB_TPM2_H_ */

@@ -9,6 +9,7 @@
 #include "log.h"
 #include "object.h"
 #include "files.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
@@ -17,11 +18,15 @@
 typedef struct tpm_duplicate_ctx tpm_duplicate_ctx;
 struct tpm_duplicate_ctx {
     struct {
-        char *auth_str;
-        tpm2_session *session;
-        const char *object_arg;
+        const char *ctx_path;
+        const char *auth_str;
         tpm2_loaded_object object;
-    } object;
+    } duplicable_key;
+
+    struct {
+        const char *ctx_path;
+        tpm2_loaded_object object;
+    } new_parent_key;
 
     char *duplicate_key_public_file;
     char *duplicate_key_private_file;
@@ -31,9 +36,6 @@ struct tpm_duplicate_ctx {
     char *sym_key_out;
 
     char *enc_seed_out;
-
-    const char *new_parent_object_arg;
-    tpm2_loaded_object new_parent_object_context;
 
     struct {
         UINT16 c : 1;
@@ -58,32 +60,16 @@ static tool_rc do_duplicate(ESYS_CONTEXT *ectx,
         TPM2B_PRIVATE **duplicate,
         TPM2B_ENCRYPTED_SECRET **encrypted_seed) {
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.object.object.tr_handle,
-                            ctx.object.session, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
-    TSS2_RC rval = Esys_Duplicate(ectx,
-                        ctx.object.object.tr_handle, ctx.new_parent_object_context.tr_handle,
-                        shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                        in_key, sym_alg, out_key, duplicate, encrypted_seed);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_Duplicate, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
+return tpm2_duplicate(ectx,&ctx.duplicable_key.object,
+    ctx.new_parent_key.object.tr_handle, in_key, sym_alg, out_key,
+    duplicate, encrypted_seed);
 }
 
 static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'p':
-        ctx.object.auth_str = value;
+        ctx.duplicable_key.auth_str = value;
         break;
     case 'g':
         ctx.key_type = tpm2_alg_util_from_optarg(value,
@@ -102,11 +88,11 @@ static bool on_option(char key, char *value) {
         ctx.flags.o = 1;
         break;
     case 'C':
-        ctx.new_parent_object_arg = value;
+        ctx.new_parent_key.ctx_path = value;
         ctx.flags.C = 1;
         break;
     case 'c':
-        ctx.object.object_arg = value;
+        ctx.duplicable_key.ctx_path = value;
         ctx.flags.c = 1;
         break;
     case 'r':
@@ -240,24 +226,19 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    rc = tpm2_util_object_load(ectx, ctx.object.object_arg,
-		    &ctx.object.object);
+    rc = tpm2_util_object_load(ectx, ctx.new_parent_key.ctx_path,
+            &ctx.new_parent_key.object);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_util_object_load(ectx, ctx.new_parent_object_arg,
-		    &ctx.new_parent_object_context);
+    rc = tpm2_util_object_load_auth(ectx, ctx.duplicable_key.ctx_path,
+		    ctx.duplicable_key.auth_str, &ctx.duplicable_key.object, false);
     if (rc != tool_rc_success) {
+        LOG_ERR("Invalid authorization, got\"%s\"", ctx.duplicable_key.auth_str);
         return rc;
     }
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_str,
-        &ctx.object.session, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid authorization, got\"%s\"", ctx.object.auth_str);
-        return rc;
-    }
 
     result = set_key_algorithm(ctx.key_type, &sym_alg);
     if(!result) {
@@ -332,5 +313,5 @@ out:
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.object.session);
+    return tpm2_session_close(&ctx.duplicable_key.object.session);
 }
