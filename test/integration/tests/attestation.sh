@@ -43,8 +43,6 @@ cleanup() {
 
   tpm2_nvrelease -Q -x $handle_nv -a $handle_hier -P "$ownerpw" 2>/dev/null || true
 
-  tpm2_changeauth -Q -W "$ownerpw" -E "$endorsepw" 2>/dev/null || true
-
   if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down
   fi
@@ -63,8 +61,8 @@ getrandom() {
   loaded_randomness=`cat rand.out | xxd -p -c $file_size`
 }
 
-
-tpm2_changeauth -Q -w "$ownerpw" -e "$endorsepw"
+tpm2_changeauth -c o "$ownerpw"
+tpm2_changeauth -c e "$endorsepw"
 
 # Key generation
 tpm2_createek -Q -c $handle_ek -G $ek_alg -p $output_ek_pub_pem -f pem -P "$ekpw" -w "$ownerpw" -e "$endorsepw"

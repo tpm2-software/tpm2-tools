@@ -940,3 +940,79 @@ tool_rc tpm2_create_loaded(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_object_change_auth(
+        ESYS_CONTEXT *esysContext,
+        tpm2_loaded_object *parent_object,
+        tpm2_loaded_object *object,
+        const TPM2B_AUTH *newAuth,
+        TPM2B_PRIVATE **outPrivate) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+                            object->tr_handle,
+                            object->session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_ObjectChangeAuth(esysContext,
+                        object->tr_handle,
+                        parent_object->tr_handle,
+                        shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+                        newAuth, outPrivate);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_ObjectChangeAuth, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_nv_change_auth(
+        ESYS_CONTEXT *esysContext,
+        tpm2_loaded_object *nv,
+        const TPM2B_AUTH *newAuth) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+                            nv->tr_handle,
+                            nv->session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_NV_ChangeAuth(esysContext,
+                nv->tr_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE, newAuth);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_NV_ChangeAuth, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_hierarchy_change_auth(
+        ESYS_CONTEXT *esysContext,
+        tpm2_loaded_object *hierarchy,
+        const TPM2B_AUTH *newAuth) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+                            hierarchy->tr_handle,
+                            hierarchy->session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_HierarchyChangeAuth(esysContext,
+                hierarchy->tr_handle,
+                shandle1, ESYS_TR_NONE, ESYS_TR_NONE, newAuth);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_HierarchyChangeAuth, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

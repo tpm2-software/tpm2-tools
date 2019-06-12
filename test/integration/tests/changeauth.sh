@@ -21,13 +21,19 @@ new_lockPasswd=newpswd
 
 tpm2_clear
 
-tpm2_changeauth -w $ownerPasswd -e $endorsePasswd -l $lockPasswd
+tpm2_changeauth -c o $ownerPasswd
+tpm2_changeauth -c e $endorsePasswd
+tpm2_changeauth -c l $lockPasswd
 
-tpm2_changeauth -W $ownerPasswd -E $endorsePasswd -L $lockPasswd -w $new_ownerPasswd -e $new_endorsePasswd -l $new_lockPasswd
+tpm2_changeauth -c o -p $ownerPasswd $new_ownerPasswd
+tpm2_changeauth -c e -p $endorsePasswd $new_endorsePasswd
+tpm2_changeauth -c l -p $lockPasswd $new_lockPasswd
 
 tpm2_clear -L $new_lockPasswd
 
-tpm2_changeauth -w $ownerPasswd -e $endorsePasswd -l $lockPasswd
+tpm2_changeauth -c o $ownerPasswd
+tpm2_changeauth -c e $endorsePasswd
+tpm2_changeauth -c l $lockPasswd
 
 echo -n $lockPasswd > secret.txt
 tpm2_clear -L "file:secret.txt"
@@ -36,7 +42,6 @@ tpm2_clear -L "file:secret.txt"
 tpm2_createprimary -Q -a o -o primary.ctx
 tpm2_create -Q -C primary.ctx -p foo -u key.pub -r key.priv
 tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -o key.ctx
-tpm2_changeauth -C primary.ctx -P foo -p bar -c key.ctx -r new.priv
-
+tpm2_changeauth -C primary.ctx -p foo -c key.ctx -r new.priv bar
 
 exit 0

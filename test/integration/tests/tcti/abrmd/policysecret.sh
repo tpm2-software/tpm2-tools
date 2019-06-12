@@ -32,7 +32,7 @@ cleanup "no-shutdown"
 
 tpm2_clear
 
-tpm2_changeauth -w ownerauth
+tpm2_changeauth -c o ownerauth
 
 # Create Policy
 tpm2_startauthsession -S $session_ctx
@@ -61,7 +61,7 @@ fi
 
 #Test the policy with auth reference object password not set
 unsealed=""
-tpm2_changeauth -W ownerauth
+tpm2_changeauth -c o -p ownerauth
 
 tpm2_startauthsession --policy-session -S $session_ctx
 tpm2_policysecret -S $session_ctx -c $TPM_RH_OWNER -o $o_policy_digest

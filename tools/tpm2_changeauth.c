@@ -9,345 +9,83 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-typedef struct auth auth;
-struct auth {
-    tpm2_session *old;
-    tpm2_session *new;
-};
-
 typedef struct changeauth_ctx changeauth_ctx;
 struct changeauth_ctx {
+
     struct {
-        auth owner;
-        auth endorse;
-        auth lockout;
-        auth tpm_handle;
-    } auths;
+        const char *ctx;
+        tpm2_loaded_object obj;
+    } parent;
+
     struct {
-        UINT8 w : 1;
-        UINT8 e : 1;
-        UINT8 l : 1;
-        UINT8 W : 1;
-        UINT8 E : 1;
-        UINT8 L : 1;
-        UINT8 p : 1;
-        UINT8 P : 1;
-        UINT8 c : 1;
-        UINT8 C : 1;
-        UINT8 r : 1;
-    } flags;
-    char *owner_auth_str;
-    char *owner_auth_old_str;
-    char *endorse_auth_str;
-    char *endorse_auth_old_str;
-    char *lockout_auth_str;
-    char *lockout_auth_old_str;
-    char *tpm_handle_auth_str;
-    char *tpm_handle_auth_old_str;
-    bool is_nv;
-    bool is_transient;
-    bool is_persistent;
-    const char *tpm_handle_context_arg;
-    tpm2_loaded_object tpm_handle_context_object;
-    char *opr_path;
-    const char *tpm_handle_parent_context_arg;
-    tpm2_loaded_object tpm_handle_parent_context_object;
+        const char *auth_current;
+        const char *auth_new;
+        const char *ctx;
+        tpm2_loaded_object obj;
+        tpm2_session *new;
+        const char *out_path;
+    } object;
 };
 
 static changeauth_ctx ctx;
 
-static tool_rc change_auth(ESYS_CONTEXT *ectx,
-        struct auth *pwd, const char *desc,
-        ESYS_TR auth_handle) {
+static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
 
-    TSS2_RC rval;
-
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, auth_handle,
-                            pwd->old, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle for auth");
-        return rc;
-    }
-
-    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(pwd->new);
-
-    rval = Esys_HierarchyChangeAuth(ectx, auth_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                new_auth);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_HierarchyChangeAuth, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    LOG_INFO("Successfully changed hierarchy for %s", desc);
-
-    return tool_rc_success;
+    return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, new_auth);
 }
 
-static tool_rc change_hierarchy_auth(ESYS_CONTEXT *ectx) {
+static tool_rc nv_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
 
-    // change owner, endorsement and lockout auth.
-    tool_rc result = tool_rc_success;
-    if (ctx.flags.w || ctx.flags.W) {
-        result |= change_auth(ectx, &ctx.auths.owner,
-                "Owner", ESYS_TR_RH_OWNER);
-    }
-
-    if (ctx.flags.e || ctx.flags.E) {
-        result |= change_auth(ectx, &ctx.auths.endorse,
-                "Endorsement", ESYS_TR_RH_ENDORSEMENT);
-    }
-
-    if (ctx.flags.l || ctx.flags.L) {
-        result |= change_auth(ectx, &ctx.auths.lockout,
-                "Lockout", ESYS_TR_RH_LOCKOUT);
-    }
-
-    return result;
+    return tpm2_nv_change_auth(ectx, &ctx.object.obj, new_auth);
 }
 
-static tool_rc process_change_hierarchy_auth_cleanup(void) {
+static tool_rc object_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
 
-    tool_rc rc = tool_rc_success;
-
-    tool_rc tmp_rc = tpm2_session_close(&ctx.auths.endorse.old);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
+    if (!ctx.object.out_path) {
+        LOG_ERR("Require private output file path option -r");
+        return tool_rc_general_error;
     }
 
-    tmp_rc = tpm2_session_close(&ctx.auths.owner.old);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-    }
-
-    tmp_rc = tpm2_session_close(&ctx.auths.lockout.old);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-    }
-
-    return rc;
-}
-
-static tool_rc process_change_hierarchy_auth (ESYS_CONTEXT *ectx) {
-
-    /* always run this, so we pick up the default empty password session */
-    tool_rc rc = tpm2_auth_util_from_optarg(NULL, ctx.owner_auth_str,
-            &ctx.auths.owner.new, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid new owner authorization, got\"%s\"", ctx.owner_auth_str);
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.endorse_auth_str,
-            &ctx.auths.endorse.new, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid new endorse authorization, got\"%s\"",
-            ctx.endorse_auth_str);
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.lockout_auth_str,
-            &ctx.auths.lockout.new, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid new lockout authorization, got\"%s\"",
-            ctx.lockout_auth_str);
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.owner_auth_old_str,
-            &ctx.auths.owner.old, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid current owner authorization, got\"%s\"",
-            ctx.owner_auth_old_str);
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.endorse_auth_old_str,
-            &ctx.auths.endorse.old, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid current endorse authorization, got\"%s\"",
-            ctx.endorse_auth_old_str);
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.lockout_auth_old_str,
-            &ctx.auths.lockout.old, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid current lockout authorization, got\"%s\"",
-            ctx.lockout_auth_old_str);
-        return rc;
-    }
-
-    return change_hierarchy_auth(ectx);
-}
-
-static bool process_tpm_handle_auths(ESYS_CONTEXT *ectx) {
-
-    /* always run this, so we pick up the default empty password session */
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_str,
-                &ctx.auths.tpm_handle.new, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid new authorization for tpm handle, got\"%s\"",
-            ctx.tpm_handle_auth_str);
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.tpm_handle_auth_old_str,
-            &ctx.auths.tpm_handle.old, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid current authorization for tpm handle, got\"%s\"",
-            ctx.tpm_handle_auth_old_str);
-        return rc;
-    }
-
-    return tool_rc_success;
-}
-
-static tool_rc process_change_nv_handle_auth_cleanup(void) {
-    return tpm2_session_close(&ctx.auths.tpm_handle.old);
-}
-
-static tool_rc process_change_nv_handle_auth(ESYS_CONTEXT *ectx) {
-
-    tool_rc rc = process_tpm_handle_auths(ectx);
+    TPM2B_PRIVATE *out_private = NULL;
+    tool_rc rc = tpm2_object_change_auth(ectx,
+            &ctx.parent.obj,
+            &ctx.object.obj,
+            new_auth,
+            &out_private);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    ESYS_TR shandle = ESYS_TR_NONE;
-    rc = tpm2_auth_util_get_shandle(ectx,
-                        ctx.tpm_handle_context_object.tr_handle,
-                        ctx.auths.tpm_handle.old, &shandle);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
+    bool res = files_save_private(out_private, ctx.object.out_path);
+    free(out_private);
 
-    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(ctx.auths.tpm_handle.new);
-
-    TSS2_RC rval = Esys_NV_ChangeAuth(ectx,
-                    ctx.tpm_handle_context_object.tr_handle,
-                    shandle, ESYS_TR_NONE, ESYS_TR_NONE, new_auth);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_NV_ChangeAuth, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
-}
-
-static tool_rc process_change_tpm_handle_auth_cleanup(void) {
-    return tpm2_session_close(&ctx.auths.tpm_handle.old);
-}
-
-static tool_rc process_change_tpm_handle_auth(ESYS_CONTEXT *ectx) {
-
-    tool_rc rc = process_tpm_handle_auths(ectx);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    ESYS_TR shandle = ESYS_TR_NONE;
-    rc = tpm2_auth_util_get_shandle(ectx,
-                        ctx.tpm_handle_context_object.tr_handle,
-                        ctx.auths.tpm_handle.old, &shandle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    if (!ctx.tpm_handle_parent_context_object.tr_handle) {
-        rc = tpm2_util_sys_handle_to_esys_handle(
-                ectx,
-                ctx.tpm_handle_parent_context_object.handle,
-                &ctx.tpm_handle_parent_context_object.tr_handle);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-    }
-
-    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(ctx.auths.tpm_handle.new);
-
-    TPM2B_PRIVATE *outPrivate = NULL;
-    TSS2_RC rval = Esys_ObjectChangeAuth(ectx,
-                        ctx.tpm_handle_context_object.tr_handle,
-                        ctx.tpm_handle_parent_context_object.tr_handle,
-                        shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                        new_auth, &outPrivate);
-
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_ObjectChangeAuth, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    rc = tool_rc_general_error;
-    if (ctx.flags.r) {
-        bool res = files_save_private(outPrivate, ctx.opr_path);
-        if (res) {
-            rc = tool_rc_success;
-        }
-    } else {
-        rc = tool_rc_success;
-    }
-
-    free(outPrivate);
-
-    return rc;
+    return res ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
 
     switch (key) {
-
-    case 'w':
-        ctx.flags.w = 1;
-        ctx.owner_auth_str = value;
-        break;
-    case 'e':
-        ctx.flags.e = 1;
-        ctx.endorse_auth_str = value;
-        break;
-    case 'l':
-        ctx.flags.l = 1;
-        ctx.lockout_auth_str = value;
-        break;
-    case 'W':
-        ctx.flags.W = 1;
-        ctx.owner_auth_old_str = value;
-        break;
-    case 'E':
-        ctx.flags.E = 1;
-        ctx.endorse_auth_old_str = value;
-        break;
-    case 'L':
-        ctx.flags.L = 1;
-        ctx.lockout_auth_old_str = value;
-        break;
     case 'c':
-        ctx.flags.c = 1;
-        ctx.tpm_handle_context_arg = value;
+        ctx.object.ctx = value;
         break;
     case 'C':
-        ctx.flags.C = 1;
-        ctx.tpm_handle_parent_context_arg = value;
+        ctx.parent.ctx = value;
         break;
     case 'p':
-        ctx.flags.p = 1;
-        ctx.tpm_handle_auth_str = value;
+        ctx.object.auth_current = value;
         break;
-    case 'P':
-        ctx.flags.P = 1;
-        ctx.tpm_handle_auth_old_str = value;
+    case 'n':
+        ctx.object.auth_new = value;
         break;
     case 'r':
-        ctx.opr_path = value;
-        ctx.flags.r = 1;
+        ctx.object.out_path = value;
         break;
         /*no default */
     }
@@ -355,124 +93,100 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_arg(int argc, char *argv[]) {
+
+    if (argc != 1) {
+        LOG_ERR("Expected 1 new password argument, got: %d", argc);
+        return false;
+    }
+
+    ctx.object.auth_new = argv[0];
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
-        //Special Permanent Handles: OWNER/ ENDORSEMENT/ LOCKOUT
-        { "new-auth-owner",             required_argument, NULL, 'w' },
-        { "current-auth-owner",         required_argument, NULL, 'W' },
-        { "new-auth-endorse",           required_argument, NULL, 'e' },
-        { "current-auth-endorse",       required_argument, NULL, 'E' },
-        { "new-auth-lockout",           required_argument, NULL, 'l' },
-        { "current-auth-lockout",       required_argument, NULL, 'L' },
-        //Other TPM Handles: PERSISTENT/ TRANSIENT/ NV
-        { "new-auth-handle",            required_argument, NULL, 'p' },
-        { "current-auth-handle",        required_argument, NULL, 'P' },
-        { "key-context",                required_argument, NULL, 'c' },
-        //Additional parameters for PERSISTENT/ TRANSIENT Handles:
-        { "key-parent-context",         required_argument, NULL, 'C' },
+        { "object-auth",                required_argument, NULL, 'p' },
+        { "object-context",             required_argument, NULL, 'c' },
+        { "parent-context",             required_argument, NULL, 'C' },
         { "privfile",                   required_argument, NULL, 'r' },
     };
-    *opts = tpm2_options_new("w:e:l:W:E:L:p:P:c:C:r:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("p:c:C:r:", ARRAY_LEN(topts), topts,
+                             on_option, on_arg, 0);
 
     return *opts != NULL;
 }
 
-static bool is_input_option_args_valid(void) {
+static inline bool object_needs_parent(tpm2_loaded_object *obj) {
 
-    if (ctx.flags.c) {
-        switch((ctx.tpm_handle_context_object.handle & TPM2_HR_RANGE_MASK) >> TPM2_HR_SHIFT) {
-            case TPM2_HT_TRANSIENT:
-                ctx.is_transient = true;
-                break;
-            case TPM2_HT_PERSISTENT:
-                ctx.is_persistent = true;
-                break;
-            case TPM2_HT_NV_INDEX:
-                ctx.is_nv = true;
-                break;
-            default:
-                // transient objects are only specified via file context and thus
-                // have no handle just an ESYS_TR
-                ctx.is_transient = true;
-        }
-    }
-
-    /*
-     * Handle specified without any intended operation
-     */
-    if (!ctx.flags.P && !ctx.flags.p && ctx.flags.c) {
-        LOG_ERR("Must specify the handle/context auths for set/modify operation.");
-        return false;
-    }
-
-    /*
-     * Clear auth value of an object --> ctx.flags.p = 0
-     * Set auth for an object that had no auth --> ctx.flags.P = 0
-     * Change old auth value to new auth value --> ctx.flags.p == ctx.flags.P = 1
-     */
-    if ((ctx.flags.P || ctx.flags.P) && !ctx.flags.c) {
-        LOG_ERR("Must specify the handle/context for auth change.");
-        return false;
-    }
-
-    if ((ctx.is_persistent || ctx.is_transient) && (!ctx.flags.C || !ctx.flags.r)) {
-        LOG_ERR("Must specify the parent handle/context of the key whose auth "
-         "is being changed along with the path to save the new sensitive data");
-        return false;
-    }
-
-    if ((ctx.is_persistent || ctx.is_transient) && ctx.is_nv) {
-        LOG_ERR("Specify a transient/persistent handle OR a NV Index, not both.");
-        return false;
-    }
-
-    return true;
+    return (obj->handle &  TPM2_HR_TRANSIENT) ||
+            (obj->handle &  TPM2_HR_PERSISTENT);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    bool result;
-    if (ctx.flags.c) {
-        tool_rc rc = tpm2_util_object_load(ectx, ctx.tpm_handle_context_arg,
-                &ctx.tpm_handle_context_object);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Invalid TPM object handle");
-            return rc;
-        }
-    }
-
-    if (ctx.flags.C) {
-        tool_rc rc = tpm2_util_object_load(ectx, ctx.tpm_handle_parent_context_arg,
-                &ctx.tpm_handle_parent_context_object);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Invalid TPM object handle parent");
-            return rc;
-        }
-    }
-
-    result = is_input_option_args_valid();
-    if (!result) {
+    /* load the object to call changeauth on */
+    if (!ctx.object.ctx) {
+        LOG_ERR("Expected object information via -c");
         return tool_rc_option_error;
     }
 
-    if (ctx.is_persistent || ctx.is_transient) {
-        return process_change_tpm_handle_auth(ectx);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.object.ctx, ctx.object.auth_current,
+            &ctx.object.obj);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    if (ctx.is_nv) {
-        return process_change_nv_handle_auth(ectx);
+    if (ctx.object.obj.tr_handle == ESYS_TR_RH_NULL) {
+        LOG_ERR("Cannot change the null hierarchy authorization");
+        return tool_rc_general_error;
     }
 
-    if (ctx.flags.w || ctx.flags.e || ctx.flags.l || ctx.flags.W || ctx.flags.E
-            || ctx.flags.L) {
-        return process_change_hierarchy_auth(ectx);
+    /* transient objects or persistent objects need parents */
+    bool load_parent = object_needs_parent(&ctx.object.obj);
+    if (load_parent) {
+
+        if (!ctx.parent.ctx) {
+            LOG_ERR("Expected parent object information via -C");
+            return tool_rc_option_error;
+        }
+
+        rc = tpm2_util_object_load(ectx, ctx.parent.ctx, &ctx.parent.obj);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
     }
 
-    return tool_rc_option_error;
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_new, &ctx.object.new, true);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    const TPM2B_AUTH *new_auth = tpm2_session_get_auth_value(ctx.object.new);
+
+    /* invoke the proper changauth command based on object type */
+    UINT8 tag = (ctx.object.obj.handle & TPM2_HR_RANGE_MASK) >> TPM2_HR_SHIFT;
+    switch(tag) {
+        case TPM2_HT_TRANSIENT:
+        case TPM2_HT_PERSISTENT:
+            rc = object_change_auth(ectx, new_auth);
+            break;
+        case TPM2_HT_NV_INDEX:
+            rc = nv_change_auth(ectx, new_auth);
+            break;
+        case TPM2_HT_PERMANENT:
+            rc = hierarchy_change_auth(ectx, new_auth);
+            break;
+        default:
+            LOG_ERR("Unsupported object type, got: 0x%x", tag);
+            rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
@@ -480,17 +194,19 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_success;
 
-    if (ctx.is_persistent || ctx.is_transient) {
-        return process_change_tpm_handle_auth_cleanup();
+    tool_rc tmp = tpm2_session_close(&ctx.object.new);
+    if (rc != tool_rc_success) {
+        rc = tmp;
     }
 
-    if (ctx.is_nv) {
-        return process_change_nv_handle_auth_cleanup();
+    tmp = tpm2_session_close(&ctx.object.obj.session);
+    if (rc != tool_rc_success) {
+        rc = tmp;
     }
 
-    if (ctx.flags.w || ctx.flags.e || ctx.flags.l || ctx.flags.W || ctx.flags.E
-            || ctx.flags.L) {
-        return process_change_hierarchy_auth_cleanup();
+    tmp = tpm2_session_close(&ctx.parent.obj.session);
+    if (rc != tool_rc_success) {
+        rc = tmp;
     }
 
     return rc;

@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,12 +9,21 @@
 #include "log.h"
 #include "object.h"
 #include "tpm2_auth_util.h"
-
-#define FILE_PREFIX "file:"
-#define FILE_PREFIX_LEN (sizeof(FILE_PREFIX) - 1)
+#include "tpm2_hierarchy.h"
 
 #define NULL_OBJECT "null"
 #define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
+
+static tool_rc do_ctx_file(ESYS_CONTEXT *ctx,
+        const char *objectstr,
+        FILE *f,
+        tpm2_loaded_object *outobject) {
+    /* assign a dummy transient handle */
+    outobject->handle = TPM2_TRANSIENT_FIRST;
+    outobject->path = objectstr;
+    return files_load_tpm_context_from_file(ctx,
+            &outobject->tr_handle, f);
+}
 
 static tool_rc tpm2_util_object_load2(
             ESYS_CONTEXT *ctx,
@@ -32,43 +42,32 @@ static tool_rc tpm2_util_object_load2(
         outobject->session = s;
     }
 
-    // 0. If objecstr is NULL return error
-    if (!objectstr) {
-        LOG_ERR("tpm2_util_object_load called with empty objectstr parameter");
+    if (!objectstr[0]) {
+        LOG_ERR("object string is empty");
         return tool_rc_general_error;
     }
 
-    // 1. If the objectstr starts with a file: prefix, treat as a context file
-    bool starts_with_file = !strncmp(objectstr, FILE_PREFIX, FILE_PREFIX_LEN);
-    if (starts_with_file) {
-        outobject->handle = 0;
-        outobject->path = objectstr += FILE_PREFIX_LEN;
-        return files_load_tpm_context_from_path(ctx,
-                &outobject->tr_handle, outobject->path);
+    // 1. Always attempt file
+    FILE *f = fopen(objectstr, "rb");
+    if (f) {
+        tool_rc rc = do_ctx_file(ctx, objectstr, f, outobject);
+        fclose(f);
+        return rc;
     }
 
-    // 2. If the objstr is "null" set the handle to RH_NULL
-    bool is_rh_null = !strncmp(objectstr, NULL_OBJECT, NULL_OBJECT_LEN);
-    if (is_rh_null){
-        outobject->path = NULL;
-        outobject->tr_handle = ESYS_TR_RH_NULL;
-        outobject->handle = TPM2_RH_NULL;
-        return tool_rc_success;
-    }
-
-    // 3. Try to load objectstr as a TPM2_HANDLE
-    bool result = tpm2_util_string_to_uint32(objectstr,
-                    &outobject->handle);
-    if (result) {
+    // 2. Try to convert a hierarchy or raw handle
+    TPMI_RH_PROVISION handle;
+    bool result = tpm2_hierarchy_from_optarg(objectstr, &handle,
+            TPM2_HIERARCHY_FLAGS_ALL|TPM2_HIERARCHY_SUPPRESS);
+    if (result){
+        outobject->handle = handle;
         outobject->path = NULL;
         return tpm2_util_sys_handle_to_esys_handle(ctx, outobject->handle, &outobject->tr_handle);
     }
 
-    // 4. we must assume the whole value is a file path
-    outobject->handle = 0;
-    outobject->path = objectstr;
-    return files_load_tpm_context_from_path(ctx,
-            &outobject->tr_handle, outobject->path);
+    LOG_ERR("Cannot make sense of object context \"%s\"", objectstr);
+
+    return tool_rc_general_error;
 }
 
 tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
