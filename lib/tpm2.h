@@ -365,4 +365,9 @@ tool_rc tpm2_load(
 tool_rc tpm2_clear(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *auth_hierarchy);
+
+tool_rc tpm2_clearcontrol(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy,
+    TPMI_YES_NO disable_clear);
 #endif /* LIB_TPM2_H_ */

@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "log.h"
+#include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
@@ -12,16 +14,16 @@
 
 typedef struct clearcontrol_ctx clearcontrol_ctx;
 struct clearcontrol_ctx {
-    TPMI_YES_NO disable_clear;
-    ESYS_TR rh;
     struct {
         char *auth_str;
-        tpm2_session *session;
-    } auth;
+        tpm2_loaded_object object;
+    } auth_hierarchy;
+
+    TPMI_YES_NO disable_clear;
 };
 
 static clearcontrol_ctx ctx = {
-    .rh = ESYS_TR_RH_PLATFORM,
+    .auth_hierarchy.object.tr_handle = ESYS_TR_RH_PLATFORM,
     .disable_clear = 0,
 };
 
@@ -29,34 +31,21 @@ static tool_rc clearcontrol(ESYS_CONTEXT *ectx) {
 
     LOG_INFO ("Sending TPM2_ClearControl(%s) disableClear command with auth handle %s",
             ctx.disable_clear ? "SET" : "CLEAR",
-            ctx.rh == ESYS_TR_RH_PLATFORM ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
+            ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_PLATFORM ?
+                "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
 
-    ESYS_TR shandle = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.rh, ctx.auth.session,
-            &shandle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    TSS2_RC rval = Esys_ClearControl(ectx, ctx.rh,
-                shandle, ESYS_TR_NONE, ESYS_TR_NONE, ctx.disable_clear);
-    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
-        LOG_PERR(Esys_ClearControl, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
+    return tpm2_clearcontrol(ectx, &ctx.auth_hierarchy.object, ctx.disable_clear);
 }
 
 static bool set_clearcontrol_auth_handle(const char *value) {
 
     if (!strcmp(value, "p") || !strcmp(value, "platform")) {
-        ctx.rh = ESYS_TR_RH_PLATFORM;
+        ctx.auth_hierarchy.object.tr_handle = ESYS_TR_RH_PLATFORM;
         return true;
     }
 
     if (!strcmp(value, "l") || !strcmp(value, "lockout")) {
-        ctx.rh = ESYS_TR_RH_LOCKOUT;
+        ctx.auth_hierarchy.object.tr_handle = ESYS_TR_RH_LOCKOUT;
         return true;
     }
 
@@ -115,7 +104,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'p':
-        ctx.auth.auth_str = value;
+        ctx.auth_hierarchy.auth_str = value;
         break;
     }
 
@@ -138,7 +127,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
-
+#if 0
     tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
             &ctx.auth.session, true);
     if (rc != tool_rc_success) {
@@ -146,11 +135,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             ctx.auth.auth_str);
         return rc;
     }
-
-    if (!ctx.disable_clear && ctx.rh == ESYS_TR_RH_LOCKOUT) {
+#endif
+    if (!ctx.disable_clear &&
+        ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_LOCKOUT) {
         LOG_ERR("Only platform hierarchy handle can be specified"
             " for CLEAR operation on disableClear");
         return tool_rc_general_error;
+    }
+
+    tool_rc rc = tpm2_util_object_load_auth(ectx, NULL,
+        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, true);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Invalid authorization, got\"%s\"",
+            ctx.auth_hierarchy.auth_str);
+        return rc;
     }
 
     return clearcontrol(ectx);
