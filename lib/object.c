@@ -46,6 +46,16 @@ static tool_rc tpm2_util_object_load2(
         outobject->session = s;
     }
 
+    /*
+     * Some tools work exclusively with TPM_RH_CONSTANTS.
+     * These are specified directly in the outobject->tr_handle.
+     */
+    if (!objectstr &&
+        (outobject->tr_handle >= ESYS_TR_RH_OWNER) &&
+        (outobject->tr_handle <= ESYS_TR_RH_PLATFORM_NV)) {
+        return tool_rc_success;
+    }
+
     if (!objectstr) {
         LOG_ERR("object string is empty");
         return tool_rc_general_error;
