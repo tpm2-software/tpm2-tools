@@ -5,7 +5,6 @@
 
 #include "log.h"
 #include "object.h"
-#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_error.h"
 
@@ -544,25 +543,31 @@ tool_rc tpm2_policy_password(
 
 tool_rc tpm2_policy_secret(
     ESYS_CONTEXT *esysContext,
-    ESYS_TR authHandle,
-    ESYS_TR policySession,
-    ESYS_TR shandle1,
-    ESYS_TR shandle2,
-    ESYS_TR shandle3,
-    const TPM2B_NONCE *nonceTPM,
-    const TPM2B_DIGEST *cpHashA,
-    const TPM2B_NONCE *policyRef,
-    INT32 expiration,
-    TPM2B_TIMEOUT **timeout,
-    TPMT_TK_AUTH **policyTicket) {
+    tpm2_loaded_object *auth_entity_obj,
+    ESYS_TR policySession) {
+
+    const TPM2B_NONCE *nonceTPM = NULL;
+    const TPM2B_DIGEST *cpHashA = NULL;
+    const TPM2B_NONCE *policyRef = NULL;
+    INT32 expiration = 0;
+    TPM2B_TIMEOUT **timeout = NULL;
+    TPMT_TK_AUTH **policyTicket = NULL;
+
+    ESYS_TR auth_entity_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, auth_entity_obj->tr_handle,
+                        auth_entity_obj->session, &auth_entity_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get auth entity obj session");
+        return rc;
+    }
 
     TSS2_RC rval = Esys_PolicySecret(
         esysContext,
-        authHandle,
+        auth_entity_obj->tr_handle,
         policySession,
-        shandle1,
-        shandle2,
-        shandle3,
+        auth_entity_obj_session_handle,
+        ESYS_TR_NONE,
+        ESYS_TR_NONE,
         nonceTPM,
         cpHashA,
         policyRef,

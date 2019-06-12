@@ -9,6 +9,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "object.h"
 #include "tpm2.h"
 #include "tpm2_hash.h"
 #include "tpm2_alg_util.h"
@@ -272,22 +273,11 @@ tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
 }
 
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, tpm2_session *secret_session,
-    ESYS_TR handle) {
+    tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj) {
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
 
-    ESYS_TR shandle = ESYS_TR_NONE;
-
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, handle,
-                        secret_session, &shandle);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-    return tpm2_policy_secret(ectx, handle, policy_session_handle,
-                    shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                    NULL, NULL, NULL, 0, NULL, NULL);
+    return tpm2_policy_secret(ectx, auth_entity_obj, policy_session_handle);
 }
 
 tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx,
