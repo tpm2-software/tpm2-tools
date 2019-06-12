@@ -32,11 +32,11 @@
 bool tpm2_hierarchy_from_optarg(const char *value,
         TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags) {
 
-    if (!value) {
+    if (!value || !value[0]) {
         return false;
     }
 
-    bool is_o = !strcmp(value, "o");
+    bool is_o = !strncmp(value, "owner", strlen(value));
     if (is_o) {
         if (!(flags & TPM2_HIERARCHY_FLAGS_O)) {
             LOG_ERR("Owner hierarchy not supported by this command.");
@@ -46,7 +46,7 @@ bool tpm2_hierarchy_from_optarg(const char *value,
         return true;
     }
 
-    bool is_p = !strcmp(value, "p");
+    bool is_p = !strncmp(value, "platform", strlen(value));
     if (is_p) {
         if (!(flags & TPM2_HIERARCHY_FLAGS_P)) {
             LOG_ERR("Platform hierarchy not supported by this command.");
@@ -56,7 +56,7 @@ bool tpm2_hierarchy_from_optarg(const char *value,
         return true;
     }
 
-    bool is_e = !strcmp(value, "e");
+    bool is_e = !strncmp(value, "endorsement", strlen(value));
     if (is_e) {
         if (!(flags & TPM2_HIERARCHY_FLAGS_E)) {
             LOG_ERR("Endorsement hierarchy not supported by this command.");
@@ -66,7 +66,7 @@ bool tpm2_hierarchy_from_optarg(const char *value,
         return true;
     }
 
-    bool is_n = !strcmp(value, "n");
+    bool is_n = !strncmp(value, "null", strlen(value));
     if (is_n) {
         if (!(flags & TPM2_HIERARCHY_FLAGS_N)) {
             LOG_ERR("NULL hierarchy not supported by this command.");
@@ -76,9 +76,19 @@ bool tpm2_hierarchy_from_optarg(const char *value,
         return true;
     }
 
+    bool is_l = !strncmp(value, "lockout", strlen(value));
+    if (is_l) {
+        if (!(flags & TPM2_HIERARCHY_FLAGS_L)) {
+            LOG_ERR("Permanent handle lockout not supported by this command.");
+            return false;
+        }
+        *hierarchy = TPM2_RH_LOCKOUT;
+        return true;
+    }
+
     bool result = tpm2_util_string_to_uint32(value, hierarchy);
     if (!result) {
-        LOG_ERR("Incorrect hierarchy value, got: \"%s\", expected [o|p|e|n]"
+        LOG_ERR("Incorrect hierarchy value, got: \"%s\", expected [o|p|e|n|l]"
                 "or a number",
             value);
     }

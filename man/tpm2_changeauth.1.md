@@ -1,23 +1,19 @@
 % tpm2_changeauth(1) tpm2-tools | General Commands Manual
 %
-% OCTOBER 2018
+% JUNE 2019
 
 # NAME
 
-**tpm2_changeauth**(1) - Configuring authorization for TPM OWNER/ENDORSEMENT/LOCKOUT hierarchies,
-NV Handles and Transient & Persistent object handles.
+**tpm2_changeauth** - Changes authorization values for TPM objects.
 
 # SYNOPSIS
 
-**tpm2_changeauth** [*OPTIONS*]
+**tpm2_changeauth** [*OPTIONS*] [NEW\_PASSWORD]
 
 # DESCRIPTION
 
-**tpm2_changeauth**(1) - Managing authorization passwords for TPM objects/ handles.
-1. Permanent Handles (Owner, Endorsement, Lockout).
-2. Persistent Handles (0x81XX_XXXX).
-3. Transient Handles (0x80XX_XXXX).
-4. NV Handles (0x01XX_XXXX).
+**tpm2_changeauth** - Configures authorization values for the various hierarchies,
+NV indices, transient and persistent objects.
 
 Note: For non-permanent objects (Transient objects and Persistent objects),
 copies of the private information (files or persistent handles) created prior
@@ -28,47 +24,25 @@ to changing auth are not invalidated.
 Passwords should follow the "password authorization formatting standards",
 see section "Authorization Formatting".
 
-  * **-w**, **\--new-owner-passwd**=_OWNER\_PASSWORD_:
+  * **-p**, **\--object-auth**=_OBJECT\_AUTH_:
 
-    The new authorization value for the owner hierarchy.
-
-  * **-e**, **\--new-endorsement-passwd**=_ENDORSEMENT\_PASSWORD_:
-
-    The new authorization value for the endorsement hierarchy.
-
-  * **-l**, **\--new-lockout-passwd**=_LOCKOUT\_PASSWORD_:
-
-    The new authorization value for the dictionary lockout.
-
-  * **-W**, **\--current-owner-passwd**=_CURRENT\_OWNER\_AUTH_:
-
-    The current authorization value for the owner hierarchy .
-
-  * **-E**, **\--current-endorsement-passwd**=_CURRENT\_ENDORSEMENT\_AUTH_:
-
-    The current authorization value for the endorsement hierarchy.
-
-  * **-L**, **\--current-lockout-passwd**=_CURRENT\_LOCKOUT\_AUTH_:
-
-    The current authorization value for the dictionary lockout authority.
-
-  * **-p**, **\--new-handle-passwd**=_TPM\_HANDLE\_PASSWORD_:
-
-    The new authorization value for the TPM handle.
+    The old authorization value for the TPM object. Follows the "# Authorization Formatting"
+    section below.
 
   * **-P**, **\--current-handle-passwd**=_CURRENT\_TPM\_HANDLE\_PASSWORD_:
 
     The current authorization value for the TPM handle .
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--object-context**=_OBJECT\_CONTEXT\_OBJECT_:
 
-    Name of the key context object to be used for the operation.
-    Either a file or a handle number. See section "Context Object Format".
+    The key context object to be used for the operation.
+    See section "Context Object Format" for details.
 
   * **-C**, **\--parent-context**=_PARENT\_CONTEXT\_OBJECT_:
-    Name of the parent context object specified either with a file or a handle number
-    (see section "Context Object Format").
-    This is the parent of the object whose auth is being modified with **\--key-context** option.
+
+    The parent object. This is required if the object for the operation is a
+    transient or persistent object.
+    See section "Context Object Format" for details.
 
   * **-r**, **\--privfile**=_OUTPUT\_PRIVATE\_FILE_:
     The output file which contains the new sensitive portion of the object whose auth was being changed.
@@ -79,21 +53,27 @@ see section "Authorization Formatting".
 
 [authorization formatting](common/authorizations.md)
 
+[context object format](common/ctxobj.md)
+
 # EXAMPLES
 
-## Set owner, endorsement and lockout authorizations
+## Set owner, endorsement and lockout authorizations to newpass
 ```
-tpm2_changeauth -w neww -e newe -l newl
-```
-
-## Set owner, endorsement and lockout authorizations to a new value
-```
-tpm2_changeauth -w neww -e newe -l newl -W oldw -E olde -L oldl
+tpm2_changeauth -c owner newpass
+tpm2_changeauth -c endorsement newpass
+tpm2_changeauth -c lockout newpass
 ```
 
-## Unset/Clear owner authorization which was previously set to value newo
+## Change owner, endorsement and lockout authorizations from newpass to a new value
 ```
-tpm2_changeauth -W neww
+tpm2_changeauth -c o -p newpass newerpass
+tpm2_changeauth -c e -p newpass newerpass
+tpm2_changeauth -c l -p newpass newerpass
+```
+
+## Set owner authorization to empty password
+```
+tpm2_changeauth -c o -p oldpass
 ```
 
 ## Modify authorization for a loadable transient object
@@ -104,10 +84,13 @@ tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx
 
 tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -o key.ctx
 
-tpm2_changeauth -p newkeyauth -c key.ctx -C prim.ctx -r key.priv
+tpm2_changeauth -c key.ctx -C prim.ctx -r key.priv newkeyauth
 ```
 
-## Modify authorization for a NV Index - Requires Extended Session Support
+## Modify authorization for a NV Index
+
+Requires Extended Session Support.
+
 ```
 tpm2_startauthsession -S session.ctx
 
@@ -121,7 +104,7 @@ tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policycommandcode -S session.ctx -c $TPM2_NV_ChangeAuth -o policy.nvchange
 
-tpm2_changeauth -P session:session.ctx -p newindexauth -c $NVIndex
+tpm2_changeauth -p session:session.ctx -c $NVIndex newindexauth
 ```
 
 [returns](common/returns.md)

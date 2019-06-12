@@ -38,7 +38,8 @@ cmp ECcert.bin ECcert2.bin
 
 # Test providing endorsement password to create EK and owner password to persist.
 tpm2_clear
-tpm2_changeauth -w $opass -e $epass
+tpm2_changeauth -c o $opass
+tpm2_changeauth -c e $epass
 
 tpm2_getmanufec -H $handle -U -E ECcert2.bin -o test_ek.pub -w $opass -e $epass \
                 https://ekop.intel.com/ekcertservice/

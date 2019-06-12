@@ -104,17 +104,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             return tmp_rc;
         }
 
-        bool is_persistent = false;
         /* if the loaded object has a handle then it must be a persistent object */
         if (ctx.session.key_context_object.handle) {
 
-            is_persistent = (ctx.session.key_context_object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT;
-            if (!is_persistent) {
-                LOG_ERR("Specified encryption key not a persistent object, got: %s", ctx.session.key_context_arg_str);
-                return rc;
+            bool is_transient = (ctx.session.key_context_object.handle >> TPM2_HR_SHIFT) == TPM2_HT_TRANSIENT;
+            if (!is_transient) {
+                LOG_WARN("check public key portion manually");
             }
-
-            LOG_WARN("check public key portion");
         }
 
         has_key = true;
