@@ -42,7 +42,9 @@ bool tpm2_hierarchy_from_optarg(const char *value,
             LOG_ERR("Owner hierarchy not supported by this command.");
             return false;
         }
-        *hierarchy = TPM2_RH_OWNER;
+        *hierarchy =
+            !(flags & TPM2_HIERARCHY_FLAGS_ESAPI) ?
+                                TPM2_RH_OWNER : ESYS_TR_RH_OWNER;
         return true;
     }
 
@@ -52,7 +54,9 @@ bool tpm2_hierarchy_from_optarg(const char *value,
             LOG_ERR("Platform hierarchy not supported by this command.");
             return false;
         }
-        *hierarchy = TPM2_RH_PLATFORM;
+        *hierarchy =
+            !(flags & TPM2_HIERARCHY_FLAGS_ESAPI) ?
+                                TPM2_RH_PLATFORM : ESYS_TR_RH_PLATFORM;
         return true;
     }
 
@@ -62,7 +66,9 @@ bool tpm2_hierarchy_from_optarg(const char *value,
             LOG_ERR("Endorsement hierarchy not supported by this command.");
             return false;
         }
-        *hierarchy = TPM2_RH_ENDORSEMENT;
+        *hierarchy =
+            !(flags & TPM2_HIERARCHY_FLAGS_ESAPI) ?
+                                TPM2_RH_ENDORSEMENT : ESYS_TR_RH_ENDORSEMENT;
         return true;
     }
 
@@ -72,7 +78,9 @@ bool tpm2_hierarchy_from_optarg(const char *value,
             LOG_ERR("NULL hierarchy not supported by this command.");
             return false;
         }
-        *hierarchy = TPM2_RH_NULL;
+        *hierarchy =
+            !(flags & TPM2_HIERARCHY_FLAGS_ESAPI) ?
+                                TPM2_RH_NULL : ESYS_TR_RH_NULL;
         return true;
     }
 
@@ -82,7 +90,9 @@ bool tpm2_hierarchy_from_optarg(const char *value,
             LOG_ERR("Permanent handle lockout not supported by this command.");
             return false;
         }
-        *hierarchy = TPM2_RH_LOCKOUT;
+        *hierarchy =
+            !(flags & TPM2_HIERARCHY_FLAGS_ESAPI) ?
+                                TPM2_RH_LOCKOUT : ESYS_TR_RH_LOCKOUT;
         return true;
     }
 

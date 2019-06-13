@@ -20,7 +20,8 @@ enum tpm2_hierarchy_flags {
     TPM2_HIERARCHY_FLAGS_N    = 1 << 3,
     TPM2_HIERARCHY_FLAGS_L    = 1 << 4,
     TPM2_HIERARCHY_SUPPRESS   = 1 << 5,
-    TPM2_HIERARCHY_FLAGS_ALL  = 0x1F
+    TPM2_HIERARCHY_FLAGS_ALL  = 0x1F,
+    TPM2_HIERARCHY_FLAGS_ESAPI= 1 << 6,
 };
 
 bool tpm2_hierarchy_from_optarg(const char *value,
