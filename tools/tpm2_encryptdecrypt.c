@@ -127,12 +127,6 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
                       ctx.is_decrypt, ctx.mode, iv_in, &ctx.data,
                       &out_data, &iv_out);
         }
-        /*
-         * Copy iv_out iv_in to use it in next loop iteration.
-         * This copy is also output from the tool for further chaining.
-         */
-        *iv_in = *iv_out;
-        free(iv_out);
         if (rval != TPM2_RC_SUCCESS) {
             if (version == 2) {
                 LOG_PERR(Esys_EncryptDecrypt2, rval);
@@ -142,6 +136,13 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
             rc = tool_rc_from_tpm(rval);
             goto out;
         }
+
+        /*
+         * Copy iv_out iv_in to use it in next loop iteration.
+         * This copy is also output from the tool for further chaining.
+         */
+        *iv_in = *iv_out;
+        free(iv_out);
 
         result = files_write_bytes(out_file_ptr, out_data->buffer, out_data->size);
         free(out_data);
