@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_changeauth: tool options change to support only one object at a time. Most command line options changed.
   * tpm2_getcap: most instances of value replaced with raw in YAML output.
   * tpm2_getcap: TPM2_PT_MANUFACTURER displays string value and raw value.
   * tpm2_createak: remove -k persistant option. Use tpm2_evictcontrol.
