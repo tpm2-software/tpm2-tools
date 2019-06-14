@@ -18,12 +18,12 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
 # OPTIONS
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-u**, **\--pubfile**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-G**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -50,7 +50,7 @@ provided, verify that the qualifying data and PCR values match those in the quot
     Also, see section "Supported Signing Schemes" for a list of supported hash
     algorithms.
 
-  * **-p**, **\--pcrs**:
+  * **-F**, **\--pcr-input-file**:
 
     PCR output file, optional, records the list of PCR values that were included
     in the quote.
