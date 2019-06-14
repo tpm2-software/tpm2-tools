@@ -29,10 +29,6 @@ see section "Authorization Formatting".
     The old authorization value for the TPM object. Follows the "# Authorization Formatting"
     section below.
 
-  * **-P**, **\--current-handle-passwd**=_CURRENT\_TPM\_HANDLE\_PASSWORD_:
-
-    The current authorization value for the TPM handle .
-
   * **-c**, **\--object-context**=_OBJECT\_CONTEXT\_OBJECT_:
 
     The key context object to be used for the operation.
