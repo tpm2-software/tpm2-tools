@@ -94,8 +94,6 @@ interactions with the created primary.
 
 [algorithm specifiers](common/alg.md)
 
-[object attribute specifiers](common/object-attrs.md)
-
 # EXAMPLES
 
 ## Create an ECC primary object

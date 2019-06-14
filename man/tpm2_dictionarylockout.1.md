@@ -26,7 +26,7 @@ dictionary-attack-lockout state. If any password option is missing, assume NULL.
 
     Specifies the tool should operate to clear dictionary-attack-lockout state.
 
-  * **-l**, **-lockout-recovery-time**=_LOCKOUT\_TIME_:
+  * **-l**, **\--lockout-recovery-time**=_LOCKOUT\_TIME_:
 
     Specifies the wait time in seconds before another **TPM_RH_LOCKOUT**
     authentication attempt can be made after a failed authentication.

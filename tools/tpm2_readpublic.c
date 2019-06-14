@@ -124,11 +124,11 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "out-file",   required_argument, NULL, 'o' },
-        { "context",    required_argument, NULL, 'c' },
-        { "format",     required_argument, NULL, 'f' },
-        { "name",       required_argument, NULL, 'n' },
-        { "handle",     required_argument, NULL, 't' }
+        { "out-file",           required_argument, NULL, 'o' },
+        { "context",            required_argument, NULL, 'c' },
+        { "format",             required_argument, NULL, 'f' },
+        { "name",               required_argument, NULL, 'n' },
+        { "serialized-handle",  required_argument, NULL, 't' }
     };
 
     *opts = tpm2_options_new("o:c:f:n:t:", ARRAY_LEN(topts), topts,

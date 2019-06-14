@@ -262,7 +262,7 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "key-key",             required_argument, NULL, 'p' },
+      { "auth-key",             required_argument, NULL, 'p' },
       { "halg",                 required_argument, NULL, 'g' },
       { "sig-scheme",           required_argument, NULL, 's' },
       { "message",              required_argument, NULL, 'm' },
