@@ -8,6 +8,7 @@
 #include "object.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_hierarchy.h"
 #include "tpm2_session.h"
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
@@ -35,23 +36,6 @@ static tool_rc clearcontrol(ESYS_CONTEXT *ectx) {
                 "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
 
     return tpm2_clearcontrol(ectx, &ctx.auth_hierarchy.object, ctx.disable_clear);
-}
-
-static bool set_clearcontrol_auth_handle(const char *value) {
-
-    if (!strcmp(value, "p") || !strcmp(value, "platform")) {
-        ctx.auth_hierarchy.object.tr_handle = ESYS_TR_RH_PLATFORM;
-        return true;
-    }
-
-    if (!strcmp(value, "l") || !strcmp(value, "lockout")) {
-        ctx.auth_hierarchy.object.tr_handle = ESYS_TR_RH_LOCKOUT;
-        return true;
-    }
-
-    LOG_ERR("Unknown or unsupported auth handle string."
-        " Specify -a followed by p(latform)|l(ockout)");
-    return false;
 }
 
 bool on_arg (int argc, char **argv) {
@@ -98,7 +82,9 @@ static bool on_option(char key, char *value) {
     bool result;
     switch (key) {
     case 'a':
-        result = set_clearcontrol_auth_handle(value);
+        result = tpm2_hierarchy_from_optarg(value,
+            &ctx.auth_hierarchy.object.tr_handle,
+            TPM2_HIERARCHY_FLAGS_ESAPI|TPM2_HIERARCHY_FLAGS_P|TPM2_HIERARCHY_FLAGS_L);
         if (!result) {
             return false;
         }
@@ -127,15 +113,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
-#if 0
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid authorization, got\"%s\"",
-            ctx.auth.auth_str);
-        return rc;
-    }
-#endif
+
     if (!ctx.disable_clear &&
         ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_LOCKOUT) {
         LOG_ERR("Only platform hierarchy handle can be specified"
