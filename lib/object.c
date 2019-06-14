@@ -30,11 +30,15 @@ static tool_rc tpm2_util_object_load2(
             const char *objectstr,
             const char *auth,
             bool do_auth,
-            tpm2_loaded_object *outobject) {
+            tpm2_loaded_object *outobject,
+            bool is_restricted_pswd_session) {
+
+    ctx = is_restricted_pswd_session ? NULL: ctx;
 
     if (do_auth) {
         tpm2_session *s = NULL;
-        tool_rc rc = tpm2_auth_util_from_optarg(ctx, auth, &s, false);
+        tool_rc rc = tpm2_auth_util_from_optarg(ctx, auth, &s,
+            is_restricted_pswd_session);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -42,7 +46,7 @@ static tool_rc tpm2_util_object_load2(
         outobject->session = s;
     }
 
-    if (!objectstr[0]) {
+    if (!objectstr) {
         LOG_ERR("object string is empty");
         return tool_rc_general_error;
     }
@@ -73,14 +77,16 @@ static tool_rc tpm2_util_object_load2(
 tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
             const char *objectstr, tpm2_loaded_object *outobject) {
 
-    return tpm2_util_object_load2(ctx, objectstr, NULL, false, outobject);
+    return tpm2_util_object_load2(ctx, objectstr, NULL, false, outobject, false);
 }
 
 tool_rc tpm2_util_object_load_auth(
             ESYS_CONTEXT *ctx,
             const char *objectstr,
             const char *auth,
-            tpm2_loaded_object *outobject) {
+            tpm2_loaded_object *outobject,
+            bool is_restricted_pswd_session) {
 
-    return tpm2_util_object_load2(ctx, objectstr, auth, true, outobject);
+    return tpm2_util_object_load2(ctx, objectstr, auth, true, outobject,
+        is_restricted_pswd_session);
 }

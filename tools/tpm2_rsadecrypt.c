@@ -125,7 +125,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     }
 
     return tpm2_util_object_load_auth(ectx, ctx.key.ctx_path, ctx.key.auth_str,
-                                &ctx.key.object);
+                                &ctx.key.object, false);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {

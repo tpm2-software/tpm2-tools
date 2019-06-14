@@ -149,7 +149,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-        ctx.parent.auth_str, &ctx.parent.object);
+        ctx.parent.auth_str, &ctx.parent.object, false);
     if (rc != tool_rc_success) {
         return rc;
     }
