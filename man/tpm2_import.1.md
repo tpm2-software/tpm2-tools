@@ -35,7 +35,7 @@ These options control the key importation process:
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-i**, **\--infile**=_FILE_:
+  * **-i**, **\--in-file**=_FILE_:
 
     Specifies the filename of symmetric key (128 bit data) to be imported. OR,
     Specifies the filename for the RSA2048 private key file in PEM and PKCS#1
