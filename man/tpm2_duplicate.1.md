@@ -46,9 +46,15 @@ These options control the key importation process:
     object.
 
   * **-p**, **\--auth-key**=_KEY\_AUTH_:
+
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
+
+  * **-c**, **\--context**=_CONTEXT\_OBJECT_:
+
+    The handle or session file of the object to be duplicated.
+    See section "Context Object Format".
 
 [common options](common/options.md)
 
