@@ -1382,3 +1382,128 @@ tool_rc tpm2_encryptdecrypt(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_hmac(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *hmac_key_obj,
+    const TPM2B_MAX_BUFFER *input_buffer,
+    TPM2B_DIGEST **out_hmac) {
+
+    ESYS_TR hmac_key_obj_shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, hmac_key_obj->tr_handle,
+                            hmac_key_obj->session, &hmac_key_obj_shandle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get hmac_key_obj_shandle");
+        return rc;
+    }
+
+    TPM2_RC rval = Esys_HMAC(
+                    esysContext,
+                    hmac_key_obj->tr_handle,
+                    hmac_key_obj_shandle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    input_buffer,
+                    TPM2_ALG_NULL,
+                    out_hmac);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_HMAC, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+
+tool_rc tpm2_hmac_start(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *hmac_key_obj,
+    ESYS_TR *sequenceHandle) {
+
+    ESYS_TR hmac_key_obj_shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, hmac_key_obj->tr_handle,
+                            hmac_key_obj->session, &hmac_key_obj_shandle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get hmac_key_obj_shandle");
+        return rc;
+    }
+
+    TPM2B_AUTH null_auth = { .size = 0 };
+    TPM2_RC rval = Esys_HMAC_Start(
+                    esysContext,
+                    hmac_key_obj->tr_handle,
+                    hmac_key_obj_shandle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    &null_auth,
+                    TPM2_ALG_NULL,
+                    sequenceHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_HMAC, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_hmac_sequenceupdate(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    tpm2_loaded_object *hmac_key_obj,
+    const TPM2B_MAX_BUFFER *input_buffer) {
+
+    ESYS_TR hmac_key_obj_shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, hmac_key_obj->tr_handle,
+                            hmac_key_obj->session, &hmac_key_obj_shandle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get hmac_key_obj_shandle");
+        return rc;
+    }
+
+    TPM2_RC rval = Esys_SequenceUpdate(
+                    esysContext,
+                    sequenceHandle,
+                    hmac_key_obj_shandle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    input_buffer);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_HMAC, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_hmac_sequencecomplete(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    tpm2_loaded_object *hmac_key_obj,
+    const TPM2B_MAX_BUFFER *input_buffer,
+    TPM2B_DIGEST **result) {
+
+    ESYS_TR hmac_key_obj_shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, hmac_key_obj->tr_handle,
+                            hmac_key_obj->session, &hmac_key_obj_shandle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get hmac_key_obj_shandle");
+        return rc;
+    }
+
+    TPM2_RC rval = Esys_SequenceComplete(
+                    esysContext,
+                    sequenceHandle,
+                    hmac_key_obj_shandle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    input_buffer,
+                    TPM2_RH_NULL,
+                    result,
+                    NULL);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_HMAC, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

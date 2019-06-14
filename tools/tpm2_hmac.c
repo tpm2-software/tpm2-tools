@@ -13,6 +13,7 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
@@ -23,32 +24,23 @@
 typedef struct tpm_hmac_ctx tpm_hmac_ctx;
 struct tpm_hmac_ctx {
     struct {
+        char *ctx_path;
         char *auth_str;
-        tpm2_session *session;
-    } auth;
-    char *hmac_output_file_path;
-    const char *context_arg;
-    tpm2_loaded_object key_context_object;
+        tpm2_loaded_object object;
+    } hmac_key;
+
     FILE *input;
+    char *hmac_output_file_path;
 };
 
 static tpm_hmac_ctx ctx;
 
 static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
 
-    TSS2_RC rval;
     unsigned long file_size = 0;
     FILE *input = ctx.input;
-    ESYS_TR shandle1 = ESYS_TR_NONE;
 
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.key_context_object.tr_handle,
-                            ctx.auth.session, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
+    tool_rc rc;
     /* Suppress error reporting with NULL path */
     bool res = files_get_file_size(input, &file_size, NULL);
 
@@ -62,32 +54,22 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
             LOG_ERR("Error reading input file!");
             return tool_rc_general_error;
         }
-
-        rval = Esys_HMAC(ectx, ctx.key_context_object.tr_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                &buffer, TPM2_ALG_NULL, result);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_HMAC, rval);
-            return tool_rc_from_tpm(rval);
-        }
-
-        return tool_rc_success;
+        /*
+         * hash algorithm specified in the key's scheme is used as the
+         * hash algorithm for the HMAC
+         */
+        return tpm2_hmac(ectx, &ctx.hmac_key.object, &buffer, result);
     }
 
-    TPM2B_AUTH null_auth = { .size = 0 };
     ESYS_TR sequence_handle;
-
     /*
      * Size is either unknown because the FILE * is a fifo, or it's too big
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    rval = Esys_HMAC_Start(ectx, ctx.key_context_object.tr_handle,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            &null_auth, TPM2_ALG_NULL, &sequence_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_HMAC_Start, rval);
-        return tool_rc_from_tpm(rval);
+    rc = tpm2_hmac_start(ectx, &ctx.hmac_key.object, &sequence_handle);
+    if (rc != tool_rc_success) {
+        return tool_rc_general_error;
     }
 
     /* If we know the file size, we decrement the amount read and terminate the
@@ -111,12 +93,10 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
         data.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Esys_SequenceUpdate(ectx, sequence_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                &data);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Eys_SequenceUpdate, rval);
-            return tool_rc_from_tpm(rval);
+        rc = tpm2_hmac_sequenceupdate(ectx, sequence_handle,
+            &ctx.hmac_key.object, &data);
+        if (rc != tool_rc_success) {
+            return tool_rc_general_error;
         }
 
         if (use_left) {
@@ -141,13 +121,11 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
         data.size = 0;
     }
 
-    rval = Esys_SequenceComplete(ectx, sequence_handle,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            &data, TPM2_RH_NULL, result, NULL);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_SequenceComplete, rval);
-        return tool_rc_from_tpm(rval);
-    }
+    rc = tpm2_hmac_sequencecomplete(ectx, sequence_handle,
+        &ctx.hmac_key.object, &data, result);
+        if (rc != tool_rc_success) {
+            return tool_rc_general_error;
+        }
 
     return tool_rc_success;
 }
@@ -190,10 +168,10 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'C':
-        ctx.context_arg = value;
+        ctx.hmac_key.ctx_path = value;
         break;
     case 'P':
-        ctx.auth.auth_str = value;
+        ctx.hmac_key.auth_str = value;
         break;
     case 'o':
         ctx.hmac_output_file_path = value;
@@ -243,25 +221,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * Option C must be specified.
      */
-    if (!ctx.context_arg) {
+    if (!ctx.hmac_key.ctx_path) {
         LOG_ERR("Must specify options C.");
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, false);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.hmac_key.ctx_path,
+        ctx.hmac_key.auth_str, &ctx.hmac_key.object, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key handle authorization, got\"%s\"",
-            ctx.auth.auth_str);
+            ctx.hmac_key.auth_str);
         return rc;
     }
-
-    rc = tpm2_util_object_load(ectx, ctx.context_arg,
-                                &ctx.key_context_object);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
 
     return do_hmac_and_output(ectx);
 }
@@ -273,5 +244,5 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
         fclose(ctx.input);
     }
 
-    return tpm2_session_close(&ctx.auth.session);
+    return tpm2_session_close(&ctx.hmac_key.object.session);
 }

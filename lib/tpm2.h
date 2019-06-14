@@ -407,4 +407,28 @@ tool_rc tpm2_encryptdecrypt(
     ESYS_TR shandle1,
     unsigned *version);
 
+tool_rc tpm2_hmac(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *hmac_key_obj,
+    const TPM2B_MAX_BUFFER *input_buffer,
+    TPM2B_DIGEST **out_hmac);
+
+tool_rc tpm2_hmac_start(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *hmac_key_obj,
+    ESYS_TR *sequenceHandle);
+
+tool_rc tpm2_hmac_sequenceupdate(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    tpm2_loaded_object *hmac_key_obj,
+    const TPM2B_MAX_BUFFER *input_buffer);
+
+tool_rc tpm2_hmac_sequencecomplete(
+    ESYS_CONTEXT *esysContext,
+    ESYS_TR sequenceHandle,
+    tpm2_loaded_object *hmac_key_obj,
+    const TPM2B_MAX_BUFFER *input_buffer,
+    TPM2B_DIGEST **result);
+
 #endif /* LIB_TPM2_H_ */
