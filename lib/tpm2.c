@@ -718,21 +718,25 @@ tool_rc tpm2_mu_tpmt_public_marshal(
 
 tool_rc tpm2_evictcontrol(
     ESYS_CONTEXT *esysContext,
-    ESYS_TR auth,
-    ESYS_TR objectHandle,
-    ESYS_TR shandle1,
-    ESYS_TR shandle2,
-    ESYS_TR shandle3,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    tpm2_loaded_object *to_persist_key_obj,
     TPMI_DH_PERSISTENT persistentHandle,
     ESYS_TR *newObjectHandle) {
 
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session, &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
     TSS2_RC rval = Esys_EvictControl(
             esysContext,
-            auth,
-            objectHandle,
+            auth_hierarchy_obj->tr_handle,
+            to_persist_key_obj->tr_handle,
             shandle1,
-            shandle2,
-            shandle3,
+            ESYS_TR_NONE,
+            ESYS_TR_NONE,
             persistentHandle,
             newObjectHandle);
     if (rval != TSS2_RC_SUCCESS) {

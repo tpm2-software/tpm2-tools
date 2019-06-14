@@ -3,6 +3,7 @@
 #include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "object.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_ctx_mgmt.h"
@@ -24,12 +25,19 @@ tool_rc tpm2_ctx_mgmt_evictcontrol(
     }
 
     ESYS_TR outHandle;
-    rc = tpm2_evictcontrol(ectx, auth, objhandle,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            phandle, &outHandle);
 
-    if (rc != tool_rc_success) {
-        return rc;
+    TSS2_RC rval = Esys_EvictControl(
+        ectx,
+        auth,
+        objhandle,
+        shandle1,
+        ESYS_TR_NONE,
+        ESYS_TR_NONE,
+        phandle,
+        &outHandle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_EvictControl, rval);
+        return tool_rc_from_tpm(rval);
     }
 
     if (out_tr) {
