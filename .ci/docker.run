@@ -75,7 +75,7 @@ fi
 
 ../configure --enable-unit $config_flags
 make -j$(nproc)
-make -j$(nproc) check
+make -j check
 
 popd
 
