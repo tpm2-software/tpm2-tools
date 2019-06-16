@@ -43,6 +43,8 @@ tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
  * The string representation of the object to be loaded.
  * @param auth
  * The auth string for the object.
+ * @param is_restricted_pswd_session
+ * The auth session associated with the object is restricted to TPM2_RS_PW
  * @param outobject
  * A *tpm2_loaded_object* with a loaded handle. The path member will also be
  * set when the *objectstr* is a context file.
@@ -55,6 +57,7 @@ tool_rc tpm2_util_object_load_auth(
             ESYS_CONTEXT *ctx,
             const char *objectstr,
             const char *auth,
-            tpm2_loaded_object *outobject);
+            tpm2_loaded_object *outobject,
+            bool is_restricted_pswd_session);
 
 #endif /* LIB_OBJECT_H_ */
