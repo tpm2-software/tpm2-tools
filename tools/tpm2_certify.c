@@ -26,13 +26,13 @@ struct tpm_certify_ctx {
         const char *ctx_path;
         const char *auth_str;
         tpm2_loaded_object object;
-    } object;
+    } certified_key;
 
     struct {
         const char *ctx_path;
         const char *auth_str;
         tpm2_loaded_object object;
-    } key;
+    } signing_key;
 
     struct {
         char *attest;
@@ -111,7 +111,7 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
     };
 
     TPMT_SIG_SCHEME scheme;
-    tool_rc rc = set_scheme(ectx, ctx.key.object.tr_handle, ctx.halg,
+    tool_rc rc = set_scheme(ectx, ctx.signing_key.object.tr_handle, ctx.halg,
                     &scheme);
     if (rc != tool_rc_success) {
         LOG_ERR("No suitable signing scheme!");
@@ -123,8 +123,8 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
 
     rc = tpm2_certify(
             ectx,
-            &ctx.object.object,
-            &ctx.key.object,
+            &ctx.certified_key.object,
+            &ctx.signing_key.object,
             &qualifying_data,
             &scheme,
             &certify_info,
@@ -157,16 +157,16 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'C':
-        ctx.object.ctx_path = value;
+        ctx.certified_key.ctx_path = value;
         break;
     case 'c':
-        ctx.key.ctx_path = value;
+        ctx.signing_key.ctx_path = value;
         break;
     case 'P':
-        ctx.object.auth_str = value;
+        ctx.certified_key.auth_str = value;
         break;
     case 'p':
-        ctx.key.auth_str = value;
+        ctx.signing_key.auth_str = value;
         break;
     case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
@@ -199,14 +199,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "auth-object",      required_argument, NULL, 'P' },
-      { "auth-key",         required_argument, NULL, 'p' },
-      { "halg",             required_argument, NULL, 'g' },
-      { "out-attest-file",  required_argument, NULL, 'o' },
-      { "sig-file",         required_argument, NULL, 's' },
-      { "obj-context",      required_argument, NULL, 'C' },
-      { "key-context",      required_argument, NULL, 'c' },
-      { "format",           required_argument, NULL, 'f' },
+      { "certifiedkey-auth",    required_argument, NULL, 'P' },
+      { "signingkey-auth",      required_argument, NULL, 'p' },
+      { "halg",                 required_argument, NULL, 'g' },
+      { "out-attest-file",      required_argument, NULL, 'o' },
+      { "sig-file",             required_argument, NULL, 's' },
+      { "certifiedkey-context", required_argument, NULL, 'C' },
+      { "signingkey-context",   required_argument, NULL, 'c' },
+      { "format",               required_argument, NULL, 'f' },
     };
 
     *opts = tpm2_options_new("P:p:g:o:s:c:C:f:", ARRAY_LEN(topts), topts,
@@ -218,22 +218,22 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    if ((!ctx.object.ctx_path)
-        && (!ctx.key.ctx_path)
+    if ((!ctx.certified_key.ctx_path)
+        && (!ctx.signing_key.ctx_path)
         && (ctx.flags.g) && (ctx.flags.o)
         && (ctx.flags.s)) {
         return tool_rc_option_error;
     }
 
     /* Load input files */
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.object.ctx_path,
-        ctx.object.auth_str, &ctx.object.object, false);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.certified_key.ctx_path,
+        ctx.certified_key.auth_str, &ctx.certified_key.object, false);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_util_object_load_auth(ectx, ctx.key.ctx_path,
-        ctx.key.auth_str, &ctx.key.object, false);
+    rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
+        ctx.signing_key.auth_str, &ctx.signing_key.object, false);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -246,12 +246,12 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_success;
 
-    tool_rc tmp_rc = tpm2_session_close(&ctx.key.object.session);
+    tool_rc tmp_rc = tpm2_session_close(&ctx.signing_key.object.session);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
     }
 
-    tmp_rc = tpm2_session_close(&ctx.object.object.session);
+    tmp_rc = tpm2_session_close(&ctx.certified_key.object.session);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
     }
