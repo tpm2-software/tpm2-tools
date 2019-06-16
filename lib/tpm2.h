@@ -389,4 +389,17 @@ tool_rc tpm2_duplicate(
     TPM2B_DATA **out_key,
     TPM2B_PRIVATE **duplicate,
     TPM2B_ENCRYPTED_SECRET **encrypted_seed);
+
+tool_rc tpm2_encryptdecrypt(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *encryption_key_obj,
+    TPMI_YES_NO decrypt,
+    TPMI_ALG_SYM_MODE mode,
+    const TPM2B_IV *iv_in,
+    const TPM2B_MAX_BUFFER *input_data,
+    TPM2B_MAX_BUFFER **output_data,
+    TPM2B_IV **iv_out,
+    ESYS_TR shandle1,
+    unsigned *version);
+
 #endif /* LIB_TPM2_H_ */

@@ -1279,3 +1279,56 @@ tool_rc tpm2_duplicate(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_encryptdecrypt(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *encryption_key_obj,
+    TPMI_YES_NO decrypt,
+    TPMI_ALG_SYM_MODE mode,
+    const TPM2B_IV *iv_in,
+    const TPM2B_MAX_BUFFER *input_data,
+    TPM2B_MAX_BUFFER **output_data,
+    TPM2B_IV **iv_out,
+    ESYS_TR shandle1,
+    unsigned *version) {
+
+
+    TSS2_RC rval = Esys_EncryptDecrypt2(
+                    esysContext,
+                    encryption_key_obj->tr_handle,
+                    shandle1,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    input_data,
+                    decrypt,
+                    mode,
+                    iv_in,
+                    output_data,
+                    iv_out);
+    if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
+        *version = 1;
+        rval = Esys_EncryptDecrypt(
+                esysContext,
+                encryption_key_obj->tr_handle,
+                shandle1,
+                ESYS_TR_NONE,
+                ESYS_TR_NONE,
+                decrypt,
+                mode,
+                iv_in,
+                input_data,
+                output_data,
+                iv_out);
+    }
+
+    if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
+        if (*version == 2) {
+            LOG_PERR(Esys_EncryptDecrypt2, rval);
+        } else {
+            LOG_PERR(Esys_EncryptDecrypt, rval);
+        }
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
