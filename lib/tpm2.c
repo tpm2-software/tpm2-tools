@@ -1158,3 +1158,30 @@ tool_rc tpm2_clear(
     }
     return tool_rc_success;
 }
+
+tool_rc tpm2_clearcontrol(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy,
+    TPMI_YES_NO disable_clear) {
+
+    ESYS_TR shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        auth_hierarchy->tr_handle, auth_hierarchy->session, &shandle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_ClearControl(
+                    esysContext,
+                    auth_hierarchy->tr_handle,
+                    shandle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    disable_clear);
+    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
+        LOG_PERR(Esys_ClearControl, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
