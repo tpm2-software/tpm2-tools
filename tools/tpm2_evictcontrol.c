@@ -14,10 +14,10 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_capability.h"
 #include "tpm2_ctx_mgmt.h"
-#include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
 #include "tpm2_session.h"
@@ -26,23 +26,29 @@
 typedef struct tpm_evictcontrol_ctx tpm_evictcontrol_ctx;
 struct tpm_evictcontrol_ctx {
     struct {
-        char *auth_str;
-        tpm2_session *session;
-    } auth;
-    TPMI_RH_PROVISION hierarchy;
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_hierarchy;
+
+    struct {
+        char *ctx_path;
+        tpm2_loaded_object object;
+    } to_persist_key;
+
     TPMI_DH_PERSISTENT persist_handle;
-    tpm2_loaded_object context_object;
-    const char *context_arg;
+
+    const char *output_arg;
+
     struct {
         UINT8 p : 1;
         UINT8 c : 1;
         UINT8 o : 1;
     } flags;
-    const char *output_arg;
 };
 
 static tpm_evictcontrol_ctx ctx = {
-    .hierarchy = TPM2_RH_OWNER,
+    .auth_hierarchy.ctx_path="o",
 };
 
 static bool on_option(char key, char *value) {
@@ -51,11 +57,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
-                TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
-        if (!result) {
-            return false;
-        }
+        ctx.auth_hierarchy.ctx_path = value;
         break;
     case 'p':
         result = tpm2_util_string_to_uint32(value, &ctx.persist_handle);
@@ -67,10 +69,10 @@ static bool on_option(char key, char *value) {
         ctx.flags.p = 1;
         break;
     case 'P':
-        ctx.auth.auth_str = value;
+        ctx.auth_hierarchy.auth_str = value;
         break;
     case 'c':
-        ctx.context_arg = value;
+        ctx.to_persist_key.ctx_path = value;
         ctx.flags.c = 1;
         break;
     case 'o':
@@ -105,16 +107,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tool_rc_general_error;
     bool evicted = false;
 
-    tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.context_arg,
-                &ctx.context_object);
+    tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
+                &ctx.to_persist_key.object);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
     }
 
-    /* Determine whether the loaded object is already persistent */
-    if (ctx.context_object.handle >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
-        ctx.persist_handle = ctx.context_object.handle;
+    if (ctx.to_persist_key.object.handle >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
+        ctx.persist_handle = ctx.to_persist_key.object.handle;
         ctx.flags.p = 1;
     }
 
@@ -133,30 +134,17 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.flags.p = 1;
     }
 
-    tmp_rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-           &ctx.auth.session, false);
-    if (tmp_rc != tool_rc_success) {
-        LOG_ERR("Invalid authorization authorization, got\"%s\"",
-            ctx.auth.auth_str);
-        rc = tmp_rc;
-        goto out;
-    }
-
+    rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false);
     if (ctx.flags.o && !ctx.flags.p) {
         LOG_ERR("Cannot specify -o without using a persistent handle");
         goto out;
     }
 
     ESYS_TR out_tr;
-    ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
-    tmp_rc = tpm2_ctx_mgmt_evictcontrol(ectx,
-            hierarchy,
-            ctx.auth.session,
-            ctx.context_object.tr_handle,
-            ctx.persist_handle,
-            &out_tr);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
+    rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
+        &ctx.to_persist_key.object, ctx.persist_handle, &out_tr);
+    if (rc != tool_rc_success) {
         goto out;
     }
 
@@ -164,7 +152,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * Only Close a TR object if it's still resident in the TPM.
      * When these handles match, evictcontrol flushed it from the TPM.
      */
-    evicted = ctx.context_object.handle == ctx.persist_handle;
+    evicted = ctx.to_persist_key.object.handle == ctx.persist_handle;
     tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persist_handle);
     tpm2_tool_output("action: %s\n", evicted ? "evicted" : "persisted");
 
@@ -190,5 +178,5 @@ out:
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.auth.session);
+    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }
