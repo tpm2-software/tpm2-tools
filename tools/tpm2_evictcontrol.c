@@ -112,18 +112,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    /* If we loaded the object from a hex handle we need to also load the
-     * associated ESYS_TR for ESAPI calls
-     */
-    if (!ctx.context_object.tr_handle) {
-        tmp_rc = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.context_object.handle, &ctx.context_object.tr_handle);
-        if (tmp_rc != tool_rc_success) {
-            rc = tmp_rc;
-            goto out;
-        }
-    }
-
     /* Determine whether the loaded object is already persistent */
     if (ctx.context_object.handle >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
         ctx.persist_handle = ctx.context_object.handle;
