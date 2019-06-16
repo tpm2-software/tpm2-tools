@@ -441,4 +441,9 @@ tool_rc tpm2_import(
     const TPMT_SYM_DEF_OBJECT *symmetricAlg,
     TPM2B_PRIVATE **outPrivate);
 
+tool_rc tpm2_nv_definespace(
+        ESYS_CONTEXT *esysContext,
+        tpm2_loaded_object *auth_hierarchy_obj,
+        const TPM2B_AUTH *auth,
+        const TPM2B_NV_PUBLIC *publicInfo);
 #endif /* LIB_TPM2_H_ */
