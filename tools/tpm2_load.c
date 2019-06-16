@@ -14,6 +14,7 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
 #include "tpm2_session.h"
@@ -23,22 +24,22 @@
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {
     struct {
-        char *auth_str;
-        tpm2_session *session;
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
     } parent;
+
     TPM2B_PUBLIC  in_public;
     TPM2B_PRIVATE in_private;
     char *out_name_file;
     char *context_file;
-    char *parent_auth_str;
-    const char *context_arg;
-    tpm2_loaded_object context_object;
+    ESYS_TR handle;
+
     struct {
         UINT8 u : 1;
         UINT8 r : 1;
         UINT8 o : 1;
     } flags;
-    ESYS_TR handle;
 };
 
 static tpm_load_ctx ctx;
@@ -47,22 +48,14 @@ tool_rc load (ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval;
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.context_object.tr_handle,
-                            ctx.parent.session, &shandle1);
+    tool_rc rc = tpm2_load(
+                    ectx,
+                    &ctx.parent.object,
+                    &ctx.in_private,
+                    &ctx.in_public,
+                    &ctx.handle);
     if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
-    rval = Esys_Load(ectx, ctx.context_object.tr_handle,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            &ctx.in_private, &ctx.in_public, &ctx.handle);
-    if (rval != TPM2_RC_SUCCESS)
-    {
-        LOG_PERR(Eys_Load, rval);
-        return tool_rc_from_tpm(rval);
+        return tool_rc_general_error;
     }
 
     if (ctx.out_name_file) {
@@ -91,7 +84,7 @@ static bool on_option(char key, char *value) {
 
     switch(key) {
     case 'P':
-        ctx.parent_auth_str = value;
+        ctx.parent.auth_str = value;
         break;
     case 'u':
         if(!files_load_public(value, &ctx.in_public)) {
@@ -110,7 +103,7 @@ static bool on_option(char key, char *value) {
         ctx.out_name_file = value;
         break;
     case 'C':
-        ctx.context_arg = value;
+        ctx.parent.ctx_path = value;
         break;
     case 'o':
         ctx.context_file = value;
@@ -145,7 +138,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if ((!ctx.context_arg) || (!ctx.flags.u || !ctx.flags.r)) {
+    if ((!ctx.parent.ctx_path) || (!ctx.flags.u || !ctx.flags.r)) {
         LOG_ERR("Expected options C, u and r.");
         return tool_rc_option_error;
     }
@@ -155,15 +148,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent_auth_str,
-            &ctx.parent.session, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent_auth_str);
-        return rc;
-    }
-
-    rc = tpm2_util_object_load(ectx,
-                                ctx.context_arg, &ctx.context_object);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
+        ctx.parent.auth_str, &ctx.parent.object, false);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -180,5 +166,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.parent.session);
+    return tpm2_session_close(&ctx.parent.object.session);
 }

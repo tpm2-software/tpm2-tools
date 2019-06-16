@@ -364,4 +364,11 @@ tool_rc tpm2_rsa_decrypt(
     const TPM2B_DATA *label,
     TPM2B_PUBLIC_KEY_RSA **message);
 
+tool_rc tpm2_load(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *parentobj,
+    const TPM2B_PRIVATE *inPrivate,
+    const TPM2B_PUBLIC *inPublic,
+    ESYS_TR *objectHandle);
+
 #endif /* LIB_TPM2_H_ */
