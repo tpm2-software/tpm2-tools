@@ -4,7 +4,8 @@
 source helpers.sh
 
 cleanup() {
-    rm -f secret.data ek.pub ak.pub ak.name mkcred.out actcred.out ak.out ak.ctx
+    rm -f secret.data ek.pub ak.pub ak.name mkcred.out actcred.out ak.out\
+     ak.ctx session.ctx
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -46,7 +47,11 @@ test "$loaded_key_name_yaml" == "$loaded_key_name"
 
 tpm2_makecredential -Q -e ek.pub  -s secret.data -n $loaded_key_name -o mkcred.out
 
+TPM2_RH_ENDORSEMENT=0x4000000B
+tpm2_startauthsession --policy-session -S session.ctx
+tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT
 tpm2_activatecredential -Q -c ak.ctx -C 0x81010009 -i mkcred.out -o actcred.out\
-    -P akpass
+	-P akpass -E"session:session.ctx"
+tpm2_flushcontext -S session.ctx
 
 exit 0
