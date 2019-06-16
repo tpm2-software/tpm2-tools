@@ -38,7 +38,6 @@ struct tpm_evictcontrol_ctx {
         UINT8 c : 1;
         UINT8 o : 1;
     } flags;
-    char *hierarchy_auth_str;
     const char *output_arg;
 };
 
