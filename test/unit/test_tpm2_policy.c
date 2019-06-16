@@ -206,7 +206,7 @@ static test_file *test_file_new(void) {
         return NULL;
     }
 
-    tf->path = strdup("xxx_test_files_xxx.test");
+    tf->path = strdup("xxx_test_tpm2_policy_xxx.test");
     if (!tf->path) {
         free(tf);
         return NULL;
