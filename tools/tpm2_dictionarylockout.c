@@ -8,6 +8,8 @@
 #include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
 #include "tpm2_session.h"
@@ -16,60 +18,22 @@
 
 typedef struct dictionarylockout_ctx dictionarylockout_ctx;
 struct dictionarylockout_ctx {
+    struct {
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_hierarchy;
+
     UINT32 max_tries;
     UINT32 recovery_time;
     UINT32 lockout_recovery_time;
     bool clear_lockout;
     bool setup_parameters;
-
-    struct {
-        tpm2_session *session;
-        char *auth_str;
-    } auth;
 };
 
-static dictionarylockout_ctx ctx;
-
-tool_rc dictionary_lockout_reset_and_parameter_setup(ESYS_CONTEXT *ectx) {
-
-    TPM2_RC rval;
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_LOCKOUT,
-                            ctx.auth.session, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Couldn't get shandle for lockout hierarchy");
-        return rc;
-    }
-
-    /*
-     * If setup params and clear lockout are both required, clear lockout should
-     * precede parameters setup.
-     */
-    if (ctx.clear_lockout) {
-
-        LOG_INFO("Resetting dictionary lockout state.");
-        rval = Esys_DictionaryAttackLockReset(ectx, ESYS_TR_RH_LOCKOUT,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_DictionaryAttackLockReset, rval);
-            return tool_rc_from_tpm(rval);
-        }
-    }
-
-    if (ctx.setup_parameters) {
-        LOG_INFO("Setting up Dictionary Lockout parameters.");
-        rval = Esys_DictionaryAttackParameters(ectx, ESYS_TR_RH_LOCKOUT,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                    ctx.max_tries, ctx.recovery_time,
-                    ctx.lockout_recovery_time);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_DictionaryAttackParameters, rval);
-            return tool_rc_from_tpm(rval);
-        }
-    }
-
-    return tool_rc_success;
-}
+static dictionarylockout_ctx ctx = {
+    .auth_hierarchy.ctx_path = "l",
+};
 
 static bool on_option(char key, char *value) {
 
@@ -83,7 +47,7 @@ static bool on_option(char key, char *value) {
         ctx.setup_parameters = true;
         break;
     case 'p':
-        ctx.auth.auth_str = value;
+        ctx.auth_hierarchy.auth_str = value;
         break;
     case 'n':
         result = tpm2_util_string_to_uint32(value, &ctx.max_tries);
@@ -144,19 +108,21 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, false);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid lockout authorization, got\"%s\"",
-            ctx.auth.auth_str);
+        LOG_ERR("Invalid authorization, got\"%s\"",
+            ctx.auth_hierarchy.auth_str);
         return rc;
     }
 
-    return dictionary_lockout_reset_and_parameter_setup(ectx);
+    return tpm2_dictionarylockout(ectx, &ctx.auth_hierarchy.object,
+        ctx.clear_lockout, ctx.setup_parameters, ctx.max_tries,
+        ctx.recovery_time, ctx.lockout_recovery_time);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.auth.session);
+    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }
