@@ -330,7 +330,6 @@ tool_rc tpm2_create_loaded(
     TPM2B_PRIVATE **outPrivate,
     TPM2B_PUBLIC **outPublic);
 
-
 tool_rc tpm2_object_change_auth(
         ESYS_CONTEXT *esysContext,
         tpm2_loaded_object *parent_object,
@@ -347,5 +346,14 @@ tool_rc tpm2_hierarchy_change_auth(
         ESYS_CONTEXT *esysContext,
         tpm2_loaded_object *hierarchy,
         const TPM2B_AUTH *newAuth);
+
+tool_rc tpm2_certify(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *object,
+    tpm2_loaded_object *key,
+    TPM2B_DATA *qualifying_data,
+    TPMT_SIG_SCHEME *scheme,
+    TPM2B_ATTEST **certify_info,
+    TPMT_SIGNATURE **signature);
 
 #endif /* LIB_TPM2_H_ */

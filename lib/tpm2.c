@@ -1016,3 +1016,49 @@ tool_rc tpm2_hierarchy_change_auth(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_certify(
+    ESYS_CONTEXT *ectx,
+    tpm2_loaded_object *object,
+    tpm2_loaded_object *key,
+    TPM2B_DATA *qualifying_data,
+    TPMT_SIG_SCHEME *scheme,
+    TPM2B_ATTEST **certify_info,
+    TPMT_SIGNATURE **signature) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, object->tr_handle,
+        object->session, &shandle1);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get session handle for TPM object");
+        return rc;
+    }
+
+    ESYS_TR shandle2 = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx,
+                            key->tr_handle,
+                            key->session, &shandle2);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get session handle for key");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_Certify(
+                    ectx,
+                    object->tr_handle,
+                    key->tr_handle,
+                    shandle1,
+                    shandle2,
+                    ESYS_TR_NONE,
+                    qualifying_data,
+                    scheme,
+                    certify_info,
+                    signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Eys_Certify, rval);
+        rc = tool_rc_from_tpm(rval);
+        return rc;
+    }
+
+    return tool_rc_success;
+}
