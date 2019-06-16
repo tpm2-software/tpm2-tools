@@ -1508,3 +1508,41 @@ tool_rc tpm2_hmac_sequencecomplete(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_import(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *parent_obj,
+    const TPM2B_DATA *encryptionKey,
+    const TPM2B_PUBLIC *objectPublic,
+    const TPM2B_PRIVATE *duplicate,
+    const TPM2B_ENCRYPTED_SECRET *inSymSeed,
+    const TPMT_SYM_DEF_OBJECT *symmetricAlg,
+    TPM2B_PRIVATE **outPrivate) {
+
+    ESYS_TR parentobj_shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, parent_obj->tr_handle,
+                            parent_obj->session, &parentobj_shandle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Couldn't get shandle for phandle");
+        return rc;
+    }
+
+    TPM2_RC rval = Esys_Import(
+                    esysContext,
+                    parent_obj->tr_handle,
+                    parentobj_shandle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    encryptionKey,
+                    objectPublic,
+                    duplicate,
+                    inSymSeed,
+                    symmetricAlg,
+                    outPrivate);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_HMAC, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

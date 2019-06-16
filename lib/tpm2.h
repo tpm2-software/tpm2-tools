@@ -431,4 +431,14 @@ tool_rc tpm2_hmac_sequencecomplete(
     const TPM2B_MAX_BUFFER *input_buffer,
     TPM2B_DIGEST **result);
 
+tool_rc tpm2_import(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *parent_obj,
+    const TPM2B_DATA *encryptionKey,
+    const TPM2B_PUBLIC *objectPublic,
+    const TPM2B_PRIVATE *duplicate,
+    const TPM2B_ENCRYPTED_SECRET *inSymSeed,
+    const TPMT_SYM_DEF_OBJECT *symmetricAlg,
+    TPM2B_PRIVATE **outPrivate);
+
 #endif /* LIB_TPM2_H_ */
