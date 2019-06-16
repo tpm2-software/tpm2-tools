@@ -1546,3 +1546,36 @@ tool_rc tpm2_import(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_nv_definespace(
+        ESYS_CONTEXT *esysContext,
+        tpm2_loaded_object *auth_hierarchy_obj,
+        const TPM2B_AUTH *auth,
+        const TPM2B_NV_PUBLIC *publicInfo) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session, &shandle1);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    ESYS_TR nvHandle;
+    TSS2_RC rval = Esys_NV_DefineSpace(
+                    esysContext,
+                    auth_hierarchy_obj->tr_handle,
+                    shandle1,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    auth,
+                    publicInfo,
+                    &nvHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_ERR("Failed to define NV area at index 0x%X", publicInfo->nvPublic.nvIndex);
+        LOG_PERR(Esys_NV_DefineSpace, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
