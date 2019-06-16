@@ -247,11 +247,8 @@ tool_rc tpm2_mu_tpmt_public_marshal(
 
 tool_rc tpm2_evictcontrol(
     ESYS_CONTEXT *esysContext,
-    ESYS_TR auth,
-    ESYS_TR objectHandle,
-    ESYS_TR shandle1,
-    ESYS_TR shandle2,
-    ESYS_TR shandle3,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    tpm2_loaded_object *to_persist_key_obj,
     TPMI_DH_PERSISTENT persistentHandle,
     ESYS_TR *newObjectHandle);
 
