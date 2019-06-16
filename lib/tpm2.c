@@ -867,6 +867,53 @@ tool_rc tpm2_tr_set_auth(
     return tool_rc_success;
 }
 
+tool_rc tpm2_activatecredential(
+        ESYS_CONTEXT *esysContext,
+        tpm2_loaded_object *activatehandleobj,
+        tpm2_loaded_object *keyhandleobj,
+        const TPM2B_ID_OBJECT *credentialBlob,
+        const TPM2B_ENCRYPTED_SECRET *secret,
+        TPM2B_DIGEST **certInfo) {
+
+    ESYS_TR keyobj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(
+                        esysContext,
+                        keyhandleobj->tr_handle,
+                        keyhandleobj->session,
+                        &keyobj_session_handle); //shandle1
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    ESYS_TR activateobj_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(
+                esysContext,
+                activatehandleobj->tr_handle,
+                activatehandleobj->session,
+                &activateobj_session_handle); //shandle2
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_ActivateCredential(
+                    esysContext,
+                    activatehandleobj->tr_handle,
+                    keyhandleobj->tr_handle,
+                    activateobj_session_handle,
+                    keyobj_session_handle,
+                    ESYS_TR_NONE,
+                    credentialBlob,
+                    secret,
+                    certInfo);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_ActivateCredential, rval);
+        rc = tool_rc_from_tpm(rval);
+        return rc;
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_create(
         ESYS_CONTEXT *esysContext,
         tpm2_loaded_object *parent_obj,
