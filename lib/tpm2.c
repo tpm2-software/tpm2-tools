@@ -1062,3 +1062,36 @@ tool_rc tpm2_certify(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_rsa_decrypt(
+    ESYS_CONTEXT *ectx,
+    tpm2_loaded_object *keyobj,
+    const TPM2B_PUBLIC_KEY_RSA *cipher_text,
+    const TPMT_RSA_DECRYPT *scheme,
+    const TPM2B_DATA *label,
+    TPM2B_PUBLIC_KEY_RSA **message) {
+
+    ESYS_TR keyobj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
+                            keyobj->tr_handle,
+                            keyobj->session, &keyobj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_RSA_Decrypt(
+                    ectx, keyobj->tr_handle,
+                    keyobj_session_handle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    cipher_text,
+                    scheme,
+                    label,
+                    message);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_RSA_Decrypt, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
