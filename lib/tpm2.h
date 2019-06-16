@@ -370,4 +370,14 @@ tool_rc tpm2_clearcontrol(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *auth_hierarchy,
     TPMI_YES_NO disable_clear);
+
+tool_rc tpm2_dictionarylockout(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy,
+    bool clear_lockout,
+    bool setup_parameters,
+    UINT32 max_tries,
+    UINT32 recovery_time,
+    UINT32 lockout_recovery_time);
+
 #endif /* LIB_TPM2_H_ */
