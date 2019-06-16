@@ -1095,3 +1095,35 @@ tool_rc tpm2_rsa_decrypt(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_load(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *parentobj,
+    const TPM2B_PRIVATE *inPrivate,
+    const TPM2B_PUBLIC *inPublic,
+    ESYS_TR *objectHandle) {
+
+    ESYS_TR parent_object_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, parentobj->tr_handle,
+                            parentobj->session, &parent_object_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get parent object session handle");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_Load(
+                    esysContext,
+                    parentobj->tr_handle,
+                    parent_object_session_handle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    inPrivate,
+                    inPublic,
+                    objectHandle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Eys_Load, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
