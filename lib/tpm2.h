@@ -362,4 +362,7 @@ tool_rc tpm2_load(
     const TPM2B_PUBLIC *inPublic,
     ESYS_TR *objectHandle);
 
+tool_rc tpm2_clear(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy);
 #endif /* LIB_TPM2_H_ */
