@@ -65,11 +65,15 @@ These options control the object verification:
 # EXAMPLES
 
 ```
-tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P abc123 -E abc123 -i <filePath> -o <filePath>
+TPM2_RH_ENDORSEMENT=0x4000000B
+tpm2_startauthsession --policy-session -S session.ctx
+tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT
 
-tpm2_activatecredential -c ak.dat -C ek.dat -P abc123 -E abc123 -i <filePath> -o <filePath>
+tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P abc123 -E session:session.ctx -i <filePath> -o <filePath>
 
-tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P 123abc -E 1a1b1c  -i <filePath> -o <filePath>
+tpm2_activatecredential -c ak.dat -C ek.dat -P abc123 -E session:session.ctx -i <filePath> -o <filePath>
+
+tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P 123abc -E session:session.ctx  -i <filePath> -o <filePath>
 ```
 
 [returns](common/returns.md)
