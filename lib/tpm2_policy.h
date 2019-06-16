@@ -7,6 +7,7 @@
 
 #include <tss2/tss2_esys.h>
 
+#include "object.h"
 #include "tpm2_session.h"
 
 /**
@@ -89,8 +90,7 @@ tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
  *  tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, tpm2_session *secret_session,
-    TPM2_HANDLE handle);
+    tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj);
 
 /**
  * Retrieves the policy digest for a session via PolicyGetDigest.

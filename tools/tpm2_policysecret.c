@@ -16,17 +16,19 @@
 
 typedef struct tpm2_policysecret_ctx tpm2_policysecret_ctx;
 struct tpm2_policysecret_ctx {
-    //File path for the session context data
-    const char *session_path;
+    struct {
+        const char *ctx_path;//auth_entity.ctx_path
+        const char *auth_str;//auth_str
+        tpm2_loaded_object object;//context_object && pwd_session
+    } auth_entity;
+
     //File path for storing the policy digest output
     const char *out_policy_dgst_path;
-    //Specifying the TPM object handle-id or the file path of context blob
-    const char *context_arg;
-    tpm2_loaded_object context_object;
-    //Auth value of the auth object
-    char *auth_str;
     TPM2B_DIGEST *policy_digest;
-    tpm2_session *session;
+    //File path for the session context data
+    const char *extended_session_path;
+    tpm2_session *extended_session;
+
     struct {
         UINT8 c : 1;
     } flags;
@@ -43,10 +45,10 @@ static bool on_option(char key, char *value) {
         ctx.out_policy_dgst_path = value;
         break;
     case 'S':
-        ctx.session_path = value;
+        ctx.extended_session_path = value;
         break;
     case 'c':
-        ctx.context_arg = value;
+        ctx.auth_entity.ctx_path = value;
         ctx.flags.c = 1;
         break;
     }
@@ -66,7 +68,7 @@ bool on_arg (int argc, char **argv) {
         return true;
     }
 
-    ctx.auth_str = argv[0];
+    ctx.auth_entity.auth_str = argv[0];
 
     return true;
 }
@@ -87,7 +89,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 bool is_input_option_args_valid(void) {
 
-    if (!ctx.session_path) {
+    if (!ctx.extended_session_path) {
         LOG_ERR("Must specify -S session file.");
         return false;
     }
@@ -109,20 +111,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false, &ctx.session);
+    tool_rc rc = tpm2_session_restore(ectx, ctx.extended_session_path, false, &ctx.extended_session);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_util_object_load(ectx, ctx.context_arg,
-                                &ctx.context_object);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    tpm2_session *pwd_session;
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.auth_str,
-        &pwd_session, true);
+    rc = tpm2_util_object_load_auth(ectx, ctx.auth_entity.ctx_path,
+            ctx.auth_entity.auth_str, &ctx.auth_entity.object, true);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -134,9 +129,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * 2. log the policy secret failure and return tool_rc_general_error.
      * 3. if the error was closing the policy secret session, return that rc.
      */
-    rc = tpm2_policy_build_policysecret(ectx, ctx.session,
-        pwd_session, ctx.context_object.tr_handle);
-    tool_rc rc2 = tpm2_session_close(&pwd_session);
+    rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
+        &ctx.auth_entity.object);
+    tool_rc rc2 = tpm2_session_close(&ctx.auth_entity.object.session);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -144,7 +139,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc2;
     }
 
-    rc = tpm2_session_close(&pwd_session);
+    rc = tpm2_session_close(&ctx.auth_entity.object.session);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysecret");
         return rc;
@@ -154,7 +149,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    rc = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
+    rc = tpm2_policy_get_digest(ectx, ctx.extended_session, &ctx.policy_digest);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm policy");
         return rc;
@@ -177,5 +172,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
     free(ctx.policy_digest);
-    return tpm2_session_close(&ctx.session);
+    return tpm2_session_close(&ctx.extended_session);
 }
