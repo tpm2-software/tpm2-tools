@@ -4,6 +4,8 @@
 #include <stdlib.h>
 
 #include "log.h"
+#include "object.h"
+#include "tpm2.h"
 #include "tpm2_tool.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_session.h"
@@ -11,40 +13,23 @@
 
 typedef struct clear_ctx clear_ctx;
 struct clear_ctx {
-    bool platform;
     struct {
-        char *auth_str;
-        tpm2_session *session;
-    } auth;
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_hierarchy;
+
+    bool platform;
 };
 
 static clear_ctx ctx;
 
 static tool_rc clear(ESYS_CONTEXT *ectx) {
 
-    ESYS_TR rh = ESYS_TR_RH_LOCKOUT;
-
     LOG_INFO ("Sending TPM2_Clear command with %s",
             ctx.platform ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
-    if (ctx.platform)
-        rh = ESYS_TR_RH_PLATFORM;
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, rh,
-                            ctx.auth.session, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle for hierarchy");
-        return rc;
-    }
-
-    TSS2_RC rval = Esys_Clear(ectx, rh,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
-    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
-        LOG_PERR(Esys_Clear, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
+    return tpm2_clear(ectx, &ctx.auth_hierarchy.object);
 }
 
 static bool on_option(char key, char *value) {
@@ -54,7 +39,7 @@ static bool on_option(char key, char *value) {
         ctx.platform = true;
         break;
     case 'L':
-        ctx.auth.auth_str = value;
+        ctx.auth_hierarchy.auth_str = value;
         break;
     }
 
@@ -78,10 +63,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tpm2_auth_util_from_optarg(NULL, ctx.auth.auth_str,
-            &ctx.auth.session, true);
+    const char *platform = "p";
+    const char *lockout = "l";
+    ctx.auth_hierarchy.ctx_path = ctx.platform ? platform : lockout;
+
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, true);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid lockout authorization, got\"%s\"", ctx.auth.auth_str);
+        LOG_ERR("Invalid lockout authorization, got\"%s\"",
+            ctx.auth_hierarchy.auth_str);
         return rc;
     }
 
@@ -91,5 +81,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
-    return tpm2_session_close(&ctx.auth.session);
+    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }
