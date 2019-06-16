@@ -4,8 +4,8 @@
 
 # NAME
 
-**tpm2_activatecredential**(1) - Verify that an object is protected with a specific
-key.
+**tpm2_activatecredential**(1) - Enables access to the credential qualifier to
+recover the credential secret.
 
 # SYNOPSIS
 
@@ -13,47 +13,46 @@ key.
 
 # DESCRIPTION
 
-**tpm2_activatecredential**(1) -  Verify that the given content is protected
-with given key handle for given handle, and then decrypt and return the secret,
-if any password option is missing, assume NULL. Currently only support using
-TCG profile compliant EK as the key handle.
+**tpm2_activatecredential**(1) -  Enables the association of a credential with
+an object in a way that ensures that the TPM has validated the parameters of the
+credentialed object. In an attestation scheme , this guarantees the registrar that
+the attestation key belongs to the TPM with a qualified parent key in the TPM.
 
 # OPTIONS
 
 These options control the object verification:
 
-  * **-c**, **\--context**=_OBJ\_CTX\_OR\_HANDLE_:
+  * **-c**, **\--credentialedkey-context**=_CREDENTIALED\_KEY\_OBJ\_CTX\_OR\_HANDLE_:
 
     _CONTEXT\_OBJECT_ of the content object associated with the created
-    certificate by CA.
-    Either a file or a handle number. See section "Context Object Format".
+    certificate by CA. Either a file or a handle number. See section "Context
+    Object Format".
 
-  * **-C**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-C**, **\--credentialkey-context**=_CREDENTIAL\_KEY\_OBJ\_CTX\_OR\_HANDLE_:
 
-    The _KEY\_CONTEXT\_OBJECT_ of the loaded key used to decrypt the random seed.
-    Either a file or a handle number. See section "Context Object Format".
+    The _CREDENTIAL\_KEY\_OBJ\_CTX\_OR\_HANDLE_ of the loaded key used to decrypt the
+    random seed. Either a file or a handle number. See section "Context Object
+    Format".
 
-  * **-P**, **\--auth-key**=_AUTH\_VALUE_:
+  * **-P**, **\--credentialedkey-auth**=_AUTH\_VALUE_:
 
-    Use _AUTH\_VALUE_ for providing an authorization value for the
-    _KEY\_CONTEXT\_OBJECT_.
-    Passwords should follow the "authorization formatting standards", see
-    section "Authorization Formatting".
+    _AUTH\_VALUE_ for providing an authorization value for the
+    _CREDENTIALED\_KEY\_OBJ\_CTX\_OR\_HANDLE_.
 
-  * **-E**, **\--auth-endorse**=_ENDORSE\_PASSWORD_:
+  * **-E**, **\--credentialkey-auth**=_AUTH\_VALUE_:
 
-    The endorsement authorization value, optional. Follows the same formatting
-    guidelines as the key authorization option **-P**.
+    _AUTH\_VALUE_ for providing an authorization value for the
+    _CREDENTIAL\_KEY\_OBJ\_CTX\_OR\_HANDLE_.
 
-  * **-i**, **\--in-file**=_INPUT\_FILE_:
+  * **-i**, **\--credential-secret**=_INPUT\_FILE_:
 
-    Input file path, containing the two structures needed by
-    **tpm2_activatecredential**(1) function. This is created via the
-    **tpm2_makecredential**(1) command.
+    Input file path, containing the two structures - credential blob and secret,
+    needed by **tpm2_activatecredential**(1) function. This is created from the
+    **tpm2_makecredential**(1) tool.
 
-  * **-o**, **\--out-file**=_OUTPUT\_FILE_:
+  * **-o**, **\--certinfo-data**=_OUTPUT\_FILE_:
 
-    Output file path, record the secret to decrypt the certificate.
+    Output file path, record the decrypted credential secret information.
 
 [common options](common/options.md)
 
