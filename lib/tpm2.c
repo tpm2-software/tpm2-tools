@@ -1019,25 +1019,25 @@ tool_rc tpm2_hierarchy_change_auth(
 
 tool_rc tpm2_certify(
     ESYS_CONTEXT *ectx,
-    tpm2_loaded_object *object,
-    tpm2_loaded_object *key,
+    tpm2_loaded_object *certifiedkey_obj,
+    tpm2_loaded_object *signingkey_obj,
     TPM2B_DATA *qualifying_data,
     TPMT_SIG_SCHEME *scheme,
     TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature) {
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, object->tr_handle,
-        object->session, &shandle1);
+    ESYS_TR certifiedkey_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, certifiedkey_obj->tr_handle,
+        certifiedkey_obj->session, &certifiedkey_session_handle);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed to get session handle for TPM object");
         return rc;
     }
 
-    ESYS_TR shandle2 = ESYS_TR_NONE;
+    ESYS_TR signingkey_session_handle = ESYS_TR_NONE;
     rc = tpm2_auth_util_get_shandle(ectx,
-                            key->tr_handle,
-                            key->session, &shandle2);
+                            signingkey_obj->tr_handle,
+                            signingkey_obj->session, &signingkey_session_handle);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed to get session handle for key");
         return rc;
@@ -1045,10 +1045,10 @@ tool_rc tpm2_certify(
 
     TSS2_RC rval = Esys_Certify(
                     ectx,
-                    object->tr_handle,
-                    key->tr_handle,
-                    shandle1,
-                    shandle2,
+                    certifiedkey_obj->tr_handle,
+                    signingkey_obj->tr_handle,
+                    certifiedkey_session_handle,
+                    signingkey_session_handle,
                     ESYS_TR_NONE,
                     qualifying_data,
                     scheme,

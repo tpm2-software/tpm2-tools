@@ -349,8 +349,8 @@ tool_rc tpm2_hierarchy_change_auth(
 
 tool_rc tpm2_certify(
     ESYS_CONTEXT *esysContext,
-    tpm2_loaded_object *object,
-    tpm2_loaded_object *key,
+    tpm2_loaded_object *certifiedkey_obj,
+    tpm2_loaded_object *signingkey_obj,
     TPM2B_DATA *qualifying_data,
     TPMT_SIG_SCHEME *scheme,
     TPM2B_ATTEST **certify_info,
