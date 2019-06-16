@@ -175,7 +175,31 @@ static void parse_iv(char *value) {
     }
 }
 
-static bool setup_alg_mode_and_padding(ESYS_CONTEXT *ectx) {
+static bool setup_alg_mode_and_iv_and_padding(ESYS_CONTEXT *ectx, TPM2B_IV *iv) {
+
+    bool result;
+    if (ctx.iv.in) {
+        unsigned long file_size;
+        result = files_get_file_size_path(ctx.iv.in, &file_size);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+
+        if (file_size != iv->size) {
+            LOG_ERR("Iv should be 16 bytes, got %lu", file_size);
+            return tool_rc_general_error;
+        }
+
+        result = files_load_bytes_from_path(ctx.iv.in, iv->buffer, &iv->size);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+
+    }
+
+    if (!ctx.iv.in) {
+        LOG_WARN("Using a weak IV, try specifying an IV");
+    }
 
     TPM2B_PUBLIC *public;
     tool_rc rc = readpub(ectx, &public);
@@ -307,34 +331,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    result = setup_alg_mode_and_padding(ectx);
+    TPM2B_IV iv = { .size = sizeof(iv.buffer), .buffer = { 0 } };
+    result = setup_alg_mode_and_iv_and_padding(ectx, &iv);
     if (!result) {
         LOG_ERR("Failure to setup key mode and or pkcs7 padding scheme.");
         return tool_rc_general_error;
-    }
-
-    TPM2B_IV iv = { .size = sizeof(iv.buffer), .buffer = { 0 } };
-    if (ctx.iv.in) {
-        unsigned long file_size;
-        result = files_get_file_size_path(ctx.iv.in, &file_size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-
-        if (file_size != iv.size) {
-            LOG_ERR("Iv should be 16 bytes, got %lu", file_size);
-            return tool_rc_general_error;
-        }
-
-        result = files_load_bytes_from_path(ctx.iv.in, iv.buffer, &iv.size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-
-    }
-
-    if (!ctx.iv.in) {
-        LOG_WARN("Using a weak IV, try specifying an IV");
     }
 
     return encrypt_decrypt(ectx, &iv);
