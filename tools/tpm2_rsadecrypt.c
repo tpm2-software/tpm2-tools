@@ -9,6 +9,7 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
 #include "tpm2_session.h"
@@ -19,15 +20,16 @@
 typedef struct tpm_rsadecrypt_ctx tpm_rsadecrypt_ctx;
 struct tpm_rsadecrypt_ctx {
     struct {
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } key;
+
+    struct {
         UINT8 i : 1;
         UINT8 o : 1;
     } flags;
-    struct {
-        char *auth_str;
-        tpm2_session *session;
-        const char *context_arg;
-        tpm2_loaded_object object;
-    } key;
+
     TPM2B_PUBLIC_KEY_RSA cipher_text;
     char *output_file_path;
     TPMT_RSA_DECRYPT scheme;
@@ -44,20 +46,15 @@ static tool_rc rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     label.size = 0;
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.key.object.tr_handle,
-                            ctx.key.session, &shandle1);
+    tool_rc rc = tpm2_rsa_decrypt(
+                    ectx,
+                    &ctx.key.object,
+                    &ctx.cipher_text,
+                    &ctx.scheme,
+                    &label,
+                    &message);
     if (rc != tool_rc_success) {
         return rc;
-    }
-
-    TSS2_RC rval = Esys_RSA_Decrypt(ectx, ctx.key.object.tr_handle,
-                        shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &ctx.cipher_text, &ctx.scheme, &label, &message);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_RSA_Decrypt, rval);
-        return tool_rc_from_tpm(rval);
     }
 
     bool ret = files_save_bytes_to_file(ctx.output_file_path, message->buffer,
@@ -72,7 +69,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'c':
-        ctx.key.context_arg = value;
+        ctx.key.ctx_path = value;
         break;
     case 'p':
         ctx.key.auth_str = value;
@@ -122,13 +119,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static tool_rc init(ESYS_CONTEXT *ectx) {
 
 
-    if (!(ctx.key.context_arg && ctx.flags.i && ctx.flags.o)) {
+    if (!(ctx.key.ctx_path && ctx.flags.i && ctx.flags.o)) {
         LOG_ERR("Expected arguments i, o and c.");
         return tool_rc_general_error;
     }
 
-    return tpm2_util_object_load(ectx, ctx.key.context_arg,
-                                &ctx.key.object);
+    return tpm2_util_object_load_auth(ectx, ctx.key.ctx_path, ctx.key.auth_str,
+                                &ctx.key.object, false);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -140,17 +137,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
-            &ctx.key.session, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key.auth_str);
-        return rc;
-    }
-
     return rsa_decrypt_and_save(ectx);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.key.session);
+    return tpm2_session_close(&ctx.key.object.session);
 }
