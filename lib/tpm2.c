@@ -1736,3 +1736,44 @@ tool_rc tpm2_nvwrite(
         offset);
     return tool_rc_success;
 }
+
+tool_rc tpm2_pcr_allocate(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    const TPML_PCR_SELECTION *pcrAllocation) {
+
+    TSS2_RC rval;
+    TPMI_YES_NO allocationSuccess;
+    UINT32 maxPCR;
+    UINT32 sizeNeeded;
+    UINT32 sizeAvailable;
+
+    ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext, ESYS_TR_RH_PLATFORM,
+                            auth_hierarchy_obj->session,
+                            &auth_hierarchy_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Couldn't get shandle for lockout hierarchy");
+        return rc;
+    }
+
+    rval = Esys_PCR_Allocate(esysContext, ESYS_TR_RH_PLATFORM,
+                             auth_hierarchy_obj_session_handle,
+                             ESYS_TR_NONE, ESYS_TR_NONE,
+                             pcrAllocation, &allocationSuccess,
+                             &maxPCR, &sizeNeeded, &sizeAvailable);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_ERR("Could not allocate PCRs.");
+        LOG_PERR(Esys_PCR_Allocate, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    if (!allocationSuccess) {
+        LOG_ERR("Allocation failed. "
+                "MaxPCR: %i, Size Needed: %i, Size available: %i",
+                maxPCR, sizeNeeded, sizeAvailable);
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
