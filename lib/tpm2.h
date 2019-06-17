@@ -468,4 +468,10 @@ tool_rc tpm2_nvwrite(
     TPM2_HANDLE nvindex,
     const TPM2B_MAX_NV_BUFFER *data,
     UINT16 offset);
+
+tool_rc tpm2_pcr_allocate(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    const TPML_PCR_SELECTION *pcrAllocation);
+
 #endif /* LIB_TPM2_H_ */
