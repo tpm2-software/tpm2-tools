@@ -1579,3 +1579,45 @@ tool_rc tpm2_nv_definespace(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_nv_increment(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    TPM2_HANDLE nv_index) {
+
+    ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session,
+        &auth_hierarchy_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    // Convert TPM2_HANDLE ctx.nv_index to an ESYS_TR
+    ESYS_TR esys_tr_nv_index;
+    TSS2_RC rval = Esys_TR_FromTPMPublic(
+                    esysContext,
+                    nv_index,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    &esys_tr_nv_index);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    rval = Esys_NV_Increment(
+            esysContext,
+            auth_hierarchy_obj->tr_handle,
+            esys_tr_nv_index,
+            auth_hierarchy_obj_session_handle,
+            ESYS_TR_NONE,
+            ESYS_TR_NONE);
+    if (rval != TPM2_RC_SUCCESS) {
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
