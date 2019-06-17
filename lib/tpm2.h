@@ -446,4 +446,10 @@ tool_rc tpm2_nv_definespace(
         tpm2_loaded_object *auth_hierarchy_obj,
         const TPM2B_AUTH *auth,
         const TPM2B_NV_PUBLIC *publicInfo);
+
+tool_rc tpm2_nv_increment(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    TPM2_HANDLE nv_index);
+
 #endif /* LIB_TPM2_H_ */

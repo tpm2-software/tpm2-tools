@@ -23,59 +23,15 @@
 
 typedef struct tpm_nvincrement_ctx tpm_nvincrement_ctx;
 struct tpm_nvincrement_ctx {
+    struct {
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_hierarchy;
 
     TPM2_HANDLE nv_index;
-    TPMI_RH_PROVISION hierarchy;
-
-    struct {
-        char *auth_str;
-        tpm2_session *session;
-    } auth;
-
-    struct {
-        UINT8 a : 1;
-    } flags;
 };
-
-static tpm_nvincrement_ctx ctx = {
-    .hierarchy = TPM2_RH_OWNER
-};
-
-static tool_rc nv_increment(ESYS_CONTEXT *ectx) {
-    // Convert TPM2_HANDLE ctx.nv_index to an ESYS_TR
-    ESYS_TR nv_index;
-    TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &nv_index);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    // Convert TPMI_RH_PROVISION ctx.auth.hierarchy to an ESYS_TR
-    ESYS_TR hierarchy;
-    if (ctx.hierarchy == ctx.nv_index) {
-        hierarchy = nv_index;
-    } else {
-        hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
-    }
-
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                            ctx.auth.session, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
-    rval = Esys_NV_Increment(ectx, hierarchy, nv_index,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to increment NV counter at index 0x%X", ctx.nv_index);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
-}
+static tpm_nvincrement_ctx ctx;
 
 static bool on_option(char key, char *value) {
     bool result;
@@ -93,17 +49,16 @@ static bool on_option(char key, char *value) {
             LOG_ERR("NV Index cannot be 0");
             return false;
         }
+        /* If the users doesn't specify an authorisation hierarchy use the index
+        * passed to -x/--index for the authorisation index.
+        */
+        ctx.auth_hierarchy.ctx_path = value;
         break;
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
-                TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
-        if (!result) {
-            return false;
-        }
-        ctx.flags.a = 1;
+        ctx.auth_hierarchy.ctx_path = value;
         break;
     case 'P':
-        ctx.auth.auth_str = value;
+        ctx.auth_hierarchy.auth_str = value;
         break;
     }
 
@@ -129,25 +84,24 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    /* If the users doesn't specify an authorisation hierarchy use the index
-     * passed to -x/--index for the authorisation index.
-     */
-    if (!ctx.flags.a) {
-        ctx.hierarchy = ctx.nv_index;
-    }
-
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, false);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization, got \"%s\"",
-            ctx.auth.auth_str);
+            ctx.auth_hierarchy.auth_str);
         return rc;
     }
 
-    return nv_increment(ectx);
+    rc = tpm2_nv_increment(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to increment NV counter at index 0x%X", ctx.nv_index);
+        return rc;
+    }
+
+    return tool_rc_success;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth.session);
+    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }
