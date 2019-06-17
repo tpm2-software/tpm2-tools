@@ -27,9 +27,6 @@ struct tpm_nvreadlock_ctx {
     } auth_hierarchy;
 
     TPM2_HANDLE nv_index;
-
-    UINT32 size_to_read;
-    UINT32 offset;
 };
 
 static tpm_nvreadlock_ctx ctx = {
