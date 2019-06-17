@@ -9,6 +9,8 @@
 #include <tss2/tss2_esys.h>
 
 #include "log.h"
+#include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_options.h"
@@ -18,53 +20,21 @@
 
 typedef struct tpm_nvreadlock_ctx tpm_nvreadlock_ctx;
 struct tpm_nvreadlock_ctx {
+    struct {
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_hierarchy;
+
     TPM2_HANDLE nv_index;
-    TPMI_RH_PROVISION hierarchy;
 
     UINT32 size_to_read;
     UINT32 offset;
-
-    struct {
-        char *auth_str;
-        tpm2_session *session;
-    } auth;
 };
 
 static tpm_nvreadlock_ctx ctx = {
-    .hierarchy = TPM2_RH_OWNER
+    .auth_hierarchy.ctx_path = "owner",
 };
-
-static tool_rc nv_readlock(ESYS_CONTEXT *ectx) {
-
-    ESYS_TR nv_handle;
-    TSS2_RC rval = Esys_TR_FromTPMPublic(ectx, ctx.nv_index,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &nv_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_FromTPMPublic, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    ESYS_TR hierarchy = tpm2_tpmi_hierarchy_to_esys_tr(ctx.hierarchy);
-
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, hierarchy,
-                            ctx.auth.session, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
-    rval = Esys_NV_ReadLock(ectx, hierarchy, nv_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to lock NVRAM area at index 0x%X" , ctx.nv_index);
-        LOG_PERR(Esys_NV_ReadLock, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
-}
 
 static bool on_option(char key, char *value) {
 
@@ -85,14 +55,10 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_hierarchy_from_optarg(value, &ctx.hierarchy,
-                TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
-        if (!result) {
-            return false;
-        }
+        ctx.auth_hierarchy.ctx_path = value;
         break;
     case 'P':
-        ctx.auth.auth_str = value;
+        ctx.auth_hierarchy.auth_str = value;
         break;
     }
 
@@ -117,18 +83,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.auth_str,
-            &ctx.auth.session, false);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization, got \"%s\"",
-            ctx.auth.auth_str);
-       return rc;
+            ctx.auth_hierarchy.auth_str);
+        return rc;
     }
 
-    return nv_readlock(ectx);
+    return tpm2_nvreadlock(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth.session);
+    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }

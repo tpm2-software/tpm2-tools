@@ -452,4 +452,9 @@ tool_rc tpm2_nv_increment(
     tpm2_loaded_object *auth_hierarchy_obj,
     TPM2_HANDLE nv_index);
 
+tool_rc tpm2_nvreadlock(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    TPM2_HANDLE nv_index);
+
 #endif /* LIB_TPM2_H_ */
