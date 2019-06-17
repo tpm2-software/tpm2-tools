@@ -462,4 +462,10 @@ tool_rc tpm2_nvrelease(
     tpm2_loaded_object *auth_hierarchy_obj,
     TPM2_HANDLE nv_index);
 
+tool_rc tpm2_nvwrite(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy_obj,
+    TPM2_HANDLE nvindex,
+    const TPM2B_MAX_NV_BUFFER *data,
+    UINT16 offset);
 #endif /* LIB_TPM2_H_ */
