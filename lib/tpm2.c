@@ -1812,3 +1812,33 @@ tool_rc tpm2_sign(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_quote(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *quote_obj,
+    TPMT_SIG_SCHEME *inScheme,
+    TPM2B_DATA *qualifyingData,
+    TPML_PCR_SELECTION *PCRselect,
+    TPM2B_ATTEST **quoted,
+    TPMT_SIGNATURE **signature) {
+
+    ESYS_TR quote_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+                            quote_obj->tr_handle,
+                            quote_obj->session, &quote_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_Quote(esysContext, quote_obj->tr_handle,
+                quote_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+                qualifyingData, inScheme, PCRselect, quoted, signature);
+    if(rval != TPM2_RC_SUCCESS)
+    {
+        LOG_PERR(Esys_Quote, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
