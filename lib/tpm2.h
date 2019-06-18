@@ -474,4 +474,12 @@ tool_rc tpm2_pcr_allocate(
     tpm2_loaded_object *auth_hierarchy_obj,
     const TPML_PCR_SELECTION *pcrAllocation);
 
+tool_rc tpm2_sign(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *signingkey_obj,
+    TPM2B_DIGEST *digest,
+    TPMT_SIG_SCHEME *inScheme,
+    TPMT_TK_HASHCHECK *validation,
+    TPMT_SIGNATURE **signature);
+
 #endif /* LIB_TPM2_H_ */
