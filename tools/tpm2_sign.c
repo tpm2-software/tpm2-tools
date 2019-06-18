@@ -12,6 +12,7 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_hash.h"
@@ -25,9 +26,11 @@ typedef struct tpm_sign_ctx tpm_sign_ctx;
 struct tpm_sign_ctx {
     TPMT_TK_HASHCHECK validation;
     struct {
+        const char *ctx_path;
         const char *auth_str;
-        tpm2_session *session;
-    } key;
+        tpm2_loaded_object object;
+    } signing_key;
+
     TPMI_ALG_HASH halg;
     TPMI_ALG_SIG_SCHEME sig_scheme;
     TPMT_SIG_SCHEME in_scheme;
@@ -35,10 +38,9 @@ struct tpm_sign_ctx {
     char *outFilePath;
     BYTE *msg;
     UINT16 length;
-    const char *context_arg;
-    tpm2_loaded_object key_context;
     char *inMsgFileName;
     tpm2_convert_sig_fmt sig_format;
+
     struct {
         UINT8 g : 1;
         UINT8 s : 1;
@@ -72,22 +74,12 @@ static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
       }
     }
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.key_context.tr_handle,
-                            ctx.key.session, &shandle1);
-    if (tmp_rc != tool_rc_success) {
-        return tmp_rc;
+    rc = tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest, &ctx.in_scheme,
+      &ctx.validation, &signature);
+    if (rc != tool_rc_success) {
+      goto out;
     }
 
-    TSS2_RC rval = Esys_Sign(ectx, ctx.key_context.tr_handle,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                    ctx.digest, &ctx.in_scheme, &ctx.validation, &signature);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Eys_Sign, rval);
-        rc = tool_rc_from_tpm(rval);
-        return rc;
-    }
     result = tpm2_convert_sig_save(signature, ctx.sig_format,
                 ctx.outFilePath);
     if (!result) {
@@ -105,7 +97,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
 
     bool option_fail = false;
 
-    if (!ctx.context_arg) {
+    if (!ctx.signing_key.ctx_path) {
         LOG_ERR("Expected option c");
         option_fail = true;
     }
@@ -135,19 +127,10 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     }
 
     /*
-     * load tpm context from a file if -c is provided
-     */
-    tool_rc rc = tpm2_util_object_load(ectx, ctx.context_arg,
-                                &ctx.key_context);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    /*
      * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
      */
-    rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.key_context.tr_handle,
-                    ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
+    tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
+      ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
     if (rc != tool_rc_success) {
         LOG_ERR("bad signature scheme for key type!");
         return rc;
@@ -195,10 +178,10 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'c':
-        ctx.context_arg = value;
+        ctx.signing_key.ctx_path = value;
         break;
     case 'p':
-        ctx.key.auth_str = value;
+        ctx.signing_key.auth_str = value;
         break;
     case 'g': {
         ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
@@ -283,15 +266,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = init(ectx);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
+        ctx.signing_key.auth_str, &ctx.signing_key.object, false);
     if (rc != tool_rc_success) {
+        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.signing_key.auth_str);
         return rc;
     }
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.key.auth_str,
-            &ctx.key.session, false);
+    rc = init(ectx);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key.auth_str);
         return rc;
     }
 
@@ -300,7 +283,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.key.session);
+    return tpm2_session_close(&ctx.signing_key.object.session);
 }
 
 void tpm2_tool_onexit(void) {

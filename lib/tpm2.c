@@ -1777,3 +1777,38 @@ tool_rc tpm2_pcr_allocate(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_sign(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *signingkey_obj,
+    TPM2B_DIGEST *digest,
+    TPMT_SIG_SCHEME *inScheme,
+    TPMT_TK_HASHCHECK *validation,
+    TPMT_SIGNATURE **signature) {
+
+    ESYS_TR signingkey_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        signingkey_obj->tr_handle, signingkey_obj->session,
+        &signingkey_obj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_Sign(
+                    esysContext,
+                    signingkey_obj->tr_handle,
+                    signingkey_obj_session_handle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    digest,
+                    inScheme,
+                    validation,
+                    signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Eys_Sign, rval);
+        rc = tool_rc_from_tpm(rval);
+        return rc;
+    }
+
+    return tool_rc_success;
+}
