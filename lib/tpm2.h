@@ -482,4 +482,13 @@ tool_rc tpm2_sign(
     TPMT_TK_HASHCHECK *validation,
     TPMT_SIGNATURE **signature);
 
+tool_rc tpm2_quote(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *quote_obj,
+    TPMT_SIG_SCHEME *inScheme,
+    TPM2B_DATA *qualifyingData,
+    TPML_PCR_SELECTION *PCRselect,
+    TPM2B_ATTEST **quoted,
+    TPMT_SIGNATURE **signature);
+
 #endif /* LIB_TPM2_H_ */

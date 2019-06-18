@@ -12,6 +12,7 @@
 #include "log.h"
 #include "object.h"
 #include "pcr.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_openssl.h"
@@ -23,9 +24,11 @@
 typedef struct tpm_quote_ctx tpm_quote_ctx;
 struct tpm_quote_ctx {
     struct {
+        const char *ctx_path;
         const char *auth_str;
-        tpm2_session *session;
+        tpm2_loaded_object object;
     } ak;
+
     char *outFilePath;
     char *signature_path;
     char *message_path;
@@ -37,8 +40,7 @@ struct tpm_quote_ctx {
     TPM2B_DATA qualifyingData;
     TPML_PCR_SELECTION pcrSelections;
     TPMS_CAPABILITY_DATA cap_data;
-    const char *context_arg;
-    tpm2_loaded_object context_object;
+
     struct {
         UINT8  p : 1;
         UINT8 l : 1;
@@ -46,6 +48,7 @@ struct tpm_quote_ctx {
         UINT8 o : 1;
         UINT8 G : 1;
     } flags;
+
     tpm2_pcrs pcrs;
 };
 
@@ -115,38 +118,24 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
 
 static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
 
+    TPM2B_ATTEST *quoted = NULL;
+    TPMT_SIGNATURE *signature = NULL;
     TPMT_SIG_SCHEME inScheme = {
         .scheme = TPM2_ALG_NULL
     };
 
-    TPM2B_ATTEST *quoted = NULL;
-    TPMT_SIGNATURE *signature = NULL;
-
     if(ctx.flags.G) {
-        tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.context_object.tr_handle,
+        tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.ak.object.tr_handle,
                                     ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme);
         if (rc != tool_rc_success) {
             return rc;
         }
     }
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.context_object.tr_handle,
-                            ctx.ak.session, &shandle1);
+    tool_rc rc = tpm2_quote(ectx, &ctx.ak.object, &inScheme, &ctx.qualifyingData,
+        pcrSelection, &quoted, &signature);
     if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
-    TSS2_RC rval = Esys_Quote(ectx, ctx.context_object.tr_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                &ctx.qualifyingData, &inScheme, pcrSelection,
-                &quoted, &signature);
-    if(rval != TPM2_RC_SUCCESS)
-    {
-        LOG_PERR(Esys_Quote, rval);
-        return tool_rc_from_tpm(rval);
+        return tool_rc_general_error;
     }
 
     tpm2_tool_output( "quoted: " );
@@ -223,7 +212,7 @@ static bool on_option(char key, char *value) {
     switch(key)
     {
     case 'C':
-        ctx.context_arg = value;
+        ctx.ak.ctx_path = value;
         break;
     case 'P':
         ctx.ak.auth_str = value;
@@ -317,8 +306,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.ak.auth_str,
-            &ctx.ak.session, false);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.ak.ctx_path,
+        ctx.ak.auth_str, &ctx.ak.object, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
         return rc;
@@ -337,12 +326,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    rc = tpm2_util_object_load(ectx, ctx.context_arg,
-                                &ctx.context_object);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
     rc = pcr_get_banks(ectx, &ctx.cap_data, &ctx.algs);
     if (rc != tool_rc_success) {
         return rc;
@@ -356,5 +339,5 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     if (ctx.pcr_output) {
         fclose(ctx.pcr_output);
     }
-    return tpm2_session_close(&ctx.ak.session);
+    return tpm2_session_close(&ctx.ak.object.session);
 }
