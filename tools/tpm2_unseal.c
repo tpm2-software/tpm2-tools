@@ -11,6 +11,7 @@
 #include "log.h"
 #include "object.h"
 #include "pcr.h"
+#include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_hash.h"
 #include "tpm2_policy.h"
@@ -20,11 +21,13 @@
 
 typedef struct tpm_unseal_ctx tpm_unseal_ctx;
 struct tpm_unseal_ctx {
-    const char *auth_str;
-    tpm2_session *session;
+    struct {
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } sealkey;
+
     char *outFilePath;
-    const char *context_arg;
-    tpm2_loaded_object context_object;
 };
 
 static tpm_unseal_ctx ctx;
@@ -33,21 +36,9 @@ tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_SENSITIVE_DATA *outData = NULL;
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.context_object.tr_handle,
-                            ctx.session, &shandle1);
+    tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &outData);
     if (rc != tool_rc_success) {
         return rc;
-    }
-
-    TSS2_RC rval = Esys_Unseal(ectx, ctx.context_object.tr_handle,
-                shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                &outData);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_Unseal, rval);
-        rc = tool_rc_from_tpm(rval);
-        goto out;
     }
 
     if (ctx.outFilePath) {
@@ -76,30 +67,29 @@ out:
 
 static tool_rc init(ESYS_CONTEXT *ectx) {
 
-    if (!ctx.context_arg) {
+    if (!ctx.sealkey.ctx_path) {
         LOG_ERR("Expected option c");
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth_str,
-            &ctx.session, false);
+    tool_rc rc =  tpm2_util_object_load_auth(ectx, ctx.sealkey.ctx_path,
+            ctx.sealkey.auth_str, &ctx.sealkey.object, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.auth_str);
+        LOG_ERR("Invalid item handle authorization, got\"%s\"", ctx.sealkey.auth_str);
         return rc;
     }
 
-    return tpm2_util_object_load(ectx, ctx.context_arg,
-            &ctx.context_object);
+    return tool_rc_success;
 }
 
 static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'c':
-        ctx.context_arg = value;
+        ctx.sealkey.ctx_path = value;
         break;
     case 'p': {
-        ctx.auth_str = value;
+        ctx.sealkey.auth_str = value;
     }
         break;
     case 'o':
@@ -139,5 +129,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.session);
+    return tpm2_session_close(&ctx.sealkey.object.session);
 }

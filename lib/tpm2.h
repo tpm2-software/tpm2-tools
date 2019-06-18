@@ -491,4 +491,9 @@ tool_rc tpm2_quote(
     TPM2B_ATTEST **quoted,
     TPMT_SIGNATURE **signature);
 
+tool_rc tpm2_unseal(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *sealkey_obj,
+    TPM2B_SENSITIVE_DATA **outData);
+
 #endif /* LIB_TPM2_H_ */
