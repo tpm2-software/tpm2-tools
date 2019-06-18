@@ -1842,3 +1842,33 @@ tool_rc tpm2_quote(
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_unseal(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *sealkey_obj,
+    TPM2B_SENSITIVE_DATA **outData) {
+
+    ESYS_TR sealkey_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(
+                    esysContext,
+                    sealkey_obj->tr_handle,
+                    sealkey_obj->session,
+                    &sealkey_obj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_Unseal(
+                    esysContext,
+                    sealkey_obj->tr_handle,
+                    sealkey_obj_session_handle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    outData);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Unseal, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
