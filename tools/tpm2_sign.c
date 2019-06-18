@@ -42,12 +42,9 @@ struct tpm_sign_ctx {
     tpm2_convert_sig_fmt sig_format;
 
     struct {
-        UINT8 g : 1;
-        UINT8 s : 1;
         UINT8 m : 1;
         UINT8 t : 1;
         UINT8 o : 1;
-        UINT8 f : 1;
         UINT8 D : 1;
     } flags;
 };
@@ -190,7 +187,6 @@ static bool on_option(char key, char *value) {
                     value);
             return false;
         }
-        ctx.flags.g = 1;
     }
         break;
     case 's': {
@@ -199,7 +195,6 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
             return false;
         }
-        ctx.flags.s = 1;
     }
         break;
     case 'D': {
@@ -230,7 +225,6 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'f':
-        ctx.flags.f = 1;
         ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
         if (ctx.sig_format == signature_format_err) {
