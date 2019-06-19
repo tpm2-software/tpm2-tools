@@ -47,9 +47,9 @@ tpm2_verifysig_ctx ctx = {
         .halg = TPM2_ALG_SHA1
 };
 
-static bool verify_signature(ESYS_CONTEXT *context) {
+static tool_rc verify_signature(ESYS_CONTEXT *context) {
 
-    bool ret = true;
+    tool_rc rc = tool_rc_success;
     TPMT_TK_VERIFIED *validation;
 
     TSS2_RC rval = Esys_VerifySignature(context,
@@ -58,7 +58,7 @@ static bool verify_signature(ESYS_CONTEXT *context) {
                         ctx.msgHash, &ctx.signature, &validation);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_VerifySignature, rval);
-        ret = false;
+        rc = tool_rc_from_tpm(rval);
         goto out;
     }
 
@@ -70,14 +70,15 @@ static bool verify_signature(ESYS_CONTEXT *context) {
         if (validation->hierarchy == TPM2_RH_NULL) {
             LOG_WARN("The NULL hierarchy doesn't produce a validation ticket,"
                      " not outputting ticket");
-            ret = true;
         } else {
-            ret = files_save_ticket(validation, ctx.out_file_path);
+            if (!files_save_ticket(validation, ctx.out_file_path)) {
+                rc = tool_rc_general_error;
+            }
         }
     }
 out:
     free(validation);
-    return ret;
+    return rc;
 }
 
 static TPM2B *message_from_file(const char *msg_file_path) {
@@ -259,10 +260,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         return rc;
     }
 
-    bool res = verify_signature(context);
-    if (!res) {
+    rc = verify_signature(context);
+    if (rc != tool_rc_success) {
         LOG_ERR("Verify signature failed!");
-        return tool_rc_general_error;
+        return rc;
     }
 
     return tool_rc_success;
