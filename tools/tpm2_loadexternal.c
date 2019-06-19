@@ -238,7 +238,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         bool res = files_load_bytes_from_path(ctx.policy,
                     pub.publicArea.authPolicy.buffer, &pub.publicArea.authPolicy.size);
         if (!res) {
-            return false;
+            return tool_rc_general_error;
         }
     }
 
@@ -250,7 +250,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                 |tpm2_alg_util_flags_misc) : DEFAULT_NAME_ALG;
     if (pub.publicArea.nameAlg == TPM2_ALG_ERROR) {
         LOG_ERR("Invalid name hashing algorithm, got: \"%s\"", ctx.name_alg);
-        return 1;
+        return tool_rc_general_error;
     }
 
     /*
