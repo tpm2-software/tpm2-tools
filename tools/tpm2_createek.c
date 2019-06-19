@@ -392,22 +392,21 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
             &ctx.auth.endorse.session, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid endorse authorization, got\"%s\"",
-            ctx.auth.endorse.auth_str);
+        LOG_ERR("Invalid endorse authorization");
         goto out;
     }
 
     rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
             &ctx.auth.owner.session, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid owner authorization, got\"%s\"", ctx.auth.owner.auth_str);
+        LOG_ERR("Invalid owner authorization");
         goto out;
     }
 
     rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.ek.auth_str,
             &ctx.auth.ek.session, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid EK authorization, got\"%s\"", ctx.auth.ek.auth_str);
+        LOG_ERR("Invalid EK authorization");
         goto out;
     }
 

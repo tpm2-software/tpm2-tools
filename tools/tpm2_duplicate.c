@@ -235,7 +235,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = tpm2_util_object_load_auth(ectx, ctx.duplicable_key.ctx_path,
 		    ctx.duplicable_key.auth_str, &ctx.duplicable_key.object, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid authorization, got\"%s\"", ctx.duplicable_key.auth_str);
+        LOG_ERR("Invalid authorization");
         return rc;
     }
 

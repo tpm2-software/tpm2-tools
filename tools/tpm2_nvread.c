@@ -148,8 +148,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
         ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid handle authorization, got \"%s\"",
-            ctx.auth_hierarchy.auth_str);
+        LOG_ERR("Invalid handle authorization");
         return rc;
     }
 

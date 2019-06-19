@@ -309,7 +309,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.ak.ctx_path,
         ctx.ak.auth_str, &ctx.ak.object, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid AK authorization, got\"%s\"", ctx.ak.auth_str);
+        LOG_ERR("Invalid AK authorization");
         return rc;
     }
 
