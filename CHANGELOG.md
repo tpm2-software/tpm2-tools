@@ -1,5 +1,10 @@
 ## Changelog
 ### next
+  * tpm2_certify: long options have been changed to align with spec language.
+    obj-context is now certifiedkey-context.
+    key-context is now signingkey-context.
+    auth-object is now certifiedkey-auth.
+    auth-key is now signingkey-auth.
   * tpm2_changeauth: tool options change to support only one object at a time. Most command line options changed.
   * tpm2_getcap: most instances of value replaced with raw in YAML output.
   * tpm2_getcap: TPM2_PT_MANUFACTURER displays string value and raw value.
