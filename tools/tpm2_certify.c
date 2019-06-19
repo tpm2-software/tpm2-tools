@@ -97,7 +97,7 @@ static tool_rc set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
     case TPM2_ALG_SYMCIPHER :
     default:
         LOG_ERR("Unknown key type, got: 0x%x", type);
-        return false;
+        return tool_rc_general_error;
     }
 
     return tool_rc_success;
