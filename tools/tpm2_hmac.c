@@ -69,7 +69,7 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
      */
     rc = tpm2_hmac_start(ectx, &ctx.hmac_key.object, &sequence_handle);
     if (rc != tool_rc_success) {
-        return tool_rc_general_error;
+        return rc;
     }
 
     /* If we know the file size, we decrement the amount read and terminate the
@@ -96,7 +96,7 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
         rc = tpm2_hmac_sequenceupdate(ectx, sequence_handle,
             &ctx.hmac_key.object, &data);
         if (rc != tool_rc_success) {
-            return tool_rc_general_error;
+            return rc;
         }
 
         if (use_left) {
@@ -124,7 +124,7 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
     rc = tpm2_hmac_sequencecomplete(ectx, sequence_handle,
         &ctx.hmac_key.object, &data, result);
         if (rc != tool_rc_success) {
-            return tool_rc_general_error;
+            return rc;
         }
 
     return tool_rc_success;
