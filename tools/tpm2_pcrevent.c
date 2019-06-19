@@ -53,7 +53,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         res = files_read_bytes(ctx.input, buffer.buffer, buffer.size);
         if (!res) {
             LOG_ERR("Error reading input file!");
-            return false;
+            return tool_rc_general_error;
         }
 
         ESYS_TR shandle1 = ESYS_TR_NONE;
@@ -111,7 +111,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                 BUFFER_SIZE(typeof(data), buffer), input);
         if (ferror(input)) {
             LOG_ERR("Error reading from input file");
-            return false;
+            return tool_rc_general_error;
         }
 
         data.size = bytes_read;
@@ -159,7 +159,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                 &data, result);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_EventSequenceComplete, rval);
-        return tool_rc_general_error;
+        return tool_rc_from_tpm(rval);
     }
 
     return tool_rc_success;
@@ -288,7 +288,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             &ctx.auth.session, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key handle authorization");
-        return tool_rc_general_error;
+        return rc;
     }
 
     return do_pcrevent_and_output(ectx);
