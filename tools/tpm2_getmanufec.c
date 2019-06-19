@@ -66,7 +66,7 @@ BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8,
                      0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64,
                      0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA};
 
-int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
+bool set_key_algorithm(TPM2B_PUBLIC *inPublic) {
     inPublic->publicArea.nameAlg = TPM2_ALG_SHA256;
     // First clear attributes bit field.
     inPublic->publicArea.objectAttributes = 0;
@@ -117,10 +117,10 @@ int set_key_algorithm(TPM2B_PUBLIC *inPublic) {
         break;
     default:
         LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.algorithm_type);
-        return 1;
+        return false;
     }
 
-    return 0;
+    return true;
 }
 
 tool_rc createEKHandle(ESYS_CONTEXT *ectx)
@@ -134,8 +134,10 @@ tool_rc createEKHandle(ESYS_CONTEXT *ectx)
 
     ESYS_TR handle2048ek;
 
-    if (set_key_algorithm(&inPublic) )
-          return 1;
+    bool ret = set_key_algorithm(&inPublic);
+    if (!ret) {
+        return tool_rc_general_error;
+    }
 
     creationPCR.count = 0;
 
@@ -162,7 +164,7 @@ tool_rc createEKHandle(ESYS_CONTEXT *ectx)
 
         if (!ctx.persistent_handle) {
             LOG_ERR("Persistent handle for EK was not provided");
-            return tool_rc_general_error;
+            return tool_rc_option_error;
         }
 
         ESYS_TR new_handle;
@@ -505,7 +507,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (!ctx.ek_server_addr) {
         LOG_ERR("Must specify a remote server url!");
-        return tool_rc_general_error;
+        return tool_rc_option_error;
     }
 
     ctx.verbose = flags.verbose;
