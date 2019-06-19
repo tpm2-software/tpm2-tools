@@ -292,7 +292,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_session *tmp;
     rc = tpm2_auth_util_from_optarg(NULL, ctx.object.auth_str, &tmp, true);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid key authorization, got\"%s\"", ctx.object.auth_str);
+        LOG_ERR("Invalid key authorization");
         return rc;
     }
 

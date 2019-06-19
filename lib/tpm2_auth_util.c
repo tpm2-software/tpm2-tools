@@ -259,7 +259,7 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     if (is_session) {
 
         if (is_restricted) {
-            LOG_ERR("cannot specify %s", password);
+            LOG_ERR("cannot specify password");
             return tool_rc_general_error;
         }
 

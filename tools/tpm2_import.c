@@ -469,7 +469,7 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
         tpm2_session *tmp;
         tmp_rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
         if (tmp_rc != tool_rc_success) {
-            LOG_ERR("Invalid key authorization, got\"%s\"", ctx.key_auth_str);
+            LOG_ERR("Invalid key authorization");
             return tmp_rc;
         }
 
@@ -634,7 +634,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
         ctx.parent.auth_str, &ctx.parent.object, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid parent key authorization, got\"%s\"", ctx.parent.auth_str);
+        LOG_ERR("Invalid parent key authorization");
         return rc;
     }
 

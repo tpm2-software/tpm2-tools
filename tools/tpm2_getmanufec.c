@@ -513,16 +513,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
             &ctx.auth.endorse.session, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid endorsement authorization, got\"%s\"",
-            ctx.auth.endorse.auth_str);
+        LOG_ERR("Invalid endorsement authorization");
         return rc;
     }
 
     rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
             &ctx.auth.owner.session, false);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid owner authorization, got\"%s\"",
-            ctx.auth.owner.auth_str);
+        LOG_ERR("Invalid owner authorization");
         return rc;
     }
 
