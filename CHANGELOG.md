@@ -1,5 +1,12 @@
 ## Changelog
 ### next
+  * tpm2_activatecredential: long options have been changed to align with spec language.
+    context is now credentialedkey-context.
+    key-context is now credentialkey-context.
+    auth-key is now credentialedkey-auth.
+    auth-endorse is now credentialkey-auth.
+    in-file is now credential-secret.
+    out-file is now certinfo-data.
   * tpm2_certify: long options have been changed to align with spec language.
     obj-context is now certifiedkey-context.
     key-context is now signingkey-context.
