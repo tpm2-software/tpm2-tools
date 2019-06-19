@@ -130,14 +130,14 @@ static capability_opts_t options;
  * populates the 'capability' and 'property' fields of the capability_opts_t
  * structure with the appropriate values from the capability_map.
  * Return values:
- * 0 - the function executed normally.
- * 1 - no matching entry found in capability_map.
+ * true - the function executed normally.
+ * false - no matching entry found in capability_map.
  */
-int sanity_check_capability_opts (void) {
+bool sanity_check_capability_opts (void) {
 
     if (options.capability_string == NULL) {
         LOG_ERR("missing capability string, see --help");
-        return 2;
+        return false;
     }
 
     size_t i;
@@ -148,14 +148,14 @@ int sanity_check_capability_opts (void) {
             options.capability = capability_map[i].capability;
             options.property   = capability_map[i].property;
             options.count      = capability_map[i].count;
-            return 0;
+            return true;
         }
     }
 
     LOG_ERR("invalid capability string: %s, see --help",
             options.capability_string);
 
-    return 1;
+    return false;
 }
 
 static void print_cap_map() {
@@ -873,7 +873,7 @@ static bool dump_tpm_capability (TPMU_CAPABILITIES *capabilities) {
                                      capabilities->tpmProperties.count);
             break;
         default:
-            return 1;
+            return false;
         }
         break;
     case TPM2_CAP_ECC_CURVES:
@@ -949,11 +949,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     /* List a capability, ie -c <arg> option */
     TPMS_CAPABILITY_DATA *capability_data = NULL;
-    int ret;
 
-    ret = sanity_check_capability_opts();
-    if (ret == 1) {
-        LOG_ERR("Invalid capability string. See --help.\n");
+    bool ret = sanity_check_capability_opts();
+    if (!ret) {
         return tool_rc_option_error;
     }
     /* get requested capability from TPM, dump it to stdout */
