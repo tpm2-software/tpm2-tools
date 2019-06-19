@@ -62,7 +62,7 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
     if (!pctx.common_policy_options.policy_type.PolicyPCR){
         LOG_ERR("Only PCR policy is currently supported!");
-        return tool_rc_general_error;
+        return tool_rc_option_error;
     }
 
     tpm2_session_data *session_data =
