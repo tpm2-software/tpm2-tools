@@ -223,7 +223,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     bool result = check_options();
     if (!result) {
-        return tool_rc_general_error;
+        return tool_rc_option_error;
     }
 
     rc = tpm2_util_object_load(ectx, ctx.new_parent_key.ctx_path,
