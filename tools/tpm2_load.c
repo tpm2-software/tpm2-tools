@@ -55,7 +55,7 @@ tool_rc load (ESYS_CONTEXT *ectx) {
                     &ctx.in_public,
                     &ctx.handle);
     if (rc != tool_rc_success) {
-        return tool_rc_general_error;
+        return rc;
     }
 
     if (ctx.out_name_file) {
