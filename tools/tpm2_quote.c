@@ -135,7 +135,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
     tool_rc rc = tpm2_quote(ectx, &ctx.ak.object, &inScheme, &ctx.qualifyingData,
         pcrSelection, &quoted, &signature);
     if (rc != tool_rc_success) {
-        return tool_rc_general_error;
+        return rc;
     }
 
     tpm2_tool_output( "quoted: " );
