@@ -121,7 +121,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
 
     if (!(ctx.key.ctx_path && ctx.flags.i && ctx.flags.o)) {
         LOG_ERR("Expected arguments i, o and c.");
-        return tool_rc_general_error;
+        return tool_rc_option_error;
     }
 
     return tpm2_util_object_load_auth(ectx, ctx.key.ctx_path, ctx.key.auth_str,
