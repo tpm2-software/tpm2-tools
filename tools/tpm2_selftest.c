@@ -63,7 +63,3 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     return tpm_selftest(ectx);
 }
-
-void tpm2_tool_onexit(void) {
-    return;
-}
