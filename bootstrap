@@ -24,7 +24,6 @@ echo "Generating file lists: ${VARS_FILE}"
   printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
 
   src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  src_listvar "test/integration/tests/tcti/abrmd" "*.sh" "SYSTEM_TESTS_TCTI_ABRMD"
   printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
 ) > ${VARS_FILE}
 
