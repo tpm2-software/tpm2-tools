@@ -158,7 +158,7 @@ static tcti_conf tcti_get_config(const char *optstr) {
 
     /* no tcti config supplied, get it from env */
     if (!optstr) {
-        optstr = getenv (TPM2TOOLS_ENV_TCTI);
+        optstr = tpm2_util_getenv (TPM2TOOLS_ENV_TCTI);
         if (!optstr) {
             /* nothing user supplied, use default */
             return tcti_get_default_conf();
@@ -344,6 +344,8 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         }
     }
 
+    optind = 1;
+
     /* Parse the options, calling the tool callback if unknown */
     int c;
     while ((c = getopt_long (argc, argv, opts->short_opts, opts->long_opts, NULL))
@@ -438,7 +440,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
                 }
 
                 if (!flags->enable_errata) {
-                  flags->enable_errata = !!getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
+                  flags->enable_errata = !!tpm2_util_getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
                 }
                 /*
                  * no loader requested ie --tcti=none is an error if tool

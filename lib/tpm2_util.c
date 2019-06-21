@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <dlfcn.h>
+
 #include "log.h"
 #include "files.h"
 #include "tpm2.h"
@@ -683,4 +685,24 @@ outname:
     free(loaded_name);
 
     return rc;
+}
+
+void *tpm2_util_dlopen(const char *filename, int flags) {
+
+    return dlopen(filename, flags);
+}
+
+int tpm2_util_dlclose(void *handle) {
+
+    return dlclose(handle);
+}
+
+char *tpm2_util_getenv(const char *name) {
+
+    return getenv(name);
+}
+
+void *tpm2_util_dlsym(void *handle, const char *symbol) {
+
+    return dlsym(handle, symbol);
 }

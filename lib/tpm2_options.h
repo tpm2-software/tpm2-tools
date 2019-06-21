@@ -11,6 +11,10 @@
 
 #include <tss2/tss2_sys.h>
 
+#define TPM2TOOLS_ENV_TCTI      "TPM2TOOLS_TCTI"
+
+#define TPM2TOOLS_ENV_ENABLE_ERRATA  "TPM2TOOLS_ENABLE_ERRATA"
+
 typedef union tpm2_option_flags tpm2_option_flags;
 union tpm2_option_flags {
     struct {
@@ -20,19 +24,6 @@ union tpm2_option_flags {
     };
     uint8_t all;
 };
-
-/**
- * This function pointer defines the interface for tcti initialization.
- * ALL tool supported TCTIs should implement this interface.
- * @param opts
- *  An option string, that is defined by the tcti, and is passed
- *  via the --tcti= or -T options.
- *
- *  Anything following the : in the --tcti option is provides as opts.
- * @return
- *   NULL on error or an initialized TCTI.
- */
-typedef TSS2_TCTI_CONTEXT *(*tcti_init)(char *opts);
 
 /**
  * Tools may implement this optional interface if they need

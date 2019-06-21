@@ -19,7 +19,7 @@ static const TSS2_TCTI_INFO *info;
 void tpm2_tcti_ldr_unload(void) {
     if (handle) {
 #ifndef DISABLE_DLCLOSE
-        dlclose(handle);
+        tpm2_util_dlclose(handle);
 #endif
         handle = NULL;
         info = NULL;
@@ -40,14 +40,14 @@ static void* tpm2_tcti_ldr_dlopen(const char *name) {
         return NULL;
     }
 
-    return dlopen(path, RTLD_LAZY);
+    return tpm2_util_dlopen(path, RTLD_LAZY);
 }
 
 bool tpm2_tcti_ldr_is_tcti_present(const char *name) {
 
     void *handle = tpm2_tcti_ldr_dlopen(name);
     if (handle) {
-        dlclose(handle);
+        tpm2_util_dlclose(handle);
     }
 
     return handle != NULL;
@@ -66,7 +66,7 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
      * Try what they gave us, if it doesn't load up, try
      * libtss2-tcti-xxx.so replacing xxx with what they gave us.
      */
-    handle = dlopen (path, RTLD_LAZY);
+    handle = tpm2_util_dlopen (path, RTLD_LAZY);
     if (!handle) {
 
         handle = tpm2_tcti_ldr_dlopen(path);
@@ -76,7 +76,7 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
         }
     }
 
-    TSS2_TCTI_INFO_FUNC infofn = (TSS2_TCTI_INFO_FUNC)dlsym(handle, TSS2_TCTI_INFO_SYMBOL);
+    TSS2_TCTI_INFO_FUNC infofn = (TSS2_TCTI_INFO_FUNC)tpm2_util_dlsym(handle, TSS2_TCTI_INFO_SYMBOL);
     if (!infofn) {
         LOG_ERR("Symbol \"%s\"not found in library: \"%s\"",
                 TSS2_TCTI_INFO_SYMBOL, path);
@@ -112,6 +112,6 @@ TSS2_TCTI_CONTEXT *tpm2_tcti_ldr_load(const char *path, const char *opts) {
 
 err:
     free(tcti_ctx);
-    dlclose(handle);
+    tpm2_util_dlclose(handle);
     return NULL;
 }
