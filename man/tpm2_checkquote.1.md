@@ -35,7 +35,7 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
     The quote message that makes up the data that is signed by the TPM.
 
-  * **-s**, **\--sig**=_SIG\_FILE_:
+  * **-s**, **\--signature**=_SIG\_FILE_:
 
     The input signature file of the signature to be validated.
 
