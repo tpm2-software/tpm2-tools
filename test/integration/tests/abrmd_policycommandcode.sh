@@ -3,7 +3,6 @@
 
 source helpers.sh
 
-TPM_CC_UNSEAL=0x15E
 file_primary_key_ctx=prim.ctx
 file_input_data=secret.data
 file_policy=policy.data
@@ -37,11 +36,9 @@ tpm2_clear
 
 tpm2_createprimary -Q -a o -o $file_primary_key_ctx
 
-TPM_CC_UNSEAL=0x15E
-
 tpm2_startauthsession -S $file_session_data
 
-tpm2_policycommandcode -S $file_session_data -o $file_policy $TPM_CC_UNSEAL
+tpm2_policycommandcode -S $file_session_data -o $file_policy unseal
 
 tpm2_flushcontext -S $file_session_data
 
@@ -57,7 +54,7 @@ tpm2_load -C $file_primary_key_ctx -u $file_unseal_key_pub \
 # Ensure unsealing passes with proper policy
 tpm2_startauthsession --policy-session -S $file_session_data
 
-tpm2_policycommandcode -S $file_session_data -o $file_policy $TPM_CC_UNSEAL
+tpm2_policycommandcode -S $file_session_data -o $file_policy unseal
 
 tpm2_unseal -p session:$file_session_data -c sealkey.ctx > $file_output_data
 

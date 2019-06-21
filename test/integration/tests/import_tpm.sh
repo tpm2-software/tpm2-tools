@@ -1,7 +1,5 @@
 #!/bin/bash
 
-TPM_CC_DUPLICATE=0x14B
-
 source helpers.sh
 
 cleanup() {
@@ -53,7 +51,7 @@ load_new_parent() {
 
 create_load_duplicatee() {
     # Create the key we want to duplicate
-    create_policy dpolicy.dat $TPM_CC_DUPLICATE
+    create_policy dpolicy.dat duplicate
     tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub -L dpolicy.dat -b "sensitivedataorigin|decrypt|userwithauth"
     # Load the key
     tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -o key.ctx
@@ -62,7 +60,7 @@ create_load_duplicatee() {
 }
 
 do_duplication() {
-    start_session dpolicy.dat $TPM_CC_DUPLICATE
+    start_session dpolicy.dat duplicate
     if [ "$2" = "aes" ]
     then
         tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -g aes -o sym.key -p "session:session.dat" -r dup.dup -s dup.seed

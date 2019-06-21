@@ -12,6 +12,7 @@
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
+#include "tpm2_cc_util.h"
 #include "tpm2_options.h"
 #include "tpm2_policy.h"
 #include "tpm2_session.h"
@@ -64,10 +65,8 @@ bool on_arg (int argc, char **argv) {
         return false;
     }
 
-    bool result = tpm2_util_string_to_uint32(argv[0], &ctx.command_code);
+    bool result = tpm2_cc_util_from_str(argv[0], &ctx.command_code);
     if (!result) {
-        LOG_ERR("Could not convert command-code to number, got: \"%s\"",
-                argv[0]);
         return false;
     }
 
