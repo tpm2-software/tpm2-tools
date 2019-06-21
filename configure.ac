@@ -32,6 +32,7 @@ AM_CONDITIONAL(
     [HAVE_MAN_PAGES],
     [test -d "${srcdir}/man/man1" -o "x${PANDOC}" = "xyes"])
 PKG_CHECK_MODULES([TSS2_ESYS], [tss2-esys >= 2.3.0])
+PKG_CHECK_MODULES([TSS2_TCTILDR], [tss2-tctildr])
 PKG_CHECK_MODULES([TSS2_MU], [tss2-mu])
 PKG_CHECK_MODULES([CRYPTO], [libcrypto >= 1.0.2g])
 PKG_CHECK_MODULES([CURL], [libcurl])
@@ -63,13 +64,10 @@ AC_CANONICAL_HOST
 case "${host_os}" in
     *nto-qnx*)
         EXTRA_CFLAGS="$EXTRA_CFLAGS -D_QNX_SOURCE"
-        LIBDL_LDFLAGS=""
         ;;
     *)
-        LIBDL_LDFLAGS="-ldl"
         ;;
 esac
-AC_SUBST([LIBDL_LDFLAGS])
 
 AC_ARG_ENABLE([unit],
             [AS_HELP_STRING([--enable-unit],
@@ -114,14 +112,6 @@ AS_IF([test "x$enable_unit" != xno], [
           [AC_MSG_ERROR([Required executable xxd not found, some system tests will fail!])])
     enable_unit="$enable_unit (tpm2_abrmd: $tpm2_abrmd, tpm_server: $tpm_server, bash: $BASH_SHELL, python: $PYTHON, xxd: $XXD)"
 ])
-
-AC_ARG_ENABLE([dlclose],
-  [AS_HELP_STRING([--disable-dlclose],
-                            [Some versions of libc cause a sigsegv on exit, this disables the dlclose and works around that bug])],
-  [AC_DEFINE([DISABLE_DLCLOSE], [1],
-  [Some versions of libc cause a sigsegv on exit with dlclose(), this disables the dlclose()
-  and works around that bug])]
- )
 
 AC_ARG_ENABLE([hardening],
   [AS_HELP_STRING([--disable-hardening],

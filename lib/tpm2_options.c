@@ -10,6 +10,8 @@
 #include <libgen.h>
 #include <unistd.h>
 
+#include <tss2/tss2_tctildr.h>
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -17,7 +19,6 @@
 #include "config.h"
 #include "log.h"
 #include "tpm2_options.h"
-#include "tpm2_tcti_ldr.h"
 
 #ifndef VERSION
   #warning "VERSION Not known at compile time, not embedding..."
@@ -107,103 +108,10 @@ void tpm2_options_free(tpm2_options *opts) {
     free(opts->short_opts);
     free(opts);
 }
-typedef struct tcti_conf tcti_conf;
-struct tcti_conf {
-    const char *name;
-    const char *opts;
-};
 
 static inline const char *fixup_name(const char *name) {
 
     return !strcmp(name, "abrmd") ? "tabrmd" : name;
-}
-
-static const char *find_default_tcti(void) {
-
-    const char *defaults[] = {
-        "tabrmd",
-        "device",
-        "mssim"
-    };
-
-    size_t i;
-    for(i=0; i < ARRAY_LEN(defaults); i++) {
-        const char *name = defaults[i];
-        bool is_present = tpm2_tcti_ldr_is_tcti_present(name);
-        if (is_present) {
-            return name;
-        }
-    }
-
-    return NULL;
-}
-
-static tcti_conf tcti_get_default_conf(void) {
-
-    tcti_conf conf = {
-        .name = find_default_tcti()
-    };
-
-    return conf;
-}
-
-static tcti_conf tcti_get_config(const char *optstr) {
-
-    /* set up the default configuration */
-    tcti_conf conf = { 0 };
-
-    /* no tcti config supplied, get it from env */
-    if (!optstr) {
-        optstr = tpm2_util_getenv (TPM2TOOLS_ENV_TCTI);
-        if (!optstr) {
-            /* nothing user supplied, use default */
-            return tcti_get_default_conf();
-        }
-    }
-
-    if (!strcmp(optstr, "none")) {
-        return conf;
-    }
-
-    char *split = strchr(optstr, ':');
-    if (!split) {
-        /* --tcti=device */
-        conf.name = fixup_name(optstr);
-        return conf;
-    }
-
-    /*
-     * If it has a ":", it could be either one of the following:
-     * case A: --tcti=:               --> default name and default (null) config
-     * case B: --tcti=:/dev/foo       --> default name, custom config
-     * case C: --tcti=device:         --> custom name, default (null) config
-     * case D: --tcti=device:/dev/foo --> custom name, custom config
-     */
-
-    split[0] = '\0';
-
-    /* Case A */
-    if (!optstr[0] && !split[1]) {
-        return tcti_get_default_conf();
-    }
-
-    /* Case B */
-    if (!optstr[0]) {
-        conf = tcti_get_default_conf();
-        conf.opts = &split[1];
-        return conf;
-    }
-
-    /* Case C */
-    if (!split[1]) {
-        conf.name = fixup_name(optstr);
-        return conf;
-    }
-
-    /* Case D */
-    conf.name = fixup_name(optstr);
-    conf.opts = &split[1];
-    return conf;
 }
 
 static bool execute_man(char *prog_name, bool show_errors) {
@@ -242,20 +150,17 @@ static bool execute_man(char *prog_name, bool show_errors) {
 }
 
 static void show_version (const char *name) {
+    const char *tcti_default = NULL;
+    TSS2_TCTI_INFO *info = NULL;
 
-#ifdef DISABLE_DLCLOSE
-    char *dlconfig="disabled";
-#else
-    char *dlconfig="enabled";
-#endif
-
-    const char *tcti_default = find_default_tcti();
-    if (!tcti_default) {
-        tcti_default = "none";
+    TSS2_RC rc = Tss2_TctiLdr_GetInfo(NULL, &info);
+    if (rc == TSS2_RC_SUCCESS && info != NULL) {
+        tcti_default = info->name;
     }
 
-    printf("tool=\"%s\" version=\"%s\" tctis=\"dynamic\" tcti-default=%s dlclose=%s\n",
-            name, VERSION, tcti_default, dlconfig);
+    printf("tool=\"%s\" version=\"%s\" tctis=\"libtss2-tctildr\" tcti-default=%s\n",
+            name, VERSION, tcti_default);
+    Tss2_TctiLdr_FreeInfo(&info);
 }
 
 void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
@@ -425,30 +330,30 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         /* tool doesn't request a sapi, don't initialize one */
         if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_NO_SAPI)) {
 
-            tcti_conf conf = tcti_get_config(tcti_conf_option);
-
-            /* name can be NULL for optional SAPI tools */
-            if (conf.name) {
-                *tcti = tpm2_tcti_ldr_load(conf.name, conf.opts);
-                if (!*tcti) {
-                  LOG_ERR("Could not load tcti, got: \"%s\"", conf.name);
-                  goto out;
+            if (tcti_conf_option == NULL)
+                tcti_conf_option = tpm2_util_getenv(TPM2TOOLS_ENV_TCTI);
+            else if (!strcmp(tcti_conf_option, "none")) {
+                if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI)) {
+                    LOG_ERR("Requested no tcti, but tool requires TCTI.");
+                    goto out;
                 }
-
-                if (!flags->enable_errata) {
-                  flags->enable_errata = !!tpm2_util_getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
-                }
+                goto none;
+            }
+            rc = Tss2_TctiLdr_Initialize(tcti_conf_option, tcti);
+            if (rc != TSS2_RC_SUCCESS || !*tcti) {
+              LOG_ERR("Could not load tcti, got: \"%s\"", tcti_conf_option);
+              goto out;
+            }
                 /*
                  * no loader requested ie --tcti=none is an error if tool
                  * doesn't indicate an optional SAPI
                  */
-            } else if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI)) {
-                LOG_ERR("Requested no tcti, but tool requires TCTI.");
-                goto out;
+            if (!flags->enable_errata) {
+                flags->enable_errata = !!tpm2_util_getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
             }
         }
     }
-
+none:
     rc = tpm2_option_code_continue;
 out:
 
@@ -471,11 +376,15 @@ out:
         if (!did_manpager) {
             tpm2_print_usage(argv[0], tool_opts);
         }
-
-        const TSS2_TCTI_INFO *info = tpm2_tcti_ldr_getinfo();
-        if (info) {
-            printf("\ntcti-help(%s): %s\n", info->name, info->config_help);
+        if (tcti_conf_option && strcmp(tcti_conf_option, "none")) {
+            TSS2_TCTI_INFO *info = NULL;
+            rc = Tss2_TctiLdr_GetInfo (tcti_conf_option, &info);
+            if (rc == TSS2_RC_SUCCESS && info) {
+                printf("\ntcti-help(%s): %s\n", info->name, info->config_help);
+            }
+            Tss2_TctiLdr_FreeInfo (&info);
         }
+
         rc = tpm2_option_code_stop;
     }
 

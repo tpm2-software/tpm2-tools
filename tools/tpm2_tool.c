@@ -6,9 +6,11 @@
 #include <openssl/err.h>
 #include <openssl/evp.h>
 
+#include <tss2/tss2_tctildr.h>
+
 #include "log.h"
 #include "tpm2_errata.h"
-#include "tpm2_tcti_ldr.h"
+#include "tpm2_options.h"
 #include "tpm2_tool.h"
 
 #define SUPPORTED_ABI_VERSION \
@@ -20,12 +22,6 @@
 }
 
 bool output_enabled = true;
-
-static void tcti_teardown (TSS2_TCTI_CONTEXT *tcti_context) {
-
-    Tss2_Tcti_Finalize (tcti_context);
-    free (tcti_context);
-}
 
 static void esys_teardown (ESYS_CONTEXT **esys_context) {
 
@@ -49,7 +45,7 @@ static void teardown_full (ESYS_CONTEXT **esys_context) {
     if (rc != TPM2_RC_SUCCESS)
         return;
     esys_teardown (esys_context);
-    tcti_teardown (tcti_context);
+    Tss2_TctiLdr_Finalize (&tcti_context);
 }
 
 static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
@@ -163,8 +159,6 @@ free_opts:
     if (tpm2_tool_onexit) {
         tpm2_tool_onexit();
     }
-
-    tpm2_tcti_ldr_unload();
 
     exit(ret);
 }

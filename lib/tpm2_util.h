@@ -395,12 +395,6 @@ tool_rc tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
  */
 ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh);
 
-void *tpm2_util_dlopen(const char *filename, int flags);
-
-int tpm2_util_dlclose(void *handle);
-
 char *tpm2_util_getenv(const char *name);
-
-void *tpm2_util_dlsym(void *handle, const char *symbol);
 
 #endif /* STRING_BYTES_H */
