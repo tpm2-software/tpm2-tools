@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * cmac algorithm support.
   * tpm2_activatecredential: long options have been changed to align with spec language.
     context is now credentialedkey-context.
     key-context is now credentialkey-context.
