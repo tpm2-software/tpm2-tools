@@ -349,7 +349,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
             { "halg",           required_argument, NULL, 'g' },
             { "message",        required_argument, NULL, 'm' },
             { "format",         required_argument, NULL, 'f' },
-            { "sig",            required_argument, NULL, 's' },
+            { "signature",      required_argument, NULL, 's' },
             { "pcr-input-file", required_argument, NULL, 'F' },
             { "pubfile",        required_argument, NULL, 'u' },
             { "qualify-data",   required_argument, NULL, 'q' },
