@@ -238,7 +238,7 @@ function start_abrmd() {
     fi
 
     # set a possible tools tcti to use abrmd
-    tpm2tools_tcti="abrmd:bus_type=session,bus_name=$name"
+    tpm2tools_tcti="tabrmd:bus_type=session,bus_name=$name"
     echo "tpm2tools_tcti=\"$tpm2tools_tcti\""
 
     return 0
