@@ -32,7 +32,7 @@ specified symmetric key.
 
     Perform a decrypt operation. Default is encryption.
 
-  * **-e**, **\--enable-pkcs7-padding**:
+  * **-e**, **\--pad**:
 
     Enable pkcs7 padding for applicable AES encryption modes cfb/cbc/ecb.
     Applicable only to encryption and for input data with last block shorter
