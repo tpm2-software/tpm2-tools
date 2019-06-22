@@ -632,7 +632,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-        ctx.parent.auth_str, &ctx.parent.object, false);
+        ctx.parent.auth_str, &ctx.parent.object, false, TPM2_HANDLES_ALL);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid parent key authorization");
         return rc;

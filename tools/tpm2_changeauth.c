@@ -136,7 +136,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.object.ctx, ctx.object.auth_current,
-            &ctx.object.obj, false);
+            &ctx.object.obj, false, TPM2_HANDLES_ALL);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -155,7 +155,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             return tool_rc_option_error;
         }
 
-        rc = tpm2_util_object_load(ectx, ctx.parent.ctx, &ctx.parent.obj);
+        rc = tpm2_util_object_load(ectx, ctx.parent.ctx, &ctx.parent.obj,
+            TPM2_HANDLES_ALL);
         if (rc != tool_rc_success) {
             return rc;
         }

@@ -213,14 +213,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.credential_key.ctx_path,
-                ctx.credential_key.auth_str, &ctx.credential_key.object, false);
+                ctx.credential_key.auth_str, &ctx.credential_key.object, false,
+                TPM2_HANDLES_ALL);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.credentialed_key.ctx_path,
                 ctx.credentialed_key.auth_str, &ctx.credentialed_key.object,
-                false);
+                false, TPM2_HANDLES_ALL);
     if (rc != tool_rc_success) {
         return rc;
     }
