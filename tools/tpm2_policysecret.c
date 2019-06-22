@@ -117,7 +117,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.auth_entity.ctx_path,
-            ctx.auth_entity.auth_str, &ctx.auth_entity.object, true);
+            ctx.auth_entity.auth_str, &ctx.auth_entity.object, true,
+            TPM2_HANDLES_ALL);
     if (rc != tool_rc_success) {
         return rc;
     }

@@ -9,7 +9,6 @@
 #include "log.h"
 #include "object.h"
 #include "tpm2_auth_util.h"
-#include "tpm2_hierarchy.h"
 
 #define NULL_OBJECT "null"
 #define NULL_OBJECT_LEN (sizeof(NULL_OBJECT) - 1)
@@ -31,7 +30,8 @@ static tool_rc tpm2_util_object_load2(
             const char *auth,
             bool do_auth,
             tpm2_loaded_object *outobject,
-            bool is_restricted_pswd_session) {
+            bool is_restricted_pswd_session,
+            tpm2_hierarchy_flags flags) {
 
     ESYS_CONTEXT *tmp_ctx = is_restricted_pswd_session ? NULL: ctx;
 
@@ -61,8 +61,7 @@ static tool_rc tpm2_util_object_load2(
 
     // 2. Try to convert a hierarchy or raw handle
     TPMI_RH_PROVISION handle;
-    bool result = tpm2_hierarchy_from_optarg(objectstr, &handle,
-            TPM2_HIERARCHY_FLAGS_ALL|TPM2_HIERARCHY_SUPPRESS);
+    bool result = tpm2_hierarchy_from_optarg(objectstr, &handle, flags);
     if (result){
         outobject->handle = handle;
         outobject->path = NULL;
@@ -75,9 +74,11 @@ static tool_rc tpm2_util_object_load2(
 }
 
 tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
-            const char *objectstr, tpm2_loaded_object *outobject) {
+            const char *objectstr, tpm2_loaded_object *outobject,
+            tpm2_hierarchy_flags flags) {
 
-    return tpm2_util_object_load2(ctx, objectstr, NULL, false, outobject, false);
+    return tpm2_util_object_load2(ctx, objectstr, NULL, false, outobject,
+        false, flags);
 }
 
 tool_rc tpm2_util_object_load_auth(
@@ -85,8 +86,9 @@ tool_rc tpm2_util_object_load_auth(
             const char *objectstr,
             const char *auth,
             tpm2_loaded_object *outobject,
-            bool is_restricted_pswd_session) {
+            bool is_restricted_pswd_session,
+            tpm2_hierarchy_flags flags) {
 
     return tpm2_util_object_load2(ctx, objectstr, auth, true, outobject,
-        is_restricted_pswd_session);
+        is_restricted_pswd_session, flags);
 }

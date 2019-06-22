@@ -3,6 +3,8 @@
 
 #include "tpm2_error.h"
 #include "tpm2_session.h"
+#include "tpm2_hierarchy.h"
+
 
 typedef struct tpm2_loaded_object tpm2_loaded_object;
 struct tpm2_loaded_object {
@@ -27,12 +29,15 @@ struct tpm2_loaded_object {
  * @param outobject
  * A *tpm2_loaded_object* with a loaded handle. The path member will also be
  * set when the *objectstr* is a context file.
+ * @param flags
+ * A *tpm2_hierarchy_flags* value to specify expected valid hierarchy
  * @return
  *  tool_rc indicating status.
  *
  */
 tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
-                        const char *objectstr, tpm2_loaded_object *outobject);
+                        const char *objectstr, tpm2_loaded_object *outobject,
+                        tpm2_hierarchy_flags flags);
 
 /**
  * Same as tpm2_util_object_load but allows the auth string value to be populated
@@ -48,6 +53,8 @@ tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
  * @param outobject
  * A *tpm2_loaded_object* with a loaded handle. The path member will also be
  * set when the *objectstr* is a context file.
+ * @param flags
+ * A *tpm2_hierarchy_flags* value to specify expected valid hierarchy
  * @return
  *  tool_rc indicating status.
  * @return
@@ -58,6 +65,7 @@ tool_rc tpm2_util_object_load_auth(
             const char *objectstr,
             const char *auth,
             tpm2_loaded_object *outobject,
-            bool is_restricted_pswd_session);
+            bool is_restricted_pswd_session,
+            tpm2_hierarchy_flags flags);
 
 #endif /* LIB_OBJECT_H_ */

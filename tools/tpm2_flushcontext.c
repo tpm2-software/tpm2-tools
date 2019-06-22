@@ -154,7 +154,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tool_rc rc = tpm2_util_object_load(ectx, ctx.context_arg,
-                &ctx.context_object);
+                &ctx.context_object, TPM2_HANDLES_ALL);
     if (rc != tool_rc_success) {
         return rc;
     }
