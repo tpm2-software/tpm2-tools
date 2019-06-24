@@ -117,21 +117,28 @@ pyscript
 }
 
 function recreate_info() {
-    # TODO Add tmpdir location
     echo
-    echo "--- To recreate this test run the following from: $(pwd) ---"
-    local a="export TPM2_ABRMD=\"$TPM2_ABRMD\" TPM2_SIM=\"$TPM2_SIM\""
-    local b="PATH=\"$PATH\" TPM2_SIM_NV_CHIP=\"$TPM2_SIM_NV_CHIP\""
-    local c="TPM2_TOOLS_TEST_FIXTURES=\"$TPM2_TOOLS_TEST_FIXTURES\""
+    echo "--- To recreate this test run the following: ---"
+    local a="export TPM2_ABRMD=\"$TPM2_ABRMD\"\n"
+    a="$a""export TPM2_SIM=\"$TPM2_SIM\"\n"
+    a="$a""export TPM2ABRMD_TCTI=\"$TPM2ABRMD_TCTI\"\n"
+    a="$a""export TPM2_SIMPORT=\"$TPM2_SIMPORT\"\n"
+    a="$a""export TPM2TOOLS_TEST_TCTI=\"$TPM2TOOLS_TEST_TCTI\"\n"
+    a="$a""export PATH=\"$PATH\"\n"
+    a="$a""TPM2_SIM_NV_CHIP=\"$TPM2_SIM_NV_CHIP\"\n"
+    a="$a""TPM2_TOOLS_TEST_FIXTURES=\"$TPM2_TOOLS_TEST_FIXTURES\"\n"
     echo "#!/usr/bin/env bash"
-    echo "$a $b $c"
-    echo "$0"
+    echo -e "$a"
+    local script="$tpm2_test_original_cwd""/""$0"
+    echo $(realpath "$script")
     echo "--- EOF ---"
     echo
 }
 
+tpm2_test_original_cwd=""
 tpm2_test_cwd=""
 function switch_to_test_dir() {
+    tpm2_test_original_cwd=`pwd`;
     tpm2_test_cwd=$(mktemp --directory --tmpdir=/tmp tpm2_test_XXXXXX)
     echo "creating simulator working dir: $tpm2_test_cwd"
     pushd "$tpm2_test_cwd"
@@ -143,20 +150,28 @@ function switch_back_from_test_dir() {
 }
 
 tpm2_sim_pid=""
-tpm2_sim_port=""
-tpm2_mssim_tcti_expected_port=""
 tpm2_abrmd_pid=""
-tpm2_tabrmd_opts=""
 tpm2_tcti_opts=""
+tpm2tools_tcti=""
+
 function start_sim() {
     local max_cnt=10
+
+    # if a user is specifying the sim port, then only attempt it once
+    if [ -n "$TPM2_SIMPORT" ]; then
+        max_cnt=1
+    fi
 
     while [ $max_cnt -gt 0 ]; do
         # If either the requested simulator port or the port that will be used
         # by mssim TCTI which is tpm2_sim_port + 1 is occupied (ESTABLISHED, TIME_WAIT, etc...),
         # just continue up to 10 retries
         # (See : https://github.com/tpm2-software/tpm2-tss/blob/master/src/tss2-tcti/tcti-mssim.c:559)
-        tpm2_sim_port="$(shuf -i 2321-65534 -n 1)"
+        if [ -z "$TPM2_SIMPORT" ]; then
+            tpm2_sim_port="$(shuf -i 2321-65534 -n 1)"
+        else
+            tpm2_sim_port=$TPM2_SIMPORT
+        fi
         tpm2_mssim_tcti_expected_port=$((tpm2_sim_port + 1))
         echo "Attempting to start simulator on port: $tpm2_sim_port"
         $TPM2_SIM -port $tpm2_sim_port &
@@ -170,13 +185,11 @@ function start_sim() {
 
         if [ -n "$(find /proc/$tpm2_sim_pid/fd -lname "socket:\[$tpm2_sim_port_inode\]")" ] && \
            [ -n "$(find /proc/$tpm2_sim_pid/fd -lname "socket:\[$tpm2_mssim_tcti_expected_port_inode\]")" ]; then
-            local name="com.intel.tss2.Tabrmd${tpm2_sim_port}"
-            tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$tpm2_sim_port"
-            echo "tpm2_tabrmd_opts: $tpm2_tabrmd_opts"
-
-            tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
-            echo "tpm2_tcti_opts: $tpm2_tcti_opts"
-            echo "Started simulator in tmp dir: $tpm2_test_cwd"
+            echo "Started simulator on port $tpm2_sim_port in dir \"$PWD\""
+            TPM2_SIMPORT=$tpm2_sim_port
+            # set a possible tools tcti to use mssim
+            tpm2tools_tcti="mssim:host=localhost,port=$TPM2_SIMPORT"
+            echo "tpm2tools_tcti=\"$tpm2tools_tcti\""
             return 0
         else
             echo "Could not start simulator at port: $tpm2_sim_port"
@@ -192,23 +205,30 @@ function start_sim() {
 
 function start_abrmd() {
 
-    if [ -z "$TPM2_SIM" ]; then
-        local tcti="device"
-        if [ -n "$TPM2_DEVICE" ]; then
-            tcti="device:$TPM2_DEVICE"
-        fi
+        local tpm2_tabrmd_opts
 
-        local name="com.intel.tss2.Tabrmd.device"
-        tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=$tcti"
-        tpm2_tcti_opts="abrmd:bus_type=session,bus_name=$name"
-    fi
+        # if we don't have an explicit TCTI to connect to, generate it
+        if [ -z "$TPM2ABRMD_TCTI" ]; then
+            echo "TPM2ABRMD_TCTI is empty, configuring"
+
+            if [ -z "$TPM2_SIMPORT" ]; then
+                echo "No simulator port found, can not determine ABRMD TCTI conf"
+                return 1
+            fi
+
+            # TCTI information for use with ABRMD
+            local name="com.intel.tss2.Tabrmd${TPM2_SIMPORT}"
+            tpm2_tabrmd_opts="--session --dbus-name=$name --tcti=mssim:port=$TPM2_SIMPORT"
+            echo "TPM2ABRMD_TCTI=\"$tpm2_tabrmd_opts\""
+            TPM2ABRMD_TCTI="$tpm2_tabrmd_opts"
+        fi
 
     if [ $UID -eq 0 ]; then
         tpm2_tabrmd_opts="--allow-root $tpm2_tabrmd_opts"
     fi
 
-    echo "tpm2-abrmd command: $TPM2_ABRMD $tpm2_tabrmd_opts"
-    $TPM2_ABRMD $tpm2_tabrmd_opts &
+    echo "tpm2-abrmd command: $TPM2_ABRMD $tpm2_tabrmd_opts $TPM2ABRMD_TCTI"
+    $TPM2_ABRMD $tpm2_tabrmd_opts $TPM2ABRMD_TCTI &
     tpm2_abrmd_pid=$!
     sleep 2
 
@@ -218,47 +238,74 @@ function start_abrmd() {
         return 1
     fi
 
+    # set a possible tools tcti to use abrmd
+    tpm2tools_tcti="abrmd:bus_type=session,bus_name=$name"
+    echo "tpm2tools_tcti=\"$tpm2tools_tcti\""
+
     return 0
 }
 
+#
+# This start up routine performs the following actions and should
+# be called by testing scripts if they need a TCTI. It also outputs
+# information for how to recreate the test outside of the test harness.
+#
+# 1. Start the simulator if specified via env var TPM2_SIM. if TPM2_SIMPORT
+#    is set, it attempts to start the simulator AT that port, else it tries
+#    a random port, and sets TPM2_SIMPORT to the random port if successful.
+#
+# 2. Start abrmd if specified via env var TPM2_ABRMD. if TPM2ABRMD_TCTI is
+#    set it starts abrmd using that TCTI, else it uses the value of TPM2_SIMPORT.
+#
+# 3. Pick a TCTI for the tools based on:
+#    a) TPM2TOOLS_TEST_TCTI user specified, just use it.
+#    b) TPM2TOOLS_TEST_TCTI not specified, the start_sim and start_anrmd routines
+#       set tpm2tools_tcti variable, so use that.
+#
 function start_up() {
 
-    recreate_info
-
     switch_to_test_dir
+
+    run_startup=true
 
     if [ -n "$TPM2_SIM" ]; then
         # Start the simulator
         echo "Starting the simulator"
         start_sim || exit 1
         echo "Started the simulator"
+    else
+        echo "not starting simulator"
     fi
 
     if [ -n "$TPM2_ABRMD" ]; then
         echo "Starting tpm2-abrmd"
         # Start tpm2-abrmd
         start_abrmd || exit 1
-        echo "Started tpm2-abrmd"
-        echo "Setting TCTI to use abrmd"
-        echo "export TPM2TOOLS_TCTI=\"$tpm2_tcti_opts\""
-        export TPM2TOOLS_TCTI="$tpm2_tcti_opts"
-    elif [ -n "$TPM2_SIM" ]; then
-        echo "Not starting tpm2-abrmd"
-        echo "Setting TCTI to use mssim"
-        echo "export TPM2TOOLS_TCTI=\"mssim:port=$tpm2_sim_port\""
-        export TPM2TOOLS_TCTI="mssim:port=$tpm2_sim_port"
-
-        echo "Running tpm2_startup -c"
-        tpm2_startup -c
+        run_startup=false
     else
-        if [ -n "$TPM2_DEVICE" ]; then
-            export TPM2TOOLS_TCTI="device:$TPM2_DEVICE"
-        else
-            export TPM2TOOLS_TCTI="device"
-        fi
+        echo "not starting abrmd"
     fi
 
-    echo "Running tpm2_clear"
+    echo "TPM2TOOLS_TEST_TCTI=$TPM2TOOLS_TEST_TCTI"
+    if [ -z "$TPM2TOOLS_TEST_TCTI" ]; then
+        echo "TPM2TOOLS_TEST_TCTI not set, attempting to figure out default"
+        if [ -z "$tpm2tools_tcti" ]; then
+            echo "The simulator not abrmd was started, cannot determine a TCTI for tools."
+            exit 1;
+        fi
+        TPM2TOOLS_TEST_TCTI="$tpm2tools_tcti"
+    fi
+
+    echo "export TPM2TOOLS_TCTI=\"$TPM2TOOLS_TEST_TCTI\""
+    export TPM2TOOLS_TCTI="$TPM2TOOLS_TEST_TCTI"
+
+    recreate_info
+
+    echo "run_startup: $run_startup"
+
+    if [ $run_startup = true ]; then
+        tpm2_startup -c
+    fi
 
     if ! tpm2_clear; then
         exit 1
