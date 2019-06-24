@@ -24,7 +24,7 @@ echo "Generating file lists: ${VARS_FILE}"
   printf "LIB_SRC = \$(LIB_C) \$(LIB_H)\n"
 
   src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
-  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS) \$(SYSTEM_TESTS_TCTI_ABRMD)\n"
+  printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS)\n"
 ) > ${VARS_FILE}
 
 mkdir -p m4
