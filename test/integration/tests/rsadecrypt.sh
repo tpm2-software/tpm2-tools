@@ -14,9 +14,9 @@ file_rsa_en_output_data=rsa_en.out
 file_rsa_de_output_data=rsa_de.out
 file_input_data=secret.data
 
-alg_hash=0x000B
-alg_primary_key=0x0001
-alg_rsaencrypt_key=0x0001
+alg_hash=sha256
+alg_primary_key=rsa
+alg_rsaencrypt_key=rsa
 
 cleanup() {
     rm -f $file_input_data $file_primary_key_ctx $file_rsaencrypt_key_pub \

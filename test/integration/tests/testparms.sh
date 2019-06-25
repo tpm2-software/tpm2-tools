@@ -30,6 +30,7 @@ done
 
 # Test that RSA signing schemes are supported
 for i in ${rsamethods}; do
+    echo "tpm2_testparms rsa:${i}"
     tpm2_testparms "rsa:${i}"
 done
 

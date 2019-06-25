@@ -20,7 +20,7 @@ ecc_key_type=ecc256
 handle_signing_key=0x81010005
 
 alg_hash=sha256
-alg_primary_key=0x0001
+alg_primary_key=rsa
 
 cleanup() {
     rm -f $file_input_data $file_primary_key_ctx $file_signing_key_pub \

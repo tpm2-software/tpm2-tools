@@ -31,6 +31,13 @@ enum alg_iter_res {
     found
 };
 
+typedef enum alg_parser_rc alg_parser_rc;
+enum alg_parser_rc {
+    alg_parser_rc_error,
+    alg_parser_rc_continue,
+    alg_parser_rc_done
+};
+
 typedef alg_iter_res (*alg_iter)(TPM2_ALG_ID id, const char *name, tpm2_alg_util_flags flags, void *userdata);
 
 static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
@@ -110,7 +117,7 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
     }
 }
 
-static bool handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
+static alg_parser_rc handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
 
     s->algorithm = TPM2_ALG_AES;
 
@@ -125,7 +132,7 @@ static bool handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
     } else if (!strncmp(ext, "256", 3)) {
         s->keyBits.aes = 256;
     } else {
-        return false;
+        return alg_parser_rc_error;
     }
 
     ext += 3;
@@ -138,65 +145,10 @@ static bool handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
             tpm2_alg_util_flags_mode
             |tpm2_alg_util_flags_misc);
     if (s->mode.sym == TPM2_ALG_ERROR) {
-        return false;
+        return alg_parser_rc_error;
     }
 
-    return true;
-}
-
-static bool handle_scheme_alg(const char *ext, TPMS_ASYM_PARMS *s) {
-
-    if (ext[0] == '\0') {
-        ext = "sha256";
-    }
-
-    s->scheme.details.anySig.hashAlg = tpm2_alg_util_strtoalg(ext, tpm2_alg_util_flags_hash);
-    if (s->scheme.details.anySig.hashAlg == TPM2_ALG_ERROR) {
-        return false;
-    }
-
-    return true;
-}
-
-static bool handle_ecdaa_scheme_details(const char *ext, TPMS_ASYM_PARMS *s) {
-
-    /* Was it just "ecdaa" and we should set some default. */
-    if (ext[0] == '\0') {
-        ext = "4-sha256";
-    }
-
-    /*
-     * Work off of a buffer since we expect const behavior
-     */
-    char buf[256];
-    snprintf(buf, sizeof(buf), "%s", ext);
-
-    char *split = strchr(buf, '-');
-    if (!split) {
-        LOG_ERR("Invalid ecdaa scheme, expected <num>-<hash-alg>, got: \"%s\"", ext);
-        return false;
-    }
-
-    char *num = buf;
-    split[0] = '\0';
-    split++;
-    char *halg = split;
-
-    TPMS_SIG_SCHEME_ECDAA *e = &s->scheme.details.ecdaa;
-
-    bool res = tpm2_util_string_to_uint16(num, &e->count);
-    if (!res) {
-        LOG_ERR("Invalid ecdaa count, expected <num>-<hash-alg>, got: \"%s\"", ext);
-        return false;
-    }
-
-    e->hashAlg = tpm2_alg_util_strtoalg(halg, tpm2_alg_util_flags_hash);
-    if (e->hashAlg == TPM2_ALG_ERROR) {
-        LOG_ERR("Invalid ecdaa hashing algorithm, expected <num>-<hash-alg>, got: \"%s\"", ext);
-        return false;
-    }
-
-    return true;
+    return alg_parser_rc_done;
 }
 
 /*
@@ -204,75 +156,100 @@ static bool handle_ecdaa_scheme_details(const char *ext, TPMS_ASYM_PARMS *s) {
  * You cannot change all the variables in this, as they are dependent
  * on names in that routine; this is for simplicity.
  */
-#define do_scheme_halg_and_advance(advance, alg) \
+#define do_scheme_halg(advance, alg) \
     do { \
-        s->scheme.scheme = alg; \
         scheme += advance; \
+        s->scheme.scheme = alg; \
         do_scheme_hash_alg = true; \
+        found = true; \
     } while (0)
 
-static bool handle_asym_scheme_common(const char *ext, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_scheme_sign(const char *scheme, TPM2B_PUBLIC *public) {
+
+    char buf[256];
+
+    if (!scheme || scheme[0] == '\0') {
+        scheme = "null";
+    }
+
+    int rc = snprintf(buf, sizeof(buf), "%s", scheme);
+    if (rc < 0 || (size_t)rc >= sizeof(buf)) {
+        return alg_parser_rc_error;
+    }
 
     // Get the scheme and symetric details
     TPMS_ASYM_PARMS *s = &public->publicArea.parameters.asymDetail;
 
-    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
-
-    // Get the scheme
-    const char *scheme;
-    char tmp[32];
-    char *next = strchr(ext, ':');
-    if (next) {
-        snprintf(tmp, sizeof(tmp), "%.*s", (int)(next - ext), ext);
-        scheme = tmp;
-    } else {
-        scheme = ext;
+    if (!strcmp(scheme, "null")) {
+        public->publicArea.parameters.asymDetail.scheme.scheme = TPM2_ALG_NULL;
+        return alg_parser_rc_continue;
     }
 
-    const char *orig = scheme;
+    char *halg = NULL;
+    char *split = strchr(scheme, '-');
+    if (split) {
+        *split = '\0';
+        halg = split + 1;
+    }
 
-    /*
-     * This can fail... if the spec is missing scheme, default the scheme to NULL
-     */
-    bool is_missing_scheme = false;
+    bool found = false;
     bool do_scheme_hash_alg = false;
-    if (!strncmp(scheme, "oaep", 4)) {
-        do_scheme_halg_and_advance(4, TPM2_ALG_OAEP);
-    } else if (!strncmp(scheme, "ecdsa", 5)) {
-        do_scheme_halg_and_advance(5, TPM2_ALG_ECDSA);
-    } else if (!strncmp(scheme, "ecdh", 4)) {
-        do_scheme_halg_and_advance(4, TPM2_ALG_ECDH);
-    } else if (!strncmp(scheme, "ecschnorr", 9)) {
-        do_scheme_halg_and_advance(9, TPM2_ALG_ECSCHNORR);
-    } else if (!strncmp(scheme, "ecdaa", 5)) {
-        /*
-         * ECDAA has both a count and hashing algorithm
-         */
-        scheme += 5;
-        s->scheme.scheme = TPM2_ALG_ECDAA;
-        bool result = handle_ecdaa_scheme_details(scheme, s);
-        if (!result) {
-            /* don't print another error message */
-            return false;
+
+    if (public->publicArea.type == TPM2_ALG_ECC) {
+        if (!strncmp(scheme, "oaep", 4)) {
+            do_scheme_halg(4, TPM2_ALG_OAEP);
+        } else if (!strncmp(scheme, "ecdsa", 5)) {
+            do_scheme_halg(5, TPM2_ALG_ECDSA);
+        } else if (!strncmp(scheme, "ecdh", 4)) {
+            do_scheme_halg(4, TPM2_ALG_ECDH);
+        } else if (!strncmp(scheme, "ecschnorr", 9)) {
+            do_scheme_halg(9, TPM2_ALG_ECSCHNORR);
+        } else if (!strncmp(scheme, "ecdaa", 5)) {
+            do_scheme_halg(5, TPM2_ALG_ECDAA);
+            /*
+             * ECDAA has both a count and hashing algorithm, scheme
+             * could either be pointing to a null byte or a number,
+             * we need a number
+             */
+            if (scheme[0] == '\0') {
+                scheme = "4";
+            }
+
+            TPMS_SIG_SCHEME_ECDAA *e = &s->scheme.details.ecdaa;
+
+            bool res = tpm2_util_string_to_uint16(scheme, &e->count);
+            if (!res) {
+                return alg_parser_rc_error;
+            }
+        } else if (!strcmp("null", scheme)) {
+            s->scheme.scheme = TPM2_ALG_NULL;
         }
-    } else if (!strcmp(scheme, "rsaes")) {
+    } else {
+        if (!strcmp(scheme, "rsaes")) {
         /*
          * rsaes has no hash alg or details, so it MUST
          * match exactly, notice strcmp and NOT strNcmp!
          */
-        s->scheme.scheme = TPM2_ALG_RSAES;
-    } else if (!strcmp("null", scheme)) {
-        s->scheme.scheme = TPM2_ALG_NULL;
-    } else {
-        s->scheme.scheme = TPM2_ALG_NULL;
-        is_missing_scheme = true;
+            s->scheme.scheme = TPM2_ALG_RSAES;
+            found = true;
+        } else if (!strcmp("null", scheme)) {
+            s->scheme.scheme = TPM2_ALG_NULL;
+            found = true;
+        } else if (!strncmp("rsapss", scheme, 6)) {
+            do_scheme_halg(6, TPM2_ALG_RSAPSS);
+        } else if (!strncmp("rsassa", scheme, 6)) {
+            do_scheme_halg(6, TPM2_ALG_RSASSA);
+        }
     }
 
-    if (do_scheme_hash_alg) {
-        bool result = handle_scheme_alg(scheme, s);
-        if (!result) {
-            goto error;
-        }
+    /* If we're not expecting a hash alg then halg should be NULL */
+    if ((!do_scheme_hash_alg && halg) || !found) {
+        return alg_parser_rc_error;
+    }
+
+    /* if we're expecting a hash alg and none provided default */
+    if (do_scheme_hash_alg && !halg) {
+        halg = "sha256";
     }
 
     /*
@@ -292,75 +269,53 @@ static bool handle_asym_scheme_common(const char *ext, TPM2B_PUBLIC *public) {
         }
     }
 
-    if (is_missing_scheme) {
-        ext = scheme;
-    } else {
-        if (!next || *(next + 1) == '\0') {
-            next = is_restricted ? ":aes128cfb" : ":null";
+    if (do_scheme_hash_alg) {
+        public->publicArea.parameters.asymDetail.scheme.details.anySig.hashAlg
+            = tpm2_alg_util_strtoalg(halg, tpm2_alg_util_flags_hash);
+        if (public->publicArea.parameters.asymDetail.scheme.details.anySig.hashAlg
+                == TPM2_ALG_ERROR) {
+            return alg_parser_rc_error;
         }
-
-        // Go past next :
-        ext = ++next;
     }
 
-    if (!strncmp(ext, "aes", 3)) {
-        return handle_aes_raw(&ext[3], &s->symmetric);
-    } else if (!strcmp(ext, "null")) {
-        s->symmetric.algorithm = TPM2_ALG_NULL;
-        return true;
-    }
-
-error:
-    LOG_ERR("Unsupported scheme, got: \"%s\"", orig);
-    return false;
+    return alg_parser_rc_continue;
 }
 
-static bool handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_RSA;
     TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
     r->exponent = 0;
 
-    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
-
-    size_t len = strlen(ext);
-    if (len == 0 || ext[0] == ':') {
+    size_t len = ext ? strlen(ext) : 0;
+    if (len == 0 || ext[0] == '\0') {
         ext = "2048";
     }
 
     // Deal with bit size
     if (!strncmp(ext, "1024", 4)) {
         r->keyBits = 1024;
+        ext += 4;
     } else if (!strncmp(ext, "2048", 4)) {
         r->keyBits = 2048;
+        ext += 4;
     } else if (!strncmp(ext, "4096", 4)) {
         r->keyBits = 4096;
+        ext += 4;
     } else {
-        return false;
+        r->keyBits = 2048;
     }
 
-    // go past bit size
-    ext += 4;
-
-    if (*ext != ':' || *ext + 1 == '\0') {
-        ext = is_restricted ? ":null:aes128cfb" : ":null:null";
-    }
-
-    // go past the colon separator
-    ext++;
-
-    // Get the scheme and symetric details
-    return handle_asym_scheme_common(ext, public);
+    /* rsa extension should be consumed at this point */
+    return ext[0] == '\0' ? alg_parser_rc_continue : alg_parser_rc_error;
 }
 
-static bool handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_ECC;
 
-    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
-
-    size_t len = strlen(ext);
-    if (len == 0 || ext[0] == ':') {
+    size_t len = ext ? strlen(ext) : 0;
+    if (len == 0 || ext[0] == '\0') {
         ext = "256";
     }
 
@@ -369,32 +324,28 @@ static bool handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
 
     if (!strncmp(ext, "192", 3)) {
         e->curveID = TPM2_ECC_NIST_P192;
+        ext += 3;
     } else if (!strncmp(ext, "224", 3)) {
         e->curveID = TPM2_ECC_NIST_P224;
+        ext += 3;
     } else if (!strncmp(ext, "256", 3)) {
         e->curveID = TPM2_ECC_NIST_P256;
+        ext += 3;
     } else if (!strncmp(ext, "384", 3)) {
         e->curveID = TPM2_ECC_NIST_P384;
+        ext += 3;
     } else if (!strncmp(ext, "521", 3)) {
         e->curveID = TPM2_ECC_NIST_P521;
+        ext += 3;
     } else {
-        return false;
+        e->curveID = TPM2_ECC_NIST_P256;
     }
 
-    // go past ecc size
-    ext += 3;
-
-    if (*ext != ':' || *ext + 1 == '\0') {
-        ext = is_restricted ? ":null:aes128cfb" : ":null:null";
-    }
-
-    // go past the colon separator
-    ext++;
-
-    return handle_asym_scheme_common(ext, public);
+    /* ecc extension should be consumed at this point */
+    return ext[0] == '\0' ? alg_parser_rc_continue : alg_parser_rc_error;
 }
 
-static bool handle_aes(const char *ext, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_SYMCIPHER;
 
@@ -405,123 +356,222 @@ static bool handle_aes(const char *ext, TPM2B_PUBLIC *public) {
     return handle_aes_raw(ext, s);
 }
 
-static bool handle_xor(const char *ext, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_xor(TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_KEYEDHASH;
+    public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_XOR;
 
-    /*
-     * Fixup and normalize things like:
-     * xor --> xor:sha256
-     */
-
-    if (*ext == '\0') {
-        ext = ":sha256";
-    }
-
-    // Move past first colon separator from xor to hash
-    ext++;
-
-    TPMT_KEYEDHASH_SCHEME *s = &public->publicArea.parameters.keyedHashDetail.scheme;
-    s->scheme = TPM2_ALG_XOR;
-    s->details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
-
-    TPM2_ALG_ID alg = tpm2_alg_util_strtoalg(ext, tpm2_alg_util_flags_hash);
-    if (alg == TPM2_ALG_ERROR) {
-        LOG_ERR("Spec does not contain hash algorithm");
-        return false;
-    }
-    s->details.exclusiveOr.hashAlg = alg;
-
-    return true;
+    return alg_parser_rc_continue;
 }
 
-static bool handle_hmac(const char *ext, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_hmac(TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_KEYEDHASH;
     public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_HMAC;
 
-    /*
-     * Fixup and normalize things like:
-     * hmac --> hmac:sha256
-     *
-     * Note this is called with hmac stripped
-     */
+    return alg_parser_rc_continue;
+}
 
-    if (*ext == ':') {
-        ext++;
+static alg_parser_rc handle_keyedhash(TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_KEYEDHASH;
+    public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
+    return alg_parser_rc_done;
+}
+
+static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
+
+    if (!strncmp(object, "rsa", 3)) {
+        object += 3;
+        return handle_rsa(object, public);
+    } else if (!strncmp(object, "ecc", 3)) {
+        object += 3;
+        return handle_ecc(object, public);
+    } else if (!strncmp(object, "aes", 3)) {
+        object += 3;
+        return handle_aes(object, public);
+    } else if (!strncmp(object, "camellia", 7)) {
+        /* TODO add camellia support */
+        LOG_ERR("Camellia not supported");
+        return alg_parser_rc_error;
+    } else if (!strcmp(object, "hmac")) {
+        return handle_hmac(public);
+    } else if (!strcmp(object, "xor")) {
+        return handle_xor(public);
+    } else if (!strcmp(object, "keyedhash")) {
+        return handle_keyedhash(public);
     }
 
-    if (*ext == '\0') {
-        ext = "sha256";
+    return alg_parser_rc_error;
+}
+
+static alg_parser_rc handle_scheme_keyedhash(const char *scheme, TPM2B_PUBLIC *public) {
+
+    if (!scheme || scheme[0] == '\0') {
+        scheme = "sha256";
     }
 
-    TPM2_ALG_ID alg = tpm2_alg_util_strtoalg(ext, tpm2_alg_util_flags_hash);
+    TPM2_ALG_ID alg = tpm2_alg_util_strtoalg(scheme, tpm2_alg_util_flags_hash);
     if (alg == TPM2_ALG_ERROR) {
-        return false;
+        return alg_parser_rc_error;
     }
 
-    public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = alg;
-    return true;
-}
-
-static bool handle_keyedhash(TPM2B_PUBLIC *public) {
-
-        public->publicArea.type = TPM2_ALG_KEYEDHASH;
-        public->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_NULL;
-        return true;
-}
-
-static const char *alg_spec_fixup(const char *alg_spec) {
-
-    /*
-     * symcipher used to imply aes128cfb.
-     */
-    if (!strcmp(alg_spec, "symcipher")) {
-        return "aes128cfb";
+    switch(public->publicArea.parameters.keyedHashDetail.scheme.scheme) {
+    case TPM2_ALG_HMAC:
+        public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = alg;
+        break;
+    case TPM2_ALG_XOR:
+        public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
+        public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = alg;
+        break;
+    default:
+        return alg_parser_rc_error;
     }
 
-    return alg_spec;
+    return alg_parser_rc_done;
+}
+
+static alg_parser_rc handle_scheme(const char *scheme, TPM2B_PUBLIC *public) {
+
+    switch(public->publicArea.type) {
+    case TPM2_ALG_RSA:
+    case TPM2_ALG_ECC:
+        return handle_scheme_sign(scheme, public);
+    case TPM2_ALG_KEYEDHASH:
+        return handle_scheme_keyedhash(scheme, public);
+    default:
+        return alg_parser_rc_error;
+    }
+
+    return alg_parser_rc_error;
+}
+
+static alg_parser_rc handle_asym_detail(const char *detail, TPM2B_PUBLIC *public) {
+
+    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
+    bool is_rsapps = public->publicArea.parameters.asymDetail.scheme.scheme == TPM2_ALG_RSAPSS;
+
+    switch(public->publicArea.type) {
+    case TPM2_ALG_RSA:
+    case TPM2_ALG_ECC:
+
+        if (!detail || detail[0] == '\0') {
+            detail = is_restricted || is_rsapps ? "aes128cfb" : "null";
+        }
+
+        TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
+
+        if (!strncmp(detail, "aes", 3)) {
+            return handle_aes_raw(detail + 3, s);
+        } else if (!strncmp(detail, "camellia", 7)) {
+            /* TODO add camellia support */
+            LOG_ERR("Camellia not supported");
+            return alg_parser_rc_error;
+        } else if(!strcmp(detail, "null")) {
+            s->algorithm = TPM2_ALG_NULL;
+            return alg_parser_rc_done;
+        }
+    /* no default */
+    }
+
+    return alg_parser_rc_error;
 }
 
 bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
 
-    /*
-     * Fix up numerics, like 0x1 for rsa
-     */
-    TPM2_ALG_ID alg;
-    bool res = tpm2_util_string_to_uint16(alg_spec, &alg);
-    if (res) {
-        alg_spec = tpm2_alg_util_algtostr(alg,
-                tpm2_alg_util_flags_base);
-        if (!alg_spec) {
-            return false;
+    char buf[256];
+
+    if (!alg_spec) {
+        return false;
+    }
+
+    int rc = snprintf(buf, sizeof(buf), "%s", alg_spec);
+    if (rc < 0 || (size_t)rc >= sizeof(buf)) {
+        goto error;
+    }
+
+    char *object = NULL;
+    char *scheme = NULL;
+    char *symdetail = NULL;
+
+    char *b = buf;
+    char *tok = NULL;
+    char *saveptr = NULL;
+    unsigned i = 0;
+    while ((tok = strtok_r(b, ":", &saveptr))) {
+        b = NULL;
+
+        switch (i) {
+        case 0:
+            object = tok;
+            break;
+        case 1:
+            scheme = tok;
+            break;
+        case 2:
+            symdetail = tok;
+            break;
+        default:
+            goto error;
         }
-        alg_spec = alg_spec_fixup(alg_spec);
+        i++;
+    }
+
+    if (i == 0) {
+        goto error;
+    }
+
+    alg_parser_rc prc = handle_object(object, public);
+    if (prc == alg_parser_rc_done) {
+        /* we must have exhausted all the entries or it's an error */
+        return scheme || symdetail ? false : true;
+    }
+
+    if (prc == alg_parser_rc_error) {
+        return false;
     }
 
     /*
-     * TODO handle Camelia
+     * at this point we either have scheme or asym detail, if it
+     * doesn't process as a scheme shuffle it to asym detail
      */
-    res = false;
-    if (!strncmp(alg_spec, "rsa", 3)) {
-        res = handle_rsa(&alg_spec[3], public);
-    } else if (!strncmp(alg_spec, "aes", 3)) {
-        res = handle_aes(&alg_spec[3], public);
-    } else if (!strncmp(alg_spec, "xor", 3)) {
-        res = handle_xor(&alg_spec[3], public);
-    } else if (!strncmp(alg_spec, "ecc", 3)) {
-        res = handle_ecc(&alg_spec[3], public);
-    } else if (!strncmp(alg_spec, "hmac", 4)) {
-        res = handle_hmac(&alg_spec[4], public);
-    } else if (!strcmp(alg_spec, "keyedhash")) {
-        res = handle_keyedhash(public);
+    for (i=0; i < 2; i++) {
+        prc = handle_scheme(scheme, public);
+        if (prc == alg_parser_rc_done) {
+            /* we must have exhausted all the entries or it's an error */
+            return symdetail ? false : true;
+        }
+
+        if (prc == alg_parser_rc_error) {
+            /*
+             * if symdetail is set scheme must be consumed
+             * unless scheme has been skipped by setting it
+             * to NULL
+             */
+            if (symdetail && scheme) {
+                return false;
+            }
+
+            symdetail = scheme;
+            scheme = NULL;
+            continue;
+        }
+
+        /* success in processing scheme */
+        break;
     }
 
-    if (!res) {
-        LOG_ERR("Could not handle algorithm spec: \"%s\"", alg_spec);
+    /* handle asym detail */
+    prc = handle_asym_detail(symdetail, public);
+    if (prc != alg_parser_rc_done) {
+        goto error;
     }
 
-    return res;
+    return true;
+
+error:
+    LOG_ERR("Could not handle algorithm spec: \"%s\"", alg_spec);
+    return false;
 }
 
 static alg_iter_res find_match(TPM2_ALG_ID id, const char *name, tpm2_alg_util_flags flags, void *userdata) {
