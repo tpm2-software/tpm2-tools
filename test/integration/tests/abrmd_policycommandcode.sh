@@ -43,6 +43,9 @@ tpm2_flushcontext -S $file_session_data
 
 rm $file_session_data
 
+echo "tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
+  -r $file_unseal_key_priv -L $file_policy -i- <<< $secret"
+
 tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
   -r $file_unseal_key_priv -L $file_policy -i- <<< $secret
 

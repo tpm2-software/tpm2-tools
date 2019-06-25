@@ -26,7 +26,7 @@ tpm2_createprimary -Q -a o -g sha1 -G rsa -o context.out
 # Keep the algorithm specifiers mixed to test friendly and raw
 # values.
 for gAlg in `populate_hash_algs`; do
-    for GAlg in rsa 0x08 ecc 0x25; do
+    for GAlg in rsa keyedhash ecc aes; do
         echo "tpm2_create -Q -C context.out -g $gAlg -G $GAlg -u key.pub -r key.priv"
         tpm2_create -Q -C context.out -g $gAlg -G $GAlg -u key.pub -r key.priv
         cleanup "keep-context" "no-shut-down"
@@ -38,7 +38,7 @@ cleanup "keep-context" "no-shut-down"
 policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
 echo "$policy_orig" | xxd -r -p > policy.bin
 
-tpm2_create -C context.out -g sha256 -G 0x1 -L policy.bin -u key.pub -r key.priv \
+tpm2_create -C context.out -g sha256 -G rsa -L policy.bin -u key.pub -r key.priv \
   -b 'sign|fixedtpm|fixedparent|sensitivedataorigin' > out.pub
 
 policy_new=$(yaml_get_kv out.pub "authorization policy")

@@ -391,6 +391,739 @@ static void test_tpm2_alg_util_flags_hash(void **state) {
     assert_null(name);
 }
 
+static void test_extended_alg_rsa2048_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa2048", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 2048);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_NULL);
+}
+
+static void test_extended_alg_rsa2048_aes128cfb_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa2048:aes128cfb", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 2048);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_NULL);
+
+    TPMT_SYM_DEF_OBJECT *s = &r->symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.sym, TPM2_ALG_CFB);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_rsa2048_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa2048", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 2048);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_NULL);
+
+    TPMT_SYM_DEF_OBJECT *s = &r->symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.sym, TPM2_ALG_CFB);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_rsa_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 2048);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_NULL);
+
+    TPMT_SYM_DEF_OBJECT *s = &r->symmetric;
+    assert_int_equal(s->algorithm, TPM2_ALG_NULL);
+}
+
+static void test_extended_alg_rsa1024_rsaes_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa1024:rsaes", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 1024);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_RSAES);
+
+    TPMT_SYM_DEF_OBJECT *s = &r->symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.sym, TPM2_ALG_CFB);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_rsa1024_rsaes(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa1024:rsaes", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 1024);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_RSAES);
+
+    TPMT_SYM_DEF_OBJECT *s = &r->symmetric;
+    assert_int_equal(s->algorithm, TPM2_ALG_NULL);
+}
+
+static void test_extended_alg_rsa_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 2048);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_NULL);
+
+    TPMT_SYM_DEF_OBJECT *s = &r->symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.aes, TPM2_ALG_CFB);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_rsa_rsapss(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa:rsapss", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 2048);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_RSAPSS);
+
+    TPMT_SYM_DEF_OBJECT *s = &r->symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.aes, TPM2_ALG_CFB);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_rsa_rsassa_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa:rsassa", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    TPMS_RSA_PARMS *r = &pub.publicArea.parameters.rsaDetail;
+    assert_int_equal(r->exponent, 0);
+    assert_int_equal(r->keyBits, 2048);
+    assert_int_equal(r->scheme.scheme, TPM2_ALG_RSASSA);
+
+    TPMS_SIG_SCHEME_RSASSA *s = &r->scheme.details.rsassa;
+    assert_int_equal(s->hashAlg, TPM2_ALG_SHA256);
+}
+
+static void test_extended_alg_ecc256_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P256);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+}
+
+static void test_extended_alg_ecc256_aes128cbc_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc256:aes128cbc", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P256);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+
+    TPMT_SYM_DEF_OBJECT *s = &e->symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.sym, TPM2_ALG_CBC);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_ecc384_ecdaa4_sha256_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc384:ecdaa4-sha256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_ECDAA);
+
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P384);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+
+    TPMS_SIG_SCHEME_ECDAA *a = &e->scheme.details.ecdaa;
+    assert_int_equal(a->count, 4);
+    assert_int_equal(a->hashAlg, TPM2_ALG_SHA256);
+}
+
+static void test_extended_alg_ecc384_ecdaa4_sha256(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc384:ecdaa4-sha256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_ECDAA);
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P384);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+
+    TPMS_SIG_SCHEME_ECDAA *a = &e->scheme.details.ecdaa;
+    assert_int_equal(a->count, 4);
+    assert_int_equal(a->hashAlg, TPM2_ALG_SHA256);
+
+    TPMT_SYM_DEF_OBJECT *s = &e->symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.sym, TPM2_ALG_CFB);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_ecc256_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P256);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+}
+
+static void test_extended_alg_ecc_non_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P256);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+}
+
+static void test_extended_alg_ecc_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P256);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+}
+
+static void test_extended_alg_ecc_ecdsa_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc:ecdaa", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_ECC);
+
+    TPMS_ECC_PARMS *e = &pub.publicArea.parameters.eccDetail;
+    assert_int_equal(e->scheme.scheme, TPM2_ALG_ECDAA);
+    assert_int_equal(e->curveID, TPM2_ECC_NIST_P256);
+    assert_int_equal(e->kdf.scheme, TPM2_ALG_NULL);
+    assert_int_equal(e->kdf.details.mgf1.hashAlg, 0);
+
+    TPMS_SIG_SCHEME_ECDAA *a = &e->scheme.details.ecdaa;
+    assert_int_equal(a->count, 4);
+    assert_int_equal(a->hashAlg, TPM2_ALG_SHA256);
+}
+
+static void test_extended_alg_xor_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("xor", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMT_KEYEDHASH_SCHEME *s = &pub.publicArea.parameters.keyedHashDetail.scheme;
+    assert_int_equal(s->scheme, TPM2_ALG_XOR);
+    assert_int_equal(s->details.exclusiveOr.hashAlg, TPM2_ALG_SHA256);
+    assert_int_equal(s->details.exclusiveOr.kdf, TPM2_ALG_KDF1_SP800_108);
+}
+
+static void test_extended_alg_xorsha256_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("xor:sha256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMT_KEYEDHASH_SCHEME *s = &pub.publicArea.parameters.keyedHashDetail.scheme;
+    assert_int_equal(s->scheme, TPM2_ALG_XOR);
+    assert_int_equal(s->details.exclusiveOr.hashAlg, TPM2_ALG_SHA256);
+    assert_int_equal(s->details.exclusiveOr.kdf, TPM2_ALG_KDF1_SP800_108);
+}
+
+static void test_extended_alg_xor(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("xor", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMT_KEYEDHASH_SCHEME *s = &pub.publicArea.parameters.keyedHashDetail.scheme;
+    assert_int_equal(s->scheme, TPM2_ALG_XOR);
+    assert_int_equal(s->details.exclusiveOr.hashAlg, TPM2_ALG_SHA256);
+    assert_int_equal(s->details.exclusiveOr.kdf, TPM2_ALG_KDF1_SP800_108);
+}
+
+static void test_extended_alg_xorsha256(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("xor:sha256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMT_KEYEDHASH_SCHEME *s = &pub.publicArea.parameters.keyedHashDetail.scheme;
+    assert_int_equal(s->scheme, TPM2_ALG_XOR);
+    assert_int_equal(s->details.exclusiveOr.hashAlg, TPM2_ALG_SHA256);
+    assert_int_equal(s->details.exclusiveOr.kdf, TPM2_ALG_KDF1_SP800_108);
+}
+
+static void test_extended_alg_hmac_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("hmac", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    assert_int_equal(alg, TPM2_ALG_SHA256);
+}
+
+static void test_extended_alg_hmac(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("hmac", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    assert_int_equal(alg, TPM2_ALG_SHA256);
+}
+
+static void test_extended_alg_hmacsha384_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("hmac:sha384", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, TPMA_OBJECT_RESTRICTED);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    assert_int_equal(alg, TPM2_ALG_SHA384);
+}
+
+static void test_extended_alg_hmacsha384(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("hmac:sha384", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.objectAttributes, 0);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    assert_int_equal(alg, TPM2_ALG_SHA384);
+}
+
+static void test_extended_alg_aes_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("aes", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_SYMCIPHER);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.symDetail.sym;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.aes, TPM2_ALG_NULL);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_aes(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("aes", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_SYMCIPHER);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.symDetail.sym;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.aes, TPM2_ALG_NULL);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_aes256_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("aes256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_SYMCIPHER);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.symDetail.sym;
+    assert_int_equal(s->keyBits.aes, 256);
+    assert_int_equal(s->mode.aes, TPM2_ALG_NULL);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_aes256(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("aes256", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_SYMCIPHER);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.symDetail.sym;
+    assert_int_equal(s->keyBits.aes, 256);
+    assert_int_equal(s->mode.aes, TPM2_ALG_NULL);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_aes256cbc_restricted(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("aes256cbc", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_SYMCIPHER);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.symDetail.sym;
+    assert_int_equal(s->keyBits.aes, 256);
+    assert_int_equal(s->mode.aes, TPM2_ALG_CBC);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_aes256cbc(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = {
+        .publicArea = {
+            .objectAttributes = TPMA_OBJECT_RESTRICTED
+        }
+    };
+
+    bool res = tpm2_alg_util_handle_ext_alg("aes256cbc", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_SYMCIPHER);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.symDetail.sym;
+    assert_int_equal(s->keyBits.aes, 256);
+    assert_int_equal(s->mode.aes, TPM2_ALG_CBC);
+    assert_int_equal(s->algorithm, TPM2_ALG_AES);
+}
+
+static void test_extended_alg_keyedhash(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("keyedhash", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
+
+    TPMS_KEYEDHASH_PARMS *k = &pub.publicArea.parameters.keyedHashDetail;
+    assert_int_equal(k->scheme.scheme, TPM2_ALG_NULL);
+}
+
+static void test_extended_alg_bad(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("ecc256funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("ecc256:funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("rsafunnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("rsa:funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("rsa2048funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("rsa2048:funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("aesfunnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("aes:funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("aes128funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("aes128:funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("xorfunnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("xor:funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("hmacfunnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("hmac:funnytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("keyedhashfunytexthere", &pub);
+    assert_false(res);
+
+    res = tpm2_alg_util_handle_ext_alg("keyedhash:funnytexthere", &pub);
+    assert_false(res);
+}
+
 /* link required symbol, but tpm2_tool.c declares it AND main, which
  * we have a main below for cmocka tests.
  */
@@ -449,7 +1182,40 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_tpm2_alg_util_get_hash_size),
         cmocka_unit_test(test_tpm2_alg_util_flags_sig),
         cmocka_unit_test(test_tpm2_alg_util_flags_enc_scheme),
-        cmocka_unit_test(test_tpm2_alg_util_flags_hash)
+        cmocka_unit_test(test_tpm2_alg_util_flags_hash),
+        cmocka_unit_test(test_extended_alg_rsa2048_non_restricted),
+        cmocka_unit_test(test_extended_alg_rsa2048_restricted),
+        cmocka_unit_test(test_extended_alg_rsa_non_restricted),
+        cmocka_unit_test(test_extended_alg_rsa_restricted),
+        cmocka_unit_test(test_extended_alg_rsa1024_rsaes_restricted),
+        cmocka_unit_test(test_extended_alg_rsa1024_rsaes),
+        cmocka_unit_test(test_extended_alg_rsa_rsapss),
+        cmocka_unit_test(test_extended_alg_rsa_rsassa_non_restricted),
+        cmocka_unit_test(test_extended_alg_rsa2048_aes128cfb_non_restricted),
+        cmocka_unit_test(test_extended_alg_ecc256_non_restricted),
+        cmocka_unit_test(test_extended_alg_ecc256_aes128cbc_non_restricted),
+        cmocka_unit_test(test_extended_alg_ecc384_ecdaa4_sha256_non_restricted),
+        cmocka_unit_test(test_extended_alg_ecc384_ecdaa4_sha256),
+        cmocka_unit_test(test_extended_alg_ecc256_restricted),
+        cmocka_unit_test(test_extended_alg_ecc_non_restricted),
+        cmocka_unit_test(test_extended_alg_ecc_restricted),
+        cmocka_unit_test(test_extended_alg_ecc_ecdsa_restricted),
+        cmocka_unit_test(test_extended_alg_xor_restricted),
+        cmocka_unit_test(test_extended_alg_xor),
+        cmocka_unit_test(test_extended_alg_xorsha256_restricted),
+        cmocka_unit_test(test_extended_alg_xorsha256),
+        cmocka_unit_test(test_extended_alg_hmac_restricted),
+        cmocka_unit_test(test_extended_alg_hmac),
+        cmocka_unit_test(test_extended_alg_hmacsha384_restricted),
+        cmocka_unit_test(test_extended_alg_hmacsha384),
+        cmocka_unit_test(test_extended_alg_aes_restricted),
+        cmocka_unit_test(test_extended_alg_aes),
+        cmocka_unit_test(test_extended_alg_aes256_restricted),
+        cmocka_unit_test(test_extended_alg_aes256),
+        cmocka_unit_test(test_extended_alg_aes256cbc_restricted),
+        cmocka_unit_test(test_extended_alg_aes256cbc),
+        cmocka_unit_test(test_extended_alg_keyedhash),
+        cmocka_unit_test(test_extended_alg_bad),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

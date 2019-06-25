@@ -16,7 +16,6 @@ list of known "Simple Specifiers Below".
 
 ### Symmetric
   * aes
-  * camellia
 
 ### Hashing Algorithms
   * sha1
@@ -90,7 +89,7 @@ algorithm is missing, it defaults to *sha256*. Some take no arguments, and some 
 arguments.
 
 #### Hash Optional Scheme Specifiers
-These scheme specifiers are followed immediately by a valid hash algorithm, For example: `oaepsha256`.
+These scheme specifiers are followed by a dash and a valid hash algorithm, For example: `oaep-sha256`.
 
   * oaep
   * ecdh
@@ -100,8 +99,9 @@ These scheme specifiers are followed immediately by a valid hash algorithm, For 
   * ecschnorr
 
 #### Multiple Option Scheme Specifiers
-This scheme specifier is followed by a count (max size UINT16) a dash(-) and a valid hash algorithm.
+This scheme specifier is followed by a count (max size UINT16) then folloed by a dash(-) and a valid hash algorithm.
   * ecdaa
+For example, ecdaa4-sha256. If no count is specified, it defaults to 4.
 
 #### No Option Scheme Specifiers
 This scheme specifier takes NO arguments.
@@ -119,8 +119,3 @@ specified, an asymmetric objects symmetric details defaults to *aes128cfb*.
 
 ### Create an ecc256 key with an ecdaa signing scheme with a count of 4 and sha384 hash
 `/tpm2_create -C parent.ctx -G ecc256:ecdaa4-sha384 -u key.pub -r key.priv`
-
-
-**DEPRECATED**
-The old numerical arguments are deprecated, and use is discouraged and will not be officially supported
-going forward.
