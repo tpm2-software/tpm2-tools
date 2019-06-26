@@ -260,7 +260,7 @@ AM_TESTS_ENVIRONMENT =	\
 	TPM2_TOOLS_TEST_FIXTURES=$(abs_top_srcdir)/test/integration/fixtures; \
 	export TPM2_TOOLS_TEST_FIXTURES;
 
-SH_LOG_COMPILER = dbus-run-session
+SH_LOG_COMPILER = dbus-run-session bash
 AM_SH_LOG_FLAGS = --
 endif
 
