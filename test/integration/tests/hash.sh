@@ -1,4 +1,3 @@
-#!/bin/bash
 # SPDX-License-Identifier: BSD-3-Clause
 
 #this script is for hash case testing
