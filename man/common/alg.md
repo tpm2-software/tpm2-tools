@@ -16,6 +16,7 @@ list of known "Simple Specifiers Below".
 
 ### Symmetric
   * aes
+  * camellia
 
 ### Hashing Algorithms
   * sha1
