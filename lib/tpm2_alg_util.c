@@ -117,20 +117,18 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
     }
 }
 
-static alg_parser_rc handle_aes_raw(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
+static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s) {
 
-    s->algorithm = TPM2_ALG_AES;
-
-    if (*ext == '\0') {
+    if (ext == NULL || ext[0] == '\0') {
         ext = "128";
     }
 
     if (!strncmp(ext, "128", 3)) {
-        s->keyBits.aes = 128;
+        s->keyBits.sym = 128;
     } else if (!strncmp(ext, "192", 3)) {
-        s->keyBits.aes = 192;
+        s->keyBits.sym = 192;
     } else if (!strncmp(ext, "256", 3)) {
-        s->keyBits.aes = 256;
+        s->keyBits.sym = 256;
     } else {
         return alg_parser_rc_error;
     }
@@ -353,7 +351,19 @@ static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
                       &public->publicArea.objectAttributes);
 
     TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
-    return handle_aes_raw(ext, s);
+    s->algorithm = TPM2_ALG_AES;
+
+    return handle_sym_common(ext, s);
+}
+
+static alg_parser_rc handle_camellia(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_SYMCIPHER;
+
+    TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
+    s->algorithm = TPM2_ALG_CAMELLIA;
+
+    return handle_sym_common(ext, s);
 }
 
 static alg_parser_rc handle_xor(TPM2B_PUBLIC *public) {
@@ -390,10 +400,9 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     } else if (!strncmp(object, "aes", 3)) {
         object += 3;
         return handle_aes(object, public);
-    } else if (!strncmp(object, "camellia", 7)) {
-        /* TODO add camellia support */
-        LOG_ERR("Camellia not supported");
-        return alg_parser_rc_error;
+    } else if (!strncmp(object, "camellia", 8)) {
+        object += 8;
+        return handle_camellia(object, public);
     } else if (!strcmp(object, "hmac")) {
         return handle_hmac(public);
     } else if (!strcmp(object, "xor")) {
@@ -462,11 +471,11 @@ static alg_parser_rc handle_asym_detail(const char *detail, TPM2B_PUBLIC *public
         TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
 
         if (!strncmp(detail, "aes", 3)) {
-            return handle_aes_raw(detail + 3, s);
-        } else if (!strncmp(detail, "camellia", 7)) {
-            /* TODO add camellia support */
-            LOG_ERR("Camellia not supported");
-            return alg_parser_rc_error;
+            s->algorithm = TPM2_ALG_AES;
+            return handle_sym_common(detail + 3, s);
+        } else if (!strncmp(detail, "camellia", 8)) {
+            s->algorithm = TPM2_ALG_CAMELLIA;
+            return handle_sym_common(detail + 8, s);
         } else if(!strcmp(detail, "null")) {
             s->algorithm = TPM2_ALG_NULL;
             return alg_parser_rc_done;

@@ -1070,6 +1070,55 @@ static void test_extended_alg_keyedhash(void **state) {
     assert_int_equal(k->scheme.scheme, TPM2_ALG_NULL);
 }
 
+static void test_extended_rsa_camellia(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa:camellia", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.rsaDetail.symmetric;
+    assert_int_equal(s->keyBits.aes, 128);
+    assert_int_equal(s->mode.aes, TPM2_ALG_NULL);
+    assert_int_equal(s->algorithm, TPM2_ALG_CAMELLIA);
+}
+
+static void test_extended_rsa_camellia256cbc(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("rsa:camellia256cbc", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_RSA);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.rsaDetail.symmetric;
+    assert_int_equal(s->keyBits.aes, 256);
+    assert_int_equal(s->mode.aes, TPM2_ALG_CBC);
+    assert_int_equal(s->algorithm, TPM2_ALG_CAMELLIA);
+}
+
+static void test_extended_camellia192cbc(void **state) {
+    UNUSED(state);
+
+    TPM2B_PUBLIC pub = { 0 };
+
+    bool res = tpm2_alg_util_handle_ext_alg("camellia192cbc", &pub);
+    assert_true(res);
+
+    assert_int_equal(pub.publicArea.type, TPM2_ALG_SYMCIPHER);
+
+    TPMT_SYM_DEF_OBJECT *s = &pub.publicArea.parameters.symDetail.sym;
+    assert_int_equal(s->keyBits.aes, 192);
+    assert_int_equal(s->mode.aes, TPM2_ALG_CBC);
+    assert_int_equal(s->algorithm, TPM2_ALG_CAMELLIA);
+}
+
+
 static void test_extended_alg_bad(void **state) {
     UNUSED(state);
 
@@ -1215,6 +1264,9 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_extended_alg_aes256cbc_restricted),
         cmocka_unit_test(test_extended_alg_aes256cbc),
         cmocka_unit_test(test_extended_alg_keyedhash),
+        cmocka_unit_test(test_extended_rsa_camellia),
+        cmocka_unit_test(test_extended_rsa_camellia256cbc),
+        cmocka_unit_test(test_extended_camellia192cbc),
         cmocka_unit_test(test_extended_alg_bad),
     };
 
