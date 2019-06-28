@@ -82,8 +82,7 @@ AC_DEFUN([AC_PYTHON_MODULE],
 [AC_MSG_CHECKING([for module $1 in python])
   echo "import $1" | python - 2>/dev/null
   if test $? -ne 0 ; then
-    AC_MSG_RESULT([not found])
-    AC_MSG_WARN([System tests require the python module $1, some tests will fail!])
+    AC_MSG_ERROR([not found])
   else
     AC_MSG_RESULT(found)
   fi
@@ -93,28 +92,26 @@ AS_IF([test "x$enable_unit" != xno], [
     PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
     AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd], found, missing)
-
-    AC_CHECK_PROG([tpm_server], [tpm_server], found, missing)
-
     AS_IF([test $tpm2_abrmd = missing],
           [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])])
 
+    AC_CHECK_PROG([tpm_server], [tpm_server], found, missing)
     AS_IF([test $tpm_server = missing],
           [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])])
 
     AC_CHECK_PROG([BASH_SHELL], [bash], found, missing)
     AS_IF([test $BASH_SHELL = missing],
-          [AC_MSG_WARN([Required executable bash not found, system tests require a bash shell!])])
+          [AC_MSG_ERROR([Required executable bash not found, system tests require a bash shell!])])
 
     AC_CHECK_PROG([PYTHON], [python], found, missing)
     AS_IF([test $PYTHON = missing],
-          [AC_MSG_WARN([Required executable python not found, some system tests will fail!])])
+          [AC_MSG_ERROR([Required executable python not found, some system tests will fail!])])
 
     AC_PYTHON_MODULE([yaml])
 
     AC_CHECK_PROG([XXD], [xxd], found, missing)
     AS_IF([test $XXD = missing],
-          [AC_MSG_WARN([Required executable xxd not found, some system tests will fail!])])
+          [AC_MSG_ERROR([Required executable xxd not found, some system tests will fail!])])
     enable_unit="$enable_unit (tpm2_abrmd: $tpm2_abrmd, tpm_server: $tpm_server, bash: $BASH_SHELL, python: $PYTHON, xxd: $XXD)"
 ])
 
