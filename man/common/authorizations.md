@@ -9,21 +9,38 @@ Authorization for use of an object in TPM2.0 can come in 3 different forms:
 
 ## Passwords
 
-Passwords are interpreted in three forms; string, hex-string or a file. A string password is not
-interpreted, and is directly used for authorization. A hex-string password is converted from
-a hexidecimal form into a byte array form, thus allowing passwords with non-printable
-and/or terminal un-friendly characters.
-A file form should be the path of a file containing a password in string or hex-string format to be read by the tool.
-Storing passwords in files prevents information leakage, passwords passed as options can be read from the process list.
+Passwords are interpreted in four forms:
+1. String
+2. Hex-string
+3. File
+4. Stdin
 
-By default passwords are assumed to be in the string form. Password form is specified
-with special prefix values, they are:
+A string password is not interpreted, and is directly used for authorization. A
+hex-string password is converted from a hexidecimal form into a byte array form,
+thus allowing passwords with non-printable and/or terminal un-friendly
+characters. A file form should be the path of a file containing a password in
+string or hex-string format to be read by the tool. Storing passwords in files
+prevents information leakage, passwords passed as options can be read from the
+process list. Stdin password input, just like string, is not interpreted. When
+specifying stdin passwords, there are two ways: Prompt and Process substitution.
+When using the prompt method, specifying the password should be followed with
+a return and ctrl+d so it becomes equivalent to a string password. As an example,
+tpm2_tool -p str:password is equivalent to tpm2_tool -p -, followed by
+prompt:password<return><ctrl+d>
 
-  * str: - Used to indicate it is a raw string. Useful for escaping a password that starts
-         with the "hex:" prefix.
-  * hex: - Used when specifying a password in hex string format.
-  * file: - Used when specifying a password stored in a file. Useful to prevent leaking the
-         password to UNIX utilities (such as ps).
+By default passwords are assumed to be in the string form. Password form is
+specified with special prefix values, they are:
+
+  * str:<password> Used to indicate it is a raw string. Useful for escaping a
+                   password that starts with the "hex:" prefix.
+  * hex:<password> Used when specifying a password in hex string format.
+  * file:<file>    Used when specifying a password stored in a file. Useful to
+                   prevent leaking the password to UNIX utilities (such as ps).
+  * "-"            Used when specifying a password from stdin. There are 2 ways
+                   to specify the password. A prompt and by the process
+                   substitution method. Note that this is is similar to using
+                   file:-, however this option additionally hides password
+                   characters being echoed back to screen when using prompt.
 
 ## Sessions
 
@@ -80,4 +97,14 @@ session:session.ctx+mypassword
 To use a session context file called *session.ctx* **AND** send the *HEX* authvalue 0x11223344.
 ```
 session:session.ctx+hex:11223344
+```
+
+To use stdin method of specifying the password.
+```
+echo $password | tpm2_tool -p -
+```
+
+To use stdin method of specifying the password with process substitution.
+```
+tpm2_tool -p - <<< $password
 ```
