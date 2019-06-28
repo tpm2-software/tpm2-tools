@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include <tss2/tss2_esys.h>
 #include <tss2/tss2_mu.h>
@@ -249,12 +251,55 @@ out:
     return rc;
 }
 
+static tool_rc console_display_control(bool display) {
+
+    struct termios console;
+    if (tcgetattr(STDIN_FILENO, &console)) {
+        return tool_rc_general_error;
+    }
+
+    if (display) {
+        console.c_lflag |= ECHO;
+    }
+
+    if (!display) {
+        console.c_lflag &= ~((tcflag_t) ECHO);
+    }
+
+    if (tcsetattr(STDIN_FILENO, TCSANOW, &console)) {
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
+
 static tool_rc handle_stdin_password(ESYS_CONTEXT *ectx, tpm2_session **session) {
 
-    tool_rc rc = handle_file(ectx, "file:-", session);
+    bool process_substituion = false;
+    tool_rc rc = console_display_control(false);
+    if (rc != tool_rc_success) {
+       /*
+        * This means password was specified with process substitution method
+        * Example: tpm2_create -p - <<< $testpass
+        */
+        process_substituion = true;
+    }
+
+    if (!process_substituion) {
+        /*
+         * Drop to a password prompt to read password from stdin
+         */
+        printf("Scanning stdin for password:");
+    }
+
+    rc = handle_file(ectx, "file:-", session);
     if (rc != tool_rc_success) {
         LOG_ERR("stdin password error.");
         return rc;
+    }
+
+    if (!process_substituion) {
+        return console_display_control(true);
     }
 
     return tool_rc_success;
