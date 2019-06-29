@@ -249,6 +249,17 @@ out:
     return rc;
 }
 
+static tool_rc handle_stdin_password(ESYS_CONTEXT *ectx, tpm2_session **session) {
+
+    tool_rc rc = handle_file(ectx, "file:-", session);
+    if (rc != tool_rc_success) {
+        LOG_ERR("stdin password error.");
+        return rc;
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     tpm2_session **session, bool is_restricted) {
 
@@ -270,6 +281,12 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     bool is_file = !strncmp(password, FILE_PREFIX, FILE_PREFIX_LEN);
     if (is_file) {
         return handle_file(ectx, password, session);
+    }
+
+    /* Is stdin"-" */
+    bool is_stdin = ( (!strncmp(password, "-", 1)) && (strlen(password) == 1) );
+    if (is_stdin)  {
+        return handle_stdin_password(ectx, session);
     }
 
     /* starts with pcr: */
