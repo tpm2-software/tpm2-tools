@@ -17,6 +17,8 @@ into the TPM.
 The tool outputs the name of the loaded object in a YAML format and saves a
 context file for future interactions with the object.
 
+**NOTE**: Both private and public portions of the tpm key must be specified.
+
 # OPTIONS
 
   * **-C**, **\--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
