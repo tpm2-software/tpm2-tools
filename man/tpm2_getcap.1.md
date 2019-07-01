@@ -82,7 +82,7 @@
 
 ## To list the fixed properties of the TPM
 ```
-tpm2_getcap \--capability properties-fixed
+tpm2_getcap --capability properties-fixed
 ```
 
 ## To list the supported capability arguments to **-c**
