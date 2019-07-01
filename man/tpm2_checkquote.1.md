@@ -52,7 +52,7 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
   * **-F**, **\--pcr-input-file**:
 
-    PCR output file, optional, records the list of PCR values that were included
+    PCR input file, optional, records the list of PCR values that were included
     in the quote.
 
   * **-q**, **\--qualify-data**:
