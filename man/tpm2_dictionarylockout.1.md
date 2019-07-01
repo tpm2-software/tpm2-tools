@@ -37,7 +37,7 @@ dictionary-attack-lockout state. If any password option is missing, assume NULL.
     authentication attempt can be made after max-tries number of failed
     authentications.
 
-  * **-n**, **\--max-tries**=_MAX\_TRYS_:
+  * **-n**, **\--max-tries**=_MAX\_TRIES_:
 
     Specifies the maximum number of allowed authentication attempts on
     DA-protected-object; after which DA is activated.
