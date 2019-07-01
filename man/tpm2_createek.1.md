@@ -15,8 +15,7 @@
 **tpm2_createek**(1) - Generate TCG profile compliant endorsement key (EK), which is the primary object
 of the endorsement hierarchy. If any password option is missing, assume NULL for the password.
 
-If a transient object is generated the tool outputs a context file, named either
-_ek.ctx_ or the value specified via **-c**, for future tool interactions.
+If a transient object is generated the tool outputs a context file specified via **-c**.
 
 Refer to:
 <http://www.trustedcomputinggroup.org/files/static_page_files/7CAA5687-1A4B-B294-D04080D058E86C5F>
@@ -25,13 +24,13 @@ Refer to:
 
   * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
 
-    Specifies current endorsement authorization.
+    Specifies current endorsement hierarchy authorization.
     authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-P**, **\--auth-ek**=_EK\_AUTH_
 
-    Specifies the EK authorization when created.
+    Specifies the endorsement key authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
   * **-w**, **\--auth-owner**=_OWNER\_AUTH_
@@ -39,11 +38,10 @@ Refer to:
     Specifies the current owner authorization.
     Same formatting as the endorse password value or **-e** option.
 
-  * **-c**, **\--context**=_CONTEXT\_OBJECT_:
+  * **-c**, **\--context**=_PERSISTENT\_HANDLE_:
 
     Specifies the name of a context object used to store the EK, either a path
     to save the context of the EK or a handle used to persist EK in the TPM.
-    See section "Context Object Format".
 
     If a value of **-** is passed the tool will find a vacant persistent handle
     to use and print out the automatically selected handle.
@@ -67,9 +65,10 @@ Refer to:
 
   * **-t**, **\--template**:
 
-    Optional: Uses the manufacturer defined EK Template and EK Nonce to populate
-    the **TPM2B_PUBLIC** public area. See the TCG EK Credential Profile
-    specification for more information.
+    Optional: Uses the manufacturer defined EK Template and EK Nonce from fixed NV Indices
+    to populate the **TPM2B_PUBLIC** public area. See the TCG EK Credential Profile specification
+    for more information:
+      - https://trustedcomputinggroup.org/wp-content/uploads/TCG_IWG_Credential_Profile_EK_V2.1_R13.pdf
 
 
 [pubkey options](common/pubkey.md)
@@ -85,26 +84,10 @@ Refer to:
 [algorithm specifiers](common/alg.md)
 
 # EXAMPLES
-## With a Resource Manager (RM)
-
-Resource managers will flush the TPM context when a tool exits, thus
-when using an RM, moving the created EK to persistent memory is
-required.
 
 ### Create an Endorsement Key and make it persistent
 ```
-tpm2_createek -e abc123 -w abc123 -P passwd -H 0x81010001 -G rsa -o ek.pub
-```
-
-## Without a Resource Manager (RM)
-
-The following examples will not work when an RM is in use, as the RM will
-flush the TPM context when the tool exits. In these scenarios, the created
-EK is in transient memory and thus will be flushed.
-
-### Create an Endorsement Key and make it transient
-```
-tpm2_createek -G rsa
+tpm2_createek -e abc123 -w abc123 -P passwd -c 0x81010001 -G rsa -p ek.pub
 ```
 
 ### Create a transient Endorsement Key, flush it, and reload it.
