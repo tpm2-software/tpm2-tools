@@ -26,7 +26,7 @@ see section "Authorization Formatting".
 
   * **-p**, **\--object-auth**=_OBJECT\_AUTH_:
 
-    The old authorization value for the TPM object. Follows the "# Authorization Formatting"
+    The old authorization value for the TPM object. Follows the "Authorization Formatting"
     section below.
 
   * **-c**, **\--object-context**=_OBJECT\_CONTEXT\_OBJECT_:
