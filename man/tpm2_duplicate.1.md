@@ -30,7 +30,7 @@ These options control the key importation process:
 
   * **-o**, **\--output-key-file**=_FILE_:
 
-    Specifies the filename to store the symmetric key (128 bit data) that was used for the inner wrapper. Valid only when specified symmetric algorithm is not null and \--input-key-file is not specified
+    Specifies the filename to store the symmetric key (128 bit data) that was used for the inner wrapper. Valid only when specified symmetric algorithm is not null and \--input-key-file is not specified. The TPM generates the key in this case.
 
   * **-C**, **\--parent-key**=_PARENT\_CONTEXT_:
 
@@ -79,7 +79,7 @@ tpm2_loadexternal -a o -u new_parent.pub -o new_parent.ctxt
 
 tpm2_startauthsession \--policy-session -S session.dat
 tpm2_policycommandcode -S session.dat -o policy.dat 0x14B
-tpm2_duplicate -C new_parent.ctxt -c key.ctxt -G null -p "session:session.dat" -r duprv.bin -s seed.dat
+tpm2_duplicate -C new_parent.ctxt -c key.ctxt -g null -p "session:session.dat" -r duprv.bin -s seed.dat
 tpm2_flushcontext -S session.dat
 ```
 
