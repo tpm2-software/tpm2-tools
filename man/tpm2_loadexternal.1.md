@@ -4,9 +4,7 @@
 
 # NAME
 
-**tpm2_loadexternal**(1) - Load an external object into the TPM. This command
-loads an external object into the TPM, forgoing TPM protections. Ie, the key
-material is not protected by the parent objects seed.
+**tpm2_loadexternal**(1) - Load an external object into the TPM.
 
 # SYNOPSIS
 
@@ -14,9 +12,12 @@ material is not protected by the parent objects seed.
 
 # DESCRIPTION
 
-**tpm2_loadexternal**(1) - Load an object that is not a Protected Object into the
-TPM. The command allows loading of a public area or both a public and a
-sensitive area.
+**tpm2_loadexternal**(1) - This command loads an external object into the TPM,
+forgoing TPM protections. Ie, the key material is not protected by the parent
+object's seed. The command allows loading of a public area or both a public 
+and a sensitive area.
+
+
 
 # OPTIONS
 
