@@ -4,8 +4,7 @@
 
 # NAME
 
-**tpm2_createprimary**(1) - Create a primary key under a primary seed or a temporary
-primary key under the **TPM_RH_NULL** hierarchy.
+**tpm2_createprimary**(1) - Create a primary key.
 
 # SYNOPSIS
 
@@ -13,12 +12,11 @@ primary key under the **TPM_RH_NULL** hierarchy.
 
 # DESCRIPTION
 
-**tpm2_createprimary**(1) - This command is used to create a Primary Object under
-one of the Primary Seeds or a Temporary Object under **TPM_RH_NULL**. The command
-uses a **TPM2B_PUBLIC** as a template for the object to be created. The command
-will create and load a Primary Object. The sensitive area is not returned.
-A context file for the created object's handle is saved to disk for future
-interactions with the created primary.
+**tpm2_createprimary**(1) - This command is used to create a primary object under
+one of the hierarchies: Owner, Platform, Endorsement, NULL. The command will create
+and load a Primary Object. The sensitive and public portions are not returned.
+A context file for the created object's handle is saved as a file for future interactions
+with the created primary.
 
 # OPTIONS
 
