@@ -13,13 +13,9 @@ endorsement hierarchy.
 
 # DESCRIPTION
 
-**tpm2_createak**(1) - Generate an attestation key (AK) with the given
-algorithm under the endorsement hierarchy. It also makes it persistent
-with given AK handle supplied via **-k**, when **-k** isn't specified a context
-for the transient handle is saved to disk either as *ek.pub* or the filename
-specified via **-c**.
-If **-p** is specified, the tool outputs the public key to the path supplied as
-the option argument.
+**tpm2_createak**(1) - Generate an attestation key (AK) with the given algorithm
+under the endorsement hierarchy. The context of the attestation key is specified
+via **-c**.
 
 If any password option is missing, assume NULL.
 
@@ -33,24 +29,23 @@ loaded-key:
 
   * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
 
-    Specifies current endorsement authorization.
+    Specifies current endorsement hierarchy authorization.
     Authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
   * **-P**, **\--auth-ak**=_AK\_AUTH_
 
-    Specifies the AK authorization when created.
+    Specifies the attestation key authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
   * **-C**, **\--ek-context**=_EK\_CONTEXT\_OBJECT_:
 
-    Specifies the object context of the EK. Either a file or a handle number.
+    Specifies the object context of the endorsement key. Either a file or a handle number.
     See section "Context Object Format".
 
   * **-c**, **\--context**=_CONTEXT\_FILE\_NAME_:
 
-    Optional, specifies a path to save the context of the AK handle. If the AK
-    is not persisted to a handle (via **-k**) then this option is required.
+    Specifies a file path to save the context of the attestation key.
 
   * **-G**, **\--algorithm**=_ALGORITHM_:
 
@@ -62,10 +57,9 @@ loaded-key:
   * **-D**, **\--digest-alg**=_HASH\_ALGORITHM_:
 
     Like **-G**, but specifies the digest algorithm used for signing.
-    Algorithms should follow the
-    "formatting standards", see section "Algorithm Specifiers".
-    See section "Supported Hash Algorithms" for a list of supported hash
-    algorithms.
+    Algorithms should follow the "formatting standards", see section
+    "Algorithm Specifiers". See section "Supported Hash Algorithms"
+    for a list of supported hash algorithms.
 
   * **-s**, **\--sign-alg**=_SIGN\_ALGORITHM_:
 
@@ -88,7 +82,6 @@ loaded-key:
   * **-r**, **\--privfile**=_OUTPUT\_PRIVATE\_FILE_:
 
     The output file which contains the sensitive portion of the object, optional.
-    If the object is an asymmetric key-pair, then this is the private key.
 
 [pubkey options](common/pubkey.md)
 
@@ -109,22 +102,13 @@ loaded-key:
 [algorithm specifiers](common/alg.md)
 
 # EXAMPLES
-## With a Resource Manager (RM)
-
-Resource managers will flush the TPM context when a tool exits, thus
-when using a RM, moving the created EK to persistent memory is
-required.
 
 ### Create an Attestation Key and make it persistent
 
-Create an Endorsement Key (EK) and persist it to handle
-0x81010002.
-
 ```
-tpm2_createek -c 0x81010001 -G rsa -p ek.pub
-# create an Attestation Key (AK) passing the EK handle
-tpm2_createak -C 0x81010001 -k ak.ctx -p ak.pub -n ak.name
-tpm2_evictcontrol -c 0x81010002 -o ek.handle
+tpm2_createek -c ek.handle -G rsa -p ek.pub
+tpm2_createak -C ek.handle -c ak.ctx -p ak.pub -n ak.name
+tpm2_evictcontrol -c 0x81010002 -o ak.ctx
 ```
 
 [returns](common/returns.md)
