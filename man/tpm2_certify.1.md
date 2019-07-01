@@ -17,10 +17,8 @@ By certifying that the object is loaded, the TPM warrants that a public area
 with a given _NAME_ is self-consistent and associated with a valid sensitive area.
 
 If a relying party has a public area that has the same _NAME_ as a _NAME_ certified
-with this command, then the values in that public area are correct.
-
-The object may be any object that is loaded with **tpm2_load**(1) or **tpm2_createprimary**(1).
-An object that only has its public area loaded cannot be certified.
+with this command, then the values in that public area are correct. An object that only has
+its public area loaded cannot be certified.
 
 # OPTIONS
 
