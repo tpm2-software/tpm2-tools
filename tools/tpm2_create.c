@@ -163,7 +163,7 @@ static bool on_option(char key, char *value) {
         ctx.object.alg =  value;
         ctx.flags.G = 1;
     break;
-    case 'b':
+    case 'a':
         ctx.object.attrs = value;
         ctx.flags.b = 1;
     break;
@@ -201,7 +201,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth-key",             required_argument, NULL, 'p' },
       { "halg",                 required_argument, NULL, 'g' },
       { "kalg",                 required_argument, NULL, 'G' },
-      { "object-attributes",    required_argument, NULL, 'b' },
+      { "object-attributes",    required_argument, NULL, 'a' },
       { "in-file",              required_argument, NULL, 'i' },
       { "policy-file",          required_argument, NULL, 'L' },
       { "pubfile",              required_argument, NULL, 'u' },
@@ -210,7 +210,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "out-context",          required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:b:i:L:u:r:C:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
