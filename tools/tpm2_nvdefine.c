@@ -98,7 +98,7 @@ static bool on_option(char key, char *value) {
                 return false;
         }
         break;
-        case 'a':
+        case 'C':
             ctx.auth_hierarchy.ctx_path = value;
         break;
         case 'P':
@@ -112,7 +112,7 @@ static bool on_option(char key, char *value) {
                 return false;
             }
             break;
-        case 'b':
+        case 'a':
             result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute);
             if (!result) {
                 result = tpm2_attr_util_nv_strtoattr(value, &ctx.nvAttribute);
@@ -138,15 +138,15 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index",                  required_argument,  NULL,   'x' },
-        { "hierarchy",              required_argument,  NULL,   'a' },
+        { "hierarchy",              required_argument,  NULL,   'C' },
         { "size",                   required_argument,  NULL,   's' },
-        { "attributes",             required_argument,  NULL,   'b' },
+        { "attributes",             required_argument,  NULL,   'a' },
         { "auth-hierarchy",         required_argument,  NULL,   'P' },
         { "auth-index",             required_argument,  NULL,   'p' },
         { "policy-file",            required_argument,  NULL,   'L' },
     };
 
-    *opts = tpm2_options_new("x:a:s:b:P:p:L:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("x:C:s:a:P:p:L:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

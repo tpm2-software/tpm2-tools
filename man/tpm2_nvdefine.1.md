@@ -18,7 +18,7 @@
 
     Specifies the index to define the space at.
 
-  * **-a**, **\--hierarchy**=_AUTH\_HIERARCHY_:
+  * **-C**, **\--hierarchy**=_AUTH\_HIERARCHY_:
 
     Specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
@@ -32,7 +32,7 @@
     Specifies the size of data area in bytes. Defaults to **MAX_NV_INDEX_SIZE**
     which is typically 2048.
 
-  * **-b**, **\--attributes**=_ATTRIBUTES_
+  * **-a**, **\--attributes**=_ATTRIBUTES_
 
     Specifies the attribute values for the nv region used when creating the
     entity. Either the raw bitfield mask or "nice-names" may be used. See
@@ -65,9 +65,9 @@
 # EXAMPLES
 
 ```
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -b 0x2000A
+tpm2_nvdefine -x 0x1500016 -C 0x40000001 -s 32 -a 0x2000A
 
-tpm2_nvdefine -x 0x1500016 -a 0x40000001 -s 32 -b ownerread|ownerwrite|policywrite -p 1a1b1c
+tpm2_nvdefine -x 0x1500016 -C 0x40000001 -s 32 -a ownerread|ownerwrite|policywrite -p 1a1b1c
 ```
 
 [returns](common/returns.md)

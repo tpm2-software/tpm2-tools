@@ -33,11 +33,11 @@ cleanup "no-shut-down"
 tpm2_clear
 
 #Test default values for the hierarchy "-a" parameter
-tpm2_nvdefine -Q -x $nv_test_index -s 32 -b "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -Q -x $nv_test_index -s 32 -a "ownerread|policywrite|ownerwrite"
 tpm2_nvrelease -Q -x $nv_test_index
 
 #Test writing and reading
-tpm2_nvdefine -Q -x $nv_test_index -a o -s 32 -b "ownerread|policywrite|ownerwrite"
+tpm2_nvdefine -Q -x $nv_test_index -C o -s 32 -a "ownerread|policywrite|ownerwrite"
 
 echo "please123abc" > nv.test_w
 
@@ -88,7 +88,7 @@ tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_createpolicy -Q --policy-pcr -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
 
-tpm2_nvdefine -Q -x 0x1500016 -a 0x40000001 -s 32 -L $file_policy -b "policyread|policywrite"
+tpm2_nvdefine -Q -x 0x1500016 -C 0x40000001 -s 32 -L $file_policy -a "policyread|policywrite"
 
 # Write with index authorization for now, since tpm2_nvwrite does not support pcr policy.
 echo -n "policy locked" | tpm2_nvwrite -Q -x 0x1500016 -a 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value
@@ -113,7 +113,7 @@ large_file_size=`yaml_get_kv cap.out "TPM2_PT_NV_INDEX_MAX" "raw"`
 nv_test_index=0x1000000
 
 # Create an nv space with attributes 1010 = TPMA_NV_PPWRITE and TPMA_NV_AUTHWRITE
-tpm2_nvdefine -Q -x $nv_test_index -a o -s $large_file_size -b 0x2000A
+tpm2_nvdefine -Q -x $nv_test_index -C o -s $large_file_size -a 0x2000A
 
 base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
 
@@ -132,7 +132,7 @@ tpm2_nvrelease -Q -x $nv_test_index -a o
 #
 # Test NV access locked
 #
-tpm2_nvdefine -Q -x $nv_test_index -a o -s 32 -b "ownerread|policywrite|ownerwrite|read_stclear"
+tpm2_nvdefine -Q -x $nv_test_index -C o -s 32 -a "ownerread|policywrite|ownerwrite|read_stclear"
 
 echo "foobar" > nv.readlock
 
@@ -164,8 +164,8 @@ trap onerror ERR
 
 tpm2_changeauth -c o owner
 
-tpm2_nvdefine -x 0x1500015 -a 0x40000001 -s 32 \
-  -b "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
+tpm2_nvdefine -x 0x1500015 -C 0x40000001 -s 32 \
+  -a "policyread|policywrite|authread|authwrite|ownerwrite|ownerread" \
   -p "index" -P "owner"
 
 # Use index password write/read, implicit -a
