@@ -1,6 +1,4 @@
 % tpm2_startauthsession(1) tpm2-tools | General Commands Manual
-%
-% JANUARY 2018
 
 # NAME
 

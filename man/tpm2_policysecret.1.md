@@ -1,6 +1,4 @@
 % tpm2_policysecret(1) tpm2-tools | General Commands Manual
-%
-% OCTOBER 2018
 
 # NAME
 

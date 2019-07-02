@@ -1,6 +1,4 @@
 % tpm2_changeauth(1) tpm2-tools | General Commands Manual
-%
-% JUNE 2019
 
 # NAME
 

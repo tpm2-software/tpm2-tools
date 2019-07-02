@@ -1,6 +1,4 @@
 % tpm2_createak(1) tpm2-tools | General Commands Manual
-%
-% SEPTEMBER 2017
 
 # NAME
 

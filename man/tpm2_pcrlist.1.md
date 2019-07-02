@@ -1,6 +1,4 @@
 % tpm2_pcrlist(1) tpm2-tools | General Commands Manual
-%
-% AUGUST 2017
 
 # NAME
 
