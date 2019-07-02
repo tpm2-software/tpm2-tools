@@ -11,7 +11,7 @@
 # DESCRIPTION
 
 **tpm2_dictionarylockout**(1) - Setup dictionary-attack-lockout parameters or clear
-dictionary-attack-lockout state. If any password option is missing, assume NULL.
+dictionary-attack-lockout state.
 
 # OPTIONS
 

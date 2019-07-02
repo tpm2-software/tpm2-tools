@@ -15,8 +15,6 @@ endorsement hierarchy.
 under the endorsement hierarchy. The context of the attestation key is specified
 via **-c**.
 
-If any password option is missing, assume NULL.
-
 The tool outputs to stdout a YAML representation of the loaded key's name, for example:
 ```
 loaded-key:
