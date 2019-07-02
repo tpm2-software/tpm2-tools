@@ -1,6 +1,4 @@
 % tpm2_flushcontext(1) tpm2-tools | General Commands Manual
-%
-% NOVEMBER 2017
 
 # NAME
 

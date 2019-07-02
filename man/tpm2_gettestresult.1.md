@@ -1,6 +1,4 @@
 % tpm2_gettestresult(1) tpm2-tools | General Commands Manual
-%
-% JANUARY 2019
 
 # NAME
 

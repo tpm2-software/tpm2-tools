@@ -1,6 +1,4 @@
 % tpm2_getmanufec(1) tpm2-tools | General Commands Manual
-%
-% AUGUST 2017
 
 # NAME
 

@@ -1,6 +1,4 @@
 % tpm2_makecredential(1) tpm2-tools | General Commands Manual
-%
-% SEPTEMBER 2017
 
 # NAME
 

@@ -1,6 +1,4 @@
 % tpm2_pcrallocate(1) tpm2-tools | General Commands Manual
-%
-% MARCH 2019
 
 # NAME
 

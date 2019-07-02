@@ -1,6 +1,4 @@
 % tpm2_policyduplicationselect(1) tpm2-tools | General Commands Manual
-%
-% MARCH 2018
 
 # NAME
 

@@ -1,6 +1,4 @@
 % tpm2_checkquote(1) tpm2-tools | General Commands Manual
-%
-% JANUARY 2019
 
 # NAME
 

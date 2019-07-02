@@ -1,6 +1,4 @@
 % tpm2_duplicate(1) tpm2-tools | General Commands Manual
-%
-% APRIL 2019
 
 # NAME
 

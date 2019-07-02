@@ -1,6 +1,4 @@
 % tpm2_policypassword(1) tpm2-tools | General Commands Manual
-%
-% AUGUST 2018
 
 # NAME
 

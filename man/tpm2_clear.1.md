@@ -1,6 +1,4 @@
 % tpm2_clear(1) tpm2-tools | General Commands Manual
-%
-% DECEMBER 2017
 
 # NAME
 

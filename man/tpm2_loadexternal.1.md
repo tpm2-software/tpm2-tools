@@ -1,6 +1,4 @@
 % tpm2_loadexternal(1) tpm2-tools | General Commands Manual
-%
-% SEPTEMBER 2017
 
 # NAME
 
