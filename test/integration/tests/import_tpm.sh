@@ -39,7 +39,7 @@ end_session() {
 
 create_load_new_parent() {
     # Create new parent
-    tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv -u new_parent.pub  -b "restricted|sensitivedataorigin|decrypt|userwithauth"
+    tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv -u new_parent.pub  -a "restricted|sensitivedataorigin|decrypt|userwithauth"
     # Load new parent key, only the public part
     tpm2_loadexternal -Q -a o -u new_parent.pub -o new_parent.ctx
 }
@@ -52,7 +52,7 @@ load_new_parent() {
 create_load_duplicatee() {
     # Create the key we want to duplicate
     create_policy dpolicy.dat duplicate
-    tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub -L dpolicy.dat -b "sensitivedataorigin|decrypt|userwithauth"
+    tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
     # Load the key
     tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -o key.ctx
     # Extract the public part for import later
