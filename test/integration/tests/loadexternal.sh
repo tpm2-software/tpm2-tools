@@ -46,7 +46,7 @@ run_tss_test() {
 
     tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_loadexternal_key_pub -r $file_loadexternal_key_priv  -C $file_primary_key_ctx
 
-    tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
+    tpm2_loadexternal -Q -C n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
 
     tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
 
@@ -55,7 +55,7 @@ run_tss_test() {
 
     tpm2_create -Q -C $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_loadexternal_key_pub  -r  $file_loadexternal_key_priv
 
-    tpm2_loadexternal -Q -a n   -u $file_loadexternal_key_pub -o $file_loadexternal_key_ctx
+    tpm2_loadexternal -Q -C n   -u $file_loadexternal_key_pub -o $file_loadexternal_key_ctx
 
     # Test with default hierarchy (and handle)
     cleanup "keep_handle" "no-shut-down"
@@ -76,14 +76,14 @@ run_rsa_test() {
     echo "hello world" > plain.txt
     openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
 
-    tpm2_loadexternal -G rsa -a n -p foo -r private.pem -o key.ctx
+    tpm2_loadexternal -G rsa -C n -p foo -r private.pem -o key.ctx
 
     tpm2_rsadecrypt -c key.ctx -p foo -i plain.rsa.enc -o plain.rsa.dec
 
     diff plain.txt plain.rsa.dec
 
     # try encrypting with the public key and decrypting with the private
-    tpm2_loadexternal -G rsa -a n -p foo -u public.pem -o key.ctx
+    tpm2_loadexternal -G rsa -C n -p foo -u public.pem -o key.ctx
 
     tpm2_rsaencrypt -c key.ctx plain.txt -o plain.rsa.enc
 
