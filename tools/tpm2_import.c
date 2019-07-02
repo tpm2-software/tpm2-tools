@@ -258,7 +258,7 @@ static bool on_option(char key, char *value) {
     case 'r':
         ctx.private_key_file = value;
         break;
-    case 'b':
+    case 'a':
         ctx.attrs = value;
         break;
     case 'g':
@@ -294,7 +294,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "parent-pubkey",      required_argument, NULL, 'K'},
       { "privfile",           required_argument, NULL, 'r'},
       { "pubfile",            required_argument, NULL, 'u'},
-      { "object-attributes",  required_argument, NULL, 'b'},
+      { "object-attributes",  required_argument, NULL, 'a'},
       { "halg",               required_argument, NULL, 'g'},
       { "seed",               required_argument, NULL, 's'},
       { "policy-file",        required_argument, NULL, 'L'},
@@ -302,7 +302,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "passin",             required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:b:g:s:L:k:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:a:g:s:L:k:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
