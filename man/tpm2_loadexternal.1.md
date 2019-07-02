@@ -19,7 +19,7 @@ and a sensitive area.
 
 # OPTIONS
 
-  * **-a**, **\--hierarchy**=_HIERARCHY_:
+  * **-C**, **\--hierarchy**=_HIERARCHY_:
 
     Hierarchy to use for the ticket, optional. Defaults to **n**, **null**.
     Supported options are:
@@ -77,7 +77,7 @@ and a sensitive area.
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-b**, **\--object-attributes**=_ATTRIBUTES_:
+  * **-a**, **\--object-attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:

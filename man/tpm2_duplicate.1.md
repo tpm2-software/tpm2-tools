@@ -73,7 +73,7 @@ tpm2_flushcontext -S session.dat
 tpm2_createprimary -C o -g sha256 -G rsa -o primary.ctxt
 tpm2_create -C primary.ctxt -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -a "sensitivedataorigin"
 
-tpm2_loadexternal -a o -u new_parent.pub -o new_parent.ctxt
+tpm2_loadexternal -C o -u new_parent.pub -o new_parent.ctxt
 
 tpm2_startauthsession \--policy-session -S session.dat
 tpm2_policycommandcode -S session.dat -o policy.dat 0x14B
