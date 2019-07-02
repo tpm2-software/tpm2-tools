@@ -49,7 +49,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
 
 1. Create a trial session and build a PCR policy via a **policyPCR** event to generate a policy hash.
     ```
-    tpm2_createprimary -H e -g sha256 -G ecc -o primary.ctx
+    tpm2_createprimary -C e -g sha256 -G ecc -o primary.ctx
 
     tpm2_pcrlist -Q -L "sha1:0,1,2,3 -o pcr.dat
 

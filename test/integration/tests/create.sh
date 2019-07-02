@@ -21,7 +21,7 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_createprimary -Q -a o -g sha1 -G rsa -o context.out
+tpm2_createprimary -Q -C o -g sha1 -G rsa -o context.out
 
 # Keep the algorithm specifiers mixed to test friendly and raw
 # values.

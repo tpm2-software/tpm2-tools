@@ -114,7 +114,7 @@ These options control the key importation process:
 
 ## To import a key, one needs to have a parent key
 ```
-tpm2_createprimary -Grsa2048:aes128cfb -a o -o parent.ctx
+tpm2_createprimary -Grsa2048:aes128cfb -C o -o parent.ctx
 ```
 
 Create your key and and import it. If you already have a key, just use that
