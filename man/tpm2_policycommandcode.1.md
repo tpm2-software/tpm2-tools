@@ -182,7 +182,7 @@ tpm2_flushcontext -S session.dat
 
 ## Create the object with unseal-only auth policy
 ```
-tpm2_createprimary -a o -o prim.ctx
+tpm2_createprimary -C o -o prim.ctx
 
 tpm2_create -C prim.ctx -u sealkey.pub -r sealkey.priv -L policy.dat \
   -i- <<< "SEALED-SECRET"

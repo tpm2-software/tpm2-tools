@@ -132,7 +132,7 @@ run_test() {
     parent_alg=$1
     name_alg=$2
 
-    tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -a o -o parent.ctx
+    tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -C o -o parent.ctx
 
     # 128 bit AES is 16 bytes
     run_aes_import_test parent.ctx aes-128-cfb 16

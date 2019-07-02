@@ -37,7 +37,7 @@ tpm2_policypassword -S $session_ctx -o $policypassword
 tpm2_flushcontext -S $session_ctx
 rm $session_ctx
 
-tpm2_createprimary -a o -o $primary_key_ctx
+tpm2_createprimary -C o -o $primary_key_ctx
 
 tpm2_create -g sha256 -G aes -u $key_pub -r $key_priv -C $primary_key_ctx \
   -L $policypassword -p $testpswd

@@ -64,7 +64,7 @@ tpm2_flushcontext -S session.ctx
 
 ## Create a TPM object like a sealing object with the policy
 ```
-tpm2_createprimary -Q -a o -g sha256 -G rsa -o prim.ctx
+tpm2_createprimary -Q -C o -g sha256 -G rsa -o prim.ctx
 
 tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.priv -i- -C prim.ctx -L secret.policy <<< "SEALED-SECRET"
 

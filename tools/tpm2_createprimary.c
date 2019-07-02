@@ -61,7 +61,7 @@ static bool on_option(char key, char *value) {
     bool res;
 
     switch (key) {
-    case 'a': {
+    case 'C': {
         res = tpm2_hierarchy_from_optarg(value, &ctx.objdata.in.hierarchy,
                 TPM2_HIERARCHY_FLAGS_ALL);
 
@@ -94,7 +94,7 @@ static bool on_option(char key, char *value) {
     case 'L':
         ctx.policy=value;
     break;
-    case 'b':
+    case 'a':
         ctx.attrs = value;
     break;
     /* no default */
@@ -106,18 +106,18 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "hierarchy",            required_argument, NULL, 'a' },
+        { "hierarchy",            required_argument, NULL, 'C' },
         { "auth-hierarchy",       required_argument, NULL, 'P' },
         { "auth-object",          required_argument, NULL, 'p' },
         { "halg",                 required_argument, NULL, 'g' },
         { "kalg",                 required_argument, NULL, 'G' },
-        { "out-context-name",     required_argument, NULL, 'o' },
+        { "context-object",       required_argument, NULL, 'o' },
         { "policy-file",          required_argument, NULL, 'L' },
-        { "object-attributes",    required_argument, NULL, 'b' },
+        { "object-attributes",    required_argument, NULL, 'a' },
         { "unique-data",          required_argument, NULL, 'u' },
     };
 
-    *opts = tpm2_options_new("b:P:p:g:G:o:L:a:u:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:p:g:G:o:L:a:u:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

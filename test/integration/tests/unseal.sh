@@ -40,7 +40,7 @@ echo $secret > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -a e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
+tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i $file_input_data -C $file_primary_key_ctx
 
