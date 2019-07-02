@@ -11,8 +11,8 @@ values.
 
 # DESCRIPTION
 
-**tpm2_clear**(1) - Send a clear command to the TPM to clear the 3 hierarchy authorization
-values. If the lockout password option is missing, assume NULL.
+**tpm2_clear**(1) - Send a clear command to the TPM to clear the 3 hierarchy
+authorization values.
 
 **NOTE**: All objects created under the respective hierarchies are lost.
 

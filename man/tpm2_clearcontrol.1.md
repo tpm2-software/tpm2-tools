@@ -18,7 +18,7 @@ knowledge of the platform hierarchy can clear the disableClear. ** As an argumen
 the tool takes the _OPERATION_ as an integer 0|1 or string c|s to clear or set
 the disableClear attribute. By default it attempts a CLEAR operation**
 Note: Platform hierarchy auth handle can always be used to clear the TPM with
-tpm2_clear command. If password option is missing, assume NULL.
+tpm2_clear command.
 
 # OPTIONS
 

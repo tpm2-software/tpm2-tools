@@ -11,7 +11,7 @@
 # DESCRIPTION
 
 **tpm2_createek**(1) - Generate TCG profile compliant endorsement key (EK), which is the primary object
-of the endorsement hierarchy. If any password option is missing, assume NULL for the password.
+of the endorsement hierarchy.
 
 If a transient object is generated the tool outputs a context file specified via **-c**.
 
