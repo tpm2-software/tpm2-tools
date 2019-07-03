@@ -3,7 +3,7 @@
 source helpers.sh
 
 cleanup() {
-    rm secret.txt key.ctx key.pub key.priv primary.ctx
+    rm key.ctx key.pub key.priv primary.ctx
 
     shut_down
 }
@@ -28,14 +28,13 @@ tpm2_changeauth -c o -p $ownerPasswd $new_ownerPasswd
 tpm2_changeauth -c e -p $endorsePasswd $new_endorsePasswd
 tpm2_changeauth -c l -p $lockPasswd $new_lockPasswd
 
-tpm2_clear -L $new_lockPasswd
+tpm2_clear $new_lockPasswd
 
 tpm2_changeauth -c o $ownerPasswd
 tpm2_changeauth -c e $endorsePasswd
 tpm2_changeauth -c l $lockPasswd
 
-echo -n $lockPasswd > secret.txt
-tpm2_clear -L "file:secret.txt"
+tpm2_clear $lockPasswd
 
 # Test changing an objects auth
 tpm2_createprimary -Q -C o -o primary.ctx
