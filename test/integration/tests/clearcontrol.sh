@@ -13,7 +13,7 @@ trap cleanup EXIT
 
 start_up
 
-tpm2_clearcontrol -a l s
+tpm2_clearcontrol -c l s
 trap - ERR
 tpm2_clear
 
