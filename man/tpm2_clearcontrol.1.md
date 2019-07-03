@@ -22,7 +22,7 @@ tpm2_clear command.
 
 # OPTIONS
 
-  * **-a**, **\--auth-handle**=_TPM\_HANDLE:
+  * **-c**, **\--auth-handle**=_TPM\_HANDLE:
 
     Specifies what auth handle, either platform hierarchy or lockout the tool
     should operate on. By default it operates on the platform hierarchy handle.
@@ -48,12 +48,12 @@ tpm2_clear command.
 
 ## Set the disableClear to block the lockout authorization's access to TPM clear
 ```
-tpm2_clearcontrol -a l s
+tpm2_clearcontrol -c l s
 ```
 
 ## Clear the disableClear to unblock lockout authorization for TPM clear operation
 ```
-tpm2_clearcontrol -a p c
+tpm2_clearcontrol -c p c
 ```
 
 [returns](common/returns.md)
