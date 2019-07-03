@@ -199,13 +199,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "certifiedkey-auth",    required_argument, NULL, 'P' },
-      { "signingkey-auth",      required_argument, NULL, 'p' },
+      { "certifiedkey-context", required_argument, NULL, 'c' },
+      { "signingkey-context",   required_argument, NULL, 'C' },
+      { "certifiedkey-auth",    required_argument, NULL, 'p' },
+      { "signingkey-auth",      required_argument, NULL, 'P' },
       { "halg",                 required_argument, NULL, 'g' },
-      { "out-attest-file",      required_argument, NULL, 'o' },
-      { "sig-file",             required_argument, NULL, 's' },
-      { "certifiedkey-context", required_argument, NULL, 'C' },
-      { "signingkey-context",   required_argument, NULL, 'c' },
+      { "attestation",          required_argument, NULL, 'o' },
+      { "signature",            required_argument, NULL, 's' },
       { "format",               required_argument, NULL, 'f' },
     };
 
