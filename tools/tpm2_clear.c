@@ -38,22 +38,36 @@ static bool on_option(char key, char *value) {
     case 'p':
         ctx.platform = true;
         break;
-    case 'L':
-        ctx.auth_hierarchy.auth_str = value;
-        break;
     }
 
     return true;
 }
 
+bool on_arg (int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("Specify a single auth value");
+        return false;
+    }
+
+    if (!argc) {
+        //empty auth
+        return true;
+     }
+
+    ctx.auth_hierarchy.auth_str = argv[0];
+
+     return true;
+ }
+
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "platform",     no_argument,       NULL, 'p' },
-        { "auth-lockout", required_argument, NULL, 'L' },
     };
 
-    *opts = tpm2_options_new("pL:", ARRAY_LEN(topts), topts, on_option, NULL,
+    *opts = tpm2_options_new("p", ARRAY_LEN(topts), topts, on_option, on_arg,
                              0);
 
     return *opts != NULL;

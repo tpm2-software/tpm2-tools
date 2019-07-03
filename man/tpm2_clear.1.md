@@ -7,12 +7,13 @@ values.
 
 # SYNOPSIS
 
-**tpm2_clear** [OPTIONS]
+**tpm2_clear** [OPTIONS] _AUTH\_VALUE_
 
 # DESCRIPTION
 
 **tpm2_clear**(1) - Send a clear command to the TPM to clear the 3 hierarchy
-authorization values.
+authorization values. As an argument takes the auth value for either platform or
+lockout hierarchy
 
 **NOTE**: All objects created under the respective hierarchies are lost.
 
@@ -25,13 +26,6 @@ authorization values.
 
     **NOTE : Operating on platform hierarchy require platform authentication.**
 
-  * **-L**, **\--auth-lockout**=_LOCKOUT\_AUTH_:
-
-    The lockout authorization value.
-
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
@@ -43,7 +37,7 @@ authorization values.
 ## Set owner, endorsement and lockout authorizations to an empty value
 
 ```
-tpm2_clear -L oldlockoutpasswd
+tpm2_clear lockoutpasswd
 ```
 
 ## Clear the authorization values on the platform hierarchy
