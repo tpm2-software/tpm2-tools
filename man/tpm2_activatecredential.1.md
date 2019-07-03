@@ -32,17 +32,17 @@ These options control the object verification:
     random seed. Either a file or a handle number. See section "Context Object
     Format".
 
-  * **-P**, **\--credentialedkey-auth**=_AUTH\_VALUE_:
+  * **-p**, **\--credentialedkey-auth**=_AUTH\_VALUE_:
 
     _AUTH\_VALUE_ for providing an authorization value for the
     _CREDENTIALED\_KEY\_OBJ\_CTX\_OR\_HANDLE_.
 
-  * **-E**, **\--credentialkey-auth**=_AUTH\_VALUE_:
+  * **-P**, **\--credentialkey-auth**=_AUTH\_VALUE_:
 
     _AUTH\_VALUE_ for providing an authorization value for the
     _CREDENTIAL\_KEY\_OBJ\_CTX\_OR\_HANDLE_.
 
-  * **-i**, **\--credential-secret**=_INPUT\_FILE_:
+  * **-i**, **\--credential-blob**=_INPUT\_FILE_:
 
     Input file path, containing the two structures - credential blob and secret,
     needed by **tpm2_activatecredential**(1) function. This is created from the
