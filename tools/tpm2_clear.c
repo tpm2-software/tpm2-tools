@@ -19,24 +19,17 @@ struct clear_ctx {
         tpm2_loaded_object object;
     } auth_hierarchy;
 
-    bool platform;
 };
 
-static clear_ctx ctx;
-
-static tool_rc clear(ESYS_CONTEXT *ectx) {
-
-    LOG_INFO ("Sending TPM2_Clear command with %s",
-            ctx.platform ? "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
-
-    return tpm2_clear(ectx, &ctx.auth_hierarchy.object);
-}
+static clear_ctx ctx = {
+    .auth_hierarchy.ctx_path = "l",
+};
 
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'p':
-        ctx.platform = true;
+    case 'c':
+        ctx.auth_hierarchy.ctx_path = value;
         break;
     }
 
@@ -64,11 +57,10 @@ bool on_arg (int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "platform",     no_argument,       NULL, 'p' },
+        { "auth-hierarchy",     no_argument,       NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("p", ARRAY_LEN(topts), topts, on_option, on_arg,
-                             0);
+    *opts = tpm2_options_new("c:", ARRAY_LEN(topts), topts, on_option, on_arg, 0);
 
     return *opts != NULL;
 }
@@ -76,10 +68,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
-
-    const char *platform = "p";
-    const char *lockout = "l";
-    ctx.auth_hierarchy.ctx_path = ctx.platform ? platform : lockout;
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
         ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, true,
@@ -89,7 +77,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return clear(ectx);
+    return tpm2_clear(ectx, &ctx.auth_hierarchy.object);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

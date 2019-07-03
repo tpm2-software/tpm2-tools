@@ -19,9 +19,9 @@ lockout hierarchy
 
 # OPTIONS
 
-  * **-p**, **\--platform**:
+  * **-c**, **\--platform**:
 
-    Specifies the tool should operate on the platform hierarchy. By default
+    Specifies the hierarchy the tools should operate on. By default
     it operates on the lockout hierarchy.
 
     **NOTE : Operating on platform hierarchy require platform authentication.**
@@ -42,7 +42,7 @@ tpm2_clear lockoutpasswd
 
 ## Clear the authorization values on the platform hierarchy
 ```
-tpm2_clear -p
+tpm2_clear -c p
 ```
 
 [returns](common/returns.md)
