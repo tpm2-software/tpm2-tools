@@ -79,6 +79,10 @@ loaded-key:
 
     The output file which contains the sensitive portion of the object, optional.
 
+  * **-f**, **\--format**
+
+    Format selection for the signature output file. See section "Signature Format Specifiers".
+
 [pubkey options](common/pubkey.md)
 
 [common options](common/options.md)
