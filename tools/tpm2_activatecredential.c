@@ -155,13 +155,13 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.credentialed_key.ctx_path = value;
         break;
-    case 'P':
+    case 'p':
         ctx.credentialed_key.auth_str = value;
         break;
     case 'C':
         ctx.credential_key.ctx_path = value;
         break;
-    case 'E':
+    case 'P':
         ctx.credential_key.auth_str = value;
         break;
     case 'i':
@@ -186,14 +186,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
          {"credentialedkey-context", required_argument, NULL, 'c'},
-         {"credentialkey-context",      required_argument, NULL, 'C'},
-         {"credentialedkey-auth",    required_argument, NULL, 'P'},
-         {"credentialkey-auth",         required_argument, NULL, 'E'},
-         {"credential-secret",      required_argument, NULL, 'i'},
-         {"certinfo-data",          required_argument, NULL, 'o'},
+         {"credentialkey-context",   required_argument, NULL, 'C'},
+         {"credentialedkey-auth",    required_argument, NULL, 'p'},
+         {"credentialkey-auth",      required_argument, NULL, 'P'},
+         {"credential-blob",         required_argument, NULL, 'i'},
+         {"certinfo-data",           required_argument, NULL, 'o'},
     };
 
-    *opts = tpm2_options_new("c:C:P:E:i:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:C:p:P:i:o:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
