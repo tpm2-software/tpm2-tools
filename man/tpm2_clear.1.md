@@ -19,7 +19,7 @@ lockout hierarchy
 
 # OPTIONS
 
-  * **-c**, **\--platform**:
+  * **-c**, **\--auth-hierarchy**:
 
     Specifies the hierarchy the tools should operate on. By default
     it operates on the lockout hierarchy.
