@@ -26,7 +26,7 @@ function check_toggle() {
         exit 254
     fi
 
-    for i in $(grep -R "'${toggle}'[[:space:]]*}" --include=*.c | sed "s%[[:space:]]*%%g"); do
+    for i in $(grep "'${toggle}'[[:space:]]*}" "${toolsdir}"/*.c | sed "s%[[:space:]]*%%g"); do
         # An example:
         # i:           tools/tpm2_nvdefine.c:{"hierarchy",required_argument,NULL,'a'},
         # filename:    tools/tpm2_nvdefine.c
@@ -95,7 +95,7 @@ for i in $(grep -rn "case '.'" "${toolsdir}"/*.c | cut -d"'" -f2-2 | sort | uniq
 done
 
 # For each documented option toggle in the man pages, look if it is present in the code
-for j in $(grep -roe "\*\*-.\*\*, \*\*\\\--.*\*\*" --include=*.1.md | sed -r 's/\s//g' ); do
+for j in $(grep -oe "\*\*-.\*\*, \*\*\\\--.*\*\*" "${mandir}"/*.1.md | sed -r 's/\s//g' ); do
     filename=${j%%:*};
     option="$(grep -oP '(?<=\*\*-).(?=\*\*)' <<< "$j")"
     option_long="$(grep -oP '(?<=\*\*\\\--).*(?=\*\*)' <<< "$j")"
