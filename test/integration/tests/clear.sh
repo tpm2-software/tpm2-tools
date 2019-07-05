@@ -28,4 +28,7 @@ tpm2_clear -c l $lockPasswd
 tpm2_changeauth -c p $platPasswd
 tpm2_clear -c p $platPasswd
 
+#Undo change of platform auth
+tpm2_changeauth -c p -p $platPasswd
+
 exit 0
