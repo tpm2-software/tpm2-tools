@@ -377,7 +377,7 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'D':
+    case 'g':
         ctx.ak.in.alg.digest = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.ak.in.alg.digest == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert digest algorithm.");
@@ -391,13 +391,13 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'e':
+    case 'P':
         ctx.ek.auth_str = value;
         break;
-    case 'P':
+    case 'p':
         ctx.ak.auth_str = value;
         break;
-    case 'p':
+    case 'u':
         ctx.ak.out.pub_file = value;
         break;
     case 'n':
@@ -424,20 +424,20 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth-endorse",   required_argument, NULL, 'e' },
-        { "auth-ak",        required_argument, NULL, 'P' },
-        { "ek-context",     required_argument, NULL, 'C' },
-        { "algorithm",      required_argument, NULL, 'G' },
-        { "digest-alg",     required_argument, NULL, 'D' },
-        { "sign-alg",       required_argument, NULL, 's' },
-        { "file",           required_argument, NULL, 'p' },
-        { "ak-name",        required_argument, NULL, 'n' },
-        { "format",         required_argument, NULL, 'f' },
-        { "context",        required_argument, NULL, 'c' },
-        { "privfile",       required_argument, NULL, 'r'},
+        { "auth-endorse",     required_argument, NULL, 'P' },
+        { "auth-ak",          required_argument, NULL, 'p' },
+        { "ek-context",       required_argument, NULL, 'C' },
+        { "ak-context",       required_argument, NULL, 'c' },
+        { "ak-name",          required_argument, NULL, 'n' },
+        { "kalg",             required_argument, NULL, 'G' },
+        { "halg",             required_argument, NULL, 'g' },
+        { "signing-algorithm",required_argument, NULL, 's' },
+        { "format",           required_argument, NULL, 'f' },
+        { "public",           required_argument, NULL, 'u' },
+        { "private",          required_argument, NULL, 'r'},
     };
 
-    *opts = tpm2_options_new("C:e:G:D:s:P:f:n:p:c:r:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:C:c:n:G:g:s:f:u:r:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

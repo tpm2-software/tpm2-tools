@@ -68,7 +68,9 @@ tpm2_changeauth -c e "$endorsepw"
 tpm2_createek -Q -c $handle_ek -G $ek_alg -p $output_ek_pub_pem -f pem -P "$ekpw" -w "$ownerpw" -e "$endorsepw"
 tpm2_readpublic -Q -c $handle_ek -o $output_ek_pub
 
-tpm2_createak -Q -C $handle_ek -c $context_ak -G $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub_pem -f pem -n $output_ak_pub_name -P "$akpw" -e "$endorsepw"
+tpm2_createak -Q -C $handle_ek -c $context_ak -G $ak_alg -g $digestAlg\
+  -s $signAlg -u $output_ak_pub_pem -f pem -n $output_ak_pub_name -p "$akpw"\
+  -P "$endorsepw"
 tpm2_readpublic -Q -c $context_ak -o $output_ak_pub
 
 

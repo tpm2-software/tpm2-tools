@@ -24,8 +24,8 @@ echo "12345678" > secret.data
 
 tpm2_createek -Q -c 0x81010009 -G rsa -p ek.pub
 
-tpm2_createak -C 0x81010009 -c ak.ctx -G rsa -D sha256 -s rsassa -p ak.pub\
-    -n ak.name -P akpass> ak.out
+tpm2_createak -C 0x81010009 -c ak.ctx -G rsa -g sha256 -s rsassa -u ak.pub\
+    -n ak.name -p akpass> ak.out
 
 # Capture the yaml output and verify that its the same as the name output
 loaded_key_name_yaml=`python << pyscript

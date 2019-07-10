@@ -35,7 +35,7 @@ echo "12345678" > $file_input_data
 
 tpm2_createek -Q -c $handle_ek -G $ek_alg -p $output_ek_pub
 
-tpm2_createak -Q -C $handle_ek -c $ak_ctx -G $ak_alg -D $digestAlg -s $signAlg -p $output_ak_pub -n $output_ak_pub_name
+tpm2_createak -Q -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg -u $output_ak_pub -n $output_ak_pub_name
 
 # Use -c in xxd so there is no line wrapping
 file_size=`stat --printf="%s" $output_ak_pub_name`

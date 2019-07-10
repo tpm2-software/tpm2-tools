@@ -23,13 +23,13 @@ loaded-key:
 
 # OPTIONS
 
-  * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-P**, **\--auth-endorse**=_ENDORSE\_AUTH_:
 
     Specifies current endorsement hierarchy authorization.
     Authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-P**, **\--auth-ak**=_AK\_AUTH_
+  * **-p**, **\--auth-ak**=_AK\_AUTH_
 
     Specifies the attestation key authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
@@ -39,32 +39,32 @@ loaded-key:
     Specifies the object context of the endorsement key. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-c**, **\--context**=_CONTEXT\_FILE\_NAME_:
+  * **-c**, **\--ak-context**=_CONTEXT\_FILE\_NAME_:
 
     Specifies a file path to save the context of the attestation key.
 
-  * **-G**, **\--algorithm**=_ALGORITHM_:
+  * **-G**, **\--kalg**=_ALGORITHM_:
 
     Specifies the algorithm type of AK. Supports:
     * ecc - An P256 key.
     * rsa - An RSA2048 key.
     * keyedhash - hmac key.
 
-  * **-D**, **\--digest-alg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
 
     Like **-G**, but specifies the digest algorithm used for signing.
     Algorithms should follow the "formatting standards", see section
     "Algorithm Specifiers". See section "Supported Hash Algorithms"
     for a list of supported hash algorithms.
 
-  * **-s**, **\--sign-alg**=_SIGN\_ALGORITHM_:
+  * **-s**, **\--signing-algorithm**=_SIGN\_ALGORITHM_:
 
     Like **-G** but specifies signing algorithm. Algorithms should follow the
     "formatting standards", see section "Algorithm Specifiers".
     See section "Supported Signing Algorithms" for a list of supported
     signing algorithms.
 
-  * **-p**, **\--file**=_FILE_:
+  * **-u**, **\--public**=_FILE_:
 
     Specifies the file used to save the public portion of AK. This will be a
     binary data structure corresponding to the **TPM2B_PUBLIC** struct in the
@@ -75,7 +75,7 @@ loaded-key:
 
     Specifies the file used to save the ak name, optional.
 
-  * **-r**, **\--privfile**=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **\--private**=_OUTPUT\_PRIVATE\_FILE_:
 
     The output file which contains the sensitive portion of the object, optional.
 
@@ -107,7 +107,7 @@ loaded-key:
 
 ```
 tpm2_createek -c ek.handle -G rsa -p ek.pub
-tpm2_createak -C ek.handle -c ak.ctx -p ak.pub -n ak.name
+tpm2_createak -C ek.handle -c ak.ctx -u ak.pub -n ak.name
 tpm2_evictcontrol -c 0x81010002 -o ak.ctx
 ```
 
