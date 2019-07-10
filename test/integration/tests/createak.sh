@@ -25,10 +25,10 @@ cleanup "no-shut-down"
 
 tpm2_createek -Q -c 0x8101000b -G rsa -p ek.pub
 
-tpm2_createak -Q -C 0x8101000b -c ak.ctx -G rsa -D sha256 -s rsassa -p ak.pub -n ak.name
+tpm2_createak -Q -C 0x8101000b -c ak.ctx -G rsa -g sha256 -s rsassa -u ak.pub -n ak.name
 
 # Find a vacant persistent handle
-tpm2_createak -C 0x8101000b -c ak.ctx -G rsa -D sha256 -s rsassa -p ak.pub -n ak.name
+tpm2_createak -C 0x8101000b -c ak.ctx -G rsa -g sha256 -s rsassa -u ak.pub -n ak.name
 tpm2_evictcontrol -c ak.ctx > ak.log
 phandle=`yaml_get_kv ak.log "persistent-handle"`
 tpm2_evictcontrol -Q -a o -c $phandle
@@ -37,6 +37,6 @@ tpm2_evictcontrol -Q -a o -c $phandle
 cleanup "no-shut-down"
 tpm2_changeauth -c e endauth
 tpm2_createek -Q -e endauth -c 0x8101000b -G rsa -p ek.pub
-tpm2_createak -Q -e endauth -C 0x8101000b -c ak.ctx -G rsa -p ak.pub -n ak.name
+tpm2_createak -Q -P endauth -C 0x8101000b -c ak.ctx -G rsa -u ak.pub -n ak.name
 
 exit 0

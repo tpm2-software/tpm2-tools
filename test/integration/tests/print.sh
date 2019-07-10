@@ -30,7 +30,8 @@ tpm2_clear
 
 # Create signing key
 tpm2_createek -Q -G rsa -c $ek_handle -p $ek_pubkey_file
-tpm2_createak -Q -G rsa -D sha256 -s rsassa -C $ek_handle -c $ak_ctx -p $ak_pubkey_file -n $ak_name_file
+tpm2_createak -Q -G rsa -g sha256 -s rsassa -C $ek_handle -c $ak_ctx\
+  -u $ak_pubkey_file -n $ak_name_file
 
 # Take PCR quote
 tpm2_quote -Q -C $ak_ctx -L "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" -m $quote_file

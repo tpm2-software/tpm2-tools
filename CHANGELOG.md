@@ -1,5 +1,15 @@
 ## Changelog
 ### next
+  * tpm2_createak: short and long options changed to make it consistent with
+    similar options in other tools.
+    -e becomes -P,
+    -P becomes -p,
+    -D becomes -g,
+    -p becomes -u,
+    context becomes ak-context,
+    algorithm becomes kalg,
+    digest-alg becomes halg,
+    privfile becomes private.
   * cmac algorithm support.
   * tpm2_activatecredential: long options have been changed to align with spec language.
     context is now credentialedkey-context.
