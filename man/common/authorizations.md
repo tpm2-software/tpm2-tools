@@ -9,21 +9,58 @@ Authorization for use of an object in TPM2.0 can come in 3 different forms:
 
 ## Passwords
 
-Passwords are interpreted in three forms; string, hex-string or a file. A string password is not
-interpreted, and is directly used for authorization. A hex-string password is converted from
-a hexidecimal form into a byte array form, thus allowing passwords with non-printable
-and/or terminal un-friendly characters.
-A file form should be the path of a file containing a password in string or hex-string format to be read by the tool.
-Storing passwords in files prevents information leakage, passwords passed as options can be read from the process list.
+Passwords are interpreted in the following forms below using prefix identifiers.
 
-By default passwords are assumed to be in the string form. Password form is specified
-with special prefix values, they are:
+**Note**: By default passwords are assumed to be in the string form when they do
+not have a prefix.
 
-  * str: - Used to indicate it is a raw string. Useful for escaping a password that starts
-         with the "hex:" prefix.
-  * hex: - Used when specifying a password in hex string format.
-  * file: - Used when specifying a password stored in a file. Useful to prevent leaking the
-         password to UNIX utilities (such as ps).
+### String
+
+A string password, specified by prefix "str:" or it's absence
+(raw string without prefix) is not interpreted, and is directly used for
+authorization.
+
+#### Examples
+
+```
+foobar
+str:foobar
+```
+
+### Hex-string
+
+A hex-string password, specified by prefix "hex:" is converted from a hexidecimal
+form into a byte array form, thus allowing passwords with non-printable and/or
+terminal un-friendly characters.
+
+#### Example
+```
+hex:0x1122334455667788
+```
+
+### File
+
+A file based password, specified be prefix "file:" should be the path of a file
+containing the password to be read by the tool or a "-" to use stdin.
+Storing passwords in files prevents information leakage, passwords passed as
+options can be read from the process list or common shell history features.
+
+#### Examples
+
+```
+# to use stdin and be prompted
+file:-
+
+# to use a file from a path
+file:path/to/password/file
+
+# to echo a password via stdin:
+echo foobar | tpm2_tool -p file:-
+
+# to use a bash here-string via stdin:
+
+tpm2_tool -p file:- <<< foobar
+```
 
 ## Sessions
 
@@ -32,6 +69,22 @@ with the *session* keyword.  Then indicate a path to a session file that was cre
 with tpm2_startauthsession(1). Optionally, if the session requires an auth value to be
 sent with the session handle (eg policy password), then append a + and a string as described
 in the **Passwords** section.
+
+### Examples
+To use a session context file called *session.ctx*.
+```
+session:session.ctx
+```
+
+To use a session context file called *session.ctx* **AND** send the authvalue mypassword.
+```
+session:session.ctx+mypassword
+```
+
+To use a session context file called *session.ctx* **AND** send the *HEX* authvalue 0x11223344.
+```
+session:session.ctx+hex:11223344
+```
 
 ## PCR Authorizations
 
@@ -47,37 +100,7 @@ The `raw-pcr-file` is an **optional** the output of the raw PCR contents as retu
 
 ### Examples
 
-To use the password `mypassword`:
-```
-mypassword
-```
-
-To use a raw binary password of 0x112233 in hex string format:
-```
-hex:112233
-```
-
-To use a password of `hex:` use the str escape:
-```
-str:hex:
-```
-
 To satisfy a PCR policy of sha256 on banks 0, 1, 2 and 3 use a specifier of:
 ```
 pcr:sha256:0,1,2,3
-```
-
-To use a session context file called *session.ctx*.
-```
-session:session.ctx
-```
-
-To use a session context file called *session.ctx* **AND** send the authvalue mypassword.
-```
-session:session.ctx+mypassword
-```
-
-To use a session context file called *session.ctx* **AND** send the *HEX* authvalue 0x11223344.
-```
-session:session.ctx+hex:11223344
 ```
