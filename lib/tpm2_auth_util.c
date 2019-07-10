@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include <termios.h>
+#include <unistd.h>
 
 #include <tss2/tss2_esys.h>
 #include <tss2/tss2_mu.h>
@@ -164,33 +166,6 @@ static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
     return tool_rc_success;
 }
 
-static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **session) {
-
-    bool ret = false;
-
-    TPM2B_AUTH auth = { 0 };
-
-    UINT8 buffer[(sizeof(auth.buffer) * 2) + HEX_PREFIX_LEN + 1] = { 0 };
-    UINT16 size = sizeof(buffer) - 1;
-
-    path += FILE_PREFIX_LEN;
-
-    path = strcmp("-", path) ? path : NULL;
-
-    ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL, path,
-            &size, buffer);
-    if (!ret) {
-        return tool_rc_general_error;
-    }
-
-    ret = handle_password((char *)buffer, &auth);
-    if (!ret) {
-        return tool_rc_general_error;
-    }
-
-    return start_hmac_session(ectx, &auth, session);
-}
-
 static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session **session) {
 
     policy += PCR_PREFIX_LEN;
@@ -248,6 +223,97 @@ out:
 
     return rc;
 }
+
+static tool_rc console_display_echo_control(bool echo) {
+
+    struct termios console;
+    int rc = tcgetattr(STDIN_FILENO, &console);
+    if (rc) {
+        return tool_rc_general_error;
+    }
+
+    if (echo) {
+        console.c_lflag |= ECHO;
+    } else {
+        console.c_lflag &= ~((tcflag_t) ECHO);
+    }
+
+    rc = tcsetattr(STDIN_FILENO, TCSANOW, &console);
+    if (rc) {
+        return tool_rc_general_error;
+    }
+
+    return tool_rc_success;
+}
+
+static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **session) {
+
+    path += FILE_PREFIX_LEN;
+    path = strcmp("-", path) ? path : NULL;
+
+    TPM2B_AUTH auth = { 0 };
+
+    UINT8 buffer[(sizeof(auth.buffer) * 2) + HEX_PREFIX_LEN + 1] = { 0 };
+
+    /*
+     * If path is set or stdin is not a TTY, then read
+     * from a path. Note: that "file:" will still go this
+     * path and fail as path "" is not valid.
+     */
+    bool is_a_tty = isatty(STDIN_FILENO);
+    if (!is_a_tty || path) {
+
+        UINT16 size = sizeof(buffer) - 1;
+
+        bool ret = files_load_bytes_from_buffer_or_file_or_stdin(NULL, path,
+                &size, buffer);
+        if (!ret) {
+            return tool_rc_general_error;
+        }
+
+        /* bash here strings and many commands add a trailing newline, if its stdin, kill the newline */
+        if (!path && buffer[size - 1] == '\n') {
+            buffer[size - 1] = '\0';
+        }
+
+        /*
+         * It is a TTY and we're reading from stdin.
+         * Prompt the user for the password with echoing
+         * disabled.
+         */
+    } else {
+
+        tool_rc rc = console_display_echo_control(false);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        printf("Enter Password: ");
+        fflush(stdout);
+
+        char *b = (char *)buffer;
+        size_t size = sizeof(buffer) - 1;
+
+        ssize_t read = getline(&b, &size, stdin);
+        if (read < 0) {
+            LOG_ERR("Could not get stdin, error: \"%s\"", strerror(errno));
+        }
+
+        b[read - 1] = '\0';
+
+        rc = console_display_echo_control(true);
+        if (rc != tool_rc_success || read < 0) {
+            return tool_rc_general_error;
+        }
+    }
+
+    /* from here the buffer has been populated with the password */
+    bool ret = handle_password((char *)buffer, &auth);
+    if (!ret) {
+        return tool_rc_general_error;
+    }
+
+    return start_hmac_session(ectx, &auth, session);}
 
 tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
     tpm2_session **session, bool is_restricted) {
