@@ -84,9 +84,7 @@ static bool verify_signature() {
         goto err;
     }
     TPM2B_PUBLIC_KEY_RSA sig = ctx.signature.signature.rsassa.sig;
-    tpm2_tool_output("sigBuffer: ");
     tpm2_util_hexdump(sig.buffer, sig.size);
-    tpm2_tool_output("\n");
 
     // Verify the signature matches message digest
     int opensslHash = tpm2_openssl_halgid_from_tpmhalg(ctx.signature.signature.rsassa.hash);
@@ -261,9 +259,6 @@ static tool_rc init(void) {
             LOG_ERR("Failed to print PCR values related to quote!");
             goto err;
         }
-        tpm2_tool_output("calcDigest: ");
-        tpm2_util_hexdump(ctx.pcrHash.buffer, ctx.pcrHash.size);
-        tpm2_tool_output("\n");
     }
 
     // Figure out the extra data (nonce) from this message
@@ -279,9 +274,6 @@ static tool_rc init(void) {
         LOG_ERR("Compute message hash failed!");
         goto err;
     }
-    tpm2_tool_output("msgDigest: ");
-    tpm2_util_hexdump(ctx.msgHash.buffer, ctx.msgHash.size);
-    tpm2_tool_output("\n");
 
     return_value = tool_rc_success;
 
