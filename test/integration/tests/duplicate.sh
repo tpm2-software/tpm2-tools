@@ -58,27 +58,27 @@ tpm2_loadexternal -Q -C o -u new_parent.pub -o new_parent.ctx
 
 ## Null parent, Null Sym Alg
 start_duplication_session
-tpm2_duplicate -Q -C null -c key.ctx -g null -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C null -c key.ctx -G null -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
 
 ## Null Sym Alg
 start_duplication_session
-tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -g null -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G null -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
 
 ## Null parent
 start_duplication_session
-tpm2_duplicate -Q -C null -c key.ctx -g aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C null -c key.ctx -G aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
 
 ## AES Sym Alg, user supplied key
 start_duplication_session
-tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -g aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
 
 ## AES Sym Alg, no user supplied key
 start_duplication_session
-tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -g aes -o sym_key_out.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G aes -o sym_key_out.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
 
 ## Repeat the tests with a key that requires encrypted duplication
@@ -87,19 +87,19 @@ tpm2_load -Q -C primary.ctx -r key2.prv -u key2.pub -o key2.ctx
 
 ## AES Sym Alg, user supplied key
 start_duplication_session
-tpm2_duplicate -Q -C new_parent.ctx -c key2.ctx -g aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C new_parent.ctx -c key2.ctx -G aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
 
 ## AES Sym Alg, no user supplied key
 start_duplication_session
-tpm2_duplicate -Q -C new_parent.ctx -c key2.ctx -g aes -o sym_key_out.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C new_parent.ctx -c key2.ctx -G aes -o sym_key_out.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 end_duplication_session
 
 trap - ERR
 
 ## Null parent - should fail (TPM_RC_HIERARCHY)
 start_duplication_session
-tpm2_duplicate -Q -C null -c key2.ctx -g aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C null -c key2.ctx -G aes -i sym_key_in.bin -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 if [ $? -eq 0 ]; then
   echo "Expected \"tpm2_duplicate -C null \" to fail."
   exit 1
@@ -108,9 +108,9 @@ dump_duplication_session
 
 ## Null Sym Alg - should fail (TPM_RC_SYMMETRIC)
 start_duplication_session
-tpm2_duplicate -Q -C new_parent.ctx -c key2.ctx -g null -p "session:session.dat" -r dupprv.bin -s dupseed.dat
+tpm2_duplicate -Q -C new_parent.ctx -c key2.ctx -G null -p "session:session.dat" -r dupprv.bin -s dupseed.dat
 if [ $? -eq 0 ]; then
-  echo "Expected \"tpm2_duplicate -g null \" to fail."
+  echo "Expected \"tpm2_duplicate -G null \" to fail."
   exit 1
 fi
 dump_duplication_session
