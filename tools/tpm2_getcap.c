@@ -918,15 +918,26 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_arg(int argc, char *argv[]) {
+
+    if (argc != 1) {
+        LOG_ERR("Only supports 1 capability group, got: %d", argc);
+        return false;
+    }
+
+    options.capability_string = argv[0];
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "capability", required_argument, NULL, 'c' },
-        { "list",       no_argument,       NULL, 'l' },
+        { "list", no_argument, NULL, 'l' },
 
     };
 
-    *opts = tpm2_options_new("c:l", ARRAY_LEN(topts), topts, on_option, NULL,
+    *opts = tpm2_options_new("l", ARRAY_LEN(topts), topts, on_option, on_arg,
                              0);
 
     return *opts != NULL;
