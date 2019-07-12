@@ -93,21 +93,21 @@ tpm2_createek -e abc123 -w abc123 -P passwd -c 0x81010001 -G rsa -p ek.pub
 tpm2_createek -G rsa -p ek.pub
 
 # Check that it is loaded in transient memory
-tpm2_getcap -c handles-transient
+tpm2_getcap handles-transient
 - 0x80000000
 
 # Flush the handle
 tpm2_flushcontext -c 0x80000000
 
 # Note that it is flushed
-tpm2_getcap -c handles-transient
+tpm2_getcap handles-transient
 <null output>
 
 # Reload it via loadexternal
 tpm2_loadexternal -C o -u ek.pub -o ek.ctx
 
 # Check that it is re-loaded in transient memory
-tpm2_getcap -c handles-transient
+tpm2_getcap handles-transient
 - 0x80000000
 
 ```

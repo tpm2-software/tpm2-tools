@@ -21,7 +21,7 @@ cleanup "no-shut-down"
 trap onerror ERR
 
 # Check for encryptdecrypt command code 0x164
-tpm2_getcap -c commands > commands.cap
+tpm2_getcap commands > commands.cap
 
 # clear the handler for the grep check
 trap - ERR

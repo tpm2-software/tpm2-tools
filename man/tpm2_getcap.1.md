@@ -6,57 +6,54 @@
 
 # SYNOPSIS
 
-**tpm2_getcap** [*OPTIONS*]
+**tpm2_getcap** [*OPTIONS*] [*CAPABILITY*]
 
 # DESCRIPTION
 
 **tpm2_getcap**(1) - Query the TPM for it's capabilities / properties and print them to the console.
+It takes a string form of the capability to query as an argument to the tool.
+Currently supported capability groups are:
+
+- **properties-fixed**:
+  Display fixed TPM properties.
+
+- **properties-variable**:
+  Display variable TPM properties.
+
+- **algorithms**:
+  Display data about supported algorithms.
+
+- **commands**:
+  Display data about supported commands.
+
+- **ecc-curves**:
+  Display data about elliptic curves.
+
+- **pcrs**:
+  Display currently allocated PCRs.
+
+- **handles-transient**:
+  Display handles about transient objects.
+
+- **handles-persistent**:
+  Display handles about persistent objects.
+
+- **handles-permanent**:
+  Display handles about permanent objects.
+
+- **handles-pcr**:
+  Display handles about PCRs.
+
+- **handles-nv-index**:
+  Display handles about NV Indices.
+
+- **handles-loaded-session**:
+  Display handles about both loaded HMAC and policy sessions.
+
+- **handles-saved-session**:
+  Display handles about saved sessions.
 
 # OPTIONS
-
-  * **-c**, **\--capability**=_CAPABILITY\_NAME_:
-
-    The name of the capability group to query.
-    Currently supported capability groups are:
-
-    * **properties-fixed**:
-      Display fixed TPM properties.
-
-    * **properties-variable**:
-      Display variable TPM properties.
-
-    * **algorithms**:
-      Display data about supported algorithms.
-
-    * **commands**:
-      Display data about supported commands.
-
-    * **ecc-curves**:
-      Display data about elliptic curves.
-
-    * **pcrs**:
-      Display currently allocated PCRs.
-
-    * **handles-transient**:
-      Display handles about transient objects.
-
-    * **handles-persistent**:
-      Display handles about persistent objects.
-
-    * **handles-permanent**:
-      Display handles about permanent objects.
-
-    * **handles-pcr**:
-      Display handles about PCRs.
-
-    * **handles-nv-index**:
-      Display handles about NV Indices.
-
-    * **handles-loaded-session**:
-      Display handles about both loaded HMAC and policy sessions.
-
-    * **handles-saved-session**:
-      Display handles about saved sessions.
 
   * **-l**, **\--list**:
 
@@ -80,7 +77,7 @@
 
 ## To list the fixed properties of the TPM
 ```
-tpm2_getcap --capability properties-fixed
+tpm2_getcap properties-fixed
 ```
 
 ## To list the supported capability arguments to **-c**

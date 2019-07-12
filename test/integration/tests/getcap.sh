@@ -35,7 +35,7 @@ tpm2_getcap -l > $out
 caplist=$(yaml_to_list $out)
 
 for c in $caplist; do
-    tpm2_getcap --capability="$c" > $out
+    tpm2_getcap "$c" > $out
     yaml_verify $out
 done;
 

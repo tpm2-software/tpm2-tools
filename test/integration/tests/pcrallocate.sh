@@ -16,7 +16,7 @@ start_up
 cleanup "no-shut-down"
 
 # Store the old banks because e.g. some TPM-simuators don't support SHA512
-OLDBANKS=$(tpm2_getcap -c pcrs | grep bank | sed 's/.*bank\: \(.*\)/+\1:all/' | tr -d "\n")
+OLDBANKS=$(tpm2_getcap pcrs | grep bank | sed 's/.*bank\: \(.*\)/+\1:all/' | tr -d "\n")
 
 echo "OLDBANKS: $OLDBANKS"
 

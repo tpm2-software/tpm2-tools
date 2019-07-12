@@ -108,7 +108,7 @@ tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
 # Test large writes
 #
 
-tpm2_getcap -c properties-fixed > cap.out
+tpm2_getcap properties-fixed > cap.out
 large_file_size=`yaml_get_kv cap.out "TPM2_PT_NV_INDEX_MAX" "raw"`
 nv_test_index=0x1000000
 

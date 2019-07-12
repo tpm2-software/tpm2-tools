@@ -23,7 +23,7 @@ pyscript
 
 populate_algs() {
     algs="$(mktemp)"
-    tpm2_getcap -c algorithms > "${algs}"
+    tpm2_getcap algorithms > "${algs}"
     filter_algs_by "${algs}" "${1}"
     rm "${algs}"
 }
