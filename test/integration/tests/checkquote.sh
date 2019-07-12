@@ -26,8 +26,8 @@ cleanup() {
         $ak_ctx
 
   tpm2_pcrreset 16
-  tpm2_evictcontrol -a o -c $handle_ek 2>/dev/null || true
-  tpm2_evictcontrol -a o -c $handle_ak 2>/dev/null || true
+  tpm2_evictcontrol -C o -c $handle_ek 2>/dev/null || true
+  tpm2_evictcontrol -C o -c $handle_ak 2>/dev/null || true
 
   if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down

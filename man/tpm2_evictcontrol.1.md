@@ -15,7 +15,7 @@ be evicted.
 
 # OPTIONS
 
-  * **-a**, **\--hierarchy**=_AUTH\_HIERARCHY\_:
+  * **-C**, **\--hierarchy**=_AUTH\_HIERARCHY\_:
 
     The authorization hierarchy used to authorize the commands. Defaults to the "owner" hierarchy.
     Supported options are:
@@ -74,18 +74,18 @@ within the TPM. If an object is *persisted* then the object is resident at the
 
 ## To make a transient handle persistent
 ```
-tpm2_evictcontrol -a o -c object.context -p 0x81010002 -P abc123
+tpm2_evictcontrol -C o -c object.context -p 0x81010002 -P abc123
 ```
 
 ## To evict a persistent handle
 ```
-tpm2_evictcontrol -a o -c 0x81010002 -p 0x81010002 -P abc123
+tpm2_evictcontrol -C o -c 0x81010002 -p 0x81010002 -P abc123
 ```
 
 ## To make a transient handle persistent and output a serialized persistent handle.
 ```
 tpm2_createprimary -o primary.ctx
-tpm2_evictcontrol -a o -c primary.ctx -o primary.handle
+tpm2_evictcontrol -C o -c primary.ctx -o primary.handle
 ```
 
 [returns](common/returns.md)

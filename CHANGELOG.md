@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_evictcontrol: -a becomes -C.
   * tpm2_encryptdecrypt: -D becomes -d.
   * tpm2_duplicate: short and long options changes to make it consistent with
     similar tools.

@@ -27,7 +27,7 @@ cleanup() {
           $file_output_data $file_input_digest $file_output_ticket \
           $file_output_hash $file_signing_key_pub_pem
 
-    tpm2_evictcontrol -Q -ao -c $handle_signing_key 2>/dev/null || true
+    tpm2_evictcontrol -Q -Co -c $handle_signing_key 2>/dev/null || true
 
     if [ "$1" != "no-shut-down" ]; then
         shut_down
@@ -52,7 +52,7 @@ test_symmetric() {
 
     rm -f $file_output_data
 
-    tpm2_evictcontrol -Q -a o -c $file_signing_key_ctx -p $handle_signing_key
+    tpm2_evictcontrol -Q -C o -c $file_signing_key_ctx -p $handle_signing_key
 
     tpm2_sign -Q -c $handle_signing_key -g $alg_hash -m $file_input_data -o $file_output_data
 

@@ -42,7 +42,7 @@ cleanup() {
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
     for handle in $handle_ek $handle_ak; do
-        tpm2_evictcontrol -Q -a o -c $handle 2>/dev/null || true
+        tpm2_evictcontrol -Q -C o -c $handle 2>/dev/null || true
     done
 
     shut_down

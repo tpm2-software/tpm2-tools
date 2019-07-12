@@ -38,8 +38,8 @@ cleanup() {
         rand.out session.ctx
 
   tpm2_pcrreset -Q $debug_pcr
-  tpm2_evictcontrol -Q -a o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
-  tpm2_evictcontrol -Q -a o -c $context_ak -P "$ownerpw" 2>/dev/null || true
+  tpm2_evictcontrol -Q -C o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
+  tpm2_evictcontrol -Q -C o -c $context_ak -P "$ownerpw" 2>/dev/null || true
 
   tpm2_nvrelease -Q -x $handle_nv -a $handle_hier -P "$ownerpw" 2>/dev/null || true
 
