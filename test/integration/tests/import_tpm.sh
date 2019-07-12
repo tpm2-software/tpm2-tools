@@ -63,9 +63,9 @@ do_duplication() {
     start_session dpolicy.dat duplicate
     if [ "$2" = "aes" ]
     then
-        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -g aes -o sym.key -p "session:session.dat" -r dup.dup -s dup.seed
+        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G aes -o sym.key -p "session:session.dat" -r dup.dup -s dup.seed
     else
-        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -g null -p "session:session.dat" -r dup.dup -s dup.seed
+        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G null -p "session:session.dat" -r dup.dup -s dup.seed
     fi
     end_session
 }

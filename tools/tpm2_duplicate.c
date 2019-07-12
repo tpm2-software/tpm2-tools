@@ -71,7 +71,7 @@ static bool on_option(char key, char *value) {
     case 'p':
         ctx.duplicable_key.auth_str = value;
         break;
-    case 'g':
+    case 'G':
         ctx.key_type = tpm2_alg_util_from_optarg(value,
                 tpm2_alg_util_flags_symmetric
                 |tpm2_alg_util_flags_misc);
@@ -115,16 +115,16 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
       { "auth-key",              required_argument, NULL, 'p'},
-      { "inner-wrapper-alg",     required_argument, NULL, 'g'},
-      { "duplicate-key-private", required_argument, NULL, 'r'},
+      { "inner-wrapper-alg",     required_argument, NULL, 'G'},
+      { "private",               required_argument, NULL, 'r'},
       { "input-key-file",        required_argument, NULL, 'i'},
       { "output-key-file",       required_argument, NULL, 'o'},
-      { "output-enc-seed-file",  required_argument, NULL, 's'},
+      { "encrypted-seed",        required_argument, NULL, 's'},
       { "parent-key",            required_argument, NULL, 'C'},
       { "context",               required_argument, NULL, 'c'},
     };
 
-    *opts = tpm2_options_new("p:g:i:C:o:s:r:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("p:G:i:C:o:s:r:c:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;

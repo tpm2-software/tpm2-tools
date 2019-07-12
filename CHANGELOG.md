@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_duplicate: short and long options changes to make it consistent with
+    similar tools.
+      - -g becomes -G
+      - \--duplicate-key-private becomes \--private
   * tpm2_nvincrement: short option changed
     -a becomes -C
   * tpm2_createak: short and long options changed to make it consistent with
