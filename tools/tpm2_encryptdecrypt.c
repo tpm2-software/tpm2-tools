@@ -313,7 +313,7 @@ static bool on_option(char key, char *value) {
     case 'p':
         ctx.encryption_key.auth_str = value;
         break;
-    case 'D':
+    case 'd':
         ctx.is_decrypt = 1;
         break;
     case 'i':
@@ -352,7 +352,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "auth-key",             required_argument, NULL, 'p' },
-        { "decrypt",              no_argument,       NULL, 'D' },
+        { "decrypt",              no_argument,       NULL, 'd' },
         { "in-file",              required_argument, NULL, 'i' },
         { "iv",                   required_argument, NULL, 't' },
         { "mode",                 required_argument, NULL, 'G' },
@@ -361,7 +361,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "pad",                  no_argument,       NULL, 'e' },
     };
 
-    *opts = tpm2_options_new("p:eDi:o:c:i:G:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("p:edi:o:c:i:G:t:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
