@@ -25,7 +25,7 @@ cleanup() {
          passfile private.pem
 
   if [ $(ina "$@" "keep_handle") -ne 0 ]; then
-    tpm2_evictcontrol -Q -ao -c $Handle_parent 2>/dev/null || true
+    tpm2_evictcontrol -Q -Co -c $Handle_parent 2>/dev/null || true
   fi
 
   if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
@@ -48,7 +48,7 @@ run_tss_test() {
 
     tpm2_loadexternal -Q -C n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
 
-    tpm2_evictcontrol -Q -a o -c $file_primary_key_ctx -p $Handle_parent
+    tpm2_evictcontrol -Q -C o -c $file_primary_key_ctx -p $Handle_parent
 
     # Test with Handle
     cleanup "keep_handle" "no-shut-down"

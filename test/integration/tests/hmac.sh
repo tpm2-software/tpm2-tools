@@ -50,7 +50,7 @@ tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
 # verify that persistent object can be used via a serialized handle
-tpm2_evictcontrol -a o -c $file_hmac_key_ctx -o $file_hmac_key_handle
+tpm2_evictcontrol -C o -c $file_hmac_key_ctx -o $file_hmac_key_handle
 
 cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_handle -o $file_hmac_output
 
