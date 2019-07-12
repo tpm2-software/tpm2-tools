@@ -26,7 +26,7 @@ specified symmetric key.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-D**, **\--decrypt**:
+  * **-d**, **\--decrypt**:
 
     Perform a decrypt operation. Default is encryption.
 
