@@ -147,6 +147,14 @@ Line Length should not exceed 80 characters and should be split on the nearest w
 Formatters:
 Code formatters can found under misc/formatters
 
+Copyright Statements:
+Copyright statements will not be included in header files, except under certain conditions. Ie particular blocks of code originated from a different source code base and have differing
+yet compatible licenses. In this case, that code will be carefully documented. Copyright statements will be permitted in the LICENSE file at the authors discretion. They may choose
+to update, but it will not be required.
+
+License Inclusion:
+All files that can contain an SPDX identifier shall contain an SPDX BSD-3 clause identifier in a single line /* */ statement in the top of the file or closes to top if not possible.
+
 References
 1: Alan Bridger, Mick Brooks, and Jim Pisano, C Coding Standards, 2001, http://www.alma.nrao.edu/development/computing/docs/joint/0009/2001-02-28.pdf
 2: Jim Larson, Standards and Style for Coding in ANSI C, 1996, http://www.jetcafe.org/jim/c-style.html
