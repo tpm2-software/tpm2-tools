@@ -26,7 +26,7 @@ If _FILE_ is not specified, it defaults to stdin.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
-      * **`<num>`** where a raw number can be used.
+      * **`<num>`** where a hierarchy handle or nv-index may be used.
 
     When **-a** isn't explicitly passed the index handle will be used to
     authorize against the index. The index auth value is set via the
