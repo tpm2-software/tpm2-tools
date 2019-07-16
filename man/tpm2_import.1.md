@@ -35,8 +35,8 @@ These options control the key importation process:
 
   * **-i**, **\--in-file**=_FILE_:
 
-    Specifies the filename of symmetric key (128 bit data) to be imported. OR,
-    Specifies the filename for the RSA2048 private key file in PEM and PKCS#1
+    Specifies the filename of the key to be imported. For AES keys,
+    this file is the raw key bytes. For assymetric keys in PEM or DER
     format. A typical file is generated with `openssl genrsa`.
 
   * **-C**, **\--parent-key**=_PARENT\_CONTEXT_:
