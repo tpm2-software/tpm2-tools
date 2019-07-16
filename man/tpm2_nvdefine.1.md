@@ -10,7 +10,7 @@
 
 # DESCRIPTION
 
-**tpm2_nvdefine**(1) - Define NV index with given auth value.
+**tpm2_nvdefine**(1) - Define an NV index with given auth value.
 
 # OPTIONS
 
