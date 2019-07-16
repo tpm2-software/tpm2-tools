@@ -10,8 +10,8 @@
 
 # DESCRIPTION
 
-**tpm2_nvreadlock**(1) - Lock the Non-Volatile (NV) index for further reads. The index
-is released on subsequent restart of the machine.
+**tpm2_nvreadlock**(1) - Lock the Non-Volatile (NV) index for further reads. The lock on the NV
+index is unlocked when the TPM is restarted and the NV index becomes readable again.
 
 # OPTIONS
 
@@ -26,6 +26,7 @@ is released on subsequent restart of the machine.
     * **p** for **TPM_RH_PLATFORM**
     Defaults to **o**, **TPM_RH_OWNER**, when no value has been
     specified.
+    * **`<num>`** where a hierarchy handle may be used.
 
   * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
 
