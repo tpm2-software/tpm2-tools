@@ -2,7 +2,7 @@
 
 # NAME
 
-**tpm2_pcrallocate**(1) - Change the allocated PCRs of a TPM
+**tpm2_pcrallocate**(1) - Configure PCRs and bank algorithms.
 
 # SYNOPSIS
 
@@ -10,18 +10,23 @@
 
 # DESCRIPTION
 
-**tpm2_pcrallocate**(1) - Allow the user to specify an allocation for the TPM.
+**tpm2_pcrallocate**(1) - Allow the user to specify a PCR allocation for the TPM.
+An allocation is the enabling or disabling of PCRs and it's banks. A PCR can have
+multiple banks, where each bank is associated with a specific hashing algorithm.
+
 If no _ALLOCATION_ is given, then SHA1 and SHA256 banks with PCRs 0 - 23 are
 allocated.
-
-The new allocations become effective after the next reboot.
 
 _ALLOCATION_ is a list of banks and selected pcrs. The values should
 follow the pcr bank specifiers standards, see section "PCR Bank Specifiers".
 
+The new allocations become effective after the next reboot.
+
+**Note**: This command requires platform authorization.
+
 # OPTIONS
 
-  * **-P**, **\--auth-platform**=_AUTH\_HIERARCHY_\VALUE_:
+  * **-P**, **\--auth-platform**=_AUTH\_PLATFORM_\VALUE_:
 
     Optional authorization value. Authorization values should follow the
     "authorization formatting standards", see section "Authorization Formatting".
