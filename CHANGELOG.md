@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvincrement: short option changed
+    -a becomes -C
   * tpm2_createak: short and long options changed to make it consistent with
     similar options in other tools.
     -e becomes -P,

@@ -18,7 +18,7 @@
 
     Specifies the index to define the space at.
 
-  * **-a**, **\--hierarchy**=_AUTH_:
+  * **-C**, **\--hierarchy**=_AUTH_:
 
     Specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
@@ -27,7 +27,7 @@
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-    When **-a** isn't explicitly passed the index handle will be used to
+    When **-C** isn't explicitly passed the index handle will be used to
     authorize against the index. The index auth value is set via the
     **-p** option to **tpm2_nvdefine**(1).
 
