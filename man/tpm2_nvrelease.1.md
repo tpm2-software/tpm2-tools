@@ -25,7 +25,7 @@ defined with **tpm2_nvdefine**(1).
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
-      * **`<num>`** where a raw number can be used.
+      * **`<num>`** where a hierarchy handle may be specified.
 
   * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
 
