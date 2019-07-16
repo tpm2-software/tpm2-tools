@@ -25,7 +25,7 @@
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
-      * **`<num>`** where a raw number can be used.
+      * **`<num>`** where a hierarchy handle or nv-index may be used.
 
   * **-s**, **\--size**=_SIZE_:
 
