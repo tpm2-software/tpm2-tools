@@ -38,7 +38,7 @@ see section "Authorization Formatting".
     transient or persistent object.
     See section "Context Object Format" for details.
 
-  * **-r**, **\--privfile**=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **\--private**=_OUTPUT\_PRIVATE\_FILE_:
     The output file which contains the new sensitive portion of the object whose auth was being changed.
 
 [common options](common/options.md)

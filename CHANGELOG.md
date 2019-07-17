@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_changeauth: --privfile becomes private
   * tpm2_evictcontrol: -p becomes an argument.
   * tpm2_getcap: -c becomes an argument.
   * tpm2_evictcontrol: -a becomes -C.

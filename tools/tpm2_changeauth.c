@@ -111,7 +111,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object-auth",                required_argument, NULL, 'p' },
         { "object-context",             required_argument, NULL, 'c' },
         { "parent-context",             required_argument, NULL, 'C' },
-        { "privfile",                   required_argument, NULL, 'r' },
+        { "private",                    required_argument, NULL, 'r' },
     };
     *opts = tpm2_options_new("p:c:C:r:", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
