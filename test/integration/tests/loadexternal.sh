@@ -48,7 +48,7 @@ run_tss_test() {
 
     tpm2_loadexternal -Q -C n   -u $file_loadexternal_key_pub   -o $file_loadexternal_key_ctx
 
-    tpm2_evictcontrol -Q -C o -c $file_primary_key_ctx -p $Handle_parent
+    tpm2_evictcontrol -Q -C o -c $file_primary_key_ctx $Handle_parent
 
     # Test with Handle
     cleanup "keep_handle" "no-shut-down"

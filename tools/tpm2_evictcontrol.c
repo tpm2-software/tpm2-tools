@@ -53,20 +53,9 @@ static tpm_evictcontrol_ctx ctx = {
 
 static bool on_option(char key, char *value) {
 
-    bool result;
-
     switch (key) {
     case 'C':
         ctx.auth_hierarchy.ctx_path = value;
-        break;
-    case 'p':
-        result = tpm2_util_string_to_uint32(value, &ctx.persist_handle);
-        if (!result) {
-            LOG_ERR("Could not convert persistent handle to a number, got: \"%s\"",
-                    value);
-            return false;
-        }
-        ctx.flags.p = 1;
         break;
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
@@ -84,18 +73,38 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_arg(int argc, char *argv[]) {
+
+    if (argc > 1) {
+        LOG_ERR("Expected at most one persistent handle, got %d", argc);
+        return false;
+    }
+
+    const char *value = argv[0];
+
+    bool result = tpm2_util_string_to_uint32(value, &ctx.persist_handle);
+    if (!result) {
+        LOG_ERR("Could not convert persistent handle to a number, got: \"%s\"",
+                value);
+        return false;
+    }
+    ctx.flags.p = 1;
+
+    return true;
+}
+
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
       { "hierarchy",      required_argument, NULL, 'C' },
-      { "persistent",     required_argument, NULL, 'p' },
       { "auth-hierarchy", required_argument, NULL, 'P' },
       { "context",        required_argument, NULL, 'c' },
       { "output",         required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("C:p:P:c:o:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    *opts = tpm2_options_new("C:P:c:o:", ARRAY_LEN(topts), topts, on_option,
+                             on_arg, 0);
 
     return *opts != NULL;
 }

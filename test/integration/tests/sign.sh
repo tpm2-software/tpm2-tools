@@ -52,7 +52,7 @@ test_symmetric() {
 
     rm -f $file_output_data
 
-    tpm2_evictcontrol -Q -C o -c $file_signing_key_ctx -p $handle_signing_key
+    tpm2_evictcontrol -Q -C o -c $file_signing_key_ctx $handle_signing_key
 
     tpm2_sign -Q -c $handle_signing_key -g $alg_hash -m $file_input_data -o $file_output_data
 

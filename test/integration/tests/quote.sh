@@ -68,7 +68,7 @@ yaml_verify $out
 tpm2_quote -Q -C $file_quote_key_ctx  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -g $alg_primary_obj
 
 #####handle testing
-tpm2_evictcontrol -Q -C o -c $file_quote_key_ctx -p $Handle_ak_quote
+tpm2_evictcontrol -Q -C o -c $file_quote_key_ctx $Handle_ak_quote
 
 tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -g $alg_primary_obj
 
@@ -78,7 +78,7 @@ tpm2_quote -Q -C $Handle_ak_quote  -L $alg_quote:16,17,18+$alg_quote1:16,17,18 -
 tpm2_createek -Q -c $Handle_ek_quote -G 0x01 -p ek.pub2
 
 tpm2_createak -Q -C $Handle_ek_quote -c $ak2_ctx -u ak.pub2 -n ak.name_2
-tpm2_evictcontrol -Q -C o -c $ak2_ctx -p $Handle_ak_quote2
+tpm2_evictcontrol -Q -C o -c $ak2_ctx $Handle_ak_quote2
 
 tpm2_quote -Q -C $Handle_ak_quote -L $alg_quote:16,17,18 -l 16,17,18 -q $nonce -m $toss_out -s $toss_out -p $toss_out -g $alg_primary_obj
 
