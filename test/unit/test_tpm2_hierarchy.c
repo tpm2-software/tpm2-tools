@@ -72,7 +72,7 @@ static void test_tpm2_hierarchy_from_optarg_valid_ids(void **state) {
     assert_int_equal(h, TPM2_RH_NULL);
 
     result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h,
-            TPM2_HIERARCHY_FLAGS_ALL);
+            TPM2_HANDLES_ALL);
     assert_true(result);
     assert_int_equal(h, 0xBADC0DE);
 }
@@ -128,9 +128,57 @@ static void test_tpm2_hierarchy_from_optarg_valid_ids_enabled(void **state) {
     assert_int_equal(h, TPM2_RH_NULL);
 
     result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h,
-            TPM2_HIERARCHY_FLAGS_ALL);
+            TPM2_HANDLES_ALL);
     assert_true(result);
     assert_int_equal(h, 0xBADC0DE);
+}
+
+static void test_tpm2_hierarchy_from_optarg_nv_valid_range(void **state) {
+    UNUSED(state);
+
+    TPMI_RH_PROVISION h;
+    /*
+     * NV index specified as NV:offset
+     */
+    bool result = tpm2_hierarchy_from_optarg("1", &h, TPM2_HANDLES_FLAGS_NV);
+    assert_true(result);
+    assert_int_equal(h, 0x01000001);
+
+    /*
+     * NV index specified as full raw handle
+     */
+    result = tpm2_hierarchy_from_optarg("0x01000002", &h, TPM2_HANDLES_FLAGS_NV);
+    assert_true(result);
+    assert_int_equal(h, 0x01000002);
+}
+
+static void test_tpm2_hierarchy_from_optarg_nv_invalid_offset(void **state) {
+    UNUSED(state);
+
+    TPMI_RH_PROVISION h;
+    /*
+     * No offset specified
+     */
+    bool result = tpm2_hierarchy_from_optarg("", &h, TPM2_HANDLES_FLAGS_NV);
+    assert_false(result);
+
+    /*
+     * Offset is non hex string
+     */
+    result = tpm2_hierarchy_from_optarg("random", &h, TPM2_HANDLES_FLAGS_NV);
+    assert_false(result);
+
+    /*
+     * Offset is larger than TPM2_HR_HANDLE_MASK
+     */
+    result = tpm2_hierarchy_from_optarg("0x12345678", &h, TPM2_HANDLES_FLAGS_NV);
+    assert_false(result);
+
+    /*
+     * Wrongly specify NV index as raw handle and disable NV in flags
+     */
+    result = tpm2_hierarchy_from_optarg("0x01000001", &h, TPM2_HIERARCHY_FLAGS_O);
+    assert_false(result);
 }
 
 /* link required symbol, but tpm2_tool.c declares it AND main, which
@@ -150,6 +198,8 @@ int main(int argc, char* argv[]) {
         cmocka_unit_test(test_tpm2_hierarchy_from_optarg_valid_ids),
         cmocka_unit_test(test_tpm2_hierarchy_from_optarg_valid_ids_disabled),
         cmocka_unit_test(test_tpm2_hierarchy_from_optarg_valid_ids_enabled),
+        cmocka_unit_test(test_tpm2_hierarchy_from_optarg_nv_valid_range),
+        cmocka_unit_test(test_tpm2_hierarchy_from_optarg_nv_invalid_offset),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

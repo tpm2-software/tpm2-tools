@@ -19,8 +19,8 @@ enum tpm2_hierarchy_flags {
     TPM2_HIERARCHY_FLAGS_E    = 1 << 2,
     TPM2_HIERARCHY_FLAGS_N    = 1 << 3,
     TPM2_HIERARCHY_FLAGS_L    = 1 << 4,
-    TPM2_HIERARCHY_SUPPRESS   = 1 << 5,
     TPM2_HIERARCHY_FLAGS_ALL  = 0x1F,
+    TPM2_HANDLES_FLAGS_NV     = 1 << 5,
     TPM2_HANDLES_ALL          = 0x3F
 };
 

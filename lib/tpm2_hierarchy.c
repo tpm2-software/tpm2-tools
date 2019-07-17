@@ -29,6 +29,84 @@
  * @return
  *  True on success, False otherwise.
  */
+
+static bool filter_hierarchy_handles(TPMI_RH_PROVISION hierarchy,
+    tpm2_hierarchy_flags flags) {
+
+    switch(hierarchy) {
+        case TPM2_RH_OWNER:
+            if ( !(flags & TPM2_HIERARCHY_FLAGS_O) ) {
+                LOG_ERR("Unexpected handle - TPM2_RH_OWNER");
+                return false;
+            }
+            break;
+        case TPM2_RH_PLATFORM:
+            if ( !(flags & TPM2_HIERARCHY_FLAGS_P) ) {
+                LOG_ERR("Unexpected handle - TPM2_RH_PLATFORM");
+                return false;
+            }
+            break;
+        case TPM2_RH_ENDORSEMENT:
+            if ( !(flags & TPM2_HIERARCHY_FLAGS_E) ) {
+                LOG_ERR("Unexpected handle - TPM2_RH_ENDORSEMENT");
+                return false;
+            }
+            break;
+        case TPM2_RH_NULL:
+            if ( !(flags & TPM2_HIERARCHY_FLAGS_N) ) {
+                LOG_ERR("Unexpected handle - TPM2_RH_NULL");
+                return false;
+            }
+            break;
+        case TPM2_RH_LOCKOUT:
+            if ( !(flags & TPM2_HIERARCHY_FLAGS_L) ) {
+                LOG_ERR("Unexpected handle - TPM2_RH_LOCKOUT");
+                return false;
+            }
+            break;
+        default: //If specified a random offset to the permanent handle range
+            if (flags == TPM2_HANDLES_ALL ||
+                flags == TPM2_HIERARCHY_FLAGS_NONE) {
+                return true;
+            }
+            return false;
+    }
+
+    return true;
+}
+
+static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags) {
+
+    bool result = true;
+    switch(*hierarchy & TPM2_HR_RANGE_MASK) {
+        case 0: //If user simply specifies an index offset
+          if (flags & TPM2_HANDLES_FLAGS_NV) {
+             *hierarchy += TPM2_HR_NV_INDEX;
+          }
+        /* fall through */
+        case TPM2_HR_NV_INDEX:
+            if ( !(flags & TPM2_HANDLES_FLAGS_NV) ) {
+                LOG_ERR("NV-Index handle not supported by this command.");
+                return false;
+            }
+            break;
+        case TPM2_HR_PERMANENT:
+            result = filter_hierarchy_handles(*hierarchy, flags);
+            if (!result) {
+                return false;
+            }
+            break;
+        default: //If specified a random number as tpm handle range
+            if (flags == TPM2_HANDLES_ALL ||
+                flags == TPM2_HIERARCHY_FLAGS_NONE) {
+                return true;
+            }
+            return false;
+    }
+
+    return true;
+}
+
 bool tpm2_hierarchy_from_optarg(const char *value,
         TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags) {
 
@@ -81,32 +159,8 @@ bool tpm2_hierarchy_from_optarg(const char *value,
      * If the caller specifies the expected valid hierarchies, either as string,
      * or hex handles, they are additionally filtered here.
      */
-    if (!(flags & TPM2_HIERARCHY_FLAGS_O) && *hierarchy == TPM2_RH_OWNER) {
-            LOG_ERR("Owner hierarchy not supported by this command.");
-            return false;
-        }
 
-    if (!(flags & TPM2_HIERARCHY_FLAGS_P) && *hierarchy == TPM2_RH_PLATFORM) {
-            LOG_ERR("Platform hierarchy not supported by this command.");
-            return false;
-        }
-
-    if (!(flags & TPM2_HIERARCHY_FLAGS_E) && *hierarchy == TPM2_RH_ENDORSEMENT) {
-            LOG_ERR("Endorsement hierarchy not supported by this command.");
-            return false;
-        }
-
-    if (!(flags & TPM2_HIERARCHY_FLAGS_N) && *hierarchy == TPM2_RH_NULL) {
-            LOG_ERR("NULL hierarchy not supported by this command.");
-            return false;
-        }
-
-    if (!(flags & TPM2_HIERARCHY_FLAGS_L) && *hierarchy == TPM2_RH_LOCKOUT) {
-            LOG_ERR("Permanent handle lockout not supported by this command.");
-            return false;
-        }
-
-    return result;
+    return filter_handles(hierarchy, flags);
 }
 
 tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
