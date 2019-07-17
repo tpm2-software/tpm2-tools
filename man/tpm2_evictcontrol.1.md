@@ -29,15 +29,11 @@ be evicted.
     Either a file path of a context blob or a handle id. See section "Context Object Format".
 
     If _OBJECT\_CONTEXT_ is for a transient object it will be persisted, either
-    to the handle specified by the **-p** option, or to the first available vacant
+    to the handle specified by the argument or to the first available vacant
     persistent handle.
 
-    If the handle is for a persistent object, then the **-p** does not need to
-    be provided since the handle must be the same for both options.
-
-  * **-p**, **\--persistent**=_PERSISTENT\_HANDLE_:
-
-    The persistent handle for the object handle specified via _HANDLE_.
+    If the handle is for a persistent object, then the object will be evicted from
+    non-volatile memory.
 
   * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY_\VALUE_:
 
@@ -72,14 +68,14 @@ within the TPM. If an object is *persisted* then the object is resident at the
 
 # EXAMPLES
 
-## To make a transient handle persistent
+## To make a transient handle persistent at address 0x81010002
 ```
-tpm2_evictcontrol -C o -c object.context -p 0x81010002 -P abc123
+tpm2_evictcontrol -C o -c object.context -P abc123 0x81010002
 ```
 
 ## To evict a persistent handle
 ```
-tpm2_evictcontrol -C o -c 0x81010002 -p 0x81010002 -P abc123
+tpm2_evictcontrol -C o -c 0x81010002 -P abc123
 ```
 
 ## To make a transient handle persistent and output a serialized persistent handle.

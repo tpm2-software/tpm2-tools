@@ -51,7 +51,7 @@ tpm2_createek -c $handle_ek -G $ek_alg -p $output_ek_pub_pem -f pem -P "$ekpw"
 
 tpm2_createak -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg\
   -u $output_ak_pub_pem -f pem -n $output_ak_pub_name -p "$akpw"
-tpm2_evictcontrol -Q -c $ak_ctx -p $handle_ak
+tpm2_evictcontrol -Q -c $ak_ctx $handle_ak
 
 # Quoting
 getrandom 20

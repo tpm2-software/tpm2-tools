@@ -70,8 +70,8 @@ for fmt in tss pem der; do
 done
 
 tpm2_createak -Q -G $alg_ak -C $handle_ek -c $ak_ctx -u "$file_pubak_tss" -n "$file_pubak_name"
-echo "tpm2_evictcontrol -Q -c $ak_ctx -p $handle_ak -o $handle_ak_file"
-tpm2_evictcontrol -Q -c $ak_ctx -p $handle_ak -o $handle_ak_file
+echo "tpm2_evictcontrol -Q -c $ak_ctx -o $handle_ak_file" $handle_ak
+tpm2_evictcontrol -Q -c $ak_ctx -o $handle_ak_file $handle_ak
 
 tpm2_readpublic -Q -c $handle_ak_file -f "pem" -o "$file_pubak_pem"
 
