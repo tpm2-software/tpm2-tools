@@ -1,5 +1,12 @@
 ## Changelog
 ### next
+  * tpm2_createpolicy: long options changed
+    out-policy-file is now policy
+    policy-digest-alg is now policy-algorithm
+    pcr-input-file is now pcr
+    -o is now -L
+    -L is now -l
+    -F is now -f
   * tpm2_createek: short and long options changed
     auth-endorse is now eh-auth
     auth-owner is now owner-auth

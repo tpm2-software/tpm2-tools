@@ -29,7 +29,7 @@ tpm2_createprimary -Q -C o -g sha256 -G rsa
 tpm2_flushcontext -Q -t
 
 # Test for flushing a loaded session
-tpm2_createpolicy -Q --policy-session --policy-pcr -L sha256:0
+tpm2_createpolicy -Q --policy-session --policy-pcr -l sha256:0
 tpm2_flushcontext -Q -l
 
 cleanup "no-shut-down"
