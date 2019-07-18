@@ -57,7 +57,7 @@ tpm2_nvrelease -x $nv_test_index -a o
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
-tpm2_createpolicy -Q --policy-pcr -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
+tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 
 tpm2_nvdefine -Q -x 0x1500016 -C 0x40000001 -s 8 -L $file_policy -a "policyread|policywrite|nt=1"
 
