@@ -22,7 +22,7 @@ cleanup "no-shut-down"
 
 echo "12345678" > secret.data
 
-tpm2_createek -Q -c 0x81010009 -G rsa -p ek.pub
+tpm2_createek -Q -c 0x81010009 -G rsa -u ek.pub
 
 tpm2_createak -C 0x81010009 -c ak.ctx -G rsa -g sha256 -s rsassa -u ak.pub\
     -n ak.name -p akpass> ak.out

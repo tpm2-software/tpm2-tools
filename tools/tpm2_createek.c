@@ -262,13 +262,13 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'e':
+    case 'P':
         ctx.auth.endorse.auth_str = value;
         break;
     case 'w':
         ctx.auth.owner.auth_str = value;
         break;
-    case 'P':
+    case 'p':
         ctx.auth.ek.auth_str = value;
         break;
     case 'G': {
@@ -279,7 +279,7 @@ static bool on_option(char key, char *value) {
         }
         ctx.objdata.in.public.publicArea.type = type;
     }   break;
-    case 'p':
+    case 'u':
         if (!value) {
             LOG_ERR("Please specify an output file to save the pub ek to.");
             return false;
@@ -307,17 +307,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth-endorse",         required_argument, NULL, 'e' },
-        { "auth-owner",           required_argument, NULL, 'w' },
-        { "auth-ek",              required_argument, NULL, 'P' },
-        { "algorithm",            required_argument, NULL, 'G' },
-        { "file",                 required_argument, NULL, 'p' },
+        { "eh-auth",              required_argument, NULL, 'P' },
+        { "owner-auth",           required_argument, NULL, 'w' },
+        { "ek-auth",              required_argument, NULL, 'p' },
+        { "key-algorithm",        required_argument, NULL, 'G' },
+        { "public",               required_argument, NULL, 'u' },
         { "format",               required_argument, NULL, 'f' },
-        { "context",              required_argument, NULL, 'c' },
+        { "ek-context",           required_argument, NULL, 'c' },
         { "template",             required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("e:w:P:G:p:f:c:t", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:w:p:G:u:f:c:t", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

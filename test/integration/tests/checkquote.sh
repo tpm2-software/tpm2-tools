@@ -47,7 +47,7 @@ getrandom() {
 }
 
 # Key generation
-tpm2_createek -c $handle_ek -G $ek_alg -p $output_ek_pub_pem -f pem -P "$ekpw"
+tpm2_createek -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem -p "$ekpw"
 
 tpm2_createak -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg\
   -u $output_ak_pub_pem -f pem -n $output_ak_pub_name -p "$akpw"

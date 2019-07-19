@@ -19,17 +19,17 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_createek -c 0x81010005 -G rsa -p ek.pub
+tpm2_createek -c 0x81010005 -G rsa -u ek.pub
 
 cleanup "no-shut-down"
 
-tpm2_createek -c - -G rsa -p ek.pub > ek.log
+tpm2_createek -c - -G rsa -u ek.pub > ek.log
 phandle=`yaml_get_kv ek.log "persistent-handle"`
 tpm2_evictcontrol -Q -C o -c $phandle
 
 cleanup "no-shut-down"
 
-tpm2_createek -G rsa -p ek.pub
+tpm2_createek -G rsa -u ek.pub
 
 cleanup "no-shut-down"
 
@@ -46,7 +46,7 @@ echo -n -e '\0' > ek.nonce
 tpm2_nvdefine -Q -x $ek_nonce_index -C o -s 1 -a "ownerread|policywrite|ownerwrite"
 tpm2_nvwrite -Q -x $ek_nonce_index -a o ek.nonce
 
-tpm2_createek -t -G rsa -p ek.pub
+tpm2_createek -t -G rsa -u ek.pub
 
 cleanup "no-shut-down"
 

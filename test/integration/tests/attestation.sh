@@ -65,7 +65,7 @@ tpm2_changeauth -c o "$ownerpw"
 tpm2_changeauth -c e "$endorsepw"
 
 # Key generation
-tpm2_createek -Q -c $handle_ek -G $ek_alg -p $output_ek_pub_pem -f pem -P "$ekpw" -w "$ownerpw" -e "$endorsepw"
+tpm2_createek -Q -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem -p "$ekpw" -w "$ownerpw" -P "$endorsepw"
 tpm2_readpublic -Q -c $handle_ek -o $output_ek_pub
 
 tpm2_createak -Q -C $handle_ek -c $context_ak -G $ak_alg -g $digestAlg\

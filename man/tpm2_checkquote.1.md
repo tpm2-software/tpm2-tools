@@ -76,7 +76,7 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
 ## Generate a quote with a TPM, then verify it
 ```
-tpm2_createek -c 0x81010009 -G rsa -p ekpub.pem -f pem
+tpm2_createek -c 0x81010009 -G rsa -u ekpub.pem -f pem
 
 tpm2_createak -C 0x81010009 -k 0x8101000a -G rsa -s rsassa -D sha256 -p akpub.pem -f pem -n ak.name
 

@@ -23,7 +23,7 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_createek -Q -c 0x8101000b -G rsa -p ek.pub
+tpm2_createek -Q -c 0x8101000b -G rsa -u ek.pub
 
 tpm2_createak -Q -C 0x8101000b -c ak.ctx -G rsa -g sha256 -s rsassa -u ak.pub -n ak.name
 
@@ -36,7 +36,7 @@ tpm2_evictcontrol -Q -C o -c $phandle
 # Test tpm2_createak with endorsement password
 cleanup "no-shut-down"
 tpm2_changeauth -c e endauth
-tpm2_createek -Q -e endauth -c 0x8101000b -G rsa -p ek.pub
+tpm2_createek -Q -P endauth -c 0x8101000b -G rsa -u ek.pub
 tpm2_createak -Q -P endauth -C 0x8101000b -c ak.ctx -G rsa -u ak.pub -n ak.name
 
 exit 0
