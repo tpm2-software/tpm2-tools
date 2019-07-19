@@ -52,13 +52,13 @@ tpm2_load -Q -C $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_
 # verify that persistent object can be used via a serialized handle
 tpm2_evictcontrol -C o -c $file_hmac_key_ctx -o $file_hmac_key_handle
 
-cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_handle -o $file_hmac_output
+cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_handle -o $file_hmac_output
 
 cleanup "keep-context" "no-shut-down"
 
 # Test large file, ie sequence hmac'ing.
 dd if=/dev/urandom of=$file_input_data bs=2093 count=1 2>/dev/null
-tpm2_hmac -Q -C $file_hmac_key_ctx -o $file_hmac_output $file_input_data
+tpm2_hmac -Q -c $file_hmac_key_ctx -o $file_hmac_output $file_input_data
 
 ####handle test
 rm -f $file_hmac_output
@@ -76,13 +76,13 @@ tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
-cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_ctx -o $file_hmac_output
+cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx -o $file_hmac_output
 
 # test no output file
-cat $file_input_data | tpm2_hmac -C $file_hmac_key_ctx 1>/dev/null
+cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx 1>/dev/null
 
 # verify that silent is indeed silent
-stdout=`cat $file_input_data | tpm2_hmac -Q -C $file_hmac_key_ctx`
+stdout=`cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx`
 if [ -n "$stdout" ]; then
     echo "Expected no output when run in quiet mode, got\"$stdout\""
     exit 1

@@ -1,5 +1,10 @@
 ## Changelog
 ### next
+  * tpm2_hmac: short and long options changed
+    out-file is now output
+    auth-key is now auth
+    -C is now -c
+    -P is now -p
   * tpm2_hash: short and long options changed
     halg is now hash-algorithm
     out-file is now output

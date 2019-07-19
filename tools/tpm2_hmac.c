@@ -167,10 +167,10 @@ out:
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'C':
+    case 'c':
         ctx.hmac_key.ctx_path = value;
         break;
-    case 'P':
+    case 'p':
         ctx.hmac_key.auth_str = value;
         break;
     case 'o':
@@ -201,14 +201,14 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "key-context",          required_argument, NULL, 'C' },
-        { "auth-key",             required_argument, NULL, 'P' },
-        { "out-file",             required_argument, NULL, 'o' },
+        { "key-context",          required_argument, NULL, 'c' },
+        { "auth",                 required_argument, NULL, 'p' },
+        { "output",               required_argument, NULL, 'o' },
     };
 
     ctx.input = stdin;
 
-    *opts = tpm2_options_new("C:P:o:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("c:p:o:", ARRAY_LEN(topts), topts, on_option,
                              on_args, 0);
 
     return *opts != NULL;
