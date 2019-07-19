@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_evictcontrol: long options changed
+    auth-hierarchy is now auth
+    context is now key-context
   * tpm2_encryptdecrypt: long options changed
     auth-key is now auth
     in-file is now input
