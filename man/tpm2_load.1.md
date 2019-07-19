@@ -19,22 +19,22 @@ context file for future interactions with the object.
 
 # OPTIONS
 
-  * **-C**, **\--context-parent**=_PARENT\_CONTEXT\_OBJECT_:
+  * **-C**, **\--parent-context**=_PARENT\_CONTEXT\_OBJECT_:
 
     Context object loaded object's parent. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-P**, **\--auth-parent**=_KEY\_AUTH_:
+  * **-P**, **\--auth**=_KEY\_AUTH_:
 
     Optional authorization value to use the parent object specified by **-C**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-u**, **\--pubfile**=_PUBLIC\_OBJECT\_DATA\_FILE_:
+  * **-u**, **\--public**=_PUBLIC\_OBJECT\_DATA\_FILE_:
 
     A file containing the public portion of the object.
 
-  * **-r**, **\--privfile**=_PRIVATE\_OBJECT\_DATA\_FILE_:
+  * **-r**, **\--private**=_PRIVATE\_OBJECT\_DATA\_FILE_:
 
     A file containing the sensitive portion of the object.
 
@@ -42,7 +42,7 @@ context file for future interactions with the object.
 
     An optional file to save the name structure of the object.
 
-  * **-o**, **\--out-context**=_CONTEXT\_FILE\_NAME_:
+  * **-o**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
 
     The file name of the saved object context, required.
 
