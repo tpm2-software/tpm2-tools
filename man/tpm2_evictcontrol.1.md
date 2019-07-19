@@ -23,7 +23,7 @@ be evicted.
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-  * **-c**, **\--context**=_OBJECT_CONTEXT_:
+  * **-c**, **\--key-context**=_OBJECT_CONTEXT_:
 
     A context object specifier of a transient or persistent object.
     Either a file path of a context blob or a handle id. See section "Context Object Format".
@@ -35,7 +35,7 @@ be evicted.
     If the handle is for a persistent object, then the object will be evicted from
     non-volatile memory.
 
-  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY_\VALUE_:
+  * **-P**, **\--auth**=_AUTH\_HIERARCHY_\VALUE_:
 
     Optional authorization value. Authorization values should follow the
     "authorization formatting standards", see section "Authorization Formatting".
