@@ -39,7 +39,7 @@ These options control the certification:
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     The hash algorithm to use.
     Algorithms should follow the "formatting standards", see section

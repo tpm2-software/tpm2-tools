@@ -203,7 +203,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "signingkey-context",   required_argument, NULL, 'C' },
       { "certifiedkey-auth",    required_argument, NULL, 'p' },
       { "signingkey-auth",      required_argument, NULL, 'P' },
-      { "halg",                 required_argument, NULL, 'g' },
+      { "hash-algorithm",       required_argument, NULL, 'g' },
       { "attestation",          required_argument, NULL, 'o' },
       { "signature",            required_argument, NULL, 's' },
       { "format",               required_argument, NULL, 'f' },
