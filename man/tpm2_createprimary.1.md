@@ -30,20 +30,20 @@ with the created primary.
       * **n** for **TPM_RH_NULL**
       * **`<num>`** where a raw number can be used.
 
-  * **-P**, **\--auth-hierarchy**=_HIERARCHY\_\_AUTH\_VALUE_:
+  * **-P**, **\--hierarchy-auth**=_HIERARCHY\_\_AUTH\_VALUE_:
 
     Optional authorization value when authorization is required to create object
     under the specified hierarchy given via the **-a** option. Authorization
     values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-p**, **\--auth-object**=_OBJECT\_AUTH_:
+  * **-p**, **\--key-auth**=_OBJECT\_AUTH_:
 
     Optional authorization password for the newly created object. Password
     values should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-g**, **\--halg**=_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm to use for generating the objects name.
     If not specified, the default name algorithm is SHA256.
@@ -51,17 +51,17 @@ with the created primary.
     "Algorithm Specifiers". Also, see section
     "Supported Hash Algorithms" for a list of supported hash algorithms.
 
-  * **-G**, **\--kalg**=_KEY\_ALGORITHM_:
+  * **-G**, **\--key-algorithm**=_KEY\_ALGORITHM_:
 
     Algorithm type for generated key. If not specified, the default key
     algorithm is rsa2048:null:aes128cfb. See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
 
-  * **-o**, **\--context-object**=_CONTEXT\_FILE\_NAME_:
+  * **-o**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
 
     File name to use for the returned object context, required.
 
-  * **-L**, **\--policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     An optional file input that contains the policy digest for policy based authorization of the object.
 

@@ -1,5 +1,12 @@
 ## Changelog
 ### next
+  * tpm2_createprimary: long options changed
+    auth-hierarchy is now hierarchy-auth
+    auth-object is now key-auth
+    halg is now hash-algorithm
+    kalg is now key-algorithm
+    context-object is now key-context
+    policy-file is now policy
   * tpm2_certify: long option changed
     halg is now hash-algorithm
   * tpm2_createpolicy: long options changed
