@@ -69,7 +69,7 @@ static bool on_option(char key, char *value) {
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
-        { "auth-platform",     required_argument, NULL, 'P' },
+        { "auth",     required_argument, NULL, 'P' },
     };
 
     *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,

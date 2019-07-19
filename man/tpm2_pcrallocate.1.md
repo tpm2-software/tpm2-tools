@@ -26,7 +26,7 @@ The new allocations become effective after the next reboot.
 
 # OPTIONS
 
-  * **-P**, **\--auth-platform**=_AUTH\_PLATFORM_\VALUE_:
+  * **-P**, **\--auth**=_PLATFORM\_AUTH\_VALUE_:
 
     Optional authorization value. Authorization values should follow the
     "authorization formatting standards", see section "Authorization Formatting".
