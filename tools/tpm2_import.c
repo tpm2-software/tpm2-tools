@@ -286,19 +286,19 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "auth-parent",        required_argument, NULL, 'P'},
-      { "auth-key",           required_argument, NULL, 'p'},
-      { "algorithm",          required_argument, NULL, 'G'},
-      { "in-file",            required_argument, NULL, 'i'},
-      { "parent-key",         required_argument, NULL, 'C'},
-      { "parent-pubkey",      required_argument, NULL, 'K'},
-      { "privfile",           required_argument, NULL, 'r'},
-      { "pubfile",            required_argument, NULL, 'u'},
+      { "parent-auth",        required_argument, NULL, 'P'},
+      { "key-auth",           required_argument, NULL, 'p'},
+      { "key-algorithm",      required_argument, NULL, 'G'},
+      { "input",              required_argument, NULL, 'i'},
+      { "parent-context",     required_argument, NULL, 'C'},
+      { "parent-public",      required_argument, NULL, 'K'},
+      { "private",            required_argument, NULL, 'r'},
+      { "public",             required_argument, NULL, 'u'},
       { "object-attributes",  required_argument, NULL, 'a'},
-      { "halg",               required_argument, NULL, 'g'},
+      { "hash-algorithm",     required_argument, NULL, 'g'},
       { "seed",               required_argument, NULL, 's'},
-      { "policy-file",        required_argument, NULL, 'L'},
-      { "sym-alg-file",       required_argument, NULL, 'k'},
+      { "policy",             required_argument, NULL, 'L'},
+      { "encryption-key",     required_argument, NULL, 'k'},
       { "passin",             required_argument, NULL,  0 },
     };
 

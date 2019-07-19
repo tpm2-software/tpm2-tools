@@ -18,14 +18,14 @@ key object created by the tpm2_duplicate tool.
 
 These options control the key importation process:
 
-  * **-G**, **\--algorithm**=_ALGORITHM_:
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
     The algorithm used by the key to be imported. Supports:
     * **aes** - AES 128, 192 or 256 key.
     * **rsa** - RSA 1024 or 2048 key.
     * **ecc** - ECC NIST P192, P224, P256, P384 or P521 public and private key.
 
-  * **-g**, **\--halg**=_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm for generating the objects name. This is optional
     and defaults to **sha256** when not specified. Algorithms should follow the
@@ -33,31 +33,31 @@ These options control the key importation process:
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-i**, **\--in-file**=_FILE_:
+  * **-i**, **\--input**=_FILE_:
 
     Specifies the filename of the key to be imported. For AES keys,
     this file is the raw key bytes. For assymetric keys in PEM or DER
     format. A typical file is generated with `openssl genrsa`.
 
-  * **-C**, **\--parent-key**=_PARENT\_CONTEXT_:
+  * **-C**, **\--parent-context**=_PARENT\_CONTEXT_:
 
     Specifies the context object for the parent key. Either a file or a handle number.
     See section "Context Object Format". The parent key **MUST** be an *RSA* key with an
     symmetric cipher of *aes128cfb*.
 
-  * **-K**, **\--parent-pubkey**=_FILE_:
+  * **-K**, **\--parent-public**=_FILE_:
 
     Optional. Specifies the parent key public data file input. This can be read with
     **tpm2_readpublic**(1) tool. If not specified, the tool invokes a tpm2_readpublic on the parent
     object.
 
-  * **-k**, **\--sym-alg-file**=_FILE_:
+  * **-k**, **\--encryption-key**=_FILE_:
 
     Optional. Specifies the file containing the symmetric algorithm key that was used for the
     inner wrapper. If the file is specified the tool assumes the algorithm is AES 128 in CFB mode
     otherwise none.
 
-  * **-r**, **\--privfile**=_FILE_:
+  * **-r**, **\--private**=_FILE_:
 
     Specifies the file path required to save the encrypted private portion of
     the object imported as key.
@@ -65,7 +65,7 @@ These options control the key importation process:
     When importing a duplicated object this option specifies the file containing the
     private portion of the object to be imported.
 
-  * **-u**, **\--pubfile**=_FILE_:
+  * **-u**, **\--public**=_FILE_:
 
     Specifies the file path required to save the public portion of the object imported as key
 
@@ -76,19 +76,19 @@ These options control the key importation process:
 
     The object attributes, optional.
 
-  * **-P**, **\--auth-parent**=_PARENT\_KEY\_AUTH_:
+  * **-P**, **\--parent-auth**=_PARENT\_KEY\_AUTH_:
 
     The authorization value for using the parent key, optional.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-p**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--key-auth**=_KEY\_AUTH_:
 
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
 
-  * **-L**, **\--policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     The policy file.
 
