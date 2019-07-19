@@ -141,9 +141,9 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "hierarchy",              required_argument,  NULL,   'C' },
         { "size",                   required_argument,  NULL,   's' },
         { "attributes",             required_argument,  NULL,   'a' },
-        { "auth-hierarchy",         required_argument,  NULL,   'P' },
-        { "auth-index",             required_argument,  NULL,   'p' },
-        { "policy-file",            required_argument,  NULL,   'L' },
+        { "hierarchy-auth",         required_argument,  NULL,   'P' },
+        { "index-auth",             required_argument,  NULL,   'p' },
+        { "policy",                 required_argument,  NULL,   'L' },
     };
 
     *opts = tpm2_options_new("x:C:s:a:P:p:L:", ARRAY_LEN(topts), topts,
