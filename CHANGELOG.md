@@ -1,5 +1,13 @@
 ## Changelog
 ### next
+  * tpm2_loadexternal: long options changed
+    key-alg is now key-algorithm
+    pubfile is now public
+    privfile is now private
+    auth-key is now auth
+    policy-file is now policy
+    halg is now hash-algorithm
+    out-context is now key-context
   * tpm2_load: long options changed
     context-parent is now parent-context
     auth-parent is now auth
