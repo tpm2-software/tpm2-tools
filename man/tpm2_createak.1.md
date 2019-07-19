@@ -23,13 +23,13 @@ loaded-key:
 
 # OPTIONS
 
-  * **-P**, **\--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-P**, **\--eh-auth**=_ENDORSE\_AUTH_:
 
     Specifies current endorsement hierarchy authorization.
     Authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-p**, **\--auth-ak**=_AK\_AUTH_
+  * **-p**, **\--ak-auth**=_AK\_AUTH_
 
     Specifies the attestation key authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
@@ -43,14 +43,14 @@ loaded-key:
 
     Specifies a file path to save the context of the attestation key.
 
-  * **-G**, **\--kalg**=_ALGORITHM_:
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
     Specifies the algorithm type of AK. Supports:
     * ecc - An P256 key.
     * rsa - An RSA2048 key.
     * keyedhash - hmac key.
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     Like **-G**, but specifies the digest algorithm used for signing.
     Algorithms should follow the "formatting standards", see section
