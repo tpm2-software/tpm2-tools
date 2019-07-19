@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_nvread: short and long options changed
+    out-file is now output
+    auth-hierarchy is now auth
+    -a is now -C
   * tpm2_nvincrement: long option changed
     auth-hierarchy is now auth
   * tpm2_nvdefine: long options changed
