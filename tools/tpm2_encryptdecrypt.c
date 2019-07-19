@@ -351,12 +351,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth-key",             required_argument, NULL, 'p' },
+        { "auth",                 required_argument, NULL, 'p' },
         { "decrypt",              no_argument,       NULL, 'd' },
-        { "in-file",              required_argument, NULL, 'i' },
+        { "input",                required_argument, NULL, 'i' },
         { "iv",                   required_argument, NULL, 't' },
         { "mode",                 required_argument, NULL, 'G' },
-        { "out-file",             required_argument, NULL, 'o' },
+        { "output",               required_argument, NULL, 'o' },
         { "key-context",          required_argument, NULL, 'c' },
         { "pad",                  no_argument,       NULL, 'e' },
     };

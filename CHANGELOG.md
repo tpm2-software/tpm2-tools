@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_encryptdecrypt: long options changed
+    auth-key is now auth
+    in-file is now input
+    out-file is now output
   * tpm2_duplicate: long options changed
     auth-key is now auth
     inner-wrapper-alg is now wrapper-algorithm
