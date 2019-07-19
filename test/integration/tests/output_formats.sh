@@ -53,7 +53,7 @@ start_up
 
 head -c 4096 /dev/urandom > $file_hash_input
 
-tpm2_createek -Q -G $alg_ek -p "$file_pubek_orig" -c $handle_ek
+tpm2_createek -Q -G $alg_ek -u "$file_pubek_orig" -c $handle_ek
 
 for fmt in tss pem der; do
 

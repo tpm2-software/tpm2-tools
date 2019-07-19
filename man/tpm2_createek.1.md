@@ -20,23 +20,23 @@ Refer to:
 
 # OPTIONS
 
-  * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-P**, **\--eh-auth**=_ENDORSE\_AUTH_:
 
     Specifies current endorsement hierarchy authorization.
     authorizations should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-P**, **\--auth-ek**=_EK\_AUTH_
+  * **-p**, **\--ek-auth**=_EK\_AUTH_
 
     Specifies the endorsement key authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-w**, **\--auth-owner**=_OWNER\_AUTH_
+  * **-w**, **\--owner-auth**=_OWNER\_AUTH_
 
     Specifies the current owner authorization.
     Same formatting as the endorse password value or **-e** option.
 
-  * **-c**, **\--context**=_PERSISTENT\_HANDLE_:
+  * **-c**, **\--ek-context**=_PERSISTENT\_HANDLE_:
 
     Specifies the name of a context object used to store the EK, either a path
     to save the context of the EK or a handle used to persist EK in the TPM.
@@ -47,14 +47,14 @@ Refer to:
     If one saves the context file via this option and the public key via the
     **-p** option, the EK can be restored via a call to **tpm2_loadexternal**(1).
 
-  * **-G**, **\--algorithm**=_ALGORITHM_:
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
     Specifies the algorithm type of EK. Supports:
     * **ecc** - An P256 key.
     * **rsa** - An RSA2048 key.
     * **keyedhash** - hmac key.
 
-  * **-p**, **\--file**=_FILE_:
+  * **-u**, **\--public**=_FILE_:
 
     Optional: specifies the file used to save the public portion of EK. This defaults
     to a binary data structure corresponding to the **TPM2B_PUBLIC** structure in the
@@ -85,12 +85,12 @@ Refer to:
 
 ### Create an Endorsement Key and make it persistent
 ```
-tpm2_createek -e abc123 -w abc123 -P passwd -c 0x81010001 -G rsa -p ek.pub
+tpm2_createek -P abc123 -w abc123 -p passwd -c 0x81010001 -G rsa -u ek.pub
 ```
 
 ### Create a transient Endorsement Key, flush it, and reload it.
 ```
-tpm2_createek -G rsa -p ek.pub
+tpm2_createek -G rsa -u ek.pub
 
 # Check that it is loaded in transient memory
 tpm2_getcap handles-transient

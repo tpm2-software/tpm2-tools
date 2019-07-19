@@ -1,5 +1,15 @@
 ## Changelog
 ### next
+  * tpm2_createek: short and long options changed
+    auth-endorse is now eh-auth
+    auth-owner is now owner-auth
+    auth-ek is now ek-auth
+    file is now public
+    context is now ek-context
+    algorithm is now key-algorithm
+    -e is now -P
+    -P is now -p
+    -p is now -u
   * tpm2_createak:
     auth-endorse is now eh-auth
     auth-ak is now ak-auth
