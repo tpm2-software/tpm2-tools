@@ -13,9 +13,9 @@ file_pcr_value=pcr.bin
 file_policy=policy.data
 
 cleanup() {
-  tpm2_nvrelease -Q -x $nv_test_index -a o 2>/dev/null || true
-  tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001 2>/dev/null || true
-  tpm2_nvrelease -Q -x 0x1500015 -a 0x40000001 -P owner 2>/dev/null || true
+  tpm2_nvrelease -Q -x $nv_test_index -C o 2>/dev/null || true
+  tpm2_nvrelease -Q -x 0x1500016 -C 0x40000001 2>/dev/null || true
+  tpm2_nvrelease -Q -x 0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
         nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out cap.out
@@ -82,7 +82,7 @@ tpm2_nvread -x $nv_test_index -C o -s 13 > cmp.dat
 
 cmp nv.test_w cmp.dat
 
-tpm2_nvrelease -x $nv_test_index -a o
+tpm2_nvrelease -x $nv_test_index -C o
 
 tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
@@ -102,7 +102,7 @@ trap - ERR
 tpm2_nvread -x 0x1500016 -C 0x1500016 -P "index" 2>/dev/null
 trap onerror ERR
 
-tpm2_nvrelease -Q -x 0x1500016 -a 0x40000001
+tpm2_nvrelease -Q -x 0x1500016 -C 0x40000001
 
 #
 # Test large writes
@@ -127,7 +127,7 @@ cmp -s $large_file_read_name $large_file_name
 tpm2_nvlist > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
-tpm2_nvrelease -Q -x $nv_test_index -a o
+tpm2_nvrelease -Q -x $nv_test_index -C o
 
 #
 # Test NV access locked
@@ -191,6 +191,6 @@ fi
 # Check using authorisation with tpm2_nvrelease
 trap onerror ERR
 
-tpm2_nvrelease -x 0x1500015 -a 0x40000001 -P "owner"
+tpm2_nvrelease -x 0x1500015 -C 0x40000001 -P "owner"
 
 exit 0
