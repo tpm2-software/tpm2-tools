@@ -16,21 +16,21 @@ tpm2_duplicate(1) -  Duplicates a loaded object so that it may be used in a diff
 
 These options control the key importation process:
 
-  * **-G**, **\--inner-wrapper-alg**=_ALGORITHM_:
+  * **-G**, **\--wrapper-algorithm**=_ALGORITHM_:
 
     The symmetric algorithm to be used for the inner wrapper. Supports:
     * aes - AES 128 in CFB mode.
     * null - none
 
-  * **-i**, **\--input-key-file**=_FILE_:
+  * **-i**, **\--encryptionkey-in**=_FILE_:
 
     Specifies the filename of the symmetric key (128 bit data) to be used for the inner wrapper. Valid only when specified symmetric algorithm is not null
 
-  * **-o**, **\--output-key-file**=_FILE_:
+  * **-o**, **\--encryptionkey-out**=_FILE_:
 
     Specifies the filename to store the symmetric key (128 bit data) that was used for the inner wrapper. Valid only when specified symmetric algorithm is not null and \--input-key-file is not specified. The TPM generates the key in this case.
 
-  * **-C**, **\--parent-key**=_PARENT\_CONTEXT_:
+  * **-C**, **\--parent-context**=_PARENT\_CONTEXT_:
 
     Specifies the context object for the parent key. Either a file, a handle number or null to select TPM2_RH_NULL.
 
@@ -43,13 +43,13 @@ These options control the key importation process:
     Specifies the file path required to save the encrypted seed of the duplicated
     object.
 
-  * **-p**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_KEY\_AUTH_:
 
     The authorization value for the key, optional.
     Follows the authorization formatting of the
     "password for parent key" option: **-P**.
 
-  * **-c**, **\--context**=_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_CONTEXT\_OBJECT_:
 
     The handle or session file of the object to be duplicated.
     See section "Context Object Format".

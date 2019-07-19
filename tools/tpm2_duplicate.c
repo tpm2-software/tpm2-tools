@@ -114,14 +114,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "auth-key",              required_argument, NULL, 'p'},
-      { "inner-wrapper-alg",     required_argument, NULL, 'G'},
-      { "private",               required_argument, NULL, 'r'},
-      { "input-key-file",        required_argument, NULL, 'i'},
-      { "output-key-file",       required_argument, NULL, 'o'},
-      { "encrypted-seed",        required_argument, NULL, 's'},
-      { "parent-key",            required_argument, NULL, 'C'},
-      { "context",               required_argument, NULL, 'c'},
+      { "auth",              required_argument, NULL, 'p'},
+      { "wrapper-algorithm", required_argument, NULL, 'G'},
+      { "private",           required_argument, NULL, 'r'},
+      { "encryptionkey-in",  required_argument, NULL, 'i'},
+      { "encryptionkey-out", required_argument, NULL, 'o'},
+      { "encrypted-seed",    required_argument, NULL, 's'},
+      { "parent-context",    required_argument, NULL, 'C'},
+      { "key-context",       required_argument, NULL, 'c'},
     };
 
     *opts = tpm2_options_new("p:G:i:C:o:s:r:c:", ARRAY_LEN(topts), topts, on_option,
