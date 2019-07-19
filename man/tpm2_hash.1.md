@@ -18,7 +18,7 @@ sign.
 
 # OPTIONS
 
-  * **-a**, **\--hierarchy**=_HIERARCHY_:
+  * **-C**, **\--hierarchy**=_HIERARCHY_:
 
     Hierarchy to use for the ticket. Defaults to **o**, **TPM_RH_OWNER**, when
     no value has been specified.
@@ -28,7 +28,7 @@ sign.
       * **e** for **TPM_RH_ENDORSEMENT**
       * **n** for **TPM_RH_NULL**
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     The hash algorithm to use.
     Algorithms should follow the "formatting standards", see section
@@ -36,7 +36,7 @@ sign.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-o**, **\--out-file**=_OUT\_FILE_
+  * **-o**, **\--output**=_OUT\_FILE_
 
     Optional file record of the hash result. Defaults to stdout in hex form.
 
@@ -56,7 +56,7 @@ sign.
 
 ## Hash a file with sha1 hash algorithm and save the hash and ticket to a file
 ```
-tpm2_hash -H e -g sha1 -o hash.bin -t ticket.bin data.txt
+tpm2_hash -C e -g sha1 -o hash.bin -t ticket.bin data.txt
 ```
 
 [returns](common/returns.md)

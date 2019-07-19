@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_hash: short and long options changed
+    halg is now hash-algorithm
+    out-file is now output
+    -a is now -C
   * tpm2_getrandom: long option changed
     out-file is now output
   * tpm2_getmanufec: short and long options changed

@@ -105,7 +105,7 @@ static bool on_option(char key, char *value) {
 
     bool res;
     switch (key) {
-    case 'a':
+    case 'C':
         res = tpm2_hierarchy_from_optarg(value, &ctx.hierarchyValue,
                 TPM2_HIERARCHY_FLAGS_ALL);
         if (!res) {
@@ -132,16 +132,16 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        {"hierarchy", required_argument, NULL, 'a'},
-        {"halg",      required_argument, NULL, 'g'},
-        {"out-file",  required_argument, NULL, 'o'},
-        {"ticket",    required_argument, NULL, 't'},
+        {"hierarchy",          required_argument, NULL, 'C'},
+        {"hash-algorithm",     required_argument, NULL, 'g'},
+        {"output",             required_argument, NULL, 'o'},
+        {"ticket",             required_argument, NULL, 't'},
     };
 
     /* set up non-static defaults here */
     ctx.input_file = stdin;
 
-    *opts = tpm2_options_new("a:g:o:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("C:g:o:t:", ARRAY_LEN(topts), topts, on_option,
                              on_args, 0);
 
     return *opts != NULL;
