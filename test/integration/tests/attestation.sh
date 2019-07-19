@@ -101,7 +101,7 @@ tpm2_checkquote -Q -u $output_ak_pub_pem -m $output_quote -s $output_quotesig -F
 
 # Save U key from verifier
 tpm2_nvdefine -Q -x $handle_nv -C $handle_hier -s 32 -a "ownerread|ownerwrite" -p "indexpass" -P "$ownerpw"
-tpm2_nvwrite -Q -x $handle_nv -a $handle_hier -P "$ownerpw" $file_input_key
+tpm2_nvwrite -Q -x $handle_nv -C $handle_hier -P "$ownerpw" $file_input_key
 tpm2_nvread -Q -x $handle_nv -C $handle_hier -s 32 -P "$ownerpw"
 
 exit 0
