@@ -75,7 +75,7 @@ tpm2_evictcontrol -Q -c $ak_ctx -o $handle_ak_file $handle_ak
 
 tpm2_readpublic -Q -c $handle_ak_file -f "pem" -o "$file_pubak_pem"
 
-tpm2_hash -Q -a e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$file_hash_input"
+tpm2_hash -Q -C e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$file_hash_input"
 
 for fmt in tss plain; do
     this_sig="${file_sig_base}.${fmt}"

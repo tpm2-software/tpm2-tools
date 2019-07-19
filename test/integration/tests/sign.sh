@@ -60,7 +60,7 @@ test_symmetric() {
 
     # generate hash and test validation
 
-    tpm2_hash -Q -a e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
+    tpm2_hash -Q -C e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
 
     tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data -m $file_input_data -t $file_output_ticket
 
