@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_dictionarylockout: long option changed
+    auth-lockout is now auth
   * tpm2_createprimary: long options changed
     auth-hierarchy is now hierarchy-auth
     auth-object is now key-auth

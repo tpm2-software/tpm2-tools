@@ -88,7 +88,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "max-tries",             required_argument, NULL, 'n' },
         { "recovery-time",         required_argument, NULL, 't' },
         { "lockout-recovery-time", required_argument, NULL, 'l' },
-        { "auth-lockout",          required_argument, NULL, 'p' },
+        { "auth",                  required_argument, NULL, 'p' },
         { "clear-lockout",         no_argument,       NULL, 'c' },
         { "setup-parameters",      no_argument,       NULL, 's' },
     };

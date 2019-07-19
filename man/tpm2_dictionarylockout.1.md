@@ -40,7 +40,7 @@ dictionary-attack-lockout state.
     Specifies the maximum number of allowed authentication attempts on
     DA-protected-object; after which DA is activated.
 
-  * **-p**, **\--auth-lockout**=_LOCKOUT\_AUTH_:
+  * **-p**, **\--auth**=_LOCKOUT\_AUTH_:
 
     The lockout authorization value.
 
