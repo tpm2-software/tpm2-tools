@@ -120,12 +120,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "auth-parent",          required_argument, NULL, 'P' },
-      { "pubfile",              required_argument, NULL, 'u' },
-      { "privfile",             required_argument, NULL, 'r' },
+      { "auth",                 required_argument, NULL, 'P' },
+      { "public",               required_argument, NULL, 'u' },
+      { "private",              required_argument, NULL, 'r' },
       { "name",                 required_argument, NULL, 'n' },
-      { "out-context",          required_argument, NULL, 'o' },
-      { "context-parent",       required_argument, NULL, 'C' },
+      { "key-context",          required_argument, NULL, 'o' },
+      { "parent-context",       required_argument, NULL, 'C' },
     };
 
     *opts = tpm2_options_new("P:u:r:n:C:o:", ARRAY_LEN(topts), topts,

@@ -1,5 +1,11 @@
 ## Changelog
 ### next
+  * tpm2_load: long options changed
+    context-parent is now parent-context
+    auth-parent is now auth
+    pubfile is now public
+    privfile is now private
+    out-context is now key-context
   * tpm2_import: long options changed
     auth-parent is now parent-auth
     auth-key is now key-auth
