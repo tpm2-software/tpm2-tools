@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_nvdefine: long options changed
+    auth-hierarchy is now hierarchy-auth
+    auth-index is now index-auth
+    policy-file is now policy
   * tpm2_makecredential: long options changed
     enckey is now encryption-key
     out-file is now output

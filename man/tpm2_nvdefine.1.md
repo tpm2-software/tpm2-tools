@@ -38,19 +38,19 @@
     entity. Either the raw bitfield mask or "nice-names" may be used. See
     section "NV Attributes" for more details.
 
-  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
+  * **-P**, **\--hierarchy-auth**=_AUTH\_HIERARCHY\_VALUE_:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
     "Authorization Formatting".
 
-  * **-p**, **\--auth-index**=_INDEX\_PASSWORD_:
+  * **-p**, **\--index-auth**=_INDEX\_PASSWORD_:
 
     Specifies the password of NV Index when created.
     HMAC and Password authorization values should follow the "authorization
     formatting standards", see section "Authorization Formatting".
 
-  * **-L**, **\--policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     Specifies the policy digest file for policy based authorizations.
 
