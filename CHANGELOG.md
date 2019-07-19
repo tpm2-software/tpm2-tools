@@ -1,5 +1,12 @@
 ## Changelog
 ### next
+  * tpm2_duplicate: long options changed
+    auth-key is now auth
+    inner-wrapper-alg is now wrapper-algorithm
+    input-key-file is now encryptionkey-in
+    output-key-file is now encryptionkey-out
+    parent-key is now parent-context
+    context is now key-context
   * tpm2_dictionarylockout: long option changed
     auth-lockout is now auth
   * tpm2_createprimary: long options changed
