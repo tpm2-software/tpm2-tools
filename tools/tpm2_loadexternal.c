@@ -124,14 +124,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
       { "hierarchy",          required_argument, NULL, 'C'},
-      { "pubfile",            required_argument, NULL, 'u'},
-      { "privfile",           required_argument, NULL, 'r'},
-      { "out-context",        required_argument, NULL, 'o'},
+      { "public",             required_argument, NULL, 'u'},
+      { "private",            required_argument, NULL, 'r'},
+      { "key-context",        required_argument, NULL, 'o'},
       { "object-attributes",  required_argument, NULL, 'a'},
-      { "policy-file",        required_argument, NULL, 'L'},
-      { "auth-key",           required_argument, NULL, 'p'},
-      { "halg",               required_argument, NULL, 'g'},
-      { "key-alg",            required_argument, NULL, 'G'},
+      { "policy",             required_argument, NULL, 'L'},
+      { "auth",               required_argument, NULL, 'p'},
+      { "hash-algorithm",     required_argument, NULL, 'g'},
+      { "key-algorithm",      required_argument, NULL, 'G'},
       { "name",               required_argument, NULL, 'n'},
       { "passin",             required_argument, NULL,  0 },
     };
