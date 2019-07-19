@@ -1,5 +1,16 @@
 ## Changelog
 ### next
+  * tpm2_import: long options changed
+    auth-parent is now parent-auth
+    auth-key is now key-auth
+    algorithm is now key-algorithm
+    in-file is now input
+    parent-key is now parent-context
+    privfile is now private
+    pubfile is now public
+    halg is now hash-algorithm
+    policy-file is now policy
+    sym-alg-file is now encryption-key
   * tpm2_hmac: short and long options changed
     out-file is now output
     auth-key is now auth
