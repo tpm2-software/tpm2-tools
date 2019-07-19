@@ -18,7 +18,7 @@
 
     Specifies the index to define the space at.
 
-  * **-a**, **\--hierarchy**=_AUTH_:
+  * **-C**, **\--hierarchy**=_AUTH_:
 
     Specifies the hierarchy used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
@@ -31,11 +31,11 @@
     authorize against the index. The index auth value is set via the
     **-p** option to **tpm2_nvdefine**(1).
 
-  * **-o**, **\--out-file**=_FILE_:
+  * **-o**, **\--output**=_FILE_:
 
     File to write data
 
-  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE__:
+  * **-P**, **\--auth**=_AUTH\_HIERARCHY\_VALUE__:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
