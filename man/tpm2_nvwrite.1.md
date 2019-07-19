@@ -19,7 +19,7 @@ If _FILE_ is not specified, it defaults to stdin.
 
     Specifies the index to define the space at.
 
-  * **-a**, **\--hierarchy**=_AUTH_:
+  * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
 
     Specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
     when no value has been specified.
@@ -32,7 +32,7 @@ If _FILE_ is not specified, it defaults to stdin.
     authorize against the index. The index auth value is set via the
     **-p** option to **tpm2_nvdefine**(1).
 
-  * **-P**, **\--auth-hierarchy**=_HIERARCHY\_AUTH_:
+  * **-P**, **\--auth**=_HIERARCHY\_AUTH_:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section

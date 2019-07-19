@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_nvwrite: short and long options changed
+    auth-hierarchy is now auth
+    -a is now -C
   * tpm2_nvrelease: short and long options changed
     auth-hierarchy is now auth
     -a is now -C
