@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_clearcontrol: Short and long options changed
+    auth-handle is now hierarchy
+    -c is now -C
   * tpm2_create:
     auth-parent is now parent-auth
     auth-key is now key-auth
