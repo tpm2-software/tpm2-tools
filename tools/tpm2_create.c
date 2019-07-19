@@ -197,17 +197,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "auth-parent",          required_argument, NULL, 'P' },
-      { "auth-key",             required_argument, NULL, 'p' },
-      { "halg",                 required_argument, NULL, 'g' },
-      { "kalg",                 required_argument, NULL, 'G' },
+      { "parent-auth",          required_argument, NULL, 'P' },
+      { "key-auth",             required_argument, NULL, 'p' },
+      { "hash-algorithm",       required_argument, NULL, 'g' },
+      { "key-algorithm",        required_argument, NULL, 'G' },
       { "object-attributes",    required_argument, NULL, 'a' },
-      { "in-file",              required_argument, NULL, 'i' },
-      { "policy-file",          required_argument, NULL, 'L' },
-      { "pubfile",              required_argument, NULL, 'u' },
-      { "privfile",             required_argument, NULL, 'r' },
-      { "context-parent",       required_argument, NULL, 'C' },
-      { "out-context",          required_argument, NULL, 'o' },
+      { "sealing-input",        required_argument, NULL, 'i' },
+      { "policy",               required_argument, NULL, 'L' },
+      { "public",               required_argument, NULL, 'u' },
+      { "private",              required_argument, NULL, 'r' },
+      { "parent-context",       required_argument, NULL, 'C' },
+      { "key-context",          required_argument, NULL, 'o' },
     };
 
     *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:o:", ARRAY_LEN(topts), topts,

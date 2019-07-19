@@ -1,5 +1,15 @@
 ## Changelog
 ### next
+  * tpm2_create:
+    auth-parent is now parent-auth
+    auth-key is now key-auth
+    in-file is now sealing-input
+    policy-file is now policy
+    pubfile is now public
+    privfile is now private
+    out-context is now key-context
+    halg is now hash-algorithm
+    kalg is now key-algorithm
   * tpm2_changeauth: --privfile becomes private
   * tpm2_evictcontrol: -p becomes an argument.
   * tpm2_getcap: -c becomes an argument.
