@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvincrement: long option changed
+    auth-hierarchy is now auth
   * tpm2_nvdefine: long options changed
     auth-hierarchy is now hierarchy-auth
     auth-index is now index-auth

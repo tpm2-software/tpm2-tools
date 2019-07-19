@@ -71,7 +71,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "index",                required_argument, NULL, 'x' },
         { "hierarchy",            required_argument, NULL, 'C' },
-        { "auth-hierarchy",       required_argument, NULL, 'P' },
+        { "auth",                 required_argument, NULL, 'P' },
     };
 
     *opts = tpm2_options_new("x:C:P:", ARRAY_LEN(topts), topts,
