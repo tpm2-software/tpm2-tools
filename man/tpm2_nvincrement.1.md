@@ -31,7 +31,7 @@
     authorize against the index. The index auth value is set via the
     **-p** option to **tpm2_nvdefine**(1).
 
-  * **-P**, **\--auth-hierarchy**=_HIERARCHY\_AUTH_:
+  * **-P**, **\--auth**=_HIERARCHY\_AUTH_:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
