@@ -140,7 +140,7 @@ tpm2_nvwrite -Q -x $nv_test_index -a o nv.readlock
 
 tpm2_nvread -Q -x $nv_test_index -C o -s 6 -o 0
 
-tpm2_nvreadlock -Q -x $nv_test_index -a o
+tpm2_nvreadlock -Q -x $nv_test_index -C o
 
 # Reset ERR signal handler to test for expected nvread error
 trap - ERR

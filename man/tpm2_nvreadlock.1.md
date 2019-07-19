@@ -19,7 +19,7 @@ index is unlocked when the TPM is restarted and the NV index becomes readable ag
 
     Specifies the index to define the space at.
 
-  * **-a**, **\--hierarchy**=_AUTH_:
+  * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
 
     Specifies the hierarchy used to authorize:
     * **o** for **TPM_RH_OWNER**
@@ -28,7 +28,7 @@ index is unlocked when the TPM is restarted and the NV index becomes readable ag
     specified.
     * **`<num>`** where a hierarchy handle may be used.
 
-  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
+  * **-P**, **\--auth**=_AUTH\_VALUE_:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
@@ -44,7 +44,7 @@ index is unlocked when the TPM is restarted and the NV index becomes readable ag
 
 ## Lock an index protected by a password
 ```
-tpm2_nvreadlock -x 0x1500016 -a 0x40000001 -P passwd
+tpm2_nvreadlock -x 0x1500016 -C 0x40000001 -P passwd
 ```
 
 [returns](common/returns.md)
