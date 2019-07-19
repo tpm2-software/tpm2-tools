@@ -19,7 +19,7 @@ defined with **tpm2_nvdefine**(1).
 
     Specifies the index to release.
 
-  * **-a**, **\--hierarchy**=_AUTH_:
+  * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
 
     Specifies the hierarchy used to authorize.
     Supported options are:
@@ -27,7 +27,7 @@ defined with **tpm2_nvdefine**(1).
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a hierarchy handle may be specified.
 
-  * **-P**, **\--auth-hierarchy**=_AUTH\_HIERARCHY\_VALUE_:
+  * **-P**, **\--auth**=_AUTH\_VALUE_:
 
     Specifies the authorization value for the hierarchy. Authorization values
     should follow the "authorization formatting standards", see section
@@ -42,7 +42,7 @@ defined with **tpm2_nvdefine**(1).
 # EXAMPLES
 
 ```
-tpm2_nvrelease -x 0x1500016 -a 0x40000001 -P passwd
+tpm2_nvrelease -x 0x1500016 -C 0x40000001 -P passwd
 ```
 
 [returns](common/returns.md)
