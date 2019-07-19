@@ -17,7 +17,7 @@ the **none** TCTI option.
 
 # OPTIONS
 
-  * **-e**, **\--enckey**=_PUBLIC\_FILE_:
+  * **-e**, **\--encryption-key**=_PUBLIC\_FILE_:
 
     A TPM public key which was used to wrap the seed.
 
@@ -29,7 +29,7 @@ the **none** TCTI option.
 
     The name of the key for which certificate is to be created.
 
-  * **-o**, **\--out-file**=_OUT\_FILE_:
+  * **-o**, **\--output**=_OUT\_FILE_:
 
     The output file path, recording the two structures output by
     tpm2_makecredential function.

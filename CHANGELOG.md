@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_makecredential: long options changed
+    enckey is now encryption-key
+    out-file is now output
   * tpm2_loadexternal: long options changed
     key-alg is now key-algorithm
     pubfile is now public

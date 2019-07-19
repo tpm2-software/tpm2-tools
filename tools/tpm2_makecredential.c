@@ -251,10 +251,10 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      {"enckey"  ,required_argument, NULL, 'e'},
-      {"secret"   ,required_argument, NULL, 's'},
-      {"name"     ,required_argument, NULL, 'n'},
-      {"out-file" ,required_argument, NULL, 'o'},
+      {"encryption-key", required_argument, NULL, 'e'},
+      {"secret",         required_argument, NULL, 's'},
+      {"name",           required_argument, NULL, 'n'},
+      {"output",         required_argument, NULL, 'o'},
     };
 
     *opts = tpm2_options_new("e:s:n:o:", ARRAY_LEN(topts), topts, on_option,
