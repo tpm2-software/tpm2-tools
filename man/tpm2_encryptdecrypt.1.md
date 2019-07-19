@@ -20,7 +20,7 @@ specified symmetric key.
     Name of the key context object to be used for the  operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-p**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
@@ -36,12 +36,12 @@ specified symmetric key.
     Applicable only to encryption and for input data with last block shorter
     than encryption block length.
 
-  * **-i**, **\--in-file**=_INPUT\_FILE_:
+  * **-i**, **\--input**=_INPUT\_FILE_:
 
     Optional. Specifies the input file path for either the encrypted or decrypted
     data, depending on option **-D**. If not specified, defaults to **stdin**.
 
-  * **-o**, **\--out-file**=_OUT\_FILE_:
+  * **-o**, **\--output**=_OUT\_FILE_:
 
     Optional. Specifies the output file path for either the encrypted or decrypted
     data, depending on option **-D**. If not specified, defaults to **stdout**.
