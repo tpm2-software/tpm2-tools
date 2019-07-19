@@ -429,13 +429,13 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
-    case 'e':
+    case 'P':
         ctx.auth.endorse.auth_str = value;
         break;
     case 'w':
         ctx.auth.owner.auth_str = value;
         break;
-    case 'P': {
+    case 'p': {
         ctx.ek_auth_str = value;
     }   break;
     case 'G':
@@ -485,19 +485,19 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
-        { "auth-endorse",         required_argument, NULL, 'e' },
-        { "auth-owner",           required_argument, NULL, 'w' },
-        { "auth-ek",              required_argument, NULL, 'P' },
-        { "handle",               required_argument, NULL, 'H' },
-        { "algorithm",            required_argument, NULL, 'G' },
-        { "out-file",             required_argument, NULL, 'o' },
+        { "eh-auth",              required_argument, NULL, 'P' },
+        { "owner-auth",           required_argument, NULL, 'w' },
+        { "ek-auth",              required_argument, NULL, 'p' },
+        { "persistent-handle",    required_argument, NULL, 'H' },
+        { "key-algorithm",        required_argument, NULL, 'G' },
+        { "output",               required_argument, NULL, 'o' },
         { "non-persistent",       no_argument,       NULL, 'N' },
         { "offline",              required_argument, NULL, 'O' },
         { "ec-cert",              required_argument, NULL, 'E' },
         { "untrusted",            no_argument,       NULL, 'U' },
     };
 
-    *opts = tpm2_options_new("e:w:H:P:G:o:NO:E:i:U", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:w:H:p:G:o:NO:E:i:U", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;

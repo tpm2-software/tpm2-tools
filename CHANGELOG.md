@@ -1,5 +1,13 @@
 ## Changelog
 ### next
+  * tpm2_getmanufec: short and long options changed
+    auth-endorse is now eh-auth
+    auth-owner is now owner-auth
+    auth-ek is now ek-auth
+    handle is now persistent-handle
+    algorithm is now ek-algorithm
+    -e is now -P
+    -P is now -p
   * tpm2_evictcontrol: long options changed
     auth-hierarchy is now auth
     context is now key-context
