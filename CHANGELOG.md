@@ -1,5 +1,10 @@
 ## Changelog
 ### next
+  * tpm2_createak:
+    auth-endorse is now eh-auth
+    auth-ak is now ak-auth
+    halg is now hash-algorithm
+    kalg is now key-algorithm
   * tpm2_clearcontrol: Short and long options changed
     auth-handle is now hierarchy
     -c is now -C

@@ -424,13 +424,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth-endorse",     required_argument, NULL, 'P' },
-        { "auth-ak",          required_argument, NULL, 'p' },
+        { "eh-auth",          required_argument, NULL, 'P' },
+        { "ak-auth",          required_argument, NULL, 'p' },
         { "ek-context",       required_argument, NULL, 'C' },
         { "ak-context",       required_argument, NULL, 'c' },
         { "ak-name",          required_argument, NULL, 'n' },
-        { "kalg",             required_argument, NULL, 'G' },
-        { "halg",             required_argument, NULL, 'g' },
+        { "key-algorithm",    required_argument, NULL, 'G' },
+        { "hash-algorithm",   required_argument, NULL, 'g' },
         { "signing-algorithm",required_argument, NULL, 's' },
         { "format",           required_argument, NULL, 'f' },
         { "public",           required_argument, NULL, 'u' },
