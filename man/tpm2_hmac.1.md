@@ -15,18 +15,18 @@ _FILE_ is not specified, then data is read from stdin.
 
 # OPTIONS
 
-  * **-C**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
 
     The context object of the symmetric signing key providing the HMAC key.
     Either a file or a handle number. See section "Context Object Format".
 
-  * **-P**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-C**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-o**, **\--out-file**=_OUT\_FILE_
+  * **-o**, **\--output**=_OUT\_FILE_
 
     Optional file record of the HMAC result. Defaults to stdout.
 
@@ -46,17 +46,17 @@ _FILE_ is not specified, then data is read from stdin.
 
 ## Perform an HMAC on data.in and send output and possibly ticket to stdout
 ```
-tpm2_hmac -C 0x81010002 -P abc123 data.in
+tpm2_hmac -c 0x81010002 -p abc123 data.in
 ```
 
 ## Perform an HMAC on data.in read as a file to stdin and send output to a file
 ```
-tpm2_hmac -C key.context -P abc123 -o hash.out << data.in
+tpm2_hmac -c key.context -p abc123 -o hash.out << data.in
 ```
 
 ## Perform an HMAC on _stdin_ and send result and possibly ticket to stdout
 ```
-cat data.in | tpm2_hmac -C 0x81010002 -o hash.out
+cat data.in | tpm2_hmac -c 0x81010002 -o hash.out
 ```
 
 [returns](common/returns.md)
