@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_certify: long option changed
+    halg is now hash-algorithm
   * tpm2_createpolicy: long options changed
     out-policy-file is now policy
     policy-digest-alg is now policy-algorithm
