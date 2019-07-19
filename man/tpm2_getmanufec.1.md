@@ -18,36 +18,36 @@ server.
 
 # OPTIONS
 
-  * **-e**, **\--auth-endorse**=_ENDORSE\_AUTH_:
+  * **-P**, **\--eh-auth**=_ENDORSE\_AUTH_:
 
     Specifies current endorsement authorization.
     Authorizations should follow the "authorization formatting standards", see
     section "Authorization Formatting".
 
-  * **-P**, **\--auth-ek**=_EK\_AUTH_
+  * **-p**, **\--ek-auth**=_EK\_AUTH_
 
     Specifies the EK authorization when created.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-w**, **\--auth-owner**=_OWNER\_AUTH_
+  * **-w**, **\--owner-auth**=_OWNER\_AUTH_
 
     Specifies the current owner authorization.
     Same formatting as the endorse authorization value or **-e** option.
 
-  * **-H**, **\--handle**=_HANDLE_:
+  * **-H**, **\--persistent-handle**=_HANDLE_:
 
     Specifies the handle used to make EK  persistent.
     If a value of **-** is passed the tool will find a vacant persistent handle
     to use and print out the automatically selected handle.
 
-  * **-G**, **\--algorithm**=_ALGORITHM_:
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
     Specifies the algorithm type of EK.
     See section "Supported Public Object Algorithms" for a list of supported
     object algorithms. See section "Algorithm Specifiers" on how to specify
     an algorithm argument.
 
-  * **-o**, **\--out-file**=_FILE_:
+  * **-o**, **\--output**=_FILE_:
 
     Specifies the file used to save the public portion of EK.
 
@@ -92,9 +92,9 @@ provided by setting the curl mode verbose, see
 # EXAMPLES
 
 ```
-tpm2_getmanufec -e abc123 -w abc123 -P passwd -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
+tpm2_getmanufec -P abc123 -w abc123 -p passwd -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
 
-tpm2_getmanufec -e 1a1b1c -w 1a1b1c -P 123abc -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
+tpm2_getmanufec -P 1a1b1c -w 1a1b1c -p 123abc -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
 ```
 
 [returns](common/returns.md)
