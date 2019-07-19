@@ -80,10 +80,10 @@ bool on_arg (int argc, char **argv) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'c':
+    case 'C':
         ctx.auth_hierarchy.ctx_path = value;
         break;
-    case 'p':
+    case 'P':
         ctx.auth_hierarchy.auth_str = value;
         break;
     }
@@ -94,11 +94,11 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth-handle",    required_argument, NULL, 'c' },
-        { "auth",           required_argument, NULL, 'p' },
+        { "hierarchy",      required_argument, NULL, 'C' },
+        { "auth",           required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("c:p:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option,
         on_arg, 0);
 
     return *opts != NULL;
