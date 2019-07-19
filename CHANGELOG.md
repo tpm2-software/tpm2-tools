@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_getrandom: long option changed
+    out-file is now output
   * tpm2_getmanufec: short and long options changed
     auth-endorse is now eh-auth
     auth-owner is now owner-auth

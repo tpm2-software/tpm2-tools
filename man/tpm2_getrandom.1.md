@@ -21,7 +21,7 @@ Most TPMs do this, and thus the tool verifies that input size is bounded by prop
 
 # OPTIONS
 
-  * **-o**, **\--out-file**=_FILE_
+  * **-o**, **\--output**=_FILE_
 
     Specifies the filename to output the raw bytes to. Defaults to stdout as a hex
     string.
