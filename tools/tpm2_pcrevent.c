@@ -269,7 +269,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
         { "pcr-index", required_argument, NULL, 'x' },
-        { "auth-pcr",  required_argument, NULL, 'P' },
+        { "auth",      required_argument, NULL, 'P' },
     };
 
     *opts = tpm2_options_new("x:P:", ARRAY_LEN(topts), topts,
