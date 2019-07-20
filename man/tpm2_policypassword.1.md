@@ -21,7 +21,7 @@ If using a resource manager (RM), then one supporting extended sessions, like
 
 # OPTIONS
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     File to save the compounded policy digest.
 
@@ -49,7 +49,7 @@ using the **tpm2_policypassword**(1) tool.
 ```
 tpm2_startauthsession -S session.dat
 
-tpm2_policypassword -S session.dat -o policy.dat
+tpm2_policypassword -S session.dat -L policy.dat
 
 tpm2_flushcontext -S session.dat
 ```
@@ -74,7 +74,7 @@ tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt -p text
 ```
 tpm2_startauthsession \--policy-session -S session.dat
 
-tpm2_policypassword -S session.dat -o policy.dat
+tpm2_policypassword -S session.dat -L policy.dat
 
 tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt \
   -p session:session.dat+testpswd

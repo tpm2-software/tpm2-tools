@@ -29,7 +29,7 @@ static tpm2_policypassword_ctx ctx;
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'o':
+    case 'L':
         ctx.out_policy_dgst_path = value;
         break;
     case 'S':
@@ -43,11 +43,11 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "out-policy-file",    required_argument, NULL, 'o' },
+        { "policy",             required_argument, NULL, 'L' },
         { "session",            required_argument, NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("o:S:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("S:L:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
