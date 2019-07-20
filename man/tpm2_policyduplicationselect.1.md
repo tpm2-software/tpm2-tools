@@ -23,11 +23,11 @@
 
     Input name file of the object to be duplicated.
 
-  * **-N**, **\--new-parent-name**=_NP\_NAME\_FILE_:
+  * **-N**, **\--parent-name**=_NP\_NAME\_FILE_:
 
     Input name file of the new parent.
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
