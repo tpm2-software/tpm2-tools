@@ -37,7 +37,7 @@ tpm2_createprimary -Q -C o -o $file_primary_key_ctx
 
 tpm2_startauthsession -S $file_session_data
 
-tpm2_policycommandcode -S $file_session_data -o $file_policy unseal
+tpm2_policycommandcode -S $file_session_data -L $file_policy unseal
 
 tpm2_flushcontext -S $file_session_data
 
@@ -56,7 +56,7 @@ tpm2_load -C $file_primary_key_ctx -u $file_unseal_key_pub \
 # Ensure unsealing passes with proper policy
 tpm2_startauthsession --policy-session -S $file_session_data
 
-tpm2_policycommandcode -S $file_session_data -o $file_policy unseal
+tpm2_policycommandcode -S $file_session_data -L $file_policy unseal
 
 tpm2_unseal -p session:$file_session_data -c sealkey.ctx > $file_output_data
 

@@ -88,15 +88,14 @@ Requires Extended Session Support.
 ```
 tpm2_startauthsession -S session.ctx
 
-TPM2_NV_ChangeAuth=0x13B
-tpm2_policycommandcode -S session.ctx -c $TPM2_NV_ChangeAuth -o policy.nvchange
+tpm2_policycommandcode -S session.ctx -L policy.nvchange nvchangeauth
 tpm2_flushcontext -S session.ctx
 
 NVIndex=0x1500015
 tpm2_nvdefine -x $NVIndex -a o -s 32 -t "authread|authwrite" -L policy.nvchange
 tpm2_startauthsession \--policy-session -S session.ctx
 
-tpm2_policycommandcode -S session.ctx -c $TPM2_NV_ChangeAuth -o policy.nvchange
+tpm2_policycommandcode -S session.ctx -L policy.nvchange nvchangeauth
 
 tpm2_changeauth -p session:session.ctx -c $NVIndex newindexauth
 ```

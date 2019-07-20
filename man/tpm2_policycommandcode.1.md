@@ -25,7 +25,7 @@ Requires support for extended sessions with resource manager.
 
     A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
@@ -175,7 +175,7 @@ TPM_CC_UNSEAL=0x15E
 
 tpm2_startauthsession -S session.dat
 
-tpm2_policycommandcode -S session.dat -o policy.dat $TPM_CC_UNSEAL
+tpm2_policycommandcode -S session.dat -L policy.dat $TPM_CC_UNSEAL
 
 tpm2_flushcontext -S session.dat
 ```
@@ -195,7 +195,7 @@ tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
 
 tpm2_startauthsession \--policy-session -S session.dat
 
-tpm2_policycommandcode -S session.dat -o policy.dat $TPM_CC_UNSEAL
+tpm2_policycommandcode -S session.dat -L policy.dat $TPM_CC_UNSEAL
 
 tpm2_unseal -p session:session.dat -c sealkey.ctx
 
