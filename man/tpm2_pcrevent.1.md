@@ -34,7 +34,7 @@ These options control extending the pcr:
     Not only compute the hash digests on _FILE_, also extend the PCR given by
     _INDEX_ for all supported hash algorithms.
 
-  * **-P**, **\--auth-pcr**=_PCR\_AUTH_:
+  * **-P**, **\--auth**=_PCR\_AUTH_:
 
     Specifies the authorization value for PCR. Authorization values
     should follow the "authorization formatting standards", see section

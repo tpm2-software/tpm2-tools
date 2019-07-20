@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_pcrevent: long options changed
+    auth-pcr is now auth
   * tpm2_pcrallocate: long option changed
     auth-platform is now auth
   * tpm2_nvwrite: short and long options changed
