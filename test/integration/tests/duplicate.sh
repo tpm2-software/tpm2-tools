@@ -2,8 +2,6 @@
 
 source helpers.sh
 
-TPM_CC_DUPLICATE=0x14B
-
 cleanup() {
     rm -f primary.ctx \
           new_parent.prv new_parent.pub new_parent.ctx \
@@ -23,14 +21,14 @@ start_up
 
 create_duplication_policy() {
     tpm2_startauthsession -Q -S session.dat
-    tpm2_policycommandcode -Q -S session.dat -o policy.dat $TPM_CC_DUPLICATE
+    tpm2_policycommandcode -Q -S session.dat -L policy.dat duplicate
     tpm2_flushcontext -Q -S session.dat
     rm session.dat
 }
 
 start_duplication_session() {
     tpm2_startauthsession -Q --policy-session -S session.dat
-    tpm2_policycommandcode -Q -S session.dat -o policy.dat $TPM_CC_DUPLICATE
+    tpm2_policycommandcode -Q -S session.dat -L policy.dat duplicate
 }
 
 end_duplication_session() {

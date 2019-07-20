@@ -22,14 +22,14 @@ start_up
 
 create_policy() {
     tpm2_startauthsession -Q -S session.dat
-    tpm2_policycommandcode -Q -S session.dat -o $1 $2
+    tpm2_policycommandcode -Q -S session.dat -L $1 $2
     tpm2_flushcontext -Q -S session.dat
     rm session.dat
 }
 
 start_session() {
     tpm2_startauthsession -Q --policy-session -S session.dat
-    tpm2_policycommandcode -Q -S session.dat -o $1 $2
+    tpm2_policycommandcode -Q -S session.dat -L $1 $2
 }
 
 end_session() {
