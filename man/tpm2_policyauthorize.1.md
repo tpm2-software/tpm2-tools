@@ -84,7 +84,7 @@ tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -o signing_key.ctx -n si
 
 ## Create a policy to be authorized like a PCR policy
 ```
-tpm2_pcrlist -L sha256:0 -o pcr0.sha256
+tpm2_pcrlist -l sha256:0 -o pcr0.sha256
 
 tpm2_startauthsession -S session.ctx
 

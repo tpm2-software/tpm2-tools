@@ -84,7 +84,7 @@ cmp nv.test_w cmp.dat
 
 tpm2_nvrelease -x $nv_test_index -C o
 
-tpm2_pcrlist -Q -L ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
+tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 
