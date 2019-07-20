@@ -22,11 +22,11 @@ at least one of the policy events are true.
 
 # OPTIONS
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     File to save the compounded policy digest.
 
-  * **-L**, **\--policy-list**=_POLICY\_FILE_\_LIST:
+  * **-l**, **\--policy-list**=_POLICY\_FILE_\_LIST:
 
     The list of files for the policy digests that has to be compounded resulting
     in individual policies being added to final policy digest that can
@@ -81,7 +81,7 @@ tpm2_flushcontext -S session.ctx
 ```
 tpm2_startauthsession -S session.ctx
 
-tpm2_policyor -S session.ctx -o policy.or -L sha256:set1_pcr0.policy,set2_pcr0.policy
+tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
 
 tpm2_flushcontext -S session.ctx
 ```
@@ -99,7 +99,7 @@ tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policypcr -Q -S session.ctx -L sha1:0 -o o_set1_pcr0.policy
 
-tpm2_policyor -S session.ctx -o policy.or -L sha256:set1_pcr0.policy,set2_pcr0.policy
+tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
 
 unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx
 

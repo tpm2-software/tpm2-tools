@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_policyor: short and long options changed
+    out-policy-file is now policy
+    -o is now -L
+    -L is now -l
   * tpm2_policylocality: short and long options changed
     out-policy-file is now policy
     -o is now -L
