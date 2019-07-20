@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_policylocality: short and long options changed
+    out-policy-file is now policy
+    -o is now -L
   * tpm2_policyduplicationselect: short and long options changed
     new-parent-name is now parent-name
     out-policy-file is now policy
