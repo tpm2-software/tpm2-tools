@@ -26,7 +26,7 @@ in the policy digest.
 
 # OPTIONS
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-o**, **\--policy-output**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
@@ -35,11 +35,11 @@ in the policy digest.
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-i**, **\--in-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     The policy digest that has to be authorized.
 
-  * **-q**, **\--qualify-data**=_DATA_FILE_:
+  * **-q**, **\--qualification-data**=_DATA_FILE_:
 
     The policy qualifier data signed in conjunction with the input policy digest.
     This is a unique data that the signer can choose to include in the signature.
@@ -102,7 +102,7 @@ openssl dgst -sha256 -sign signing_key_private.pem -out pcr.signature pcr.policy
 ```
 tpm2_startauthsession -S session.ctx
 
-tpm2_policyauthorize -S session.ctx -i authorized.policy -o pcr.policy -n signing_key.name
+tpm2_policyauthorize -S session.ctx -L authorized.policy -o pcr.policy -n signing_key.name
 
 tpm2_flushcontext -S session.ctx
 ```
@@ -122,7 +122,7 @@ tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policypcr -Q -S session.ctx -L sha256:0 -o pcr.policy
 
-tpm2_policyauthorize -S session.ctx -o authorized.policy -i pcr.policy -n signing_key.name -t verification.tkt
+tpm2_policyauthorize -S session.ctx -o authorized.policy -L pcr.policy -n signing_key.name -t verification.tkt
 
 tpm2_load -Q -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -o sealing_key.ctx
 

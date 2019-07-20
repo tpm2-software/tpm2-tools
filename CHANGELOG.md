@@ -1,5 +1,10 @@
 ## Changelog
 ### next
+  * tpm2_policyauthorize: short and long options changed
+    out-policy-file is now policy-output
+    in-policy-file is now policy
+    qualify-data is now qualification-data
+    -i is now -L
   * tpm2_pcrlist: short and long options changed
     halg is now hash-algorithm
     out-file is now output
