@@ -22,7 +22,7 @@ value. Requires support for extended sessions with resource manager.
 
     A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
@@ -41,7 +41,7 @@ TPM_LOCALITY=0x3
 
 tpm2_startauthsession -S session.dat
 
-tpm2_policylocality -S session.dat -o policy.dat $TPM_LOCALITY
+tpm2_policylocality -S session.dat -L policy.dat $TPM_LOCALITY
 
 tpm2_flushcontext -S session.dat
 ```
@@ -61,7 +61,7 @@ tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
 
 tpm2_startauthsession \--policy-session -S session.dat
 
-tpm2_policylocality -S session.dat -o policy.dat $TPM_LOCALITY
+tpm2_policylocality -S session.dat -L policy.dat $TPM_LOCALITY
 
 # Change to locality 3, Note: this operation varies on different platforms
 
