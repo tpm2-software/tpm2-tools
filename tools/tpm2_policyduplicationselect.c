@@ -82,7 +82,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "include-if-exists",  no_argument,        NULL,    0  },
     };
 
-    *opts = tpm2_options_new("S:n:N:o:i", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("S:n:N:o:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
