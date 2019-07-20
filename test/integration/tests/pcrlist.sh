@@ -20,7 +20,7 @@ yaml_verify pcrs.out
 
 tpm2_pcrlist -Q -g 0x04
 
-tpm2_pcrlist -Q -L 0x04:17,18,19+sha256:0,17,18,19 -o pcrs.out
+tpm2_pcrlist -Q -l 0x04:17,18,19+sha256:0,17,18,19 -o pcrs.out
 
 test -e pcrs.out
 

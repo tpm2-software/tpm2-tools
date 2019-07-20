@@ -58,7 +58,7 @@ and seal a secret. Unsealing with either of the PCR sets should be successful.
 
 ## Create two PCR sets and policies
 ```
-tpm2_pcrlist -L sha1:0 -o set1_pcr0.sha1
+tpm2_pcrlist -l sha1:0 -o set1_pcr0.sha1
 
 tpm2_startauthsession -S session.ctx
 

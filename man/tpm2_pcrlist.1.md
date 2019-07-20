@@ -27,7 +27,7 @@ sha256 :
 
 # OPTIONS
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     Only output PCR banks with the given algorithm.
     Algorithms should follow the "formatting standards", see section
@@ -35,11 +35,11 @@ sha256 :
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-o**, **\--out-file**=_FILE_:
+  * **-o**, **\--output**=_FILE_:
 
     The output file to write the PCR values in binary format, optional.
 
-  * **-L**, **\--sel-list**=_PCR\_SELECTION\_LIST_:
+  * **-l**, **\--pcr-list**=_PCR\_SELECTION\_LIST_:
 
     The list of PCR banks and selected PCRs' ids for each bank to display.
     _PCR\_SELECTION\_LIST_ values should follow the
@@ -47,7 +47,7 @@ sha256 :
 
     Also read **NOTES** section below.
 
-  * **-s**, **\--algs**:
+  * **-s**, **\--pcr-algorithms**:
 
     Output the list of supported algorithms.
 
@@ -75,7 +75,7 @@ tpm2_pcrlist -g sha1
 
 ## Display the PCR values with specified banks and store in a file
 ```
-tpm2_pcrlist -L sha1:16,17,18+sha256:16,17,18 -o pcrs
+tpm2_pcrlist -l sha1:16,17,18+sha256:16,17,18 -o pcrs
 ```
 
 ## Display the supported PCR bank algorithms and exit

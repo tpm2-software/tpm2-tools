@@ -158,7 +158,7 @@ static bool on_option(char key, char *value) {
         ctx.output_file_path = value;
         ctx.flags.o = 1;
         break;
-    case 'L':
+    case 'l':
         if (!pcr_parse_selections(value, &ctx.pcr_selections)) {
             LOG_ERR("Could not parse pcr list, got: \"%s\"", value);
             return false;
@@ -177,13 +177,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-         { "halg",      required_argument, NULL, 'g' },
-         { "out-file",  required_argument, NULL, 'o' },
-         { "algs",      no_argument,       NULL, 's' },
-         { "sel-list",  required_argument, NULL, 'L' },
+         { "hash-algorithm", required_argument, NULL, 'g' },
+         { "output",         required_argument, NULL, 'o' },
+         { "pcr-algorithms", no_argument,       NULL, 's' },
+         { "pcr-list",       required_argument, NULL, 'l' },
      };
 
-    *opts = tpm2_options_new("g:o:L:s", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:o:l:s", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

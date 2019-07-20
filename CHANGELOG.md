@@ -1,5 +1,11 @@
 ## Changelog
 ### next
+  * tpm2_pcrlist: short and long options changed
+    halg is now hash-algorithm
+    out-file is now output
+    algs is now pcr-algorithms
+    sel-list is now pcr-list
+    -L is now -l
   * tpm2_pcrevent: long options changed
     auth-pcr is now auth
   * tpm2_pcrallocate: long option changed
