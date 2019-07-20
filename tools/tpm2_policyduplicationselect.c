@@ -44,7 +44,7 @@ static bool on_option(char key, char *value) {
     case 'N':
         ctx.new_parent_name_path = value;
         break;
-    case 'o':
+    case 'L':
         ctx.out_policy_dgst_path = value;
         break;
     case 0:
@@ -77,12 +77,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static struct option topts[] = {
         { "session",            required_argument,  NULL,   'S' },
         { "object-name",        required_argument,  NULL,   'n' },
-        { "new-parent-name",    required_argument,  NULL,   'N' },
-        { "out-policy-file",    required_argument,  NULL,   'o' },
+        { "parent-name",        required_argument,  NULL,   'N' },
+        { "policy",             required_argument,  NULL,   'L' },
         { "include-if-exists",  no_argument,        NULL,    0  },
     };
 
-    *opts = tpm2_options_new("S:n:N:o:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("S:n:N:L:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
