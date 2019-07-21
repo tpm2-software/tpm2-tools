@@ -29,7 +29,6 @@ struct tpm_quote_ctx {
         tpm2_loaded_object object;
     } ak;
 
-    char *outFilePath;
     char *signature_path;
     char *message_path;
     char *pcr_path;
@@ -232,10 +231,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
         ctx.flags.L = 1;
-        break;
-    case 'o':
-        ctx.outFilePath = value;
-        ctx.flags.o = 1;
         break;
     case 'q':
         ctx.qualifyingData.size = sizeof(ctx.qualifyingData) - 2;
