@@ -104,9 +104,9 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "auth-key",             required_argument, NULL, 'p' },
-      { "out-file",             required_argument, NULL, 'o' },
-      { "context-object",       required_argument, NULL, 'c' },
+      { "auth",             required_argument, NULL, 'p' },
+      { "output",           required_argument, NULL, 'o' },
+      { "object-context",   required_argument, NULL, 'c' },
     };
 
     *opts = tpm2_options_new("p:o:c:", ARRAY_LEN(topts), topts,

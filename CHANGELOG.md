@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_unseal: long options changed
+    auth-key is now auth
+    out-file is now output
+    context-object is now object-context
   * tpm2_startauthsession: short and long options changed
     halg is now hash-algorithm
     key is now key-context
