@@ -1,5 +1,16 @@
 ## Changelog
 ### next
+  * tpm2_quote: short and long options changed
+    auth-ak is now ak-auth
+    id-list is now pcr-index
+    sel-list is now pcr-list
+    qualify-data is now qualification-data
+    pcrs is now pcr
+    halg is now hash-signature
+    -l is now -i
+    -L is now -l
+    -p is now -f
+    -f is now -F
   * tpm2_policysecret: short and long options changed
     context is now object-context
     out-policy-file is now policy

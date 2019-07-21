@@ -216,7 +216,7 @@ static bool on_option(char key, char *value) {
     case 'P':
         ctx.ak.auth_str = value;
         break;
-    case 'l':
+    case 'i':
         if(!pcr_parse_list(value, strlen(value), &ctx.pcrSelections.pcrSelections[0]))
         {
             LOG_ERR("Could not parse pcr list, got: \"%s\"", value);
@@ -224,7 +224,7 @@ static bool on_option(char key, char *value) {
         }
         ctx.flags.l = 1;
         break;
-    case 'L':
+    case 'l':
         if(!pcr_parse_selections(value, &ctx.pcrSelections))
         {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
@@ -246,11 +246,11 @@ static bool on_option(char key, char *value) {
     case 'm':
          ctx.message_path = value;
          break;
-    case 'p':
+    case 'f':
          ctx.pcr_path = value;
          ctx.flags.p = 1;
          break;
-    case 'f':
+    case 'F':
          ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
          if (ctx.sig_format == signature_format_err) {
@@ -274,18 +274,18 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
         { "ak-context",           required_argument, NULL, 'C' },
-        { "auth-ak",              required_argument, NULL, 'P' },
-        { "id-list",              required_argument, NULL, 'l' },
-        { "sel-list",             required_argument, NULL, 'L' },
-        { "qualify-data",         required_argument, NULL, 'q' },
+        { "ak-auth",              required_argument, NULL, 'P' },
+        { "pcr-index",            required_argument, NULL, 'i' },
+        { "pcr-list",             required_argument, NULL, 'l' },
+        { "qualification-data",   required_argument, NULL, 'q' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
-        { "pcrs",                 required_argument, NULL, 'p' },
-        { "format",               required_argument, NULL, 'f' },
-        { "halg",                 required_argument, NULL, 'g' }
+        { "pcr",                  required_argument, NULL, 'f' },
+        { "format",               required_argument, NULL, 'F' },
+        { "hash-algorithm",       required_argument, NULL, 'g' }
     };
 
-    *opts = tpm2_options_new("C:P:l:L:q:s:m:p:f:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:i:l:q:s:m:f:F:g:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
