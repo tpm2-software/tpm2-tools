@@ -20,7 +20,7 @@ program to decode and display the response in a human readable form.
 
 # OPTIONS
 
-  * **-o**, **\--out-file**=_OUTPUT\_FILE_:
+  * **-o**, **\--output**=_OUTPUT\_FILE_:
 
     Output file to send response buffer to. Defaults to stdout.
 

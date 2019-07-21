@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_send: long option changed
+    out-file is now output
   * tpm2_rsaencrypt: long option changed
     out-file is now output
   * tpm2_rsadecrypt: long options changed
