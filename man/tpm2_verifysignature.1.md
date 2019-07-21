@@ -108,7 +108,7 @@ sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.di
 tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
 
 # Sign in the TPM and verify with OSSL
-tpm2_sign -Q -c key.ctx -g sha256 -D data.in.digest -f plain -s data.out.signed
+tpm2_sign -Q -c key.ctx -g sha256 -d data.in.digest -f plain -s data.out.signed
 
 openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 

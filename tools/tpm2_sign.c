@@ -197,7 +197,7 @@ static bool on_option(char key, char *value) {
         }
     }
         break;
-    case 'D': {
+    case 'd': {
         ctx.digest = malloc(sizeof(TPM2B_DIGEST));
         ctx.digest->size = sizeof(TPM2B_DIGEST);
         if (!files_load_bytes_from_path(value, ctx.digest->buffer, &ctx.digest->size)) {
@@ -239,18 +239,18 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-      { "auth-key",             required_argument, NULL, 'p' },
-      { "halg",                 required_argument, NULL, 'g' },
-      { "sig-scheme",           required_argument, NULL, 's' },
+      { "auth",                 required_argument, NULL, 'p' },
+      { "hash-algorithm",       required_argument, NULL, 'g' },
+      { "scheme",               required_argument, NULL, 's' },
       { "message",              required_argument, NULL, 'm' },
-      { "digest",               required_argument, NULL, 'D' },
-      { "out-sig",              required_argument, NULL, 'o' },
+      { "digest",               required_argument, NULL, 'd' },
+      { "signature",            required_argument, NULL, 'o' },
       { "ticket",               required_argument, NULL, 't' },
       { "key-context",          required_argument, NULL, 'c' },
       { "format",               required_argument, NULL, 'f' }
     };
 
-    *opts = tpm2_options_new("p:g:m:D:t:o:c:f:s:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:g:m:d:t:o:c:f:s:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

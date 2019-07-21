@@ -23,13 +23,13 @@ data and validation shall indicate that hashed data did not start with
     Context object pointing to the the key used for signing. Either a file or a
     handle number. See section "Context Object Format".
 
-  * **-p**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -37,7 +37,7 @@ data and validation shall indicate that hashed data did not start with
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-s**, **\--sig-scheme**=_SIGNING\_SCHEME_:
+  * **-s**, **\--scheme**=_SIGNING\_SCHEME_:
 
     The signing scheme used to sign the message. Optional.
     Signing schemes should follow the "formatting standards", see section
@@ -52,7 +52,7 @@ data and validation shall indicate that hashed data did not start with
 
     The message file, containing the content to be  digested.
 
-  * **-D**, **\--digest**=_DIGEST\_FILE_:
+  * **-d**, **\--digest**=_DIGEST\_FILE_:
 
     The digest file that shall be computed using the correct hash
     algorithm. When this option is specified, a warning is generated and
@@ -65,7 +65,7 @@ data and validation shall indicate that hashed data did not start with
 
     The ticket file, containing the validation structure, optional.
 
-  * **-o**, **\--out-sig**=_SIGNATURE\_FILE_:
+  * **-o**, **\--signature**=_SIGNATURE\_FILE_:
 
     The signature file, records the signature structure.
 
@@ -121,7 +121,7 @@ sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.di
 tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
 
 # Sign in the TPM and verify with OSSL
-tpm2_sign -Q -c key.ctx -g sha256 -D data.in.digest -f plain -s data.out.signed
+tpm2_sign -Q -c key.ctx -g sha256 -d data.in.digest -f plain -s data.out.signed
 
 openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 ```
