@@ -125,7 +125,7 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "out-file", required_argument, NULL, 'o' },
+        { "output", required_argument, NULL, 'o' },
     };
 
     *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts,
