@@ -14,18 +14,18 @@
 
 # OPTIONS
 
-  * **-c**, **\--context-object**=_CONTEXT\_OBJECT_:
+  * **-c**, **\--object-context**=_CONTEXT\_OBJECT_:
 
     Context object for the loaded object. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-p**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-o**, **\--out-file**=_OUT\_FILE_:
+  * **-o**, **\--output**=_OUT\_FILE_:
 
     Output file name, containing the unsealed data. Defaults to stdout if not specified.
 
@@ -48,7 +48,7 @@ tpm2_unseal -c item.context -p abc123 -o out.dat
 
 tpm2_unseal -c 0x81010001 -p "hex:123abc" -o out.dat
 
-tpm2_unseal -c item.context -L sha1:0,1,2 -F out.dat
+tpm2_unseal -c item.context -p pcr:sha256:0,1+pcr.value -o out.dat
 ```
 
 # NOTES
