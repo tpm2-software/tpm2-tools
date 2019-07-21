@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_readpublic: long options changed
+    out-file is now output
+    context is now object-context
   * tpm2_quote: short and long options changed
     auth-ak is now ak-auth
     id-list is now pcr-index
