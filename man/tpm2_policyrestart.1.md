@@ -36,7 +36,7 @@ state would still need to satisfy the policy
 ```
 tpm2_startauthsession \--policy-session
 
-tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -o policy.dat
+tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
 
 # PCR event occurs here causing unseal to fail
 tpm2_unseal -S session.dat -c unseal.key.ctx
@@ -45,7 +45,7 @@ tpm2_unseal -S session.dat -c unseal.key.ctx
 # Clear the policy digest by restarting the policy session, try again, PCR state must satisfy policy
 tpm2_policyrestart -S session.dat
 
-tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -o policy.dat
+tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
 
 tpm2_unseal -S session.dat -c unseal.key.ctx
 ```

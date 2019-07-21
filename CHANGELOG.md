@@ -1,5 +1,12 @@
 ## Changelog
 ### next
+  * tpm2_policypcr: short and long options changed
+    out-policy-file is now policy
+    pcr-input-file is now pcr
+    set-list is now pcr-list
+    -o is now -L
+    -F is now -f
+    -L is now -l
   * tpm2_policypassword: short and long options changed
     out-policy-file is now policy
     -o is now -L
