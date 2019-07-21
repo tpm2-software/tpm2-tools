@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_verifysignature: short and long options changed
+    halg is now hash-algorithm
+    sig is now signature
+    -D is now -d
   * tpm2_unseal: long options changed
     auth-key is now auth
     out-file is now output

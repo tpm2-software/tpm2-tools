@@ -24,7 +24,7 @@ symmetric key, both the public and private portions need to be loaded.
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -36,13 +36,13 @@ symmetric key, both the public and private portions need to be loaded.
 
     The message file, containing the content to be  digested.
 
-  * **-D**, **\--digest**=_DIGEST\_FILE_:
+  * **-d**, **\--digest**=_DIGEST\_FILE_:
 
     The input hash file, containing the hash of the message. If this option is
     selected, then the message (**-m**) and algorithm (**-g**) options do not need
     to be specified.
 
-  * **-s**, **\--sig**=_SIG\_FILE_:
+  * **-s**, **\--signature**=_SIG\_FILE_:
 
     The input signature file of the signature to be validated.
 
