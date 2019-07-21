@@ -27,7 +27,7 @@ The key referenced by key-context is **required** to be:
     encryption. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-o**, **\--out-file**=_OUTPUT\_FILE_:
+  * **-o**, **\--output**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data. The default is to print an
     xxd compatible hexdump to stdout. If a file is specified, raw binary

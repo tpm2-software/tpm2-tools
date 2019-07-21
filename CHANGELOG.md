@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_rsaencrypt: long option changed
+    out-file is now output
   * tpm2_rsadecrypt: long options changed
     auth-key is now auth
     in-file is now input
