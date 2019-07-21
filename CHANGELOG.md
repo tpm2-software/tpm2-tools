@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_rsadecrypt: long options changed
+    auth-key is now auth
+    in-file is now input
+    out-file is now output
   * tpm2_readpublic: long options changed
     out-file is now output
     context is now object-context

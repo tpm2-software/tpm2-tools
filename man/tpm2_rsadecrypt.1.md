@@ -26,17 +26,17 @@ The key referenced by key-context is **required** to be:
     decryption. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-p**, **\--auth-key**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_KEY\_AUTH_:
 
     Optional authorization value to use the key specified by **-k**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-i**, **\--in-file**=_INPUT\FILE_:
+  * **-i**, **\--input**=_INPUT\FILE_:
 
     Input file path, containing the data to be decrypted.
 
-  * **-o**, **\--out-file**=_OUTPUT\_FILE_:
+  * **-o**, **\--output**=_OUTPUT\_FILE_:
 
     Output file path, record the decrypted data.
 
