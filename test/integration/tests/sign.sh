@@ -70,13 +70,13 @@ test_symmetric() {
 
     sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > $file_input_digest
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -D $file_input_digest -o $file_output_data
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d $file_input_digest -o $file_output_data
 
     rm -f $file_output_data
 
     # test with digest + message/validation (warning generated)
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -D $file_input_digest -o $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d $file_input_digest -o $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
 }
 
 create_signature() {

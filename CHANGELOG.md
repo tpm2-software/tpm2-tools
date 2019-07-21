@@ -1,5 +1,11 @@
 ## Changelog
 ### next
+  * tpm2_sign: short and long options changed
+    auth-key is now auth
+    halg is now hash-algorithm
+    sig-scheme is now scheme
+    out-sig is now signature
+    -D is now -d
   * tpm2_send: long option changed
     out-file is now output
   * tpm2_rsaencrypt: long option changed
