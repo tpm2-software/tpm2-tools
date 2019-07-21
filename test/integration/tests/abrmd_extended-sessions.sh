@@ -66,7 +66,7 @@ tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
 tpm2_startauthsession -Q -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
+tpm2_policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 
 tpm2_flushcontext -S $file_session_file
 
@@ -80,7 +80,7 @@ rm $file_session_file
 # Start a REAL encrypted and bound policy session (-a option) and perform a pcr policy event
 tpm2_startauthsession --policy-session -k $file_primary_key_ctx -S $file_session_file
 
-tpm2_policypcr -Q -S $file_session_file -L ${alg_pcr_policy}:${pcr_ids} -F $file_pcr_value -o $file_policy
+tpm2_policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 
 unsealed=`tpm2_unseal -p"session:$file_session_file" -c $file_unseal_key_ctx`
 

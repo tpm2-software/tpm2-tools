@@ -16,16 +16,16 @@ established via **tpm2_startauthsession**(1).
 
 # OPTIONS
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
-  * **-F**, **\--pcr-input-file**=_PCR\_FILE_:
+  * **-f**, **\--pcr**=_PCR\_FILE_:
 
     Optional Path or Name of the file containing expected PCR values for the
     specified index. Default is to read the current PCRs per the set list.
 
-  * **-L**, **\--set-list**=_PCR\_LIST_:
+  * **-l**, **\--pcr-list**=_PCR\_LIST_:
 
     The list of PCR banks and selected PCRs' ids for each bank.
 
@@ -55,7 +55,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
 
     handle=`tpm2_startauthsession -S session.dat | cut -d' ' -f 2-2`
 
-    tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -o policy.dat
+    tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
 
     tpm2_flushcontext -H "$handle"
     ```
@@ -69,7 +69,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
     ```
     handle=`tpm2_startauthsession \--policy-session -S session.dat | cut -d' ' -f 2-2`
 
-    tpm2_policypcr -Q -S session.dat -L "sha1:0,1,2,3" -F pcr.dat -o policy.dat
+    tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
     ```
 4. Using the actual policy session from step 3 in tpm2_unseal to unseal the object.
     ```

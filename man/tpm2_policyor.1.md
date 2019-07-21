@@ -62,7 +62,7 @@ tpm2_pcrlist -l sha1:0 -o set1_pcr0.sha1
 
 tpm2_startauthsession -S session.ctx
 
-tpm2_policypcr -S session.ctx -L sha1:0 -F set1_pcr0.sha1 -o set1_pcr0.policy
+tpm2_policypcr -S session.ctx -l sha1:0 -f set1_pcr0.sha1 -L set1_pcr0.policy
 
 tpm2_flushcontext -S session.ctx
 
@@ -72,7 +72,7 @@ cat set1_pcr0.sha1 rand.bin | openssl dgst -sha1 set2_pcr0.sha1
 
 tpm2_startauthsession -S session.ctx
 
-tpm2_policypcr -S session.ctx -L sha1:0 -F set2_pcr0.sha1 -o set2_pcr0.policy
+tpm2_policypcr -S session.ctx -l sha1:0 -f set2_pcr0.sha1 -L set2_pcr0.policy
 
 tpm2_flushcontext -S session.ctx
 ```
@@ -97,7 +97,7 @@ tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -i- -C prim.ctx -
 ```
 tpm2_startauthsession \--policy-session -S session.ctx
 
-tpm2_policypcr -Q -S session.ctx -L sha1:0 -o o_set1_pcr0.policy
+tpm2_policypcr -Q -S session.ctx -l sha1:0 -L o_set1_pcr0.policy
 
 tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
 

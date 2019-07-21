@@ -33,13 +33,13 @@ static tpm2_policypcr_ctx ctx;
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'o':
+    case 'L':
         ctx.policy_out_path = value;
         break;
-    case 'F':
+    case 'f':
         ctx.raw_pcrs_file = value;
         break;
-    case 'L': {
+    case 'l': {
         bool result = pcr_parse_selections(value, &ctx.pcr_selection);
         if (!result) {
             LOG_ERR("Could not parse PCR selections");
@@ -56,13 +56,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "out-policy-file",    required_argument,  NULL,   'o' },
-        { "pcr-input-file",     required_argument,  NULL,   'F' },
-        { "set-list",           required_argument,  NULL,   'L' },
+        { "policy",             required_argument,  NULL,   'L' },
+        { "pcr",                required_argument,  NULL,   'f' },
+        { "pcr-list",           required_argument,  NULL,   'l' },
         { "session",            required_argument,  NULL,   'S' },
     };
 
-    *opts = tpm2_options_new("o:F:L:S:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("L:f:l:S:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;

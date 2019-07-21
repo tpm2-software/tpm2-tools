@@ -88,7 +88,7 @@ tpm2_pcrlist -l sha256:0 -o pcr0.sha256
 
 tpm2_startauthsession -S session.ctx
 
-tpm2_policypcr -S session.ctx -L sha256:0 -F pcr0.sha256 -o pcr.policy
+tpm2_policypcr -S session.ctx -l sha256:0 -f pcr0.sha256 -L pcr.policy
 
 tpm2_flushcontext -S session.ctx
 ```
@@ -120,7 +120,7 @@ tpm2_verifysignature -c signing_key.ctx -g sha256 -m pcr.policy -s pcr.signature
 
 tpm2_startauthsession \--policy-session -S session.ctx
 
-tpm2_policypcr -Q -S session.ctx -L sha256:0 -o pcr.policy
+tpm2_policypcr -Q -S session.ctx -l sha256:0 -L pcr.policy
 
 tpm2_policyauthorize -S session.ctx -o authorized.policy -L pcr.policy -n signing_key.name -t verification.tkt
 
