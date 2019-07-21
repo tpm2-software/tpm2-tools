@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_policysecret: short and long options changed
+    context is now object-context
+    out-policy-file is now policy
+    -o is now -L
   * tpm2_policypcr: short and long options changed
     out-policy-file is now policy
     pcr-input-file is now pcr

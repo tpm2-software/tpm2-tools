@@ -41,7 +41,7 @@ static bool on_option(char key, char *value) {
     bool result = true;
 
     switch (key) {
-    case 'o':
+    case 'L':
         ctx.out_policy_dgst_path = value;
         break;
     case 'S':
@@ -76,12 +76,12 @@ bool on_arg (int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "out-policy-file", required_argument, NULL, 'o' },
-        { "session",     required_argument, NULL, 'S' },
-        { "context",     required_argument, NULL, 'c' },
+        { "policy",         required_argument, NULL, 'L' },
+        { "session",        required_argument, NULL, 'S' },
+        { "object-context", required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("o:S:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("L:S:c:", ARRAY_LEN(topts), topts, on_option,
                              on_arg, 0);
 
     return *opts != NULL;
