@@ -29,14 +29,14 @@ This will work with direct TPM access, but note that internally this calls a *Co
     **NOTE**: A *trial* session is used when building a policy and a *policy*
     session is used when authenticating with a policy.
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     The hash algorithm used in computation of the policy digest. Algorithms
     should follow the "formatting standards", see section "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-k**, **\--key**=_SESSION\_ENCRYPTION\_KEY_:
+  * **-c**, **\--key-context**=_SESSION\_ENCRYPTION\_KEY_:
 
     Set the session encryption and bind key. When using this, sensitive data transmitted to
     the TPM will be encrypted with AES128CFB. **This prevents bus snooping attacks.**
@@ -72,7 +72,7 @@ tpm2_startauthsession \--policy-session -S mysession.ctx
 ## Start an encrypted and bound *policy* session and save the session data to a file
 ```
 tpm2_createprimary -o primary.ctx
-tpm2_startauthsession \--policy-session -k primary.ctx -S mysession.ctx
+tpm2_startauthsession \--policy-session -c primary.ctx -S mysession.ctx
 ```
 
 [returns](common/returns.md)

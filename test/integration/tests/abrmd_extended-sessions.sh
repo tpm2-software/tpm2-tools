@@ -78,7 +78,7 @@ tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub -r $file_unseal_ke
 rm $file_session_file
 
 # Start a REAL encrypted and bound policy session (-a option) and perform a pcr policy event
-tpm2_startauthsession --policy-session -k $file_primary_key_ctx -S $file_session_file
+tpm2_startauthsession --policy-session -c $file_primary_key_ctx -S $file_session_file
 
 tpm2_policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 

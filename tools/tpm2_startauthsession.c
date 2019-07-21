@@ -56,7 +56,7 @@ static bool on_option(char key, char *value) {
     case 'S':
         ctx.output.path = value;
         break;
-    case 'k':
+    case 'c':
         ctx.session.key_context_arg_str = value;
         break;
     }
@@ -68,12 +68,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "policy-session",      no_argument,       NULL,  0 },
-        { "key",                 required_argument, NULL, 'k'},
-        { "halg",                required_argument, NULL, 'g'},
+        { "key-context",         required_argument, NULL, 'c'},
+        { "hash-algorithm",      required_argument, NULL, 'g'},
         { "session",             required_argument, NULL, 'S'},
     };
 
-    *opts = tpm2_options_new("g:S:k:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("g:S:c:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
