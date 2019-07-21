@@ -103,9 +103,9 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "auth-key",     required_argument, NULL, 'p' },
-      { "in-file",      required_argument, NULL, 'i' },
-      { "out-file",     required_argument, NULL, 'o' },
+      { "auth",         required_argument, NULL, 'p' },
+      { "input",        required_argument, NULL, 'i' },
+      { "output",       required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
       { "scheme",       required_argument, NULL, 'g' },
     };
