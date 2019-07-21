@@ -17,7 +17,7 @@ a policy.
 
 # OPTIONS
 
-  * **-c**, **\--context**=_OBJECT_CONTEXT_:
+  * **-c**, **\--object-context**=_OBJECT_CONTEXT_:
 
     A context object specifier of a transient/permanent/persistent object. Either
     a file path of a object context blob or a loaded/persistent/permanent handle
@@ -31,7 +31,7 @@ a policy.
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-o**, **\--out-policy-file**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_POLICY\_FILE_:
 
     File to save the policy digest.
 
@@ -57,7 +57,7 @@ TPM_RH_OWNER=0x40000001
 
 tpm2_startauthsession -S session.ctx
 
-tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -o secret.policy
+tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -L secret.policy
 
 tpm2_flushcontext -S session.ctx
 ```
@@ -75,7 +75,7 @@ tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -n sealing_key.name
 ```
 tpm2_startauthsession \--policy-session -S session.ctx
 
-tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -o secret.policy
+tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -L secret.policy
 
 unsealed=`tpm2_unseal -p "session:session.ctx" -c sealing_key.ctx`
 echo $unsealed
