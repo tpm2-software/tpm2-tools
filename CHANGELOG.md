@@ -1,5 +1,9 @@
 ## Changelog
 ### next
+  * tpm2_startauthsession: short and long options changed
+    halg is now hash-algorithm
+    key is now key-context
+    -k is now -c
   * tpm2_sign: short and long options changed
     auth-key is now auth
     halg is now hash-algorithm
