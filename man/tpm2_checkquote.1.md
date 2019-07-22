@@ -16,12 +16,12 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
 # OPTIONS
 
-  * **-u**, **\--pubfile**=_KEY\_CONTEXT\_OBJECT_:
+  * **-u**, **\--public**=_KEY\_CONTEXT\_OBJECT_:
 
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-g**, **\--halg**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -37,7 +37,7 @@ provided, verify that the qualifying data and PCR values match those in the quot
 
     The input signature file of the signature to be validated.
 
-  * **-f**, **\--format**:
+  * **-F**, **\--format**:
 
     Set the input signature file to a specified format. The default is the TPM2.0 **TPMT_SIGNATURE**
     data format, however different schemes can be selected if the data came from an external
@@ -48,12 +48,12 @@ provided, verify that the qualifying data and PCR values match those in the quot
     Also, see section "Supported Signing Schemes" for a list of supported hash
     algorithms.
 
-  * **-F**, **\--pcr-input-file**:
+  * **-f**, **\--pcr**:
 
     PCR input file, optional, records the list of PCR values that were included
     in the quote.
 
-  * **-q**, **\--qualify-data**:
+  * **-q**, **\--qualification**:
 
     Data given as a hex string that was used to qualify the quote. This is typically
     used to add a nonce against replay attacks.
@@ -82,7 +82,7 @@ tpm2_createak -C 0x81010009 -k 0x8101000a -G rsa -s rsassa -D sha256 -p akpub.pe
 
 tpm2_quote -C 0x8101000a -l sha256:15,16,22 -q abc123 -m quote.out -s sig.out -f pcrs.out -g sha256
 
-tpm2_checkquote -c akpub.pem -m quote.out -s sig.out -p pcrs.out -G sha256 -q abc123
+tpm2_checkquote -u akpub.pem -m quote.out -s sig.out -f pcrs.out -g sha256 -q abc123
 ```
 
 [returns](common/returns.md)

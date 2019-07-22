@@ -96,7 +96,7 @@ tpm2_quote -Q -C $context_ak -l $digestAlg:$debug_pcr_list -q $loaded_randomness
 
 
 # Verify quote
-tpm2_checkquote -Q -u $output_ak_pub_pem -m $output_quote -s $output_quotesig -F $output_quotepcr -g $digestAlg -q $loaded_randomness
+tpm2_checkquote -Q -u $output_ak_pub_pem -m $output_quote -s $output_quotesig -f $output_quotepcr -g $digestAlg -q $loaded_randomness
 
 
 # Save U key from verifier
