@@ -45,7 +45,7 @@ These options control the key importation process:
     See section "Context Object Format". The parent key **MUST** be an *RSA* key with an
     symmetric cipher of *aes128cfb*.
 
-  * **-K**, **\--parent-public**=_FILE_:
+  * **-U**, **\--parent-public**=_FILE_:
 
     Optional. Specifies the parent key public data file input. This can be read with
     **tpm2_readpublic**(1) tool. If not specified, the tool invokes a tpm2_readpublic on the parent
