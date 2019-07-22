@@ -303,7 +303,7 @@ static bool on_option(char key, char *value) {
 		ctx.flags.msg = 1;
 	}
 		break;
-	case 'f': {
+	case 'F': {
 		ctx.format = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
 		if (ctx.format == TPM2_ALG_ERROR) {
 		    LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
@@ -325,7 +325,7 @@ static bool on_option(char key, char *value) {
 		ctx.sig_file_path = value;
 		ctx.flags.sig = 1;
 		break;
-	case 'F':
+	case 'f':
 		ctx.pcr_file_path = value;
 		ctx.flags.pcr = 1;
 		break;
@@ -338,17 +338,17 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-            { "halg",           required_argument, NULL, 'g' },
-            { "message",        required_argument, NULL, 'm' },
-            { "format",         required_argument, NULL, 'f' },
-            { "signature",      required_argument, NULL, 's' },
-            { "pcr-input-file", required_argument, NULL, 'F' },
-            { "pubfile",        required_argument, NULL, 'u' },
-            { "qualify-data",   required_argument, NULL, 'q' },
+            { "hash-algorithm",     required_argument, NULL, 'g' },
+            { "message",            required_argument, NULL, 'm' },
+            { "format",             required_argument, NULL, 'F' },
+            { "signature",          required_argument, NULL, 's' },
+            { "pcr",                required_argument, NULL, 'f' },
+            { "public",             required_argument, NULL, 'u' },
+            { "qualification",      required_argument, NULL, 'q' },
     };
 
 
-    *opts = tpm2_options_new("g:m:f:s:u:F:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:m:F:s:u:f:q:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
