@@ -312,7 +312,7 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     /* Output in YAML format */
     tpm2_tool_output("loaded-key:\n  name: ");
-    tpm2_util_print_tpm2b((TPM2B *)key_name);
+    tpm2_util_print_tpm2b(key_name);
     tpm2_tool_output("\n");
 
     // write name to ak.name file

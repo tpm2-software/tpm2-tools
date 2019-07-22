@@ -53,7 +53,7 @@ static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
                 out_data->size);
     }
 
-    tpm2_util_print_tpm2b((TPM2B *)out_data);
+    tpm2_util_print_tpm2b(out_data);
 
     free(out_data);
 
