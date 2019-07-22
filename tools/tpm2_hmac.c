@@ -31,13 +31,14 @@ struct tpm_hmac_ctx {
 
     FILE *input;
     char *hmac_output_file_path;
+    char *ticket_path;
     TPMI_ALG_HASH halg;
     bool hex;
 };
 
 static tpm_hmac_ctx ctx;
 
-static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
+static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result, TPMT_TK_HASHCHECK **validation) {
 
     unsigned long file_size = 0;
     FILE *input = ctx.input;
@@ -46,8 +47,12 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
     /* Suppress error reporting with NULL path */
     bool res = files_get_file_size(input, &file_size, NULL);
 
-    /* If we can get the file size and its less than 1024, just do it in one hash invocation */
-    if (res && file_size <= TPM2_MAX_DIGEST_BUFFER) {
+    /*
+     * If we can get the file size and its less than 1024, just do it in one hash invocation.
+     * We can't use the one-shot command if we require ticket, as it doesn't provide it in
+     * the response from the TPM.
+     */
+    if (!ctx.ticket_path && res && file_size <= TPM2_MAX_DIGEST_BUFFER) {
 
         TPM2B_MAX_BUFFER buffer = { .size = file_size };
 
@@ -124,7 +129,7 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
     }
 
     rc = tpm2_hmac_sequencecomplete(ectx, sequence_handle,
-        &ctx.hmac_key.object, &data, result);
+        &ctx.hmac_key.object, &data, result, validation);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -136,13 +141,23 @@ static tool_rc tpm_hmac_file(ESYS_CONTEXT *ectx, TPM2B_DIGEST **result) {
 static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *hmac_out = NULL;
+    TPMT_TK_HASHCHECK *validation = NULL;
 
-    tool_rc rc = tpm_hmac_file(ectx, &hmac_out);
+    tool_rc rc = tpm_hmac_file(ectx, &hmac_out, &validation);
     if (rc != tool_rc_success) {
         goto out;
     }
 
     assert(hmac_out);
+
+    if (ctx.ticket_path) {
+        bool res = files_save_validation(validation,
+                ctx.ticket_path);
+        if (!res) {
+            rc = tool_rc_general_error;
+            goto out;
+        }
+    }
 
     rc = tool_rc_general_error;
     FILE *out = stdout;
@@ -173,6 +188,7 @@ static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
 
 out:
     free(hmac_out);
+    free(validation);
     return rc;
 }
 
@@ -193,6 +209,9 @@ static bool on_option(char key, char *value) {
         if (ctx.halg == TPM2_ALG_ERROR) {
             return false;
         }
+        break;
+    case 't':
+        ctx.ticket_path = value;
         break;
     case 0:
         ctx.hex = true;
@@ -227,12 +246,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth",                 required_argument, NULL, 'p' },
         { "output",               required_argument, NULL, 'o' },
         { "hash-algorithm",       required_argument, NULL, 'g' },
+        { "ticket",               required_argument, NULL, 't' },
         { "hex",                  no_argument,       NULL,  0  },
     };
 
     ctx.input = stdin;
 
-    *opts = tpm2_options_new("c:p:o:g:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("c:p:o:g:t:", ARRAY_LEN(topts), topts, on_option,
                              on_args, 0);
 
     return *opts != NULL;

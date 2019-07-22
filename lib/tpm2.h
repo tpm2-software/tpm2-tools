@@ -431,7 +431,8 @@ tool_rc tpm2_hmac_sequencecomplete(
     ESYS_TR sequenceHandle,
     tpm2_loaded_object *hmac_key_obj,
     const TPM2B_MAX_BUFFER *input_buffer,
-    TPM2B_DIGEST **result);
+    TPM2B_DIGEST **result,
+    TPMT_TK_HASHCHECK **validation);
 
 tool_rc tpm2_import(
     ESYS_CONTEXT *esysContext,

@@ -20,7 +20,7 @@ file_input_data=secret.data
 
 cleanup() {
   rm -f $file_primary_key_ctx $file_hmac_key_pub $file_hmac_key_priv \
-        $file_hmac_key_name $file_hmac_output
+        $file_hmac_key_name $file_hmac_output ticket.out
 
   if [ $(ina "$@" "keep-context") -ne 0 ]; then
     rm -f $file_hmac_key_ctx $file_input_data
@@ -65,7 +65,7 @@ rm -f $file_hmac_output
 
 cleanup "no-shut-down"
 
-# Test default algorithm selection of sha1
+# Test stdin
 echo "12345678" > $file_input_data
 
 tpm2_clear
@@ -77,6 +77,10 @@ tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_hmac_key_pub  -r $file_hmac_key_priv -n $file_hmac_key_name -o $file_hmac_key_ctx
 
 cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx -o $file_hmac_output
+
+# test ticket option
+cat $file_input_data | tpm2_hmac -Q -c $file_hmac_key_ctx -o $file_hmac_output -t ticket.out
+test -f ticket.out
 
 # test no output file
 cat $file_input_data | tpm2_hmac -c $file_hmac_key_ctx 1>/dev/null

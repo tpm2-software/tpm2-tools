@@ -1483,7 +1483,8 @@ tool_rc tpm2_hmac_sequencecomplete(
     ESYS_TR sequenceHandle,
     tpm2_loaded_object *hmac_key_obj,
     const TPM2B_MAX_BUFFER *input_buffer,
-    TPM2B_DIGEST **result) {
+    TPM2B_DIGEST **result,
+    TPMT_TK_HASHCHECK **validation) {
 
     ESYS_TR hmac_key_obj_shandle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esysContext, hmac_key_obj->tr_handle,
@@ -1502,7 +1503,7 @@ tool_rc tpm2_hmac_sequencecomplete(
                     input_buffer,
                     TPM2_RH_NULL,
                     result,
-                    NULL);
+                    validation);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_HMAC, rval);
         return tool_rc_from_tpm(rval);

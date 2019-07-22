@@ -47,6 +47,10 @@ and **--hex** options respectively.
 
     Optional file record of the HMAC result. Defaults to stdout.
 
+  * **-t**, **\--ticket**=_TICKET\_FILE_
+
+    Optional file record of the ticket result.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
