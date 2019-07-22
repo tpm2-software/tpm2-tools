@@ -20,7 +20,7 @@ elements to stdout as YAML.
     Required. Type of data structure. Only **TPMS_ATTEST** and **TPMS_CONTEXT** are
     presently supported.
 
-  * **-i**, **\--in-file**:
+  * **-i**, **\--input**:
 
     Optional. File containing TPM object. Reads from stdin if unspecified.
 
@@ -31,9 +31,9 @@ elements to stdout as YAML.
 # EXAMPLES
 
 ```
-tpm2_print -t TPMS_ATTEST -f /path/to/tpm/quote
+tpm2_print -t TPMS_ATTEST -i /path/to/tpm/quote
 
-tpm2_print \--type=TPMS_ATTEST \--file=/path/to/tpm/quote
+tpm2_print \--type=TPMS_ATTEST \--input=/path/to/tpm/quote
 
 cat /path/to/tpm/quote | tpm2_print \--type=TPMS_ATTEST
 ```
