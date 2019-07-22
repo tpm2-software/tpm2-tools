@@ -410,12 +410,14 @@ tool_rc tpm2_encryptdecrypt(
 tool_rc tpm2_hmac(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *hmac_key_obj,
+    TPMI_ALG_HASH halg,
     const TPM2B_MAX_BUFFER *input_buffer,
     TPM2B_DIGEST **out_hmac);
 
 tool_rc tpm2_hmac_start(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *hmac_key_obj,
+    TPMI_ALG_HASH halg,
     ESYS_TR *sequenceHandle);
 
 tool_rc tpm2_hmac_sequenceupdate(
