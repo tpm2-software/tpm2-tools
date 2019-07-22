@@ -348,7 +348,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
 
-    *opts = tpm2_options_new("g:m:f:s:t:u:F:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("g:m:f:s:u:F:q:", ARRAY_LEN(topts), topts,
                              on_option, NULL, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
