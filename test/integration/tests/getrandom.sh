@@ -43,7 +43,7 @@ if [ $? -eq 0 ]; then
 fi
 
 # verify that tpm2_getrandom requires a TCTI
-./tools/tpm2_listpersistent -T none &> /dev/null
+./tools/tpm2_getrandom -T none &> /dev/null
 if [ $? -eq 0 ]; then
     echo "tpm2_getrandom should fail with tcti: \"none\""
     exit 1
