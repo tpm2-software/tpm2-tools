@@ -2,6 +2,7 @@
 ### next
   * tpm2_hmac:
       - add -g option for specifying hash algorithm.
+      - add -t option for specifying ticket result.
   * tpm2_getrandom:
       - change default output to binary.
       - add --hex option for output to hex format.
