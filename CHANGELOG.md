@@ -1,5 +1,11 @@
 ## Changelog
 ### next
+  * tpm2_hash:
+    - add --hex for specifying hex output.
+    - default output of hash to stdout.
+    - default output of hash to binary.
+    - remove output of ticket to stdout.
+
   * tpm2_listpersistent: deleted as tpm2_getcap and tpm2_readpublic can be used instead.
   * tpm2_hmac:
       - add -g option for specifying hash algorithm.

@@ -16,6 +16,9 @@ hash will be used in a signing operation that uses a restricted signing key,
 then the ticket returned by this command can indicate that the hash is safe to
 sign.
 
+Output defaults to *stdout* and binary format unless otherwise specified via **-o**
+and **--hex** options respectively.
+
 # OPTIONS
 
   * **-C**, **\--hierarchy**=_HIERARCHY_:
@@ -35,6 +38,10 @@ sign.
     "Algorithm Specifiers".
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
+
+  * **\--hex**
+
+	Convert the output hmac to hex format without a leading "0x".
 
   * **-o**, **\--output**=_OUT\_FILE_
 

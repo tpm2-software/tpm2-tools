@@ -25,6 +25,7 @@ struct tpm_hash_ctx {
     TPMI_ALG_HASH  halg;
     char *outHashFilePath;
     char *outTicketFilePath;
+    bool hex;
 };
 
 static tpm_hash_ctx ctx = {
@@ -43,45 +44,48 @@ static tool_rc hash_and_save(ESYS_CONTEXT *context) {
         return rc;
     }
 
-    if (outHash->size) {
-        UINT16 i;
-        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(ctx.halg,
-                tpm2_alg_util_flags_hash));
-        for (i = 0; i < outHash->size; i++) {
-            tpm2_tool_output("%02x", outHash->buffer[i]);
-        }
-        tpm2_tool_output("\n");
-    }
-
-    if (validation->digest.size) {
-        UINT16 i;
-        tpm2_tool_output("ticket:");
-        for (i = 0; i < validation->digest.size; i++) {
-            tpm2_tool_output("%02x", validation->digest.buffer[i]);
-        }
-        tpm2_tool_output("\n");
-    }
-
-    if (ctx.outHashFilePath) {
-        bool result = files_save_bytes_to_file(ctx.outHashFilePath,
-                                               &outHash->buffer[0],
-                                               outHash->size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    }
-
     if (ctx.outTicketFilePath) {
-        bool result = files_save_validation(validation, ctx.outTicketFilePath);
-        if (!result) {
-            return tool_rc_general_error;
+        bool res = files_save_validation(validation,
+                ctx.outTicketFilePath);
+        if (!res) {
+            rc = tool_rc_general_error;
+            goto out;
         }
     }
+
+    rc = tool_rc_general_error;
+    FILE *out = stdout;
+    if (ctx.outHashFilePath) {
+        out = fopen(ctx.outHashFilePath, "wb+");
+        if (!out) {
+            LOG_ERR("Could not open output file \"%s\", error: %s",
+                    ctx.outHashFilePath, strerror(errno));
+            goto out;
+        }
+    } else if (!output_enabled) {
+        rc = tool_rc_success;
+        goto out;
+    }
+
+    if (ctx.hex) {
+        tpm2_util_print_tpm2b2(out, outHash);
+    } else {
+
+        bool res = files_write_bytes(out, outHash->buffer,
+                outHash->size);
+        if (!res) {
+            goto out;
+        }
+    }
+
+    rc = tool_rc_success;
+
+out:
 
     free(outHash);
     free(validation);
 
-    return tool_rc_success;
+    return rc;
 }
 
 static bool on_args(int argc, char **argv) {
@@ -124,6 +128,9 @@ static bool on_option(char key, char *value) {
     case 't':
         ctx.outTicketFilePath = value;
         break;
+    case 0:
+        ctx.hex = true;
+        break;
     }
 
     return true;
@@ -136,6 +143,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         {"hash-algorithm",     required_argument, NULL, 'g'},
         {"output",             required_argument, NULL, 'o'},
         {"ticket",             required_argument, NULL, 't'},
+        {"hex",                no_argument,       NULL,  0 },
     };
 
     /* set up non-static defaults here */
