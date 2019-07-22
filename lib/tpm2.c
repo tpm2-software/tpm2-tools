@@ -1387,6 +1387,7 @@ tool_rc tpm2_encryptdecrypt(
 tool_rc tpm2_hmac(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *hmac_key_obj,
+    TPMI_ALG_HASH halg,
     const TPM2B_MAX_BUFFER *input_buffer,
     TPM2B_DIGEST **out_hmac) {
 
@@ -1405,7 +1406,7 @@ tool_rc tpm2_hmac(
                     ESYS_TR_NONE,
                     ESYS_TR_NONE,
                     input_buffer,
-                    TPM2_ALG_NULL,
+                    halg,
                     out_hmac);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_HMAC, rval);
@@ -1419,6 +1420,7 @@ tool_rc tpm2_hmac(
 tool_rc tpm2_hmac_start(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *hmac_key_obj,
+    TPMI_ALG_HASH halg,
     ESYS_TR *sequenceHandle) {
 
     ESYS_TR hmac_key_obj_shandle = ESYS_TR_NONE;
@@ -1437,7 +1439,7 @@ tool_rc tpm2_hmac_start(
                     ESYS_TR_NONE,
                     ESYS_TR_NONE,
                     &null_auth,
-                    TPM2_ALG_NULL,
+                    halg,
                     sequenceHandle);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_HMAC, rval);

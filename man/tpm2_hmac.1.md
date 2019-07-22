@@ -13,6 +13,11 @@
 **tpm2_hmac**(1) - Performs an HMAC operation on _FILE_ and returns the results. If
 _FILE_ is not specified, then data is read from stdin.
 
+The hashing algorithm defaults to the keys scheme or sha256 if the key has a NULL scheme.
+
+Output defaults to *stdout* and binary format unless otherwise specified via **-o**
+and **--hex** options respectively.
+
 # OPTIONS
 
   * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
@@ -25,6 +30,18 @@ _FILE_ is not specified, then data is read from stdin.
     Optional authorization value to use the key specified by **-C**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
+
+  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
+
+    The hash algorithm to use.
+    Algorithms should follow the "formatting standards", see section
+    "Algorithm Specifiers".
+    Also, see section "Supported Hash Algorithms" for a list of supported hash
+    algorithms.
+
+  * **\--hex**
+
+	Convert the output hmac to hex format without a leading "0x".
 
   * **-o**, **\--output**=_OUT\_FILE_
 
@@ -44,19 +61,22 @@ _FILE_ is not specified, then data is read from stdin.
 
 # EXAMPLES
 
-## Perform an HMAC on data.in and send output and possibly ticket to stdout
+## Setup
 ```
-tpm2_hmac -c 0x81010002 -p abc123 data.in
+# create a primary object
+tpm2_createprimary -o primary.ctx
+
+# create an hmac key
+tpm2_create -C primary.ctx -Ghmac -o hmac.key
 ```
 
-## Perform an HMAC on data.in read as a file to stdin and send output to a file
-```
-tpm2_hmac -c key.context -p abc123 -o hash.out << data.in
-```
+### Perform an HMAC with Default Hash Algorithm
+Perform an hmac using the key's default scheme (hash algorithm) and
+output to stdout in hexidecimal format.
 
-## Perform an HMAC on _stdin_ and send result and possibly ticket to stdout
 ```
-cat data.in | tpm2_hmac -c 0x81010002 -o hash.out
+tpm2_hmac -c hmac.key --hex data.in
+e6eda48a53a9ddbb92f788f6d98e0372d63a408afb11aca43f522a2475a32805
 ```
 
 [returns](common/returns.md)
