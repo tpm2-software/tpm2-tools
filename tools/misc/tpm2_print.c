@@ -344,8 +344,8 @@ static bool on_option(char key, char *value) {
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
-        { "type",        required_argument, NULL, 't' },
-        { "in-file",        optional_argument, NULL, 'i' },
+        { "type",  required_argument, NULL, 't' },
+        { "input", optional_argument, NULL, 'i' },
     };
 
     *opts = tpm2_options_new("i:t:", ARRAY_LEN(topts), topts,

@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_print: long option changed
+    in-file is now input
   * tpm2_checkquote: short and long options changed
     halg is now hash-algorithm
     pcr-input-file is now pcr
