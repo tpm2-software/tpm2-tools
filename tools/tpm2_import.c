@@ -245,7 +245,7 @@ static bool on_option(char key, char *value) {
     case 'C':
         ctx.parent.ctx_path = value;
         break;
-    case 'K':
+    case 'U':
         ctx.parent_key_public_file = value;
         break;
     case 'k':
@@ -291,7 +291,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-algorithm",      required_argument, NULL, 'G'},
       { "input",              required_argument, NULL, 'i'},
       { "parent-context",     required_argument, NULL, 'C'},
-      { "parent-public",      required_argument, NULL, 'K'},
+      { "parent-public",      required_argument, NULL, 'U'},
       { "private",            required_argument, NULL, 'r'},
       { "public",             required_argument, NULL, 'u'},
       { "object-attributes",  required_argument, NULL, 'a'},
@@ -302,7 +302,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "passin",             required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("P:p:G:i:C:K:u:r:a:g:s:L:k:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("P:p:G:i:C:U:u:r:a:g:s:L:k:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;
