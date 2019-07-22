@@ -138,7 +138,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
     }
 
     tpm2_tool_output( "quoted: " );
-    tpm2_util_print_tpm2b((TPM2B *)quoted);
+    tpm2_util_print_tpm2b(quoted);
     tpm2_tool_output("\nsignature:\n" );
     tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature->sigAlg, tpm2_alg_util_flags_sig));
 
