@@ -17,11 +17,20 @@ cleanup "no-shut-down"
 
 # test file output
 tpm2_getrandom -o random.out 32
+s=`stat -c %s random.out`
+test $s -eq 32
 
 #test stdout
-tpm2_getrandom 4 > random.out
+tpm2_getrandom --hex 4 > random.out
+s=`stat -c %s random.out`
+test $s -eq 8
 
 yaml_verify random.out
+
+# test stdout and -Q
+tpm2_getrandom -Q --hex 4 > random.out
+s=`stat -c %s random.out`
+test $s -eq 0
 
 # negative tests
 trap - ERR
@@ -39,6 +48,5 @@ if [ $? -eq 0 ]; then
     echo "tpm2_getrandom should fail with tcti: \"none\""
     exit 1
 fi
-
 
 exit 0

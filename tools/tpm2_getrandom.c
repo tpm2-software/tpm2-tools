@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <errno.h>
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -18,10 +19,10 @@
 
 typedef struct tpm_random_ctx tpm_random_ctx;
 struct tpm_random_ctx {
-    bool output_file_specified;
     char *output_file;
     UINT16 num_of_bytes;
     bool force;
+    bool hex;
 };
 
 static tpm_random_ctx ctx;
@@ -47,26 +48,35 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
         return tool_rc_general_error;
     }
 
-    if (!ctx.output_file_specified) {
-        UINT16 i;
-        for (i = 0; i < random_bytes->size; i++) {
-            tpm2_tool_output("%s0x%2.2X", i ? " " : "", random_bytes->buffer[i]);
+    bool res = true;
+
+    /*
+     * Either open an output file, or if stdout, do nothing as -Q
+     * was specified.
+     */
+    FILE *out = stdout;
+    if (ctx.output_file) {
+        out = fopen(ctx.output_file, "wb+");
+        if (!out) {
+            LOG_ERR("Could not open output file \"%s\", error: %s",
+                    ctx.output_file, strerror(errno));
+            goto out;
         }
-        tpm2_tool_output("\n");
-        free(random_bytes);
-        return tool_rc_success;
+    } else if (!output_enabled) {
+        goto out;
     }
 
-    rval = files_save_bytes_to_file(ctx.output_file, random_bytes->buffer,
-            random_bytes->size);
-    if (!rval) {
-        LOG_ERR("Failed to save bytes into file \"%s\"", ctx.output_file);
-        free(random_bytes);
-        return tool_rc_general_error;
+    if (ctx.hex) {
+        tpm2_util_print_tpm2b2(out, random_bytes);
+        goto out;
     }
 
+    res = files_write_bytes(out, random_bytes->buffer,
+                random_bytes->size);
+
+out:
     free(random_bytes);
-    return tool_rc_success;
+    return res == true ? tool_rc_success : tool_rc_general_error;
 }
 
 static bool on_option(char key, char *value) {
@@ -78,9 +88,10 @@ static bool on_option(char key, char *value) {
         ctx.force = true;
         break;
     case 'o':
-        ctx.output_file_specified = true;
         ctx.output_file = value;
         break;
+    case 0:
+        ctx.hex = true;
         /* no default */
     }
 
@@ -136,6 +147,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "output",     required_argument, NULL, 'o' },
         { "force",      required_argument, NULL, 'f' },
+        { "hex",        no_argument,       NULL,  0  },
     };
 
     *opts = tpm2_options_new("o:f", ARRAY_LEN(topts), topts, on_option, on_args,

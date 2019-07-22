@@ -170,6 +170,19 @@ bool tpm2_util_string_to_uint8(const char *str, uint8_t *value);
 void tpm2_util_hexdump(const BYTE *data, size_t len);
 
 /**
+ * Similar to tpm2_util_hexdump(), but:
+ *   - does NOT respect the -Q option
+ *   - allows specification of the output stream.
+ * @param f
+ *  The FILE output stream.
+ * @param data
+ *  The data to convert to hex.
+ * @param len
+ *  The length of the data.
+ */
+void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len);
+
+/**
  * Prints a file as a hex string to stdout if quiet mode
  * is not enabled.
  * ie no -Q option.
@@ -185,12 +198,30 @@ void tpm2_util_hexdump(const BYTE *data, size_t len);
 bool tpm2_util_hexdump_file(FILE *fd, size_t len);
 
 /**
- * Prints a TPM2B as a hex dump.
+ * Prints a TPM2B as a hex dump respecting the -Q option
+ * to stdout.
+ *
  * @param buffer the TPM2B to print.
  */
-static inline void tpm2_util_print_tpm2b(TPM2B *buffer) {
+#define tpm2_util_print_tpm2b(b) _tpm2_util_print_tpm2b((TPM2B *)b)
+static inline void _tpm2_util_print_tpm2b(TPM2B *buffer) {
 
     return tpm2_util_hexdump(buffer->buffer, buffer->size);
+}
+
+/**
+ * Prints a TPM2B as a hex dump to the FILE specified. Does NOT
+ * respect -Q like tpm2_util_print_tpm2b().
+ *
+ * @param out
+ *  The output FILE.
+ * @param
+ *   buffer the TPM2B to print.
+ */
+#define tpm2_util_print_tpm2b2(o, b) _tpm2_util_print_tpm2b2(o, (TPM2B *)b)
+static inline void _tpm2_util_print_tpm2b2(FILE *out, TPM2B *buffer) {
+
+    return tpm2_util_hexdump2(out, buffer->buffer, buffer->size);
 }
 
 /**
