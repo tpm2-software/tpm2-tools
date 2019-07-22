@@ -53,7 +53,6 @@ bin_PROGRAMS = \
     tools/tpm2_hmac \
     tools/tpm2_import \
     tools/tpm2_incrementalselftest \
-    tools/tpm2_listpersistent \
     tools/tpm2_load \
     tools/tpm2_loadexternal \
     tools/tpm2_makecredential \
@@ -108,7 +107,6 @@ tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
 tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
 tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c $(TOOL_SRC)
-tools_tpm2_listpersistent_SOURCES = tools/tpm2_listpersistent.c $(TOOL_SRC)
 tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
 tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
 tools_tpm2_startup_SOURCES = tools/tpm2_startup.c $(TOOL_SRC)
@@ -313,7 +311,6 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_hmac.1 \
     man/man1/tpm2_import.1 \
     man/man1/tpm2_incrementalselftest.1 \
-    man/man1/tpm2_listpersistent.1 \
     man/man1/tpm2_load.1 \
     man/man1/tpm2_loadexternal.1 \
     man/man1/tpm2_makecredential.1 \

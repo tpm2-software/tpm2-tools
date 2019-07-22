@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_listpersistent: deleted as tpm2_getcap and tpm2_readpublic can be used instead.
   * tpm2_hmac:
       - add -g option for specifying hash algorithm.
       - add -t option for specifying ticket result.

@@ -183,7 +183,7 @@ class ToolConflictor(object):
                 "gname": "custom",
                 "tools-in-group": [
                     "tpm2_send", "tpm2_createak", "tpm2_createek",
-                    "tpm2_getmanufec", "tpm2_listpersistent"
+                    "tpm2_getmanufec"
                 ],
                 "tools": [],
                 "conflict": None,

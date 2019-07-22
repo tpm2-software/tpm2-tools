@@ -43,7 +43,7 @@ tpm2_changeauth -c e $epass
 tpm2_getmanufec -H $handle -U -E ECcert2.bin -o test_ek.pub -w $opass -P $epass \
                 https://ekop.intel.com/ekcertservice/
 
-tpm2_listpersistent | grep -q $handle
+tpm2_getcap "handles-persistent" | grep -q $handle
 
 tpm2_evictcontrol -Q -c $handle -C o -P $opass
 
