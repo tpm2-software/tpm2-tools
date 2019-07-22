@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_getrandom:
+      - change default output to binary.
+      - add --hex option for output to hex format.
   * tpm2_verifysignature: short and long options changed
     halg is now hash-algorithm
     sig is now signature

@@ -274,16 +274,21 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
     return 0;
 }
 
+void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len) {
+
+    size_t i;
+    for (i=0; i < len; i++) {
+        fprintf(f, "%02x", data[i]);
+    }
+}
+
 void tpm2_util_hexdump(const BYTE *data, size_t len) {
 
     if (!output_enabled) {
         return;
     }
 
-    size_t i;
-    for (i=0; i < len; i++) {
-        printf("%02x", data[i]);
-    }
+    tpm2_util_hexdump2(stdout, data, len);
 }
 
 bool tpm2_util_hexdump_file(FILE *fd, size_t len) {

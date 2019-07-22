@@ -19,12 +19,19 @@ available entry to the maximum size of a hash algorithm output in bytes.
 Most TPMs do this, and thus the tool verifies that input size is bounded by property
 **TPM2_PT_MAX_DIGEST** and issues an error if it is too large.
 
+Output defaults to *stdout* and binary format unless otherwise specified via **-o**
+and **--hex** options respectively.
+
 # OPTIONS
 
   * **-o**, **\--output**=_FILE_
 
     Specifies the filename to output the raw bytes to. Defaults to stdout as a hex
     string.
+
+  * **\--hex**
+
+	Convert the output data to hex format without a leading "0x".
 
   * **-f**, **\--force**
 
