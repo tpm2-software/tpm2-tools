@@ -68,7 +68,7 @@ tpm2_createprimary -Q -C o -g sha256 -G rsa -c prim.ctx
 
 tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.priv -i- -C prim.ctx -L secret.policy <<< "SEALED-SECRET"
 
-tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -n sealing_key.name -o sealing_key.ctx
+tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -n sealing_key.name -c sealing_key.ctx
 ```
 
 ## Satisfy the policy and unseal the secret

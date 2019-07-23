@@ -42,7 +42,7 @@ context file for future interactions with the object.
 
     An optional file to save the name structure of the object.
 
-  * **-o**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
+  * **-c**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
 
     The file name of the saved object context, required.
 
@@ -58,7 +58,7 @@ context file for future interactions with the object.
 # EXAMPLES
 
 ```
-tpm2_load  -C parent.ctx -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -o object.context
+tpm2_load  -C parent.ctx -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -c object.context
 
 tpm2_load  -C parent.ctx -P "hex:123abc" -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
 

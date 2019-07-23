@@ -39,7 +39,7 @@ tpm2_clear $lockPasswd
 # Test changing an objects auth
 tpm2_createprimary -Q -C o -c primary.ctx
 tpm2_create -Q -C primary.ctx -p foo -u key.pub -r key.priv
-tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -o key.ctx
+tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -c key.ctx
 tpm2_changeauth -C primary.ctx -p foo -c key.ctx -r new.priv bar
 
 exit 0

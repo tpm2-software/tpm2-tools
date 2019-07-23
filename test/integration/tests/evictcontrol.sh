@@ -22,7 +22,7 @@ tpm2_createprimary -Q -C e -g sha256 -G rsa -c primary.ctx
 
 tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv  -C primary.ctx
 
-tpm2_load -Q -C primary.ctx  -u key.pub  -r key.priv -n key.name -o key.dat
+tpm2_load -Q -C primary.ctx  -u key.pub  -r key.priv -n key.name -c key.dat
 
 # Load the context into a specific handle, delete it
 tpm2_evictcontrol -Q -c key.dat 0x81010003

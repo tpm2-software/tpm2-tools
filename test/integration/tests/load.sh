@@ -47,7 +47,7 @@ tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -c $file_prim
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_load_key_pub -r $file_load_key_priv  -C $file_primary_key_ctx
 
-tpm2_load -Q -C $file_primary_key_ctx  -u $file_load_key_pub  -r $file_load_key_priv -n $file_load_key_name -o $file_load_key_ctx
+tpm2_load -Q -C $file_primary_key_ctx  -u $file_load_key_pub  -r $file_load_key_priv -n $file_load_key_name -c $file_load_key_ctx
 
 #####handle test
 
@@ -57,6 +57,6 @@ tpm2_evictcontrol -Q -C o -c $file_primary_key_ctx $Handle_parent
 
 tpm2_create -Q -C $Handle_parent   -g $alg_create_obj  -G $alg_create_key -u $file_load_key_pub  -r  $file_load_key_priv
 
-tpm2_load -Q -C $Handle_parent   -u $file_load_key_pub  -r $file_load_key_priv -n $file_load_key_name -o $file_load_key_ctx
+tpm2_load -Q -C $Handle_parent   -u $file_load_key_pub  -r $file_load_key_priv -n $file_load_key_name -c $file_load_key_ctx
 
 exit 0

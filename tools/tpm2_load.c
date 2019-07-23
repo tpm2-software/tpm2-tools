@@ -105,7 +105,7 @@ static bool on_option(char key, char *value) {
     case 'C':
         ctx.parent.ctx_path = value;
         break;
-    case 'o':
+    case 'c':
         ctx.context_file = value;
         if(ctx.context_file == NULL || ctx.context_file[0] == '\0') {
             return false;
@@ -124,11 +124,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "public",               required_argument, NULL, 'u' },
       { "private",              required_argument, NULL, 'r' },
       { "name",                 required_argument, NULL, 'n' },
-      { "key-context",          required_argument, NULL, 'o' },
+      { "key-context",          required_argument, NULL, 'c' },
       { "parent-context",       required_argument, NULL, 'C' },
     };
 
-    *opts = tpm2_options_new("P:u:r:n:C:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:u:r:n:C:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

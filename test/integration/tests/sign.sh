@@ -46,7 +46,7 @@ test_symmetric() {
 
     tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv -C $file_primary_key_ctx
 
-    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
+    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
     tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -o $file_output_data
 
@@ -209,7 +209,7 @@ test_asymmetric() {
 
     tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv -C $file_primary_key_ctx
 
-    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
+    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
     tpm2_readpublic -Q -c $file_signing_key_ctx --format=pem -o $file_signing_key_pub_pem
 
@@ -264,7 +264,7 @@ echo "12345678" > $file_input_data
 
 tpm2_createprimary -Q -c $file_primary_key_ctx
 tpm2_create -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -p "mypassword"
-tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
+tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
 # Negative test, remove error handler
 trap - ERR

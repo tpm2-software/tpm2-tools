@@ -46,7 +46,7 @@ create_load_new_parent() {
 
 load_new_parent() {
     # Load new parent key, public & private parts
-    tpm2_load -Q -C primary.ctx -r new_parent.prv -u new_parent.pub -o new_parent.ctx
+    tpm2_load -Q -C primary.ctx -r new_parent.prv -u new_parent.pub -c new_parent.ctx
 }
 
 create_load_duplicatee() {
@@ -54,7 +54,7 @@ create_load_duplicatee() {
     create_policy dpolicy.dat duplicate
     tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
     # Load the key
-    tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -o key.ctx
+    tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -c key.ctx
     # Extract the public part for import later
     tpm2_readpublic -Q -c key.ctx -o dup.pub
 }
@@ -77,7 +77,7 @@ do_import_load() {
     else
         tpm2_import -Q -C new_parent.ctx -u dup.pub -i dup.dup -r dup.prv -s dup.seed  -L dpolicy.dat
     fi
-    tpm2_load -Q -C new_parent.ctx -r dup.prv -u dup.pub -o dup.ctx
+    tpm2_load -Q -C new_parent.ctx -r dup.prv -u dup.pub -c dup.ctx
 }
 
 test() {

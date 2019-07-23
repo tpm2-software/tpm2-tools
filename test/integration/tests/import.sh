@@ -30,7 +30,7 @@ run_aes_import_test() {
     -r import_key.priv
 
     tpm2_load -Q -C $1 -u import_key.pub -r import_key.priv -n import_key.name \
-    -o import_key.ctx
+    -c import_key.ctx
 
     echo "plaintext" > "plain.txt"
 
@@ -54,7 +54,7 @@ run_rsa_import_test() {
     -u import_rsa_key.pub -r import_rsa_key.priv
 
     tpm2_load -Q -C $1 -u import_rsa_key.pub -r import_rsa_key.priv \
-    -n import_rsa_key.name -o import_rsa_key.ctx
+    -n import_rsa_key.name -c import_rsa_key.ctx
 
     openssl rsa -in private.pem -out public.pem -outform PEM -pubout
     openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
@@ -99,7 +99,7 @@ run_ecc_import_test() {
 
     tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub -r ecc.priv
 
-    tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -o ecc.ctx
+    tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -c ecc.ctx
 
     # Sign in the TPM and verify with OSSL
     tpm2_sign -Q -c ecc.ctx -g sha256 -d data.in.digest -f plain -o data.out.signed

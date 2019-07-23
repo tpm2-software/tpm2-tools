@@ -124,7 +124,7 @@ tpm2_policypcr -Q -S session.ctx -l sha256:0 -L pcr.policy
 
 tpm2_policyauthorize -S session.ctx -o authorized.policy -L pcr.policy -n signing_key.name -t verification.tkt
 
-tpm2_load -Q -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -o sealing_key.ctx
+tpm2_load -Q -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -c sealing_key.ctx
 
 unsealed=$(tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx)
 
