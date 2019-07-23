@@ -33,7 +33,7 @@ echo $secret > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -C o -o $file_primary_key_ctx
+tpm2_createprimary -Q -C o -c $file_primary_key_ctx
 
 tpm2_startauthsession -S $file_session_data
 

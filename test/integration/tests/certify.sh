@@ -18,7 +18,7 @@ cleanup "no-shut-down"
 
 tpm2_clear -Q
 
-tpm2_createprimary -Q -C e -g sha256 -G rsa -o primary.ctx
+tpm2_createprimary -Q -C e -g sha256 -G rsa -c primary.ctx
 
 tpm2_create -Q -g sha256 -G rsa -u certify.pub -r certify.priv  -C primary.ctx
 

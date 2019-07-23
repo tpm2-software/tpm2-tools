@@ -60,7 +60,7 @@ tpm2_clear
 # Step 4: Using that actual policy session from step 3 in tpm2_unseal to unseal the object.
 #
 
-tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
+tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -c $file_primary_key_ctx
 
 tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 

@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_createprimary: short and long options changed
+    object-attributes is now attributes
+    -o is now -c
   * tpm2_print: long option changed
     in-file is now input
   * tpm2_checkquote: short and long options changed

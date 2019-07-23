@@ -71,7 +71,7 @@ tpm2_startauthsession \--policy-session -S mysession.ctx
 
 ## Start an encrypted and bound *policy* session and save the session data to a file
 ```
-tpm2_createprimary -o primary.ctx
+tpm2_createprimary -c primary.ctx
 tpm2_startauthsession \--policy-session -c primary.ctx -S mysession.ctx
 ```
 

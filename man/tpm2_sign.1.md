@@ -93,7 +93,7 @@ data and validation shall indicate that hashed data did not start with
 
 ## Sign and verify with the TPM using the *endorsement* hierarchy
 ```
-tpm2_createprimary -C e -o primary.ctx
+tpm2_createprimary -C e -c primary.ctx
 
 tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
 

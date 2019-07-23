@@ -42,7 +42,7 @@ dump_duplication_session() {
 
 dd if=/dev/urandom of=sym_key_in.bin bs=1 count=16 status=none
 
-tpm2_createprimary -Q -C o -g sha256 -G rsa -o primary.ctx
+tpm2_createprimary -Q -C o -g sha256 -G rsa -c primary.ctx
 
 # Create a new parent, we will only use the public portion
 tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv -u new_parent.pub -a "decrypt|fixedparent|fixedtpm|restricted|sensitivedataorigin"

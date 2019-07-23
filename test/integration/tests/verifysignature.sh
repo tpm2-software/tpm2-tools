@@ -40,7 +40,7 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -o $file_primary_key_ctx
+tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv -C $file_primary_key_ctx
 

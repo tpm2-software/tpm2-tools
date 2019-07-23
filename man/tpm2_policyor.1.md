@@ -88,7 +88,7 @@ tpm2_flushcontext -S session.ctx
 
 ## Create a TPM sealing object with the compounded auth policy
 ```
-tpm2_createprimary -Q -C o -g sha256 -G rsa -o prim.ctx
+tpm2_createprimary -Q -C o -g sha256 -G rsa -c prim.ctx
 
 tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -i- -C prim.ctx -L policy.or <<< "secret to seal"
 ```

@@ -34,7 +34,7 @@ cleanup "no-shut-down"
 
 tpm2_clear
 
-tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
+tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -c $file_primary_key_ctx
 
 tpm2_create -Q -g $alg_create_obj -G $alg_create_key -u $file_readpub_key_pub -r $file_readpub_key_priv  -C $file_primary_key_ctx
 

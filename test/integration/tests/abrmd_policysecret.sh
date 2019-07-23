@@ -40,7 +40,7 @@ tpm2_flushcontext -S $session_ctx
 rm $session_ctx
 
 # Create and Load Object
-tpm2_createprimary -Q -C o  -o $primary_ctx -P ownerauth
+tpm2_createprimary -Q -C o  -c $primary_ctx -P ownerauth
 tpm2_create -Q -g sha256 -u $seal_key_pub -r $seal_key_priv -C $primary_ctx\
   -L $o_policy_digest -i- <<< $SEALED_SECRET
 tpm2_load -C $primary_ctx -u $seal_key_pub -r $seal_key_priv -o $seal_key_ctx
