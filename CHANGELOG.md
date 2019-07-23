@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_quote: long option changed
+    qualification-data is now qualification
   * tpm2_policyauthorize: short and long options changed.
     policy-output is now policy.
     input is now the option for specifying the policy to authorize.

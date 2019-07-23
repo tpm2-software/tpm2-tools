@@ -58,7 +58,7 @@
     signed quote message \-- these values themselves are not signed or
     stored in the message.
 
-  * **-q**, **\--qualification-data**:
+  * **-q**, **\--qualification**:
 
     Data given as a Hex string to qualify the  quote, optional. This is typically
     used to add a nonce against replay attacks.
