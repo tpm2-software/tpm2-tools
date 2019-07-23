@@ -52,7 +52,7 @@ create_duplication_policy
 tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -a "sensitivedataorigin|sign|decrypt"
 tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -o key.ctx
 
-tpm2_loadexternal -Q -C o -u new_parent.pub -o new_parent.ctx
+tpm2_loadexternal -Q -C o -u new_parent.pub -c new_parent.ctx
 
 ## Null parent, Null Sym Alg
 start_duplication_session

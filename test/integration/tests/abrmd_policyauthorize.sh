@@ -43,7 +43,7 @@ generate_policy_authorize () {
 
 openssl genrsa -out $file_private_key 2048 2>/dev/null
 openssl rsa -in $file_private_key -out $file_public_key -pubout 2>/dev/null
-tpm2_loadexternal -G rsa -C n -u $file_public_key -o $file_verifying_key_ctx \
+tpm2_loadexternal -G rsa -C n -u $file_public_key -c $file_verifying_key_ctx \
   -n $file_verifying_key_name
 
 dd if=/dev/urandom of=$file_policyref bs=1 count=32 2>/dev/null

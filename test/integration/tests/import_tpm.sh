@@ -41,7 +41,7 @@ create_load_new_parent() {
     # Create new parent
     tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv -u new_parent.pub  -a "restricted|sensitivedataorigin|decrypt|userwithauth"
     # Load new parent key, only the public part
-    tpm2_loadexternal -Q -C o -u new_parent.pub -o new_parent.ctx
+    tpm2_loadexternal -Q -C o -u new_parent.pub -c new_parent.ctx
 }
 
 load_new_parent() {
