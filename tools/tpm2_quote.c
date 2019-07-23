@@ -277,7 +277,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ak-auth",              required_argument, NULL, 'P' },
         { "pcr-index",            required_argument, NULL, 'i' },
         { "pcr-list",             required_argument, NULL, 'l' },
-        { "qualification-data",   required_argument, NULL, 'q' },
+        { "qualification",        required_argument, NULL, 'q' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
         { "pcr",                  required_argument, NULL, 'f' },
