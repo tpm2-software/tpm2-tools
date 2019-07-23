@@ -52,7 +52,7 @@ These options for creating the TPM entity:
     See section "Supported Public Object Algorithms" for a list
     of supported object algorithms. Mutually exclusive of **-i**.
 
-  * **-a**, **\--object-attributes**=_ATTRIBUTES_:
+  * **-a**, **\--attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
@@ -83,7 +83,7 @@ These options for creating the TPM entity:
 
     The output file which contains the sensitive portion of the object, optional.
 
-  * **-o**, **\--key-context**=_OUTPUT\_CONTEXT\_FILE_:
+  * **-c**, **\--key-context**=_OUTPUT\_CONTEXT\_FILE_:
 
     The output file which contains the key context, optional. The key context is analogous to the context
     file produced by **tpm2_load**(1), however is generated via a **tpm2_createloaded**(1) command. This option
@@ -121,7 +121,7 @@ tpm2_create -C parent.ctx  -K def456 -G keyedhash -i seal.dat -u obj.pub -r obj.
 
 ## Create an rsa2048 object and load it into the TPM
 ```
-tpm2_create -C primary.ctx -G rsa2048 -u obj.pub -r obj.priv -o obj.ctx
+tpm2_create -C primary.ctx -G rsa2048 -u obj.pub -r obj.priv -c obj.ctx
 ```
 
 [returns](common/returns.md)

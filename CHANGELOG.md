@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_create: short and long options changed
+    object-attributes is now attributes
+    -o is now -c
   * tpm2_createprimary: short and long options changed
     object-attributes is now attributes
     -o is now -c

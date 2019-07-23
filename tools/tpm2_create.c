@@ -186,7 +186,7 @@ static bool on_option(char key, char *value) {
     case 'C':
         ctx.parent.ctx_path = value;
         break;
-    case 'o':
+    case 'c':
         ctx.object.ctx_path = value;
         break;
     };
@@ -201,16 +201,16 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-auth",             required_argument, NULL, 'p' },
       { "hash-algorithm",       required_argument, NULL, 'g' },
       { "key-algorithm",        required_argument, NULL, 'G' },
-      { "object-attributes",    required_argument, NULL, 'a' },
+      { "attributes",    required_argument, NULL, 'a' },
       { "sealing-input",        required_argument, NULL, 'i' },
       { "policy",               required_argument, NULL, 'L' },
       { "public",               required_argument, NULL, 'u' },
       { "private",              required_argument, NULL, 'r' },
       { "parent-context",       required_argument, NULL, 'C' },
-      { "key-context",          required_argument, NULL, 'o' },
+      { "key-context",          required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
