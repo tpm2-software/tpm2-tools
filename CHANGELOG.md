@@ -1,5 +1,11 @@
 ## Changelog
 ### next
+  * tpm2_policyauthorize: short and long options changed.
+    policy-output is now policy.
+    input is now the option for specifying the policy to authorize.
+    qualification-data is now qualification.
+    -o is now -L.
+    -L is now -i.
   * tpm2_import: short option changed
     object-attributes is now attributes
   * tpm2_load: short option changed
