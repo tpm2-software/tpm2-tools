@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_import: short option changed
+    object-attributes is now attributes
   * tpm2_load: short option changed
     -o is now -c
   * tpm2_loadexternal: short and long options changed
