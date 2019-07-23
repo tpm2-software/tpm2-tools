@@ -91,7 +91,7 @@ static bool on_option(char key, char *value) {
     case 'r':
         ctx.private_key_path = value;
         break;
-    case 'o':
+    case 'c':
         ctx.context_file_path = value;
         break;
     case 'a':
@@ -126,8 +126,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "hierarchy",          required_argument, NULL, 'C'},
       { "public",             required_argument, NULL, 'u'},
       { "private",            required_argument, NULL, 'r'},
-      { "key-context",        required_argument, NULL, 'o'},
-      { "object-attributes",  required_argument, NULL, 'a'},
+      { "key-context",        required_argument, NULL, 'c'},
+      { "attributes",  required_argument, NULL, 'a'},
       { "policy",             required_argument, NULL, 'L'},
       { "auth",               required_argument, NULL, 'p'},
       { "hash-algorithm",     required_argument, NULL, 'g'},
@@ -136,7 +136,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "passin",             required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("C:u:r:o:a:p:L:g:G:n:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;

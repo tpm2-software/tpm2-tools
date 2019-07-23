@@ -77,7 +77,7 @@ and a sensitive area.
     Also, see section "Supported Hash Algorithms" for a list of supported
     hash algorithms.
 
-  * **-a**, **\--object-attributes**=_ATTRIBUTES_:
+  * **-a**, **\--attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
@@ -88,7 +88,7 @@ and a sensitive area.
     *Note*: If specifying attributes, the TPM will reject certain attributes like
     **TPMA_OBJECT_FIXEDTPM**, as those guarantees cannot be made.
 
-  * **-o**, **\--key-context**=_CONTEXT\_FILE_
+  * **-c**, **\--key-context**=_CONTEXT\_FILE_
 
     The file name of the saved object context, required.
 

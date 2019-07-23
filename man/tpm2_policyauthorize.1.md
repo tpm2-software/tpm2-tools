@@ -79,7 +79,7 @@ openssl genrsa -out signing_key_private.pem 2048
 
 openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
 
-tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -o signing_key.ctx -n signing_key.name
+tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -c signing_key.ctx -n signing_key.name
 ```
 
 ## Create a policy to be authorized like a PCR policy

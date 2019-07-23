@@ -118,7 +118,7 @@ echo "data to sign" > data.in.raw
 sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
 # Load the private key for signing
-tpm2_loadexternal -Q -G ecc -r private.ecc.pem -o key.ctx
+tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
 
 # Sign in the TPM and verify with OSSL
 tpm2_sign -Q -c key.ctx -g sha256 -d data.in.digest -f plain -s data.out.signed

@@ -41,7 +41,7 @@ tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key
 
 tpm2_create -Q -g $alg_hash -p foo -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -C $file_primary_key_ctx
 
-tpm2_loadexternal -Q -C n -u $file_rsaencrypt_key_pub -o $file_rsaencrypt_key_ctx
+tpm2_loadexternal -Q -C n -u $file_rsaencrypt_key_pub -c $file_rsaencrypt_key_ctx
 
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data < $file_input_data
 
