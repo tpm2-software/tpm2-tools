@@ -43,7 +43,7 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
+tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -c $file_primary_key_ctx
 
 tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C $file_primary_key_ctx
 
@@ -70,7 +70,7 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -o $file_primary_key_ctx
+tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -c $file_primary_key_ctx
 
 tpm2_create -Q -G $alg_create_key -u $file_hmac_key_pub -r $file_hmac_key_priv  -C $file_primary_key_ctx
 

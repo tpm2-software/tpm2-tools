@@ -42,7 +42,7 @@ test_symmetric() {
 
     tpm2_clear
 
-    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -o $file_primary_key_ctx
+    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key_ctx
 
     tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv -C $file_primary_key_ctx
 
@@ -205,7 +205,7 @@ test_asymmetric() {
 
     tpm2_clear
 
-    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -o $file_primary_key_ctx
+    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key_ctx
 
     tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv -C $file_primary_key_ctx
 
@@ -262,7 +262,7 @@ cleanup "no-shut-down"
 
 echo "12345678" > $file_input_data
 
-tpm2_createprimary -Q -o $file_primary_key_ctx
+tpm2_createprimary -Q -c $file_primary_key_ctx
 tpm2_create -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -p "mypassword"
 tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -o $file_signing_key_ctx
 

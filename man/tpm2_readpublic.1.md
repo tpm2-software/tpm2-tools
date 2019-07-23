@@ -45,7 +45,7 @@
 
 ## Create a primary object and read the public structure in an openssl compliant format
 ```
-tpm2_createprimary -o primary.ctx
+tpm2_createprimary -c primary.ctx
 tpm2_readpublic -c primary.ctx -o output.dat -f pem
 ```
 
@@ -60,7 +60,7 @@ We assume that an object has already been persisted, for example via:
 
 ```
 # We assume that an object has already been persisted, for example
-tpm2_createprimary -o primary.ctx
+tpm2_createprimary -c primary.ctx
 
 # context files have all the information for the TPM to verify the object
 tpm2_evictcontrol -c primary.ctx

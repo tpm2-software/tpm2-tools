@@ -132,7 +132,7 @@ run_test() {
     parent_alg=$1
     name_alg=$2
 
-    tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -C o -o parent.ctx
+    tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -C o -c parent.ctx
 
     # 128 bit AES is 16 bytes
     run_aes_import_test parent.ctx aes-128-cfb 16
@@ -164,7 +164,7 @@ done;
 # Test the passin options
 #
 
-tpm2_createprimary -Q -o parent.ctx
+tpm2_createprimary -Q -c parent.ctx
 
 openssl genrsa -aes128 -passout "pass:mypassword" -out "private.pem" 1024
 

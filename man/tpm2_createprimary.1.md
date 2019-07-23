@@ -57,7 +57,7 @@ with the created primary.
     algorithm is rsa2048:null:aes128cfb. See section "Supported Public Object Algorithms"
     for a list of supported object algorithms.
 
-  * **-o**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
+  * **-c**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
 
     File name to use for the returned object context, required.
 
@@ -65,7 +65,7 @@ with the created primary.
 
     An optional file input that contains the policy digest for policy based authorization of the object.
 
-  * **-a**, **\--object-attributes**=_ATTRIBUTES_:
+  * **-a**, **\--attributes**=_ATTRIBUTES_:
 
     The object attributes, optional. Object attributes follow the specifications
     as outlined in "object attribute specifiers". The default for created objects is:
@@ -94,7 +94,7 @@ with the created primary.
 
 ## Create an ECC primary object
 ```
-tpm2_createprimary -C o -g sha256 -G ecc -o context.out
+tpm2_createprimary -C o -g sha256 -G ecc -c context.out
 ```
 
 ## Create a primary object that follows the guidance of TCG Provisioning guide
@@ -104,7 +104,7 @@ See : https://trustedcomputinggroup.org/wp-content/uploads/TCG-TPM-v2.0-Provisio
 Where unique.dat contains the binary-formatted data: 0x00 0x01 (0x00 * 256)
 
 ```
-tpm2_createprimary -C o -G rsa2048:aes128cfb -g sha256 -o prim.ctx \
+tpm2_createprimary -C o -G rsa2048:aes128cfb -g sha256 -c prim.ctx \
   -a 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
   -u unique.dat
 ```

@@ -109,7 +109,7 @@ tpm2_flushcontext -S session.ctx
 
 ## Create a TPM object like a sealing object with the authorized policy based authentication
 ```
-tpm2_createprimary -Q -C o -g sha256 -G rsa -o prim.ctx
+tpm2_createprimary -Q -C o -g sha256 -G rsa -c prim.ctx
 
 tpm2_create -Q -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -i- -C prim.ctx -L authorized.policy <<< "secret to seal"
 ```

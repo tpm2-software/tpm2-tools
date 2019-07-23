@@ -100,7 +100,7 @@ test() {
 # can be imported & loaded
 for dup_key_type in aes rsa ecc; do
     for sym_key_type in aes null; do
-        tpm2_createprimary -Q -C o -g sha256 -G rsa -o primary.ctx
+        tpm2_createprimary -Q -C o -g sha256 -G rsa -c primary.ctx
         test $dup_key_type $sym_key_type
         cleanup "no-shut-down"
     done
@@ -112,7 +112,7 @@ done
 # Duplicate Kd
 # Import & Load Kd
 # Decrypt the message and verify
-tpm2_createprimary -Q -C o -g sha256 -G rsa -o primary.ctx
+tpm2_createprimary -Q -C o -g sha256 -G rsa -c primary.ctx
 # New parent ...
 create_load_new_parent
 # Key to be duplicated

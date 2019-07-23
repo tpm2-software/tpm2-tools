@@ -82,7 +82,7 @@ static bool on_option(char key, char *value) {
     case 'G':
         ctx.alg = value;
         break;
-    case 'o':
+    case 'c':
         ctx.context_file = value;
         break;
     case 'u':
@@ -111,13 +111,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-auth",             required_argument, NULL, 'p' },
         { "hash-algorithm",       required_argument, NULL, 'g' },
         { "key-algorithm",        required_argument, NULL, 'G' },
-        { "key-context",          required_argument, NULL, 'o' },
+        { "key-context",          required_argument, NULL, 'c' },
         { "policy",               required_argument, NULL, 'L' },
-        { "object-attributes",    required_argument, NULL, 'a' },
+        { "attributes",    required_argument, NULL, 'a' },
         { "unique-data",          required_argument, NULL, 'u' },
     };
 
-    *opts = tpm2_options_new("C:P:p:g:G:o:L:a:u:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

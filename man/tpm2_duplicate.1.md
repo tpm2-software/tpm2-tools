@@ -70,7 +70,7 @@ tpm2_startauthsession -S session.dat
 tpm2_policycommandcode -S session.dat -L policy.dat duplicate
 tpm2_flushcontext -S session.dat
 
-tpm2_createprimary -C o -g sha256 -G rsa -o primary.ctxt
+tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctxt
 tpm2_create -C primary.ctxt -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -a "sensitivedataorigin"
 
 tpm2_loadexternal -C o -u new_parent.pub -o new_parent.ctxt

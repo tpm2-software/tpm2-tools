@@ -80,7 +80,7 @@ tpm2_evictcontrol -C o -c 0x81010002 -P abc123
 
 ## To make a transient handle persistent and output a serialized persistent handle.
 ```
-tpm2_createprimary -o primary.ctx
+tpm2_createprimary -c primary.ctx
 tpm2_evictcontrol -C o -c primary.ctx -o primary.handle
 ```
 

@@ -57,7 +57,7 @@ tpm2_flushcontext -S session.dat
 ## Create the object with a passphrase and the password policy
 ```
 
-tpm2_createprimary -C o -o prim.ctx
+tpm2_createprimary -C o -c prim.ctx
 
 tpm2_create -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx -L policy.pass \
   -p testpswd

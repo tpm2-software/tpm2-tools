@@ -72,7 +72,7 @@ tpm2_changeauth -c o -p oldpass
 
 ## Modify authorization for a loadable transient object
 ```
-tpm2_createprimary -Q -C o -o prim.ctx
+tpm2_createprimary -Q -C o -c prim.ctx
 
 tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx
 
