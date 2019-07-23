@@ -73,7 +73,7 @@ for alg in "rsa1024:rsaes" "ecc384:ecdaa4-sha256"; do
 done
 
 # Test createloaded support
-tpm2_create -C context.out -u key.pub -r key.priv -o key.ctx
+tpm2_create -C context.out -u key.pub -r key.priv -c key.ctx
 tpm2_readpublic -c key.ctx 2>/dev/null
 
 exit 0
