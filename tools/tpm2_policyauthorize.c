@@ -36,13 +36,13 @@ static tpm2_policyauthorize_ctx ctx;
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'o':
+    case 'L':
         ctx.out_policy_dgst_path = value;
         break;
     case 'S':
         ctx.session_path = value;
         break;
-    case 'L':
+    case 'i':
         ctx.policy_digest_path = value;
         break;
     case 'q':
@@ -61,15 +61,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "policy-output",      required_argument, NULL, 'o' },
-        { "session",            required_argument, NULL, 'S' },
         { "policy",             required_argument, NULL, 'L' },
-        { "qualification-data", required_argument, NULL, 'q' },
+        { "session",            required_argument, NULL, 'S' },
+        { "input",              required_argument, NULL, 'i' },
+        { "qualification",      required_argument, NULL, 'q' },
         { "name",               required_argument, NULL, 'n' },
         { "ticket",             required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("o:S:L:q:n:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("L:S:i:q:n:t:", ARRAY_LEN(topts), topts, on_option,
                              NULL, 0);
 
     return *opts != NULL;

@@ -36,7 +36,7 @@ cleanup "no-shutdown"
 
 generate_policy_authorize () {
     tpm2_startauthsession -Q -S $file_session_file
-    tpm2_policyauthorize -Q -S $file_session_file  -o $3 -L $1 -q $2 -n $4
+    tpm2_policyauthorize -Q -S $file_session_file  -L $3 -i $1 -q $2 -n $4
     tpm2_flushcontext -S $file_session_file
     rm $file_session_file
 }
