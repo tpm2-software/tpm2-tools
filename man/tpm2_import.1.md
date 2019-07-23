@@ -72,7 +72,7 @@ These options control the key importation process:
     When importing a duplicated object this option specifies the file containing the
     public portion of the object to be imported.
 
-  * **-a**, **\--object-attributes**=_ATTRIBUTES_:
+  * **-a**, **\--attributes**=_ATTRIBUTES_:
 
     The object attributes, optional.
 
