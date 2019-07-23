@@ -50,7 +50,7 @@ tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv -u new_parent.p
 # Create the key we want to duplicate
 create_duplication_policy
 tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -a "sensitivedataorigin|sign|decrypt"
-tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -o key.ctx
+tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -c key.ctx
 
 tpm2_loadexternal -Q -C o -u new_parent.pub -c new_parent.ctx
 
@@ -81,7 +81,7 @@ end_duplication_session
 
 ## Repeat the tests with a key that requires encrypted duplication
 tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r key2.prv -u key2.pub -L policy.dat -a "sensitivedataorigin|sign|decrypt|encryptedduplication"
-tpm2_load -Q -C primary.ctx -r key2.prv -u key2.pub -o key2.ctx
+tpm2_load -Q -C primary.ctx -r key2.prv -u key2.pub -c key2.ctx
 
 ## AES Sym Alg, user supplied key
 start_duplication_session

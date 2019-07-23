@@ -76,7 +76,7 @@ tpm2_createprimary -Q -C o -c prim.ctx
 
 tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx
 
-tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -o key.ctx
+tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -c key.ctx
 
 tpm2_changeauth -c key.ctx -C prim.ctx -r key.priv newkeyauth
 ```

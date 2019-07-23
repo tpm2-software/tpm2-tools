@@ -44,7 +44,7 @@ tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -c $file_prim
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i $file_input_data -C $file_primary_key_ctx
 
-tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
+tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
@@ -56,7 +56,7 @@ rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal
 
 cat $file_input_data | tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx
 
-tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
+tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 tpm2_unseal -Q -c $file_unseal_key_ctx -o $file_unseal_output_data
 
@@ -73,7 +73,7 @@ tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_v
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
   -a 'fixedtpm|fixedparent' <<< $secret
 
-tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
+tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 unsealed=`tpm2_unseal -V --object-context $file_unseal_key_ctx -p pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value`
 
@@ -113,7 +113,7 @@ tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_v
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy -p secretpass <<< $secret
 
-tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
+tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 unsealed=`tpm2_unseal -c $file_unseal_key_ctx -p secretpass`
 

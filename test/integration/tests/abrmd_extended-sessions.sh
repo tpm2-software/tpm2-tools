@@ -73,7 +73,7 @@ tpm2_flushcontext -S $file_session_file
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
   -a 'fixedtpm|fixedparent' <<< $secret
 
-tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
+tpm2_load -Q -C $file_primary_key_ctx -u $file_unseal_key_pub -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 rm $file_session_file
 

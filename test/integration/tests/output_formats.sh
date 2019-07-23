@@ -100,7 +100,7 @@ done
 #
 tpm2_createprimary -c primary.ctx
 tpm2_create -Q -C primary.ctx -G ecc -u ecc.pub -r ecc.priv
-tpm2_load -C primary.ctx -u ecc.pub -r ecc.priv -o ecc.ctx
+tpm2_load -C primary.ctx -u ecc.pub -r ecc.priv -c ecc.ctx
 
 for fmt in pem der; do
 

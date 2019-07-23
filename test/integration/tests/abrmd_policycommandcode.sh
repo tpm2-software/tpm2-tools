@@ -50,7 +50,7 @@ tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
   -r $file_unseal_key_priv -L $file_policy -i- <<< $secret
 
 tpm2_load -C $file_primary_key_ctx -u $file_unseal_key_pub \
-  -r $file_unseal_key_priv -n $file_unseal_key_name -o $file_unseal_key_ctx
+  -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 
 # Ensure unsealing passes with proper policy
