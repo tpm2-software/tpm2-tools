@@ -12,8 +12,15 @@
 
 **tpm2_load**(1) - Load both the private and public portions of an object
 into the TPM.
-The tool outputs the name of the loaded object in a YAML format and saves a
-context file for future interactions with the object.
+
+The tool outputs the name of the loaded object in a YAML dictionary format
+with the key *name* where the value for that key is the name of the object
+in hex format, for example:
+```yaml
+name: 000bac25cb8743111c8e1f52f2ee7279d05d3902a18dd1af694db5d1afa7adf1c8b3
+```
+
+It also saves a context file for future interactions with the object.
 
 **NOTE**: Both private and public portions of the tpm key must be specified.
 
@@ -57,11 +64,30 @@ context file for future interactions with the object.
 
 # EXAMPLES
 
+## Setup
+To load an object you first must create an object under a primary object. So the first
+step is to create the primary object.
+
+```bash
+tpm2_createprimary -c primary.ctx
 ```
-tpm2_load  -C parent.ctx -P abc123 -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName> -c object.context
 
-tpm2_load  -C parent.ctx -P "hex:123abc" -u <pubKeyFileName> -r <privKeyFileName> -n <outPutFileName>
+Step 2 is to create an object under the primary object.
 
+```bash
+tpm2_create -C primary.ctx -u key.pub -r key.priv
+```
+
+This creates the private and public portions of the TPM object. With these object
+portions, it is now possible to load that object into the TPM for subsequent use.
+
+## Loading an Object into the TPM
+
+The final step, is loading the public and private portions of the object into the TPM.
+
+```bash
+tpm2_load  -C primary.ctx -u key.pub -r key.priv -c key.ctx
+name: 000bac25cb8743111c8e1f52f2ee7279d05d3902a18dd1af694db5d1afa7adf1c8b3
 ```
 
 [returns](common/returns.md)
