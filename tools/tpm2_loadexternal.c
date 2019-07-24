@@ -127,7 +127,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "public",             required_argument, NULL, 'u'},
       { "private",            required_argument, NULL, 'r'},
       { "key-context",        required_argument, NULL, 'c'},
-      { "attributes",  required_argument, NULL, 'a'},
+      { "attributes",         required_argument, NULL, 'a'},
       { "policy",             required_argument, NULL, 'L'},
       { "auth",               required_argument, NULL, 'p'},
       { "hash-algorithm",     required_argument, NULL, 'g'},
