@@ -317,7 +317,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tool_rc rc = tool_rc_general_error;
     TPM2B_NAME *name = NULL;
-    char *ctx_file = NULL;
     tmp_rc = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
                 &name);
     if (tmp_rc != tool_rc_success) {
@@ -327,17 +326,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     assert(name);
 
-    if (!ctx.context_file_path || ctx.context_file_path[0] == '\0') {
-        ctx.context_file_path = "object.ctx";
-    }
-
-    bool result = files_get_unique_name(ctx.context_file_path, &ctx_file);
-    if (!result) {
-        goto out;
-    }
-
     tmp_rc = files_save_tpm_context_to_path(ectx, ctx.handle,
-                ctx_file);
+            ctx.context_file_path);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
@@ -349,7 +339,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_tool_output("\n");
 
     if (ctx.name_path) {
-        result = files_save_bytes_to_file(ctx.name_path, name->name,
+        bool result = files_save_bytes_to_file(ctx.name_path, name->name,
                     name->size);
         if(!result) {
             goto out;
@@ -360,7 +350,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 out:
     free(name);
-    free(ctx_file);
 
     return rc;
 }
