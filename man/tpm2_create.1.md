@@ -109,19 +109,42 @@ These options for creating the TPM entity:
 
 # EXAMPLES
 
-## Create an object whose parent is provided via parent.ctx
-```
-tpm2_create -C parent.ctx -u obj.pub obj.priv
+## Setup
+
+In order to create an object, we must first create a primary key as it's parent.
+```bash
+tpm2_createprimary -c primary.ctx
 ```
 
-## Create an object and seal data to it
-```
-tpm2_create -C parent.ctx  -K def456 -G keyedhash -i seal.dat -u obj.pub -r obj.priv
+## Create an Object
+
+This will create an object using all the default values and store the TPM sealed private
+and public portions to the paths specified via -u and -r respectively. The tool defaults
+to an RSA key.
+
+```bash
+tpm2_create -C primary.ctx -u obj.pub -r obj.priv
 ```
 
-## Create an rsa2048 object and load it into the TPM
+## Seal Data to the TPM
+
+Outside of key objects, the TPM allows for small amounts of user specified data to be sealed to the
+TPM.
+
+```bash
+echo "my sealed data" > seal.dat
+tpm2_create -C primary.ctx -i seal.dat -u obj.pub -r obj.priv
 ```
-tpm2_create -C primary.ctx -G rsa2048 -u obj.pub -r obj.priv -c obj.ctx
+
+## Create an EC Key Object and Load it to the TPM
+
+Normally, when creating an object, only the public and private portions of the object
+are returned and the caller needs to use tpm2_load(1) to load those public and private
+portions to the TPM before being able to use the object. However, this can be
+accomplished within this command as well.
+
+```bash
+tpm2_create -C primary.ctx -G ecc -u obj.pub -r obj.priv -c ecc.ctx
 ```
 
 [returns](common/returns.md)
