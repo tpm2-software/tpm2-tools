@@ -142,6 +142,11 @@ static tool_rc finish(ESYS_CONTEXT *ectx) {
         if (!result) {
             return tool_rc_general_error;
         }
+    } else {
+        tpm2_tool_output("name: ");
+        tpm2_util_print_tpm2b(name);
+        tpm2_tool_output("\n");
+        free(name);
     }
 
     return files_save_tpm_context_to_path(ectx,
