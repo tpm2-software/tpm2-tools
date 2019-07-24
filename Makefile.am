@@ -50,6 +50,7 @@ bin_PROGRAMS = \
     tools/tpm2_getmanufec \
     tools/tpm2_getrandom \
     tools/tpm2_hash \
+    tools/tpm2_hierarchycontrol \
     tools/tpm2_hmac \
     tools/tpm2_import \
     tools/tpm2_incrementalselftest \
@@ -142,6 +143,7 @@ tools_tpm2_sign_SOURCES = tools/tpm2_sign.c $(TOOL_SRC)
 tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
 tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
+tools_tpm2_hierarchycontrol_SOURCES = tools/tpm2_hierarchycontrol.c $(TOOL_SRC)
 tools_tpm2_pcrallocate_SOURCES = tools/tpm2_pcrallocate.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
 tools_tpm2_pcrevent_SOURCES = tools/tpm2_pcrevent.c $(TOOL_SRC)
@@ -307,6 +309,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_getmanufec.1 \
     man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_gettestresult.1 \
+    man/man1/tpm2_hierarchycontrol.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
     man/man1/tpm2_import.1 \

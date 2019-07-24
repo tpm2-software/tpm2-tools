@@ -407,6 +407,12 @@ tool_rc tpm2_encryptdecrypt(
     ESYS_TR shandle1,
     unsigned *version);
 
+tool_rc tpm2_hierarchycontrol(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy,
+    TPMI_RH_ENABLES enable,
+    TPMI_YES_NO state);
+
 tool_rc tpm2_hmac(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *hmac_key_obj,
