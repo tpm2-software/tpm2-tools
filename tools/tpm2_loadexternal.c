@@ -152,7 +152,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if (!ctx.context_file_path) {
-        LOG_ERR("Expected -o option");
+        LOG_ERR("Expected -c option");
         return tool_rc_option_error;
     }
 
