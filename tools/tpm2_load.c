@@ -29,88 +29,40 @@ struct tpm_load_ctx {
         tpm2_loaded_object object;
     } parent;
 
-    TPM2B_PUBLIC  in_public;
-    TPM2B_PRIVATE in_private;
-    char *out_name_file;
-    char *context_file;
-    ESYS_TR handle;
-
     struct {
-        UINT8 u : 1;
-        UINT8 r : 1;
-        UINT8 o : 1;
-    } flags;
+        const char *pubpath;
+        TPM2B_PUBLIC  public;
+        const char *privpath;
+        TPM2B_PRIVATE private;
+        ESYS_TR handle;
+    } object;
+
+    const char *namepath;
+    const char *contextpath;
 };
 
 static tpm_load_ctx ctx;
 
-tool_rc load (ESYS_CONTEXT *ectx) {
-
-    TSS2_RC rval;
-
-    tool_rc rc = tpm2_load(
-                    ectx,
-                    &ctx.parent.object,
-                    &ctx.in_private,
-                    &ctx.in_public,
-                    &ctx.handle);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    if (ctx.out_name_file) {
-
-        TPM2B_NAME *nameExt;
-
-        rval = Esys_TR_GetName(ectx, ctx.handle, &nameExt);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_TR_GetName, rval);
-            return tool_rc_from_tpm(rval);
-        }
-
-        bool result = files_save_bytes_to_file(ctx.out_name_file, nameExt->name, nameExt->size);
-        free(nameExt);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    }
-
-    return tool_rc_success;
-}
-
 static bool on_option(char key, char *value) {
-
-    bool res;
 
     switch(key) {
     case 'P':
         ctx.parent.auth_str = value;
         break;
     case 'u':
-        if(!files_load_public(value, &ctx.in_public)) {
-            return false;;
-        }
-        ctx.flags.u = 1;
+        ctx.object.pubpath = value;
         break;
     case 'r':
-        res = files_load_private(value, &ctx.in_private);
-        if(!res) {
-            return false;
-        }
-        ctx.flags.r = 1;
+        ctx.object.privpath = value;
         break;
     case 'n':
-        ctx.out_name_file = value;
+        ctx.namepath = value;
         break;
     case 'C':
         ctx.parent.ctx_path = value;
         break;
     case 'c':
-        ctx.context_file = value;
-        if(ctx.context_file == NULL || ctx.context_file[0] == '\0') {
-            return false;
-        }
-        ctx.flags.o = 1;
+        ctx.contextpath = value;
         break;
     }
 
@@ -134,34 +86,94 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
+static tool_rc check_opts(void) {
+
+    tool_rc rc = tool_rc_success;
+    if (!ctx.parent.ctx_path) {
+        LOG_ERR("Expected parent object via -C");
+        rc = tool_rc_option_error;
+    }
+
+    if (!ctx.object.pubpath) {
+        LOG_ERR("Expected public object portion via -u");
+        rc = tool_rc_option_error;
+    }
+
+    if (!ctx.object.privpath) {
+        LOG_ERR("Expected public object portion via -r");
+        rc = tool_rc_option_error;
+    }
+
+    if (!ctx.contextpath) {
+        LOG_ERR("Expected option -c");
+        rc = tool_rc_option_error;
+    }
+
+    return rc;
+}
+
+static tool_rc init(ESYS_CONTEXT *ectx) {
+
+    bool res = files_load_public(ctx.object.pubpath, &ctx.object.public);
+    if(!res) {
+        return tool_rc_general_error;
+    }
+
+    res = files_load_private(ctx.object.privpath, &ctx.object.private);
+    if(!res) {
+        return tool_rc_general_error;
+    }
+
+    return tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
+        ctx.parent.auth_str, &ctx.parent.object, false, TPM2_HANDLES_ALL);
+}
+
+static tool_rc finish(ESYS_CONTEXT *ectx) {
+
+    TPM2B_NAME *name;
+    tool_rc rc = tpm2_tr_get_name(ectx, ctx.object.handle, &name);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    if (ctx.namepath) {
+        bool result = files_save_bytes_to_file(ctx.namepath, name->name, name->size);
+        free(name);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+
+    return files_save_tpm_context_to_path(ectx,
+                    ctx.object.handle,
+                    ctx.contextpath);
+}
+
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    if ((!ctx.parent.ctx_path) || (!ctx.flags.u || !ctx.flags.r)) {
-        LOG_ERR("Expected options C, u and r.");
-        return tool_rc_option_error;
-    }
-
-    if (!ctx.context_file) {
-        LOG_ERR("Expected option -o");
-        return tool_rc_option_error;
-    }
-
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-        ctx.parent.auth_str, &ctx.parent.object, false, TPM2_HANDLES_ALL);
+    tool_rc rc = check_opts();
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = load(ectx);
+    rc = init(ectx);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    return files_save_tpm_context_to_path(ectx,
-                ctx.handle,
-                ctx.context_file);
+    rc = tpm2_load(
+            ectx,
+            &ctx.parent.object,
+            &ctx.object.private,
+            &ctx.object.public,
+            &ctx.object.handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    return finish(ectx);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
