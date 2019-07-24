@@ -218,34 +218,12 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
         }
     } else {
         /* If it wasn't persistent, save a context for future tool interactions */
-        char *filename = NULL;
-
-        if (!ctx.ctx_obj.path) {
-            /* Ensure the context file path is unique, we don't want to clobber
-            * existing files.
-            */
-            bool ok = files_get_unique_name("ek.ctx", &filename);
-            if (!ok) {
-                return tool_rc_general_error;
-            }
-        } else {
-            /* Make a copy of specified path so we can free properly below */
-            filename = strdup(ctx.ctx_obj.path);
-            if (!filename) {
-                LOG_ERR("oom");
-                return tool_rc_general_error;
-            }
-        }
-
         tool_rc rc = files_save_tpm_context_to_path(ectx,
-                ctx.objdata.out.handle, filename);
+                ctx.objdata.out.handle, ctx.context_arg);
         if (rc != tool_rc_success) {
             LOG_ERR("Error saving tpm context for handle");
-            free(filename);
             return rc;
         }
-        tpm2_tool_output("transient-object-context: %s\n", filename);
-        free(filename);
     }
 
     if (ctx.out_file_path) {
@@ -368,8 +346,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
+    if (!ctx.context_arg) {
+        LOG_ERR("Expected option -c");
+        return tool_rc_option_error;
+    }
+
     bool ret;
-    if (ctx.context_arg && !strcmp(ctx.context_arg, "-")) {
+    if (!strcmp(ctx.context_arg, "-")) {
         /* If user passes a handle of '-' we try and find a vacant slot for
          * to use and tell them what it is.
          */
@@ -381,12 +364,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             goto out;
         }
         tpm2_tool_output("persistent-handle: 0x%x\n", ctx.ctx_obj.handle);
-    } else if (ctx.context_arg) {
+    } else {
+        /* best attempt to convert what they have us to a handle, if it's not
+         * a handle then we assume its a path to a context file */
         ret = tpm2_util_string_to_uint32(ctx.context_arg,
                         &ctx.ctx_obj.handle);
-        if (!ret) {
-            goto out;
-        }
+        UNUSED(ret);
     }
 
     rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
