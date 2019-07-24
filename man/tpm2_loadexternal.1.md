@@ -12,10 +12,17 @@
 
 **tpm2_loadexternal**(1) - This command loads an external object into the TPM,
 forgoing TPM protections. Ie, the key material is not protected by the parent
-object's seed. The command allows loading of a public area or both a public 
-and a sensitive area.
+object's seed. The command allows loading of just the public portion of an
+object or both the public and private portions of an object.
 
+The tool outputs the name of the loaded object in a YAML dictionary format
+with the key *name* where the value for that key is the name of the object
+in hex format, for example:
+```yaml
+name: 000bac25cb8743111c8e1f52f2ee7279d05d3902a18dd1af694db5d1afa7adf1c8b3
+```
 
+It also saves a context file for future interactions with the object.
 
 # OPTIONS
 
@@ -114,17 +121,6 @@ and a sensitive area.
 
 [supported public object algorithms](common/object-alg.md)
 
-# OUTPUT
-The tool outputs the name of the loaded object in a YAML format and saves a
-context file for future interactions with the object. The context file name
-defaults to *object.ctx* and can be specified with **-o**.
-
-## Example output via stdout
-```
-transient-context: object.ctx
-name: 0x000b44e59fa5658ab443834a069a488ecc1f6d7deb47c40c6ec49871ef57d7036b43
-```
-
 # NOTES
 
 * If the hierarchy is *null* or the name hashing algorithm is *null*, tickets produced using the object
@@ -137,33 +133,43 @@ name: 0x000b44e59fa5658ab443834a069a488ecc1f6d7deb47c40c6ec49871ef57d7036b43
 # EXAMPLES
 
 ## Load a TPM generated public key into the *owner* hierarchy
-```
-tpm2_create -G rsa -u pub.dat -r priv.dat
 
-tpm2_loadexternal -a o -u pub.dat
+```bash
+tpm2_createprimary -c primary.ctx
+
+tpm2_create -C primary.ctx -u pub.dat -r priv.dat
+
+tpm2_loadexternal -C o -u pub.dat -c pub.ctx
+name: 000b9be4d7c6193a57e1bfc86a42a6b03856a91d2f9e77c6cbdb796a783d52d4b3b9
 ```
 
 ## Load an RSA public key into the *owner* hierarchy
-```
-genrsa -out private.pem 2048
+
+```bash
+openssl genrsa -out private.pem 2048
 
 openssl rsa -in private.pem -out public.pem -outform PEM -pubout
 
-tpm2_loadexternal -a n -Grsa -u public.pem
+tpm2_loadexternal -C o -Grsa -u public.pem -c key.ctx
+name: 000b7b91d304d16995d42792b57d0fb25df7abe5fdd8afe9950730e00dc5b934ddbc
 ```
 
 ## Load an RSA key-pair into the *null* hierarchy
-```
-genrsa -out private.pem 2048
 
-tpm2_loadexternal -a n -Grsa -r private.pem
+```bash
+openssl genrsa -out private.pem 2048
+
+tpm2_loadexternal -C n -Grsa -r private.pem -c key.ctx
+name: 000b635ea220b6c62ec1d02343859dd203c8ac5dad82ebc5b124e407d2502f88691f
 ```
 
 ## Load an AES key into the *null* hierarchy
-```
+
+```bash
 dd if=/dev/urandom of=sym.key bs=1 count=16
 
-tpm2_loadexternal -a n -Gaes -r sym.key
+tpm2_loadexternal -C n -Gaes -r sym.key -c key.ctx
+name: 000bfc4d8dd7e4f921bcc9dca4b04f49564243cd9def129a3740002bfd4b9e966d34
 ```
 
 [returns](common/returns.md)
