@@ -1384,6 +1384,36 @@ tool_rc tpm2_encryptdecrypt(
     return tool_rc_success;
 }
 
+tool_rc tpm2_hierarchycontrol(
+    ESYS_CONTEXT *esysContext,
+    tpm2_loaded_object *auth_hierarchy,
+    TPMI_RH_ENABLES enable,
+    TPMI_YES_NO state) {
+
+    ESYS_TR shandle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esysContext,
+        auth_hierarchy->tr_handle, auth_hierarchy->session, &shandle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle for hierarchy");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_HierarchyControl(
+                    esysContext,
+                    auth_hierarchy->tr_handle,
+                    shandle,
+                    ESYS_TR_NONE,
+                    ESYS_TR_NONE,
+                    enable,
+                    state);
+    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
+        LOG_PERR(Esys_HierarchyControl, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_hmac(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *hmac_key_obj,
