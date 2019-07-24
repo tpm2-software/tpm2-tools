@@ -333,8 +333,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
-    tpm2_tool_output("transient-context: %s\n", ctx_file);
-    tpm2_tool_output("name: 0x");
+    tpm2_tool_output("name: ");
     tpm2_util_hexdump(name->name, name->size);
     tpm2_tool_output("\n");
 
