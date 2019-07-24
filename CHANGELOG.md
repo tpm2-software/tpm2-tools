@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_hierarchycontrol: new tool added for enabling or disabling the use
+    of a hierarchy and its associated NV storage.
   * tpm2_quote: long option changed
     qualification-data is now qualification
   * tpm2_policyauthorize: short and long options changed.
