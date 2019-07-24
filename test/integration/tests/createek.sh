@@ -3,7 +3,7 @@
 source helpers.sh
 
 cleanup() {
-    rm -f ek.pub ek.log ek.template ek.nonce
+    rm -f ek.pub ek.log ek.template ek.nonce ek.ctx
 
     # Evict persistent handles, we want them to always succeed and never trip
     # the onerror trap.
@@ -29,7 +29,7 @@ tpm2_evictcontrol -Q -C o -c $phandle
 
 cleanup "no-shut-down"
 
-tpm2_createek -G rsa -u ek.pub
+tpm2_createek -G rsa -u ek.pub -c ek.ctx
 
 cleanup "no-shut-down"
 
@@ -46,7 +46,7 @@ echo -n -e '\0' > ek.nonce
 tpm2_nvdefine -Q -x $ek_nonce_index -C o -s 1 -a "ownerread|policywrite|ownerwrite"
 tpm2_nvwrite -Q -x $ek_nonce_index -C o ek.nonce
 
-tpm2_createek -t -G rsa -u ek.pub
+tpm2_createek -t -G rsa -u ek.pub -c ek.ctx
 
 cleanup "no-shut-down"
 
