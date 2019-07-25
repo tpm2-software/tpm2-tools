@@ -45,17 +45,30 @@ transient object, loaded session or saved session from the TPM.
 
 # EXAMPLES
 
-## Flushing a transient loaded context
-```
-tpm2_flushcontext -c 0x80000000
+## Flushing a Transient Object
+
+Typically, when using the TPM, the interactions occur through a resource
+manager, like tpm2-abrmd(8). When the process exits, transient object
+handles are flushed. Thus, flushing transient objects through the command
+line is not required. However, when interacting with the TPM directly,
+this scenario is possible. The below example assumes direct TPM access not
+brokered by a resource manager. Specifically we will use the simulator.
+
+```bash
+tpm2_createprimary -Tmssim -c primary.ctx
+
+tpm2_getcap -T mssim handles-transient
+- 0x80000000
+
+tpm2_flushcontext -T mssim -c 0x80000000
 ```
 
-## Flush all the transient objects loaded
-```
+## Flush All the Transient Objects
+```bash
 tpm2_flushcontext \--transient-object
 ```
 
-## Flush a context via a session file
+## Flush a Session
 ```
 tpm2_startauthsession -S session.dat
 
