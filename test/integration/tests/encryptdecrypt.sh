@@ -141,7 +141,7 @@ tpm2_loadexternal -C n -G aes -r sym128.key -c key128.ctx
 tpm2_loadexternal -C n -G aes -r sym256.key -c key256.ctx
 echo "plaintext" > plain.txt
 
-## Encrypt with ossl and tpm
+## Encrypt with ossl and tpm for cbc mode that requires padding
 
 ### Key size = 128
 openssl enc -in plain.txt -out plain.enc128.ssl -K `xxd -c 128 -p sym128.key` \
@@ -179,6 +179,48 @@ tpm2_encryptdecrypt -c key256.ctx -i plain.enc256.ssl -o plain.dec256.tpm -e \
 diff plain.dec256.tpm plain.txt
 
 openssl enc -d -in plain.enc256.tpm -out plain.dec256.ssl -aes-256-cbc -iv 0 \
+-K `xxd -c 256 -p sym256.key`
+
+diff plain.dec256.ssl plain.txt
+
+## Encrypt with ossl and tpm for cfb mode that does not apply padding
+
+### Key size = 128
+openssl enc -in plain.txt -out plain.enc128.ssl -K `xxd -c 128 -p sym128.key` \
+-aes-128-cfb -iv 0
+
+tpm2_encryptdecrypt -c key128.ctx -i plain.txt -o plain.enc128.tpm -G cfb
+
+diff plain.enc128.ssl plain.enc128.tpm
+
+### Key size = 256
+openssl enc -in plain.txt -out plain.enc256.ssl -K `xxd -c 256 -p sym256.key` \
+-aes-256-cfb -iv 0
+
+tpm2_encryptdecrypt -c key256.ctx -i plain.txt -o plain.enc256.tpm -G cfb
+
+diff plain.enc256.ssl plain.enc256.tpm
+
+## Decrypt ciphertext from tpm in openssl and vice versa
+
+### Key size = 128
+tpm2_encryptdecrypt -c key128.ctx -i plain.enc128.ssl -o plain.dec128.tpm \
+-G cfb -d
+
+diff plain.dec128.tpm plain.txt
+
+openssl enc -d -in plain.enc128.tpm -out plain.dec128.ssl -aes-128-cfb -iv 0 \
+-K `xxd -c 128 -p sym128.key`
+
+diff plain.dec128.ssl plain.txt
+
+### Key size = 256
+tpm2_encryptdecrypt -c key256.ctx -i plain.enc256.ssl -o plain.dec256.tpm \
+-G cfb -d
+
+diff plain.dec256.tpm plain.txt
+
+openssl enc -d -in plain.enc256.tpm -out plain.dec256.ssl -aes-256-cfb -iv 0 \
 -K `xxd -c 256 -p sym256.key`
 
 diff plain.dec256.ssl plain.txt
