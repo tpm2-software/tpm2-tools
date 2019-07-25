@@ -6,17 +6,15 @@
 
 # SYNOPSIS
 
-**tpm2_nvdefine** [*OPTIONS*]
+**tpm2_nvdefine** [*OPTIONS*] _NV\_INDEX_
 
 # DESCRIPTION
 
-**tpm2_nvdefine**(1) - Define an NV index with given auth value.
+**tpm2_nvdefine**(1) - Define an NV index with given auth value. The index is
+specified as an argument. It can be specified as raw handle or an offset value
+to the nv handle range "TPM2_HR_NV_INDEX".
 
 # OPTIONS
-
-  * **-x**, **\--index**=_NV\_INDEX_:
-
-    Specifies the index to define the space at.
 
   * **-C**, **\--hierarchy**=_AUTH\_HIERARCHY_:
 
@@ -65,9 +63,9 @@
 # EXAMPLES
 
 ```
-tpm2_nvdefine -x 0x1500016 -C 0x40000001 -s 32 -a 0x2000A
+tpm2_nvdefine   0x1500016 -C 0x40000001 -s 32 -a 0x2000A
 
-tpm2_nvdefine -x 0x1500016 -C 0x40000001 -s 32 -a ownerread|ownerwrite|policywrite -p 1a1b1c
+tpm2_nvdefine   0x1500016 -C 0x40000001 -s 32 -a ownerread|ownerwrite|policywrite -p 1a1b1c
 ```
 
 [returns](common/returns.md)
