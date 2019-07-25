@@ -1,12 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
+#include <stdlib.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_nv_util.h"
 #include "tpm2_options.h"
-#include "tpm2_util.h"
 
 typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
 struct tpm_nvdefine_ctx {
@@ -16,7 +17,7 @@ struct tpm_nvdefine_ctx {
         tpm2_loaded_object object;
     } auth_hierarchy;
 
-    UINT32 nvIndex;
+    TPMI_RH_NV_INDEX nvIndex;
     UINT16 size;
     TPMA_NV nvAttribute;
     TPM2B_AUTH nvAuth;
@@ -73,20 +74,6 @@ static bool on_option(char key, char *value) {
     bool result;
 
     switch (key) {
-    case 'x':
-        result = tpm2_util_handle_from_optarg(value, &ctx.nvIndex,
-                TPM2_HANDLE_FLAGS_NV);
-        if (!result) {
-            LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                    value);
-            return false;
-        }
-
-        if (ctx.nvIndex == 0) {
-                LOG_ERR("NV Index cannot be 0");
-                return false;
-        }
-        break;
         case 'C':
             ctx.auth_hierarchy.ctx_path = value;
         break;
@@ -123,10 +110,14 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_arg(int argc, char **argv) {
+
+    return on_arg_nv_index(argc, argv, &ctx.nvIndex);
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "index",                  required_argument,  NULL,   'x' },
         { "hierarchy",              required_argument,  NULL,   'C' },
         { "size",                   required_argument,  NULL,   's' },
         { "attributes",             required_argument,  NULL,   'a' },
@@ -135,8 +126,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "policy",                 required_argument,  NULL,   'L' },
     };
 
-    *opts = tpm2_options_new("x:C:s:a:P:p:L:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("C:s:a:P:p:L:", ARRAY_LEN(topts), topts,
+                             on_option, on_arg, 0);
 
     return *opts != NULL;
 }
