@@ -89,7 +89,7 @@ Requires Extended Session Support.
 tpm2_startauthsession -S session.ctx
 
 tpm2_policycommandcode -S session.ctx -L policy.nvchange nvchangeauth
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 
 NVIndex=0x1500015
 tpm2_nvdefine -x $NVIndex -a o -s 32 -t "authread|authwrite" -L policy.nvchange

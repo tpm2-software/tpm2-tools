@@ -59,7 +59,7 @@ tpm2_startauthsession -S session.ctx
 
 tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -L secret.policy
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 ## Create a TPM object like a sealing object with the policy
@@ -80,7 +80,7 @@ tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -L secret.policy
 unsealed=`tpm2_unseal -p "session:session.ctx" -c sealing_key.ctx`
 echo $unsealed
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 [returns](common/returns.md)

@@ -90,7 +90,7 @@ tpm2_startauthsession -S session.ctx
 
 tpm2_policypcr -S session.ctx -l sha256:0 -f pcr0.sha256 -L pcr.policy
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 ## Sign the policy
@@ -104,7 +104,7 @@ tpm2_startauthsession -S session.ctx
 
 tpm2_policyauthorize -S session.ctx -L authorized.policy -i pcr.policy -n signing_key.name
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 ## Create a TPM object like a sealing object with the authorized policy based authentication
@@ -130,7 +130,7 @@ unsealed=$(tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx)
 
 echo $unsealed
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 [returns](common/returns.md)

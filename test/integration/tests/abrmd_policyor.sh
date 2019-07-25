@@ -15,7 +15,7 @@ cleanup() {
     rm -f $policy_1 $policy_2 $policy_init $test_vector $policyor_cc \
     $session_ctx $policy_digest $concatenated
 
-    tpm2_flushcontext -S $session_ctx 2>/dev/null || true
+    tpm2_flushcontext $session_ctx 2>/dev/null || true
 
     if [ "${1}" != "no-shutdown" ]; then
         shut_down
@@ -36,7 +36,7 @@ openssl dgst -binary -sha256 $concatenated > $test_vector
 
 tpm2_startauthsession -S $session_ctx
 tpm2_policyor -L $o_policy_digest -l sha256:$policy_1,$policy_2 -S $session_ctx
-tpm2_flushcontext -S $session_ctx
+tpm2_flushcontext $session_ctx
 
 diff $test_vector $o_policy_digest
 

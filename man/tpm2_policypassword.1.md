@@ -51,7 +51,7 @@ tpm2_startauthsession -S session.dat
 
 tpm2_policypassword -S session.dat -L policy.dat
 
-tpm2_flushcontext -S session.dat
+tpm2_flushcontext session.dat
 ```
 
 ## Create the object with a passphrase and the password policy
@@ -79,7 +79,7 @@ tpm2_policypassword -S session.dat -L policy.dat
 tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt \
   -p session:session.dat+testpswd
 
-tpm2_flushcontext -S session.dat
+tpm2_flushcontext session.dat
 ```
 
 [returns](common/returns.md)

@@ -39,7 +39,7 @@ tpm2_startauthsession -S $file_session_data
 
 tpm2_policycommandcode -S $file_session_data -L $file_policy unseal
 
-tpm2_flushcontext -S $file_session_data
+tpm2_flushcontext $file_session_data
 
 rm $file_session_data
 
@@ -60,7 +60,7 @@ tpm2_policycommandcode -S $file_session_data -L $file_policy unseal
 
 tpm2_unseal -p session:$file_session_data -c sealkey.ctx > $file_output_data
 
-tpm2_flushcontext -S $file_session_data
+tpm2_flushcontext $file_session_data
 
 rm $file_session_data
 

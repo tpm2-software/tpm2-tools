@@ -18,7 +18,7 @@ cleanup() {
     rm -f  $policypassword $session_ctx $o_policy_digest $primary_key_ctx $key_ctx\
     $key_pub $key_priv $plain_txt $encrypted_txt $decrypted_txt
 
-    tpm2_flushcontext -S $session_ctx 2>/dev/null || true
+    tpm2_flushcontext $session_ctx 2>/dev/null || true
 
     if [ "${1}" != "no-shutdown" ]; then
         shut_down
@@ -34,7 +34,7 @@ echo "plaintext" > $plain_txt
 
 tpm2_startauthsession -S $session_ctx
 tpm2_policypassword -S $session_ctx -L $policypassword
-tpm2_flushcontext -S $session_ctx
+tpm2_flushcontext $session_ctx
 rm $session_ctx
 
 tpm2_createprimary -C o -c $primary_key_ctx
@@ -49,7 +49,7 @@ tpm2_startauthsession --policy-session -S $session_ctx
 tpm2_policypassword -S $session_ctx -L $policypassword
 tpm2_encryptdecrypt -c $key_ctx -i $encrypted_txt -o $decrypted_txt -d \
   -p session:$session_ctx+$testpswd
-tpm2_flushcontext -S $session_ctx
+tpm2_flushcontext $session_ctx
 rm $session_ctx
 
 diff $plain_txt $decrypted_txt

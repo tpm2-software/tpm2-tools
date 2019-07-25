@@ -28,7 +28,7 @@ cleanup() {
         $file_unseal_output_data $file_pcr_value \
         $file_policy $file_session_file
 
-    tpm2_flushcontext -S $file_session_file 2>/dev/null || true
+    tpm2_flushcontext $file_session_file 2>/dev/null || true
 
     if [ "${1}" != "no-shutdown" ]; then
         shut_down
@@ -68,7 +68,7 @@ tpm2_startauthsession -Q -S $file_session_file
 
 tpm2_policypcr -Q -S $file_session_file -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 
-tpm2_flushcontext -S $file_session_file
+tpm2_flushcontext $file_session_file
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
   -a 'fixedtpm|fixedparent' <<< $secret

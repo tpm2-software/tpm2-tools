@@ -177,7 +177,7 @@ tpm2_startauthsession -S session.dat
 
 tpm2_policycommandcode -S session.dat -L policy.dat $TPM_CC_UNSEAL
 
-tpm2_flushcontext -S session.dat
+tpm2_flushcontext session.dat
 ```
 
 ## Create the object with unseal-only auth policy
@@ -199,7 +199,7 @@ tpm2_policycommandcode -S session.dat -L policy.dat $TPM_CC_UNSEAL
 
 tpm2_unseal -p session:session.dat -c sealkey.ctx
 
-tpm2_flushcontext -S session.dat
+tpm2_flushcontext session.dat
 ```
 
 ## Try any other operation

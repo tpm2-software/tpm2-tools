@@ -51,6 +51,6 @@ tpm2_startauthsession --policy-session -S session.ctx
 tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT
 tpm2_activatecredential -Q -c ak.ctx -C 0x81010009 -i mkcred.out -o actcred.out\
 	-p akpass -P"session:session.ctx"
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 
 exit 0
