@@ -21,6 +21,7 @@ struct tpm_flush_context_ctx {
     } session;
     tpm2_loaded_object context_object;
     char *context_arg;
+    unsigned encountered_option;
 };
 
 static struct tpm_flush_context_ctx ctx;
@@ -83,6 +84,12 @@ static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
 
 static bool on_option(char key, char *value) {
 
+    if (ctx.encountered_option) {
+        LOG_ERR("Options -c, -t, -l, -s and -S are mutually exclusive");
+        return false;
+    }
+
+    ctx.encountered_option = true;
 
     switch (key) {
     case 'c':
