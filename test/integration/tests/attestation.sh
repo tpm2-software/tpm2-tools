@@ -35,7 +35,7 @@ cleanup() {
   rm -f $file_input_data $file_input_key $output_ek_pub $output_ek_pub_pem $output_ak_pub \
         $output_ak_pub_pem $output_ak_pub_name $output_mkcredential \
         $output_actcredential $output_quote $output_quotesig $output_quotepcr $context_ak \
-        rand.out session.ctx
+        session.ctx
 
   tpm2_pcrreset -Q $debug_pcr
   tpm2_evictcontrol -Q -C o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
@@ -54,12 +54,6 @@ cleanup "no-shut-down"
 
 echo "12345678" > $file_input_data
 echo "1234567890123456789012345678901" > $file_input_key
-
-getrandom() {
-  tpm2_getrandom --hex -o rand.out $1
-  local file_size=`stat --printf="%s" rand.out`
-  loaded_randomness=`cat rand.out | xxd -p -c $file_size`
-}
 
 tpm2_changeauth -c o "$ownerpw"
 tpm2_changeauth -c e "$endorsepw"
@@ -91,7 +85,7 @@ diff $file_input_data $output_actcredential
 tpm2_pcrreset -Q $debug_pcr
 tpm2_pcrextend -Q $debug_pcr:sha256=$rand_pcr_value
 tpm2_pcrlist -Q
-getrandom 20
+loaded_randomness=$(tpm2_getrandom --hex 20)
 tpm2_quote -Q -C $context_ak -l $digestAlg:$debug_pcr_list -q $loaded_randomness -m $output_quote -s $output_quotesig -f $output_quotepcr -g $digestAlg -P "$akpw"
 
 
