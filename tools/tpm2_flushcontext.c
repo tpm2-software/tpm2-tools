@@ -15,7 +15,7 @@
 #include "tpm2_tool.h"
 
 struct tpm_flush_context_ctx {
-    UINT32 property;
+    TPM2_HANDLE property;
     struct {
         char *path;
     } session;
