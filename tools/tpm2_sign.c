@@ -252,7 +252,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
         ctx.signing_key.auth_str, &ctx.signing_key.object, false,
-        TPM2_HANDLES_ALL);
+        TPM2_HANDLES_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
         return rc;

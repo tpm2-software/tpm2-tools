@@ -20,9 +20,12 @@ enum tpm2_hierarchy_flags {
     TPM2_HIERARCHY_FLAGS_N       = 1 << 3,
     TPM2_HIERARCHY_FLAGS_L       = 1 << 4,
     TPM2_HIERARCHY_FLAGS_ALL     = 0x1F,
-    TPM2_HANDLES_FLAGS_NV        = 1 << 5,
-    TPM2_HANDLES_FLAGS_TRANSIENT = 1 << 6,
-    TPM2_HANDLES_ALL             = 0x7F
+    TPM2_HANDLES_FLAGS_TRANSIENT = 1 << 5,
+    /* bits 6 and 7 are mutually exclusive */
+    TPM2_HANDLES_FLAGS_NV        = 1 << 6,
+    TPM2_HANDLES_ALL_W_NV        = 0x7F,
+    TPM2_HANDLES_FLAGS_PCR       = 1 << 7,
+    TPM2_HANDLES_ALL_W_PCR       = 0xFF,
 };
 
 bool tpm2_hierarchy_from_optarg(const char *value,

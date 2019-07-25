@@ -115,7 +115,7 @@ static tool_rc init(ESYS_CONTEXT *context) {
     }
 
     return tpm2_util_object_load(context, ctx.context_arg, &ctx.key_context,
-        TPM2_HANDLES_ALL);
+        TPM2_HANDLES_ALL_W_NV);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {

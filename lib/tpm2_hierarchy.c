@@ -62,7 +62,7 @@ static bool filter_hierarchy_handles(TPMI_RH_PROVISION hierarchy,
             }
             break;
         default: //If specified a random offset to the permanent handle range
-            if (flags == TPM2_HANDLES_ALL ||
+            if (flags == TPM2_HANDLES_ALL_W_NV ||
                 flags == TPM2_HIERARCHY_FLAGS_NONE) {
                 return true;
             }
@@ -75,37 +75,38 @@ static bool filter_hierarchy_handles(TPMI_RH_PROVISION hierarchy,
 static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags) {
 
     bool result = true;
-    switch(*hierarchy & TPM2_HR_RANGE_MASK) {
-        case 0: //If user simply specifies an index offset
-          if (flags & TPM2_HANDLES_FLAGS_NV) {
-             *hierarchy += TPM2_HR_NV_INDEX;
-          }
-        /* fall through */
-        case TPM2_HR_NV_INDEX:
-            if ( !(flags & TPM2_HANDLES_FLAGS_NV) ) {
-                LOG_ERR("NV-Index handle not supported by this command.");
-                return false;
-            }
-            break;
-        case TPM2_HR_PERMANENT:
-            result = filter_hierarchy_handles(*hierarchy, flags);
-            if (!result) {
-                return false;
-            }
-            break;
-        case TPM2_HR_TRANSIENT:
-            if ( !(flags & TPM2_HANDLES_FLAGS_TRANSIENT) ) {
-                LOG_ERR("Transient handles not supported by this command.");
-                return false;
-            }
-            break;
-        default: //If specified a random number as tpm handle range
-            if (flags == TPM2_HANDLES_ALL ||
-                flags == TPM2_HIERARCHY_FLAGS_NONE) {
-                return true;
-            }
+    TPM2_RH range = *hierarchy & TPM2_HR_RANGE_MASK;
+
+    /*
+     * if their is no range, then it could be NV or PCR, use flags
+     * to figure out what it is.
+     */
+    if (range == 0) {
+        if (flags & TPM2_HANDLES_FLAGS_NV) {
+           *hierarchy += TPM2_HR_NV_INDEX;
+        } else if (flags & TPM2_HANDLES_FLAGS_PCR) {
+            *hierarchy += TPM2_HR_PCR;
+        } else {
+            LOG_ERR("Implicit indices are not supported.");
             return false;
+        }
     }
+
+    /* now that we have fixed up any non-ranged handles, check them */
+    if (range == TPM2_HR_NV_INDEX && !(flags & TPM2_HANDLES_FLAGS_NV)) {
+        LOG_ERR("NV-Index handles are not supported by this command.");
+        return false;
+    } else if (range == TPM2_HR_PCR && !(flags & TPM2_HANDLES_FLAGS_PCR)) {
+        LOG_ERR("PCR handles are not supported by this command.");
+        return false;
+    } else if (range == TPM2_HR_TRANSIENT && !(flags & TPM2_HANDLES_FLAGS_TRANSIENT)) {
+        LOG_ERR("Transient handles are not supported by this command.");
+        return false;
+    } else if (range == TPM2_HR_PERMANENT) {
+        return filter_hierarchy_handles(*hierarchy, flags);
+    }
+
+    /* else just use it as is */
 
     return true;
 }
@@ -114,6 +115,12 @@ bool tpm2_hierarchy_from_optarg(const char *value,
         TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags flags) {
 
     if (!value || !value[0]) {
+        return false;
+    }
+
+    if ((flags & TPM2_HANDLES_FLAGS_NV) &&
+            (flags & TPM2_HANDLES_FLAGS_PCR)) {
+        LOG_ERR("Cannot specify NV and PCR index together");
         return false;
     }
 

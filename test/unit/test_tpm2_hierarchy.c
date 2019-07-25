@@ -70,7 +70,7 @@ static void test_tpm2_hierarchy_from_optarg_valid_ids(void **state) {
     assert_int_equal(h, TPM2_RH_NULL);
 
     result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h,
-            TPM2_HANDLES_ALL);
+            TPM2_HANDLES_ALL_W_NV);
     assert_true(result);
     assert_int_equal(h, 0xBADC0DE);
 }
@@ -126,7 +126,7 @@ static void test_tpm2_hierarchy_from_optarg_valid_ids_enabled(void **state) {
     assert_int_equal(h, TPM2_RH_NULL);
 
     result = tpm2_hierarchy_from_optarg("0xBADC0DE", &h,
-            TPM2_HANDLES_ALL);
+            TPM2_HANDLES_ALL_W_NV);
     assert_true(result);
     assert_int_equal(h, 0xBADC0DE);
 }
