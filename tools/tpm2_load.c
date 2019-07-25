@@ -6,6 +6,7 @@
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_options.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {
