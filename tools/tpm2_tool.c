@@ -3,17 +3,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include <unistd.h>
-
-#include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
 
 #include "log.h"
-#include "tpm2_tcti_ldr.h"
-#include "tpm2_options.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
 #include "tpm2_errata.h"
+#include "tpm2_tcti_ldr.h"
+#include "tpm2_tool.h"
 
 #define SUPPORTED_ABI_VERSION \
 { \

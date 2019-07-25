@@ -1,23 +1,17 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <stdlib.h>
-#include <errno.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
 
 #include <openssl/rand.h>
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
-#include "tpm2_options.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_openssl.h"
 #include "tpm2_identity_util.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
+#include "tpm2_options.h"
 
 typedef struct tpm_makecred_ctx tpm_makecred_ctx;
 struct tpm_makecred_ctx {

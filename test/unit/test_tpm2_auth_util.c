@@ -1,20 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <errno.h>
-#include <fcntl.h>
-#include <setjmp.h>
 #include <stdarg.h>
-#include <stddef.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
+#include <setjmp.h>
 #include <cmocka.h>
-#include <tss2/tss2_sys.h>
 
-#include "tpm2_util.h"
 #include "tpm2_auth_util.h"
 
 #include "esys_stubs.h"

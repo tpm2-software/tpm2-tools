@@ -4,13 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_esys.h>
-
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
-#include "tpm2_util.h"
 
 /**
  * Parses a hierarchy value from an option argument.

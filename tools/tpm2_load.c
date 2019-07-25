@@ -1,25 +1,11 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <stdarg.h>
-
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <limits.h>
-#include <ctype.h>
-#include <stdbool.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
-#include "object.h"
 #include "tpm2.h"
-#include "tpm2_auth_util.h"
 #include "tpm2_options.h"
-#include "tpm2_session.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct tpm_load_ctx tpm_load_ctx;
 struct tpm_load_ctx {

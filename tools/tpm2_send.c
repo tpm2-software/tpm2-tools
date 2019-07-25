@@ -1,15 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <errno.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 
-#include "tpm2_header.h"
 #include "files.h"
 #include "log.h"
+#include "tpm2_header.h"
 #include "tpm2_tool.h"
 
 typedef struct tpm2_send_ctx tpm2_send_ctx;

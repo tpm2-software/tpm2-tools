@@ -1,20 +1,17 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
 #include "tpm2.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_errata.h"
-#include "tpm2_hash.h"
-#include "tpm2_alg_util.h"
-#include "tpm2_util.h"
 
 typedef struct alg_pair alg_pair;
 struct alg_pair {

@@ -2,20 +2,12 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <tss2/tss2_esys.h>
-
-#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
-#include "object.h"
 #include "tpm2.h"
-#include "tpm2_alg_util.h"
-#include "tpm2_attr_util.h"
-#include "tpm2_options.h"
+#include "tpm2_convert.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {

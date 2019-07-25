@@ -1,14 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <tss2/tss2_sys.h>
-
- #include <openssl/err.h>
-#include <openssl/hmac.h>
-
 #include "log.h"
 #include "tpm2_kdfa.h"
 #include "tpm2_openssl.h"
-#include "tpm2_util.h"
 
 TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg,
         TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,

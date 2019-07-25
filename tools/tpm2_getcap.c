@@ -1,19 +1,16 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
-#include <tss2/tss2_esys.h>
-
 #include "log.h"
-#include "tpm2_alg_util.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
-#include "tpm2_capability.h"
 #include "pcr.h"
+#include "tpm2_alg_util.h"
+#include "tpm2_capability.h"
+#include "tpm2_tool.h"
 
 /* convenience macro to convert flags into "1" / "0" strings */
 #define prop_str(val) val ? "1" : "0"

@@ -1,14 +1,7 @@
-#include <stdbool.h>
-
-#include <tss2/tss2_esys.h>
-
 #include "log.h"
-#include "object.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_ctx_mgmt.h"
-
-#include <stdlib.h>
 
 tool_rc tpm2_ctx_mgmt_evictcontrol(
         ESYS_CONTEXT *ectx,

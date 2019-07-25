@@ -1,14 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <inttypes.h>
-#include <stdbool.h>
-#include <stdlib.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "log.h"
-#include "tpm2_error.h"
-#include "tpm2_options.h"
 #include "tpm2_tool.h"
 
 #define TPM2_RC_MAX 0xffffffff

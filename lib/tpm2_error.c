@@ -1,11 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_error.h"
 #include "tpm2_util.h"

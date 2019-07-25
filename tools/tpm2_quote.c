@@ -1,25 +1,17 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <errno.h>
 
-#include <tss2/tss2_esys.h>
-
-#include "tpm2_convert.h"
 #include "files.h"
 #include "log.h"
-#include "object.h"
-#include "pcr.h"
 #include "tpm2.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_auth_util.h"
+#include "tpm2_convert.h"
 #include "tpm2_openssl.h"
-#include "tpm2_session.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
-
 
 typedef struct tpm_quote_ctx tpm_quote_ctx;
 struct tpm_quote_ctx {

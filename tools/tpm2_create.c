@@ -1,28 +1,14 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-
-#include <tss2/tss2_esys.h>
-#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_attr_util.h"
 #include "tpm2_auth_util.h"
-#include "tpm2_errata.h"
 #include "tpm2_options.h"
-#include "tpm2_session.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 #define DEFAULT_ATTRS \
      TPMA_OBJECT_DECRYPT|TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_FIXEDTPM \

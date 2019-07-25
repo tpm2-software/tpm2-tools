@@ -1,23 +1,9 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <tss2/tss2_esys.h>
-
 #include "log.h"
-#include "object.h"
 #include "pcr.h"
 #include "tpm2.h"
-#include "tpm2_alg_util.h"
-#include "tpm2_auth_util.h"
 #include "tpm2_options.h"
-#include "tpm2_session.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 static struct {
     TPML_PCR_SELECTION pcrSelection;

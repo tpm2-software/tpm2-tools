@@ -1,15 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <errno.h>
+#include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_esys.h>
-
-#include "log.h"
 #include "files.h"
+#include "log.h"
 #include "tpm2.h"
 #include "tpm2_hash.h"
-#include "tpm2_util.h"
 
 static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
                                 TPMI_ALG_HASH       halg,

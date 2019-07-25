@@ -1,23 +1,15 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <errno.h>
-
 #include "files.h"
 #include "log.h"
-#include "object.h"
 #include "tpm2.h"
-#include "tpm2_hash.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_auth_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_policy.h"
-#include "tpm2_session.h"
-#include "tpm2_util.h"
 
 static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
         const char *raw_pcrs_file, TPML_DIGEST *pcr_values) {

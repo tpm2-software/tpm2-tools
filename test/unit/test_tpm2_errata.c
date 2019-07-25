@@ -1,18 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdarg.h>
-#include <stddef.h>
+#include <stdbool.h>
 #include <stdlib.h>
-
-#include <stdio.h>
 
 #include <setjmp.h>
 #include <cmocka.h>
 
-#include <tss2/tss2_sys.h>
-
 #include "tpm2_errata.h"
-#include "tpm2_tool.h"
 #include "tpm2_util.h"
 
 static inline void setcaps(UINT32 level, UINT32 rev, UINT32 day, UINT32 year, TSS2_RC rc) {

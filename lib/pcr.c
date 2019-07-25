@@ -1,18 +1,15 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
-#include <inttypes.h>
-#include <stdbool.h>
-
-#include "pcr.h"
 #include "log.h"
+#include "pcr.h"
 #include "tpm2.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 #include "tpm2_alg_util.h"
 
 #define MAX(a,b) ((a>b)?a:b)

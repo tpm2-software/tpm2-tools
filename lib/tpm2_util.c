@@ -1,15 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
+#include <dlfcn.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <dlfcn.h>
-
-#include "log.h"
 #include "files.h"
+#include "log.h"
 #include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"

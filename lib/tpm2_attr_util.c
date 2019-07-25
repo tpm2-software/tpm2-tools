@@ -1,14 +1,12 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_sys.h>
-
 #include "log.h"
 #include "tpm2_attr_util.h"
-#include "tpm2_util.h"
 
 #define dispatch_no_arg_add(x) \
     { .name = str(x), .callback=(action)x, .width = 1 }

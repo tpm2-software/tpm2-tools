@@ -1,18 +1,12 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <stdbool.h>
 #include <stdlib.h>
-#include <string.h>
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
-#include "object.h"
-#include "tpm2_auth_util.h"
-#include "tpm2_options.h"
 #include "tpm2_policy.h"
-#include "tpm2_session.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct tpm2_policysecret_ctx tpm2_policysecret_ctx;
 struct tpm2_policysecret_ctx {

@@ -1,27 +1,17 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <assert.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
-
-#include <tss2/tss2_esys.h>
-
-#include <openssl/rand.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_auth_util.h"
 #include "tpm2_attr_util.h"
+#include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_openssl.h"
-#include "tpm2_options.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 #define BASE_DEFAULT_ATTRS \
     (TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT)

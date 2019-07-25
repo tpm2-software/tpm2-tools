@@ -1,22 +1,16 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <errno.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include <setjmp.h>
 #include <cmocka.h>
 
-#include <tss2/tss2_esys.h>
-
 #include "pcr.h"
-#include "tpm2_alg_util.h"
 #include "tpm2_policy.h"
-#include "tpm2_session.h"
 #include "tpm2_util.h"
 
 typedef struct pcr_data pcr_data;

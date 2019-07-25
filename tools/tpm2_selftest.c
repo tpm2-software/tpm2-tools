@@ -1,16 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <tss2/tss2_esys.h>
-
 #include "log.h"
 #include "tpm2_options.h"
-#include "tpm2_tool.h"
 
 typedef struct tpm_selftest_ctx tpm_selftest_ctx;
 

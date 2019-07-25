@@ -1,20 +1,14 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <limits.h>
-#include <string.h>
-#include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
 #include "pcr.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_options.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 //Records the type of policy and if one is selected
 typedef struct {

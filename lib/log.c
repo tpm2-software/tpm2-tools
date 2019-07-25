@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdarg.h>
-#include <stdbool.h>
 #include <stdio.h>
 
 #include "log.h"

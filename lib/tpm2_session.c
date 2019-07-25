@@ -6,15 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_esys.h>
-
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
-#include "tpm2_kdfa.h"
-#include "tpm2_alg_util.h"
 #include "tpm2_session.h"
-#include "tpm2_util.h"
 
 struct tpm2_session_data {
     ESYS_TR key;
