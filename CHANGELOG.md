@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvincrement: short option changed to argument
+    -x used to specify nv index is now an argument
   * tpm2_nvdefine: short option changed to argument
     -x used to specify nv index is now an argument
   * tpm2_hierarchycontrol: new tool added for enabling or disabling the use
