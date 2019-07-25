@@ -19,7 +19,6 @@ struct tpm_flush_context_ctx {
     struct {
         char *path;
     } session;
-    tpm2_loaded_object context_object;
     char *context_arg;
     unsigned encountered_option;
 };
@@ -160,11 +159,17 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_success;
     }
 
-    tool_rc rc = tpm2_util_object_load(ectx, ctx.context_arg,
-                &ctx.context_object, TPM2_HANDLES_ALL);
+    TPM2_HANDLE handle;
+    bool result = tpm2_util_string_to_uint32(ctx.context_arg, &handle);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    ESYS_TR tr_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_util_sys_handle_to_esys_handle(ectx, handle, &tr_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    return flush_contexts_tr(ectx, &ctx.context_object.tr_handle, 1);
+    return flush_contexts_tr(ectx, &tr_handle, 1);
 }

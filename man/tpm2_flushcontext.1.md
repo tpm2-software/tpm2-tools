@@ -18,8 +18,7 @@ transient object, loaded session or saved session from the TPM.
 
   * **-c**, **\--context**=_CONTEXT\_OBJECT_:
 
-    The handle or session file of an object, loaded session or saved session to be removed.
-    See section "Context Object Format".
+    The transient handle of the object to be flushed from the TPM. Must be a valid handle number.
 
   * **-t**, **\--transient-object**:
 
@@ -40,8 +39,6 @@ transient object, loaded session or saved session from the TPM.
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
-
-[context object format](common/ctxobj.md)
 
 # EXAMPLES
 
