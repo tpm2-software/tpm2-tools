@@ -56,9 +56,7 @@ echo "12345678" > $file_input_data
 echo "1234567890123456789012345678901" > $file_input_key
 
 getrandom() {
-  tpm2_getrandom --hex -o rand.out $1
-  local file_size=`stat --printf="%s" rand.out`
-  loaded_randomness=`cat rand.out | xxd -p -c $file_size`
+  loaded_randomness=`tpm2_getrandom --hex $1`
 }
 
 tpm2_changeauth -c o "$ownerpw"
