@@ -286,13 +286,7 @@ static bool setup_alg_mode_and_iv_and_padding(ESYS_CONTEXT *ectx, TPM2B_IV *iv) 
         (ctx.mode == TPM2_ALG_CBC ||
          ctx.mode == TPM2_ALG_ECB ||
          ctx.mode == TPM2_ALG_CFB)) {
-        /*
-         * https://tools.ietf.org/html/rfc2315 section 10.3 Content-encryption
-         * The pkcs#7 requirement of 256 bit max block length for padding
-         * applies cleanly since TPM2_MAX_SYM_KEY_BYTES = 32
-         */
-        ctx.padded_block_len =
-            public->publicArea.parameters.symDetail.sym.keyBits.sym/8;
+
         LOG_WARN("pkcs7 padding is required and will be applied to input data.");
     }
 
