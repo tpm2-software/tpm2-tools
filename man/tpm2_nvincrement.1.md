@@ -48,6 +48,9 @@ handle range "TPM2_HR_NV_INDEX".
 ## To increment the counter at index *0x150016*
 
 ```
+tpm2_nvdefine -C 0x1500016 -s 8 -a "ownerread|policywrite|ownerwrite|nt=1" \
+0x1500016 -p index
+
 tpm2_nvincrement   0x1500016 -P "index"
 ```
 
