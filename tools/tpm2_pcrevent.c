@@ -10,6 +10,7 @@
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_hierarchy.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_tool.h"
 
@@ -176,7 +177,7 @@ static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
 
         tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(d->hashAlg, tpm2_alg_util_flags_hash));
 
-        BYTE *bytes;
+        const BYTE *bytes;
         size_t size;
         switch (d->hashAlg) {
         case TPM2_ALG_SHA1:
@@ -203,7 +204,7 @@ static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
             LOG_WARN("Unknown digest to convert!");
             // print something so the format doesn't change
             // on this case.
-            static BYTE byte = 0;
+            static const BYTE byte = 0;
             bytes = &byte;
             size = sizeof(byte);
         }
@@ -243,7 +244,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'x': {
-        bool result = tpm2_util_string_to_uint32(value, &ctx.pcr);
+        bool result = tpm2_hierarchy_from_optarg(value, &ctx.pcr, TPM2_HANDLES_FLAGS_PCR);
         if (!result) {
             LOG_ERR("Could not convert \"%s\", to a pcr index.", value);
             return false;

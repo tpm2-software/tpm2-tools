@@ -132,7 +132,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static tool_rc init(ESYS_CONTEXT *context) {
 
     tool_rc rc = tpm2_util_object_load(context, ctx.context_arg,
-        &ctx.context_object, TPM2_HANDLES_ALL);
+        &ctx.context_object, TPM2_HANDLES_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }

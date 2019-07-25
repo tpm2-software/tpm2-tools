@@ -61,7 +61,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     }
 
     tool_rc rc =  tpm2_util_object_load_auth(ectx, ctx.sealkey.ctx_path,
-            ctx.sealkey.auth_str, &ctx.sealkey.object, false, TPM2_HANDLES_ALL);
+            ctx.sealkey.auth_str, &ctx.sealkey.object, false, TPM2_HANDLES_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid item handle authorization");
         return rc;

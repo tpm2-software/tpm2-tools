@@ -112,7 +112,7 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     }
 
     return tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-        ctx.parent.auth_str, &ctx.parent.object, false, TPM2_HANDLES_ALL);
+        ctx.parent.auth_str, &ctx.parent.object, false, TPM2_HANDLES_ALL_W_NV);
 }
 
 static tool_rc finish(ESYS_CONTEXT *ectx) {
