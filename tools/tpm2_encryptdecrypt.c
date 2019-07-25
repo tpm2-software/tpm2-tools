@@ -275,8 +275,7 @@ static bool setup_alg_mode_and_iv_and_padding(ESYS_CONTEXT *ectx, TPM2B_IV *iv) 
     if (ctx.is_padding_option_enabled && !ctx.is_decrypt &&
         public->publicArea.parameters.symDetail.sym.algorithm == TPM2_ALG_AES &&
         (ctx.mode == TPM2_ALG_CBC ||
-         ctx.mode == TPM2_ALG_ECB ||
-         ctx.mode == TPM2_ALG_CFB)) {
+         ctx.mode == TPM2_ALG_ECB)) {
 
         LOG_WARN("pkcs7 padding is required and will be applied to input data.");
     }
