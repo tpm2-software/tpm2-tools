@@ -6,17 +6,15 @@
 
 # SYNOPSIS
 
-**tpm2_nvincrement** [*OPTIONS*]
+**tpm2_nvincrement** [*OPTIONS*] _NV\_INDEX_
 
 # DESCRIPTION
 
-**tpm2_nvincrement**(1) - Increment a counter at a Non-Volatile (NV) index.
+**tpm2_nvincrement**(1) - Increment value of a Non-Volatile (NV) index setup as
+a counter. The index can be specified as raw handle or an offset value to the nv
+handle range "TPM2_HR_NV_INDEX".
 
 # OPTIONS
-
-  * **-x**, **\--index**=_NV\_INDEX_:
-
-    Specifies the index to define the space at.
 
   * **-C**, **\--hierarchy**=_AUTH_:
 
@@ -50,7 +48,7 @@
 ## To increment the counter at index *0x150016*
 
 ```
-tpm2_nvincrement -x 0x1500016 -P "index"
+tpm2_nvincrement   0x1500016 -P "index"
 ```
 
 [returns](common/returns.md)
