@@ -7,18 +7,19 @@ transient object, loaded session or saved session from the TPM.
 
 # SYNOPSIS
 
-**tpm2_flushcontext** [*OPTIONS*]
+**tpm2_flushcontext** [*OPTIONS*] _OBJECT\_TO\_FLUSH_
 
 # DESCRIPTION
 
 **tpm2_flushcontext**(1) - Remove a specified handle, or all contexts associated with a
-transient object, loaded session or saved session from the TPM.
+transient object, loaded session or saved session from the TPM. The object to be
+flushed is specified as the first argument to the tool and is in one of the following
+forms:
+  - The handle of the object to be flushed from the TPM. Must be a valid handle number.
+  - Flush a session via a session file. A session file is generated from
+    **tpm2_startauthsession**(1)'s **-S** option.
 
 # OPTIONS
-
-  * **-c**, **\--context**=_CONTEXT\_OBJECT_:
-
-    The transient handle of the object to be flushed from the TPM. Must be a valid handle number.
 
   * **-t**, **\--transient-object**:
 
@@ -31,10 +32,6 @@ transient object, loaded session or saved session from the TPM.
   * **-s**, **\--saved-session**:
 
     Remove all saved sessions.
-
-  * **-S**, **\--session**=_SESSION\_FILE_:
-
-    Obtain handle to flush from a session file. A session file is generated from **tpm2_startauthsession**(1)'s **-S** option.
 
 [common options](common/options.md)
 
@@ -57,7 +54,7 @@ tpm2_createprimary -Tmssim -c primary.ctx
 tpm2_getcap -T mssim handles-transient
 - 0x80000000
 
-tpm2_flushcontext -T mssim -c 0x80000000
+tpm2_flushcontext -T mssim 0x80000000
 ```
 
 ## Flush All the Transient Objects
@@ -69,12 +66,8 @@ tpm2_flushcontext \--transient-object
 ```
 tpm2_startauthsession -S session.dat
 
-tpm2_flushcontext -S session.dat
+tpm2_flushcontext session.dat
 ```
-
-# NOTES
-
-If multiple options are specified (**-t**, **-s** or **-l**), only the last option will be taken into account.
 
 [returns](common/returns.md)
 

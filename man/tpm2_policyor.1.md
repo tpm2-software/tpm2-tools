@@ -64,7 +64,7 @@ tpm2_startauthsession -S session.ctx
 
 tpm2_policypcr -S session.ctx -l sha1:0 -f set1_pcr0.sha1 -L set1_pcr0.policy
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 
 dd if=/dev/urandom of=rand.bin bs=1 count=20
 
@@ -74,7 +74,7 @@ tpm2_startauthsession -S session.ctx
 
 tpm2_policypcr -S session.ctx -l sha1:0 -f set2_pcr0.sha1 -L set2_pcr0.policy
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 ## Generate a policy by compounding valid policies
@@ -83,7 +83,7 @@ tpm2_startauthsession -S session.ctx
 
 tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 ## Create a TPM sealing object with the compounded auth policy
@@ -103,7 +103,7 @@ tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.p
 
 unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx
 
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 ```
 
 [returns](common/returns.md)

@@ -68,7 +68,7 @@ To duplicate a key, one needs the key to duplicate, created with a policy that a
 ```
 tpm2_startauthsession -S session.dat
 tpm2_policycommandcode -S session.dat -L policy.dat duplicate
-tpm2_flushcontext -S session.dat
+tpm2_flushcontext session.dat
 
 tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctxt
 tpm2_create -C primary.ctxt -g sha256 -G rsa -r key.prv -u key.pub -L policy.dat -a "sensitivedataorigin"
@@ -78,7 +78,7 @@ tpm2_loadexternal -C o -u new_parent.pub -c new_parent.ctxt
 tpm2_startauthsession \--policy-session -S session.dat
 tpm2_policycommandcode -S session.dat -L policy.dat duplicate
 tpm2_duplicate -C new_parent.ctxt -c key.ctxt -G null -p "session:session.dat" -r duprv.bin -s seed.dat
-tpm2_flushcontext -S session.dat
+tpm2_flushcontext session.dat
 ```
 
 [returns](common/returns.md)

@@ -22,7 +22,7 @@ start_up
 create_duplication_policy() {
     tpm2_startauthsession -Q -S session.dat
     tpm2_policycommandcode -Q -S session.dat -L policy.dat duplicate
-    tpm2_flushcontext -Q -S session.dat
+    tpm2_flushcontext -Q session.dat
     rm session.dat
 }
 
@@ -32,7 +32,7 @@ start_duplication_session() {
 }
 
 end_duplication_session() {
-    tpm2_flushcontext -Q -S session.dat
+    tpm2_flushcontext -Q session.dat
     rm session.dat
 }
 

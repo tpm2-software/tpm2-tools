@@ -16,9 +16,6 @@
 
 struct tpm_flush_context_ctx {
     TPM2_HANDLE property;
-    struct {
-        char *path;
-    } session;
     char *context_arg;
     unsigned encountered_option;
 };
@@ -82,18 +79,16 @@ static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
 }
 
 static bool on_option(char key, char *value) {
+    UNUSED(value);
 
     if (ctx.encountered_option) {
-        LOG_ERR("Options -c, -t, -l, -s and -S are mutually exclusive");
+        LOG_ERR("Options -t, -l and -s are mutually exclusive");
         return false;
     }
 
     ctx.encountered_option = true;
 
     switch (key) {
-    case 'c':
-        ctx.context_arg = value;
-        break;
     case 't':
         ctx.property = TPM2_TRANSIENT_FIRST;
         break;
@@ -103,10 +98,19 @@ static bool on_option(char key, char *value) {
     case 's':
         ctx.property = TPM2_ACTIVE_SESSION_FIRST;
         break;
-    case 'S':
-        ctx.session.path = value;
-        break;
     }
+
+    return true;
+}
+
+static bool on_arg(int argc, char *argv[]) {
+
+    if (ctx.encountered_option && argc != 0) {
+        LOG_ERR("Options are mutually exclusive of an argument");
+        return false;
+    }
+
+    ctx.context_arg = argv[0];
 
     return true;
 }
@@ -114,15 +118,13 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "context",          required_argument,  NULL, 'c' },
         { "transient-object", no_argument,        NULL, 't' },
         { "loaded-session",   no_argument,        NULL, 'l' },
         { "saved-session",    no_argument,        NULL, 's' },
-        { "session",          required_argument,  NULL, 'S' },
     };
 
-    *opts = tpm2_options_new("c:tlsS:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("tls", ARRAY_LEN(topts), topts,
+                             on_option, on_arg, 0);
 
     return *opts != NULL;
 }
@@ -146,10 +148,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    /* handle from a session file */
-    if (ctx.session.path) {
+    TPM2_HANDLE handle;
+    bool result = tpm2_util_string_to_uint32(ctx.context_arg, &handle);
+    if (!result) {
+        /* hmm not a handle, try a session */
         tpm2_session *s = NULL;
-        tool_rc rc = tpm2_session_restore(ectx, ctx.session.path, true, &s);
+        tool_rc rc = tpm2_session_restore(ectx, ctx.context_arg, true, &s);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -159,12 +163,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_success;
     }
 
-    TPM2_HANDLE handle;
-    bool result = tpm2_util_string_to_uint32(ctx.context_arg, &handle);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
+    /* its a handle, call flush */
     ESYS_TR tr_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_util_sys_handle_to_esys_handle(ectx, handle, &tr_handle);
     if (rc != tool_rc_success) {

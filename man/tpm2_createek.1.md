@@ -97,7 +97,7 @@ tpm2_getcap handles-transient
 - 0x80000000
 
 # Flush the handle
-tpm2_flushcontext -c 0x80000000
+tpm2_flushcontext 0x80000000
 
 # Note that it is flushed
 tpm2_getcap handles-transient

@@ -83,7 +83,7 @@ TPM2_RH_ENDORSEMENT=0x4000000B
 tpm2_startauthsession --policy-session -S session.ctx
 tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT $endorsepw
 tpm2_activatecredential -Q -c $context_ak -C $handle_ek -i $output_mkcredential -o $output_actcredential -p "$akpw" -P "session:session.ctx"
-tpm2_flushcontext -S session.ctx
+tpm2_flushcontext session.ctx
 diff $file_input_data $output_actcredential
 
 
