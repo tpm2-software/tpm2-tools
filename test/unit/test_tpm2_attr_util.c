@@ -2,15 +2,12 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdlib.h>
-#include <setjmp.h>
 
+#include <setjmp.h>
 #include <cmocka.h>
-#include <tss2/tss2_sys.h>
 
 #include "tpm2_attr_util.h"
-#include "tpm2_util.h"
 
 #define test_nv_strtoattr_get(set) \
     cmocka_unit_test(test_tpm2_attr_util_nv_strtoattr_##set)

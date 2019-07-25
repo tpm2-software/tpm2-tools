@@ -1,18 +1,11 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <inttypes.h>
-#include <stdbool.h>
 #include <stdlib.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "log.h"
 #include "object.h"
 #include "tpm2_capability.h"
 #include "tpm2_options.h"
-#include "tpm2_session.h"
-#include "tpm2_util.h"
-#include "tpm2_tool.h"
 
 struct tpm_flush_context_ctx {
     TPM2_HANDLE property;

@@ -1,32 +1,21 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdarg.h>
 #include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <curl/curl.h>
-#include <openssl/bio.h>
 #include <openssl/buffer.h>
 #include <openssl/evp.h>
 #include <openssl/sha.h>
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_capability.h"
-#include "tpm2_hash.h"
-#include "tpm2_options.h"
-#include "tpm2_session.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct tpm_getmanufec_ctx tpm_getmanufec_ctx;
 struct tpm_getmanufec_ctx {

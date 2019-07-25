@@ -1,9 +1,4 @@
-#include <errno.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <tss2/tss2_esys.h>
+#include <stdio.h>
 
 #include "files.h"
 #include "log.h"

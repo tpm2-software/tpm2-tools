@@ -1,11 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <stdbool.h>
-#include <stdlib.h>
-
 #include "log.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 /*
  * Both the Microsoft and IBM TPM2 simulators require some specific setup

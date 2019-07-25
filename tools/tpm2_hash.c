@@ -1,22 +1,17 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <errno.h>
-#include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <limits.h>
-#include <ctype.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_hash.h"
-#include "tpm2_options.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
 #include "tpm2_hierarchy.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_hash_ctx tpm_hash_ctx;
 struct tpm_hash_ctx {

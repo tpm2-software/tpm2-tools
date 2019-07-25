@@ -1,22 +1,12 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <errno.h>
-#include <setjmp.h>
 #include <stdarg.h>
-#include <stddef.h>
 #include <stdbool.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <unistd.h>
-
+#include <setjmp.h>
 #include <cmocka.h>
 
-#include <tss2/tss2_esys.h>
-#include <tss2/tss2_tcti.h>
-
-#include "config.h"
 #include "tpm2_options.h"
 #include "tpm2_tcti_ldr.h"
 #include "tpm2_util.h"

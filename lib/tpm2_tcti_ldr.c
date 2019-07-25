@@ -1,13 +1,10 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <limits.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <dlfcn.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <tss2/tss2_sys.h>
-
-#include "config.h"
 #include "log.h"
 #include "tpm2_tcti_ldr.h"
 

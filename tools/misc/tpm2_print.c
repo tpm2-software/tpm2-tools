@@ -1,16 +1,14 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef enum {
     file_type_unknown = 0,

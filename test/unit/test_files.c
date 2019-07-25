@@ -1,16 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <errno.h>
-#include <stdarg.h>
 #include <stdbool.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <setjmp.h>
 
+#include <setjmp.h>
 #include <cmocka.h>
-#include <tss2/tss2_sys.h>
 
 #include "files.h"
 

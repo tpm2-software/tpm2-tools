@@ -7,7 +7,6 @@
 #include "log.h"
 #include "tpm2_errata.h"
 #include "tpm2_capability.h"
-#include "tpm2_util.h"
 
 struct tpm2_errata_desc {
     UINT32 spec_level;          /* spec level */

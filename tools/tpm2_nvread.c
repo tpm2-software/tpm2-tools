@@ -1,24 +1,10 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <ctype.h>
-#include <stdbool.h>
 #include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <tss2/tss2_esys.h>
 
 #include "files.h"
-#include "log.h"
-#include "pcr.h"
-#include "tpm2_auth_util.h"
-#include "tpm2_hierarchy.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_options.h"
-#include "tpm2_policy.h"
-#include "tpm2_session.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct tpm_nvread_ctx tpm_nvread_ctx;
 struct tpm_nvread_ctx {

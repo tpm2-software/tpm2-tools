@@ -2,14 +2,11 @@
 
 #include <errno.h>
 #include <limits.h>
-#include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
-
-#include <tss2/tss2_esys.h>
-#include <tss2/tss2_mu.h>
 
 #include "files.h"
 #include "log.h"
@@ -17,8 +14,6 @@
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_policy.h"
-#include "tpm2_session.h"
-#include "tpm2_util.h"
 
 #define HEX_PREFIX "hex:"
 #define HEX_PREFIX_LEN sizeof(HEX_PREFIX) - 1

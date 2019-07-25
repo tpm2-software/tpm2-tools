@@ -1,18 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <ctype.h>
-#include <errno.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <tss2/tss2_esys.h>
-
 #include "files.h"
 #include "log.h"
 #include "tpm2_options.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 /* Spec enforce input data to be not longer than 128 bytes */
 #define MAX_SIZE_TO_READ 128

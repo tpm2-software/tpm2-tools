@@ -2,16 +2,10 @@
 
 #include <stdlib.h>
 
-#include <tss2/tss2_esys.h>
-
 #include "files.h"
 #include "log.h"
-#include "tpm2_alg_util.h"
-#include "tpm2_options.h"
 #include "tpm2_policy.h"
-#include "tpm2_session.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct tpm2_policypassword_ctx tpm2_policypassword_ctx;
 struct tpm2_policypassword_ctx {

@@ -1,20 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <errno.h>
-#include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
-#include <tss2/tss2_esys.h>
-
-#include "tpm2_options.h"
 #include "log.h"
 #include "pcr.h"
-#include "tpm2_util.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
-
 
 typedef struct listpcr_context listpcr_context;
 struct listpcr_context {

@@ -7,11 +7,8 @@
 #include <string.h>
 
 #include <fcntl.h>
-#include <getopt.h>
-#include <unistd.h>
 #include <libgen.h>
-
-#include <limits.h>
+#include <unistd.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -21,7 +18,6 @@
 #include "log.h"
 #include "tpm2_options.h"
 #include "tpm2_tcti_ldr.h"
-#include "tpm2_util.h"
 
 #ifndef VERSION
   #warning "VERSION Not known at compile time, not embedding..."

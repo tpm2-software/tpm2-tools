@@ -1,20 +1,18 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
-#include <errno.h>
+#include <strings.h>
 
-#include <openssl/asn1.h>
-#include <openssl/rsa.h>
 #include <openssl/pem.h>
-#include <openssl/bn.h>
-#include <openssl/err.h>
 
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_openssl.h"
-#include "tpm2_util.h"
 
 static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path);
 

@@ -3,10 +3,9 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <setjmp.h>
 
+#include <setjmp.h>
 #include <cmocka.h>
-#include <tss2/tss2_sys.h>
 
 #include "pcr.h"
 #include "tpm2_util.h"

@@ -3,23 +3,15 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
-#include <limits.h>
 
-#include <tss2/tss2_esys.h>
 #include <tss2/tss2_mu.h>
 
 #include "files.h"
-#include "log.h"
 #include "tpm2_alg_util.h"
-#include "tpm2_auth_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_ctx_mgmt.h"
-#include "tpm2_hierarchy.h"
-#include "tpm2_session.h"
-#include "tpm2_tool.h"
-#include "tpm2_util.h"
-#include "tpm2_capability.h"
 #include "tpm2_nv_util.h"
+#include "tpm2_tool.h"
 
 #define RSA_EK_NONCE_NV_INDEX 0x01c00003
 #define RSA_EK_TEMPLATE_NV_INDEX 0x01c00004

@@ -1,16 +1,10 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-#include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "log.h"
-#include "object.h"
 #include "tpm2.h"
-#include "tpm2_auth_util.h"
-#include "tpm2_session.h"
 #include "tpm2_tool.h"
-#include "tpm2_util.h"
 
 typedef struct clearcontrol_ctx clearcontrol_ctx;
 struct clearcontrol_ctx {

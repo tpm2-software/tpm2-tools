@@ -4,12 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <tss2/tss2_esys.h>
-
 #include "log.h"
 #include "tpm2.h"
-#include "tpm2_util.h"
-
 #include "tpm2_capability.h"
 
 #define APPEND_CAPABILITY_INFORMATION(capability, field, subfield, max_count) \
