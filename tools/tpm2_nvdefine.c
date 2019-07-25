@@ -73,7 +73,8 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'x':
-        result = tpm2_util_string_to_uint32(value, &ctx.nvIndex);
+        result = tpm2_hierarchy_from_optarg(value, &ctx.nvIndex,
+            TPM2_HANDLES_FLAGS_NV);
         if (!result) {
             LOG_ERR("Could not convert NV index to number, got: \"%s\"",
                     value);
