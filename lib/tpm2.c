@@ -1372,7 +1372,7 @@ tool_rc tpm2_encryptdecrypt(
                 iv_out);
     }
 
-    if (tpm2_error_get(rval) == TPM2_RC_COMMAND_CODE) {
+    if (rval != TPM2_RC_SUCCESS) {
         if (*version == 2) {
             LOG_PERR(Esys_EncryptDecrypt2, rval);
         } else {
