@@ -156,8 +156,57 @@ bool tpm2_hierarchy_from_optarg(const char *value,
         result = tpm2_util_string_to_uint32(value, hierarchy);
     }
     if (!result) {
-        LOG_ERR("Incorrect handle value, got: \"%s\", expected [o|p|e|n|l]"
-                "or a handle number", value);
+
+        char msg[256] = { 0 };
+
+        char print_flags[32] = { '[', '\0' };
+
+        if (flags & TPM2_HIERARCHY_FLAGS_O) {
+            strncat(print_flags, "o|",
+                    sizeof(print_flags) - strlen(print_flags) - 1);
+        }
+
+        if (flags & TPM2_HIERARCHY_FLAGS_P) {
+            strncat(print_flags, "p|",
+                    sizeof(print_flags) - strlen(print_flags) - 1);
+        }
+
+        if (flags & TPM2_HIERARCHY_FLAGS_E) {
+            strncat(print_flags, "e|",
+                    sizeof(print_flags) - strlen(print_flags) - 1);
+        }
+
+        if (flags & TPM2_HIERARCHY_FLAGS_N) {
+            strncat(print_flags, "n|",
+                    sizeof(print_flags) - strlen(print_flags) - 1);
+        }
+
+        if (flags & TPM2_HIERARCHY_FLAGS_L) {
+            strncat(print_flags, "l|",
+                    sizeof(print_flags) - strlen(print_flags) - 1);
+        }
+
+        size_t len = strlen(print_flags);
+        if (print_flags[len -1] == '|') {
+            len--;
+            print_flags[len] = '\0';
+        }
+
+        strncat(print_flags, "]",
+                sizeof(print_flags) - strlen(print_flags) - 1);
+        len++;
+
+        bool has_print_flags = len > 2;
+
+        if (has_print_flags) {
+            snprintf(msg, sizeof(msg), "expected %s or ", print_flags);
+        }
+
+        strncat(msg, "a handle number",
+                sizeof(msg) - strlen(msg) - 1);
+
+        LOG_ERR("Incorrect handle value, got: \"%s\", expected %s",
+                 value, msg);
         return false;
     }
 
