@@ -74,11 +74,20 @@ static bool evaluate_pkcs7_padding_requirements(uint16_t remaining_bytes,
     }
 
     /*
+     * If no ctx.mode was specified, the default cfb was set.
+     */
+    if (ctx.mode != TPM2_ALG_CBC && ctx.mode != TPM2_ALG_ECB) {
+        return false;
+    }
+
+    /*
      * Is last block?
      */
     if (!(remaining_bytes <= TPM2_MAX_DIGEST_BUFFER && remaining_bytes > 0)) {
         return false;
     }
+
+    LOG_WARN("Processing pkcs7 padding.");
 
     return true;
 }
@@ -279,14 +288,6 @@ static bool setup_alg_mode_and_iv_and_padding(ESYS_CONTEXT *ectx, TPM2B_IV *iv) 
         } else {
             ctx.mode = objmode;
         }
-    }
-
-    if (ctx.is_padding_option_enabled && !ctx.is_decrypt &&
-        public->publicArea.parameters.symDetail.sym.algorithm == TPM2_ALG_AES &&
-        (ctx.mode == TPM2_ALG_CBC ||
-         ctx.mode == TPM2_ALG_ECB)) {
-
-        LOG_WARN("pkcs7 padding is required and will be applied to input data.");
     }
 
     free(public);
