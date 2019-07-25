@@ -193,4 +193,8 @@ trap onerror ERR
 
 tpm2_nvrelease -x 0x1500015 -C 0x40000001 -P "owner"
 
+# Check nv index can be specified simply as an offset
+tpm2_nvdefine -Q -C o -s 32 -a "ownerread|ownerwrite" -x 1 -P "owner"
+tpm2_nvrelease -x 0x01000001 -C o -P "owner"
+
 exit 0
