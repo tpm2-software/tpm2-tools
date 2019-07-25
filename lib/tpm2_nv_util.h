@@ -242,4 +242,31 @@ out:
     return rc;
 }
 
+static inline bool on_arg_nv_index(int argc, char **argv,
+    TPMI_RH_NV_INDEX *nvIndex) {
+
+    if (argc > 1) {
+        LOG_ERR("Specify single value for NV Index");
+        return false;
+    }
+
+    if (!argc) {
+        LOG_ERR("Specify at least a single value for NV Index");
+        return false;
+    }
+
+    bool result = tpm2_hierarchy_from_optarg(argv[0], nvIndex,
+        TPM2_HANDLES_FLAGS_NV);
+    if (!result) {
+        LOG_ERR("Could not convert NV index to number, got: \"%s\"", argv[0]);
+        return false;
+    }
+    if (*nvIndex == 0) {
+            LOG_ERR("NV Index cannot be 0");
+            return false;
+    }
+
+    return true;
+}
+
 #endif /* LIB_TPM2_NV_UTIL_H_ */
