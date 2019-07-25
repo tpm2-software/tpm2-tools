@@ -161,6 +161,9 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
     uint8_t pad_data = 0;
 
     uint16_t remaining_bytes = ctx.input_data_size;
+    if (ctx.mode == TPM2_ALG_ECB) {
+        iv_in = NULL;
+    }
     while (remaining_bytes > 0) {
         in_data.size =
             remaining_bytes > TPM2_MAX_DIGEST_BUFFER ?
@@ -185,8 +188,10 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
          * Copy iv_out iv_in to use it in next loop iteration.
          * This copy is also output from the tool for further chaining.
          */
-        *iv_in = *iv_out;
-        free(iv_out);
+        if (ctx.mode != TPM2_ALG_ECB) {
+            *iv_in = *iv_out;
+            free(iv_out);
+        }
 
         strip_pkcs7_padding_data_from_output(&pad_data, out_data, &remaining_bytes);
 
