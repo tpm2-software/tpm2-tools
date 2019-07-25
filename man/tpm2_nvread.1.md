@@ -61,7 +61,13 @@ index can be specified as raw handle or an offset value to the nv handle range
 
 ## Read 32 bytes from an index starting at offset 0
 ```
-tpm2_nvread   0x1500016 -a 0x40000001 -s 32
+tpm2_nvdefine -Q  1 -C o -s 32 -a "ownerread|policywrite|ownerwrite"
+
+echo "please123abc" > nv.test_w
+
+tpm2_nvwrite -Q -x $nv_test_index -C o nv.test_w
+
+tpm2_nvread -Q  1 -C o -s 32 -o 0
 ```
 
 [returns](common/returns.md)
