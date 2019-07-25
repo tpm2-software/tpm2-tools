@@ -6,17 +6,15 @@
 
 # SYNOPSIS
 
-**tpm2_nvread** [*OPTIONS*]
+**tpm2_nvread** [*OPTIONS*] _NV\_INDEX_
 
 # DESCRIPTION
 
-**tpm2_nvread**(1) - Read the data stored in a Non-Volatile (NV)s index.
+**tpm2_nvread**(1) - Read the data stored in a Non-Volatile (NV)s index. The
+index can be specified as raw handle or an offset value to the nv handle range
+"TPM2_HR_NV_INDEX".
 
 # OPTIONS
-
-  * **-x**, **\--index**=_NV\_INDEX_:
-
-    Specifies the index to define the space at.
 
   * **-C**, **\--hierarchy**=_AUTH_:
 
@@ -63,7 +61,7 @@
 
 ## Read 32 bytes from an index starting at offset 0
 ```
-tpm2_nvread -x 0x1500016 -a 0x40000001 -s 32
+tpm2_nvread   0x1500016 -a 0x40000001 -s 32
 ```
 
 [returns](common/returns.md)

@@ -15,13 +15,16 @@ struct tpm_nvread_ctx {
     } auth_hierarchy;
 
     TPM2_HANDLE nv_index;
+    bool is_auth_hierarchy_specified;
 
     UINT32 size_to_read;
     UINT32 offset;
     char *output_file;
 };
 
-static tpm_nvread_ctx ctx;
+static tpm_nvread_ctx ctx = {
+    .is_auth_hierarchy_specified = false,
+};
 
 static tool_rc nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
@@ -57,31 +60,25 @@ out:
     return rc;
 }
 
+static bool on_arg(int argc, char **argv) {
+    /* If the users doesn't specify an authorization hierarchy use the index
+    * passed to -x/--index for the authorization index.
+    */
+    if (!ctx.is_auth_hierarchy_specified) {
+        ctx.auth_hierarchy.ctx_path = argv[0];
+    }
+    return on_arg_nv_index(argc, argv, &ctx.nv_index);
+}
+
 static bool on_option(char key, char *value) {
 
     bool result;
 
     switch (key) {
-    case 'x':
-        result = tpm2_util_string_to_uint32(value, &ctx.nv_index);
-        if (!result) {
-            LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                    value);
-            return false;
-        }
 
-        if (ctx.nv_index == 0) {
-            LOG_ERR("NV Index cannot be 0");
-            return false;
-        }
-        /*
-         * If the users doesn't specify an authorization hierarchy use the index
-         * passed to -x/--index for the authorization index.
-         */
-        ctx.auth_hierarchy.ctx_path = value;
-        break;
     case 'C':
         ctx.auth_hierarchy.ctx_path = value;
+        ctx.is_auth_hierarchy_specified = true;
         break;
     case 'o':
         ctx.output_file = value;
@@ -113,7 +110,6 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "index",                required_argument, NULL, 'x' },
         { "hierarchy",            required_argument, NULL, 'C' },
         { "output",               required_argument, NULL, 'o' },
         { "size",                 required_argument, NULL, 's' },
@@ -121,8 +117,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth",                 required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("x:C:s:o:P:", ARRAY_LEN(topts),
-                             topts, on_option, NULL, 0);
+    *opts = tpm2_options_new("C:s:o:P:", ARRAY_LEN(topts),
+                             topts, on_option, on_arg, 0);
 
     return *opts != NULL;
 }
