@@ -96,6 +96,12 @@ static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags fl
                 return false;
             }
             break;
+        case TPM2_HR_TRANSIENT:
+            if ( !(flags & TPM2_HANDLES_FLAGS_TRANSIENT) ) {
+                LOG_ERR("Transient handles not supported by this command.");
+                return false;
+            }
+            break;
         default: //If specified a random number as tpm handle range
             if (flags == TPM2_HANDLES_ALL ||
                 flags == TPM2_HIERARCHY_FLAGS_NONE) {
