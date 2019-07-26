@@ -45,7 +45,7 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     free(attrs);
 }
 
-static tool_rc nv_list(ESYS_CONTEXT *context) {
+static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
 
     TPMS_CAPABILITY_DATA *capabilityData;
     UINT32 property = tpm2_util_hton_32(TPM2_HT_NV_INDEX);
@@ -93,5 +93,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return nv_list(context);
+    return nv_readpublic(context);
 }

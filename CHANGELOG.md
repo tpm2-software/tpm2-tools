@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvlist: Renaming the tool
+    - tpm2_nvlist is now tpm2_nvreadpublic
   * tpm2_nvundefine: short option changed to argument
     -x used to specify nv index is now an argument
   * tpm2_nvrelease: Renaming the tool
