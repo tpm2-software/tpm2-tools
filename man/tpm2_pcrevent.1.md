@@ -49,12 +49,14 @@ These options control extending the pcr:
 # EXAMPLES
 
 ## Hash a file
-```
+```bash
+echo "foo" > data
 tpm2_pcrevent data
 ```
 
 ## Hash a file and extend PCR 8
-```
+```bash
+echo "foo" > data
 tpm2_pcrevent -x 8 data
 ```
 
