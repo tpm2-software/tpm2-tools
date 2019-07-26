@@ -51,13 +51,13 @@ static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
                     &ctx.handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_LoadExternal, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_TR_GetName(ectx, ctx.handle, name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_GetName, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     return tool_rc_success;

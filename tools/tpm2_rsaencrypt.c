@@ -39,7 +39,7 @@ static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
                         &ctx.message, &ctx.scheme, &label, &out_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Encrypt, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     if (ctx.output_path) {

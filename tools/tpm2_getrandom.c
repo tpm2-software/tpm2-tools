@@ -31,7 +31,7 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
                                   ctx.num_of_bytes, &random_bytes);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetRandom, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     /* ensure we got the expected number of bytes unless force is set */

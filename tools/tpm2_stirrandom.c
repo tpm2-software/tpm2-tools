@@ -23,7 +23,7 @@ static tool_rc do_stirrandom(ESYS_CONTEXT *ectx) {
         LOG_ERR("Error while injecting specified additionnal data into TPM "
                 "random pool");
         LOG_PERR(Esys_StirRandom, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     return tool_rc_success;
