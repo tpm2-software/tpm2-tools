@@ -1,23 +1,23 @@
-% tpm2_nvrelease(1) tpm2-tools | General Commands Manual
+% tpm2_nvundefine(1) tpm2-tools | General Commands Manual
 
 # NAME
 
-**tpm2_nvrelease**(1) - Release a Non-Volatile (NV) index.
+**tpm2_nvundefine**(1) - Undefine a Non-Volatile (NV) index.
 
 # SYNOPSIS
 
-**tpm2_nvrelease** [*OPTIONS*]
+**tpm2_nvundefine** [*OPTIONS*]
 
 # DESCRIPTION
 
-**tpm2_nvrelease**(1) - Release a Non-Volatile (NV) index that was previously
+**tpm2_nvundefine**(1) - Undefine a Non-Volatile (NV) index that was previously
 defined with **tpm2_nvdefine**(1).
 
 # OPTIONS
 
   * **-x**, **\--index**=_NV\_INDEX_:
 
-    Specifies the index to release.
+    Specifies the nv index to undefine.
 
   * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
 
@@ -42,7 +42,7 @@ defined with **tpm2_nvdefine**(1).
 # EXAMPLES
 
 ```
-tpm2_nvrelease -x 0x1500016 -C 0x40000001 -P passwd
+tpm2_nvundefine -x 0x1500016 -C 0x40000001 -P passwd
 ```
 
 [returns](common/returns.md)

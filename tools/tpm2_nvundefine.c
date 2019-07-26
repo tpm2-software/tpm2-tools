@@ -4,8 +4,8 @@
 #include "tpm2.h"
 #include "tpm2_options.h"
 
-typedef struct tpm_nvrelease_ctx tpm_nvrelease_ctx;
-struct tpm_nvrelease_ctx {
+typedef struct tpm_nvundefine_ctx tpm_nvundefine_ctx;
+struct tpm_nvundefine_ctx {
     struct {
         const char *ctx_path;
         const char *auth_str;
@@ -15,7 +15,7 @@ struct tpm_nvrelease_ctx {
     TPM2_HANDLE nv_index;
 };
 
-static tpm_nvrelease_ctx ctx = {
+static tpm_nvundefine_ctx ctx = {
     .auth_hierarchy.ctx_path = "owner",
 };
 
@@ -74,7 +74,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return tpm2_nvrelease(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
+    return tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
