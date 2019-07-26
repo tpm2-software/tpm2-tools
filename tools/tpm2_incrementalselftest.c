@@ -21,7 +21,7 @@ static tool_rc tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
             ESYS_TR_NONE, &(ctx.inputalgs), &totest);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_SelfTest, rval);
-        return tool_rc_from_tpm(rval);
+        return Tss2_RC_Decode(rval);
     }
 
     tpm2_tool_output("status: ");

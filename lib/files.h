@@ -8,7 +8,7 @@
 
 #include <tss2/tss2_esys.h>
 
-#include "tpm2_error.h"
+#include "tool_rc.h"
 
 /**
  * Reads a series of bytes from a file as a byte array. This is similar to files_read_bytes(),

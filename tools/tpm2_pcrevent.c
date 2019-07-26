@@ -64,7 +64,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                     &buffer, result);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Esys_PCR_Event, rval);
-            return tool_rc_from_tpm(rval);
+            return Tss2_RC_Decode(rval);
         }
 
         return tool_rc_success;
@@ -83,13 +83,13 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                 &nullAuth, TPM2_ALG_NULL, &sequence_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HashSequenceStart, rval);
-        return tool_rc_from_tpm(rval);
+        return Tss2_RC_Decode(rval);
     }
 
     rval = Esys_TR_SetAuth(ectx, sequence_handle, &nullAuth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_SetAuth, rval);
-        return tool_rc_from_tpm(rval);
+        return Tss2_RC_Decode(rval);
     }
 
     /* If we know the file size, we decrement the amount read and terminate the
@@ -118,7 +118,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                     &data);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_SequenceUpdate, rval);
-            return tool_rc_from_tpm(rval);
+            return Tss2_RC_Decode(rval);
         }
 
         if (use_left) {
@@ -155,7 +155,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
                 &data, result);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_EventSequenceComplete, rval);
-        return tool_rc_from_tpm(rval);
+        return Tss2_RC_Decode(rval);
     }
 
     return tool_rc_success;

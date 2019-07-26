@@ -18,7 +18,7 @@ static tool_rc tpm_testparms(ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval = Esys_TestParms(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &(ctx.inputalg));
     /*
-     * TODO: this is a good candidate for flatten support via tool_rc_from_tpm(rval);
+     * TODO: this is a good candidate for flatten support via Tss2_RC_Decode(rval);
      */
     if (rval != TSS2_RC_SUCCESS) {
         if ((rval & (TPM2_RC_P | TPM2_RC_1)) == (TPM2_RC_P | TPM2_RC_1)){

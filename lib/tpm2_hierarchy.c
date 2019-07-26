@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "log.h"
+#include "tool_rc.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
@@ -84,8 +85,10 @@ static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags fl
     if (range == 0) {
         if (flags & TPM2_HANDLES_FLAGS_NV) {
            *hierarchy += TPM2_HR_NV_INDEX;
+           range = *hierarchy & TPM2_HR_RANGE_MASK;
         } else if (flags & TPM2_HANDLES_FLAGS_PCR) {
             *hierarchy += TPM2_HR_PCR;
+            range = *hierarchy & TPM2_HR_RANGE_MASK;
         } else {
             LOG_ERR("Implicit indices are not supported.");
             return false;
@@ -93,22 +96,52 @@ static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_hierarchy_flags fl
     }
 
     /* now that we have fixed up any non-ranged handles, check them */
-    if (range == TPM2_HR_NV_INDEX && !(flags & TPM2_HANDLES_FLAGS_NV)) {
-        LOG_ERR("NV-Index handles are not supported by this command.");
-        return false;
-    } else if (range == TPM2_HR_PCR && !(flags & TPM2_HANDLES_FLAGS_PCR)) {
-        LOG_ERR("PCR handles are not supported by this command.");
-        return false;
-    } else if (range == TPM2_HR_TRANSIENT && !(flags & TPM2_HANDLES_FLAGS_TRANSIENT)) {
-        LOG_ERR("Transient handles are not supported by this command.");
-        return false;
+    if (range == TPM2_HR_NV_INDEX) {
+        if (!(flags & TPM2_HANDLES_FLAGS_NV)) {
+            LOG_ERR("NV-Index handles are not supported by this command.");
+            return false;
+        }
+        return true;
+        if (*hierarchy < TPM2_NV_INDEX_FIRST
+                || *hierarchy > TPM2_NV_INDEX_LAST) {
+            LOG_ERR("NV-Index handle is out of range.");
+            return false;
+        }
+        return true;
+    } else if (range == TPM2_HR_PCR) {
+        if(!(flags & TPM2_HANDLES_FLAGS_PCR)) {
+            LOG_ERR("PCR handles are not supported by this command.");
+            return false;
+        }
+        /* first is 0 so no possible way unsigned is less than 0, thus no check */
+        if (*hierarchy > TPM2_PCR_LAST) {
+            LOG_ERR("PCR handle out of range.");
+            return false;
+        }
+        return true;
+    } else if (range == TPM2_HR_TRANSIENT) {
+        if (!(flags & TPM2_HANDLES_FLAGS_TRANSIENT)) {
+            LOG_ERR("Transient handles are not supported by this command.");
+            return false;
+        }
+        return true;
     } else if (range == TPM2_HR_PERMANENT) {
         return filter_hierarchy_handles(*hierarchy, flags);
+    } else if (range == TPM2_HR_PERSISTENT) {
+        if (!(flags & TPM2_HANDLES_FLAGS_PERSISTENT)) {
+            LOG_ERR("Persistent handles are not supported by this command.");
+            return false;
+        }
+        if (*hierarchy < TPM2_PERSISTENT_FIRST ||
+                *hierarchy > TPM2_PERSISTENT_LAST) {
+            LOG_ERR("Persistent handle out of range.");
+            return false;
+        }
+        return true;
     }
 
-    /* else just use it as is */
-
-    return true;
+    /* else its a session flag and shouldn't use this interface */
+    return false;
 }
 
 bool tpm2_hierarchy_from_optarg(const char *value,
@@ -219,7 +252,12 @@ bool tpm2_hierarchy_from_optarg(const char *value,
      * or hex handles, they are additionally filtered here.
      */
 
-    return filter_handles(hierarchy, flags);
+    bool res = filter_handles(hierarchy, flags);
+    if (!res) {
+        LOG_ERR("Unknown or unsupported handle, got: \"%s\"",
+                 value);
+    }
+    return res;
 }
 
 tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,

@@ -23,7 +23,7 @@ static tool_rc pcr_extend_one(ESYS_CONTEXT *ectx,
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Could not extend pcr index: 0x%X", pcr_index);
         LOG_PERR(Esys_PCR_Extend, rval);
-        return tool_rc_from_tpm(rval);
+        return Tss2_RC_Decode(rval);
     }
 
     return tool_rc_success;

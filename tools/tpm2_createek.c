@@ -206,7 +206,7 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
         TSS2_RC rval = Esys_FlushContext(ectx, ctx.objdata.out.handle);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Esys_FlushContext, rval);
-            return tool_rc_from_tpm(rval);
+            return Tss2_RC_Decode(rval);
         }
     } else {
         /* If it wasn't persistent, save a context for future tool interactions */

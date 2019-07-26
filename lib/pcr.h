@@ -7,7 +7,7 @@
 
 #include <tss2/tss2_esys.h>
 
-#include "tpm2_error.h"
+#include "tool_rc.h"
 
 typedef struct tpm2_algorithm tpm2_algorithm;
 struct tpm2_algorithm {

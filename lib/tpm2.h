@@ -6,7 +6,7 @@
 #include <tss2/tss2_esys.h>
 
 #include "object.h"
-#include "tpm2_error.h"
+#include "tool_rc.h"
 
 tool_rc tpm2_from_tpm_public(
             ESYS_CONTEXT *esysContext,
