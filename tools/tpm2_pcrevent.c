@@ -28,7 +28,7 @@ struct tpm_pcrevent_ctx {
 };
 
 static tpm_pcrevent_ctx ctx = {
-        .pcr = ESYS_TR_RH_NULL,
+    .pcr = ESYS_TR_RH_NULL,
 };
 
 static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
