@@ -207,6 +207,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
         TSS2_TCTI_CONTEXT **tcti) {
 
     tpm2_option_code rc = tpm2_option_code_err;
+    TSS2_RC rc_tcti;
     bool result = false;
     bool show_help = false;
     bool manpager = true;
@@ -339,8 +340,8 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
                 }
                 goto none;
             }
-            rc = Tss2_TctiLdr_Initialize(tcti_conf_option, tcti);
-            if (rc != TSS2_RC_SUCCESS || !*tcti) {
+            rc_tcti = Tss2_TctiLdr_Initialize(tcti_conf_option, tcti);
+            if (rc_tcti != TSS2_RC_SUCCESS || !*tcti) {
               LOG_ERR("Could not load tcti, got: \"%s\"", tcti_conf_option);
               goto out;
             }
@@ -378,8 +379,8 @@ out:
         }
         if (tcti_conf_option && strcmp(tcti_conf_option, "none")) {
             TSS2_TCTI_INFO *info = NULL;
-            rc = Tss2_TctiLdr_GetInfo (tcti_conf_option, &info);
-            if (rc == TSS2_RC_SUCCESS && info) {
+            rc_tcti = Tss2_TctiLdr_GetInfo (tcti_conf_option, &info);
+            if (rc_tcti == TSS2_RC_SUCCESS && info) {
                 printf("\ntcti-help(%s): %s\n", info->name, info->config_help);
             }
             Tss2_TctiLdr_FreeInfo (&info);
