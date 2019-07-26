@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvundefine: short option changed to argument
+    -x used to specify nv index is now an argument
   * tpm2_nvrelease: Renaming the tool
     - tpm2_nvrelease is now tpm2_nvundefine
   * tpm2_nvreadlock: short option changed to argument
