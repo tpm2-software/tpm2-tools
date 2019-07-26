@@ -152,12 +152,40 @@ static void test_tcti_short_option_no_errata(void **state) {
     assert_int_equal(oc, tpm2_option_code_continue);
 }
 
-static void test_tcti_long_option_no_errata(void **state) {
+static void test_tcti_long_option_with_equals_no_errata(void **state) {
     UNUSED(state);
 
     char *argv[] = {
         "program",
         "--tcti=tctifake",    // Set TCTI to something specific
+        "-Z"                  // Disable errata getenv call
+    };
+
+    int argc = ARRAY_LEN(argv);
+
+    tpm2_options *tool_opts = NULL;
+    tpm2_option_flags flags = { .all = 0 };
+    TSS2_TCTI_CONTEXT *tcti = NULL;
+
+    /* we never call getenv() because we use -T */
+    /* we never probe for a tcti */
+    /* we just use what is given, in this case, return a mocked instance */
+    will_return(__wrap_Tss2_TctiLdr_Initialize, TSS2_RC_SUCCESS);
+    will_return(__wrap_Tss2_TctiLdr_Initialize, &tcti_instance);
+
+    tpm2_option_code oc = tpm2_handle_options(argc, argv, tool_opts, &flags,
+            &tcti);
+    assert_non_null(tcti);
+    assert_int_equal(oc, tpm2_option_code_continue);
+}
+
+static void test_tcti_long_option_no_equals_no_errata(void **state) {
+    UNUSED(state);
+
+    char *argv[] = {
+        "program",
+        "--tcti",             // Set TCTI to something specific
+        "tctifake",
         "-Z"                  // Disable errata getenv call
     };
 
@@ -217,7 +245,8 @@ int main(int argc, char *argv[]) {
             cmocka_unit_test(test_null_tcti_getenv_no_errata),
             cmocka_unit_test(test_null_tcti_getenv_with_errata),
             cmocka_unit_test(test_tcti_short_option_no_errata),
-            cmocka_unit_test(test_tcti_long_option_no_errata),
+            cmocka_unit_test(test_tcti_long_option_no_equals_no_errata),
+            cmocka_unit_test(test_tcti_long_option_with_equals_no_errata),
             cmocka_unit_test(test_invalid_tcti_no_errata),
     };
 
