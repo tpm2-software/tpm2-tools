@@ -179,6 +179,30 @@ static void test_tcti_long_option_no_errata(void **state) {
     assert_int_equal(oc, tpm2_option_code_continue);
 }
 
+static void test_invalid_tcti_no_errata(void **state) {
+    UNUSED(state);
+
+    char *argv[] = {
+        "program",
+        "-T",      // Set TCTI to something specific
+        "tctiinvalid",
+        "-Z"       // Disable errata getenv call
+    };
+
+    int argc = ARRAY_LEN(argv);
+
+    tpm2_options *tool_opts = NULL;
+    tpm2_option_flags flags = { .all = 0 };
+    TSS2_TCTI_CONTEXT *tcti = NULL;
+
+    will_return(__wrap_Tss2_TctiLdr_Initialize, TSS2_TCTI_RC_NOT_SUPPORTED);
+
+    tpm2_option_code oc = tpm2_handle_options(argc, argv, tool_opts, &flags,
+            &tcti);
+    assert_int_equal(oc, tpm2_option_code_err);
+}
+
+
 /*
  * link required symbol, but tpm2_tool.c declares it AND main, which
  * we have a main below for cmocka tests.
@@ -194,6 +218,7 @@ int main(int argc, char *argv[]) {
             cmocka_unit_test(test_null_tcti_getenv_with_errata),
             cmocka_unit_test(test_tcti_short_option_no_errata),
             cmocka_unit_test(test_tcti_long_option_no_errata),
+            cmocka_unit_test(test_invalid_tcti_no_errata),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
