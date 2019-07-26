@@ -36,7 +36,7 @@ tpm2_nvincrement -Q   $nv_test_index -C o
 
 tpm2_nvread -Q   $nv_test_index -C o -s 8
 
-tpm2_nvlist > nv.out
+tpm2_nvreadpublic > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 # Test writing to and reading from an offset by:

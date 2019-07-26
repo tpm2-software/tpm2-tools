@@ -45,7 +45,7 @@ tpm2_nvwrite -Q -x $nv_test_index -C o nv.test_w
 
 tpm2_nvread -Q   $nv_test_index -C o -s 32 -o 0
 
-tpm2_nvlist > nv.out
+tpm2_nvreadpublic > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 
@@ -124,7 +124,7 @@ tpm2_nvread   $nv_test_index -C o > $large_file_read_name
 
 cmp -s $large_file_read_name $large_file_name
 
-tpm2_nvlist > nv.out
+tpm2_nvreadpublic > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 tpm2_nvundefine -Q   $nv_test_index -C o
