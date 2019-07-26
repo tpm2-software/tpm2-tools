@@ -123,7 +123,7 @@ static tool_rc init(ESYS_CONTEXT *context) {
     TPM2B *msg = NULL;
 
     tool_rc tmp_rc = tpm2_util_object_load(context, ctx.context_arg,
-        &ctx.key_context_object, TPM2_HANDLES_ALL_W_NV);
+        &ctx.key_context_object, TPM2_HANDLE_ALL_W_NV);
     if (tmp_rc != tool_rc_success) {
         return tmp_rc;
     }

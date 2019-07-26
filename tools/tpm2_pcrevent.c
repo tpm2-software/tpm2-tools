@@ -244,7 +244,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'x': {
-        bool result = tpm2_hierarchy_from_optarg(value, &ctx.pcr, TPM2_HANDLES_FLAGS_PCR);
+        bool result = tpm2_util_handle_from_optarg(value, &ctx.pcr, TPM2_HANDLE_FLAGS_PCR);
         if (!result) {
             LOG_ERR("Could not convert \"%s\", to a pcr index.", value);
             return false;

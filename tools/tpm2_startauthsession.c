@@ -87,7 +87,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.session.key_context_arg_str) {
         tool_rc tmp_rc = tpm2_util_object_load(ectx,
             ctx.session.key_context_arg_str, &ctx.session.key_context_object,
-            TPM2_HANDLES_ALL_W_NV);
+            TPM2_HANDLE_ALL_W_NV);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }

@@ -100,7 +100,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
         ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HIERARCHY_FLAGS_L);
+        TPM2_HANDLE_FLAGS_L);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
         return rc;

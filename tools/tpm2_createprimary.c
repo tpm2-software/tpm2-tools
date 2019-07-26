@@ -48,8 +48,8 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'C': {
-        res = tpm2_hierarchy_from_optarg(value, &ctx.objdata.in.hierarchy,
-                TPM2_HIERARCHY_FLAGS_ALL);
+        res = tpm2_util_handle_from_optarg(value, &ctx.objdata.in.hierarchy,
+                TPM2_HANDLE_FLAGS_ALL_HIERACHIES);
 
         if (!res) {
             return false;

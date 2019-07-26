@@ -102,7 +102,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool evicted = false;
 
     tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
-                &ctx.to_persist_key.object, TPM2_HANDLES_ALL_W_NV);
+                &ctx.to_persist_key.object, TPM2_HANDLE_ALL_W_NV);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
@@ -130,7 +130,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
         ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HIERARCHY_FLAGS_O|TPM2_HIERARCHY_FLAGS_P);
+        TPM2_HANDLE_FLAGS_O|TPM2_HANDLE_FLAGS_P);
     if (ctx.flags.o && !ctx.flags.p) {
         LOG_ERR("Cannot specify -o without using a persistent handle");
         goto out;

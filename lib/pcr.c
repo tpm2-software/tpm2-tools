@@ -27,7 +27,7 @@ bool pcr_get_id(const char *arg, UINT32 *pcrId) {
         return false;
     }
 
-    return tpm2_hierarchy_from_optarg(arg, pcrId, TPM2_HANDLES_FLAGS_PCR);
+    return tpm2_util_handle_from_optarg(arg, pcrId, TPM2_HANDLE_FLAGS_PCR);
 }
 
 static bool pcr_parse_selection(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {

@@ -448,7 +448,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tool_rc rc = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
-                                &ctx.ek.ek_ctx, TPM2_HANDLES_ALL_W_NV);
+                                &ctx.ek.ek_ctx, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
