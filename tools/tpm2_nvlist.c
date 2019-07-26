@@ -56,7 +56,7 @@ static tool_rc nv_list(ESYS_CONTEXT *context) {
                                       NULL, &capabilityData);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetCapability, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     UINT32 i;

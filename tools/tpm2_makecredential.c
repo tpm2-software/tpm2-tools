@@ -182,7 +182,7 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx)
                         &tr_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_LoadExternal, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_MakeCredential(ectx, tr_handle, ESYS_TR_NONE,
@@ -190,13 +190,13 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx)
                         &ctx.object_name, &cred_blob, &secret);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_MakeCredential, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     rval = Esys_FlushContext(ectx, tr_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_FlushContext, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     bool ret = write_cred_and_secret(ctx.out_file_path, cred_blob, secret);

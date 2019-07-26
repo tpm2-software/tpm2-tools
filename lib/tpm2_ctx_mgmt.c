@@ -30,7 +30,7 @@ tool_rc tpm2_ctx_mgmt_evictcontrol(
         &outHandle);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_EvictControl, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     if (out_tr) {

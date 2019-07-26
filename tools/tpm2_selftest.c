@@ -16,7 +16,7 @@ static tool_rc tpm_selftest(ESYS_CONTEXT *ectx) {
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("TPM SelfTest failed !");
         LOG_PERR(Esys_SelfTest, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     return tool_rc_success;

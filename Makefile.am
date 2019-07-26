@@ -182,7 +182,6 @@ check_PROGRAMS = \
     test/unit/test_tpm2_session \
     test/unit/test_tpm2_policy \
     test/unit/test_tpm2_util \
-    test/unit/test_tpm2_error \
     test/unit/test_options \
     test/unit/test_cc_util
 

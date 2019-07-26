@@ -30,7 +30,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             ESYS_TR_NONE, &output, &status);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_SelfTest, rval);
-        return Tss2_RC_Decode(rval);
+        return tool_rc_from_tpm(rval);
     }
 
     tpm2_tool_output("status: ");
