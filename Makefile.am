@@ -59,7 +59,7 @@ bin_PROGRAMS = \
     tools/tpm2_makecredential \
     tools/tpm2_nvdefine \
     tools/tpm2_nvincrement \
-    tools/tpm2_nvlist \
+    tools/tpm2_nvreadpublic \
     tools/tpm2_nvread \
     tools/tpm2_nvreadlock \
     tools/tpm2_nvundefine \
@@ -122,7 +122,7 @@ tools_tpm2_createak_SOURCES = tools/tpm2_createak.c $(TOOL_SRC)
 tools_tpm2_hash_SOURCES = tools/tpm2_hash.c $(TOOL_SRC)
 tools_tpm2_activatecredential_SOURCES = tools/tpm2_activatecredential.c $(TOOL_SRC)
 tools_tpm2_makecredential_SOURCES = tools/tpm2_makecredential.c $(TOOL_SRC)
-tools_tpm2_nvlist_SOURCES = tools/tpm2_nvlist.c $(TOOL_SRC)
+tools_tpm2_nvreadpublic_SOURCES = tools/tpm2_nvreadpublic.c $(TOOL_SRC)
 tools_tpm2_nvread_SOURCES = tools/tpm2_nvread.c $(TOOL_SRC)
 tools_tpm2_nvreadlock_SOURCES = tools/tpm2_nvreadlock.c $(TOOL_SRC)
 tools_tpm2_nvwrite_SOURCES = tools/tpm2_nvwrite.c $(TOOL_SRC)
@@ -317,7 +317,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_makecredential.1 \
     man/man1/tpm2_nvdefine.1 \
     man/man1/tpm2_nvincrement.1 \
-    man/man1/tpm2_nvlist.1 \
+    man/man1/tpm2_nvreadpublic.1 \
     man/man1/tpm2_nvread.1 \
     man/man1/tpm2_nvreadlock.1 \
     man/man1/tpm2_nvundefine.1 \

@@ -1,16 +1,16 @@
-% tpm2_nvlist(1) tpm2-tools | General Commands Manual
+% tpm2_nvreadpublic(1) tpm2-tools | General Commands Manual
 
 # NAME
 
-**tpm2_nvlist**(1) - Display all defined Non-Volatile (NV)s indices.
+**tpm2_nvreadpublic**(1) - Display all defined Non-Volatile (NV)s indices.
 
 # SYNOPSIS
 
-**tpm2_nvlist** [*OPTIONS*]
+**tpm2_nvreadpublic** [*OPTIONS*]
 
 # DESCRIPTION
 
-**tpm2_nvlist**(1) - Display all defined Non-Volatile (NV)s indices to stdout in a YAML format.
+**tpm2_nvreadpublic**(1) - Display all defined Non-Volatile (NV)s indices to stdout in a YAML format.
 
 Display metadata for all defined NV indices. Metadata includes:
 
@@ -57,7 +57,7 @@ This tool takes no tool specific options.
 ## List the defined NV indices to stdout
 
 ```
-tpm2_nvlist
+tpm2_nvreadpublic
 ```
 
 [returns](common/returns.md)
