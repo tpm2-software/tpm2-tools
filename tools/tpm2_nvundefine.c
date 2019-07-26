@@ -1,7 +1,9 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
+#include <stdlib.h>
 
 #include "log.h"
 #include "tpm2.h"
+#include "tpm2_nv_util.h"
 #include "tpm2_options.h"
 
 typedef struct tpm_nvundefine_ctx tpm_nvundefine_ctx;
@@ -21,22 +23,8 @@ static tpm_nvundefine_ctx ctx = {
 
 static bool on_option(char key, char *value) {
 
-    bool result;
-
     switch (key) {
-    case 'x':
-        result = tpm2_util_string_to_uint32(value, &ctx.nv_index);
-        if (!result) {
-            LOG_ERR("Could not convert NV index to number, got: \"%s\"",
-                    value);
-            return false;
-        }
 
-        if (ctx.nv_index == 0) {
-            LOG_ERR("NV Index cannot be 0");
-            return false;
-        }
-        break;
     case 'C':
         ctx.auth_hierarchy.ctx_path = value;
         break;
@@ -48,16 +36,20 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_arg(int argc, char **argv) {
+
+    return on_arg_nv_index(argc, argv, &ctx.nv_index);
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "index",          required_argument, NULL, 'x' },
         { "hierarchy",      required_argument, NULL, 'C' },
         { "auth",           required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("x:C:P:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option,
+                             on_arg, 0);
 
     return *opts != NULL;
 }
