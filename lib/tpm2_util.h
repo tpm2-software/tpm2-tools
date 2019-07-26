@@ -396,4 +396,37 @@ ESYS_TR tpm2_tpmi_hierarchy_to_esys_tr(TPMI_RH_PROVISION inh);
 
 char *tpm2_util_getenv(const char *name);
 
+typedef enum tpm2_handle_flags tpm2_handle_flags;
+enum tpm2_handle_flags {
+    TPM2_HANDLE_FLAGS_NONE = 0,
+    TPM2_HANDLE_FLAGS_O              = 1 << 0,
+    TPM2_HANDLE_FLAGS_P              = 1 << 1,
+    TPM2_HANDLE_FLAGS_E              = 1 << 2,
+    TPM2_HANDLE_FLAGS_N              = 1 << 3,
+    TPM2_HANDLE_FLAGS_L              = 1 << 4,
+    TPM2_HANDLE_FLAGS_ALL_HIERACHIES = 0x1F,
+    TPM2_HANDLES_FLAGS_TRANSIENT     = 1 << 5,
+    TPM2_HANDLES_FLAGS_PERSISTENT    = 1 << 6,
+    /* bits 7 and 8 are mutually exclusive */
+    TPM2_HANDLE_FLAGS_NV             = 1 << 7,
+    TPM2_HANDLE_ALL_W_NV             = 0xFF,
+    TPM2_HANDLE_FLAGS_PCR            = 1 << 8,
+    TPM2_HANDLE_ALL_W_PCR            = 0x17F,
+};
+
+/**
+ * Converts an option from the command line into a valid TPM handle, checking
+ * for errors and if the tool supports it based on flags settings.
+ * @param value
+ *  The command line value to convert.
+ * @param handle
+ *  The output handle.
+ * @param flags
+ *  The flags indicating what is supported by the tool.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_util_handle_from_optarg(const char *value,
+        TPMI_RH_PROVISION *hierarchy, tpm2_handle_flags flags);
+
 #endif /* STRING_BYTES_H */

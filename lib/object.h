@@ -3,8 +3,7 @@
 
 #include "tool_rc.h"
 #include "tpm2_session.h"
-#include "tpm2_hierarchy.h"
-
+#include "tpm2_util.h"
 
 typedef struct tpm2_loaded_object tpm2_loaded_object;
 struct tpm2_loaded_object {
@@ -37,7 +36,7 @@ struct tpm2_loaded_object {
  */
 tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
                         const char *objectstr, tpm2_loaded_object *outobject,
-                        tpm2_hierarchy_flags flags);
+                        tpm2_handle_flags flags);
 
 /**
  * Same as tpm2_util_object_load but allows the auth string value to be populated
@@ -66,6 +65,6 @@ tool_rc tpm2_util_object_load_auth(
             const char *auth,
             tpm2_loaded_object *outobject,
             bool is_restricted_pswd_session,
-            tpm2_hierarchy_flags flags);
+            tpm2_handle_flags flags);
 
 #endif /* LIB_OBJECT_H_ */

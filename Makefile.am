@@ -181,7 +181,7 @@ check_PROGRAMS = \
     test/unit/test_tpm2_errata \
     test/unit/test_tpm2_session \
     test/unit/test_tpm2_policy \
-    test/unit/test_tpm2_hierarchy \
+    test/unit/test_tpm2_util \
     test/unit/test_tpm2_error \
     test/unit/test_options \
     test/unit/test_cc_util
@@ -239,8 +239,8 @@ test_unit_test_tpm2_policy_LDFLAGS  = -Wl,--wrap=Esys_StartAuthSession \
 
 test_unit_test_tpm2_policy_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
-test_unit_test_tpm2_hierarchy_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
-test_unit_test_tpm2_hierarchy_LDADD    = $(CMOCKA_LIBS) $(LDADD)
+test_unit_test_tpm2_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
 test_unit_test_options_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_options_LDFLAGS  = -Wl,--wrap=Tss2_TctiLdr_Initialize \
