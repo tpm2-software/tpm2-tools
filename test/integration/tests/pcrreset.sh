@@ -19,21 +19,13 @@ tpm2_pcrreset 23
 # Reset more than one resettable PCR
 tpm2_pcrreset 16 23
 
-# Get PCR_Reset out of bound index error
-tpm2_pcrreset 999 2>&1 1>/dev/null | grep -q "out of bound PCR"
-
-# Get PCR_Reset wrong index error
-tpm2_pcrreset toto 2>&1 1>/dev/null | grep -q "invalid PCR"
-
-# Get PCR_Reset index out of range error
-if ! tpm2_pcrreset 29 2>&1 1>/dev/null | grep -q "0x184"; then
-    echo "tpm2_pcrreset on out of range PCR index didn't fail"
-    exit 1
-else
-    true
-fi
+trap - ERR
 
 # Get PCR_Reset bad locality error
-tpm2_pcrreset 0 2>&1 1>/dev/null | grep -q "0x907"
+tpm2_pcrreset 0
+if [ $? -eq 0 ]; then
+  echo "Expected PCR reset of 0 to induce bad locality error"
+  exit 1
+fi
 
 exit 0
