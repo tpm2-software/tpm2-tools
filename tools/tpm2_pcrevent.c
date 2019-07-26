@@ -17,9 +17,6 @@
 typedef struct tpm_pcrevent_ctx tpm_pcrevent_ctx;
 struct tpm_pcrevent_ctx {
     struct {
-        UINT8 x : 1;
-    } flags;
-    struct {
         const char *auth_str;
         tpm2_session *session;
     } auth;
@@ -250,7 +247,6 @@ static bool on_option(char key, char *value) {
             return false;
         }
     }
-        ctx.flags.x = 1;
         break;
     case 'P':
         ctx.auth.auth_str = value;
