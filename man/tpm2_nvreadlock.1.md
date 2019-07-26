@@ -40,9 +40,17 @@ value to the nv handle range "TPM2_HR_NV_INDEX".
 
 # EXAMPLES
 
-## Lock an index protected by a password
+## Lock an index
 ```
-tpm2_nvreadlock   0x1500016 -C 0x40000001 -P passwd
+tpm2_nvdefine -Q   1 -C o -s 32 -a "ownerread|policywrite|ownerwrite|read_stclear"
+
+echo "foobar" > nv.readlock
+
+tpm2_nvwrite -Q -x 0x01000001 -C o nv.readlock
+
+tpm2_nvread -Q   1 -C o -s 6 -o 0
+
+tpm2_nvreadlock -Q   1 -C o
 ```
 
 [returns](common/returns.md)
