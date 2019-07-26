@@ -40,7 +40,9 @@ be specified as raw handle or an offset value to the nv handle range
 # EXAMPLES
 
 ```
-tpm2_nvundefine   0x1500016 -C 0x40000001 -P passwd
+tpm2_nvdefine   0x1500016 -C 0x40000001 -s 32 -a 0x2000A
+
+tpm2_nvundefine   0x1500016 -C 0x40000001
 ```
 
 [returns](common/returns.md)
