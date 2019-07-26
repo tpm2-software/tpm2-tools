@@ -218,7 +218,7 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
      * grep -rn case\ \'[a-zA-Z]\' | awk '{print $3}' | sed s/\'//g | sed s/\://g | sort | uniq | less
      */
     struct option long_options [] = {
-        { "tcti",          optional_argument, NULL, 'T' },
+        { "tcti",          required_argument, NULL, 'T' },
         { "help",          optional_argument, NULL, 'h' },
         { "verbose",       no_argument,       NULL, 'V' },
         { "quiet",         no_argument,       NULL, 'Q' },
