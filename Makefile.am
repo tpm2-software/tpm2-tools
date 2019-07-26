@@ -62,7 +62,7 @@ bin_PROGRAMS = \
     tools/tpm2_nvlist \
     tools/tpm2_nvread \
     tools/tpm2_nvreadlock \
-    tools/tpm2_nvrelease \
+    tools/tpm2_nvundefine \
     tools/tpm2_nvwrite \
     tools/tpm2_pcrallocate \
     tools/tpm2_pcrevent \
@@ -128,7 +128,7 @@ tools_tpm2_nvreadlock_SOURCES = tools/tpm2_nvreadlock.c $(TOOL_SRC)
 tools_tpm2_nvwrite_SOURCES = tools/tpm2_nvwrite.c $(TOOL_SRC)
 tools_tpm2_nvdefine_SOURCES = tools/tpm2_nvdefine.c $(TOOL_SRC)
 tools_tpm2_nvincrement_SOURCES = tools/tpm2_nvincrement.c $(TOOL_SRC)
-tools_tpm2_nvrelease_SOURCES = tools/tpm2_nvrelease.c $(TOOL_SRC)
+tools_tpm2_nvundefine_SOURCES = tools/tpm2_nvundefine.c $(TOOL_SRC)
 tools_tpm2_hmac_SOURCES = tools/tpm2_hmac.c $(TOOL_SRC)
 tools_tpm2_certify_SOURCES = tools/tpm2_certify.c $(TOOL_SRC)
 tools_tpm2_readpublic_SOURCES = tools/tpm2_readpublic.c $(TOOL_SRC)
@@ -320,7 +320,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_nvlist.1 \
     man/man1/tpm2_nvread.1 \
     man/man1/tpm2_nvreadlock.1 \
-    man/man1/tpm2_nvrelease.1 \
+    man/man1/tpm2_nvundefine.1 \
     man/man1/tpm2_nvwrite.1 \
     man/man1/tpm2_pcrallocate.1 \
     man/man1/tpm2_pcrevent.1 \

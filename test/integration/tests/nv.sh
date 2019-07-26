@@ -13,9 +13,9 @@ file_pcr_value=pcr.bin
 file_policy=policy.data
 
 cleanup() {
-  tpm2_nvrelease -Q -x $nv_test_index -C o 2>/dev/null || true
-  tpm2_nvrelease -Q -x 0x1500016 -C 0x40000001 2>/dev/null || true
-  tpm2_nvrelease -Q -x 0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
+  tpm2_nvundefine -Q -x $nv_test_index -C o 2>/dev/null || true
+  tpm2_nvundefine -Q -x 0x1500016 -C 0x40000001 2>/dev/null || true
+  tpm2_nvundefine -Q -x 0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
         nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out cap.out
@@ -34,7 +34,7 @@ tpm2_clear
 
 #Test default values for the hierarchy "-a" parameter
 tpm2_nvdefine -Q   $nv_test_index -s 32 -a "ownerread|policywrite|ownerwrite"
-tpm2_nvrelease -Q -x $nv_test_index
+tpm2_nvundefine -Q -x $nv_test_index
 
 #Test writing and reading
 tpm2_nvdefine -Q   $nv_test_index -C o -s 32 -a "ownerread|policywrite|ownerwrite"
@@ -82,7 +82,7 @@ tpm2_nvread   $nv_test_index -C o -s 13 > cmp.dat
 
 cmp nv.test_w cmp.dat
 
-tpm2_nvrelease -x $nv_test_index -C o
+tpm2_nvundefine -x $nv_test_index -C o
 
 tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
 
@@ -102,7 +102,7 @@ trap - ERR
 tpm2_nvread   0x1500016 -C 0x1500016 -P "index" 2>/dev/null
 trap onerror ERR
 
-tpm2_nvrelease -Q -x 0x1500016 -C 0x40000001
+tpm2_nvundefine -Q -x 0x1500016 -C 0x40000001
 
 #
 # Test large writes
@@ -127,7 +127,7 @@ cmp -s $large_file_read_name $large_file_name
 tpm2_nvlist > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
-tpm2_nvrelease -Q -x $nv_test_index -C o
+tpm2_nvundefine -Q -x $nv_test_index -C o
 
 #
 # Test NV access locked
@@ -188,13 +188,13 @@ if [ $? -eq 0 ];then
  exit 1
 fi
 
-# Check using authorisation with tpm2_nvrelease
+# Check using authorisation with tpm2_nvundefine
 trap onerror ERR
 
-tpm2_nvrelease -x 0x1500015 -C 0x40000001 -P "owner"
+tpm2_nvundefine -x 0x1500015 -C 0x40000001 -P "owner"
 
 # Check nv index can be specified simply as an offset
 tpm2_nvdefine -Q -C o -s 32 -a "ownerread|ownerwrite"   1 -P "owner"
-tpm2_nvrelease -x 0x01000001 -C o -P "owner"
+tpm2_nvundefine -x 0x01000001 -C o -P "owner"
 
 exit 0

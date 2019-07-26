@@ -1691,7 +1691,7 @@ tool_rc tpm2_nvreadlock(
     return tool_rc_success;
 }
 
-tool_rc tpm2_nvrelease(
+tool_rc tpm2_nvundefine(
     ESYS_CONTEXT *esysContext,
     tpm2_loaded_object *auth_hierarchy_obj,
     TPM2_HANDLE nv_index) {
