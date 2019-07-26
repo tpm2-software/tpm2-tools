@@ -41,7 +41,7 @@ cleanup() {
   tpm2_evictcontrol -Q -C o -c $handle_ek -P "$ownerpw" 2>/dev/null || true
   tpm2_evictcontrol -Q -C o -c $context_ak -P "$ownerpw" 2>/dev/null || true
 
-  tpm2_nvundefine -Q -x $handle_nv -C $handle_hier -P "$ownerpw" 2>/dev/null || true
+  tpm2_nvundefine -Q   $handle_nv -C $handle_hier -P "$ownerpw" 2>/dev/null || true
 
   if [ $(ina "$@" "no-shut-down") -ne 0 ]; then
     shut_down

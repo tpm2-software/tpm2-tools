@@ -11,9 +11,9 @@ file_pcr_value=pcr.bin
 file_policy=policy.data
 
 cleanup() {
-  tpm2_nvundefine -Q -x $nv_test_index -C o 2>/dev/null || true
-  tpm2_nvundefine -Q -x 0x1500016 -C 0x40000001 2>/dev/null || true
-  tpm2_nvundefine -Q -x 0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
+  tpm2_nvundefine -Q   $nv_test_index -C o 2>/dev/null || true
+  tpm2_nvundefine -Q   0x1500016 -C 0x40000001 2>/dev/null || true
+  tpm2_nvundefine -Q   0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_inc nv.readlock foo.dat cmp.dat \
         $file_pcr_value $file_policy nv.out cap.out
@@ -52,7 +52,7 @@ tpm2_nvread   $nv_test_index -C o -s 8 > cmp.dat
 
 cmp nv.test_inc cmp.dat
 
-tpm2_nvundefine -x $nv_test_index -C o
+tpm2_nvundefine   $nv_test_index -C o
 
 
 tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
@@ -76,7 +76,7 @@ trap - ERR
 tpm2_nvread   0x1500016 -C 0x1500016 -P "index" 2>/dev/null
 trap onerror ERR
 
-tpm2_nvundefine -Q -x 0x1500016 -C 0x40000001
+tpm2_nvundefine -Q   0x1500016 -C 0x40000001
 
 
 #
@@ -139,6 +139,6 @@ fi
 # Check using authorisation with tpm2_nvundefine
 trap onerror ERR
 
-tpm2_nvundefine -x 0x1500015 -C 0x40000001 -P "owner"
+tpm2_nvundefine   0x1500015 -C 0x40000001 -P "owner"
 
 exit 0

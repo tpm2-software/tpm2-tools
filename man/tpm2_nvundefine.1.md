@@ -11,13 +11,11 @@
 # DESCRIPTION
 
 **tpm2_nvundefine**(1) - Undefine a Non-Volatile (NV) index that was previously
-defined with **tpm2_nvdefine**(1).
+defined with **tpm2_nvdefine**(1). The index is specified as an argument. It can
+be specified as raw handle or an offset value to the nv handle range
+"TPM2_HR_NV_INDEX".
 
 # OPTIONS
-
-  * **-x**, **\--index**=_NV\_INDEX_:
-
-    Specifies the nv index to undefine.
 
   * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
 
@@ -42,7 +40,7 @@ defined with **tpm2_nvdefine**(1).
 # EXAMPLES
 
 ```
-tpm2_nvundefine -x 0x1500016 -C 0x40000001 -P passwd
+tpm2_nvundefine   0x1500016 -C 0x40000001 -P passwd
 ```
 
 [returns](common/returns.md)
