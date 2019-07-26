@@ -282,7 +282,7 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
                 out_private, out_public, &loaded_sha1_key_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Load, rval);
-        rc = tool_rc_from_tpm(rval);
+        rc = Tss2_RC_Decode(rval);
         goto out;
     }
 
@@ -291,7 +291,7 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
     rval = Esys_TR_GetName(ectx, loaded_sha1_key_handle, &key_name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_GetName, rval);
-        rc = tool_rc_from_tpm(rval);
+        rc = Tss2_RC_Decode(rval);
         goto nameout;
     }
 

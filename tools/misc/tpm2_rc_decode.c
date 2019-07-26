@@ -2,6 +2,8 @@
 
 #include <inttypes.h>
 
+#include <tss2/tss2_rc.h>
+
 #include "log.h"
 #include "tpm2_tool.h"
 
@@ -53,7 +55,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
     UNUSED(ectx);
 
-    const char *e = tpm2_error_str(ctx.rc);
+    const char *e = Tss2_RC_Decode(ctx.rc);
     tpm2_tool_output("%s\n", e);
 
     return tool_rc_success;

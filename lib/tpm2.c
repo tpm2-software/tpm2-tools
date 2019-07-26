@@ -4,8 +4,15 @@
 
 #include "log.h"
 #include "object.h"
+#include "tool_rc.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
+
+#define TPM2_ERROR_TSS2_RC_ERROR_MASK 0xFFFF
+
+static inline UINT16 tpm2_error_get(TSS2_RC rc) {
+    return ((rc & TPM2_ERROR_TSS2_RC_ERROR_MASK));
+}
 
 tool_rc tpm2_readpublic(
         ESYS_CONTEXT *esysContext,

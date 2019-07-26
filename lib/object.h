@@ -1,7 +1,7 @@
 #ifndef LIB_OBJECT_H_
 #define LIB_OBJECT_H_
 
-#include "tpm2_error.h"
+#include "tool_rc.h"
 #include "tpm2_session.h"
 #include "tpm2_hierarchy.h"
 

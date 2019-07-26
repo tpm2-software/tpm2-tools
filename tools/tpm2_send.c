@@ -160,7 +160,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     TSS2_RC rval = Esys_GetTcti(context, &tcti_context);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetTctiContext, rval);
-        rc = tool_rc_from_tpm(rval);
+        rc = Tss2_RC_Decode(rval);
         goto out;
     }
 
@@ -175,7 +175,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     rval = Tss2_Tcti_Receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_receive failed: 0x%x", rval);
-        rc = tool_rc_from_tpm(rval);
+        rc = Tss2_RC_Decode(rval);
         goto out;
     }
 

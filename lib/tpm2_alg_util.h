@@ -7,7 +7,7 @@
 
 #include <tss2/tss2_esys.h>
 
-#include "tpm2_error.h"
+#include "tool_rc.h"
 
 typedef enum tpm2_alg_util_flags tpm2_alg_util_flags;
 enum tpm2_alg_util_flags {

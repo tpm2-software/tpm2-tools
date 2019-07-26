@@ -48,7 +48,7 @@ static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
             LOG_ERR("Failed Flush Context for %s handle 0x%x",
                     get_property_name(handles[i]), handles[i]);
             LOG_PERR(Esys_FlushContext, rval);
-            return tool_rc_from_tpm(rval);
+            return Tss2_RC_Decode(rval);
         }
     }
 
@@ -64,7 +64,7 @@ static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
         TPM2_RC rval = Esys_FlushContext(ectx, handles[i]);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_FlushContext, rval);
-            return tool_rc_from_tpm(rval);
+            return Tss2_RC_Decode(rval);
         }
     }
 

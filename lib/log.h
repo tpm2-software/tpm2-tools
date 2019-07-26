@@ -8,7 +8,7 @@
 
 #include <tss2/tss2_sys.h>
 
-#include "tpm2_error.h"
+#include <tss2/tss2_rc.h>
 #include "tpm2_util.h"
 
 typedef enum log_level log_level;
@@ -50,7 +50,7 @@ void _log (log_level level, const char *file, unsigned lineno, const char *fmt, 
  */
 static inline void _LOG_PERR(const char *func, TSS2_RC rc) {
 
-    LOG_ERR("%s(0x%X) - %s", func, rc, tpm2_error_str(rc));
+    LOG_ERR("%s(0x%X) - %s", func, rc, Tss2_RC_Decode(rc));
 }
 
 /*

@@ -52,7 +52,7 @@ static tool_rc verify_signature(ESYS_CONTEXT *context) {
                         ctx.msgHash, &ctx.signature, &validation);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_VerifySignature, rval);
-        rc = tool_rc_from_tpm(rval);
+        rc = Tss2_RC_Decode(rval);
         goto out;
     }
 

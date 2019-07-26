@@ -6,7 +6,7 @@
 #include <tss2/tss2_esys.h>
 #include <stdbool.h>
 
-#include "tpm2_error.h"
+#include "tool_rc.h"
 #include "tpm2_options.h"
 
 extern bool output_enabled;

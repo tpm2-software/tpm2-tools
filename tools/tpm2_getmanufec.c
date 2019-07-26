@@ -146,7 +146,7 @@ tool_rc createEKHandle(ESYS_CONTEXT *ectx)
             NULL, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS ) {
         LOG_PERR(Esys_CreatePrimary, rval);
-        return tool_rc_from_tpm(rval);
+        return Tss2_RC_Decode(rval);
     }
 
     if (!ctx.non_persistent_read) {
@@ -171,21 +171,21 @@ tool_rc createEKHandle(ESYS_CONTEXT *ectx)
                 ctx.persistent_handle, &new_handle);
         if (rval != TPM2_RC_SUCCESS ) {
             LOG_PERR(Esys_EvictControl, rval);
-            return tool_rc_from_tpm(rval);
+            return Tss2_RC_Decode(rval);
         }
         LOG_INFO("EvictControl EK persistent succ.");
 
         rval = Esys_TR_Close(ectx, &new_handle);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_TR_Close, rval);
-            return tool_rc_from_tpm(rval);
+            return Tss2_RC_Decode(rval);
         }
     }
 
     rval = Esys_FlushContext(ectx, handle2048ek);
     if (rval != TPM2_RC_SUCCESS ) {
         LOG_PERR(Esys_FlushContext, rval);
-        return tool_rc_from_tpm(rval);
+        return Tss2_RC_Decode(rval);
     }
 
     LOG_INFO("Flush transient EK succ.");

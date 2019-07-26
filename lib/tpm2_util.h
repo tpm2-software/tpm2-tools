@@ -9,7 +9,6 @@
 
 #include <tss2/tss2_esys.h>
 
-#include "tpm2_error.h"
 #include "tpm2_session.h"
 
 #if defined (__GNUC__)

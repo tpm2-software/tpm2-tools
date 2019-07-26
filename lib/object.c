@@ -3,6 +3,7 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tool_rc.h"
 #include "tpm2_auth_util.h"
 
 #define NULL_OBJECT "null"
