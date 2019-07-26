@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvreadlock: short option changed to argument
+    -x used to specify nv index is now an argument
   * tpm2_nvread: short option changed to argument
     -x used to specify nv index is now an argument
   * tpm2_nvincrement: short option changed to argument

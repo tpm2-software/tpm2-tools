@@ -88,7 +88,7 @@ tpm2_nvincrement -Q   $nv_test_index -C o
 
 tpm2_nvread -Q   $nv_test_index -C o -s 8
 
-tpm2_nvreadlock -Q -x $nv_test_index -C o
+tpm2_nvreadlock -Q   $nv_test_index -C o
 
 # Reset ERR signal handler to test for expected nvread error
 trap - ERR
