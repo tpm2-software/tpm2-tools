@@ -6,7 +6,7 @@
 
 # SYNOPSIS
 
-**tpm2_nvwrite** [*OPTIONS*] _FILE_
+**tpm2_nvwrite** [*OPTIONS*]
 
 # DESCRIPTION
 
@@ -14,6 +14,10 @@
 If _FILE_ is not specified, it defaults to stdin.
 
 # OPTIONS
+
+  * **-i**, **\--input**=_FILE_:
+
+    Specifies the input file with data to write to NV.
 
   * **-x**, **\--index**=_NV\_INDEX_:
 
@@ -54,7 +58,7 @@ If _FILE_ is not specified, it defaults to stdin.
 
 ## Write the file nv.data to index *0x150016*
 ```
-tpm2_nvwrite -x 0x1500016 -P "index" -f nv.data
+tpm2_nvwrite -x 0x1500016 -P "index" -i nv.data
 ```
 
 [returns](common/returns.md)

@@ -65,7 +65,7 @@ tpm2_nvdefine -Q  1 -C o -s 32 -a "ownerread|policywrite|ownerwrite"
 
 echo "please123abc" > nv.test_w
 
-tpm2_nvwrite -Q -x $nv_test_index -C o nv.test_w
+tpm2_nvwrite -Q -x $nv_test_index -C o -i nv.test_w
 
 tpm2_nvread -Q  1 -C o -s 32 -o 0
 ```

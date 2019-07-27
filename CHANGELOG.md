@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvwrite: input file changed from argument to option
+    -i or --input is now the method to specify file data to write
   * tpm2_nvlist: Renaming the tool
     - tpm2_nvlist is now tpm2_nvreadpublic
   * tpm2_nvundefine: short option changed to argument
