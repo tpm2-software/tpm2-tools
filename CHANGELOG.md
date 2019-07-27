@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_nvwrite: short option changed to argument
+    -x used to specify nv index is now an argument
   * tpm2_nvwrite: input file changed from argument to option
     -i or --input is now the method to specify file data to write
   * tpm2_nvlist: Renaming the tool

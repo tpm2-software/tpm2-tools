@@ -6,22 +6,19 @@
 
 # SYNOPSIS
 
-**tpm2_nvwrite** [*OPTIONS*]
+**tpm2_nvwrite** [*OPTIONS*] _NV\_INDEX_
 
 # DESCRIPTION
 
 **tpm2_nvwrite**(1) - Write data specified via _FILE_ to a Non-Volatile (NV) index.
-If _FILE_ is not specified, it defaults to stdin.
+If _FILE_ is not specified, it defaults to stdin. The index can be specified as
+raw handle or an offset value to the nv handle range "TPM2_HR_NV_INDEX".
 
 # OPTIONS
 
   * **-i**, **\--input**=_FILE_:
 
     Specifies the input file with data to write to NV.
-
-  * **-x**, **\--index**=_NV\_INDEX_:
-
-    Specifies the index to define the space at.
 
   * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
 
@@ -58,7 +55,7 @@ If _FILE_ is not specified, it defaults to stdin.
 
 ## Write the file nv.data to index *0x150016*
 ```
-tpm2_nvwrite -x 0x1500016 -P "index" -i nv.data
+tpm2_nvwrite 0x1500016 -P "index" -i nv.data
 ```
 
 [returns](common/returns.md)
