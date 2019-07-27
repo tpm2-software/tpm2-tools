@@ -41,7 +41,7 @@ tpm2_nvdefine -Q   $nv_test_index -C o -s 32 -a "ownerread|policywrite|ownerwrit
 
 echo "please123abc" > nv.test_w
 
-tpm2_nvwrite -Q -x $nv_test_index -C o -i nv.test_w
+tpm2_nvwrite -Q   $nv_test_index -C o -i nv.test_w
 
 tpm2_nvread -Q   $nv_test_index -C o -s 32 -o 0
 
@@ -60,7 +60,7 @@ echo -n "foo" > foo.dat
 dd if=foo.dat of=nv.test_w bs=1 seek=4 conv=notrunc 2>/dev/null
 
 # Test a pipe input
-cat foo.dat | tpm2_nvwrite -Q -x $nv_test_index -C o --offset 4 -i -
+cat foo.dat | tpm2_nvwrite -Q   $nv_test_index -C o --offset 4 -i -
 
 tpm2_nvread   $nv_test_index -C o -s 13 > cmp.dat
 
@@ -71,7 +71,7 @@ cmp nv.test_w cmp.dat
 
 trap - ERR
 
-tpm2_nvwrite -Q -x $nv_test_index -C o -o 30 -i foo.dat 2>/dev/null
+tpm2_nvwrite -Q   $nv_test_index -C o -o 30 -i foo.dat 2>/dev/null
 if [ $? -eq 0 ]; then
   echo "Writing past the public size shouldn't work!"
   exit 1
@@ -91,7 +91,7 @@ tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_v
 tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 32 -L $file_policy -a "policyread|policywrite"
 
 # Write with index authorization for now, since tpm2_nvwrite does not support pcr policy.
-echo -n "policy locked" | tpm2_nvwrite -Q -x 0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value -i -
+echo -n "policy locked" | tpm2_nvwrite -Q   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value -i -
 
 str=`tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value -s 13`
 
@@ -118,7 +118,7 @@ tpm2_nvdefine -Q   $nv_test_index -C o -s $large_file_size -a 0x2000A
 base64 /dev/urandom | head -c $(($large_file_size)) > $large_file_name
 
 # Test file input redirection
-tpm2_nvwrite -Q -x $nv_test_index -C o -i -< $large_file_name
+tpm2_nvwrite -Q   $nv_test_index -C o -i -< $large_file_name
 
 tpm2_nvread   $nv_test_index -C o > $large_file_read_name
 
@@ -136,7 +136,7 @@ tpm2_nvdefine -Q   $nv_test_index -C o -s 32 -a "ownerread|policywrite|ownerwrit
 
 echo "foobar" > nv.readlock
 
-tpm2_nvwrite -Q -x $nv_test_index -C o -i nv.readlock
+tpm2_nvwrite -Q   $nv_test_index -C o -i nv.readlock
 
 tpm2_nvread -Q   $nv_test_index -C o -s 6 -o 0
 
@@ -169,20 +169,20 @@ tpm2_nvdefine   0x1500015 -C 0x40000001 -s 32 \
   -p "index" -P "owner"
 
 # Use index password write/read, implicit -a
-tpm2_nvwrite -Q -x 0x1500015 -P "index" -i nv.test_w
+tpm2_nvwrite -Q   0x1500015 -P "index" -i nv.test_w
 tpm2_nvread -Q   0x1500015 -P "index"
 
 # Use index password write/read, explicit -a
-tpm2_nvwrite -Q -x 0x1500015 -C 0x1500015 -P "index" -i nv.test_w
+tpm2_nvwrite -Q   0x1500015 -C 0x1500015 -P "index" -i nv.test_w
 tpm2_nvread -Q   0x1500015 -C 0x1500015 -P "index"
 
 # use owner password
-tpm2_nvwrite -Q -x 0x1500015 -C 0x40000001 -P "owner" -i nv.test_w
+tpm2_nvwrite -Q   0x1500015 -C 0x40000001 -P "owner" -i nv.test_w
 tpm2_nvread -Q   0x1500015 -C 0x40000001 -P "owner"
 
 # Check a bad password fails
 trap - ERR
-tpm2_nvwrite -Q -x 0x1500015 -C 0x1500015 -P "wrong" -i nv.test_w 2>/dev/null
+tpm2_nvwrite -Q   0x1500015 -C 0x1500015 -P "wrong" -i nv.test_w 2>/dev/null
 if [ $? -eq 0 ];then
  echo "nvwrite with bad password should fail!"
  exit 1
