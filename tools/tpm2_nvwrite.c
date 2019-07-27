@@ -19,7 +19,7 @@ struct tpm_nvwrite_ctx {
 
     TPM2_HANDLE nv_index;
 
-    UINT8 nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
+    BYTE nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
     FILE *input_file;
     UINT16 data_size;
     UINT16 offset;
@@ -96,7 +96,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
 static bool on_option(char key, char *value) {
     bool result;
-
+    char *input_file;
     switch (key) {
     case 'x':
         result = tpm2_util_string_to_uint32(value, &ctx.nv_index);
@@ -122,6 +122,24 @@ static bool on_option(char key, char *value) {
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
         break;
+    case 'i':
+        input_file = strcmp("-", value) ? value : NULL;
+        if (input_file) {
+            result = files_get_file_size_path(value, (long unsigned *)&ctx.data_size);
+        }
+        if (input_file && !result) {
+            return false;
+        }
+        result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, input_file,
+            &ctx.data_size, ctx.nv_buffer);
+        if (!result) {
+            return false;
+        }
+        if (ctx.data_size > TPM2_MAX_NV_BUFFER_SIZE) {
+            LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE");
+            return false;
+        }
+        break;
     case 0:
         if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {
             LOG_ERR("Could not convert starting offset, got: \"%s\"",
@@ -134,36 +152,18 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
-static bool on_args(int argc, char **argv) {
-
-    if (argc > 1) {
-        LOG_ERR("Only supports one input file, got: %d", argc);
-        return false;
-    }
-
-    ctx.input_file = fopen(argv[0], "rb");
-    if (!ctx.input_file) {
-        LOG_ERR("Could not open input file \"%s\", error: %s",
-                argv[0], strerror(errno));
-        return false;
-    }
-
-    return true;
-}
-
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "index",                required_argument, NULL, 'x' },
         { "hierarchy",            required_argument, NULL, 'C' },
         { "auth",                 required_argument, NULL, 'P' },
+        { "input",                required_argument, NULL, 'i' },
         { "offset",               required_argument, NULL,  0  },
     };
 
-    *opts = tpm2_options_new("x:C:P:", ARRAY_LEN(topts), topts,
-                             on_option, on_args, 0);
-
-    ctx.input_file = stdin;
+    *opts = tpm2_options_new("x:C:P:i:", ARRAY_LEN(topts), topts, on_option,
+        NULL, 0);
 
     return *opts != NULL;
 }
@@ -178,47 +178,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization");
         return rc;
-    }
-
-    /* Suppress error reporting with NULL path */
-    unsigned long file_size;
-    bool result = files_get_file_size(ctx.input_file, &file_size, NULL);
-
-    if (result) {
-
-        if (file_size > TPM2_MAX_NV_BUFFER_SIZE) {
-            LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE, got %lu expected %u", file_size,
-                    TPM2_MAX_NV_BUFFER_SIZE);
-            return tool_rc_general_error;
-        }
-
-        /*
-         * We know the size upfront, read it. Note that the size was already
-         * bounded by TPM2_MAX_NV_BUFFER_SIZE
-         */
-        ctx.data_size = (UINT16) file_size;
-        result = files_read_bytes(ctx.input_file, ctx.nv_buffer, ctx.data_size);
-        if (!result)  {
-            LOG_ERR("could not read input file");
-            return tool_rc_general_error;
-        }
-    } else {
-        /* we don't know the file size, ie it's a stream, read till end */
-        size_t bytes = fread(ctx.nv_buffer, 1, TPM2_MAX_NV_BUFFER_SIZE, ctx.input_file);
-        if (bytes != TPM2_MAX_NV_BUFFER_SIZE) {
-            if (ferror(ctx.input_file)) {
-                LOG_ERR("reading from input file failed: %s", strerror(errno));
-                return tool_rc_general_error;
-            }
-
-            if (!feof(ctx.input_file)) {
-                LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE: %u",
-                        TPM2_MAX_NV_BUFFER_SIZE);
-                return tool_rc_general_error;
-            }
-        }
-
-        ctx.data_size = (UINT16)bytes;
     }
 
     return nv_write(ectx);

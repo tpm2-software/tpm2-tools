@@ -46,7 +46,7 @@ tpm2_nvdefine -Q   1 -C o -s 32 -a "ownerread|policywrite|ownerwrite|read_stclea
 
 echo "foobar" > nv.readlock
 
-tpm2_nvwrite -Q -x 0x01000001 -C o nv.readlock
+tpm2_nvwrite -Q -x 0x01000001 -C o -i nv.readlock
 
 tpm2_nvread -Q   1 -C o -s 6 -o 0
 
