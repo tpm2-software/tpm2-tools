@@ -53,9 +53,13 @@ raw handle or an offset value to the nv handle range "TPM2_HR_NV_INDEX".
 
 # EXAMPLES
 
-## Write the file nv.data to index *0x150016*
+## Write the file nv.data to index *0x01000001*
 ```
-tpm2_nvwrite 0x1500016 -P "index" -i nv.data
+tpm2_nvdefine -Q   1 -C o -s 32 -a "ownerread|policywrite|ownerwrite"
+
+echo "please123abc" > nv.test_w
+
+tpm2_nvwrite -Q   1 -C o -i nv.test_w
 ```
 
 [returns](common/returns.md)
