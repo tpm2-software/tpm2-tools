@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_pcrlist: -gls go away, -g and -l become a single argument.
   * tpm2_pcrevent: -x becomes an argument.
   * tpm2_nvwrite: short option changed to argument
     -x used to specify nv index is now an argument

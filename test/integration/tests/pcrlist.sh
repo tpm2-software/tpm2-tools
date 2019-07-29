@@ -18,12 +18,12 @@ cleanup "no-shut-down"
 tpm2_pcrlist > pcrs.out
 yaml_verify pcrs.out
 
-tpm2_pcrlist -Q -g 0x04
+tpm2_pcrlist -Q 0x04
 
-tpm2_pcrlist -Q -l 0x04:17,18,19+sha256:0,17,18,19 -o pcrs.out
+tpm2_pcrlist -Q -o pcrs.out 0x04:17,18,19+sha256:0,17,18,19
 
 test -e pcrs.out
 
-tpm2_pcrlist -Q -s
+tpm2_pcrlist -Q
 
 exit 0
