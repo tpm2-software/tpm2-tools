@@ -222,32 +222,56 @@ static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
 
 static bool on_arg(int argc, char **argv) {
 
-    if (argc > 1) {
-        LOG_ERR("Expected a single FILE argument, got: %d", argc);
+    if (argc > 2) {
+        LOG_ERR("Expected FILE and PCR index at most, got %d", argc);
         return false;
     }
 
-    ctx.input = fopen(argv[0], "rb");
-    if (!ctx.input) {
-        LOG_ERR("Error opening file \"%s\", error: %s", argv[0],
-                strerror(errno));
-        return false;
+    FILE *f = NULL;
+    const char *pcr = NULL;
+
+    unsigned i;
+    /* argc can never be negative so cast is safe */
+    for (i=0; i < (unsigned)argc; i++) {
+
+        FILE *x = fopen(argv[i], "rb");
+        /* file already found but got another file */
+        if (f && x) {
+            LOG_ERR("Only expected one file input");
+            goto error;
+            /* looking for file and got a file so assign */
+        } else if (x && !f) {
+            f = ctx.input = x;
+            /* looking for pcr and not a file */
+        } else if (!pcr) {
+            pcr = argv[i];
+            bool result = tpm2_util_handle_from_optarg(pcr, &ctx.pcr,
+                    TPM2_HANDLE_FLAGS_PCR);
+            if (!result) {
+                LOG_ERR("Could not convert \"%s\", to a pcr index.", pcr);
+                return false;
+            }
+
+            /* got pcr and not a file (another pcr) */
+        } else {
+            LOG_ERR("Already got PCR index.");
+            goto error;
+        }
     }
 
     return true;
+
+error:
+    if (f) {
+        fclose(f);
+    }
+
+    return false;
 }
 
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'x': {
-        bool result = tpm2_util_handle_from_optarg(value, &ctx.pcr, TPM2_HANDLE_FLAGS_PCR);
-        if (!result) {
-            LOG_ERR("Could not convert \"%s\", to a pcr index.", value);
-            return false;
-        }
-    }
-        break;
     case 'P':
         ctx.auth.auth_str = value;
         break;
@@ -260,11 +284,10 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "pcr-index", required_argument, NULL, 'x' },
         { "auth",      required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("x:P:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
 
     return *opts != NULL;

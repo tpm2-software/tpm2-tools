@@ -6,7 +6,7 @@
 
 # SYNOPSIS
 
-**tpm2_pcrevent** [*OPTIONS*] _FILE_
+**tpm2_pcrevent** [*OPTIONS*] _FILE_ _PCR\_INDEX_
 
 # DESCRIPTION
 
@@ -14,7 +14,10 @@
 hashing algorithms that the TPM supports.
 
 Optionally, if a PCR index is specified, it extends that PCR for all
-supported algorithms with the hash digest. In either case, it
+supported algorithms with the hash digest. _FILE_ and _PCR\_INDEX\_ arguments
+don't need to come in any particular order.
+
+In either case, it
 outputs to stdout the hash algorithm used and the digest value,
 one per line:
 
@@ -28,11 +31,6 @@ See sections 23.1 and sections 17 of the [TPM2.0 Specification](https://trustedc
 # OPTIONS
 
 These options control extending the pcr:
-
-  * **-x**, **\--pcr-index**=_INDEX_:
-
-    Not only compute the hash digests on _FILE_, also extend the PCR given by
-    _INDEX_ for all supported hash algorithms.
 
   * **-P**, **\--auth**=_PCR\_AUTH_:
 
@@ -57,7 +55,7 @@ tpm2_pcrevent data
 ## Hash a file and extend PCR 8
 ```bash
 echo "foo" > data
-tpm2_pcrevent -x 8 data
+tpm2_pcrevent 8 data
 ```
 
 [returns](common/returns.md)

@@ -50,7 +50,7 @@ old_pcr_value=`yaml_get_kv $yaml_out_file "sha1" "9"`
 
 # Verify that extend works, and test large files
 dd if=/dev/urandom of=$hash_in_file count=1 bs=2093 2> /dev/null
-tpm2_pcrevent -Q -x 9 $hash_in_file
+tpm2_pcrevent -Q 9 $hash_in_file
 
 tpm2_pcrlist -l sha1:9 > $yaml_out_file
 new_pcr_value=`yaml_get_kv $yaml_out_file "sha1" "9"`
