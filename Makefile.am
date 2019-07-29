@@ -69,7 +69,7 @@ bin_PROGRAMS = \
     tools/tpm2_pcrallocate \
     tools/tpm2_pcrevent \
     tools/tpm2_pcrextend \
-    tools/tpm2_pcrlist \
+    tools/tpm2_pcrread \
     tools/tpm2_pcrreset \
     tools/tpm2_policypcr \
     tools/tpm2_policyauthorize \
@@ -109,7 +109,7 @@ tools_tpm2_clearcontrol_SOURCES = tools/tpm2_clearcontrol.c $(TOOL_SRC)
 tools_tpm2_create_SOURCES = tools/tpm2_create.c $(TOOL_SRC)
 tools_tpm2_createprimary_SOURCES = tools/tpm2_createprimary.c $(TOOL_SRC)
 tools_tpm2_getcap_SOURCES = tools/tpm2_getcap.c $(TOOL_SRC)
-tools_tpm2_pcrlist_SOURCES = tools/tpm2_pcrlist.c $(TOOL_SRC)
+tools_tpm2_pcrread_SOURCES = tools/tpm2_pcrread.c $(TOOL_SRC)
 tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
 tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
 tools_tpm2_startup_SOURCES = tools/tpm2_startup.c $(TOOL_SRC)
@@ -323,7 +323,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_pcrallocate.1 \
     man/man1/tpm2_pcrevent.1 \
     man/man1/tpm2_pcrextend.1 \
-    man/man1/tpm2_pcrlist.1 \
+    man/man1/tpm2_pcrread.1 \
     man/man1/tpm2_pcrreset.1 \
     man/man1/tpm2_policypcr.1 \
     man/man1/tpm2_policyrestart.1 \

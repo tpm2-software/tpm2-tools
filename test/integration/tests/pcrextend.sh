@@ -47,7 +47,7 @@ else
     true
 fi
 
-oversizedspec="sha1=$(tpm2_pcrlist sha1 | tail +2 | cut -d':' -f2 | sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
+oversizedspec="sha1=$(tpm2_pcrread sha1 | tail +2 | cut -d':' -f2 | sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
 
 # Over-length spec should fail
 if tpm2_pcrextend 8:${oversizedspec}; then

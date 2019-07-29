@@ -1,16 +1,16 @@
-% tpm2_pcrlist(1) tpm2-tools | General Commands Manual
+% tpm2_pcrread(1) tpm2-tools | General Commands Manual
 
 # NAME
 
-**tpm2_pcrlist**(1) - List PCR values.
+**tpm2_pcrread**(1) - List PCR values.
 
 # SYNOPSIS
 
-**tpm2_pcrlist** [*OPTIONS*] _PCR\_LIST\_OR\_ALG_
+**tpm2_pcrread** [*OPTIONS*] _PCR\_LIST\_OR\_ALG_
 
 # DESCRIPTION
 
-**tpm2_pcrlist**(1) - Displays PCR values. Without any arguments, **tpm2_pcrlist**(1)
+**tpm2_pcrread**(1) - Displays PCR values. Without any arguments, **tpm2_pcrread**(1)
 outputs all PCRs and their hash banks. One can use specify the hash algorithm or
 a pcr list as an argument to filter the output.
 
@@ -29,7 +29,7 @@ Output is written in a YAML format to stdout, with each algorithm followed by
 a PCR index and its value. As a simple example assume just sha1 and sha256
 support and only 1 PCR. The output would be:
 ```
-$ tpm2_pcrlist -L sha1:0+sha256:0
+$ tpm2_pcrread -L sha1:0+sha256:0
 sha1 :
   0  : 0000000000000000000000000000000000000003
 sha256 :
@@ -57,22 +57,22 @@ sha256 :
 
 ## Display all PCR values
 ```bash
-tpm2_pcrlist
+tpm2_pcrread
 ```
 
 ## Display the PCR values with a specified bank
 ```bash
-tpm2_pcrlist sha1
+tpm2_pcrread sha1
 ```
 
 ## Display the PCR values with specified banks and store in a file
 ```bash
-tpm2_pcrlist -o pcrs sha1:16,17,18+sha256:16,17,18
+tpm2_pcrread -o pcrs sha1:16,17,18+sha256:16,17,18
 ```
 
 ## Display the supported PCR bank algorithms and exit
 ```bash
-tpm2_pcrlist
+tpm2_pcrread
 ```
 
 # NOTES

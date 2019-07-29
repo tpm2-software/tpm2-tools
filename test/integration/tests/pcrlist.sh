@@ -15,15 +15,15 @@ start_up
 
 cleanup "no-shut-down"
 
-tpm2_pcrlist > pcrs.out
+tpm2_pcrread > pcrs.out
 yaml_verify pcrs.out
 
-tpm2_pcrlist -Q 0x04
+tpm2_pcrread -Q 0x04
 
-tpm2_pcrlist -Q -o pcrs.out 0x04:17,18,19+sha256:0,17,18,19
+tpm2_pcrread -Q -o pcrs.out 0x04:17,18,19+sha256:0,17,18,19
 
 test -e pcrs.out
 
-tpm2_pcrlist -Q
+tpm2_pcrread -Q
 
 exit 0
