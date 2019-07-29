@@ -66,7 +66,7 @@ cmp -s $file_unseal_output_data $file_input_data
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
-tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
+tpm2_pcrlist -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
 
 tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 
@@ -107,7 +107,7 @@ trap onerror ERR
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
-tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
+tpm2_pcrlist -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
 
 tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
 

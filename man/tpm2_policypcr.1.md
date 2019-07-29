@@ -51,7 +51,7 @@ Then, it uses a *policy* session to unseal some data stored in the object.
     ```
     tpm2_createprimary -C e -g sha256 -G ecc -c primary.ctx
 
-    tpm2_pcrlist -Q -l "sha1:0,1,2,3 -o pcr.dat
+    tpm2_pcrlist -Q -o pcr.dat "sha1:0,1,2,3
 
     handle=`tpm2_startauthsession -S session.dat | cut -d' ' -f 2-2`
 

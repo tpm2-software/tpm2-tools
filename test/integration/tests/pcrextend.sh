@@ -14,7 +14,7 @@ declare -A alg_hashes=(
 
 digests=""
 # test a single algorithm based on what is supported
-for alg in `tpm2_pcrlist -s | cut -d\  -f 3-`; do
+for alg in `tpm2_getcap pcrs | sed -r -e '1d' -e s/'\s+-\s+(\w+):.*'/'\1'/g`; do
   alg=`echo $alg | cut -d\( -f 1-1`;
 
   hash=${alg_hashes[$alg]}
@@ -47,7 +47,7 @@ else
     true
 fi
 
-oversizedspec="sha1=$(tpm2_pcrlist -g sha1 | tail +2 | cut -d':' -f2 | sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
+oversizedspec="sha1=$(tpm2_pcrlist sha1 | tail +2 | cut -d':' -f2 | sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
 
 # Over-length spec should fail
 if tpm2_pcrextend 8:${oversizedspec}; then

@@ -62,7 +62,7 @@ tpm2_clear
 
 tpm2_createprimary -Q -C e -g $alg_primary_obj -G $alg_primary_key -c $file_primary_key_ctx
 
-tpm2_pcrlist -Q -l ${alg_pcr_policy}:${pcr_ids} -o $file_pcr_value
+tpm2_pcrlist -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
 
 tpm2_startauthsession -Q -S $file_session_file
 

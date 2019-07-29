@@ -6,13 +6,24 @@
 
 # SYNOPSIS
 
-**tpm2_pcrlist** [*OPTIONS*]
+**tpm2_pcrlist** [*OPTIONS*] _PCR\_LIST\_OR\_ALG_
 
 # DESCRIPTION
 
-**tpm2_pcrlist**(1) - Displays PCR values. Without any options, **tpm2_pcrlist**(1)
-outputs all pcrs and their hash banks. One can use either the **-g** or **-L**
-mutually exclusive options to filter the output.
+**tpm2_pcrlist**(1) - Displays PCR values. Without any arguments, **tpm2_pcrlist**(1)
+outputs all PCRs and their hash banks. One can use specify the hash algorithm or
+a pcr list as an argument to filter the output.
+
+To only output PCR banks with a given algorithm, specify the hashing algorithm
+as the argument. Algorithms should follow the "formatting standards", see section
+"Algorithm Specifiers". Also, see section "Supported Hash Algorithms" for a list
+of supported hash algorithms.
+
+To output a list of PCR banks (sha1, sha256, etc) and ids (0, 1, 2 etc) specify
+a PCR selection list as the argument as specified via section "PCR Bank
+Specifiers".
+
+Also read **NOTES** section below.
 
 Output is written in a YAML format to stdout, with each algorithm followed by
 a PCR index and its value. As a simple example assume just sha1 and sha256
@@ -27,29 +38,10 @@ sha256 :
 
 # OPTIONS
 
-  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
-
-    Only output PCR banks with the given algorithm.
-    Algorithms should follow the "formatting standards", see section
-    "Algorithm Specifiers".
-    Also, see section "Supported Hash Algorithms" for a list of supported hash
-    algorithms.
-
   * **-o**, **\--output**=_FILE_:
 
     The output file to write the PCR values in binary format, optional.
 
-  * **-l**, **\--pcr-list**=_PCR\_SELECTION\_LIST_:
-
-    The list of PCR banks and selected PCRs' ids for each bank to display.
-    _PCR\_SELECTION\_LIST_ values should follow the
-    PCR bank specifiers standards, see section "PCR Bank Specifiers".
-
-    Also read **NOTES** section below.
-
-  * **-s**, **\--pcr-algorithms**:
-
-    Output the list of supported algorithms.
 
 [common options](common/options.md)
 
@@ -64,23 +56,23 @@ sha256 :
 # EXAMPLES
 
 ## Display all PCR values
-```
+```bash
 tpm2_pcrlist
 ```
 
 ## Display the PCR values with a specified bank
-```
-tpm2_pcrlist -g sha1
+```bash
+tpm2_pcrlist sha1
 ```
 
 ## Display the PCR values with specified banks and store in a file
-```
-tpm2_pcrlist -l sha1:16,17,18+sha256:16,17,18 -o pcrs
+```bash
+tpm2_pcrlist -o pcrs sha1:16,17,18+sha256:16,17,18
 ```
 
 ## Display the supported PCR bank algorithms and exit
-```
-tpm2_pcrlist -s
+```bash
+tpm2_pcrlist
 ```
 
 # NOTES
