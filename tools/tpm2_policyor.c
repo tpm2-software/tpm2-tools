@@ -67,11 +67,6 @@ bool is_input_option_args_valid(void) {
         return false;
     }
 
-    if (!ctx.out_policy_dgst_path) {
-        LOG_ERR("Must specify -o output policy digest file.");
-        return false;
-    }
-
     //Minimum two policies needed to be specified for compounding
     if (ctx.policy_list.count < 1) {
         LOG_ERR("Must specify at least 2 policy digests for compounding.");
