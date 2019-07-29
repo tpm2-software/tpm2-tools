@@ -128,7 +128,7 @@ class ToolConflictor(object):
             {
                 "gname": "integrity",
                 "tools-in-group":
-                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrlist", "tpm2_pcrreset", "tpm2_checkquote", "tpm2_pcrallocate"],
+                ["tpm2_pcrextend", "tpm2_pcrevent", "tpm2_pcrread", "tpm2_pcrreset", "tpm2_checkquote", "tpm2_pcrallocate"],
                 "tools": [],
                 "conflict": None,
                 "ignore": set(['g', 'halg', 'f', 'format', 's', 'algs'])

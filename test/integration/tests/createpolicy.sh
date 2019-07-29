@@ -19,7 +19,7 @@ declare -A digestlengths=(["sha1"]=20 ["sha256"]=32)
 declare -A expected_policy_digest=(["sha1"]="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
                                    ["sha256"]="33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8")
 
-tpm2_pcrlist -V "sha1"
+tpm2_pcrread -V "sha1"
 
 for halg in ${!digestlengths[@]}
 do

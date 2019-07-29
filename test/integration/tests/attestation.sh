@@ -88,7 +88,7 @@ diff $file_input_data $output_actcredential
 # Quoting
 tpm2_pcrreset -Q $debug_pcr
 tpm2_pcrextend -Q $debug_pcr:sha256=$rand_pcr_value
-tpm2_pcrlist -Q
+tpm2_pcrread -Q
 getrandom 20
 tpm2_quote -Q -C $context_ak -l $digestAlg:$debug_pcr_list -q $loaded_randomness -m $output_quote -s $output_quotesig -f $output_quotepcr -g $digestAlg -P "$akpw"
 

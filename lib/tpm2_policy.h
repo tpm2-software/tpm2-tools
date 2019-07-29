@@ -17,7 +17,7 @@
  * @param policy_session
  *  A session started with tpm2_session_new().
  * @param raw_pcrs_file
- *  The a file output from tpm2_pcrlist -o option. Optional, can be NULL.
+ *  The a file output from tpm2_pcrread -o option. Optional, can be NULL.
  *  If NULL, the PCR values are read via the pcr_selection value.
  * @param pcr_selections
  *  The pcr selections to use when building the pcr policy. It follows the PCR selection
