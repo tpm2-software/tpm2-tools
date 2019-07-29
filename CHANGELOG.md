@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_pcrevent: -x becomes an argument.
   * tpm2_nvwrite: short option changed to argument
     -x used to specify nv index is now an argument
   * tpm2_nvwrite: input file changed from argument to option
