@@ -184,4 +184,23 @@ tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
     const char *new_parent_name_path,
     TPMI_YES_NO is_include_obj);
 
+/**
+ * Policy tools need to:
+ *  - get the policy digest
+ *  - print the policy digest
+ *  - optionally save the digest to a file
+ *  This routine serves a common helper so all policy tools
+ *  behave in the same way.
+ * @param ectx
+ *  The Enhanced system api (ESAPI_) context.
+ * @param session
+ *  The policy session to get the digest of.
+ * @param save_path
+ *  The path to optionally save the digest too.
+ * @return
+ *  A tool_rc indicating status.
+ */
+tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
+        const char *save_path);
+
 #endif /* TPM2_POLICY_H_ */
