@@ -2,7 +2,7 @@
 
 # NAME
 
-**tpm2_policypcr**(1) - Perform a PolicyPCR event with the TPM.
+**tpm2_policypcr**(1) - Create a policy that includes specific PCR values.
 
 # SYNOPSIS
 
@@ -10,9 +10,10 @@
 
 # DESCRIPTION
 
-**tpm2_policypcr**(1) - Generates a PCR policy event with the TPM. It is similar
-to **tpm2_createpolicy**(1), however, it expects a session to be already
-established via **tpm2_startauthsession**(1).
+**tpm2_policypcr**(1) - Generates a PCR policy event with the TPM. A PCR policy event
+creates a policy bound to specific PCR values and is useful within larger policies
+constructed using policyor and policyauthorize events. See **tpm2_policyor(1)**
+and **tpm2_policyauthorize(1)** respectively for their usages.
 
 # OPTIONS
 
@@ -47,39 +48,43 @@ established via **tpm2_startauthsession**(1).
 Starts a *trial* session, builds a PCR policy and uses that policy in the creation of an object.
 Then, it uses a *policy* session to unseal some data stored in the object.
 
-1. Create a trial session and build a PCR policy via a **policyPCR** event to generate a policy hash.
-    ```
-    tpm2_createprimary -C e -g sha256 -G ecc -c primary.ctx
+## Step 1: create a policy
+```bash
+tpm2_createprimary -C e -g sha256 -G ecc -c primary.ctx
 
-    tpm2_pcrread -Q -o pcr.dat "sha1:0,1,2,3
+tpm2_pcrread -o pcr.dat "sha1:0,1,2,3"
 
-    handle=`tpm2_startauthsession -S session.dat | cut -d' ' -f 2-2`
+tpm2_startauthsession -S session.dat
 
-    tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
+tpm2_policypcr -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
 
-    tpm2_flushcontext -H "$handle"
-    ```
-2. Create an object and use the policy hash as the policy to satisfy for usage.
-    ```
-    tpm2_create -Q -g sha256 -G keyedhash -u key.pub -r key.priv -C primary.ctx -L policy.dat -a 'sign|fixedtpm|fixedparent|sensitivedataorigin' -i- <<< "12345678"
+tpm2_flushcontext session.dat
+```
 
-    tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n unseal.key.name -c unseal.key.ctx
-    ```
-3. Create an actual policy session and using a policyPCR event, update the session policy hash.
-    ```
-    handle=`tpm2_startauthsession \--policy-session -S session.dat | cut -d' ' -f 2-2`
+# Step 2: create an object using that policy
+```bash
+tpm2_create -Q -u key.pub -r key.priv -C primary.ctx -L policy.dat -i- <<< "12345678"
 
-    tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
-    ```
-4. Using the actual policy session from step 3 in tpm2_unseal to unseal the object.
-    ```
-    unsealed=`tpm2_unseal -S session.dat -c unseal.key.ctx`
+tpm2_load -C primary.ctx -u key.pub -r key.priv -n unseal.key.name -c unseal.key.ctx
+```
 
-    echo "$unsealed"
+## Step 3: Satisfy the policy
+```bash
+tpm2_startauthsession --policy-session -S session.dat
 
-    tpm2_flushcontext -H "$handle"
-    ```
+tpm2_policypcr -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
+```
+
+## Step 4: Use the policy
+```bash
+tpm2_unseal -psession:session.dat -c unseal.key.ctx
+12345678
+
+tpm2_flushcontext session.dat
+```
 
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
