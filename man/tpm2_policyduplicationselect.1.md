@@ -2,7 +2,7 @@
 
 # NAME
 
-**tpm2_policyduplicationselect**(1) - Restricts duplication to specific new parent.
+**tpm2_policyduplicationselect**(1) - Restricts duplication to a specific new parent.
 
 # SYNOPSIS
 
@@ -10,7 +10,7 @@
 
 # DESCRIPTION
 
-**tpm2_policyduplicationselect**(1) - Restricts duplication to specific new parent.
+**tpm2_policyduplicationselect**(1) - Restricts duplication to a specific new parent.
 
 # OPTIONS
 
@@ -41,12 +41,14 @@
 
 # NOTES
 
-* This command usually coorperates with **tpm2_duplicate**(1), so, firstly refering to the man page of **tpm2_duplicate**(1)
+* This command usually cooperates with **tpm2_duplicate**(1), so referring to the man page of **tpm2_duplicate**(1)
 is recommended.
 
 * This command will set the policy session's command code to **TPM_CC_Duplicate** which enables duplication role of
 the policy.
 
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
