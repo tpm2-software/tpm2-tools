@@ -2,9 +2,7 @@
 
 # NAME
 
-**tpm2_policyor**(1) - Generates/Creates a policy event that compounds two or
-more input policy digests such that the resulting authentication is successful
-with at least one of the policy events being true.
+**tpm2_policyor**(1) - logically OR's two policies together.
 
 # SYNOPSIS
 
@@ -57,7 +55,7 @@ inputs. Create a sealing object with an authentication policy resulting from
 and seal a secret. Unsealing with either of the PCR sets should be successful.
 
 ## Create two PCR sets and policies
-```
+```bash
 tpm2_pcrread -oset1_pcr0.sha1 sha1:0
 
 tpm2_startauthsession -S session.ctx
@@ -68,7 +66,7 @@ tpm2_flushcontext session.ctx
 
 dd if=/dev/urandom of=rand.bin bs=1 count=20
 
-cat set1_pcr0.sha1 rand.bin | openssl dgst -sha1 set2_pcr0.sha1
+cat set1_pcr0.sha1 rand.bin | openssl dgst -sha1 -binary -out set2_pcr0.sha1
 
 tpm2_startauthsession -S session.ctx
 
@@ -78,7 +76,7 @@ tpm2_flushcontext session.ctx
 ```
 
 ## Generate a policy by compounding valid policies
-```
+```bash
 tpm2_startauthsession -S session.ctx
 
 tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
@@ -87,25 +85,30 @@ tpm2_flushcontext session.ctx
 ```
 
 ## Create a TPM sealing object with the compounded auth policy
-```
-tpm2_createprimary -Q -C o -g sha256 -G rsa -c prim.ctx
+```bash
+tpm2_createprimary -C o -g sha256 -G rsa -c prim.ctx
 
-tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.pub -i- -C prim.ctx -L policy.or <<< "secret to seal"
+tpm2_create -u sealing_key.pub -r sealing_key.priv -i- -C prim.ctx -L policy.or <<< "secret to seal"
+
+tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -c sealing_key.ctx
 ```
 
 ## Satisfy the policy and unseal the secret
-```
+```bash
 tpm2_startauthsession \--policy-session -S session.ctx
 
 tpm2_policypcr -Q -S session.ctx -l sha1:0 -L o_set1_pcr0.policy
 
 tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
 
-unsealed=`tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx
+tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx
+secret to seal
 
 tpm2_flushcontext session.ctx
 ```
 
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
