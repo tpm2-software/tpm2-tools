@@ -557,6 +557,7 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
          */
         attrs &= ~(mask << bit_index);
 
+        int n;
         /*
          * if the callback is NULL, we are either in a field middle or reserved
          * section which is weird, just add the name in. In the case of being
@@ -567,32 +568,17 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
          * Fields are either 1 or > 1.
          */
         if (w == 1) {
-            /*
-             * set the format to a middle output, unless we're parsing
-             * the first or last. Let the format be static with the routine
-             * so the compiler can do printf style format specifier checking.
-             */
-            if (!string_index) {
-                /* on the first write, if we are already done, no pipes */
-                string_index += !attrs ? snprintf(s, left, "%s", name) :
-                        snprintf(s, left, "%s|", name);
-            } else if (!attrs) {
-                string_index += snprintf(s, left, "%s", name);
-            } else {
-                string_index += snprintf(s, left, "%s|", name);
-            }
+            n = snprintf(s, left, attrs ? "%s|" : "%s", name);
         } else {
             /* deal with the field */
-            if (!string_index) {
-                /* on the first write, if we are already done, no pipes */
-                string_index += !attrs ? snprintf(s, left, "%s=0x%X", name, field_values) :
-                        snprintf(s, left, "%s=0x%X|", name, field_values);
-            } else if (!attrs) {
-                string_index += snprintf(s, left, "%s=0x%X", name, field_values);
-            } else {
-                string_index += snprintf(s, left, "%s=0x%X|", name, field_values);
-            }
+            n = snprintf(s, left, attrs ? "%s=0x%X|" : "%s=0x%X", name, field_values);
         }
+
+        /* check if there was enough space left in s */
+        if ((n < 0) || ((unsigned) n >= left)) {
+            break;
+        }
+        string_index += n;
     }
 
     return str;
