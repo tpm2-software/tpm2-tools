@@ -14,8 +14,9 @@
 initial state. This is useful when the TPM gives one a **TPM_RC_PCR_CHANGED**
 (`0x00000128`) error code when using a PCR policy session.
 
-This will be returned if a PCR state affecting policy is altered during the session. One could restart the session and try again, however, the PCR
-state would still need to satisfy the policy
+This will be returned if a PCR state affecting policy is altered during the
+session. One could restart the session and try again, however, the PCR state
+would still need to satisfy the policy.
 
 # OPTIONS
 
@@ -33,23 +34,38 @@ state would still need to satisfy the policy
 
 ## Start a *policy* session and restart it, unsealing some data.
 
-```
-tpm2_startauthsession \--policy-session
+```bash
+# create a policy and bind it to an object
+tpm2_startauthsession -S session.dat
 
-tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
+tpm2_policypcr -S session.dat -l "sha1:0,1,2,3" -L policy.dat
+
+tpm2_createprimary -c primary.ctx
+
+tpm2_create -Cprimary.ctx -u key.pub -r key.priv -L policy.dat -i- <<< "secret"
+
+tpm2_load -C primary.ctx -c key.ctx -u key.pub -r key.priv
+
+tpm2_flushcontext session.dat
+
+# satisfy the policy and use the object
+tpm2_startauthsession --policy -S session.dat
+
+tpm2_policypcr -S session.dat -l "sha1:0,1,2,3"
 
 # PCR event occurs here causing unseal to fail
-tpm2_unseal -S session.dat -c unseal.key.ctx
-"Sys_Unseal failed. Error Code: 0x00000128"
+tpm2_pcrevent 0 <<< "event data"
 
-# Clear the policy digest by restarting the policy session, try again, PCR state must satisfy policy
+tpm2_unseal -psession:session.dat -c key.ct
+ERROR: Esys_Unseal(0x128) - tpm:error(2.0): PCR have changed since checked
+
+# Clear the policy digest to initial state, note access to object no longer allowed by
+# policy so policyor would be useful here.
 tpm2_policyrestart -S session.dat
-
-tpm2_policypcr -Q -S session.dat -l "sha1:0,1,2,3" -f pcr.dat -L policy.dat
-
-tpm2_unseal -S session.dat -c unseal.key.ctx
 ```
 
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
