@@ -16,8 +16,6 @@ authentication passphrase be provided. This is equivalent to authenticating
 using the object passphrase in plaintext, only this enforces it as a policy.
 It provides a mechanism to allow for password authentication when an object only
 allows policy based authorization, ie object attribute "userwithauth" is 0.
-If using a resource manager (RM), then one supporting extended sessions, like
-[tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd) is required.
 
 # OPTIONS
 
@@ -46,7 +44,7 @@ we will authenticate with the plaintext passphrase in  a policy session instead
 using the **tpm2_policypassword**(1) tool.
 
 ## Create the password policy
-```
+```bash
 tpm2_startauthsession -S session.dat
 
 tpm2_policypassword -S session.dat -L policy.dat
@@ -55,23 +53,23 @@ tpm2_flushcontext session.dat
 ```
 
 ## Create the object with a passphrase and the password policy
-```
-
+```bash
 tpm2_createprimary -C o -c prim.ctx
 
-tpm2_create -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx -L policy.pass \
+tpm2_create -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx -L policy.dat \
   -p testpswd
 ```
 
 ## Authenticate with plaintext passphrase input
-```
+```bash
 tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -c key.ctx
 
-tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt -p text
+echo "plaintext" > plain.txt
+tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt -p testpswd
 ```
 
 ## Authenticate with password and the policy
-```
+```bash
 tpm2_startauthsession \--policy-session -S session.dat
 
 tpm2_policypassword -S session.dat -L policy.dat
@@ -83,5 +81,7 @@ tpm2_flushcontext session.dat
 ```
 
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
