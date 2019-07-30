@@ -14,7 +14,7 @@ struct tpm2_policyor_ctx {
    //File path for the session context data
    const char *session_path;
    //List of policy digests that will be compounded
-   TPML_DIGEST policy_list;
+   TPML_DIGEST *policy_list;
    //File path for storing the policy digest output
    const char *out_policy_dgst_path;
 
@@ -36,7 +36,8 @@ static bool on_option(char key, char *value) {
         ctx.session_path = value;
         break;
     case 'l':
-        result = tpm2_policy_parse_policy_list(value, &ctx.policy_list);
+        ctx.policy_list = calloc(1, sizeof(TPML_DIGEST));
+        result = tpm2_policy_parse_policy_list(value, ctx.policy_list);
         if (!result) {
             return false;
         }
@@ -73,7 +74,7 @@ bool is_input_option_args_valid(void) {
     }
 
     //Minimum two policies needed to be specified for compounding
-    if (ctx.policy_list.count < 1) {
+    if (ctx.policy_list->count < 1) {
         LOG_ERR("Must specify at least 2 policy digests for compounding.");
         return false;
     }
@@ -96,7 +97,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     /* Policy digest hash alg should match that of the session */
-    if (ctx.policy_list.digests[0].size !=
+    if (ctx.policy_list->digests[0].size !=
         tpm2_alg_util_get_hash_size(tpm2_session_get_authhash(ctx.session))) {
         LOG_ERR("Policy digest hash alg should match that of the session.");
         return tool_rc_general_error;
@@ -132,6 +133,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
+    free(ctx.policy_list);
     free(ctx.policy_digest);
     return tpm2_session_close(&ctx.session);
 }

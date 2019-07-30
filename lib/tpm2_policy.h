@@ -71,7 +71,7 @@ tool_rc tpm2_policy_build_policyauthorize(
  *   tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, TPML_DIGEST policy_list);
+    tpm2_session *policy_session, TPML_DIGEST *policy_list);
 
 /**
  * Enables secret (password/hmac) based authorization to a policy.
