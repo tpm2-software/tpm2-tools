@@ -247,12 +247,12 @@ tool_rc tpm2_policy_build_policyauthorize(
 }
 
 tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, TPML_DIGEST policy_list) {
+    tpm2_session *policy_session, TPML_DIGEST *policy_list) {
 
     ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
     return tpm2_policy_or(ectx, sess_handle,
                     ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &policy_list);
+                    policy_list);
 }
 
 tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
