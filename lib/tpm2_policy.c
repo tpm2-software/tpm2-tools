@@ -19,7 +19,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
     unsigned dgst_cnt = 0;
 
     //Iterating the number of pcr banks selected
-    UINT32 i;
+    UINT8 i;
     for (i = 0; i < pcr_selections->count; i++) {
 
         UINT8 total_indices_for_this_alg = 0;
@@ -52,7 +52,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
          * Populating the digest sizes in the PCR digest list per algorithm bank
          * Once iterated through all banks, creates an file offsets map for all pcr indices
          */
-        UINT32 k;
+        UINT8 k;
         for (k = 0; k < total_indices_for_this_alg; k++) {
             pcr_values->digests[dgst_cnt + k].size = dgst_size;
         }
