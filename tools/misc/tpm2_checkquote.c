@@ -43,7 +43,7 @@ struct tpm2_verifysig_ctx {
     tpm2_loaded_object key_context_object;
 };
 
-tpm2_verifysig_ctx ctx = {
+static tpm2_verifysig_ctx ctx = {
         .format = TPM2_ALG_ERROR,
         .halg = TPM2_ALG_SHA1,
         .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),

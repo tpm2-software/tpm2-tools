@@ -26,7 +26,7 @@ struct tpm_rsadecrypt_ctx {
     TPMT_RSA_DECRYPT scheme;
 };
 
-tpm_rsadecrypt_ctx ctx = {
+static tpm_rsadecrypt_ctx ctx = {
     .scheme = { .scheme = TPM2_ALG_RSAES }
 };
 

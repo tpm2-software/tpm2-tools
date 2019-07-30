@@ -14,7 +14,7 @@ struct tpm2_rc_ctx {
     TSS2_RC rc;
 };
 
-tpm2_rc_ctx ctx;
+static tpm2_rc_ctx ctx;
 
 static bool str_to_tpm_rc(const char *rc_str, TSS2_RC *rc) {
 

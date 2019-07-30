@@ -16,7 +16,7 @@ struct tpm2_send_ctx {
     FILE *output;
 };
 
-tpm2_send_ctx ctx;
+static tpm2_send_ctx ctx;
 
 static bool read_command_from_file(FILE *f, tpm2_command_header **c,
         UINT32 *size) {
