@@ -3,7 +3,7 @@
 # NAME
 
 **tpm2_policylocality**(1) - Restrict TPM object authorization to specific
-TPM commands or operations.
+localities.
 
 # SYNOPSIS
 
@@ -13,8 +13,29 @@ TPM commands or operations.
 
 **tpm2_policylocality**(1) - Restricts TPM object authorization to specific
 TPM locality. Useful when you want to allow only specific locality
-with the TPM object. As an argument it takes the _LOCALITY_ as an integer
-value. Requires support for extended sessions with resource manager.
+with the TPM object. A locality indicates the source of the command,
+for example it could be from the application layer or the driver layer, each
+would have it's own locality integer. Localities are hints to the TPM and are
+enforced by the software communicating to the TPM. Thus they are
+**not trusted** inputs on their own and are implemented in platform specific
+ways.
+
+As an argument it takes the _LOCALITY_ as an integer or friendly name.
+
+Localities are fixed to a byte in size and have two representations, locality
+and extended locality.
+
+Localities 0 through 4 are the normal locality representation and are represented
+as set bit indexes. Thus locality 0 is indicated by `1<<0` and locality 4 is
+indicated by `1<<4`. Rather then using raw numbers, these localities can also
+be specified by the friendly names of:
+ - zero: locality 0 or `1<<0`
+ - one: locality 1 or `1<<1`
+ - two: locality 2 or `1<<2`
+ - three: locality 3 or `1<<3`
+ - four: locality 4 or `1<<4`
+
+Anything from the range 32 - 255 are extended localities.
 
 # OPTIONS
 
@@ -36,32 +57,30 @@ Start a *policy* session and extend it with a specific locality number (like 3).
 Attempts to perform other operations would fail.
 
 ## Create an policy restricted by locality 3
-```
-TPM_LOCALITY=0x3
-
+```bash
 tpm2_startauthsession -S session.dat
 
-tpm2_policylocality -S session.dat -L policy.dat $TPM_LOCALITY
+tpm2_policylocality -S session.dat -L policy.dat three
 
 tpm2_flushcontext session.dat
 ```
 
 ## Create the object with auth policy
-```
+```bash
 tpm2_createprimary -C o -c prim.ctx
 
 tpm2_create -C prim.ctx -u sealkey.pub -r sealkey.priv -L policy.dat \
-  -I- <<< "SEALED-SECRET"
+  -i- <<< "SEALED-SECRET"
 ```
 
 ## Try unseal operation
-```
+```bash
 tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
-  -o sealkey.ctx
+  -c sealkey.ctx
 
 tpm2_startauthsession \--policy-session -S session.dat
 
-tpm2_policylocality -S session.dat -L policy.dat $TPM_LOCALITY
+tpm2_policylocality -S session.dat -L policy.dat three
 
 # Change to locality 3, Note: this operation varies on different platforms
 
@@ -70,29 +89,8 @@ tpm2_unseal -p session:session.dat -c sealkey.ctx
 tpm2_flushcontext session.dat
 ```
 
-## Try any other operation
-```
-echo "Encrypt Me" > plain.txt
-
-tpm2_encryptdecrypt -i plain.txt -o enc.txt -c sealkey.ctx
-
-if [ $? != 0 ]; then
- echo "Expected that operations other than unsealing will fail"
-fi
-```
-
-# NOTES
-
-Locality control implementation is platform specific.
-
-# LIMITATIONS
-
-Currently there is no interface (from TSS to TPM linux driver) to set
-locality for a discrete nor firmware TPM.
-
-As for TPM simulator, there is no [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd) interface to change locality.
-For now, one can set locality with TPM simulator, without [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd).
-
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
