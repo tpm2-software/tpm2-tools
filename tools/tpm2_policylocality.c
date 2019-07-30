@@ -97,26 +97,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    rc = tpm2_policy_get_digest(ectx, ctx.session, &ctx.policy_digest);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Could not build tpm policy");
-        return rc;
-    }
-
-    tpm2_util_hexdump(ctx.policy_digest->buffer, ctx.policy_digest->size);
-    tpm2_tool_output("\n");
-
-    if (ctx.out_policy_dgst_path) {
-        bool result = files_save_bytes_to_file(ctx.out_policy_dgst_path,
-                    ctx.policy_digest->buffer, ctx.policy_digest->size);
-        if (!result) {
-            LOG_ERR("Failed to save policy digest into file \"%s\"",
-                    ctx.out_policy_dgst_path);
-            return tool_rc_general_error;
-        }
-    }
-
-    return tool_rc_success;
+    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.out_policy_dgst_path);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

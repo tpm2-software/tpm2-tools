@@ -10,6 +10,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_policy.h"
+#include "tpm2_tool.h"
 
 static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
         const char *raw_pcrs_file, TPML_DIGEST *pcr_values) {
@@ -426,4 +427,36 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
     }
 
     return true;
+}
+
+tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
+        const char *save_path) {
+
+    TPM2B_DIGEST *policy_digest = NULL;
+    tool_rc rc = tpm2_policy_get_digest(ectx, session, &policy_digest);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Could not build tpm policy");
+        return rc;
+    }
+
+    tpm2_util_hexdump(policy_digest->buffer, policy_digest->size);
+    tpm2_tool_output("\n");
+
+    rc = tool_rc_general_error;
+
+    if (save_path) {
+        bool result = files_save_bytes_to_file(save_path,
+                    policy_digest->buffer, policy_digest->size);
+        if (!result) {
+            LOG_ERR("Failed to save policy digest into file \"%s\"",
+                    save_path);
+            goto error;
+        }
+    }
+
+    rc = tool_rc_success;
+
+error:
+    free(policy_digest);
+    return rc;
 }
