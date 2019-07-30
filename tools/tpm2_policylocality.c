@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "files.h"
 #include "log.h"
@@ -53,11 +54,23 @@ bool on_arg (int argc, char **argv) {
         return false;
     }
 
-    bool result = tpm2_util_string_to_uint8(argv[0], &ctx.locality);
-    if (!result) {
-        LOG_ERR("Could not convert locality to number, got: \"%s\"",
-                argv[0]);
-        return false;
+    if (strcmp(argv[0], "zero")) {
+        ctx.locality = TPMA_LOCALITY_TPM2_LOC_ZERO;
+    } else if(strcmp(argv[0], "one")) {
+        ctx.locality = TPMA_LOCALITY_TPM2_LOC_ONE;
+    } else if(strcmp(argv[0], "two")) {
+        ctx.locality = TPMA_LOCALITY_TPM2_LOC_TWO;
+    } else if(strcmp(argv[0], "three")) {
+        ctx.locality = TPMA_LOCALITY_TPM2_LOC_THREE;
+    } else if(strcmp(argv[0], "four")) {
+        ctx.locality = TPMA_LOCALITY_TPM2_LOC_FOUR;
+    } else {
+        bool result = tpm2_util_string_to_uint8(argv[0], &ctx.locality);
+        if (!result) {
+            LOG_ERR("Could not convert locality to number, got: \"%s\"",
+                    argv[0]);
+            return false;
+        }
     }
 
     return true;
