@@ -2,8 +2,8 @@
 
 # NAME
 
-**tpm2_policyauthorize**(1) - Generates/Creates a policy event that authorizes
-a policy digest from TPM policy events.
+**tpm2_policyauthorize**(1) - Allows for mutable policies by tethering to a signing
+authority.
 
 # SYNOPSIS
 
@@ -11,9 +11,8 @@ a policy digest from TPM policy events.
 
 # DESCRIPTION
 
-**tpm2_policyauthorize**(1) - Generates a policy_authorize event with the TPM.
-It expects a session to be already established via **tpm2_startauthsession**(1) and
-requires extended session support with **tpm2-abrmd**.
+**tpm2_policyauthorize**(1) - This command allows for policies to change by associating
+the policy to a signing authority and allowing the policy contents to change.
 
 1. If the input session is a trial session this tool generates a policy digest
 that associates a signing authority's public key name with the policy being
@@ -74,7 +73,7 @@ will not change. At runtime the new PCR policy needs to be satisfied along with
 verification of the signature on the PCR policy digest using **tpm2_policyauthorize**(1)
 
 ## Create a signing authority
-```
+```bash
 openssl genrsa -out signing_key_private.pem 2048
 
 openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
@@ -83,7 +82,7 @@ tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -c signing_key.ctx -n si
 ```
 
 ## Create a policy to be authorized like a PCR policy
-```
+```bash
 tpm2_pcrread -opcr0.sha256 sha256:0
 
 tpm2_startauthsession -S session.ctx
@@ -94,12 +93,12 @@ tpm2_flushcontext session.ctx
 ```
 
 ## Sign the policy
-```
+```bash
 openssl dgst -sha256 -sign signing_key_private.pem -out pcr.signature pcr.policy
 ```
 
 ## Authorize the policy in the policy digest
-```
+```bash
 tpm2_startauthsession -S session.ctx
 
 tpm2_policyauthorize -S session.ctx -L authorized.policy -i pcr.policy -n signing_key.name
@@ -108,23 +107,23 @@ tpm2_flushcontext session.ctx
 ```
 
 ## Create a TPM object like a sealing object with the authorized policy based authentication
-```
-tpm2_createprimary -Q -C o -g sha256 -G rsa -c prim.ctx
+```bash
+tpm2_createprimary -C o -g sha256 -G rsa -c prim.ctx
 
-tpm2_create -Q -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -i- -C prim.ctx -L authorized.policy <<< "secret to seal"
+tpm2_create -g sha256 -u sealing_pubkey.pub -r sealing_prikey.pub -i- -C prim.ctx -L authorized.policy <<< "secret to seal"
 ```
 
 ## Satisfy policy and unseal the secret
-```
+```bash
 tpm2_verifysignature -c signing_key.ctx -g sha256 -m pcr.policy -s pcr.signature -t verification.tkt -f rsassa
 
 tpm2_startauthsession \--policy-session -S session.ctx
 
-tpm2_policypcr -Q -S session.ctx -l sha256:0 -L pcr.policy
+tpm2_policypcr -S session.ctx -l sha256:0 -L pcr.policy
 
 tpm2_policyauthorize -S session.ctx -L authorized.policy -i pcr.policy -n signing_key.name -t verification.tkt
 
-tpm2_load -Q -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -c sealing_key.ctx
+tpm2_load -C prim.ctx -u sealing_pubkey.pub -r sealing_prikey.pub -c sealing_key.ctx
 
 unsealed=$(tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx)
 
@@ -134,5 +133,7 @@ tpm2_flushcontext session.ctx
 ```
 
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
