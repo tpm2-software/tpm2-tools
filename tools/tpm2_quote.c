@@ -230,7 +230,7 @@ static bool on_option(char key, char *value) {
     case 'o':
          ctx.pcr_path = value;
          break;
-    case 'F':
+    case 'f':
          ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
          if (ctx.sig_format == signature_format_err) {
@@ -260,11 +260,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
         { "pcr",                  required_argument, NULL, 'o' },
-        { "format",               required_argument, NULL, 'F' },
+        { "format",               required_argument, NULL, 'f' },
         { "hash-algorithm",       required_argument, NULL, 'g' }
     };
 
-    *opts = tpm2_options_new("c:p:i:l:q:s:m:o:F:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:p:i:l:q:s:m:o:f:g:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

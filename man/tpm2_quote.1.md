@@ -47,7 +47,7 @@
     Signature output file, records the signature in the format specified via the **-f**
     option.
 
-  * **-F**, **\--format**
+  * **-f**, **\--format**
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 
