@@ -33,7 +33,7 @@ struct tpm_quote_ctx {
     TPMS_CAPABILITY_DATA cap_data;
 
     struct {
-        UINT8  p : 1;
+        UINT8 p : 1;
         UINT8 l : 1;
         UINT8 L : 1;
         UINT8 o : 1;
@@ -200,10 +200,10 @@ static bool on_option(char key, char *value) {
 
     switch(key)
     {
-    case 'C':
+    case 'c':
         ctx.ak.ctx_path = value;
         break;
-    case 'P':
+    case 'p':
         ctx.ak.auth_str = value;
         break;
     case 'i':
@@ -262,8 +262,8 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "ak-context",           required_argument, NULL, 'C' },
-        { "ak-auth",              required_argument, NULL, 'P' },
+        { "key-context",          required_argument, NULL, 'c' },
+        { "auth",                 required_argument, NULL, 'p' },
         { "pcr-index",            required_argument, NULL, 'i' },
         { "pcr-list",             required_argument, NULL, 'l' },
         { "qualification",        required_argument, NULL, 'q' },
@@ -274,7 +274,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "hash-algorithm",       required_argument, NULL, 'g' }
     };
 
-    *opts = tpm2_options_new("C:P:i:l:q:s:m:f:F:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:p:i:l:q:s:m:f:F:g:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
