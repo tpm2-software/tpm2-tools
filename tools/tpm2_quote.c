@@ -33,8 +33,6 @@ struct tpm_quote_ctx {
     TPMS_CAPABILITY_DATA cap_data;
 
     struct {
-        UINT8 l : 1;
-        UINT8 L : 1;
         UINT8 o : 1;
     } flags;
 
@@ -203,7 +201,6 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Could not parse pcr list, got: \"%s\"", value);
             return false;
         }
-        ctx.flags.l = 1;
         break;
     case 'l':
         if(!pcr_parse_selections(value, &ctx.pcrSelections))
@@ -211,7 +208,6 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
             return false;
         }
-        ctx.flags.L = 1;
         break;
     case 'q':
         ctx.qualifyingData.size = sizeof(ctx.qualifyingData) - 2;
@@ -275,8 +271,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     /* TODO this whole file needs to be re-done, especially the option validation */
-    if (!ctx.flags.l && !ctx.flags.L) {
-        LOG_ERR("Expected either -l or -L to be specified.");
+    if (!ctx.pcrSelections.count) {
+        LOG_ERR("Expected -l to be specified.");
         return tool_rc_option_error;
     }
 
