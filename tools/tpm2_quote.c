@@ -37,7 +37,6 @@ struct tpm_quote_ctx {
         UINT8 l : 1;
         UINT8 L : 1;
         UINT8 o : 1;
-        UINT8 G : 1;
     } flags;
 
     tpm2_pcrs pcrs;
@@ -52,6 +51,7 @@ static tpm_quote_ctx ctx = {
             TPM2_ALG_SHA384
         }
     },
+    .sig_hash_algorithm = TPM2_ALG_SHA256,
     .qualifyingData = TPM2B_EMPTY_INIT,
 };
 
@@ -115,15 +115,13 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
         .scheme = TPM2_ALG_NULL
     };
 
-    if(ctx.flags.G) {
-        tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.ak.object.tr_handle,
-                                    ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
+    tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.ak.object.tr_handle,
+                                ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    tool_rc rc = tpm2_quote(ectx, &ctx.ak.object, &inScheme, &ctx.qualifyingData,
+    rc = tpm2_quote(ectx, &ctx.ak.object, &inScheme, &ctx.qualifyingData,
         pcrSelection, &quoted, &signature);
     if (rc != tool_rc_success) {
         return rc;
@@ -255,7 +253,6 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
             return false;
         }
-        ctx.flags.G = 1;
         break;
     }
 
@@ -301,10 +298,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     if (ctx.flags.p) {
-        if (!ctx.flags.G) {
-            LOG_ERR("Must specify -G if -p is requested.");
-            return tool_rc_option_error;
-        }
         ctx.pcr_output = fopen(ctx.pcr_path, "wb+");
         if (!ctx.pcr_output) {
             LOG_ERR("Could not open PCR output file \"%s\" error: \"%s\"",
