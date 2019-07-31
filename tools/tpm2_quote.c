@@ -19,7 +19,7 @@ struct tpm_quote_ctx {
         const char *ctx_path;
         const char *auth_str;
         tpm2_loaded_object object;
-    } ak;
+    } key;
 
     char *signature_path;
     char *message_path;
@@ -106,13 +106,13 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
         .scheme = TPM2_ALG_NULL
     };
 
-    tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.ak.object.tr_handle,
+    tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.key.object.tr_handle,
                                 ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_quote(ectx, &ctx.ak.object, &inScheme, &ctx.qualifyingData,
+    rc = tpm2_quote(ectx, &ctx.key.object, &inScheme, &ctx.qualifyingData,
         pcrSelection, &quoted, &signature);
     if (rc != tool_rc_success) {
         return rc;
@@ -192,10 +192,10 @@ static bool on_option(char key, char *value) {
     switch(key)
     {
     case 'c':
-        ctx.ak.ctx_path = value;
+        ctx.key.ctx_path = value;
         break;
     case 'p':
-        ctx.ak.auth_str = value;
+        ctx.key.auth_str = value;
         break;
     case 'i':
         if(!pcr_parse_list(value, strlen(value), &ctx.pcrSelections.pcrSelections[0]))
@@ -280,10 +280,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.ak.ctx_path,
-        ctx.ak.auth_str, &ctx.ak.object, false, TPM2_HANDLE_ALL_W_NV);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.key.ctx_path,
+        ctx.key.auth_str, &ctx.key.object, false, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid AK authorization");
+        LOG_ERR("Invalid key authorization");
         return rc;
     }
 
@@ -309,5 +309,5 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     if (ctx.pcr_output) {
         fclose(ctx.pcr_output);
     }
-    return tpm2_session_close(&ctx.ak.object.session);
+    return tpm2_session_close(&ctx.key.object.session);
 }
