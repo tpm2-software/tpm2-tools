@@ -340,14 +340,25 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_arg(int argc, char *argv[]) {
+
+    if (argc != 1) {
+        LOG_ERR("Expected single file path argument");
+        return false;
+    }
+
+    ctx.file.path = argv[0];
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
         { "type",  required_argument, NULL, 't' },
-        { "input", optional_argument, NULL, 'i' },
     };
 
     *opts = tpm2_options_new("i:t:", ARRAY_LEN(topts), topts,
-        on_option, NULL, TPM2_OPTIONS_NO_SAPI);
+        on_option, on_arg, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
 }

@@ -6,12 +6,13 @@
 
 # SYNOPSIS
 
-**tpm2_print** [*OPTIONS*]
+**tpm2_print** [*OPTIONS*] _PATH_
 
 # DESCRIPTION
 
 **tpm2_print**(1) - Decodes a TPM data structure and prints enclosed
-elements to stdout as YAML.
+elements to stdout as YAML. A file path containing a TPM object may
+be specified as the _PATH_ argument. Reads from stdin if unspecified.
 
 # OPTIONS
 
@@ -20,22 +21,27 @@ elements to stdout as YAML.
     Required. Type of data structure. Only **TPMS_ATTEST** and **TPMS_CONTEXT** are
     presently supported.
 
-  * **-i**, **\--input**:
-
-    Optional. File containing TPM object. Reads from stdin if unspecified.
-
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
 
 # EXAMPLES
 
+
+## Print a TPM Quote
+
+### Setup a key to generate a qoute from
+```bash
+tpm2_createprimary -C e -c primary.ctx
+tpm2_create -C primary.ctx -u key.pub -r key.priv
+tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
+tpm2_quote -C key.ctx -l 0x0004:16,17,18+0x000b:16,17,18 -g sha256 -m msg.dat
 ```
-tpm2_print -t TPMS_ATTEST -i /path/to/tpm/quote
 
-tpm2_print \--type=TPMS_ATTEST \--input=/path/to/tpm/quote
+### Print a Quote
 
-cat /path/to/tpm/quote | tpm2_print \--type=TPMS_ATTEST
+```bash
+tpm2_print -t TPMS_ATTEST msg.dat
 ```
 
 [returns](common/returns.md)

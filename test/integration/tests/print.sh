@@ -37,7 +37,7 @@ tpm2_createak -Q -G rsa -g sha256 -s rsassa -C $ek_handle -c $ak_ctx\
 tpm2_quote -Q -C $ak_ctx -l "sha256:0,2,4,9,10,11,12,17" -q "0f8beb45ac" -m $quote_file
 
 # Print TPM's quote file
-tpm2_print -t TPMS_ATTEST -i $quote_file > $print_file
+tpm2_print -t TPMS_ATTEST $quote_file > $print_file
 
 # Check printed yaml
 python << pyscript
