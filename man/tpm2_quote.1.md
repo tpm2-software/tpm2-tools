@@ -51,12 +51,10 @@
 
     Format selection for the signature output file. See section "Signature Format Specifiers".
 
-  * **-f**, **\--pcr**:
+  * **-o**, **\--pcr**:
 
     PCR output file, optional, records the list of PCR values as defined
-    by **-l** or **-L**.  Note that only the digest of these values is stored in the
-    signed quote message \-- these values themselves are not signed or
-    stored in the message.
+    by **-l**.
 
   * **-q**, **\--qualification**:
 
@@ -98,6 +96,8 @@ with the maximum length of a bank.
 
 On most TPMs, it means that this tool can quote up to 24 PCRs
 at once.
+
+That this performs a detached signature.
 
 [returns](common/returns.md)
 

@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_quote: -f becomes -o.
   * tpm2_quote: -C and -P becomes -c and -p respectively.
   * tpm2_quote: -g becomes optional.
   * tpm2_print: -i becomes an argument.

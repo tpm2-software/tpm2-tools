@@ -33,7 +33,6 @@ struct tpm_quote_ctx {
     TPMS_CAPABILITY_DATA cap_data;
 
     struct {
-        UINT8 p : 1;
         UINT8 l : 1;
         UINT8 L : 1;
         UINT8 o : 1;
@@ -236,9 +235,8 @@ static bool on_option(char key, char *value) {
     case 'm':
          ctx.message_path = value;
          break;
-    case 'f':
+    case 'o':
          ctx.pcr_path = value;
-         ctx.flags.p = 1;
          break;
     case 'F':
          ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
@@ -269,12 +267,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "qualification",        required_argument, NULL, 'q' },
         { "signature",            required_argument, NULL, 's' },
         { "message",              required_argument, NULL, 'm' },
-        { "pcr",                  required_argument, NULL, 'f' },
+        { "pcr",                  required_argument, NULL, 'o' },
         { "format",               required_argument, NULL, 'F' },
         { "hash-algorithm",       required_argument, NULL, 'g' }
     };
 
-    *opts = tpm2_options_new("c:p:i:l:q:s:m:f:F:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:p:i:l:q:s:m:o:F:g:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;
@@ -297,7 +295,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    if (ctx.flags.p) {
+    if (ctx.pcr_path) {
         ctx.pcr_output = fopen(ctx.pcr_path, "wb+");
         if (!ctx.pcr_output) {
             LOG_ERR("Could not open PCR output file \"%s\" error: \"%s\"",
