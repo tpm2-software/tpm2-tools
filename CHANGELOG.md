@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_print: -i becomes an argument.
   * tpm2_pcrread: renamed from tpm2_pcrlist.
   * tpm2_pcrlist: -gls go away, -g and -l become a single argument.
   * tpm2_pcrevent: -x becomes an argument.
