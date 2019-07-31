@@ -2,8 +2,8 @@
 
 # NAME
 
-**tpm2_policysecret**(1) - Enables secret(password/hmac) based authorization to
-a policy.
+**tpm2_policysecret**(1) - Couples the authorization of an object to that of an
+existing object.
 
 # SYNOPSIS
 
@@ -11,9 +11,9 @@ a policy.
 
 # DESCRIPTION
 
-**tpm2_policysecret**(1) - Enables secret (password/hmac) based authorization to a
- policy. The secret is the auth value of any TPM object (NV/Hierarchy/Loaded/
- Persistent).
+**tpm2_policysecret**(1) - Couples the authorization of an object to that of an
+existing object without requiring exposing the existing secret until time of
+object use.
 
 # OPTIONS
 
@@ -39,6 +39,8 @@ a policy.
 
 [common tcti options](common/tcti.md)
 
+[limitations](common/policy-limitations.md)
+
 [authorization formatting](common/authorizations.md)
 
 # EXAMPLES
@@ -51,38 +53,40 @@ can only be satisfied if owner hierarchy auth value is supplied.
 was satisfied to the unseal tool.
 * If the policy was satisfied unsealing should succeed.
 
-## Generate a policy that binds to the secret of the auth object
-```
-TPM_RH_OWNER=0x40000001
-
+## Generate a policy that binds to the secret of the owner hiearchy
+```bash
 tpm2_startauthsession -S session.ctx
 
-tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -L secret.policy
+tpm2_policysecret -S session.ctx -c o -L secret.policy
 
 tpm2_flushcontext session.ctx
 ```
 
-## Create a TPM object like a sealing object with the policy
-```
+## Create a TPM object using the policy
+```bash
 tpm2_createprimary -Q -C o -g sha256 -G rsa -c prim.ctx
 
-tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.priv -i- -C prim.ctx -L secret.policy <<< "SEALED-SECRET"
+tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.priv -i- \
+  -C prim.ctx -L secret.policy <<< "SEALED-SECRET"
 
-tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -n sealing_key.name -c sealing_key.ctx
+tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv \
+  -c sealing_key.ctx
 ```
 
 ## Satisfy the policy and unseal the secret
-```
-tpm2_startauthsession \--policy-session -S session.ctx
+```bash
+tpm2_startauthsession --policy-session -S session.ctx
 
-tpm2_policysecret -S session.ctx -c $TPM_RH_OWNER -L secret.policy
+tpm2_policysecret -S session.ctx -c o -L secret.policy
 
-unsealed=`tpm2_unseal -p "session:session.ctx" -c sealing_key.ctx`
-echo $unsealed
+tpm2_unseal -p "session:session.ctx" -c sealing_key.ctx
+SEALED-SECRET
 
 tpm2_flushcontext session.ctx
 ```
 
 [returns](common/returns.md)
+
+[limitations](common/policy-limitations.md)
 
 [footer](common/footer.md)
