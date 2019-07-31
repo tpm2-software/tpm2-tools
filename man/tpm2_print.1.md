@@ -35,7 +35,7 @@ be specified as the _PATH_ argument. Reads from stdin if unspecified.
 tpm2_createprimary -C e -c primary.ctx
 tpm2_create -C primary.ctx -u key.pub -r key.priv
 tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
-tpm2_quote -C key.ctx -l 0x0004:16,17,18+0x000b:16,17,18 -g sha256 -m msg.dat
+tpm2_quote -c key.ctx -l 0x0004:16,17,18+0x000b:16,17,18 -g sha256 -m msg.dat
 ```
 
 ### Print a Quote

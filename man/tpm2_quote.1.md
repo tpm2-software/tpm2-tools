@@ -14,12 +14,12 @@
 
 # OPTIONS
 
-  * **-C**, **\--ak-context**=_AK\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_AK\_CONTEXT\_OBJECT_:
 
-    Context object for the existing AK's context. Either a file or a handle number.
+    Context object for the quote signing key. Either a file or a handle number.
     See section "Context Object Format".
 
-  * **-P**, **\--ak-auth**=_AK\_AUTH_:
+  * **-p**, **\--auth**=_AK\_AUTH_:
 
     Specifies the authorization value for AK specified by option **-C**.
     Authorization values should follow the "authorization formatting standards",
@@ -65,7 +65,7 @@
 
   * **-g**, **\--hash-algorithm**:
 
-    Hash algorithm for signature. Required if **-p** is given.
+    Hash algorithm for signature. Defaults to sha256.
 
 [common options](common/options.md)
 
@@ -81,16 +81,14 @@
 
 # EXAMPLES
 
-```
-tpm2_quote -C 0x81010002 -P abc123 -i 16,17,18
+```bash
+tpm2_createprimary -C e -c primary.ctx
 
-tpm2_quote -C ak.context -P "str:abc123" -i 16,17,18
+tpm2_create -C primary.ctx -u key.pub -r key.priv
 
-tpm2_quote -C 0x81010002 -l sha1:16,17,18
+tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
 
-tpm2_quote -C ak.dat -l sha1:16,17,18
-
-tpm2_quote -C 0x81010002 -P "hex:123abc" -l sha1:16,17,18+sha256:16,17,18 -q 11aa22bb
+tpm2_quote -Q -c key.ctx -l 0x0004:16,17,18+0x000b:16,17,18
 ```
 
 # NOTES
