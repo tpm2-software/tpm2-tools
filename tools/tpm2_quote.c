@@ -31,11 +31,6 @@ struct tpm_quote_ctx {
     TPM2B_DATA qualifyingData;
     TPML_PCR_SELECTION pcrSelections;
     TPMS_CAPABILITY_DATA cap_data;
-
-    struct {
-        UINT8 o : 1;
-    } flags;
-
     tpm2_pcrs pcrs;
 };
 
