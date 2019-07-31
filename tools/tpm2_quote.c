@@ -42,14 +42,6 @@ struct tpm_quote_ctx {
 };
 
 static tpm_quote_ctx ctx = {
-    .algs = {
-        .count = 3,
-        .alg = {
-            TPM2_ALG_SHA1,
-            TPM2_ALG_SHA256,
-            TPM2_ALG_SHA384
-        }
-    },
     .sig_hash_algorithm = TPM2_ALG_SHA256,
     .qualifyingData = TPM2B_EMPTY_INIT,
 };
