@@ -18,7 +18,6 @@ struct tpm_nvwrite_ctx {
     } auth_hierarchy;
 
     TPM2_HANDLE nv_index;
-    bool is_auth_hierarchy_specified;
 
     BYTE nv_buffer[TPM2_MAX_NV_BUFFER_SIZE];
     FILE *input_file;
@@ -26,9 +25,7 @@ struct tpm_nvwrite_ctx {
     UINT16 offset;
 };
 
-static tpm_nvwrite_ctx ctx = {
-    .is_auth_hierarchy_specified = false,
-};
+static tpm_nvwrite_ctx ctx;
 
 static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
@@ -103,7 +100,6 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'C':
         ctx.auth_hierarchy.ctx_path = value;
-        ctx.is_auth_hierarchy_specified = true;
         break;
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
@@ -139,10 +135,10 @@ static bool on_option(char key, char *value) {
 }
 
 static bool on_arg(int argc, char **argv) {
-    /* If the users doesn't specify an authorization hierarchy use the index
+    /* If the user doesn't specify an authorization hierarchy use the index
     * passed to -x/--index for the authorization index.
     */
-    if (!ctx.is_auth_hierarchy_specified) {
+    if (!ctx.auth_hierarchy.ctx_path) {
         ctx.auth_hierarchy.ctx_path = argv[0];
     }
     return on_arg_nv_index(argc, argv, &ctx.nv_index);

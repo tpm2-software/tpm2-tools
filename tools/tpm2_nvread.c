@@ -15,16 +15,13 @@ struct tpm_nvread_ctx {
     } auth_hierarchy;
 
     TPM2_HANDLE nv_index;
-    bool is_auth_hierarchy_specified;
 
     UINT32 size_to_read;
     UINT32 offset;
     char *output_file;
 };
 
-static tpm_nvread_ctx ctx = {
-    .is_auth_hierarchy_specified = false,
-};
+static tpm_nvread_ctx ctx;
 
 static tool_rc nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
@@ -61,10 +58,10 @@ out:
 }
 
 static bool on_arg(int argc, char **argv) {
-    /* If the users doesn't specify an authorization hierarchy use the index
+    /* If the user doesn't specify an authorization hierarchy use the index
     * passed to -x/--index for the authorization index.
     */
-    if (!ctx.is_auth_hierarchy_specified) {
+    if (!ctx.auth_hierarchy.ctx_path) {
         ctx.auth_hierarchy.ctx_path = argv[0];
     }
     return on_arg_nv_index(argc, argv, &ctx.nv_index);
@@ -78,7 +75,6 @@ static bool on_option(char key, char *value) {
 
     case 'C':
         ctx.auth_hierarchy.ctx_path = value;
-        ctx.is_auth_hierarchy_specified = true;
         break;
     case 'o':
         ctx.output_file = value;
