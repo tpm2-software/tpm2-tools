@@ -190,13 +190,6 @@ static bool on_option(char key, char *value) {
     case 'p':
         ctx.key.auth_str = value;
         break;
-    case 'i':
-        if(!pcr_parse_list(value, strlen(value), &ctx.pcrSelections.pcrSelections[0]))
-        {
-            LOG_ERR("Could not parse pcr list, got: \"%s\"", value);
-            return false;
-        }
-        break;
     case 'l':
         if(!pcr_parse_selections(value, &ctx.pcrSelections))
         {
@@ -245,7 +238,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     static const struct option topts[] = {
         { "key-context",          required_argument, NULL, 'c' },
         { "auth",                 required_argument, NULL, 'p' },
-        { "pcr-index",            required_argument, NULL, 'i' },
         { "pcr-list",             required_argument, NULL, 'l' },
         { "qualification",        required_argument, NULL, 'q' },
         { "signature",            required_argument, NULL, 's' },
@@ -255,7 +247,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "hash-algorithm",       required_argument, NULL, 'g' }
     };
 
-    *opts = tpm2_options_new("c:p:i:l:q:s:m:o:f:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("c:p:l:q:s:m:o:f:g:", ARRAY_LEN(topts), topts,
                              on_option, NULL, 0);
 
     return *opts != NULL;

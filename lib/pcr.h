@@ -45,7 +45,6 @@ bool pcr_get_id(const char *arg, UINT32 *pcrId);
 
 bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections);
 bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels);
-bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel);
 tool_rc pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs);
 bool pcr_init_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION *pcr_sel, TPMI_ALG_HASH alg_id);
 bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION *pcr_sel);

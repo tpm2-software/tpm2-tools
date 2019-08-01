@@ -25,10 +25,6 @@
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-i**, **\--pcr-index**=_PCR\_ID\_LIST_
-
-    The comma separated list of selected PCRs' e.g. "4,5,6".
-
   * **-l**, **\--pcr-list**=_PCR\_SELECTION\_LIST_:
 
     The list of PCR banks and selected PCRs' ids for each bank.
