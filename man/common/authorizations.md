@@ -90,7 +90,7 @@ session:session.ctx+hex:11223344
 
 You can satisfy a PCR policy using the "pcr:" prefix and the PCR minilanguage. The PCR
 minilanguage is as follows:
-`<pcr-spec>+<raw-pcr-file>`
+`<pcr-spec>=<raw-pcr-file>`
 
 The PCR spec is documented in in the section "PCR bank specifiers".
 

@@ -48,7 +48,7 @@ tpm2_unseal -c item.context -p abc123 -o out.dat
 
 tpm2_unseal -c 0x81010001 -p "hex:123abc" -o out.dat
 
-tpm2_unseal -c item.context -p pcr:sha256:0,1+pcr.value -o out.dat
+tpm2_unseal -c item.context -p pcr:sha256:0,1=pcr.value -o out.dat
 ```
 
 # NOTES
