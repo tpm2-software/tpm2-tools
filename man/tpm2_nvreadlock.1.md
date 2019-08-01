@@ -17,14 +17,17 @@ value to the nv handle range "TPM2_HR_NV_INDEX".
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
+  * **-C**, **\--hierarchy**=_AUTH_HANDLE_:
 
-    Specifies the hierarchy used to authorize:
-    * **o** for **TPM_RH_OWNER**
-    * **p** for **TPM_RH_PLATFORM**
-    Defaults to **o**, **TPM_RH_OWNER**, when no value has been
-    specified.
-    * **`<num>`** where a hierarchy handle may be used.
+    Specifies the hierarchy used to authorize.
+    Supported options are:
+      * **o** for **TPM_RH_OWNER**
+      * **p** for **TPM_RH_PLATFORM**
+      * **`<num>`** where a hierarchy handle or nv-index may be used.
+
+    When **-C** isn't explicitly passed the index handle will be used to
+    authorize against the index. The index auth value is set via the
+    **-p** option to **tpm2_nvdefine**(1).
 
   * **-P**, **\--auth**=_AUTH\_VALUE_:
 

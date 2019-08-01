@@ -16,10 +16,9 @@ handle range "TPM2_HR_NV_INDEX".
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_AUTH_:
+  * **-C**, **\--hierarchy**=_AUTH_HANDLE_:
 
-    Specifies the handle used to authorize. Defaults to **o**, **TPM_RH_OWNER**,
-    when no value has been specified.
+    Specifies the hierarchy used to authorize.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
