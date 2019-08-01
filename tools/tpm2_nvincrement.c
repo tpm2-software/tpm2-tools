@@ -13,18 +13,15 @@ struct tpm_nvincrement_ctx {
         tpm2_loaded_object object;
     } auth_hierarchy;
 
-    bool is_auth_hierarchy_specified;
     TPM2_HANDLE nv_index;
 };
-static tpm_nvincrement_ctx ctx = {
-    .is_auth_hierarchy_specified = false,
-};
+static tpm_nvincrement_ctx ctx;
 
 static bool on_arg(int argc, char **argv) {
-    /* If the users doesn't specify an authorization hierarchy use the index
+    /* If the user doesn't specify an authorization hierarchy use the index
     * passed to -x/--index for the authorization index.
     */
-    if (!ctx.is_auth_hierarchy_specified) {
+    if (!ctx.auth_hierarchy.ctx_path) {
         ctx.auth_hierarchy.ctx_path = argv[0];
     }
     return on_arg_nv_index(argc, argv, &ctx.nv_index);
@@ -35,7 +32,6 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'C':
         ctx.auth_hierarchy.ctx_path = value;
-        ctx.is_auth_hierarchy_specified = true;
         break;
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
