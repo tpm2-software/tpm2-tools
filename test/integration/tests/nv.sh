@@ -91,9 +91,9 @@ tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_v
 tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 32 -L $file_policy -a "policyread|policywrite"
 
 # Write with index authorization for now, since tpm2_nvwrite does not support pcr policy.
-echo -n "policy locked" | tpm2_nvwrite -Q   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value -i -
+echo -n "policy locked" | tpm2_nvwrite -Q   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value -i -
 
-str=`tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value -s 13`
+str=`tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value -s 13`
 
 test "policy locked" == "$str"
 

@@ -175,7 +175,7 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session *
 
     const char *pcr_str = dup;
     const char *raw_path = NULL;
-    char *split = strchr(dup, '+');
+    char *split = strchr(dup, '=');
     if (split) {
         *split = '\0';
         raw_path = split + 1;

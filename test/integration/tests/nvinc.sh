@@ -65,9 +65,9 @@ tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy -a "policyread|p
 echo -n -e '\x00\x00\x00\x00\x00\x00\x00\x03' > nv.test_inc
 
 # Counter is initialised to highest value previously seen (in this case 2) then incremented
-tpm2_nvincrement -Q   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value
+tpm2_nvincrement -Q   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value
 
-tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}+$file_pcr_value -s 8 > cmp.dat
+tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value -s 8 > cmp.dat
 
 cmp nv.test_inc cmp.dat
 
