@@ -44,7 +44,7 @@
 # EXAMPLES
 
 ## Create a primary object and read the public structure in an openssl compliant format
-```
+```bash
 tpm2_createprimary -c primary.ctx
 tpm2_readpublic -c primary.ctx -o output.dat -f pem
 ```
@@ -58,7 +58,7 @@ creating an object from scratch, save the serialized handle when making the obje
 
 We assume that an object has already been persisted, for example via:
 
-```
+```bash
 # We assume that an object has already been persisted, for example
 tpm2_createprimary -c primary.ctx
 
@@ -70,14 +70,15 @@ action: persisted
 
 Next use the persistent handle to get a serialized handle:
 
-```
+```bash
 # The persistent handle output could be at an attacker controlled object,
 # best practice is to use the option "-o: for tpm2_evictcontrol to get a
 # serialized handle instead.
 
 tpm2_readpublic -c 0x81000001 -o output.dat -f pem -t primary.handle
 
-tpm2_startauthsession --policy-session -S session.ctx -k primary.handle
+# use this verified handle in an encrypted session with the tpm
+tpm2_startauthsession --policy-session -S session.ctx -c primary.handle
 ```
 
 For new objects, its best to use all serialized handles.
