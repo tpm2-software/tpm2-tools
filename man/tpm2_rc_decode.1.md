@@ -2,7 +2,7 @@
 
 # NAME
 
-**tpm2_rc_decode**(1) - Decode TPM2 error codes to human readable format.
+**tpm2_rc_decode**(1) - Decode TPM2 error codes to a human readable format.
 
 # SYNOPSIS
 
@@ -10,8 +10,8 @@
 
 # DESCRIPTION
 
-**tpm2_rc_decode**(1) - Converts _RC\_CODE_ originating from the SAPI and TCTI into
-human readable errors. Analogous to **strerror**(3), but for the TPM2 stack.
+**tpm2_rc_decode**(1) - Converts an _RC\_CODE_ from the TPM or TSS2 software stack
+into human readable errors. Analogous to **strerror**(3), but for the TPM2 stack.
 
 # OPTIONS
 
@@ -21,8 +21,9 @@ This tool takes no tool specific options.
 
 # EXAMPLES
 
-```
-tpm2_rc_decode 0x100
+```bash
+tpm2_rc_decode 0x1d5
+tpm:parameter(1):structure is the wrong size
 ```
 
 [returns](common/returns.md)
