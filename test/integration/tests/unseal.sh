@@ -5,10 +5,7 @@ source helpers.sh
 alg_primary_obj=sha256
 alg_primary_key=ecc
 alg_create_obj=sha256
-alg_pcr_policy=sha1
-
-pcr_ids="0,1,2,3"
-
+pcr_specification=sha256:0,1,2,3+sha1:0,1,2,3
 file_pcr_value=pcr.bin
 file_input_data=secret.data
 file_policy=policy.data
@@ -66,16 +63,16 @@ cmp -s $file_unseal_output_data $file_input_data
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
-tpm2_pcrread -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
+tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
+tpm2_createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value -L $file_policy
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy \
   -a 'fixedtpm|fixedparent' <<< $secret
 
 tpm2_load -Q -C $file_primary_key_ctx  -u $file_unseal_key_pub  -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
-unsealed=`tpm2_unseal -V --object-context $file_unseal_key_ctx -p pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value`
+unsealed=`tpm2_unseal -V --object-context $file_unseal_key_ctx -p pcr:$pcr_specification=$file_pcr_value`
 
 test "$unsealed" == "$secret"
 
@@ -91,11 +88,9 @@ fi
 
 # Test that unseal fails if PCR state isn't the same as the defined PCR policy
 
-pcr_extend=$(echo $pcr_ids | cut -d ',' -f1)
+tpm2_pcrextend 0:sha1=6c10289a8da7f774cf67bd2fc8502cd4b585346a
 
-tpm2_pcrextend $pcr_extend:sha1=6c10289a8da7f774cf67bd2fc8502cd4b585346a
-
-tpm2_unseal -c $file_unseal_key_ctx -p pcr:${alg_pcr_policy}:${pcr_ids} 2> /dev/null
+tpm2_unseal -c $file_unseal_key_ctx -p pcr:$pcr_specification 2> /dev/null
 if [ $? != 1 ]; then
   echo "tpm2_unseal didn't fail with a PCR state different than the policy!"
   exit 1
@@ -107,9 +102,9 @@ trap onerror ERR
 
 rm $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_name $file_unseal_key_ctx
 
-tpm2_pcrread -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
+tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
+tpm2_createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value -L $file_policy
 
 tpm2_create -Q -g $alg_create_obj -u $file_unseal_key_pub -r $file_unseal_key_priv -i- -C $file_primary_key_ctx -L $file_policy -p secretpass <<< $secret
 

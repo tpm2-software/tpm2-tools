@@ -7,8 +7,7 @@ nv_test_index=0x1500018
 large_file_name="nv.test_large_w"
 large_file_read_name="nv.test_large_r"
 
-alg_pcr_policy=sha1
-pcr_ids="0,1,2,3"
+pcr_specification=sha256:0,1,2,3+sha1:0,1,2,3
 file_pcr_value=pcr.bin
 file_policy=policy.data
 
@@ -84,16 +83,16 @@ cmp nv.test_w cmp.dat
 
 tpm2_nvundefine   $nv_test_index -C o
 
-tpm2_pcrread -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
+tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
+tpm2_createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value -L $file_policy
 
 tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 32 -L $file_policy -a "policyread|policywrite"
 
 # Write with index authorization for now, since tpm2_nvwrite does not support pcr policy.
-echo -n "policy locked" | tpm2_nvwrite -Q   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value -i -
+echo -n "policy locked" | tpm2_nvwrite -Q   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value -i -
 
-str=`tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value -s 13`
+str=`tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value -s 13`
 
 test "policy locked" == "$str"
 
