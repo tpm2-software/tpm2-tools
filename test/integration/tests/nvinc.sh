@@ -5,8 +5,7 @@ source helpers.sh
 
 nv_test_index=0x1500018
 
-alg_pcr_policy=sha1
-pcr_ids="0,1,2,3"
+pcr_specification=sha256:0,1,2,3+sha1:0,1,2,3
 file_pcr_value=pcr.bin
 file_policy=policy.data
 
@@ -55,9 +54,9 @@ cmp nv.test_inc cmp.dat
 tpm2_nvundefine   $nv_test_index -C o
 
 
-tpm2_pcrread -Q -o $file_pcr_value ${alg_pcr_policy}:${pcr_ids}
+tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l ${alg_pcr_policy}:${pcr_ids} -f $file_pcr_value -L $file_policy
+tpm2_createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value -L $file_policy
 
 tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy -a "policyread|policywrite|nt=1"
 
@@ -65,9 +64,9 @@ tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy -a "policyread|p
 echo -n -e '\x00\x00\x00\x00\x00\x00\x00\x03' > nv.test_inc
 
 # Counter is initialised to highest value previously seen (in this case 2) then incremented
-tpm2_nvincrement -Q   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value
+tpm2_nvincrement -Q   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value
 
-tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:${alg_pcr_policy}:${pcr_ids}=$file_pcr_value -s 8 > cmp.dat
+tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value -s 8 > cmp.dat
 
 cmp nv.test_inc cmp.dat
 
