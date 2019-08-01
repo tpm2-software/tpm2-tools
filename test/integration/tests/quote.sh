@@ -80,6 +80,6 @@ tpm2_createek -Q -c $Handle_ek_quote -G 0x01 -p ek.pub2
 tpm2_createak -Q -C $Handle_ek_quote -c $ak2_ctx -u ak.pub2 -n ak.name_2
 tpm2_evictcontrol -Q -C o -c $ak2_ctx $Handle_ak_quote2
 
-tpm2_quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18 -i 16,17,18 -q $nonce -m $toss_out -s $toss_out -o $toss_out -g $alg_primary_obj
+tpm2_quote -Q -c $Handle_ak_quote -l $alg_quote:16,17,18 -q $nonce -m $toss_out -s $toss_out -o $toss_out -g $alg_primary_obj
 
 exit 0

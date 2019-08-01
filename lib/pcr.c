@@ -30,6 +30,57 @@ bool pcr_get_id(const char *arg, UINT32 *pcrId) {
     return tpm2_util_handle_from_optarg(arg, pcrId, TPM2_HANDLE_FLAGS_PCR);
 }
 
+
+static bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
+    char buf[4];
+    const char *strCurrent;
+    int lenCurrent;
+    UINT32 pcr;
+
+    if (str == NULL || len == 0 || strlen(str) == 0) {
+        return false;
+    }
+
+    pcrSel->sizeofSelect = 3;
+    pcrSel->pcrSelect[0] = 0;
+    pcrSel->pcrSelect[1] = 0;
+    pcrSel->pcrSelect[2] = 0;
+
+    if (!strncmp(str, "all", 3)) {
+        pcrSel->pcrSelect[0] = 0xff;
+        pcrSel->pcrSelect[1] = 0xff;
+        pcrSel->pcrSelect[2] = 0xff;
+        return true;
+    }
+
+    do {
+        strCurrent = str;
+        str = memchr(strCurrent, ',', len);
+        if (str) {
+            lenCurrent = str - strCurrent;
+            str++;
+            len -= lenCurrent + 1;
+        } else {
+            lenCurrent = len;
+            len = 0;
+        }
+
+        if ((size_t)lenCurrent > sizeof(buf) - 1) {
+            return false;
+        }
+
+        snprintf(buf, lenCurrent + 1, "%s", strCurrent);
+
+        if (!pcr_get_id(buf, &pcr)) {
+            return false;
+        }
+
+        pcrSel->pcrSelect[pcr / 8] |= (1 << (pcr % 8));
+    } while (str);
+
+    return true;
+}
+
 static bool pcr_parse_selection(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
     const char *strLeft;
     char buf[7];
@@ -247,56 +298,6 @@ bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels) {
     if (pcrSels->count == 0) {
         return false;
     }
-    return true;
-}
-
-bool pcr_parse_list(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
-    char buf[4];
-    const char *strCurrent;
-    int lenCurrent;
-    UINT32 pcr;
-
-    if (str == NULL || len == 0 || strlen(str) == 0) {
-        return false;
-    }
-
-    pcrSel->sizeofSelect = 3;
-    pcrSel->pcrSelect[0] = 0;
-    pcrSel->pcrSelect[1] = 0;
-    pcrSel->pcrSelect[2] = 0;
-
-    if (!strncmp(str, "all", 3)) {
-        pcrSel->pcrSelect[0] = 0xff;
-        pcrSel->pcrSelect[1] = 0xff;
-        pcrSel->pcrSelect[2] = 0xff;
-        return true;
-    }
-
-    do {
-        strCurrent = str;
-        str = memchr(strCurrent, ',', len);
-        if (str) {
-            lenCurrent = str - strCurrent;
-            str++;
-            len -= lenCurrent + 1;
-        } else {
-            lenCurrent = len;
-            len = 0;
-        }
-
-        if ((size_t)lenCurrent > sizeof(buf) - 1) {
-            return false;
-        }
-
-        snprintf(buf, lenCurrent + 1, "%s", strCurrent);
-
-        if (!pcr_get_id(buf, &pcr)) {
-            return false;
-        }
-
-        pcrSel->pcrSelect[pcr / 8] |= (1 << (pcr % 8));
-    } while (str);
-
     return true;
 }
 
