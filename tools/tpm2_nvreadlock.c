@@ -17,13 +17,16 @@ struct tpm_nvreadlock_ctx {
     TPM2_HANDLE nv_index;
 };
 
-static tpm_nvreadlock_ctx ctx = {
-    .auth_hierarchy.ctx_path = "owner",
-};
+static tpm_nvreadlock_ctx ctx;
 
 
 static bool on_arg(int argc, char **argv) {
-
+    /* If the user doesn't specify an authorization hierarchy use the index
+    * passed to -x/--index for the authorization index.
+    */
+    if (!ctx.auth_hierarchy.ctx_path) {
+        ctx.auth_hierarchy.ctx_path = argv[0];
+    }
     return on_arg_nv_index(argc, argv, &ctx.nv_index);
 }
 
