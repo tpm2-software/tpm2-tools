@@ -9,6 +9,7 @@
 #include <cmocka.h>
 
 #include "tpm2_auth_util.h"
+#include "tpm2_auth_util.c" /* we want to test the static function parse_pcr */
 
 #include "esys_stubs.h"
 #include "test_session_common.h"
@@ -155,6 +156,39 @@ static void test_tpm2_auth_util_from_optarg_file(void **state) {
     tpm2_session_close(&session);
 }
 
+#define PCR_SPECIFICATION "sha256:0,1,2,3+sha1:0,1,2,3"
+#define PCR_FILE "raw-pcr-file"
+
+static void test_parse_pcr_no_raw_file(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:" PCR_SPECIFICATION;
+
+    char *pcr_str, *raw_file;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    assert_true(ret);
+    assert_string_equal(pcr_str, PCR_SPECIFICATION);
+    assert_null(raw_file);
+
+    free(pcr_str);
+}
+
+static void test_parse_pcr_with_raw_file(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:" PCR_SPECIFICATION "=" PCR_FILE;
+
+    char *pcr_str, *raw_file;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    assert_true(ret);
+    assert_string_equal(pcr_str, PCR_SPECIFICATION);
+    assert_string_equal(raw_file, PCR_FILE);
+
+    free(pcr_str);
+}
+
 static void test_tpm2_auth_util_from_optarg_raw_overlength(void **state) {
     (void) state;
 
@@ -224,6 +258,41 @@ static void test_tpm2_auth_util_from_optarg_empty_str_hex_prefix(
     assert_int_equal(auth->size, 0);
 
     tpm2_session_close(&session);
+}
+
+static void test_parse_pcr_empty(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:";
+
+    char *pcr_str, *raw_file;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    assert_false(ret);
+}
+
+static void test_parse_pcr_empty_pcr_specification(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:=" PCR_FILE;
+
+    char *pcr_str, *raw_file;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    assert_false(ret);
+}
+
+static void test_parse_pcr_empty_pcr_file(void **state) {
+    UNUSED(state);
+
+    const char *policy = "pcr:" PCR_SPECIFICATION "=";
+
+    char *pcr_str, *raw_file;
+
+    bool ret = parse_pcr(policy, &pcr_str, &raw_file);
+    assert_false(ret);
+
+    free(pcr_str);
 }
 
 static int setup(void **state) {
@@ -304,12 +373,18 @@ int main(int argc, char* argv[]) {
                                             setup, teardown),
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_file),
 
+            cmocka_unit_test(test_parse_pcr_no_raw_file),
+            cmocka_unit_test(test_parse_pcr_with_raw_file),
+
             /* negative testing */
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_raw_overlength),
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_hex_overlength),
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_empty_str),
             cmocka_unit_test(test_tpm2_auth_util_from_optarg_empty_str_str_prefix),
-            cmocka_unit_test(test_tpm2_auth_util_from_optarg_empty_str_hex_prefix)
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_empty_str_hex_prefix),
+            cmocka_unit_test(test_parse_pcr_empty),
+            cmocka_unit_test(test_parse_pcr_empty_pcr_specification),
+            cmocka_unit_test(test_parse_pcr_empty_pcr_file),
     };
 
 return cmocka_run_group_tests(tests, NULL, NULL);
