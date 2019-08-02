@@ -22,7 +22,7 @@ TSS2_RC __wrap_Esys_TR_SetAuth(ESYS_CONTEXT *esysContext, ESYS_TR handle,
     return TPM2_RC_SUCCESS;
 }
 
-static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {
+static void test_tpm2_auth_util_from_optarg_raw_noprefix(void **state) {
     (void) state;
 
     tpm2_session *session;
@@ -37,7 +37,7 @@ static void test_tpm2_password_util_from_optarg_raw_noprefix(void **state) {
     tpm2_session_close(&session);
 }
 
-static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
+static void test_tpm2_auth_util_from_optarg_str_prefix(void **state) {
     (void) state;
 
     tpm2_session *session;
@@ -52,7 +52,7 @@ static void test_tpm2_password_util_from_optarg_str_prefix(void **state) {
     tpm2_session_close(&session);
 }
 
-static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
+static void test_tpm2_auth_util_from_optarg_hex_prefix(void **state) {
     (void) state;
 
     tpm2_session *session;
@@ -70,7 +70,7 @@ static void test_tpm2_password_util_from_optarg_hex_prefix(void **state) {
     tpm2_session_close(&session);
 }
 
-static void test_tpm2_password_util_from_optarg_str_escaped_hex_prefix(
+static void test_tpm2_auth_util_from_optarg_str_escaped_hex_prefix(
         void **state) {
     (void) state;
 
@@ -132,7 +132,7 @@ int __wrap_fclose(FILE *stream) {
     return 0;
 }
 
-static void test_tpm2_password_util_from_optarg_file(void **state) {
+static void test_tpm2_auth_util_from_optarg_file(void **state) {
     UNUSED(state);
 
     tpm2_session *session;
@@ -155,7 +155,7 @@ static void test_tpm2_password_util_from_optarg_file(void **state) {
     tpm2_session_close(&session);
 }
 
-static void test_tpm2_password_util_from_optarg_raw_overlength(void **state) {
+static void test_tpm2_auth_util_from_optarg_raw_overlength(void **state) {
     (void) state;
 
     tpm2_session *session = NULL;
@@ -166,7 +166,7 @@ static void test_tpm2_password_util_from_optarg_raw_overlength(void **state) {
     assert_null(session);
 }
 
-static void test_tpm2_password_util_from_optarg_hex_overlength(void **state) {
+static void test_tpm2_auth_util_from_optarg_hex_overlength(void **state) {
     (void) state;
 
     tpm2_session *session = NULL;
@@ -179,7 +179,7 @@ static void test_tpm2_password_util_from_optarg_hex_overlength(void **state) {
     assert_null(session);
 }
 
-static void test_tpm2_password_util_from_optarg_empty_str(void **state) {
+static void test_tpm2_auth_util_from_optarg_empty_str(void **state) {
     (void) state;
 
     tpm2_session *session;
@@ -194,7 +194,7 @@ static void test_tpm2_password_util_from_optarg_empty_str(void **state) {
     tpm2_session_close(&session);
 }
 
-static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(
+static void test_tpm2_auth_util_from_optarg_empty_str_str_prefix(
     void **state) {
     (void) state;
 
@@ -210,7 +210,7 @@ static void test_tpm2_password_util_from_optarg_empty_str_str_prefix(
     tpm2_session_close(&session);
 }
 
-static void test_tpm2_password_util_from_optarg_empty_str_hex_prefix(
+static void test_tpm2_auth_util_from_optarg_empty_str_hex_prefix(
     void **state) {
     (void) state;
 
@@ -295,21 +295,21 @@ int main(int argc, char* argv[]) {
     (void) argv;
 
     const struct CMUnitTest tests[] = {
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_raw_noprefix),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_str_prefix),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_hex_prefix),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_str_escaped_hex_prefix),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_raw_noprefix),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_str_prefix),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_hex_prefix),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_str_escaped_hex_prefix),
 
             cmocka_unit_test_setup_teardown(test_tpm2_auth_util_get_pw_shandle,
                                             setup, teardown),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_file),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_file),
 
             /* negative testing */
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_raw_overlength),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_hex_overlength),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_empty_str),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_empty_str_str_prefix),
-            cmocka_unit_test(test_tpm2_password_util_from_optarg_empty_str_hex_prefix)
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_raw_overlength),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_hex_overlength),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_empty_str),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_empty_str_str_prefix),
+            cmocka_unit_test(test_tpm2_auth_util_from_optarg_empty_str_hex_prefix)
     };
 
 return cmocka_run_group_tests(tests, NULL, NULL);
