@@ -29,7 +29,7 @@ the **none** TCTI option.
 
     The name of the key for which certificate is to be created.
 
-  * **-o**, **\--output**=_OUT\_FILE_:
+  * **-o**, **\--credential-blob**=_OUTPUT_:
 
     The output file path, recording the two structures output by
     tpm2_makecredential function.
