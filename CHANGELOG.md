@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_makecredential: long option output becomes credential-blob
   * tpm2_quote: -F becomes -f.
   * tpm2_quote: -f becomes -o.
   * tpm2_quote: -C and -P becomes -c and -p respectively.
