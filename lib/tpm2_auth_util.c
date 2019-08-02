@@ -164,30 +164,53 @@ static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
     return tool_rc_success;
 }
 
-static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
-        tpm2_session **session) {
+static bool parse_pcr(const char *policy, char **pcr_str, char **raw_path) {
+    char *split;
 
     policy += PCR_PREFIX_LEN;
 
+    *pcr_str = NULL;
+    *raw_path = NULL;
+
+    /* completely empty PCR specification or just raw-pcr-file given */
+    if ((policy[0] == '\0') || (policy[0] == '=')) {
+       return false;
+    }
+
+    *pcr_str = strdup(policy);
+    if (!*pcr_str) {
+        LOG_ERR("oom");
+        return false;
+    }
+
+    split = strchr(*pcr_str, '=');
+    if (split) {
+        split[0] = '\0';
+        *raw_path = split + 1;
+
+        /* empty raw-pcr-file */
+        if (*raw_path[0] == '\0') {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
+        tpm2_session **session) {
     tool_rc rc = tool_rc_general_error;
 
-    char *dup = strdup(policy);
-    if (!dup) {
-        LOG_ERR("oom");
-        return tool_rc_general_error;
-    }
-
-    const char *pcr_str = dup;
-    const char *raw_path = NULL;
-    char *split = strchr(dup, '=');
-    if (split) {
-        *split = '\0';
-        raw_path = split + 1;
-        raw_path = raw_path[0] == '\0' ? NULL : raw_path;
-    }
-
+    char *pcr_str, *raw_path;
     TPML_PCR_SELECTION pcrs;
-    bool ret = pcr_parse_selections(pcr_str, &pcrs);
+    bool ret;
+
+    ret = parse_pcr(policy, &pcr_str, &raw_path);
+    if (!ret) {
+        goto out;
+    }
+
+    ret = pcr_parse_selections(pcr_str, &pcrs);
     if (!ret) {
         goto out;
     }
@@ -217,7 +240,7 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
     rc = tool_rc_success;
 
 out:
-    free(dup);
+    free(pcr_str);
 
     return rc;
 }
