@@ -47,64 +47,121 @@ at least one of the policy events are true.
 
 Creates two sets of PCR data files, one of them being the existing PCR values
 and other being a set of PCR values that would result if the PCR were extended
-with a known value (without actually extending the PCR). Now create two separate
-policy digests, each with one set of the PCR values using **tpm2_policypcr**(1) tool
-in *trial* sessions. Now build a policy_or with the two PCR policy digests as
-inputs. Create a sealing object with an authentication policy resulting from
-**tpm2_policyor**(1)
+with a known value. Now create two separate policy digests, each with one set
+of the PCR values using **tpm2_policypcr**(1) tool in *trial* sessions. Now
+build a policy_or with the two PCR policy digests as inputs. Create a sealing
+object with an authentication policy compounding the 2 policies with **tpm2_policyor**
 and seal a secret. Unsealing with either of the PCR sets should be successful.
 
-## Create two PCR sets and policies
-```bash
-tpm2_pcrread -oset1_pcr0.sha1 sha1:0
+## Create two unique pcr policies with corresponding unique sets of pcrs.
+
+### Start with pcr value 0
+```
+tpm2_pcrreset 23
+```
+
+### PCR1 policy
+```
+tpm2_startauthsession -S session.ctx
+
+tpm2_policypcr -S session.ctx -l sha1:23 -L set1.pcr0.policy
+
+tpm2_flushcontext session.ctx
+
+rm session.ctx
+```
+
+### PCR2 policy
+```
+tpm2_pcrextend 23:sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
 
 tpm2_startauthsession -S session.ctx
 
-tpm2_policypcr -S session.ctx -l sha1:0 -f set1_pcr0.sha1 -L set1_pcr0.policy
+tpm2_policypcr -S session.ctx -l sha1:23 -L set2.pcr0.policy
 
 tpm2_flushcontext session.ctx
 
-dd if=/dev/urandom of=rand.bin bs=1 count=20
+rm session.ctx
+```
 
-cat set1_pcr0.sha1 rand.bin | openssl dgst -sha1 -binary -out set2_pcr0.sha1
-
+## Create a policyOR resulting from compounding the two unique pcr policies in an OR fashion
+```
 tpm2_startauthsession -S session.ctx
 
-tpm2_policypcr -S session.ctx -l sha1:0 -f set2_pcr0.sha1 -L set2_pcr0.policy
+tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
 
 tpm2_flushcontext session.ctx
+
+rm session.ctx
 ```
 
-## Generate a policy by compounding valid policies
-```bash
-tpm2_startauthsession -S session.ctx
+## Create a sealing object with auth policyOR created above.
+```
+tpm2_createprimary -C o -c prim.ctx
 
-tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
+tpm2_create -g sha256 -u sealkey.pub -r sealkey.priv -L policyOR -C prim.ctx -i- <<< "secretpass"
+
+tpm2_load -C prim.ctx -c sealkey.ctx -u sealkey.pub -r sealkey.priv
+```
+
+## Attempt unsealing by satisfying the policyOR by satisfying SECOND of the two policies.
+```
+tpm2_startauthsession -S session.ctx --policy-session
+
+tpm2_policypcr -S session.ctx -l sha1:23
+
+tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
+
+unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
+
+echo $unsealed
 
 tpm2_flushcontext session.ctx
+
+rm session.ctx
 ```
 
-## Create a TPM sealing object with the compounded auth policy
-```bash
-tpm2_createprimary -C o -g sha256 -G rsa -c prim.ctx
-
-tpm2_create -u sealing_key.pub -r sealing_key.priv -i- -C prim.ctx -L policy.or <<< "secret to seal"
-
-tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -c sealing_key.ctx
+## Extend the pcr to emulate tampering of the system software and hence the pcr value.
+```
+tpm2_pcrextend 23:sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
 ```
 
-## Satisfy the policy and unseal the secret
-```bash
-tpm2_startauthsession \--policy-session -S session.ctx
+## Attempt unsealing by trying to satisy the policOR by attempting to satisy one of the two policies.
+```
+tpm2_startauthsession -S session.ctx --policy-session
 
-tpm2_policypcr -Q -S session.ctx -l sha1:0 -L o_set1_pcr0.policy
+tpm2_policypcr -S session.ctx -l sha1:23
+```
 
-tpm2_policyor -S session.ctx -L policy.or -l sha256:set1_pcr0.policy,set2_pcr0.policy
-
-tpm2_unseal -p"session:session.ctx" -c sealing_key.ctx
-secret to seal
+### This should fail
+```
+tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
 
 tpm2_flushcontext session.ctx
+
+rm session.ctx
+```
+
+## Reset pcr to get back to the first set of pcr value
+```
+tpm2_pcrreset 23
+```
+
+## Attempt unsealing by satisfying the policyOR by satisfying FIRST of the two policies.
+```
+tpm2_startauthsession -S session.ctx --policy-session
+
+tpm2_policypcr -S session.ctx -l sha1:23
+
+tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
+
+unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
+
+echo $unsealed
+
+tpm2_flushcontext session.ctx
+
+rm session.ctx
 ```
 
 [returns](common/returns.md)
