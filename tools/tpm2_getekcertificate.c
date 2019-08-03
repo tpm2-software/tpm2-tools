@@ -486,7 +486,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "untrusted",            no_argument,       NULL, 'U' },
     };
 
-    *opts = tpm2_options_new("P:w:H:p:G:o:NO:E:i:U", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:w:H:p:G:o:NO:E:U", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;
