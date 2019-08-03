@@ -1,18 +1,18 @@
-% tpm2_getmanufec(1) tpm2-tools | General Commands Manual
+% tpm2_getekcertificate(1) tpm2-tools | General Commands Manual
 
 # NAME
 
-**tpm2_getmanufec**(1) - Retrieve the Endorsement Credential Certificate for the TPM
+**tpm2_getekcertificate**(1) - Retrieve the Endorsement key Certificate for the TPM
 endorsement key from the TPM manufacturer's endorsement certificate hosting
 server.
 
 # SYNOPSIS
 
-**tpm2_getmanufec** [*OPTIONS*] _URL_
+**tpm2_getekcertificate** [*OPTIONS*] _URL_
 
 # DESCRIPTION
 
-**tpm2_getmanufec**(1) - Retrieve the Endorsement Credential Certificate for
+**tpm2_getekcertificate**(1) - Retrieve the Endorsement key Certificate for
 the TPM endorsement key from the TPM manufacturer's endorsement certificate hosting
 server.
 
@@ -62,7 +62,7 @@ server.
 
   * **-E**, **\--ec-cert**=_EC\_CERT\_FILE_:
 
-    Specifies the file used to save the Endorsement Credentials retrieved from
+    Specifies the file used to save the Endorsement key certificate retrieved from
     the TPM manufacturer provisioning server. Defaults to stdout if not
     specified.
 
@@ -92,9 +92,9 @@ provided by setting the curl mode verbose, see
 # EXAMPLES
 
 ```
-tpm2_getmanufec -P abc123 -w abc123 -p passwd -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
+tpm2_getekcertificate -P abc123 -w abc123 -p passwd -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
 
-tpm2_getmanufec -P 1a1b1c -w 1a1b1c -p 123abc -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
+tpm2_getekcertificate -P 1a1b1c -w 1a1b1c -p 123abc -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
 ```
 
 [returns](common/returns.md)
