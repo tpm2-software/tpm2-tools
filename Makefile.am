@@ -49,7 +49,7 @@ bin_PROGRAMS = \
     tools/tpm2_encryptdecrypt \
     tools/tpm2_evictcontrol \
     tools/tpm2_flushcontext \
-    tools/tpm2_getmanufec \
+    tools/tpm2_getekcertificate \
     tools/tpm2_getrandom \
     tools/tpm2_hash \
     tools/tpm2_hierarchycontrol \
@@ -114,9 +114,9 @@ tools_tpm2_load_SOURCES = tools/tpm2_load.c $(TOOL_SRC)
 tools_tpm2_send_SOURCES = tools/tpm2_send.c $(TOOL_SRC)
 tools_tpm2_startup_SOURCES = tools/tpm2_startup.c $(TOOL_SRC)
 tools_tpm2_verifysignature_SOURCES = tools/tpm2_verifysignature.c $(TOOL_SRC)
-tools_tpm2_getmanufec_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS)
-tools_tpm2_getmanufec_LDADD = $(LDADD) $(CURL_LIBS)
-tools_tpm2_getmanufec_SOURCES = tools/tpm2_getmanufec.c $(TOOL_SRC)
+tools_tpm2_getekcertificate_CFLAGS = $(AM_CFLAGS) $(CURL_CFLAGS)
+tools_tpm2_getekcertificate_LDADD = $(LDADD) $(CURL_LIBS)
+tools_tpm2_getekcertificate_SOURCES = tools/tpm2_getekcertificate.c $(TOOL_SRC)
 tools_tpm2_quote_SOURCES = tools/tpm2_quote.c $(TOOL_SRC)
 tools_tpm2_changeauth_SOURCES = tools/tpm2_changeauth.c $(TOOL_SRC)
 tools_tpm2_createek_SOURCES = tools/tpm2_createek.c $(TOOL_SRC)
@@ -302,7 +302,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_encryptdecrypt.1 \
     man/man1/tpm2_evictcontrol.1 \
     man/man1/tpm2_flushcontext.1 \
-    man/man1/tpm2_getmanufec.1 \
+    man/man1/tpm2_getekcertificate.1 \
     man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_gettestresult.1 \
     man/man1/tpm2_hierarchycontrol.1 \

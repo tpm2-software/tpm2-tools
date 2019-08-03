@@ -27,10 +27,10 @@ bc3e1d4084e835c7c8906a1c05b4d2d30fdbebc1dbad950fa6b165bd4b6a
 79a8f32938dd8197e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859
 525118bd4470b18180eef78ae4267bcd" | xxd -r -p > test_ek.pub
 
-tpm2_getmanufec -G rsa -O test_ek.pub -N -U -E ECcert.bin https://ekop.intel.com/ekcertservice/
+tpm2_getekcertificate -G rsa -O test_ek.pub -N -U -E ECcert.bin https://ekop.intel.com/ekcertservice/
 
 # Test that stdoutput is the same
-tpm2_getmanufec -G rsa -N -U -O test_ek.pub https://ekop.intel.com/ekcertservice/ > ECcert2.bin
+tpm2_getekcertificate -G rsa -N -U -O test_ek.pub https://ekop.intel.com/ekcertservice/ > ECcert2.bin
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin
@@ -40,7 +40,7 @@ tpm2_clear
 tpm2_changeauth -c o $opass
 tpm2_changeauth -c e $epass
 
-tpm2_getmanufec -H $handle -U -E ECcert2.bin -o test_ek.pub -w $opass -P $epass \
+tpm2_getekcertificate -H $handle -U -E ECcert2.bin -o test_ek.pub -w $opass -P $epass \
                 https://ekop.intel.com/ekcertservice/
 
 tpm2_getcap "handles-persistent" | grep -q $handle
@@ -53,7 +53,7 @@ if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91f
 fi
 
 # Test with automatic persistent handle
-tpm2_getmanufec -H - -U -E ECcert2.bin -o test_ek.pub -w $opass -P $epass \
+tpm2_getekcertificate -H - -U -E ECcert2.bin -o test_ek.pub -w $opass -P $epass \
                 https://ekop.intel.com/ekcertservice/ > man.log
 phandle=`yaml_get_kv man.log "persistent-handle"`
 

@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_getmanufec: Renamed the tool to tpm2_getekcertificate
   * tpm2_rsadecrypt: add -l for specifying label.
   * tpm2_rsaencrypt: add -l for specifying label.
   * tpm2_sign:
