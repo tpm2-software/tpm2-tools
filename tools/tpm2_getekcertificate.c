@@ -17,8 +17,8 @@
 #include "tpm2_capability.h"
 #include "tpm2_tool.h"
 
-typedef struct tpm_getmanufec_ctx tpm_getmanufec_ctx;
-struct tpm_getmanufec_ctx {
+typedef struct tpm_getekcertificate_ctx tpm_getekcertificate_ctx;
+struct tpm_getekcertificate_ctx {
     char *output_file;
     struct {
         struct {
@@ -45,7 +45,7 @@ struct tpm_getmanufec_ctx {
     char *ek_auth_str;
 };
 
-static tpm_getmanufec_ctx ctx = {
+static tpm_getekcertificate_ctx ctx = {
     .algorithm_type = TPM2_ALG_RSA,
     .find_persistent_handle = false
 };
