@@ -1,4 +1,8 @@
 ## Changelog
+### 3.2.1-rc0 - 2019-08-05
+ * Correct PCR logic to prevent memory corruption bug.
+ * errata handler fix.
+ 
 ### 3.2.0 - 2019-06-19
 * fix configure bug for linking against libmu.
 * tpm2_changeauth: Support changing platform hierarchy auth.
