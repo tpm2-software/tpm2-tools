@@ -48,13 +48,13 @@ test_symmetric() {
 
     tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
-    tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -o $file_output_data
+    tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -o $file_output_data $file_input_data
 
     rm -f $file_output_data
 
     tpm2_evictcontrol -Q -C o -c $file_signing_key_ctx $handle_signing_key
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -m $file_input_data -o $file_output_data
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data $file_input_data
 
     rm -f $file_output_data
 
@@ -62,7 +62,7 @@ test_symmetric() {
 
     tpm2_hash -Q -C e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data -m $file_input_data -t $file_output_ticket
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data -t $file_output_ticket $file_input_data
 
     rm -f $file_output_data
 
@@ -70,21 +70,17 @@ test_symmetric() {
 
     sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > $file_input_digest
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d $file_input_digest -o $file_output_data
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d -o $file_output_data $file_input_digest
 
     rm -f $file_output_data
-
-    # test with digest + message/validation (warning generated)
-
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d $file_input_digest -o $file_output_data -m $file_input_data -t $file_output_ticket |& grep -q ^WARN
 }
 
 create_signature() {
     local sign_scheme=$1
     if [ "$sign_scheme" = "" ]; then
-        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -f plain -o $file_output_data
+        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -f plain -o $file_output_data $file_input_data
     else
-        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -s $sign_scheme -m $file_input_data -f plain -o $file_output_data
+        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -s $sign_scheme -f plain -o $file_output_data $file_input_data
     fi
 }
 
@@ -269,7 +265,7 @@ tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_
 # Negative test, remove error handler
 trap - ERR
 
-tpm2_sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash -m $file_input_data -o $file_output_data
+tpm2_sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash -o $file_output_data $file_input_data
 if [ $? != 3]; then
     echo "Expected RC 3, got: $?" 1>&2
 fi

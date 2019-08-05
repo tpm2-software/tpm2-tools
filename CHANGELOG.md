@@ -1,5 +1,8 @@
 ## Changelog
 ### next
+  * tpm2_sign:
+     - Drop -m and -d option arguments and make them sole argument.
+     - Remove the -m option and make -d toggle if input is a digest.
   * tpm2_encryptdecrypt: drop -i input option and make argument.
   * tpm2_rsadecrypt: drop -i input option and make argument.
   * tpm2_rsaencrypt: make output binary and either stdout or file based on -o.

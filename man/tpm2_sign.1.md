@@ -6,15 +6,16 @@
 
 # SYNOPSIS
 
-**tpm2_sign** [*OPTIONS*]
+**tpm2_sign** [*OPTIONS*] _FILE_
 
 # DESCRIPTION
 
-**tpm2_sign**(1) - Signs an externally provided hash with the specified symmetric or
-asymmetric signing key. If keyHandle references a restricted signing key, then
-validation shall be provided, indicating that the TPM performed the hash of the
-data and validation shall indicate that hashed data did not start with
-**TPM_GENERATED_VALUE**. The scheme of keyHandle should not be **TPM_ALG_NULL**.
+**tpm2_sign**(1) - Signs an externally provided message or hash with the
+specified symmetric or asymmetric signing key.
+
+If the signing key is a restricted signing key, then validation can be provided
+via the **-t** output. The ticket indicates that the TPM performed the hash of
+the message.
 
 # OPTIONS
 
@@ -48,16 +49,11 @@ data and validation shall indicate that hashed data did not start with
     If left unspecified, a default signature scheme for the key type will
      be used.
 
-  * **-m**, **\--message**=_MSG\_FILE_:
+  * **-d**, **\--digest**
 
-    The message file, containing the content to be  digested.
-
-  * **-d**, **\--digest**=_DIGEST\_FILE_:
-
-    The digest file that shall be computed using the correct hash
-    algorithm. When this option is specified, a warning is generated and
-    **both the message file (-m) and the validation ticket (-t) are
-    ignored**.
+    Indicate that _FILE_ is a file containing the digest of the message.
+    When this option and **-t** is specified, a warning is
+    generated and the **validation ticket (-t) is ignored**.
     You cannot use this option to sign a digest against a restricted
     signing key.
 
@@ -92,22 +88,22 @@ data and validation shall indicate that hashed data did not start with
 # EXAMPLES
 
 ## Sign and verify with the TPM using the *endorsement* hierarchy
-```
+```bash
 tpm2_createprimary -C e -c primary.ctx
 
 tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
 
 tpm2_load -C primary.ctx -u rsa.pub -r rsa.priv -c rsa.ctx
 
-echo "my message > message.dat
+echo "my message" > message.dat
 
-tpm2_sign -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
+tpm2_sign -c rsa.ctx -g sha256 -o sig.rssa message.dat
 
-tpm2_verifysignature -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
+tpm2_verifysignature -c rsa.ctx -g sha256 -s sig.rssa -m message.dat
 ```
 
 ## Sign with the TPM and verify with OSSL
-```
+```bash
 openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
 
 openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
@@ -121,7 +117,7 @@ sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.di
 tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
 
 # Sign in the TPM and verify with OSSL
-tpm2_sign -Q -c key.ctx -g sha256 -d data.in.digest -f plain -s data.out.signed
+tpm2_sign -Q -c key.ctx -g sha256 -d -f plain -o data.out.signed data.in.digest
 
 openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 ```
