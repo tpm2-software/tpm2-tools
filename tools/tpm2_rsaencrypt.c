@@ -26,11 +26,11 @@ static tpm_rsaencrypt_ctx ctx = {
 
 static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
 
-    bool ret = true;
+    bool ret = false;
     // Inputs
     TPM2B_DATA label;
     // Outputs
-    TPM2B_PUBLIC_KEY_RSA *out_data;
+    TPM2B_PUBLIC_KEY_RSA *out_data = NULL;
 
     label.size = 0;
 
@@ -42,15 +42,18 @@ static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
         return tool_rc_from_tpm(rval);
     }
 
-    if (ctx.output_path) {
-        ret = files_save_bytes_to_file(ctx.output_path, out_data->buffer,
-                out_data->size);
+    FILE *f = ctx.output_path ? fopen(ctx.output_path, "wb+") : stdout;
+    if (!f) {
+        goto out;
     }
 
-    tpm2_util_print_tpm2b(out_data);
+    ret = files_write_bytes(f, out_data->buffer, out_data->size);
+    if (f != stdout) {
+        fclose(f);
+    }
 
+out:
     free(out_data);
-
     return ret ? tool_rc_success : tool_rc_general_error;
 }
 

@@ -29,9 +29,8 @@ The key referenced by key-context is **required** to be:
 
   * **-o**, **\--output**=_OUTPUT\_FILE_:
 
-    Output file path, record the decrypted data. The default is to print an
-    xxd compatible hexdump to stdout. If a file is specified, raw binary
-    output is performed.
+    Optional output file path to record the decrypted data to. The default is to print
+    the binary encrypted data to stdout.
 
   * **-g**, **\--scheme**=_PADDING\_SCHEME_:
 
