@@ -34,7 +34,7 @@ program to decode and display the response in a human readable form.
 
 Send the contents of *tpm2-command.bin* to a device and collect the response as *tpm2-response.bin*.
 
-```
+```bash
 tpm2_send < tpm2-command.bin > tpm2-response.bin
 
 tpm2_send < tpm2-command.bin -o tpm2-response.bin
