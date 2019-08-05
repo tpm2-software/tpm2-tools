@@ -293,9 +293,6 @@ static bool setup_alg_mode_and_iv_and_padding(ESYS_CONTEXT *ectx, TPM2B_IV *iv) 
 
 static bool on_option(char key, char *value) {
 
-    bool result;
-    long unsigned int filesize;
-
     switch (key) {
     case 'c':
         ctx.encryption_key.ctx_path = value;
@@ -305,17 +302,6 @@ static bool on_option(char key, char *value) {
         break;
     case 'd':
         ctx.is_decrypt = 1;
-        break;
-    case 'i':
-        ctx.input_path = value;
-        result = files_get_file_size_path(ctx.input_path, &filesize);
-        if (!result) {
-            LOG_ERR("Input file size could not be retrieved.");
-        }
-        if (filesize > UINT16_MAX) {
-            LOG_ERR("File size bigger than UINT16_MAX");
-        }
-        ctx.input_data_size = filesize;
         break;
     case 'o':
         ctx.out_file_path = value;
@@ -338,12 +324,36 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_args(int argc, char *argv[]) {
+
+    if (argc != 1) {
+        LOG_ERR("Expected one input file, got: %d", argc);
+        return false;
+    }
+
+    bool result;
+    long unsigned int filesize;
+    ctx.input_path = argv[0];
+    result = files_get_file_size_path(ctx.input_path, &filesize);
+    if (!result) {
+        LOG_ERR("Input file size could not be retrieved.");
+        return false;
+    }
+    if (filesize > UINT16_MAX) {
+        LOG_ERR("File size bigger than UINT16_MAX");
+        return false;
+    }
+
+    ctx.input_data_size = filesize;
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "auth",                 required_argument, NULL, 'p' },
         { "decrypt",              no_argument,       NULL, 'd' },
-        { "input",                required_argument, NULL, 'i' },
         { "iv",                   required_argument, NULL, 't' },
         { "mode",                 required_argument, NULL, 'G' },
         { "output",               required_argument, NULL, 'o' },
@@ -351,8 +361,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "pad",                  no_argument,       NULL, 'e' },
     };
 
-    *opts = tpm2_options_new("p:edi:o:c:i:G:t:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    *opts = tpm2_options_new("p:edi:o:c:G:t:", ARRAY_LEN(topts), topts, on_option,
+                             on_args, 0);
 
     return *opts != NULL;
 }

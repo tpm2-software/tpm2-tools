@@ -65,7 +65,7 @@ tpm2_create -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx -L policy.dat \
 tpm2_load -C prim.ctx -u key.pub -r key.priv -n key.name -c key.ctx
 
 echo "plaintext" > plain.txt
-tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt -p testpswd
+tpm2_encryptdecrypt -c key.ctx -o encrypt.out plain.txt -p testpswd plain.txt
 ```
 
 ## Authenticate with password and the policy
@@ -74,8 +74,8 @@ tpm2_startauthsession \--policy-session -S session.dat
 
 tpm2_policypassword -S session.dat -L policy.dat
 
-tpm2_encryptdecrypt -c key.ctx -o encrypt.out -i plain.txt \
-  -p session:session.dat+testpswd
+tpm2_encryptdecrypt -c key.ctx -o encrypt.out \
+  -p session:session.dat+testpswd plain.txt
 
 tpm2_flushcontext session.dat
 ```

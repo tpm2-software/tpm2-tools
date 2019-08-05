@@ -43,12 +43,12 @@ tpm2_create -g sha256 -G aes -u $key_pub -r $key_priv -C $primary_key_ctx \
   -L $policypassword -p $testpswd
 
 tpm2_load -C $primary_key_ctx -u $key_pub -r $key_priv -c $key_ctx
-tpm2_encryptdecrypt -c $key_ctx -o $encrypted_txt -i $plain_txt -p $testpswd
+tpm2_encryptdecrypt -c $key_ctx -o $encrypted_txt -p $testpswd $plain_txt
 
 tpm2_startauthsession --policy-session -S $session_ctx
 tpm2_policypassword -S $session_ctx -L $policypassword
-tpm2_encryptdecrypt -c $key_ctx -i $encrypted_txt -o $decrypted_txt -d \
-  -p session:$session_ctx+$testpswd
+tpm2_encryptdecrypt -c $key_ctx -o $decrypted_txt -d \
+  -p session:$session_ctx+$testpswd $encrypted_txt
 tpm2_flushcontext $session_ctx
 rm $session_ctx
 
