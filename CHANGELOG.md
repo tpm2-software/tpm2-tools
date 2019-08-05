@@ -1,5 +1,16 @@
 ## Changelog
 ### next
+  * tpm2_getekcertificate: Removed ek key creation and management logic.
+    - The tool now simply takes the ek public key as an input. This
+    public key is being read in tss format and can be retrieved using
+    the tpm2_createek tool.
+    - Removed option -P or --eh-auth
+    - Removed option -p or --ek-auth
+    - Removed option -w or --owner-auth
+    - Removed option -H or --persistent-handle
+    - Removed option -G or --key-algorithm
+    - Removed option -N or --non-persistent
+    - Removed option -O or --offline
   * tpm2_getmanufec: Renamed the tool to tpm2_getekcertificate
   * tpm2_rsadecrypt: add -l for specifying label.
   * tpm2_rsaencrypt: add -l for specifying label.

@@ -14,53 +14,11 @@ server.
 
 **tpm2_getekcertificate**(1) - Retrieve the Endorsement key Certificate for
 the TPM endorsement key from the TPM manufacturer's endorsement certificate hosting
-server.
+server. The argument _URL_ specifies the address for the ek certificate portal.
 
 # OPTIONS
 
-  * **-P**, **\--eh-auth**=_ENDORSE\_AUTH_:
-
-    Specifies current endorsement authorization.
-    Authorizations should follow the "authorization formatting standards", see
-    section "Authorization Formatting".
-
-  * **-p**, **\--ek-auth**=_EK\_AUTH_
-
-    Specifies the EK authorization when created.
-    Same formatting as the endorse authorization value or **-e** option.
-
-  * **-w**, **\--owner-auth**=_OWNER\_AUTH_
-
-    Specifies the current owner authorization.
-    Same formatting as the endorse authorization value or **-e** option.
-
-  * **-H**, **\--persistent-handle**=_HANDLE_:
-
-    Specifies the handle used to make EK  persistent.
-    If a value of **-** is passed the tool will find a vacant persistent handle
-    to use and print out the automatically selected handle.
-
-  * **-G**, **\--key-algorithm**=_ALGORITHM_:
-
-    Specifies the algorithm type of EK.
-    See section "Supported Public Object Algorithms" for a list of supported
-    object algorithms. See section "Algorithm Specifiers" on how to specify
-    an algorithm argument.
-
-  * **-o**, **\--output**=_FILE_:
-
-    Specifies the file used to save the public portion of EK.
-
-  * **-N**, **\--non-persistent**:
-
-    Specifies to readout the EK public without making it persistent.
-
-  * **-O**, **\--offline**=_FILE_:
-
-    Specifies the file that contains an EK retrieved from offline
-    platform that needs to be provisioned.
-
-  * **-E**, **\--ec-cert**=_EC\_CERT\_FILE_:
+  * **-E**, **\--ec-cert**=_EK\_CERTIFICATE\_FILE_:
 
     Specifies the file used to save the Endorsement key certificate retrieved from
     the TPM manufacturer provisioning server. Defaults to stdout if not
@@ -72,6 +30,10 @@ server.
     without verifying server certificate.
 
     **WARNING**: This option should be used only on platforms with older CA certificates.
+
+  * **-o**, **\--output**: _EK\_PUBLIC\_FILE_
+
+    Specifies the file path for the endorsement key public portion in tss format.
 
 [common options](common/options.md)
 
@@ -92,9 +54,8 @@ provided by setting the curl mode verbose, see
 # EXAMPLES
 
 ```
-tpm2_getekcertificate -P abc123 -w abc123 -p passwd -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
+tpm2_getekcertificate -U -E ECcert.bin -o ek.pub https://tpm.manufacturer.com/ekcertserver/
 
-tpm2_getekcertificate -P 1a1b1c -w 1a1b1c -p 123abc -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
 ```
 
 [returns](common/returns.md)

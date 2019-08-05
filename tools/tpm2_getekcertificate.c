@@ -19,180 +19,16 @@
 
 typedef struct tpm_getekcertificate_ctx tpm_getekcertificate_ctx;
 struct tpm_getekcertificate_ctx {
-    char *output_file;
-    struct {
-        struct {
-            char *auth_str;
-            tpm2_session *session;
-        } endorse;
-        struct {
-            char *auth_str;
-            tpm2_session *session;
-        } owner;
-    } auth;
-    TPM2B_SENSITIVE_CREATE inSensitive;
     char *ec_cert_path;
-    ESYS_TR persistent_handle;
-    UINT32 algorithm_type;
-    FILE *ec_cert_file;
+    FILE *ec_cert_file_handle;
     char *ek_server_addr;
-    unsigned int non_persistent_read;
     unsigned int SSL_NO_VERIFY;
     char *ek_path;
     bool verbose;
     TPM2B_PUBLIC *outPublic;
-    bool find_persistent_handle;
-    char *ek_auth_str;
 };
 
-static tpm_getekcertificate_ctx ctx = {
-    .algorithm_type = TPM2_ALG_RSA,
-    .find_persistent_handle = false
-};
-
-BYTE authPolicy[] = {0x83, 0x71, 0x97, 0x67, 0x44, 0x84, 0xB3, 0xF8,
-                     0x1A, 0x90, 0xCC, 0x8D, 0x46, 0xA5, 0xD7, 0x24,
-                     0xFD, 0x52, 0xD7, 0x6E, 0x06, 0x52, 0x0B, 0x64,
-                     0xF2, 0xA1, 0xDA, 0x1B, 0x33, 0x14, 0x69, 0xAA};
-
-bool set_key_algorithm(TPM2B_PUBLIC *inPublic) {
-    inPublic->publicArea.nameAlg = TPM2_ALG_SHA256;
-    // First clear attributes bit field.
-    inPublic->publicArea.objectAttributes = 0;
-    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_RESTRICTED;
-    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
-    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_ADMINWITHPOLICY;
-    inPublic->publicArea.objectAttributes &= ~TPMA_OBJECT_SIGN_ENCRYPT;
-    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_DECRYPT;
-    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDTPM;
-    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_FIXEDPARENT;
-    inPublic->publicArea.objectAttributes |= TPMA_OBJECT_SENSITIVEDATAORIGIN;
-    inPublic->publicArea.authPolicy.size = 32;
-    memcpy(inPublic->publicArea.authPolicy.buffer, authPolicy, 32);
-
-    inPublic->publicArea.type = ctx.algorithm_type;
-
-    switch (ctx.algorithm_type) {
-    case TPM2_ALG_RSA:
-        inPublic->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_AES;
-        inPublic->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        inPublic->publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM2_ALG_CFB;
-        inPublic->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
-        inPublic->publicArea.parameters.rsaDetail.keyBits = 2048;
-        inPublic->publicArea.parameters.rsaDetail.exponent = 0x0;
-        inPublic->publicArea.unique.rsa.size = 256;
-        break;
-    case TPM2_ALG_KEYEDHASH:
-        inPublic->publicArea.parameters.keyedHashDetail.scheme.scheme = TPM2_ALG_XOR;
-        inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = TPM2_ALG_SHA256;
-        inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
-        inPublic->publicArea.unique.keyedHash.size = 0;
-        break;
-    case TPM2_ALG_ECC:
-        inPublic->publicArea.parameters.eccDetail.symmetric.algorithm = TPM2_ALG_AES;
-        inPublic->publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
-        inPublic->publicArea.parameters.eccDetail.symmetric.mode.sym = TPM2_ALG_CFB;
-        inPublic->publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
-        inPublic->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
-        inPublic->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
-        inPublic->publicArea.unique.ecc.x.size = 32;
-        inPublic->publicArea.unique.ecc.y.size = 32;
-        break;
-    case TPM2_ALG_SYMCIPHER:
-        inPublic->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
-        inPublic->publicArea.parameters.symDetail.sym.keyBits.aes = 128;
-        inPublic->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
-        inPublic->publicArea.unique.sym.size = 0;
-        break;
-    default:
-        LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.algorithm_type);
-        return false;
-    }
-
-    return true;
-}
-
-tool_rc createEKHandle(ESYS_CONTEXT *ectx)
-{
-    TPM2_RC rval;
-
-    TPM2B_PUBLIC inPublic = TPM2B_EMPTY_INIT;
-
-    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
-    TPML_PCR_SELECTION creationPCR;
-
-    ESYS_TR handle2048ek;
-
-    bool ret = set_key_algorithm(&inPublic);
-    if (!ret) {
-        return tool_rc_general_error;
-    }
-
-    creationPCR.count = 0;
-
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
-                            ctx.auth.endorse.session, &shandle1);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to get shandle");
-        return rc;
-    }
-
-    rval = Esys_CreatePrimary(ectx, ESYS_TR_RH_ENDORSEMENT,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            &ctx.inSensitive, &inPublic, &outsideInfo,
-            &creationPCR, &handle2048ek, &ctx.outPublic,
-            NULL, NULL, NULL);
-    if (rval != TPM2_RC_SUCCESS ) {
-        LOG_PERR(Esys_CreatePrimary, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    if (!ctx.non_persistent_read) {
-
-        if (!ctx.persistent_handle) {
-            LOG_ERR("Persistent handle for EK was not provided");
-            return tool_rc_option_error;
-        }
-
-        ESYS_TR new_handle;
-
-        ESYS_TR shandle = ESYS_TR_NONE;
-        rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_OWNER,
-                                ctx.auth.owner.session, &shandle);
-        if (rc != tool_rc_success) {
-            LOG_ERR("Couldn't get shandle for owner hierarchy");
-            return rc;
-        }
-
-        rval = Esys_EvictControl(ectx, ESYS_TR_RH_OWNER, handle2048ek,
-                shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                ctx.persistent_handle, &new_handle);
-        if (rval != TPM2_RC_SUCCESS ) {
-            LOG_PERR(Esys_EvictControl, rval);
-            return tool_rc_from_tpm(rval);
-        }
-        LOG_INFO("EvictControl EK persistent succ.");
-
-        rval = Esys_TR_Close(ectx, &new_handle);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_TR_Close, rval);
-            return tool_rc_from_tpm(rval);
-        }
-    }
-
-    rval = Esys_FlushContext(ectx, handle2048ek);
-    if (rval != TPM2_RC_SUCCESS ) {
-        LOG_PERR(Esys_FlushContext, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    LOG_INFO("Flush transient EK succ.");
-
-    return files_save_public(ctx.outPublic, ctx.output_file)
-            ? tool_rc_success : tool_rc_general_error;
-}
+static tpm_getekcertificate_ctx ctx;
 
 static unsigned char *HashEKPublicKey(void) {
 
@@ -360,8 +196,8 @@ int RetrieveEndorsementCredentials(char *b64h)
      * If an output file is specified, write to the file, else curl will use stdout:
      * https://curl.haxx.se/libcurl/c/CURLOPT_WRITEDATA.html
      */
-    if (ctx.ec_cert_file) {
-        rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, ctx.ec_cert_file);
+    if (ctx.ec_cert_file_handle) {
+        rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, ctx.ec_cert_file_handle);
         if (rc != CURLE_OK) {
             LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s", curl_easy_strerror(rc));
             goto out_easy_cleanup;
@@ -387,7 +223,7 @@ out_memory:
 }
 
 
-int TPMinitialProvisioning(void)
+int get_ek_certificate(void)
 {
     int rc = 1;
     unsigned char *hash = HashEKPublicKey();
@@ -410,49 +246,15 @@ out:
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'H':
-        if (!strcmp(value, "-")) {
-            ctx.find_persistent_handle = true;
-        } else if (!tpm2_util_string_to_uint32(value, &ctx.persistent_handle)) {
-            LOG_ERR("Please input the handle used to make EK persistent(hex) in correct format.");
-            return false;
-        }
-        break;
-    case 'P':
-        ctx.auth.endorse.auth_str = value;
-        break;
-    case 'w':
-        ctx.auth.owner.auth_str = value;
-        break;
-    case 'p': {
-        ctx.ek_auth_str = value;
-    }   break;
-    case 'G':
-        ctx.algorithm_type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
-        if (ctx.algorithm_type == TPM2_ALG_ERROR) {
-             LOG_ERR("Please input the algorithm type in correct format.");
-            return false;
-        }
-        break;
-    case 'o':
-        if (value == NULL ) {
-            LOG_ERR("Please input the file used to save the pub ek.");
-            return false;
-        }
-        ctx.output_file = value;
-        break;
     case 'E':
         ctx.ec_cert_path = value;
-        break;
-    case 'N':
-        ctx.non_persistent_read = 1;
-        break;
-    case 'O':
-        ctx.ek_path = value;
         break;
     case 'U':
         ctx.SSL_NO_VERIFY = 1;
         LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
+        break;
+    case 'o':
+        ctx.ek_path = value;
         break;
     }
     return true;
@@ -474,19 +276,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
-        { "eh-auth",              required_argument, NULL, 'P' },
-        { "owner-auth",           required_argument, NULL, 'w' },
-        { "ek-auth",              required_argument, NULL, 'p' },
-        { "persistent-handle",    required_argument, NULL, 'H' },
-        { "key-algorithm",        required_argument, NULL, 'G' },
-        { "output",               required_argument, NULL, 'o' },
-        { "non-persistent",       no_argument,       NULL, 'N' },
-        { "offline",              required_argument, NULL, 'O' },
         { "ec-cert",              required_argument, NULL, 'E' },
         { "untrusted",            no_argument,       NULL, 'U' },
+        { "output",               required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("P:w:H:p:G:o:NO:E:U", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("E:Uo:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;
@@ -494,76 +289,37 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
+    UNUSED(ectx);
+
+    if (!ctx.ek_path) {
+        LOG_ERR("Must specify the ek public key path");
+        return tool_rc_general_error;
+    }
+
     if (!ctx.ek_server_addr) {
         LOG_ERR("Must specify a remote server url!");
         return tool_rc_option_error;
     }
 
-    ctx.verbose = flags.verbose;
-
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
-            &ctx.auth.endorse.session, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid endorsement authorization");
-        return rc;
-    }
-
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
-            &ctx.auth.owner.session, false);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid owner authorization");
-        return rc;
-    }
-
-    tpm2_session *tmp;
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.ek_auth_str,
-            &tmp, true);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Invalid EK auth");
-        return rc;
-    }
-
-    const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-    ctx.inSensitive.sensitive.userAuth = *auth;
-
-    tpm2_session_close(&tmp);
-
-    if (ctx.find_persistent_handle) {
-        rc = tpm2_capability_find_vacant_persistent_handle(ectx,
-                        &ctx.persistent_handle);
-        if (rc != tool_rc_success) {
-            LOG_ERR("handle/H passed with a value of '-' but unable to find a"
-                    " vacant persistent handle!");
-            return rc;
-        }
-        tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persistent_handle);
-    }
-
     if (ctx.ec_cert_path) {
-        ctx.ec_cert_file = fopen(ctx.ec_cert_path, "wb");
-        if (!ctx.ec_cert_file) {
+        ctx.ec_cert_file_handle = fopen(ctx.ec_cert_path, "wb");
+        if (!ctx.ec_cert_file_handle) {
             LOG_ERR("Could not open file for writing: \"%s\"", ctx.ec_cert_path);
             return tool_rc_general_error;
         }
     }
 
-    if (!ctx.ek_path) {
-        tool_rc rc = createEKHandle(ectx);
-        if (rc != tool_rc_success) {
-            return tool_rc_general_error;
-        }
-    } else {
-        ctx.outPublic = malloc(sizeof(*ctx.outPublic));
-        ctx.outPublic->size = 0;
-
-        bool res = files_load_public(ctx.ek_path, ctx.outPublic);
-        if (!res) {
-            LOG_ERR("Could not load existing EK public from file");
-            return tool_rc_general_error;
-        }
+    ctx.outPublic = malloc(sizeof(*ctx.outPublic));
+    ctx.outPublic->size = 0;
+    bool res = files_load_public(ctx.ek_path, ctx.outPublic);
+    if (!res) {
+        LOG_ERR("Could not load EK public from file");
+        return tool_rc_general_error;
     }
 
-    int ret = TPMinitialProvisioning();
+    ctx.verbose = flags.verbose;
+
+    int ret = get_ek_certificate();
     if (ret) {
         return tool_rc_general_error;
     }
@@ -572,23 +328,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
 
-    tool_rc rc = tool_rc_success;
-
-    tool_rc tmp_rc = tpm2_session_close(&ctx.auth.owner.session);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
+    if (ctx.ec_cert_file_handle) {
+        fclose(ctx.ec_cert_file_handle);
     }
 
-    tmp_rc = tpm2_session_close(&ctx.auth.endorse.session);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-    }
-
-    if (ctx.ec_cert_file) {
-        fclose(ctx.ec_cert_file);
-    }
-
-    return rc;
+    return tool_rc_success;
 }
