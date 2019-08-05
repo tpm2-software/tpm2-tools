@@ -205,7 +205,7 @@ tpm2_flushcontext session.dat
 ```bash
 echo "Encrypt Me" > plain.txt
 
-tpm2_encryptdecrypt -i plain.txt -o enc.txt -c sealkey.ctx
+tpm2_encryptdecrypt plain.txt -o enc.txt -c sealkey.ctx plain.txt
 ERROR: Esys_EncryptDecrypt2(0x12F) - tpm:error(2.0): authValue or authPolicy is not available for selected entity
 ```
 

@@ -34,7 +34,7 @@ run_aes_import_test() {
 
     echo "plaintext" > "plain.txt"
 
-    tpm2_encryptdecrypt -c import_key.ctx  -i plain.txt -o plain.enc
+    tpm2_encryptdecrypt -c import_key.ctx -o plain.enc plain.txt
 
     openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` -iv 0 -$2
 
