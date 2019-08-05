@@ -25,9 +25,13 @@
 
 # EXAMPLES
 
-```
+## Send a TPM Startup Command with flags TPM2\_SU\_STATE
+```bash
 tpm2_startup
+```
 
+## Send a TPM Startup Command with flags TPM2\_SU\_CLEAR
+```bash
 tpm2_startup -c
 ```
 
