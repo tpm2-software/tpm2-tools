@@ -63,7 +63,7 @@ tpm2_rsaencrypt -c key.ctx -o msg.enc msg.dat
 
 ## Decrypt using RSA
 ```bash
-tpm2_rsadecrypt -c key.ctx -o msg.ptext -i msg.enc
+tpm2_rsadecrypt -c key.ctx -o msg.ptext msg.enc
 cat msg.ptext
 my message
 ```

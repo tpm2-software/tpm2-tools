@@ -6,12 +6,13 @@
 
 # SYNOPSIS
 
-**tpm2_rsadecrypt** [*OPTIONS*]
+**tpm2_rsadecrypt** [*OPTIONS*] _FILE_
 
 # DESCRIPTION
 
-**tpm2_rsadecrypt**(1) - Performs RSA decryption using the indicated padding scheme according to
-IETF RFC 3447 (PKCS#1).
+**tpm2_rsadecrypt**(1) - Performs RSA decryption on the contents of _FILE_
+using the indicated padding scheme according to IETF RFC 3447 (PKCS#1).
+Input defaults to *stdin* if not specified.
 
 The key referenced by key-context is **required** to be:
 
@@ -31,10 +32,6 @@ The key referenced by key-context is **required** to be:
     Optional authorization value to use the key specified by **-k**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
-
-  * **-i**, **\--input**=_INPUT\FILE_:
-
-    Input file path, containing the data to be decrypted.
 
   * **-o**, **\--output**=_OUTPUT\_FILE_:
 
@@ -73,7 +70,7 @@ tpm2_rsaencrypt -c key.ctx -o msg.enc msg.dat
 
 ## Decrypt using RSA
 ```bash
-tpm2_rsadecrypt -c key.ctx -o msg.ptext -i msg.enc
+tpm2_rsadecrypt -c key.ctx -o msg.ptext msg.enc
 cat msg.ptext
 my message
 ```
