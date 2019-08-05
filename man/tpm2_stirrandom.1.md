@@ -35,19 +35,19 @@ This command has no option
 # EXAMPLES
 
 ## Inject from stdin using echo
-```
+```bash
 echo -n "myrandomdata" | tpm2_stirrandom
 ```
 
 ## Inject 64 bytes from stdin using a file
-```
+```bash
 dd if=/dev/urandom bs=1 count=64 > myrandom.bin
 
 tpm2_stirrandom < ./myrandom.bin
 ```
 
 ## Inject bytes from a file and reading up to 128 bytes
-```
+```bash
 dd if=/dev/urandom of=./myrandom.bin bs=1 count=42
 
 tpm2_stirrandom ./myrandom.bin
