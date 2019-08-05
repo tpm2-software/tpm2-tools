@@ -16,12 +16,8 @@ struct tpm_rsadecrypt_ctx {
         tpm2_loaded_object object;
     } key;
 
-    struct {
-        UINT8 i : 1;
-        UINT8 o : 1;
-    } flags;
-
     TPM2B_PUBLIC_KEY_RSA cipher_text;
+    char *input_path;
     char *output_file_path;
     TPMT_RSA_DECRYPT scheme;
 };
@@ -65,19 +61,8 @@ static bool on_option(char key, char *value) {
     case 'p':
         ctx.key.auth_str = value;
         break;
-    case 'i': {
-        ctx.cipher_text.size = sizeof(ctx.cipher_text) - 2;
-        bool result = files_load_bytes_from_path(value, ctx.cipher_text.buffer,
-                &ctx.cipher_text.size);
-        if (!result) {
-            return false;
-        }
-        ctx.flags.i = 1;
-    }
-        break;
     case 'o': {
         ctx.output_file_path = value;
-        ctx.flags.o = 1;
         break;
     }
     case 'g':
@@ -91,28 +76,45 @@ static bool on_option(char key, char *value) {
     return true;
 }
 
+static bool on_args(int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("Only supports one input file, got: %d", argc);
+        return false;
+    }
+
+    ctx.input_path = argv[0];
+
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
       { "auth",         required_argument, NULL, 'p' },
-      { "input",        required_argument, NULL, 'i' },
       { "output",       required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
       { "scheme",       required_argument, NULL, 'g' },
     };
 
-    *opts = tpm2_options_new("p:i:o:c:g:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("p:o:c:g:", ARRAY_LEN(topts), topts,
+                             on_option, on_args, 0);
 
     return *opts != NULL;
 }
 
 static tool_rc init(ESYS_CONTEXT *ectx) {
 
-
-    if (!(ctx.key.ctx_path && ctx.flags.i && ctx.flags.o)) {
-        LOG_ERR("Expected arguments i, o and c.");
+    if (!ctx.key.ctx_path) {
+        LOG_ERR("Expected argument -c.");
         return tool_rc_option_error;
+    }
+
+    ctx.cipher_text.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
+        &ctx.cipher_text.size, ctx.cipher_text.buffer);
+    if (!result) {
+        return tool_rc_general_error;
     }
 
     return tpm2_util_object_load_auth(ectx, ctx.key.ctx_path, ctx.key.auth_str,

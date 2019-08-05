@@ -1,5 +1,6 @@
 ## Changelog
 ### next
+  * tpm2_rsadecrypt: drop -i input option and make argument.
   * tpm2_rsaencrypt: make output binary and either stdout or file based on -o.
   * tpm2_makecredential: long option output becomes credential-blob
   * tpm2_quote: -F becomes -f.
