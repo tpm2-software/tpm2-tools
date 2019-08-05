@@ -60,19 +60,19 @@ This will work with direct TPM access, but note that internally this calls a *Co
 # EXAMPLES
 
 ## Start a *trial* session and save the session data to a file
-```
+```bash
 tpm2_startauthsession -S mysession.ctx
 ```
 
 ## Start a *policy* session and save the session data to a file
-```
-tpm2_startauthsession \--policy-session -S mysession.ctx
+```bash
+tpm2_startauthsession --policy-session -S mysession.ctx
 ```
 
 ## Start an encrypted and bound *policy* session and save the session data to a file
-```
+```bash
 tpm2_createprimary -c primary.ctx
-tpm2_startauthsession \--policy-session -c primary.ctx -S mysession.ctx
+tpm2_startauthsession --policy-session -c primary.ctx -S mysession.ctx
 ```
 
 [returns](common/returns.md)
