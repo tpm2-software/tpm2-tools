@@ -7,7 +7,7 @@ opass=abc123
 epass=abc123
 
 cleanup() {
-    rm -f test_ek.pub ECcert.bin ECcert2.bin test_ek.pub man.log
+    rm -f test_ek.pub ECcert.bin ECcert2.bin
 
     shut_down
 }
@@ -15,6 +15,7 @@ trap cleanup EXIT
 
 start_up
 
+# Sample ek public from a real platform
 echo "013a0001000b000300b20020837197674484b3f81a90cc8d46a5d724fd52
 d76e06520b64f2a1da1b331469aa00060080004300100800000000000100
 c320e2f244a8601aacf3e01d26c665249935562de1da197e9e7f076c4696
@@ -27,36 +28,18 @@ bc3e1d4084e835c7c8906a1c05b4d2d30fdbebc1dbad950fa6b165bd4b6a
 79a8f32938dd8197e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859
 525118bd4470b18180eef78ae4267bcd" | xxd -r -p > test_ek.pub
 
-tpm2_getekcertificate -G rsa -O test_ek.pub -N -U -E ECcert.bin https://ekop.intel.com/ekcertservice/
+tpm2_getekcertificate -o test_ek.pub -U https://ekop.intel.com/ekcertservice/ -E ECcert.bin
 
 # Test that stdoutput is the same
-tpm2_getekcertificate -G rsa -N -U -O test_ek.pub https://ekop.intel.com/ekcertservice/ > ECcert2.bin
+tpm2_getekcertificate -o test_ek.pub -U https://ekop.intel.com/ekcertservice/ > ECcert2.bin
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin
 
-# Test providing endorsement password to create EK and owner password to persist.
-tpm2_clear
-tpm2_changeauth -c o $opass
-tpm2_changeauth -c e $epass
-
-tpm2_getekcertificate -H $handle -U -E ECcert2.bin -o test_ek.pub -w $opass -P $epass \
-                https://ekop.intel.com/ekcertservice/
-
-tpm2_getcap "handles-persistent" | grep -q $handle
-
-tpm2_evictcontrol -Q -c $handle -C o -P $opass
-
+# Retrieved certificate should be valid
 if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91ff5" ]; then
  echo "Failed: retrieving endorsement certificate"
  exit 1
 fi
-
-# Test with automatic persistent handle
-tpm2_getekcertificate -H - -U -E ECcert2.bin -o test_ek.pub -w $opass -P $epass \
-                https://ekop.intel.com/ekcertservice/ > man.log
-phandle=`yaml_get_kv man.log "persistent-handle"`
-
-tpm2_evictcontrol -Q -c $phandle -C o -P $opass
 
 exit 0
