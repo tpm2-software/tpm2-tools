@@ -80,7 +80,7 @@ static bool on_option(char key, char *value) {
 static bool on_args(int argc, char **argv) {
 
     if (argc > 1) {
-        LOG_ERR("Only supports one hash input file, got: %d", argc);
+        LOG_ERR("Only supports one input file, got: %d", argc);
         return false;
     }
 
@@ -106,7 +106,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static tool_rc init(ESYS_CONTEXT *context) {
 
     if (!ctx.context_arg) {
-        LOG_ERR("Expected option C");
+        LOG_ERR("Expected option c");
         return tool_rc_option_error;
     }
 
