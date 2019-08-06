@@ -65,7 +65,7 @@ These options control the key importation process:
 # EXAMPLES
 
 To duplicate a key, one needs the key to duplicate, created with a policy that allows duplication and a new parent:
-```
+```bash
 tpm2_startauthsession -S session.dat
 tpm2_policycommandcode -S session.dat -L policy.dat duplicate
 tpm2_flushcontext session.dat
