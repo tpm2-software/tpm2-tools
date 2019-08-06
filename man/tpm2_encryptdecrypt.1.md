@@ -6,12 +6,13 @@
 
 # SYNOPSIS
 
-**tpm2_encryptdecrypt** [*OPTIONS*]
+**tpm2_encryptdecrypt** [*OPTIONS*] _FILE_
 
 # DESCRIPTION
 
 **tpm2_encryptdecrypt**(1) - Performs symmetric encryption or decryption with a
-specified symmetric key.
+specified symmetric key on the contents of _FILE_.
+If _FILE_ is not specified, defaults to *stdin*.
 
 # OPTIONS
 
@@ -35,11 +36,6 @@ specified symmetric key.
     Enable pkcs7 padding for applicable AES encryption modes cfb/cbc/ecb.
     Applicable only to encryption and for input data with last block shorter
     than encryption block length.
-
-  * **-i**, **\--input**=_INPUT\_FILE_:
-
-    Optional. Specifies the input file path for either the encrypted or decrypted
-    data, depending on option **-D**. If not specified, defaults to **stdin**.
 
   * **-o**, **\--output**=_OUT\_FILE_:
 
@@ -74,11 +70,20 @@ specified symmetric key.
 
 # EXAMPLES
 
+# Create an AES key
+```bash
+tpm2_createprimary -c primary.ctx
+tpm2_create -C primary.ctx -Gaes128 -u key.pub -r key.priv
+tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
 ```
-tpm2_encryptdecrypt -c 0x81010001 -p abc123 -i <filePath> -o <filePath>
-tpm2_encryptdecrypt -c key.dat -p abc123 -i <filePath> -o <filePath>
-tpm2_encryptdecrypt -c 0x81010001 -p 123abca  -i <filePath> -o <filePath>
-tpm2_encryptdecrypt -c 0x81010001 --enable-pkcs7-padding -i <filePath> -o <filePath>
+
+# Encrypt and Decrypt some data
+```bash
+echo "my secret" > secret.dat
+tpm2_encryptdecrypt -c key.ctx -o secret.enc secret.dat
+tpm2_encryptdecrypt -d -c key.ctx -o secret.dec secret.enc
+cat secret.dec
+my secret
 ```
 
 [returns](common/returns.md)

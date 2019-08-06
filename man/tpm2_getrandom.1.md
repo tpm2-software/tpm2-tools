@@ -46,12 +46,12 @@ and **--hex** options respectively.
 # EXAMPLES
 
 ## Generate a random 20 bytes and output the binary data to a file
-```
+```bash
 tpm2_getrandom -o random.out 20
 ```
 
 ## Generate a random 8 bytes and output the hex formatted data to stdout
-```
+```bash
 tpm2_getrandom 8
 ```
 

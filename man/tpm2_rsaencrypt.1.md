@@ -11,13 +11,13 @@
 # DESCRIPTION
 
 **tpm2_rsaencrypt**(1) - Performs RSA encryption on the contents of _FILE_
-(defaulting to stdin) using the indicated padding scheme according to
-IETF RFC 3447 (PKCS#1). The scheme of keyHandle should not be **TPM_ALG_NULL**.
+using the indicated padding scheme according to IETF RFC 3447 (PKCS#1).
+Input defaults to *stdin* if not specified.
 
 The key referenced by key-context is **required** to be:
 
 1. An RSA key
-2. Have the attribute *decrypt* **SET** in it's attributes.
+2. Have the attribute *encrypt* **SET** in it's attributes.
 
 # OPTIONS
 
@@ -29,17 +29,22 @@ The key referenced by key-context is **required** to be:
 
   * **-o**, **\--output**=_OUTPUT\_FILE_:
 
-    Output file path, record the decrypted data. The default is to print an
-    xxd compatible hexdump to stdout. If a file is specified, raw binary
-    output is performed.
+    Optional output file path to record the decrypted data to. The default is to print
+    the binary encrypted data to stdout.
 
   * **-g**, **\--scheme**=_PADDING\_SCHEME_:
 
     Optional, set the padding scheme (defaults to rsaes).
 
-    * null  - TPM_ALG_NULL
-    * rsaes - TPM_ALG_RSAES
-    * oaep  - TPM_ALG_OAEP
+    * null  - TPM_ALG_NULL uses the key's scheme if set.
+    * rsaes - TPM_ALG_RSAES which is RSAES_PKCSV1.5.
+    * oaep  - TPM_ALG_OAEP which is RSAES_OAEP.
+
+  * **-l**, **\--label**=_LABEL\_DATA_:
+
+    Optional, set the label data. Can either be a string or file path. The TPM requires the last
+    byte of the label to be zero, this is handled internally to the tool. No other embedded 0
+    bytes can exist or the TPM will truncate your label.
 
 [common options](common/options.md)
 
@@ -49,8 +54,24 @@ The key referenced by key-context is **required** to be:
 
 # EXAMPLES
 
+## Create an RSA key and load it
+```bash
+tpm2_createprimary -c primary.ctx
+tpm2_create -C primary.ctx -Grsa2048 -u key.pub -r key.priv
+tpm2_load -C primary.ctx -u key.pub -r key.priv -c key.ctx
 ```
-tpm2_rsaencrypt -C 0x81010001 -o encrypted.out
+
+## Encrypt using RSA
+```bash
+echo "my message" > msg.dat
+tpm2_rsaencrypt -c key.ctx -o msg.enc msg.dat
+```
+
+## Decrypt using RSA
+```bash
+tpm2_rsadecrypt -c key.ctx -o msg.ptext msg.enc
+cat msg.ptext
+my message
 ```
 
 [returns](common/returns.md)

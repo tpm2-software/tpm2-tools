@@ -129,7 +129,7 @@ load_new_parent
 # Import & load the duplicate
 do_import_load null
 # Decrypt the secret message using duplicated key
-tpm2_rsadecrypt -Q -p foo -c dup.ctx -i cipher.txt -o recovered.txt
+tpm2_rsadecrypt -Q -p foo -c dup.ctx -o recovered.txt cipher.txt
 # Check we got it right ...
 diff recovered.txt plain.txt
 # Cleanup

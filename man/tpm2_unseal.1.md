@@ -46,8 +46,7 @@ the type _TPM\_ALG\_KEYEDHASH_.
 
 # EXAMPLES
 
-```
-bash
+```bash
 echo "secretdata" > secret.data
 
 tpm2_createprimary -Q -C e -g sha256 -G rsa -c primkey.ctx

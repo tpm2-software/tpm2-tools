@@ -67,7 +67,7 @@ rm $file_session_data
 cmp -s $file_output_data $file_input_data
 
 # Test that other operations fail
-if tpm2_encryptdecrypt -i $file_input_data -o $file_output_data -c $file_unseal_key_ctx; then
+if tpm2_encryptdecrypt -o $file_output_data -c $file_unseal_key_ctx $file_input_data; then
     echo "tpm2_policycommandcode: Should have failed!"
     exit 1
 else

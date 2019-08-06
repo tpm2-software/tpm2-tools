@@ -84,12 +84,12 @@ Refer to:
 # EXAMPLES
 
 ### Create an Endorsement Key and make it persistent
-```
+```bash
 tpm2_createek -P abc123 -w abc123 -p passwd -c 0x81010001 -G rsa -u ek.pub
 ```
 
 ### Create a transient Endorsement Key, flush it, and reload it.
-```
+```bash
 tpm2_createek -G rsa -u ek.pub
 
 # Check that it is loaded in transient memory

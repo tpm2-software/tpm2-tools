@@ -34,7 +34,7 @@ run_aes_import_test() {
 
     echo "plaintext" > "plain.txt"
 
-    tpm2_encryptdecrypt -c import_key.ctx  -i plain.txt -o plain.enc
+    tpm2_encryptdecrypt -c import_key.ctx -o plain.enc plain.txt
 
     openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` -iv 0 -$2
 
@@ -59,7 +59,7 @@ run_rsa_import_test() {
     openssl rsa -in private.pem -out public.pem -outform PEM -pubout
     openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
 
-    tpm2_rsadecrypt -c import_rsa_key.ctx -i plain.rsa.enc -o plain.rsa.dec
+    tpm2_rsadecrypt -c import_rsa_key.ctx -o plain.rsa.dec plain.rsa.enc
 
     diff plain.txt plain.rsa.dec
 
@@ -68,7 +68,7 @@ run_rsa_import_test() {
 
     sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
 
-    tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -d data.in.digest -f plain -o data.out.signed
+    tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -d -f plain -o data.out.signed data.in.digest
 
     openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
@@ -102,7 +102,7 @@ run_ecc_import_test() {
     tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -c ecc.ctx
 
     # Sign in the TPM and verify with OSSL
-    tpm2_sign -Q -c ecc.ctx -g sha256 -d data.in.digest -f plain -o data.out.signed
+    tpm2_sign -Q -c ecc.ctx -g sha256 -d -f plain -o data.out.signed data.in.digest
     openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
     # Sign with openssl and verify with TPM.

@@ -78,7 +78,7 @@ run_rsa_test() {
 
     tpm2_loadexternal -G rsa -C n -p foo -r private.pem -c key.ctx
 
-    tpm2_rsadecrypt -c key.ctx -p foo -i plain.rsa.enc -o plain.rsa.dec
+    tpm2_rsadecrypt -c key.ctx -p foo -o plain.rsa.dec plain.rsa.enc
 
     diff plain.txt plain.rsa.dec
 
@@ -114,7 +114,7 @@ run_aes_test() {
 
     echo "plaintext" > "plain.txt"
 
-    tpm2_encryptdecrypt -c key.ctx -i plain.txt -o plain.enc
+    tpm2_encryptdecrypt -c key.ctx -o plain.enc plain.txt
 
     openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
 	-iv 0 -aes-$1-cfb
@@ -144,7 +144,7 @@ run_ecc_test() {
     tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
 
     # Sign in the TPM and verify with OSSL
-    tpm2_sign -Q -c key.ctx -g sha256 -d data.in.digest -f plain -o data.out.signed
+    tpm2_sign -Q -c key.ctx -g sha256 -d -f plain -o data.out.signed data.in.digest
     openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
 
     # Sign with openssl and verify with TPM but only with the public portion of an object loaded

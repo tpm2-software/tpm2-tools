@@ -17,6 +17,7 @@ struct tpm_rsaencrypt_ctx {
     char *output_path;
     char *input_path;
     TPMT_RSA_DECRYPT scheme;
+    TPM2B_DATA label;
 };
 
 static tpm_rsaencrypt_ctx ctx = {
@@ -26,31 +27,29 @@ static tpm_rsaencrypt_ctx ctx = {
 
 static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
 
-    bool ret = true;
-    // Inputs
-    TPM2B_DATA label;
-    // Outputs
-    TPM2B_PUBLIC_KEY_RSA *out_data;
-
-    label.size = 0;
+    bool ret = false;
+    TPM2B_PUBLIC_KEY_RSA *out_data = NULL;
 
     TSS2_RC rval = Esys_RSA_Encrypt(context, ctx.key_context.tr_handle,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &ctx.message, &ctx.scheme, &label, &out_data);
+                        &ctx.message, &ctx.scheme, &ctx.label, &out_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Encrypt, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    if (ctx.output_path) {
-        ret = files_save_bytes_to_file(ctx.output_path, out_data->buffer,
-                out_data->size);
+    FILE *f = ctx.output_path ? fopen(ctx.output_path, "wb+") : stdout;
+    if (!f) {
+        goto out;
     }
 
-    tpm2_util_print_tpm2b(out_data);
+    ret = files_write_bytes(f, out_data->buffer, out_data->size);
+    if (f != stdout) {
+        fclose(f);
+    }
 
+out:
     free(out_data);
-
     return ret ? tool_rc_success : tool_rc_general_error;
 }
 
@@ -70,6 +69,8 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'l':
+        return tpm2_util_get_label(value, &ctx.label);
     }
     return true;
 }
@@ -77,7 +78,7 @@ static bool on_option(char key, char *value) {
 static bool on_args(int argc, char **argv) {
 
     if (argc > 1) {
-        LOG_ERR("Only supports one hash input file, got: %d", argc);
+        LOG_ERR("Only supports one input file, got: %d", argc);
         return false;
     }
 
@@ -92,9 +93,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"output",      required_argument, NULL, 'o'},
       {"key-context", required_argument, NULL, 'c'},
       {"scheme",      required_argument, NULL, 'g'},
+      {"label",       required_argument, NULL, 'l'},
     };
 
-    *opts = tpm2_options_new("o:c:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:c:g:l:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;
@@ -103,7 +105,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static tool_rc init(ESYS_CONTEXT *context) {
 
     if (!ctx.context_arg) {
-        LOG_ERR("Expected option C");
+        LOG_ERR("Expected option c");
         return tool_rc_option_error;
     }
 

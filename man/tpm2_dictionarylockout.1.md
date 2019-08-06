@@ -54,7 +54,7 @@ dictionary-attack-lockout state.
 
 # EXAMPLES
 
-```
+```bash
 tpm2_dictionarylockout -c -p passwd
 
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7 -p passwd

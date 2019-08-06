@@ -47,12 +47,12 @@ tpm2_clear command.
 # EXAMPLES
 
 ## Set the disableClear to block the lockout authorization's access to TPM clear
-```
+```bash
 tpm2_clearcontrol -C l s
 ```
 
 ## Clear the disableClear to unblock lockout authorization for TPM clear operation
-```
+```bash
 tpm2_clearcontrol -C p c
 ```
 

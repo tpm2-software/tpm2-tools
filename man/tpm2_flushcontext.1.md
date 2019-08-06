@@ -63,7 +63,7 @@ tpm2_flushcontext \--transient-object
 ```
 
 ## Flush a Session
-```
+```bash
 tpm2_startauthsession -S session.dat
 
 tpm2_flushcontext session.dat

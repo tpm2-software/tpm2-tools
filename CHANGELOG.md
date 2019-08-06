@@ -1,5 +1,13 @@
 ## Changelog
 ### next
+  * tpm2_rsadecrypt: add -l for specifying label.
+  * tpm2_rsaencrypt: add -l for specifying label.
+  * tpm2_sign:
+     - Drop -m and -d option arguments and make them sole argument.
+     - Remove the -m option and make -d toggle if input is a digest.
+  * tpm2_encryptdecrypt: drop -i input option and make argument.
+  * tpm2_rsadecrypt: drop -i input option and make argument.
+  * tpm2_rsaencrypt: make output binary and either stdout or file based on -o.
   * tpm2_makecredential: long option output becomes credential-blob
   * tpm2_quote: -F becomes -f.
   * tpm2_quote: -f becomes -o.

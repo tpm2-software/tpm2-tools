@@ -44,7 +44,7 @@ value to the nv handle range "TPM2_HR_NV_INDEX".
 # EXAMPLES
 
 ## Lock an index
-```
+```bash
 tpm2_nvdefine -Q   1 -C o -s 32 -a "ownerread|policywrite|ownerwrite|read_stclear"
 
 echo "foobar" > nv.readlock
