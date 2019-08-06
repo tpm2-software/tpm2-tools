@@ -12,7 +12,7 @@
 
 **tpm2_incrementalselftest**(1) Request the TPM to perform testing on specified algorithm
 and print a list of algorithm scheduled to be tested *OR* remain to be tested but not
-scheduled
+scheduled.
 
 The main interest of this command is to reduce delays that might occur on cryptographic
 operations as TPM must test the algorithm prior using it.
@@ -53,13 +53,13 @@ This tool accepts no tool specific options.
 
 ## Request testing of RSA algorithm
 
-```
+```bash
 tpm2_incrementalselftest rsa
 ```
 
 ## Request testing of multiple algorithms
 
-```
+```bash
 tpm2_incrementalselftest rsa ecc xor aes cbc
 ```
 
@@ -72,7 +72,7 @@ e.g : One TPM might only test AES with CTR mode if "aes ctr" is specified. An ot
 also test complete AES mode list AND test ctr mode.
 
 If an algorithm has already been tested, this command won't permit re-executing the test. Only
-issuing **tpm2_selftest**(1) in full-test mode enabled will force retesting.
+issuing **tpm2_selftest**(1) in full-test mode enabled will force re-testing.
 
 [returns](common/returns.md)
 
