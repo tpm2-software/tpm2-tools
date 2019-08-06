@@ -35,6 +35,15 @@ server. The argument _URL_ specifies the address for the ek certificate portal.
 
     Specifies the file path for the endorsement key public portion in tss format.
 
+  * **-x**, **\--offline**:
+
+    This flags the tool to operate in an offline mode. In that the certificates
+    can be retrieved for supplied ek public that do not belong to the platform
+    the tool is run on. Useful in factory provisioning of multiple platforms
+    that are not individually connected to the Internet. In such a scenario a
+    single Internet facing provisioning server can utilize this tool in this
+    mode.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)
