@@ -30,12 +30,12 @@ This tool accepts no tool specific options.
 # EXAMPLES
 
 ## Reset a single PCR
-```
+```bash
 tpm2_pcrreset 23
 ```
 
 ## Reset multiple PCRs
-```
+```bash
 tpm2_pcrreset 16 23
 ```
 
