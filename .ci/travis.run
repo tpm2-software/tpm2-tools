@@ -18,12 +18,6 @@ if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
   docker run $ci_env --env-file .ci/docker.env \
     -v `pwd`:/workspace/tpm2-tools tpm2software/tpm2-tss \
     /bin/bash -c '/workspace/tpm2-tools/.ci/docker.run'
-
-  # check to ensure change hasn't introduced conflicting short options
-  # This should cause CI build failures before 4.0
-  if ! scripts/utils/analyze.py tools ; then
-      echo "WARN: conflicts in tool options, please resolve."
-  fi
   exit 0
 else
 
