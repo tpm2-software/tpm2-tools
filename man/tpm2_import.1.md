@@ -113,7 +113,7 @@ These options control the key importation process:
 # EXAMPLES
 
 ## To import a key, one needs to have a parent key
-```
+```bash
 tpm2_createprimary -Grsa2048:aes128cfb -C o -c parent.ctx
 ```
 
@@ -121,28 +121,28 @@ Create your key and and import it. If you already have a key, just use that
 and skip creating it.
 
 ## Import an AES 128 key
-```
+```bash
 dd if=/dev/urandom of=sym.key bs=1 count=16
 
 tpm2_import -C parent.ctx -i sym.key -u key.pub -r key.priv
 ```
 
 ## Import an RSA key
-```
+```bash
 openssl genrsa -out private.pem 2048
 
 tpm2_import -C parent.ctx -G rsa -i private.pem -u key.pub -r key.priv
 ```
 
 ## Import an ECC key
-```
+```bash
 openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
 
 tpm2_import -C parent.ctx -G ecc -i private.ecc.pem -u key.pub -r key.priv
 ```
 
 ## Import a duplicated key
-```
+```bash
 tpm2_import -C parent.ctx -i key.dup -u key.pub -r key.priv -L policy.dat
 ```
 
