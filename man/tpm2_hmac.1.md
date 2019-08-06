@@ -66,7 +66,7 @@ and **--hex** options respectively.
 # EXAMPLES
 
 ## Setup
-```
+```bash
 # create a primary object
 tpm2_createprimary -o primary.ctx
 
@@ -78,7 +78,7 @@ tpm2_create -C primary.ctx -Ghmac -o hmac.key
 Perform an hmac using the key's default scheme (hash algorithm) and
 output to stdout in hexidecimal format.
 
-```
+```bash
 tpm2_hmac -c hmac.key --hex data.in
 e6eda48a53a9ddbb92f788f6d98e0372d63a408afb11aca43f522a2475a32805
 ```
