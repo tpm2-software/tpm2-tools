@@ -78,7 +78,7 @@ symmetric key, both the public and private portions need to be loaded.
 # EXAMPLES
 
 ## Sign and verify with the TPM using the *endorsement* hierarchy
-```
+```bash
 tpm2_createprimary -C e -c primary.ctx
 
 tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx
@@ -93,7 +93,7 @@ tpm2_verifysignature -c rsa.ctx -g sha256 -m message.dat -s sig.rssa
 ```
 
 ## Sign with openssl and verify with the TPM
-```
+```bash
 # Generate an ECC key
 openssl ecparam -name prime256v1 -genkey -noout -out private.ecc.pem
 
