@@ -41,7 +41,7 @@
 
 # EXAMPLES
 
-```
+```bash
 tpm2_unseal -c 0x81010001 -p abc123 -o out.dat
 
 tpm2_unseal -c item.context -p abc123 -o out.dat
