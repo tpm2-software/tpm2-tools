@@ -1,5 +1,12 @@
 ## Changelog
 ### next
+  * tpm2_getekcertificate: Short and long options changed
+    - ec-cert is now ek-certificate
+    - untrusted is now allow-unverified
+    - output is now ek-public
+    - -E is now -o
+    - -U is now -X
+    - -o is now -u
   * tpm2_getekcertificate: Removed ek key creation and management logic.
     - The tool now simply takes the ek public key as an input. This
     public key is being read in tss format and can be retrieved using
