@@ -40,7 +40,7 @@ the **none** TCTI option.
 
 # EXAMPLES
 
-```
+```bash
 tpm2_makecredential -e <keyFile> -s <secFile> -n <hexString> -o <outFile>
 ```
 
