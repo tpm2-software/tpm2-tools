@@ -47,27 +47,27 @@ Note: If password option is missing, assume NULL.
 # EXAMPLES
 
 ## Set phEnableNV with platform hierarchy and its authorization
-```
+```bash
 tpm2_hierarchycontrol -C p phEnableNV set -P pass
 ```
 
 ## clear phEnableNV with platform hierarchy
-```
+```bash
 tpm2_hierarchycontrol -C p phEnableNV clear
 ```
 
 ## Set shEnable with platform hierarchy
-```
+```bash
 tpm2_hierarchycontrol -C p shEnable set
 ```
 
 ## Set shEnable with owner hierarchy
-```
+```bash
 tpm2_hierarchycontrol -C o shEnable set
 ```
 
 ## Check current TPMA_STARTUP_CLEAR Bits
-```
+```bash
 tpm2_getcap properties-variable
 ```
 
