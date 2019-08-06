@@ -21,7 +21,7 @@ cleanup() {
     rm -f $file_input_data $file_primary_key_ctx $file_rsaencrypt_key_pub \
     $file_rsaencrypt_key_priv $file_rsaencrypt_key_ctx $file_rsaencrypt_key_name \
     $file_output_data $file_rsa_en_output_data $file_rsa_de_output_data \
-    $file_rsadecrypt_key_ctx
+    $file_rsadecrypt_key_ctx label.dat
 
     if [ "$1" != "no-shut-down" ]; then
         shut_down
@@ -56,6 +56,15 @@ tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_da
 
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data  -g null < $file_input_data
 tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_data -g null $file_rsa_en_output_data
+
+# Test the label option with a string
+tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -l mylabel -o $file_rsa_en_output_data < $file_input_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -l mylabel -p foo -o $file_rsa_de_output_data $file_rsa_en_output_data
+
+# Test the label option with a file
+echo "my file label" > label.dat
+tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -l label.dat -o $file_rsa_en_output_data < $file_input_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -l label.dat -p foo -o $file_rsa_de_output_data $file_rsa_en_output_data
 
 trap - ERR
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data  -g oaep < $file_input_data

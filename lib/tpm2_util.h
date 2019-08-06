@@ -429,4 +429,6 @@ enum tpm2_handle_flags {
 bool tpm2_util_handle_from_optarg(const char *value,
         TPMI_RH_PROVISION *hierarchy, tpm2_handle_flags flags);
 
+bool tpm2_util_get_label(const char *value, TPM2B_DATA *label);
+
 #endif /* STRING_BYTES_H */

@@ -40,6 +40,12 @@ The key referenced by key-context is **required** to be:
     * rsaes - TPM_ALG_RSAES which is RSAES_PKCSV1.5.
     * oaep  - TPM_ALG_OAEP which is RSAES_OAEP.
 
+  * **-l**, **\--label**=_LABEL\_DATA_:
+
+    Optional, set the label data. Can either be a string or file path. The TPM requires the last
+    byte of the label to be zero, this is handled internally to the tool. No other embedded 0
+    bytes can exist or the TPM will truncate your label.
+
 [common options](common/options.md)
 
 [common tcti options](common/tcti.md)

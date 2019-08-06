@@ -939,3 +939,53 @@ bool tpm2_util_handle_from_optarg(const char *value,
     }
     return res;
 }
+
+bool tpm2_util_get_label(const char *value, TPM2B_DATA *label) {
+
+    if (!value) {
+        label->size = 0;
+        return true;
+    }
+
+    FILE *f = fopen(value, "rb");
+    if (f) {
+        /* set size one smaller for NUL byte */
+        label->size = sizeof(label->buffer) - 1;
+        size_t cnt = fread(label->buffer, 1, label->size, f);
+        if (!feof(f)) {
+            LOG_ERR("label file \"%s\" larger than expected. Expected %u",
+                    value, label->size);
+            fclose(f);
+            return false;
+        }
+        if (ferror(f)) {
+            LOG_ERR("reading label file \"%s\" error: %s",
+                    value, strerror(errno));
+            fclose(f);
+            return false;
+        }
+        fclose(f);
+
+        label->size = cnt;
+
+        /* Set NUL byte and increment */
+        label->buffer[label->size++] = '\0';
+
+        return true;
+    }
+
+    size_t len = strlen(value);
+    if (len > sizeof(label->buffer) - 1) {
+        LOG_ERR("label file \"%s\" larger than expected. Expected %zu",
+                value, sizeof(label->buffer) - 1);
+        return false;
+    }
+
+    memcpy(label->buffer, value, len);
+
+    label->size = len;
+    /* Set NUL byte and increment */
+    label->buffer[label->size++] = '\0';
+
+    return true;
+}

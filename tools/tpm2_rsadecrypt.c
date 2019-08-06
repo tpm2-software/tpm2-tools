@@ -16,6 +16,7 @@ struct tpm_rsadecrypt_ctx {
         tpm2_loaded_object object;
     } key;
 
+    TPM2B_DATA label;
     TPM2B_PUBLIC_KEY_RSA cipher_text;
     char *input_path;
     char *output_file_path;
@@ -28,17 +29,14 @@ static tpm_rsadecrypt_ctx ctx = {
 
 static tool_rc rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
-    TPM2B_DATA label;
-    TPM2B_PUBLIC_KEY_RSA *message;
-
-    label.size = 0;
+    TPM2B_PUBLIC_KEY_RSA *message = NULL;
 
     tool_rc rc = tpm2_rsa_decrypt(
                     ectx,
                     &ctx.key.object,
                     &ctx.cipher_text,
                     &ctx.scheme,
-                    &label,
+                    &ctx.label,
                     &message);
     if (rc != tool_rc_success) {
         return rc;
@@ -72,6 +70,8 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'l':
+        return tpm2_util_get_label(value, &ctx.label);
     }
     return true;
 }
@@ -95,9 +95,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "output",       required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
       { "scheme",       required_argument, NULL, 'g' },
+      { "label",        required_argument, NULL, 'l'},
     };
 
-    *opts = tpm2_options_new("p:o:c:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:o:c:g:l:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;

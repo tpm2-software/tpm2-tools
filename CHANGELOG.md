@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_rsadecrypt: add -l for specifying label.
+  * tpm2_rsaencrypt: add -l for specifying label.
   * tpm2_sign:
      - Drop -m and -d option arguments and make them sole argument.
      - Remove the -m option and make -d toggle if input is a digest.
