@@ -47,7 +47,7 @@ the type _TPM\_ALG\_KEYEDHASH_.
 # EXAMPLES
 
 ```bash
-tpm2_unseal -c 0x81010001 -p abc123 -o out.dat
+echo "secretdata" > secret.data
 
 tpm2_unseal -c item.context -p abc123 -o out.dat
 
