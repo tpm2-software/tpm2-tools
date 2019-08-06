@@ -62,7 +62,7 @@ These options control the object verification:
 
 # EXAMPLES
 
-```
+```bash
 TPM2_RH_ENDORSEMENT=0x4000000B
 tpm2_startauthsession --policy-session -S session.ctx
 tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT
