@@ -105,7 +105,7 @@ loaded-key:
 
 ### Create an Attestation Key and make it persistent
 
-```
+```bash
 tpm2_createek -c ek.handle -G rsa -u ek.pub
 tpm2_createak -C ek.handle -c ak.ctx -u ak.pub -n ak.name
 tpm2_evictcontrol -c 0x81010002 -o ak.ctx
