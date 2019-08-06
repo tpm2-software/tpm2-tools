@@ -91,7 +91,7 @@ provided by setting the curl mode verbose, see
 
 # EXAMPLES
 
-```
+```bash
 tpm2_getmanufec -P abc123 -w abc123 -p passwd -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
 
 tpm2_getmanufec -P 1a1b1c -w 1a1b1c -p 123abc -H 0x81010001 -G rsa -O -N -U -E ECcert.bin -o ek.bin https://tpm.manufacturer.com/ekcertserver/
