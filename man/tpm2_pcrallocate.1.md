@@ -44,12 +44,12 @@ The new allocations become effective after the next reboot.
 # EXAMPLES
 
 ## To allocate the two default banks (SHA1 and SHA256)
-```
+```bash
 tpm2_pcrallocate
 ```
 
 ## To make a custom allocation with a platform authorization
-```
+```bash
 tpm2_pcrallocate -P abc sha1:7,8,9,10,16,17,18,19+sha256:all
 ```
 
