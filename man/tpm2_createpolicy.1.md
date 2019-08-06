@@ -61,7 +61,7 @@ These options control creating the policy authorization session:
 # EXAMPLES
 
 ## Create a authorization policy tied to a specific PCR index
-```
+```bash
 tpm2_createpolicy \--policy-pcr -l 0x4:0 -L policy.file -f pcr0.bin
 ```
 
