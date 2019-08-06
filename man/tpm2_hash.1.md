@@ -62,7 +62,7 @@ and **--hex** options respectively.
 # EXAMPLES
 
 ## Hash a file with sha1 hash algorithm and save the hash and ticket to a file
-```
+```bash
 tpm2_hash -C e -g sha1 -o hash.bin -t ticket.bin data.txt
 ```
 
