@@ -62,7 +62,7 @@ to the nv handle range "TPM2_HR_NV_INDEX".
 
 # EXAMPLES
 
-```
+```bash
 tpm2_nvdefine   0x1500016 -C 0x40000001 -s 32 -a 0x2000A
 
 tpm2_nvdefine   0x1500016 -C 0x40000001 -s 32 -a ownerread|ownerwrite|policywrite -p 1a1b1c
