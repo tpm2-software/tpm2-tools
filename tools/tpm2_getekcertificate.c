@@ -246,14 +246,14 @@ out:
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'E':
+    case 'o':
         ctx.ec_cert_path = value;
         break;
-    case 'U':
+    case 'X':
         ctx.SSL_NO_VERIFY = 1;
         LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
         break;
-    case 'o':
+    case 'u':
         ctx.ek_path = value;
         break;
     }
@@ -276,12 +276,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
-        { "ec-cert",              required_argument, NULL, 'E' },
-        { "untrusted",            no_argument,       NULL, 'U' },
-        { "output",               required_argument, NULL, 'o' },
+        { "ek-certificate",       required_argument, NULL, 'o' },
+        { "allow-unverified",     no_argument,       NULL, 'X' },
+        { "ek-public",            required_argument, NULL, 'u' },
     };
 
-    *opts = tpm2_options_new("E:Uo:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:u:X", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;

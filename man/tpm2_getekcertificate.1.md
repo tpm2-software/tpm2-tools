@@ -18,20 +18,20 @@ server. The argument _URL_ specifies the address for the ek certificate portal.
 
 # OPTIONS
 
-  * **-E**, **\--ec-cert**=_EK\_CERTIFICATE\_FILE_:
+  * **-o**, **\--ek-certificate**=_EK\_CERTIFICATE\_FILE_:
 
     Specifies the file used to save the Endorsement key certificate retrieved from
     the TPM manufacturer provisioning server. Defaults to stdout if not
     specified.
 
-  * **-U**, **\--untrusted**:
+  * **-X**, **\--allow-unverified**:
 
     Specifies to attempt connecting with the TPM manufacturer provisioning server
     without verifying server certificate.
 
     **WARNING**: This option should be used only on platforms with older CA certificates.
 
-  * **-o**, **\--output**: _EK\_PUBLIC\_FILE_
+  * **-u**, **\--ek-public**: _EK\_PUBLIC\_FILE_
 
     Specifies the file path for the endorsement key public portion in tss format.
 
@@ -54,7 +54,9 @@ provided by setting the curl mode verbose, see
 # EXAMPLES
 
 ```
-tpm2_getekcertificate -U -E ECcert.bin -o ek.pub https://tpm.manufacturer.com/ekcertserver/
+tpm2_createek -G rsa -u ek.pub -c key.ctx
+
+tpm2_getekcertificate -X -o ECcert.bin -u ek.pub https://tpm.manufacturer.com/ekcertserver/
 
 ```
 
