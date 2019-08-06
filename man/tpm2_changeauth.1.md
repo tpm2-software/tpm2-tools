@@ -52,26 +52,26 @@ see section "Authorization Formatting".
 # EXAMPLES
 
 ## Set owner, endorsement and lockout authorizations to newpass
-```
+```bash
 tpm2_changeauth -c owner newpass
 tpm2_changeauth -c endorsement newpass
 tpm2_changeauth -c lockout newpass
 ```
 
 ## Change owner, endorsement and lockout authorizations from newpass to a new value
-```
+```bash
 tpm2_changeauth -c o -p newpass newerpass
 tpm2_changeauth -c e -p newpass newerpass
 tpm2_changeauth -c l -p newpass newerpass
 ```
 
 ## Set owner authorization to empty password
-```
+```bash
 tpm2_changeauth -c o -p oldpass
 ```
 
 ## Modify authorization for a loadable transient object
-```
+```bash
 tpm2_createprimary -Q -C o -c prim.ctx
 
 tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C prim.ctx
@@ -85,7 +85,7 @@ tpm2_changeauth -c key.ctx -C prim.ctx -r key.priv newkeyauth
 
 Requires Extended Session Support.
 
-```
+```bash
 tpm2_startauthsession -S session.ctx
 
 tpm2_policycommandcode -S session.ctx -L policy.nvchange nvchangeauth
