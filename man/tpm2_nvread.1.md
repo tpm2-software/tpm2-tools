@@ -59,7 +59,7 @@ index can be specified as raw handle or an offset value to the nv handle range
 # EXAMPLES
 
 ## Read 32 bytes from an index starting at offset 0
-```
+```bash
 tpm2_nvdefine -Q  1 -C o -s 32 -a "ownerread|policywrite|ownerwrite"
 
 echo "please123abc" > nv.test_w
