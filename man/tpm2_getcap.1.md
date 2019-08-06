@@ -76,12 +76,12 @@ Currently supported capability groups are:
 # EXAMPLES
 
 ## To list the fixed properties of the TPM
-```
+```bash
 tpm2_getcap properties-fixed
 ```
 
 ## To list the supported capability arguments to **-c**
-```
+```bash
 tpm2_getcap -l
 ```
 
