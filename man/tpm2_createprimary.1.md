@@ -93,7 +93,7 @@ with the created primary.
 # EXAMPLES
 
 ## Create an ECC primary object
-```
+```bash
 tpm2_createprimary -C o -g sha256 -G ecc -c context.out
 ```
 
@@ -103,7 +103,7 @@ See : https://trustedcomputinggroup.org/wp-content/uploads/TCG-TPM-v2.0-Provisio
 
 Where unique.dat contains the binary-formatted data: 0x00 0x01 (0x00 * 256)
 
-```
+```bash
 tpm2_createprimary -C o -G rsa2048:aes128cfb -g sha256 -c prim.ctx \
   -a 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
   -u unique.dat
