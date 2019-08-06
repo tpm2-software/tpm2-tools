@@ -34,12 +34,12 @@ This tool accepts no tool specific options.
 # EXAMPLES
 
 ## Check whether if "rsa" is supported
-```
+```bash
 tpm2_testparms rsa
 ```
 
 ## Check that ECDSA using P-256 with AES-128 CTR mode is available
-```
+```bash
 tpm2_testparms ecc256:ecdsa:aes128ctr
 ```
 
