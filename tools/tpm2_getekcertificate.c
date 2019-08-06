@@ -12,6 +12,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_capability.h"
@@ -25,10 +26,13 @@ struct tpm_getekcertificate_ctx {
     unsigned int SSL_NO_VERIFY;
     char *ek_path;
     bool verbose;
+    bool is_tpm2_device_active;
     TPM2B_PUBLIC *outPublic;
 };
 
-static tpm_getekcertificate_ctx ctx;
+static tpm_getekcertificate_ctx ctx = {
+    .is_tpm2_device_active = true,
+};
 
 static unsigned char *HashEKPublicKey(void) {
 
@@ -256,6 +260,9 @@ static bool on_option(char key, char *value) {
     case 'u':
         ctx.ek_path = value;
         break;
+    case 'x':
+        ctx.is_tpm2_device_active = false;
+        break;
     }
     return true;
 }
@@ -279,17 +286,70 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ek-certificate",       required_argument, NULL, 'o' },
         { "allow-unverified",     no_argument,       NULL, 'X' },
         { "ek-public",            required_argument, NULL, 'u' },
+        { "offline",              no_argument,       NULL, 'x' },
     };
 
-    *opts = tpm2_options_new("o:u:X", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:u:Xx", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;
 }
 
+#define INTC 0x494E5443
+#define IBM  0x49424D20
+#define TPM_RNG_EPS 0x400
+bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
+
+    TPMI_YES_NO more_data;
+    TPMS_CAPABILITY_DATA *capability_data;
+
+    tool_rc rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+        TPM2_CAP_TPM_PROPERTIES, TPM2_PT_MANUFACTURER, 1, &more_data,
+        &capability_data);
+    if (rc != tool_rc_success) {
+        LOG_ERR("TPM property read failure.");
+        return false;
+    }
+
+    if (capability_data->data.tpmProperties.tpmProperty[0].value == IBM) {
+        LOG_ERR("Simulator endorsement keys aren't certified");
+        return false;
+    }
+
+    if (capability_data->data.tpmProperties.tpmProperty[0].value != INTC) {
+        return true;
+    }
+
+    rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+        TPM2_CAP_TPM_PROPERTIES, TPM2_PT_PERMANENT, 1, &more_data,
+        &capability_data);
+    if (rc != tool_rc_success) {
+        LOG_ERR("TPM property read failure.");
+        return false;
+    }
+
+    if (capability_data->data.tpmProperties.tpmProperty[0].value == TPM_RNG_EPS) {
+        LOG_ERR("Cannot proceed. For further information please refer to: "
+            "https://www.intel.com/content/www/us/en/security-center/advisory/"
+            "intel-sa-00086.html. Recovery tools are located here: "
+            "https://github.com/intel/INTEL-SA-00086-Linux-Recovery-Tools");
+        return false;
+    }
+
+    return true;
+}
+
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(ectx);
+
+    bool is_getekcert_feasible;
+    if (ctx.is_tpm2_device_active) {
+        is_getekcert_feasible = is_getekcertificate_feasible(ectx);
+        if (!is_getekcert_feasible) {
+            return(tool_rc_general_error);
+        }
+    }
 
     if (!ctx.ek_path) {
         LOG_ERR("Must specify the ek public key path");
