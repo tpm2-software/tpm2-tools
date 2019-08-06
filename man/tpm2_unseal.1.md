@@ -2,7 +2,8 @@
 
 # NAME
 
-**tpm2_unseal**(1) - Returns the data in a loaded Sealed Data Object.
+**tpm2_unseal**(1) - Returns a data blob in a loaded TPM object. The data blob
+is returned in clear.
 
 # SYNOPSIS
 
@@ -10,24 +11,28 @@
 
 # DESCRIPTION
 
-**tpm2_unseal**(1) - Returns the data in a loaded Sealed Data Object.
+**tpm2_unseal**(1) - Returns a data blob in a loaded TPM object. The data blob
+is returned in clear. The data is sealed at the time of the object creation using
+the **tpm2_create** tool. Such an object intended for sealing data has to be of
+the type _TPM\_ALG\_KEYEDHASH_.
 
 # OPTIONS
 
   * **-c**, **\--object-context**=_CONTEXT\_OBJECT_:
 
-    Context object for the loaded object. Either a file or a handle number.
+    Object context for the loaded object. Either a file or a handle number.
     See section "Context Object Format".
 
   * **-p**, **\--auth**=_KEY\_AUTH_:
 
-    Optional authorization value to use the key specified by **-c**.
+    Optional auth value to use for the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
   * **-o**, **\--output**=_OUT\_FILE_:
 
-    Output file name, containing the unsealed data. Defaults to stdout if not specified.
+    Output file name containing the unsealed data. Defaults to stdout if not
+    specified.
 
 [common options](common/options.md)
 
@@ -50,13 +55,6 @@ tpm2_unseal -c 0x81010001 -p "hex:123abc" -o out.dat
 
 tpm2_unseal -c item.context -p pcr:sha256:0,1=pcr.value -o out.dat
 ```
-
-# NOTES
-
-The **\--set-list** and **\--pcr-input-file** options should only be
-used for simple PCR authentication policies. For more complex policies the
-tools should be run in an execution environment that keeps the session context
-alive and pass that session using the **\--input-session-handle** option.
 
 [returns](common/returns.md)
 
