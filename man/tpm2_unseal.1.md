@@ -47,13 +47,19 @@ the type _TPM\_ALG\_KEYEDHASH_.
 # EXAMPLES
 
 ```
-tpm2_unseal -c 0x81010001 -p abc123 -o out.dat
+bash
+echo "secretdata" > secret.data
 
-tpm2_unseal -c item.context -p abc123 -o out.dat
+tpm2_createprimary -Q -C e -g sha256 -G rsa -c primkey.ctx
 
-tpm2_unseal -c 0x81010001 -p "hex:123abc" -o out.dat
+tpm2_create -Q -g sha256 -u key_pub -r key.priv -i secret.data -C primkey.ctx
 
-tpm2_unseal -c item.context -p pcr:sha256:0,1=pcr.value -o out.dat
+tpm2_load -Q -C primkey.ctx  -u key.pub  -r key.priv -n key.name -c key.ctx
+
+tpm2_unseal -Q -c key.ctx -o unsealed.data
+
+cat unsealed.data
+secretdata
 ```
 
 [returns](common/returns.md)
