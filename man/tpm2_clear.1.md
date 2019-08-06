@@ -36,12 +36,12 @@ lockout hierarchy
 
 ## Set owner, endorsement and lockout authorizations to an empty value
 
-```
+```bash
 tpm2_clear lockoutpasswd
 ```
 
 ## Clear the authorization values on the platform hierarchy
-```
+```bash
 tpm2_clear -c p
 ```
 
