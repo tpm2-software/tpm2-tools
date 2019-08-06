@@ -56,7 +56,7 @@ This tool takes no tool specific options.
 
 ## List the defined NV indices to stdout
 
-```
+```bash
 tpm2_nvreadpublic
 ```
 
