@@ -10,7 +10,7 @@
 
 # DESCRIPTION
 
-**tpm2_gettestresult**(1) will return the result of the tests conducted by the TPM
+**tpm2_gettestresult**(1) will return the result of the tests conducted by the TPM.
 
 Error code will state if the test executed successfully or have failed.
 
@@ -32,7 +32,7 @@ This tool accepts no tool specific options.
 
 ## Get the result of the TPM testing
 
-```
+```bash
 tpm2_gettestresult
 ```
 
