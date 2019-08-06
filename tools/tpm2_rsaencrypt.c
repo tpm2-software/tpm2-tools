@@ -17,6 +17,7 @@ struct tpm_rsaencrypt_ctx {
     char *output_path;
     char *input_path;
     TPMT_RSA_DECRYPT scheme;
+    TPM2B_DATA label;
 };
 
 static tpm_rsaencrypt_ctx ctx = {
@@ -27,16 +28,11 @@ static tpm_rsaencrypt_ctx ctx = {
 static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
 
     bool ret = false;
-    // Inputs
-    TPM2B_DATA label;
-    // Outputs
     TPM2B_PUBLIC_KEY_RSA *out_data = NULL;
-
-    label.size = 0;
 
     TSS2_RC rval = Esys_RSA_Encrypt(context, ctx.key_context.tr_handle,
                         ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &ctx.message, &ctx.scheme, &label, &out_data);
+                        &ctx.message, &ctx.scheme, &ctx.label, &out_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Encrypt, rval);
         return tool_rc_from_tpm(rval);
@@ -73,6 +69,8 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 'l':
+        return tpm2_util_get_label(value, &ctx.label);
     }
     return true;
 }
@@ -95,9 +93,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"output",      required_argument, NULL, 'o'},
       {"key-context", required_argument, NULL, 'c'},
       {"scheme",      required_argument, NULL, 'g'},
+      {"label",       required_argument, NULL, 'l'},
     };
 
-    *opts = tpm2_options_new("o:c:g:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("o:c:g:l:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;
