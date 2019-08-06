@@ -78,7 +78,7 @@ These options control the certification:
 
 # EXAMPLES
 
-```
+```bash
 tpm2_certify -H 0x81010002 -P 0x0011 -p 0x00FF -g 0x00B -a <fileName> -s <fileName>
 
 tpm2_certify -C obj.context -c key.context -P 0x0011 -p 0x00FF -g 0x00B -a <fileName> -s <fileName>
