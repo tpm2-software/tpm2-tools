@@ -99,18 +99,20 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
         .buffer = { 0x00, 0xff, 0x55,0xaa }
     };
 
+    tool_rc rc = tool_rc_general_error;
+
     TPMT_SIG_SCHEME scheme;
-    tool_rc rc = set_scheme(ectx, ctx.signing_key.object.tr_handle, ctx.halg,
+    tool_rc tmp_rc = set_scheme(ectx, ctx.signing_key.object.tr_handle, ctx.halg,
                     &scheme);
-    if (rc != tool_rc_success) {
+    if (tmp_rc != tool_rc_success) {
         LOG_ERR("No suitable signing scheme!");
-        return rc;
+        return tmp_rc;
     }
 
     TPM2B_ATTEST *certify_info;
     TPMT_SIGNATURE *signature;
 
-    rc = tpm2_certify(
+    tmp_rc = tpm2_certify(
             ectx,
             &ctx.certified_key.object,
             &ctx.signing_key.object,
@@ -118,8 +120,8 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
             &scheme,
             &certify_info,
             &signature);
-    if (rc != tool_rc_success) {
-        return rc;
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
     }
     /* serialization is safe here, since it's just a byte array */
     bool result = files_save_bytes_to_file(ctx.file_path.attest,
