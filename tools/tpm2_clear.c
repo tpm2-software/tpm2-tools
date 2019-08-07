@@ -39,12 +39,12 @@ bool on_arg (int argc, char **argv) {
     if (!argc) {
         //empty auth
         return true;
-     }
+    }
 
     ctx.auth_hierarchy.auth_str = argv[0];
 
-     return true;
- }
+    return true;
+}
 
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
