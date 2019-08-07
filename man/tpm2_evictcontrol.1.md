@@ -70,18 +70,19 @@ within the TPM. If an object is *persisted* then the object is resident at the
 
 ## To make a transient handle persistent at address 0x81010002
 ```bash
-tpm2_evictcontrol -C o -c object.context -P abc123 0x81010002
+tpm2_changeauth -c o ownerauth
+tpm2_createprimary -c primary.ctx -P ownerauth
+tpm2_evictcontrol -C o -c primary.ctx 0x81010002 -P ownerauth
 ```
 
 ## To evict a persistent handle
 ```bash
-tpm2_evictcontrol -C o -c 0x81010002 -P abc123
+tpm2_evictcontrol -C o -c 0x81010002 -P ownerauth
 ```
 
 ## To make a transient handle persistent and output a serialized persistent handle.
 ```bash
-tpm2_createprimary -c primary.ctx
-tpm2_evictcontrol -C o -c primary.ctx -o primary.handle
+tpm2_evictcontrol -C o -c primary.ctx -o primary.handle -P ownerauth
 ```
 
 [returns](common/returns.md)
