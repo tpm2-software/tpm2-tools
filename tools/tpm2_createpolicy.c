@@ -93,31 +93,9 @@ static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    // Display the policy digest during real policy session.
-    if (pctx.common_policy_options.policy_session_type == TPM2_SE_POLICY) {
-        tpm2_tool_output("policy-digest: 0x");
-        int i;
-        for(i = 0; i < pctx.common_policy_options.policy_digest->size; i++) {
-            tpm2_tool_output("%02X", pctx.common_policy_options.policy_digest->buffer[i]);
-        }
-        tpm2_tool_output("\n");
+    return tpm2_policy_tool_finish(ectx, pctx.common_policy_options.policy_session,
+            pctx.common_policy_options.policy_file);
     }
-
-    // Additional operations when session if a trial policy session
-    if (pctx.common_policy_options.policy_session_type == TPM2_SE_TRIAL) {
-        //save the policy buffer in a file for use later
-        bool result = files_save_bytes_to_file(pctx.common_policy_options.policy_file,
-                          (UINT8 *) &pctx.common_policy_options.policy_digest->buffer,
-                                      pctx.common_policy_options.policy_digest->size);
-        if (!result) {
-            LOG_ERR("Failed to save policy digest into file \"%s\"",
-                    pctx.common_policy_options.policy_file);
-            return tool_rc_general_error;
-        }
-    }
-
-    return tool_rc_success;
-}
 
 static bool on_option(char key, char *value) {
 
