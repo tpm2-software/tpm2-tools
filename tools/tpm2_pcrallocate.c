@@ -75,9 +75,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    pcr_print_pcr_selections(&ctx.pcrSelection);
+    rc = tpm2_pcr_allocate(ectx, &ctx.auth_hierarchy.object, &ctx.pcrSelection);
+    if (rc == tool_rc_success) {
+        pcr_print_pcr_selections(&ctx.pcrSelection);
+    }
 
-    return tpm2_pcr_allocate(ectx, &ctx.auth_hierarchy.object, &ctx.pcrSelection);
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
