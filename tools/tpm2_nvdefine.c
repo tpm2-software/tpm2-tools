@@ -158,8 +158,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-
-
     return nv_space_define(ectx);
 }
 
