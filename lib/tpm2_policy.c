@@ -308,14 +308,19 @@ tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
     const char *new_parent_name_path,
     TPMI_YES_NO is_include_obj) {
 
-    TPM2B_NAME obj_name = {
-        .size = sizeof(obj_name.name)
-    };
+    TPM2B_NAME obj_name;
+    bool result = true;
 
-    bool result = files_load_bytes_from_path(obj_name_path,
-            obj_name.name,
+    if (obj_name_path) {
+        obj_name.size = sizeof(obj_name.name);
+        result = files_load_bytes_from_path(obj_name_path, obj_name.name,
         &obj_name.size);
+    } else {
+        obj_name.size = 0;
+    }
+
     if (!result) {
+        LOG_ERR("Failed to load duplicable object name.");
         return tool_rc_general_error;
     }
 
