@@ -1,551 +1,641 @@
 ## Changelog
 ### next
-  * tpm2_policyduplicationselect: Update long option
-    - Change option include-if-exists to include-object
-  * tpm2_getekcertificate: Added option for getting ek cert for offline platform
-    - -x is the short option and offline is the long option
-  * tpm2_getekcertificate: Short and long options changed
-    - ec-cert is now ek-certificate
-    - untrusted is now allow-unverified
-    - output is now ek-public
-    - -E is now -o
-    - -U is now -X
-    - -o is now -u
-  * tpm2_getekcertificate: Removed ek key creation and management logic.
-    - The tool now simply takes the ek public key as an input. This
-    public key is being read in tss format and can be retrieved using
-    the tpm2_createek tool.
-    - Removed option -P or --eh-auth
-    - Removed option -p or --ek-auth
-    - Removed option -w or --owner-auth
-    - Removed option -H or --persistent-handle
-    - Removed option -G or --key-algorithm
-    - Removed option -N or --non-persistent
-    - Removed option -O or --offline
-  * tpm2_getmanufec: Renamed the tool to tpm2_getekcertificate
-  * tpm2_rsadecrypt: add -l for specifying label.
-  * tpm2_rsaencrypt: add -l for specifying label.
-  * tpm2_sign:
-     - Drop -m and -d option arguments and make them sole argument.
-     - Remove the -m option and make -d toggle if input is a digest.
-  * tpm2_encryptdecrypt: drop -i input option and make argument.
-  * tpm2_rsadecrypt: drop -i input option and make argument.
-  * tpm2_rsaencrypt: make output binary and either stdout or file based on -o.
-  * tpm2_makecredential: long option output becomes credential-blob
-  * tpm2_quote: -F becomes -f.
-  * tpm2_quote: -f becomes -o.
-  * tpm2_quote: -C and -P becomes -c and -p respectively.
-  * tpm2_quote: -g becomes optional.
-  * tpm2_print: -i becomes an argument.
-  * tpm2_pcrread: renamed from tpm2_pcrlist.
-  * tpm2_pcrlist: -gls go away, -g and -l become a single argument.
-  * tpm2_pcrevent: -x becomes an argument.
-  * tpm2_nvwrite: short option changed to argument
-    -x used to specify nv index is now an argument
-  * tpm2_nvwrite: input file changed from argument to option
-    -i or --input is now the method to specify file data to write
-  * tpm2_nvlist: Renaming the tool
-    - tpm2_nvlist is now tpm2_nvreadpublic
-  * tpm2_nvundefine: short option changed to argument
-    -x used to specify nv index is now an argument
-  * tpm2_nvrelease: Renaming the tool
-    - tpm2_nvrelease is now tpm2_nvundefine
-  * tpm2_nvreadlock: short option changed to argument
-    -x used to specify nv index is now an argument
-  * tpm2_nvread: short option changed to argument
-    -x used to specify nv index is now an argument
-  * tpm2_nvincrement: short option changed to argument
-    -x used to specify nv index is now an argument
-  * tpm2_nvdefine: short option changed to argument
-    -x used to specify nv index is now an argument
-  * tpm2_hierarchycontrol: new tool added for enabling or disabling the use
-    of a hierarchy and its associated NV storage.
-  * tpm2_quote: long option changed
-    qualification-data is now qualification
-  * tpm2_policyauthorize: short and long options changed.
-    policy-output is now policy.
-    input is now the option for specifying the policy to authorize.
-    qualification-data is now qualification.
-    -o is now -L.
-    -L is now -i.
-  * tpm2_import: short option changed
-    object-attributes is now attributes
-  * tpm2_load: short option changed
-    -o is now -c
-  * tpm2_loadexternal: short and long options changed
-    object-attributes is now attributes
-    -o is now -c
-  * tpm2_create: short and long options changed
-    object-attributes is now attributes
-    -o is now -c
-  * tpm2_createprimary: short and long options changed
-    object-attributes is now attributes
-    -o is now -c
-  * tpm2_print: long option changed
-    in-file is now input
-  * tpm2_checkquote: short and long options changed
-    halg is now hash-algorithm
-    pcr-input-file is now pcr
-    pubfile is now public
-    qualify-data is now qualification
-    -f is now -F
-    -F is now -f
-  * tpm2_hash:
-    - add --hex for specifying hex output.
-    - default output of hash to stdout.
-    - default output of hash to binary.
-    - remove output of ticket to stdout.
-  * tpm2_listpersistent: deleted as tpm2_getcap and tpm2_readpublic can be used instead.
-  * tpm2_hmac:
-      - add -g option for specifying hash algorithm.
-      - add -t option for specifying ticket result.
-  * tpm2_getrandom:
-      - change default output to binary.
-      - add --hex option for output to hex format.
-  * tpm2_verifysignature: short and long options changed
-    halg is now hash-algorithm
-    sig is now signature
-    -D is now -d
-  * tpm2_unseal: long options changed
-    auth-key is now auth
-    out-file is now output
-    context-object is now object-context
-  * tpm2_startauthsession: short and long options changed
-    halg is now hash-algorithm
-    key is now key-context
-    -k is now -c
-  * tpm2_sign: short and long options changed
-    auth-key is now auth
-    halg is now hash-algorithm
-    sig-scheme is now scheme
-    out-sig is now signature
-    -D is now -d
-  * tpm2_send: long option changed
-    out-file is now output
-  * tpm2_rsaencrypt: long option changed
-    out-file is now output
-  * tpm2_rsadecrypt: long options changed
-    auth-key is now auth
-    in-file is now input
-    out-file is now output
-  * tpm2_readpublic: long options changed
-    out-file is now output
-    context is now object-context
-  * tpm2_quote: short and long options changed
-    auth-ak is now ak-auth
-    id-list is now pcr-index
-    sel-list is now pcr-list
-    qualify-data is now qualification-data
-    pcrs is now pcr
-    halg is now hash-signature
-    -l is now -i
-    -L is now -l
-    -p is now -f
-    -f is now -F
-  * tpm2_policysecret: short and long options changed
-    context is now object-context
-    out-policy-file is now policy
-    -o is now -L
-  * tpm2_policypcr: short and long options changed
-    out-policy-file is now policy
-    pcr-input-file is now pcr
-    set-list is now pcr-list
-    -o is now -L
-    -F is now -f
-    -L is now -l
-  * tpm2_policypassword: short and long options changed
-    out-policy-file is now policy
-    -o is now -L
-  * tpm2_policyor: short and long options changed
-    out-policy-file is now policy
-    -o is now -L
-    -L is now -l
-  * tpm2_policylocality: short and long options changed
-    out-policy-file is now policy
-    -o is now -L
-  * tpm2_policyduplicationselect: short and long options changed
-    new-parent-name is now parent-name
-    out-policy-file is now policy
-    -o is now -L
-  * tpm2_policycommandcode: short and long options changed
-    out-policy-file is now policy
-    -o is now -L
-  * tpm2_policyauthorize: short and long options changed
-    out-policy-file is now policy-output
-    in-policy-file is now policy
-    qualify-data is now qualification-data
-    -i is now -L
-  * tpm2_pcrlist: short and long options changed
-    halg is now hash-algorithm
-    out-file is now output
-    algs is now pcr-algorithms
-    sel-list is now pcr-list
-    -L is now -l
-  * tpm2_pcrevent: long options changed
-    auth-pcr is now auth
-  * tpm2_pcrallocate: long option changed
-    auth-platform is now auth
-  * tpm2_nvwrite: short and long options changed
-    auth-hierarchy is now auth
-    -a is now -C
-  * tpm2_nvrelease: short and long options changed
-    auth-hierarchy is now auth
-    -a is now -C
-  * tpm2_nvreadlock: short and long options changed
-    auth-hierarchy is now auth
-    -a is now -C
-  * tpm2_nvread: short and long options changed
-    out-file is now output
-    auth-hierarchy is now auth
-    -a is now -C
-  * tpm2_nvincrement: long option changed
-    auth-hierarchy is now auth
-  * tpm2_nvdefine: long options changed
-    auth-hierarchy is now hierarchy-auth
-    auth-index is now index-auth
-    policy-file is now policy
-  * tpm2_makecredential: long options changed
-    enckey is now encryption-key
-    out-file is now output
-  * tpm2_loadexternal: long options changed
-    key-alg is now key-algorithm
-    pubfile is now public
-    privfile is now private
-    auth-key is now auth
-    policy-file is now policy
-    halg is now hash-algorithm
-    out-context is now key-context
-  * tpm2_load: long options changed
-    context-parent is now parent-context
-    auth-parent is now auth
-    pubfile is now public
-    privfile is now private
-    out-context is now key-context
-  * tpm2_import: long options changed
-    auth-parent is now parent-auth
-    auth-key is now key-auth
-    algorithm is now key-algorithm
-    in-file is now input
-    parent-key is now parent-context
-    privfile is now private
-    pubfile is now public
-    halg is now hash-algorithm
-    policy-file is now policy
-    sym-alg-file is now encryption-key
-  * tpm2_hmac: short and long options changed
-    out-file is now output
-    auth-key is now auth
-    -C is now -c
-    -P is now -p
-  * tpm2_hash: short and long options changed
-    halg is now hash-algorithm
-    out-file is now output
-    -a is now -C
-  * tpm2_getrandom: long option changed
-    out-file is now output
-  * tpm2_getmanufec: short and long options changed
-    auth-endorse is now eh-auth
-    auth-owner is now owner-auth
-    auth-ek is now ek-auth
-    handle is now persistent-handle
-    algorithm is now ek-algorithm
-    -e is now -P
-    -P is now -p
-  * tpm2_evictcontrol: long options changed
-    auth-hierarchy is now auth
-    context is now key-context
-  * tpm2_encryptdecrypt: long options changed
-    auth-key is now auth
-    in-file is now input
-    out-file is now output
-  * tpm2_duplicate: long options changed
-    auth-key is now auth
-    inner-wrapper-alg is now wrapper-algorithm
-    input-key-file is now encryptionkey-in
-    output-key-file is now encryptionkey-out
-    parent-key is now parent-context
-    context is now key-context
-  * tpm2_dictionarylockout: long option changed
-    auth-lockout is now auth
-  * tpm2_createprimary: long options changed
-    auth-hierarchy is now hierarchy-auth
-    auth-object is now key-auth
-    halg is now hash-algorithm
-    kalg is now key-algorithm
-    context-object is now key-context
-    policy-file is now policy
-  * tpm2_certify: long option changed
-    halg is now hash-algorithm
-  * tpm2_createpolicy: long options changed
-    out-policy-file is now policy
-    policy-digest-alg is now policy-algorithm
-    pcr-input-file is now pcr
-    -o is now -L
-    -L is now -l
-    -F is now -f
-  * tpm2_createek: short and long options changed
-    auth-endorse is now eh-auth
-    auth-owner is now owner-auth
-    auth-ek is now ek-auth
-    file is now public
-    context is now ek-context
-    algorithm is now key-algorithm
-    -e is now -P
-    -P is now -p
-    -p is now -u
-  * tpm2_createak:
-    auth-endorse is now eh-auth
-    auth-ak is now ak-auth
-    halg is now hash-algorithm
-    kalg is now key-algorithm
-  * tpm2_clearcontrol: Short and long options changed
-    auth-handle is now hierarchy
-    -c is now -C
-  * tpm2_create:
-    auth-parent is now parent-auth
-    auth-key is now key-auth
-    in-file is now sealing-input
-    policy-file is now policy
-    pubfile is now public
-    privfile is now private
-    out-context is now key-context
-    halg is now hash-algorithm
-    kalg is now key-algorithm
-  * tpm2_changeauth: --privfile becomes private
-  * tpm2_evictcontrol: -p becomes an argument.
-  * tpm2_getcap: -c becomes an argument.
-  * tpm2_evictcontrol: -a becomes -C.
-  * tpm2_encryptdecrypt: -D becomes -d.
-  * tpm2_duplicate: short and long options changes to make it consistent with
-    similar tools.
-      - -g becomes -G
-      - \--duplicate-key-private becomes \--private
-  * tpm2_nvincrement: short option changed
-    -a becomes -C
-  * tpm2_createak: short and long options changed to make it consistent with
-    similar options in other tools.
-    -e becomes -P,
-    -P becomes -p,
-    -D becomes -g,
-    -p becomes -u,
-    context becomes ak-context,
-    algorithm becomes kalg,
-    digest-alg becomes halg,
-    privfile becomes private.
-  * cmac algorithm support.
-  * tpm2_activatecredential: long options have been changed to align with spec language.
-    context is now credentialedkey-context.
-    key-context is now credentialkey-context.
-    auth-key is now credentialedkey-auth.
-    auth-endorse is now credentialkey-auth.
-    in-file is now credential-secret.
-    out-file is now certinfo-data.
-  * tpm2_certify: long options have been changed to align with spec language.
-    obj-context is now certifiedkey-context.
-    key-context is now signingkey-context.
-    auth-object is now certifiedkey-auth.
-    auth-key is now signingkey-auth.
-  * tpm2_changeauth: tool options change to support only one object at a time. Most command line options changed.
-  * tpm2_getcap: most instances of value replaced with raw in YAML output.
-  * tpm2_getcap: TPM2_PT_MANUFACTURER displays string value and raw value.
-  * tpm2_createak: remove -k persistant option. Use tpm2_evictcontrol.
-  * tpm2_nvincrement: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
-  * tpm2_nvwrite: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
-  * tpm2_nvread: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
-  * tpm2_unseal: -L and -F pcr policy options go away, replaced with pcr password minilanguage.
-  * tpm2_evictcontrol: support serializing ESYS_TR handle to disk.
-  * tpm2_readpublic: support serializing ESYS_TR handle to disk.
-  * tpm2_startauthsession: support encrypted and bound sessions.
-  * tpm2_duplicate: add new tool for duplicating TPM objects.
-  * tpm2_createpolicy: Remove small option -a and rename long option to "policy-session"
-  * tpm2_startauthsession: Remove small option -a and rename long option to "policy-session"
-  * tpm2_startauthsession: Fix long version of policy-digest-alg to halg
-  * tpm2_policysecret: Fix long version of policy-file to out-policy-file
-  * tpm2_policypcr: Fix long version of policy-file to out-policy-file
-  * tpm2_policypcr: Fix -f option to -o
-  * tpm2_policypassword: Fix long version of policy-file to out-policy-file
-  * tpm2_policyor: Fix long version of policy-file to out-policy-file
-  * tpm2_policylocality: Fix long version of policy-file to out-policy-file
-  * tpm2_policyduplicationselect: Fix long version of policy-file to out-policy-file
-  * tpm2_policyduplicationselect: Fix long version of obj-name to object-name
-  * tpm2_policyduplicationselect: Remove small option -i and rename long option to "include-if-exists"
-  * tpm2_policycommandcode: Fix long version of policy-file to out-policy-file
-  * tpm2_policyauthorize Fix -f option to -i
-  * tpm2_pcrlist: Remove unused -f option
-  * tpm2_nvwrite: Remove small option for --offset
-  * tpm2_nvread: Fix -f option to -o
-  * tpm2_makecredential: Fix -enc-key option to -enckey
-  * tpm2_createpolicy: Fix -f option to -o
-  * tpm2_loadexternal: Remove unused -P option
-  * tpm2_encryptdecrypt: Enable back '-t'/'--iv' support
-  * tpm2_create : Fix "-A" option to "-b" for attributes
-  * tpm2_createprimary : Fix "-A" option to "-b" for attributes
-  * tpm2_import : Fix "-A" option to "-b" for attributes
-  * tpm2_loadexternal : Fix "-A" option to "-b" for attributes
-  * tpm2_nvdefine : Fix "-A" option to "-b" for attributes
-  * tpm2_certify: Fix "-a" option to "-o"
-  * tpm2_createpolicy: Fix "-P" option to "--policy-pcr"
-  * tpm2_pcrevent: Fix "-i" option to "-x"
-  * tpm2_createek: Fix "-o" option to "-w"
-  * tpm2_createak: Fix "-o" option to "-w"
-  * tpm2_nvdefine: Fix "-t" option to "-b"
-  * tpm2_import: Fix "-k" option to "-i"
-  * tpm2_getmanufec: Fix "-o" option to "-w" and "-f" option to "-o"
-  * tpm2_changeauth: Fix "-o/-O" option to "-w/-W"
-  * tpm2_checkquote: Fix -G option to -g
-  * tpm2_getrandom: bound input request on max hash size per spec, allow -f to override this.
-  * tpm_gettestresult: new tool for getting test results.
-  * tpm2_pcrallocate: new tool for changing the allocated PCRs of a TPM.
-  * tpm2_incrementalselftest: Add tool to test support of specific algorithms.
-  * tpm2_verifysignature: Fix -G option to -g
-  * tpm2_sign: Fix -G option to -g
-  * tpm2_hash: Fix -G option to -g
-  * tpm2_quote: Fix -G option to -g
-  * tpm2_testparms: new tool for querying tpm for supported algorithms.
-  * tpm2_getcap: supports "pcr" option for listing hash algorithms and bank numbers.
-  * tpm2_createprimary: add -u for supporting unique field when creating objects.
-  * tpm2_policylocality: add tool for creating a policy restricted to a locality.
-  * tpm2_policyduplicationselect: add tool for creating a policy to restrict duplication to a new parent.
-  * tpm2_selftest: tool for invoking tpm selftest.
-  * tpm2_stirrandom: new command for injecting entropy into the TPM.
-  * tpm2_readpublic: supports saving the binary name via -n.
-  * tpm2_nvincrement: tool for incrememnting NVs configured as counters.
-  * tpm2_sign: supports rsapss.
-  * tpm2_sign: -s becomes -o and -s is for signing scheme.
-  * tpm2_activatecredential: -f becomes -i
-  * tpm2_create: -I becomes -i
-  * tpm2_encryptdecrypt: -I becomes -i
-  * tpm2_rsadecrypt: -I becomes -i
-  * tpm2_create: supports TPM command CreateLoaded.
-  * Add support for reading authorisation passwords from a file
-  * tpm2_createek: now saves a context file for the generated primary's
-    handle to disk.
-  * tpm2_createak: now saves a context file for the generated primary's
-    handle to disk.
-  * tpm2_loadexternal: now saves a context file for the generated primary's
-    handle to disk.
-  * tpm2_load: now saves a context file for the generated primary's
-    handle to disk.
-  * tpm2_startauthsession: now saves a context file for the generated primary's
-    handle to disk.
-  * tpm2_createprimary: now saves a context file for the generated primary's
-    handle to disk.
-  * Ported all tools from SAPI to ESAPI
-  * tpm2_loadexternal: support OSSL style -passin argument as --passin for PEM file passwords.
-  * tpm2_import: support OSSL style -passin argument as --passin for PEM file passwords.
-  * tpm2_readpublic: supports ECC pem and der file generation.
-  * tpm2_activatecredential: Option `--endorse-passwd` changes to `--auth-endorse`.
-  * tpm2_loadexternal: name output to file and stdout. Changes YAML stdout output.
-  * tpm2_loadexternal: ECC Public and Private PEM support.
-  * tpm2_loadexternal: AES Public and Private "raw file" support.
-  * tpm2_loadexternal: RSA Public and Private PEM support.
-  * tpm2_loadexternal: Object Attribute support.
-  * tpm2_loadexternal: Object authorization support.
-  * tpm2_loadexternal: Default hierarchy changes to the *null* hierarchy.
-  * tpm2_verifysignature: stop outputting message hash.
-  * tpm2_verifysignature: issues a warning when ticket is specified for a NULL hierarchy.
-  * tpm2_verifysignature: make -t optional.
-  * tpm2_import: support additional import key types:
-    * RSA1024/2048
-    * AES128/192/256
-  * tpm2_import: -q changes to -u to align with tpm2_loads public/private output arguments.
-  * tpm2_import: Supports setting object name algorithm via -g.
-  * tpm2_unseal: -P becomes -p
-  * tpm2_sign: -P becomes -p
-  * tpm2_nvreadlock: long form for -P is now --auth-hierarchy
-  * tpm2_rsadecrypt: -P becomes -p
-  * tpm2_nvrelease: long-form of -P becomes --auth-hierarchy
-  * tpm2_nvdefine: -I becomes -p
-  * tpm2_encryptdecrypt: -P becomes -p
-  * tpm2_dictionarylockout: -P becomes -p
-  * tpm2_createprimary: -K becomes -p
-  * tpm2_createak: -E becomes -e
-  * tpm2_certify: -k becomes -p
-  * tpm2_hash: -g changes to -G
-  * tpm2_encryptdecrypt: Support IVs via -t and algorithm modes via -G.
-  * tpm2_hmac: drop -g, just use the algorithm associated with the object.
-  * tpm2_getmanufec: -g changes to -G
-  * tpm2_createek: -g changes to -G
-  * tpm2_createak: -g changes to -G
-  * tpm2_verifysignature: -g becomes -G
-  * tpm2_sign: -g becomes -G
-  * tpm2_import: support specifying parent key with a context file,
-    --parent-key-handle/-H becomes --parent-key/-C
-  * tpm2_nvwrite and tpm2_nvread: when -P is "index" -a is optional and defaults to
-    the NV_INDEX value passed to -x.
-  * Load TCTI's by SONAME, not raw .so file
-  * tpm2_activatecredential: -e becomes -E
-  * tpm2_activatecredential: -e becomes -E
-  * tpm2_certify: -c and -C are swapped, -k becomes -K
-  * tpm2_createprimary: -K becomes -k
-  * tpm2_encryptdecrypt: supports input and output to stdin and stdout respectively.
-  * tpm2_create: -g/-G become optional options.
-  * tpm2_createprimary: -g/-G become optional options.
-  * tpm2_verifysignature - Option `-r` changes to `-f` and supports signature format "rsa".
-  * tpm2_import - Parent public data option is optional and changes from `-K` to `-U`.
-  * tpm2_import - Supports importing external RSA 2048 keys via pem files.
-  * tpm2_pcrlist: Option `--algorithm` changes to `--halg`, which is in line with other tools.
-  * tpm2_verifysignature: Option `-r` and `--raw` have been removed. This were unused within the tool.
-  * tpm2_hmac: Option `--algorithm` changes to `--halg`, which is in line with the manpage.
-  * tpm2_makecredential: Option `--sec` changes to `--secret`.
-  * tpm2_activatecredential: Option `--Password` changes to `--auth-key`.
-  * system tests are now run with make check when --enable-unit is used in configure.
-  * tpm2_unseal: Option `--pwdk` changes to `--auth-key`.
-  * tpm2_sign: Option `--pwdk` changes to `--auth-key`.
-  * tpm2_rsadecrypt: Option `--pwdk` changes to `--auth-key`.
-  * tpm2_quote: Option `--ak-passwd` changes to `--auth-ak`
-  * tpm2_pcrevent: Option `--passwd` changes to `--auth-pcr`
-  * tpm2_nvwrite: Options `--authhandle` and `--handle-passwd`
-    changes to `--hierarchy` and `--auth-hierarchy` respectively.
-  * tpm2_nvread: Options `--authhandle` and `--handle-passwd`
-    changes to `--hierarchy` and `--auth-hierarchy` respectively.
-  * tpm2_nvdefine: Options `--authhandle`, `--handle-passwd` and `--index-passwd`
-    changes to `--hierarchy`, `--auth-hierarchy` and `--auth-index`
-    respectively.
-  * tpm2_loadexternal: `-H` changes to `-a` for specifying hierarchy.
-  * tpm2_load: Option `--pwdp` changes to `--auth-parent`.
-  * tpm2_hmac: Option `--pwdk` changes to `--auth-key`.
-  * tpm2_hash: `-H` changes to `-a` for specifying hierarchy.
-  * tpm2_getmanufec: Options `--owner-passwd`, `--endorse-passwd`
-  * and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
-    and `--auth-ek` respectively.
-  * tpm2_evictcontrol: Option group `-A` and `--auth` changes to `-a` and `--hierarchy`
-    Option `--pwda` changes to `--auth-hierarchy`
-  * tpm2_encryptdecrypt: Option `--pwdk` changes to `--auth-key`.
-  * tpm2_dictionarylockout: Option `--lockout-passwd` changes to `--auth-lockout`
-  * tpm2_createprimary: Options `--pwdp` and `--pwdk` change to
-    `--auth-hierarchy` and `--auth-object` respectively.
-  * tpm2_createek: Options `--owner-passwd`, `--endorse-passwd`
-  * and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
-    and `--auth-ek` respectively.
-  * tpm2_createak: Options `--owner-passwd`, `--endorse-passwd`
-  * and `--ak-passwd`change to `--auth-owner`, `--auth-endorse`
-    and `--auth-ak` respectively.
-  * tpm2_create: Options `--pwdo` and `--pwdk` change to `--auth-object` and
+* tpm2_activatecredential:
+  - \--context is now \--credentialedkey-context.
+  - \--key-context is now \--credentialkey-context.
+  - \--auth-key is now \--credentialedkey-auth.
+  - \--auth-endorse is now \--credentialkey-auth.
+  - \--in-file is now \--credential-secret.
+  - \--out-file is now \--certinfo-data.
+  - -f becomes -i
+  - Option \--endorse-passwd changes to \--auth-endorse.
+  - -e becomes -E.
+  - Option `--Password` changes to `--auth-key`.
+
+* tpm2_certify:
+  - \--halg is now \--hash-algorithm.
+  - \--obj-context is now \--certifiedkey-context.
+  - \--key-context is now \--signingkey-context.
+  - \--auth-object is now \--certifiedkey-auth.
+  - \--auth-key is now \--signingkey-auth.
+  - Fix -a option to -o.
+  - -k becomes -p.
+  - -c and -C are swapped, -k becomes -K.
+  - Options `--pwdo` and `--pwdk` change to `--auth-object` and
     `--auth-key` respectively.
-  * tpm2_clearlock: Option `--lockout-passwd` changes to `--auth-lockout`
-  * tpm2_clear: Option `--lockout-passwd` changes to `--auth-lockout`
-  * tpm2_changeauth: Options, `--old-owner-passwd`, `--old-endorse-passwd`,
+
+* tpm2_changeauth:
+  - tool options change to support only one object at a time.
+    Most command line options changed.
+  - \--privfile becomes \--private.
+  - Fix -o/-O option to -w/-W.
+  - Options, `--old-owner-passwd`, `--old-endorse-passwd`,
     and `--old-lockout-passwd` go to `--old-auth-owner`, `--old-auth-endorse`,
     and `--old-auth-lockout` respectively.
-  * tpm2_certify: Options `--pwdo` and `--pwdk` change to `--auth-object` and
+
+* tpm2_checkquote:
+  - \--halg is now \--hash-algorithm.
+  - \--pcr-input-file is now \--pcr.
+  - \--pubfile is now \--public.
+  - \--qualify-data is now \--qualification.
+  - -f is now -F.
+  - -F is now -f.
+  - Fix -G option to -g
+
+* tpm2_clear:
+  - Option `--lockout-passwd` changes to `--auth-lockout`
+
+* tpm2_clearcontrol:
+  - new tool for enabling or disabling tpm2_clear commands.
+
+* tpm2_clearlock:
+  - tool added.
+
+* tpm2_create
+  - \--object-attributes is now \--attributes.
+  - -o is now -c
+  - \--auth-parent is now \--parent-auth.
+  - \--auth-key is now \--key-auth.
+  - \--in-file is now \--sealing-input.
+  - \--policy-file is now \--policy.
+  - \--pubfile is now \--public.
+  - \--privfile is now \--private.
+  - \--out-context is now \--key-context.
+  - \--halg is now \--hash-algorithm.
+  - \--kalg is now \--key-algorithm.
+  - Fix -A option to -b for attributes.
+  - -I becomes -i
+  - supports TPM command CreateLoaded via -c.
+  - -g/-G become optional options.
+  - Options `--pwdo` and `--pwdk` change to `--auth-object` and
     `--auth-key` respectively.
-  * tpm2_createprimary: `-H` changes to `-a` for specifying hierarchy.
-  * tpm2_createak: support for non-persistent AK generation.
-  * tpm2_createek: support for non-persistent EK generation.
-  * tpm2_getpubak renamed to tpm2_createak, -f becomes -p and -f is used for format of public key
-    output.
-  * tpm2_getpubek renamed to tpm2_createek, -f becomes -p and -f is used for format of public key
-    output.
-  * Libre SSL builds fixed.
-  * Dynamic TCTIS. Support for pluggable TCTI modules via the -T or --tcti options.
-  * tpm2_sign: supports signing a pre-computed hash via -D
-  * tpm2_clearlock: tool added
-  * test: system testing scripts moved into subordinate test directory.
-  * fix a buffer overflow in nvread/write tools.
-  * configure: enable code coverage option.
-  * tpm2_takeownership: split into tpm2_clear and tpm2_changeauth
-  * env: add TPM2TOOLS_ENABLE_ERRATA to control the -Z or errata option.
+
+* tpm2_createak:
+  - renamed from tpm2_getpubak
+
+* tpm2_createek:
+  - renamed from tpm2_getpubek
+
+* tpm2_createpolicy:
+  - \--out-policy-file is now \--policy.
+  - \--policy-digest-alg is now \--policy-algorithm.
+  - \--pcr-input-file is now \--pcr.
+  - -o is now -L.
+  - -L is now -l.
+  - -F is now -f.
+  - Remove small option -a and rename long option to \--policy-session.
+  - Fix -f option to -o.
+  - Fix -P option to \--policy-pcr.
+
+* tpm2_createprimary:
+  - \--object-attributes is now \--attributes.
+  - -o is now -c
+  - \--auth-hierarchy is now \--hierarchy-auth.
+  - \--auth-object is now \--key-auth.
+  - \--halg is now \--hash-algorithm.
+  - \--kalg is now \--key-algorithm.
+  - \--context-object is now \--key-context.
+  - \--policy-file is now \--policy.
+  - Fix -A option to -b for attributes.
+  - add -u for supporting unique field when creating objects.
+  - now saves a context file for the generated primary's handle to disk.
+  - -K becomes -p.
+  - -K becomes -k.
+  - -g/-G become optional options.
+  - Options `--pwdp` and `--pwdk` change to
+    `--auth-hierarchy` and `--auth-object` respectively.
+  - `-H` changes to `-a` for specifying hierarchy.
+
+* tpm2_dictionarylockout:
+  - \--auth-lockout is now \--auth.
+  - -P becomes -p.
+  - Option `--lockout-passwd` changes to `--auth-lockout`
+
+* tpm2_duplicate:
+  - add new tool for duplicating TPM objects.
+
+* tpm2_encryptdecrypt:
+  - drop -i input option and make argument.
+  - \--auth-key is now \--auth.
+  - \--out-file is now \--output.
+  - -D becomes -d.
+  - Enable back IV support via -t or \--iv.
+  - -I becomes -i
+  - -P becomes -p.
+  - Support IVs via -t and algorithm modes via -G.
+  - supports input and output to stdin and stdout respectively.
+  - Option `--pwdk` changes to `--auth-key`.
+
+* tpm2_evictcontrol:
+  - \--auth-hierarchy is now \--auth.
+  - \--context is now \--key-context.
+  - -p becomes an argument.
+  - -a becomes -C.
+  - support serializing ESYS_TR handle to disk.
+  - Option group `-A` and `--auth` changes to `-a` and `--hierarchy`
+    Option `--pwda` changes to `--auth-hierarchy`
+
+* tpm2_getcap:
+  - -c becomes an argument.
+  - most instances of value replaced with raw in YAML output.
+  - TPM2_PT_MANUFACTURER displays string value and raw value.
+  - supports \--pcr option for listing hash algorithms and bank numbers.
+
+* tpm2_getekcertificate:
+  - renamed from tpm2_getmanufec
+
+* tpm2_getmanufec:
+  - Renamed the tool to tpm2_getekcertificate.
+  - Removed ek key creation and management logic.
+  - Added option for getting ek cert for offline platform via -x.
+  - \--ec-cert is now \--ek-certificate
+  - \--untrusted is now \--allow-unverified
+  - output is now ek-public
+  - -E is now -o
+  - -U is now -X
+  - -o is now -u
+  - Removed option -P or --eh-auth.
+  - Removed option -p or --ek-auth.
+  - Removed option -w or --owner-auth.
+  - Removed option -H or --persistent-handle.
+  - Removed option -G or --key-algorithm.
+  - Removed option -N or --non-persistent.
+  - Removed option -O or --offline.
+  - \--auth-endorse is now \--eh-auth.
+  - \--auth-owner is now \--owner-auth.
+  - \--auth-ek is now \--ek-auth.
+  - \--handle is now \--persistent-handle.
+  - \--algorithm is now \--ek-algorithm.
+  - -e is now -P.
+  - -P is now -p.
+  - Fix -o option to -w and -f option to -o.
+  - -g changes to -G.
+  - Options `--owner-passwd`, `--endorse-passwd`
+    and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
+    and `--auth-ek` respectively.
+
+* tpm2_getpubak:
+  - renamed to tpm2_createak.
+  - -f becomes -p and -f is used for format of public key output.
+  - \--auth-endorse is now \--eh-auth.
+  - \--auth-ak is now \--ak-auth.
+  - \--halg is now \--hash-algorithm.
+  - \--kalg is now \--key-algorithm.
+  - -e becomes -P.
+  - -P becomes -p.
+  - -D becomes -g.
+  - -p becomes -u.
+  - \--context becomes \--ak-context.
+  - \--algorithm becomes \--kalg.
+  - \--digest-alg becomes \--halg.
+  - \--privfile becomes \--private.
+  - remove -k persistant option. Use tpm2_evictcontrol.
+  - Fix -o option to -w.
+  - now saves a context file for the generated primary's handle to disk.
+  - -E becomes -e.
+  - -g changes to -G.
+  - Options `--owner-passwd`, `--endorse-passwd`
+    and `--ak-passwd`change to `--auth-owner`, `--auth-endorse`
+    and `--auth-ak` respectively.
+  - support for non-persistent AK generation.
+
+* tpm2_getpubek:
+  - renamed to tpm2_createek
+  - \--auth-endorse is now \--eh-auth.
+  - \--auth-owner is now \--owner-auth.
+  - \--auth-ek is now \--ek-auth.
+  - \--file is now \--public.
+  - \--context is now \--ek-context.
+  - \--algorithm is now \--key-algorithm.
+  - -e is now -P.
+  - -P is now -p.
+  - -p is now -u.
+  - Fix -o option to -w.
+  - now saves a context file for the generated primary's handle to disk.
+  - -g changes to -G.
+  - Options `--owner-passwd`, `--endorse-passwd`
+    and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
+    and `--auth-ek` respectively.
+  - support for non-persistent EK generation.
+  - -f becomes -p and -f is used for format of public key output.
+
+* tpm2_getrandom:
+  - change default output to binary.
+  - add \--hex option for output to hex format.
+  - \--out-file is now \--output.
+  - bound input request on max hash size per spec, allow -f to override this.
+
+* tpm_gettestresult:
+  - new tool for getting test results.
+
+* tpm2_hash:
+  - add \--hex for specifying hex output.
+  - default output of hash to stdout.
+  - default output of hash to binary.
+  - remove output of ticket to stdout.
+  - \--halg is now \--hash-algorithm.
+  - \--out-file is now \--output.
+  - -a is now -C.
+  - Fix -G option to -g.
+  - -g changes to -G.
+  - `-H` changes to `-a` for specifying hierarchy.
+
+* tpm2_hmac:
+  - add -t option for specifying ticket result.
+  - \--out-file is now \--output.
+  - \--auth-key is now \--auth.
+  - -C is now -c.
+  - -P is now -p.
+  - Option `--algorithm` changes to `--halg`, which is in line with the manpage.
+  - Option `--pwdk` changes to `--auth-key`.
+
+* tpm2_hierarchycontrol:
+  - new tool added for enabling or disabling the use
+    of a hierarchy and its associated NV storage.
+
+* tpm2_import:
+  - \--object-attributes is now \--attributes.
+  - \--auth-parent is now \--parent-auth.
+  - \--auth-key is now \--key-auth.
+  - \--algorithm is now \--key-algorithm.
+  - \--in-file is now \--input.
+  - \--parent-key is now \--parent-context.
+  - \--privfile is now \--private.
+  - \--pubfile is now \--public.
+  - \--halg is now \--hash-algorithm.
+  - \--policy-file is now \--policy.
+  - \--sym-alg-file is now \--encryption-key.
+  - Fix -A option to -b for attributes.
+  - Fix -k option to -i.
+  - support OSSL style -passin argument as \--passin for PEM file passwords.
+  - support additional import key types:
+    - RSA1024/2048.
+    - AES128/192/256.
+  - -q changes to -u to align with tpm2_loads public/private output arguments.
+  - Supports setting object name algorithm via -g.
+  - support specifying parent key with a context file.
+  - \--parent-key-handle/-H becomes \--parent-key/-C
+  - Parent public data option is optional and changes from `-K` to `-U`.
+  - Supports importing external RSA 2048 keys via pem files.
+
+* tpm2_incrementalselftest:
+  - Add tool to test support of specific algorithms.
+
+* tpm2_listpersistent:
+  - deleted as tpm2_getcap and tpm2_readpublic can be used instead.
+
+* tpm2_load:
+  - -o is now -c.
+  - \--context-parent is now \--parent-context.
+  - \--auth-parent is now \--auth.
+  - \--pubfile is now \--public.
+  - \--privfile is now \--private.
+  - \--out-context is now \--key-context.
+  - now saves a context file for the generated primary's handle to disk.
+  - Option `--pwdp` changes to `--auth-parent`.
+
+* tpm2_loadexternal:
+  - \--object-attributes is now --attributes.
+  - -o is now -c
+  - \--key-alg is now \--key-algorithm.
+  - \--pubfile is now \--public.
+  - \--privfile is now \--private.
+  - \--auth-key is now \--auth.
+  - \--policy-file is now \--policy.
+  - \--halg is now \--hash-algorithm.
+  - \--out-context is now \--key-context.
+  - Remove unused -P option
+  - Fix -A option to -b for attributes.
+  - now saves a context file for the generated primary's handle to disk.
+  - support OSSL style -passin argument as \--passin for PEM file passwords.
+  - name output to file and stdout. Changes YAML stdout output.
+  - ECC Public and Private PEM support.
+  - AES Public and Private "raw file" support.
+  - RSA Public and Private PEM support.
+  - Object Attribute support.
+  - Object authorization support.
+  - Default hierarchy changes to the *null* hierarchy.
+  - `-H` changes to `-a` for specifying hierarchy.
+
+* tpm2_makecredential:
+  - long option output becomes credential-blob
+  - \--enckey is now \--encryption-key.
+  - \--out-file is now \--output.
+  - Fix \--enc-key option to \--enckey.
+  - Option `--sec` changes to `--secret`.
+
+* tpm2_nvdefine:
+  - -x used to specify nv index is now an argument.
+  - \--auth-hierarchy is now \--hierarchy-auth.
+  - \--auth-index is now \--index-auth.
+  - \--policy-file is now \--policy.
+  - Fix -A option to -b for attributes.
+  - Fix -t option to -b.
+  - -I becomes -p.
+  - Options `--authhandle`, `--handle-passwd` and `--index-passwd`
+    changes to `--hierarchy`, `--auth-hierarchy` and `--auth-index`
+    respectively.
+
+* tpm2_nvincrement:
+  - -x used to specify nv index is now an argument.
+  - \--auth-hierarchy is \--now auth.
+  - -a becomes -C
+  - -L and -F pcr policy options go away, replaced with pcr password
+    minilanguage.
+  - tool for incrememnting NVs configured as counters.
+
+* tpm2_nvlist:
+  - tpm2_nvlist is now tpm2_nvreadpublic.
+
+* tpm2_nvread:
+  - -x used to specify nv index is now an argument.
+  - \--out-file is now \--output.
+  - \--auth-hierarchy is now \--auth.
+  - -a is now -C.
+  - -L and -F pcr policy options go away, replaced with pcr password minilanguage.
+  - Fix -f option to -o.
+  - when -P is "index" -a is optional and defaults to
+    the NV_INDEX value passed to -x.
+  - Options `--authhandle` and `--handle-passwd`
+    changes to `--hierarchy` and `--auth-hierarchy` respectively.
+  - fix a buffer overflow.
+
+* tpm2_nvreadlock:
+  - -x used to specify nv index is now an argument.
+  - \--auth-hierarchy is now \--auth.
+  - -a is now -C
+  - long form for -P is now \--auth-hierarchy.
+
+* tpm2_nvrelease:
+  - tpm2_nvrelease is now tpm2_nvundefine.
+  - \--auth-hierarchy is now \--auth.
+  - -a is now -C.
+  - long-form of -P becomes \--auth-hierarchy.
+  - -x used to specify nv index is now an argument.
+
+* tpm2_nvwrite:
+  - -x used to specify nv index is now an argument.
+  - -i or --input is now the method to specify file data to write.
+  - \--auth-hierarchy is now \--auth.
+  - -L and -F pcr policy options go away, replaced with pcr password minilanguage.
+  - -a is now -C.
+  - Remove small option for \--offset.
+  - when -P is "index" -a is optional and defaults to
+    the NV_INDEX value passed to -x.
+  - Options `--authhandle` and `--handle-passwd`
+    changes to `--hierarchy` and `--auth-hierarchy` respectively.
+  - fix a buffer overflow.
+
+* tpm2_nvundefine:
+  - renamed from tpm2_nvrelease.
+
+* tpm2_pcrallocate:
+  - new tool for changing the allocated PCRs of a TPM.
+
+* tpm2_pcrevent:
+  - -x becomes an argument.
+  - \--auth-pcr is now \--auth.
+  - Fix -i option to -x.
+  - Option `--passwd` changes to `--auth-pcr`
+
+* tpm2_pcrlist:
+  - -gls options go away with -g and -l becoming a single argument.
+  - \--halg is now \--hash-algorithm.
+  - \--out-file is now \--output.
+  - \--algs is now \--pcr-algorithms.
+  - \--sel-list is now \--pcr-list.
+  - -L is now -l.
+  - Remove unused -f option.
+  - Option `--algorithm` changes to `--halg`, which is in line with other tools.
+
+* tpm2_pcrread:
+  - renamed from tpm2_pcrlist.
+
+* tpm2_print:
+  - -i becomes an argument.
+  - \--in-file is now \--input.
+
+* tpm2_policyauthorize:
+  - \--policy-output is now \--policy.
+  - \--input is now the option for specifying the policy to authorize.
+  - \--qualification-data is now \--qualification.
+  - -o is now -L.
+  - -L is now -i.
+  - \--out-policy-file is now \--policy-output.
+  - \--in-policy-file is now \--policy.
+  - \--qualify-data is now \--qualification-data.
+  - -i is now -L.
+  - Fix -f option to -i.
+
+* tpm2_policycommandcode:
+  - \--out-policy-file is now \--policy.
+  - -o is now -L.
+  - Fix long version of \--policy-file to \--out-policy-file.
+
+* tpm2_policyduplicationselect:
+  - add tool for creating a policy to restrict duplication to a new parent.
+
+* tpm2_policylocality:
+  - add tool for creating a policy restricted to a locality.
+
+* tpm2_policypcr:
+  - \--out-policy-file is now \--policy.
+  - \--pcr-input-file is now \--pcr.
+  - \--set-list is now \--pcr-list.
+  - -o is now -L.
+  - -F is now -f.
+  - -L is now -l.
+  - Fix long version of \--policy-file to \--out-policy-file.
+  - Fix -f option to -o.
+
+* tpm2_policyor:
+  - \--out-policy-file is now \--policy.
+  - -o is now -L.
+  - -L is now -l.
+  - Fix long version of \--policy-file to \--out-policy-file.
+
+* tpm2_policypassword:
+  - \--out-policy-file is now \--policy.
+  - -o is now -L.
+  - Fix long version of \--policy-file to \--out-policy-file.
+
+* tpm2_policysecret:
+  - \--context is now \--object-context.
+  - \--out-policy-file is now \--policy.
+  - -o is now -L.
+  - Fix long version of \--policy-file to \--out-policy-file.
+
+* tpm2_quote:
+  - \--auth-ak is now \--ak-auth.
+  - \--id-list is now \--pcr-index.
+  - \--sel-list is now \--pcr-list.
+  - \--qualify-data is now \--qualification-data.
+  - \--pcrs is now \--pcr.
+  - \--halg is now \--hash-signature.
+  - -l is now -i.
+  - -L is now -l.
+  - -p is now -f.
+  - -f is now -F.
+  - -F becomes -f.
+  - -f becomes -o.
+  - -C and -P becomes -c and -p respectively.
+  - -g becomes optional.
+  - \--qualification-data is now \--qualification.
+  - Fix -G option to -g.
+  - Option `--ak-passwd` changes to `--auth-ak`
+
+* tpm2_readpublic:
+  - \--out-file is now \--output.
+  - \--context is now \--object-context.
+  - support serializing ESYS_TR handle to disk.
+  - supports saving the binary name via -n.
+  - supports ECC pem and der file generation.
+
+* tpm2_rsadecrypt:
+  - add -l for specifying label.
+  - drop -i input option and make argument.
+  - \--auth-key is now \--auth.
+  - \--in-file is now \--input.
+  - \--out-file is now \--output.
+  - -I becomes -i
+  - -P becomes -p.
+  - Option `--pwdk` changes to `--auth-key`.
+
+* tpm2_rsaencrypt:
+  - add -l for specifying label.
+  - make output binary and either stdout or file based on -o.
+  - \--out-file is now \--output.
+
+* tpm2_selftest:
+  - tool for invoking tpm selftest.
+
+* tpm2_send:
+  - \--out-file is now \--output.
+
+* tpm2_sign:
+  - Drop -m and -d option arguments and make them sole argument.
+  - Remove the -m option and make -d toggle if input is a digest.
+  - \--auth-key is now \--auth.
+  - \--halg is now \--hash-algorithm.
+  - \--sig-scheme is now \--scheme.
+  - \--out-sig is now \--signature.
+  - -D is now -d
+  - Fix -G option to -g.
+  - supports rsapss.
+  - -s becomes -o and -s is for signing scheme.
+  - -P becomes -p.
+  - -g becomes -G.
+  - Option `--pwdk` changes to `--auth-key`.
+  - supports signing a pre-computed hash via -D.
+
+* tpm2_startauthsession:
+  - \--halg is now \--hash-algorithm.
+  - \--key is now \--key-context.
+  - -k is now -c
+  - support encrypted and bound sessions.
+  - Remove small option -a and rename long option to \--policy-session.
+  - Fix long version of \--policy-digest-alg to \--halg.
+  - now saves a context file for the generated primary's handle to disk.
+
+* tpm2_stirrandom:
+  - new command for injecting entropy into the TPM.
+
+* tpm2_takeownership:
+  - split into tpm2_clear and tpm2_changeauth
+
+* tpm2_testparms:
+  - new tool for querying tpm for supported algorithms.
+
+* tpm2_unseal:
+  - \--auth-key is now \--auth.
+  - \--out-file is now \--output.
+  - \--context-object is now object-context.
+  - -L and -F pcr policy options go away, replaced with pcr password
+    minilanguage.
+  - \--P becomes -p.
+  - Option `--pwdk` changes to `--auth-key`.
+
+* tpm2_verifysignature:
+  - \--halg is now \--hash-algorithm.
+  - \--sig is now \--signature.
+  - -D is now -d.
+  - Fix -G option to -g.
+  - stop outputting message hash.
+  - issues a warning when ticket is specified for a NULL hierarchy.
+  - make -t optional.
+  - -g becomes -G.
+  - Option `-r` changes to `-f` and supports signature format "rsa".
+  - Option `-r` and `--raw` have been removed. This were unused within the tool.
+
+* misc:
+  - cmac algorithm support.
+  - Add support for reading authorisation passwords from a file.
+  - Ported all tools from SAPI to ESAPI.
+  - Load TCTI's by SONAME, not raw .so file.
+  - system tests are now run with make check when --enable-unit is used in configure.
+  - Libre SSL builds fixed.
+  - Dynamic TCTIS. Support for pluggable TCTI modules via the -T or --tcti
+    options.
+  - test: system testing scripts moved into subordinate test directory.
+  - configure: enable code coverage option.
+  - env: add TPM2TOOLS_ENABLE_ERRATA to control the -Z or errata option.
+    affects all tools.
+    ### 3.2.1-rc0 - 2019-08-05
+     * Correct PCR logic to prevent memory corruption bug.
+     * errata handler fix.
+
+### 3.2.0 - 2019-06-19
+  * fix configure bug for linking against libmu.
+  * tpm2_changeauth: Support changing platform hierarchy auth.
+  * tpm2_flushcontext: Introduce new tool for flushing handles from the TPM.
+  * tpm2_checkquote: Introduce new tool for checking validity of quotes.
+  * tpm2_quote: Add ability to output PCR values for quotes.
+  * tpm2_makecredential: add support for executing tool off-TPM.
+  * tpm2_pcrreset: introduce new tool for resetting PCRs.
+  * tpm2_quote: Fix AK auth password not being used.
+
+### 3.1.4 - 2019-03-14
+  * Fix various man pages
+  * tpm2_getmanufec: fix OSSL build warnings
+  * Fix broken -T option
+  * Various build compatibility fixes
+  * Fix some unit tests
+  * Update build for recent autoconf-archive versions
+  * Install m4 files
+
+### 3.1.3 - 2018-10-15
+  * Restore support for the TPM2TOOLS_* env vars for TCTI configuration, in
+  addition to supporting the new unified TPM2TOOLS_ENV_TCTI
+  * Fix tpm2_getcap to print properties with the TPM_PT prefix, rather than
+  TPM2_PT
+  * Make test_tpm2_activecredential Python 3 compatible
+  * Fix tpm2_takeownership to only attempt to change the specified hierarchies
+
+### 3.1.2 - 2018-08-14
+  * Revert the change to use user supplied object attributes exclusively. This is an inappropriate behavioural change for a MINOR version number increment.
+  * Fix inclusion of object attribute specifiers section in tpm2_create and tpm2_createprimary man pages.
+  * Use better object attribute defaults for authentication, preventing an empty password being used for authentication when a policy is set.
+
+### 3.1.1 - 2018-07-09
+  * Allow man page installation without pandoc being available
+
+### 3.1.0 - 2018-06-21
+  * Update to use TSS version 2.0
+  * When user supplies nv attributes use those exclusively, not in addition to the defaults
+  * When user supplies object attributes use those exclusively, not in addition to the defaults
+  * Load TCTI's by SONAME, not raw .so file
+
+### 3.0.4 - 2018-05-30
+  * Fix save and load for TPM2B_PRIVATE object.
+  * Use a default buffer size for tpm2_nv{read,write} if the TPM reports a 0 size.
+  * Fix --verbose and --version options crossover.
+  * Generate man pages from markdown and include them in the distribution tarball.
+  * Print usage summary if tools are executed with no options or man page can't be displayed.
+
+### 3.0.3 - 2017-15-18
+  * Tools that don't need a TPM to work no longer request
+    a TPM connection. Namely, tpm2_rc_decode
+  * Fix undefined references in libmarshal port.
 
 ### 3.0.2 - 2017-12-18
   * configure: enable code coverage option.
