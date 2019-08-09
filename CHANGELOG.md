@@ -3,59 +3,52 @@
 * tpm2_activatecredential:
   - \--context is now \--credentialedkey-context.
   - \--key-context is now \--credentialkey-context.
-  - \--auth-key is now \--credentialedkey-auth.
-  - \--auth-endorse is now \--credentialkey-auth.
+  - \--Password is now \--credentialedkey-auth.
+  - \--endorse-passwd is now \--credentialkey-auth.
   - \--in-file is now \--credential-secret.
   - \--out-file is now \--certinfo-data.
-  - -f becomes -i
-  - Option \--endorse-passwd changes to \--auth-endorse.
+  - -f becomes -i.
+  - -k becomes -C.
   - -e becomes -E.
-  - Option `--Password` changes to `--auth-key`.
 
 * tpm2_certify:
   - \--halg is now \--hash-algorithm.
   - \--obj-context is now \--certifiedkey-context.
   - \--key-context is now \--signingkey-context.
-  - \--auth-object is now \--certifiedkey-auth.
-  - \--auth-key is now \--signingkey-auth.
-  - Fix -a option to -o.
+  - \--pwdo is now \--certifiedkey-auth.
+  - \--pwdk is now \--signingkey-auth.
+  - -a becomes -o.
   - -k becomes -p.
-  - -c and -C are swapped, -k becomes -K.
-  - Options `--pwdo` and `--pwdk` change to `--auth-object` and
-    `--auth-key` respectively.
+  - -c becomes -C.
+  - -k becomes -K.
 
 * tpm2_changeauth:
-  - tool options change to support only one object at a time.
-    Most command line options changed.
-  - \--privfile becomes \--private.
-  - Fix -o/-O option to -w/-W.
-  - Options, `--old-owner-passwd`, `--old-endorse-passwd`,
-    and `--old-lockout-passwd` go to `--old-auth-owner`, `--old-auth-endorse`,
-    and `--old-auth-lockout` respectively.
+  - new tool for changing the authorization values of:
+    - Hierarchies
+    - NV
+    - Objects
+  - Replaces tpm2_takeownership with more generic functionality.
 
 * tpm2_checkquote:
   - \--halg is now \--hash-algorithm.
   - \--pcr-input-file is now \--pcr.
   - \--pubfile is now \--public.
   - \--qualify-data is now \--qualification.
-  - -f is now -F.
-  - -F is now -f.
-  - Fix -G option to -g
+  - -f becomes -F.
+  - -F becomes -f.
+  - -G becomes -g.
 
 * tpm2_clear:
-  - Option `--lockout-passwd` changes to `--auth-lockout`
+  - \--lockout-passwd is now \--auth-lockout.
 
 * tpm2_clearcontrol:
   - new tool for enabling or disabling tpm2_clear commands.
 
-* tpm2_clearlock:
-  - tool added.
-
 * tpm2_create
   - \--object-attributes is now \--attributes.
   - -o is now -c
-  - \--auth-parent is now \--parent-auth.
-  - \--auth-key is now \--key-auth.
+  - \--pwdp is now \--parent-auth.
+  - \--pwdo is now \--key-auth.
   - \--in-file is now \--sealing-input.
   - \--policy-file is now \--policy.
   - \--pubfile is now \--public.
@@ -63,12 +56,12 @@
   - \--out-context is now \--key-context.
   - \--halg is now \--hash-algorithm.
   - \--kalg is now \--key-algorithm.
-  - Fix -A option to -b for attributes.
-  - -I becomes -i
+  - -K becomes -p.
+  - -A becomes -b.
+  - -I becomes -i.
   - supports TPM command CreateLoaded via -c.
-  - -g/-G become optional options.
-  - Options `--pwdo` and `--pwdk` change to `--auth-object` and
-    `--auth-key` respectively.
+  - -g become an optional option.
+  - -G become an optional option.
 
 * tpm2_createak:
   - renamed from tpm2_getpubak
@@ -80,36 +73,33 @@
   - \--out-policy-file is now \--policy.
   - \--policy-digest-alg is now \--policy-algorithm.
   - \--pcr-input-file is now \--pcr.
-  - -o is now -L.
-  - -L is now -l.
-  - -F is now -f.
-  - Remove small option -a and rename long option to \--policy-session.
-  - Fix -f option to -o.
-  - Fix -P option to \--policy-pcr.
+  - \--auth-policy-session is now \--policy-session.
+  - -o becomes -l.
+  - -F becomes -f.
+  - -f becomes -o.
+  - Remove -a.
+  - Remove -P.
 
 * tpm2_createprimary:
   - \--object-attributes is now \--attributes.
   - -o is now -c
-  - \--auth-hierarchy is now \--hierarchy-auth.
-  - \--auth-object is now \--key-auth.
+  - \--pwdp is now \--hierarchy-auth.
+  - \--pwdk is now \--key-auth.
   - \--halg is now \--hash-algorithm.
   - \--kalg is now \--key-algorithm.
   - \--context-object is now \--key-context.
   - \--policy-file is now \--policy.
-  - Fix -A option to -b for attributes.
-  - add -u for supporting unique field when creating objects.
-  - now saves a context file for the generated primary's handle to disk.
+  - support for unique field when creating objects via -u
+  - saves a context file for the generated primary's handle to disk via -c.
+  - -A becomes -a.
   - -K becomes -p.
-  - -K becomes -k.
-  - -g/-G become optional options.
-  - Options `--pwdp` and `--pwdk` change to
-    `--auth-hierarchy` and `--auth-object` respectively.
-  - `-H` changes to `-a` for specifying hierarchy.
+  - -H becomes -C.
+  - -g becomes optional.
+  - -G becomes optional.
 
 * tpm2_dictionarylockout:
-  - \--auth-lockout is now \--auth.
+  - \--lockout-passwd is now \--auth.
   - -P becomes -p.
-  - Option `--lockout-passwd` changes to `--auth-lockout`
 
 * tpm2_duplicate:
   - add new tool for duplicating TPM objects.
