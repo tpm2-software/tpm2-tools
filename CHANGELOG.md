@@ -1,5 +1,7 @@
 ## Changelog
 ### next
+  * tpm2_policyduplicationselect: Update long option
+    - Change option include-if-exists to include-object
   * tpm2_getekcertificate: Added option for getting ek cert for offline platform
     - -x is the short option and offline is the long option
   * tpm2_getekcertificate: Short and long options changed

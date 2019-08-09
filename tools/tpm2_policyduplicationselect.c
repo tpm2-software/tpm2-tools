@@ -65,7 +65,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object-name",        required_argument,  NULL,   'n' },
         { "parent-name",        required_argument,  NULL,   'N' },
         { "policy",             required_argument,  NULL,   'L' },
-        { "include-if-exists",  no_argument,        NULL,    0  },
+        { "include-object",     no_argument,        NULL,    0  },
     };
 
     *opts = tpm2_options_new("S:n:N:L:", ARRAY_LEN(topts), topts, on_option,
