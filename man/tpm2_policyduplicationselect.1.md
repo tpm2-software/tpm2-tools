@@ -31,7 +31,7 @@
 
     File to save the policy digest.
 
-  * **\--include-object-if-exists**:
+  * **\--include-object**:
 
     If exists, the object name will be included in the value in policy digest.
 
