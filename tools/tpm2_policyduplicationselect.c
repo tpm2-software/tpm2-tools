@@ -49,10 +49,7 @@ bool is_input_option_args_valid(void) {
         LOG_ERR("Must specify -S session file.");
         return false;
     }
-    if (!ctx.obj_name_path) {
-        LOG_ERR("Must specify -n object name file.");
-        return false;
-    }
+
     if (!ctx.new_parent_name_path) {
         LOG_ERR("Must specify -N object new parent file.");
         return false;
