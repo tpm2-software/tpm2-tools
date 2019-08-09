@@ -39,6 +39,40 @@
 
 [common tcti options](common/tcti.md)
 
+# EXAMPLES
+
+## Setup a duplication role policy to restricted new parent
+
+### Create source parent and destination(or new) parent
+```bash
+tpm2_createprimary -C n -g sha256 -G rsa -c dst_n.ctx -Q
+tpm2_createprimary -C o -g sha256 -G rsa -c src_o.ctx -Q
+```
+
+### Create the restricted parent policy
+```bash
+tpm2_readpublic -c dst_n.ctx -n dst_n.name -Q
+tpm2_startauthsession -S session.ctx
+tpm2_policyduplicationselect -S session.ctx  -N dst_n.name -L policydupselect.dat -Q
+tpm2_flushcontext session.ctx
+rm session.ctx
+```
+
+### Create the object to be duplicated using the policy
+```bash
+tpm2_create -C src_o.ctx -g sha256 -G rsa -r dupkey.priv -u dupkey.pub -L policydupselect.dat  -a "sensitivedataorigin|sign|decrypt" -c dupkey.ctx -Q
+tpm2_readpublic -c dupkey.ctx -n dupkey.name -Q
+```
+
+### Satisfy the policy and duplicate the object
+```bash
+tpm2_startauthsession -S session.ctx --policy-session
+tpm2_policyduplicationselect -S session.ctx  -N dst_n.name -n dupkey.name -Q
+tpm2_duplicate -C dst_n.ctx -c dupkey.ctx -G null -p session:session.ctx -r new_dupkey.priv -s dupseed.dat
+tpm2_flushcontext  session.ctx
+rm session.ctx
+```
+
 # NOTES
 
 * This command usually cooperates with **tpm2_duplicate**(1), so referring to the man page of **tpm2_duplicate**(1)
