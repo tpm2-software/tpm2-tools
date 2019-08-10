@@ -23,7 +23,7 @@
   - -k becomes -K.
 
 * tpm2_changeauth:
-  - new tool for changing the authorization values of:
+  - New tool for changing the authorization values of:
     - Hierarchies
     - NV
     - Objects
@@ -42,7 +42,7 @@
   - \--lockout-passwd is now \--auth-lockout.
 
 * tpm2_clearcontrol:
-  - new tool for enabling or disabling tpm2_clear commands.
+  - New tool for enabling or disabling tpm2_clear commands.
 
 * tpm2_create
   - \--object-attributes is now \--attributes.
@@ -59,12 +59,12 @@
   - -K becomes -p.
   - -A becomes -b.
   - -I becomes -i.
-  - supports TPM command CreateLoaded via -c.
   - -g become an optional option.
   - -G become an optional option.
+  - Supports TPM command CreateLoaded via -c.
 
 * tpm2_createak:
-  - renamed from tpm2_getpubak
+  - Renamed from tpm2_getpubak
 
 * tpm2_createek:
   - renamed from tpm2_getpubek
@@ -102,67 +102,53 @@
   - -P becomes -p.
 
 * tpm2_duplicate:
-  - add new tool for duplicating TPM objects.
+  - Add new tool for duplicating TPM objects.
 
 * tpm2_encryptdecrypt:
-  - drop -i input option and make argument.
-  - \--auth-key is now \--auth.
+  - \----pwdk is now \--auth.
   - \--out-file is now \--output.
   - -D becomes -d.
-  - Enable back IV support via -t or \--iv.
-  - -I becomes -i
+  - -I becomes an argument.
   - -P becomes -p.
-  - Support IVs via -t and algorithm modes via -G.
-  - supports input and output to stdin and stdout respectively.
-  - Option `--pwdk` changes to `--auth-key`.
+  - Support IVs via -t or \--iv.
+  - Support modes via -G.
+  - Support padding via -e or \--pad.
+  - Supports input and output to stdin and stdout respectively.
 
 * tpm2_evictcontrol:
-  - \--auth-hierarchy is now \--auth.
+  - \----hierarchy is now \--auth.
   - \--context is now \--key-context.
   - -p becomes an argument.
-  - -a becomes -C.
-  - support serializing ESYS_TR handle to disk.
-  - Option group `-A` and `--auth` changes to `-a` and `--hierarchy`
-    Option `--pwda` changes to `--auth-hierarchy`
+  - -A becomes -C.
+  - Support serializing ESYS_TR handle to disk.
+  - Option group `-A` and `--auth` changes to `-a` and ``
 
 * tpm2_getcap:
   - -c becomes an argument.
-  - most instances of value replaced with raw in YAML output.
+  - Most instances of value replaced with raw in YAML output.
   - TPM2_PT_MANUFACTURER displays string value and raw value.
-  - supports \--pcr option for listing hash algorithms and bank numbers.
+  - Supports \--pcr option for listing hash algorithms and bank numbers.
 
 * tpm2_getekcertificate:
-  - renamed from tpm2_getmanufec
+  - Renamed from tpm2_getmanufec
 
 * tpm2_getmanufec:
   - Renamed the tool to tpm2_getekcertificate.
   - Removed ek key creation and management logic.
   - Added option for getting ek cert for offline platform via -x.
-  - \--ec-cert is now \--ek-certificate
-  - \--untrusted is now \--allow-unverified
-  - output is now ek-public
-  - -E is now -o
-  - -U is now -X
-  - -o is now -u
-  - Removed option -P or --eh-auth.
-  - Removed option -p or --ek-auth.
-  - Removed option -w or --owner-auth.
-  - Removed option -H or --persistent-handle.
-  - Removed option -G or --key-algorithm.
-  - Removed option -N or --non-persistent.
-  - Removed option -O or --offline.
-  - \--auth-endorse is now \--eh-auth.
-  - \--auth-owner is now \--owner-auth.
-  - \--auth-ek is now \--ek-auth.
-  - \--handle is now \--persistent-handle.
-  - \--algorithm is now \--ek-algorithm.
-  - -e is now -P.
-  - -P is now -p.
-  - Fix -o option to -w and -f option to -o.
-  - -g changes to -G.
-  - Options `--owner-passwd`, `--endorse-passwd`
-    and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
-    and `--auth-ek` respectively.
+  - \--ec-cert is now \--ek-certificate,
+  - \--untrusted is now \--allow-unverified,
+  - \--output is now \--ek-public,
+  - -U is now -X.
+  - -O is now -x.
+  - -f becomes -o.
+  - Removed option -P or \--endorse-passwd.
+  - Removed option -p or \--ek-passwd.
+  - Removed option -w or \--owner-passwd.
+  - Removed option -H or \--persistent-handle.
+  - Removed option -G or \--key-algorithm.
+  - Removed option -N or \--non-persistent.
+  - Removed option -O or \--offline.
 
 * tpm2_getpubak:
   - renamed to tpm2_createak.
@@ -184,30 +170,26 @@
   - now saves a context file for the generated primary's handle to disk.
   - -E becomes -e.
   - -g changes to -G.
-  - Options `--owner-passwd`, `--endorse-passwd`
-    and `--ak-passwd`change to `--auth-owner`, `--auth-endorse`
-    and `--auth-ak` respectively.
   - support for non-persistent AK generation.
 
 * tpm2_getpubek:
   - renamed to tpm2_createek
-  - \--auth-endorse is now \--eh-auth.
-  - \--auth-owner is now \--owner-auth.
-  - \--auth-ek is now \--ek-auth.
+  - \--endorse-passwd is now \--eh-auth.
+  - \--owner-passwd is now \--owner-auth.
+  - \--ek-passwd is now \--ek-auth.
   - \--file is now \--public.
   - \--context is now \--ek-context.
   - \--algorithm is now \--key-algorithm.
   - -e is now -P.
   - -P is now -p.
   - -p is now -u.
-  - Fix -o option to -w.
-  - now saves a context file for the generated primary's handle to disk.
-  - -g changes to -G.
-  - Options `--owner-passwd`, `--endorse-passwd`
-    and `--ek-passwd`change to `--auth-owner`, `--auth-endorse`
-    and `--auth-ek` respectively.
+  - -o is now -w.
+  - -g is now -G.
+  - Support for saving a context file for the generated primary keys handle
+    to disk.
   - support for non-persistent EK generation.
-  - -f becomes -p and -f is used for format of public key output.
+  - -f is now -p.
+  - -f support for format of public key output.
 
 * tpm2_getrandom:
   - change default output to binary.
@@ -221,23 +203,21 @@
 * tpm2_hash:
   - add \--hex for specifying hex output.
   - default output of hash to stdout.
-  - default output of hash to binary.
+  - default output of hash as binary.
   - remove output of ticket to stdout.
   - \--halg is now \--hash-algorithm.
   - \--out-file is now \--output.
   - -a is now -C.
-  - Fix -G option to -g.
-  - -g changes to -G.
-  - `-H` changes to `-a` for specifying hierarchy.
+  - -H is now -a.
 
 * tpm2_hmac:
   - add -t option for specifying ticket result.
   - \--out-file is now \--output.
   - \--auth-key is now \--auth.
+  -\--algorithm is now \--hash-algorithm.
+  - \--pwdk is now \--auth-key.
   - -C is now -c.
   - -P is now -p.
-  - Option `--algorithm` changes to `--halg`, which is in line with the manpage.
-  - Option `--pwdk` changes to `--auth-key`.
 
 * tpm2_hierarchycontrol:
   - new tool added for enabling or disabling the use
@@ -255,8 +235,8 @@
   - \--halg is now \--hash-algorithm.
   - \--policy-file is now \--policy.
   - \--sym-alg-file is now \--encryption-key.
-  - Fix -A option to -b for attributes.
-  - Fix -k option to -i.
+  - -A is now -b.
+  - -k is now -i.
   - support OSSL style -passin argument as \--passin for PEM file passwords.
   - support additional import key types:
     - RSA1024/2048.
@@ -294,7 +274,8 @@
   - \--policy-file is now \--policy.
   - \--halg is now \--hash-algorithm.
   - \--out-context is now \--key-context.
-  - Remove unused -P option
+  - Remove unused -P option.
+  - -H is now -a.
   - Fix -A option to -b for attributes.
   - now saves a context file for the generated primary's handle to disk.
   - support OSSL style -passin argument as \--passin for PEM file passwords.
@@ -305,26 +286,20 @@
   - Object Attribute support.
   - Object authorization support.
   - Default hierarchy changes to the *null* hierarchy.
-  - `-H` changes to `-a` for specifying hierarchy.
 
 * tpm2_makecredential:
-  - long option output becomes credential-blob
+  - \--out-file is now \--credential-blob
   - \--enckey is now \--encryption-key.
-  - \--out-file is now \--output.
-  - Fix \--enc-key option to \--enckey.
   - Option `--sec` changes to `--secret`.
 
 * tpm2_nvdefine:
   - -x used to specify nv index is now an argument.
-  - \--auth-hierarchy is now \--hierarchy-auth.
-  - \--auth-index is now \--index-auth.
+  - \--authhandle is now \--hierarchy.
+  - \--handle-passwd is now \--hierarchy-auth.
+  - \--index-passwd is now \--index-auth.
   - \--policy-file is now \--policy.
-  - Fix -A option to -b for attributes.
-  - Fix -t option to -b.
+  - -t becomes -a.
   - -I becomes -p.
-  - Options `--authhandle`, `--handle-passwd` and `--index-passwd`
-    changes to `--hierarchy`, `--auth-hierarchy` and `--auth-index`
-    respectively.
 
 * tpm2_nvincrement:
   - -x used to specify nv index is now an argument.
