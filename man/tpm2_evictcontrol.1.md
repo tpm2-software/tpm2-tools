@@ -6,12 +6,16 @@
 
 # SYNOPSIS
 
-**tpm2_evictcontrol** [*OPTIONS*]
+**tpm2_evictcontrol** [*OPTIONS*] _HANDLE_
 
 # DESCRIPTION
 
 **tpm2_evictcontrol**(1) - Allows a transient object to be made persistent or a persistent object to
-be evicted.
+be evicted. The _HANDLE_ argument controls the index the handle will be assigned to. If the object
+specified via **-c** is transient, and a permanent _HANDLE_ is specified, the object will be persisted
+at _HANDLE_. If _HANDLE_ is a -, then the object will be persisted at the first available permanent
+handle location. If the object specified via **-c** is a permanent handle, then the object will
+be evicted from it's permenent handle location.
 
 # OPTIONS
 
