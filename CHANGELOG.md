@@ -46,7 +46,6 @@
 
 * tpm2_create
   - \--object-attributes is now \--attributes.
-  - -o is now -c
   - \--pwdp is now \--parent-auth.
   - \--pwdo is now \--key-auth.
   - \--in-file is now \--sealing-input.
@@ -56,11 +55,12 @@
   - \--out-context is now \--key-context.
   - \--halg is now \--hash-algorithm.
   - \--kalg is now \--key-algorithm.
+  - -o becomes -c.
   - -K becomes -p.
   - -A becomes -b.
   - -I becomes -i.
-  - -g become an optional option.
-  - -G become an optional option.
+  - -g becomes an optional option.
+  - -G becomes an optional option.
   - Supports TPM command CreateLoaded via -c.
 
 * tpm2_createak:
@@ -72,13 +72,15 @@
 * tpm2_createpolicy:
   - \--out-policy-file is now \--policy.
   - \--policy-digest-alg is now \--policy-algorithm.
-  - \--pcr-input-file is now \--pcr.
   - \--auth-policy-session is now \--policy-session.
-  - -o becomes -l.
+  - -L becomes -l.
   - -F becomes -f.
   - -f becomes -o.
-  - Remove -a.
-  - Remove -P.
+  - Removed option \--set-list with short option -L.
+  - Removed option \--pcr-input-file with short option -F.
+  - Pcr policy options replaced with pcr password mini language.
+  - Removed short option a for specifying auth session. Use long option \--policy-session.
+  - Removed short option -P for specifying pcr policy. Use long option \--policy-pcr.
 
 * tpm2_createprimary:
   - \--object-attributes is now \--attributes.
@@ -102,10 +104,10 @@
   - -P becomes -p.
 
 * tpm2_duplicate:
-  - Add new tool for duplicating TPM objects.
+  - New tool for duplicating TPM objects.
 
 * tpm2_encryptdecrypt:
-  - \----pwdk is now \--auth.
+  - \--pwdk is now \--auth.
   - \--out-file is now \--output.
   - -D becomes -d.
   - -I becomes an argument.
@@ -116,12 +118,17 @@
   - Supports input and output to stdin and stdout respectively.
 
 * tpm2_evictcontrol:
-  - \----hierarchy is now \--auth.
+  - \--auth is now \--hierarchy.
   - \--context is now \--object-context.
-  - -p becomes an argument.
+  - \--pwda is now \--auth.
+  - \--persistent with short option -S is now an argument.
   - -A becomes -C.
-  - Support serializing ESYS_TR handle to disk.
-  - Option group `-A` and `--auth` changes to `-a` and ``
+  - Added option \--output -o to serialize handle to disk.
+  - Removed option \--handle with short option -H.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
+  - Removed option \--input-session-handle with short option -i.
+  - Authorization session is now part of password mini language.
 
 * tpm2_getcap:
   - -c becomes an argument.
@@ -293,204 +300,193 @@
   - Option `--sec` changes to `--secret`.
 
 * tpm2_nvdefine:
-  - -x used to specify nv index is now an argument.
-  - \--authhandle is now \--hierarchy.
   - \--handle-passwd is now \--hierarchy-auth.
   - \--index-passwd is now \--index-auth.
   - \--policy-file is now \--policy.
+  - \--auth-handle is now \--hierarchy.
+  - -a becomes -C.
   - -t becomes -a.
   - -I becomes -p.
+  - Removed option \--index with short option -x. It is now an argument.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
 
 * tpm2_nvincrement:
-  - New tool for incrememnting NVs configured as counters.
+  - New tool to increment value of a Non-Volatile (NV) index setup as a
+  counter.
 
 * tpm2_nvlist:
   - tpm2_nvlist is now tpm2_nvreadpublic.
 
 * tpm2_nvread:
-  - -x used to specify nv index is now an argument.
-  - \--out-file is now \--output.
-  - \--auth-hierarchy is now \--auth.
-  - \--handle-passwd is now \--hierarchy.
-  - -a is now -C.
-  - -f is now -o.
-  - -L and -F pcr policy options go away, replaced with pcr password minilanguage.
-  - when -P is "index" -a is optional and defaults to
-    the NV_INDEX value passed to -x.
-
-* tpm2_nvreadlock:
-  - -x used to specify nv index is now an argument.
-  - \--auth-hierarchy is now \--auth.
-  - -a is now -C
-  - long form for -P is now \--auth-hierarchy.
-
-* tpm2_nvrelease:
-  - -x used to specify nv index is now an argument.
-  - tpm2_nvrelease is now tpm2_nvundefine.
   - \--handle-passwd is now \--auth.
-  - -a is now -C.
-
-* tpm2_nvwrite:
-  - -x used to specify nv index is now an argument.
-  - -i or --input is now the method to specify file data to write.
-  - \--handle-passwd is now \--auth.
-  - -L and -F pcr policy options go away, replaced with pcr password minilanguage.
-  - -a is now -C.
-  - Remove small option -o for specifying offset.
-  - when -P is "index" -a is optional and defaults to
-    the NV_INDEX value passed.
+  - \--auth-handle is now \--hierarchy.
+  - -a becomes -C.
+  - Removed option \--index with short option -x. It is now an argument.
+  - Removed short option -o for specifying offset. Use long option \--offset.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
+  - Removed option \--set-list with short option -L.
+  - Removed option \--pcr-input-file with short option -F.
+  - Pcr policy options replaced with pcr password mini language.
   - fix a buffer overflow.
 
+* tpm2_nvreadlock:
+  - \--handle-passwd is now \--auth.
+  - \--auth-handle is now \--hierarchy.
+  - -a becomes -C.
+  - Removed option \--index with short option -x. It is now an argument.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
+
+* tpm2_nvwrite:
+  - \--handle-passwd is now \--auth.
+  - \--auth-handle is now \--hierarchy.
+  - -a becomes -C.
+  - Removed option \--index with short option -x. It is now an argument.
+  - Removed short option -o for specifying offset. Use long option \--offset.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
+  - Removed option \--set-list with short option -L.
+  - Removed option \--pcr-input-file with short option -F.
+  - Pcr policy options replaced with pcr password mini language.
+
+* tpm2_nvrelease:
+  - \--handle-passwd is now \--auth.
+  - \--auth-handle is now \--hierarchy.
+  - -a becomes -C.
+  - Removed option \--index with short option -x. It is now an argument.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
+
 * tpm2_nvundefine:
-  - renamed from tpm2_nvrelease.
+  - Renamed from tpm2_nvrelease.
 
 * tpm2_pcrallocate:
-  - new tool for changing the allocated PCRs of a TPM.
+  - New tool for changing the allocated PCRs of a TPM.
 
 * tpm2_pcrevent:
-  - -x becomes an argument.
-  - \--auth-pcr is now \--auth.
-  - Fix -i option to -x.
-  - Option `--passwd` changes to `--auth-pcr`
+  - \--password is now \--auth.
+  - Removed option \--pcr-index with short option -i.
+  - PCR index is now specified as an argument.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
 
 * tpm2_pcrlist:
   - -gls options go away with -g and -l becoming a single argument.
-  - \--halg is now \--hash-algorithm.
-  - \--out-file is now \--output.
-  - \--algs is now \--pcr-algorithms.
-  - \--sel-list is now \--pcr-list.
-  - -L is now -l.
-  - Remove unused -f option.
-  - Option `--algorithm` changes to `--halg`, which is in line with other tools.
 
 * tpm2_pcrread:
-  - renamed from tpm2_pcrlist.
+  - Renamed from tpm2_pcrlist.
 
 * tpm2_print:
-  - -i becomes an argument.
-  - \--in-file is now \--input.
+  - New tool that decodes a TPM data structure and prints enclosed elements
+  to stdout as YAML.
 
 * tpm2_policyauthorize:
-  - \--policy-output is now \--policy.
-  - \--input is now the option for specifying the policy to authorize.
-  - \--qualification-data is now \--qualification.
-  - -o is now -L.
-  - -L is now -i.
-  - \--out-policy-file is now \--policy-output.
-  - \--in-policy-file is now \--policy.
-  - \--qualify-data is now \--qualification-data.
-  - -i is now -L.
-  - Fix -f option to -i.
+  - New tool that allows for policies to change by associating the policy to
+  a signing authority essentially allowing the auth policy to change.
 
 * tpm2_policycommandcode:
-  - \--out-policy-file is now \--policy.
-  - -o is now -L.
-  - Fix long version of \--policy-file to \--out-policy-file.
+  - New tool to restricts TPM object authorization to specific TPM commands.
 
 * tpm2_policyduplicationselect:
-  - add tool for creating a policy to restrict duplication to a new parent.
+  - New tool for creating a policy to restrict duplication to a new parent
+  and or duplicable object.
 
 * tpm2_policylocality:
-  - add tool for creating a policy restricted to a locality.
+  - New tool for creating a policy restricted to a locality.
 
 * tpm2_policypcr:
-  - \--out-policy-file is now \--policy.
-  - \--pcr-input-file is now \--pcr.
-  - \--set-list is now \--pcr-list.
-  - -o is now -L.
-  - -F is now -f.
-  - -L is now -l.
-  - Fix long version of \--policy-file to \--out-policy-file.
-  - Fix -f option to -o.
+  - New tool to generate a pcr policy event that bounds auth to specific PCR
+  values in user defined pcr banks and indices.
 
 * tpm2_policyor:
-  - \--out-policy-file is now \--policy.
-  - -o is now -L.
-  - -L is now -l.
-  - Fix long version of \--policy-file to \--out-policy-file.
+  - New tool to compound multiple policies in a logical OR fashion to allow
+  multiple auth methods using a policy session.
 
 * tpm2_policypassword:
-  - \--out-policy-file is now \--policy.
-  - -o is now -L.
-  - Fix long version of \--policy-file to \--out-policy-file.
+  - New tool to mandate specifying of the object password in clear using a
+    policy session.
 
 * tpm2_policysecret:
-  - \--context is now \--object-context.
-  - \--out-policy-file is now \--policy.
-  - -o is now -L.
-  - Fix long version of \--policy-file to \--out-policy-file.
+  - New tool to associate auth of a reference object as the auth of the new
+    object using a policy session.
 
 * tpm2_quote:
-  - \--auth-ak is now \--ak-auth.
-  - \--id-list is now \--pcr-index.
+  - \--ak-context is now \--key-context.
+  - \--ak-password is now \--auth.
   - \--sel-list is now \--pcr-list.
   - \--qualify-data is now \--qualification-data.
   - \--pcrs is now \--pcr.
-  - \--halg is now \--hash-signature.
-  - -l is now -i.
-  - -L is now -l.
-  - -p is now -f.
-  - -f is now -F.
-  - -F becomes -f.
-  - -f becomes -o.
-  - -C and -P becomes -c and -p respectively.
+  - \--sig-hash-algorithm is now \--hash-algorithm.
+  - -P becomes -p
+  - -L becomes -l.
+  - -p becomes -o.
+  - -G becomes -g.
   - -g becomes optional.
-  - \--qualification-data is now \--qualification.
-  - Fix -G option to -g.
-  - Option `--ak-passwd` changes to `--auth-ak`
+  - Removed option \--id-list with short option -l.
+  - Removed option \--ak-handle with short option -k.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
 
 * tpm2_readpublic:
-  - \--out-file is now \--output.
-  - \--context is now \--object-context.
-  - support serializing ESYS_TR handle to disk.
-  - supports saving the binary name via -n.
-  - supports ECC pem and der file generation.
+  - \--opu is now \--output.
+  - \--context-object is now \--object-context.
+  - Removed option \--object with short option -H.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
+  - Added \--serialized-handle for saving serialized ESYS_TR handle to disk.
+  - Added \--name with short option -n for  saving the binary name.
+  - Supports ECC pem and der file generation.
 
 * tpm2_rsadecrypt:
-  - add -l for specifying label.
-  - drop -i input option and make argument.
-  - \--auth-key is now \--auth.
-  - \--in-file is now \--input.
+  - \--pwdk is now \--auth.
   - \--out-file is now \--output.
-  - -I becomes -i
   - -P becomes -p.
-  - Option `--pwdk` changes to `--auth-key`.
+  - Added \--label with short option -l for specifying label.
+  - Removed option -I or in-file input option and make argument.
+  - Removed option \--key-handle with short option -k.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
 
 * tpm2_rsaencrypt:
-  - add -l for specifying label.
-  - make output binary and either stdout or file based on -o.
   - \--out-file is now \--output.
+  - Added \--scheme with short option -g for specifying encryption scheme.
+  - Added \--label with -l for specifying label.
+  - Removed option \--key-handle with short option -k.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
+  - make output binary either stdout or file based on -o.
 
 * tpm2_selftest:
-  - tool for invoking tpm selftest.
+  - New tool for invoking tpm selftest.
 
 * tpm2_send:
   - \--out-file is now \--output.
 
 * tpm2_sign:
-  - Drop -m and -d option arguments and make them sole argument.
-  - Remove the -m option and make -d toggle if input is a digest.
-  - \--auth-key is now \--auth.
+  - \--pwdk is now \--auth.
   - \--halg is now \--hash-algorithm.
-  - \--sig-scheme is now \--scheme.
-  - \--out-sig is now \--signature.
-  - -D is now -d
-  - Fix -G option to -g.
-  - supports rsapss.
-  - -s becomes -o and -s is for signing scheme.
+  - \--sig is now \--signature.
   - -P becomes -p.
-  - -g becomes -G.
-  - Option `--pwdk` changes to `--auth-key`.
-  - supports signing a pre-computed hash via -D.
+  - -s becomes -o.
+  - Added \--digest with short option -d.
+  - Added \--scheme with short option -s.
+  - Supports rsapss.
+  - Removed option \--key-handle with short option -k.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
+  - Removed option \--msg with short option -m.
+  - Make -d toggle if input is a digest.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
+  - Supports signing a pre-computed hash via -d.
 
 * tpm2_startauthsession:
-  - \--halg is now \--hash-algorithm.
-  - \--key is now \--key-context.
-  - -k is now -c
-  - support encrypted and bound sessions.
-  - Remove small option -a and rename long option to \--policy-session.
-  - Fix long version of \--policy-digest-alg to \--halg.
-  - now saves a context file for the generated primary's handle to disk.
+  - New tool to start/save a trial-policy-session (default) or policy-
+    authorization-session with command line option --policy-session.
 
 * tpm2_stirrandom:
   - new command for injecting entropy into the TPM.
@@ -502,25 +498,34 @@
   - new tool for querying tpm for supported algorithms.
 
 * tpm2_unseal:
-  - \--auth-key is now \--auth.
-  - \--out-file is now \--output.
-  - \--context-object is now object-context.
-  - -L and -F pcr policy options go away, replaced with pcr password
-    minilanguage.
-  - \--P becomes -p.
-  - Option `--pwdk` changes to `--auth-key`.
+  - \--pwdk is now \--auth.
+  - \--outfile is now \--output.
+  - \--item-context is now \--object-context.
+  - -P becomes -p
+  - Removed option \--item with short option -H.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
+  - Removed option \--input-session-handle with short option -S.
+  - Authorization session is now part of password mini language.
+  - Removed option \--set-list with short option -L.
+  - Removed option \--pcr-input-file with short option -F.
+  - Pcr policy options replaced with pcr password mini language.
+
 
 * tpm2_verifysignature:
   - \--halg is now \--hash-algorithm.
+  - \--msg is now \--message.
   - \--sig is now \--signature.
-  - -D is now -d.
-  - Fix -G option to -g.
-  - stop outputting message hash.
-  - issues a warning when ticket is specified for a NULL hierarchy.
-  - make -t optional.
-  - -g becomes -G.
-  - Option `-r` changes to `-f` and supports signature format "rsa".
-  - Option `-r` and `--raw` have been removed. This were unused within the tool.
+  - -D becomes -d.
+  - -t becomes optional.
+  - Issue warning when ticket is specified for a NULL hierarchy.
+  - Added option \--format with short option -f.
+  - Removed option \--raw with short option -r.
+  - Removed option \--key-handle with short option -k.
+  - Raw object-handles and object-contexts are commonly handled with object
+    handling logic.
+  - Support routines for OpenSSL compatible format of public keys (PEM, DER) and
+    plain signature data without TSS specific headers.
 
 * misc:
   - cmac algorithm support.
