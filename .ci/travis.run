@@ -50,7 +50,7 @@ else
     if [ -f `pwd`/tpm2-tools-scan.tgz ]; then
       echo "Submitting data to Coverity"
       curl --form token=$COVERITY_SCAN_TOKEN \
-        --form email=joshua.g.lock@intel.com \
+        --form email=william.c.roberts@intel.com \
         --form project=01org/tpm2.0-tools \
         --form file=@`pwd`/tpm2-tools-scan.tgz \
         --form version="$TRAVIS_COMMIT" \
