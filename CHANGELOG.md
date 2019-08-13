@@ -453,7 +453,7 @@
 
 * tpm2_rsaencrypt:
   - \--out-file is now \--output.
-  - Added \--scheme with short option -g for specifying encryption scheme.
+  - Added \--scheme with short option -s for specifying encryption scheme.
   - Added \--label with -l for specifying label.
   - Removed option \--key-handle with short option -k.
   - Raw object-handles and object-contexts are commonly handled with object
