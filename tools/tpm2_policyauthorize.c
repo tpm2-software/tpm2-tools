@@ -16,7 +16,7 @@ struct tpm2_policyauthorize_ctx {
    //File path for the policy qualifier data
    const char *qualifier_data_path;
    //File path for the verifying public key name
-   const char *verifying_pubkey_path;
+   const char *verifying_pubkey_name_path;
    //File path for the verification ticket
    const char *ticket_path;
    //File path for storing the policy digest output
@@ -44,7 +44,7 @@ static bool on_option(char key, char *value) {
         ctx.qualifier_data_path = value;
         break;
     case 'n':
-        ctx.verifying_pubkey_path = value;
+        ctx.verifying_pubkey_name_path = value;
         break;
     case 't':
         ctx.ticket_path = value;
@@ -73,17 +73,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 bool is_check_input_options_ok(void) {
 
     if (!ctx.session_path) {
-        LOG_ERR("Must specify -S session file.");
+        LOG_ERR("Must specify a session file with -S.");
         return false;
     }
 
     if (!ctx.policy_digest_path) {
-        LOG_ERR("Must specify -a p name.");
+        LOG_ERR("Must specify path for the policy-digest with -L.");
         return false;
     }
 
-    if (!ctx.verifying_pubkey_path) {
-        LOG_ERR("Must specify -c u name.");
+    if (!ctx.verifying_pubkey_name_path) {
+        LOG_ERR("Must specify name of the public key used for verification -n.");
         return false;
     }
 
@@ -105,7 +105,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     rc = tpm2_policy_build_policyauthorize(ectx, ctx.session,
                         ctx.policy_digest_path,
-                        ctx.qualifier_data_path, ctx.verifying_pubkey_path, ctx.ticket_path);
+                        ctx.qualifier_data_path, ctx.verifying_pubkey_name_path, ctx.ticket_path);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm authorized policy");
         return rc;
