@@ -42,9 +42,18 @@ static tool_rc rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    bool ret = files_save_bytes_to_file(ctx.output_file_path, message->buffer,
-                    message->size);
+    bool ret = false;
+    FILE *f = ctx.output_file_path ? fopen(ctx.output_file_path, "wb+") : stdout;
+    if (!f) {
+        goto out;
+    }
 
+    ret = files_write_bytes(f, message->buffer, message->size);
+    if (f != stdout) {
+        fclose(f);
+    }
+
+out:
     free(message);
 
     return ret ? tool_rc_success : tool_rc_general_error;
