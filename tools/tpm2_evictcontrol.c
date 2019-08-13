@@ -84,7 +84,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
       { "hierarchy",      required_argument, NULL, 'C' },
       { "auth",           required_argument, NULL, 'P' },
-      { "key-context",    required_argument, NULL, 'c' },
+      { "object-context", required_argument, NULL, 'c' },
       { "output",         required_argument, NULL, 'o' },
     };
 

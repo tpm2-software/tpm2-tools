@@ -117,7 +117,7 @@
 
 * tpm2_evictcontrol:
   - \----hierarchy is now \--auth.
-  - \--context is now \--key-context.
+  - \--context is now \--object-context.
   - -p becomes an argument.
   - -A becomes -C.
   - Support serializing ESYS_TR handle to disk.

@@ -27,7 +27,7 @@ be evicted from it's permenent handle location.
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-  * **-c**, **\--key-context**=_OBJECT_CONTEXT_:
+  * **-c**, **\--object-context**=_OBJECT_CONTEXT_:
 
     A context object specifier of a transient or persistent object.
     Either a file path of a context blob or a handle id. See section "Context Object Format".
