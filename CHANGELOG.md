@@ -570,9 +570,10 @@
   - configure: enable code coverage option.
   - env: add TPM2TOOLS_ENABLE_ERRATA to control the -Z or errata option.
     affects all tools.
-    ### 3.2.1-rc0 - 2019-08-05
-     * Correct PCR logic to prevent memory corruption bug.
-     * errata handler fix.
+
+### 3.2.1-rc0 - 2019-08-05
+  * Correct PCR logic to prevent memory corruption bug.
+  * errata handler fix.
 
 ### 3.2.0 - 2019-06-19
   * fix configure bug for linking against libmu.
