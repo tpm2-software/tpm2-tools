@@ -302,12 +302,7 @@
   - -I becomes -p.
 
 * tpm2_nvincrement:
-  - -x used to specify nv index is now an argument.
-  - \--auth-hierarchy is \--now auth.
-  - -a becomes -C
-  - -L and -F pcr policy options go away, replaced with pcr password
-    minilanguage.
-  - tool for incrememnting NVs configured as counters.
+  - New tool for incrememnting NVs configured as counters.
 
 * tpm2_nvlist:
   - tpm2_nvlist is now tpm2_nvreadpublic.
@@ -316,14 +311,12 @@
   - -x used to specify nv index is now an argument.
   - \--out-file is now \--output.
   - \--auth-hierarchy is now \--auth.
+  - \--handle-passwd is now \--hierarchy.
   - -a is now -C.
+  - -f is now -o.
   - -L and -F pcr policy options go away, replaced with pcr password minilanguage.
-  - Fix -f option to -o.
   - when -P is "index" -a is optional and defaults to
     the NV_INDEX value passed to -x.
-  - Options `--authhandle` and `--handle-passwd`
-    changes to `--hierarchy` and `--auth-hierarchy` respectively.
-  - fix a buffer overflow.
 
 * tpm2_nvreadlock:
   - -x used to specify nv index is now an argument.
@@ -332,23 +325,20 @@
   - long form for -P is now \--auth-hierarchy.
 
 * tpm2_nvrelease:
-  - tpm2_nvrelease is now tpm2_nvundefine.
-  - \--auth-hierarchy is now \--auth.
-  - -a is now -C.
-  - long-form of -P becomes \--auth-hierarchy.
   - -x used to specify nv index is now an argument.
+  - tpm2_nvrelease is now tpm2_nvundefine.
+  - \--handle-passwd is now \--auth.
+  - -a is now -C.
 
 * tpm2_nvwrite:
   - -x used to specify nv index is now an argument.
   - -i or --input is now the method to specify file data to write.
-  - \--auth-hierarchy is now \--auth.
+  - \--handle-passwd is now \--auth.
   - -L and -F pcr policy options go away, replaced with pcr password minilanguage.
   - -a is now -C.
-  - Remove small option for \--offset.
+  - Remove small option -o for specifying offset.
   - when -P is "index" -a is optional and defaults to
-    the NV_INDEX value passed to -x.
-  - Options `--authhandle` and `--handle-passwd`
-    changes to `--hierarchy` and `--auth-hierarchy` respectively.
+    the NV_INDEX value passed.
   - fix a buffer overflow.
 
 * tpm2_nvundefine:
