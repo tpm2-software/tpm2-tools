@@ -264,7 +264,7 @@ dump_tpm_properties_fixed (TPMS_TAGGED_PROPERTY properties[],
         case TPM2_PT_FAMILY_INDICATOR:
             buf = get_uint32_as_chars (value);
             tpm2_tool_output ("TPM2_PT_FAMILY_INDICATOR:\n"
-                    "  raw: 0x08%x\n"
+                    "  raw: 0x%X\n"
                     "  value: \"%s\"\n",
                     value,
                     buf);
