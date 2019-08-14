@@ -63,15 +63,25 @@ These options control the object verification:
 # EXAMPLES
 
 ```bash
-TPM2_RH_ENDORSEMENT=0x4000000B
+echo "12345678" > secret.data
+
+tpm2_createek -Q -c 0x81010001 -G rsa -u ek.pub
+
+tpm2_createak -C 0x81010001 -c ak.ctx -G rsa -g sha256 -s rsassa -u ak.pub -n ak.name -p akpass> ak.out
+
+file_size=`stat --printf="%s" ak.name`
+loaded_key_name=`cat ak.name | xxd -p -c $file_size`
+
+tpm2_makecredential -Q -e ek.pub  -s secret.data -n $loaded_key_name -o mkcred.out
+
 tpm2_startauthsession --policy-session -S session.ctx
+
+TPM2_RH_ENDORSEMENT=0x4000000B
 tpm2_policysecret -S session.ctx -c $TPM2_RH_ENDORSEMENT
 
-tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P abc123 -E session:session.ctx -i <filePath> -o <filePath>
+tpm2_activatecredential -Q -c ak.ctx -C 0x81010001 -i mkcred.out -o actcred.out -p akpass -P"session:session.ctx"
 
-tpm2_activatecredential -c ak.dat -C ek.dat -P abc123 -E session:session.ctx -i <filePath> -o <filePath>
-
-tpm2_activatecredential -c 0x81010002 -C 0x81010001 -P 123abc -E session:session.ctx  -i <filePath> -o <filePath>
+tpm2_flushcontext session.ctx
 ```
 
 [returns](common/returns.md)
