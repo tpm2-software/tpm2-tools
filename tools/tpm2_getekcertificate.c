@@ -36,43 +36,39 @@ static tpm_getekcertificate_ctx ctx = {
 
 static unsigned char *hash_ek_public(void) {
 
-    unsigned char *hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
+    unsigned char *hash = (unsigned char*) malloc(SHA256_DIGEST_LENGTH);
     if (!hash) {
-        LOG_ERR ("OOM");
+        LOG_ERR("OOM");
         return NULL;
     }
-
 
     SHA256_CTX sha256;
     int is_success = SHA256_Init(&sha256);
     if (!is_success) {
-        LOG_ERR ("SHA256_Init failed");
+        LOG_ERR("SHA256_Init failed");
         goto err;
     }
 
-    is_success = SHA256_Update(&sha256, ctx.out_public->publicArea.unique.rsa.buffer,
+    is_success = SHA256_Update(&sha256,
+            ctx.out_public->publicArea.unique.rsa.buffer,
             ctx.out_public->publicArea.unique.rsa.size);
     if (!is_success) {
-        LOG_ERR ("SHA256_Update failed");
+        LOG_ERR("SHA256_Update failed");
         goto err;
     }
 
     /* TODO what do these magic bytes line up to? */
-    BYTE buf[3] = {
-        0x1,
-        0x00,
-        0x01 //Exponent
-    };
+    BYTE buf[3] = { 0x1, 0x00, 0x01 }; //Exponent
 
     is_success = SHA256_Update(&sha256, buf, sizeof(buf));
     if (!is_success) {
-        LOG_ERR ("SHA256_Update failed");
+        LOG_ERR("SHA256_Update failed");
         goto err;
     }
 
     is_success = SHA256_Final(hash, &sha256);
     if (!is_success) {
-        LOG_ERR ("SHA256_Final failed");
+        LOG_ERR("SHA256_Final failed");
         goto err;
     }
 
@@ -97,7 +93,8 @@ char *base64_encode(const unsigned char* buffer)
     BIO *bio, *b64;
     BUF_MEM *buffer_pointer;
 
-    LOG_INFO("Calculating the base64_encode of the hash of the Endorsement Public Key:");
+    LOG_INFO("Calculating the base64_encode of the hash of the Endorsement"
+             "Public Key:");
 
     if (buffer == NULL) {
         LOG_ERR("hash_ek_public returned null");
@@ -144,12 +141,11 @@ char *base64_encode(const unsigned char* buffer)
     return final_string;
 }
 
-int retrieve_endorsement_certificate(char *b64h)
-{
+int retrieve_endorsement_certificate(char *b64h) {
     int ret = -1;
 
     size_t len = 1 + strlen(b64h) + strlen(ctx.ek_server_addr);
-    char *weblink = (char *)malloc(len);
+    char *weblink = (char *) malloc(len);
     if (!weblink) {
         LOG_ERR("oom");
         return ret;
@@ -175,14 +171,16 @@ int retrieve_endorsement_certificate(char *b64h)
     if (ctx.SSL_NO_VERIFY) {
         rc = curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
         if (rc != CURLE_OK) {
-            LOG_ERR("curl_easy_setopt for CURLOPT_SSL_VERIFYPEER failed: %s", curl_easy_strerror(rc));
+            LOG_ERR("curl_easy_setopt for CURLOPT_SSL_VERIFYPEER failed: %s",
+                    curl_easy_strerror(rc));
             goto out_easy_cleanup;
         }
     }
 
     rc = curl_easy_setopt(curl, CURLOPT_URL, weblink);
     if (rc != CURLE_OK) {
-        LOG_ERR("curl_easy_setopt for CURLOPT_URL failed: %s", curl_easy_strerror(rc));
+        LOG_ERR("curl_easy_setopt for CURLOPT_URL failed: %s",
+                curl_easy_strerror(rc));
         goto out_easy_cleanup;
     }
 
@@ -190,9 +188,10 @@ int retrieve_endorsement_certificate(char *b64h)
      * If verbose is set, add in diagnostic information for debugging connections.
      * https://curl.haxx.se/libcurl/c/CURLOPT_VERBOSE.html
      */
-    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, (long)ctx.verbose);
+    rc = curl_easy_setopt(curl, CURLOPT_VERBOSE, (long )ctx.verbose);
     if (rc != CURLE_OK) {
-        LOG_ERR("curl_easy_setopt for CURLOPT_VERBOSE failed: %s", curl_easy_strerror(rc));
+        LOG_ERR("curl_easy_setopt for CURLOPT_VERBOSE failed: %s",
+                curl_easy_strerror(rc));
         goto out_easy_cleanup;
     }
 
@@ -203,7 +202,8 @@ int retrieve_endorsement_certificate(char *b64h)
     if (ctx.ec_cert_file_handle) {
         rc = curl_easy_setopt(curl, CURLOPT_WRITEDATA, ctx.ec_cert_file_handle);
         if (rc != CURLE_OK) {
-            LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s", curl_easy_strerror(rc));
+            LOG_ERR("curl_easy_setopt for CURLOPT_WRITEDATA failed: %s",
+                    curl_easy_strerror(rc));
             goto out_easy_cleanup;
         }
     }
@@ -226,9 +226,7 @@ out_memory:
     return ret;
 }
 
-
-int get_ek_certificate(void)
-{
+int get_ek_certificate(void) {
     int rc = 1;
     unsigned char *hash = hash_ek_public();
     char *b64 = base64_encode(hash);
@@ -255,7 +253,8 @@ static bool on_option(char key, char *value) {
         break;
     case 'X':
         ctx.SSL_NO_VERIFY = 1;
-        LOG_WARN("TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
+        LOG_WARN(
+                "TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
         break;
     case 'u':
         ctx.ek_path = value;
@@ -283,14 +282,14 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] =
     {
-        { "ek-certificate",       required_argument, NULL, 'o' },
-        { "allow-unverified",     no_argument,       NULL, 'X' },
-        { "ek-public",            required_argument, NULL, 'u' },
-        { "offline",              no_argument,       NULL, 'x' },
+        { "ek-certificate",   required_argument, NULL, 'o' },
+        { "allow-unverified", no_argument,       NULL, 'X' },
+        { "ek-public",        required_argument, NULL, 'u' },
+        { "offline",          no_argument,       NULL, 'x' },
     };
 
-    *opts = tpm2_options_new("o:u:Xx", ARRAY_LEN(topts), topts,
-                             on_option, on_args, 0);
+    *opts = tpm2_options_new("o:u:Xx", ARRAY_LEN(topts), topts, on_option,
+            on_args, 0);
 
     return *opts != NULL;
 }
@@ -304,8 +303,8 @@ bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
     TPMS_CAPABILITY_DATA *capability_data;
 
     tool_rc rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-        TPM2_CAP_TPM_PROPERTIES, TPM2_PT_MANUFACTURER, 1, &more_data,
-        &capability_data);
+            TPM2_CAP_TPM_PROPERTIES, TPM2_PT_MANUFACTURER, 1, &more_data,
+            &capability_data);
     if (rc != tool_rc_success) {
         LOG_ERR("TPM property read failure.");
         return false;
@@ -321,18 +320,20 @@ bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
     }
 
     rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-        TPM2_CAP_TPM_PROPERTIES, TPM2_PT_PERMANENT, 1, &more_data,
-        &capability_data);
+            TPM2_CAP_TPM_PROPERTIES, TPM2_PT_PERMANENT, 1, &more_data,
+            &capability_data);
     if (rc != tool_rc_success) {
         LOG_ERR("TPM property read failure.");
         return false;
     }
 
-    if (capability_data->data.tpmProperties.tpmProperty[0].value == TPM_RNG_EPS) {
-        LOG_ERR("Cannot proceed. For further information please refer to: "
-            "https://www.intel.com/content/www/us/en/security-center/advisory/"
-            "intel-sa-00086.html. Recovery tools are located here: "
-            "https://github.com/intel/INTEL-SA-00086-Linux-Recovery-Tools");
+    if (capability_data->data.tpmProperties.tpmProperty[0].value ==
+        TPM_RNG_EPS) {
+        LOG_ERR(
+                "Cannot proceed. For further information please refer to: "
+                "https://www.intel.com/content/www/us/en/security-center/"
+                "advisory/intel-sa-00086.html. Recovery tools are located here:"
+                "https://github.com/intel/INTEL-SA-00086-Linux-Recovery-Tools");
         return false;
     }
 
@@ -347,7 +348,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.is_tpm2_device_active) {
         is_getekcert_feasible = is_getekcertificate_feasible(ectx);
         if (!is_getekcert_feasible) {
-            return(tool_rc_general_error);
+            return tool_rc_general_error;
         }
     }
 
@@ -364,7 +365,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     if (ctx.ec_cert_path) {
         ctx.ec_cert_file_handle = fopen(ctx.ec_cert_path, "wb");
         if (!ctx.ec_cert_file_handle) {
-            LOG_ERR("Could not open file for writing: \"%s\"", ctx.ec_cert_path);
+            LOG_ERR("Could not open file for writing: \"%s\"",
+                ctx.ec_cert_path);
             return tool_rc_general_error;
         }
     }
