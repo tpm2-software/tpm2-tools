@@ -27,14 +27,14 @@ struct tpm_getekcertificate_ctx {
     char *ek_path;
     bool verbose;
     bool is_tpm2_device_active;
-    TPM2B_PUBLIC *outPublic;
+    TPM2B_PUBLIC *out_public;
 };
 
 static tpm_getekcertificate_ctx ctx = {
     .is_tpm2_device_active = true,
 };
 
-static unsigned char *HashEKPublicKey(void) {
+static unsigned char *hash_ek_public(void) {
 
     unsigned char *hash = (unsigned char*)malloc(SHA256_DIGEST_LENGTH);
     if (!hash) {
@@ -50,8 +50,8 @@ static unsigned char *HashEKPublicKey(void) {
         goto err;
     }
 
-    is_success = SHA256_Update(&sha256, ctx.outPublic->publicArea.unique.rsa.buffer,
-            ctx.outPublic->publicArea.unique.rsa.size);
+    is_success = SHA256_Update(&sha256, ctx.out_public->publicArea.unique.rsa.buffer,
+            ctx.out_public->publicArea.unique.rsa.size);
     if (!is_success) {
         LOG_ERR ("SHA256_Update failed");
         goto err;
@@ -92,15 +92,15 @@ err:
     return NULL;
 }
 
-char *Base64Encode(const unsigned char* buffer)
+char *base64_encode(const unsigned char* buffer)
 {
     BIO *bio, *b64;
-    BUF_MEM *bufferPtr;
+    BUF_MEM *buffer_pointer;
 
-    LOG_INFO("Calculating the Base64Encode of the hash of the Endorsement Public Key:");
+    LOG_INFO("Calculating the base64_encode of the hash of the Endorsement Public Key:");
 
     if (buffer == NULL) {
-        LOG_ERR("HashEKPublicKey returned null");
+        LOG_ERR("hash_ek_public returned null");
         return NULL;
     }
 
@@ -110,11 +110,11 @@ char *Base64Encode(const unsigned char* buffer)
     BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
     BIO_write(bio, buffer, SHA256_DIGEST_LENGTH);
     UNUSED(BIO_flush(bio));
-    BIO_get_mem_ptr(bio, &bufferPtr);
+    BIO_get_mem_ptr(bio, &buffer_pointer);
 
     /* these are not NULL terminated */
-    char *b64text = bufferPtr->data;
-    size_t len = bufferPtr->length;
+    char *b64text = buffer_pointer->data;
+    size_t len = buffer_pointer->length;
 
     size_t i;
     for (i = 0; i < len; i++) {
@@ -144,7 +144,7 @@ char *Base64Encode(const unsigned char* buffer)
     return final_string;
 }
 
-int RetrieveEndorsementCredentials(char *b64h)
+int retrieve_endorsement_certificate(char *b64h)
 {
     int ret = -1;
 
@@ -230,16 +230,16 @@ out_memory:
 int get_ek_certificate(void)
 {
     int rc = 1;
-    unsigned char *hash = HashEKPublicKey();
-    char *b64 = Base64Encode(hash);
+    unsigned char *hash = hash_ek_public();
+    char *b64 = base64_encode(hash);
     if (!b64) {
-        LOG_ERR("Base64Encode returned null");
+        LOG_ERR("base64_encode returned null");
         goto out;
     }
 
     LOG_INFO("%s", b64);
 
-    rc = RetrieveEndorsementCredentials(b64);
+    rc = retrieve_endorsement_certificate(b64);
 
     free(b64);
 out:
@@ -369,9 +369,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    ctx.outPublic = malloc(sizeof(*ctx.outPublic));
-    ctx.outPublic->size = 0;
-    bool res = files_load_public(ctx.ek_path, ctx.outPublic);
+    ctx.out_public = malloc(sizeof(*ctx.out_public));
+    ctx.out_public->size = 0;
+    bool res = files_load_public(ctx.ek_path, ctx.out_public);
     if (!res) {
         LOG_ERR("Could not load EK public from file");
         return tool_rc_general_error;
