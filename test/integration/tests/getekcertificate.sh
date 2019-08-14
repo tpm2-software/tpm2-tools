@@ -28,6 +28,15 @@ bc3e1d4084e835c7c8906a1c05b4d2d30fdbebc1dbad950fa6b165bd4b6a
 79a8f32938dd8197e29dae839f5b4ca0f5de27c9522c23c54e1c2ce57859
 525118bd4470b18180eef78ae4267bcd" | xxd -r -p > test_ek.pub
 
+if [ -z "$(curl -V 2>/dev/null)" ]; then
+    echo "curl is not not installed. Skipping connection check."
+else
+    if [ "$(curl --silent --output /dev/null --write-out %{http_code} 'https://ekop.intel.com/')" != '200' ]; then
+        echo 'No connection to https://ekop.intel.com/'
+        exit 77
+    fi
+fi
+
 tpm2_getekcertificate -u test_ek.pub -x -X https://ekop.intel.com/ekcertservice/ -o ECcert.bin
 
 # Test that stdoutput is the same

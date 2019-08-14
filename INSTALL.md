@@ -28,6 +28,7 @@ To build and install the tpm2-tools software the following software is required:
     (**recommended**).
   * For the tests: tpm2-abrmd (must be on $PATH) and tpm_server
   * Some tests pass only if xxd, bash and python with PyYAML are available
+  * Some tests optionally use (but do not require) curl
 
 ### Typical Distro Dependency Installation
 
