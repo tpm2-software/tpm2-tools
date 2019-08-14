@@ -95,7 +95,7 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 }
 
 static bool on_option(char key, char *value) {
-    bool result;
+    bool result = false;
     char *input_file;
     switch (key) {
     case 'C':
