@@ -38,7 +38,7 @@ The key referenced by key-context is **required** to be:
     Optional output file path to record the decrypted data to. The default is to print
     the binary encrypted data to stdout.
 
-  * **-g**, **\--scheme**=_PADDING\_SCHEME_:
+  * **-s**, **\--scheme**=_PADDING\_SCHEME_:
 
     Optional, set the padding scheme (defaults to rsaes).
 
