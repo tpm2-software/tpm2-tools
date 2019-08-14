@@ -72,7 +72,7 @@ static bool on_option(char key, char *value) {
         ctx.output_file_path = value;
         break;
     }
-    case 'g':
+    case 's':
         ctx.scheme.scheme = tpm2_alg_util_from_optarg(value,
                 tpm2_alg_util_flags_rsa_scheme);
         if (ctx.scheme.scheme == TPM2_ALG_ERROR) {
@@ -103,11 +103,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth",         required_argument, NULL, 'p' },
       { "output",       required_argument, NULL, 'o' },
       { "key-context",  required_argument, NULL, 'c' },
-      { "scheme",       required_argument, NULL, 'g' },
+      { "scheme",       required_argument, NULL, 's' },
       { "label",        required_argument, NULL, 'l'},
     };
 
-    *opts = tpm2_options_new("p:o:c:g:l:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("p:o:c:s:l:", ARRAY_LEN(topts), topts,
                              on_option, on_args, 0);
 
     return *opts != NULL;

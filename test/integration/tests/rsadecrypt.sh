@@ -52,10 +52,10 @@ tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_da
 # Test the diffeent padding schemes ...
 
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data -s rsaes < $file_input_data
-tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_data -g rsaes $file_rsa_en_output_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_data -s rsaes $file_rsa_en_output_data
 
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data -s null < $file_input_data
-tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_data -g null $file_rsa_en_output_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_data -s null $file_rsa_en_output_data
 
 # Test the label option with a string
 tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -l mylabel -o $file_rsa_en_output_data < $file_input_data
@@ -73,7 +73,7 @@ if [ $? -eq 0 ]; then
     exit 1
 fi
 
-tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_data -g oaep $file_rsa_en_output_data
+tpm2_rsadecrypt -Q -c $file_rsadecrypt_key_ctx -p foo -o  $file_rsa_de_output_data -s oaep $file_rsa_en_output_data
 if [ $? -eq 0 ]; then
     echo "tpm2_rsadecrypt should fail with 'hash algorithm not supported or not appropriate'"
     exit 1

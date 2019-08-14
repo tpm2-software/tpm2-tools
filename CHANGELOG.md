@@ -444,6 +444,7 @@
   - \--out-file is now \--output.
   - -P becomes -p.
   - Added \--label with short option -l for specifying label.
+  - Added \--scheme with short option -s for specifying encryption scheme.
   - Removed option -I or in-file input option and make argument.
   - Removed option \--key-handle with short option -k.
   - Raw object-handles and object-contexts are commonly handled with object
