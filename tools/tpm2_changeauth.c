@@ -188,17 +188,17 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     tool_rc rc = tool_rc_success;
 
     tool_rc tmp = tpm2_session_close(&ctx.object.new);
-    if (rc != tool_rc_success) {
+    if (tmp != tool_rc_success) {
         rc = tmp;
     }
 
     tmp = tpm2_session_close(&ctx.object.obj.session);
-    if (rc != tool_rc_success) {
+    if (tmp != tool_rc_success) {
         rc = tmp;
     }
 
     tmp = tpm2_session_close(&ctx.parent.obj.session);
-    if (rc != tool_rc_success) {
+    if (tmp != tool_rc_success) {
         rc = tmp;
     }
 
