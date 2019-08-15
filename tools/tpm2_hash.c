@@ -33,6 +33,8 @@ static tool_rc hash_and_save(ESYS_CONTEXT *context) {
     TPM2B_DIGEST *outHash;
     TPMT_TK_HASHCHECK *validation;
 
+    FILE *out = stdout;
+
     tool_rc rc = tpm2_hash_file(context, ctx.halg, ctx.hierarchyValue,
                               ctx.input_file, &outHash, &validation);
     if (rc != tool_rc_success) {
@@ -49,7 +51,6 @@ static tool_rc hash_and_save(ESYS_CONTEXT *context) {
     }
 
     rc = tool_rc_general_error;
-    FILE *out = stdout;
     if (ctx.outHashFilePath) {
         out = fopen(ctx.outHashFilePath, "wb+");
         if (!out) {
@@ -76,6 +77,9 @@ static tool_rc hash_and_save(ESYS_CONTEXT *context) {
     rc = tool_rc_success;
 
 out:
+    if (out && out != stdout) {
+        fclose(out);
+    }
 
     free(outHash);
     free(validation);
