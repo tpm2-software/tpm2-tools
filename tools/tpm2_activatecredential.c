@@ -31,8 +31,8 @@ struct tpm_activatecred_ctx {
     const char *output_file;
 
     struct {
-        UINT8 i : 1;
-        UINT8 o : 1;
+        UINT8 i :1;
+        UINT8 o :1;
     } flags;
 };
 
@@ -57,8 +57,7 @@ static bool read_cert_secret(const char *path, TPM2B_ID_OBJECT *cred,
     }
 
     if (version != 1) {
-        LOG_ERR("Unknown credential format, got %"PRIu32" expected 1",
-                version);
+        LOG_ERR("Unknown credential format, got %"PRIu32" expected 1", version);
         goto out;
     }
 
@@ -112,13 +111,8 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *certInfoData;
 
-
-    rc = tpm2_activatecredential(
-            ectx,
-            &ctx.credentialed_key.object,
-            &ctx.credential_key.object,
-            &ctx.credentialBlob,
-            &ctx.secret,
+    rc = tpm2_activatecredential(ectx, &ctx.credentialed_key.object,
+            &ctx.credential_key.object, &ctx.credentialBlob, &ctx.secret,
             &certInfoData);
     if (rc != tool_rc_success) {
         goto out_all;
@@ -131,8 +125,7 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
     rc = tool_rc_success;
 
-out_all:
-    free(certInfoData);
+    out_all: free(certInfoData);
     return rc;
 }
 
@@ -155,8 +148,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'i':
         /* logs errors */
-        result = read_cert_secret(value, &ctx.credentialBlob,
-                &ctx.secret);
+        result = read_cert_secret(value, &ctx.credentialBlob, &ctx.secret);
         if (!result) {
             return false;
         }
@@ -182,8 +174,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"certinfo-data",           required_argument, NULL, 'o'},
     };
 
-    *opts = tpm2_options_new("c:C:p:P:i:o:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("c:C:p:P:i:o:", ARRAY_LEN(topts), topts, on_option,
+            NULL, 0);
 
     return *opts != NULL;
 }
@@ -193,24 +185,22 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /* opts is unused, avoid compiler warning */
     UNUSED(flags);
 
-
-    if ((!ctx.credentialed_key.ctx_path)
-            && (!ctx.credential_key.ctx_path)
+    if ((!ctx.credentialed_key.ctx_path) && (!ctx.credential_key.ctx_path)
             && !ctx.flags.i && !ctx.flags.o) {
         LOG_ERR("Expected options c and C and i and o.");
         return tool_rc_option_error;
     }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.credential_key.ctx_path,
-                ctx.credential_key.auth_str, &ctx.credential_key.object, false,
-                TPM2_HANDLE_ALL_W_NV);
+            ctx.credential_key.auth_str, &ctx.credential_key.object, false,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.credentialed_key.ctx_path,
-                ctx.credentialed_key.auth_str, &ctx.credentialed_key.object,
-                false, TPM2_HANDLE_ALL_W_NV);
+            ctx.credentialed_key.auth_str, &ctx.credentialed_key.object,
+            false, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
