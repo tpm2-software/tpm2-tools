@@ -9,21 +9,21 @@
 
 typedef struct tpm2_policyauthorize_ctx tpm2_policyauthorize_ctx;
 struct tpm2_policyauthorize_ctx {
-   //File path for the session context data
-   const char *session_path;
-   //File path for the policy digest that will be authorized
-   const char *policy_digest_path;
-   //File path for the policy qualifier data
-   const char *qualifier_data_path;
-   //File path for the verifying public key name
-   const char *verifying_pubkey_name_path;
-   //File path for the verification ticket
-   const char *ticket_path;
-   //File path for storing the policy digest output
-   const char *out_policy_dgst_path;
+    //File path for the session context data
+    const char *session_path;
+    //File path for the policy digest that will be authorized
+    const char *policy_digest_path;
+    //File path for the policy qualifier data
+    const char *qualifier_data_path;
+    //File path for the verifying public key name
+    const char *verifying_pubkey_name_path;
+    //File path for the verification ticket
+    const char *ticket_path;
+    //File path for storing the policy digest output
+    const char *out_policy_dgst_path;
 
-   tpm2_session *session;
-   TPM2B_DIGEST *policy_digest;
+    tpm2_session *session;
+    TPM2B_DIGEST *policy_digest;
 };
 
 static tpm2_policyauthorize_ctx ctx;
@@ -56,16 +56,16 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "policy",             required_argument, NULL, 'L' },
-        { "session",            required_argument, NULL, 'S' },
-        { "input",              required_argument, NULL, 'i' },
-        { "qualification",      required_argument, NULL, 'q' },
-        { "name",               required_argument, NULL, 'n' },
-        { "ticket",             required_argument, NULL, 't' },
+        { "policy",        required_argument, NULL, 'L' },
+        { "session",       required_argument, NULL, 'S' },
+        { "input",         required_argument, NULL, 'i' },
+        { "qualification", required_argument, NULL, 'q' },
+        { "name",          required_argument, NULL, 'n' },
+        { "ticket",        required_argument, NULL, 't' },
     };
 
     *opts = tpm2_options_new("L:S:i:q:n:t:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    NULL, 0);
 
     return *opts != NULL;
 }
@@ -98,14 +98,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false, &ctx.session);
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
+            &ctx.session);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     rc = tpm2_policy_build_policyauthorize(ectx, ctx.session,
-                        ctx.policy_digest_path,
-                        ctx.qualifier_data_path, ctx.verifying_pubkey_name_path, ctx.ticket_path);
+            ctx.policy_digest_path, ctx.qualifier_data_path,
+            ctx.verifying_pubkey_name_path, ctx.ticket_path);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build tpm authorized policy");
         return rc;
