@@ -12,7 +12,7 @@
 typedef struct tpm_readpub_ctx tpm_readpub_ctx;
 struct tpm_readpub_ctx {
     struct {
-        UINT8 f      : 1;
+        UINT8 f :1;
     } flags;
     char *outFilePath;
     char *out_name_file;
@@ -35,8 +35,8 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
     tool_rc rc = tool_rc_general_error;
 
     tool_rc tmp_rc = tpm2_readpublic(ectx, ctx.context_object.tr_handle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &public, &name, &qualified_name);
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &public, &name,
+            &qualified_name);
     if (tmp_rc != tool_rc_success) {
         return tmp_rc;
     }
@@ -50,8 +50,9 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
 
     bool ret = true;
     if (ctx.out_name_file) {
-        ret = files_save_bytes_to_file(ctx.out_name_file, name->name, name->size);
-        if(!ret) {
+        ret = files_save_bytes_to_file(ctx.out_name_file, name->name,
+                name->size);
+        if (!ret) {
             LOG_ERR("Can not save object name file.");
             goto out;
         }
@@ -66,14 +67,15 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
     tpm2_util_public_to_yaml(public, NULL);
 
     ret = ctx.outFilePath ?
-            tpm2_convert_pubkey_save(public, ctx.format, ctx.outFilePath) : true;
+            tpm2_convert_pubkey_save(public, ctx.format, ctx.outFilePath) :
+            true;
     if (!ret) {
         goto out;
     }
 
     if (ctx.out_tr_file) {
         rc = files_save_ESYS_TR(ectx, ctx.context_object.tr_handle,
-            ctx.out_tr_file);
+                ctx.out_tr_file);
     } else {
         rc = tool_rc_success;
     }
@@ -116,15 +118,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "output",             required_argument, NULL, 'o' },
-        { "object-context",     required_argument, NULL, 'c' },
-        { "format",             required_argument, NULL, 'f' },
-        { "name",               required_argument, NULL, 'n' },
-        { "serialized-handle",  required_argument, NULL, 't' }
+        { "output",            required_argument, NULL, 'o' },
+        { "object-context",    required_argument, NULL, 'c' },
+        { "format",            required_argument, NULL, 'f' },
+        { "name",              required_argument, NULL, 'n' },
+        { "serialized-handle", required_argument, NULL, 't' }
     };
 
-    *opts = tpm2_options_new("o:c:f:n:t:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("o:c:f:n:t:", ARRAY_LEN(topts), topts, on_option,
+            NULL, 0);
 
     return *opts != NULL;
 }
@@ -132,15 +134,17 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static tool_rc init(ESYS_CONTEXT *context) {
 
     tool_rc rc = tpm2_util_object_load(context, ctx.context_arg,
-        &ctx.context_object, TPM2_HANDLE_ALL_W_NV);
+            &ctx.context_object, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     bool is_persistent = ctx.context_object.handle
-            && ((ctx.context_object.handle >> TPM2_HR_SHIFT) == TPM2_HT_PERSISTENT);
+            && ((ctx.context_object.handle >> TPM2_HR_SHIFT)
+                    == TPM2_HT_PERSISTENT);
     if (ctx.out_tr_file && !is_persistent) {
-        LOG_ERR("Can only output a serialized handle for persistent object handles");
+        LOG_ERR("Can only output a serialized handle for persistent object "
+                "handles");
         return tool_rc_general_error;
     }
 
