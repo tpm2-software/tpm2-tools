@@ -57,10 +57,10 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_general_error;
 
-    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
-    TPML_PCR_SELECTION creationPCR = { .count = 0 };
-    TPM2B_PUBLIC *outPublic;
-    TPM2B_PRIVATE *outPrivate;
+    TPM2B_DATA outside_info = TPM2B_EMPTY_INIT;
+    TPML_PCR_SELECTION creation_pcr = { .count = 0 };
+    TPM2B_PUBLIC *out_public;
+    TPM2B_PRIVATE *out_private;
 
     ESYS_TR object_handle = ESYS_TR_NONE;
     if (ctx.object.ctx_path) {
@@ -77,38 +77,38 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         template.size = offset;
 
         tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
-                &ctx.object.sensitive, &template, &object_handle, &outPrivate,
-                &outPublic);
+                &ctx.object.sensitive, &template, &object_handle, &out_private,
+                &out_public);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
     } else {
-        TPM2B_CREATION_DATA *creationData;
-        TPM2B_DIGEST *creationHash;
-        TPMT_TK_CREATION *creationTicket;
+        TPM2B_CREATION_DATA *creation_data;
+        TPM2B_DIGEST *creation_hash;
+        TPMT_TK_CREATION *creation_ticket;
         tool_rc tmp_rc = tpm2_create(ectx, &ctx.parent.object,
-                &ctx.object.sensitive, &ctx.object.public, &outsideInfo,
-                &creationPCR, &outPrivate, &outPublic, &creationData,
-                &creationHash, &creationTicket);
+                &ctx.object.sensitive, &ctx.object.public, &outside_info,
+                &creation_pcr, &out_private, &out_public, &creation_data,
+                &creation_hash, &creation_ticket);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
-        free(creationData);
-        free(creationHash);
-        free(creationTicket);
+        free(creation_data);
+        free(creation_hash);
+        free(creation_ticket);
     }
 
-    tpm2_util_public_to_yaml(outPublic, NULL);
+    tpm2_util_public_to_yaml(out_public, NULL);
 
     if (ctx.flags.u) {
-        bool res = files_save_public(outPublic, ctx.object.public_path);
+        bool res = files_save_public(out_public, ctx.object.public_path);
         if (!res) {
             goto out;
         }
     }
 
     if (ctx.flags.r) {
-        bool res = files_save_private(outPrivate, ctx.object.private_path);
+        bool res = files_save_private(out_private, ctx.object.private_path);
         if (!res) {
             goto out;
         }
@@ -122,8 +122,8 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     }
 
 out:
-    free(outPrivate);
-    free(outPublic);
+    free(out_private);
+    free(out_public);
 
     return rc;
 }
