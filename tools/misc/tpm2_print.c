@@ -106,18 +106,18 @@ static bool print_TPMS_QUOTE_INFO(FILE* fd, size_t indent_count) {
         tpm2_tool_output("hash: %u (%s)\n", (unsigned int) hash_type,
                 hash_name);
 
-        UINT8 sizeofSelect;
-        res = files_read_bytes(fd, &sizeofSelect, 1);
+        UINT8 select_size;
+        res = files_read_bytes(fd, &select_size, 1);
         if (!res) {
             goto read_error;
         }
         print_yaml_indent(indent_count + 3);
-        tpm2_tool_output("sizeofSelect: %u\n", (unsigned int) sizeofSelect);
+        tpm2_tool_output("sizeofSelect: %u\n", (unsigned int) select_size);
 
         // print PCR selection in hex
         print_yaml_indent(indent_count + 3);
         tpm2_tool_output("pcrSelect: ");
-        res = tpm2_util_hexdump_file(fd, sizeofSelect);
+        res = tpm2_util_hexdump_file(fd, select_size);
         tpm2_tool_output("\n");
         if (!res) {
             goto read_error;
