@@ -135,6 +135,8 @@ static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
     TPM2B_DIGEST *hmac_out = NULL;
     TPMT_TK_HASHCHECK *validation = NULL;
 
+    FILE *out = stdout;
+
     tool_rc rc = tpm_hmac_file(ectx, &hmac_out, &validation);
     if (rc != tool_rc_success) {
         goto out;
@@ -152,7 +154,6 @@ static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
     }
 
     rc = tool_rc_general_error;
-    FILE *out = stdout;
     if (ctx.hmac_output_file_path) {
         out = fopen(ctx.hmac_output_file_path, "wb+");
         if (!out) {
@@ -179,6 +180,10 @@ static tool_rc do_hmac_and_output(ESYS_CONTEXT *ectx) {
     rc = tool_rc_success;
 
 out:
+    if (out && out != stdout) {
+        fclose(out);
+    }
+
     free(hmac_out);
     free(validation);
     return rc;
