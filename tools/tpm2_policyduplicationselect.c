@@ -69,7 +69,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("S:n:N:L:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    NULL, 0);
 
     return *opts != NULL;
 }
@@ -84,13 +84,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
-        &ctx.session);
+            &ctx.session);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     rc = tpm2_policy_build_policyduplicationselect(ectx, ctx.session,
-        ctx.obj_name_path, ctx.new_parent_name_path, ctx.is_include_obj);
+            ctx.obj_name_path, ctx.new_parent_name_path, ctx.is_include_obj);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build TPM policy_duplication_select");
         return rc;
