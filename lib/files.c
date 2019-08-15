@@ -332,7 +332,11 @@ static bool check_magic(FILE *fstream, bool seek_reset) {
     bool match = magic == MAGIC;
 
     if (seek_reset) {
-        fseek(fstream, -sizeof(magic), SEEK_CUR);
+        int rc = fseek(fstream, -sizeof(magic), SEEK_CUR);
+        if (rc != 0) {
+            LOG_ERR("fseek failed: %s", strerror(errno));
+            return false;
+        }
         return match;
     }
 
