@@ -14,7 +14,7 @@ struct tpm_readpub_ctx {
     struct {
         UINT8 f :1;
     } flags;
-    char *outFilePath;
+    char *output_path;
     char *out_name_file;
     tpm2_convert_pubkey_fmt format;
     tpm2_loaded_object context_object;
@@ -66,8 +66,8 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
 
     tpm2_util_public_to_yaml(public, NULL);
 
-    ret = ctx.outFilePath ?
-            tpm2_convert_pubkey_save(public, ctx.format, ctx.outFilePath) :
+    ret = ctx.output_path ?
+            tpm2_convert_pubkey_save(public, ctx.format, ctx.output_path) :
             true;
     if (!ret) {
         goto out;
@@ -95,7 +95,7 @@ static bool on_option(char key, char *value) {
         ctx.context_arg = value;
         break;
     case 'o':
-        ctx.outFilePath = value;
+        ctx.output_path = value;
         break;
     case 'f':
         ctx.format = tpm2_convert_pubkey_fmt_from_optarg(value);
