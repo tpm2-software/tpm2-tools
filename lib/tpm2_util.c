@@ -781,7 +781,6 @@ static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_handle_flags flags
             LOG_ERR("NV-Index handles are not supported by this command.");
             return false;
         }
-        return true;
         if (*hierarchy < TPM2_NV_INDEX_FIRST
                 || *hierarchy > TPM2_NV_INDEX_LAST) {
             LOG_ERR("NV-Index handle is out of range.");
