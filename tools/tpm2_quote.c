@@ -49,8 +49,7 @@ static bool write_pcr_values() {
     }
 
     // Export TPML_PCR_SELECTION structure to pcr outfile
-    if (fwrite(&ctx.pcrSelections,
-            sizeof(TPML_PCR_SELECTION), 1,
+    if (fwrite(&ctx.pcrSelections, sizeof(TPML_PCR_SELECTION), 1,
             ctx.pcr_output) != 1) {
         LOG_ERR("write to output file failed: %s", strerror(errno));
         return false;
@@ -64,7 +63,8 @@ static bool write_pcr_values() {
 
     UINT32 j;
     for (j = 0; j < ctx.pcrs.count; j++) {
-        if (fwrite(&ctx.pcrs.pcr_values[j], sizeof(TPML_DIGEST), 1, ctx.pcr_output) != 1) {
+        if (fwrite(&ctx.pcrs.pcr_values[j], sizeof(TPML_DIGEST), 1,
+                ctx.pcr_output) != 1) {
             LOG_ERR("write to output file failed: %s", strerror(errno));
             return false;
         }
@@ -77,13 +77,13 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
 
     bool res = true;
     if (ctx.signature_path) {
-        res &= tpm2_convert_sig_save(signature, ctx.sig_format, ctx.signature_path);
+        res &= tpm2_convert_sig_save(signature, ctx.sig_format,
+                ctx.signature_path);
     }
 
     if (ctx.message_path) {
         res &= files_save_bytes_to_file(ctx.message_path,
-                (UINT8*)quoted->attestationData,
-                quoted->size);
+                (UINT8*) quoted->attestationData, quoted->size);
     }
 
     res &= write_pcr_values();
@@ -95,26 +95,26 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
 
     TPM2B_ATTEST *quoted = NULL;
     TPMT_SIGNATURE *signature = NULL;
-    TPMT_SIG_SCHEME inScheme = {
-        .scheme = TPM2_ALG_NULL
-    };
+    TPMT_SIG_SCHEME inScheme = { .scheme = TPM2_ALG_NULL };
 
-    tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx, ctx.key.object.tr_handle,
-                                ctx.sig_hash_algorithm, TPM2_ALG_NULL, &inScheme);
+    tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
+            ctx.key.object.tr_handle, ctx.sig_hash_algorithm, TPM2_ALG_NULL,
+            &inScheme);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     rc = tpm2_quote(ectx, &ctx.key.object, &inScheme, &ctx.qualifyingData,
-        pcrSelection, &quoted, &signature);
+            pcrSelection, &quoted, &signature);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    tpm2_tool_output( "quoted: " );
+    tpm2_tool_output("quoted: ");
     tpm2_util_print_tpm2b(quoted);
-    tpm2_tool_output("\nsignature:\n" );
-    tpm2_tool_output("  alg: %s\n", tpm2_alg_util_algtostr(signature->sigAlg, tpm2_alg_util_flags_sig));
+    tpm2_tool_output("\nsignature:\n");
+    tpm2_tool_output("  alg: %s\n",
+            tpm2_alg_util_algtostr(signature->sigAlg, tpm2_alg_util_flags_sig));
 
     UINT16 size;
     BYTE *sig = tpm2_convert_sig(&size, signature);
@@ -143,7 +143,8 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
         // Grab the digest from the quote
         TPM2B_DIGEST quoteDigest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
         TPM2B_DATA extraData = TPM2B_TYPE_INIT(TPM2B_DATA, buffer);
-        if (!tpm2_util_get_digest_from_quote(quoted, &quoteDigest, &extraData)) {
+        if (!tpm2_util_get_digest_from_quote(quoted, &quoteDigest,
+                &extraData)) {
             LOG_ERR("Failed to get digest from quote!");
             return tool_rc_general_error;
         }
@@ -156,7 +157,8 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
 
         // Calculate the digest from our selected PCR values (to ensure correctness)
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-        if (!tpm2_openssl_hash_pcr_banks(ctx.sig_hash_algorithm, &ctx.pcrSelections, &ctx.pcrs, &pcr_digest)) {
+        if (!tpm2_openssl_hash_pcr_banks(ctx.sig_hash_algorithm,
+                &ctx.pcrSelections, &ctx.pcrs, &pcr_digest)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
             return tool_rc_general_error;
         }
@@ -182,8 +184,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
 
 static bool on_option(char key, char *value) {
 
-    switch(key)
-    {
+    switch (key) {
     case 'c':
         ctx.key.ctx_path = value;
         break;
@@ -191,40 +192,43 @@ static bool on_option(char key, char *value) {
         ctx.key.auth_str = value;
         break;
     case 'l':
-        if(!pcr_parse_selections(value, &ctx.pcrSelections))
-        {
+        if (!pcr_parse_selections(value, &ctx.pcrSelections)) {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
             return false;
         }
         break;
     case 'q':
         ctx.qualifyingData.size = sizeof(ctx.qualifyingData) - 2;
-        if(tpm2_util_hex_to_byte_structure(value, &ctx.qualifyingData.size, ctx.qualifyingData.buffer) != 0)
-        {
-            LOG_ERR("Could not convert \"%s\" from a hex string to byte array!", value);
+        if (tpm2_util_hex_to_byte_structure(value, &ctx.qualifyingData.size,
+                ctx.qualifyingData.buffer) != 0) {
+            LOG_ERR("Could not convert \"%s\" from a hex string to byte array!",
+                    value);
             return false;
         }
         break;
     case 's':
-         ctx.signature_path = value;
-         break;
+        ctx.signature_path = value;
+        break;
     case 'm':
-         ctx.message_path = value;
-         break;
+        ctx.message_path = value;
+        break;
     case 'o':
-         ctx.pcr_path = value;
-         break;
+        ctx.pcr_path = value;
+        break;
     case 'f':
-         ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
+        ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
-         if (ctx.sig_format == signature_format_err) {
+        if (ctx.sig_format == signature_format_err) {
             return false;
-         }
-         break;
+        }
+        break;
     case 'g':
-        ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
-        if(ctx.sig_hash_algorithm == TPM2_ALG_ERROR) {
-            LOG_ERR("Could not convert signature hash algorithm selection, got: \"%s\"", value);
+        ctx.sig_hash_algorithm = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_hash);
+        if (ctx.sig_hash_algorithm == TPM2_ALG_ERROR) {
+            LOG_ERR(
+                    "Could not convert signature hash algorithm selection, got: \"%s\"",
+                    value);
             return false;
         }
         break;
@@ -236,19 +240,19 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "key-context",          required_argument, NULL, 'c' },
-        { "auth",                 required_argument, NULL, 'p' },
-        { "pcr-list",             required_argument, NULL, 'l' },
-        { "qualification",        required_argument, NULL, 'q' },
-        { "signature",            required_argument, NULL, 's' },
-        { "message",              required_argument, NULL, 'm' },
-        { "pcr",                  required_argument, NULL, 'o' },
-        { "format",               required_argument, NULL, 'f' },
-        { "hash-algorithm",       required_argument, NULL, 'g' }
+        { "key-context",    required_argument, NULL, 'c' },
+        { "auth",           required_argument, NULL, 'p' },
+        { "pcr-list",       required_argument, NULL, 'l' },
+        { "qualification",  required_argument, NULL, 'q' },
+        { "signature",      required_argument, NULL, 's' },
+        { "message",        required_argument, NULL, 'm' },
+        { "pcr",            required_argument, NULL, 'o' },
+        { "format",         required_argument, NULL, 'f' },
+        { "hash-algorithm", required_argument, NULL, 'g' }
     };
 
     *opts = tpm2_options_new("c:p:l:q:s:m:o:f:g:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -264,7 +268,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.key.ctx_path,
-        ctx.key.auth_str, &ctx.key.object, false, TPM2_HANDLE_ALL_W_NV);
+            ctx.key.auth_str, &ctx.key.object, false, TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
         return rc;
