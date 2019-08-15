@@ -55,7 +55,8 @@ static void test_tpm2_attr_util_nv_strtoattr_nt_good(void **state) {
     char arg[] = "nt=0x1";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true((nvattrs & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT == 0x1);
+    assert_true((nvattrs & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT ==
+        0x1);
 }
 
 static void test_tpm2_attr_util_nv_strtoattr_nt_bad(void **state) {
@@ -104,7 +105,8 @@ static void test_tpm2_attr_util_nv_strtoattr_multiple_good(void **state) {
     char arg[] = "authread|authwrite|nt=0x4";
     bool res = tpm2_attr_util_nv_strtoattr(arg, &nvattrs);
     assert_true(res);
-    assert_true((nvattrs & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT == 0x4);
+    assert_true((nvattrs & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT ==
+        0x4);
     assert_true(nvattrs & TPMA_NV_AUTHREAD);
     assert_true(nvattrs & TPMA_NV_AUTHWRITE);
 }
@@ -205,13 +207,12 @@ test_nv_attrtostr(0xFFFFFFFF, NV_ALL_FIELDS);
     }
 
 test_nv_attrtostr_compound(stclear_ppwrite,
-        TPMA_NV_WRITE_STCLEAR|TPMA_NV_PPWRITE,
-        "ppwrite|write_stclear")
+        TPMA_NV_WRITE_STCLEAR | TPMA_NV_PPWRITE, "ppwrite|write_stclear")
 test_nv_attrtostr_compound(stclear_ppwrite_0x30,
-        TPMA_NV_WRITE_STCLEAR|TPMA_NV_PPWRITE|0x30,
+        TPMA_NV_WRITE_STCLEAR | TPMA_NV_PPWRITE | 0x30,
         "ppwrite|nt=0x3|write_stclear")
 test_nv_attrtostr_compound(platformcreate_ownerread_nt_0x90_0x20000,
-        TPMA_NV_PLATFORMCREATE|TPMA_NV_AUTHWRITE|0x90|0x200000,
+        TPMA_NV_PLATFORMCREATE | TPMA_NV_AUTHWRITE | 0x90 | 0x200000,
         "authwrite|nt=0x9|<reserved(21)>|platformcreate")
 
 /*
@@ -252,7 +253,7 @@ obj_single_item_test("sign", TPMA_OBJECT_SIGN_ENCRYPT);
         "<reserved(13)>|<reserved(14)>|<reserved(15)>|restricted|decrypt|" \
         "sign|<reserved(19)>|<reserved(20)>|<reserved(21)>|<reserved(22)>|" \
         "<reserved(23)>|<reserved(24)>|<reserved(25)>|<reserved(26)>|" \
-		"<reserved(27)>|<reserved(28)>|<reserved(29)>|<reserved(30)>|" \
+        "<reserved(27)>|<reserved(28)>|<reserved(29)>|<reserved(30)>|" \
         "<reserved(31)>"
 
 #define test_obj_attrtostr(value, expected) \
@@ -260,13 +261,12 @@ obj_single_item_test("sign", TPMA_OBJECT_SIGN_ENCRYPT);
     \
         (void) state; \
     \
-	    TPMA_OBJECT attrs = value; \
+        TPMA_OBJECT attrs = value; \
         char *str = tpm2_attr_util_obj_attrtostr(attrs); \
         assert_string_equal(str, expected); \
     \
         free(str); \
     }
-
 
 #define test_obj_attrtostr_get(value) \
         cmocka_unit_test(test_tpm2_obj_util_attrtostr_##value)
@@ -308,7 +308,8 @@ static void test_tpm2_attr_util_obj_strtoattr_multiple_good(void **state) {
     assert_true(objattrs & TPMA_OBJECT_NODA);
 
     assert_int_equal(objattrs,
-            TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_NODA|TPMA_OBJECT_ADMINWITHPOLICY);
+            TPMA_OBJECT_SIGN_ENCRYPT | TPMA_OBJECT_NODA
+                    | TPMA_OBJECT_ADMINWITHPOLICY);
 }
 
 static void test_tpm2_attr_util_obj_strtoattr_token_unknown(void **state) {
