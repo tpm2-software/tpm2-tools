@@ -26,7 +26,7 @@ struct tpm_activatecred_ctx {
         tpm2_loaded_object object;
     } credentialed_key; //Typically AK
 
-    TPM2B_ID_OBJECT credentialBlob;
+    TPM2B_ID_OBJECT credential_blob;
     TPM2B_ENCRYPTED_SECRET secret;
     const char *output_file;
 
@@ -109,23 +109,24 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_general_error;
 
-    TPM2B_DIGEST *certInfoData;
+    TPM2B_DIGEST *cert_info_data;
 
     rc = tpm2_activatecredential(ectx, &ctx.credentialed_key.object,
-            &ctx.credential_key.object, &ctx.credentialBlob, &ctx.secret,
-            &certInfoData);
+            &ctx.credential_key.object, &ctx.credential_blob, &ctx.secret,
+            &cert_info_data);
     if (rc != tool_rc_success) {
         goto out_all;
     }
 
-    bool result = output_and_save(certInfoData, ctx.output_file);
+    bool result = output_and_save(cert_info_data, ctx.output_file);
     if (!result) {
         goto out_all;
     }
 
     rc = tool_rc_success;
 
-    out_all: free(certInfoData);
+out_all:
+    free(cert_info_data);
     return rc;
 }
 
@@ -148,7 +149,7 @@ static bool on_option(char key, char *value) {
         break;
     case 'i':
         /* logs errors */
-        result = read_cert_secret(value, &ctx.credentialBlob, &ctx.secret);
+        result = read_cert_secret(value, &ctx.credential_blob, &ctx.secret);
         if (!result) {
             return false;
         }
