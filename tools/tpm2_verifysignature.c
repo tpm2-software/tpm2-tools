@@ -26,7 +26,7 @@ struct tpm2_verifysig_ctx {
     } flags;
     TPMI_ALG_SIG_SCHEME format;
     TPMI_ALG_HASH halg;
-    TPM2B_DIGEST *msgHash;
+    TPM2B_DIGEST *msg_hash;
     TPMT_SIGNATURE signature;
     char *msg_file_path;
     char *sig_file_path;
@@ -37,7 +37,7 @@ struct tpm2_verifysig_ctx {
 
 static tpm2_verifysig_ctx ctx = {
         .format = TPM2_ALG_ERROR,
-        .msgHash = NULL,
+        .msg_hash = NULL,
         .halg = TPM2_ALG_SHA1
 };
 
@@ -48,7 +48,7 @@ static tool_rc verify_signature(ESYS_CONTEXT *context) {
 
     TSS2_RC rval = Esys_VerifySignature(context,
             ctx.key_context_object.tr_handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, ctx.msgHash, &ctx.signature, &validation);
+            ESYS_TR_NONE, ctx.msg_hash, &ctx.signature, &validation);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_VerifySignature, rval);
         rc = tool_rc_from_tpm(rval);
@@ -157,7 +157,7 @@ static tool_rc init(ESYS_CONTEXT *context) {
             goto err;
         }
         tmp_rc = tpm2_hash_compute_data(context, ctx.halg, TPM2_RH_NULL,
-                msg->buffer, msg->size, &ctx.msgHash, NULL);
+                msg->buffer, msg->size, &ctx.msg_hash, NULL);
         if (tmp_rc != tool_rc_success) {
             rc = tmp_rc;
             LOG_ERR("Compute message hash failed!");
@@ -193,10 +193,10 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'd': {
-        ctx.msgHash = malloc(sizeof(TPM2B_DIGEST));
-        ctx.msgHash->size = sizeof(ctx.msgHash->buffer);
-        if (!files_load_bytes_from_path(value, ctx.msgHash->buffer,
-                &ctx.msgHash->size)) {
+        ctx.msg_hash = malloc(sizeof(TPM2B_DIGEST));
+        ctx.msg_hash->size = sizeof(ctx.msg_hash->buffer);
+        if (!files_load_bytes_from_path(value, ctx.msg_hash->buffer,
+                &ctx.msg_hash->size)) {
             LOG_ERR("Could not load digest from file!");
             return false;
         }
@@ -266,7 +266,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 }
 
 void tpm2_tool_onexit(void) {
-    if (ctx.msgHash) {
-        free(ctx.msgHash);
+    if (ctx.msg_hash) {
+        free(ctx.msg_hash);
     }
 }
