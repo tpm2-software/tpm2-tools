@@ -37,7 +37,6 @@
 
 #define nv_single_item_test(friendly, value) nv_single_item_test2(friendly, value, tpm2_alg_util_flags_any)
 
-
 nv_single_item_test(rsa, TPM2_ALG_RSA)
 /*
  * sha sha1 is it's own test, as alg to string
@@ -90,15 +89,19 @@ static void test_tpm2_alg_util_sha1_test(void **state) {
 
     (void) state;
 
-    TPM2_ALG_ID sha1_found_id = tpm2_alg_util_strtoalg("sha1", tpm2_alg_util_flags_hash);
-    const char *sha1_found_str = tpm2_alg_util_algtostr(TPM2_ALG_SHA1, tpm2_alg_util_flags_hash);
+    TPM2_ALG_ID sha1_found_id = tpm2_alg_util_strtoalg("sha1",
+            tpm2_alg_util_flags_hash);
+    const char *sha1_found_str = tpm2_alg_util_algtostr(TPM2_ALG_SHA1,
+            tpm2_alg_util_flags_hash);
 
     char buf[256];
 
-    TPM2_ALG_ID sha1_from_hex_str = tpm2_alg_util_from_optarg("sha1", tpm2_alg_util_flags_hash);
+    TPM2_ALG_ID sha1_from_hex_str = tpm2_alg_util_from_optarg("sha1",
+            tpm2_alg_util_flags_hash);
 
     snprintf(buf, sizeof(buf), "0x%X", TPM2_ALG_SHA1);
-    TPM2_ALG_ID sha1_from_nice_str = tpm2_alg_util_from_optarg(buf, tpm2_alg_util_flags_hash);
+    TPM2_ALG_ID sha1_from_nice_str = tpm2_alg_util_from_optarg(buf,
+            tpm2_alg_util_flags_hash);
 
     assert_int_equal(TPM2_ALG_SHA1, sha1_found_id);
     assert_int_equal(TPM2_ALG_SHA1, sha1_from_hex_str);
@@ -134,7 +137,7 @@ static void test_tpm2_alg_util_sha1_test(void **state) {
 #define test_digest_sha512(digest)  test_digest(digest, HASH_SHA512, TPM2_ALG_SHA512, TPM2_SHA512_DIGEST_SIZE)
 
 #define get_single_digest_pcr_parse_test(friendly_hash) \
-		cmocka_unit_test(test_pcr_parse_digest_list_##friendly_hash)
+        cmocka_unit_test(test_pcr_parse_digest_list_##friendly_hash)
 
 #define add_single_digest_pcr_parse_test(pcrindex, friendly_hash, hash_value, hash_id, hash_size) \
     static void test_pcr_parse_digest_list_##friendly_hash(void **state) { \
@@ -153,17 +156,17 @@ static void test_tpm2_alg_util_sha1_test(void **state) {
         test_digest(digest, hash_value, hash_id, hash_size); \
     }
 
-add_single_digest_pcr_parse_test(4, sha1, HASH_SHA1,
-        TPM2_ALG_SHA1, TPM2_SHA1_DIGEST_SIZE)
+add_single_digest_pcr_parse_test(4, sha1, HASH_SHA1, TPM2_ALG_SHA1,
+        TPM2_SHA1_DIGEST_SIZE)
 
-add_single_digest_pcr_parse_test(9, sha256, HASH_SHA256,
-        TPM2_ALG_SHA256, TPM2_SHA256_DIGEST_SIZE)
+add_single_digest_pcr_parse_test(9, sha256, HASH_SHA256, TPM2_ALG_SHA256,
+        TPM2_SHA256_DIGEST_SIZE)
 
-add_single_digest_pcr_parse_test(6, sha384, HASH_SHA384,
-        TPM2_ALG_SHA384, TPM2_SHA384_DIGEST_SIZE)
+add_single_digest_pcr_parse_test(6, sha384, HASH_SHA384, TPM2_ALG_SHA384,
+        TPM2_SHA384_DIGEST_SIZE)
 
-add_single_digest_pcr_parse_test(21, sha512, HASH_SHA512,
-        TPM2_ALG_SHA512, TPM2_SHA512_DIGEST_SIZE)
+add_single_digest_pcr_parse_test(21, sha512, HASH_SHA512, TPM2_ALG_SHA512,
+        TPM2_SHA512_DIGEST_SIZE)
 
 static void test_pcr_parse_digest_list_many_items(void **state) {
     (void) state;
@@ -171,18 +174,15 @@ static void test_pcr_parse_digest_list_many_items(void **state) {
     char mutable_1[] = "12:sha1="HASH_SHA1;
     char mutable_2[] = "5:sha256="HASH_SHA256;
     char mutable_3[] = "7:sha512="HASH_SHA512;
-    char *optstr[] = {
-        mutable_1,
-        mutable_2,
-        mutable_3
-    };
+    char *optstr[] = { mutable_1, mutable_2, mutable_3 };
 
     tpm2_pcr_digest_spec digest_spec[ARRAY_LEN(optstr)];
-    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
+    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec),
+            digest_spec);
     assert_true(res);
 
     size_t i;
-    for (i=0; i < ARRAY_LEN(digest_spec); i++) {
+    for (i = 0; i < ARRAY_LEN(digest_spec); i++) {
         tpm2_pcr_digest_spec *dspec = &digest_spec[i];
 
         /* each pcr only has 1 alg hash specified */
@@ -212,13 +212,13 @@ static void test_pcr_parse_digest_list_many_items(void **state) {
 static void test_pcr_parse_digest_list_compound(void **state) {
     (void) state;
 
-    char mutable_1[] = "12:sha1="HASH_SHA1",sha256="HASH_SHA256",sha512="HASH_SHA512;
-    char *optstr[] = {
-        mutable_1,
-    };
+    char mutable_1[] =
+            "12:sha1="HASH_SHA1",sha256="HASH_SHA256",sha512="HASH_SHA512;
+    char *optstr[] = { mutable_1, };
 
     tpm2_pcr_digest_spec digest_spec[ARRAY_LEN(optstr)];
-    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
+    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec),
+            digest_spec);
     assert_true(res);
 
     tpm2_pcr_digest_spec *dspec = &digest_spec[0];
@@ -227,7 +227,7 @@ static void test_pcr_parse_digest_list_compound(void **state) {
     assert_int_equal(3, dspec->digests.count);
 
     size_t i;
-    for (i=0; i < dspec->digests.count && i < TPM2_NUM_PCR_BANKS; i++) {
+    for (i = 0; i < dspec->digests.count && i < TPM2_NUM_PCR_BANKS; i++) {
         TPMT_HA *digest = &dspec->digests.digests[i];
 
         switch (i) {
@@ -250,12 +250,11 @@ static void test_pcr_parse_digest_list_bad(void **state) {
     (void) state;
 
     char mutable_1[] = "12";
-    char *optstr[] = {
-        mutable_1,
-    };
+    char *optstr[] = { mutable_1, };
 
     tpm2_pcr_digest_spec digest_spec[ARRAY_LEN(optstr)];
-    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
+    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec),
+            digest_spec);
     assert_false(res);
 
     char mutable_2[] = "12:sha256";
@@ -288,12 +287,11 @@ static void test_pcr_parse_digest_list_bad_alg(void **state) {
     (void) state;
 
     char mutable_1[] = "12";
-    char *optstr[] = {
-        mutable_1,
-    };
+    char *optstr[] = { mutable_1, };
 
     tpm2_pcr_digest_spec digest_spec[ARRAY_LEN(optstr)];
-    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec), digest_spec);
+    bool res = pcr_parse_digest_list(optstr, ARRAY_LEN(digest_spec),
+            digest_spec);
     assert_false(res);
 
     char mutable_2[] = "12:rsa="HASH_SHA1;
@@ -334,13 +332,14 @@ static void test_tpm2_alg_util_flags_sig(void **state) {
     };
 
     size_t i;
-    for(i=0; i < ARRAY_LEN(good_algs); i++) {
+    for (i = 0; i < ARRAY_LEN(good_algs); i++) {
         TPM2_ALG_ID id = good_algs[i];
         const char *name = tpm2_alg_util_algtostr(id, tpm2_alg_util_flags_sig);
         assert_non_null(name);
     }
 
-    const char *name = tpm2_alg_util_algtostr(TPM2_ALG_AES, tpm2_alg_util_flags_sig);
+    const char *name = tpm2_alg_util_algtostr(TPM2_ALG_AES,
+            tpm2_alg_util_flags_sig);
     assert_null(name);
 }
 
@@ -353,7 +352,7 @@ static void test_tpm2_alg_util_flags_enc_scheme(void **state) {
     };
 
     size_t i;
-    for(i=0; i < ARRAY_LEN(good_algs); i++) {
+    for (i = 0; i < ARRAY_LEN(good_algs); i++) {
         TPM2_ALG_ID id = good_algs[i];
         const char *name = tpm2_alg_util_algtostr(id,
                 tpm2_alg_util_flags_enc_scheme);
@@ -364,7 +363,6 @@ static void test_tpm2_alg_util_flags_enc_scheme(void **state) {
             tpm2_alg_util_flags_enc_scheme);
     assert_null(name);
 }
-
 
 static void test_tpm2_alg_util_flags_hash(void **state) {
     UNUSED(state);
@@ -378,13 +376,14 @@ static void test_tpm2_alg_util_flags_hash(void **state) {
     };
 
     size_t i;
-    for(i=0; i < ARRAY_LEN(good_algs); i++) {
+    for (i = 0; i < ARRAY_LEN(good_algs); i++) {
         TPM2_ALG_ID id = good_algs[i];
         const char *name = tpm2_alg_util_algtostr(id, tpm2_alg_util_flags_hash);
         assert_non_null(name);
     }
 
-    const char *name = tpm2_alg_util_algtostr(TPM2_ALG_AES, tpm2_alg_util_flags_hash);
+    const char *name = tpm2_alg_util_algtostr(TPM2_ALG_AES,
+            tpm2_alg_util_flags_hash);
     assert_null(name);
 }
 
@@ -877,7 +876,8 @@ static void test_extended_alg_hmac_restricted(void **state) {
 
     assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
 
-    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    TPMI_ALG_HASH alg =
+            pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
     assert_int_equal(alg, TPM2_ALG_SHA256);
 }
 
@@ -893,7 +893,8 @@ static void test_extended_alg_hmac(void **state) {
 
     assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
 
-    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    TPMI_ALG_HASH alg =
+            pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
     assert_int_equal(alg, TPM2_ALG_SHA256);
 }
 
@@ -913,7 +914,8 @@ static void test_extended_alg_hmacsha384_restricted(void **state) {
 
     assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
 
-    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    TPMI_ALG_HASH alg =
+            pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
     assert_int_equal(alg, TPM2_ALG_SHA384);
 }
 
@@ -929,7 +931,8 @@ static void test_extended_alg_hmacsha384(void **state) {
 
     assert_int_equal(pub.publicArea.type, TPM2_ALG_KEYEDHASH);
 
-    TPMI_ALG_HASH alg = pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
+    TPMI_ALG_HASH alg =
+            pub.publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg;
     assert_int_equal(alg, TPM2_ALG_SHA384);
 }
 
@@ -1114,7 +1117,6 @@ static void test_extended_camellia192cbc(void **state) {
     assert_int_equal(s->mode.aes, TPM2_ALG_CBC);
     assert_int_equal(s->algorithm, TPM2_ALG_CAMELLIA);
 }
-
 
 static void test_extended_alg_bad(void **state) {
     UNUSED(state);
