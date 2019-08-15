@@ -15,30 +15,30 @@ struct tpm_unseal_ctx {
         tpm2_loaded_object object;
     } sealkey;
 
-    char *outFilePath;
+    char *output_file_path;
 };
 
 static tpm_unseal_ctx ctx;
 
 tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
 
-    TPM2B_SENSITIVE_DATA *outData = NULL;
+    TPM2B_SENSITIVE_DATA *output_data = NULL;
 
-    tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &outData);
+    tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &output_data);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    if (ctx.outFilePath) {
-        bool ret = files_save_bytes_to_file(ctx.outFilePath,
-                (UINT8 *) outData->buffer, outData->size);
+    if (ctx.output_file_path) {
+        bool ret = files_save_bytes_to_file(ctx.output_file_path,
+                (UINT8 *) output_data->buffer, output_data->size);
         if (!ret) {
             rc = tool_rc_general_error;
             goto out;
         }
     } else {
-        bool ret = files_write_bytes(stdout, (UINT8 *) outData->buffer,
-                outData->size);
+        bool ret = files_write_bytes(stdout, (UINT8 *) output_data->buffer,
+                output_data->size);
         if (!ret) {
             rc = tool_rc_general_error;
             goto out;
@@ -48,7 +48,7 @@ tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
     rc = tool_rc_success;
 
 out:
-    free(outData);
+    free(output_data);
 
     return rc;
 }
@@ -82,7 +82,7 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'o':
-        ctx.outFilePath = value;
+        ctx.output_file_path = value;
         break;
         /* no default */
     }
