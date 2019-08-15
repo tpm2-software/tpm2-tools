@@ -25,7 +25,7 @@ struct tpm_sign_ctx {
     TPMI_ALG_SIG_SCHEME sig_scheme;
     TPMT_SIG_SCHEME in_scheme;
     TPM2B_DIGEST *digest;
-    char *outFilePath;
+    char *output_path;
     BYTE *msg;
     UINT16 length;
     char *input_file;
@@ -54,7 +54,7 @@ static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
-    result = tpm2_convert_sig_save(signature, ctx.sig_format, ctx.outFilePath);
+    result = tpm2_convert_sig_save(signature, ctx.sig_format, ctx.output_path);
     if (!result) {
         rc = tool_rc_general_error;
         goto out;
@@ -183,7 +183,7 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'o':
-        ctx.outFilePath = value;
+        ctx.output_path = value;
         ctx.flags.o = 1;
         break;
     case 'f':
