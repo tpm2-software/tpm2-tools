@@ -13,7 +13,7 @@
  */
 typedef struct tpm2_startup_ctx tpm2_startup_ctx;
 struct tpm2_startup_ctx {
-    UINT8 clear : 1;
+    UINT8 clear :1;
 };
 
 static tpm2_startup_ctx ctx;
@@ -38,8 +38,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "clear", no_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("c", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("c", ARRAY_LEN(topts), topts, on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -50,15 +49,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     TPM2_SU startup_type = ctx.clear ? TPM2_SU_CLEAR : TPM2_SU_STATE;
 
-    LOG_INFO ("Sending TPM_Startup command with type: %s",
+    LOG_INFO("Sending TPM_Startup command with type: %s",
             ctx.clear ? "TPM2_SU_CLEAR" : "TPM2_SU_STATE");
 
-    TSS2_RC rval = Esys_Startup (context, startup_type);
+    TSS2_RC rval = Esys_Startup(context, startup_type);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
         LOG_PERR(Esys_Startup, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    LOG_INFO ("Success. TSS2_RC: 0x%x", rval);
+    LOG_INFO("Success. TSS2_RC: 0x%x", rval);
     return tool_rc_success;
 }
