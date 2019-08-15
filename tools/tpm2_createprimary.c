@@ -78,12 +78,12 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'L':
-        ctx.policy=value;
-    break;
+        ctx.policy = value;
+        break;
     case 'a':
         ctx.attrs = value;
-    break;
-    /* no default */
+        break;
+        /* no default */
     }
 
     return true;
@@ -92,15 +92,15 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "hierarchy",            required_argument, NULL, 'C' },
-        { "hierarchy-auth",       required_argument, NULL, 'P' },
-        { "key-auth",             required_argument, NULL, 'p' },
-        { "hash-algorithm",       required_argument, NULL, 'g' },
-        { "key-algorithm",        required_argument, NULL, 'G' },
-        { "key-context",          required_argument, NULL, 'c' },
-        { "policy",               required_argument, NULL, 'L' },
-        { "attributes",    required_argument, NULL, 'a' },
-        { "unique-data",          required_argument, NULL, 'u' },
+        { "hierarchy",      required_argument, NULL, 'C' },
+        { "hierarchy-auth", required_argument, NULL, 'P' },
+        { "key-auth",       required_argument, NULL, 'p' },
+        { "hash-algorithm", required_argument, NULL, 'g' },
+        { "key-algorithm",  required_argument, NULL, 'G' },
+        { "key-context",    required_argument, NULL, 'c' },
+        { "policy",         required_argument, NULL, 'L' },
+        { "attributes",     required_argument, NULL, 'a' },
+        { "unique-data",    required_argument, NULL, 'u' },
     };
 
     *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:", ARRAY_LEN(topts), topts,
@@ -112,7 +112,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str, &ctx.parent.session, false);
+    tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
+            &ctx.parent.session, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid parent key authorization");
         return rc;
@@ -130,22 +131,23 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_session_close(&tmp);
 
-    bool result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs, ctx.policy, ctx.unique_file, DEFAULT_ATTRS,
-            &ctx.objdata.in.public);
-    if(!result) {
+    bool result = tpm2_alg_util_public_init(ctx.alg, ctx.halg, ctx.attrs,
+            ctx.policy, ctx.unique_file, DEFAULT_ATTRS, &ctx.objdata.in.public);
+    if (!result) {
         return tool_rc_general_error;
     }
 
-    rc = tpm2_hierarchy_create_primary(ectx,
-                ctx.parent.session, &ctx.objdata);
+    rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);
 
-    return ctx.context_file ? files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
-        ctx.context_file) : tool_rc_success;
+    return ctx.context_file ?
+            files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
+                    ctx.context_file) :
+            tool_rc_success;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
