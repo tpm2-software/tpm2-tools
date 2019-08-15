@@ -26,9 +26,8 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *random_bytes;
 
-    TSS2_RC rval = Esys_GetRandom(ectx,
-                                  ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                                  ctx.num_of_bytes, &random_bytes);
+    TSS2_RC rval = Esys_GetRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, ctx.num_of_bytes, &random_bytes);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetRandom, rval);
         return tool_rc_from_tpm(rval);
@@ -38,8 +37,8 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
     if (!ctx.force && random_bytes->size != ctx.num_of_bytes) {
         LOG_ERR("Got %"PRIu16" bytes, expected: %"PRIu16"\n"
                 "Lower your requested amount or"
-                " use --force to override this behavior", random_bytes->size,
-                ctx.num_of_bytes);
+                " use --force to override this behavior",
+                random_bytes->size, ctx.num_of_bytes);
         return tool_rc_general_error;
     }
 
@@ -66,8 +65,7 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
         goto out;
     }
 
-    res = files_write_bytes(out, random_bytes->buffer,
-                random_bytes->size);
+    res = files_write_bytes(out, random_bytes->buffer, random_bytes->size);
 
 out:
     if (out && out != stdout) {
@@ -100,17 +98,14 @@ static bool on_option(char key, char *value) {
 static tool_rc get_max_random(ESYS_CONTEXT *ectx, UINT32 *value) {
 
     TPMS_CAPABILITY_DATA *cap_data = NULL;
-    tool_rc rc = tpm2_capability_get (ectx,
-            TPM2_CAP_TPM_PROPERTIES,
-            TPM2_PT_FIXED,
-            TPM2_MAX_TPM_PROPERTIES,
-            &cap_data);
+    tool_rc rc = tpm2_capability_get(ectx, TPM2_CAP_TPM_PROPERTIES,
+            TPM2_PT_FIXED, TPM2_MAX_TPM_PROPERTIES, &cap_data);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     UINT32 i;
-    for (i=0; i < cap_data->data.tpmProperties.count; i++) {
+    for (i = 0; i < cap_data->data.tpmProperties.count; i++) {
         TPMS_TAGGED_PROPERTY *p = &cap_data->data.tpmProperties.tpmProperty[i];
         if (p->property == TPM2_PT_MAX_DIGEST) {
             *value = p->value;
@@ -133,8 +128,7 @@ static bool on_args(int argc, char **argv) {
 
     bool result = tpm2_util_string_to_uint16(argv[0], &ctx.num_of_bytes);
     if (!result) {
-        LOG_ERR("Error converting size to a number, got: \"%s\".",
-                argv[0]);
+        LOG_ERR("Error converting size to a number, got: \"%s\".", argv[0]);
         return false;
     }
 
@@ -150,7 +144,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("o:f", ARRAY_LEN(topts), topts, on_option, on_args,
-                             0);
+            0);
 
     return *opts != NULL;
 }
@@ -176,7 +170,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
 
         if (ctx.num_of_bytes > max) {
-            LOG_ERR ("TPM getrandom is bounded by max hash size, which is: "
+            LOG_ERR("TPM getrandom is bounded by max hash size, which is: "
                     "%"PRIu32"\n"
                     "Please lower your request (preferred) and try again or"
                     " use --force (advanced)", max);
