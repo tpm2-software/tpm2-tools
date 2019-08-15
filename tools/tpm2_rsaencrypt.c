@@ -31,8 +31,8 @@ static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
     TPM2B_PUBLIC_KEY_RSA *out_data = NULL;
 
     TSS2_RC rval = Esys_RSA_Encrypt(context, ctx.key_context.tr_handle,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &ctx.message, &ctx.scheme, &ctx.label, &out_data);
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.message, &ctx.scheme,
+            &ctx.label, &out_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_RSA_Encrypt, rval);
         return tool_rc_from_tpm(rval);
@@ -96,8 +96,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       {"label",       required_argument, NULL, 'l'},
     };
 
-    *opts = tpm2_options_new("o:c:s:l:", ARRAY_LEN(topts), topts,
-                             on_option, on_args, 0);
+    *opts = tpm2_options_new("o:c:s:l:", ARRAY_LEN(topts), topts, on_option,
+            on_args, 0);
 
     return *opts != NULL;
 }
@@ -110,14 +110,14 @@ static tool_rc init(ESYS_CONTEXT *context) {
     }
 
     ctx.message.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
-        &ctx.message.size, ctx.message.buffer);
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+            ctx.input_path, &ctx.message.size, ctx.message.buffer);
     if (!result) {
         return tool_rc_general_error;
     }
 
     return tpm2_util_object_load(context, ctx.context_arg, &ctx.key_context,
-        TPM2_HANDLE_ALL_W_NV);
+            TPM2_HANDLE_ALL_W_NV);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
