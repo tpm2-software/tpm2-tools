@@ -39,21 +39,21 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     status &= TPM2_RC_TESTING;
 
     switch (status) {
-        case TPM2_RC_SUCCESS:
-            tpm2_tool_output("success");
-            break;
-        case TPM2_RC_TESTING:
-            tpm2_tool_output("testing");
-            break;
-        case TPM2_RC_NEEDS_TEST:
-            tpm2_tool_output("needs-test");
-            break;
-        default:
-            LOG_ERR("Unknown testing result, got: 0x%x", status);
-            goto out;
+    case TPM2_RC_SUCCESS:
+        tpm2_tool_output("success");
+        break;
+    case TPM2_RC_TESTING:
+        tpm2_tool_output("testing");
+        break;
+    case TPM2_RC_NEEDS_TEST:
+        tpm2_tool_output("needs-test");
+        break;
+    default:
+        LOG_ERR("Unknown testing result, got: 0x%x", status);
+        goto out;
     }
 
-    if(output->size > 0){
+    if (output->size > 0) {
         tpm2_tool_output("\ndata: ");
         print_yaml_indent(1);
         tpm2_util_hexdump(output->buffer, output->size);
@@ -61,8 +61,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_tool_output("\n");
 
     rc = tool_rc_success;
-out:
-    free(output);
+    out: free(output);
 
     return rc;
 }
