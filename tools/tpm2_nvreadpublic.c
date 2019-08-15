@@ -46,19 +46,19 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
 static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
 
-    TPMS_CAPABILITY_DATA *capabilityData;
+    TPMS_CAPABILITY_DATA *capability_data;
     UINT32 property = tpm2_util_hton_32(TPM2_HT_NV_INDEX);
     TSS2_RC rval = Esys_GetCapability(context, ESYS_TR_NONE, ESYS_TR_NONE,
             ESYS_TR_NONE, TPM2_CAP_HANDLES, property, TPM2_PT_NV_INDEX_MAX,
-            NULL, &capabilityData);
+            NULL, &capability_data);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetCapability, rval);
         return tool_rc_from_tpm(rval);
     }
 
     UINT32 i;
-    for (i = 0; i < capabilityData->data.handles.count; i++) {
-        TPMI_RH_NV_INDEX index = capabilityData->data.handles.handle[i];
+    for (i = 0; i < capability_data->data.handles.count; i++) {
+        TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
 
         tpm2_tool_output("0x%x:\n", index);
 
@@ -66,7 +66,7 @@ static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
         tool_rc rc = tpm2_util_nv_read_public(context, index, &nv_public);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to read the public part of NV index 0x%X", index);
-            free(capabilityData);
+            free(capability_data);
             return rc;
         }
         print_nv_public(nv_public);
@@ -74,7 +74,7 @@ static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
         tpm2_tool_output("\n");
     }
 
-    free(capabilityData);
+    free(capability_data);
     return tool_rc_success;
 }
 
