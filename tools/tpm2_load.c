@@ -18,7 +18,7 @@ struct tpm_load_ctx {
 
     struct {
         const char *pubpath;
-        TPM2B_PUBLIC  public;
+        TPM2B_PUBLIC public;
         const char *privpath;
         TPM2B_PRIVATE private;
         ESYS_TR handle;
@@ -32,7 +32,7 @@ static tpm_load_ctx ctx;
 
 static bool on_option(char key, char *value) {
 
-    switch(key) {
+    switch (key) {
     case 'P':
         ctx.parent.auth_str = value;
         break;
@@ -59,16 +59,16 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "auth",                 required_argument, NULL, 'P' },
-      { "public",               required_argument, NULL, 'u' },
-      { "private",              required_argument, NULL, 'r' },
-      { "name",                 required_argument, NULL, 'n' },
-      { "key-context",          required_argument, NULL, 'c' },
-      { "parent-context",       required_argument, NULL, 'C' },
+      { "auth",           required_argument, NULL, 'P' },
+      { "public",         required_argument, NULL, 'u' },
+      { "private",        required_argument, NULL, 'r' },
+      { "name",           required_argument, NULL, 'n' },
+      { "key-context",    required_argument, NULL, 'c' },
+      { "parent-context", required_argument, NULL, 'C' },
     };
 
-    *opts = tpm2_options_new("P:u:r:n:C:c:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("P:u:r:n:C:c:", ARRAY_LEN(topts), topts, on_option,
+            NULL, 0);
 
     return *opts != NULL;
 }
@@ -102,17 +102,18 @@ static tool_rc check_opts(void) {
 static tool_rc init(ESYS_CONTEXT *ectx) {
 
     bool res = files_load_public(ctx.object.pubpath, &ctx.object.public);
-    if(!res) {
+    if (!res) {
         return tool_rc_general_error;
     }
 
     res = files_load_private(ctx.object.privpath, &ctx.object.private);
-    if(!res) {
+    if (!res) {
         return tool_rc_general_error;
     }
 
     return tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-        ctx.parent.auth_str, &ctx.parent.object, false, TPM2_HANDLE_ALL_W_NV);
+            ctx.parent.auth_str, &ctx.parent.object, false,
+            TPM2_HANDLE_ALL_W_NV);
 }
 
 static tool_rc finish(ESYS_CONTEXT *ectx) {
@@ -124,7 +125,8 @@ static tool_rc finish(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.namepath) {
-        bool result = files_save_bytes_to_file(ctx.namepath, name->name, name->size);
+        bool result = files_save_bytes_to_file(ctx.namepath, name->name,
+                name->size);
         free(name);
         if (!result) {
             return tool_rc_general_error;
@@ -136,9 +138,8 @@ static tool_rc finish(ESYS_CONTEXT *ectx) {
         free(name);
     }
 
-    return files_save_tpm_context_to_path(ectx,
-                    ctx.object.handle,
-                    ctx.contextpath);
+    return files_save_tpm_context_to_path(ectx, ctx.object.handle,
+            ctx.contextpath);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -155,12 +156,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    rc = tpm2_load(
-            ectx,
-            &ctx.parent.object,
-            &ctx.object.private,
-            &ctx.object.public,
-            &ctx.object.handle);
+    rc = tpm2_load(ectx, &ctx.parent.object, &ctx.object.private,
+            &ctx.object.public, &ctx.object.handle);
     if (rc != tool_rc_success) {
         return rc;
     }
