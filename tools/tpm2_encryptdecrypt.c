@@ -150,8 +150,9 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
                             ctx.encryption_key.object.tr_handle,
                             ctx.encryption_key.object.session, &shandle1);
     if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
         LOG_ERR("Failed to get shandle");
-        return tmp_rc;
+        goto out;
     }
 
     TPM2B_MAX_BUFFER *out_data = NULL;
