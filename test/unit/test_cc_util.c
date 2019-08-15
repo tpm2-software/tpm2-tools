@@ -190,7 +190,7 @@ static void test_tpm2_cc_util_from_str_validate_map(void **state) {
     };
 
     size_t i;
-    for (i=0; i < ARRAY_LEN(map); i++) {
+    for (i = 0; i < ARRAY_LEN(map); i++) {
         const cc_map *m = &map[i];
         TPM2_CC expected = m->cc;
         TPM2_CC got = 0;
