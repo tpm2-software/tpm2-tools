@@ -34,8 +34,9 @@ static bool on_option(char key, char *value) {
         ctx.session.type = TPM2_SE_POLICY;
         break;
     case 'g':
-        ctx.session.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
-        if(ctx.session.halg == TPM2_ALG_ERROR) {
+        ctx.session.halg = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_hash);
+        if (ctx.session.halg == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid choice for policy digest hash algorithm");
             return false;
         }
@@ -54,14 +55,14 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "policy-session",      no_argument,       NULL,  0 },
-        { "key-context",         required_argument, NULL, 'c'},
-        { "hash-algorithm",      required_argument, NULL, 'g'},
-        { "session",             required_argument, NULL, 'S'},
+        { "policy-session", no_argument,       NULL,  0 },
+        { "key-context",    required_argument, NULL, 'c'},
+        { "hash-algorithm", required_argument, NULL, 'g'},
+        { "session",        required_argument, NULL, 'S'},
     };
 
     *opts = tpm2_options_new("g:S:c:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    NULL, 0);
 
     return *opts != NULL;
 }
@@ -86,8 +87,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.session.key_context_arg_str) {
         tool_rc tmp_rc = tpm2_util_object_load(ectx,
-            ctx.session.key_context_arg_str, &ctx.session.key_context_object,
-            TPM2_HANDLE_ALL_W_NV);
+                ctx.session.key_context_arg_str,
+                &ctx.session.key_context_object, TPM2_HANDLE_ALL_W_NV);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
@@ -95,7 +96,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         /* if the loaded object has a handle then it must be a persistent object */
         if (ctx.session.key_context_object.handle) {
 
-            bool is_transient = (ctx.session.key_context_object.handle >> TPM2_HR_SHIFT) == TPM2_HT_TRANSIENT;
+            bool is_transient = (ctx.session.key_context_object.handle
+                    >> TPM2_HR_SHIFT) == TPM2_HT_TRANSIENT;
             if (!is_transient) {
                 LOG_WARN("check public key portion manually");
             }
@@ -116,28 +118,24 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* if it has an encryption key, set it as both the encryption key and bind key */
     if (has_key) {
-        tpm2_session_set_key(session_data, ctx.session.key_context_object.tr_handle);
-        tpm2_session_set_bind(session_data, ctx.session.key_context_object.tr_handle);
+        tpm2_session_set_key(session_data,
+                ctx.session.key_context_object.tr_handle);
+        tpm2_session_set_bind(session_data,
+                ctx.session.key_context_object.tr_handle);
 
-        TPMT_SYM_DEF sym = {
-            .algorithm = TPM2_ALG_AES,
-            .keyBits = { .aes = 128 },
-            .mode = { .aes = TPM2_ALG_CFB }
-        };
+        TPMT_SYM_DEF sym = { .algorithm = TPM2_ALG_AES, .keyBits =
+                { .aes = 128 }, .mode = { .aes = TPM2_ALG_CFB } };
 
         tpm2_session_set_symmetric(session_data, &sym);
 
-        TPMA_SESSION attrs =
-            TPMA_SESSION_CONTINUESESSION
-          | TPMA_SESSION_DECRYPT
-          | TPMA_SESSION_ENCRYPT;
+        TPMA_SESSION attrs = TPMA_SESSION_CONTINUESESSION | TPMA_SESSION_DECRYPT
+                | TPMA_SESSION_ENCRYPT;
 
         tpm2_session_set_attrs(session_data, attrs);
     }
 
     tpm2_session *s = NULL;
-    rc = tpm2_session_open(ectx,
-            session_data, &s);
+    rc = tpm2_session_open(ectx, session_data, &s);
     if (rc != tool_rc_success) {
         return rc;
     }
