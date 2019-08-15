@@ -62,14 +62,14 @@ static int test_setup(void **state) {
 
 static int test_teardown(void **state) {
 
-    test_file *tf = (test_file *)*state;
+    test_file *tf = (test_file *) *state;
     test_file_free(tf);
     return 0;
 }
 
 static test_file *test_file_from_state(void **state) {
 
-    test_file *f = (test_file *)*state;
+    test_file *f = (test_file *) *state;
     assert_non_null(f);
     return f;
 }
@@ -206,7 +206,8 @@ static void test_file_size(void **state) {
 static void test_file_size_bad_args(void **state) {
 
     unsigned long file_size;
-    bool res = files_get_file_size_path("this_should_be_a_bad_path", &file_size);
+    bool res = files_get_file_size_path("this_should_be_a_bad_path",
+            &file_size);
     assert_false(res);
 
     res = files_get_file_size_path(NULL, &file_size);
@@ -243,8 +244,8 @@ static void test_file_exists_bad_args(void **state) {
 bool output_enabled = true;
 
 int main(int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
+    (void) argc;
+    (void) argv;
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(test_file_read_write_16,
