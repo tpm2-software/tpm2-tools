@@ -70,6 +70,10 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
                 random_bytes->size);
 
 out:
+    if (out && out != stdout) {
+        fclose(out);
+    }
+
     free(random_bytes);
     return res == true ? tool_rc_success : tool_rc_general_error;
 }
