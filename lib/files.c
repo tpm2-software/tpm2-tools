@@ -38,7 +38,8 @@ bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
     long current = ftell(fp);
     if (current < 0) {
         if (path) {
-            LOG_ERR("Error getting current file offset for file \"%s\" error: %s", path, strerror(errno));
+            LOG_ERR("Error getting current file offset for file \"%s\" error: "
+                    "%s", path, strerror(errno));
         }
         return false;
     }
@@ -46,7 +47,8 @@ bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
     int rc = fseek(fp, 0, SEEK_END);
     if (rc < 0) {
         if (path) {
-            LOG_ERR("Error seeking to end of file \"%s\" error: %s", path, strerror(errno));
+            LOG_ERR("Error seeking to end of file \"%s\" error: %s", path,
+                    strerror(errno));
         }
         return false;
     }
@@ -62,18 +64,20 @@ bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
     rc = fseek(fp, current, SEEK_SET);
     if (rc < 0) {
         if (path) {
-            LOG_ERR("Could not restore initial stream position for file \"%s\" failed: %s", path, strerror(errno));
+            LOG_ERR(
+                    "Could not restore initial stream position for file \"%s\" "
+                    "failed: %s", path, strerror(errno));
         }
         return false;
     }
 
     /* size cannot be negative at this point */
-    *file_size = (unsigned long)size;
+    *file_size = (unsigned long) size;
     return true;
 }
 
 static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
-                                 const char *path) {
+        const char *path) {
     unsigned long file_size;
     bool result = files_get_file_size(f, &file_size, path);
     if (!result) {
@@ -85,8 +89,8 @@ static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
     if (file_size > *size) {
         if (path) {
             LOG_ERR(
-                    "File \"%s\" size is larger than buffer, got %lu expected less than %u",
-                    path, file_size, *size);
+                    "File \"%s\" size is larger than buffer, got %lu expected "
+                    "less than %u", path, file_size, *size);
         }
         return false;
     }
@@ -211,8 +215,8 @@ out:
     return result;
 }
 
-tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *ectx,
-        ESYS_TR handle, FILE *stream) {
+tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *ectx, ESYS_TR handle,
+        FILE *stream) {
 
     TPMS_CONTEXT *context = NULL;
 
@@ -255,9 +259,9 @@ static bool load_tpm_context_file(FILE *fstream, TPMS_CONTEXT *context) {
     UINT32 version;
     bool result = files_read_header(fstream, &version);
     if (!result) {
-        LOG_WARN(
-            "The loaded tpm context does not appear to be in the proper format,"
-            "assuming old format, this will be converted on the next save.");
+        LOG_WARN("The loaded tpm context does not appear to be in the proper "
+                "format, assuming old format, this will be converted on the "
+                "next save.");
         rewind(fstream);
         result = files_read_bytes(fstream, (UINT8 *) context, sizeof(*context));
         if (!result) {
@@ -301,9 +305,8 @@ static bool load_tpm_context_file(FILE *fstream, TPMS_CONTEXT *context) {
     }
 
     if (context->contextBlob.size > sizeof(context->contextBlob.buffer)) {
-        LOG_ERR(
-                "Size mismatch found on contextBlob, got %"PRIu16" expected less than or equal to %zu",
-                context->contextBlob.size,
+        LOG_ERR("Size mismatch found on contextBlob, got %"PRIu16" expected "
+                "less than or equal to %zu", context->contextBlob.size,
                 sizeof(context->contextBlob.buffer));
         result = false;
         goto out;
@@ -341,8 +344,8 @@ static bool check_magic(FILE *fstream, bool seek_reset) {
     }
 
     if (!match) {
-        LOG_ERR("Found magic 0x%x did not match expected magic of 0x%x!",
-                magic, MAGIC);
+        LOG_ERR("Found magic 0x%x did not match expected magic of 0x%x!", magic,
+                MAGIC);
     }
 
     return match;
@@ -394,17 +397,12 @@ tool_rc files_load_tpm_context_from_file(ESYS_CONTEXT *context,
         goto out;
     }
 
-    rc = tpm2_tr_deserialize(
-        context,
-        buffer,
-        size,
-        &loaded_handle);
+    rc = tpm2_tr_deserialize(context, buffer, size, &loaded_handle);
     free(buffer);
     if (rc == tool_rc_success) {
         *tr_handle = loaded_handle;
     }
-out:
-    return rc;
+    out: return rc;
 }
 
 tool_rc files_load_tpm_context_from_path(ESYS_CONTEXT *context,
@@ -430,7 +428,7 @@ bool files_does_file_exist(const char *path) {
         return false;
     }
 
-    FILE *fp = fopen(path,"rb");
+    FILE *fp = fopen(path, "rb");
     if (fp) {
         fclose(fp);
         LOG_WARN("Path: %s already exists. Please rename or delete the file!",
@@ -454,8 +452,8 @@ bool files_get_file_size_path(const char *path, unsigned long *file_size) {
         return false;
     }
 
-    FILE *fp = fopen(path,"rb");
-    if(!fp) {
+    FILE *fp = fopen(path, "rb");
+    if (!fp) {
         LOG_ERR("Could not open file: \"%s\" error: %s", path, strerror(errno));
         return false;
     }
@@ -602,7 +600,7 @@ bool files_read_header(FILE *out, uint32_t *version) {
 }
 
 bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
-    const char *path, UINT16 *size, BYTE *buf) {
+        const char *path, UINT16 *size, BYTE *buf) {
     /*
      * Read from stdin where in size is not fixed or is unknown
      * Size however cannot be bigger than UINT16_MAX
@@ -631,11 +629,12 @@ bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
     if (input_buffer) {
         size_t input_buffer_size = strlen(input_buffer);
         if (path) {
-            LOG_ERR("Specify either the input buffer or file path to load data, not both");
+            LOG_ERR("Specify either the input buffer or file path to load data,"
+                    " not both");
         }
-        if (input_buffer_size != (size_t)original_size) {
-            LOG_ERR("Unexpected data size. Got %u expected %u",
-                    original_size, (unsigned)input_buffer_size);
+        if (input_buffer_size != (size_t) original_size) {
+            LOG_ERR("Unexpected data size. Got %u expected %u", original_size,
+                    (unsigned )input_buffer_size);
             res = false;
         } else {
             memcpy(buf, input_buffer, input_buffer_size);
@@ -672,8 +671,7 @@ tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path)
 
     size_t size;
     uint8_t *buffer;
-    tool_rc rc = tpm2_tr_serialize(ectx,
-                      handle, &buffer, &size);
+    tool_rc rc = tpm2_tr_serialize(ectx, handle, &buffer, &size);
     if (rc != tool_rc_success) {
         return rc;
     }
