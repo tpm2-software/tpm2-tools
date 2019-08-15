@@ -15,14 +15,14 @@ static void test_pcr_alg_nice_names(void **state) {
     (void) state;
 
     TPML_PCR_SELECTION friendly_pcr_selections =
-            TPML_PCR_SELECTION_EMPTY_INIT;
+    TPML_PCR_SELECTION_EMPTY_INIT;
 
     bool result = pcr_parse_selections("sha256:16,17,18+0x0b:16,17,18",
             &friendly_pcr_selections);
     assert_true(result);
 
     TPML_PCR_SELECTION raw_pcr_selections =
-            TPML_PCR_SELECTION_EMPTY_INIT;
+    TPML_PCR_SELECTION_EMPTY_INIT;
 
     result = pcr_parse_selections("0xb:16,17,18+0x0b:16,17,18",
             &raw_pcr_selections);
