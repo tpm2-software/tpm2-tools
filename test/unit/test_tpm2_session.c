@@ -24,8 +24,8 @@ static void test_tpm2_create_dummy_context(TPMS_CONTEXT *context) {
     memset(context->contextBlob.buffer, '\0', context->contextBlob.size);
 }
 
-tool_rc __wrap_tpm2_context_save(ESYS_CONTEXT *esysContext,
-            ESYS_TR saveHandle, TPMS_CONTEXT **context) {
+tool_rc __wrap_tpm2_context_save(ESYS_CONTEXT *esysContext, ESYS_TR saveHandle,
+        TPMS_CONTEXT **context) {
 
     UNUSED(esysContext);
 
@@ -40,7 +40,7 @@ tool_rc __wrap_tpm2_context_save(ESYS_CONTEXT *esysContext,
 }
 
 TSS2_RC __wrap_Esys_ContextLoad(ESYS_CONTEXT *esysContext,
-            const TPMS_CONTEXT *context, ESYS_TR *loadedHandle) {
+        const TPMS_CONTEXT *context, ESYS_TR *loadedHandle) {
 
     UNUSED(esysContext);
     UNUSED(context);
@@ -51,12 +51,12 @@ TSS2_RC __wrap_Esys_ContextLoad(ESYS_CONTEXT *esysContext,
 }
 
 static TSS2_RC policy_restart_return() {
-    return (TSS2_RC)mock();
+    return (TSS2_RC) mock();
 }
 
 TSS2_RC __wrap_Esys_PolicyRestart(ESYS_CONTEXT *esysContext,
-            ESYS_TR sessionHandle,
-            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3) {
+        ESYS_TR sessionHandle, ESYS_TR shandle1, ESYS_TR shandle2,
+        ESYS_TR shandle3) {
 
     UNUSED(esysContext);
     UNUSED(sessionHandle);
@@ -67,24 +67,25 @@ TSS2_RC __wrap_Esys_PolicyRestart(ESYS_CONTEXT *esysContext,
     return policy_restart_return();
 }
 
-static ESYS_CONTEXT *CONTEXT = ((ESYS_CONTEXT *)0xDEADBEEF);
+static ESYS_CONTEXT *CONTEXT = ((ESYS_CONTEXT *) 0xDEADBEEF);
 
 TSS2_RC __wrap_Esys_TR_GetName(ESYS_CONTEXT *esysContext, ESYS_TR handle,
-            TPM2B_NAME **name) {
+        TPM2B_NAME **name) {
 
     UNUSED(esysContext);
     UNUSED(handle);
 
     *name = malloc(sizeof(TPM2B_NAME));
     size_t offset = 0;
-    TSS2_RC rc = Tss2_MU_TPM2_HANDLE_Marshal(SESSION_HANDLE,
-                    &(*name)->name[0], sizeof(TPM2_HANDLE), &offset);
+    TSS2_RC rc = Tss2_MU_TPM2_HANDLE_Marshal(SESSION_HANDLE, &(*name)->name[0],
+            sizeof(TPM2_HANDLE), &offset);
     (*name)->size = offset;
 
     return rc;
 }
 
-TSS2_RC __wrap_tpm2_flush_context(ESYS_CONTEXT *esysContext, ESYS_TR flushHandle) {
+TSS2_RC __wrap_tpm2_flush_context(ESYS_CONTEXT *esysContext,
+        ESYS_TR flushHandle) {
     UNUSED(esysContext);
     UNUSED(flushHandle);
 
@@ -120,7 +121,6 @@ static void test_tpm2_session_setters_good(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_TRIAL);
     assert_non_null(d);
 
-
     tpm2_session_set_authhash(d, TPM2_ALG_SHA512);
 
     TPMT_SYM_DEF symmetric = {
@@ -148,11 +148,8 @@ static void test_tpm2_session_setters_good(void **state) {
 
     tpm2_session_set_key(d, 0x1234);
 
-    set_expected(0x1234, 42,
-    TPM2_SE_TRIAL, &symmetric,
-    TPM2_ALG_SHA512, &nonce,
-    SESSION_HANDLE,
-    TPM2_RC_SUCCESS);
+    set_expected(0x1234, 42, TPM2_SE_TRIAL, &symmetric, TPM2_ALG_SHA512, &nonce,
+    SESSION_HANDLE, TPM2_RC_SUCCESS);
 
     tpm2_session *s = NULL;
     tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
@@ -191,7 +188,7 @@ static int test_session_setup(void **state) {
 
 static int test_session_teardown(void **state) {
 
-    int rc = unlink((char *)*state);
+    int rc = unlink((char *) *state);
     return rc;
 }
 
@@ -202,7 +199,7 @@ static void test_tpm2_session_save(void **state) {
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_POLICY);
     assert_non_null(d);
 
-    tpm2_session_set_path(d, (char *)*state);
+    tpm2_session_set_path(d, (char *) *state);
 
     tpm2_session *s = NULL;
     tool_rc rc = tpm2_session_open(CONTEXT, d, &s);
@@ -211,22 +208,20 @@ static void test_tpm2_session_save(void **state) {
 
     ESYS_TR handle1 = tpm2_session_get_handle(s);
     TPMI_SH_AUTH_SESSION tpm_handle1;
-    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle1,
-                    &tpm_handle1);
+    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle1, &tpm_handle1);
     assert_int_equal(rc, tool_rc_success);
 
     rc = tpm2_session_close(&s);
     assert_int_equal(rc, tool_rc_success);
     assert_null(s);
 
-    rc = tpm2_session_restore(NULL, (char *)*state, false, &s);
+    rc = tpm2_session_restore(NULL, (char *) *state, false, &s);
     assert_int_equal(rc, tool_rc_success);
     assert_non_null(s);
 
     ESYS_TR handle2 = tpm2_session_get_handle(s);
     TPMI_SH_AUTH_SESSION tpm_handle2;
-    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle2,
-                &tpm_handle2);
+    rc = tpm2_util_esys_handle_to_sys_handle(CONTEXT, handle2, &tpm_handle2);
     assert_int_equal(rc, tool_rc_success);
 
     assert_int_equal(tpm_handle1, tpm_handle2);
