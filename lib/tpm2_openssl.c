@@ -393,6 +393,7 @@ static bool do_open_file(FILE *f, const char *path, char **pass) {
 
     result = files_read_bytes(f, (UINT8 *)tmp, file_size);
     if (!result) {
+        free(tmp);
         goto out;
     }
 
