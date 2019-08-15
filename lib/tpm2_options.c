@@ -130,6 +130,10 @@ static bool execute_man(char *prog_name, bool show_errors) {
         if (!show_errors) {
             /* redirect manpager errors to stderr */
             int fd = open("/dev/null", O_WRONLY);
+            if (fd < 0) {
+                LOG_ERR("Could not open /dev/null");
+                return false;
+            }
             dup2(fd, 2);
             close(fd);
         }
