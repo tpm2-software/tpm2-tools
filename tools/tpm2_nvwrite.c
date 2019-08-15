@@ -51,8 +51,8 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
     if (ctx.offset + ctx.data_size > nv_public->nvPublic.dataSize) {
         LOG_ERR("The starting offset (%u) and the size (%u) are larger than the"
-                " defined space: %u.",
-                ctx.offset, ctx.data_size, nv_public->nvPublic.dataSize);
+                " defined space: %u.", ctx.offset, ctx.data_size,
+                nv_public->nvPublic.dataSize);
         free(nv_public);
         return tool_rc_general_error;
     }
@@ -66,23 +66,22 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
     if (max_data_size > TPM2_MAX_NV_BUFFER_SIZE) {
         max_data_size = TPM2_MAX_NV_BUFFER_SIZE;
-    }
-    else if (max_data_size == 0) {
+    } else if (max_data_size == 0) {
         max_data_size = NV_DEFAULT_BUFFER_SIZE;
     }
 
     while (ctx.data_size > 0) {
 
         nv_write_data.size =
-                ctx.data_size > max_data_size ?
-                        max_data_size : ctx.data_size;
+                ctx.data_size > max_data_size ? max_data_size : ctx.data_size;
 
         LOG_INFO("The data(size=%d) to be written:", nv_write_data.size);
 
-        memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset], nv_write_data.size);
+        memcpy(nv_write_data.buffer, &ctx.nv_buffer[data_offset],
+                nv_write_data.size);
 
         rc = tpm2_nvwrite(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-            &nv_write_data, ctx.offset + data_offset);
+                &nv_write_data, ctx.offset + data_offset);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -107,13 +106,14 @@ static bool on_option(char key, char *value) {
     case 'i':
         input_file = strcmp("-", value) ? value : NULL;
         if (input_file) {
-            result = files_get_file_size_path(value, (long unsigned *)&ctx.data_size);
+            result = files_get_file_size_path(value,
+                    (long unsigned *) &ctx.data_size);
         }
         if (input_file && !result) {
             return false;
         }
         result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, input_file,
-            &ctx.data_size, ctx.nv_buffer);
+                &ctx.data_size, ctx.nv_buffer);
         if (!result) {
             return false;
         }
@@ -124,8 +124,7 @@ static bool on_option(char key, char *value) {
         break;
     case 0:
         if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {
-            LOG_ERR("Could not convert starting offset, got: \"%s\"",
-                    value);
+            LOG_ERR("Could not convert starting offset, got: \"%s\"", value);
             return false;
         }
         break;
@@ -136,8 +135,8 @@ static bool on_option(char key, char *value) {
 
 static bool on_arg(int argc, char **argv) {
     /* If the user doesn't specify an authorization hierarchy use the index
-    * passed to -x/--index for the authorization index.
-    */
+     * passed to -x/--index for the authorization index.
+     */
     if (!ctx.auth_hierarchy.ctx_path) {
         ctx.auth_hierarchy.ctx_path = argv[0];
     }
@@ -154,7 +153,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("C:P:i:", ARRAY_LEN(topts), topts, on_option,
-        on_arg, 0);
+            on_arg, 0);
 
     return *opts != NULL;
 }
@@ -164,8 +163,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HANDLE_FLAGS_NV|TPM2_HANDLE_FLAGS_O|TPM2_HANDLE_FLAGS_P);
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization");
         return rc;
