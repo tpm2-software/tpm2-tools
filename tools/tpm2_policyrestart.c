@@ -5,8 +5,8 @@
 
 typedef struct tpm2_policyreset_ctx tpm2_policyreset_ctx;
 struct tpm2_policyreset_ctx {
-   char *path;
-   tpm2_session *session;
+    char *path;
+    tpm2_session *session;
 };
 
 static tpm2_policyreset_ctx ctx;
@@ -16,7 +16,7 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'S':
         ctx.path = value;
-    break;
+        break;
     }
     return true;
 }
@@ -24,11 +24,11 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "session",        required_argument,  NULL,   'S' },
+        { "session", required_argument,  NULL, 'S' },
     };
 
     *opts = tpm2_options_new("S:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    NULL, 0);
 
     return *opts != NULL;
 }
