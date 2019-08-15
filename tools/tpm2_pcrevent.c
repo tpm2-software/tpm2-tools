@@ -67,7 +67,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
     }
 
     ESYS_TR sequence_handle;
-    TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
+    TPM2B_AUTH null_auth = TPM2B_EMPTY_INIT;
 
     /*
      * Size is either unknown because the FILE * is a fifo, or it's too big
@@ -75,13 +75,13 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
      * to loop over, if possible. This way we can call Complete with data.
      */
     rval = Esys_HashSequenceStart(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &nullAuth, TPM2_ALG_NULL, &sequence_handle);
+            ESYS_TR_NONE, &null_auth, TPM2_ALG_NULL, &sequence_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HashSequenceStart, rval);
         return tool_rc_from_tpm(rval);
     }
 
-    rval = Esys_TR_SetAuth(ectx, sequence_handle, &nullAuth);
+    rval = Esys_TR_SetAuth(ectx, sequence_handle, &null_auth);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_SetAuth, rval);
         return tool_rc_from_tpm(rval);
