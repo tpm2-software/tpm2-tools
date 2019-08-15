@@ -11,9 +11,9 @@
 typedef struct tpm2_policysecret_ctx tpm2_policysecret_ctx;
 struct tpm2_policysecret_ctx {
     struct {
-        const char *ctx_path;//auth_entity.ctx_path
-        const char *auth_str;//auth_str
-        tpm2_loaded_object object;//context_object && pwd_session
+        const char *ctx_path; //auth_entity.ctx_path
+        const char *auth_str; //auth_str
+        tpm2_loaded_object object; //context_object && pwd_session
     } auth_entity;
 
     //File path for storing the policy digest output
@@ -24,7 +24,7 @@ struct tpm2_policysecret_ctx {
     tpm2_session *extended_session;
 
     struct {
-        UINT8 c : 1;
+        UINT8 c :1;
     } flags;
 };
 
@@ -50,7 +50,7 @@ static bool on_option(char key, char *value) {
     return result;
 }
 
-bool on_arg (int argc, char **argv) {
+bool on_arg(int argc, char **argv) {
 
     if (argc > 1) {
         LOG_ERR("Specify a single auth value");
@@ -76,7 +76,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("L:S:c:", ARRAY_LEN(topts), topts, on_option,
-                             on_arg, 0);
+            on_arg, 0);
 
     return *opts != NULL;
 }
@@ -105,7 +105,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_session_restore(ectx, ctx.extended_session_path, false, &ctx.extended_session);
+    tool_rc rc = tpm2_session_restore(ectx, ctx.extended_session_path, false,
+            &ctx.extended_session);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -125,7 +126,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * 3. if the error was closing the policy secret session, return that rc.
      */
     rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
-        &ctx.auth_entity.object);
+            &ctx.auth_entity.object);
     tool_rc rc2 = tpm2_session_close(&ctx.auth_entity.object.session);
     if (rc != tool_rc_success) {
         return rc;
@@ -140,7 +141,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return tpm2_policy_tool_finish(ectx, ctx.extended_session, ctx.out_policy_dgst_path);
+    return tpm2_policy_tool_finish(ectx, ctx.extended_session,
+            ctx.out_policy_dgst_path);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
