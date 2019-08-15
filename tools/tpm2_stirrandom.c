@@ -18,7 +18,7 @@ static tpm_stirrandom_ctx ctx;
 static tool_rc do_stirrandom(ESYS_CONTEXT *ectx) {
 
     TSS2_RC rval = Esys_StirRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-                                   ESYS_TR_NONE, &ctx.in_data);
+            ESYS_TR_NONE, &ctx.in_data);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Error while injecting specified additionnal data into TPM "
                 "random pool");
@@ -52,8 +52,8 @@ static bool load_sensitive(void) {
 
     ctx.in_data.size = MAX_SIZE_TO_READ;
 
-    bool res = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
-                        ctx.in_file, &ctx.in_data.size, ctx.in_data.buffer);
+    bool res = files_load_bytes_from_buffer_or_file_or_stdin(NULL, ctx.in_file,
+            &ctx.in_data.size, ctx.in_data.buffer);
     if (!res) {
         LOG_ERR("Error while reading data from file or stdin");
         return false;
