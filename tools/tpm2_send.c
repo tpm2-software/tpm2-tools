@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +34,12 @@ static bool read_command_from_file(FILE *f, tpm2_command_header **c,
 
     UINT32 command_size = tpm2_command_header_get_size(header, true);
     UINT32 data_size = tpm2_command_header_get_size(header, false);
+
+    if (command_size < data_size) {
+        LOG_ERR("Command buffer %"PRIu32" bytes cannot be smaller then the "
+                "encapsulated data %"PRIu32" bytes", command_size, data_size);
+        return false;
+    }
 
     tpm2_command_header *command = (tpm2_command_header *) malloc(command_size);
     if (!command) {
