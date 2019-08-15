@@ -15,34 +15,34 @@
 
 typedef struct tpm_hash_ctx tpm_hash_ctx;
 struct tpm_hash_ctx {
-    TPMI_RH_HIERARCHY hierarchyValue;
+    TPMI_RH_HIERARCHY hierarchy_value;
     FILE *input_file;
     TPMI_ALG_HASH halg;
-    char *outHashFilePath;
-    char *outTicketFilePath;
+    char *output_hash_path;
+    char *output_ticket_path;
     bool hex;
 };
 
 static tpm_hash_ctx ctx = {
-    .hierarchyValue = TPM2_RH_OWNER,
+    .hierarchy_value = TPM2_RH_OWNER,
     .halg = TPM2_ALG_SHA1,
 };
 
 static tool_rc hash_and_save(ESYS_CONTEXT *context) {
 
-    TPM2B_DIGEST *outHash;
+    TPM2B_DIGEST *out_hash;
     TPMT_TK_HASHCHECK *validation;
 
     FILE *out = stdout;
 
-    tool_rc rc = tpm2_hash_file(context, ctx.halg, ctx.hierarchyValue,
-            ctx.input_file, &outHash, &validation);
+    tool_rc rc = tpm2_hash_file(context, ctx.halg, ctx.hierarchy_value,
+            ctx.input_file, &out_hash, &validation);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    if (ctx.outTicketFilePath) {
-        bool res = files_save_validation(validation, ctx.outTicketFilePath);
+    if (ctx.output_ticket_path) {
+        bool res = files_save_validation(validation, ctx.output_ticket_path);
         if (!res) {
             rc = tool_rc_general_error;
             goto out;
@@ -50,11 +50,11 @@ static tool_rc hash_and_save(ESYS_CONTEXT *context) {
     }
 
     rc = tool_rc_general_error;
-    if (ctx.outHashFilePath) {
-        out = fopen(ctx.outHashFilePath, "wb+");
+    if (ctx.output_hash_path) {
+        out = fopen(ctx.output_hash_path, "wb+");
         if (!out) {
             LOG_ERR("Could not open output file \"%s\", error: %s",
-                    ctx.outHashFilePath, strerror(errno));
+                    ctx.output_hash_path, strerror(errno));
             goto out;
         }
     } else if (!output_enabled) {
@@ -63,10 +63,10 @@ static tool_rc hash_and_save(ESYS_CONTEXT *context) {
     }
 
     if (ctx.hex) {
-        tpm2_util_print_tpm2b2(out, outHash);
+        tpm2_util_print_tpm2b2(out, out_hash);
     } else {
 
-        bool res = files_write_bytes(out, outHash->buffer, outHash->size);
+        bool res = files_write_bytes(out, out_hash->buffer, out_hash->size);
         if (!res) {
             goto out;
         }
@@ -79,7 +79,7 @@ out:
         fclose(out);
     }
 
-    free(outHash);
+    free(out_hash);
     free(validation);
 
     return rc;
@@ -107,7 +107,7 @@ static bool on_option(char key, char *value) {
     bool res;
     switch (key) {
     case 'C':
-        res = tpm2_util_handle_from_optarg(value, &ctx.hierarchyValue,
+        res = tpm2_util_handle_from_optarg(value, &ctx.hierarchy_value,
                 TPM2_HANDLE_FLAGS_ALL_HIERACHIES);
         if (!res) {
             return false;
@@ -120,10 +120,10 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'o':
-        ctx.outHashFilePath = value;
+        ctx.output_hash_path = value;
         break;
     case 't':
-        ctx.outTicketFilePath = value;
+        ctx.output_ticket_path = value;
         break;
     case 0:
         ctx.hex = true;
