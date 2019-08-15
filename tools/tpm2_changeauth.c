@@ -28,7 +28,8 @@ struct changeauth_ctx {
 
 static changeauth_ctx ctx;
 
-static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
+static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx,
+        const TPM2B_AUTH *new_auth) {
 
     return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, new_auth);
 }
@@ -38,7 +39,8 @@ static tool_rc nv_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
     return tpm2_nv_change_auth(ectx, &ctx.object.obj, new_auth);
 }
 
-static tool_rc object_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
+static tool_rc object_change_auth(ESYS_CONTEXT *ectx,
+        const TPM2B_AUTH *new_auth) {
 
     if (!ctx.object.out_path) {
         LOG_ERR("Require private output file path option -r");
@@ -46,11 +48,8 @@ static tool_rc object_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth
     }
 
     TPM2B_PRIVATE *out_private = NULL;
-    tool_rc rc = tpm2_object_change_auth(ectx,
-            &ctx.parent.obj,
-            &ctx.object.obj,
-            new_auth,
-            &out_private);
+    tool_rc rc = tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
+            new_auth, &out_private);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -100,10 +99,10 @@ static bool on_arg(int argc, char *argv[]) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     struct option topts[] = {
-        { "object-auth",                required_argument, NULL, 'p' },
-        { "object-context",             required_argument, NULL, 'c' },
-        { "parent-context",             required_argument, NULL, 'C' },
-        { "private",                    required_argument, NULL, 'r' },
+        { "object-auth",    required_argument, NULL, 'p' },
+        { "object-context", required_argument, NULL, 'c' },
+        { "parent-context", required_argument, NULL, 'C' },
+        { "private",        required_argument, NULL, 'r' },
     };
     *opts = tpm2_options_new("p:c:C:r:", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
@@ -113,8 +112,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static inline bool object_needs_parent(tpm2_loaded_object *obj) {
 
-    return (obj->handle &  TPM2_HR_TRANSIENT) ||
-            (obj->handle &  TPM2_HR_PERSISTENT);
+    return (obj->handle & TPM2_HR_TRANSIENT)
+            || (obj->handle & TPM2_HR_PERSISTENT);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
@@ -127,8 +126,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.object.ctx, ctx.object.auth_current,
-            &ctx.object.obj, false, TPM2_HANDLE_ALL_W_NV);
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.object.ctx,
+            ctx.object.auth_current, &ctx.object.obj, false,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -148,13 +148,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
 
         rc = tpm2_util_object_load(ectx, ctx.parent.ctx, &ctx.parent.obj,
-            TPM2_HANDLE_ALL_W_NV);
+                TPM2_HANDLE_ALL_W_NV);
         if (rc != tool_rc_success) {
             return rc;
         }
     }
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_new, &ctx.object.new, true);
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.object.auth_new, &ctx.object.new,
+            true);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -163,20 +164,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* invoke the proper changauth command based on object type */
     UINT8 tag = (ctx.object.obj.handle & TPM2_HR_RANGE_MASK) >> TPM2_HR_SHIFT;
-    switch(tag) {
-        case TPM2_HT_TRANSIENT:
-        case TPM2_HT_PERSISTENT:
-            rc = object_change_auth(ectx, new_auth);
-            break;
-        case TPM2_HT_NV_INDEX:
-            rc = nv_change_auth(ectx, new_auth);
-            break;
-        case TPM2_HT_PERMANENT:
-            rc = hierarchy_change_auth(ectx, new_auth);
-            break;
-        default:
-            LOG_ERR("Unsupported object type, got: 0x%x", tag);
-            rc = tool_rc_general_error;
+    switch (tag) {
+    case TPM2_HT_TRANSIENT:
+    case TPM2_HT_PERSISTENT:
+        rc = object_change_auth(ectx, new_auth);
+        break;
+    case TPM2_HT_NV_INDEX:
+        rc = nv_change_auth(ectx, new_auth);
+        break;
+    case TPM2_HT_PERMANENT:
+        rc = hierarchy_change_auth(ectx, new_auth);
+        break;
+    default:
+        LOG_ERR("Unsupported object type, got: 0x%x", tag);
+        rc = tool_rc_general_error;
     }
 
     return rc;
