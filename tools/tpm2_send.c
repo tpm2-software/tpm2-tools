@@ -98,13 +98,13 @@ static void close_file(FILE *f) {
 static bool on_option(char key, char *value) {
 
     switch (key) {
-     case 'o':
-         ctx.output = open_file(value, "wb");
-         if (!ctx.output) {
-             return false;
-         }
-         break;
-    /* no break */
+    case 'o':
+        ctx.output = open_file(value, "wb");
+        if (!ctx.output) {
+            return false;
+        }
+        break;
+        /* no break */
     }
 
     return true;
@@ -133,8 +133,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "output", required_argument, NULL, 'o' },
     };
 
-    *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts,
-                             on_option, on_args, 0);
+    *opts = tpm2_options_new("o:", ARRAY_LEN(topts), topts, on_option, on_args,
+            0);
 
     ctx.input = stdin;
     ctx.output = stdout;
@@ -179,7 +179,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
 
     size_t rsize = TPM2_MAX_SIZE;
     UINT8 rbuf[TPM2_MAX_SIZE];
-    rval = Tss2_Tcti_Receive(tcti_context, &rsize, rbuf, TSS2_TCTI_TIMEOUT_BLOCK);
+    rval = Tss2_Tcti_Receive(tcti_context, &rsize, rbuf,
+            TSS2_TCTI_TIMEOUT_BLOCK);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("tss2_tcti_receive failed: 0x%x", rval);
         rc = tool_rc_from_tpm(rval);
