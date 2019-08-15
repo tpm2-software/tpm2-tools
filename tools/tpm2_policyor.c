@@ -11,15 +11,15 @@
 
 typedef struct tpm2_policyor_ctx tpm2_policyor_ctx;
 struct tpm2_policyor_ctx {
-   //File path for the session context data
-   const char *session_path;
-   //List of policy digests that will be compounded
-   TPML_DIGEST *policy_list;
-   //File path for storing the policy digest output
-   const char *out_policy_dgst_path;
+    //File path for the session context data
+    const char *session_path;
+    //List of policy digests that will be compounded
+    TPML_DIGEST *policy_list;
+    //File path for storing the policy digest output
+    const char *out_policy_dgst_path;
 
-   TPM2B_DIGEST *policy_digest;
-   tpm2_session *session;
+    TPM2B_DIGEST *policy_digest;
+    tpm2_session *session;
 };
 
 static tpm2_policyor_ctx ctx;
@@ -56,7 +56,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("L:S:l:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    NULL, 0);
 
     return *opts != NULL;
 }
@@ -86,14 +86,16 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false, &ctx.session);
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
+            &ctx.session);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     /* Policy digest hash alg should match that of the session */
-    if (ctx.policy_list->digests[0].size !=
-        tpm2_alg_util_get_hash_size(tpm2_session_get_authhash(ctx.session))) {
+    if (ctx.policy_list->digests[0].size
+            != tpm2_alg_util_get_hash_size(
+                    tpm2_session_get_authhash(ctx.session))) {
         LOG_ERR("Policy digest hash alg should match that of the session.");
         return tool_rc_general_error;
     }
