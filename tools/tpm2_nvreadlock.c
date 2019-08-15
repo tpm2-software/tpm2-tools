@@ -19,11 +19,10 @@ struct tpm_nvreadlock_ctx {
 
 static tpm_nvreadlock_ctx ctx;
 
-
 static bool on_arg(int argc, char **argv) {
     /* If the user doesn't specify an authorization hierarchy use the index
-    * passed to -x/--index for the authorization index.
-    */
+     * passed to -x/--index for the authorization index.
+     */
     if (!ctx.auth_hierarchy.ctx_path) {
         ctx.auth_hierarchy.ctx_path = argv[0];
     }
@@ -48,12 +47,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "hierarchy",            required_argument, NULL, 'C' },
-        { "auth",                 required_argument, NULL, 'P' },
+        { "hierarchy", required_argument, NULL, 'C' },
+        { "auth",      required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts,
-                             on_option, on_arg, 0);
+    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
+            0);
 
     return *opts != NULL;
 }
@@ -63,8 +62,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HANDLE_FLAGS_NV|TPM2_HANDLE_FLAGS_O|TPM2_HANDLE_FLAGS_P);
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_NV | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid handle authorization");
         return rc;
