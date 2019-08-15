@@ -12,33 +12,28 @@
 
 static log_level current_log_level = log_level_warning;
 
-void
-log_set_level (log_level value)
-{
+void log_set_level(log_level value) {
     current_log_level = value;
 }
 
 static const char *
-get_level_msg (log_level level)
-{
+get_level_msg(log_level level) {
     const char *value = "UNK";
-    switch (level)
-    {
-        case log_level_error:
-            value = "ERROR";
-            break;
-        case log_level_warning:
-            value = "WARN";
-            break;
-        case log_level_verbose:
-            value = "INFO";
+    switch (level) {
+    case log_level_error:
+        value = "ERROR";
+        break;
+    case log_level_warning:
+        value = "WARN";
+        break;
+    case log_level_verbose:
+        value = "INFO";
     }
     return value;
 }
 
-void
-_log (log_level level, const char *file, unsigned lineno, const char *fmt, ...)
-{
+void _log(log_level level, const char *file, unsigned lineno, const char *fmt,
+        ...) {
 
     /* Skip printing messages outside of the log level */
     if (level > current_log_level)
@@ -48,17 +43,18 @@ _log (log_level level, const char *file, unsigned lineno, const char *fmt, ...)
     va_start(argptr, fmt);
 
     /* Verbose output prints file and line on error */
-    if (current_log_level >= log_level_verbose)
-        fprintf (stderr, "%s on line: \"%u\" in file: \"%s\": ",
-                 get_level_msg (level), lineno, file);
-    else
-        fprintf (stderr, "%s: ", get_level_msg (level));
+    if (current_log_level >= log_level_verbose) {
+        fprintf(stderr, "%s on line: \"%u\" in file: \"%s\": ",
+                get_level_msg(level), lineno, file);
+    } else {
+        fprintf(stderr, "%s: ", get_level_msg(level));
+    }
 
     /* Print the user supplied message */
-    vfprintf (stderr, fmt, argptr);
+    vfprintf(stderr, fmt, argptr);
 
     /* always add a new line so the user doesn't have to */
-    fprintf (stderr, "\n");
+    fprintf(stderr, "\n");
 
     va_end(argptr);
 }
