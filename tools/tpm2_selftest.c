@@ -6,13 +6,14 @@
 typedef struct tpm_selftest_ctx tpm_selftest_ctx;
 
 struct tpm_selftest_ctx {
-    TPMI_YES_NO     fulltest;
+    TPMI_YES_NO fulltest;
 };
 
 static tpm_selftest_ctx ctx;
 
 static tool_rc tpm_selftest(ESYS_CONTEXT *ectx) {
-    TSS2_RC rval = Esys_SelfTest(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, ctx.fulltest);
+    TSS2_RC rval = Esys_SelfTest(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            ctx.fulltest);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("TPM SelfTest failed !");
         LOG_PERR(Esys_SelfTest, rval);
