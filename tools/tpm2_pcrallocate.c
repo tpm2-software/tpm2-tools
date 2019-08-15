@@ -6,14 +6,14 @@
 #include "tpm2_options.h"
 
 static struct {
-    TPML_PCR_SELECTION pcrSelection;
+    TPML_PCR_SELECTION pcr_selection;
     struct {
         const char *ctx_path;
         const char *auth_str;
         tpm2_loaded_object object;
     } auth_hierarchy;
 } ctx = {
-    .pcrSelection = {
+    .pcr_selection = {
         .count = 2,
         .pcrSelections = { {
             .hash = TPM2_ALG_SHA1,
@@ -34,7 +34,7 @@ static bool on_arg(int argc, char **argv) {
         return false;
     }
 
-    if (argc == 1 && !pcr_parse_selections(argv[0], &ctx.pcrSelection)) {
+    if (argc == 1 && !pcr_parse_selections(argv[0], &ctx.pcr_selection)) {
         LOG_ERR("Could not parse pcr selections");
         return false;
     }
@@ -72,9 +72,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    rc = tpm2_pcr_allocate(ectx, &ctx.auth_hierarchy.object, &ctx.pcrSelection);
+    rc = tpm2_pcr_allocate(ectx, &ctx.auth_hierarchy.object,
+        &ctx.pcr_selection);
     if (rc == tool_rc_success) {
-        pcr_print_pcr_selections(&ctx.pcrSelection);
+        pcr_print_pcr_selections(&ctx.pcr_selection);
     }
 
     return rc;
