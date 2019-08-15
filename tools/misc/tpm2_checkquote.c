@@ -29,11 +29,11 @@ struct tpm2_verifysig_ctx {
     } flags;
     TPMI_ALG_SIG_SCHEME format;
     TPMI_ALG_HASH halg;
-    TPM2B_DIGEST msgHash;
-    TPM2B_DIGEST pcrHash;
-    TPM2B_DIGEST quoteHash;
-    TPM2B_DATA quoteExtraData;
-    TPM2B_DATA extraData;
+    TPM2B_DIGEST msg_hash;
+    TPM2B_DIGEST pcr_hash;
+    TPM2B_DIGEST quote_hash;
+    TPM2B_DATA quote_extra_data;
+    TPM2B_DATA extra_data;
     TPMT_SIGNATURE signature;
     char *msg_file_path;
     char *sig_file_path;
@@ -46,11 +46,11 @@ struct tpm2_verifysig_ctx {
 static tpm2_verifysig_ctx ctx = {
         .format = TPM2_ALG_ERROR,
         .halg = TPM2_ALG_SHA1,
-        .msgHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
-        .pcrHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
-        .quoteHash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
-        .quoteExtraData = TPM2B_TYPE_INIT(TPM2B_DATA, buffer),
-        .extraData = TPM2B_TYPE_INIT(TPM2B_DATA, buffer),
+        .msg_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
+        .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
+        .quote_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
+        .quote_extra_data = TPM2B_TYPE_INIT(TPM2B_DATA, buffer),
+        .extra_data = TPM2B_TYPE_INIT(TPM2B_DATA, buffer),
 };
 
 static bool verify_signature() {
@@ -64,9 +64,9 @@ static bool verify_signature() {
                 ctx.pubkey_file_path, strerror(errno));
         return false;
     }
-    RSA *pubKey = tpm2_openssl_get_public_RSA_from_pem(pubkey_input,
+    RSA *pub_key = tpm2_openssl_get_public_RSA_from_pem(pubkey_input,
             ctx.pubkey_file_path);
-    if (pubKey == NULL) {
+    if (pub_key == NULL) {
         LOG_ERR("Failed to load RSA public key from file");
         goto err;
     }
@@ -80,19 +80,19 @@ static bool verify_signature() {
     tpm2_util_hexdump(sig.buffer, sig.size);
 
     // Verify the signature matches message digest
-    int opensslHash =
+    int openssl_hash =
         tpm2_openssl_halgid_from_tpmhalg(ctx.signature.signature.rsassa.hash);
-    if (!RSA_verify(opensslHash, ctx.msgHash.buffer, ctx.msgHash.size,
-            sig.buffer, sig.size, pubKey)) {
+    if (!RSA_verify(openssl_hash, ctx.msg_hash.buffer, ctx.msg_hash.size,
+            sig.buffer, sig.size, pub_key)) {
         LOG_ERR("Error validating signed message with public key provided");
         goto err;
     }
 
     // Ensure nonce is the same as given
     if (ctx.flags.extra) {
-        if (ctx.quoteExtraData.size != ctx.extraData.size ||
-            memcmp(ctx.quoteExtraData.buffer, ctx.extraData.buffer,
-            ctx.extraData.size) != 0) {
+        if (ctx.quote_extra_data.size != ctx.extra_data.size ||
+            memcmp(ctx.quote_extra_data.buffer, ctx.extra_data.buffer,
+            ctx.extra_data.size) != 0) {
             LOG_ERR("Error validating nonce from quote");
             goto err;
         }
@@ -100,7 +100,7 @@ static bool verify_signature() {
 
     // Also ensure digest from quote matches PCR digest
     if (ctx.flags.pcr) {
-        if (!tpm2_util_verify_digests(&ctx.quoteHash, &ctx.pcrHash)) {
+        if (!tpm2_util_verify_digests(&ctx.quote_hash, &ctx.pcr_hash)) {
             LOG_ERR("Error validating PCR composite against signed message");
             goto err;
         }
@@ -113,7 +113,7 @@ err:
         fclose(pubkey_input);
     }
 
-    RSA_free(pubKey);
+    RSA_free(pub_key);
 
     return result;
 }
@@ -148,7 +148,7 @@ static TPM2B_ATTEST *message_from_file(const char *msg_file_path) {
 }
 
 static bool pcrs_from_file(const char *pcr_file_path,
-        TPML_PCR_SELECTION *pcrSel, tpm2_pcrs *pcrs) {
+        TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
 
     bool result = false;
     unsigned long size;
@@ -170,7 +170,7 @@ static bool pcrs_from_file(const char *pcr_file_path,
     }
 
     // Import TPML_PCR_SELECTION structure to pcr outfile
-    if (fread(pcrSel, sizeof(TPML_PCR_SELECTION), 1, pcr_input) != 1) {
+    if (fread(pcr_select, sizeof(TPML_PCR_SELECTION), 1, pcr_input) != 1) {
         LOG_ERR("Failed to read PCR selection from file");
         goto out;
     }
@@ -217,7 +217,7 @@ static tool_rc init(void) {
     }
 
     TPM2B_ATTEST *msg = NULL;
-    TPML_PCR_SELECTION pcrSel;
+    TPML_PCR_SELECTION pcr_select;
     tpm2_pcrs pcrs;
     tool_rc return_value = tool_rc_general_error;
 
@@ -251,32 +251,32 @@ static tool_rc init(void) {
     }
 
     if (ctx.flags.pcr) {
-        if (!pcrs_from_file(ctx.pcr_file_path, &pcrSel, &pcrs)) {
+        if (!pcrs_from_file(ctx.pcr_file_path, &pcr_select, &pcrs)) {
             /* pcrs_from_file() logs specific error no need to here */
             goto err;
         }
 
-        if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcrSel, &pcrs,
-                &ctx.pcrHash)) {
+        if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcr_select, &pcrs,
+                &ctx.pcr_hash)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
             goto err;
         }
-        if (!pcr_print_pcr_struct(&pcrSel, &pcrs)) {
+        if (!pcr_print_pcr_struct(&pcr_select, &pcrs)) {
             LOG_ERR("Failed to print PCR values related to quote!");
             goto err;
         }
     }
 
     // Figure out the extra data (nonce) from this message
-    if (!tpm2_util_get_digest_from_quote(msg, &ctx.quoteHash,
-            &ctx.quoteExtraData)) {
+    if (!tpm2_util_get_digest_from_quote(msg, &ctx.quote_hash,
+            &ctx.quote_extra_data)) {
         LOG_ERR("Failed to get digest from quote!");
         goto err;
     }
 
     // Figure out the digest for this message
     bool res = tpm2_openssl_hash_compute_data(ctx.halg, msg->attestationData,
-            msg->size, &ctx.msgHash);
+            msg->size, &ctx.msg_hash);
     if (!res) {
         LOG_ERR("Compute message hash failed!");
         goto err;
@@ -321,9 +321,9 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'q':
-        ctx.extraData.size = sizeof(ctx.extraData) - 2;
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.extraData.size,
-                ctx.extraData.buffer) != 0) {
+        ctx.extra_data.size = sizeof(ctx.extra_data) - 2;
+        if (tpm2_util_hex_to_byte_structure(value, &ctx.extra_data.size,
+                ctx.extra_data.buffer) != 0) {
             LOG_ERR("Could not convert \"%s\" from a hex string to byte array!",
                     value);
             return false;
