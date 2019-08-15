@@ -38,7 +38,7 @@ struct createak_context {
         char *auth_str;
     } ak;
     struct {
-        UINT8 f : 1;
+        UINT8 f :1;
     } flags;
 };
 
@@ -61,7 +61,8 @@ static createak_context ctx = {
 /*
  * TODO: All these set_xxx_signing_algorithm() routines could likely somehow be refactored into one.
  */
-static bool set_rsa_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg, TPM2B_PUBLIC *in_public) {
+static bool set_rsa_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
+        TPM2B_PUBLIC *in_public) {
 
     if (sign_alg == TPM2_ALG_NULL) {
         sign_alg = TPM2_ALG_RSASSA;
@@ -69,8 +70,8 @@ static bool set_rsa_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg, TPM2B_
 
     in_public->publicArea.parameters.rsaDetail.scheme.scheme = sign_alg;
     switch (sign_alg) {
-    case TPM2_ALG_RSASSA :
-    case TPM2_ALG_RSAPSS :
+    case TPM2_ALG_RSASSA:
+    case TPM2_ALG_RSAPSS:
         in_public->publicArea.parameters.rsaDetail.scheme.details.anySig.hashAlg =
                 digest_alg;
         break;
@@ -92,10 +93,10 @@ static bool set_ecc_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
 
     in_public->publicArea.parameters.eccDetail.scheme.scheme = sign_alg;
     switch (sign_alg) {
-    case TPM2_ALG_ECDSA :
-    case TPM2_ALG_SM2 :
-    case TPM2_ALG_ECSCHNORR :
-    case TPM2_ALG_ECDAA :
+    case TPM2_ALG_ECDSA:
+    case TPM2_ALG_SM2:
+    case TPM2_ALG_ECSCHNORR:
+    case TPM2_ALG_ECDAA:
         in_public->publicArea.parameters.eccDetail.scheme.details.anySig.hashAlg =
                 digest_alg;
         break;
@@ -117,7 +118,7 @@ static bool set_keyed_hash_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
 
     in_public->publicArea.parameters.keyedHashDetail.scheme.scheme = sign_alg;
     switch (sign_alg) {
-    case TPM2_ALG_HMAC :
+    case TPM2_ALG_HMAC:
         in_public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg =
                 digest_alg;
         break;
@@ -131,8 +132,7 @@ static bool set_keyed_hash_signing_algorithm(UINT32 sign_alg, UINT32 digest_alg,
     return true;
 }
 
-static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
-{
+static bool set_key_algorithm(TPM2B_PUBLIC *in_public) {
     in_public->publicArea.nameAlg = TPM2_ALG_SHA256;
     // First clear attributes bit field.
     in_public->publicArea.objectAttributes = 0;
@@ -147,31 +147,38 @@ static bool set_key_algorithm(TPM2B_PUBLIC *in_public)
 
     in_public->publicArea.type = ctx.ak.in.alg.type;
 
-    switch(ctx.ak.in.alg.type)
-    {
+    switch (ctx.ak.in.alg.type) {
     case TPM2_ALG_RSA:
-        in_public->publicArea.parameters.rsaDetail.symmetric.algorithm = TPM2_ALG_NULL;
+        in_public->publicArea.parameters.rsaDetail.symmetric.algorithm =
+                TPM2_ALG_NULL;
         in_public->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 0;
-        in_public->publicArea.parameters.rsaDetail.symmetric.mode.aes = TPM2_ALG_NULL;
+        in_public->publicArea.parameters.rsaDetail.symmetric.mode.aes =
+                TPM2_ALG_NULL;
         in_public->publicArea.parameters.rsaDetail.keyBits = 2048;
         in_public->publicArea.parameters.rsaDetail.exponent = 0;
         in_public->publicArea.unique.rsa.size = 0;
-        return set_rsa_signing_algorithm(ctx.ak.in.alg.sign, ctx.ak.in.alg.digest, in_public);
+        return set_rsa_signing_algorithm(ctx.ak.in.alg.sign,
+                ctx.ak.in.alg.digest, in_public);
     case TPM2_ALG_ECC:
-        in_public->publicArea.parameters.eccDetail.symmetric.algorithm = TPM2_ALG_NULL;
-        in_public->publicArea.parameters.eccDetail.symmetric.mode.sym = TPM2_ALG_NULL;
+        in_public->publicArea.parameters.eccDetail.symmetric.algorithm =
+                TPM2_ALG_NULL;
+        in_public->publicArea.parameters.eccDetail.symmetric.mode.sym =
+                TPM2_ALG_NULL;
         in_public->publicArea.parameters.eccDetail.symmetric.keyBits.sym = 0;
         in_public->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
         in_public->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
         in_public->publicArea.unique.ecc.x.size = 0;
         in_public->publicArea.unique.ecc.y.size = 0;
-        return set_ecc_signing_algorithm(ctx.ak.in.alg.sign, ctx.ak.in.alg.digest, in_public);
+        return set_ecc_signing_algorithm(ctx.ak.in.alg.sign,
+                ctx.ak.in.alg.digest, in_public);
     case TPM2_ALG_KEYEDHASH:
         in_public->publicArea.unique.keyedHash.size = 0;
-        return set_keyed_hash_signing_algorithm(ctx.ak.in.alg.sign, ctx.ak.in.alg.digest, in_public);
+        return set_keyed_hash_signing_algorithm(ctx.ak.in.alg.sign,
+                ctx.ak.in.alg.digest, in_public);
     case TPM2_ALG_SYMCIPHER:
     default:
-        LOG_ERR("The algorithm type input(%4.4x) is not supported!", ctx.ak.in.alg.type);
+        LOG_ERR("The algorithm type input(%4.4x) is not supported!",
+                ctx.ak.in.alg.type);
         return false;
     }
 
@@ -212,15 +219,15 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     ESYS_TR shandle = ESYS_TR_NONE;
     tmp_rc = tpm2_auth_util_get_shandle(ectx, ESYS_TR_RH_ENDORSEMENT,
-                        ctx.ek.session, &shandle);
+            ctx.ek.session, &shandle);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out_session;
     }
 
     TPM2_RC rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
-                    shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                    NULL, NULL, NULL, 0, NULL, NULL);
+            shandle, ESYS_TR_NONE, ESYS_TR_NONE,
+            NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
         goto out_session;
@@ -228,10 +235,9 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     LOG_INFO("Esys_PolicySecret success");
 
-    rval = Esys_Create(ectx, ctx.ek.ek_ctx.tr_handle,
-                sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
-                &ctx.ak.in.inSensitive, &inPublic, &outsideInfo,
-                &creation_pcr, &out_private, &out_public, NULL, NULL, NULL);
+    rval = Esys_Create(ectx, ctx.ek.ek_ctx.tr_handle, sess_handle, ESYS_TR_NONE,
+            ESYS_TR_NONE, &ctx.ak.in.inSensitive, &inPublic, &outsideInfo,
+            &creation_pcr, &out_private, &out_public, NULL, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Create, rval);
         goto out;
@@ -260,16 +266,15 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     sess_handle = tpm2_session_get_handle(session);
 
-    tmp_rc = tpm2_auth_util_get_shandle(ectx, sess_handle,
-                ctx.ek.session, &shandle);
+    tmp_rc = tpm2_auth_util_get_shandle(ectx, sess_handle, ctx.ek.session,
+            &shandle);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
     }
 
-    rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle,
-                shandle, ESYS_TR_NONE, ESYS_TR_NONE,
-                NULL, NULL, NULL, 0, NULL, NULL);
+    rval = Esys_PolicySecret(ectx, ESYS_TR_RH_ENDORSEMENT, sess_handle, shandle,
+            ESYS_TR_NONE, ESYS_TR_NONE, NULL, NULL, NULL, 0, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
         goto out;
@@ -277,9 +282,8 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
     LOG_INFO("Esys_PolicySecret success");
 
     ESYS_TR loaded_sha1_key_handle;
-    rval = Esys_Load(ectx, ctx.ek.ek_ctx.tr_handle,
-                sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
-                out_private, out_public, &loaded_sha1_key_handle);
+    rval = Esys_Load(ectx, ctx.ek.ek_ctx.tr_handle, sess_handle, ESYS_TR_NONE,
+            ESYS_TR_NONE, out_private, out_public, &loaded_sha1_key_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Load, rval);
         rc = tool_rc_from_tpm(rval);
@@ -307,19 +311,19 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
 
     // write name to ak.name file
     if (ctx.ak.out.name_file) {
-        result = files_save_bytes_to_file(ctx.ak.out.name_file,
-                    key_name->name, key_name->size);
+        result = files_save_bytes_to_file(ctx.ak.out.name_file, key_name->name,
+                key_name->size);
         if (!result) {
             LOG_ERR("Failed to save AK name into file \"%s\"",
-                        ctx.ak.out.name_file);
+                    ctx.ak.out.name_file);
             goto nameout;
         }
     }
 
     // If the AK isn't persisted we always save a context file of the
     // transient AK handle for future tool interactions.
-    tmp_rc = files_save_tpm_context_to_path(ectx,
-                loaded_sha1_key_handle, ctx.ak.out.ctx_file);
+    tmp_rc = files_save_tpm_context_to_path(ectx, loaded_sha1_key_handle,
+            ctx.ak.out.ctx_file);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         LOG_ERR("Error saving tpm context for handle");
@@ -361,21 +365,24 @@ static bool on_option(char key, char *value) {
         ctx.ek.ctx_arg = value;
         break;
     case 'G':
-        ctx.ak.in.alg.type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
+        ctx.ak.in.alg.type = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_base);
         if (ctx.ak.in.alg.type == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert algorithm. got: \"%s\".", value);
             return false;
         }
         break;
     case 'g':
-        ctx.ak.in.alg.digest = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
+        ctx.ak.in.alg.digest = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_hash);
         if (ctx.ak.in.alg.digest == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert digest algorithm.");
             return false;
         }
         break;
     case 's':
-        ctx.ak.in.alg.sign = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
+        ctx.ak.in.alg.sign = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_sig);
         if (ctx.ak.in.alg.sign == TPM2_ALG_ERROR) {
             LOG_ERR("Could not convert signing algorithm.");
             return false;
@@ -428,7 +435,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("P:p:C:c:n:G:g:s:f:u:r:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -447,31 +454,30 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_util_object_load(ectx, ctx.ek.ctx_arg,
-                                &ctx.ek.ek_ctx, TPM2_HANDLE_ALL_W_NV);
+    tool_rc rc = tpm2_util_object_load(ectx, ctx.ek.ctx_arg, &ctx.ek.ek_ctx,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     if (!ctx.ek.ek_ctx.tr_handle) {
-        rc = tpm2_util_sys_handle_to_esys_handle(ectx,
-                    ctx.ek.ek_ctx.handle, &ctx.ek.ek_ctx.tr_handle);
+        rc = tpm2_util_sys_handle_to_esys_handle(ectx, ctx.ek.ek_ctx.handle,
+                &ctx.ek.ek_ctx.tr_handle);
         if (rc != tool_rc_success) {
             LOG_ERR("Converting ek_ctx TPM2_HANDLE to ESYS_TR");
             return rc;
         }
     }
 
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str,
-            &ctx.ek.session, true);
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.ek.auth_str, &ctx.ek.session,
+            true);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid endorse authorization");
         return rc;
     }
 
     tpm2_session *tmp;
-    rc = tpm2_auth_util_from_optarg(NULL, ctx.ak.auth_str,
-            &tmp, true);
+    rc = tpm2_auth_util_from_optarg(NULL, ctx.ak.auth_str, &tmp, true);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid AK authorization");
         return rc;
