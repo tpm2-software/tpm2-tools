@@ -49,12 +49,11 @@ static tpm_encrypt_decrypt_ctx ctx = {
 static tool_rc readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
 
     return tpm2_readpublic(ectx, ctx.encryption_key.object.tr_handle,
-                      ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                      public, NULL, NULL);
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, public, NULL, NULL);
 }
 
 static bool evaluate_pkcs7_padding_requirements(uint16_t remaining_bytes,
-    bool expected) {
+bool expected) {
 
     if (!ctx.is_padding_option_enabled) {
         return false;
@@ -84,15 +83,15 @@ static bool evaluate_pkcs7_padding_requirements(uint16_t remaining_bytes,
 }
 
 static void append_pkcs7_padding_data_to_input(uint8_t *pad_data,
-    uint16_t *in_data_size, uint16_t *remaining_bytes) {
+        uint16_t *in_data_size, uint16_t *remaining_bytes) {
 
     bool test_pad_reqs = evaluate_pkcs7_padding_requirements(*remaining_bytes,
-        false);
+    false);
     if (!test_pad_reqs) {
         return;
     }
 
-    *pad_data = ctx.padded_block_len -(*in_data_size % ctx.padded_block_len);
+    *pad_data = ctx.padded_block_len - (*in_data_size % ctx.padded_block_len);
 
     memset(&ctx.input_data[ctx.input_data_size], *pad_data, *pad_data);
 
@@ -106,16 +105,16 @@ static void append_pkcs7_padding_data_to_input(uint8_t *pad_data,
 }
 
 static void strip_pkcs7_padding_data_from_output(uint8_t *pad_data,
-    TPM2B_MAX_BUFFER *out_data, uint16_t *remaining_bytes) {
+        TPM2B_MAX_BUFFER *out_data, uint16_t *remaining_bytes) {
 
     bool test_pad_reqs = evaluate_pkcs7_padding_requirements(*remaining_bytes,
-        true);
+    true);
     if (!test_pad_reqs) {
         return;
     }
 
-    uint8_t last_block_length =
-                ctx.padded_block_len -(out_data->size % ctx.padded_block_len);
+    uint8_t last_block_length = ctx.padded_block_len
+            - (out_data->size % ctx.padded_block_len);
 
     if (last_block_length != ctx.padded_block_len) {
         LOG_WARN("Encrypted input is not block length aligned.");
@@ -139,16 +138,18 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
 
     UINT16 data_offset = 0;
     bool result = true;
-    FILE *out_file_ptr = ctx.out_file_path ? fopen(ctx.out_file_path, "wb+") : stdout;
+    FILE *out_file_ptr =
+            ctx.out_file_path ? fopen(ctx.out_file_path, "wb+") : stdout;
     if (!out_file_ptr) {
-        LOG_ERR("Could not open file \"%s\", error: %s", ctx.out_file_path, strerror(errno));
+        LOG_ERR("Could not open file \"%s\", error: %s", ctx.out_file_path,
+                strerror(errno));
         return tool_rc_general_error;
     }
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
     tool_rc tmp_rc = tpm2_auth_util_get_shandle(ectx,
-                            ctx.encryption_key.object.tr_handle,
-                            ctx.encryption_key.object.session, &shandle1);
+            ctx.encryption_key.object.tr_handle,
+            ctx.encryption_key.object.session, &shandle1);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         LOG_ERR("Failed to get shandle");
@@ -167,20 +168,19 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
     }
     while (remaining_bytes > 0) {
         in_data.size =
-            remaining_bytes > TPM2_MAX_DIGEST_BUFFER ?
-                    TPM2_MAX_DIGEST_BUFFER : remaining_bytes;
+                remaining_bytes > TPM2_MAX_DIGEST_BUFFER ?
+                        TPM2_MAX_DIGEST_BUFFER : remaining_bytes;
 
         if (!pad_data) {
             append_pkcs7_padding_data_to_input(&pad_data, &in_data.size,
-                &remaining_bytes);
+                    &remaining_bytes);
         }
 
         memcpy(in_data.buffer, &ctx.input_data[data_offset], in_data.size);
 
         rc = tpm2_encryptdecrypt(ectx, &ctx.encryption_key.object,
-            ctx.is_decrypt, ctx.mode, iv_in,
-            &in_data, &out_data,
-            &iv_out, shandle1, &version);
+                ctx.is_decrypt, ctx.mode, iv_in, &in_data, &out_data, &iv_out,
+                shandle1, &version);
         if (rc != tool_rc_success) {
             goto out;
         }
@@ -194,9 +194,11 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
             free(iv_out);
         }
 
-        strip_pkcs7_padding_data_from_output(&pad_data, out_data, &remaining_bytes);
+        strip_pkcs7_padding_data_from_output(&pad_data, out_data,
+                &remaining_bytes);
 
-        result = files_write_bytes(out_file_ptr, out_data->buffer, out_data->size);
+        result = files_write_bytes(out_file_ptr, out_data->buffer,
+                out_data->size);
         free(out_data);
         if (!result) {
             LOG_ERR("Failed to save output data to file");
@@ -210,8 +212,11 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
     /*
      * iv_in here is the copy of final iv_out from the loop above.
      */
-    result = (ctx.iv.out) ?
-        files_save_bytes_to_file(ctx.iv.out, iv_in->buffer, iv_in->size) : true;
+    result =
+            (ctx.iv.out) ?
+                    files_save_bytes_to_file(ctx.iv.out, iv_in->buffer,
+                            iv_in->size) :
+                    true;
     if (!result) {
         goto out;
     }
@@ -279,7 +284,8 @@ static bool setup_alg_mode_and_iv_and_padding(ESYS_CONTEXT *ectx, TPM2B_IV *iv) 
      */
     if (ctx.mode == TPM2_ALG_NULL) {
 
-        TPMI_ALG_SYM_MODE objmode = public->publicArea.parameters.symDetail.sym.mode.sym;
+        TPMI_ALG_SYM_MODE objmode =
+            public->publicArea.parameters.symDetail.sym.mode.sym;
         if (objmode == TPM2_ALG_NULL) {
             ctx.mode = TPM2_ALG_CFB;
         } else {
@@ -353,17 +359,17 @@ static bool on_args(int argc, char *argv[]) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "auth",                 required_argument, NULL, 'p' },
-        { "decrypt",              no_argument,       NULL, 'd' },
-        { "iv",                   required_argument, NULL, 't' },
-        { "mode",                 required_argument, NULL, 'G' },
-        { "output",               required_argument, NULL, 'o' },
-        { "key-context",          required_argument, NULL, 'c' },
-        { "pad",                  no_argument,       NULL, 'e' },
+        { "auth",        required_argument, NULL, 'p' },
+        { "decrypt",     no_argument,       NULL, 'd' },
+        { "iv",          required_argument, NULL, 't' },
+        { "mode",        required_argument, NULL, 'G' },
+        { "output",      required_argument, NULL, 'o' },
+        { "key-context", required_argument, NULL, 'c' },
+        { "pad",         no_argument,       NULL, 'e' },
     };
 
-    *opts = tpm2_options_new("p:edi:o:c:G:t:", ARRAY_LEN(topts), topts, on_option,
-                             on_args, 0);
+    *opts = tpm2_options_new("p:edi:o:c:G:t:", ARRAY_LEN(topts), topts,
+            on_option, on_args, 0);
 
     return *opts != NULL;
 }
@@ -378,14 +384,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
-        ctx.input_path, &ctx.input_data_size, ctx.input_data);
+            ctx.input_path, &ctx.input_data_size, ctx.input_data);
     if (!result) {
         return tool_rc_general_error;
     }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.encryption_key.ctx_path,
-        ctx.encryption_key.auth_str, &ctx.encryption_key.object, false,
-        TPM2_HANDLE_ALL_W_NV);
+            ctx.encryption_key.auth_str, &ctx.encryption_key.object, false,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid object key authorization");
         return rc;
