@@ -21,7 +21,7 @@ struct createak_context {
     } ek;
     struct {
         struct {
-            TPM2B_SENSITIVE_CREATE inSensitive;
+            TPM2B_SENSITIVE_CREATE in_sensitive;
             struct {
                 TPM2_ALG_ID type;
                 TPM2_ALG_ID digest;
@@ -190,12 +190,12 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
     tool_rc rc = tool_rc_general_error;
 
     TPML_PCR_SELECTION creation_pcr = { .count = 0 };
-    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
+    TPM2B_DATA outside_info = TPM2B_EMPTY_INIT;
     TPM2B_PUBLIC *out_public;
     TPM2B_PRIVATE *out_private;
-    TPM2B_PUBLIC inPublic = TPM2B_EMPTY_INIT;
+    TPM2B_PUBLIC in_public = TPM2B_EMPTY_INIT;
 
-    bool result = set_key_algorithm(&inPublic);
+    bool result = set_key_algorithm(&in_public);
     if (!result) {
         return tool_rc_general_error;
     }
@@ -236,7 +236,7 @@ static tool_rc create_ak(ESYS_CONTEXT *ectx) {
     LOG_INFO("Esys_PolicySecret success");
 
     rval = Esys_Create(ectx, ctx.ek.ek_ctx.tr_handle, sess_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE, &ctx.ak.in.inSensitive, &inPublic, &outsideInfo,
+            ESYS_TR_NONE, &ctx.ak.in.in_sensitive, &in_public, &outside_info,
             &creation_pcr, &out_private, &out_public, NULL, NULL, NULL);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_Create, rval);
@@ -484,7 +484,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-    ctx.ak.in.inSensitive.sensitive.userAuth = *auth;
+    ctx.ak.in.in_sensitive.sensitive.userAuth = *auth;
 
     tpm2_session_close(&tmp);
 
