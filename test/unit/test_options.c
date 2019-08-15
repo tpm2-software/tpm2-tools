@@ -24,7 +24,6 @@ struct test_pair {
     } output;
 };
 
-
 static void set_getenv(const char *name, char *ret) {
 
     test_pair *e = calloc(1, sizeof(test_pair));
@@ -49,16 +48,16 @@ char *__wrap_tpm2_util_getenv(const char *name) {
     return ret;
 }
 
-TSS2_RC
-__wrap_Tss2_TctiLdr_Initialize (const char *nameConf,
-                                TSS2_TCTI_CONTEXT **context)
-{
+TSS2_RC __wrap_Tss2_TctiLdr_Initialize(const char *nameConf,
+        TSS2_TCTI_CONTEXT **context) {
+
     UNUSED(nameConf);
-    printf ("fml\n");
+    printf("fml\n");
     TSS2_RC rc = mock_type(TSS2_RC);
     if (rc == TSS2_RC_SUCCESS) {
         *context = mock_type(TSS2_TCTI_CONTEXT*);
     }
+
     return rc;
 }
 
@@ -229,7 +228,6 @@ static void test_invalid_tcti_no_errata(void **state) {
             &tcti);
     assert_int_equal(oc, tpm2_option_code_err);
 }
-
 
 /*
  * link required symbol, but tpm2_tool.c declares it AND main, which
