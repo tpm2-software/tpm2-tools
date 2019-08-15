@@ -120,11 +120,11 @@ static tool_rc make_external_credential_and_save(void) {
     TPM2B_MAX_BUFFER marshalled_inner_integrity = TPM2B_EMPTY_INIT;
     marshalled_inner_integrity.size = ctx.credential.size
             + sizeof(ctx.credential.size);
-    UINT16 credSize = ctx.credential.size;
+    UINT16 cred_size = ctx.credential.size;
     if (!tpm2_util_is_big_endian()) {
-        credSize = tpm2_util_endian_swap_16(credSize);
+        cred_size = tpm2_util_endian_swap_16(cred_size);
     }
-    memcpy(marshalled_inner_integrity.buffer, &credSize, sizeof(credSize));
+    memcpy(marshalled_inner_integrity.buffer, &cred_size, sizeof(cred_size));
     memcpy(&marshalled_inner_integrity.buffer[2], ctx.credential.buffer,
             ctx.credential.size);
 
