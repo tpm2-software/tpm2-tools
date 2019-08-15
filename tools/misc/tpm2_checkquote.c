@@ -64,7 +64,8 @@ static bool verify_signature() {
                 ctx.pubkey_file_path, strerror(errno));
         return false;
     }
-    RSA *pubKey = tpm2_openssl_get_public_RSA_from_pem(pubkey_input, ctx.pubkey_file_path);
+    RSA *pubKey = tpm2_openssl_get_public_RSA_from_pem(pubkey_input,
+            ctx.pubkey_file_path);
     if (pubKey == NULL) {
         LOG_ERR("Failed to load RSA public key from file");
         goto err;
@@ -79,7 +80,8 @@ static bool verify_signature() {
     tpm2_util_hexdump(sig.buffer, sig.size);
 
     // Verify the signature matches message digest
-    int opensslHash = tpm2_openssl_halgid_from_tpmhalg(ctx.signature.signature.rsassa.hash);
+    int opensslHash =
+        tpm2_openssl_halgid_from_tpmhalg(ctx.signature.signature.rsassa.hash);
     if (!RSA_verify(opensslHash, ctx.msgHash.buffer, ctx.msgHash.size,
             sig.buffer, sig.size, pubKey)) {
         LOG_ERR("Error validating signed message with public key provided");
@@ -88,10 +90,9 @@ static bool verify_signature() {
 
     // Ensure nonce is the same as given
     if (ctx.flags.extra) {
-        if (
-            ctx.quoteExtraData.size != ctx.extraData.size
-            || memcmp(ctx.quoteExtraData.buffer, ctx.extraData.buffer, ctx.extraData.size) != 0
-        ) {
+        if (ctx.quoteExtraData.size != ctx.extraData.size ||
+            memcmp(ctx.quoteExtraData.buffer, ctx.extraData.buffer,
+            ctx.extraData.size) != 0) {
             LOG_ERR("Error validating nonce from quote");
             goto err;
         }
@@ -138,7 +139,8 @@ static TPM2B_ATTEST *message_from_file(const char *msg_file_path) {
     }
 
     UINT16 tmp = msg->size = size;
-    if (!files_load_bytes_from_path(msg_file_path, msg->attestationData, &tmp)) {
+    if (!files_load_bytes_from_path(msg_file_path, msg->attestationData,
+            &tmp)) {
         free(msg);
         return NULL;
     }
@@ -187,7 +189,8 @@ static bool pcrs_from_file(const char *pcr_file_path,
 
     UINT32 j;
     for (j = 0; j < pcrs->count; j++) {
-        if (fread(&pcrs->pcr_values[j], sizeof(TPML_DIGEST), 1, pcr_input) != 1) {
+        if (fread(&pcrs->pcr_values[j], sizeof(TPML_DIGEST), 1, pcr_input)
+                != 1) {
             LOG_ERR("Failed to read PCR digest from file");
             goto out;
         }
@@ -206,7 +209,8 @@ out:
 static tool_rc init(void) {
 
     /* check flags for mismatches */
-    if (!(ctx.pubkey_file_path && ctx.flags.sig && ctx.flags.msg && ctx.flags.halg)) {
+    if (!(ctx.pubkey_file_path && ctx.flags.sig && ctx.flags.msg
+            && ctx.flags.halg)) {
         LOG_ERR(
                 "--pubkey (-c), --msg (-m), --halg (-g) and --sig (-s) are required");
         return tool_rc_option_error;
@@ -226,8 +230,10 @@ static tool_rc init(void) {
     }
 
     if (ctx.flags.sig) {
-        tpm2_convert_sig_fmt fmt = ctx.flags.fmt ? signature_format_plain : signature_format_tss;
-        bool res = tpm2_convert_sig_load(ctx.sig_file_path, fmt, ctx.format, ctx.halg, &ctx.signature);
+        tpm2_convert_sig_fmt fmt =
+                ctx.flags.fmt ? signature_format_plain : signature_format_tss;
+        bool res = tpm2_convert_sig_load(ctx.sig_file_path, fmt, ctx.format,
+                ctx.halg, &ctx.signature);
         if (!res) {
             goto err;
         }
@@ -239,7 +245,8 @@ static tool_rc init(void) {
          * This is a redundant check since main() checks this case, but we'll add it here to silence any
          * complainers.
          */
-        LOG_ERR("No digest set and no message file to compute from, cannot compute message hash!");
+        LOG_ERR("No digest set and no message file to compute from, cannot "
+                "compute message hash!");
         goto err;
     }
 
@@ -249,7 +256,8 @@ static tool_rc init(void) {
             goto err;
         }
 
-        if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcrSel, &pcrs, &ctx.pcrHash)) {
+        if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcrSel, &pcrs,
+                &ctx.pcrHash)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
             goto err;
         }
@@ -260,14 +268,15 @@ static tool_rc init(void) {
     }
 
     // Figure out the extra data (nonce) from this message
-    if (!tpm2_util_get_digest_from_quote(msg, &ctx.quoteHash, &ctx.quoteExtraData)) {
+    if (!tpm2_util_get_digest_from_quote(msg, &ctx.quoteHash,
+            &ctx.quoteExtraData)) {
         LOG_ERR("Failed to get digest from quote!");
         goto err;
     }
 
     // Figure out the digest for this message
     bool res = tpm2_openssl_hash_compute_data(ctx.halg, msg->attestationData,
-        msg->size, &ctx.msgHash);
+            msg->size, &ctx.msgHash);
     if (!res) {
         LOG_ERR("Compute message hash failed!");
         goto err;
@@ -277,58 +286,60 @@ static tool_rc init(void) {
 
 err:
     free(msg);
-    return return_value;
 
+    return return_value;
 }
 
 static bool on_option(char key, char *value) {
 
-	switch (key) {
-	case 'u':
-	    ctx.pubkey_file_path = value;
-	    break;
-	case 'g': {
-		ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
-		if (ctx.halg == TPM2_ALG_ERROR) {
-			LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
-			return false;
-		}
-		ctx.flags.halg = 1;
-	}
-		break;
-	case 'm': {
-		ctx.msg_file_path = value;
-		ctx.flags.msg = 1;
-	}
-		break;
-	case 'F': {
-		ctx.format = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
-		if (ctx.format == TPM2_ALG_ERROR) {
-		    LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
-		    return false;
-		}
+    switch (key) {
+    case 'u':
+        ctx.pubkey_file_path = value;
+        break;
+    case 'g': {
+        ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
+        if (ctx.halg == TPM2_ALG_ERROR) {
+            LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
+            return false;
+        }
+        ctx.flags.halg = 1;
+    }
+        break;
+    case 'm': {
+        ctx.msg_file_path = value;
+        ctx.flags.msg = 1;
+    }
+        break;
+    case 'F': {
+        ctx.format = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
+        if (ctx.format == TPM2_ALG_ERROR) {
+            LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
+            return false;
+        }
 
-		ctx.flags.fmt = 1;
-	} break;
-	case 'q':
-		ctx.extraData.size = sizeof(ctx.extraData) - 2;
-		if(tpm2_util_hex_to_byte_structure(value, &ctx.extraData.size, ctx.extraData.buffer) != 0)
-		{
-			LOG_ERR("Could not convert \"%s\" from a hex string to byte array!", value);
-			return false;
-		}
-		ctx.flags.extra = 1;
-		break;
-	case 's':
-		ctx.sig_file_path = value;
-		ctx.flags.sig = 1;
-		break;
-	case 'f':
-		ctx.pcr_file_path = value;
-		ctx.flags.pcr = 1;
-		break;
-		/* no default */
-	}
+        ctx.flags.fmt = 1;
+    }
+        break;
+    case 'q':
+        ctx.extraData.size = sizeof(ctx.extraData) - 2;
+        if (tpm2_util_hex_to_byte_structure(value, &ctx.extraData.size,
+                ctx.extraData.buffer) != 0) {
+            LOG_ERR("Could not convert \"%s\" from a hex string to byte array!",
+                    value);
+            return false;
+        }
+        ctx.flags.extra = 1;
+        break;
+    case 's':
+        ctx.sig_file_path = value;
+        ctx.flags.sig = 1;
+        break;
+    case 'f':
+        ctx.pcr_file_path = value;
+        ctx.flags.pcr = 1;
+        break;
+        /* no default */
+    }
 
     return true;
 }
@@ -347,15 +358,15 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 
     *opts = tpm2_options_new("g:m:F:s:u:f:q:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, TPM2_OPTIONS_NO_SAPI);
+            on_option, NULL, TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
-	UNUSED(ectx);
-	UNUSED(flags);
+    UNUSED(ectx);
+    UNUSED(flags);
 
     /* initialize and process */
     tool_rc rc = init();
