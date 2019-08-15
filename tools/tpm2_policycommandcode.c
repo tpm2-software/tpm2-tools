@@ -10,11 +10,11 @@
 
 typedef struct tpm2_policycommandcode_ctx tpm2_policycommandcode_ctx;
 struct tpm2_policycommandcode_ctx {
-   const char *session_path;
-   TPM2_CC command_code;
-   const char *out_policy_dgst_path;
-   TPM2B_DIGEST *policy_digest;
-   tpm2_session *session;
+    const char *session_path;
+    TPM2_CC command_code;
+    const char *out_policy_dgst_path;
+    TPM2B_DIGEST *policy_digest;
+    tpm2_session *session;
 };
 
 static tpm2_policycommandcode_ctx ctx;
@@ -42,7 +42,7 @@ bool is_input_option_args_valid(void) {
     return true;
 }
 
-bool on_arg (int argc, char **argv) {
+bool on_arg(int argc, char **argv) {
 
     if (argc > 1) {
         LOG_ERR("Specify only the TPM2 command code.");
@@ -69,8 +69,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "policy",  required_argument,  NULL,   'L' },
     };
 
-    *opts = tpm2_options_new("S:L:", ARRAY_LEN(topts), topts, on_option,
-                             on_arg, 0);
+    *opts = tpm2_options_new("S:L:", ARRAY_LEN(topts), topts, on_option, on_arg,
+            0);
 
     return *opts != NULL;
 }
@@ -84,13 +84,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false, &ctx.session);
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
+            &ctx.session);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     rc = tpm2_policy_build_policycommandcode(ectx, ctx.session,
-        ctx.command_code);
+            ctx.command_code);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build TPM policy_command_code");
         return rc;
