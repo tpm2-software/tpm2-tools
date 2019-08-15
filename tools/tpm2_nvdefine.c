@@ -17,10 +17,10 @@ struct tpm_nvdefine_ctx {
         tpm2_loaded_object object;
     } auth_hierarchy;
 
-    TPMI_RH_NV_INDEX nvIndex;
+    TPMI_RH_NV_INDEX nv_index;
     UINT16 size;
-    TPMA_NV nvAttribute;
-    TPM2B_AUTH nvAuth;
+    TPMA_NV nv_attribute;
+    TPM2B_AUTH nv_auth;
 
     char *policy_file;
     char *index_auth_str;
@@ -30,7 +30,7 @@ static tpm_nvdefine_ctx ctx = {
     .auth_hierarchy = {
         .ctx_path = "o",
     },
-    .nvAuth = TPM2B_EMPTY_INIT,
+    .nv_auth = TPM2B_EMPTY_INIT,
     .size = TPM2_MAX_NV_BUFFER_SIZE,
 };
 
@@ -40,11 +40,11 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
 
     public_info.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
             + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
-    public_info.nvPublic.nvIndex = ctx.nvIndex;
+    public_info.nvPublic.nvIndex = ctx.nv_index;
     public_info.nvPublic.nameAlg = TPM2_ALG_SHA256;
 
     // Now set the attributes.
-    public_info.nvPublic.attributes = ctx.nvAttribute;
+    public_info.nvPublic.attributes = ctx.nv_attribute;
 
     if (!ctx.size) {
         LOG_WARN("Defining an index with size 0");
@@ -63,9 +63,9 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
     public_info.nvPublic.dataSize = ctx.size;
 
     tool_rc rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
-            &ctx.nvAuth, &public_info);
+            &ctx.nv_auth, &public_info);
     if (rc != tool_rc_success) {
-        LOG_INFO("Success to define NV area at index 0x%x.", ctx.nvIndex);
+        LOG_INFO("Success to define NV area at index 0x%x.", ctx.nv_index);
         return rc;
     }
 
@@ -91,9 +91,9 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'a':
-        result = tpm2_util_string_to_uint32(value, &ctx.nvAttribute);
+        result = tpm2_util_string_to_uint32(value, &ctx.nv_attribute);
         if (!result) {
-            result = tpm2_attr_util_nv_strtoattr(value, &ctx.nvAttribute);
+            result = tpm2_attr_util_nv_strtoattr(value, &ctx.nv_attribute);
             if (!result) {
                 LOG_ERR(
                         "Could not convert NV attribute to number or keyword, got: \"%s\"",
@@ -115,7 +115,7 @@ static bool on_option(char key, char *value) {
 
 static bool on_arg(int argc, char **argv) {
 
-    return on_arg_nv_index(argc, argv, &ctx.nvIndex);
+    return on_arg_nv_index(argc, argv, &ctx.nv_index);
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
@@ -155,7 +155,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-    ctx.nvAuth = *auth;
+    ctx.nv_auth = *auth;
 
     tpm2_session_close(&tmp);
 
