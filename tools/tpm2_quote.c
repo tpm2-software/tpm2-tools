@@ -28,15 +28,15 @@ struct tpm_quote_ctx {
     tpm2_convert_sig_fmt sig_format;
     TPMI_ALG_HASH sig_hash_algorithm;
     tpm2_algorithm algs;
-    TPM2B_DATA qualifyingData;
-    TPML_PCR_SELECTION pcrSelections;
+    TPM2B_DATA qualification_data;
+    TPML_PCR_SELECTION pcr_selections;
     TPMS_CAPABILITY_DATA cap_data;
     tpm2_pcrs pcrs;
 };
 
 static tpm_quote_ctx ctx = {
     .sig_hash_algorithm = TPM2_ALG_SHA256,
-    .qualifyingData = TPM2B_EMPTY_INIT,
+    .qualification_data = TPM2B_EMPTY_INIT,
 };
 
 
@@ -49,7 +49,7 @@ static bool write_pcr_values() {
     }
 
     // Export TPML_PCR_SELECTION structure to pcr outfile
-    if (fwrite(&ctx.pcrSelections, sizeof(TPML_PCR_SELECTION), 1,
+    if (fwrite(&ctx.pcr_selections, sizeof(TPML_PCR_SELECTION), 1,
             ctx.pcr_output) != 1) {
         LOG_ERR("write to output file failed: %s", strerror(errno));
         return false;
@@ -91,21 +91,21 @@ static bool write_output_files(TPM2B_ATTEST *quoted, TPMT_SIGNATURE *signature) 
     return res;
 }
 
-static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
+static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcr_selection) {
 
     TPM2B_ATTEST *quoted = NULL;
     TPMT_SIGNATURE *signature = NULL;
-    TPMT_SIG_SCHEME inScheme = { .scheme = TPM2_ALG_NULL };
+    TPMT_SIG_SCHEME in_scheme = { .scheme = TPM2_ALG_NULL };
 
     tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
             ctx.key.object.tr_handle, ctx.sig_hash_algorithm, TPM2_ALG_NULL,
-            &inScheme);
+            &in_scheme);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_quote(ectx, &ctx.key.object, &inScheme, &ctx.qualifyingData,
-            pcrSelection, &quoted, &signature);
+    rc = tpm2_quote(ectx, &ctx.key.object, &in_scheme, &ctx.qualification_data,
+            pcr_selection, &quoted, &signature);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -128,29 +128,29 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
 
     if (ctx.pcr_output) {
         // Filter out invalid/unavailable PCR selections
-        if (!pcr_check_pcr_selection(&ctx.cap_data, &ctx.pcrSelections)) {
+        if (!pcr_check_pcr_selection(&ctx.cap_data, &ctx.pcr_selections)) {
             LOG_ERR("Failed to filter unavailable PCR values for quote!");
             return tool_rc_general_error;
         }
 
         // Gather PCR values from the TPM (the quote doesn't have them!)
-        rc = pcr_read_pcr_values(ectx, &ctx.pcrSelections, &ctx.pcrs);
+        rc = pcr_read_pcr_values(ectx, &ctx.pcr_selections, &ctx.pcrs);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to retrieve PCR values related to quote!");
             return rc;
         }
 
         // Grab the digest from the quote
-        TPM2B_DIGEST quoteDigest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-        TPM2B_DATA extraData = TPM2B_TYPE_INIT(TPM2B_DATA, buffer);
-        if (!tpm2_util_get_digest_from_quote(quoted, &quoteDigest,
-                &extraData)) {
+        TPM2B_DIGEST quote_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
+        TPM2B_DATA extra_data = TPM2B_TYPE_INIT(TPM2B_DATA, buffer);
+        if (!tpm2_util_get_digest_from_quote(quoted, &quote_digest,
+                &extra_data)) {
             LOG_ERR("Failed to get digest from quote!");
             return tool_rc_general_error;
         }
 
         // Print out PCR values as output
-        if (!pcr_print_pcr_struct(&ctx.pcrSelections, &ctx.pcrs)) {
+        if (!pcr_print_pcr_struct(&ctx.pcr_selections, &ctx.pcrs)) {
             LOG_ERR("Failed to print PCR values related to quote!");
             return tool_rc_general_error;
         }
@@ -158,7 +158,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
         // Calculate the digest from our selected PCR values (to ensure correctness)
         TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
         if (!tpm2_openssl_hash_pcr_banks(ctx.sig_hash_algorithm,
-                &ctx.pcrSelections, &ctx.pcrs, &pcr_digest)) {
+                &ctx.pcr_selections, &ctx.pcrs, &pcr_digest)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
             return tool_rc_general_error;
         }
@@ -167,7 +167,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcrSelection) {
         tpm2_tool_output("\n");
 
         // Make sure digest from quote matches calculated PCR digest
-        if (!tpm2_util_verify_digests(&quoteDigest, &pcr_digest)) {
+        if (!tpm2_util_verify_digests(&quote_digest, &pcr_digest)) {
             LOG_ERR("Error validating calculated PCR composite with quote");
             return tool_rc_general_error;
         }
@@ -192,15 +192,15 @@ static bool on_option(char key, char *value) {
         ctx.key.auth_str = value;
         break;
     case 'l':
-        if (!pcr_parse_selections(value, &ctx.pcrSelections)) {
+        if (!pcr_parse_selections(value, &ctx.pcr_selections)) {
             LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
             return false;
         }
         break;
     case 'q':
-        ctx.qualifyingData.size = sizeof(ctx.qualifyingData) - 2;
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.qualifyingData.size,
-                ctx.qualifyingData.buffer) != 0) {
+        ctx.qualification_data.size = sizeof(ctx.qualification_data) - 2;
+        if (tpm2_util_hex_to_byte_structure(value, &ctx.qualification_data.size,
+                ctx.qualification_data.buffer) != 0) {
             LOG_ERR("Could not convert \"%s\" from a hex string to byte array!",
                     value);
             return false;
@@ -262,7 +262,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     /* TODO this whole file needs to be re-done, especially the option validation */
-    if (!ctx.pcrSelections.count) {
+    if (!ctx.pcr_selections.count) {
         LOG_ERR("Expected -l to be specified.");
         return tool_rc_option_error;
     }
@@ -288,7 +288,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return quote(ectx, &ctx.pcrSelections);
+    return quote(ectx, &ctx.pcr_selections);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
