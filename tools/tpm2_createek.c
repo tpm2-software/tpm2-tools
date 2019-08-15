@@ -53,61 +53,61 @@ static createek_context ctx = {
     .find_persistent_handle = false
 };
 
-static bool set_key_algorithm(TPM2B_PUBLIC *inPublic) {
+static bool set_key_algorithm(TPM2B_PUBLIC *input_public) {
 
-    switch (inPublic->publicArea.type) {
+    switch (input_public->publicArea.type) {
     case TPM2_ALG_RSA:
-        inPublic->publicArea.parameters.rsaDetail.symmetric.algorithm =
+        input_public->publicArea.parameters.rsaDetail.symmetric.algorithm =
                 TPM2_ALG_AES;
-        inPublic->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
-        inPublic->publicArea.parameters.rsaDetail.symmetric.mode.aes =
+        input_public->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
+        input_public->publicArea.parameters.rsaDetail.symmetric.mode.aes =
                 TPM2_ALG_CFB;
-        inPublic->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
-        inPublic->publicArea.parameters.rsaDetail.keyBits = 2048;
-        inPublic->publicArea.parameters.rsaDetail.exponent = 0;
-        inPublic->publicArea.unique.rsa.size = 256;
+        input_public->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
+        input_public->publicArea.parameters.rsaDetail.keyBits = 2048;
+        input_public->publicArea.parameters.rsaDetail.exponent = 0;
+        input_public->publicArea.unique.rsa.size = 256;
         break;
     case TPM2_ALG_KEYEDHASH:
-        inPublic->publicArea.parameters.keyedHashDetail.scheme.scheme =
+        input_public->publicArea.parameters.keyedHashDetail.scheme.scheme =
                 TPM2_ALG_XOR;
-        inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
+        input_public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
                 TPM2_ALG_SHA256;
-        inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf =
+        input_public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf =
                 TPM2_ALG_KDF1_SP800_108;
-        inPublic->publicArea.unique.keyedHash.size = 0;
+        input_public->publicArea.unique.keyedHash.size = 0;
         break;
     case TPM2_ALG_ECC:
-        inPublic->publicArea.parameters.eccDetail.symmetric.algorithm =
+        input_public->publicArea.parameters.eccDetail.symmetric.algorithm =
                 TPM2_ALG_AES;
-        inPublic->publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
-        inPublic->publicArea.parameters.eccDetail.symmetric.mode.sym =
+        input_public->publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
+        input_public->publicArea.parameters.eccDetail.symmetric.mode.sym =
                 TPM2_ALG_CFB;
-        inPublic->publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
-        inPublic->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
-        inPublic->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
-        inPublic->publicArea.unique.ecc.x.size = 32;
-        inPublic->publicArea.unique.ecc.y.size = 32;
+        input_public->publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
+        input_public->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
+        input_public->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
+        input_public->publicArea.unique.ecc.x.size = 32;
+        input_public->publicArea.unique.ecc.y.size = 32;
         break;
     case TPM2_ALG_SYMCIPHER:
-        inPublic->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
-        inPublic->publicArea.parameters.symDetail.sym.keyBits.aes = 128;
-        inPublic->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
-        inPublic->publicArea.unique.sym.size = 0;
+        input_public->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
+        input_public->publicArea.parameters.symDetail.sym.keyBits.aes = 128;
+        input_public->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
+        input_public->publicArea.unique.sym.size = 0;
         break;
     default:
         LOG_ERR("The algorithm type input(%4.4x) is not supported!",
-                inPublic->publicArea.type);
+                input_public->publicArea.type);
         return false;
     }
 
     return true;
 }
 
-static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
+static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
     TPM2_HANDLE template_nv_index;
     TPM2_HANDLE nonce_nv_index;
 
-    switch (inPublic->publicArea.type) {
+    switch (input_public->publicArea.type) {
     case TPM2_ALG_RSA:
         template_nv_index = RSA_EK_TEMPLATE_NV_INDEX;
         nonce_nv_index = RSA_EK_NONCE_NV_INDEX;
@@ -118,7 +118,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
         break;
     default:
         LOG_ERR("EK template and EK nonce for algorithm type input(%4.4x)"
-                " are not supported!", inPublic->publicArea.type);
+                " are not supported!", input_public->publicArea.type);
         return tool_rc_general_error;
     }
 
@@ -134,7 +134,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     }
 
     TSS2_RC ret = Tss2_MU_TPMT_PUBLIC_Unmarshal(template, template_size,
-    NULL, &inPublic->publicArea);
+    NULL, &input_public->publicArea);
     if (ret != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to unmarshal TPMT_PUBLIC from buffer 0x%p", template);
         rc = tool_rc_general_error;
@@ -149,14 +149,14 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
         goto out;
     }
 
-    if (inPublic->publicArea.type == TPM2_ALG_RSA) {
-        memcpy(&inPublic->publicArea.unique.rsa.buffer, &nonce, nonce_size);
-        inPublic->publicArea.unique.rsa.size = 256;
+    if (input_public->publicArea.type == TPM2_ALG_RSA) {
+        memcpy(&input_public->publicArea.unique.rsa.buffer, &nonce, nonce_size);
+        input_public->publicArea.unique.rsa.size = 256;
     } else {
         // ECC is only other supported algorithm
-        memcpy(&inPublic->publicArea.unique.ecc.x.buffer, &nonce, nonce_size);
-        inPublic->publicArea.unique.ecc.x.size = 32;
-        inPublic->publicArea.unique.ecc.y.size = 32;
+        memcpy(&input_public->publicArea.unique.ecc.x.buffer, &nonce, nonce_size);
+        input_public->publicArea.unique.ecc.x.size = 32;
+        input_public->publicArea.unique.ecc.y.size = 32;
     }
 
     out: if (template) {
