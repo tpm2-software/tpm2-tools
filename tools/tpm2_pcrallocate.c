@@ -28,14 +28,13 @@ static struct {
     .auth_hierarchy.ctx_path = "platform",
 };
 
-static bool on_arg(int argc, char **argv){
+static bool on_arg(int argc, char **argv) {
     if (argc > 1) {
         LOG_ERR("Too many arguments");
         return false;
     }
 
-    if(argc == 1 && !pcr_parse_selections(argv[0], &ctx.pcrSelection))
-    {
+    if (argc == 1 && !pcr_parse_selections(argv[0], &ctx.pcrSelection)) {
         LOG_ERR("Could not parse pcr selections");
         return false;
     }
@@ -54,12 +53,10 @@ static bool on_option(char key, char *value) {
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
-    const struct option topts[] = {
-        { "auth",     required_argument, NULL, 'P' },
-    };
+    const struct option topts[] = { { "auth", required_argument, NULL, 'P' }, };
 
     *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,
-                             0);
+            0);
 
     return *opts != NULL;
 }
@@ -68,8 +65,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HANDLE_FLAGS_P);
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_P);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid platform authorization format.");
         return rc;
