@@ -245,6 +245,7 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
     if (!f) {
         LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
                 dup_path, strerror(errno));
+        free(dup_path);
         return tool_rc_general_error;
     }
 
