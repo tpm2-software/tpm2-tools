@@ -30,15 +30,15 @@ tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.outFilePath) {
-        bool ret = files_save_bytes_to_file(ctx.outFilePath, (UINT8 *)
-                                        outData->buffer, outData->size);
+        bool ret = files_save_bytes_to_file(ctx.outFilePath,
+                (UINT8 *) outData->buffer, outData->size);
         if (!ret) {
             rc = tool_rc_general_error;
             goto out;
         }
     } else {
         bool ret = files_write_bytes(stdout, (UINT8 *) outData->buffer,
-                                 outData->size);
+                outData->size);
         if (!ret) {
             rc = tool_rc_general_error;
             goto out;
@@ -60,9 +60,9 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc =  tpm2_util_object_load_auth(ectx, ctx.sealkey.ctx_path,
+    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.sealkey.ctx_path,
             ctx.sealkey.auth_str, &ctx.sealkey.object, false,
-            TPM2_HANDLES_FLAGS_TRANSIENT|TPM2_HANDLES_FLAGS_PERSISTENT);
+            TPM2_HANDLES_FLAGS_TRANSIENT | TPM2_HANDLES_FLAGS_PERSISTENT);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid item handle authorization");
         return rc;
@@ -98,8 +98,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "object-context",   required_argument, NULL, 'c' },
     };
 
-    *opts = tpm2_options_new("p:o:c:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+    *opts = tpm2_options_new("p:o:c:", ARRAY_LEN(topts), topts, on_option, NULL,
+            0);
 
     return *opts != NULL;
 }
