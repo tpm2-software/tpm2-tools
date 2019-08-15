@@ -210,7 +210,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_DATA in_key;
     TPM2B_DATA* out_key = NULL;
     TPM2B_PRIVATE* duplicate;
-    TPM2B_ENCRYPTED_SECRET* outSymSeed;
+    TPM2B_ENCRYPTED_SECRET* out_sym_seed;
 
     bool result = check_options();
     if (!result) {
@@ -251,7 +251,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = do_duplicate(ectx, ctx.flags.i ? &in_key : NULL, &sym_alg,
-            ctx.flags.o ? &out_key : NULL, &duplicate, &outSymSeed);
+            ctx.flags.o ? &out_key : NULL, &duplicate, &out_sym_seed);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -273,7 +273,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    result = files_save_encrypted_seed(outSymSeed, ctx.enc_seed_out);
+    result = files_save_encrypted_seed(out_sym_seed, ctx.enc_seed_out);
     if (!result) {
         LOG_ERR("Failed to save encryption seed into file \"%s\"",
                 ctx.enc_seed_out);
@@ -293,7 +293,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 out:
     free(out_key);
-    free(outSymSeed);
+    free(out_sym_seed);
     free(duplicate);
 
     return rc;
