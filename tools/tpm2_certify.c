@@ -29,10 +29,10 @@ struct tpm_certify_ctx {
     } file_path;
 
     struct {
-        UINT16 g : 1;
-        UINT16 o : 1;
-        UINT16 s : 1;
-        UINT16 f : 1;
+        UINT16 g :1;
+        UINT16 o :1;
+        UINT16 s :1;
+        UINT16 f :1;
     } flags;
 
     TPMI_ALG_HASH halg;
@@ -44,12 +44,11 @@ static tpm_certify_ctx ctx = {
 };
 
 static tool_rc get_key_type(ESYS_CONTEXT *ectx, ESYS_TR object_handle,
-                            TPMI_ALG_PUBLIC *type) {
+        TPMI_ALG_PUBLIC *type) {
 
     TPM2B_PUBLIC *out_public = NULL;
-    tool_rc rc = tpm2_readpublic(ectx, object_handle,
-                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                &out_public, NULL, NULL);
+    tool_rc rc = tpm2_readpublic(ectx, object_handle, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &out_public, NULL, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -71,19 +70,19 @@ static tool_rc set_scheme(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
     }
 
     switch (type) {
-    case TPM2_ALG_RSA :
+    case TPM2_ALG_RSA:
         scheme->scheme = TPM2_ALG_RSASSA;
         scheme->details.rsassa.hashAlg = halg;
         break;
-    case TPM2_ALG_KEYEDHASH :
+    case TPM2_ALG_KEYEDHASH:
         scheme->scheme = TPM2_ALG_HMAC;
         scheme->details.hmac.hashAlg = halg;
         break;
-    case TPM2_ALG_ECC :
+    case TPM2_ALG_ECC:
         scheme->scheme = TPM2_ALG_ECDSA;
         scheme->details.ecdsa.hashAlg = halg;
         break;
-    case TPM2_ALG_SYMCIPHER :
+    case TPM2_ALG_SYMCIPHER:
     default:
         LOG_ERR("Unknown key type, got: 0x%x", type);
         return tool_rc_general_error;
@@ -102,8 +101,8 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
     tool_rc rc = tool_rc_general_error;
 
     TPMT_SIG_SCHEME scheme;
-    tool_rc tmp_rc = set_scheme(ectx, ctx.signing_key.object.tr_handle, ctx.halg,
-                    &scheme);
+    tool_rc tmp_rc = set_scheme(ectx, ctx.signing_key.object.tr_handle,
+            ctx.halg, &scheme);
     if (tmp_rc != tool_rc_success) {
         LOG_ERR("No suitable signing scheme!");
         return tmp_rc;
@@ -112,13 +111,8 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
     TPM2B_ATTEST *certify_info;
     TPMT_SIGNATURE *signature;
 
-    tmp_rc = tpm2_certify(
-            ectx,
-            &ctx.certified_key.object,
-            &ctx.signing_key.object,
-            &qualifying_data,
-            &scheme,
-            &certify_info,
+    tmp_rc = tpm2_certify(ectx, &ctx.certified_key.object,
+            &ctx.signing_key.object, &qualifying_data, &scheme, &certify_info,
             &signature);
     if (tmp_rc != tool_rc_success) {
         return tmp_rc;
@@ -201,7 +195,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("P:p:g:o:s:c:C:f:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -209,24 +203,22 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
-    if ((!ctx.certified_key.ctx_path)
-        && (!ctx.signing_key.ctx_path)
-        && (ctx.flags.g) && (ctx.flags.o)
-        && (ctx.flags.s)) {
+    if ((!ctx.certified_key.ctx_path) && (!ctx.signing_key.ctx_path)
+            && (ctx.flags.g) && (ctx.flags.o) && (ctx.flags.s)) {
         return tool_rc_option_error;
     }
 
     /* Load input files */
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.certified_key.ctx_path,
-        ctx.certified_key.auth_str, &ctx.certified_key.object, false,
-        TPM2_HANDLE_ALL_W_NV);
+            ctx.certified_key.auth_str, &ctx.certified_key.object, false,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-        ctx.signing_key.auth_str, &ctx.signing_key.object, false,
-        TPM2_HANDLE_ALL_W_NV);
+            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
