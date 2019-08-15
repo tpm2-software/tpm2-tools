@@ -32,29 +32,31 @@ static tool_rc hierarchycontrol(ESYS_CONTEXT *ectx) {
         ctx.enable == TPM2_RH_ENDORSEMENT ? "ehEnable" : "phEnableNV",
         ctx.state ? "SET" : "CLEAR");
 
-    return tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object, ctx.enable, ctx.state);
+    return tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object, ctx.enable,
+            ctx.state);
 }
 
-bool on_arg (int argc, char **argv) {
+bool on_arg(int argc, char **argv) {
 
-    switch(argc) {
+    switch (argc) {
     case 2:
-	    break;
+        break;
     default:
-	    return false;
+        return false;
     }
 
     if (!strcmp(argv[0], "phEnable")) {
-	ctx.enable = TPM2_RH_PLATFORM;
+        ctx.enable = TPM2_RH_PLATFORM;
     } else if (!strcmp(argv[0], "shEnable")) {
-	ctx.enable = TPM2_RH_OWNER;
+        ctx.enable = TPM2_RH_OWNER;
     } else if (!strcmp(argv[0], "ehEnable")) {
-	ctx.enable = TPM2_RH_ENDORSEMENT;
+        ctx.enable = TPM2_RH_ENDORSEMENT;
     } else if (!strcmp(argv[0], "phEnableNV")) {
-	ctx.enable = TPM2_RH_PLATFORM_NV;
+        ctx.enable = TPM2_RH_PLATFORM_NV;
     } else {
-	LOG_ERR("Incorrect property, got: \"%s\", expected [phEnable|shEnable|ehEnable|phEnableNV]", argv[0]);
-	return false;
+        LOG_ERR("Incorrect property, got: \"%s\", expected "
+                "[phEnable|shEnable|ehEnable|phEnableNV]", argv[0]);
+        return false;
     }
 
     if (!strcmp(argv[1], "set")) {
@@ -62,8 +64,9 @@ bool on_arg (int argc, char **argv) {
     } else if (!strcmp(argv[1], "clear")) {
         ctx.state = TPM2_NO;
     } else {
-	LOG_ERR("Incorrect operation, got: \"%s\", expected [set|clear].", argv[1]);
-	return false;
+        LOG_ERR("Incorrect operation, got: \"%s\", expected [set|clear].",
+                argv[1]);
+        return false;
     }
 
     return true;
@@ -86,12 +89,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-        { "hierarchy",		required_argument, NULL, 'C' },
-        { "hierarchy-auth",	required_argument, NULL, 'P' },
+        { "hierarchy",      required_argument, NULL, 'C' },
+        { "hierarchy-auth", required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option,
-                             on_arg, 0);
+    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
+            0);
 
     return *opts != NULL;
 }
@@ -101,18 +104,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-                                            ctx.auth_hierarchy.auth_str,
-                                            &ctx.auth_hierarchy.object, true,
-                                            TPM2_HANDLE_FLAGS_P |
-                                            TPM2_HANDLE_FLAGS_O |
-                                            TPM2_HANDLE_FLAGS_E);
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, true,
+            TPM2_HANDLE_FLAGS_P | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_E);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
         return rc;
     }
 
     if (ctx.state == TPM2_YES) {
-        switch(ctx.enable) {
+        switch (ctx.enable) {
         case TPM2_RH_PLATFORM:
             LOG_ERR("phEnable may not be SET using this command");
             return tool_rc_tcti_error;
@@ -120,10 +120,12 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         case TPM2_RH_ENDORSEMENT:
         case TPM2_RH_PLATFORM_NV:
             if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM) {
-                LOG_ERR("Only platform hierarchy handle can be specified for SET \'%s\' bit",
+                LOG_ERR("Only platform hierarchy handle can be specified for "
+                        "SET \'%s\' bit",
                         ctx.enable == TPM2_RH_OWNER ? "shEnable" :
                         ctx.enable == TPM2_RH_ENDORSEMENT ? "ehEnable" :
-                        ctx.enable == TPM2_RH_PLATFORM_NV ? "phEnableNV" : "NONE");
+                        ctx.enable == TPM2_RH_PLATFORM_NV ?
+                                "phEnableNV" : "NONE");
                 return tool_rc_auth_error;
             }
             break;
@@ -132,32 +134,41 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             return tool_rc_unsupported;
         }
     } else {
-        switch(ctx.enable) {
+        switch (ctx.enable) {
         case TPM2_RH_PLATFORM:
             if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM) {
-                LOG_ERR("Only platform hierarchy handle can be specified for CLEAR \'phEnable\' bit");
+                LOG_ERR("Only platform hierarchy handle can be specified for "
+                        "CLEAR \'phEnable\' bit");
                 return tool_rc_general_error;
             }
             break;
         case TPM2_RH_OWNER:
-            if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_OWNER &&
-                ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM) {
-                LOG_ERR("Only platform and owner hierarchy handle can be specified for CLEAR \'shEnable\' bit");
+            if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_OWNER
+                    && ctx.auth_hierarchy.object.tr_handle
+                            != ESYS_TR_RH_PLATFORM) {
+                LOG_ERR("Only platform and owner hierarchy handle can be "
+                        "specified for CLEAR \'shEnable\' bit");
                 return tool_rc_auth_error;
             }
             break;
         case TPM2_RH_ENDORSEMENT:
-            if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_ENDORSEMENT &&
-                ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM) {
-                LOG_ERR("Only platform and endorsement hierarchy handle can be specified for CLEAR \'ehEnable\' bit");
+            if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_ENDORSEMENT
+                    && ctx.auth_hierarchy.object.tr_handle
+                            != ESYS_TR_RH_PLATFORM) {
+                LOG_ERR(
+                        "Only platform and endorsement hierarchy handle can be "
+                        "specified for CLEAR \'ehEnable\' bit");
                 return tool_rc_auth_error;
             }
             break;
         case TPM2_RH_PLATFORM_NV:
-            if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM_NV &&
-                ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM) {
-                    LOG_ERR("Only platform hierarchy handle can be specified for CLEAR \'phEnableNV\' bit");
-                    return tool_rc_auth_error;
+            if (ctx.auth_hierarchy.object.tr_handle != ESYS_TR_RH_PLATFORM_NV
+                    && ctx.auth_hierarchy.object.tr_handle
+                            != ESYS_TR_RH_PLATFORM) {
+                LOG_ERR(
+                        "Only platform hierarchy handle can be specified for "
+                        "CLEAR \'phEnableNV\' bit");
+                return tool_rc_auth_error;
             }
             break;
         default:
