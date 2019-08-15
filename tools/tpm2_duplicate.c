@@ -32,13 +32,13 @@ struct tpm_duplicate_ctx {
     char *enc_seed_out;
 
     struct {
-        UINT16 c : 1;
-        UINT16 C : 1;
-        UINT16 g : 1;
-        UINT16 i : 1;
-        UINT16 o : 1;
-        UINT16 r : 1;
-        UINT16 s : 1;
+        UINT16 c :1;
+        UINT16 C :1;
+        UINT16 g :1;
+        UINT16 i :1;
+        UINT16 o :1;
+        UINT16 r :1;
+        UINT16 s :1;
     } flags;
 
 };
@@ -47,28 +47,24 @@ static tpm_duplicate_ctx ctx = {
     .key_type = TPM2_ALG_ERROR,
 };
 
-static tool_rc do_duplicate(ESYS_CONTEXT *ectx,
-        TPM2B_DATA *in_key,
-        TPMT_SYM_DEF_OBJECT *sym_alg,
-        TPM2B_DATA **out_key,
-        TPM2B_PRIVATE **duplicate,
-        TPM2B_ENCRYPTED_SECRET **encrypted_seed) {
+static tool_rc do_duplicate(ESYS_CONTEXT *ectx, TPM2B_DATA *in_key,
+        TPMT_SYM_DEF_OBJECT *sym_alg, TPM2B_DATA **out_key,
+        TPM2B_PRIVATE **duplicate, TPM2B_ENCRYPTED_SECRET **encrypted_seed) {
 
-return tpm2_duplicate(ectx,&ctx.duplicable_key.object,
-    ctx.new_parent_key.object.tr_handle, in_key, sym_alg, out_key,
-    duplicate, encrypted_seed);
+    return tpm2_duplicate(ectx, &ctx.duplicable_key.object,
+            ctx.new_parent_key.object.tr_handle, in_key, sym_alg, out_key,
+            duplicate, encrypted_seed);
 }
 
 static bool on_option(char key, char *value) {
 
-    switch(key) {
+    switch (key) {
     case 'p':
         ctx.duplicable_key.auth_str = value;
         break;
     case 'G':
         ctx.key_type = tpm2_alg_util_from_optarg(value,
-                tpm2_alg_util_flags_symmetric
-                |tpm2_alg_util_flags_misc);
+                tpm2_alg_util_flags_symmetric | tpm2_alg_util_flags_misc);
         if (ctx.key_type != TPM2_ALG_ERROR) {
             ctx.flags.g = 1;
         }
@@ -118,8 +114,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-context",       required_argument, NULL, 'c'},
     };
 
-    *opts = tpm2_options_new("p:G:i:C:o:s:r:c:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    *opts = tpm2_options_new("p:G:i:C:o:s:r:c:", ARRAY_LEN(topts), topts,
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -141,7 +137,7 @@ static bool check_options(void) {
     }
 
     if (ctx.key_type != TPM2_ALG_NULL) {
-        if((ctx.flags.i == 0) && (ctx.flags.o == 0)) {
+        if ((ctx.flags.i == 0) && (ctx.flags.o == 0)) {
             LOG_ERR("Expected in or out encryption key file \"-k/K\","
                     " missing option.");
             result = false;
@@ -172,8 +168,9 @@ static bool check_options(void) {
     }
 
     if (ctx.flags.s == 0) {
-        LOG_ERR("Expected encrypted seed out filename to be specified via \"-S\","
-                " missing option.");
+        LOG_ERR(
+                "Expected encrypted seed out filename to be specified via \"-S\","
+                        " missing option.");
         result = false;
     }
 
@@ -189,12 +186,12 @@ static bool check_options(void) {
 static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
     bool result = true;
     switch (alg) {
-    case TPM2_ALG_AES :
+    case TPM2_ALG_AES:
         obj->algorithm = TPM2_ALG_AES;
         obj->keyBits.aes = 128;
         obj->mode.aes = TPM2_ALG_CFB;
         break;
-    case TPM2_ALG_NULL :
+    case TPM2_ALG_NULL:
         obj->algorithm = TPM2_ALG_NULL;
         break;
     default:
@@ -227,50 +224,47 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.duplicable_key.ctx_path,
-		    ctx.duplicable_key.auth_str, &ctx.duplicable_key.object, false,
+            ctx.duplicable_key.auth_str, &ctx.duplicable_key.object, false,
             TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
         return rc;
     }
 
-
     result = set_key_algorithm(ctx.key_type, &sym_alg);
-    if(!result) {
+    if (!result) {
         return tool_rc_general_error;
     }
 
-    if(ctx.flags.i) {
+    if (ctx.flags.i) {
         in_key.size = 16;
-        result = files_load_bytes_from_path(ctx.sym_key_in, in_key.buffer, &in_key.size);
-        if(!result) {
+        result = files_load_bytes_from_path(ctx.sym_key_in, in_key.buffer,
+                &in_key.size);
+        if (!result) {
             return tool_rc_general_error;
         }
-        if(in_key.size != 16) {
-            LOG_ERR("Invalid AES key size, got %u bytes, expected 16", in_key.size);
+        if (in_key.size != 16) {
+            LOG_ERR("Invalid AES key size, got %u bytes, expected 16",
+                    in_key.size);
             return tool_rc_general_error;
         }
     }
 
-    rc = do_duplicate(ectx,
-        ctx.flags.i ? &in_key : NULL,
-        &sym_alg,
-        ctx.flags.o ? &out_key : NULL,
-        &duplicate,
-        &outSymSeed);
+    rc = do_duplicate(ectx, ctx.flags.i ? &in_key : NULL, &sym_alg,
+            ctx.flags.o ? &out_key : NULL, &duplicate, &outSymSeed);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     /* Maybe a false positive from scan-build but we'll check out_key anyway */
     if (ctx.flags.o) {
-        if(out_key == NULL) {
+        if (out_key == NULL) {
             LOG_ERR("No encryption key from TPM ");
             rc = tool_rc_general_error;
             goto out;
         }
-        result = files_save_bytes_to_file(ctx.sym_key_out,
-                    out_key->buffer, out_key->size);
+        result = files_save_bytes_to_file(ctx.sym_key_out, out_key->buffer,
+                out_key->size);
         if (!result) {
             LOG_ERR("Failed to save encryption key out into file \"%s\"",
                     ctx.sym_key_out);
