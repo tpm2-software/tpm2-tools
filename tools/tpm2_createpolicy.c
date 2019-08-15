@@ -12,7 +12,7 @@
 
 //Records the type of policy and if one is selected
 typedef struct {
-    bool PolicyPCR;
+    bool policy_pcr;
 } policy_type;
 
 //Common policy options
@@ -54,7 +54,7 @@ static create_policy_ctx pctx = {
 
 static tool_rc parse_policy_type_specific_command(ESYS_CONTEXT *ectx) {
 
-    if (!pctx.common_policy_options.policy_type.PolicyPCR) {
+    if (!pctx.common_policy_options.policy_type.policy_pcr) {
         LOG_ERR("Only PCR policy is currently supported!");
         return tool_rc_option_error;
     }
@@ -122,7 +122,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 0:
-        pctx.common_policy_options.policy_type.PolicyPCR = true;
+        pctx.common_policy_options.policy_type.policy_pcr = true;
         break;
     case 1:
         pctx.common_policy_options.policy_session_type = TPM2_SE_POLICY;
