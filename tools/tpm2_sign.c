@@ -32,9 +32,9 @@ struct tpm_sign_ctx {
     tpm2_convert_sig_fmt sig_format;
 
     struct {
-        UINT8 d : 1;
-        UINT8 t : 1;
-        UINT8 o : 1;
+        UINT8 d :1;
+        UINT8 t :1;
+        UINT8 o :1;
     } flags;
 };
 
@@ -48,14 +48,13 @@ static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
     TPMT_SIGNATURE *signature;
     bool result;
 
-    tool_rc rc = tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest, &ctx.in_scheme,
-      &ctx.validation, &signature);
+    tool_rc rc = tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest,
+            &ctx.in_scheme, &ctx.validation, &signature);
     if (rc != tool_rc_success) {
-      goto out;
+        goto out;
     }
 
-    result = tpm2_convert_sig_save(signature, ctx.sig_format,
-                ctx.outFilePath);
+    result = tpm2_convert_sig_save(signature, ctx.sig_format, ctx.outFilePath);
     if (!result) {
         rc = tool_rc_general_error;
         goto out;
@@ -65,6 +64,7 @@ static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
 
 out:
     free(signature);
+
     return rc;
 }
 
@@ -101,7 +101,8 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
      * Set signature scheme for key type, or validate chosen scheme is allowed for key type.
      */
     tool_rc rc = tpm2_alg_util_get_signature_scheme(ectx,
-      ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme, &ctx.in_scheme);
+            ctx.signing_key.object.tr_handle, ctx.halg, ctx.sig_scheme,
+            &ctx.in_scheme);
     if (rc != tool_rc_success) {
         LOG_ERR("bad signature scheme for key type!");
         return rc;
@@ -109,22 +110,22 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
 
     /* Process the msg file if needed */
     if (!ctx.flags.d) {
-      FILE *input = ctx.input_file ? fopen(ctx.input_file, "rb") : stdin;
-      if (!input) {
-          LOG_ERR("Could not open file \"%s\"", ctx.input_file);
-          return tool_rc_general_error;
-      }
+        FILE *input = ctx.input_file ? fopen(ctx.input_file, "rb") : stdin;
+        if (!input) {
+            LOG_ERR("Could not open file \"%s\"", ctx.input_file);
+            return tool_rc_general_error;
+        }
 
-      rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_NULL, input,
-              &ctx.digest, NULL);
-      if (input != stdin) {
-          fclose(input);
-      }
-      if (rc != tool_rc_success) {
-          LOG_ERR("Could not hash input");
-      }
-      return rc;
-      /* we don't need to perform the digest, just read it */
+        rc = tpm2_hash_file(ectx, ctx.halg, TPM2_RH_NULL, input, &ctx.digest,
+                NULL);
+        if (input != stdin) {
+            fclose(input);
+        }
+        if (rc != tool_rc_success) {
+            LOG_ERR("Could not hash input");
+        }
+        return rc;
+        /* we don't need to perform the digest, just read it */
     }
 
     /* else process it as a pre-computed digest */
@@ -156,13 +157,14 @@ static bool on_option(char key, char *value) {
     case 'g':
         ctx.halg = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_hash);
         if (ctx.halg == TPM2_ALG_ERROR) {
-            LOG_ERR("Could not convert to number or lookup algorithm, got: \"%s\"",
-                    value);
+            LOG_ERR("Could not convert to number or lookup algorithm, got: "
+                    "\"%s\"", value);
             return false;
         }
         break;
     case 's': {
-        ctx.sig_scheme = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_sig);
+        ctx.sig_scheme = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_sig);
         if (ctx.sig_scheme == TPM2_ALG_ERROR) {
             LOG_ERR("Unknown signing scheme, got: \"%s\"", value);
             return false;
@@ -190,7 +192,7 @@ static bool on_option(char key, char *value) {
         if (ctx.sig_format == signature_format_err) {
             return false;
         }
-    /* no default */
+        /* no default */
     }
 
     return true;
@@ -222,7 +224,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("p:g:dt:o:c:f:s:", ARRAY_LEN(topts), topts,
-                             on_option, on_args, 0);
+            on_option, on_args, 0);
 
     return *opts != NULL;
 }
@@ -232,8 +234,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.signing_key.ctx_path,
-        ctx.signing_key.auth_str, &ctx.signing_key.object, false,
-        TPM2_HANDLE_ALL_W_NV);
+            ctx.signing_key.auth_str, &ctx.signing_key.object, false,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid key authorization");
         return rc;
