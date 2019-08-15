@@ -23,16 +23,16 @@
 
 bool output_enabled = true;
 
-static void esys_teardown (ESYS_CONTEXT **esys_context) {
+static void esys_teardown(ESYS_CONTEXT **esys_context) {
 
     if (esys_context == NULL)
         return;
     if (*esys_context == NULL)
         return;
-    Esys_Finalize (esys_context);
+    Esys_Finalize(esys_context);
 }
 
-static void teardown_full (ESYS_CONTEXT **esys_context) {
+static void teardown_full(ESYS_CONTEXT **esys_context) {
 
     TSS2_TCTI_CONTEXT *tcti_context = NULL;
     TSS2_RC rc;
@@ -44,8 +44,8 @@ static void teardown_full (ESYS_CONTEXT **esys_context) {
     rc = Esys_GetTcti(*esys_context, &tcti_context);
     if (rc != TPM2_RC_SUCCESS)
         return;
-    esys_teardown (esys_context);
-    Tss2_TctiLdr_Finalize (&tcti_context);
+    esys_teardown(esys_context);
+    Tss2_TctiLdr_Finalize(&tcti_context);
 }
 
 static ESYS_CONTEXT* ctx_init(TSS2_TCTI_CONTEXT *tcti_ctx) {
@@ -82,9 +82,11 @@ int main(int argc, char *argv[]) {
 
     tpm2_option_flags flags = { .all = 0 };
     TSS2_TCTI_CONTEXT *tcti = NULL;
-    tpm2_option_code rc = tpm2_handle_options(argc, argv, tool_opts, &flags, &tcti);
+    tpm2_option_code rc = tpm2_handle_options(argc, argv, tool_opts, &flags,
+            &tcti);
     if (rc != tpm2_option_code_continue) {
-        ret = rc == tpm2_option_code_err ? tool_rc_general_error : tool_rc_success;
+        ret = rc == tpm2_option_code_err ?
+                tool_rc_general_error : tool_rc_success;
         goto free_opts;
     }
 
@@ -134,15 +136,15 @@ int main(int argc, char *argv[]) {
         /* if onrun() passed, the error code should come from onstop() */
         ret = ret == tool_rc_success ? tmp_rc : ret;
     }
-    switch(ret) {
-        case tool_rc_success:
-            /* nothing to do here */
-            break;
-        case tool_rc_option_error:
-            tpm2_print_usage(argv[0], tool_opts);
-            break;
-        default:
-            LOG_ERR("Unable to run %s", argv[0]);
+    switch (ret) {
+    case tool_rc_success:
+        /* nothing to do here */
+        break;
+    case tool_rc_option_error:
+        tpm2_print_usage(argv[0], tool_opts);
+        break;
+    default:
+        LOG_ERR("Unable to run %s", argv[0]);
     }
 
     /*
