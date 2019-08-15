@@ -31,6 +31,9 @@ static bool on_option(char key, char *value) {
     case 'f':
         ctx.fulltest = TPM2_YES;
         break;
+    default:
+        LOG_ERR("Invalid option.");
+        return false;
     }
 
     return true;
