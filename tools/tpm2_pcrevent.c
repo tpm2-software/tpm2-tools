@@ -238,6 +238,7 @@ static bool on_arg(int argc, char **argv) {
         /* file already found but got another file */
         if (f && x) {
             LOG_ERR("Only expected one file input");
+            fclose(x);
             goto error;
             /* looking for file and got a file so assign */
         } else if (x && !f) {
