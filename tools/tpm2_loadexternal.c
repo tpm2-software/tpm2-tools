@@ -43,12 +43,11 @@ static tpm_loadexternal_ctx ctx = {
 };
 
 static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
-                TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME **name) {
+        TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME **name) {
 
-    TSS2_RC rval = Esys_LoadExternal(ectx,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    has_priv ? priv : NULL, pub, ctx.hierarchy_value,
-                    &ctx.handle);
+    TSS2_RC rval = Esys_LoadExternal(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, has_priv ? priv : NULL, pub, ctx.hierarchy_value,
+            &ctx.handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_LoadExternal, rval);
         return tool_rc_from_tpm(rval);
@@ -67,10 +66,10 @@ static bool on_option(char key, char *value) {
 
     bool result;
 
-    switch(key) {
+    switch (key) {
     case 'C':
         result = tpm2_util_handle_from_optarg(value, &ctx.hierarchy_value,
-                   TPM2_HANDLE_FLAGS_ALL_HIERACHIES);
+                TPM2_HANDLE_FLAGS_ALL_HIERACHIES);
         if (!result) {
             return false;
         }
@@ -113,21 +112,21 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
-      { "hierarchy",          required_argument, NULL, 'C'},
-      { "public",             required_argument, NULL, 'u'},
-      { "private",            required_argument, NULL, 'r'},
-      { "key-context",        required_argument, NULL, 'c'},
-      { "attributes",         required_argument, NULL, 'a'},
-      { "policy",             required_argument, NULL, 'L'},
-      { "auth",               required_argument, NULL, 'p'},
-      { "hash-algorithm",     required_argument, NULL, 'g'},
-      { "key-algorithm",      required_argument, NULL, 'G'},
-      { "name",               required_argument, NULL, 'n'},
-      { "passin",             required_argument, NULL,  0 },
+      { "hierarchy",      required_argument, NULL, 'C'},
+      { "public",         required_argument, NULL, 'u'},
+      { "private",        required_argument, NULL, 'r'},
+      { "key-context",    required_argument, NULL, 'c'},
+      { "attributes",     required_argument, NULL, 'a'},
+      { "policy",         required_argument, NULL, 'L'},
+      { "auth",           required_argument, NULL, 'p'},
+      { "hash-algorithm", required_argument, NULL, 'g'},
+      { "key-algorithm",  required_argument, NULL, 'G'},
+      { "name",           required_argument, NULL, 'n'},
+      { "passin",         required_argument, NULL,  0 },
     };
 
-    *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    *opts = tpm2_options_new("C:u:r:c:a:p:L:g:G:n:", ARRAY_LEN(topts), topts,
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -166,11 +165,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.key_type) {
         alg = tpm2_alg_util_from_optarg(ctx.key_type,
-                        tpm2_alg_util_flags_asymmetric
-                        |tpm2_alg_util_flags_symmetric);
+                tpm2_alg_util_flags_asymmetric | tpm2_alg_util_flags_symmetric);
         if (alg == TPM2_ALG_ERROR) {
-            LOG_ERR("Unsupported key type, got: \"%s\"",
-                    ctx.key_type);
+            LOG_ERR("Unsupported key type, got: \"%s\"", ctx.key_type);
             return tool_rc_general_error;
         }
     }
@@ -194,7 +191,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      */
     if (ctx.attrs) {
         bool result = tpm2_attr_util_obj_from_optarg(ctx.attrs,
-            &pub.publicArea.objectAttributes);
+                &pub.publicArea.objectAttributes);
         if (!result) {
             return tool_rc_general_error;
         }
@@ -224,9 +221,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * object is a TSS object
      */
     if (ctx.policy) {
-        pub.publicArea.authPolicy.size = sizeof(pub.publicArea.authPolicy.buffer);
+        pub.publicArea.authPolicy.size =
+                sizeof(pub.publicArea.authPolicy.buffer);
         bool res = files_load_bytes_from_path(ctx.policy,
-                    pub.publicArea.authPolicy.buffer, &pub.publicArea.authPolicy.size);
+                pub.publicArea.authPolicy.buffer,
+                &pub.publicArea.authPolicy.size);
         if (!res) {
             return tool_rc_general_error;
         }
@@ -236,8 +235,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * Set the name alg, again this gets wipped on a TSS object
      */
     pub.publicArea.nameAlg =
-        ctx.name_alg ? tpm2_alg_util_from_optarg(ctx.name_alg, tpm2_alg_util_flags_hash
-                |tpm2_alg_util_flags_misc) : DEFAULT_NAME_ALG;
+        ctx.name_alg ?
+                    tpm2_alg_util_from_optarg(ctx.name_alg,
+                            tpm2_alg_util_flags_hash
+                                    | tpm2_alg_util_flags_misc) :
+                    DEFAULT_NAME_ALG;
     if (pub.publicArea.nameAlg == TPM2_ALG_ERROR) {
         LOG_ERR("Invalid name hashing algorithm, got: \"%s\"", ctx.name_alg);
         return tool_rc_general_error;
@@ -269,8 +271,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_openssl_load_rc load_status = lprc_error;
     if (ctx.private_key_path) {
-        load_status = tpm2_openssl_load_private(ctx.private_key_path, ctx.passin,
-                alg, &pub, &priv);
+        load_status = tpm2_openssl_load_private(ctx.private_key_path,
+                ctx.passin, alg, &pub, &priv);
         if (load_status == lprc_error) {
             return tool_rc_general_error;
         }
@@ -289,12 +291,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
                 " private PEM or -r option");
         return tool_rc_general_error;
 
-    } else if(tpm2_openssl_did_load_public(load_status) && ctx.public_key_path) {
+    } else if (tpm2_openssl_did_load_public(load_status)
+            && ctx.public_key_path) {
         LOG_WARN("Loaded a public key from the private portion"
-                 " and a public portion was specified via -u. Defaulting"
-                 " to specified public");
+                " and a public portion was specified via -u. Defaulting"
+                " to specified public");
 
-        memset(&pub.publicArea.parameters, 0, sizeof(pub.publicArea.parameters));
+        memset(&pub.publicArea.parameters, 0,
+                sizeof(pub.publicArea.parameters));
         pub.publicArea.type = TPM2_ALG_NULL;
     }
 
@@ -308,7 +312,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tool_rc_general_error;
     TPM2B_NAME *name = NULL;
     tmp_rc = load_external(ectx, &pub, &priv, ctx.private_key_path != NULL,
-                &name);
+            &name);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
@@ -329,8 +333,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.name_path) {
         bool result = files_save_bytes_to_file(ctx.name_path, name->name,
-                    name->size);
-        if(!result) {
+                name->size);
+        if (!result) {
             goto out;
         }
     }
