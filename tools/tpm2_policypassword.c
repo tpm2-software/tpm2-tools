@@ -9,13 +9,13 @@
 
 typedef struct tpm2_policypassword_ctx tpm2_policypassword_ctx;
 struct tpm2_policypassword_ctx {
-   //File path for the session context data
-   const char *session_path;
-   //File path for storing the policy digest output
-   const char *out_policy_dgst_path;
+    //File path for the session context data
+    const char *session_path;
+    //File path for storing the policy digest output
+    const char *out_policy_dgst_path;
 
-   TPM2B_DIGEST *policy_digest;
-   tpm2_session *session;
+    TPM2B_DIGEST *policy_digest;
+    tpm2_session *session;
 };
 
 static tpm2_policypassword_ctx ctx;
@@ -37,12 +37,12 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-        { "policy",             required_argument, NULL, 'L' },
-        { "session",            required_argument, NULL, 'S' },
+        { "policy",  required_argument, NULL, 'L' },
+        { "session", required_argument, NULL, 'S' },
     };
 
     *opts = tpm2_options_new("S:L:", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    NULL, 0);
 
     return *opts != NULL;
 }
@@ -65,7 +65,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false, &ctx.session);
+    tool_rc rc = tpm2_session_restore(ectx, ctx.session_path, false,
+            &ctx.session);
     if (rc != tool_rc_success) {
         return rc;
     }
