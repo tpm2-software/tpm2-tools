@@ -932,7 +932,6 @@ static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path,
     EC_KEY *k = PEM_read_ECPrivateKey(f, NULL,
         NULL, (void *)pass);
     free(pass);
-    fclose(f);
     if (!k) {
          ERR_print_errors_fp (stderr);
          LOG_ERR("Reading PEM file \"%s\" failed", path);
@@ -976,7 +975,6 @@ static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path,
     k = PEM_read_RSAPrivateKey(f, NULL,
         NULL, (void *)pass);
     free(pass);
-    fclose(f);
     if (!k) {
          ERR_print_errors_fp (stderr);
          LOG_ERR("Reading PEM file \"%s\" failed", path);
@@ -1072,9 +1070,10 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pas
     case TPM2_ALG_AES:
         if (pass) {
             LOG_ERR("No password can be used for protecting AES key");
-            return lprc_error;
+            rc = lprc_error;
+        } else {
+            rc = load_private_AES_from_file(f, path, pub, priv);
         }
-        rc = load_private_AES_from_file(f, path, pub, priv);
         break;
     case TPM2_ALG_ECC:
         rc =load_private_ECC_from_pem(f, path, pass, pub, priv);
@@ -1082,8 +1081,10 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pas
     default:
         LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,
             tpm2_alg_util_flags_any));
-        return lprc_error;
+        rc = lprc_error;
     }
+
+    fclose(f);
 
     return rc;
 }
