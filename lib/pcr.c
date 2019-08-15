@@ -319,7 +319,7 @@ tool_rc pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capabili
 
     // If the TPM support more bank algorithm that we currently
     // able to manage, throw an error
-    if (capability_data->data.assignedPCR.count > sizeof(algs->alg)) {
+    if (capability_data->data.assignedPCR.count > ARRAY_LEN(algs->alg)) {
         LOG_ERR("Current implementation does not support more than %zu banks, "
                 "got %" PRIu32 " banks supported by TPM",
                 sizeof(algs->alg),
