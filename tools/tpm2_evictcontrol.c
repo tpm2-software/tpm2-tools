@@ -26,9 +26,9 @@ struct tpm_evictcontrol_ctx {
     const char *output_arg;
 
     struct {
-        UINT8 p : 1;
-        UINT8 c : 1;
-        UINT8 o : 1;
+        UINT8 p :1;
+        UINT8 c :1;
+        UINT8 o :1;
     } flags;
 };
 
@@ -78,7 +78,6 @@ static bool on_arg(int argc, char *argv[]) {
     return true;
 }
 
-
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
@@ -89,7 +88,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("C:P:c:o:", ARRAY_LEN(topts), topts, on_option,
-                             on_arg, 0);
+            on_arg, 0);
 
     return *opts != NULL;
 }
@@ -102,13 +101,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool evicted = false;
 
     tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
-                &ctx.to_persist_key.object, TPM2_HANDLE_ALL_W_NV);
+            &ctx.to_persist_key.object, TPM2_HANDLE_ALL_W_NV);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
     }
 
-    if (ctx.to_persist_key.object.handle >> TPM2_HR_SHIFT == TPM2_HT_PERSISTENT) {
+    if (ctx.to_persist_key.object.handle >> TPM2_HR_SHIFT
+            == TPM2_HT_PERSISTENT) {
         ctx.persist_handle = ctx.to_persist_key.object.handle;
         ctx.flags.p = 1;
     }
@@ -119,7 +119,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      */
     if (ctx.flags.c && !ctx.flags.p) {
         tmp_rc = tpm2_capability_find_vacant_persistent_handle(ectx,
-                    &ctx.persist_handle);
+                &ctx.persist_handle);
         if (tmp_rc != tool_rc_success) {
             rc = tmp_rc;
             goto out;
@@ -129,8 +129,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HANDLE_FLAGS_O|TPM2_HANDLE_FLAGS_P);
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     if (ctx.flags.o && !ctx.flags.p) {
         LOG_ERR("Cannot specify -o without using a persistent handle");
         goto out;
@@ -138,7 +138,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     ESYS_TR out_tr;
     rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
-        &ctx.to_persist_key.object, ctx.persist_handle, &out_tr);
+            &ctx.to_persist_key.object, ctx.persist_handle, &out_tr);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -158,7 +158,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
 out:
-
     if (!evicted) {
         TSS2_RC rval = Esys_TR_Close(ectx, &out_tr);
         if (rval != TPM2_RC_SUCCESS) {
