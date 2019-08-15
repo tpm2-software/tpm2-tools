@@ -18,19 +18,19 @@ static struct tpm_flush_context_ctx ctx;
 static const char *get_property_name(TPM2_HANDLE handle) {
 
     switch (handle & TPM2_HR_RANGE_MASK) {
-        case TPM2_HR_TRANSIENT:
-            return "transient";
-        case TPM2_HT_LOADED_SESSION << TPM2_HR_SHIFT:
-            return "loaded session";
-        case TPM2_HT_SAVED_SESSION << TPM2_HR_SHIFT:
-            return "saved session";
+    case TPM2_HR_TRANSIENT:
+        return "transient";
+    case TPM2_HT_LOADED_SESSION << TPM2_HR_SHIFT:
+        return "loaded session";
+    case TPM2_HT_SAVED_SESSION << TPM2_HR_SHIFT:
+        return "saved session";
     }
 
     return "invalid";
 }
 
 static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
-                          UINT32 count) {
+        UINT32 count) {
 
     UINT32 i;
 
@@ -38,7 +38,7 @@ static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
 
         ESYS_TR handle;
         tool_rc rc = tpm2_util_sys_handle_to_esys_handle(ectx, handles[i],
-                    &handle);
+                &handle);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -56,7 +56,7 @@ static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
 }
 
 static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
-                UINT32 count) {
+        UINT32 count) {
 
     UINT32 i;
 
@@ -111,13 +111,13 @@ static bool on_arg(int argc, char *argv[]) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        { "transient-object", no_argument,        NULL, 't' },
-        { "loaded-session",   no_argument,        NULL, 'l' },
-        { "saved-session",    no_argument,        NULL, 's' },
+        { "transient-object", no_argument, NULL, 't' },
+        { "loaded-session",   no_argument, NULL, 'l' },
+        { "saved-session",    no_argument, NULL, 's' },
     };
 
-    *opts = tpm2_options_new("tls", ARRAY_LEN(topts), topts,
-                             on_option, on_arg, 0);
+    *opts = tpm2_options_new("tls", ARRAY_LEN(topts), topts, on_option, on_arg,
+            0);
 
     return *opts != NULL;
 }
@@ -135,8 +135,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
 
         TPML_HANDLE *handles = &capability_data->data.handles;
-        rc = flush_contexts_tpm2(ectx, handles->handle,
-                                    handles->count);
+        rc = flush_contexts_tpm2(ectx, handles->handle, handles->count);
         free(capability_data);
         return rc;
     }
