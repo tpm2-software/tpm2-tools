@@ -38,8 +38,8 @@ struct createek_context {
     char *out_file_path;
     tpm2_convert_pubkey_fmt format;
     struct {
-        UINT8 f : 1;
-        UINT8 t : 1;
+        UINT8 f :1;
+        UINT8 t :1;
     } flags;
     bool find_persistent_handle;
     const char *context_arg;
@@ -53,23 +53,21 @@ static createek_context ctx = {
     .find_persistent_handle = false
 };
 
-static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
-{
+static bool set_key_algorithm(TPM2B_PUBLIC *inPublic) {
 
     switch (inPublic->publicArea.type) {
-    case TPM2_ALG_RSA :
+    case TPM2_ALG_RSA:
         inPublic->publicArea.parameters.rsaDetail.symmetric.algorithm =
                 TPM2_ALG_AES;
         inPublic->publicArea.parameters.rsaDetail.symmetric.keyBits.aes = 128;
         inPublic->publicArea.parameters.rsaDetail.symmetric.mode.aes =
                 TPM2_ALG_CFB;
-        inPublic->publicArea.parameters.rsaDetail.scheme.scheme =
-                TPM2_ALG_NULL;
+        inPublic->publicArea.parameters.rsaDetail.scheme.scheme = TPM2_ALG_NULL;
         inPublic->publicArea.parameters.rsaDetail.keyBits = 2048;
         inPublic->publicArea.parameters.rsaDetail.exponent = 0;
         inPublic->publicArea.unique.rsa.size = 256;
         break;
-    case TPM2_ALG_KEYEDHASH :
+    case TPM2_ALG_KEYEDHASH:
         inPublic->publicArea.parameters.keyedHashDetail.scheme.scheme =
                 TPM2_ALG_XOR;
         inPublic->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
@@ -78,27 +76,27 @@ static bool set_key_algorithm(TPM2B_PUBLIC *inPublic)
                 TPM2_ALG_KDF1_SP800_108;
         inPublic->publicArea.unique.keyedHash.size = 0;
         break;
-    case TPM2_ALG_ECC :
+    case TPM2_ALG_ECC:
         inPublic->publicArea.parameters.eccDetail.symmetric.algorithm =
                 TPM2_ALG_AES;
         inPublic->publicArea.parameters.eccDetail.symmetric.keyBits.aes = 128;
         inPublic->publicArea.parameters.eccDetail.symmetric.mode.sym =
                 TPM2_ALG_CFB;
-        inPublic->publicArea.parameters.eccDetail.scheme.scheme =
-                TPM2_ALG_NULL;
+        inPublic->publicArea.parameters.eccDetail.scheme.scheme = TPM2_ALG_NULL;
         inPublic->publicArea.parameters.eccDetail.curveID = TPM2_ECC_NIST_P256;
         inPublic->publicArea.parameters.eccDetail.kdf.scheme = TPM2_ALG_NULL;
         inPublic->publicArea.unique.ecc.x.size = 32;
         inPublic->publicArea.unique.ecc.y.size = 32;
         break;
-    case TPM2_ALG_SYMCIPHER :
+    case TPM2_ALG_SYMCIPHER:
         inPublic->publicArea.parameters.symDetail.sym.algorithm = TPM2_ALG_AES;
         inPublic->publicArea.parameters.symDetail.sym.keyBits.aes = 128;
         inPublic->publicArea.parameters.symDetail.sym.mode.sym = TPM2_ALG_CFB;
         inPublic->publicArea.unique.sym.size = 0;
         break;
     default:
-        LOG_ERR("The algorithm type input(%4.4x) is not supported!", inPublic->publicArea.type);
+        LOG_ERR("The algorithm type input(%4.4x) is not supported!",
+                inPublic->publicArea.type);
         return false;
     }
 
@@ -110,11 +108,11 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     TPM2_HANDLE nonce_nv_index;
 
     switch (inPublic->publicArea.type) {
-    case TPM2_ALG_RSA :
+    case TPM2_ALG_RSA:
         template_nv_index = RSA_EK_TEMPLATE_NV_INDEX;
         nonce_nv_index = RSA_EK_NONCE_NV_INDEX;
         break;
-    case TPM2_ALG_ECC :
+    case TPM2_ALG_ECC:
         template_nv_index = ECC_EK_TEMPLATE_NV_INDEX;
         nonce_nv_index = ECC_EK_NONCE_NV_INDEX;
         break;
@@ -136,7 +134,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     }
 
     TSS2_RC ret = Tss2_MU_TPMT_PUBLIC_Unmarshal(template, template_size,
-                                                NULL, &inPublic->publicArea);
+    NULL, &inPublic->publicArea);
     if (ret != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to unmarshal TPMT_PUBLIC from buffer 0x%p", template);
         rc = tool_rc_general_error;
@@ -146,7 +144,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
     // Read EK nonce
     UINT16 nonce_size;
     rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0, TPM2_RH_OWNER,
-           ctx.auth.endorse.session, &nonce, &nonce_size);
+            ctx.auth.endorse.session, &nonce, &nonce_size);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -161,8 +159,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *inPublic) {
         inPublic->publicArea.unique.ecc.y.size = 32;
     }
 
-out:
-    if (template) {
+    out: if (template) {
         free(template);
     }
 
@@ -187,8 +184,8 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
         }
     }
 
-    tool_rc rc = tpm2_hierarchy_create_primary(ectx,
-            ctx.auth.endorse.session, &ctx.objdata);
+    tool_rc rc = tpm2_hierarchy_create_primary(ectx, ctx.auth.endorse.session,
+            &ctx.objdata);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -196,8 +193,7 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
     if (ctx.ctx_obj.handle) {
 
         rc = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
-                ctx.auth.owner.session,
-                ctx.objdata.out.handle,
+                ctx.auth.owner.session, ctx.objdata.out.handle,
                 ctx.ctx_obj.handle, NULL);
         if (rc != tool_rc_success) {
             return rc;
@@ -219,8 +215,8 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.out_file_path) {
-        bool ok = tpm2_convert_pubkey_save(ctx.objdata.out.public,
-                ctx.format, ctx.out_file_path);
+        bool ok = tpm2_convert_pubkey_save(ctx.objdata.out.public, ctx.format,
+                ctx.out_file_path);
         if (!ok) {
             return tool_rc_general_error;
         }
@@ -242,13 +238,15 @@ static bool on_option(char key, char *value) {
         ctx.auth.ek.auth_str = value;
         break;
     case 'G': {
-        TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value, tpm2_alg_util_flags_base);
+        TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value,
+                tpm2_alg_util_flags_base);
         if (type == TPM2_ALG_ERROR) {
             LOG_ERR("Invalid key algorithm, got \"%s\"", value);
             return false;
         }
         ctx.objdata.in.public.publicArea.type = type;
-    }   break;
+    }
+        break;
     case 'u':
         if (!value) {
             LOG_ERR("Please specify an output file to save the pub ek to.");
@@ -288,7 +286,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("P:w:p:G:u:f:c:t", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
@@ -349,7 +347,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
          * to use and tell them what it is.
          */
         rc = tpm2_capability_find_vacant_persistent_handle(ectx,
-                        &ctx.ctx_obj.handle);
+                &ctx.ctx_obj.handle);
         if (rc != tool_rc_success) {
             LOG_ERR("handle/-H passed with a value '-' but unable to find a"
                     " vacant persistent handle!");
@@ -359,8 +357,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     } else {
         /* best attempt to convert what they have us to a handle, if it's not
          * a handle then we assume its a path to a context file */
-        ret = tpm2_util_string_to_uint32(ctx.context_arg,
-                        &ctx.ctx_obj.handle);
+        ret = tpm2_util_string_to_uint32(ctx.context_arg, &ctx.ctx_obj.handle);
         UNUSED(ret);
     }
 
@@ -396,9 +393,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     /* normalize 0 success 1 failure */
     rc = create_ek_handle(ectx);
-out:
 
-    for(i=0; i < ARRAY_LEN(sessions); i++) {
+out:
+    for (i = 0; i < ARRAY_LEN(sessions); i++) {
         tpm2_session *s = *sessions[i];
         tool_rc tmp_rc = tpm2_session_close(&s);
         if (tmp_rc != tool_rc_success) {
