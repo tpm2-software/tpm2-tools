@@ -79,20 +79,16 @@ static void test_tpm2_util_handle_from_optarg_valid_ids_disabled(void **state) {
     UNUSED(state);
 
     TPMI_RH_PROVISION h;
-    bool result = tpm2_util_handle_from_optarg("o", &h,
-            TPM2_HANDLE_FLAGS_N);
+    bool result = tpm2_util_handle_from_optarg("o", &h, TPM2_HANDLE_FLAGS_N);
     assert_false(result);
 
-    result = tpm2_util_handle_from_optarg("p", &h,
-            TPM2_HANDLE_FLAGS_O);
+    result = tpm2_util_handle_from_optarg("p", &h, TPM2_HANDLE_FLAGS_O);
     assert_false(result);
 
-    result = tpm2_util_handle_from_optarg("e", &h,
-            TPM2_HANDLE_FLAGS_P);
+    result = tpm2_util_handle_from_optarg("e", &h, TPM2_HANDLE_FLAGS_P);
     assert_false(result);
 
-    result = tpm2_util_handle_from_optarg("n", &h,
-            TPM2_HANDLE_FLAGS_E);
+    result = tpm2_util_handle_from_optarg("n", &h, TPM2_HANDLE_FLAGS_E);
     assert_false(result);
 
     result = tpm2_util_handle_from_optarg("0x81010009", &h,
@@ -104,23 +100,19 @@ static void test_tpm2_util_handle_from_optarg_valid_ids_enabled(void **state) {
     UNUSED(state);
 
     TPMI_RH_PROVISION h;
-    bool result = tpm2_util_handle_from_optarg("o", &h,
-            TPM2_HANDLE_FLAGS_O);
+    bool result = tpm2_util_handle_from_optarg("o", &h, TPM2_HANDLE_FLAGS_O);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_OWNER);
 
-    result = tpm2_util_handle_from_optarg("p", &h,
-            TPM2_HANDLE_FLAGS_P);
+    result = tpm2_util_handle_from_optarg("p", &h, TPM2_HANDLE_FLAGS_P);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_PLATFORM);
 
-    result = tpm2_util_handle_from_optarg("e", &h,
-            TPM2_HANDLE_FLAGS_E);
+    result = tpm2_util_handle_from_optarg("e", &h, TPM2_HANDLE_FLAGS_E);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_ENDORSEMENT);
 
-    result = tpm2_util_handle_from_optarg("n", &h,
-            TPM2_HANDLE_FLAGS_N);
+    result = tpm2_util_handle_from_optarg("n", &h, TPM2_HANDLE_FLAGS_N);
     assert_true(result);
     assert_int_equal(h, TPM2_RH_NULL);
 }
@@ -139,7 +131,8 @@ static void test_tpm2_util_handle_from_optarg_nv_valid_range(void **state) {
     /*
      * NV index specified as full raw handle
      */
-    result = tpm2_util_handle_from_optarg("0x01000002", &h, TPM2_HANDLE_FLAGS_NV);
+    result = tpm2_util_handle_from_optarg("0x01000002", &h,
+            TPM2_HANDLE_FLAGS_NV);
     assert_true(result);
     assert_int_equal(h, 0x01000002);
 }
@@ -163,13 +156,15 @@ static void test_tpm2_util_handle_from_optarg_nv_invalid_offset(void **state) {
     /*
      * Offset is larger than TPM2_HR_HANDLE_MASK
      */
-    result = tpm2_util_handle_from_optarg("0x12345678", &h, TPM2_HANDLE_FLAGS_NV);
+    result = tpm2_util_handle_from_optarg("0x12345678", &h,
+            TPM2_HANDLE_FLAGS_NV);
     assert_false(result);
 
     /*
      * Wrongly specify NV index as raw handle and disable NV in flags
      */
-    result = tpm2_util_handle_from_optarg("0x01000001", &h, TPM2_HANDLE_FLAGS_O);
+    result = tpm2_util_handle_from_optarg("0x01000001", &h,
+            TPM2_HANDLE_FLAGS_O);
     assert_false(result);
 }
 
@@ -179,8 +174,8 @@ static void test_tpm2_util_handle_from_optarg_nv_invalid_offset(void **state) {
 bool output_enabled = true;
 
 int main(int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
+    (void) argc;
+    (void) argv;
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_tpm2_util_handle_from_optarg_NULL),
