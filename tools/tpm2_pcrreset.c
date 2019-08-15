@@ -8,15 +8,15 @@
 
 typedef struct tpm_pcr_reset_ctx tpm_pcr_reset_ctx;
 struct tpm_pcr_reset_ctx {
-    bool            pcr_list[TPM2_MAX_PCRS];
+    bool pcr_list[TPM2_MAX_PCRS];
 };
 
 static tpm_pcr_reset_ctx ctx;
 
-static tool_rc pcr_reset_one(ESYS_CONTEXT *ectx,
-                          TPMI_DH_PCR pcr_index) {
+static tool_rc pcr_reset_one(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index) {
 
-    TSS2_RC rval = Esys_PCR_Reset(ectx, pcr_index, ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE);
+    TSS2_RC rval = Esys_PCR_Reset(ectx, pcr_index, ESYS_TR_PASSWORD,
+            ESYS_TR_NONE, ESYS_TR_NONE);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_ERR("Could not reset PCR index: %d", pcr_index);
         LOG_PERR(Esys_PCR_Reset, rval);
@@ -30,7 +30,7 @@ static tool_rc pcr_reset(ESYS_CONTEXT *ectx) {
     size_t i;
 
     for (i = 0; i < TPM2_MAX_PCRS; i++) {
-        if(!ctx.pcr_list[i])
+        if (!ctx.pcr_list[i])
             continue;
 
         tool_rc rc = pcr_reset_one(ectx, i);
@@ -42,7 +42,7 @@ static tool_rc pcr_reset(ESYS_CONTEXT *ectx) {
     return tool_rc_success;
 }
 
-static bool on_arg(int argc, char** argv){
+static bool on_arg(int argc, char** argv) {
     int i;
     uint32_t pcr;
 
@@ -54,8 +54,8 @@ static bool on_arg(int argc, char** argv){
         return false;
     }
 
-    for(i = 0; i < argc; i++){
-        if(!pcr_get_id(argv[i], &pcr))
+    for (i = 0; i < argc; i++) {
+        if (!pcr_get_id(argv[i], &pcr))
             return false;
 
         ctx.pcr_list[pcr] = 1;
