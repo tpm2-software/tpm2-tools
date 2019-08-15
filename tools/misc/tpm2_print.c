@@ -356,7 +356,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "type",  required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("i:t:", ARRAY_LEN(topts), topts, on_option, on_arg,
+    *opts = tpm2_options_new("t:", ARRAY_LEN(topts), topts, on_option, on_arg,
             TPM2_OPTIONS_NO_SAPI);
 
     return *opts != NULL;
