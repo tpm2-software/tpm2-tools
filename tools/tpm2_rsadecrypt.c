@@ -31,19 +31,15 @@ static tool_rc rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_PUBLIC_KEY_RSA *message = NULL;
 
-    tool_rc rc = tpm2_rsa_decrypt(
-                    ectx,
-                    &ctx.key.object,
-                    &ctx.cipher_text,
-                    &ctx.scheme,
-                    &ctx.label,
-                    &message);
+    tool_rc rc = tpm2_rsa_decrypt(ectx, &ctx.key.object, &ctx.cipher_text,
+            &ctx.scheme, &ctx.label, &message);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     bool ret = false;
-    FILE *f = ctx.output_file_path ? fopen(ctx.output_file_path, "wb+") : stdout;
+    FILE *f =
+            ctx.output_file_path ? fopen(ctx.output_file_path, "wb+") : stdout;
     if (!f) {
         goto out;
     }
@@ -100,15 +96,15 @@ static bool on_args(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "auth",         required_argument, NULL, 'p' },
-      { "output",       required_argument, NULL, 'o' },
-      { "key-context",  required_argument, NULL, 'c' },
-      { "scheme",       required_argument, NULL, 's' },
-      { "label",        required_argument, NULL, 'l'},
+      { "auth",        required_argument, NULL, 'p' },
+      { "output",      required_argument, NULL, 'o' },
+      { "key-context", required_argument, NULL, 'c' },
+      { "scheme",      required_argument, NULL, 's' },
+      { "label",       required_argument, NULL, 'l'},
     };
 
-    *opts = tpm2_options_new("p:o:c:s:l:", ARRAY_LEN(topts), topts,
-                             on_option, on_args, 0);
+    *opts = tpm2_options_new("p:o:c:s:l:", ARRAY_LEN(topts), topts, on_option,
+            on_args, 0);
 
     return *opts != NULL;
 }
@@ -121,14 +117,14 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
     }
 
     ctx.cipher_text.size = BUFFER_SIZE(TPM2B_PUBLIC_KEY_RSA, buffer);
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.input_path,
-        &ctx.cipher_text.size, ctx.cipher_text.buffer);
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+            ctx.input_path, &ctx.cipher_text.size, ctx.cipher_text.buffer);
     if (!result) {
         return tool_rc_general_error;
     }
 
     return tpm2_util_object_load_auth(ectx, ctx.key.ctx_path, ctx.key.auth_str,
-                                &ctx.key.object, false, TPM2_HANDLE_ALL_W_NV);
+            &ctx.key.object, false, TPM2_HANDLE_ALL_W_NV);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
