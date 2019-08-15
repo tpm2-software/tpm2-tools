@@ -12,8 +12,8 @@
 static void test_is_big_endian(void **state) {
 
     uint16_t test = 0xFF00;
-    uint8_t *b = (uint8_t *)&test;
-    (void)state;
+    uint8_t *b = (uint8_t *) &test;
+    (void) state;
 
     bool test_host_is_big_endian = b[0] == 0xFF;
     bool host_is_big_endian = tpm2_util_is_big_endian();
@@ -83,8 +83,8 @@ TEST_ENDIAN_NTOH(64, 0x0011223344556677, 0x7766554433221100)
 bool output_enabled = true;
 
 int main(int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
+    (void) argc;
+    (void) argv;
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_is_big_endian),
