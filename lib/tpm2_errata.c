@@ -125,13 +125,13 @@ void tpm2_errata_fixup(tpm2_errata_index_t index, ...) {
     LOG_INFO("Errata %s applied", errata->name);
 }
 
-static void process(TPMS_CAPABILITY_DATA capability_data) {
+static void process(TPMS_CAPABILITY_DATA *capability_data) {
     /* Distinguish current spec level 0 */
     UINT32 spec_level = -1;
     UINT32 spec_rev = 0;
     UINT32 day_of_year = 0;
     UINT32 year = 0;
-    TPML_TAGGED_TPM_PROPERTY *properties = &capability_data.data.tpmProperties;
+    TPML_TAGGED_TPM_PROPERTY *properties = &capability_data->data.tpmProperties;
     size_t i;
     for (i = 0; i < properties->count; ++i) {
         TPMS_TAGGED_PROPERTY *property = properties->tpmProperty + i;
@@ -188,7 +188,7 @@ void tpm2_errata_init(ESYS_CONTEXT *ctx) {
         return;
     }
 
-    process(*capability_data);
+    process(capability_data);
     free(capability_data);
 }
 
