@@ -38,12 +38,12 @@ struct tpm_create_ctx {
     } object;
 
     struct {
-        UINT8 b : 1;
-        UINT8 i : 1;
-        UINT8 L : 1;
-        UINT8 u : 1;
-        UINT8 r : 1;
-        UINT8 G : 1;
+        UINT8 b :1;
+        UINT8 i :1;
+        UINT8 L :1;
+        UINT8 u :1;
+        UINT8 r :1;
+        UINT8 G :1;
     } flags;
 };
 
@@ -57,44 +57,40 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_general_error;
 
-    TPM2B_DATA              outsideInfo = TPM2B_EMPTY_INIT;
-    TPML_PCR_SELECTION      creationPCR = { .count = 0 };
-    TPM2B_PUBLIC            *outPublic;
-    TPM2B_PRIVATE           *outPrivate;
+    TPM2B_DATA outsideInfo = TPM2B_EMPTY_INIT;
+    TPML_PCR_SELECTION creationPCR = { .count = 0 };
+    TPM2B_PUBLIC *outPublic;
+    TPM2B_PRIVATE *outPrivate;
 
     ESYS_TR object_handle = ESYS_TR_NONE;
     if (ctx.object.ctx_path) {
 
         size_t offset = 0;
         TPM2B_TEMPLATE template = { .size = 0 };
-        tool_rc tmp_rc = tpm2_mu_tpmt_public_marshal(&ctx.object.public.publicArea, &template.buffer[0],
-                                        sizeof(TPMT_PUBLIC), &offset);
-        if(tmp_rc != tool_rc_success) {
+        tool_rc tmp_rc = tpm2_mu_tpmt_public_marshal(
+                &ctx.object.public.publicArea, &template.buffer[0],
+                sizeof(TPMT_PUBLIC), &offset);
+        if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
 
         template.size = offset;
 
-        tmp_rc = tpm2_create_loaded(
-                ectx,
-                &ctx.parent.object,
-                &ctx.object.sensitive,
-                &template,
-                &object_handle,
-                &outPrivate,
+        tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
+                &ctx.object.sensitive, &template, &object_handle, &outPrivate,
                 &outPublic);
-        if(tmp_rc != tool_rc_success) {
+        if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
     } else {
-        TPM2B_CREATION_DATA     *creationData;
-        TPM2B_DIGEST            *creationHash;
-        TPMT_TK_CREATION        *creationTicket;
+        TPM2B_CREATION_DATA *creationData;
+        TPM2B_DIGEST *creationHash;
+        TPMT_TK_CREATION *creationTicket;
         tool_rc tmp_rc = tpm2_create(ectx, &ctx.parent.object,
-                &ctx.object.sensitive, &ctx.object.public, &outsideInfo, &creationPCR,
-                &outPrivate, &outPublic, &creationData, &creationHash,
-                &creationTicket);
-        if(tmp_rc != tool_rc_success) {
+                &ctx.object.sensitive, &ctx.object.public, &outsideInfo,
+                &creationPCR, &outPrivate, &outPublic, &creationData,
+                &creationHash, &creationTicket);
+        if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
         free(creationData);
@@ -106,7 +102,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
     if (ctx.flags.u) {
         bool res = files_save_public(outPublic, ctx.object.public_path);
-        if(!res) {
+        if (!res) {
             goto out;
         }
     }
@@ -119,9 +115,8 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     }
 
     if (ctx.object.ctx_path) {
-        rc = files_save_tpm_context_to_path(ectx,
-                    object_handle,
-                    ctx.object.ctx_path);
+        rc = files_save_tpm_context_to_path(ectx, object_handle,
+                ctx.object.ctx_path);
     } else {
         rc = tool_rc_success;
     }
@@ -135,24 +130,24 @@ out:
 
 static bool on_option(char key, char *value) {
 
-    switch(key) {
+    switch (key) {
     case 'P':
         ctx.parent.auth_str = value;
         break;
     case 'p':
         ctx.object.auth_str = value;
-    break;
+        break;
     case 'g':
         ctx.object.name_alg = value;
-    break;
+        break;
     case 'G':
-        ctx.object.alg =  value;
+        ctx.object.alg = value;
         ctx.flags.G = 1;
-    break;
+        break;
     case 'a':
         ctx.object.attrs = value;
         ctx.flags.b = 1;
-    break;
+        break;
     case 'i':
         ctx.object.sealed_data = strcmp("-", value) ? value : NULL;
         ctx.flags.i = 1;
@@ -183,35 +178,37 @@ static bool on_option(char key, char *value) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
-      { "parent-auth",          required_argument, NULL, 'P' },
-      { "key-auth",             required_argument, NULL, 'p' },
-      { "hash-algorithm",       required_argument, NULL, 'g' },
-      { "key-algorithm",        required_argument, NULL, 'G' },
-      { "attributes",    required_argument, NULL, 'a' },
-      { "sealing-input",        required_argument, NULL, 'i' },
-      { "policy",               required_argument, NULL, 'L' },
-      { "public",               required_argument, NULL, 'u' },
-      { "private",              required_argument, NULL, 'r' },
-      { "parent-context",       required_argument, NULL, 'C' },
-      { "key-context",          required_argument, NULL, 'c' },
+      { "parent-auth",    required_argument, NULL, 'P' },
+      { "key-auth",       required_argument, NULL, 'p' },
+      { "hash-algorithm", required_argument, NULL, 'g' },
+      { "key-algorithm",  required_argument, NULL, 'G' },
+      { "attributes",     required_argument, NULL, 'a' },
+      { "sealing-input",  required_argument, NULL, 'i' },
+      { "policy",         required_argument, NULL, 'L' },
+      { "public",         required_argument, NULL, 'u' },
+      { "private",        required_argument, NULL, 'r' },
+      { "parent-context", required_argument, NULL, 'C' },
+      { "key-context",    required_argument, NULL, 'c' },
     };
 
     *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:", ARRAY_LEN(topts), topts,
-                             on_option, NULL, 0);
+            on_option, NULL, 0);
 
     return *opts != NULL;
 }
 
 static bool load_sensitive(void) {
 
-    ctx.object.sensitive.sensitive.data.size = BUFFER_SIZE(typeof(ctx.object.sensitive.sensitive.data), buffer);
-    return files_load_bytes_from_buffer_or_file_or_stdin(NULL,ctx.object.sealed_data,
-            &ctx.object.sensitive.sensitive.data.size, ctx.object.sensitive.sensitive.data.buffer);
+    ctx.object.sensitive.sensitive.data.size = BUFFER_SIZE(
+            typeof(ctx.object.sensitive.sensitive.data), buffer);
+    return files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+            ctx.object.sealed_data, &ctx.object.sensitive.sensitive.data.size,
+            ctx.object.sensitive.sensitive.data.buffer);
 }
 
 static tool_rc check_options(void) {
 
-    if(!ctx.parent.ctx_path) {
+    if (!ctx.parent.ctx_path) {
         LOG_ERR("Must specify parent object via -C.");
         return tool_rc_option_error;
     }
@@ -256,21 +253,24 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     bool result = tpm2_alg_util_public_init(ctx.object.alg, ctx.object.name_alg,
             ctx.object.attrs, ctx.object.policy, NULL, attrs,
             &ctx.object.public);
-    if(!result) {
+    if (!result) {
         return tool_rc_general_error;
     }
 
     if (ctx.flags.L && !ctx.object.auth_str) {
-        ctx.object.public.publicArea.objectAttributes &= ~TPMA_OBJECT_USERWITHAUTH;
+        ctx.object.public.publicArea.objectAttributes &=
+                ~TPMA_OBJECT_USERWITHAUTH;
     }
 
-    if (ctx.flags.i && ctx.object.public.publicArea.type != TPM2_ALG_KEYEDHASH) {
+    if (ctx.flags.i
+            && ctx.object.public.publicArea.type != TPM2_ALG_KEYEDHASH) {
         LOG_ERR("Only TPM2_ALG_KEYEDHASH algorithm is allowed when sealing data");
         return tool_rc_general_error;
     }
 
     rc = tpm2_util_object_load_auth(ectx, ctx.parent.ctx_path,
-            ctx.parent.auth_str, &ctx.parent.object, false, TPM2_HANDLE_ALL_W_NV);
+            ctx.parent.auth_str, &ctx.parent.object, false,
+            TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         return rc;
     }
