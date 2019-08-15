@@ -58,12 +58,11 @@ static TPM2B_DIGEST expected_policy_digest = {
         }
 };
 
-TSS2_RC __wrap_Esys_StartAuthSession(ESYS_CONTEXT *esysContext,
-            ESYS_TR tpmKey, ESYS_TR bind,
-            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-            const TPM2B_NONCE *nonceCaller, TPM2_SE sessionType,
-            const TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH authHash,
-            ESYS_TR *sessionHandle) {
+TSS2_RC __wrap_Esys_StartAuthSession(ESYS_CONTEXT *esysContext, ESYS_TR tpmKey,
+        ESYS_TR bind, ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+        const TPM2B_NONCE *nonceCaller, TPM2_SE sessionType,
+        const TPMT_SYM_DEF *symmetric, TPMI_ALG_HASH authHash,
+        ESYS_TR *sessionHandle) {
 
     UNUSED(esysContext);
     UNUSED(tpmKey);
@@ -86,10 +85,9 @@ TSS2_RC __wrap_Esys_StartAuthSession(ESYS_CONTEXT *esysContext,
  */
 static TPM2B_DIGEST current_digest;
 
-TSS2_RC __wrap_Esys_PolicyPCR(ESYS_CONTEXT *esysContext,
-            ESYS_TR policySession,
-            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-            const TPM2B_DIGEST *pcrDigest, const TPML_PCR_SELECTION *pcrs) {
+TSS2_RC __wrap_Esys_PolicyPCR(ESYS_CONTEXT *esysContext, ESYS_TR policySession,
+        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+        const TPM2B_DIGEST *pcrDigest, const TPML_PCR_SELECTION *pcrs) {
 
     UNUSED(esysContext);
     UNUSED(policySession);
@@ -108,9 +106,8 @@ TSS2_RC __wrap_Esys_PolicyPCR(ESYS_CONTEXT *esysContext,
 }
 
 TSS2_RC __wrap_Esys_PolicyGetDigest(ESYS_CONTEXT *esysContext,
-            ESYS_TR policySession,
-            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-            TPM2B_DIGEST **policyDigest) {
+        ESYS_TR policySession, ESYS_TR shandle1, ESYS_TR shandle2,
+        ESYS_TR shandle3, TPM2B_DIGEST **policyDigest) {
 
     UNUSED(esysContext);
     UNUSED(policySession);
@@ -123,10 +120,10 @@ TSS2_RC __wrap_Esys_PolicyGetDigest(ESYS_CONTEXT *esysContext,
     return TPM2_RC_SUCCESS;
 }
 
-TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext,
-            ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-            const TPML_PCR_SELECTION *pcrSelectionIn, UINT32 *pcrUpdateCounter,
-            TPML_PCR_SELECTION **pcrSelectionOut, TPML_DIGEST **pcrValues) {
+TSS2_RC __wrap_Esys_PCR_Read(ESYS_CONTEXT *esysContext, ESYS_TR shandle1,
+        ESYS_TR shandle2, ESYS_TR shandle3,
+        const TPML_PCR_SELECTION *pcrSelectionIn, UINT32 *pcrUpdateCounter,
+        TPML_PCR_SELECTION **pcrSelectionOut, TPML_DIGEST **pcrValues) {
 
     UNUSED(esysContext);
     UNUSED(shandle1);
@@ -291,8 +288,7 @@ static void test_tpm2_policy_build_pcr_file_good(void **state) {
     assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
-    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
-            &pcr_selections);
+    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections);
     assert_int_equal(trc, tool_rc_success);
 
     TPM2B_DIGEST *policy_digest;
@@ -349,8 +345,7 @@ static void test_tpm2_policy_build_pcr_file_bad_size(void **state) {
     assert_int_equal(trc, tool_rc_success);
     assert_non_null(s);
 
-    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path,
-            &pcr_selections);
+    trc = tpm2_policy_build_pcr(ESAPI_CONTEXT, s, tf->path, &pcr_selections);
     tpm2_session_close(&s);
     assert_null(s);
     assert_int_equal(trc, tool_rc_general_error);
