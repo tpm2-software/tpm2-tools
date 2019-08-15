@@ -11,7 +11,7 @@
 
 static void test_tpm_command_header(void **state) {
 
-    (void)state;
+    (void) state;
 
     UINT8 command_bytes[] = {
       0x80, 0x01, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x01, 0x7a, 0x00, 0x00,
@@ -28,7 +28,8 @@ static void test_tpm_command_header(void **state) {
     assert_memory_equal(c->bytes, command_bytes, sizeof(command_bytes));
 
     /* everything from data should be the same */
-    assert_memory_equal(c->data, command_bytes + 10, sizeof(command_bytes) - 10);
+    assert_memory_equal(c->data, command_bytes + 10,
+            sizeof(command_bytes) - 10);
 
     TPMI_ST_COMMAND_TAG tag = tpm2_command_header_get_tag(c);
     UINT32 size_with_header = tpm2_command_header_get_size(c, true);
@@ -43,7 +44,7 @@ static void test_tpm_command_header(void **state) {
 
 static void test_tpm_response_header(void **state) {
 
-    (void)state;
+    (void) state;
 
     unsigned char response_bytes[] = {
       0x80, 0x01, 0x00, 0x00, 0x02, 0x1b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -103,7 +104,8 @@ static void test_tpm_response_header(void **state) {
     assert_memory_equal(r->bytes, response_bytes, sizeof(response_bytes));
 
     /* everything from data should be the same */
-    assert_memory_equal(r->data, response_bytes + 10, sizeof(response_bytes) - 10);
+    assert_memory_equal(r->data, response_bytes + 10,
+            sizeof(response_bytes) - 10);
 
     TPMI_ST_COMMAND_TAG tag = tpm2_response_header_get_tag(r);
     UINT32 size_with_header = tpm2_response_header_get_size(r, true);
@@ -122,8 +124,8 @@ static void test_tpm_response_header(void **state) {
 bool output_enabled = true;
 
 int main(int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
+    (void) argc;
+    (void) argv;
 
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_tpm_command_header),
