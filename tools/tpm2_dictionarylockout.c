@@ -62,8 +62,8 @@ static bool on_option(char key, char *value) {
     case 'l':
         result = tpm2_util_string_to_uint32(value, &ctx.lockout_recovery_time);
         if (!result) {
-            LOG_ERR("Could not convert lockout_recovery_time to number, got: \"%s\"",
-                    value);
+            LOG_ERR("Could not convert lockout_recovery_time to number, got: "
+                "\"%s\"", value);
             return false;
         }
         break;
@@ -84,7 +84,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     };
 
     *opts = tpm2_options_new("n:t:l:p:cs", ARRAY_LEN(topts), topts, on_option,
-                             NULL, 0);
+    NULL, 0);
 
     return *opts != NULL;
 }
@@ -94,21 +94,22 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     if (!ctx.clear_lockout && !ctx.setup_parameters) {
-        LOG_ERR( "Invalid operational input: Neither Setup nor Clear lockout requested.");
+        LOG_ERR("Invalid operational input: Neither Setup nor Clear lockout "
+                "requested.");
         return tool_rc_option_error;
     }
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-        ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-        TPM2_HANDLE_FLAGS_L);
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_L);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
         return rc;
     }
 
     return tpm2_dictionarylockout(ectx, &ctx.auth_hierarchy.object,
-        ctx.clear_lockout, ctx.setup_parameters, ctx.max_tries,
-        ctx.recovery_time, ctx.lockout_recovery_time);
+            ctx.clear_lockout, ctx.setup_parameters, ctx.max_tries,
+            ctx.recovery_time, ctx.lockout_recovery_time);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
