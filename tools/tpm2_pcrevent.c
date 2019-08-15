@@ -50,15 +50,14 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         }
 
         ESYS_TR shandle1 = ESYS_TR_NONE;
-        tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
-                                ctx.auth.session, &shandle1);
+        tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr, ctx.auth.session,
+                &shandle1);
         if (rc != tool_rc_success) {
             return rc;
         }
 
-        rval = Esys_PCR_Event(ectx, ctx.pcr,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &buffer, result);
+        rval = Esys_PCR_Event(ectx, ctx.pcr, shandle1, ESYS_TR_NONE,
+                ESYS_TR_NONE, &buffer, result);
         if (rval != TSS2_RC_SUCCESS) {
             LOG_PERR(Esys_PCR_Event, rval);
             return tool_rc_from_tpm(rval);
@@ -75,9 +74,8 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    rval = Esys_HashSequenceStart(ectx,
-                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                &nullAuth, TPM2_ALG_NULL, &sequence_handle);
+    rval = Esys_HashSequenceStart(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &nullAuth, TPM2_ALG_NULL, &sequence_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_HashSequenceStart, rval);
         return tool_rc_from_tpm(rval);
@@ -110,9 +108,8 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         data.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Esys_SequenceUpdate(ectx, sequence_handle,
-                    ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &data);
+        rval = Esys_SequenceUpdate(ectx, sequence_handle, ESYS_TR_PASSWORD,
+                ESYS_TR_NONE, ESYS_TR_NONE, &data);
         if (rval != TPM2_RC_SUCCESS) {
             LOG_PERR(Esys_SequenceUpdate, rval);
             return tool_rc_from_tpm(rval);
@@ -141,15 +138,14 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
     }
 
     ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr,
-                            ctx.auth.session, &shandle1);
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr, ctx.auth.session,
+            &shandle1);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rval = Esys_EventSequenceComplete(ectx, ctx.pcr, sequence_handle,
-                shandle1, ESYS_TR_PASSWORD, ESYS_TR_NONE,
-                &data, result);
+    rval = Esys_EventSequenceComplete(ectx, ctx.pcr, sequence_handle, shandle1,
+            ESYS_TR_PASSWORD, ESYS_TR_NONE, &data, result);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_EventSequenceComplete, rval);
         return tool_rc_from_tpm(rval);
@@ -172,7 +168,8 @@ static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
     for (i = 0; i < digests->count; i++) {
         TPMT_HA *d = &digests->digests[i];
 
-        tpm2_tool_output("%s: ", tpm2_alg_util_algtostr(d->hashAlg, tpm2_alg_util_flags_hash));
+        tpm2_tool_output("%s: ",
+                tpm2_alg_util_algtostr(d->hashAlg, tpm2_alg_util_flags_hash));
 
         const BYTE *bytes;
         size_t size;
@@ -232,7 +229,7 @@ static bool on_arg(int argc, char **argv) {
 
     unsigned i;
     /* argc can never be negative so cast is safe */
-    for (i=0; i < (unsigned)argc; i++) {
+    for (i = 0; i < (unsigned) argc; i++) {
 
         FILE *x = fopen(argv[i], "rb");
         /* file already found but got another file */
@@ -288,8 +285,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth",      required_argument, NULL, 'P' },
     };
 
-    *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts,
-                             on_option, on_arg, 0);
+    *opts = tpm2_options_new("P:", ARRAY_LEN(topts), topts, on_option, on_arg,
+            0);
 
     return *opts != NULL;
 }
