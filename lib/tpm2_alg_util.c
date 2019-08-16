@@ -35,7 +35,8 @@ enum alg_parser_rc {
     alg_parser_rc_done
 };
 
-typedef alg_iter_res (*alg_iter)(TPM2_ALG_ID id, const char *name, tpm2_alg_util_flags flags, void *userdata);
+typedef alg_iter_res (*alg_iter)(TPM2_ALG_ID id, const char *name,
+        tpm2_alg_util_flags flags, void *userdata);
 
 static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
 
@@ -105,9 +106,10 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
     };
 
     size_t i;
-    for (i=0; i < ARRAY_LEN(algs); i++) {
+    for (i = 0; i < ARRAY_LEN(algs); i++) {
         const alg_pair *alg = &algs[i];
-        alg_iter_res result = iterator(alg->id, alg->name, alg->flags, userdata);
+        alg_iter_res result = iterator(alg->id, alg->name, alg->flags,
+                userdata);
         if (result != go) {
             return;
         }
@@ -137,8 +139,7 @@ static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s) 
     }
 
     s->mode.sym = tpm2_alg_util_strtoalg(ext,
-            tpm2_alg_util_flags_mode
-            |tpm2_alg_util_flags_misc);
+            tpm2_alg_util_flags_mode | tpm2_alg_util_flags_misc);
     if (s->mode.sym == TPM2_ALG_ERROR) {
         return alg_parser_rc_error;
     }
@@ -159,7 +160,8 @@ static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s) 
         found = true; \
     } while (0)
 
-static alg_parser_rc handle_scheme_sign(const char *scheme, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_scheme_sign(const char *scheme,
+        TPM2B_PUBLIC *public) {
 
     char buf[256];
 
@@ -168,7 +170,7 @@ static alg_parser_rc handle_scheme_sign(const char *scheme, TPM2B_PUBLIC *public
     }
 
     int rc = snprintf(buf, sizeof(buf), "%s", scheme);
-    if (rc < 0 || (size_t)rc >= sizeof(buf)) {
+    if (rc < 0 || (size_t) rc >= sizeof(buf)) {
         return alg_parser_rc_error;
     }
 
@@ -221,10 +223,10 @@ static alg_parser_rc handle_scheme_sign(const char *scheme, TPM2B_PUBLIC *public
         }
     } else {
         if (!strcmp(scheme, "rsaes")) {
-        /*
-         * rsaes has no hash alg or details, so it MUST
-         * match exactly, notice strcmp and NOT strNcmp!
-         */
+            /*
+             * rsaes has no hash alg or details, so it MUST
+             * match exactly, notice strcmp and NOT strNcmp!
+             */
             s->scheme.scheme = TPM2_ALG_RSAES;
             found = true;
         } else if (!strcmp("null", scheme)) {
@@ -254,19 +256,21 @@ static alg_parser_rc handle_scheme_sign(const char *scheme, TPM2B_PUBLIC *public
      *  - ENCRYPT - If its an asymmetric enc scheme.
      */
     if (s->scheme.scheme != TPM2_ALG_NULL) {
-        bool is_both_set =
-                !!(public->publicArea.objectAttributes & (TPMA_OBJECT_SIGN_ENCRYPT | TPMA_OBJECT_DECRYPT));
+        bool is_both_set = !!(public->publicArea.objectAttributes
+                & (TPMA_OBJECT_SIGN_ENCRYPT | TPMA_OBJECT_DECRYPT));
         if (is_both_set) {
-            tpm2_alg_util_flags flags = tpm2_alg_util_algtoflags(s->scheme.scheme);
-            TPMA_OBJECT turn_down_flags = (flags & tpm2_alg_util_flags_sig) ?
-                    TPMA_OBJECT_DECRYPT : TPMA_OBJECT_SIGN_ENCRYPT;
+            tpm2_alg_util_flags flags = tpm2_alg_util_algtoflags(
+                    s->scheme.scheme);
+            TPMA_OBJECT turn_down_flags =
+                    (flags & tpm2_alg_util_flags_sig) ?
+                            TPMA_OBJECT_DECRYPT : TPMA_OBJECT_SIGN_ENCRYPT;
             public->publicArea.objectAttributes &= ~turn_down_flags;
         }
     }
 
     if (do_scheme_hash_alg) {
-        public->publicArea.parameters.asymDetail.scheme.details.anySig.hashAlg
-            = tpm2_alg_util_strtoalg(halg, tpm2_alg_util_flags_hash);
+    public->publicArea.parameters.asymDetail.scheme.details.anySig.hashAlg =
+                tpm2_alg_util_strtoalg(halg, tpm2_alg_util_flags_hash);
         if (public->publicArea.parameters.asymDetail.scheme.details.anySig.hashAlg
                 == TPM2_ALG_ERROR) {
             return alg_parser_rc_error;
@@ -345,7 +349,7 @@ static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
     public->publicArea.type = TPM2_ALG_SYMCIPHER;
 
     tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
-                      &public->publicArea.objectAttributes);
+            &public->publicArea.objectAttributes);
 
     TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
     s->algorithm = TPM2_ALG_AES;
@@ -411,7 +415,8 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     return alg_parser_rc_error;
 }
 
-static alg_parser_rc handle_scheme_keyedhash(const char *scheme, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_scheme_keyedhash(const char *scheme,
+        TPM2B_PUBLIC *public) {
 
     if (!scheme || scheme[0] == '\0') {
         scheme = "sha256";
@@ -422,13 +427,16 @@ static alg_parser_rc handle_scheme_keyedhash(const char *scheme, TPM2B_PUBLIC *p
         return alg_parser_rc_error;
     }
 
-    switch(public->publicArea.parameters.keyedHashDetail.scheme.scheme) {
+    switch (public->publicArea.parameters.keyedHashDetail.scheme.scheme) {
     case TPM2_ALG_HMAC:
-        public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg = alg;
+    public->publicArea.parameters.keyedHashDetail.scheme.details.hmac.hashAlg =
+                alg;
         break;
     case TPM2_ALG_XOR:
-        public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf = TPM2_ALG_KDF1_SP800_108;
-        public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg = alg;
+    public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.kdf =
+                TPM2_ALG_KDF1_SP800_108;
+    public->publicArea.parameters.keyedHashDetail.scheme.details.exclusiveOr.hashAlg =
+                alg;
         break;
     default:
         return alg_parser_rc_error;
@@ -439,7 +447,7 @@ static alg_parser_rc handle_scheme_keyedhash(const char *scheme, TPM2B_PUBLIC *p
 
 static alg_parser_rc handle_scheme(const char *scheme, TPM2B_PUBLIC *public) {
 
-    switch(public->publicArea.type) {
+    switch (public->publicArea.type) {
     case TPM2_ALG_RSA:
     case TPM2_ALG_ECC:
         return handle_scheme_sign(scheme, public);
@@ -452,12 +460,15 @@ static alg_parser_rc handle_scheme(const char *scheme, TPM2B_PUBLIC *public) {
     return alg_parser_rc_error;
 }
 
-static alg_parser_rc handle_asym_detail(const char *detail, TPM2B_PUBLIC *public) {
+static alg_parser_rc handle_asym_detail(const char *detail,
+        TPM2B_PUBLIC *public) {
 
-    bool is_restricted = !!(public->publicArea.objectAttributes & TPMA_OBJECT_RESTRICTED);
-    bool is_rsapps = public->publicArea.parameters.asymDetail.scheme.scheme == TPM2_ALG_RSAPSS;
+    bool is_restricted = !!(public->publicArea.objectAttributes
+            & TPMA_OBJECT_RESTRICTED);
+    bool is_rsapps = public->publicArea.parameters.asymDetail.scheme.scheme
+            == TPM2_ALG_RSAPSS;
 
-    switch(public->publicArea.type) {
+    switch (public->publicArea.type) {
     case TPM2_ALG_RSA:
     case TPM2_ALG_ECC:
 
@@ -473,11 +484,11 @@ static alg_parser_rc handle_asym_detail(const char *detail, TPM2B_PUBLIC *public
         } else if (!strncmp(detail, "camellia", 8)) {
             s->algorithm = TPM2_ALG_CAMELLIA;
             return handle_sym_common(detail + 8, s);
-        } else if(!strcmp(detail, "null")) {
+        } else if (!strcmp(detail, "null")) {
             s->algorithm = TPM2_ALG_NULL;
             return alg_parser_rc_done;
         }
-    /* no default */
+        /* no default */
     }
 
     return alg_parser_rc_error;
@@ -492,7 +503,7 @@ bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
     }
 
     int rc = snprintf(buf, sizeof(buf), "%s", alg_spec);
-    if (rc < 0 || (size_t)rc >= sizeof(buf)) {
+    if (rc < 0 || (size_t) rc >= sizeof(buf)) {
         goto error;
     }
 
@@ -541,7 +552,7 @@ bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
      * at this point we either have scheme or asym detail, if it
      * doesn't process as a scheme shuffle it to asym detail
      */
-    for (i=0; i < 2; i++) {
+    for (i = 0; i < 2; i++) {
         prc = handle_scheme(scheme, public);
         if (prc == alg_parser_rc_done) {
             /* we must have exhausted all the entries or it's an error */
@@ -575,14 +586,15 @@ bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public) {
 
     return true;
 
-error:
+    error:
     LOG_ERR("Could not handle algorithm spec: \"%s\"", alg_spec);
     return false;
 }
 
-static alg_iter_res find_match(TPM2_ALG_ID id, const char *name, tpm2_alg_util_flags flags, void *userdata) {
+static alg_iter_res find_match(TPM2_ALG_ID id, const char *name,
+        tpm2_alg_util_flags flags, void *userdata) {
 
-    alg_pair *search_data = (alg_pair *)userdata;
+    alg_pair *search_data = (alg_pair *) userdata;
 
     /*
      * if name, then search on name, else
@@ -601,7 +613,7 @@ static alg_iter_res find_match(TPM2_ALG_ID id, const char *name, tpm2_alg_util_f
             search_data->name = name;
             search_data->_flags = flags;
         }
-        return  res;
+        return res;
     }
 
     return go;
@@ -609,11 +621,7 @@ static alg_iter_res find_match(TPM2_ALG_ID id, const char *name, tpm2_alg_util_f
 
 TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name, tpm2_alg_util_flags flags) {
 
-    alg_pair userdata = {
-        .name = name,
-        .id = TPM2_ALG_ERROR,
-        .flags = flags
-    };
+    alg_pair userdata = { .name = name, .id = TPM2_ALG_ERROR, .flags = flags };
 
     if (name) {
         tpm2_alg_util_for_each_alg(find_match, &userdata);
@@ -624,11 +632,7 @@ TPM2_ALG_ID tpm2_alg_util_strtoalg(const char *name, tpm2_alg_util_flags flags) 
 
 const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id, tpm2_alg_util_flags flags) {
 
-    alg_pair userdata = {
-        .name = NULL,
-        .id = id,
-        .flags = flags
-    };
+    alg_pair userdata = { .name = NULL, .id = id, .flags = flags };
 
     tpm2_alg_util_for_each_alg(find_match, &userdata);
 
@@ -637,20 +641,16 @@ const char *tpm2_alg_util_algtostr(TPM2_ALG_ID id, tpm2_alg_util_flags flags) {
 
 tpm2_alg_util_flags tpm2_alg_util_algtoflags(TPM2_ALG_ID id) {
 
-    alg_pair userdata = {
-        .name = NULL,
-        .id = id,
-        .flags = tpm2_alg_util_flags_any,
-        ._flags = tpm2_alg_util_flags_none
-    };
+    alg_pair userdata = { .name = NULL, .id = id, .flags =
+            tpm2_alg_util_flags_any, ._flags = tpm2_alg_util_flags_none };
 
     tpm2_alg_util_for_each_alg(find_match, &userdata);
 
     return userdata._flags;
 }
 
-
-TPM2_ALG_ID tpm2_alg_util_from_optarg(const char *optarg, tpm2_alg_util_flags flags) {
+TPM2_ALG_ID tpm2_alg_util_from_optarg(const char *optarg,
+        tpm2_alg_util_flags flags) {
 
     TPM2_ALG_ID halg;
     bool res = tpm2_util_string_to_uint16(optarg, &halg);
@@ -667,15 +667,15 @@ TPM2_ALG_ID tpm2_alg_util_from_optarg(const char *optarg, tpm2_alg_util_flags fl
 UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id) {
 
     switch (id) {
-    case TPM2_ALG_SHA1 :
+    case TPM2_ALG_SHA1:
         return TPM2_SHA1_DIGEST_SIZE;
-    case TPM2_ALG_SHA256 :
+    case TPM2_ALG_SHA256:
         return TPM2_SHA256_DIGEST_SIZE;
-    case TPM2_ALG_SHA384 :
+    case TPM2_ALG_SHA384:
         return TPM2_SHA384_DIGEST_SIZE;
-    case TPM2_ALG_SHA512 :
+    case TPM2_ALG_SHA512:
         return TPM2_SHA512_DIGEST_SIZE;
-    case TPM2_ALG_SM3_256 :
+    case TPM2_ALG_SM3_256:
         return TPM2_SM3_256_DIGEST_SIZE;
         /* no default */
     }
@@ -719,7 +719,8 @@ bool pcr_parse_digest_list(char **argv, int len,
         char *pcr_index_str = spec_str;
         char *digest_spec_str = strchr(spec_str, ':');
         if (!digest_spec_str) {
-            LOG_ERR("Expecting : in digest spec, not found, got: \"%s\"", spec_str);
+            LOG_ERR("Expecting : in digest spec, not found, got: \"%s\"",
+                    spec_str);
             return false;
         }
 
@@ -765,7 +766,8 @@ bool pcr_parse_digest_list(char **argv, int len,
             /*
              * Convert and validate the hash algorithm. It should be a hash algorithm
              */
-            TPM2_ALG_ID alg = tpm2_alg_util_from_optarg(stralg, tpm2_alg_util_flags_hash);
+            TPM2_ALG_ID alg = tpm2_alg_util_from_optarg(stralg,
+                    tpm2_alg_util_flags_hash);
             if (alg == TPM2_ALG_ERROR) {
                 LOG_ERR("Could not convert algorithm, got: \"%s\"", stralg);
                 return false;
@@ -783,18 +785,16 @@ bool pcr_parse_digest_list(char **argv, int len,
                 data += 2;
             }
 
-            UINT16 size =  expected_hash_size;
-            int rc = tpm2_util_hex_to_byte_structure(data, &size,
-                    digest_data);
+            UINT16 size = expected_hash_size;
+            int rc = tpm2_util_hex_to_byte_structure(data, &size, digest_data);
             if (rc) {
                 LOG_ERR("Error \"%s\" converting hex string as data, got:"
-                    " \"%s\"", hex_to_byte_err(rc), data);
+                        " \"%s\"", hex_to_byte_err(rc), data);
                 return false;
             }
 
             if (expected_hash_size != size) {
-                LOG_ERR(
-                        "Algorithm \"%s\" expects a size of %u bytes, got: %u",
+                LOG_ERR("Algorithm \"%s\" expects a size of %u bytes, got: %u",
                         stralg, expected_hash_size, size);
                 return false;
             }
@@ -820,9 +820,8 @@ static tool_rc get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT objectHandle,
 
     TPM2B_PUBLIC *out_public;
 
-    tool_rc rc = tpm2_readpublic(ectx, objectHandle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &out_public, NULL, NULL);
+    tool_rc rc = tpm2_readpublic(ectx, objectHandle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &out_public, NULL, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -845,7 +844,7 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
     }
 
     switch (type) {
-    case TPM2_ALG_RSA :
+    case TPM2_ALG_RSA:
         if (sig_scheme == TPM2_ALG_NULL || sig_scheme == TPM2_ALG_RSASSA) {
             scheme->scheme = TPM2_ALG_RSASSA;
             scheme->details.rsassa.hashAlg = halg;
@@ -856,11 +855,11 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
             return tool_rc_general_error;
         }
         break;
-    case TPM2_ALG_KEYEDHASH :
+    case TPM2_ALG_KEYEDHASH:
         scheme->scheme = TPM2_ALG_HMAC;
         scheme->details.hmac.hashAlg = halg;
         break;
-    case TPM2_ALG_ECC :
+    case TPM2_ALG_ECC:
         if (sig_scheme == TPM2_ALG_NULL || sig_scheme == TPM2_ALG_ECDSA) {
             scheme->scheme = TPM2_ALG_ECDSA;
             scheme->details.ecdsa.hashAlg = halg;
@@ -874,7 +873,7 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
             return tool_rc_general_error;
         }
         break;
-    case TPM2_ALG_SYMCIPHER :
+    case TPM2_ALG_SYMCIPHER:
     default:
         LOG_ERR("Unknown key type, got: 0x%x", type);
         return tool_rc_general_error;
@@ -883,16 +882,19 @@ tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
     return tool_rc_success;
 }
 
-bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, char *unique_file,
-        TPMA_OBJECT def_attrs, TPM2B_PUBLIC *public) {
+bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
+        char *auth_policy, char *unique_file, TPMA_OBJECT def_attrs,
+        TPM2B_PUBLIC *public) {
 
     memset(public, 0, sizeof(*public));
 
     /* load a policy from a path if present */
     if (auth_policy) {
-        public->publicArea.authPolicy.size = sizeof(public->publicArea.authPolicy.buffer);
+    public->publicArea.authPolicy.size =
+                sizeof(public->publicArea.authPolicy.buffer);
         bool res = files_load_bytes_from_path(auth_policy,
-                    public->publicArea.authPolicy.buffer, &public->publicArea.authPolicy.size);
+            public->publicArea.authPolicy.buffer,
+                &public->publicArea.authPolicy.size);
         if (!res) {
             return false;
         }
@@ -905,15 +907,16 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
          * for ensuring that that this buffer is formatted as a
          * TPMU_PUBLIC_ID union. unique_size is max size of the union */
         bool res = files_load_bytes_from_path(unique_file,
-                    (UINT8*)&public->publicArea.unique, &unique_size);
+                (UINT8*) &public->publicArea.unique, &unique_size);
         if (!res) {
             return false;
         }
     }
 
     /* Set the hashing algorithm used for object name */
-    public->publicArea.nameAlg =
-            name_halg ? tpm2_alg_util_from_optarg(name_halg, tpm2_alg_util_flags_hash) : TPM2_ALG_SHA256;
+    public->publicArea.nameAlg = name_halg ?
+        tpm2_alg_util_from_optarg(name_halg, tpm2_alg_util_flags_hash) :
+        TPM2_ALG_SHA256;
     if (public->publicArea.nameAlg == TPM2_ALG_ERROR) {
         LOG_ERR("Invalid name hashing algorithm, got\"%s\"", name_halg);
         return false;
@@ -942,11 +945,14 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
         return false;
     }
 
-    if (attrs && tmp.publicArea.objectAttributes != public->publicArea.objectAttributes) {
+    if (attrs && tmp.publicArea.objectAttributes !=
+        public->publicArea.objectAttributes) {
 
-        char *proposed_attrs = tpm2_attr_util_obj_attrtostr(tmp.publicArea.objectAttributes);
-        LOG_ERR("Specified attributes \"%s\" and algorithm specifier \"%s\" do not work together, try"
-                "attributes: \"%s\"", attrs, alg_details, proposed_attrs);
+        char *proposed_attrs = tpm2_attr_util_obj_attrtostr(
+                tmp.publicArea.objectAttributes);
+        LOG_ERR("Specified attributes \"%s\" and algorithm specifier \"%s\" do "
+                "not work together, try attributes: \"%s\"", attrs, alg_details,
+                proposed_attrs);
         free(proposed_attrs);
         return false;
     }
@@ -958,7 +964,7 @@ bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, 
 
 const char *tpm2_alg_util_ecc_to_str(TPM2_ECC_CURVE curve_id) {
 
-    switch(curve_id) {
+    switch (curve_id) {
     case TPM2_ECC_NIST_P192:
         return "NIST p192";
     case TPM2_ECC_NIST_P224:

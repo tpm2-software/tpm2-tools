@@ -11,20 +11,20 @@
 
 typedef enum tpm2_alg_util_flags tpm2_alg_util_flags;
 enum tpm2_alg_util_flags {
-    tpm2_alg_util_flags_none        = 0,
-    tpm2_alg_util_flags_hash        = 1 << 0,
-    tpm2_alg_util_flags_keyedhash   = 1 << 0,
-    tpm2_alg_util_flags_symmetric   = 1 << 2,
-    tpm2_alg_util_flags_asymmetric  = 1 << 3,
-    tpm2_alg_util_flags_kdf         = 1 << 4,
-    tpm2_alg_util_flags_mgf         = 1 << 5,
-    tpm2_alg_util_flags_sig         = 1 << 6,
-    tpm2_alg_util_flags_mode        = 1 << 7,
-    tpm2_alg_util_flags_base        = 1 << 8,
-    tpm2_alg_util_flags_misc        = 1 << 9,
-    tpm2_alg_util_flags_enc_scheme  = 1 << 10,
-    tpm2_alg_util_flags_rsa_scheme  = 1 << 11,
-    tpm2_alg_util_flags_any         = ~0
+    tpm2_alg_util_flags_none       = 0,
+    tpm2_alg_util_flags_hash       = 1 << 0,
+    tpm2_alg_util_flags_keyedhash  = 1 << 0,
+    tpm2_alg_util_flags_symmetric  = 1 << 2,
+    tpm2_alg_util_flags_asymmetric = 1 << 3,
+    tpm2_alg_util_flags_kdf        = 1 << 4,
+    tpm2_alg_util_flags_mgf        = 1 << 5,
+    tpm2_alg_util_flags_sig        = 1 << 6,
+    tpm2_alg_util_flags_mode       = 1 << 7,
+    tpm2_alg_util_flags_base       = 1 << 8,
+    tpm2_alg_util_flags_misc       = 1 << 9,
+    tpm2_alg_util_flags_enc_scheme = 1 << 10,
+    tpm2_alg_util_flags_rsa_scheme = 1 << 11,
+    tpm2_alg_util_flags_any        = ~0
 };
 
 /**
@@ -60,7 +60,8 @@ tpm2_alg_util_flags tpm2_alg_util_algtoflags(TPM2_ALG_ID id);
  * @return
  *  TPM2_ALG_ERROR on error or the algorithm id.
  */
-TPM2_ALG_ID tpm2_alg_util_from_optarg(const char *optarg, tpm2_alg_util_flags flags);
+TPM2_ALG_ID tpm2_alg_util_from_optarg(const char *optarg,
+        tpm2_alg_util_flags flags);
 
 /**
  * Contains the information from parsing an argv style vector of strings for
@@ -142,8 +143,7 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
  *  On error scheme is left unmodified.
  */
 tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
-        ESYS_TR keyHandle, TPMI_ALG_HASH halg,
-        TPMI_ALG_SIG_SCHEME sig_scheme,
+        ESYS_TR keyHandle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme);
 
 /**
@@ -169,8 +169,9 @@ bool tpm2_alg_util_handle_ext_alg(const char *alg_spec, TPM2B_PUBLIC *public);
  * @param public
  * @return
  */
-bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs, char *auth_policy, char *unique_file,
-        TPMA_OBJECT def_attrs, TPM2B_PUBLIC *public);
+bool tpm2_alg_util_public_init(char *alg_details, char *name_halg, char *attrs,
+        char *auth_policy, char *unique_file, TPMA_OBJECT def_attrs,
+        TPM2B_PUBLIC *public);
 
 /**
  * Returns an ECC curve as a friendly name.
