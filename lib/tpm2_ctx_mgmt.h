@@ -21,11 +21,8 @@
  * @return
  *  tool_rc indicating status.
  */
-tool_rc tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *context,
-        ESYS_TR auth,
-        tpm2_session *sess,
-        ESYS_TR objhandle,
-        TPMI_DH_PERSISTENT phandle,
-	ESYS_TR *out_tr);
+tool_rc tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *context, ESYS_TR auth,
+        tpm2_session *sess, ESYS_TR objhandle, TPMI_DH_PERSISTENT phandle,
+        ESYS_TR *out_tr);
 
 #endif /* LIB_TPM2_CTX_MGMT_H_ */
