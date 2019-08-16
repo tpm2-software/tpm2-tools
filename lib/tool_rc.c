@@ -19,7 +19,7 @@ static inline UINT8 tss2_rc_layer_format_get(TSS2_RC rc) {
 static tool_rc flatten_fmt1(TSS2_RC rc) {
 
     UINT8 errnum = tpm2_rc_fmt1_error_get(rc);
-    switch(errnum) {
+    switch (errnum) {
     case UNFMT1(TPM2_RC_AUTH_FAIL):
         return tool_rc_auth_error;
     default:
