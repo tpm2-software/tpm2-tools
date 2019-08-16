@@ -18,9 +18,9 @@
 typedef union tpm2_option_flags tpm2_option_flags;
 union tpm2_option_flags {
     struct {
-        uint8_t verbose : 1;
-        uint8_t quiet   : 1;
-        uint8_t enable_errata  : 1;
+        uint8_t verbose :1;
+        uint8_t quiet :1;
+        uint8_t enable_errata :1;
     };
     uint8_t all;
 };
@@ -152,7 +152,7 @@ enum tpm2_option_code {
  *  Used by tpm2_tool, and likely should only be used there.
  *
  */
-tpm2_option_code tpm2_handle_options (int argc, char **argv,
+tpm2_option_code tpm2_handle_options(int argc, char **argv,
         tpm2_options *tool_opts, tpm2_option_flags *flags,
         TSS2_TCTI_CONTEXT **tcti);
 
