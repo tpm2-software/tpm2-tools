@@ -13,7 +13,6 @@ struct tpm2_loaded_object {
     tpm2_session *session;
 };
 
-
 /**
  * Parses a string representation of a context object, either a file or handle,
  * and loads the context object ensuring the handle member of the out object is
@@ -34,9 +33,8 @@ struct tpm2_loaded_object {
  *  tool_rc indicating status.
  *
  */
-tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
-                        const char *objectstr, tpm2_loaded_object *outobject,
-                        tpm2_handle_flags flags);
+tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx, const char *objectstr,
+        tpm2_loaded_object *outobject, tpm2_handle_flags flags);
 
 /**
  * Same as tpm2_util_object_load but allows the auth string value to be populated
@@ -59,12 +57,8 @@ tool_rc tpm2_util_object_load(ESYS_CONTEXT *ctx,
  * @return
  *  tool_rc indicating status
  */
-tool_rc tpm2_util_object_load_auth(
-            ESYS_CONTEXT *ctx,
-            const char *objectstr,
-            const char *auth,
-            tpm2_loaded_object *outobject,
-            bool is_restricted_pswd_session,
-            tpm2_handle_flags flags);
+tool_rc tpm2_util_object_load_auth(ESYS_CONTEXT *ctx, const char *objectstr,
+        const char *auth, tpm2_loaded_object *outobject,
+        bool is_restricted_pswd_session, tpm2_handle_flags flags);
 
 #endif /* LIB_OBJECT_H_ */
