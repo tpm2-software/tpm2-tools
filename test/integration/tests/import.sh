@@ -150,7 +150,7 @@ run_test() {
 #   - RSA2048 with AES CFB 128 and 256 bit parents
 #   - SHA256 object (not parent) name algorithms
 #
-parent_algs=("rsa2048:aes128cfb" "rsa2048:aes256cfb")
+parent_algs=("rsa2048:aes128cfb" "rsa2048:aes256cfb" "ecc256:aes128cfb")
 halgs=`populate_hash_algs 'and alg != "sha1"'`
 echo "halgs: $halgs"
 for pa in "${parent_algs[@]}"; do

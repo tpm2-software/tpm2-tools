@@ -25,6 +25,8 @@
 
 #include <tss2/tss2_mu.h>
 
+#include <openssl/rand.h>
+
 #include "files.h"
 #include "log.h"
 #include "tpm2.h"
@@ -132,6 +134,7 @@ private->size = sizeof(uint16_t) + parent_hash_size
 
 static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
         TPM2B_SENSITIVE *privkey, TPM2B_PUBLIC *pubkey,
+        TPM2B_ENCRYPTED_SECRET *encrypted_seed,
         TPM2B_PRIVATE **imported_private) {
 
     TPMI_ALG_HASH name_alg = pubkey->publicArea.nameAlg;
@@ -177,20 +180,11 @@ static tool_rc key_import(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *parent_pub,
     create_import_key_private_data(&private, parent_pub->publicArea.nameAlg,
             &encrypted_duplicate_sensitive, &outer_hmac);
 
-    TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
-    unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
-    res = tpm2_identity_util_encrypt_seed_with_public_key(seed, parent_pub,
-            label, 10, &encrypted_seed);
-    if (!res) {
-        LOG_ERR("Failed Seed Encryption\n");
-        return tool_rc_general_error;
-    }
-
     TPMT_SYM_DEF_OBJECT *sym_alg =
             &parent_pub->publicArea.parameters.rsaDetail.symmetric;
 
     return tpm2_import(ectx, &ctx.parent.object, &enc_sensitive_key, pubkey,
-            &private, &encrypted_seed, sym_alg, imported_private);
+            &private, encrypted_seed, sym_alg, imported_private);
 }
 
 static bool on_option(char key, char *value) {
@@ -452,6 +446,26 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
     }
 
     /*
+     * When the parent is an RSA key, seed is randomly generated and encrypted
+     * with parents public key.
+     * When the parent is en ECC key, seed is derived using an ephemeral key
+     * and KDFe, and the encrypted_seed is the public key for the ephemeral key.
+     */
+    TPM2B_DIGEST *seed = &private.sensitiveArea.seedValue;
+    seed->size = tpm2_alg_util_get_hash_size(public.publicArea.nameAlg);
+    RAND_bytes(seed->buffer, seed->size);
+
+    TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
+    unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
+    bool res;
+    res = tpm2_identity_util_encrypt_seed_with_public_key(seed, parent_pub,
+            label, 10, &encrypted_seed);
+    if (!res) {
+        LOG_ERR("Failed Seed Encryption\n");
+        goto out;
+    }
+
+    /*
      * Populate all the private and public data fields we can based on the key type and the PEM files read in.
      */
     tpm2_openssl_load_rc status = tpm2_openssl_load_private(ctx.input_key_file,
@@ -467,7 +481,8 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
     }
 
     TPM2B_PRIVATE *imported_private = NULL;
-    tmp_rc = key_import(ectx, parent_pub, &private, &public, &imported_private);
+    tmp_rc = key_import(ectx, parent_pub, &private, &public, &encrypted_seed,
+            &imported_private);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto keyout;
@@ -476,7 +491,7 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
     /*
      * Save the public and imported_private structure to disk
      */
-    bool res = files_save_public(&public, ctx.public_key_file);
+    res = files_save_public(&public, ctx.public_key_file);
     if (!res) {
         goto keyout;
     }

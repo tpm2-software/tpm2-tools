@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <openssl/rand.h>
+
 #include "files.h"
 #include "log.h"
 #include "tpm2_alg_util.h"
@@ -251,11 +253,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_SENSITIVE priv = {
         .size = 0,
         .sensitiveArea = {
-            /* no parent seed value for protection */
-            .seedValue = { .size = 0 },
             .authValue = { .size = 0 }
         },
     };
+    /*
+     * when nameAlg is not TPM2_ALG_NULL, seed value is needed to pass
+     * consistency checks by TPM
+     */
+    TPM2B_DIGEST *seed = &priv.sensitiveArea.seedValue;
+    seed->size = tpm2_alg_util_get_hash_size(pub.publicArea.nameAlg);
+    if (seed->size != 0) {
+        RAND_bytes(seed->buffer, seed->size);
+    }
 
     tpm2_session *tmp;
     tool_rc tmp_rc = tpm2_auth_util_from_optarg(NULL, ctx.auth, &tmp, true);
