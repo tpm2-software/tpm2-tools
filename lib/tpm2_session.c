@@ -16,7 +16,7 @@ struct tpm2_session_data {
     ESYS_TR bind;
     TPM2_SE session_type;
     TPMT_SYM_DEF symmetric;
-    TPMI_ALG_HASH authHash;
+    TPMI_ALG_HASH auth_hash;
     TPM2B_NONCE nonce_caller;
     TPMA_SESSION attrs;
     TPM2B_AUTH auth_data;
@@ -45,7 +45,7 @@ tpm2_session_data *tpm2_session_data_new(TPM2_SE type) {
         d->key = ESYS_TR_NONE;
         d->bind = ESYS_TR_NONE;
         d->session_type = type;
-        d->authHash = TPM2_ALG_SHA256;
+        d->auth_hash = TPM2_ALG_SHA256;
     }
     return d;
 }
@@ -87,7 +87,7 @@ void tpm2_session_set_symmetric(tpm2_session_data *data,
 }
 
 void tpm2_session_set_authhash(tpm2_session_data *data, TPMI_ALG_HASH auth_hash) {
-    data->authHash = auth_hash;
+    data->auth_hash = auth_hash;
 }
 
 void tpm2_session_set_path(tpm2_session_data *data, const char *path) {
@@ -95,7 +95,7 @@ void tpm2_session_set_path(tpm2_session_data *data, const char *path) {
 }
 
 TPMI_ALG_HASH tpm2_session_get_authhash(tpm2_session *session) {
-    return session->input->authHash;
+    return session->input->auth_hash;
 }
 
 ESYS_TR tpm2_session_get_handle(tpm2_session *session) {
@@ -125,7 +125,7 @@ static tool_rc start_auth_session(tpm2_session *session) {
 
     tool_rc rc = tpm2_start_auth_session(session->internal.ectx, d->key,
             d->bind, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nonce,
-            d->session_type, &d->symmetric, d->authHash,
+            d->session_type, &d->symmetric, d->auth_hash,
             &session->output.session_handle);
     if (rc != tool_rc_success) {
         return rc;
