@@ -10,6 +10,7 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_identity_util.h"
 #include "tpm2_kdfa.h"
+#include "tpm2_kdfe.h"
 #include "tpm2_openssl.h"
 
 // Identity-related functionality that the TPM normally does, but using OpenSSL
@@ -216,9 +217,9 @@ bool tpm2_identity_util_encrypt_seed_with_public_key(
                 parent_pub, label, label_len, encrypted_protection_seed);
         break;
     case TPM2_ALG_ECC:
-        LOG_ERR("Algorithm '%s' not supported yet",
-                tpm2_alg_util_algtostr(alg, tpm2_alg_util_flags_any));
-        result = false;
+        result = ecdh_derive_seed_and_encrypted_seed(parent_pub,
+                label, label_len,
+                protection_seed, encrypted_protection_seed);
         break;
     default:
         LOG_ERR("Cannot handle algorithm, got: %s",

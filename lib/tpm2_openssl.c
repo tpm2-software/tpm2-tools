@@ -1060,11 +1060,6 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
         return 0;
     }
 
-    /* set the seed */
-    TPM2B_DIGEST *seed = &priv->sensitiveArea.seedValue;
-    seed->size = tpm2_alg_util_get_hash_size(pub->publicArea.nameAlg);
-    RAND_bytes(seed->buffer, seed->size);
-
     tpm2_openssl_load_rc rc = lprc_error;
 
     switch (alg) {
