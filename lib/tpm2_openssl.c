@@ -172,13 +172,13 @@ out:
 }
 
 // show all PCR banks according to g_pcrSelection & g_pcrs->
-bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
-        TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs, TPM2B_DIGEST *digest) {
+bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hash_alg,
+        TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs, TPM2B_DIGEST *digest) {
 
     UINT32 vi = 0, di = 0, i;
     bool result = false;
 
-    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hashAlg);
+    const EVP_MD *md = tpm2_openssl_halg_from_tpmhalg(hash_alg);
     if (!md) {
         return false;
     }
@@ -196,13 +196,13 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
     }
 
     // Loop through all PCR/hash banks
-    for (i = 0; i < pcrSelect->count; i++) {
+    for (i = 0; i < pcr_select->count; i++) {
 
         // Loop through all PCRs in this bank
         UINT8 pcr_id;
-        for (pcr_id = 0; pcr_id < pcrSelect->pcrSelections[i].sizeofSelect * 8;
+        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8;
                 pcr_id++) {
-            if (!tpm2_util_is_pcr_select_bit_set(&pcrSelect->pcrSelections[i],
+            if (!tpm2_util_is_pcr_select_bit_set(&pcr_select->pcrSelections[i],
                     pcr_id)) {
                 // skip non-selected banks
                 continue;
