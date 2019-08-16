@@ -4,10 +4,9 @@
 #include "tpm2_kdfa.h"
 #include "tpm2_openssl.h"
 
-TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg,
-        TPM2B *key, char *label, TPM2B *contextU, TPM2B *contextV, UINT16 bits,
-        TPM2B_MAX_BUFFER  *resultKey )
-{
+TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
+        TPM2B *contextU, TPM2B *contextV, UINT16 bits,
+        TPM2B_MAX_BUFFER *resultKey) {
     TPM2B_DIGEST tpm2bLabel, tpm2bBits, tpm2b_i_2;
     UINT8 *tpm2bBitsPtr = &tpm2bBits.buffer[0];
     UINT8 *tpm2b_i_2Ptr = &tpm2b_i_2.buffer[0];
@@ -22,14 +21,13 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg,
     tpm2b_i_2.size = 4;
 
     tpm2bBits.size = 4;
-    bitsSwizzled = tpm2_util_endian_swap_32( bits );
-    *(UINT32 *)tpm2bBitsPtr = bitsSwizzled;
+    bitsSwizzled = tpm2_util_endian_swap_32(bits);
+    *(UINT32 *) tpm2bBitsPtr = bitsSwizzled;
 
     for(i = 0; label[i] != 0 ;i++ );
 
-    tpm2bLabel.size = i+1;
-    for( i = 0; i < tpm2bLabel.size; i++ )
-    {
+    tpm2bLabel.size = i + 1;
+    for (i = 0; i < tpm2bLabel.size; i++) {
         tpm2bLabel.buffer[i] = label[i];
     }
 
@@ -57,26 +55,25 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg,
     }
 
     // TODO Why is this a loop? It appears to only execute once.
-    while( resultKey->size < bytes )
-    {
+    while (resultKey->size < bytes) {
         TPM2B_DIGEST tmpResult;
         // Inner loop
 
-        i_Swizzled = tpm2_util_endian_swap_32( i );
-        *(UINT32 *)tpm2b_i_2Ptr = i_Swizzled;
+        i_Swizzled = tpm2_util_endian_swap_32(i);
+        *(UINT32 *) tpm2b_i_2Ptr = i_Swizzled;
 
         j = 0;
-        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2b_i_2);
-        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2bLabel);
-        bufferList[j++] = (TPM2B_DIGEST *)contextU;
-        bufferList[j++] = (TPM2B_DIGEST *)contextV;
-        bufferList[j++] = (TPM2B_DIGEST *)&(tpm2bBits);
-        bufferList[j] = (TPM2B_DIGEST *)0;
+        bufferList[j++] = (TPM2B_DIGEST *) &(tpm2b_i_2);
+        bufferList[j++] = (TPM2B_DIGEST *) &(tpm2bLabel);
+        bufferList[j++] = (TPM2B_DIGEST *) contextU;
+        bufferList[j++] = (TPM2B_DIGEST *) contextV;
+        bufferList[j++] = (TPM2B_DIGEST *) &(tpm2bBits);
+        bufferList[j] = (TPM2B_DIGEST *) 0;
 
         int c;
-        for(c=0; c < j; c++) {
+        for (c = 0; c < j; c++) {
             TPM2B_DIGEST *digest = bufferList[c];
-            int rc =  HMAC_Update(ctx, digest->buffer, digest->size);
+            int rc = HMAC_Update(ctx, digest->buffer, digest->size);
             if (!rc) {
                 LOG_ERR("HMAC Update failed: %s", ERR_error_string(rc, NULL));
                 rval = TPM2_RC_MEMORY;
@@ -94,7 +91,7 @@ TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg,
 
         tmpResult.size = size;
 
-        bool res = tpm2_util_concat_buffer(resultKey, (TPM2B *)&tmpResult);
+        bool res = tpm2_util_concat_buffer(resultKey, (TPM2B *) &tmpResult);
         if (!res) {
             rval = TSS2_SYS_RC_BAD_VALUE;
             goto err;
