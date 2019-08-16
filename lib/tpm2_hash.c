@@ -9,14 +9,10 @@
 #include "tpm2.h"
 #include "tpm2_hash.h"
 
-static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
-                                TPMI_ALG_HASH       halg,
-                                TPMI_RH_HIERARCHY   hierarchy,
-                                FILE                *infilep,
-                                BYTE                *inbuffer,
-                                UINT16              inbuffer_len,
-                                TPM2B_DIGEST        **result,
-                                TPMT_TK_HASHCHECK   **validation) {
+static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
+        TPMI_RH_HIERARCHY hierarchy, FILE *infilep, BYTE *inbuffer,
+        UINT16 inbuffer_len, TPM2B_DIGEST **result,
+        TPMT_TK_HASHCHECK **validation) {
     bool use_left, done;
     unsigned long left;
     size_t bytes_read;
@@ -35,7 +31,7 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
     }
 
     /* if data length is non-zero (valid) and less than 1024, just do it in one
-       hash invocation */
+     hash invocation */
     if (use_left && left <= TPM2_MAX_DIGEST_BUFFER) {
         buffer.size = left;
         if (!!infilep) {
@@ -48,7 +44,7 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
         }
 
         return tpm2_hash(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &buffer, halg, hierarchy, result, validation);
+                &buffer, halg, hierarchy, result, validation);
     }
     /*
      * length is either unknown because the FILE * is a fifo, or it's too
@@ -56,9 +52,8 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
      * chunks to loop over, if possible. This way we can call Complete with
      * data.
      */
-    tool_rc rc = tpm2_hash_sequence_start(ectx,
-                ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                &nullAuth, halg, &sequenceHandle);
+    tool_rc rc = tpm2_hash_sequence_start(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &nullAuth, halg, &sequenceHandle);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -74,10 +69,10 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
     done = false;
     while (!done) {
         /*  if we're using infilep, read the file. Otherwise, directly
-            copy into our local buffer. */
+         copy into our local buffer. */
         buffer.size = BUFFER_SIZE(typeof(buffer), buffer);
-        if(!!infilep){
-            bytes_read = fread( buffer.buffer, 1, buffer.size, infilep);
+        if (!!infilep) {
+            bytes_read = fread(buffer.buffer, 1, buffer.size, infilep);
             if (ferror(infilep)) {
                 LOG_ERR("Error reading from input file");
                 return tool_rc_general_error;
@@ -89,9 +84,8 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
             inbuffer = inbuffer + buffer.size;
         }
 
-        rc = tpm2_sequence_update(ectx, sequenceHandle,
-                    ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &buffer);
+        rc = tpm2_sequence_update(ectx, sequenceHandle, ESYS_TR_PASSWORD,
+                ESYS_TR_NONE, ESYS_TR_NONE, &buffer);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -108,10 +102,10 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
     } /* end file read/hash update loop */
 
     /*  if there is data left, get the last bit of data from the file or
-        buffer or set the size to zero */
+     buffer or set the size to zero */
     if (use_left) {
         buffer.size = left;
-        if(!!infilep) {
+        if (!!infilep) {
             bool res = files_read_bytes(infilep, buffer.buffer, buffer.size);
             if (!res) {
                 LOG_ERR("Error reading from input file.");
@@ -124,52 +118,30 @@ static tool_rc tpm2_hash_common(   ESYS_CONTEXT        *ectx,
         buffer.size = 0;
     }
 
-    return tpm2_sequence_complete(ectx, sequenceHandle,
-                ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE,
-                &buffer, hierarchy, result, validation);
+    return tpm2_sequence_complete(ectx, sequenceHandle, ESYS_TR_PASSWORD,
+            ESYS_TR_NONE, ESYS_TR_NONE, &buffer, hierarchy, result, validation);
 }
 
-tool_rc tpm2_hash_compute_data(
-            ESYS_CONTEXT        *ectx,
-            TPMI_ALG_HASH       halg,
-            TPMI_RH_HIERARCHY   hierarchy,
-            BYTE                *buffer,
-            UINT16              length,
-            TPM2B_DIGEST        **result,
-            TPMT_TK_HASHCHECK   **validation) {
+tool_rc tpm2_hash_compute_data(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
+        TPMI_RH_HIERARCHY hierarchy, BYTE *buffer, UINT16 length,
+        TPM2B_DIGEST **result, TPMT_TK_HASHCHECK **validation) {
 
     if (!buffer) {
         return tool_rc_general_error;
     }
 
-    return tpm2_hash_common(ectx,
-                            halg,
-                            hierarchy,
-                            NULL,
-                            buffer,
-                            length,
-                            result,
-                            validation);
+    return tpm2_hash_common(ectx, halg, hierarchy, NULL, buffer, length, result,
+        validation);
 }
 
-tool_rc tpm2_hash_file(
-        ESYS_CONTEXT        *ectx,
-        TPMI_ALG_HASH       halg,
-        TPMI_RH_HIERARCHY   hierarchy,
-        FILE                *input,
-        TPM2B_DIGEST        **result,
-        TPMT_TK_HASHCHECK   **validation) {
+tool_rc tpm2_hash_file(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
+        TPMI_RH_HIERARCHY hierarchy, FILE *input, TPM2B_DIGEST **result,
+        TPMT_TK_HASHCHECK **validation) {
 
     if (!input) {
         return tool_rc_general_error;
     }
 
-    return tpm2_hash_common(ectx,
-                            halg,
-                            hierarchy,
-                            input,
-                            NULL,
-                            0,
-                            result,
-                            validation);
+    return tpm2_hash_common(ectx, halg, hierarchy, input, NULL, 0, result,
+        validation);
 }
