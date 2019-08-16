@@ -27,10 +27,8 @@
  *  tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
-        tpm2_session *policy_session,
-        const char *raw_pcrs_file,
+        tpm2_session *policy_session, const char *raw_pcrs_file,
         TPML_PCR_SELECTION *pcr_selections);
-
 
 /**
  * Enables a signing authority to authorize policies
@@ -49,13 +47,10 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
  * @return
  *   tool_rc indicating status.
  */
-tool_rc tpm2_policy_build_policyauthorize(
-    ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session,
-    const char *policy_digest_path,
-    const char *policy_qualifier_path,
-    const char *verifying_pubkey_name_path,
-    const char *ticket_path);
+tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
+        tpm2_session *policy_session, const char *policy_digest_path,
+        const char *policy_qualifier_path,
+        const char *verifying_pubkey_name_path, const char *ticket_path);
 
 /**
  * Compounds policies in an OR fashion
@@ -71,7 +66,7 @@ tool_rc tpm2_policy_build_policyauthorize(
  *   tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, TPML_DIGEST *policy_list);
+        tpm2_session *policy_session, TPML_DIGEST *policy_list);
 
 /**
  * Enables secret (password/hmac) based authorization to a policy.
@@ -90,7 +85,7 @@ tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
  *  tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj);
+        tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj);
 
 /**
  * Retrieves the policy digest for a session via PolicyGetDigest.
@@ -103,8 +98,7 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
  * @return
  *  tool_rc indicating status.
  */
-tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *context,
-        tpm2_session *session,
+tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *context, tpm2_session *session,
         TPM2B_DIGEST **policy_digest);
 
 /**
@@ -112,7 +106,7 @@ tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *context,
  * provided.
  * @param ectx
  *  The Enhanced system api (ESAPI_) context.
-  * @param session
+ * @param session
  *  The policy session which is extended with PolicyPassword command code
  * @return
  *  tool_rc indicating status.
@@ -145,7 +139,7 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list);
  *  A tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
-    tpm2_session *session, uint32_t command_code);
+        tpm2_session *session, uint32_t command_code);
 
 /**
  * Policy to restrict tpm object authorization to specific locality
@@ -160,7 +154,7 @@ tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
  *   A tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
-    tpm2_session *session, TPMA_LOCALITY locality);
+        tpm2_session *session, TPMA_LOCALITY locality);
 
 /**
  * Policy to restrict tpm object authorization to specific duplication target
@@ -179,10 +173,8 @@ tool_rc tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
  *  A tool_rc indicating status.
  */
 tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
-    tpm2_session *session,
-    const char *obj_name_path,
-    const char *new_parent_name_path,
-    TPMI_YES_NO is_include_obj);
+        tpm2_session *session, const char *obj_name_path,
+        const char *new_parent_name_path, TPMI_YES_NO is_include_obj);
 
 /**
  * Policy tools need to:

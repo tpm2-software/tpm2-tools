@@ -31,8 +31,10 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
             total_indices_for_this_alg += tpm2_util_pop_count(group_val);
         }
 
-        if(pcr_values->count + total_indices_for_this_alg > ARRAY_LEN(pcr_values->digests)) {
-            LOG_ERR("Number of PCR is limited to %zu", ARRAY_LEN(pcr_values->digests));
+        if (pcr_values->count
+                + total_indices_for_this_alg> ARRAY_LEN(pcr_values->digests)) {
+            LOG_ERR("Number of PCR is limited to %zu",
+                    ARRAY_LEN(pcr_values->digests));
             return false;
         }
 
@@ -76,9 +78,8 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
     return true;
 }
 
-tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
-        tpm2_session *policy_session, const char *raw_pcrs_file,
-        TPML_PCR_SELECTION *pcr_selections) {
+tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
+        const char *raw_pcrs_file, TPML_PCR_SELECTION *pcr_selections) {
 
     TPML_DIGEST pcr_values = { .count = 0 };
 
@@ -119,10 +120,9 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
         UINT32 pcr_update_counter;
         TPML_DIGEST *pcr_val = NULL;
         // Read PCRs
-        tool_rc rc = tpm2_pcr_read(ectx,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        pcr_selections, &pcr_update_counter,
-                        NULL, &pcr_val);
+        tool_rc rc = tpm2_pcr_read(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+                ESYS_TR_NONE, pcr_selections, &pcr_update_counter,
+                NULL, &pcr_val);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -141,8 +141,7 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
     TPM2B_DIGEST pcr_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
     TPMI_ALG_HASH auth_hash = tpm2_session_get_authhash(policy_session);
 
-    result = tpm2_openssl_hash_pcr_values(auth_hash,
-                &pcr_values, &pcr_digest);
+    result = tpm2_openssl_hash_pcr_values(auth_hash, &pcr_values, &pcr_digest);
     if (!result) {
         LOG_ERR("Could not hash pcr values");
         return tool_rc_general_error;
@@ -151,18 +150,14 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx,
     // Call the PolicyPCR command
     ESYS_TR handle = tpm2_session_get_handle(policy_session);
 
-    return tpm2_policy_pcr(ectx, handle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &pcr_digest, pcr_selections);
+    return tpm2_policy_pcr(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &pcr_digest, pcr_selections);
 }
 
-tool_rc tpm2_policy_build_policyauthorize(
-    ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session,
-    const char *policy_digest_path,
-    const char *policy_qualifier_path,
-    const char *verifying_pubkey_name_path,
-    const char *ticket_path) {
+tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
+        tpm2_session *policy_session, const char *policy_digest_path,
+        const char *policy_qualifier_path,
+        const char *verifying_pubkey_name_path, const char *ticket_path) {
 
     unsigned long file_size = 0;
 
@@ -171,11 +166,9 @@ tool_rc tpm2_policy_build_policyauthorize(
         return tool_rc_general_error;
     }
 
-    TPM2B_DIGEST approved_policy = {
-        .size = (uint16_t)file_size
-    };
+    TPM2B_DIGEST approved_policy = { .size = (uint16_t) file_size };
     result = files_load_bytes_from_path(policy_digest_path,
-        approved_policy.buffer, &approved_policy.size);
+            approved_policy.buffer, &approved_policy.size);
     if (!result) {
         return tool_rc_general_error;
     }
@@ -185,20 +178,17 @@ tool_rc tpm2_policy_build_policyauthorize(
      */
     file_size = 0;
     if (policy_qualifier_path) {
-        result = files_get_file_size_path(policy_qualifier_path,
-            &file_size);
+        result = files_get_file_size_path(policy_qualifier_path, &file_size);
         if (!result) {
             return tool_rc_general_error;
         }
     }
 
-    TPM2B_NONCE policy_qualifier = {
-        .size = (uint16_t) file_size
-    };
+    TPM2B_NONCE policy_qualifier = { .size = (uint16_t) file_size };
 
     if (file_size != 0) {
         result = files_load_bytes_from_path(policy_qualifier_path,
-            policy_qualifier.buffer, &policy_qualifier.size);
+                policy_qualifier.buffer, &policy_qualifier.size);
         if (!result) {
             return tool_rc_general_error;
         }
@@ -215,22 +205,16 @@ tool_rc tpm2_policy_build_policyauthorize(
         return tool_rc_general_error;
     }
 
-    TPM2B_NAME key_sign = {
-        .size = (uint16_t)file_size
-    };
+    TPM2B_NAME key_sign = { .size = (uint16_t) file_size };
 
     result = files_load_bytes_from_path(verifying_pubkey_name_path,
-            key_sign.name,
-        &key_sign.size);
+            key_sign.name, &key_sign.size);
     if (!result) {
         return tool_rc_general_error;
     }
 
-    TPMT_TK_VERIFIED  check_ticket = {
-        .tag = TPM2_ST_VERIFIED,
-        .hierarchy = TPM2_RH_OWNER,
-        .digest = {0}
-    };
+    TPMT_TK_VERIFIED check_ticket = { .tag = TPM2_ST_VERIFIED, .hierarchy =
+            TPM2_RH_OWNER, .digest = { 0 } };
     result = tpm2_session_is_trial(policy_session);
     if (!result) {
         result = files_load_ticket(ticket_path, &check_ticket);
@@ -241,19 +225,17 @@ tool_rc tpm2_policy_build_policyauthorize(
     }
 
     ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
-    return tpm2_policy_authorize(ectx, sess_handle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    &approved_policy, &policy_qualifier, &key_sign,
-                    &check_ticket);
+    return tpm2_policy_authorize(ectx, sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &approved_policy, &policy_qualifier, &key_sign,
+            &check_ticket);
 }
 
 tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, TPML_DIGEST *policy_list) {
+        tpm2_session *policy_session, TPML_DIGEST *policy_list) {
 
     ESYS_TR sess_handle = tpm2_session_get_handle(policy_session);
-    return tpm2_policy_or(ectx, sess_handle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                    policy_list);
+    return tpm2_policy_or(ectx, sess_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, policy_list);
 }
 
 tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
@@ -261,52 +243,48 @@ tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(session);
 
-    return tpm2_policy_password(ectx, policy_session_handle,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
+    return tpm2_policy_password(ectx, policy_session_handle, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE);
 }
 
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
-    tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj) {
+        tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj) {
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
 
     return tpm2_policy_secret(ectx, auth_entity_obj, policy_session_handle);
 }
 
-tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx,
-        tpm2_session *session,
+tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx, tpm2_session *session,
         TPM2B_DIGEST **policy_digest) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    return tpm2_policy_getdigest(ectx, handle,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        policy_digest);
+    return tpm2_policy_getdigest(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, policy_digest);
 }
 
 tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
-    tpm2_session *session, uint32_t command_code) {
+        tpm2_session *session, uint32_t command_code) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    return tpm2_policy_command_code(ectx, handle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, command_code);
+    return tpm2_policy_command_code(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, command_code);
 }
 
 tool_rc tpm2_policy_build_policylocality(ESYS_CONTEXT *ectx,
-    tpm2_session *session, TPMA_LOCALITY locality) {
+        tpm2_session *session, TPMA_LOCALITY locality) {
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    return tpm2_policy_locality(ectx, handle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, locality);
+    return tpm2_policy_locality(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, locality);
 }
 
 tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
-    tpm2_session *session,
-    const char *obj_name_path,
-    const char *new_parent_name_path,
-    TPMI_YES_NO is_include_obj) {
+        tpm2_session *session, const char *obj_name_path,
+        const char *new_parent_name_path, TPMI_YES_NO is_include_obj) {
 
     TPM2B_NAME obj_name;
     bool result = true;
@@ -314,7 +292,7 @@ tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
     if (obj_name_path) {
         obj_name.size = sizeof(obj_name.name);
         result = files_load_bytes_from_path(obj_name_path, obj_name.name,
-        &obj_name.size);
+                &obj_name.size);
     } else {
         obj_name.size = 0;
     }
@@ -324,63 +302,57 @@ tool_rc tpm2_policy_build_policyduplicationselect(ESYS_CONTEXT *ectx,
         return tool_rc_general_error;
     }
 
-    TPM2B_NAME new_parent_name = {
-        .size = sizeof(new_parent_name.name)
-    };
+    TPM2B_NAME new_parent_name = { .size = sizeof(new_parent_name.name) };
 
     result = files_load_bytes_from_path(new_parent_name_path,
-            new_parent_name.name,
-        &new_parent_name.size);
+            new_parent_name.name, &new_parent_name.size);
     if (!result) {
         return tool_rc_general_error;
     }
 
     ESYS_TR handle = tpm2_session_get_handle(session);
 
-    return tpm2_policy_duplication_select(
-        ectx,
-        handle,
-        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-        &obj_name,
-        &new_parent_name,
-        is_include_obj);
+    return tpm2_policy_duplication_select(ectx, handle, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &obj_name, &new_parent_name,
+            is_include_obj);
 }
 
-static bool tpm2_policy_populate_digest_list(char *buf, TPML_DIGEST *policy_list,
-    TPMI_ALG_HASH hash) {
+static bool tpm2_policy_populate_digest_list(char *buf,
+        TPML_DIGEST *policy_list, TPMI_ALG_HASH hash) {
 
-        uint8_t hash_len = tpm2_alg_util_get_hash_size(hash);
-        if (!hash_len) {
-            return false;
-        }
+    uint8_t hash_len = tpm2_alg_util_get_hash_size(hash);
+    if (!hash_len) {
+        return false;
+    }
 
-        unsigned long file_size;
-        bool retval = files_get_file_size_path(buf, &file_size);
-        if (!retval) {
-            return false;
-        }
-        if (file_size != hash_len) {
-            return false;
-        }
+    unsigned long file_size;
+    bool retval = files_get_file_size_path(buf, &file_size);
+    if (!retval) {
+        return false;
+    }
+    if (file_size != hash_len) {
+        return false;
+    }
 
-        policy_list->digests[policy_list->count].size = hash_len;
-        /* All policy digests are expected to be of same hash len */
-        if (policy_list->count > 0 &&
-            policy_list->digests[policy_list->count].size !=
-            policy_list->digests[policy_list->count - 1].size) {
-            return false;
-        }
+    policy_list->digests[policy_list->count].size = hash_len;
+    /* All policy digests are expected to be of same hash len */
+    if (policy_list->count > 0
+            && policy_list->digests[policy_list->count].size
+                    != policy_list->digests[policy_list->count - 1].size) {
+        return false;
+    }
 
-        uint16_t policy_digest_size = hash_len;
-        retval = files_load_bytes_from_path(buf,
-            policy_list->digests[policy_list->count].buffer, &policy_digest_size);
-        if (!retval) {
-            return false;
-        }
+    uint16_t policy_digest_size = hash_len;
+    retval = files_load_bytes_from_path(buf,
+            policy_list->digests[policy_list->count].buffer,
+            &policy_digest_size);
+    if (!retval) {
+        return false;
+    }
 
-        policy_list->count++;
+    policy_list->count++;
 
-        return true;
+    return true;
 }
 
 bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
@@ -398,14 +370,14 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
     bool retval;
     TPMI_ALG_HASH hash = TPM2_ALG_ERROR;
 
-    for (j = 1, str1 = str; ; j++, str1 = NULL) {
+    for (j = 1, str1 = str;; j++, str1 = NULL) {
 
         token = strtok_r(str1, delimiter1, &saveptr1);
         if (token == NULL) {
             break;
         }
 
-        for (str2 = token; ; str2 = NULL) {
+        for (str2 = token;; str2 = NULL) {
 
             subtoken = strtok_r(str2, delimiter2, &saveptr2);
             if (subtoken == NULL) {
@@ -414,7 +386,8 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
 
             //Expecting one policy digest of same hash alg type for all policies
             if (j == 1) {
-                hash = tpm2_alg_util_from_optarg(subtoken, tpm2_alg_util_flags_hash);
+                hash = tpm2_alg_util_from_optarg(subtoken,
+                        tpm2_alg_util_flags_hash);
                 if (hash == TPM2_ALG_ERROR) {
                     return false;
                 }
@@ -422,7 +395,8 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
 
             //Multiple valid policy files
             if (j > 1) {
-                retval = tpm2_policy_populate_digest_list(subtoken, policy_list, hash);
+                retval = tpm2_policy_populate_digest_list(subtoken, policy_list,
+                        hash);
                 if (!retval) {
                     return false;
                 }
@@ -450,11 +424,10 @@ tool_rc tpm2_policy_tool_finish(ESYS_CONTEXT *ectx, tpm2_session *session,
     rc = tool_rc_general_error;
 
     if (save_path) {
-        bool result = files_save_bytes_to_file(save_path,
-                    policy_digest->buffer, policy_digest->size);
+        bool result = files_save_bytes_to_file(save_path, policy_digest->buffer,
+                policy_digest->size);
         if (!result) {
-            LOG_ERR("Failed to save policy digest into file \"%s\"",
-                    save_path);
+            LOG_ERR("Failed to save policy digest into file \"%s\"", save_path);
             goto error;
         }
     }
