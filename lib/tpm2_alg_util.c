@@ -815,12 +815,12 @@ bool pcr_parse_digest_list(char **argv, int len,
     return true;
 }
 
-static tool_rc get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT objectHandle,
+static tool_rc get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT object_handle,
         TPMI_ALG_PUBLIC *type) {
 
     TPM2B_PUBLIC *out_public;
 
-    tool_rc rc = tpm2_readpublic(ectx, objectHandle, ESYS_TR_NONE, ESYS_TR_NONE,
+    tool_rc rc = tpm2_readpublic(ectx, object_handle, ESYS_TR_NONE, ESYS_TR_NONE,
             ESYS_TR_NONE, &out_public, NULL, NULL);
     if (rc != tool_rc_success) {
         return rc;
@@ -834,11 +834,11 @@ static tool_rc get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT objectHandle,
 }
 
 tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
-        ESYS_TR keyHandle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
+        ESYS_TR key_handle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme) {
 
     TPM2_ALG_ID type;
-    tool_rc rc = get_key_type(context, keyHandle, &type);
+    tool_rc rc = get_key_type(context, key_handle, &type);
     if (rc != tool_rc_success) {
         return rc;
     }

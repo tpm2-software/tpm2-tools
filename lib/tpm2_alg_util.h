@@ -143,7 +143,7 @@ UINT16 tpm2_alg_util_get_hash_size(TPMI_ALG_HASH id);
  *  On error scheme is left unmodified.
  */
 tool_rc tpm2_alg_util_get_signature_scheme(ESYS_CONTEXT *context,
-        ESYS_TR keyHandle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
+        ESYS_TR key_handle, TPMI_ALG_HASH halg, TPMI_ALG_SIG_SCHEME sig_scheme,
         TPMT_SIG_SCHEME *scheme);
 
 /**
