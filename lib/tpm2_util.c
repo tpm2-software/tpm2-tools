@@ -16,7 +16,8 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
-bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest, TPM2B_DATA *extraData) {
+bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
+        TPM2B_DATA *extraData) {
     TPM2_GENERATED magic;
     TPMI_ST_ATTEST type;
     UINT16 nameSize = 0;
@@ -28,8 +29,10 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
         return false;
     }
 
-    memcpy(&magic, &quoted->attestationData[i], 4);i += 4;
-    memcpy(&type, &quoted->attestationData[i], 2);i += 2;
+    memcpy(&magic, &quoted->attestationData[i], 4);
+    i += 4;
+    memcpy(&type, &quoted->attestationData[i], 2);
+    i += 2;
     if (!tpm2_util_is_big_endian()) {
         magic = tpm2_util_endian_swap_32(magic);
         type = tpm2_util_endian_swap_16(type);
@@ -46,30 +49,33 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
     }
 
     // Qualified signer name (skip)
-    if (i+2 >= quoted->size) {
+    if (i + 2 >= quoted->size) {
         LOG_ERR("Malformed TPM2B_NAME value");
         return false;
     }
-    memcpy(&nameSize, &quoted->attestationData[i], 2);i += 2;
+    memcpy(&nameSize, &quoted->attestationData[i], 2);
+    i += 2;
     if (!tpm2_util_is_big_endian()) {
         nameSize = tpm2_util_endian_swap_16(nameSize);
     }
     i += nameSize;
 
     // Extra data (skip)
-    if (i+2 >= quoted->size) {
+    if (i + 2 >= quoted->size) {
         LOG_ERR("Malformed TPM2B_DATA value");
         return false;
     }
-    memcpy(&extraData->size, &quoted->attestationData[i], 2);i += 2;
+    memcpy(&extraData->size, &quoted->attestationData[i], 2);
+    i += 2;
     if (!tpm2_util_is_big_endian()) {
         extraData->size = tpm2_util_endian_swap_16(extraData->size);
     }
-    if (extraData->size+i > quoted->size) {
+    if (extraData->size + i > quoted->size) {
         LOG_ERR("Malformed extraData TPM2B_DATA value");
         return false;
     }
-    memcpy(&extraData->buffer, &quoted->attestationData[i], extraData->size);i += extraData->size;
+    memcpy(&extraData->buffer, &quoted->attestationData[i], extraData->size);
+    i += extraData->size;
 
     // Clock info (skip)
     i += 17;
@@ -89,31 +95,34 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
     UINT8 sos;
     TPMI_ALG_HASH hashAlg;
     UINT32 pcrSelCount = 0, j = 0;
-    if (i+4 >= quoted->size) {
+    if (i + 4 >= quoted->size) {
         LOG_ERR("Malformed TPML_PCR_SELECTION value");
         return false;
     }
-    memcpy(&pcrSelCount, &quoted->attestationData[i], 4);i += 4;
+    memcpy(&pcrSelCount, &quoted->attestationData[i], 4);
+    i += 4;
     if (!tpm2_util_is_big_endian()) {
         pcrSelCount = tpm2_util_endian_swap_32(pcrSelCount);
     }
     for (j = 0; j < pcrSelCount; j++) {
         // Hash
-        if (i+2 >= quoted->size) {
+        if (i + 2 >= quoted->size) {
             LOG_ERR("Malformed TPMS_PCR_SELECTION value");
             return false;
         }
-        memcpy(&hashAlg, &quoted->attestationData[i], 2);i += 2;
+        memcpy(&hashAlg, &quoted->attestationData[i], 2);
+        i += 2;
         if (!tpm2_util_is_big_endian()) {
             hashAlg = tpm2_util_endian_swap_16(hashAlg);
         }
 
         // SizeOfSelected
-        if (i+1 >= quoted->size) {
+        if (i + 1 >= quoted->size) {
             LOG_ERR("Malformed TPMS_PCR_SELECTION value");
             return false;
         }
-        memcpy(&sos, &quoted->attestationData[i], 1);i += 1;
+        memcpy(&sos, &quoted->attestationData[i], 1);
+        i += 1;
 
         // PCR Select (skip)
         i += sos;
@@ -124,16 +133,17 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
     }
 
     // Digest
-    if (i+2 >= quoted->size) {
+    if (i + 2 >= quoted->size) {
         LOG_ERR("Malformed TPM2B_DIGEST value");
         return false;
     }
-    memcpy(&digest->size, &quoted->attestationData[i], 2);i += 2;
+    memcpy(&digest->size, &quoted->attestationData[i], 2);
+    i += 2;
     if (!tpm2_util_is_big_endian()) {
         digest->size = tpm2_util_endian_swap_16(digest->size);
     }
 
-    if (digest->size+i > quoted->size) {
+    if (digest->size + i > quoted->size) {
         LOG_ERR("Malformed TPM2B_DIGEST value");
         return false;
     }
@@ -143,7 +153,8 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
 }
 
 // verify that the quote digest equals the digest we calculated
-bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest, TPM2B_DIGEST *pcrDigest) {
+bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest,
+        TPM2B_DIGEST *pcrDigest) {
 
     // Sanity check -- they should at least be same size!
     if (quoteDigest->size != pcrDigest->size) {
@@ -276,7 +287,7 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
 void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len) {
 
     size_t i;
-    for (i=0; i < len; i++) {
+    for (i = 0; i < len; i++) {
         fprintf(f, "%02x", data[i]);
     }
 }
@@ -291,7 +302,7 @@ void tpm2_util_hexdump(const BYTE *data, size_t len) {
 }
 
 bool tpm2_util_hexdump_file(FILE *fd, size_t len) {
-    BYTE* buff = (BYTE*)malloc(len);
+    BYTE* buff = (BYTE*) malloc(len);
     if (!buff) {
         LOG_ERR("malloc() failed");
         return false;
@@ -310,11 +321,10 @@ bool tpm2_util_hexdump_file(FILE *fd, size_t len) {
     return true;
 }
 
-bool tpm2_util_print_tpm2b_file(FILE *fd)
-{
+bool tpm2_util_print_tpm2b_file(FILE *fd) {
     UINT16 len;
     bool res = files_read_16(fd, &len);
-    if(!res) {
+    if (!res) {
         LOG_ERR("File read failed");
         return false;
     }
@@ -389,10 +399,10 @@ UINT32 tpm2_util_pop_count(UINT32 data) {
         {0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4};
 
     UINT8 count = 0;
-    UINT8 *d = (UINT8 *)&data;
+    UINT8 *d = (UINT8 *) &data;
 
     size_t i;
-    for (i=0; i < sizeof(data); i++) {
+    for (i = 0; i < sizeof(data); i++) {
         count += bits_per_nibble[d[i] & 0x0f];
         count += bits_per_nibble[d[i] >> 4];
     }
@@ -411,34 +421,39 @@ struct tpm2_util_keydata {
     } entries[2];
 };
 
-static void tpm2_util_public_to_keydata(TPM2B_PUBLIC *public, tpm2_util_keydata *keydata) {
+static void tpm2_util_public_to_keydata(TPM2B_PUBLIC *public,
+        tpm2_util_keydata *keydata) {
 
     switch (public->publicArea.type) {
     case TPM2_ALG_RSA:
         keydata->len = 1;
-        keydata->entries[0].name = tpm2_alg_util_algtostr(public->publicArea.type, tpm2_alg_util_flags_any);
-        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.rsa;
+        keydata->entries[0].name = tpm2_alg_util_algtostr(
+            public->publicArea.type, tpm2_alg_util_flags_any);
+        keydata->entries[0].value = (TPM2B *) &public->publicArea.unique.rsa;
         return;
     case TPM2_ALG_KEYEDHASH:
         keydata->len = 1;
-        keydata->entries[0].name = tpm2_alg_util_algtostr(public->publicArea.type, tpm2_alg_util_flags_any);
-        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.keyedHash;
+        keydata->entries[0].name = tpm2_alg_util_algtostr(
+            public->publicArea.type, tpm2_alg_util_flags_any);
+        keydata->entries[0].value =
+                (TPM2B *) &public->publicArea.unique.keyedHash;
         return;
     case TPM2_ALG_SYMCIPHER:
         keydata->len = 1;
-        keydata->entries[0].name = tpm2_alg_util_algtostr(public->publicArea.type, tpm2_alg_util_flags_any);
-        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.sym;
+        keydata->entries[0].name = tpm2_alg_util_algtostr(
+            public->publicArea.type, tpm2_alg_util_flags_any);
+        keydata->entries[0].value = (TPM2B *) &public->publicArea.unique.sym;
         return;
     case TPM2_ALG_ECC:
         keydata->len = 2;
         keydata->entries[0].name = "x";
-        keydata->entries[0].value = (TPM2B *)&public->publicArea.unique.ecc.x;
+        keydata->entries[0].value = (TPM2B *) &public->publicArea.unique.ecc.x;
         keydata->entries[1].name = "y";
-        keydata->entries[1].value = (TPM2B *)&public->publicArea.unique.ecc.y;
+        keydata->entries[1].value = (TPM2B *) &public->publicArea.unique.ecc.y;
         return;
     default:
         LOG_WARN("The algorithm type(0x%4.4x) is not supported",
-                public->publicArea.type);
+            public->publicArea.type);
     }
 
     return;
@@ -466,7 +481,8 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent) {
 static void print_alg_raw(const char *name, TPM2_ALG_ID alg, const char *indent) {
 
     tpm2_tool_output("%s%s:\n", indent, name);
-    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(alg, tpm2_alg_util_flags_any));
+    tpm2_tool_output("%s  value: %s\n", indent,
+            tpm2_alg_util_algtostr(alg, tpm2_alg_util_flags_any));
     tpm2_tool_output("%s  raw: 0x%x\n", indent, alg);
 }
 
@@ -506,7 +522,8 @@ static void print_ecc_scheme(TPMT_ECC_SCHEME *scheme, const char *indent) {
     print_alg_raw("scheme-halg", scheme->details.oaep.hashAlg, indent);
 
     if (scheme->scheme == TPM2_ALG_ECDAA) {
-        tpm2_tool_output("%sscheme-count: %u\n", indent, scheme->details.ecdaa.count);
+        tpm2_tool_output("%sscheme-count: %u\n", indent,
+                scheme->details.ecdaa.count);
     }
 }
 
@@ -527,41 +544,59 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     }
 
     tpm2_tool_output("%sname-alg:\n", indent);
-    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(public->publicArea.nameAlg, tpm2_alg_util_flags_any));
+    tpm2_tool_output("%s  value: %s\n", indent,
+            tpm2_alg_util_algtostr(public->publicArea.nameAlg,
+                    tpm2_alg_util_flags_any));
     tpm2_tool_output("%s  raw: 0x%x\n", indent, public->publicArea.nameAlg);
 
     tpm2_util_tpma_object_to_yaml(public->publicArea.objectAttributes, indent);
 
     tpm2_tool_output("%stype:\n", indent);
-    tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(public->publicArea.type, tpm2_alg_util_flags_any));
+    tpm2_tool_output("%s  value: %s\n", indent,
+            tpm2_alg_util_algtostr(public->publicArea.type,
+                    tpm2_alg_util_flags_any));
     tpm2_tool_output("%s  raw: 0x%x\n", indent, public->publicArea.type);
 
-    switch(public->publicArea.type) {
+    switch (public->publicArea.type) {
     case TPM2_ALG_SYMCIPHER: {
         TPMS_SYMCIPHER_PARMS *s = &public->publicArea.parameters.symDetail;
         print_sym(&s->sym, indent);
-    } break;
+    }
+        break;
     case TPM2_ALG_KEYEDHASH: {
         TPMS_KEYEDHASH_PARMS *k = &public->publicArea.parameters.keyedHashDetail;
         tpm2_tool_output("%salgorithm: \n", indent);
-        tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(k->scheme.scheme, tpm2_alg_util_flags_any));
+        tpm2_tool_output("%s  value: %s\n", indent,
+                tpm2_alg_util_algtostr(k->scheme.scheme,
+                        tpm2_alg_util_flags_any));
         tpm2_tool_output("%s  raw: 0x%x\n", indent, k->scheme.scheme);
 
         if (k->scheme.scheme == TPM2_ALG_HMAC) {
             tpm2_tool_output("%shash-alg:\n", indent);
-            tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(k->scheme.details.hmac.hashAlg, tpm2_alg_util_flags_any));
-            tpm2_tool_output("%s  raw: 0x%x\n", indent, k->scheme.details.hmac.hashAlg);
+            tpm2_tool_output("%s  value: %s\n", indent,
+                    tpm2_alg_util_algtostr(k->scheme.details.hmac.hashAlg,
+                            tpm2_alg_util_flags_any));
+            tpm2_tool_output("%s  raw: 0x%x\n", indent,
+                    k->scheme.details.hmac.hashAlg);
         } else if (k->scheme.scheme == TPM2_ALG_XOR) {
             tpm2_tool_output("%shash-alg:\n", indent);
-            tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(k->scheme.details.exclusiveOr.hashAlg, tpm2_alg_util_flags_any));
-            tpm2_tool_output("%s  raw: 0x%x\n", indent, k->scheme.details.exclusiveOr.hashAlg);
+            tpm2_tool_output("%s  value: %s\n", indent,
+                    tpm2_alg_util_algtostr(
+                            k->scheme.details.exclusiveOr.hashAlg,
+                            tpm2_alg_util_flags_any));
+            tpm2_tool_output("%s  raw: 0x%x\n", indent,
+                    k->scheme.details.exclusiveOr.hashAlg);
 
             tpm2_tool_output("%skdfa-alg:\n", indent);
-            tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_algtostr(k->scheme.details.exclusiveOr.kdf, tpm2_alg_util_flags_any));
-            tpm2_tool_output("%s  raw: 0x%x\n", indent, k->scheme.details.exclusiveOr.kdf);
+            tpm2_tool_output("%s  value: %s\n", indent,
+                    tpm2_alg_util_algtostr(k->scheme.details.exclusiveOr.kdf,
+                            tpm2_alg_util_flags_any));
+            tpm2_tool_output("%s  raw: 0x%x\n", indent,
+                    k->scheme.details.exclusiveOr.kdf);
         }
 
-    } break;
+    }
+        break;
     case TPM2_ALG_RSA: {
         TPMS_RSA_PARMS *r = &public->publicArea.parameters.rsaDetail;
         tpm2_tool_output("%sexponent: 0x%x\n", indent, r->exponent);
@@ -570,12 +605,14 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
         print_rsa_scheme(&r->scheme, indent);
 
         print_sym(&r->symmetric, indent);
-    } break;
+    }
+        break;
     case TPM2_ALG_ECC: {
         TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
 
         tpm2_tool_output("%scurve-id:\n", indent);
-        tpm2_tool_output("%s  value: %s\n", indent, tpm2_alg_util_ecc_to_str(e->curveID));
+        tpm2_tool_output("%s  value: %s\n", indent,
+                tpm2_alg_util_ecc_to_str(e->curveID));
         tpm2_tool_output("%s  raw: 0x%x\n", indent, e->curveID);
 
         print_kdf_scheme(&e->kdf, indent);
@@ -583,16 +620,17 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
         print_ecc_scheme(&e->scheme, indent);
 
         print_sym(&e->symmetric, indent);
-    } break;
+    }
+        break;
     }
 
-
-    tpm2_util_keydata keydata = TPM2_UTIL_KEYDATA_INIT;
+    tpm2_util_keydata keydata = TPM2_UTIL_KEYDATA_INIT
+    ;
     tpm2_util_public_to_keydata(public, &keydata);
 
     UINT16 i;
     /* if no keydata len will be 0 and it wont print */
-    for (i=0; i < keydata.len; i++) {
+    for (i = 0; i < keydata.len; i++) {
         tpm2_tool_output("%s%s: ", indent, keydata.entries[i].name);
         tpm2_util_print_tpm2b(keydata.entries[i].value);
         tpm2_tool_output("%s\n", indent);
@@ -601,13 +639,14 @@ void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent) {
     if (public->publicArea.authPolicy.size) {
         tpm2_tool_output("%sauthorization policy: ", indent);
         tpm2_util_hexdump(public->publicArea.authPolicy.buffer,
-                public->publicArea.authPolicy.size);
+            public->publicArea.authPolicy.size);
         tpm2_tool_output("%s\n", indent);
     }
 }
 
-bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,
-        TPM2B_DIGEST *seed, TPM2B_DIGEST *unique_data) {
+bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg,
+        TPM2B_PRIVATE_VENDOR_SPECIFIC *key, TPM2B_DIGEST *seed,
+        TPM2B_DIGEST *unique_data) {
 
     TPM2B_MAX_BUFFER buf = { .size = key->size + seed->size };
     if (buf.size > sizeof(buf.buffer)) {
@@ -616,8 +655,7 @@ bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC
     }
 
     memcpy(buf.buffer, seed->buffer, seed->size);
-    memcpy(&buf.buffer[seed->size], key->buffer,
-        key->size);
+    memcpy(&buf.buffer[seed->size], key->buffer, key->size);
 
     digester d = tpm2_openssl_halg_to_digester(name_alg);
     if (!d) {
@@ -656,8 +694,8 @@ tool_rc tpm2_util_sys_handle_to_esys_handle(ESYS_CONTEXT *context,
         return tool_rc_success;
     }
 
-    return tpm2_from_tpm_public(context, sys_handle,
-                    ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, esys_handle);
+    return tpm2_from_tpm_public(context, sys_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, esys_handle);
 }
 
 tool_rc tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
@@ -673,15 +711,14 @@ tool_rc tpm2_util_esys_handle_to_sys_handle(ESYS_CONTEXT *context,
     TPM2_HANDLE hndl;
     // TODO: this doesn't produce handles that _look_ right
     rc = tpm2_mu_tpm2_handle_unmarshal(loaded_name->name, loaded_name->size,
-                &offset, &hndl);
+            &offset, &hndl);
     if (rc != tool_rc_success) {
         goto outname;
     }
 
     *sys_handle = hndl;
 
-outname:
-    free(loaded_name);
+    outname: free(loaded_name);
 
     return rc;
 }
@@ -710,51 +747,51 @@ char *tpm2_util_getenv(const char *name) {
  */
 
 static bool filter_hierarchy_handles(TPMI_RH_PROVISION hierarchy,
-    tpm2_handle_flags flags) {
+        tpm2_handle_flags flags) {
 
-    switch(hierarchy) {
-        case TPM2_RH_OWNER:
-            if ( !(flags & TPM2_HANDLE_FLAGS_O) ) {
-                LOG_ERR("Unexpected handle - TPM2_RH_OWNER");
-                return false;
-            }
-            break;
-        case TPM2_RH_PLATFORM:
-            if ( !(flags & TPM2_HANDLE_FLAGS_P) ) {
-                LOG_ERR("Unexpected handle - TPM2_RH_PLATFORM");
-                return false;
-            }
-            break;
-        case TPM2_RH_ENDORSEMENT:
-            if ( !(flags & TPM2_HANDLE_FLAGS_E) ) {
-                LOG_ERR("Unexpected handle - TPM2_RH_ENDORSEMENT");
-                return false;
-            }
-            break;
-        case TPM2_RH_NULL:
-            if ( !(flags & TPM2_HANDLE_FLAGS_N) ) {
-                LOG_ERR("Unexpected handle - TPM2_RH_NULL");
-                return false;
-            }
-            break;
-        case TPM2_RH_LOCKOUT:
-            if ( !(flags & TPM2_HANDLE_FLAGS_L) ) {
-                LOG_ERR("Unexpected handle - TPM2_RH_LOCKOUT");
-                return false;
-            }
-            break;
-        default: //If specified a random offset to the permanent handle range
-            if (flags == TPM2_HANDLE_ALL_W_NV ||
-                flags == TPM2_HANDLE_FLAGS_NONE) {
-                return true;
-            }
+    switch (hierarchy) {
+    case TPM2_RH_OWNER:
+        if (!(flags & TPM2_HANDLE_FLAGS_O)) {
+            LOG_ERR("Unexpected handle - TPM2_RH_OWNER");
             return false;
+        }
+        break;
+    case TPM2_RH_PLATFORM:
+        if (!(flags & TPM2_HANDLE_FLAGS_P)) {
+            LOG_ERR("Unexpected handle - TPM2_RH_PLATFORM");
+            return false;
+        }
+        break;
+    case TPM2_RH_ENDORSEMENT:
+        if (!(flags & TPM2_HANDLE_FLAGS_E)) {
+            LOG_ERR("Unexpected handle - TPM2_RH_ENDORSEMENT");
+            return false;
+        }
+        break;
+    case TPM2_RH_NULL:
+        if (!(flags & TPM2_HANDLE_FLAGS_N)) {
+            LOG_ERR("Unexpected handle - TPM2_RH_NULL");
+            return false;
+        }
+        break;
+    case TPM2_RH_LOCKOUT:
+        if (!(flags & TPM2_HANDLE_FLAGS_L)) {
+            LOG_ERR("Unexpected handle - TPM2_RH_LOCKOUT");
+            return false;
+        }
+        break;
+    default: //If specified a random offset to the permanent handle range
+        if (flags == TPM2_HANDLE_ALL_W_NV || flags == TPM2_HANDLE_FLAGS_NONE) {
+            return true;
+        }
+        return false;
     }
 
     return true;
 }
 
-static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_handle_flags flags) {
+static bool filter_handles(TPMI_RH_PROVISION *hierarchy,
+        tpm2_handle_flags flags) {
 
     TPM2_RH range = *hierarchy & TPM2_HR_RANGE_MASK;
 
@@ -764,8 +801,8 @@ static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_handle_flags flags
      */
     if (range == 0) {
         if (flags & TPM2_HANDLE_FLAGS_NV) {
-           *hierarchy += TPM2_HR_NV_INDEX;
-           range = *hierarchy & TPM2_HR_RANGE_MASK;
+            *hierarchy += TPM2_HR_NV_INDEX;
+            range = *hierarchy & TPM2_HR_RANGE_MASK;
         } else if (flags & TPM2_HANDLE_FLAGS_PCR) {
             *hierarchy += TPM2_HR_PCR;
             range = *hierarchy & TPM2_HR_RANGE_MASK;
@@ -788,7 +825,7 @@ static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_handle_flags flags
         }
         return true;
     } else if (range == TPM2_HR_PCR) {
-        if(!(flags & TPM2_HANDLE_FLAGS_PCR)) {
+        if (!(flags & TPM2_HANDLE_FLAGS_PCR)) {
             LOG_ERR("PCR handles are not supported by this command.");
             return false;
         }
@@ -811,8 +848,8 @@ static bool filter_handles(TPMI_RH_PROVISION *hierarchy, tpm2_handle_flags flags
             LOG_ERR("Persistent handles are not supported by this command.");
             return false;
         }
-        if (*hierarchy < TPM2_PERSISTENT_FIRST ||
-                *hierarchy > TPM2_PERSISTENT_LAST) {
+        if (*hierarchy < TPM2_PERSISTENT_FIRST
+                || *hierarchy > TPM2_PERSISTENT_LAST) {
             LOG_ERR("Persistent handle out of range.");
             return false;
         }
@@ -830,8 +867,7 @@ bool tpm2_util_handle_from_optarg(const char *value,
         return false;
     }
 
-    if ((flags & TPM2_HANDLE_FLAGS_NV) &&
-            (flags & TPM2_HANDLE_FLAGS_PCR)) {
+    if ((flags & TPM2_HANDLE_FLAGS_NV) && (flags & TPM2_HANDLE_FLAGS_PCR)) {
         LOG_ERR("Cannot specify NV and PCR index together");
         return false;
     }
@@ -903,7 +939,7 @@ bool tpm2_util_handle_from_optarg(const char *value,
         }
 
         size_t len = strlen(print_flags);
-        if (print_flags[len -1] == '|') {
+        if (print_flags[len - 1] == '|') {
             len--;
             print_flags[len] = '\0';
         }
@@ -918,11 +954,9 @@ bool tpm2_util_handle_from_optarg(const char *value,
             snprintf(msg, sizeof(msg), "expected %s or ", print_flags);
         }
 
-        strncat(msg, "a handle number",
-                sizeof(msg) - strlen(msg) - 1);
+        strncat(msg, "a handle number", sizeof(msg) - strlen(msg) - 1);
 
-        LOG_ERR("Incorrect handle value, got: \"%s\", expected %s",
-                 value, msg);
+        LOG_ERR("Incorrect handle value, got: \"%s\", expected %s", value, msg);
         return false;
     }
 
@@ -933,8 +967,7 @@ bool tpm2_util_handle_from_optarg(const char *value,
 
     bool res = filter_handles(hierarchy, flags);
     if (!res) {
-        LOG_ERR("Unknown or unsupported handle, got: \"%s\"",
-                 value);
+        LOG_ERR("Unknown or unsupported handle, got: \"%s\"", value);
     }
     return res;
 }
@@ -958,8 +991,8 @@ bool tpm2_util_get_label(const char *value, TPM2B_DATA *label) {
             return false;
         }
         if (ferror(f)) {
-            LOG_ERR("reading label file \"%s\" error: %s",
-                    value, strerror(errno));
+            LOG_ERR("reading label file \"%s\" error: %s", value,
+                    strerror(errno));
             fclose(f);
             return false;
         }
@@ -975,8 +1008,8 @@ bool tpm2_util_get_label(const char *value, TPM2B_DATA *label) {
 
     size_t len = strlen(value);
     if (len > sizeof(label->buffer) - 1) {
-        LOG_ERR("label file \"%s\" larger than expected. Expected %zu",
-                value, sizeof(label->buffer) - 1);
+        LOG_ERR("label file \"%s\" larger than expected. Expected %zu", value,
+                sizeof(label->buffer) - 1);
         return false;
     }
 
