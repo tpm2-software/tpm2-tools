@@ -41,7 +41,7 @@ bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
  *  True on success or false otherwise.
  */
 bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
-	const char *path, UINT16 *size, BYTE *buf);
+        const char *path, UINT16 *size, BYTE *buf);
 
 /**
  * Similar to files_write_bytes(), in that it writes an array of bytes to disk,
@@ -86,8 +86,7 @@ tool_rc files_save_tpm_context_to_path(ESYS_CONTEXT *context, ESYS_TR handle,
  * @return
  *  tool_rc indicating status.
  */
-tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *context,
-        ESYS_TR handle,
+tool_rc files_save_tpm_context_to_file(ESYS_CONTEXT *context, ESYS_TR handle,
         FILE *stream);
 
 /**
@@ -271,7 +270,8 @@ bool files_load_private(const char *path, TPM2B_PRIVATE *private);
  * @return
  *  true on success, false on error.
  */
-bool files_save_encrypted_seed(TPM2B_ENCRYPTED_SECRET *encrypted_seed, const char *path);
+bool files_save_encrypted_seed(TPM2B_ENCRYPTED_SECRET *encrypted_seed,
+        const char *path);
 
 /**
  * Loads a TPM2B_ENCRYPTED_SECRET from disk.
@@ -282,8 +282,8 @@ bool files_save_encrypted_seed(TPM2B_ENCRYPTED_SECRET *encrypted_seed, const cha
  * @return
  *  true on success, false on error.
  */
-bool files_load_encrypted_seed(const char *path, TPM2B_ENCRYPTED_SECRET *encrypted_seed);
-
+bool files_load_encrypted_seed(const char *path,
+        TPM2B_ENCRYPTED_SECRET *encrypted_seed);
 
 /**
  * Checks a file for existence.
