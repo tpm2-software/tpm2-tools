@@ -21,7 +21,7 @@ union tpm2_command_header {
         UINT32 size; //
         TPM2_CC command_code;
         UINT8 data[];
-    } __attribute__((packed));
+    }__attribute__((packed));
     UINT8 bytes[0];
 };
 
@@ -32,7 +32,7 @@ union tpm2_response_header {
         UINT32 size;
         TSS2_RC response_code;
         UINT8 data[];
-    } __attribute__((packed));
+    }__attribute__((packed));
     UINT8 bytes[0];
 };
 
@@ -44,7 +44,8 @@ union tpm2_response_header {
  *  A converted byte array.
  */
 static inline tpm2_command_header *tpm2_command_header_from_bytes(UINT8 *h) {
-    return (tpm2_command_header *)h;
+
+    return (tpm2_command_header *) h;
 }
 
 /**
@@ -55,7 +56,8 @@ static inline tpm2_command_header *tpm2_command_header_from_bytes(UINT8 *h) {
  *  A converted byte array.
  */
 static inline tpm2_response_header *tpm2_response_header_from_bytes(UINT8 *h) {
-    return (tpm2_response_header *)h;
+
+    return (tpm2_response_header *) h;
 }
 
 /**
@@ -64,7 +66,8 @@ static inline tpm2_response_header *tpm2_response_header_from_bytes(UINT8 *h) {
  * @param command
  * @return
  */
-static inline TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(tpm2_command_header *command) {
+static inline TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(
+        tpm2_command_header *command) {
 
     return tpm2_util_ntoh_16(command->tag);
 }
@@ -76,7 +79,8 @@ static inline TPMI_ST_COMMAND_TAG tpm2_command_header_get_tag(tpm2_command_heade
  * @param include_header
  * @return
  */
-static inline UINT32 tpm2_command_header_get_size(tpm2_command_header *command, bool include_header) {
+static inline UINT32 tpm2_command_header_get_size(tpm2_command_header *command,
+        bool include_header) {
 
     UINT32 size = tpm2_util_ntoh_32(command->size);
     return include_header ? size : size - TPM2_COMMAND_HEADER_SIZE;
@@ -112,7 +116,8 @@ static inline UINT8 *tpm2_command_header_get_data(tpm2_command_header *command) 
  * @param include_header
  * @return
  */
-static inline UINT32 tpm2_response_header_get_size(tpm2_response_header *response, bool include_header) {
+static inline UINT32 tpm2_response_header_get_size(
+        tpm2_response_header *response, bool include_header) {
 
     UINT32 size = tpm2_util_ntoh_32(response->size);
     return include_header ? size : size - TPM2_RESPONSE_HEADER_SIZE;
@@ -124,7 +129,8 @@ static inline UINT32 tpm2_response_header_get_size(tpm2_response_header *respons
  * @param response_header
  * @return
  */
-static inline TPM2_ST tpm2_response_header_get_tag(tpm2_response_header *response) {
+static inline TPM2_ST tpm2_response_header_get_tag(
+        tpm2_response_header *response) {
 
     return tpm2_util_ntoh_16(response->tag);
 }
@@ -135,7 +141,8 @@ static inline TPM2_ST tpm2_response_header_get_tag(tpm2_response_header *respons
  * @param response_header
  * @return
  */
-static inline TSS2_RC tpm2_response_header_get_code(tpm2_response_header *response) {
+static inline TSS2_RC tpm2_response_header_get_code(
+        tpm2_response_header *response) {
 
     return tpm2_util_ntoh_32(response->response_code);
 }
@@ -146,8 +153,8 @@ static inline TSS2_RC tpm2_response_header_get_code(tpm2_response_header *respon
  *  The response_header to check for following data.
  * @return The response data or NULL if not present.
  */
-static inline UINT8 *tpm2_response_header_get_data(tpm2_response_header *response) {
-
+static inline UINT8 *tpm2_response_header_get_data(
+        tpm2_response_header *response) {
 
     UINT32 size = tpm2_response_header_get_size(response, false);
     return size ? response->data : NULL;
