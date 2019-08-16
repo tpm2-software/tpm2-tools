@@ -46,8 +46,8 @@
 
 #define TPMT_TK_CREATION_EMPTY_INIT { \
         .tag = 0, \
-		.hierarchy = 0, \
-		.digest = TPM2B_EMPTY_INIT \
+        .hierarchy = 0, \
+        .digest = TPM2B_EMPTY_INIT \
     }
 
 #define TPML_PCR_SELECTION_EMPTY_INIT { \
@@ -59,9 +59,9 @@
     } // ignore data since capability is 0.
 
 #define TPMT_TK_HASHCHECK_EMPTY_INIT { \
-		.tag = 0, \
-		.hierarchy = 0, \
-		.digest = TPM2B_EMPTY_INIT \
+        .tag = 0, \
+        .hierarchy = 0, \
+        .digest = TPM2B_EMPTY_INIT \
     }
 
 #define TSS2L_SYS_AUTH_COMMAND_INIT(cnt, array) { \
@@ -87,7 +87,8 @@ typedef struct {
     BYTE buffer[0];
 } TPM2B;
 
-int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE *byteBuffer);
+int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
+        BYTE *byteBuffer);
 
 /**
  * Pulls the TPM2B_DIGEST out of a TPM2B_ATTEST quote.
@@ -100,7 +101,8 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength, BYTE 
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest, TPM2B_DATA *extraData);
+bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
+        TPM2B_DATA *extraData);
 
 /**
  * Compares two digests to ensure they are equal (for validation).
@@ -111,7 +113,8 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest, TPM2B_DIGEST *pcrDigest);
+bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest,
+        TPM2B_DIGEST *pcrDigest);
 
 /**
  * Appends a TPM2B buffer to a MAX buffer.
@@ -228,7 +231,8 @@ static inline void _tpm2_util_print_tpm2b2(FILE *out, TPM2B *buffer) {
  * @param pcr_selection the TPMS_PCR_SELECTION structure to check pcr against.
  * @param pcr the PCR ID to check selection status of.
  */
-static inline bool tpm2_util_is_pcr_select_bit_set(TPMS_PCR_SELECTION *pcr_selection, UINT32 pcr) {
+static inline bool tpm2_util_is_pcr_select_bit_set(
+        TPMS_PCR_SELECTION *pcr_selection, UINT32 pcr) {
     return (pcr_selection->pcrSelect[((pcr) / 8)] & (1 << ((pcr) % 8)));
 }
 
@@ -328,7 +332,6 @@ void print_yaml_indent(size_t indent_count);
  */
 void tpm2_util_public_to_yaml(TPM2B_PUBLIC *public, char *indent);
 
-
 /**
  * Convert a TPMA_OBJECT to a yaml format and output if not quiet.
  * @param obj
@@ -354,9 +357,9 @@ void tpm2_util_tpma_object_to_yaml(TPMA_OBJECT obj, char *indent);
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg, TPM2B_PRIVATE_VENDOR_SPECIFIC *key,
-        TPM2B_DIGEST *seed, TPM2B_DIGEST *unique);
-
+bool tpm2_util_calc_unique(TPMI_ALG_HASH name_alg,
+        TPM2B_PRIVATE_VENDOR_SPECIFIC *key, TPM2B_DIGEST *seed,
+        TPM2B_DIGEST *unique);
 
 /**
  * Uses TR_FromTPMPublic() to construct the ESYS_TR object corresponding
@@ -399,19 +402,19 @@ char *tpm2_util_getenv(const char *name);
 typedef enum tpm2_handle_flags tpm2_handle_flags;
 enum tpm2_handle_flags {
     TPM2_HANDLE_FLAGS_NONE = 0,
-    TPM2_HANDLE_FLAGS_O              = 1 << 0,
-    TPM2_HANDLE_FLAGS_P              = 1 << 1,
-    TPM2_HANDLE_FLAGS_E              = 1 << 2,
-    TPM2_HANDLE_FLAGS_N              = 1 << 3,
-    TPM2_HANDLE_FLAGS_L              = 1 << 4,
+    TPM2_HANDLE_FLAGS_O = 1 << 0,
+    TPM2_HANDLE_FLAGS_P = 1 << 1,
+    TPM2_HANDLE_FLAGS_E = 1 << 2,
+    TPM2_HANDLE_FLAGS_N = 1 << 3,
+    TPM2_HANDLE_FLAGS_L = 1 << 4,
     TPM2_HANDLE_FLAGS_ALL_HIERACHIES = 0x1F,
-    TPM2_HANDLES_FLAGS_TRANSIENT     = 1 << 5,
-    TPM2_HANDLES_FLAGS_PERSISTENT    = 1 << 6,
+    TPM2_HANDLES_FLAGS_TRANSIENT = 1 << 5,
+    TPM2_HANDLES_FLAGS_PERSISTENT = 1 << 6,
     /* bits 7 and 8 are mutually exclusive */
-    TPM2_HANDLE_FLAGS_NV             = 1 << 7,
-    TPM2_HANDLE_ALL_W_NV             = 0xFF,
-    TPM2_HANDLE_FLAGS_PCR            = 1 << 8,
-    TPM2_HANDLE_ALL_W_PCR            = 0x17F,
+    TPM2_HANDLE_FLAGS_NV = 1 << 7,
+    TPM2_HANDLE_ALL_W_NV = 0xFF,
+    TPM2_HANDLE_FLAGS_PCR = 1 << 8,
+    TPM2_HANDLE_ALL_W_PCR = 0x17F,
 };
 
 /**
