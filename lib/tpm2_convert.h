@@ -39,7 +39,8 @@ tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label);
  *
  * LOG_ERR is used to communicate errors.
  */
-bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path);
+bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, const char *path);
 
 /**
  * Parses the given command line signature format option string and returns
@@ -58,8 +59,8 @@ tpm2_convert_sig_fmt tpm2_convert_sig_fmt_from_optarg(const char *label);
  *
  * LOG_ERR is used to communicate errors.
  */
-bool tpm2_convert_sig_save(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format,
-        const char *path);
+bool tpm2_convert_sig_save(TPMT_SIGNATURE *signature,
+        tpm2_convert_sig_fmt format, const char *path);
 
 /**
  * Like tpm2_convert_save with the "plain" signature option.
@@ -89,7 +90,8 @@ UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature);
  * @return
  *  true on success, false on error.
  */
-bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format, TPMI_ALG_SIG_SCHEME sig_alg,
-        TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature);
+bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format,
+        TPMI_ALG_SIG_SCHEME sig_alg, TPMI_ALG_HASH halg,
+        TPMT_SIGNATURE *signature);
 
 #endif /* CONVERSION_H */
