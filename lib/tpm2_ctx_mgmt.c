@@ -13,19 +13,19 @@ tool_rc tpm2_ctx_mgmt_evictcontrol(ESYS_CONTEXT *ectx, ESYS_TR auth,
         return rc;
     }
 
-    ESYS_TR outHandle;
+    ESYS_TR out_handle;
 
     TSS2_RC rval = Esys_EvictControl(ectx, auth, objhandle, shandle1,
-            ESYS_TR_NONE, ESYS_TR_NONE, phandle, &outHandle);
+            ESYS_TR_NONE, ESYS_TR_NONE, phandle, &out_handle);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_EvictControl, rval);
         return tool_rc_from_tpm(rval);
     }
 
     if (out_tr) {
-        *out_tr = outHandle;
+        *out_tr = out_handle;
         return tool_rc_success;
     }
 
-    return tpm2_close(ectx, &outHandle);
+    return tpm2_close(ectx, &out_handle);
 }
