@@ -17,10 +17,10 @@
 #include "tpm2_util.h"
 
 bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
-        TPM2B_DATA *extraData) {
+        TPM2B_DATA *extra_data) {
     TPM2_GENERATED magic;
     TPMI_ST_ATTEST type;
-    UINT16 nameSize = 0;
+    UINT16 name_size = 0;
     UINT32 i = 0;
 
     // Ensure required headers are at least there
@@ -53,29 +53,29 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
         LOG_ERR("Malformed TPM2B_NAME value");
         return false;
     }
-    memcpy(&nameSize, &quoted->attestationData[i], 2);
+    memcpy(&name_size, &quoted->attestationData[i], 2);
     i += 2;
     if (!tpm2_util_is_big_endian()) {
-        nameSize = tpm2_util_endian_swap_16(nameSize);
+        name_size = tpm2_util_endian_swap_16(name_size);
     }
-    i += nameSize;
+    i += name_size;
 
     // Extra data (skip)
     if (i + 2 >= quoted->size) {
         LOG_ERR("Malformed TPM2B_DATA value");
         return false;
     }
-    memcpy(&extraData->size, &quoted->attestationData[i], 2);
+    memcpy(&extra_data->size, &quoted->attestationData[i], 2);
     i += 2;
     if (!tpm2_util_is_big_endian()) {
-        extraData->size = tpm2_util_endian_swap_16(extraData->size);
+        extra_data->size = tpm2_util_endian_swap_16(extra_data->size);
     }
-    if (extraData->size + i > quoted->size) {
-        LOG_ERR("Malformed extraData TPM2B_DATA value");
+    if (extra_data->size + i > quoted->size) {
+        LOG_ERR("Malformed extra_data TPM2B_DATA value");
         return false;
     }
-    memcpy(&extraData->buffer, &quoted->attestationData[i], extraData->size);
-    i += extraData->size;
+    memcpy(&extra_data->buffer, &quoted->attestationData[i], extra_data->size);
+    i += extra_data->size;
 
     // Clock info (skip)
     i += 17;
@@ -93,27 +93,27 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
 
     // PCR select info
     UINT8 sos;
-    TPMI_ALG_HASH hashAlg;
-    UINT32 pcrSelCount = 0, j = 0;
+    TPMI_ALG_HASH hash_alg;
+    UINT32 pcr_select_count = 0, j = 0;
     if (i + 4 >= quoted->size) {
         LOG_ERR("Malformed TPML_PCR_SELECTION value");
         return false;
     }
-    memcpy(&pcrSelCount, &quoted->attestationData[i], 4);
+    memcpy(&pcr_select_count, &quoted->attestationData[i], 4);
     i += 4;
     if (!tpm2_util_is_big_endian()) {
-        pcrSelCount = tpm2_util_endian_swap_32(pcrSelCount);
+        pcr_select_count = tpm2_util_endian_swap_32(pcr_select_count);
     }
-    for (j = 0; j < pcrSelCount; j++) {
+    for (j = 0; j < pcr_select_count; j++) {
         // Hash
         if (i + 2 >= quoted->size) {
             LOG_ERR("Malformed TPMS_PCR_SELECTION value");
             return false;
         }
-        memcpy(&hashAlg, &quoted->attestationData[i], 2);
+        memcpy(&hash_alg, &quoted->attestationData[i], 2);
         i += 2;
         if (!tpm2_util_is_big_endian()) {
-            hashAlg = tpm2_util_endian_swap_16(hashAlg);
+            hash_alg = tpm2_util_endian_swap_16(hash_alg);
         }
 
         // SizeOfSelected
@@ -154,10 +154,10 @@ bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
 
 // verify that the quote digest equals the digest we calculated
 bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest,
-        TPM2B_DIGEST *pcrDigest) {
+        TPM2B_DIGEST *pcr_digest) {
 
     // Sanity check -- they should at least be same size!
-    if (quoteDigest->size != pcrDigest->size) {
+    if (quoteDigest->size != pcr_digest->size) {
         LOG_ERR("FATAL ERROR: PCR values failed to match quote's digest!");
         return false;
     }
@@ -165,7 +165,7 @@ bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest,
     // Compare running digest with quote's digest
     int k;
     for (k = 0; k < quoteDigest->size; k++) {
-        if (quoteDigest->buffer[k] != pcrDigest->buffer[k]) {
+        if (quoteDigest->buffer[k] != pcr_digest->buffer[k]) {
             LOG_ERR("FATAL ERROR: PCR values failed to match quote's digest!");
             return false;
         }
@@ -256,30 +256,30 @@ bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
     return true;
 }
 
-int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
-        BYTE *byteBuffer) {
-    int strLength; //if the inStr likes "1a2b...", no prefix "0x"
+int tpm2_util_hex_to_byte_structure(const char *input_string, UINT16 *byte_length,
+        BYTE *byte_buffer) {
+    int str_length; //if the input_string likes "1a2b...", no prefix "0x"
     int i = 0;
-    if (inStr == NULL || byteLength == NULL || byteBuffer == NULL)
+    if (input_string == NULL || byte_length == NULL || byte_buffer == NULL)
         return -1;
-    strLength = strlen(inStr);
-    if (strLength % 2)
+    str_length = strlen(input_string);
+    if (str_length % 2)
         return -2;
-    for (i = 0; i < strLength; i++) {
-        if (!isxdigit(inStr[i]))
+    for (i = 0; i < str_length; i++) {
+        if (!isxdigit(input_string[i]))
             return -3;
     }
 
-    if (*byteLength < strLength / 2)
+    if (*byte_length < str_length / 2)
         return -4;
 
-    *byteLength = strLength / 2;
+    *byte_length = str_length / 2;
 
-    for (i = 0; i < *byteLength; i++) {
-        char tmpStr[4] = { 0 };
-        tmpStr[0] = inStr[i * 2];
-        tmpStr[1] = inStr[i * 2 + 1];
-        byteBuffer[i] = strtol(tmpStr, NULL, 16);
+    for (i = 0; i < *byte_length; i++) {
+        char tmp_str[4] = { 0 };
+        tmp_str[0] = input_string[i * 2];
+        tmp_str[1] = input_string[i * 2 + 1];
+        byte_buffer[i] = strtol(tmp_str, NULL, 16);
     }
     return 0;
 }

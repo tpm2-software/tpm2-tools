@@ -87,8 +87,8 @@ typedef struct {
     BYTE buffer[0];
 } TPM2B;
 
-int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
-        BYTE *byteBuffer);
+int tpm2_util_hex_to_byte_structure(const char *in_str, UINT16 *byte_length,
+        BYTE *byte_buffer);
 
 /**
  * Pulls the TPM2B_DIGEST out of a TPM2B_ATTEST quote.
@@ -96,25 +96,25 @@ int tpm2_util_hex_to_byte_structure(const char *inStr, UINT16 *byteLength,
  *  The attestation quote structure.
 ^ * @param digest
 ^ *  The digest from the quote.
-^ * @param extraData
-^ *  The extraData from the quote.
+^ * @param extra_data
+^ *  The extra_data from the quote.
  * @return
  *  True on success, false otherwise.
  */
 bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
-        TPM2B_DATA *extraData);
+        TPM2B_DATA *extra_data);
 
 /**
  * Compares two digests to ensure they are equal (for validation).
- * @param quoteDigest
+ * @param quote_digest
  *  The digest from the quote.
- * @param pcrDigest
+ * @param pcr_digest
  *  The digest calculated off-TMP from the PCRs.
  * @return
  *  True on success, false otherwise.
  */
-bool tpm2_util_verify_digests(TPM2B_DIGEST *quoteDigest,
-        TPM2B_DIGEST *pcrDigest);
+bool tpm2_util_verify_digests(TPM2B_DIGEST *quote_digest,
+        TPM2B_DIGEST *pcr_digest);
 
 /**
  * Appends a TPM2B buffer to a MAX buffer.
