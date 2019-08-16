@@ -17,8 +17,8 @@
  * @param resultKey
  * @return
  */
-TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hashAlg, TPM2B *key, char *label,
-        TPM2B *contextU, TPM2B *contextV, UINT16 bits,
-        TPM2B_MAX_BUFFER *resultKey);
+TSS2_RC tpm2_kdfa(TPMI_ALG_HASH hash_alg, TPM2B *key, char *label,
+        TPM2B *context_u, TPM2B *context_v, UINT16 bits,
+        TPM2B_MAX_BUFFER *result_key);
 
 #endif /* SRC_TPM_KDFA_H_ */
