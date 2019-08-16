@@ -74,8 +74,7 @@ struct tpm2_hierarchy_pdata {
  * @return
  *  tool_rc indicating status.
  */
-tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *context,
-        tpm2_session *sess,
+tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *context, tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata);
 
 /**

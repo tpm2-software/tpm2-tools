@@ -10,8 +10,7 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
 
-tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
-        tpm2_session *sess,
+tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx, tpm2_session *sess,
         tpm2_hierarchy_pdata *objdata) {
 
     ESYS_TR hierarchy;
@@ -25,9 +24,8 @@ tool_rc tpm2_hierarchy_create_primary(ESYS_CONTEXT *ectx,
         return rc;
     }
 
-    return tpm2_create_primary(ectx, hierarchy,
-            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-            &objdata->in.sensitive, &objdata->in.public,
+    return tpm2_create_primary(ectx, hierarchy, shandle1, ESYS_TR_NONE,
+            ESYS_TR_NONE, &objdata->in.sensitive, &objdata->in.public,
             &objdata->in.outside_info, &objdata->in.creation_pcr,
             &objdata->out.handle, &objdata->out.public,
             &objdata->out.creation.data, &objdata->out.hash,
