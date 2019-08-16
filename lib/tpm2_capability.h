@@ -21,11 +21,8 @@
  * @return
  *  tool_rc indicating status.
  */
-tool_rc tpm2_capability_get (ESYS_CONTEXT *context,
-        TPM2_CAP capability,
-        UINT32 property,
-        UINT32 count,
-        TPMS_CAPABILITY_DATA **capability_data);
+tool_rc tpm2_capability_get(ESYS_CONTEXT *context, TPM2_CAP capability,
+        UINT32 property, UINT32 count, TPMS_CAPABILITY_DATA **capability_data);
 
 /**
  * Attempts to find a vacant handle in the persistent handle namespace.
@@ -36,7 +33,7 @@ tool_rc tpm2_capability_get (ESYS_CONTEXT *context,
  * @return
  *  tool_rc indicating status.
  */
-tool_rc tpm2_capability_find_vacant_persistent_handle (ESYS_CONTEXT *ctx,
+tool_rc tpm2_capability_find_vacant_persistent_handle(ESYS_CONTEXT *ctx,
         UINT32 *vacant);
 
 #endif /* LIB_TPM2_CAPABILITY_H_ */
