@@ -229,7 +229,7 @@ out:
 }
 
 static inline bool on_arg_nv_index(int argc, char **argv,
-        TPMI_RH_NV_INDEX *nvIndex) {
+        TPMI_RH_NV_INDEX *nv_index) {
 
     if (argc > 1) {
         LOG_ERR("Specify single value for NV Index");
@@ -241,13 +241,13 @@ static inline bool on_arg_nv_index(int argc, char **argv,
         return false;
     }
 
-    bool result = tpm2_util_handle_from_optarg(argv[0], nvIndex,
+    bool result = tpm2_util_handle_from_optarg(argv[0], nv_index,
             TPM2_HANDLE_FLAGS_NV);
     if (!result) {
         LOG_ERR("Could not convert NV index to number, got: \"%s\"", argv[0]);
         return false;
     }
-    if (*nvIndex == 0) {
+    if (*nv_index == 0) {
         LOG_ERR("NV Index cannot be 0");
         return false;
     }
