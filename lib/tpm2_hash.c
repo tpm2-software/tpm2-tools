@@ -16,8 +16,8 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
     bool use_left, done;
     unsigned long left;
     size_t bytes_read;
-    TPM2B_AUTH nullAuth = TPM2B_EMPTY_INIT;
-    TPMI_DH_OBJECT sequenceHandle;
+    TPM2B_AUTH null_auth = TPM2B_EMPTY_INIT;
+    TPMI_DH_OBJECT sequence_handle;
     TPM2B_MAX_BUFFER buffer;
 
     /*  if we're using infilep, get file size */
@@ -53,12 +53,12 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
      * data.
      */
     tool_rc rc = tpm2_hash_sequence_start(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &nullAuth, halg, &sequenceHandle);
+            ESYS_TR_NONE, &null_auth, halg, &sequence_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_tr_set_auth(ectx, sequenceHandle, &nullAuth);
+    rc = tpm2_tr_set_auth(ectx, sequence_handle, &null_auth);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -84,7 +84,7 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
             inbuffer = inbuffer + buffer.size;
         }
 
-        rc = tpm2_sequence_update(ectx, sequenceHandle, ESYS_TR_PASSWORD,
+        rc = tpm2_sequence_update(ectx, sequence_handle, ESYS_TR_PASSWORD,
                 ESYS_TR_NONE, ESYS_TR_NONE, &buffer);
         if (rc != tool_rc_success) {
             return rc;
@@ -118,7 +118,7 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
         buffer.size = 0;
     }
 
-    return tpm2_sequence_complete(ectx, sequenceHandle, ESYS_TR_PASSWORD,
+    return tpm2_sequence_complete(ectx, sequence_handle, ESYS_TR_PASSWORD,
             ESYS_TR_NONE, ESYS_TR_NONE, &buffer, hierarchy, result, validation);
 }
 
