@@ -19,9 +19,7 @@
 
 typedef enum dispatch_error dispatch_error;
 enum dispatch_error {
-    dispatch_ok = 0,
-    dispatch_err,
-    dispatch_no_match,
+    dispatch_ok = 0, dispatch_err, dispatch_no_match,
 };
 
 typedef bool (*action)(void *obj, char *arg);
@@ -357,7 +355,8 @@ static dispatch_table obj_attr_table[] = {         // Bit Index
         dispatch_reserved(31),                     // 31
 };
 
-static bool token_match(const char *name, const char *token, bool has_arg, char **sep) {
+static bool token_match(const char *name, const char *token, bool has_arg,
+        char **sep) {
 
     /* if it has an argument, we expect a separator */
     size_t match_len = strlen(token);
@@ -415,7 +414,8 @@ static dispatch_error handle_dispatch(dispatch_table *d, char *token,
     return result ? dispatch_ok : dispatch_err;
 }
 
-static bool common_strtoattr(char *attribute_list, void *attrs, dispatch_table *table, size_t size) {
+static bool common_strtoattr(char *attribute_list, void *attrs,
+        dispatch_table *table, size_t size) {
 
     char *token;
     char *save;
@@ -466,15 +466,16 @@ static bool common_strtoattr(char *attribute_list, void *attrs, dispatch_table *
 bool tpm2_attr_util_nv_strtoattr(char *attribute_list, TPMA_NV *nvattrs) {
 
     memset(nvattrs, 0, sizeof(*nvattrs));
-    return common_strtoattr(attribute_list, nvattrs, nv_attr_table, ARRAY_LEN(nv_attr_table));
+    return common_strtoattr(attribute_list, nvattrs, nv_attr_table,
+            ARRAY_LEN(nv_attr_table));
 }
 
 bool tpm2_attr_util_obj_strtoattr(char *attribute_list, TPMA_OBJECT *objattrs) {
 
     memset(objattrs, 0, sizeof(*objattrs));
-    return common_strtoattr(attribute_list, objattrs, obj_attr_table, ARRAY_LEN(obj_attr_table));
+    return common_strtoattr(attribute_list, objattrs, obj_attr_table,
+            ARRAY_LEN(obj_attr_table));
 }
-
 
 static UINT8 find_first_set(UINT32 bits) {
 
@@ -484,16 +485,30 @@ static UINT8 find_first_set(UINT32 bits) {
         return n;
     }
 
-    if (!(bits & 0x0000FFFF)) { n += 16; bits >>= 16; }
-    if (!(bits & 0x000000FF)) { n +=  8; bits >>=  8; }
-    if (!(bits & 0x0000000F)) { n +=  4; bits >>=  4; }
-    if (!(bits & 0x00000003)) { n +=  2; bits >>=  2; }
-    if (!(bits & 0x00000001))   n +=  1;
+    if (!(bits & 0x0000FFFF)) {
+        n += 16;
+        bits >>= 16;
+    }
+    if (!(bits & 0x000000FF)) {
+        n += 8;
+        bits >>= 8;
+    }
+    if (!(bits & 0x0000000F)) {
+        n += 4;
+        bits >>= 4;
+    }
+    if (!(bits & 0x00000003)) {
+        n += 2;
+        bits >>= 2;
+    }
+    if (!(bits & 0x00000001))
+        n += 1;
 
     return n;
 }
 
-static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table, size_t size) {
+static char *tpm2_attr_util_common_attrtostr(UINT32 attrs,
+        dispatch_table *table, size_t size) {
 
     if (attrs == 0) {
         return strdup("<none>");
@@ -513,7 +528,7 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
 
     size_t i;
     size_t max_name_len = 0;
-    for (i=0; i < size; i++) {
+    for (i = 0; i < size; i++) {
         dispatch_table *d = &table[i];
         size_t name_len = strlen(d->name);
         max_name_len = name_len > max_name_len ? name_len : max_name_len;
@@ -525,7 +540,6 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
     if (!str) {
         return NULL;
     }
-
 
     size_t string_index = 0;
 
@@ -546,7 +560,7 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
         size_t left = length - string_index;
 
         /* this is a mask that is field width wide */
-        UINT8 mask = ((UINT32)1 << w) - 1;
+        UINT8 mask = ((UINT32) 1 << w) - 1;
 
         /* get the value in the field before clearing attrs out */
         UINT8 field_values = (attrs & mask << bit_index) >> bit_index;
@@ -571,7 +585,8 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
             n = snprintf(s, left, attrs ? "%s|" : "%s", name);
         } else {
             /* deal with the field */
-            n = snprintf(s, left, attrs ? "%s=0x%X|" : "%s=0x%X", name, field_values);
+            n = snprintf(s, left, attrs ? "%s=0x%X|" : "%s=0x%X", name,
+                    field_values);
         }
 
         /* check if there was enough space left in s */
@@ -585,11 +600,13 @@ static char *tpm2_attr_util_common_attrtostr(UINT32 attrs, dispatch_table *table
 }
 
 char *tpm2_attr_util_nv_attrtostr(TPMA_NV nvattrs) {
-    return tpm2_attr_util_common_attrtostr(nvattrs, nv_attr_table, ARRAY_LEN(nv_attr_table));
+    return tpm2_attr_util_common_attrtostr(nvattrs, nv_attr_table,
+            ARRAY_LEN(nv_attr_table));
 }
 
 char *tpm2_attr_util_obj_attrtostr(TPMA_OBJECT objattrs) {
-    return tpm2_attr_util_common_attrtostr(objattrs, obj_attr_table, ARRAY_LEN(obj_attr_table));
+    return tpm2_attr_util_common_attrtostr(objattrs, obj_attr_table,
+            ARRAY_LEN(obj_attr_table));
 }
 
 bool tpm2_attr_util_obj_from_optarg(char *argvalue, TPMA_OBJECT *objattrs) {
