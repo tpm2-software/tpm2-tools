@@ -14,16 +14,15 @@
 #include "tpm2_convert.h"
 #include "tpm2_openssl.h"
 
-static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path);
+static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, const char *path);
 
 tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label) {
     if (strcasecmp(label, "der") == 0) {
         return pubkey_format_der;
-    }
-    else if (strcasecmp(label, "pem") == 0) {
+    } else if (strcasecmp(label, "pem") == 0) {
         return pubkey_format_pem;
-    }
-    else if (strcasecmp(label, "tss") == 0) {
+    } else if (strcasecmp(label, "tss") == 0) {
         return pubkey_format_tss;
     }
 
@@ -35,8 +34,7 @@ tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label) {
 tpm2_convert_sig_fmt tpm2_convert_sig_fmt_from_optarg(const char *label) {
     if (strcasecmp(label, "tss") == 0) {
         return signature_format_tss;
-    }
-    else if (strcasecmp(label, "plain") == 0) {
+    } else if (strcasecmp(label, "plain") == 0) {
         return signature_format_plain;
     }
 
@@ -46,19 +44,19 @@ tpm2_convert_sig_fmt tpm2_convert_sig_fmt_from_optarg(const char *label) {
 }
 
 static void print_ssl_error(const char *failed_action) {
-    char errstr[256] = {0};
+    char errstr[256] = { 0 };
     unsigned long errnum = ERR_get_error();
 
     ERR_error_string_n(errnum, errstr, sizeof(errstr));
     LOG_ERR("%s: %s", failed_action, errstr);
 }
 
-bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path) {
+bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, const char *path) {
 
     if (format == pubkey_format_der || format == pubkey_format_pem) {
         return tpm2_convert_pubkey_ssl(&public->publicArea, format, path);
-    }
-    else if (format == pubkey_format_tss) {
+    } else if (format == pubkey_format_tss) {
         return files_save_public(public, path);
     }
 
@@ -66,7 +64,8 @@ bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public, tpm2_convert_pubkey_fmt form
     return false;
 }
 
-static bool convert_pubkey_RSA(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, FILE *fp) {
+static bool convert_pubkey_RSA(TPMT_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, FILE *fp) {
 
     bool ret = false;
     RSA *ssl_rsa_key = NULL;
@@ -85,9 +84,9 @@ static bool convert_pubkey_RSA(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt form
         goto error;
     }
 
-    e = BN_bin2bn((void*)&exponent, sizeof(exponent), NULL);
+    e = BN_bin2bn((void*) &exponent, sizeof(exponent), NULL);
     n = BN_bin2bn(public->unique.rsa.buffer, public->unique.rsa.size,
-                  NULL);
+    NULL);
 
     if (!n || !e) {
         print_ssl_error("Failed to convert data to SSL internal format");
@@ -109,7 +108,7 @@ static bool convert_pubkey_RSA(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt form
 
     int ssl_res = 0;
 
-    switch(format) {
+    switch (format) {
     case pubkey_format_pem:
         ssl_res = PEM_write_RSA_PUBKEY(fp, ssl_rsa_key);
         break;
@@ -128,8 +127,7 @@ static bool convert_pubkey_RSA(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt form
 
     ret = true;
 
-error:
-    if (n) {
+    error: if (n) {
         BN_free(n);
     }
     if (e) {
@@ -142,7 +140,8 @@ error:
     return ret;
 }
 
-static bool convert_pubkey_ECC(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, FILE *fp) {
+static bool convert_pubkey_ECC(TPMT_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, FILE *fp) {
 
     BIGNUM *x = NULL;
     BIGNUM *y = NULL;
@@ -195,9 +194,7 @@ static bool convert_pubkey_ECC(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt form
         goto out;
     }
 
-    int rc = EC_POINT_set_affine_coordinates_GFp(group, point,
-                                            x, y,
-                                            NULL);
+    int rc = EC_POINT_set_affine_coordinates_GFp(group, point, x, y, NULL);
     if (!rc) {
         print_ssl_error("Could not set affine coordinates");
         goto out;
@@ -211,7 +208,7 @@ static bool convert_pubkey_ECC(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt form
 
     int ssl_res = 0;
 
-    switch(format) {
+    switch (format) {
     case pubkey_format_pem:
         ssl_res = PEM_write_EC_PUBKEY(fp, key);
         break;
@@ -247,18 +244,19 @@ out:
     return result;
 }
 
-static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt format, const char *path) {
+static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public,
+        tpm2_convert_pubkey_fmt format, const char *path) {
 
     bool result = false;
 
     FILE *fp = fopen(path, "wb");
     if (!fp) {
-        LOG_ERR("Failed to open public key output file '%s': %s",
-            path, strerror(errno));
+        LOG_ERR("Failed to open public key output file '%s': %s", path,
+                strerror(errno));
         goto out;
     }
 
-    switch(public->type) {
+    switch (public->type) {
     case TPM2_ALG_RSA:
         result = convert_pubkey_RSA(public, format, fp);
         break;
@@ -266,7 +264,8 @@ static bool tpm2_convert_pubkey_ssl(TPMT_PUBLIC *public, tpm2_convert_pubkey_fmt
         result = convert_pubkey_ECC(public, format, fp);
         break;
     default:
-        LOG_ERR("Unsupported key type for requested output format. Only RSA is supported.");
+        LOG_ERR(
+                "Unsupported key type for requested output format. Only RSA is supported.");
     }
 
     fclose(fp);
@@ -276,9 +275,10 @@ out:
     return result;
 }
 
-bool tpm2_convert_sig_save(TPMT_SIGNATURE *signature, tpm2_convert_sig_fmt format, const char *path) {
+bool tpm2_convert_sig_save(TPMT_SIGNATURE *signature,
+        tpm2_convert_sig_fmt format, const char *path) {
 
-    switch(format) {
+    switch (format) {
     case signature_format_tss:
         return files_save_signature(signature, path);
     case signature_format_plain: {
@@ -314,9 +314,7 @@ static bool pop_ecdsa(const char *path, TPMS_SIGNATURE_ECDSA *ecdsa) {
 
     TPM2B_MAX_BUFFER buf = { .size = sizeof(buf.buffer) };
 
-    bool res = files_load_bytes_from_path(path,
-            buf.buffer,
-            &buf.size);
+    bool res = files_load_bytes_from_path(path, buf.buffer, &buf.size);
     if (!res) {
         return res;
     }
@@ -372,26 +370,28 @@ static bool sig_load(const char *path, TPMI_ALG_SIG_SCHEME sig_alg,
     signature->sigAlg = sig_alg;
 
     switch (sig_alg) {
-        case TPM2_ALG_RSASSA:
-            signature->signature.rsassa.hash = halg;
-            signature->signature.rsassa.sig.size = sizeof(signature->signature.rsassa.sig.buffer);
-            bool res = files_load_bytes_from_path(path,
-                    signature->signature.rsassa.sig.buffer,
-                    &signature->signature.rsassa.sig.size);
-            return res;
-        case TPM2_ALG_ECDSA:
-            signature->signature.ecdsa.hash = halg;
-            return pop_ecdsa(path, &signature->signature.ecdsa);
-        default:
-            LOG_ERR("Unsupported signature input format.");
-            return false;
+    case TPM2_ALG_RSASSA:
+        signature->signature.rsassa.hash = halg;
+        signature->signature.rsassa.sig.size =
+                sizeof(signature->signature.rsassa.sig.buffer);
+        bool res = files_load_bytes_from_path(path,
+                signature->signature.rsassa.sig.buffer,
+                &signature->signature.rsassa.sig.size);
+        return res;
+    case TPM2_ALG_ECDSA:
+        signature->signature.ecdsa.hash = halg;
+        return pop_ecdsa(path, &signature->signature.ecdsa);
+    default:
+        LOG_ERR("Unsupported signature input format.");
+        return false;
     }
 }
 
-bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format, TPMI_ALG_SIG_SCHEME sig_alg,
-        TPMI_ALG_HASH halg, TPMT_SIGNATURE *signature) {
+bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format,
+        TPMI_ALG_SIG_SCHEME sig_alg, TPMI_ALG_HASH halg,
+        TPMT_SIGNATURE *signature) {
 
-    switch(format) {
+    switch (format) {
     case signature_format_tss:
         return files_load_signature(path, signature);
     case signature_format_plain:
@@ -530,7 +530,7 @@ UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature) {
         *size = tpm2_alg_util_get_hash_size(signature->signature.hmac.hashAlg);
         if (*size == 0) {
             LOG_ERR("Hash algorithm %d has 0 size",
-                signature->signature.hmac.hashAlg);
+                    signature->signature.hmac.hashAlg);
             goto nomem;
         }
         buffer = malloc(*size);
@@ -545,7 +545,7 @@ UINT8 *tpm2_convert_sig(UINT16 *size, TPMT_SIGNATURE *signature) {
     }
     default:
         LOG_ERR("%s: unknown signature scheme: 0x%x", __func__,
-            signature->sigAlg);
+                signature->sigAlg);
         return NULL;
     }
 
