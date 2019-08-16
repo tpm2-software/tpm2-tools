@@ -81,7 +81,8 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
     /* now move the enclosing structure */
     size_t long_opts_len = d->len + src->len;
     /* +1 for a terminating NULL at the end of options array for getopt_long */
-    tpm2_options *tmp = realloc(d, sizeof(*d) + ((long_opts_len + 1) * sizeof(d->long_opts[0])));
+    tpm2_options *tmp = realloc(d,
+            sizeof(*d) + ((long_opts_len + 1) * sizeof(d->long_opts[0])));
     if (!tmp) {
         LOG_ERR("oom");
         return false;
@@ -93,7 +94,8 @@ bool tpm2_options_cat(tpm2_options **dest, tpm2_options *src) {
     d->callbacks.on_opt = src->callbacks.on_opt;
     d->flags = src->flags;
 
-    memcpy(&d->long_opts[d->len], src->long_opts, src->len * sizeof(src->long_opts[0]));
+    memcpy(&d->long_opts[d->len], src->long_opts,
+            src->len * sizeof(src->long_opts[0]));
 
     /* length must be updated post memcpy as we need d->len to be the original offset */
     d->len = long_opts_len;
@@ -116,7 +118,7 @@ static inline const char *fixup_name(const char *name) {
 
 static bool execute_man(char *prog_name, bool show_errors) {
 
-    pid_t  pid;
+    pid_t pid;
     int status;
 
     if ((pid = fork()) < 0) {
@@ -142,8 +144,8 @@ static bool execute_man(char *prog_name, bool show_errors) {
         execlp("man", "man", manpage, NULL);
     } else {
         if ((pid = waitpid(pid, &status, 0)) == -1) {
-            LOG_ERR("Waiting for child process that executes man failed, error: %s",
-                    strerror(errno));
+            LOG_ERR("Waiting for child process that executes man failed, error:"
+                    " %s", strerror(errno));
             return false;
         }
 
@@ -153,7 +155,7 @@ static bool execute_man(char *prog_name, bool show_errors) {
     return true;
 }
 
-static void show_version (const char *name) {
+static void show_version(const char *name) {
     const char *tcti_default = NULL;
     TSS2_TCTI_INFO *info = NULL;
 
@@ -194,7 +196,7 @@ void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
                 printf(" ");
             }
             printf("[ -%c | --%s%s]", opt->val, opt->name,
-                   opt->has_arg ? "=<value>" : "");
+                    opt->has_arg ? "=<value>" : "");
             if ((i + 1) % 4 == 0) {
                 printf("\n");
                 indent = true;
@@ -206,7 +208,7 @@ void tpm2_print_usage(const char *command, struct tpm2_options *tool_opts) {
     }
 }
 
-tpm2_option_code tpm2_handle_options (int argc, char **argv,
+tpm2_option_code tpm2_handle_options(int argc, char **argv,
         tpm2_options *tool_opts, tpm2_option_flags *flags,
         TSS2_TCTI_CONTEXT **tcti) {
 
@@ -232,7 +234,6 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
 
     const char *tcti_conf_option = NULL;
 
-
     /* handle any options */
     const char* common_short_opts = "T:h::vVQZ";
     tpm2_options *opts = tpm2_options_new(common_short_opts,
@@ -253,9 +254,8 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
 
     /* Parse the options, calling the tool callback if unknown */
     int c;
-    while ((c = getopt_long (argc, argv, opts->short_opts, opts->long_opts, NULL))
-           != -1)
-    {
+    while ((c = getopt_long(argc, argv, opts->short_opts, opts->long_opts, NULL))
+            != -1) {
         switch (c) {
         case 'T':
             if (opts->flags & TPM2_OPTIONS_NO_SAPI) {
@@ -276,12 +276,12 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
                     manpager = false;
                     optind++;
                 } else {
-                    show_help=false;
+                    show_help = false;
                     LOG_ERR("Unknown help argument, got: \"%s\"", argv[optind]);
                 }
             }
             goto out;
-        break;
+            break;
         case 'V':
             flags->verbose = 1;
             break;
@@ -337,7 +337,8 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
             if (tcti_conf_option == NULL)
                 tcti_conf_option = tpm2_util_getenv(TPM2TOOLS_ENV_TCTI);
             else if (!strcmp(tcti_conf_option, "none")) {
-                if (!tool_opts || !(tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI)) {
+                if (!tool_opts
+                        || !(tool_opts->flags & TPM2_OPTIONS_OPTIONAL_SAPI)) {
                     LOG_ERR("Requested no tcti, but tool requires TCTI.");
                     goto out;
                 }
@@ -345,22 +346,22 @@ tpm2_option_code tpm2_handle_options (int argc, char **argv,
             }
             rc_tcti = Tss2_TctiLdr_Initialize(tcti_conf_option, tcti);
             if (rc_tcti != TSS2_RC_SUCCESS || !*tcti) {
-              LOG_ERR("Could not load tcti, got: \"%s\"", tcti_conf_option);
-              goto out;
+                LOG_ERR("Could not load tcti, got: \"%s\"", tcti_conf_option);
+                goto out;
             }
-                /*
-                 * no loader requested ie --tcti=none is an error if tool
-                 * doesn't indicate an optional SAPI
-                 */
+            /*
+             * no loader requested ie --tcti=none is an error if tool
+             * doesn't indicate an optional SAPI
+             */
             if (!flags->enable_errata) {
-                flags->enable_errata = !!tpm2_util_getenv (TPM2TOOLS_ENV_ENABLE_ERRATA);
+                flags->enable_errata = !!tpm2_util_getenv(
+                        TPM2TOOLS_ENV_ENABLE_ERRATA);
             }
         }
     }
 none:
     rc = tpm2_option_code_continue;
 out:
-
     /*
      * If help output is selected via -h or indicated by an error that help output
      * is desirable, show it.
@@ -382,11 +383,11 @@ out:
         }
         if (tcti_conf_option && strcmp(tcti_conf_option, "none")) {
             TSS2_TCTI_INFO *info = NULL;
-            rc_tcti = Tss2_TctiLdr_GetInfo (tcti_conf_option, &info);
+            rc_tcti = Tss2_TctiLdr_GetInfo(tcti_conf_option, &info);
             if (rc_tcti == TSS2_RC_SUCCESS && info) {
                 printf("\ntcti-help(%s): %s\n", info->name, info->config_help);
             }
-            Tss2_TctiLdr_FreeInfo (&info);
+            Tss2_TctiLdr_FreeInfo(&info);
         }
 
         rc = tpm2_option_code_stop;
