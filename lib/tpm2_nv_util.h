@@ -34,16 +34,14 @@ static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
         TPMI_RH_NV_INDEX nv_index, TPM2B_NV_PUBLIC **nv_public) {
 
     ESYS_TR tr_object;
-    tool_rc rc = tpm2_from_tpm_public(context, nv_index,
-                                 ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                                 &tr_object);
+    tool_rc rc = tpm2_from_tpm_public(context, nv_index, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &tr_object);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    rc = tpm2_nv_readpublic(context, tr_object,
-                              ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                              nv_public, NULL);
+    rc = tpm2_nv_readpublic(context, tr_object, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, nv_public, NULL);
     tool_rc tmp_rc = tpm2_close(context, &tr_object);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
@@ -51,7 +49,6 @@ static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
 
     return rc;
 }
-
 
 /**
  * Retrieves the maximum transmission size for an NV buffer by
@@ -69,10 +66,9 @@ static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
     /* Get the maximum read block size */
     TPMS_CAPABILITY_DATA *cap_data;
     TPMI_YES_NO more_data;
-    tool_rc rc = tpm2_getcap(ectx,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX,
-                        1, &more_data, &cap_data);
+    tool_rc rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX, 1, &more_data,
+            &cap_data);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -107,14 +103,9 @@ static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
  * @return
  *  tool_rc indicating status.
  */
-static inline tool_rc tpm2_util_nv_read(
-        ESYS_CONTEXT *ectx,
-        TPMI_RH_NV_INDEX nv_index,
-        UINT16 size,
-        UINT16 offset,
-        TPMI_RH_PROVISION hierarchy,
-        tpm2_session *sess,
-        UINT8 **data_buffer,
+static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
+        TPMI_RH_NV_INDEX nv_index, UINT16 size, UINT16 offset,
+        TPMI_RH_PROVISION hierarchy, tpm2_session *sess, UINT8 **data_buffer,
         UINT16 *bytes_written) {
 
     *data_buffer = NULL;
@@ -122,9 +113,8 @@ static inline tool_rc tpm2_util_nv_read(
     tool_rc tmp_rc;
 
     ESYS_TR nv_handle;
-    tool_rc rc = tpm2_from_tpm_public(ectx, nv_index,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        &nv_handle);
+    tool_rc rc = tpm2_from_tpm_public(ectx, nv_index, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &nv_handle);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -132,9 +122,8 @@ static inline tool_rc tpm2_util_nv_read(
     // Don't use tpm2_util_nv_read_public since we need to make use of nv_handle
     // later
     TPM2B_NV_PUBLIC *nv_public = NULL;
-    rc = tpm2_nv_readpublic(ectx, nv_handle,
-                              ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                              &nv_public, NULL);
+    rc = tpm2_nv_readpublic(ectx, nv_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, &nv_public, NULL);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -148,18 +137,16 @@ static inline tool_rc tpm2_util_nv_read(
     }
 
     if (offset > data_size) {
-        LOG_ERR(
-            "Requested offset to read from is greater than size. offset=%u"
-            ", size=%u", offset, data_size);
+        LOG_ERR("Requested offset to read from is greater than size. offset=%u"
+                ", size=%u", offset, data_size);
         rc = tool_rc_general_error;
         goto out;
     }
 
     if (offset + size > data_size) {
-        LOG_ERR(
-            "Requested to read more bytes than available from offset,"
-            " offset=%u, request-read-size=%u actual-data-size=%u",
-            offset, size, data_size);
+        LOG_ERR("Requested to read more bytes than available from offset,"
+                " offset=%u, request-read-size=%u actual-data-size=%u", offset,
+                size, data_size);
         rc = tool_rc_general_error;
         goto out;
     }
@@ -207,9 +194,8 @@ static inline tool_rc tpm2_util_nv_read(
 
         TPM2B_MAX_NV_BUFFER *nv_data;
 
-        rc = tpm2_nv_read(ectx, tr_hierarchy, nv_handle,
-                    shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
-                    bytes_to_read, offset, &nv_data);
+        rc = tpm2_nv_read(ectx, tr_hierarchy, nv_handle, shandle1, ESYS_TR_NONE,
+                ESYS_TR_NONE, bytes_to_read, offset, &nv_data);
         if (rc != tool_rc_success) {
             LOG_ERR("Failed to read NVRAM area at index 0x%X", nv_index);
             goto out;
@@ -243,7 +229,7 @@ out:
 }
 
 static inline bool on_arg_nv_index(int argc, char **argv,
-    TPMI_RH_NV_INDEX *nvIndex) {
+        TPMI_RH_NV_INDEX *nvIndex) {
 
     if (argc > 1) {
         LOG_ERR("Specify single value for NV Index");
@@ -262,8 +248,8 @@ static inline bool on_arg_nv_index(int argc, char **argv,
         return false;
     }
     if (*nvIndex == 0) {
-            LOG_ERR("NV Index cannot be 0");
-            return false;
+        LOG_ERR("NV Index cannot be 0");
+        return false;
     }
 
     return true;
