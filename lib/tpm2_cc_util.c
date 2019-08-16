@@ -157,7 +157,7 @@ bool tpm2_cc_util_from_str(const char *str, TPM2_CC *cc) {
     }
 
     size_t i;
-    for (i=0; i < ARRAY_LEN(map); i++) {
+    for (i = 0; i < ARRAY_LEN(map); i++) {
         const cc_map *m = &map[i];
         if (!strcmp(str, m->str)) {
             *cc = m->cc;
@@ -165,8 +165,7 @@ bool tpm2_cc_util_from_str(const char *str, TPM2_CC *cc) {
         }
     }
 
-    LOG_ERR("Could not convert command-code to number, got: \"%s\"",
-            str);
+    LOG_ERR("Could not convert command-code to number, got: \"%s\"", str);
 
     return false;
 }
