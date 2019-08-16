@@ -9,11 +9,11 @@
 #include "tpm2_capability.h"
 
 struct tpm2_errata_desc {
-    UINT32 spec_level;          /* spec level */
-    UINT32 spec_rev;            /* spec revision */
-    UINT32 errata_ver;          /* errata version */
+    UINT32 spec_level; /* spec level */
+    UINT32 spec_rev; /* spec revision */
+    UINT32 errata_ver; /* errata version */
     void (*fixup)(va_list *ap); /* errata correction handler */
-    const char *name;           /* full section name in errata doc */
+    const char *name; /* full section name in errata doc */
 };
 
 /*
@@ -164,24 +164,24 @@ static void process(TPMS_CAPABILITY_DATA *capability_data) {
              known_errata_info[i].spec_level == spec_level) {
              this_errata_info = known_errata_info + i;
 
-             LOG_INFO("TPM_SPEC: spec level %d, spec rev %f, errata ver %f",
-                      this_errata_info->spec_level,
-                      (float)this_errata_info->spec_rev / 100,
-                      (float)this_errata_info->errata_ver / 100);
-             return;
-         }
+            LOG_INFO("TPM_SPEC: spec level %d, spec rev %f, errata ver %f",
+                    this_errata_info->spec_level,
+                    (float )this_errata_info->spec_rev / 100,
+                    (float )this_errata_info->errata_ver / 100);
+            return;
+        }
     }
 
     LOG_INFO("Unknown TPM_SPEC. spec_level: %d, spec_rev: 0x%x, "
-            "year: %d, day_of_year: %d", spec_level, spec_rev,
-            year, day_of_year);
+            "year: %d, day_of_year: %d", spec_level, spec_rev, year,
+            day_of_year);
 }
 
 void tpm2_errata_init(ESYS_CONTEXT *ctx) {
 
     TPMS_CAPABILITY_DATA *capability_data;
-    tool_rc rc = tpm2_capability_get(ctx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_LEVEL,
-                    TPM2_PT_YEAR - TPM2_PT_LEVEL + 1, &capability_data);
+    tool_rc rc = tpm2_capability_get(ctx, TPM2_CAP_TPM_PROPERTIES,
+            TPM2_PT_LEVEL, TPM2_PT_YEAR - TPM2_PT_LEVEL + 1, &capability_data);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed to GetCapability: capability: 0x%x, property: 0x%x, ",
                 TPM2_CAP_TPM_PROPERTIES, TPM2_PT_LEVEL);
@@ -201,15 +201,15 @@ static void fixup_sign_decrypt_attribute_encoding(va_list *ap) {
 
 static bool errata_match(struct tpm2_errata_desc *errata) {
 
-    return errata->errata_ver > this_errata_info->errata_ver &&
-           errata->spec_rev >= this_errata_info->spec_rev &&
-           errata->spec_level == this_errata_info->spec_level;
+    return errata->errata_ver > this_errata_info->errata_ver
+            && errata->spec_rev >= this_errata_info->spec_rev
+            && errata->spec_level == this_errata_info->spec_level;
 }
 
 static struct tpm2_errata_desc *errata_query(tpm2_errata_index_t index) {
 
-    if ((size_t)index >= ARRAY_LEN(errata_desc_list)) {
-        LOG_WARN("Invalid errata index queried: %u", (unsigned int)index);
+    if ((size_t) index >= ARRAY_LEN(errata_desc_list)) {
+        LOG_WARN("Invalid errata index queried: %u", (unsigned int )index);
         return NULL;
     }
 
