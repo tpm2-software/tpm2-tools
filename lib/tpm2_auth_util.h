@@ -39,10 +39,8 @@
  * @return
  *  tool_rc indicating status.
  */
-tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
-        const char *password,
-        tpm2_session **session,
-        bool is_restricted);
+tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx, const char *password,
+        tpm2_session **session, bool is_restricted);
 
 /**
  * Set up authorisation for a handle and return a session handle for use in
@@ -62,6 +60,6 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ctx,
  *  A tool_rc indicating status.
  */
 tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR for_auth,
-                tpm2_session *session, ESYS_TR *handle);
+        tpm2_session *session, ESYS_TR *handle);
 
 #endif /* SRC_PASSWORD_UTIL_H_ */

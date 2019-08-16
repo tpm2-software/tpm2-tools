@@ -30,14 +30,14 @@
 #define PCR_PREFIX "pcr:"
 #define PCR_PREFIX_LEN sizeof(PCR_PREFIX) - 1
 
-
 static bool handle_hex_password(const char *password, TPM2B_AUTH *auth) {
 
     /* if it is hex, then skip the prefix */
     password += HEX_PREFIX_LEN;
 
     auth->size = BUFFER_SIZE(typeof(*auth), buffer);
-    int rc = tpm2_util_hex_to_byte_structure(password, &auth->size, auth->buffer);
+    int rc = tpm2_util_hex_to_byte_structure(password, &auth->size,
+            auth->buffer);
     if (rc) {
         auth->size = 0;
         return false;
@@ -58,7 +58,8 @@ static bool handle_str_password(const char *password, TPM2B_AUTH *auth) {
      * Per the man page:
      * "a return value of size or more means that the output was truncated."
      */
-    size_t wrote = snprintf((char *)&auth->buffer, BUFFER_SIZE(typeof(*auth), buffer), "%s", password);
+    size_t wrote = snprintf((char * )&auth->buffer,
+            BUFFER_SIZE(typeof(*auth), buffer), "%s", password);
     if (wrote >= BUFFER_SIZE(typeof(*auth), buffer)) {
         auth->size = 0;
         return false;
@@ -80,7 +81,8 @@ static bool handle_password(const char *password, TPM2B_AUTH *auth) {
     return handle_str_password(password, auth);
 }
 
-static tool_rc start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth, tpm2_session **session) {
+static tool_rc start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth,
+        tpm2_session **session) {
 
     tpm2_session_data *d = tpm2_session_data_new(TPM2_SE_HMAC);
     if (!d) {
@@ -98,7 +100,8 @@ static tool_rc start_hmac_session(ESYS_CONTEXT *ectx, TPM2B_AUTH *auth, tpm2_ses
     return tool_rc_success;
 }
 
-static tool_rc handle_password_session(ESYS_CONTEXT *ectx, const char *password, tpm2_session **session) {
+static tool_rc handle_password_session(ESYS_CONTEXT *ectx, const char *password,
+        tpm2_session **session) {
 
     TPM2B_AUTH auth = { 0 };
     bool result = handle_password(password, &auth);
@@ -161,7 +164,8 @@ static tool_rc handle_session(ESYS_CONTEXT *ectx, const char *path,
     return tool_rc_success;
 }
 
-static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session **session) {
+static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy,
+        tpm2_session **session) {
 
     policy += PCR_PREFIX_LEN;
 
@@ -202,8 +206,7 @@ static tool_rc handle_pcr(ESYS_CONTEXT *ectx, const char *policy, tpm2_session *
         goto out;
     }
 
-    tmp_rc = tpm2_policy_build_pcr(ectx, s,
-            raw_path, &pcrs);
+    tmp_rc = tpm2_policy_build_pcr(ectx, s, raw_path, &pcrs);
     if (tmp_rc != tool_rc_success) {
         tpm2_session_close(&s);
         rc = tmp_rc;
@@ -241,7 +244,8 @@ static tool_rc console_display_echo_control(bool echo) {
     return tool_rc_success;
 }
 
-static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **session) {
+static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path,
+        tpm2_session **session) {
 
     path += FILE_PREFIX_LEN;
     path = strcmp("-", path) ? path : NULL;
@@ -286,7 +290,7 @@ static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **
         printf("Enter Password: ");
         fflush(stdout);
 
-        char *b = (char *)buffer;
+        char *b = (char *) buffer;
         size_t size = sizeof(buffer) - 1;
 
         ssize_t read = getline(&b, &size, stdin);
@@ -303,15 +307,16 @@ static tool_rc handle_file(ESYS_CONTEXT *ectx, const char *path, tpm2_session **
     }
 
     /* from here the buffer has been populated with the password */
-    bool ret = handle_password((char *)buffer, &auth);
+    bool ret = handle_password((char *) buffer, &auth);
     if (!ret) {
         return tool_rc_general_error;
     }
 
-    return start_hmac_session(ectx, &auth, session);}
+    return start_hmac_session(ectx, &auth, session);
+}
 
 tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
-    tpm2_session **session, bool is_restricted) {
+        tpm2_session **session, bool is_restricted) {
 
     password = password ? password : "";
 
@@ -344,7 +349,7 @@ tool_rc tpm2_auth_util_from_optarg(ESYS_CONTEXT *ectx, const char *password,
 }
 
 tool_rc tpm2_auth_util_get_shandle(ESYS_CONTEXT *ectx, ESYS_TR object,
-            tpm2_session *session, ESYS_TR *out) {
+        tpm2_session *session, ESYS_TR *out) {
 
     *out = tpm2_session_get_handle(session);
 
