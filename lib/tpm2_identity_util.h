@@ -39,7 +39,7 @@ bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
  *  The public key used for encryption.
  * @param label
  *  Indicates label for the seed, such as "IDENTITY" or "DUPLICATE".
- * @param labelLen
+ * @param label_len
  *  Length of label.
  * @param encrypted_protection_seed
  *  The encrypted protection seed to populate.
@@ -48,7 +48,7 @@ bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
  */
 bool tpm2_identity_util_encrypt_seed_with_public_key(
         TPM2B_DIGEST *protection_seed, TPM2B_PUBLIC *parent_pub,
-        unsigned char *label, int labelLen,
+        unsigned char *label, int label_len,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed);
 
 /**
