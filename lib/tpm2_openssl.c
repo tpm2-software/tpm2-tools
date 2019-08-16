@@ -77,9 +77,8 @@ static inline const char *get_openssl_err(void) {
     return ERR_error_string(ERR_get_error(), NULL);
 }
 
-
-bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg,
-        BYTE *buffer, UINT16 length, TPM2B_DIGEST *digest) {
+bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg, BYTE *buffer,
+        UINT16 length, TPM2B_DIGEST *digest) {
 
     bool result = false;
 
@@ -122,8 +121,8 @@ out:
     return result;
 }
 
-bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg,
-        TPML_DIGEST *digests, TPM2B_DIGEST *digest) {
+bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg, TPML_DIGEST *digests,
+        TPM2B_DIGEST *digest) {
 
     bool result = false;
 
@@ -145,7 +144,7 @@ bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg,
     }
 
     size_t i;
-    for (i=0; i < digests->count; i++) {
+    for (i = 0; i < digests->count; i++) {
 
         TPM2B_DIGEST *b = &digests->digests[i];
         rc = EVP_DigestUpdate(mdctx, b->buffer, b->size);
@@ -174,8 +173,7 @@ out:
 
 // show all PCR banks according to g_pcrSelection & g_pcrs->
 bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
-                TPML_PCR_SELECTION *pcrSelect,
-                tpm2_pcrs *pcrs, TPM2B_DIGEST *digest) {
+        TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs, TPM2B_DIGEST *digest) {
 
     UINT32 vi = 0, di = 0, i;
     bool result = false;
@@ -202,7 +200,8 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
 
         // Loop through all PCRs in this bank
         UINT8 pcr_id;
-        for (pcr_id = 0; pcr_id < pcrSelect->pcrSelections[i].sizeofSelect * 8; pcr_id++) {
+        for (pcr_id = 0; pcr_id < pcrSelect->pcrSelections[i].sizeofSelect * 8;
+                pcr_id++) {
             if (!tpm2_util_is_pcr_select_bit_set(&pcrSelect->pcrSelections[i],
                     pcr_id)) {
                 // skip non-selected banks
@@ -303,7 +302,7 @@ void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx) {
 
 digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
 
-    switch(halg) {
+    switch (halg) {
     case TPM2_ALG_SHA1:
         return SHA1;
     case TPM2_ALG_SHA256:
@@ -312,7 +311,7 @@ digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
         return SHA384;
     case TPM2_ALG_SHA512:
         return SHA512;
-    /* no default */
+        /* no default */
     }
 
     return NULL;
@@ -391,7 +390,7 @@ static bool do_open_file(FILE *f, const char *path, char **pass) {
         goto out;
     }
 
-    result = files_read_bytes(f, (UINT8 *)tmp, file_size);
+    result = files_read_bytes(f, (UINT8 *) tmp, file_size);
     if (!result) {
         free(tmp);
         goto out;
@@ -411,8 +410,7 @@ static bool do_file(const char *path, char **pass) {
 
     FILE *f = fopen(path, "rb");
     if (!f) {
-        LOG_ERR("could not open file \"%s\" error: %s",
-                path, strerror(errno));
+        LOG_ERR("could not open file \"%s\" error: %s", path, strerror(errno));
         return false;
     }
 
@@ -430,8 +428,7 @@ static bool do_fd(const char *passin, char **pass) {
 
     FILE *f = fdopen(fd, "rb");
     if (!f) {
-        LOG_ERR("could not open fd \"%d\" error: %s",
-                fd, strerror(errno));
+        LOG_ERR("could not open fd \"%d\" error: %s", fd, strerror(errno));
         return false;
     }
 
@@ -450,8 +447,8 @@ static bool do_stdin(const char *passin, char **pass) {
 
     UINT16 size = UINT16_MAX;
 
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,NULL, &size,
-        buf);
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, NULL,
+            &size, buf);
     if (!result) {
         free(buf);
         return false;
@@ -534,7 +531,7 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
     }
 
     /* copy the modulus to the unique RSA field */
-    pt->unique.rsa.size = rdetail->keyBits/8;
+    pt->unique.rsa.size = rdetail->keyBits / 8;
     int success = BN_bn2bin(n, pt->unique.rsa.buffer);
     if (!success) {
         LOG_ERR("Could not copy public modulus N");
@@ -544,7 +541,8 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
     /*Make sure that we can fit the exponent into a UINT32 */
     unsigned e_size = BN_num_bytes(e);
     if (e_size > sizeof(rdetail->exponent)) {
-        LOG_ERR("Exponent is too big. Got %d expected less than or equal to %zu",
+        LOG_ERR(
+                "Exponent is too big. Got %d expected less than or equal to %zu",
                 e_size, sizeof(rdetail->exponent));
         return false;
     }
@@ -553,7 +551,7 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
      * Copy the exponent into the field.
      * Returns 1 on success false on error.
      */
-    return BN_bn2bin(e, (unsigned char *)&rdetail->exponent);
+    return BN_bn2bin(e, (unsigned char *) &rdetail->exponent);
 }
 
 RSA *tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path) {
@@ -572,15 +570,16 @@ RSA *tpm2_openssl_get_public_RSA_from_pem(FILE *f, const char *path) {
     }
 
     if (!pub) {
-         ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading public PEM file \"%s\" failed", path);
-         return NULL;
+        ERR_print_errors_fp(stderr);
+        LOG_ERR("Reading public PEM file \"%s\" failed", path);
+        return NULL;
     }
 
     return pub;
 }
 
-static bool load_public_RSA_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub) {
+static bool load_public_RSA_from_pem(FILE *f, const char *path,
+        TPM2B_PUBLIC *pub) {
 
     /*
      * Public PEM files appear in two formats:
@@ -632,7 +631,7 @@ static const struct {
 static TPMI_ECC_CURVE ossl_nid_to_curve(int nid) {
 
     unsigned i;
-    for (i=0; i < ARRAY_LEN(nid_curve_map); i++) {
+    for (i = 0; i < ARRAY_LEN(nid_curve_map); i++) {
         TPMI_ECC_CURVE c = nid_curve_map[i].curve;
         int n = nid_curve_map[i].nid;
 
@@ -648,7 +647,7 @@ static TPMI_ECC_CURVE ossl_nid_to_curve(int nid) {
 int tpm2_ossl_curve_to_nid(TPMI_ECC_CURVE curve) {
 
     unsigned i;
-    for (i=0; i < ARRAY_LEN(nid_curve_map); i++) {
+    for (i = 0; i < ARRAY_LEN(nid_curve_map); i++) {
         TPMI_ECC_CURVE c = nid_curve_map[i].curve;
         int n = nid_curve_map[i].nid;
 
@@ -711,15 +710,15 @@ static bool load_public_ECC_from_key(EC_KEY *k, TPM2B_PUBLIC *pub) {
 
     unsigned x_size = BN_num_bytes(x);
     if (x_size > sizeof(X->buffer)) {
-        LOG_ERR("X coordinate is too big. Got %u expected less than or equal to %zu",
-                x_size, sizeof(X->buffer));
+        LOG_ERR("X coordinate is too big. Got %u expected less than or equal to"
+                " %zu", x_size, sizeof(X->buffer));
         goto out;
     }
 
     unsigned y_size = BN_num_bytes(y);
     if (y_size > sizeof(Y->buffer)) {
-        LOG_ERR("X coordinate is too big. Got %u expected less than or equal to %zu",
-                y_size, sizeof(Y->buffer));
+        LOG_ERR("X coordinate is too big. Got %u expected less than or equal to"
+                " %zu", y_size, sizeof(Y->buffer));
         goto out;
     }
 
@@ -766,21 +765,22 @@ EC_KEY *tpm2_openssl_get_public_ECC_from_pem(FILE *f, const char *path) {
 
     EC_KEY *pub = PEM_read_EC_PUBKEY(f, NULL, NULL, NULL);
     if (!pub) {
-         ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading public PEM file \"%s\" failed", path);
-         return NULL;
+        ERR_print_errors_fp(stderr);
+        LOG_ERR("Reading public PEM file \"%s\" failed", path);
+        return NULL;
     }
 
     return pub;
 }
 
-static bool load_public_ECC_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pub) {
+static bool load_public_ECC_from_pem(FILE *f, const char *path,
+        TPM2B_PUBLIC *pub) {
 
     EC_KEY *k = tpm2_openssl_get_public_ECC_from_pem(f, path);
     if (!k) {
-         ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading PEM file \"%s\" failed", path);
-         return false;
+        ERR_print_errors_fp(stderr);
+        LOG_ERR("Reading PEM file \"%s\" failed", path);
+        return false;
     }
 
     bool result = load_public_ECC_from_key(k, pub);
@@ -790,7 +790,8 @@ static bool load_public_ECC_from_pem(FILE *f, const char *path, TPM2B_PUBLIC *pu
     return result;
 }
 
-static bool load_public_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+static bool load_public_AES_from_file(FILE *f, const char *path,
+        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     /*
      * Get the file size and validate that it is the proper AES keysize.
@@ -829,7 +830,6 @@ static bool load_public_AES_from_file(FILE *f, const char *path, TPM2B_PUBLIC *p
     return tpm2_util_calc_unique(name_alg, key, seed, unique);
 }
 
-
 static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
 
     const BIGNUM *p; /* the private key exponent */
@@ -857,7 +857,7 @@ static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
 
     int success = BN_bn2bin(p, pkr->buffer);
     if (!success) {
-        ERR_print_errors_fp (stderr);
+        ERR_print_errors_fp(stderr);
         LOG_ERR("Could not copy private exponent \"d\"");
         return false;
     }
@@ -865,7 +865,8 @@ static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
     return true;
 }
 
-bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub) {
+bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg,
+        TPM2B_PUBLIC *pub) {
 
     FILE *f = fopen(path, "rb");
     if (!f) {
@@ -882,7 +883,7 @@ bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLI
     case TPM2_ALG_ECC:
         result = load_public_ECC_from_pem(f, path, pub);
         break;
-    /* Skip AES here, as we can only load this one from a private file */
+        /* Skip AES here, as we can only load this one from a private file */
     default:
         /* default try TSS */
         result = files_load_public(path, pub);
@@ -893,34 +894,35 @@ bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLI
     return result;
 }
 
- static bool load_private_ECC_from_key(EC_KEY *k, TPM2B_SENSITIVE *priv) {
+static bool load_private_ECC_from_key(EC_KEY *k, TPM2B_SENSITIVE *priv) {
 
-     /*
-      * private data
-      */
-     priv->sensitiveArea.sensitiveType = TPM2_ALG_ECC;
+    /*
+     * private data
+     */
+    priv->sensitiveArea.sensitiveType = TPM2_ALG_ECC;
 
-     TPM2B_ECC_PARAMETER *p = &priv->sensitiveArea.sensitive.ecc;
+    TPM2B_ECC_PARAMETER *p = &priv->sensitiveArea.sensitive.ecc;
 
-     const BIGNUM *b = EC_KEY_get0_private_key(k);
+    const BIGNUM *b = EC_KEY_get0_private_key(k);
 
-     unsigned priv_bytes = BN_num_bytes(b);
-     if (priv_bytes > sizeof(p->buffer)) {
-         LOG_ERR("Expected ECC private portion to be less than or equal to %zu,"
-                 " got: %u", sizeof(p->buffer), priv_bytes);
-         return false;
-     }
+    unsigned priv_bytes = BN_num_bytes(b);
+    if (priv_bytes > sizeof(p->buffer)) {
+        LOG_ERR("Expected ECC private portion to be less than or equal to %zu,"
+                " got: %u", sizeof(p->buffer), priv_bytes);
+        return false;
+    }
 
-     p->size = priv_bytes;
-     int success = BN_bn2bin(b, p->buffer);
-     if (!success) {
-         return false;
-     }
+    p->size = priv_bytes;
+    int success = BN_bn2bin(b, p->buffer);
+    if (!success) {
+        return false;
+    }
 
-     return true;
+    return true;
 }
 
-static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path, const char *passin, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path,
+        const char *passin, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     tpm2_openssl_load_rc rc = lprc_error;
 
@@ -931,12 +933,12 @@ static tpm2_openssl_load_rc load_private_ECC_from_pem(FILE *f, const char *path,
     }
 
     EC_KEY *k = PEM_read_ECPrivateKey(f, NULL,
-        NULL, (void *)pass);
+    NULL, (void *) pass);
     free(pass);
     if (!k) {
-         ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading PEM file \"%s\" failed", path);
-         return lprc_error;
+        ERR_print_errors_fp(stderr);
+        LOG_ERR("Reading PEM file \"%s\" failed", path);
+        return lprc_error;
     }
 
     result = load_private_ECC_from_key(k, priv);
@@ -960,8 +962,8 @@ out:
     return rc;
 }
 
-static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path, const char *passin,
-        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path,
+        const char *passin, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     RSA *k = NULL;
 
@@ -974,12 +976,12 @@ static tpm2_openssl_load_rc load_private_RSA_from_pem(FILE *f, const char *path,
     }
 
     k = PEM_read_RSAPrivateKey(f, NULL,
-        NULL, (void *)pass);
+    NULL, (void *) pass);
     free(pass);
     if (!k) {
-         ERR_print_errors_fp (stderr);
-         LOG_ERR("Reading PEM file \"%s\" failed", path);
-         return lprc_error;
+        ERR_print_errors_fp(stderr);
+        LOG_ERR("Reading PEM file \"%s\" failed", path);
+        return lprc_error;
     }
 
     bool loaded_priv = load_private_RSA_from_key(k, priv);
@@ -1000,8 +1002,8 @@ out:
     return rc;
 }
 
-static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f, const char *path,
-        TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f,
+        const char *path, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
 
     unsigned long file_size = 0;
     bool result = files_get_file_size(f, &file_size, path);
@@ -1048,12 +1050,13 @@ static tpm2_openssl_load_rc load_private_AES_from_file(FILE *f, const char *path
  * @returns
  *  A private object loading status
  */
-tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pass, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv) {
+tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
+        const char *pass, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub,
+        TPM2B_SENSITIVE *priv) {
 
     FILE *f = fopen(path, "r");
     if (!f) {
-        LOG_ERR("Could not open file \"%s\", error: %s",
-                path, strerror(errno));
+        LOG_ERR("Could not open file \"%s\", error: %s", path, strerror(errno));
         return 0;
     }
 
@@ -1077,7 +1080,7 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pas
         }
         break;
     case TPM2_ALG_ECC:
-        rc =load_private_ECC_from_pem(f, path, pass, pub, priv);
+        rc = load_private_ECC_from_pem(f, path, pass, pub, priv);
         break;
     default:
         LOG_ERR("Cannot handle algorithm, got: %s", tpm2_alg_util_algtostr(alg,

@@ -16,11 +16,9 @@
 #define LIB_TPM2_OPENSSL_OPENSSL_PRE11
 #endif
 
-
 #if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
 int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
 #endif
-
 
 /**
  * Function prototype for a hashing routine.
@@ -36,7 +34,8 @@ int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
  * @return
  * A pointer to the digest or NULL on error.
  */
-typedef unsigned char *(*digester)(const unsigned char *d, size_t n, unsigned char *md);
+typedef unsigned char *(*digester)(const unsigned char *d, size_t n,
+        unsigned char *md);
 
 /**
  * Get an openssl hash algorithm ID from a tpm hashing algorithm ID.
@@ -78,13 +77,13 @@ void tpm2_openssl_hmac_free(HMAC_CTX *ctx);
  *  The byte buffer to be hashed.
  * @param length
  *  The length of the byte buffer to hash.
-^ * @param digest
-^ *  The result of hashing digests with halg.
+ ^ * @param digest
+ ^ *  The result of hashing digests with halg.
  * @return
  *  true on success, false on error.
  */
-bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg,
-        BYTE *buffer, UINT16 length, TPM2B_DIGEST *digest);
+bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg, BYTE *buffer,
+        UINT16 length, TPM2B_DIGEST *digest);
 
 /**
  * Hash a list of PCR digests.
@@ -92,13 +91,13 @@ bool tpm2_openssl_hash_compute_data(TPMI_ALG_HASH halg,
  *  The hashing algorithm to use.
  * @param digests
  *  The list of PCR digests to hash.
-^ * @param digest
-^ *  The result of hashing digests with halg.
+ ^ * @param digest
+ ^ *  The result of hashing digests with halg.
  * @return
  *  true on success, false on error.
  */
-bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg,
-        TPML_DIGEST *digests, TPM2B_DIGEST *digest);
+bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg, TPML_DIGEST *digests,
+        TPM2B_DIGEST *digest);
 
 /**
  * Hash a list of PCR digests, supporting multiple banks.
@@ -108,14 +107,13 @@ bool tpm2_openssl_hash_pcr_values(TPMI_ALG_HASH halg,
  *  The list that specifies which PCRs are selected.
  * @param pcrs
  *  The list of PCR banks, each containing a list of PCR digests to hash.
-^ * @param digest
-^ *  The result of hashing digests with halg.
+ ^ * @param digest
+ ^ *  The result of hashing digests with halg.
  * @return
  *  true on success, false on error.
  */
 bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hashAlg,
-        TPML_PCR_SELECTION *pcrSelect,
-        tpm2_pcrs *pcrs, TPM2B_DIGEST *digest);
+        TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs, TPM2B_DIGEST *digest);
 
 /**
  * Obtains an OpenSSL EVP_CIPHER_CTX dealing with version
@@ -147,9 +145,9 @@ digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg);
 
 typedef enum tpm2_openssl_load_rc tpm2_openssl_load_rc;
 enum tpm2_openssl_load_rc {
-    lprc_error     = 0,      /* an error has occurred */
-    lprc_private   = 1 << 0, /* successfully loaded a private portion of object */
-    lprc_public    = 1 << 1, /* successfully loaded a public portion of object */
+    lprc_error = 0, /* an error has occurred */
+    lprc_private = 1 << 0, /* successfully loaded a private portion of object */
+    lprc_public = 1 << 1, /* successfully loaded a public portion of object */
 };
 
 /**
@@ -162,7 +160,8 @@ enum tpm2_openssl_load_rc {
  *  True if the load status indicates it loaded a public portion of an object,
  *  false otherwise.
  */
-static inline bool tpm2_openssl_did_load_public(tpm2_openssl_load_rc load_status) {
+static inline bool tpm2_openssl_did_load_public(
+        tpm2_openssl_load_rc load_status) {
     return (load_status & lprc_public);
 }
 
@@ -190,8 +189,9 @@ static inline bool tpm2_openssl_did_load_public(tpm2_openssl_load_rc load_status
  * @returns
  *  A private object loading status
  */
-tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pass,
-        TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub, TPM2B_SENSITIVE *priv);
+tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
+        const char *pass, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub,
+        TPM2B_SENSITIVE *priv);
 
 /**
  * Loads a public portion of a key from a file. Files can be the raw key, in the case
@@ -206,7 +206,8 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path, const char *pas
  * @return
  *  True on success, false on failure.
  */
-bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg, TPM2B_PUBLIC *pub);
+bool tpm2_openssl_load_public(const char *path, TPMI_ALG_PUBLIC alg,
+        TPM2B_PUBLIC *pub);
 
 /**
  * Retrieves a public portion of an RSA key from a PEM file.
