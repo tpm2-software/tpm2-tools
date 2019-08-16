@@ -64,8 +64,7 @@ void tpm2_session_set_auth_value(tpm2_session *session, TPM2B_AUTH *auth) {
         session->input->auth_data.size = 0;
         memset(session->input->auth_data.buffer, 0xBA,
                 sizeof(session->input->auth_data.buffer));
-    }
-    else {
+    } else {
         memcpy(&session->input->auth_data, auth, sizeof(*auth));
     }
 }
@@ -120,27 +119,23 @@ static tool_rc start_auth_session(tpm2_session *session) {
 
     tpm2_session_data *d = session->input;
 
-    TPM2B_NONCE *nonce = session->input->nonce_caller.size > 0 ?
-            &session->input->nonce_caller : NULL;
+    TPM2B_NONCE *nonce =
+            session->input->nonce_caller.size > 0 ?
+                    &session->input->nonce_caller : NULL;
 
-    tool_rc rc = tpm2_start_auth_session(session->internal.ectx, d->key, d->bind,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-                        nonce, d->session_type,
-                        &d->symmetric, d->authHash,
-                        &session->output.session_handle);
+    tool_rc rc = tpm2_start_auth_session(session->internal.ectx, d->key,
+            d->bind, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nonce,
+            d->session_type, &d->symmetric, d->authHash,
+            &session->output.session_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
 
     if (d->attrs) {
-        rc = tpm2_sess_set_attributes(
-                session->internal.ectx,
-                session->output.session_handle,
-                d->attrs,
-                0xff);
+        rc = tpm2_sess_set_attributes(session->internal.ectx,
+                session->output.session_handle, d->attrs, 0xff);
         if (rc != tool_rc_success) {
-            tool_rc tmp_rc = tpm2_flush_context(
-                    session->internal.ectx,
+            tool_rc tmp_rc = tpm2_flush_context(session->internal.ectx,
                     session->output.session_handle);
             UNUSED(tmp_rc);
             return rc;
@@ -164,8 +159,8 @@ static void tpm2_session_free(tpm2_session **session) {
     }
 }
 
-tool_rc tpm2_session_open(ESYS_CONTEXT *context,
-        tpm2_session_data *data, tpm2_session **session) {
+tool_rc tpm2_session_open(ESYS_CONTEXT *context, tpm2_session_data *data,
+        tpm2_session **session) {
 
     tpm2_session *s = calloc(1, sizeof(tpm2_session));
     if (!s) {
@@ -226,7 +221,8 @@ COMPILE_ASSERT_SIZE(ESYS_TR, UINT32);
 COMPILE_ASSERT_SIZE(TPMI_ALG_HASH, UINT16);
 COMPILE_ASSERT_SIZE(TPM2_SE, UINT8);
 
-tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final, tpm2_session **session) {
+tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
+        tpm2_session **session) {
 
     tool_rc rc = tool_rc_general_error;
     tpm2_session *s = NULL;
@@ -243,8 +239,8 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
 
     FILE *f = fopen(dup_path, "rb");
     if (!f) {
-        LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
-                dup_path, strerror(errno));
+        LOG_ERR("Could not open path \"%s\", due to error: \"%s\"", dup_path,
+                strerror(errno));
         free(dup_path);
         return tool_rc_general_error;
     }
@@ -267,8 +263,7 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
     }
 
     ESYS_TR handle;
-    tool_rc tmp_rc = files_load_tpm_context_from_file(ctx,
-                    &handle, f);
+    tool_rc tmp_rc = files_load_tpm_context_from_file(ctx, &handle, f);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         LOG_ERR("Could not load session context");
@@ -300,14 +295,11 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
 
     if (ctx) {
         tool_rc tmp_rc = tpm2_util_esys_handle_to_sys_handle(ctx, handle,
-                    &sapi_handle);
+                &sapi_handle);
         UNUSED(tmp_rc);
 
         /* hack this in here, should be done when starting the session */
-        tmp_rc = tpm2_sess_get_attributes(
-                     ctx,
-                     handle,
-                     &attrs);
+        tmp_rc = tpm2_sess_get_attributes(ctx, handle, &attrs);
         UNUSED(tmp_rc);
     }
 
@@ -315,7 +307,8 @@ tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
 
     *session = s;
 
-    LOG_INFO("Restored session: ESYS_TR(0x%x) SAPI(0x%x) attrs(0x%x)", handle, sapi_handle, attrs);
+    LOG_INFO("Restored session: ESYS_TR(0x%x) SAPI(0x%x) attrs(0x%x)", handle,
+            sapi_handle, attrs);
 
     rc = tool_rc_success;
 
@@ -355,8 +348,8 @@ tool_rc tpm2_session_close(tpm2_session **s) {
     if (path) {
         session_file = fopen(path, "w+b");
         if (!session_file) {
-            LOG_ERR("Could not open path \"%s\", due to error: \"%s\"",
-                    path, strerror(errno));
+            LOG_ERR("Could not open path \"%s\", due to error: \"%s\"", path,
+                    strerror(errno));
             goto out;
         }
     } else {
@@ -365,7 +358,8 @@ tool_rc tpm2_session_close(tpm2_session **s) {
 
     if (flush) {
 
-        rc = tpm2_flush_context(session->internal.ectx, session->output.session_handle);
+        rc = tpm2_flush_context(session->internal.ectx,
+                session->output.session_handle);
         /* done use rc to inidcate status */
         goto out;
     }
@@ -375,14 +369,14 @@ tool_rc tpm2_session_close(tpm2_session **s) {
      */
     bool result = files_write_header(session_file, SESSION_VERSION);
     if (!result) {
-         LOG_ERR("Could not write context file header");
-         goto out;
+        LOG_ERR("Could not write context file header");
+        goto out;
     }
 
     // UINT8 session type:
     TPM2_SE session_type = session->input->session_type;
     result = files_write_bytes(session_file, &session_type,
-                sizeof(session_type));
+            sizeof(session_type));
     if (!result) {
         LOG_ERR("Could not write session type");
         goto out;
@@ -405,12 +399,12 @@ tool_rc tpm2_session_close(tpm2_session **s) {
 
     TPM2_HANDLE sapi_handle = 0;
     tpm2_util_esys_handle_to_sys_handle(session->internal.ectx, handle,
-                &sapi_handle);
+            &sapi_handle);
 
     LOG_INFO("Saved session: ESYS_TR(0x%x) SAPI(0x%x)", handle, sapi_handle);
 
     rc = files_save_tpm_context_to_file(session->internal.ectx,
-                tpm2_session_get_handle(session), session_file);
+            tpm2_session_get_handle(session), session_file);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not write session context");
     }
@@ -429,6 +423,6 @@ tool_rc tpm2_session_restart(ESYS_CONTEXT *context, tpm2_session *s) {
 
     ESYS_TR handle = tpm2_session_get_handle(s);
 
-    return tpm2_policy_restart(context, handle,
-                        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE);
+    return tpm2_policy_restart(context, handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE);
 }

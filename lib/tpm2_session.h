@@ -23,7 +23,7 @@ typedef struct tpm2_session tpm2_session;
  *   nonceCaller = a SHA1 hash of all 0s.
  *   symmetric = TPM2_ALG_NULL
  *   authHash = TPM2_ALG_SHA256
-^ *
+ ^ *
  * @param type
  *  The type of policy session, one of:
  *    - TPM2_SE_HMAC   - For an HMAC session.
@@ -144,8 +144,8 @@ static inline bool tpm2_session_is_trial(tpm2_session *session) {
  * @return
  *  A tool_rc indicating status.
  */
-tool_rc tpm2_session_open(ESYS_CONTEXT *context,
-        tpm2_session_data *data, tpm2_session **session);
+tool_rc tpm2_session_open(ESYS_CONTEXT *context, tpm2_session_data *data,
+        tpm2_session **session);
 
 /**
  * Saves session data to disk allowing tpm2_session_from_file() to
@@ -177,7 +177,8 @@ tool_rc tpm2_session_close(tpm2_session **session);
  * @return
  *  tool_rc indicating status.
  */
-tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final, tpm2_session **session);
+tool_rc tpm2_session_restore(ESYS_CONTEXT *ctx, const char *path, bool is_final,
+        tpm2_session **session);
 
 /**
  * restarts the session to it's initial state via a call to
