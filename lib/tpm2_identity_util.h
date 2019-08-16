@@ -9,7 +9,6 @@
 #include <openssl/hmac.h>
 #include <openssl/rsa.h>
 
-
 /**
  * Generates HMAC integrity and symmetric encryption keys for TPM2 identies.
  *
@@ -27,10 +26,8 @@
  *  True on success, false on failure.
  */
 bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
-        TPM2B_PUBLIC *parent_pub,
-        TPM2B_NAME *pubname,
-        TPM2B_DIGEST *protection_seed,
-        TPM2B_MAX_BUFFER *protection_hmac_key,
+        TPM2B_PUBLIC *parent_pub, TPM2B_NAME *pubname,
+        TPM2B_DIGEST *protection_seed, TPM2B_MAX_BUFFER *protection_hmac_key,
         TPM2B_MAX_BUFFER *protection_enc_key);
 
 /**
@@ -50,10 +47,8 @@ bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
  *  True on success, false on failure.
  */
 bool tpm2_identity_util_encrypt_seed_with_public_key(
-        TPM2B_DIGEST *protection_seed,
-        TPM2B_PUBLIC *parent_pub,
-        unsigned char *label,
-        int labelLen,
+        TPM2B_DIGEST *protection_seed, TPM2B_PUBLIC *parent_pub,
+        unsigned char *label, int labelLen,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed);
 
 /**
@@ -74,12 +69,9 @@ bool tpm2_identity_util_encrypt_seed_with_public_key(
  * @return
  *  True on success, false on failure.
  */
-bool tpm2_identity_util_calculate_inner_integrity(
-        TPMI_ALG_HASH name_alg,
-        TPM2B_SENSITIVE *sensitive,
-        TPM2B_NAME *pubname,
-        TPM2B_DATA *enc_sensitive_key,
-        TPMT_SYM_DEF_OBJECT *sym_alg,
+bool tpm2_identity_util_calculate_inner_integrity(TPMI_ALG_HASH name_alg,
+        TPM2B_SENSITIVE *sensitive, TPM2B_NAME *pubname,
+        TPM2B_DATA *enc_sensitive_key, TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_MAX_BUFFER *encrypted_inner_integrity);
 
 /**
@@ -102,13 +94,10 @@ bool tpm2_identity_util_calculate_inner_integrity(
  * @param outer_hmac
  *  The outer HMAC structure to populate.
  */
-void tpm2_identity_util_calculate_outer_integrity(
-        TPMI_ALG_HASH parent_name_alg,
-        TPM2B_NAME *pubname,
-        TPM2B_MAX_BUFFER *marshalled_sensitive,
+void tpm2_identity_util_calculate_outer_integrity(TPMI_ALG_HASH parent_name_alg,
+        TPM2B_NAME *pubname, TPM2B_MAX_BUFFER *marshalled_sensitive,
         TPM2B_MAX_BUFFER *protection_hmac_key,
-        TPM2B_MAX_BUFFER *protection_enc_key,
-        TPMT_SYM_DEF_OBJECT *sym_alg,
+        TPM2B_MAX_BUFFER *protection_enc_key, TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_MAX_BUFFER *encrypted_duplicate_sensitive,
         TPM2B_DIGEST *outer_hmac);
 
