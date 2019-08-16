@@ -20,100 +20,100 @@ static inline void set_pcr_select_size(TPMS_PCR_SELECTION *pcr_selection,
     pcr_selection->sizeofSelect = size;
 }
 
-bool pcr_get_id(const char *arg, UINT32 *pcrId) {
+bool pcr_get_id(const char *arg, UINT32 *pcr_id) {
 
-    if (arg == NULL || pcrId == NULL) {
-        LOG_ERR("arg or pcrId is NULL");
+    if (arg == NULL || pcr_id == NULL) {
+        LOG_ERR("arg or pcr_id is NULL");
         return false;
     }
 
-    return tpm2_util_handle_from_optarg(arg, pcrId, TPM2_HANDLE_FLAGS_PCR);
+    return tpm2_util_handle_from_optarg(arg, pcr_id, TPM2_HANDLE_FLAGS_PCR);
 }
 
 static bool pcr_parse_list(const char *str, size_t len,
-        TPMS_PCR_SELECTION *pcrSel) {
+        TPMS_PCR_SELECTION *pcr_select) {
     char buf[4];
-    const char *strCurrent;
-    int lenCurrent;
+    const char *current_string;
+    int current_length;
     UINT32 pcr;
 
     if (str == NULL || len == 0 || strlen(str) == 0) {
         return false;
     }
 
-    pcrSel->sizeofSelect = 3;
-    pcrSel->pcrSelect[0] = 0;
-    pcrSel->pcrSelect[1] = 0;
-    pcrSel->pcrSelect[2] = 0;
+    pcr_select->sizeofSelect = 3;
+    pcr_select->pcrSelect[0] = 0;
+    pcr_select->pcrSelect[1] = 0;
+    pcr_select->pcrSelect[2] = 0;
 
     if (!strncmp(str, "all", 3)) {
-        pcrSel->pcrSelect[0] = 0xff;
-        pcrSel->pcrSelect[1] = 0xff;
-        pcrSel->pcrSelect[2] = 0xff;
+        pcr_select->pcrSelect[0] = 0xff;
+        pcr_select->pcrSelect[1] = 0xff;
+        pcr_select->pcrSelect[2] = 0xff;
         return true;
     }
 
     do {
-        strCurrent = str;
-        str = memchr(strCurrent, ',', len);
+        current_string = str;
+        str = memchr(current_string, ',', len);
         if (str) {
-            lenCurrent = str - strCurrent;
+            current_length = str - current_string;
             str++;
-            len -= lenCurrent + 1;
+            len -= current_length + 1;
         } else {
-            lenCurrent = len;
+            current_length = len;
             len = 0;
         }
 
-        if ((size_t) lenCurrent > sizeof(buf) - 1) {
+        if ((size_t) current_length > sizeof(buf) - 1) {
             return false;
         }
 
-        snprintf(buf, lenCurrent + 1, "%s", strCurrent);
+        snprintf(buf, current_length + 1, "%s", current_string);
 
         if (!pcr_get_id(buf, &pcr)) {
             return false;
         }
 
-        pcrSel->pcrSelect[pcr / 8] |= (1 << (pcr % 8));
+        pcr_select->pcrSelect[pcr / 8] |= (1 << (pcr % 8));
     } while (str);
 
     return true;
 }
 
 static bool pcr_parse_selection(const char *str, size_t len,
-        TPMS_PCR_SELECTION *pcrSel) {
-    const char *strLeft;
+        TPMS_PCR_SELECTION *pcr_select) {
+    const char *left_string;
     char buf[7];
 
     if (str == NULL || len == 0 || strlen(str) == 0)
         return false;
 
-    strLeft = memchr(str, ':', len);
+    left_string = memchr(str, ':', len);
 
-    if (strLeft == NULL) {
+    if (left_string == NULL) {
         return false;
     }
 
-    if ((size_t) (strLeft - str) > sizeof(buf) - 1) {
+    if ((size_t) (left_string - str) > sizeof(buf) - 1) {
         return false;
     }
 
-    snprintf(buf, strLeft - str + 1, "%s", str);
+    snprintf(buf, left_string - str + 1, "%s", str);
 
-    pcrSel->hash = tpm2_alg_util_from_optarg(buf, tpm2_alg_util_flags_hash);
+    pcr_select->hash = tpm2_alg_util_from_optarg(buf, tpm2_alg_util_flags_hash);
 
-    if (pcrSel->hash == TPM2_ALG_ERROR) {
+    if (pcr_select->hash == TPM2_ALG_ERROR) {
         return false;
     }
 
-    strLeft++;
+    left_string++;
 
-    if ((size_t) (strLeft - str) >= len) {
+    if ((size_t) (left_string - str) >= len) {
         return false;
     }
 
-    if (!pcr_parse_list(strLeft, str + len - strLeft, pcrSel)) {
+    if (!pcr_parse_list(left_string, str + len - left_string, pcr_select)) {
         return false;
     }
 
@@ -176,7 +176,7 @@ static bool pcr_unset_pcr_sections(TPML_PCR_SELECTION *s) {
     return true;
 }
 
-bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs) {
+bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
 
     UINT32 vi = 0, di = 0, i;
     bool result = true;
@@ -184,17 +184,17 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs) {
     tpm2_tool_output("pcrs:\n");
 
     // Loop through all PCR/hash banks
-    for (i = 0; i < pcrSelect->count; i++) {
+    for (i = 0; i < pcr_select->count; i++) {
         const char *alg_name = tpm2_alg_util_algtostr(
-                pcrSelect->pcrSelections[i].hash, tpm2_alg_util_flags_hash);
+                pcr_select->pcrSelections[i].hash, tpm2_alg_util_flags_hash);
 
         tpm2_tool_output("  %s:\n", alg_name);
 
         // Loop through all PCRs in this bank
         UINT8 pcr_id;
-        for (pcr_id = 0; pcr_id < pcrSelect->pcrSelections[i].sizeofSelect * 8;
+        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8;
                 pcr_id++) {
-            if (!tpm2_util_is_pcr_select_bit_set(&pcrSelect->pcrSelections[i],
+            if (!tpm2_util_is_pcr_select_bit_set(&pcr_select->pcrSelections[i],
                     pcr_id)) {
                 // skip non-selected banks
                 continue;
@@ -268,35 +268,35 @@ bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections) {
     return true;
 }
 
-bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels) {
-    const char *strLeft = arg;
-    const char *strCurrent = arg;
-    int lenCurrent = 0;
+bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_select) {
+    const char *left_string = arg;
+    const char *current_string = arg;
+    int current_length = 0;
 
-    if (arg == NULL || pcrSels == NULL) {
+    if (arg == NULL || pcr_select == NULL) {
         return false;
     }
 
-    pcrSels->count = 0;
+    pcr_select->count = 0;
 
     do {
-        strCurrent = strLeft;
+        current_string = left_string;
 
-        strLeft = strchr(strCurrent, '+');
-        if (strLeft) {
-            lenCurrent = strLeft - strCurrent;
-            strLeft++;
+        left_string = strchr(current_string, '+');
+        if (left_string) {
+            current_length = left_string - current_string;
+            left_string++;
         } else
-            lenCurrent = strlen(strCurrent);
+            current_length = strlen(current_string);
 
-        if (!pcr_parse_selection(strCurrent, lenCurrent,
-                &pcrSels->pcrSelections[pcrSels->count]))
+        if (!pcr_parse_selection(current_string, current_length,
+                &pcr_select->pcrSelections[pcr_select->count]))
             return false;
 
-        pcrSels->count++;
-    } while (strLeft);
+        pcr_select->count++;
+    } while (left_string);
 
-    if (pcrSels->count == 0) {
+    if (pcr_select->count == 0) {
         return false;
     }
     return true;
@@ -399,14 +399,14 @@ bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data,
 }
 
 tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context,
-        TPML_PCR_SELECTION *pcrSelections, tpm2_pcrs *pcrs) {
+        TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
 
     TPML_PCR_SELECTION pcr_selection_tmp;
     TPML_PCR_SELECTION *pcr_selection_out;
     UINT32 pcr_update_counter;
 
     //1. prepare pcrSelectionIn with g_pcrSelections
-    memcpy(&pcr_selection_tmp, pcrSelections, sizeof(pcr_selection_tmp));
+    memcpy(&pcr_selection_tmp, pcr_select, sizeof(pcr_selection_tmp));
 
     //2. call pcr_read
     pcrs->count = 0;

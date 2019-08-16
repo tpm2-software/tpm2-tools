@@ -41,13 +41,22 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcrSelect, tpm2_pcrs *pcrs);
  * @return
  *  True on success, false otherwise.
  */
-bool pcr_get_id(const char *arg, UINT32 *pcrId);
+bool pcr_get_id(const char *arg, UINT32 *pcr_id);
 
 bool pcr_print_pcr_selections(TPML_PCR_SELECTION *pcr_selections);
-bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcrSels);
-tool_rc pcr_get_banks(ESYS_CONTEXT *esys_context, TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs);
-bool pcr_init_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION *pcr_sel, TPMI_ALG_HASH alg_id);
-bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data, TPML_PCR_SELECTION *pcr_sel);
-tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context, TPML_PCR_SELECTION *pcrSelections, tpm2_pcrs *pcrs);
+
+bool pcr_parse_selections(const char *arg, TPML_PCR_SELECTION *pcr_selections);
+
+tool_rc pcr_get_banks(ESYS_CONTEXT *esys_context,
+        TPMS_CAPABILITY_DATA *capability_data, tpm2_algorithm *algs);
+
+bool pcr_init_pcr_selection(TPMS_CAPABILITY_DATA *cap_data,
+        TPML_PCR_SELECTION *pcr_selections, TPMI_ALG_HASH alg_id);
+
+bool pcr_check_pcr_selection(TPMS_CAPABILITY_DATA *cap_data,
+        TPML_PCR_SELECTION *pcr_selections);
+
+tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context,
+        TPML_PCR_SELECTION *pcr_selections, tpm2_pcrs *pcrs);
 
 #endif /* SRC_PCR_H_ */
