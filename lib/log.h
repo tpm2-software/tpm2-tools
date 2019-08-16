@@ -74,6 +74,6 @@ static inline void _LOG_PERR(const char *func, TSS2_RC rc) {
  * @param level
  *  The logging level to set.
  */
-void log_set_level (log_level level);
+void log_set_level(log_level level);
 
 #endif /* SRC_LOG_H_ */
