@@ -254,6 +254,7 @@
   - \--parent-key-handle/-H becomes \--parent-key/-C
   - Parent public data option is optional and changes from `-K` to `-U`.
   - Supports importing external RSA 2048 keys via pem files.
+  - Supports ECC Parent keys.
 
 * tpm2_incrementalselftest:
   - Add tool to test support of specific algorithms.
