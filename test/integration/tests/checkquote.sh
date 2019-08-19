@@ -20,10 +20,8 @@ output_quotesig=quotesig.out
 output_quotepcr=quotepcr.out
 
 cleanup() {
-  rm -f $output_ek_pub_pem \
-        $output_ak_pub_pem $output_ak_pub_name \
-        $output_quote $output_quotesig $output_quotepcr rand.out \
-        $ak_ctx
+  rm -f $output_ek_pub_pem $output_ak_pub_pem $output_ak_pub_name \
+  $output_quote $output_quotesig $output_quotepcr rand.out $ak_ctx
 
   tpm2_pcrreset 16
   tpm2_evictcontrol -C o -c $handle_ek 2>/dev/null || true
@@ -49,15 +47,17 @@ getrandom() {
 # Key generation
 tpm2_createek -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem -p "$ekpw"
 
-tpm2_createak -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg\
-  -u $output_ak_pub_pem -f pem -n $output_ak_pub_name -p "$akpw"
+tpm2_createak -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg \
+-u $output_ak_pub_pem -f pem -n $output_ak_pub_name -p "$akpw"
 tpm2_evictcontrol -Q -c $ak_ctx $handle_ak
 
 # Quoting
 getrandom 20
-tpm2_quote -c $handle_ak -l sha256:15,16,22 -q $loaded_randomness -m $output_quote -s $output_quotesig -o $output_quotepcr -g $digestAlg -p "$akpw"
+tpm2_quote -c $handle_ak -l sha256:15,16,22 -q $loaded_randomness \
+-m $output_quote -s $output_quotesig -o $output_quotepcr -g $digestAlg -p "$akpw"
 
 # Verify quote
-tpm2_checkquote -u $output_ak_pub_pem -m $output_quote -s $output_quotesig -f $output_quotepcr -g $digestAlg -q $loaded_randomness
+tpm2_checkquote -u $output_ak_pub_pem -m $output_quote -s $output_quotesig \
+-f $output_quotepcr -g $digestAlg -q $loaded_randomness
 
 exit 0
