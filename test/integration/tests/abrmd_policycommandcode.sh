@@ -12,12 +12,12 @@ file_unseal_key_name=sealkey.name
 file_output_data=unsealed.data
 file_session_data=session.dat
 
-secret="12345678"
+secret=12345678
 
 cleanup() {
-    rm -f  $file_primary_key_ctx $file_input_data $file_policy $file_unseal_key_pub\
-    $file_unseal_key_priv $file_unseal_key_ctx $file_unseal_key_name\
-    $file_output_data $file_session_data
+    rm -f $file_primary_key_ctx $file_input_data $file_policy \
+    $file_unseal_key_pub $file_unseal_key_priv $file_unseal_key_ctx \
+    $file_unseal_key_name $file_output_data $file_session_data
 
     if [ "${1}" != "no-shutdown" ]; then
         shut_down
@@ -44,13 +44,13 @@ tpm2_flushcontext $file_session_data
 rm $file_session_data
 
 echo "tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
-  -r $file_unseal_key_priv -L $file_policy -i- <<< $secret"
+-r $file_unseal_key_priv -L $file_policy -i- <<< $secret"
 
 tpm2_create -C $file_primary_key_ctx -u $file_unseal_key_pub \
-  -r $file_unseal_key_priv -L $file_policy -i- <<< $secret
+-r $file_unseal_key_priv -L $file_policy -i- <<< $secret
 
 tpm2_load -C $file_primary_key_ctx -u $file_unseal_key_pub \
-  -r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
+-r $file_unseal_key_priv -n $file_unseal_key_name -c $file_unseal_key_ctx
 
 
 # Ensure unsealing passes with proper policy
@@ -67,7 +67,8 @@ rm $file_session_data
 cmp -s $file_output_data $file_input_data
 
 # Test that other operations fail
-if tpm2_encryptdecrypt -o $file_output_data -c $file_unseal_key_ctx $file_input_data; then
+if tpm2_encryptdecrypt -o $file_output_data -c $file_unseal_key_ctx \
+$file_input_data; then
     echo "tpm2_policycommandcode: Should have failed!"
     exit 1
 else
