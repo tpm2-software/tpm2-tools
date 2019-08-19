@@ -19,7 +19,7 @@ unintended_new_parent_name=dst2_n.name
 
 
 cleanup() {
-  rm -f  $source_parent_object $new_parent_object $new_parent_name \
+  rm -f $source_parent_object $new_parent_object $new_parent_name \
   $duplicable_object_private $duplicable_object_public $duplicable_object \
   $policy_duplication_select $duplicated_object_private $policy_session \
   $duplicated_object_seed $duplicable_object_name \
@@ -49,8 +49,8 @@ tpm2_readpublic -c $new_parent_object -n $new_parent_name -Q
 
 tpm2_startauthsession -S $policy_session
 
-tpm2_policyduplicationselect -S $policy_session  -N $new_parent_name \
-  -L $policy_duplication_select -Q
+tpm2_policyduplicationselect -S $policy_session -N $new_parent_name \
+-L $policy_duplication_select -Q
 
 tpm2_flushcontext $policy_session
 
@@ -58,23 +58,23 @@ rm $policy_session
 
 # Create the object to be duplicated using the policy
 tpm2_create -C $source_parent_object -g sha256 -G rsa \
-  -r $duplicable_object_private -u $duplicable_object_public \
-  -L $policy_duplication_select -a "sensitivedataorigin|sign|decrypt" \
-  -c $duplicable_object -Q
+-r $duplicable_object_private -u $duplicable_object_public \
+-L $policy_duplication_select -a "sensitivedataorigin|sign|decrypt" \
+-c $duplicable_object -Q
 
 # Satisfy the policy and duplicate the object
 tpm2_readpublic -c $duplicable_object -n $duplicable_object_name -Q
 
 tpm2_startauthsession -S $policy_session --policy-session
 
-tpm2_policyduplicationselect -S $policy_session  -N $new_parent_name \
-  -n $duplicable_object_name -Q
+tpm2_policyduplicationselect -S $policy_session -N $new_parent_name \
+-n $duplicable_object_name -Q
 
 tpm2_duplicate -C $new_parent_object -c $duplicable_object -G null \
-  -p session:$policy_session -r $duplicated_object_private \
-  -s $duplicated_object_seed
+-p session:$policy_session -r $duplicated_object_private \
+-s $duplicated_object_seed
 
-tpm2_flushcontext  $policy_session
+tpm2_flushcontext $policy_session
 
 rm $policy_session
 
@@ -85,20 +85,20 @@ tpm2_readpublic -c $new_parent_object -n $unintended_new_parent_name -Q
 
 tpm2_startauthsession -S $policy_session --policy-session
 
-tpm2_policyduplicationselect -S $policy_session  -N $unintended_new_parent_name \
-  -n $duplicable_object_name -Q
+tpm2_policyduplicationselect -S $policy_session -N $unintended_new_parent_name \
+-n $duplicable_object_name -Q
 
 ## Disable error reporting for expected failures to follow
 trap - ERR
 
 tpm2_duplicate -C $unintended_new_parent_object -c $duplicable_object -G null \
-  -p session:$policy_session -r $duplicated_object_private \
-  -s $duplicated_object_seed
+-p session:$policy_session -r $duplicated_object_private \
+-s $duplicated_object_seed
 
 ## Restore error reporting
 trap onerror ERR
 
-tpm2_flushcontext  $policy_session
+tpm2_flushcontext $policy_session
 
 rm $policy_session
 
