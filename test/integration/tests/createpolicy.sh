@@ -15,11 +15,14 @@ trap cleanup EXIT
 
 start_up
 
-declare -A digestlengths=(["sha1"]=20 ["sha256"]=32)
-declare -A expected_policy_digest=(["sha1"]="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
-                                   ["sha256"]="33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8")
+declare -A digestlengths=\
+([sha1]=20
+ [sha256]=32)
+declare -A expected_policy_digest=\
+([sha1]=f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988
+ [sha256]=33e36e786c878632494217c3f490e74ca0a3a122a8a4f3c5302500df3b32b3b8)
 
-tpm2_pcrread -V "sha1"
+tpm2_pcrread -V sha1
 
 for halg in ${!digestlengths[@]}
 do
@@ -32,8 +35,10 @@ do
     tpm2_createpolicy --policy-pcr -l $halg:0 -f pcr.in -L policy.out
 
     # Test the policy creation hashes against expected
-    if [ $(xxd -p policy.out | tr -d '\n' ) != "${expected_policy_digest[${halg}]}" ]; then
-        echo "Failure: Creating Policy Digest with PCR policy for index 0 and ${halg} pcr index hash"
+    if [ $(xxd -p policy.out | tr -d '\n' ) != \
+    "${expected_policy_digest[${halg}]}" ]; then
+        echo "Failure: Creating Policy Digest with PCR policy for index 0 and \
+        ${halg} pcr index hash"
         echo "Got: $(xxd -p policy.out | tr -d '\n')"
         echo "Expected: ${expected_policy_digest[${halg}]}"
         exit 1
