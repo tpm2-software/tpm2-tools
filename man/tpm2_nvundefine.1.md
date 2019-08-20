@@ -6,7 +6,7 @@
 
 # SYNOPSIS
 
-**tpm2_nvundefine** [*OPTIONS*]
+**tpm2_nvundefine** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -17,7 +17,7 @@ be specified as raw handle or an offset value to the nv handle range
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
     Specifies the hierarchy used to authorize.
     Supported options are:
@@ -25,17 +25,26 @@ be specified as raw handle or an offset value to the nv handle range
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a hierarchy handle may be specified.
 
-  * **-P**, **\--auth**=_AUTH\_VALUE_:
+  * **-P**, **\--auth**=_AUTH_:
 
-    Specifies the authorization value for the hierarchy. Authorization values
-    should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    Specifies the authorization value for the hierarchy.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the NV index or offset
+    number.
 
-[common tcti options](common/tcti.md)
+## References
 
-[authorization formatting](common/authorizations.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
+
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
