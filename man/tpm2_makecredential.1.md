@@ -2,8 +2,8 @@
 
 # NAME
 
-**tpm2_makecredential**(1) - Load an object that is not a Protected Object into the
-TPM.
+**tpm2_makecredential**(1) - Load an object that is not a Protected Object into
+the TPM.
 
 # SYNOPSIS
 
@@ -11,25 +11,25 @@ TPM.
 
 # DESCRIPTION
 
-**tpm2_makecredential**(1) - Use a TPM public key to protect a secret that is used
-to encrypt the AK certificate.  This can be used without a TPM by using
-the **none** TCTI option.
+**tpm2_makecredential**(1) - Use a TPM public key to protect a secret that is
+used to encrypt the attestation key certificate. This can be used without a TPM
+by using the **none** TCTI option.
 
 # OPTIONS
 
-  * **-e**, **\--encryption-key**=_PUBLIC\_FILE_:
+  * **-e**, **\--encryption-key**=_FILE_:
 
     A TPM public key which was used to wrap the seed.
 
-  * **-s**, **\--secret**=_SECRET\_DATA\_FILE_:
+  * **-s**, **\--secret**=_FILE_:
 
     The secret which will be protected by the key derived from the random seed.
 
-  * **-n**, **\--name**=_NAME_:
+  * **-n**, **\--name**=_FILE_:
 
     The name of the key for which certificate is to be created.
 
-  * **-o**, **\--credential-blob**=_OUTPUT_:
+  * **-o**, **\--credential-blob**=_FILE_:
 
     The output file path, recording the two structures output by
     tpm2_makecredential function.
