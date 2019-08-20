@@ -10,43 +10,54 @@
 
 # DESCRIPTION
 
-**tpm2_policypcr**(1) - Generates a PCR policy event with the TPM. A PCR policy event
-creates a policy bound to specific PCR values and is useful within larger policies
-constructed using policyor and policyauthorize events. See **tpm2_policyor(1)**
-and **tpm2_policyauthorize(1)** respectively for their usages.
+**tpm2_policypcr**(1) - Generates a PCR policy event with the TPM. A PCR policy
+event creates a policy bound to specific PCR values and is useful within larger
+policies constructed using policyor and policyauthorize events. See
+**tpm2_policyor(1)** and **tpm2_policyauthorize(1)** respectively for their
+usages.
 
 # OPTIONS
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     File to save the policy digest.
 
-  * **-f**, **\--pcr**=_PCR\_FILE_:
+  * **-f**, **\--pcr**=_FILE_:
 
     Optional Path or Name of the file containing expected PCR values for the
     specified index. Default is to read the current PCRs per the set list.
 
-  * **-l**, **\--pcr-list**=_PCR\_LIST_:
+  * **-l**, **\--pcr-list**=_PCR_:
 
     The list of PCR banks and selected PCRs' ids for each bank.
 
-  * **-S**, **\--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[supported hash algorithms](common/hash.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[algorithm specifiers](common/alg.md)
+[pcr bank specifiers](common/pcr.md) details the syntax for specifying pcr list
+_PCR_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
-Starts a *trial* session, builds a PCR policy and uses that policy in the creation of an object.
-Then, it uses a *policy* session to unseal some data stored in the object.
+Starts a *trial* session, builds a PCR policy and uses that policy in the
+creation of an object. Then, it uses a *policy* session to unseal some data
+stored in the object.
 
 ## Step 1: create a policy
 ```bash
@@ -63,9 +74,11 @@ tpm2_flushcontext session.dat
 
 # Step 2: create an object using that policy
 ```bash
-tpm2_create -Q -u key.pub -r key.priv -C primary.ctx -L policy.dat -i- <<< "12345678"
+tpm2_create -Q -u key.pub -r key.priv -C primary.ctx -L policy.dat \
+-i- <<< "12345678"
 
-tpm2_load -C primary.ctx -u key.pub -r key.priv -n unseal.key.name -c unseal.key.ctx
+tpm2_load -C primary.ctx -u key.pub -r key.priv -n unseal.key.name \
+-c unseal.key.ctx
 ```
 
 ## Step 3: Satisfy the policy
