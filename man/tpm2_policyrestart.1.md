@@ -20,15 +20,19 @@ would still need to satisfy the policy.
 
 # OPTIONS
 
-  * **-S**, **\--session**=_SESSION\_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     Optional, A session file from **tpm2_startauthsession**(1)'s **-S** option.
-    This session is used in lieu of starting a session and using the PCR policy options.
-    **-L** is mutually exclusive of this option.
+    This session is used in lieu of starting a session and using the PCR policy
+    options.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
