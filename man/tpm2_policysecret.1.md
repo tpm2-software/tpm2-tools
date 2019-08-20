@@ -7,7 +7,7 @@ existing object.
 
 # SYNOPSIS
 
-**tpm2_policysecret** [*OPTIONS*] _AUTH\_VALUE_
+**tpm2_policysecret** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -17,7 +17,7 @@ object use.
 
 # OPTIONS
 
-  * **-c**, **\--object-context**=_OBJECT_CONTEXT_:
+  * **-c**, **\--object-context**=_OBJECT_:
 
     A context object specifier of a transient/permanent/persistent object. Either
     a file path of a object context blob or a loaded/persistent/permanent handle
@@ -26,28 +26,37 @@ object use.
     auth value from stdin. The argument follows the "authorization formatting
     standards", see section "Authorization Formatting".
 
-  * **-S**, **\--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     File to save the policy digest.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
+    the object specified with **-c**.
 
-[common tcti options](common/tcti.md)
+## References
 
-[limitations](common/policy-limitations.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[authorization formatting](common/authorizations.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
 Associate auth value of a sealing object to the owner hierarchy password.
-* Start a trial auth session and run **tpm2_policysecret**(1) to create policy that
-can only be satisfied if owner hierarchy auth value is supplied.
+* Start a trial auth session and run **tpm2_policysecret**(1) to create policy
+that can only be satisfied if owner hierarchy auth value is supplied.
 * Start a real policy session and provide the owner hierarchy auth value.
 * Provide the session input where in the policysecret for owner hierarchy auth
 was satisfied to the unseal tool.
