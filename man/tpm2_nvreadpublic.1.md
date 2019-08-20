@@ -10,7 +10,8 @@
 
 # DESCRIPTION
 
-**tpm2_nvreadpublic**(1) - Display all defined Non-Volatile (NV)s indices to stdout in a YAML format.
+**tpm2_nvreadpublic**(1) - Display all defined Non-Volatile (NV)s indices to
+stdout in a YAML format.
 
 Display metadata for all defined NV indices. Metadata includes:
 
