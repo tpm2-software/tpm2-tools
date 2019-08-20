@@ -7,22 +7,22 @@ effectively block/ unblock lockout authorization handle for issuing TPM clear.
 
 # SYNOPSIS
 
-**tpm2_clearcontrol** [*OPTIONS*] _OPERATION_
+**tpm2_clearcontrol** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
 **tpm2_clearcontrol**(1) - Allows user with knowledge of either lockout auth
 and or platform hierarchy auth to set disableClear which prevents the lockout
 authorization's capability to execute tpm2_clear. Only user with authorization
-knowledge of the platform hierarchy can clear the disableClear. ** As an argument
-the tool takes the _OPERATION_ as an integer 0|1 or string c|s to clear or set
-the disableClear attribute. By default it attempts a CLEAR operation**
+knowledge of the platform hierarchy can clear the disableClear. By default it
+attempts to clear the disableClear bit.
+
 Note: Platform hierarchy auth handle can always be used to clear the TPM with
 tpm2_clear command.
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_TPM\_HANDLE:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
     Specifies what auth handle, either platform hierarchy or lockout the tool
     should operate on. By default it operates on the platform hierarchy handle.
@@ -30,19 +30,27 @@ tpm2_clear command.
 
     **NOTE : Operating on platform hierarchy require platform authentication.**
 
-  * **-P**, **\--auth**=_HANDLE\_PASSWORD:
+  * **-P**, **\--auth**=_AUTH_:
 
-    The handle's authorization value.
-
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
+    The authorization value of the hierarchy specified with **-C**.
     This tool only respects the *Password* and *HMAC* options.
 
-[common options](common/options.md)
+  * **ARGUMENT**  ** Specify an integer 0|1 or string c|s to clear or set the
+    disableClear attribute.
 
-[common tcti options](common/tcti.md)
+## References
 
-[authorization formatting](common/authorizations.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
+
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
@@ -51,7 +59,7 @@ tpm2_clear command.
 tpm2_clearcontrol -C l s
 ```
 
-## Clear the disableClear to unblock lockout authorization for TPM clear operation
+## Clear the disableClear to unblock lockout authorization for TPM clear
 ```bash
 tpm2_clearcontrol -C p c
 ```
