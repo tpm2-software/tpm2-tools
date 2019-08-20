@@ -32,11 +32,9 @@ See sections 23.1 and sections 17 of the [TPM2.0 Specification](https://trustedc
 
 These options control extending the pcr:
 
-  * **-P**, **\--auth**=_PCR\_AUTH_:
+  * **-P**, **\--auth**=_AUTH_:
 
-    Specifies the authorization value for PCR. Authorization values
-    should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    Specifies the authorization value for PCR.
 
 [common options](common/options.md)
 
