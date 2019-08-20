@@ -15,7 +15,8 @@ endorsement hierarchy.
 under the endorsement hierarchy. The context of the attestation key is specified
 via **-c**.
 
-The tool outputs to stdout a YAML representation of the loaded key's name, for example:
+The tool outputs to stdout a YAML representation of the loaded key's name, for
+example:
 ```
 loaded-key:
   name: 000bac149518baa05540a0678bd9b624f8a98d042e46c60f4d098ba394d36fc49268
@@ -23,83 +24,72 @@ loaded-key:
 
 # OPTIONS
 
-  * **-P**, **\--eh-auth**=_ENDORSE\_AUTH_:
+  * **-P**, **\--eh-auth**=_AUTH_:
 
-    Specifies current endorsement hierarchy authorization.
-    Authorizations should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    The authorization value for the endorsement hierarchy.
 
-  * **-p**, **\--ak-auth**=_AK\_AUTH_
+  * **-p**, **\--ak-auth**=_AUTH_
 
-    Specifies the attestation key authorization when created.
-    Same formatting as the endorse authorization value or **-e** option.
+    The authorization value for the attestation key object created.
 
-  * **-C**, **\--ek-context**=_EK\_CONTEXT\_OBJECT_:
+  * **-C**, **\--ek-context**=_OBJECT_:
 
-    Specifies the object context of the endorsement key. Either a file or a handle number.
-    See section "Context Object Format".
+    The endorsement key object.
 
-  * **-c**, **\--ak-context**=_CONTEXT\_FILE\_NAME_:
+  * **-c**, **\--ak-context**=_FILE_:
 
-    Specifies a file path to save the context of the attestation key.
+    The file path to save the object context of the attestation key.
 
   * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
-    Specifies the algorithm type of AK. Supports:
+    Specifies the attestation key algorithm. Supports:
     * ecc - An P256 key.
     * rsa - An RSA2048 key.
     * keyedhash - hmac key.
 
-  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
-    Like **-G**, but specifies the digest algorithm used for signing.
-    Algorithms should follow the "formatting standards", see section
-    "Algorithm Specifiers". See section "Supported Hash Algorithms"
-    for a list of supported hash algorithms.
+    Specifies the digest algorithm used for signing.
 
-  * **-s**, **\--signing-algorithm**=_SIGN\_ALGORITHM_:
+  * **-s**, **\--signing-algorithm**=_ALGORITHM_:
 
-    Like **-G** but specifies signing algorithm. Algorithms should follow the
-    "formatting standards", see section "Algorithm Specifiers".
-    See section "Supported Signing Algorithms" for a list of supported
-    signing algorithms.
+    The signing algorithm.
 
   * **-u**, **\--public**=_FILE_:
 
-    Specifies the file used to save the public portion of AK. This will be a
-    binary data structure corresponding to the **TPM2B_PUBLIC** struct in the
-    specification. One can control the output to other formats via the
-    **\--format** option.
+    The file to save the public portion of the attestation key.
 
-  * **-n**, **\--ak-name**=_NAME_:
+  * **-n**, **\--ak-name**=_FILE_:
 
-    Specifies the file used to save the ak name, optional.
+    The file to save the attestation key name, optional.
 
-  * **-r**, **\--private**=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **\--private**=_FILE_:
 
     The output file which contains the sensitive portion of the object, optional.
 
-  * **-f**, **\--format**
+  * **-f**, **\--format**=_FORMAT_:
 
-    Format selection for the signature output file. See section "Signature Format Specifiers".
+    Format selection for the signature output file.
 
-[pubkey options](common/pubkey.md)
+## References
 
-[common options](common/options.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[common tcti options](common/tcti.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[authorization formatting](common/authorizations.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[context object format](common/ctxobj.md)
+[signature format specifiers](common/signature.md) option used to configure
+signature _FORMAT_.
 
-[supported signing algorithms](common/sign-alg.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[supported public object algorithms](common/object-alg.md)
-
-[supported hash algorithms](common/hash.md)
-
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
