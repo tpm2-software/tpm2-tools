@@ -19,22 +19,22 @@ allows policy based authorization, ie object attribute "userwithauth" is 0.
 
 # OPTIONS
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     File to save the compounded policy digest.
 
-  * **-S**, **\--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[supported hash algorithms](common/hash.md)
-
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
