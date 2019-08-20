@@ -26,41 +26,43 @@ It also saves a context file for future interactions with the object.
 
 # OPTIONS
 
-  * **-C**, **\--parent-context**=_PARENT\_CONTEXT\_OBJECT_:
+  * **-C**, **\--parent-context**=_OBJECT_:
 
-    Context object loaded object's parent. Either a file or a handle number.
-    See section "Context Object Format".
+    The parent object.
 
-  * **-P**, **\--auth**=_KEY\_AUTH_:
+  * **-P**, **\--auth**=_AUTH_:
 
-    Optional authorization value to use the parent object specified by **-C**.
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
+    The authorization value of the parent object specified by **-C**.
 
-  * **-u**, **\--public**=_PUBLIC\_OBJECT\_DATA\_FILE_:
+  * **-u**, **\--public**=_FILE_:
 
     A file containing the public portion of the object.
 
-  * **-r**, **\--private**=_PRIVATE\_OBJECT\_DATA\_FILE_:
+  * **-r**, **\--private**=_FILE_:
 
     A file containing the sensitive portion of the object.
 
-  * **-n**, **\--name**=_NAME\_DATA\_FILE_:
+  * **-n**, **\--name**=_FILE_:
 
     An optional file to save the name structure of the object.
 
-  * **-c**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
+  * **-c**, **\--key-context**=_FILE_:
 
     The file name of the saved object context, required.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[context object format](common/ctxobj.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[authorization formatting](common/authorizations.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
