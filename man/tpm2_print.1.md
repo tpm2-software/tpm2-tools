@@ -6,27 +6,46 @@
 
 # SYNOPSIS
 
-**tpm2_print** [*OPTIONS*] _PATH_
+**tpm2_print** [*OPTIONS*] [*ARGUMENT* or *STDIN*]
 
 # DESCRIPTION
 
-**tpm2_print**(1) - Decodes a TPM data structure and prints enclosed
-elements to stdout as YAML. A file path containing a TPM object may
-be specified as the _PATH_ argument. Reads from stdin if unspecified.
+**tpm2_print**(1) - Decodes a TPM data structure and prints enclosed elements to
+stdout as YAML. A file path containing a TPM object may be specified as the
+path argument. Reads from stdin if unspecified.
 
 # OPTIONS
 
   * **-t**, **\--type**:
 
-    Required. Type of data structure. Only **TPMS_ATTEST** and **TPMS_CONTEXT** are
-    presently supported.
+    Required. Type of data structure. Only **TPMS_ATTEST** and **TPMS_CONTEXT**
+    are presently supported.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the path of the TPM data.
 
-[common tcti options](common/tcti.md)
+## References
+
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
+
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
+
+## References
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
-
 
 ## Print a TPM Quote
 
