@@ -6,7 +6,7 @@
 
 # SYNOPSIS
 
-**tpm2_encryptdecrypt** [*OPTIONS*] _FILE_
+**tpm2_encryptdecrypt** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -16,20 +16,18 @@ If _FILE_ is not specified, defaults to *stdin*.
 
 # OPTIONS
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_OBJECT_:
 
-    Name of the key context object to be used for the  operation. Either a file
-    or a handle number. See section "Context Object Format".
+    The encryption key object.
 
-  * **-p**, **\--auth**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_AUTH_:
 
-    Optional authorization value to use the key specified by **-c**.
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
+    The authorization value for the encryption key object.
 
   * **-d**, **\--decrypt**:
 
-    Perform a decrypt operation. Default is encryption.
+    Perform a decrypt operation. Defaults to encryption when this option is not
+    specified.
 
   * **-e**, **\--pad**:
 
@@ -37,36 +35,42 @@ If _FILE_ is not specified, defaults to *stdin*.
     Applicable only to encryption and for input data with last block shorter
     than encryption block length.
 
-  * **-o**, **\--output**=_OUT\_FILE_:
+  * **-o**, **\--output**=_FILE_ or _STDOUT_:
 
-    Optional. Specifies the output file path for either the encrypted or decrypted
-    data, depending on option **-D**. If not specified, defaults to **stdout**.
+    The output file path for either the encrypted or decrypted data. If not
+    specified, defaults to **stdout**.
 
-  * **-G**, **\--mode**=_CIPHER\_MODE\_ALGORITHM_:
+  * **-G**, **\--mode**=_ALGORITHM_:
 
-    The key algorithm associated with this object. It defaults to the object's
-    mode or CFB if left unconfigured.
+    The key algorithm associated with this object. Defaults to object properties
+    or CFB if not defined.
 
-    It accepts friendly names just like **-g** option.
-    See section "Supported Public Object Algorithms" for a list
-    of supported object algorithms.
+  * **-t**, **\--iv**=_FILE_:
 
-  * **-t**, **\--iv**=_IV\_INPUT\_FILE_ : _IV\_OUTPUT\_FILE_:
+    Optional initialization vector to use. Defaults to 0's. Syntax allows for an
+    input file and output file source to be specified. The input file path is
+    first, optionally followed by a colon ":" and the output iv path. This
+    output iv can be saved for subsequent calls when chaining.
 
-    Optional. The initialization vector to use. Defaults to 0's. The specification
-  syntax allows for an input file and output file source to be specified. The input file
-  path is first, optionally followed by a colon ":" and the output iv path. This the output
-  iv can be saved for subsequent calls when chaining.
+  * **ARGUMENT** the command line argument specifies the input file path _FILE_
+    of the data to encrypt or decrypt.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[context object format](common/ctxobj.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[authorization formatting](common/authorizations.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[supported public object algorithms](common/object-alg.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
