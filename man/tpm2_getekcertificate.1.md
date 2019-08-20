@@ -2,38 +2,40 @@
 
 # NAME
 
-**tpm2_getekcertificate**(1) - Retrieve the Endorsement key Certificate for the TPM
-endorsement key from the TPM manufacturer's endorsement certificate hosting
+**tpm2_getekcertificate**(1) - Retrieve the Endorsement key Certificate for the
+TPM endorsement key from the TPM manufacturer's endorsement certificate hosting
 server.
 
 # SYNOPSIS
 
-**tpm2_getekcertificate** [*OPTIONS*] _URL_
+**tpm2_getekcertificate** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
 **tpm2_getekcertificate**(1) - Retrieve the Endorsement key Certificate for
-the TPM endorsement key from the TPM manufacturer's endorsement certificate hosting
-server. The argument _URL_ specifies the address for the ek certificate portal.
+the TPM endorsement key from the TPM manufacturer's endorsement certificate
+hosting server. The argument specifies the URL address for the ek certificate
+portal.
 
 # OPTIONS
 
-  * **-o**, **\--ek-certificate**=_EK\_CERTIFICATE\_FILE_:
+  * **-o**, **\--ek-certificate**=_FILE_ or _STDOUT_:
 
-    Specifies the file used to save the Endorsement key certificate retrieved from
-    the TPM manufacturer provisioning server. Defaults to stdout if not
-    specified.
+    The fileto save the Endorsement key certificate retrieved from the TPM
+    manufacturer provisioning server. Defaults to stdout if not specified.
 
   * **-X**, **\--allow-unverified**:
 
-    Specifies to attempt connecting with the TPM manufacturer provisioning server
-    without verifying server certificate.
+    Specifies to attempt connecting with the TPM manufacturer provisioning
+    server without verifying server certificate.
 
-    **WARNING**: This option should be used only on platforms with older CA certificates.
+    **WARNING**: This option should be used only on platforms with older CA
+    certificates.
 
-  * **-u**, **\--ek-public**: _EK\_PUBLIC\_FILE_
+  * **-u**, **\--ek-public**=_FILE_:
 
-    Specifies the file path for the endorsement key public portion in tss format.
+    Specifies the file path for the endorsement key public portion in tss
+    format.
 
   * **-x**, **\--offline**:
 
@@ -44,15 +46,16 @@ server. The argument _URL_ specifies the address for the ek certificate portal.
     single Internet facing provisioning server can utilize this tool in this
     mode.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the URL address for the ek
+    certificate portal.
 
-[common tcti options](common/tcti.md)
+## References
 
-[authorization formatting](common/authorizations.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[supported public object algorithms](common/object-alg.md)
-
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # NOTES
 
@@ -65,7 +68,8 @@ provided by setting the curl mode verbose, see
 ```bash
 tpm2_createek -G rsa -u ek.pub -c key.ctx
 
-tpm2_getekcertificate -X -o ECcert.bin -u ek.pub https://tpm.manufacturer.com/ekcertserver/
+tpm2_getekcertificate -X -o ECcert.bin -u ek.pub \
+https://tpm.manufacturer.com/ekcertserver/
 
 ```
 
