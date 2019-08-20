@@ -2,8 +2,8 @@
 
 # NAME
 
-**tpm2_policyauthorize**(1) - Allows for mutable policies by tethering to a signing
-authority.
+**tpm2_policyauthorize**(1) - Allows for mutable policies by tethering to a
+signing authority.
 
 # SYNOPSIS
 
@@ -25,47 +25,48 @@ in the policy digest.
 
 # OPTIONS
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     File to save the policy digest.
 
-  * **-S**, **\--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-  * **-i**, **\--input**=_POLICY\_FILE_:
+  * **-i**, **\--input**=_FILE_:
 
     The policy digest that has to be authorized.
 
-  * **-q**, **\--qualification**=_DATA_FILE_:
+  * **-q**, **\--qualification**=_FILE_:
 
     The policy qualifier data signed in conjunction with the input policy digest.
     This is a unique data that the signer can choose to include in the signature.
 
-  * **-n**, **\--name**=_NAME\_DATA\_FILE_:
+  * **-n**, **\--name**=_FILE_:
 
     File containing the name of the verifying public key. This ties the final
-    policy digest with a signer. This can be retrieved with **tpm2_readpublic**(1)
+    policy digest with a signer. This can be retrieved with
+    **tpm2_readpublic**(1)
 
-  * **-t**, **\--ticket**=_TICKET\_FILE_:
+  * **-t**, **\--ticket**=_FILE_:
 
     The ticket file to record the validation structure. This is generated with
     **tpm2_verifysignature**(1).
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[supported hash algorithms](common/hash.md)
-
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
 Starts a *trial* session, builds a PCR policy. This PCR policy digest is then
-an input to the **tpm2_policyauthorize**(1) along with policy qualifier data and a
-signer public. The resultant policy digest is then used in creation of objects.
+an input to the **tpm2_policyauthorize**(1) along with policy qualifier data and
+a signer public. The resultant policy digest is then used in creation of objects.
 
 Subsequently when the PCR change and so does the PCR policy digest, the actual
 policy digest from the **tpm2_policyauthorize**(1) used in creation of the object
