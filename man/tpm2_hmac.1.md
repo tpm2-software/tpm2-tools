@@ -6,32 +6,31 @@
 
 # SYNOPSIS
 
-**tpm2_hmac** [*OPTIONS*] _FILE_
+**tpm2_hmac** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
-**tpm2_hmac**(1) - Performs an HMAC operation on _FILE_ and returns the results. If
-_FILE_ is not specified, then data is read from stdin.
+**tpm2_hmac**(1) - Performs an HMAC operation and returns the results.
+If argument file is not specified, then data is read from stdin.
 
-The hashing algorithm defaults to the keys scheme or sha256 if the key has a NULL scheme.
+The hashing algorithm defaults to the keys scheme or sha256 if the key has a
+NULL scheme.
 
-Output defaults to *stdout* and binary format unless otherwise specified via **-o**
-and **--hex** options respectively.
+Output defaults to _STDOUT_ and binary format unless otherwise specified via
+**-o** and **--hex** options respectively.
 
 # OPTIONS
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_OBJECT_:
 
     The context object of the symmetric signing key providing the HMAC key.
     Either a file or a handle number. See section "Context Object Format".
 
-  * **-p**, **\--auth**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_AUTH_:
 
-    Optional authorization value to use the key specified by **-C**.
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
+    Optional authorization value to use the key specified by **-c**.
 
-  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm to use.
     Algorithms should follow the "formatting standards", see section
@@ -43,25 +42,33 @@ and **--hex** options respectively.
 
 	Convert the output hmac to hex format without a leading "0x".
 
-  * **-o**, **\--output**=_OUT\_FILE_
+  * **-o**, **\--output**=_FILE_:
 
-    Optional file record of the HMAC result. Defaults to stdout.
+    Optional file record of the HMAC result. Defaults to _STDOUT_.
 
-  * **-t**, **\--ticket**=_TICKET\_FILE_
+  * **-t**, **\--ticket**=_FILE_:
 
     Optional file record of the ticket result.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the file path for the data
+    to HMAC. Defaults to _STDIN_ if not specified.
 
-[common tcti options](common/tcti.md)
+## References
 
-[context object format](common/ctxobj.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[authorization formatting](common/authorizations.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[supported hash algorithms](common/hash.md)
+[authorization formatting](common/alg.md) details the methods for specifying
+_ALGORITHM_.
 
-[algorithm specifiers](common/alg.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
