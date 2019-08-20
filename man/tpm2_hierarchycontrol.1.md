@@ -24,7 +24,7 @@ Note: If password option is missing, assume NULL.
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_AUTH\_HANDLE_:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
     Specifies the handle used to authorize. Defaults to the "platform" hierarchy.
     Supported options are:
@@ -32,17 +32,23 @@ Note: If password option is missing, assume NULL.
       * **p** for **TPM_RH_PLATFORM**
       * **`<num>`** where a raw number can be used.
 
-  * **-P**, **\--hierarchy-auth**=_HIERARCHY\_\_AUTH\_VALUE_:
+  * **-P**, **\--hierarchy-auth**=_AUTH_:
 
-    Specifies the authorization value for the hierarchy. Authorization values
-    should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    Specifies the authorization value for the hierarchy.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[authorization formatting](common/authorizations.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
