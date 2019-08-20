@@ -6,13 +6,14 @@
 
 # SYNOPSIS
 
-**tpm2_nvwrite** [*OPTIONS*] _NV\_INDEX_
+**tpm2_nvwrite** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
-**tpm2_nvwrite**(1) - Write data specified via _FILE_ to a Non-Volatile (NV) index.
-If _FILE_ is not specified, it defaults to stdin. The index can be specified as
-raw handle or an offset value to the nv handle range "TPM2_HR_NV_INDEX".
+**tpm2_nvwrite**(1) - Write data specified via _FILE_ to a Non-Volatile (NV)
+index. If _FILE_ is not specified, it defaults to stdin. The index can be
+specified as raw handle or an offset value to the nv handle range
+"TPM2_HR_NV_INDEX".
 
 # OPTIONS
 
@@ -20,7 +21,7 @@ raw handle or an offset value to the nv handle range "TPM2_HR_NV_INDEX".
 
     Specifies the input file with data to write to NV.
 
-  * **-C**, **\--hierarchy**=_AUTH_HANDLE_:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
     Specifies the hierarchy used to authorize.
     Supported options are:
@@ -32,23 +33,27 @@ raw handle or an offset value to the nv handle range "TPM2_HR_NV_INDEX".
     authorize against the index. The index auth value is set via the
     **-p** option to **tpm2_nvdefine**(1).
 
-  * **-P**, **\--auth**=_HIERARCHY\_AUTH_:
+  * **-P**, **\--auth**=_AUTH_:
 
-    Specifies the authorization value for the hierarchy. Authorization values
-    should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    Specifies the authorization value for the hierarchy.
 
-  * **\--offset**=_OFFSET_:
+  * **\--offset**=_NATURAL_NUMBER_:
 
     The offset within the NV index to start writing at.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[authorization formatting](common/authorizations.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[PCR bank specifiers](common/pcr.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
