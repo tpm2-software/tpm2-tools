@@ -7,7 +7,7 @@ localities.
 
 # SYNOPSIS
 
-**tpm2_policylocality** [*OPTIONS*] _LOCALITY_
+**tpm2_policylocality** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -39,17 +39,23 @@ Anything from the range 32 - 255 are extended localities.
 
 # OPTIONS
 
-  * **-S**, **\--session**=_SESSION\_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     File to save the policy digest.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the locality number.
 
-[common tcti options](common/tcti.md)
+## References
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
@@ -70,13 +76,13 @@ tpm2_flushcontext session.dat
 tpm2_createprimary -C o -c prim.ctx
 
 tpm2_create -C prim.ctx -u sealkey.pub -r sealkey.priv -L policy.dat \
-  -i- <<< "SEALED-SECRET"
+-i- <<< "SEALED-SECRET"
 ```
 
 ## Try unseal operation
 ```bash
 tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
-  -c sealkey.ctx
+-c sealkey.ctx
 
 tpm2_startauthsession \--policy-session -S session.dat
 
