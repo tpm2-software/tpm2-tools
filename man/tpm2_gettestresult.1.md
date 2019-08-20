@@ -10,7 +10,8 @@
 
 # DESCRIPTION
 
-**tpm2_gettestresult**(1) will return the result of the tests conducted by the TPM.
+**tpm2_gettestresult**(1) will return the result of the tests conducted by the
+TPM.
 
 Error code will state if the test executed successfully or have failed.
 
@@ -38,7 +39,8 @@ tpm2_gettestresult
 
 # NOTES
 
-This command is the one of the few commands authorized to be submitted to TPM when in failure mode.
+This command is the one of the few commands authorized to be submitted to TPM
+when in failure mode.
 
 [returns](common/returns.md)
 
