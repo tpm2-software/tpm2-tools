@@ -7,7 +7,7 @@ TPM commands.
 
 # SYNOPSIS
 
-**tpm2_policycommandcode** [*OPTIONS*] _COMMAND\_CODE_
+**tpm2_policycommandcode** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -15,23 +15,29 @@ TPM commands.
 TPM commands. Useful when you want to allow only specific commands to interact
 with the TPM object.
 
-As an argument it takes the _COMMAND\_CODE_ as an integer
-or friendly string value. Friendly string to COMMAND CODE mapping can be found
-in section *COMMAND CODE MAPPINGS*.
+As an argument it takes the command as an integer or friendly string value.
+Friendly string to COMMAND CODE mapping can be found in section
+*COMMAND CODE MAPPINGS*.
 
 # OPTIONS
 
-  * **-S**, **\--session**=_SESSION\_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     A session file from **tpm2_startauthsession**(1)'s **-S** option.
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     File to save the policy digest.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies TPM2 command code.
 
-[common tcti options](common/tcti.md)
+## References
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 <!-- Generated Via (requires minor hand tweaks still)
 IFS=$'\n'
@@ -206,7 +212,8 @@ tpm2_flushcontext session.dat
 echo "Encrypt Me" > plain.txt
 
 tpm2_encryptdecrypt plain.txt -o enc.txt -c sealkey.ctx plain.txt
-ERROR: Esys_EncryptDecrypt2(0x12F) - tpm:error(2.0): authValue or authPolicy is not available for selected entity
+ERROR: Esys_EncryptDecrypt2(0x12F) - tpm:error(2.0): authValue or authPolicy is
+not available for selected entity
 ```
 
 [returns](common/returns.md)
