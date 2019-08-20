@@ -2,12 +2,12 @@
 
 # NAME
 
-**tpm2_clear**(1) - Clears lockout, endorsement and owner hierarchy authorization
-values.
+**tpm2_clear**(1) - Clears lockout, endorsement and owner hierarchy
+authorization values.
 
 # SYNOPSIS
 
-**tpm2_clear** [OPTIONS] _AUTH\_VALUE_
+**tpm2_clear** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -19,18 +19,29 @@ lockout hierarchy
 
 # OPTIONS
 
-  * **-c**, **\--auth-hierarchy**:
+  * **-c**, **\--auth-hierarchy**=_OBJECT_:
 
     Specifies the hierarchy the tools should operate on. By default
     it operates on the lockout hierarchy.
 
     **NOTE : Operating on platform hierarchy require platform authentication.**
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
+    the object specified with **-c**.
 
-[common tcti options](common/tcti.md)
+## References
 
-[authorization formatting](common/authorizations.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
+
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
