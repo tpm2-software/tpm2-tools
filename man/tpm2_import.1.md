@@ -2,7 +2,8 @@
 
 # NAME
 
-**tpm2_import**(1) - Imports an external key into the tpm as a TPM managed key object.
+**tpm2_import**(1) - Imports an external key into the tpm as a TPM managed key
+object.
 
 # SYNOPSIS
 
@@ -11,8 +12,8 @@
 # DESCRIPTION
 
 **tpm2_import**(1) - Imports an external generated key as TPM managed key object.
-It requires that the parent key object be a RSA key. Can also import a TPM managed
-key object created by the tpm2_duplicate tool.
+It requires that the parent key object be a RSA key. Can also import a TPM
+managed key object created by the tpm2_duplicate tool.
 
 # OPTIONS
 
@@ -39,54 +40,49 @@ These options control the key importation process:
     this file is the raw key bytes. For assymetric keys in PEM or DER
     format. A typical file is generated with `openssl genrsa`.
 
-  * **-C**, **\--parent-context**=_PARENT\_CONTEXT_:
+  * **-C**, **\--parent-context**=_OBJECT_:
 
-    Specifies the context object for the parent key. Either a file or a handle number.
-    See section "Context Object Format". The parent key **MUST** be an *RSA* key with an
-    symmetric cipher of *aes128cfb*.
+    The parent key object.
 
   * **-U**, **\--parent-public**=_FILE_:
 
-    Optional. Specifies the parent key public data file input. This can be read with
-    **tpm2_readpublic**(1) tool. If not specified, the tool invokes a tpm2_readpublic on the parent
-    object.
+    Optional. Specifies the parent key public data file input. This can be read
+    with **tpm2_readpublic**(1) tool. If not specified, the tool invokes a
+    tpm2_readpublic on the parent object.
 
   * **-k**, **\--encryption-key**=_FILE_:
 
-    Optional. Specifies the file containing the symmetric algorithm key that was used for the
-    inner wrapper. If the file is specified the tool assumes the algorithm is AES 128 in CFB mode
-    otherwise none.
+    Optional. Specifies the file containing the symmetric algorithm key that was
+    used for the inner wrapper. If the file is specified the tool assumes the
+    algorithm is AES 128 in CFB mode otherwise none.
 
   * **-r**, **\--private**=_FILE_:
 
     Specifies the file path required to save the encrypted private portion of
     the object imported as key.
 
-    When importing a duplicated object this option specifies the file containing the
-    private portion of the object to be imported.
+    When importing a duplicated object this option specifies the file containing
+    the private portion of the object to be imported.
 
   * **-u**, **\--public**=_FILE_:
 
-    Specifies the file path required to save the public portion of the object imported as key
+    Specifies the file path required to save the public portion of the object
+    imported as key
 
-    When importing a duplicated object this option specifies the file containing the
-    public portion of the object to be imported.
+    When importing a duplicated object this option specifies the file containing
+    the public portion of the object to be imported.
 
   * **-a**, **\--attributes**=_ATTRIBUTES_:
 
     The object attributes, optional.
 
-  * **-P**, **\--parent-auth**=_PARENT\_KEY\_AUTH_:
+  * **-P**, **\--parent-auth**=_AUTH_:
 
-    The authorization value for using the parent key, optional.
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
+    The authorization value for using the parent key specified with **-C**.
 
-  * **-p**, **\--key-auth**=_KEY\_AUTH_:
+  * **-p**, **\--key-auth**=_AUTH_:
 
-    The authorization value for the key, optional.
-    Follows the authorization formatting of the
-    "password for parent key" option: **-P**.
+    The authorization value for the imported key, optional.
 
   * **-L**, **\--policy**=_POLICY\_FILE_:
 
@@ -98,17 +94,29 @@ These options control the key importation process:
 
   * **\--passin**=_OSSL\_PEM\_FILE\_PASSWORD_
 
-    An optional password for an Open SSL (OSSL) provided input file. It mirrors the -passin option of
-    OSSL and is known to support the pass, file, env, fd and plain password formats of openssl.
-    (see *man(1) openssl*) for more.
+    An optional password for an Open SSL (OSSL) provided input file. It mirrors
+    the -passin option of OSSL and is known to support the pass, file, env, fd
+    and plain password formats of openssl. (see *man(1) openssl*) for more.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[context object format](common/ctxobj.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[algorithm specifiers](common/alg.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
+
+[object attribute specifiers](common/obj-attrs.md) details the options for
+specifying the object attributes _ATTRIBUTES_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
@@ -147,7 +155,8 @@ tpm2_import -C parent.ctx -i key.dup -u key.pub -r key.priv -L policy.dat
 ```
 
 # LIMITATIONS
-  * The TPM requires that the name algorithm of the child be smaller than the parent.
+  * The TPM requires that the name algorithm of the child be smaller than the
+    parent.
 
 [returns](common/returns.md)
 
