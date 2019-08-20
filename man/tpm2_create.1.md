@@ -19,93 +19,89 @@ maximum size of 256 bytes. Additionally it will load the created object if the
 
 These options for creating the TPM entity:
 
-  * **-C**, **\--parent-context**=_PARENT\_CONTEXT\_OBJECT_:
+  * **-C**, **\--parent-context**=_OBJECT_:
 
-    Context object for the created object's parent. Either a file or a handle
-    number. See section "Context Object Format".
+    The parent of the object to be created.
 
-  * **-P**, **\--parent-auth**=_PARENT\_KEY\_AUTH_:
+  * **-P**, **\--parent-auth**=_AUTH_:
 
-    The authorization value for using the parent key, optional.
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
+    The authorization value of the parent object specified with **-C**.
 
-  * **-p**, **\--key-auth**=_KEY\_AUTH_:
+  * **-p**, **\--key-auth**=_AUTH_:
 
-    The authorization value for the key, optional.
-    Follows the authorization formatting of the
-    "password for parent key" option: **-P**.
+    The authorization value for the created object.
 
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm for generating the objects name. This is optional
-    and defaults to sha256 when not specified. Algorithms should follow the
-    "formatting standards", see section "Algorithm Specifiers".
-    Also, see section "Supported Hash Algorithms" for a list of supported
-    hash algorithms.
+    and defaults to sha256 when not specified.
 
-  * **-G**, **\--key-algorithm**=_KEY\_ALGORITHM_:
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
     The key algorithm associated with this object. It defaults to "rsa" if not
     specified.
-    It accepts friendly names just like -g option.
-    See section "Supported Public Object Algorithms" for a list
-    of supported object algorithms. Mutually exclusive of **-i**.
 
   * **-a**, **\--attributes**=_ATTRIBUTES_:
 
-    The object attributes, optional. Object attributes follow the specifications
-    as outlined in "object attribute specifiers". The default for created objects is:
+    The object attributes, optional. The default for created objects is:
 
-    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
+    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|
+     TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|
+     TPMA_OBJECT_USERWITHAUTH`
 
-    When **-i** is specified for sealing, `TPMA_OBJECT_SIGN_ENCRYPT` and `TPMA_OBJECT_DECRYPT`
-    are removed from the default attribute set.
-    The algorithm is set in a way where the the object is only good for sealing and unsealing.
-    I.e. one cannot use an object for sealing and cryptography
+    When **-i** is specified for sealing, `TPMA_OBJECT_SIGN_ENCRYPT` and
+    `TPMA_OBJECT_DECRYPT` are removed from the default attribute set.
+    The algorithm is set in a way where the the object is only good for sealing
+    and unsealing. I.e. one cannot use an object for sealing and cryptography
     operations.
 
-  * **-i**, **\--sealing-input**=_FILE_:
+  * **-i**, **\--sealing-input**=_FILE_ or _STDIN_:
 
     The data file to be sealed, optional. If file is -, read from stdin.
-    When sealing data only the _TPM\_ALG\_KEYEDHASH_ algorithm with a NULL scheme is allowed.
-    Thus, **-G** cannot be specified.
+    When sealing data only the _TPM\_ALG\_KEYEDHASH_ algorithm with a NULL
+    scheme is allowed. Thus, **-G** cannot be specified.
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     The input policy file, optional.
 
-  * **-u**, **\--public**=_OUTPUT\_PUBLIC\_FILE_:
+  * **-u**, **\--public**=_FILE_:
 
-    The output file which contains the public portion of the created object, optional.
+    The output file which contains the public portion of the created object,
+    optional.
 
-  * **-r**, **\--private**=_OUTPUT\_PRIVATE\_FILE_:
+  * **-r**, **\--private**=_FILE_:
 
-    The output file which contains the sensitive portion of the object, optional.
+    The output file which contains the sensitive portion of the object,
+    optional.
 
-  * **-c**, **\--key-context**=_OUTPUT\_CONTEXT\_FILE_:
+  * **-c**, **\--key-context**=_FILE_:
 
-    The output file which contains the key context, optional. The key context is analogous to the context
-    file produced by **tpm2_load**(1), however is generated via a **tpm2_createloaded**(1) command. This option
-    can be used to avoid the normal **tpm2_create**(1) and **tpm2_load**(1) command sequences and do it all in one
-    command, atomically.
+    The output file which contains the key context, optional. The key context is
+    analogous to the context file produced by **tpm2_load**(1), however is
+    generated via a **tpm2_createloaded**(1) command. This option can be used to
+    avoid the normal **tpm2_create**(1) and **tpm2_load**(1) command sequences
+    and do it all in one command, atomically.
 
+## References
 
-[common options](common/options.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[common tcti options](common/tcti.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[context object format](common/ctxobj.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[authorization formatting](common/authorizations.md)
+[object attribute specifiers](common/obj-attrs.md) details the options for
+specifying the object attributes _ATTRIBUTES_.
 
-[supported hash algorithms](common/hash.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[supported public object algorithms](common/object-alg.md)
-
-[algorithm specifiers](common/alg.md)
-
-[object attribute specifiers](common/obj-attrs.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
@@ -118,9 +114,9 @@ tpm2_createprimary -c primary.ctx
 
 ## Create an Object
 
-This will create an object using all the default values and store the TPM sealed private
-and public portions to the paths specified via -u and -r respectively. The tool defaults
-to an RSA key.
+This will create an object using all the default values and store the TPM sealed
+private and public portions to the paths specified via -u and -r respectively.
+The tool defaults to an RSA key.
 
 ```bash
 tpm2_create -C primary.ctx -u obj.pub -r obj.priv
@@ -128,8 +124,8 @@ tpm2_create -C primary.ctx -u obj.pub -r obj.priv
 
 ## Seal Data to the TPM
 
-Outside of key objects, the TPM allows for small amounts of user specified data to be sealed to the
-TPM.
+Outside of key objects, the TPM allows for small amounts of user specified data
+to be sealed to the TPM.
 
 ```bash
 echo "my sealed data" > seal.dat
@@ -138,10 +134,10 @@ tpm2_create -C primary.ctx -i seal.dat -u obj.pub -r obj.priv
 
 ## Create an EC Key Object and Load it to the TPM
 
-Normally, when creating an object, only the public and private portions of the object
-are returned and the caller needs to use tpm2_load(1) to load those public and private
-portions to the TPM before being able to use the object. However, this can be
-accomplished within this command as well.
+Normally, when creating an object, only the public and private portions of the
+object are returned and the caller needs to use tpm2_load(1) to load those
+public and private portions to the TPM before being able to use the object.
+However, this can be accomplished within this command as well.
 
 ```bash
 tpm2_create -C primary.ctx -G ecc -u obj.pub -r obj.priv -c ecc.ctx
