@@ -10,9 +10,9 @@
 
 # DESCRIPTION
 
-**tpm2_getcap**(1) - Query the TPM for it's capabilities / properties and print them to the console.
-It takes a string form of the capability to query as an argument to the tool.
-Currently supported capability groups are:
+**tpm2_getcap**(1) - Query the TPM for it's capabilities / properties and print
+them to the console. It takes a string form of the capability to query as an
+argument to the tool. Currently supported capability groups are:
 
 - **properties-fixed**:
   Display fixed TPM properties.
