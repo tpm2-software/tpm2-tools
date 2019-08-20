@@ -15,12 +15,12 @@ session to be already established via **tpm2_startauthsession**(1). If
 the input session is a trial session this tool generates a policy digest that
 compounds two or more input  policy digests such that the resulting policy digest
 requires at least one of the policy events being true. If the input session is
-real policy session **tpm2_policyor**(1) authenticates the object successfully if
-at least one of the policy events are true.
+real policy session **tpm2_policyor**(1) authenticates the object successfully
+if at least one of the policy events are true.
 
 # OPTIONS
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
     File to save the compounded policy digest.
 
@@ -30,18 +30,18 @@ at least one of the policy events are true.
     in individual policies being added to final policy digest that can
     authenticate the object. The list begins with the policy digest hash alg.
 
-  * **-S**, **\--session**=_SESSION_FILE_:
+  * **-S**, **\--session**=_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[supported hash algorithms](common/hash.md)
-
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
@@ -50,8 +50,9 @@ and other being a set of PCR values that would result if the PCR were extended
 with a known value. Now create two separate policy digests, each with one set
 of the PCR values using **tpm2_policypcr**(1) tool in *trial* sessions. Now
 build a policy_or with the two PCR policy digests as inputs. Create a sealing
-object with an authentication policy compounding the 2 policies with **tpm2_policyor**
-and seal a secret. Unsealing with either of the PCR sets should be successful.
+object with an authentication policy compounding the 2 policies with
+**tpm2_policyor** and seal a secret. Unsealing with either of the PCR sets
+should be successful.
 
 ## Create two unique pcr policies with corresponding unique sets of pcrs.
 
@@ -88,7 +89,8 @@ rm session.ctx
 ```bash
 tpm2_startauthsession -S session.ctx
 
-tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
+tpm2_policyor -S session.ctx -L policyOR \
+-l sha256:set1.pcr0.policy,set2.pcr0.policy
 
 tpm2_flushcontext session.ctx
 
@@ -99,7 +101,8 @@ rm session.ctx
 ```bash
 tpm2_createprimary -C o -c prim.ctx
 
-tpm2_create -g sha256 -u sealkey.pub -r sealkey.priv -L policyOR -C prim.ctx -i- <<< "secretpass"
+tpm2_create -g sha256 -u sealkey.pub -r sealkey.priv -L policyOR -C prim.ctx \
+-i- <<< "secretpass"
 
 tpm2_load -C prim.ctx -c sealkey.ctx -u sealkey.pub -r sealkey.priv
 ```
@@ -110,7 +113,8 @@ tpm2_startauthsession -S session.ctx --policy-session
 
 tpm2_policypcr -S session.ctx -l sha1:23
 
-tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
+tpm2_policyor -S session.ctx -L policyOR \
+-l sha256:set1.pcr0.policy,set2.pcr0.policy
 
 unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
 
@@ -135,7 +139,8 @@ tpm2_policypcr -S session.ctx -l sha1:23
 
 ### This should fail
 ```bash
-tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
+tpm2_policyor -S session.ctx -L policyOR \
+-l sha256:set1.pcr0.policy,set2.pcr0.policy
 
 tpm2_flushcontext session.ctx
 
@@ -153,7 +158,8 @@ tpm2_startauthsession -S session.ctx --policy-session
 
 tpm2_policypcr -S session.ctx -l sha1:23
 
-tpm2_policyor -S session.ctx -L policyOR -l sha256:set1.pcr0.policy,set2.pcr0.policy
+tpm2_policyor -S session.ctx -L policyOR \
+-l sha256:set1.pcr0.policy,set2.pcr0.policy
 
 unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
 
