@@ -6,7 +6,7 @@
 
 # SYNOPSIS
 
-**tpm2_nvincrement** [*OPTIONS*] _NV\_INDEX_
+**tpm2_nvincrement** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -16,7 +16,7 @@ handle range "TPM2_HR_NV_INDEX".
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_AUTH_HANDLE_:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
     Specifies the hierarchy used to authorize.
     Supported options are:
@@ -28,19 +28,26 @@ handle range "TPM2_HR_NV_INDEX".
     authorize against the index. The index auth value is set via the
     **-p** option to **tpm2_nvdefine**(1).
 
-  * **-P**, **\--auth**=_HIERARCHY\_AUTH_:
+  * **-P**, **\--auth**=_AUTH_:
 
-    Specifies the authorization value for the hierarchy. Authorization values
-    should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    Specifies the authorization value for the hierarchy.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the NV index or offset
+    number.
 
-[common tcti options](common/tcti.md)
+## References
 
-[authorization formatting](common/authorizations.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[PCR bank specifiers](common/pcr.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
