@@ -26,7 +26,7 @@ It also saves a context file for future interactions with the object.
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_HIERARCHY_:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
     Hierarchy to use for the ticket, optional. Defaults to **n**, **null**.
     Supported options are:
@@ -42,64 +42,61 @@ It also saves a context file for future interactions with the object.
     * **rsa** - RSA 1024 or 2048 key.
     * **ecc** - ECC NIST P192, P224, P256, P384 or P521 public and private key.
 
-  * **-u**, **\--public**=_PUBLIC\_FILE_:
+  * **-u**, **\--public**=_FILE_:
 
-    The public portion of the object, this can be one of the following file formats:
-      * TSS - The TSS/TPM format. For example from option `-u` of command **tpm2_create**(1).
+    The public portion of the object, this can be one of the following file
+    formats:
+      * TSS - The TSS/TPM format. For example from option `-u` of command
+        **tpm2_create**(1).
       * RSA - OSSL PEM formats. For example `public.pem` from the command
         `openssl rsa -in private.pem -out public.pem -pubout`
       * ECC - OSSL PEM formats. For example `public.pem` from the command
         `openssl ec -in private.ecc.pem -out public.ecc.pem -pubout`
 
-  * **-r**, **\--private**=_PRIVATE\_FILE_:
+  * **-r**, **\--private**=_FILE_:
 
-    The sensitive portion of the object, optional. If one wishes to use the private portion
-    of a key, this must be specified. Like option **-u**, this command takes files in the
-    following format:
+    The sensitive portion of the object, optional. If one wishes to use the
+    private portion of a key, this must be specified. Like option **-u**, this
+    command takes files in the following format:
       * RSA - OSSL PEM formats. For example `private.pem` from the command
         `openssl genrsa -out private.pem 2048`
-        Since an RSA public key can be derived from the private PEM file, their is no
-        need to specify -u for the public portion.
+        Since an RSA public key can be derived from the private PEM file, their
+        is no need to specify -u for the public portion.
 
-    *Note*: The private portion does not respect TSS formats as it's impossible to get a **TPM2B_SENSITIVE** output from a previous command.
+    *Note*: The private portion does not respect TSS formats as it's impossible
+    to get a **TPM2B_SENSITIVE** output from a previous command.
 
-  * **-p**, **\--auth**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_AUTH_:
 
     The authorization value for the key, optional.
-    Follows the authorization formatting of the
-    "password for parent key" option: **-P**.
 
   * **-L**, **\--policy**=_POLICY\_FILE_:
 
-    The input policy file, optional. A file containing the hash of a policy derived from
-    `tpm2_createpolicy`.
+    The input policy file, optional. A file containing the hash of a policy
+    derived from `tpm2_createpolicy`.
 
-  * **-g**, **\--hash-algorithm**=_NAME\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm for generating the objects name. This is optional
     and defaults to sha256 when not specified. However, load external supports
-    having a *null* name algorithm. In this case, no cryptographic binding checks
-    between the public and private portions are performed.
-    Algorithms should follow the "formatting standards", see section "Algorithm Specifiers".
-    Also, see section "Supported Hash Algorithms" for a list of supported
-    hash algorithms.
+    having a *null* name algorithm. In this case, no cryptographic binding
+    checks between the public and private portions are performed.
 
   * **-a**, **\--attributes**=_ATTRIBUTES_:
 
-    The object attributes, optional. Object attributes follow the specifications
-    as outlined in "object attribute specifiers". The default for created objects is:
-    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_DECRYPT`. Optionally, if -p is specified or no
-    `-p` or `-L` is specified then `TPMA_OBJECT_USERWITHAUTH` is added to the default
-    attribute set.
+    The object attributes, optional. The default for created objects is:
+    `TPMA_OBJECT_SIGN_ENCRYPT|TPMA_OBJECT_DECRYPT`. Optionally, if -p is
+    specified or no `-p` or `-L` is specified then `TPMA_OBJECT_USERWITHAUTH`
+    is added to the default attribute set.
 
-    *Note*: If specifying attributes, the TPM will reject certain attributes like
-    **TPMA_OBJECT_FIXEDTPM**, as those guarantees cannot be made.
+    *Note*: If specifying attributes, the TPM will reject certain attributes
+    like **TPMA_OBJECT_FIXEDTPM**, as those guarantees cannot be made.
 
-  * **-c**, **\--key-context**=_CONTEXT\_FILE_
+  * **-c**, **\--key-context**=_FILE_
 
-    The file name of the saved object context, required.
+    The file name to save the object context, required.
 
-  * **-n**, **\--name**=_NAME\_DATA\_FILE_:
+  * **-n**, **\--name**=_FILE_:
 
     An optional file to save the object name, which is in a binary hash format.
     The size of the hash is based on name algorithm or the **-g** option.
@@ -111,23 +108,34 @@ It also saves a context file for future interactions with the object.
     file, env, fd and plain password formats of openssl.
     (see *man(1) openssl*) for more.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[authorization formatting](common/authorizations.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[supported hash algorithms](common/hash.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[supported public object algorithms](common/object-alg.md)
+[object attribute specifiers](common/obj-attrs.md) details the options for
+specifying the object attributes _ATTRIBUTES_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
+
 
 # NOTES
 
-* If the hierarchy is *null* or the name hashing algorithm is *null*, tickets produced using the object
-  will be NULL.
+* If the hierarchy is *null* or the name hashing algorithm is *null*, tickets
+  produced using the object will be NULL.
 
-* If the private portion of an object is specified, the hierarchy must be *null* or the TPM will reject
-  loading it.
+* If the private portion of an object is specified, the hierarchy must be *null*
+  or the TPM will reject loading it.
 
 
 # EXAMPLES
