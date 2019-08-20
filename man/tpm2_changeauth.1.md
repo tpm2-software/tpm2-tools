@@ -6,12 +6,12 @@
 
 # SYNOPSIS
 
-**tpm2_changeauth** [*OPTIONS*] [NEW\_PASSWORD]
+**tpm2_changeauth** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
-**tpm2_changeauth** - Configures authorization values for the various hierarchies,
-NV indices, transient and persistent objects.
+**tpm2_changeauth** - Configures authorization values for the various
+hierarchies, NV indices, transient and persistent objects.
 
 Note: For non-permanent objects (Transient objects and Persistent objects),
 copies of the private information (files or persistent handles) created prior
@@ -22,32 +22,40 @@ to changing auth are not invalidated.
 Passwords should follow the "password authorization formatting standards",
 see section "Authorization Formatting".
 
-  * **-p**, **\--object-auth**=_OBJECT\_AUTH_:
-
-    The old authorization value for the TPM object. Follows the "Authorization Formatting"
-    section below.
-
-  * **-c**, **\--object-context**=_OBJECT\_CONTEXT\_OBJECT_:
+  * **-c**, **\--object-context**=_OBJECT_:
 
     The key context object to be used for the operation.
-    See section "Context Object Format" for details.
 
-  * **-C**, **\--parent-context**=_PARENT\_CONTEXT\_OBJECT_:
+  * **-p**, **\--object-auth**=_AUTH_:
+
+    The old authorization value for the TPM object specified with **-c**.
+
+  * **-C**, **\--parent-context**=_OBJECT_:
 
     The parent object. This is required if the object for the operation is a
     transient or persistent object.
-    See section "Context Object Format" for details.
 
-  * **-r**, **\--private**=_OUTPUT\_PRIVATE\_FILE_:
-    The output file which contains the new sensitive portion of the object whose auth was being changed.
+  * **-r**, **\--private**=_FILE_:
+    The output file which contains the new sensitive portion of the object whose
+    auth was being changed.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
+    the object specified with **-c**.
 
-[common tcti options](common/tcti.md)
+## References
 
-[authorization formatting](common/authorizations.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[context object format](common/ctxobj.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
+
 
 # EXAMPLES
 
@@ -58,7 +66,7 @@ tpm2_changeauth -c endorsement newpass
 tpm2_changeauth -c lockout newpass
 ```
 
-## Change owner, endorsement and lockout authorizations from newpass to a new value
+## Change owner, endorsement and lockout authorizations
 ```bash
 tpm2_changeauth -c o -p newpass newerpass
 tpm2_changeauth -c e -p newpass newerpass
