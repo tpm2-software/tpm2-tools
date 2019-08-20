@@ -6,7 +6,7 @@
 
 # SYNOPSIS
 
-**tpm2_nvread** [*OPTIONS*] _NV\_INDEX_
+**tpm2_nvread** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -16,7 +16,7 @@ index can be specified as raw handle or an offset value to the nv handle range
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_AUTH_HANDLE_:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
     Specifies the hierarchy used to authorize.
     Supported options are:
@@ -32,29 +32,36 @@ index can be specified as raw handle or an offset value to the nv handle range
 
     File to write data
 
-  * **-P**, **\--auth**=_AUTH\_HIERARCHY\_VALUE__:
+  * **-P**, **\--auth**=_AUTH_:
 
-    Specifies the authorization value for the hierarchy. Authorization values
-    should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    Specifies the authorization value for the hierarchy.
 
-  * **-s**, **\--size**=_SIZE_:
+  * **-s**, **\--size**=_NATURAL_NUMBER_:
 
     Specifies the size of data to be read in bytes, starting from 0 if
     offset is not specified. If not specified, the size of the data
     as reported by the public portion of the index will be used.
 
-  * **\--offset**=_OFFSET_:
+  * **\--offset**=_NATURAL_NUMBER_:
 
     The offset within the NV index to start reading from.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the NV index or offset
+    number.
 
-[common tcti options](common/tcti.md)
+## References
 
-[authorization formatting](common/authorizations.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[PCR bank specifiers](common/pcr.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.d)
 
 # EXAMPLES
 
