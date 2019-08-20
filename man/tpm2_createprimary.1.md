@@ -10,19 +10,19 @@
 
 # DESCRIPTION
 
-**tpm2_createprimary**(1) - This command is used to create a primary object under
-one of the hierarchies: Owner, Platform, Endorsement, NULL. The command will create
-and load a Primary Object. The sensitive and public portions are not returned.
-A context file for the created object's handle is saved as a file for future interactions
-with the created primary.
+**tpm2_createprimary**(1) - This command is used to create a primary object
+under one of the hierarchies: Owner, Platform, Endorsement, NULL. The command
+will create and load a Primary Object. The sensitive and public portions are not
+returned. A context file for the created object's handle is saved as a file for
+future interactions with the created primary.
 
 # OPTIONS
 
-  * **-C**, **\--hierarchy**=_HIERARCHY_:
+  * **-C**, **\--hierarchy**=_OBJECT_:
 
-    Specify the hierarchy under which the object is created. This will also
-    dictate which authorization secret (if any) must be supplied. Defaults to
-    **o**, **TPM_RH_OWNER**, when no value specified.
+    The hierarchy under which the object is created. This will also dictate
+    which authorization secret (if any) must be supplied. Defaults to
+    **TPM_RH_OWNER**, when no value specified.
     Supported options are:
       * **o** for **TPM_RH_OWNER**
       * **p** for **TPM_RH_PLATFORM**
@@ -30,65 +30,65 @@ with the created primary.
       * **n** for **TPM_RH_NULL**
       * **`<num>`** where a raw number can be used.
 
-  * **-P**, **\--hierarchy-auth**=_HIERARCHY\_\_AUTH\_VALUE_:
+  * **-P**, **\--hierarchy-auth**=_AUTH_:
 
-    Optional authorization value when authorization is required to create object
-    under the specified hierarchy given via the **-a** option. Authorization
-    values should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    The authorization value for the hierarchy specified with **-C**.
 
-  * **-p**, **\--key-auth**=_OBJECT\_AUTH_:
+  * **-p**, **\--key-auth**=_AUTH_:
 
-    Optional authorization password for the newly created object. Password
-    values should follow the "authorization formatting standards", see section
-    "Authorization Formatting".
+    The authorization value for the primary object created.
 
   * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm to use for generating the objects name.
-    If not specified, the default name algorithm is SHA256.
-    Algorithms should follow the "formatting standards", see section
-    "Algorithm Specifiers". Also, see section
-    "Supported Hash Algorithms" for a list of supported hash algorithms.
+    Defaults to sha256 if not specified.
 
-  * **-G**, **\--key-algorithm**=_KEY\_ALGORITHM_:
+  * **-G**, **\--key-algorithm**=_ALGORITHM_:
 
-    Algorithm type for generated key. If not specified, the default key
-    algorithm is rsa2048:null:aes128cfb. See section "Supported Public Object Algorithms"
-    for a list of supported object algorithms.
+    The algorithm type for the generated primary key. Defaults to
+    rsa2048:null:aes128cfb.
 
-  * **-c**, **\--key-context**=_CONTEXT\_FILE\_NAME_:
+  * **-c**, **\--key-context**=_FILE_:
 
-    File name to use for the returned object context, required.
+    The file path to save the object context of the generated primary object.
 
-  * **-L**, **\--policy**=_POLICY\_FILE_:
+  * **-L**, **\--policy**=_FILE_:
 
-    An optional file input that contains the policy digest for policy based authorization of the object.
+    An optional file input that contains the policy digest for policy based
+    authorization of the object.
 
   * **-a**, **\--attributes**=_ATTRIBUTES_:
 
-    The object attributes, optional. Object attributes follow the specifications
-    as outlined in "object attribute specifiers". The default for created objects is:
+    The object attributes, optional. Defaults to:
+    `TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|
+     TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|
+     TPMA_OBJECT_USERWITHAUTH`
 
-    `TPMA_OBJECT_RESTRICTED|TPMA_OBJECT_DECRYPT|TPMA_OBJECT_FIXEDTPM|TPMA_OBJECT_FIXEDPARENT|TPMA_OBJECT_SENSITIVEDATAORIGIN|TPMA_OBJECT_USERWITHAUTH`
+  * **-u**, **\--unique-data**=_FILE_:
 
-  * **-u**, **\--unique-data**=_UNIQUE\_FILE_:
+    An optional file input that contains the unique field of **TPMT_PUBLIC** in
+    little-endian format.
 
-    An optional file input that contains the binary bits of a **TPMU_PUBLIC_ID** union where
-    numbers (such as length words) are in little-endian format. This is passed in the
-    unique field of **TPMT_PUBLIC**.
+## References
 
-[common options](common/options.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[common tcti options](common/tcti.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[authorization formatting](common/authorizations.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[supported hash algorithms](common/hash.md)
+[object attribute specifiers](common/obj-attrs.md) details the options for
+specifying the object attributes _ATTRIBUTES_.
 
-[supported public object algorithms](common/object-alg.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
+
 
 # EXAMPLES
 
@@ -105,10 +105,9 @@ Where unique.dat contains the binary-formatted data: 0x00 0x01 (0x00 * 256)
 
 ```bash
 tpm2_createprimary -C o -G rsa2048:aes128cfb -g sha256 -c prim.ctx \
-  -a 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
-  -u unique.dat
+-a 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|\
+noda' -u unique.dat
 ```
-
 
 [returns](common/returns.md)
 
