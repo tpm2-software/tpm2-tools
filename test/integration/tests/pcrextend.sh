@@ -19,7 +19,7 @@ for alg in `tpm2_getcap pcrs | sed -r -e '1d' -e s/'\s+-\s+(\w+):.*'/'\1'/g`; do
 
   hash=${alg_hashes[$alg]}
 
-  if [ ! -z  $digests ]; then
+  if [ ! -z $digests ]; then
       digests="$digests,"
   fi
 
@@ -47,7 +47,8 @@ else
     true
 fi
 
-oversizedspec="sha1=$(tpm2_pcrread sha1 | tail +2 | cut -d':' -f2 | sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
+oversizedspec="sha1=$(tpm2_pcrread sha1 | tail +2 | cut -d':' -f2 | \
+sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
 
 # Over-length spec should fail
 if tpm2_pcrextend 8:${oversizedspec}; then
