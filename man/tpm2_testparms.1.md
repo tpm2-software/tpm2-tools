@@ -6,12 +6,12 @@
 
 # SYNOPSIS
 
-**tpm2_testparms** [*OPTIONS*] _ALG\_SPEC_
+**tpm2_testparms** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
-**tpm2_testparms**(1) - Checks that the suite specified by _ALG\_SPEC_ is available for
-usage.
+**tpm2_testparms**(1) - Checks that the suite specified by _ALG\_SPEC_ is
+available for usage per _ALGORITHM_.
 
 Algorithms should follow the "formatting standards", see section "Algorithm Specifiers".
 
@@ -21,15 +21,18 @@ Also, see section "Supported Signing Schemes" for a list of supported hash algor
 
 This tool accepts no tool specific options.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
-[supported hash algorithms](common/hash.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[supported signing schemes](common/signschemes.md)
+[signature format specifiers](common/signature.md)
 
 # EXAMPLES
 
