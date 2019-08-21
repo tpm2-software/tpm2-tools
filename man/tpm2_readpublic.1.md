@@ -14,33 +14,38 @@
 
 # OPTIONS
 
-  * **-c**, **\--object-context**=_OBJECT\_CONTEXT_:
+  * **-c**, **\--object-context**=_OBJECT_:
 
-    Context object for the object to read. Either a file, a serialized handle or a handle number.
-    See section "Context Object Format".
+    Context object for the object to read.
 
-  * **-n**, **\--name**=_NAME\_DATA\_FILE_:
+  * **-n**, **\--name**=_FILE_:
 
     An optional file to save the name structure of the object.
 
-  * **-o**, **\--output**=_OUT\_FILE_:
+  * **-f**, **\--format**=_FORMAT_:
+
+    Public key format.
+
+  * **-o**, **\--output**=_FILE_:
 
     The output file path, recording the public portion of the object.
 
-  * **-t**, **\--serialized-handle**=_OUT\_HANDLE\_:
+  * **-t**, **\--serialized-handle**=_HANDLE_:
 
-    If the object to be read is a persistent object specified by a raw handle, optionally save the
-    serialized handle for use later. This routine does NOT verify the name of the object being read.
-    Callers should ensure that the contents of name match the expected objects name.
+    If the object to be read is a persistent object specified by a raw handle,
+    optionally save the serialized handle for use later. This routine does NOT verify the name of the object being read. Callers should ensure that the
+    contents of name match the expected objects name.
 
-[pubkey options](common/pubkey.md)
+## References
 
-[context object format](common/ctxobj.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[common options](common/options.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[common tcti options](common/tcti.md)
-
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 # EXAMPLES
 
 ## Create a primary object and read the public structure in an openssl compliant format
@@ -51,10 +56,11 @@ tpm2_readpublic -c primary.ctx -o output.dat -f pem
 
 ## Serialize an existing persistent object handle to disk for later use
 
-This work-flow is primarily intended for existing persistent TPM objects. This work-flow does
-not verify that the name of the serialized object matches the expected, and thus the serialized
-handle could be pointing to an attacker controlled object if no verification is done. If you are
-creating an object from scratch, save the serialized handle when making the object persistent.
+This work-flow is primarily intended for existing persistent TPM objects. This
+work-flow does not verify that the name of the serialized object matches the
+expected, and thus the serialized handle could be pointing to an attacker
+controlled object if no verification is done. If you are creating an object from
+scratch, save the serialized handle when making the object persistent.
 
 We assume that an object has already been persisted, for example via:
 
