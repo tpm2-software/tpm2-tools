@@ -6,18 +6,18 @@
 
 # SYNOPSIS
 
-**tpm2_stirrandom** [*OPTIONS*] _INPUT\_FILE_
+**tpm2_stirrandom** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
 **tpm2_stirrandom**(1) - Inject "additional information" as bytes into TPM entropy Protected Capability pool.
 
-"Additional information" can be extracted from _INPUT\_FILE_ or being read from stdin
-if _INPUT\_FILE_ is not specified.
+"Additional information" can be extracted from file specified as argument or
+being read from *STDIN* if argument is not specified.
 
 Up to 128 bytes can be injected at once through standard input to **tpm2_stirrandom**(1).
 
-If _INPUT\_FILE_ is larger than 128 bytes, **tpm2_stirrandom**(1) will fail.
+If input file is larger than 128 bytes, **tpm2_stirrandom**(1) will fail.
 
 Adding data through **tpm2_stirrandom**(1) will trigger a reseeding of TPM
 DRBG Protected Capability. It is used when performing any sensitive action
@@ -28,9 +28,13 @@ Protected Capability like updating TPM firmware.
 
 This command has no option
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.)
 
 # EXAMPLES
 
