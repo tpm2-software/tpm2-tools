@@ -34,14 +34,18 @@ echo "12345678" > $file_input_data
 
 tpm2_clear
 
-tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key_ctx
+tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
+-c $file_primary_key_ctx
 
-tpm2_create -Q -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub -r $file_rsaencrypt_key_priv  -C $file_primary_key_ctx
+tpm2_create -Q -g $alg_hash -G $alg_rsaencrypt_key -u $file_rsaencrypt_key_pub \
+-r $file_rsaencrypt_key_priv -C $file_primary_key_ctx
 
-tpm2_loadexternal -Q -C n   -u $file_rsaencrypt_key_pub  -c $file_rsaencrypt_key_ctx
+tpm2_loadexternal -Q -C n   -u $file_rsaencrypt_key_pub \
+-c $file_rsaencrypt_key_ctx
 
 #./tpm2_rsaencrypt -c context_loadexternal_out6.out -I secret.data -o rsa_en.out
-tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data $file_input_data
+tpm2_rsaencrypt -Q -c $file_rsaencrypt_key_ctx -o $file_rsa_en_output_data \
+$file_input_data
 
 # Test stdout output and test that stdin pipe works as well.
 cat $file_input_data | tpm2_rsaencrypt -c $file_rsaencrypt_key_ctx > /dev/null
