@@ -53,8 +53,11 @@ fi
 # make distcheck, so only do this with gcc.
 # Do a make distcheck in the root, clear it and than
 # cd to the variant directory.
-if [ "$CC" == "gcc" ]; then
-    ./configure
+if [[ "$CC" != clang* ]]; then
+    ./configure --enable-unit
+    # build with default options and build tests to see if any compilation
+    # errors arise with default config.
+    make check TESTS=""
     make distcheck
     make distclean
 fi
@@ -65,7 +68,7 @@ pushd ./build
 
 # Run scan-build for gcc only.
 # Scan-build does not work with clang because of asan linking errors.
-if [[ "$CC" == gcc* ]]; then
+if [[ "$CC" != clang ]]; then
     scan-build ../configure --enable-unit $config_flags
     scan-build --status-bugs make -j$(nproc)
 
