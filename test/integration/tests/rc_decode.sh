@@ -19,7 +19,8 @@ trap - EXIT
 declare -A codes
 
 tss2_tpm2_types=''
-for dir in "$(pkg-config --variable includedir tss2-esys)" /usr/local/include /usr/include; do
+for dir in "$(pkg-config --variable includedir tss2-esys)" \
+/usr/local/include /usr/include; do
     if [ -f "$dir/tss2/tss2_tpm2_types.h" ]; then
         tss2_tpm2_types="$dir/tss2/tss2_tpm2_types.h"
         break
