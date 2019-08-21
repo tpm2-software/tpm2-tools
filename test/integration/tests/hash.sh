@@ -24,8 +24,8 @@ cleanup "no-shut-down"
 
 echo "T0naX0u123abc" > $hash_in_file
 
-# Test with ticket and hash output files (binary) and verify that the output hash
-# is correct. Ticket is not stable and changes run to run, don't verify it.
+# Test with ticket and hash output files (binary) and verify that the output
+# hash is correct. Ticket is not stable and changes run to run, don't verify it.
 tpm2_hash -C e -g sha1 -o $hash_out_file -t $ticket_file $hash_in_file
 
 expected=`sha1sum $hash_in_file | awk '{print $1}'`
@@ -35,7 +35,7 @@ test "$expected" == "$actual"
 
 cleanup "no-shut-down"
 
-# Test platform hierarchy with multiple files and verify output against sha256sum
+# Test platform hierarchy with multiple files & verify output against sha256sum
 # Test a file redirection as well. Output files are binary.
 echo "T0naX0u123abc" > $hash_in_file
 tpm2_hash -C p -g sha256 -o $hash_out_file -t $ticket_file < $hash_in_file
@@ -59,7 +59,8 @@ if [ "$tpm_hash_val" != "$sha1sum_val" ]; then
   exit 1
 fi
 
-# Test a file that cannot be done in 1 update call. The tpm works on a 1024 block size.
+# Test a file that cannot be done in 1 update call.
+# The tpm works on a 1024 block size.
 dd if=/dev/urandom of=$hash_in_file bs=2093 count=1 2>/dev/null
 tpm_hash_val=`tpm2_hash --hex $hash_in_file`
 sha1sum_val=`sha1sum $hash_in_file | cut -d\  -f 1-2 | tr -d '[:space:]'`
