@@ -20,7 +20,7 @@ tpm2_clear -Q
 
 tpm2_createprimary -Q -C e -g sha256 -G rsa -c primary.ctx
 
-tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv  -C primary.ctx
+tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C primary.ctx
 
 tpm2_load -Q -C primary.ctx  -u key.pub  -r key.priv -n key.name -c key.dat
 
