@@ -250,3 +250,7 @@ int main(int argc, char *argv[]) {
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
+
+/* this function will yield compiler warnings (= errors due to -Werror) */
+void unused_function(int unused_param) {
+}
