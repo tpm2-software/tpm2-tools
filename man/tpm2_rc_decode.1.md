@@ -6,18 +6,24 @@
 
 # SYNOPSIS
 
-**tpm2_rc_decode** [*OPTIONS*] _RC\_CODE_
+**tpm2_rc_decode** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
-**tpm2_rc_decode**(1) - Converts an _RC\_CODE_ from the TPM or TSS2 software stack
-into human readable errors. Analogous to **strerror**(3), but for the TPM2 stack.
+**tpm2_rc_decode**(1) - Converts an _RC\_CODE_ from the TPM or TSS2 software
+stack into human readable errors. Analogous to **strerror**(3), but for the TPM2
+stack.
 
 # OPTIONS
 
 This tool takes no tool specific options.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the error code to be parsed.
+
+## References
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
 # EXAMPLES
 
