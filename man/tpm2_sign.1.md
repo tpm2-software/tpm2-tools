@@ -6,7 +6,7 @@
 
 # SYNOPSIS
 
-**tpm2_sign** [*OPTIONS*] _FILE_
+**tpm2_sign** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
@@ -19,18 +19,18 @@ the message.
 
 # OPTIONS
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_OBJECT_:
 
     Context object pointing to the the key used for signing. Either a file or a
     handle number. See section "Context Object Format".
 
-  * **-p**, **\--auth**=_KEY\_AUTH_:
+  * **-p**, **\--auth**_AUTH_:
 
     Optional authorization value to use the key specified by **-c**.
     Authorization values should follow the "authorization formatting standards",
     see section "Authorization Formatting".
 
-  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -38,7 +38,7 @@ the message.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-s**, **\--scheme**=_SIGNING\_SCHEME_:
+  * **-s**, **\--scheme**=_ALGORITHM_:
 
     The signing scheme used to sign the message. Optional.
     Signing schemes should follow the "formatting standards", see section
@@ -49,7 +49,7 @@ the message.
     If left unspecified, a default signature scheme for the key type will
      be used.
 
-  * **-d**, **\--digest**
+  * **-d**, **\--digest**:
 
     Indicate that _FILE_ is a file containing the digest of the message.
     When this option and **-t** is specified, a warning is
@@ -57,32 +57,37 @@ the message.
     You cannot use this option to sign a digest against a restricted
     signing key.
 
-  * **-t**, **\--ticket**=_TICKET\_FILE_:
+  * **-t**, **\--ticket**=_FILE_:
 
     The ticket file, containing the validation structure, optional.
 
-  * **-o**, **\--signature**=_SIGNATURE\_FILE_:
+  * **-o**, **\--signature**=_FILE_:
 
     The signature file, records the signature structure.
 
-  * **-f**, **\--format**
+  * **-f**, **\--format**=_FORMAT_:
 
-    Format selection for the signature output file. See section "Signature Format Specifiers".
+    Format selection for the signature output file. See section
+    "Signature Format Specifiers".
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the file data for sign.
 
-[common tcti options](common/tcti.md)
+## References
 
-[context object format](common/ctxobj.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[authorization formatting](common/authorizations.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[supported hash algorithms](common/hash.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[supported signing schemes](common/sign-alg.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[algorithm specifiers](common/alg.md)
-
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 [signature format specifiers](common/signature.md)
 
 # EXAMPLES
@@ -111,7 +116,8 @@ openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
 # Generate a hash to sign
 echo "data to sign" > data.in.raw
 
-sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+sha256sum data.in.raw | awk '{ print "000000 " $1 }' | \
+xxd -r -c 32 > data.in.digest
 
 # Load the private key for signing
 tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
@@ -119,7 +125,8 @@ tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
 # Sign in the TPM and verify with OSSL
 tpm2_sign -Q -c key.ctx -g sha256 -d -f plain -o data.out.signed data.in.digest
 
-openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+openssl dgst -verify public.ecc.pem -keyform pem -sha256 \
+-signature data.out.signed data.in.raw
 ```
 
 [returns](common/returns.md)
