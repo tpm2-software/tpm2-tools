@@ -3,13 +3,12 @@
 source helpers.sh
 
 cleanup() {
-    rm -f import_key.ctx  import_key.name  import_key.priv  import_key.pub \
-          parent.ctx plain.dec.ssl  plain.enc  plain.txt  sym.key \
-          import_rsa_key.pub import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name \
-          private.pem public.pem plain.rsa.enc plain.rsa.dec \
-          public.pem data.in.raw data.in.digest data.out.signed ticket.out \
-          ecc.pub ecc.priv ecc.name ecc.ctx private.ecc.pem public.ecc.pem \
-          passfile
+    rm -f import_key.ctx import_key.name import_key.priv import_key.pub \
+    parent.ctx plain.dec.ssl  plain.enc plain.txt sym.key import_rsa_key.pub \
+    import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name private.pem \
+    public.pem plain.rsa.enc plain.rsa.dec public.pem data.in.raw \
+    data.in.digest data.out.signed ticket.out ecc.pub ecc.priv ecc.name \
+    ecc.ctx private.ecc.pem public.ecc.pem passfile
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -24,7 +23,8 @@ run_aes_import_test() {
     dd if=/dev/urandom of=sym.key bs=1 count=$3 2>/dev/null
 
     #Symmetric Key Import Test
-    echo "tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub -r import_key.priv"
+    echo "tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 \
+    -u import_key.pub -r import_key.priv"
 
     tpm2_import -Q -G aes -g "$name_alg" -i sym.key -C $1 -u import_key.pub \
     -r import_key.priv
@@ -36,7 +36,8 @@ run_aes_import_test() {
 
     tpm2_encryptdecrypt -c import_key.ctx -o plain.enc plain.txt
 
-    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` -iv 0 -$2
+    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
+    -iv 0 -$2
 
     diff plain.txt plain.dec.ssl
 
@@ -57,34 +58,40 @@ run_rsa_import_test() {
     -n import_rsa_key.name -c import_rsa_key.ctx
 
     openssl rsa -in private.pem -out public.pem -outform PEM -pubout
-    openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt -out plain.rsa.enc
+    openssl rsautl -encrypt -inkey public.pem -pubin -in plain.txt \
+    -out plain.rsa.enc
 
     tpm2_rsadecrypt -c import_rsa_key.ctx -o plain.rsa.dec plain.rsa.enc
 
     diff plain.txt plain.rsa.dec
 
-    # test verifying a sigature with the imported key, ie sign in tpm and verify with openssl
+    # test verifying a sigature with the imported key, ie sign in tpm and
+    # verify with openssl
     echo "data to sign" > data.in.raw
 
-    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
+    data.in.digest
 
-    tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -d -f plain -o data.out.signed data.in.digest
+    tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -d -f plain \
+    -o data.out.signed data.in.digest
 
-    openssl dgst -verify public.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+    openssl dgst -verify public.pem -keyform pem -sha256 -signature \
+    data.out.signed data.in.raw
 
     # Sign with openssl and verify with TPM
     openssl dgst -sha256 -sign private.pem -out data.out.signed data.in.raw
 
     # Verify with the TPM
-    tpm2_verifysignature -Q -c import_rsa_key.ctx -g sha256 -m data.in.raw -f rsassa -s data.out.signed -t ticket.out
+    tpm2_verifysignature -Q -c import_rsa_key.ctx -g sha256 -m data.in.raw \
+    -f rsassa -s data.out.signed -t ticket.out
 
     rm import_rsa_key.ctx
 }
 
 run_ecc_import_test() {
     #
-    # Test loading an OSSL PEM format ECC key, and verifying a signature external
-    # to the TPM
+    # Test loading an OSSL PEM format ECC key, and verifying a signature
+    # external to the TPM
     #
 
     #
@@ -95,19 +102,24 @@ run_ecc_import_test() {
 
     # Generate a hash to sign
     echo "data to sign" > data.in.raw
-    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
+    data.in.digest
 
-    tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub -r ecc.priv
+    tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub \
+    -r ecc.priv
 
     tpm2_load -Q -C $1 -u ecc.pub -r ecc.priv -n ecc.name -c ecc.ctx
 
     # Sign in the TPM and verify with OSSL
-    tpm2_sign -Q -c ecc.ctx -g sha256 -d -f plain -o data.out.signed data.in.digest
-    openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+    tpm2_sign -Q -c ecc.ctx -g sha256 -d -f plain -o data.out.signed \
+    data.in.digest
+    openssl dgst -verify public.ecc.pem -keyform pem -sha256 \
+    -signature data.out.signed data.in.raw
 
     # Sign with openssl and verify with TPM.
     openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
-    tpm2_verifysignature -Q -c ecc.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
+    tpm2_verifysignature -Q -c ecc.ctx -g sha256 -m data.in.raw -f ecdsa \
+    -s data.out.signed
 
     rm ecc.ctx
 }
