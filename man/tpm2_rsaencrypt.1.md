@@ -6,13 +6,13 @@
 
 # SYNOPSIS
 
-**tpm2_rsaencrypt** [*OPTIONS*] _FILE_
+**tpm2_rsaencrypt** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
-**tpm2_rsaencrypt**(1) - Performs RSA encryption on the contents of _FILE_
+**tpm2_rsaencrypt**(1) - Performs RSA encryption on the contents of file data
 using the indicated padding scheme according to IETF RFC 3447 (PKCS#1).
-Input defaults to *stdin* if not specified.
+Input defaults to *STDIN* if not specified.
 
 The key referenced by key-context is **required** to be:
 
@@ -21,18 +21,17 @@ The key referenced by key-context is **required** to be:
 
 # OPTIONS
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_OBJECT_:
 
     Context object pointing to the the public portion of RSA key to use for
-    encryption. Either a file or a handle number.
-    See section "Context Object Format".
+    encryption.
 
-  * **-o**, **\--output**=_OUTPUT\_FILE_:
+  * **-o**, **\--output**=_FILE_:
 
     Optional output file path to record the encrypted data to. The default is to print
     the binary encrypted data to stdout.
 
-  * **-s**, **\--scheme**=_PADDING\_SCHEME_:
+  * **-s**, **\--scheme**=_FORMAT_:
 
     Optional, set the padding scheme (defaults to rsaes).
 
@@ -40,17 +39,30 @@ The key referenced by key-context is **required** to be:
     * rsaes - TPM_ALG_RSAES which is RSAES_PKCSV1.5.
     * oaep  - TPM_ALG_OAEP which is RSAES_OAEP.
 
-  * **-l**, **\--label**=_LABEL\_DATA_:
+  * **-l**, **\--label**=_FILE_ or _STRING_:
 
-    Optional, set the label data. Can either be a string or file path. The TPM requires the last
-    byte of the label to be zero, this is handled internally to the tool. No other embedded 0
-    bytes can exist or the TPM will truncate your label.
+    Optional, set the label data. Can either be a string or file path. The TPM
+    requires the last byte of the label to be zero, this is handled internally
+    to the tool. No other embedded 0 bytes can exist or the TPM will truncate
+    your label.
 
-[common options](common/options.md)
+  * **ARGUMENT** the command line argument specifies the path of the file with
+    data to be encrypted.
 
-[common tcti options](common/tcti.md)
+## References
 
-[context object format](common/ctxobj.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
+
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
+
 
 # EXAMPLES
 
