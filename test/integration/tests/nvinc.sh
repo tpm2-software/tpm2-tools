@@ -29,7 +29,8 @@ cleanup "no-shut-down"
 
 tpm2_clear
 
-tpm2_nvdefine -Q   $nv_test_index -C o -s 8 -a "ownerread|policywrite|ownerwrite|nt=1"
+tpm2_nvdefine -Q   $nv_test_index -C o -s 8 \
+-a "ownerread|policywrite|ownerwrite|nt=1"
 
 tpm2_nvincrement -Q   $nv_test_index -C o
 
@@ -56,17 +57,23 @@ tpm2_nvundefine   $nv_test_index -C o
 
 tpm2_pcrread -Q -o $file_pcr_value $pcr_specification
 
-tpm2_createpolicy -Q --policy-pcr -l $pcr_specification -f $file_pcr_value -L $file_policy
+tpm2_createpolicy -Q --policy-pcr -l $pcr_specification \
+-f $file_pcr_value -L $file_policy
 
-tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy -a "policyread|policywrite|nt=1"
+tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy \
+-a "policyread|policywrite|nt=1"
 
-# Increment with index authorization for now, since tpm2_nvincrement does not support pcr policy.
+# Increment with index authorization for now, since tpm2_nvincrement does not
+# support pcr policy.
 echo -n -e '\x00\x00\x00\x00\x00\x00\x00\x03' > nv.test_inc
 
-# Counter is initialised to highest value previously seen (in this case 2) then incremented
-tpm2_nvincrement -Q   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value
+# Counter is initialised to highest value previously seen (in this case 2) then
+# incremented
+tpm2_nvincrement -Q   0x1500016 -C 0x1500016 \
+-P pcr:$pcr_specification=$file_pcr_value
 
-tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value -s 8 > cmp.dat
+tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value \
+-s 8 > cmp.dat
 
 cmp nv.test_inc cmp.dat
 
@@ -81,7 +88,8 @@ tpm2_nvundefine -Q   0x1500016 -C 0x40000001
 #
 # Test NV access locked
 #
-tpm2_nvdefine -Q   $nv_test_index -C o -s 8 -a "ownerread|policywrite|ownerwrite|read_stclear|nt=1"
+tpm2_nvdefine -Q   $nv_test_index -C o -s 8 \
+-a "ownerread|policywrite|ownerwrite|read_stclear|nt=1"
 
 tpm2_nvincrement -Q   $nv_test_index -C o
 
