@@ -10,68 +10,70 @@
 
 # DESCRIPTION
 
-**tpm2_quote**(1) - Provide quote and signature for given list of PCRs in given algorithm/banks.
+**tpm2_quote**(1) - Provide quote and signature for given list of PCRs in given
+algorithm/banks.
 
 # OPTIONS
 
-  * **-c**, **\--key-context**=_AK\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_OBJECT_:
 
-    Context object for the quote signing key. Either a file or a handle number.
-    See section "Context Object Format".
+    Context object for the quote signing key.
 
-  * **-p**, **\--auth**=_AK\_AUTH_:
+  * **-p**, **\--auth**=_AUTH_:
 
     Specifies the authorization value for AK specified by option **-C**.
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
 
-  * **-l**, **\--pcr-list**=_PCR\_SELECTION\_LIST_:
+  * **-l**, **\--pcr-list**=_PCR_:
 
     The list of PCR banks and selected PCRs' ids for each bank.
-    _PCR\_SELECTION\_LIST_ values should follow the
-    PCR bank specifiers standards, see section "PCR Bank Specifiers".
-
     Also see **NOTES** section below.
 
-  * **-m**, **\--message**:
+  * **-m**, **\--message**=_FILE_:
 
     Message output file, records the quote message that makes up the data that
     is signed by the TPM.
 
-  * **-s**, **\--signature**:
+  * **-s**, **\--signature**=_FILE_:
 
-    Signature output file, records the signature in the format specified via the **-f**
-    option.
+    Signature output file, records the signature in the format specified via the
+    **-f** option.
 
-  * **-f**, **\--format**
+  * **-f**, **\--format**=_FORMAT_:
 
-    Format selection for the signature output file. See section "Signature Format Specifiers".
+    Format selection for the signature output file.
 
-  * **-o**, **\--pcr**:
+  * **-o**, **\--pcr**=_FILE_.
 
     PCR output file, optional, records the list of PCR values as defined
     by **-l**.
 
-  * **-q**, **\--qualification**:
+  * **-q**, **\--qualification**=_HEX\_STRING_:
 
-    Data given as a Hex string to qualify the  quote, optional. This is typically
-    used to add a nonce against replay attacks.
+    Data given as a Hex string to qualify the  quote, optional. This is
+    typically used to add a nonce against replay attacks.
 
   * **-g**, **\--hash-algorithm**:
 
     Hash algorithm for signature. Defaults to sha256.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[context object format](common/ctxobj.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[authorization formatting](common/authorizations.md)
+[signature format specifiers](common/signature.md) option used to configure
+signature _FORMAT_.
 
-[pcr bank specifiers](common/pcr.md)
+[pcr bank specifiers](common/pcr.md) details the syntax for specifying pcr list.
 
-[signature format specifiers](common/signature.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
