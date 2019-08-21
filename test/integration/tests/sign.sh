@@ -42,35 +42,44 @@ test_symmetric() {
 
     tpm2_clear
 
-    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key_ctx
+    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
+    -c $file_primary_key_ctx
 
-    tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv -C $file_primary_key_ctx
+    tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
+    -r $file_signing_key_priv -C $file_primary_key_ctx
 
-    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
+    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+    -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
-    tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -o $file_output_data $file_input_data
+    tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash \
+    -o $file_output_data $file_input_data
 
     rm -f $file_output_data
 
     tpm2_evictcontrol -Q -C o -c $file_signing_key_ctx $handle_signing_key
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data $file_input_data
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data \
+    $file_input_data
 
     rm -f $file_output_data
 
     # generate hash and test validation
 
-    tpm2_hash -Q -C e -g $alg_hash -o $file_output_hash -t $file_output_ticket $file_input_data
+    tpm2_hash -Q -C e -g $alg_hash -o $file_output_hash -t $file_output_ticket \
+    $file_input_data
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data -t $file_output_ticket $file_input_data
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -o $file_output_data \
+    -t $file_output_ticket $file_input_data
 
     rm -f $file_output_data
 
     # test with digest, no validation
 
-    sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > $file_input_digest
+    sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
+    $file_input_digest
 
-    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d -o $file_output_data $file_input_digest
+    tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d -o $file_output_data \
+    $file_input_digest
 
     rm -f $file_output_data
 }
@@ -78,9 +87,11 @@ test_symmetric() {
 create_signature() {
     local sign_scheme=$1
     if [ "$sign_scheme" = "" ]; then
-        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -f plain -o $file_output_data $file_input_data
+        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -f plain \
+        -o $file_output_data $file_input_data
     else
-        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -s $sign_scheme -f plain -o $file_output_data $file_input_data
+        tpm2_sign -Q -c $file_signing_key_ctx -g $alg_hash -s $sign_scheme \
+        -f plain -o $file_output_data $file_input_data
     fi
 }
 
@@ -197,17 +208,22 @@ test_asymmetric() {
 
     head -c30 /dev/urandom > $file_input_data
 
-    sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > $file_input_digest
+    sha256sum $file_input_data | awk '{ print "000000 " $1 }' | \
+    xxd -r -c 32 > $file_input_digest
 
     tpm2_clear
 
-    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key -c $file_primary_key_ctx
+    tpm2_createprimary -Q -C e -g $alg_hash -G $alg_primary_key \
+    -c $file_primary_key_ctx
 
-    tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub -r $file_signing_key_priv -C $file_primary_key_ctx
+    tpm2_create -Q -g $alg_hash -G $alg_signing_key -u $file_signing_key_pub \
+    -r $file_signing_key_priv -C $file_primary_key_ctx
 
-    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
+    tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+    -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
-    tpm2_readpublic -Q -c $file_signing_key_ctx --format=pem -o $file_signing_key_pub_pem
+    tpm2_readpublic -Q -c $file_signing_key_ctx --format=pem \
+    -o $file_signing_key_pub_pem
 
     local sign_scheme
 
@@ -245,7 +261,8 @@ cleanup "no-shut-down"
 
 for key_type in $rsa_key_type $ecc_key_type
 do
-    # make sure commands failing inside the function will cause the script to fail!
+    # make sure commands failing inside the function will cause the script
+    # to fail!
     (
         set -e
         test_asymmetric $key_type
@@ -259,13 +276,16 @@ cleanup "no-shut-down"
 echo "12345678" > $file_input_data
 
 tpm2_createprimary -Q -c $file_primary_key_ctx
-tpm2_create -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -p "mypassword"
-tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub -r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
+tpm2_create -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+-r $file_signing_key_priv -p "mypassword"
+tpm2_load -Q -C $file_primary_key_ctx -u $file_signing_key_pub \
+-r $file_signing_key_priv -n $file_signing_key_name -c $file_signing_key_ctx
 
 # Negative test, remove error handler
 trap - ERR
 
-tpm2_sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash -o $file_output_data $file_input_data
+tpm2_sign -Q -p "badpassword" -c $file_signing_key_ctx -g $alg_hash \
+-o $file_output_data $file_input_data
 if [ $? != 3]; then
     echo "Expected RC 3, got: $?" 1>&2
 fi
