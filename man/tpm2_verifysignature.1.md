@@ -10,21 +10,21 @@
 
 # DESCRIPTION
 
-**tpm2_verifysignature**(1) - Uses loaded keys to validate a signature on a message
-with the message digest passed to the TPM. If the signature check succeeds,
-then the TPM will produce a **TPMT_TK_VERIFIED**. Otherwise, the TPM shall return
-**TPM_RC_SIGNATURE**. If _KEY\_HANDLE_ references an asymmetric key, only the
-public portion of the key needs to be loaded. If _KEY\_HANDLE_ references a
+**tpm2_verifysignature**(1) - Uses loaded keys to validate a signature on a
+message with the message digest passed to the TPM. If the signature check
+succeeds, then the TPM will produce a **TPMT_TK_VERIFIED**. Otherwise, the TPM
+shall return **TPM_RC_SIGNATURE**. If object references an asymmetric key, only
+the public portion of the key needs to be loaded. If object references a
 symmetric key, both the public and private portions need to be loaded.
 
 # OPTIONS
 
-  * **-c**, **\--key-context**=_KEY\_CONTEXT\_OBJECT_:
+  * **-c**, **\--key-context**=_OBJECT_:
 
     Context object for the key context used for the operation. Either a file
     or a handle number. See section "Context Object Format".
 
-  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
     The hash algorithm used to digest the message.
     Algorithms should follow the "formatting standards", see section
@@ -32,48 +32,45 @@ symmetric key, both the public and private portions need to be loaded.
     Also, see section "Supported Hash Algorithms" for a list of supported hash
     algorithms.
 
-  * **-m**, **\--message**=_MSG\_FILE_:
+  * **-m**, **\--message**=_FILE_:
 
     The message file, containing the content to be  digested.
 
-  * **-d**, **\--digest**=_DIGEST\_FILE_:
+  * **-d**, **\--digest**=_FILE_:
 
     The input hash file, containing the hash of the message. If this option is
-    selected, then the message (**-m**) and algorithm (**-g**) options do not need
-    to be specified.
+    selected, then the message (**-m**) and algorithm (**-g**) options do not
+    need to be specified.
 
-  * **-s**, **\--signature**=_SIG\_FILE_:
+  * **-s**, **\--signature**=_FILE_:
 
     The input signature file of the signature to be validated.
 
-  * **-f**, **\--format**:
+  * **-f**, **\--format**=_FORMAT_:
 
-    Set the input signature file to a specified format. The default is the tpm2.0 TPMT_SIGNATURE
-    data format, however different schemes can be selected if the data came from an external
-    source like OpenSSL. The tool currently only supports rsassa.
+    Set the input signature file to a specified format. The default is the
+    tpm2.0 TPMT_SIGNATURE data format, however different schemes can be selected
+    if the data came from an external source like OpenSSL. The tool currently
+    only supports rsassa.
 
-    Algorithms should follow the "formatting standards", see section
-    "Algorithm Specifiers".
-    Also, see section "Supported Signing Schemes" for a list of supported hash
-    algorithms.
-
-  * **-t**, **\--ticket**=_TICKET\_FILE_:
+  * **-t**, **\--ticket**=_FILE_:
 
     The ticket file to record the validation structure.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[context object format](common/ctxobj.md)
+[algorithm specifiers](common/alg.md) details the options for specifying
+cryptographic algorithms _ALGORITHM_.
 
-[authorization formatting](common/authorizations.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[supported hash algorithms](common/hash.md)
-
-[supported signing schemes](common/signschemes.md)
-
-[algorithm specifiers](common/alg.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
+[signature format specifiers](common/signature.md)
 
 # EXAMPLES
 
@@ -102,7 +99,8 @@ openssl ec -in private.ecc.pem -out public.ecc.pem -pubout
 # Generate a hash to sign (OSSL needs the hash of the message)
 echo "data to sign" > data.in.raw
 
-sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > data.in.digest
+sha256sum data.in.raw | awk '{ print "000000 " $1 }' | \
+xxd -r -c 32 > data.in.digest
 
 # Load the private key for signing
 tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
@@ -110,12 +108,14 @@ tpm2_loadexternal -Q -G ecc -r private.ecc.pem -c key.ctx
 # Sign in the TPM and verify with OSSL
 tpm2_sign -Q -c key.ctx -g sha256 -d data.in.digest -f plain -s data.out.signed
 
-openssl dgst -verify public.ecc.pem -keyform pem -sha256 -signature data.out.signed data.in.raw
+openssl dgst -verify public.ecc.pem -keyform pem -sha256 \
+-signature data.out.signed data.in.raw
 
 # Sign with openssl and verify with TPM
 openssl dgst -sha256 -sign private.ecc.pem -out data.out.signed data.in.raw
 
-tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa -s data.out.signed
+tpm2_verifysignature -Q -c key.ctx -g sha256 -m data.in.raw -f ecdsa \
+-s data.out.signed
 ```
 
 [returns](common/returns.md)
