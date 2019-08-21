@@ -6,27 +6,32 @@
 
 # SYNOPSIS
 
-**tpm2_send** [*OPTIONS*]
+**tpm2_send** [*OPTIONS*] [*STDIN*]
 
 # DESCRIPTION
 
-**tpm2_send**(1) - Sends a TPM command to the TPM. The command is
-read from a file as a binary stream and transmitted to the TPM using the TCTI
-specified by the caller. The response received from the TPM is written to
-the output file.
+**tpm2_send**(1) - Sends a TPM command to the TPM. The command is read from a
+file as a binary stream and transmitted to the TPM using the TCTI specified by
+the caller. The response received from the TPM is written to the output file.
 
 Likely the caller will want to redirect this to a file or into a
 program to decode and display the response in a human readable form.
 
 # OPTIONS
 
-  * **-o**, **\--output**=_OUTPUT\_FILE_:
+  * **-o**, **\--output**=_FILE_:
 
-    Output file to send response buffer to. Defaults to stdout.
+    Output file to send response buffer to. Defaults to _STDOUT_.
 
-[common options](common/options.md)
+  * **_STDIN** the file containing the TPM2 command.
 
-[common tcti options](common/tcti.md)
+## References
+
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
