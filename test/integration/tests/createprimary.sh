@@ -34,7 +34,7 @@ for gAlg in `populate_hash_algs 'and alg != "keyedhash"'`; do
     done
 done
 
-policy_orig="f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988"
+policy_orig=f28230c080bbe417141199e36d18978228d8948fc10a6a24921b9eba6bb1d988
 
 #test for createprimary objects with policy authorization structures
 echo -n "$policy_orig" | xxd -r -p > policy.bin
@@ -54,8 +54,8 @@ printf '\x00\x01' > ud.1
 dd if=/dev/zero bs=256 count=1 of=ud.2
 cat ud.1 ud.2 > unique.dat
 tpm2_createprimary -C o -G rsa2048:aes128cfb -g sha256 -c prim.ctx \
-  -a 'restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|noda' \
-  -u unique.dat
+-a "restricted|decrypt|fixedtpm|fixedparent|sensitivedataorigin|userwithauth|\
+noda" -u unique.dat
 test -f prim.ctx
 
 # Test that -g/-G do not need to be specified.
