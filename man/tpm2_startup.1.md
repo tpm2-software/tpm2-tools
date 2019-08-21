@@ -10,8 +10,8 @@
 
 # DESCRIPTION
 
-**tpm2_startup**(1) - Send a **TPM2_Startup** command with either **TPM_SU_CLEAR** or
-**TPM_SU_STATE**.
+**tpm2_startup**(1) - Send a **TPM2_Startup** command with either
+**TPM_SU_CLEAR** or **TPM_SU_STATE**.
 
 # OPTIONS
 
@@ -19,9 +19,13 @@
 
     Startup type sent will be **TPM_SU_CLEAR** instead of **TPM2_SU_STATE**.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
+
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
@@ -37,8 +41,8 @@ tpm2_startup -c
 
 # NOTES
 
-Typically a Resource Manager (like [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd)) or low-level/boot software will
-have already sent this command.
+Typically a Resource Manager (like [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd))
+or low-level/boot software will have already sent this command.
 
 [returns](common/returns.md)
 
