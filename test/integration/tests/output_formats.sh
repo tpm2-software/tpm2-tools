@@ -69,29 +69,35 @@ for fmt in tss pem der; do
 
 done
 
-tpm2_createak -Q -G $alg_ak -C $handle_ek -c $ak_ctx -u "$file_pubak_tss" -n "$file_pubak_name"
+tpm2_createak -Q -G $alg_ak -C $handle_ek -c $ak_ctx -u "$file_pubak_tss" \
+-n "$file_pubak_name"
 echo "tpm2_evictcontrol -Q -c $ak_ctx -o $handle_ak_file" $handle_ak
 tpm2_evictcontrol -Q -c $ak_ctx -o $handle_ak_file $handle_ak
 
 tpm2_readpublic -Q -c $handle_ak_file -f "pem" -o "$file_pubak_pem"
 
-tpm2_hash -Q -C e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" "$file_hash_input"
+tpm2_hash -Q -C e -g $alg_hash -t "$file_hash_ticket" -o "$file_hash_result" \
+"$file_hash_input"
 
 for fmt in tss plain; do
     this_sig="${file_sig_base}.${fmt}"
-    tpm2_sign -Q -c $handle_ak -g $alg_hash -f $fmt -o "${this_sig}" -t "${file_hash_ticket}" "${file_hash_input}"
+    tpm2_sign -Q -c $handle_ak -g $alg_hash -f $fmt -o "${this_sig}" \
+    -t "${file_hash_ticket}" "${file_hash_input}"
 
     if [ "$fmt" = plain ]; then
-        openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} -signature "$this_sig" "$file_hash_input" > /dev/null
+        openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} \
+        -signature "$this_sig" "$file_hash_input" > /dev/null
     fi
 done
 
 for fmt in tss plain; do
     this_sig="${file_quote_sig_base}.${fmt}"
-    tpm2_quote -Q -c $handle_ak -l "$alg_hash":0 -f $fmt -m "$file_quote_msg" -s "$this_sig"
+    tpm2_quote -Q -c $handle_ak -l "$alg_hash":0 -f $fmt -m "$file_quote_msg" \
+    -s "$this_sig"
 
     if [ "$fmt" = plain ]; then
-        openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} -signature "$this_sig" "$file_quote_msg" > /dev/null
+        openssl dgst -verify "$file_pubak_pem" -keyform pem -${alg_hash} \
+        -signature "$this_sig" "$file_quote_msg" > /dev/null
     fi
 done
 
