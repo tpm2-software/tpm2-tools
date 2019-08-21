@@ -39,20 +39,23 @@ end_session() {
 
 create_load_new_parent() {
     # Create new parent
-    tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv -u new_parent.pub  -a "restricted|sensitivedataorigin|decrypt|userwithauth"
+    tpm2_create -Q -C primary.ctx -g sha256 -G rsa -r new_parent.prv \
+    -u new_parent.pub -a "restricted|sensitivedataorigin|decrypt|userwithauth"
     # Load new parent key, only the public part
     tpm2_loadexternal -Q -C o -u new_parent.pub -c new_parent.ctx
 }
 
 load_new_parent() {
     # Load new parent key, public & private parts
-    tpm2_load -Q -C primary.ctx -r new_parent.prv -u new_parent.pub -c new_parent.ctx
+    tpm2_load -Q -C primary.ctx -r new_parent.prv -u new_parent.pub \
+    -c new_parent.ctx
 }
 
 create_load_duplicatee() {
     # Create the key we want to duplicate
     create_policy dpolicy.dat duplicate
-    tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
+    tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub \
+    -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
     # Load the key
     tpm2_load -Q -C primary.ctx -r key.prv -u key.pub -c key.ctx
     # Extract the public part for import later
@@ -63,9 +66,11 @@ do_duplication() {
     start_session dpolicy.dat duplicate
     if [ "$2" = "aes" ]
     then
-        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G aes -o sym.key -p "session:session.dat" -r dup.dup -s dup.seed
+        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G aes -o sym.key \
+        -p "session:session.dat" -r dup.dup -s dup.seed
     else
-        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G null -p "session:session.dat" -r dup.dup -s dup.seed
+        tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G null \
+        -p "session:session.dat" -r dup.dup -s dup.seed
     fi
     end_session
 }
@@ -73,9 +78,11 @@ do_duplication() {
 do_import_load() {
     if [ "$2" = "aes" ]
     then
-        tpm2_import -Q -C new_parent.ctx -k sym.key -u dup.pub -i dup.dup -r dup.prv -s dup.seed  -L dpolicy.dat
+        tpm2_import -Q -C new_parent.ctx -k sym.key -u dup.pub -i dup.dup \
+        -r dup.prv -s dup.seed -L dpolicy.dat
     else
-        tpm2_import -Q -C new_parent.ctx -u dup.pub -i dup.dup -r dup.prv -s dup.seed  -L dpolicy.dat
+        tpm2_import -Q -C new_parent.ctx -u dup.pub -i dup.dup -r dup.prv \
+        -s dup.seed -L dpolicy.dat
     fi
     tpm2_load -Q -C new_parent.ctx -r dup.prv -u dup.pub -c dup.ctx
 }
