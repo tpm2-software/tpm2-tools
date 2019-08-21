@@ -15,10 +15,13 @@ to start a *trial* session unless the **-a** option is specified.
 Saves the policy session data to a file. This file can then be used in subsequent
 tools that can use a policy file for authorization or policy events.
 
-This will not work with resource managers (RMs) outside of [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd), as most RMs will
-flush session handles when a client disconnects from the IPC channel.
+This will not work with resource managers (RMs) outside of [tpm2-abrmd](https://
+github.com/tpm2-software/tpm2-abrmd), as most RMs will flush session handles
+when a client disconnects from the IPC channel.
 
-This will work with direct TPM access, but note that internally this calls a *ContextSave* and a *ContextLoad* on the session handle, thus the session **cannot** be saved/loaded again.
+This will work with direct TPM access, but note that internally this calls a
+*ContextSave* and a *ContextLoad* on the session handle, thus the session
+**cannot** be saved/loaded again.
 
 # OPTIONS
 
@@ -29,34 +32,33 @@ This will work with direct TPM access, but note that internally this calls a *Co
     **NOTE**: A *trial* session is used when building a policy and a *policy*
     session is used when authenticating with a policy.
 
-  * **-g**, **\--hash-algorithm**=_HASH\_ALGORITHM_:
+  * **-g**, **\--hash-algorithm**=_ALGORITHM_:
 
-    The hash algorithm used in computation of the policy digest. Algorithms
-    should follow the "formatting standards", see section "Algorithm Specifiers".
-    Also, see section "Supported Hash Algorithms" for a list of supported hash
-    algorithms.
+    The hash algorithm used in computation of the policy digest.
 
-  * **-c**, **\--key-context**=_SESSION\_ENCRYPTION\_KEY_:
+  * **-c**, **\--key-context**=_OBJECT_:
 
-    Set the session encryption and bind key. When using this, sensitive data transmitted to
-    the TPM will be encrypted with AES128CFB. **This prevents bus snooping attacks.**
-    See section "Context Object Format" for details on key formats.
+    Set the session encryption and bind key. When using this, sensitive data
+    transmitted to the TPM will be encrypted with AES128CFB. **This prevents bus
+    snooping attacks.**
 
-  * **-S**, **\--session**=_SESSION\_FILE\_NAME_:
+  * **-S**, **\--session**=_FILE_:
 
     The name of the policy session file, required.
 
+## References
 
-[common options](common/options.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[common tcti options](common/tcti.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[supported hash algorithms](common/hash.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[algorithm specifiers](common/alg.md)
-
-[context object format](common/ctxobj.md)
-
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 # EXAMPLES
 
 ## Start a *trial* session and save the session data to a file
