@@ -3,13 +3,11 @@
 source helpers.sh
 
 cleanup() {
-  rm -f primary.ctx decrypt.ctx key.pub key.priv key.name \
-        decrypt.out decrypt2.out encrypt.out encrypt2.out \
-        secret.dat commands.cap secret2.dat iv.dat iv2.dat \
-        key128.ctx plain.dec128.tpm plain.dec256.tpm \
-        plain.enc128.tpm plain.enc256.tpm sym128.key \
-        key256.ctx plain.dec128.ssl plain.dec256.ssl \
-        plain.enc128.ssl plain.enc256.ssl plain.txt sym256.key
+  rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
+  decrypt2.out encrypt.out encrypt2.out secret.dat commands.cap secret2.dat \
+  iv.dat iv2.dat key128.ctx plain.dec128.tpm plain.dec256.tpm plain.enc128.tpm \
+  plain.enc256.tpm sym128.key key256.ctx plain.dec128.ssl plain.dec256.ssl \
+  plain.enc128.ssl plain.enc256.ssl plain.txt sym256.key
 
   if [ "$1" != "no-shut-down" ]; then
       shut_down
@@ -32,7 +30,8 @@ trap - ERR
 
 grep -q 0x164 commands.cap
 if [ $? != 0 ];then
-    echo "WARN: Command EncryptDecrypt is not supported by your device, skipping..."
+    echo "WARN: Command EncryptDecrypt is not supported by your device, \
+    skipping..."
     exit 0
 fi
 
@@ -54,11 +53,13 @@ tpm2_encryptdecrypt -Q -c decrypt.ctx -o encrypt.out secret.dat
 tpm2_encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out encrypt.out
 
 # Test using stdin/stdout
-cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx | tpm2_encryptdecrypt -c decrypt.ctx -d > secret2.dat
+cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx | tpm2_encryptdecrypt \
+-c decrypt.ctx -d > secret2.dat
 
 # test using IVs
 dd if=/dev/urandom of=iv.dat bs=16 count=1
-cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat:iv2.dat -d > secret2.dat
+cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat | \
+tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat:iv2.dat -d > secret2.dat
 
 cmp secret.dat secret2.dat
 
@@ -70,10 +71,11 @@ rm decrypt.ctx
 tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c decrypt.ctx
 
 # We need to perform cbc on blocksize of 16
-echo -n "1234567812345678" > secret.dat
+echo -n 1234567812345678 > secret.dat
 
 # specified mode
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc --iv=iv.dat  -o encrypt.out secret.dat
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc --iv=iv.dat -o encrypt.out \
+secret.dat
 
 # Unspecified mode (figure out via readpublic)
 tpm2_encryptdecrypt -Q -d -c decrypt.ctx --iv iv.dat -o decrypt.out encrypt.out
@@ -81,11 +83,14 @@ tpm2_encryptdecrypt -Q -d -c decrypt.ctx --iv iv.dat -o decrypt.out encrypt.out
 cmp secret.dat decrypt.out
 
 # Test that iv looping works
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc --iv=iv.dat:iv2.dat -o encrypt.out secret.dat
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc --iv=iv2.dat -o encrypt2.out secret.dat
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc --iv=iv.dat:iv2.dat \
+-o encrypt.out secret.dat
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cbc --iv=iv2.dat -o encrypt2.out \
+secret.dat
 
 tpm2_encryptdecrypt -Q -d -c decrypt.ctx --iv iv.dat -o decrypt.out encrypt.out
-tpm2_encryptdecrypt -Q -d -c decrypt.ctx --iv iv2.dat -o decrypt2.out encrypt2.out
+tpm2_encryptdecrypt -Q -d -c decrypt.ctx --iv iv2.dat -o decrypt2.out \
+encrypt2.out
 
 cmp secret.dat decrypt.out
 cmp secret.dat decrypt2.out
@@ -102,7 +107,7 @@ dd if=/dev/zero bs=1 count=2050 status=none of=secret2.dat
 cat secret2.dat | tpm2_encryptdecrypt -Q -c decrypt.ctx -o encrypt.out -e
 tpm2_encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out encrypt.out
 ## Last block is short 14 or hex 0E trailing bytes
-echo "0e0e0e0e0e0e0e0e0e0e0e0e0e0e" | xxd -r -p >> secret2.dat
+echo 0e0e0e0e0e0e0e0e0e0e0e0e0e0e | xxd -r -p >> secret2.dat
 cmp secret2.dat decrypt.out
 
 # Test that pkcs7 padding is added as last block for block length aligned inputs
@@ -110,7 +115,7 @@ dd if=/dev/zero bs=1 count=2048 status=none of=secret2.dat
 cat secret2.dat | tpm2_encryptdecrypt -Q -c decrypt.ctx -o encrypt.out -e
 tpm2_encryptdecrypt -Q -c decrypt.ctx -d -o decrypt.out encrypt.out
 ## Last block is short 14 or hex 0E trailing bytes
-echo "10101010101010101010101010101010" | xxd -r -p >> secret2.dat
+echo 10101010101010101010101010101010 | xxd -r -p >> secret2.dat
 cmp secret2.dat decrypt.out
 
 # Test pkcs7 padding is stripped from input data is shorter than block length
@@ -129,7 +134,8 @@ cmp secret2.dat decrypt.out
 trap - ERR
 
 # mode CFB should fail, since the object was explicitly created with mode CBC
-tpm2_encryptdecrypt -Q -c decrypt.ctx -G cfb --iv=iv.dat -o encrypt.out secret.dat
+tpm2_encryptdecrypt -Q -c decrypt.ctx -G cfb --iv=iv.dat -o encrypt.out \
+secret.dat
 
 # set the error handler for checking interoperability with openssl
 trap onerror ERR
