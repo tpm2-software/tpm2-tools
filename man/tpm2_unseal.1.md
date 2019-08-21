@@ -12,37 +12,38 @@ is returned in clear.
 # DESCRIPTION
 
 **tpm2_unseal**(1) - Returns a data blob in a loaded TPM object. The data blob
-is returned in clear. The data is sealed at the time of the object creation using
-the **tpm2_create** tool. Such an object intended for sealing data has to be of
-the type _TPM\_ALG\_KEYEDHASH_.
+is returned in clear. The data is sealed at the time of the object creation
+using the **tpm2_create** tool. Such an object intended for sealing data has to
+be of the type _TPM\_ALG\_KEYEDHASH_.
 
 # OPTIONS
 
-  * **-c**, **\--object-context**=_CONTEXT\_OBJECT_:
+  * **-c**, **\--object-context**=_OBJECT_:
 
-    Object context for the loaded object. Either a file or a handle number.
-    See section "Context Object Format".
+    Object context for the loaded object.
 
-  * **-p**, **\--auth**=_KEY\_AUTH_:
+  * **-p**, **\--auth**=_AUTH_:
 
     Optional auth value to use for the key specified by **-c**.
-    Authorization values should follow the "authorization formatting standards",
-    see section "Authorization Formatting".
 
-  * **-o**, **\--output**=_OUT\_FILE_:
+  * **-o**, **\--output**=_FILE_:
 
-    Output file name containing the unsealed data. Defaults to stdout if not
+    Output file name containing the unsealed data. Defaults to _STDOUT_ if not
     specified.
 
-[common options](common/options.md)
+## References
 
-[common tcti options](common/tcti.md)
+[context object format](common/ctxobj.md) details the methods for specifying
+_OBJECT_.
 
-[context object format](common/ctxobj.md)
+[authorization formatting](common/authorizations.md) details the methods for
+specifying _AUTH_.
 
-[authorization formatting](common/authorizations.md)
+[common options](common/options.md) collection of common options that provide
+information many users may expect.
 
-[pcr bank specifiers](common/pcr.md)
+[common tcti options](common/tcti.md) collection of options used to configure
+the various known TCTI modules.
 
 # EXAMPLES
 
