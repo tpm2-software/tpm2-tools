@@ -26,9 +26,10 @@ function check_toggle() {
         exit 254
     fi
 
-    for i in $(grep "'${toggle}'[[:space:]]*}" "${toolsdir}"/*.c | sed "s%[[:space:]]*%%g"); do
+    for i in $(grep "'${toggle}'[[:space:]]*}" "${toolsdir}"/*.c | \
+    sed "s%[[:space:]]*%%g"); do
         # An example:
-        # i:           tools/tpm2_nvdefine.c:{"hierarchy",required_argument,NULL,'a'},
+        # i:     tools/tpm2_nvdefine.c:{"hierarchy",required_argument,NULL,'a'},
         # filename:    tools/tpm2_nvdefine.c
         # match:       {"hierarchy",required_argument,NULL,'a'},
         # option:      a
@@ -40,8 +41,10 @@ function check_toggle() {
         match=${i##*:};
         option="$(sed -r "s%.*'([^'])'.*%\1%g" <<< "${match}")"
         option_long="$(grep -oP '(?<={").*(?=")' <<< "${match}")"
-        optionlist="$(grep -R "tpm2_options_new" "${filename}" | sed -r 's%.*("[^"]+").*%\1%g')"
-        getcase="$(grep "case '${option}'" "${filename}" | sed "s%[[:space:]]*%%g")"
+        optionlist="$(grep -R "tpm2_options_new" "${filename}" | \
+        sed -r 's%.*("[^"]+").*%\1%g')"
+        getcase="$(grep "case '${option}'" "${filename}" | \
+        sed "s%[[:space:]]*%%g")"
 
         echo "filename: $filename"
         echo "    match:        $match"
@@ -55,18 +58,20 @@ function check_toggle() {
         fi
 
         if ! grep -q "${option}" <<< "${optionlist}"; then
-            echo "$filename: option -$option (--$option_long) not found in option list $optionlist"
+            echo "$filename: option -$option (--$option_long) not found in \
+            option list $optionlist"
             exit 1
         fi
 
         if ! test -n "${getcase}"; then
-            echo "$filename: switch case '$option' not found for option -$option (--$option_long)"
+            echo "$filename: switch case '$option' not found for option \
+            -$option (--$option_long)"
             exit 1
         fi
 
         ####################### check man page #######################
-        man_filename="$(basename $filename)"                 # tpm2_nvdefine.c
-        man_filename="$mandir/${man_filename%.*}.1.md"       # man/tpm2_nvdefine.1.md
+        man_filename="$(basename $filename)"            # tpm2_nvdefine.c
+        man_filename="$mandir/${man_filename%.*}.1.md"  # man/tpm2_nvdefine.1.md
         man=$(cat "$man_filename")
 
         # resolve markdown includes
@@ -76,12 +81,14 @@ function check_toggle() {
         done
 
         # search markdown for option (short and long)
-        man_opt=$(grep -oe "\*\*-$option\*\*, \*\*\\\--$option_long\*\*" <<< "$man_resolved") || true
+        man_opt=$(grep -oe "\*\*-$option\*\*, \*\*\\\--$option_long\*\*" \
+        <<< "$man_resolved") || true
 
         if [ -n "$man_opt" ]; then
             echo "    man_opt:      $man_opt"
         else
-            echo "$filename: missing option -$option/--$option_long in $man_filename"
+            echo "$filename: missing option -$option/--$option_long in \
+            $man_filename"
             exit 1
         fi
     done
@@ -89,13 +96,17 @@ function check_toggle() {
 
 fail=0
 
-# For each detected option toggle, check if it is actually declared to be used and documented
-for i in $(grep -rn "case '.'" "${toolsdir}"/*.c | cut -d"'" -f2-2 | sort | uniq); do
+# For each detected option toggle, check if it is actually declared to be used
+# and documented
+for i in $(grep -rn "case '.'" "${toolsdir}"/*.c | \
+cut -d"'" -f2-2 | sort | uniq); do
     check_toggle "${i}"
 done
 
-# For each documented option toggle in the man pages, look if it is present in the code
-for j in $(grep -oe "\*\*-.\*\*, \*\*\\\--.*\*\*" "${mandir}"/*.1.md | sed -r 's/\s//g' ); do
+# For each documented option toggle in the man pages, look if it is present in
+# the code
+for j in $(grep -oe "\*\*-.\*\*, \*\*\\\--.*\*\*" "${mandir}"/*.1.md | \
+sed -r 's/\s//g' ); do
     filename=${j%%:*};
     option="$(grep -oP '(?<=\*\*-).(?=\*\*)' <<< "$j")"
     option_long="$(grep -oP '(?<=\*\*\\\--).*(?=\*\*)' <<< "$j")"
@@ -103,10 +114,12 @@ for j in $(grep -oe "\*\*-.\*\*, \*\*\\\--.*\*\*" "${mandir}"/*.1.md | sed -r 's
     c_filename=$(basename ${filename%.1.md}).c
 
     echo "$filename: looking for -$option (--$option_long) in $c_filename"
-    found=$(grep -r "case '${option}'" "$toolsdir" --include="$c_filename") || true
+    found=$(grep -r "case '${option}'" "$toolsdir" --include="$c_filename") \
+    || true
 
     if [ -z "$found" ]; then
-        echo "$filename: missing option -$option (--$option_long) in $c_filename"
+        echo "$filename: missing option -$option (--$option_long) in \
+        $c_filename"
         exit 1
     fi
 done
