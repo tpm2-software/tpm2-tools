@@ -31,22 +31,26 @@ bc3e1d4084e835c7c8906a1c05b4d2d30fdbebc1dbad950fa6b165bd4b6a
 if [ -z "$(curl -V 2>/dev/null)" ]; then
     echo "curl is not not installed. Skipping connection check."
 else
-    if [ "$(curl --silent --output /dev/null --write-out %{http_code} 'https://ekop.intel.com/')" != '200' ]; then
+    if [ "$(curl --silent --output /dev/null --write-out %{http_code} \
+    'https://ekop.intel.com/')" != '200' ]; then
         echo 'No connection to https://ekop.intel.com/'
         exit 77
     fi
 fi
 
-tpm2_getekcertificate -u test_ek.pub -x -X https://ekop.intel.com/ekcertservice/ -o ECcert.bin
+tpm2_getekcertificate -u test_ek.pub -x -X -o ECcert.bin \
+https://ekop.intel.com/ekcertservice/
 
 # Test that stdoutput is the same
-tpm2_getekcertificate -u test_ek.pub -x -X https://ekop.intel.com/ekcertservice/ > ECcert2.bin
+tpm2_getekcertificate -u test_ek.pub -x https://ekop.intel.com/ekcertservice/ \
+-X > ECcert2.bin
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin
 
 # Retrieved certificate should be valid
-if [ $(md5sum ECcert.bin| awk '{ print $1 }') != "56af9eb8a271bbf7ac41b780acd91ff5" ]; then
+if [ $(md5sum ECcert.bin| awk '{ print $1 }') != \
+"56af9eb8a271bbf7ac41b780acd91ff5" ]; then
  echo "Failed: retrieving endorsement certificate"
  exit 1
 fi
