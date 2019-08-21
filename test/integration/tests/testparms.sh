@@ -54,7 +54,8 @@ for i in ${hashalgs}; do
 done
 
 # Test that null algorithm raise an error (error from software stack)
-if ! tpm2_testparms "null" 2>&1 1>/dev/null | grep -q "Invalid or unsupported by the tool : null"; then
+if ! tpm2_testparms "null" 2>&1 1>/dev/null | \
+    grep -q "Invalid or unsupported by the tool : null"; then
     echo "tpm2_testparms with 'null' algorithm didn't fail"
     exit 1
 else
