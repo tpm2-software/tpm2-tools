@@ -1322,3 +1322,16 @@ tool_rc tpm2_incrementalselftest(ESYS_CONTEXT *ectx, const TPML_ALG *to_test,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_stirrandom(ESYS_CONTEXT *ectx,
+        const TPM2B_SENSITIVE_DATA *data) {
+
+    TSS2_RC rval = Esys_StirRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+        ESYS_TR_NONE, data);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_StirRandom, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
