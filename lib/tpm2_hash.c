@@ -57,11 +57,6 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
         return rc;
     }
 
-    rc = tpm2_tr_set_auth(ectx, sequence_handle, &null_auth);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
     /* If we know the file size, we decrement the amount read and terminate
      * the loop when 1 block is left, else we go till feof.
      */
