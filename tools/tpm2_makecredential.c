@@ -187,10 +187,11 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
         return tool_rc_from_tpm(rval);
     }
 
-    rval = Esys_FlushContext(ectx, tr_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_FlushContext, rval);
-        return tool_rc_from_tpm(rval);
+    rc = tpm2_flush_context(ectx, tr_handle);
+    if (rc != tool_rc_success) {
+        free(cred_blob);
+        free(secret);
+        return rc;
     }
 
     bool ret = write_cred_and_secret(ctx.out_file_path, cred_blob, secret);
