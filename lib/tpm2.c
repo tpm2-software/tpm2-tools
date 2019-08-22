@@ -1391,3 +1391,19 @@ tool_rc tpm2_gettestresult(ESYS_CONTEXT *ectx, TPM2B_MAX_BUFFER **out_data,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
+        const TPM2B_PUBLIC *public, TPMI_RH_HIERARCHY hierarchy,
+        ESYS_TR *object_handle) {
+
+    TSS2_RC rval = Esys_LoadExternal(ectx,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            private, public, hierarchy,
+            object_handle);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_LoadExternal, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
