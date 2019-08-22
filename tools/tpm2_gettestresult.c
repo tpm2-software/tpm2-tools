@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_tool.h"
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
@@ -26,11 +27,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * testResult will be TPM_RC_TESTING. If testing of all functions is complete without functional failures,
      * testResult will be TPM_RC_SUCCESS. If any test failed, testResult will be TPM_RC_FAILURE.
      */
-    TSS2_RC rval = Esys_GetTestResult(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &output, &status);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_SelfTest, rval);
-        return tool_rc_from_tpm(rval);
+    tool_rc tmp_rc = tpm2_gettestresult(ectx, &output, &status);
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
     }
 
     tpm2_tool_output("status: ");

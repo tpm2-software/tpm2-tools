@@ -1378,3 +1378,16 @@ tool_rc tpm2_selftest(ESYS_CONTEXT *ectx, TPMI_YES_NO full_test) {
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_gettestresult(ESYS_CONTEXT *ectx, TPM2B_MAX_BUFFER **out_data,
+        TPM2_RC *test_result) {
+
+    TSS2_RC rval = Esys_GetTestResult(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, out_data, test_result);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_GetTestResult, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
