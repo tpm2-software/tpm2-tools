@@ -171,7 +171,6 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
     TPM2B_ID_OBJECT *cred_blob;
     TPM2B_ENCRYPTED_SECRET *secret;
     ESYS_TR tr_handle = ESYS_TR_NONE;
-    UINT32 rval;
 
     tool_rc rc = tpm2_loadexternal(ectx,
             NULL, &ctx.public, TPM2_RH_NULL, &tr_handle);
@@ -179,12 +178,11 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
         return rc;
     }
 
-    rval = Esys_MakeCredential(ectx, tr_handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &ctx.credential, &ctx.object_name, &cred_blob,
+    rc = tpm2_makecredential(ectx, tr_handle,
+            &ctx.credential, &ctx.object_name, &cred_blob,
             &secret);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_MakeCredential, rval);
-        return tool_rc_from_tpm(rval);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     rc = tpm2_flush_context(ectx, tr_handle);

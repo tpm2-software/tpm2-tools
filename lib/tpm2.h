@@ -305,4 +305,8 @@ tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type);
 
 tool_rc tpm2_pcr_reset(ESYS_CONTEXT *ectx, ESYS_TR pcr_handle);
 
+tool_rc tpm2_makecredential(ESYS_CONTEXT *ectx, ESYS_TR handle,
+        const TPM2B_DIGEST *credential, const TPM2B_NAME *object_name,
+        TPM2B_ID_OBJECT **credential_blob, TPM2B_ENCRYPTED_SECRET **secret);
+
 #endif /* LIB_TPM2_H_ */
