@@ -1467,3 +1467,18 @@ tool_rc tpm2_makecredential(ESYS_CONTEXT *ectx, ESYS_TR handle,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_verifysignature(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
+        const TPM2B_DIGEST *digest, const TPMT_SIGNATURE *signature,
+        TPMT_TK_VERIFIED **validation) {
+
+    TSS2_RC rval = Esys_VerifySignature(ectx,
+            key_handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, digest, signature, validation);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_VerifySignature, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
