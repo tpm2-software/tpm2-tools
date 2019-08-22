@@ -287,4 +287,7 @@ tool_rc tpm2_stirrandom(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE_DATA *data);
 
 tool_rc tpm2_selftest(ESYS_CONTEXT *ectx, TPMI_YES_NO full_test);
 
+tool_rc tpm2_gettestresult(ESYS_CONTEXT *ectx, TPM2B_MAX_BUFFER **out_data,
+        TPM2_RC *test_result);
+
 #endif /* LIB_TPM2_H_ */
