@@ -55,13 +55,7 @@ static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
         return rc;
     }
 
-    TSS2_RC rval = Esys_TR_GetName(ectx, ctx.handle, name);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_GetName, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
+    return tpm2_tr_get_name(ectx, ctx.handle, name);
 }
 
 static bool on_option(char key, char *value) {
