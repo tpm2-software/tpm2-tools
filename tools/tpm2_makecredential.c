@@ -9,6 +9,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_identity_util.h"
 #include "tpm2_options.h"
@@ -172,11 +173,10 @@ static tool_rc make_credential_and_save(ESYS_CONTEXT *ectx) {
     ESYS_TR tr_handle = ESYS_TR_NONE;
     UINT32 rval;
 
-    rval = Esys_LoadExternal(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+    tool_rc rc = tpm2_loadexternal(ectx,
             NULL, &ctx.public, TPM2_RH_NULL, &tr_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_LoadExternal, rval);
-        return tool_rc_from_tpm(rval);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     rval = Esys_MakeCredential(ectx, tr_handle, ESYS_TR_NONE, ESYS_TR_NONE,
