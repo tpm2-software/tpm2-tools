@@ -159,11 +159,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 out:
     if (!evicted) {
-        TSS2_RC rval = Esys_TR_Close(ectx, &out_tr);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_TR_Close, rc);
-            rc = tool_rc_from_tpm(rval);
-        }
+        rc = tpm2_close(ectx, &out_tr);
     }
 
     return rc;
