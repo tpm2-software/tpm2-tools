@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_tool.h"
 
 /*
@@ -52,12 +53,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     LOG_INFO("Sending TPM_Startup command with type: %s",
             ctx.clear ? "TPM2_SU_CLEAR" : "TPM2_SU_STATE");
 
-    TSS2_RC rval = Esys_Startup(context, startup_type);
-    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
-        LOG_PERR(Esys_Startup, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    LOG_INFO("Success. TSS2_RC: 0x%x", rval);
-    return tool_rc_success;
+    return tpm2_startup(context, startup_type);
 }
