@@ -32,7 +32,6 @@ static tpm_pcrevent_ctx ctx = {
 static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         TPML_DIGEST_VALUES **result) {
 
-    TSS2_RC rval;
     unsigned long file_size = 0;
     FILE *input = ctx.input;
 
@@ -115,21 +114,8 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         data.size = 0;
     }
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr, ctx.auth.session,
-            &shandle1);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    rval = Esys_EventSequenceComplete(ectx, ctx.pcr, sequence_handle, shandle1,
-            ESYS_TR_PASSWORD, ESYS_TR_NONE, &data, result);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_EventSequenceComplete, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
+    return tpm2_event_sequence_complete(ectx, ctx.pcr, sequence_handle,
+            ctx.auth.session, &data, result);
 }
 
 static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
