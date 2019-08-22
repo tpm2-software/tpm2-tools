@@ -329,9 +329,8 @@ bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
     TPMI_YES_NO more_data;
     TPMS_CAPABILITY_DATA *capability_data;
 
-    tool_rc rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-            TPM2_CAP_TPM_PROPERTIES, TPM2_PT_MANUFACTURER, 1, &more_data,
-            &capability_data);
+    tool_rc rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_MANUFACTURER,
+            1, &more_data, &capability_data);
     if (rc != tool_rc_success) {
         LOG_ERR("TPM property read failure.");
         return false;
@@ -346,9 +345,8 @@ bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
         return true;
     }
 
-    rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-            TPM2_CAP_TPM_PROPERTIES, TPM2_PT_PERMANENT, 1, &more_data,
-            &capability_data);
+    rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_PERMANENT,
+            1, &more_data, &capability_data);
     if (rc != tool_rc_success) {
         LOG_ERR("TPM property read failure.");
         return false;

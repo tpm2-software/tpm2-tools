@@ -106,12 +106,11 @@ tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR nv_index,
     return tool_rc_success;
 }
 
-tool_rc tpm2_getcap(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
-        ESYS_TR shandle2, ESYS_TR shandle3, TPM2_CAP capability,
+tool_rc tpm2_getcap(ESYS_CONTEXT *esys_context, TPM2_CAP capability,
         UINT32 property, UINT32 property_count, TPMI_YES_NO *more_data,
         TPMS_CAPABILITY_DATA **capability_data) {
 
-    TSS2_RC rval = Esys_GetCapability(esys_context, shandle1, shandle2, shandle3,
+    TSS2_RC rval = Esys_GetCapability(esys_context, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
             capability, property, property_count, more_data, capability_data);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ReadPublic, rval);
