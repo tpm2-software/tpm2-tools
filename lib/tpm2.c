@@ -1334,3 +1334,15 @@ tool_rc tpm2_stirrandom(ESYS_CONTEXT *ectx,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_selftest(ESYS_CONTEXT *ectx, TPMI_YES_NO full_test) {
+
+    TSS2_RC rval = Esys_SelfTest(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+        full_test);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_SelfTest, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

@@ -281,4 +281,6 @@ tool_rc tpm2_incrementalselftest(ESYS_CONTEXT *ectx, const TPML_ALG *to_test,
 
 tool_rc tpm2_stirrandom(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE_DATA *data);
 
+tool_rc tpm2_selftest(ESYS_CONTEXT *ectx, TPMI_YES_NO full_test);
+
 #endif /* LIB_TPM2_H_ */
