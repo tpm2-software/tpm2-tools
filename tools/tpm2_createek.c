@@ -199,10 +199,9 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
             return rc;
         }
 
-        TSS2_RC rval = Esys_FlushContext(ectx, ctx.objdata.out.handle);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_FlushContext, rval);
-            return tool_rc_from_tpm(rval);
+        rc = tpm2_flush_context(ectx, ctx.objdata.out.handle);
+        if (rc != tool_rc_success) {
+            return rc;
         }
     } else {
         /* If it wasn't persistent, save a context for future tool interactions */
