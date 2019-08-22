@@ -4,6 +4,7 @@
 
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_capability.h"
 #include "tpm2_options.h"
 
@@ -43,12 +44,11 @@ static tool_rc flush_contexts_tpm2(ESYS_CONTEXT *ectx, TPM2_HANDLE handles[],
             return rc;
         }
 
-        TPM2_RC rval = Esys_FlushContext(ectx, handle);
-        if (rval != TPM2_RC_SUCCESS) {
+        rc = tpm2_flush_context(ectx, handle);
+        if (rc != tool_rc_success) {
             LOG_ERR("Failed Flush Context for %s handle 0x%x",
                     get_property_name(handles[i]), handles[i]);
-            LOG_PERR(Esys_FlushContext, rval);
-            return tool_rc_from_tpm(rval);
+            return rc;
         }
     }
 
@@ -61,10 +61,9 @@ static bool flush_contexts_tr(ESYS_CONTEXT *ectx, ESYS_TR handles[],
     UINT32 i;
 
     for (i = 0; i < count; ++i) {
-        TPM2_RC rval = Esys_FlushContext(ectx, handles[i]);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_FlushContext, rval);
-            return Tss2_RC_Decode(rval);
+        tool_rc rc = tpm2_flush_context(ectx, handles[i]);
+        if (rc != tool_rc_success) {
+            return rc;
         }
     }
 
