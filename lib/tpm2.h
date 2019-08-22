@@ -290,4 +290,7 @@ tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
         const TPM2B_PUBLIC *public, TPMI_RH_HIERARCHY hierarchy,
         ESYS_TR *objectHandle);
 
+tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,
+        const TPM2B_EVENT *event_data, TPML_DIGEST_VALUES **digests);
+
 #endif /* LIB_TPM2_H_ */
