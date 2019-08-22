@@ -1472,3 +1472,15 @@ tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type) {
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_pcr_reset(ESYS_CONTEXT *ectx, ESYS_TR pcr_handle) {
+
+    TSS2_RC rval = Esys_PCR_Reset(ectx, pcr_handle, ESYS_TR_PASSWORD,
+            ESYS_TR_NONE, ESYS_TR_NONE);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PCR_Reset, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

@@ -4,6 +4,7 @@
 
 #include "log.h"
 #include "pcr.h"
+#include "tpm2.h"
 #include "tpm2_options.h"
 
 typedef struct tpm_pcr_reset_ctx tpm_pcr_reset_ctx;
@@ -15,15 +16,12 @@ static tpm_pcr_reset_ctx ctx;
 
 static tool_rc pcr_reset_one(ESYS_CONTEXT *ectx, TPMI_DH_PCR pcr_index) {
 
-    TSS2_RC rval = Esys_PCR_Reset(ectx, pcr_index, ESYS_TR_PASSWORD,
-            ESYS_TR_NONE, ESYS_TR_NONE);
-    if (rval != TSS2_RC_SUCCESS) {
+    tool_rc rc = tpm2_pcr_reset(ectx, pcr_index);
+    if (rc != tool_rc_success) {
         LOG_ERR("Could not reset PCR index: %d", pcr_index);
-        LOG_PERR(Esys_PCR_Reset, rval);
-        return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+    return rc;
 }
 
 static tool_rc pcr_reset(ESYS_CONTEXT *ectx) {

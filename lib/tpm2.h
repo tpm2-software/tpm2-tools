@@ -303,4 +303,6 @@ tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
 
 tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type);
 
+tool_rc tpm2_pcr_reset(ESYS_CONTEXT *ectx, ESYS_TR pcr_handle);
+
 #endif /* LIB_TPM2_H_ */
