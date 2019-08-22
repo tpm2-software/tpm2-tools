@@ -493,7 +493,7 @@ tool_rc tpm2_hash_sequence_start(ESYS_CONTEXT *esys_context, const TPM2B_AUTH *a
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+    return tpm2_tr_set_auth(esys_context, *sequence_handle, auth);
 }
 
 tool_rc tpm2_sequence_update(ESYS_CONTEXT *esys_context, ESYS_TR sequence_handle,
