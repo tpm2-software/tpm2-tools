@@ -290,4 +290,8 @@ tool_rc tpm2_selftest(ESYS_CONTEXT *ectx, TPMI_YES_NO full_test);
 tool_rc tpm2_gettestresult(ESYS_CONTEXT *ectx, TPM2B_MAX_BUFFER **out_data,
         TPM2_RC *test_result);
 
+tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
+        const TPM2B_PUBLIC *public, TPMI_RH_HIERARCHY hierarchy,
+        ESYS_TR *object_handle);
+
 #endif /* LIB_TPM2_H_ */

@@ -8,6 +8,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_attr_util.h"
 #include "tpm2_auth_util.h"
@@ -47,15 +48,14 @@ static tpm_loadexternal_ctx ctx = {
 static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
         TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME **name) {
 
-    TSS2_RC rval = Esys_LoadExternal(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, has_priv ? priv : NULL, pub, ctx.hierarchy_value,
+    tool_rc rc = tpm2_loadexternal(ectx,
+            has_priv ? priv : NULL, pub, ctx.hierarchy_value,
             &ctx.handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_LoadExternal, rval);
-        return tool_rc_from_tpm(rval);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
-    rval = Esys_TR_GetName(ectx, ctx.handle, name);
+    TSS2_RC rval = Esys_TR_GetName(ectx, ctx.handle, name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_GetName, rval);
         return tool_rc_from_tpm(rval);
