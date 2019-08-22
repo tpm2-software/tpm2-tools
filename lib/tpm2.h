@@ -133,8 +133,7 @@ tool_rc tpm2_hash(ESYS_CONTEXT *esys_context, ESYS_TR shandle1, ESYS_TR shandle2
         TPMI_RH_HIERARCHY hierarchy, TPM2B_DIGEST **out_hash,
         TPMT_TK_HASHCHECK **validation);
 
-tool_rc tpm2_hash_sequence_start(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
-        ESYS_TR shandle2, ESYS_TR shandle3, const TPM2B_AUTH *auth,
+tool_rc tpm2_hash_sequence_start(ESYS_CONTEXT *esys_context, const TPM2B_AUTH *auth,
         TPMI_ALG_HASH hash_alg, ESYS_TR *sequence_handle);
 
 tool_rc tpm2_sequence_update(ESYS_CONTEXT *esys_context, ESYS_TR sequence_handle,

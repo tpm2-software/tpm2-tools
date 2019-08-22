@@ -52,8 +52,7 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
      * chunks to loop over, if possible. This way we can call Complete with
      * data.
      */
-    tool_rc rc = tpm2_hash_sequence_start(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &null_auth, halg, &sequence_handle);
+    tool_rc rc = tpm2_hash_sequence_start(ectx, &null_auth, halg, &sequence_handle);
     if (rc != tool_rc_success) {
         return rc;
     }
