@@ -1407,3 +1407,25 @@ tool_rc tpm2_loadexternal(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE *private,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
+        ESYS_TR pcr, tpm2_session *session,
+        const TPM2B_EVENT *event_data,
+        TPML_DIGEST_VALUES **digests) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, pcr, session,
+            &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_PCR_Event(ectx, pcr, shandle1, ESYS_TR_NONE,
+            ESYS_TR_NONE, event_data, digests);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PCR_Event, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
