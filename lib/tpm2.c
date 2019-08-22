@@ -1452,3 +1452,18 @@ tool_rc tpm2_pcr_reset(ESYS_CONTEXT *ectx, ESYS_TR pcr_handle) {
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_makecredential(ESYS_CONTEXT *ectx, ESYS_TR handle,
+        const TPM2B_DIGEST *credential, const TPM2B_NAME *object_name,
+        TPM2B_ID_OBJECT **credential_blob, TPM2B_ENCRYPTED_SECRET **secret) {
+
+    TSS2_RC rval = Esys_MakeCredential(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, credential, object_name, credential_blob,
+            secret);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_MakeCredential, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
