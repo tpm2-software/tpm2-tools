@@ -9,6 +9,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_capability.h"
 #include "tpm2_tool.h"
 
@@ -26,11 +27,9 @@ static tool_rc get_random_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *random_bytes;
 
-    TSS2_RC rval = Esys_GetRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, ctx.num_of_bytes, &random_bytes);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_GetRandom, rval);
-        return tool_rc_from_tpm(rval);
+    tool_rc rc = tpm2_getrandom(ectx, ctx.num_of_bytes, &random_bytes);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /* ensure we got the expected number of bytes unless force is set */

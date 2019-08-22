@@ -1448,3 +1448,16 @@ tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
+        TPM2B_DIGEST **random) {
+
+    TSS2_RC rval = Esys_GetRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
+        ESYS_TR_NONE, count, random);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_GetRandom, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
