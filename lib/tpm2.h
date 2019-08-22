@@ -190,6 +190,10 @@ tool_rc tpm2_rsa_decrypt(ESYS_CONTEXT *esys_context, tpm2_loaded_object *keyobj,
         const TPMT_RSA_DECRYPT *in_scheme, const TPM2B_DATA *label,
         TPM2B_PUBLIC_KEY_RSA **message);
 
+tool_rc tpm2_rsa_encrypt(ESYS_CONTEXT *ectx, tpm2_loaded_object *keyobj,
+        const TPM2B_PUBLIC_KEY_RSA *message, const TPMT_RSA_DECRYPT *scheme,
+        const TPM2B_DATA *label, TPM2B_PUBLIC_KEY_RSA **cipher_text);
+
 tool_rc tpm2_load(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parentobj,
         const TPM2B_PRIVATE *in_private, const TPM2B_PUBLIC *in_public,
         ESYS_TR *object_handle);
