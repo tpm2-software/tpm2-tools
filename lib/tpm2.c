@@ -483,12 +483,11 @@ tool_rc tpm2_hash(ESYS_CONTEXT *esys_context, ESYS_TR shandle1, ESYS_TR shandle2
     return tool_rc_success;
 }
 
-tool_rc tpm2_hash_sequence_start(ESYS_CONTEXT *esys_context, ESYS_TR shandle1,
-        ESYS_TR shandle2, ESYS_TR shandle3, const TPM2B_AUTH *auth,
+tool_rc tpm2_hash_sequence_start(ESYS_CONTEXT *esys_context, const TPM2B_AUTH *auth,
         TPMI_ALG_HASH hash_alg, ESYS_TR *sequence_handle) {
 
-    TSS2_RC rval = Esys_HashSequenceStart(esys_context, shandle1, shandle2,
-            shandle3, auth, hash_alg, sequence_handle);
+    TSS2_RC rval = Esys_HashSequenceStart(esys_context, ESYS_TR_NONE, ESYS_TR_NONE,
+            ESYS_TR_NONE, auth, hash_alg, sequence_handle);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_HashSequenceStart, rval);
         return tool_rc_from_tpm(rval);
