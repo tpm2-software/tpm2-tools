@@ -5,6 +5,7 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_convert.h"
 #include "tpm2_hash.h"
@@ -43,15 +44,12 @@ static tpm2_verifysig_ctx ctx = {
 
 static tool_rc verify_signature(ESYS_CONTEXT *context) {
 
-    tool_rc rc = tool_rc_success;
-    TPMT_TK_VERIFIED *validation;
+    TPMT_TK_VERIFIED *validation = NULL;
 
-    TSS2_RC rval = Esys_VerifySignature(context,
-            ctx.key_context_object.tr_handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, ctx.msg_hash, &ctx.signature, &validation);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_VerifySignature, rval);
-        rc = tool_rc_from_tpm(rval);
+    tool_rc rc = tpm2_verifysignature(context,
+            ctx.key_context_object.tr_handle,
+            ctx.msg_hash, &ctx.signature, &validation);
+    if (rc != tool_rc_success) {
         goto out;
     }
 

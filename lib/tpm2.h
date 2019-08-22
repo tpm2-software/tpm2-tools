@@ -309,4 +309,8 @@ tool_rc tpm2_makecredential(ESYS_CONTEXT *ectx, ESYS_TR handle,
         const TPM2B_DIGEST *credential, const TPM2B_NAME *object_name,
         TPM2B_ID_OBJECT **credential_blob, TPM2B_ENCRYPTED_SECRET **secret);
 
+tool_rc tpm2_verifysignature(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
+        const TPM2B_DIGEST *digest, const TPMT_SIGNATURE *signature,
+        TPMT_TK_VERIFIED **validation);
+
 #endif /* LIB_TPM2_H_ */
