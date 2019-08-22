@@ -78,8 +78,7 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
             inbuffer = inbuffer + buffer.size;
         }
 
-        rc = tpm2_sequence_update(ectx, sequence_handle, ESYS_TR_PASSWORD,
-                ESYS_TR_NONE, ESYS_TR_NONE, &buffer);
+        rc = tpm2_sequence_update(ectx, sequence_handle, &buffer);
         if (rc != tool_rc_success) {
             return rc;
         }
