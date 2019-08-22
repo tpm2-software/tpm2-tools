@@ -759,6 +759,21 @@ tool_rc tpm2_rsa_decrypt(ESYS_CONTEXT *ectx, tpm2_loaded_object *keyobj,
     return tool_rc_success;
 }
 
+tool_rc tpm2_rsa_encrypt(ESYS_CONTEXT *ectx, tpm2_loaded_object *keyobj,
+        const TPM2B_PUBLIC_KEY_RSA *message, const TPMT_RSA_DECRYPT *scheme,
+        const TPM2B_DATA *label, TPM2B_PUBLIC_KEY_RSA **cipher_text) {
+
+    TSS2_RC rval = Esys_RSA_Encrypt(ectx, keyobj->tr_handle,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, message, scheme,
+            label, cipher_text);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_RSA_Encrypt, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_load(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parentobj,
         const TPM2B_PRIVATE *in_private, const TPM2B_PUBLIC *in_public,
         ESYS_TR *object_handle) {

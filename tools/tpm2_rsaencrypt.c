@@ -6,6 +6,7 @@
 #include "files.h"
 #include "log.h"
 #include "object.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
 
@@ -30,12 +31,10 @@ static tool_rc rsa_encrypt_and_save(ESYS_CONTEXT *context) {
     bool ret = false;
     TPM2B_PUBLIC_KEY_RSA *out_data = NULL;
 
-    TSS2_RC rval = Esys_RSA_Encrypt(context, ctx.key_context.tr_handle,
-            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &ctx.message, &ctx.scheme,
-            &ctx.label, &out_data);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_RSA_Encrypt, rval);
-        return tool_rc_from_tpm(rval);
+    tool_rc rc = tpm2_rsa_encrypt(context, &ctx.key_context,
+            &ctx.message, &ctx.scheme, &ctx.label, &out_data);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     FILE *f = ctx.output_path ? fopen(ctx.output_path, "wb+") : stdout;
