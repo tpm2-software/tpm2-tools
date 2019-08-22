@@ -47,13 +47,10 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
 
     TPMS_CAPABILITY_DATA *capability_data;
-    UINT32 property = tpm2_util_hton_32(TPM2_HT_NV_INDEX);
-    TSS2_RC rval = Esys_GetCapability(context, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, TPM2_CAP_HANDLES, property, TPM2_PT_NV_INDEX_MAX,
-            NULL, &capability_data);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_GetCapability, rval);
-        return tool_rc_from_tpm(rval);
+    tool_rc rc = tpm2_getcap(context, TPM2_CAP_HANDLES, tpm2_util_hton_32(TPM2_HT_NV_INDEX),
+            TPM2_PT_NV_INDEX_MAX, NULL, &capability_data);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     UINT32 i;
