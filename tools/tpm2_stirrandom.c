@@ -2,6 +2,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_options.h"
 
 /* Spec enforce input data to be not longer than 128 bytes */
@@ -14,20 +15,6 @@ struct tpm_stirrandom_ctx {
 };
 
 static tpm_stirrandom_ctx ctx;
-
-static tool_rc do_stirrandom(ESYS_CONTEXT *ectx) {
-
-    TSS2_RC rval = Esys_StirRandom(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &ctx.in_data);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_ERR("Error while injecting specified additionnal data into TPM "
-                "random pool");
-        LOG_PERR(Esys_StirRandom, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
-}
 
 static bool on_args(int argc, char **argv) {
 
@@ -77,5 +64,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
-    return do_stirrandom(ectx);
+    return tpm2_stirrandom(ectx, &ctx.in_data);
 }

@@ -284,4 +284,6 @@ tool_rc tpm2_policy_authorize_nv(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_incrementalselftest(ESYS_CONTEXT *ectx, const TPML_ALG *to_test,
         TPML_ALG **to_do_list);
 
+tool_rc tpm2_stirrandom(ESYS_CONTEXT *ectx, const TPM2B_SENSITIVE_DATA *data);
+
 #endif /* LIB_TPM2_H_ */
