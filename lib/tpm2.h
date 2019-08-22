@@ -297,4 +297,6 @@ tool_rc tpm2_pcr_event(ESYS_CONTEXT *ectx, ESYS_TR pcr, tpm2_session *session,
 tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
         TPM2B_DIGEST **random);
 
+tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type);
+
 #endif /* LIB_TPM2_H_ */

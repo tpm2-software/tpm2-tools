@@ -1429,3 +1429,14 @@ tool_rc tpm2_getrandom(ESYS_CONTEXT *ectx, UINT16 count,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_startup(ESYS_CONTEXT *ectx, TPM2_SU startup_type) {
+
+    TSS2_RC rval = Esys_Startup(ectx, startup_type);
+    if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
+        LOG_PERR(Esys_Startup, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
