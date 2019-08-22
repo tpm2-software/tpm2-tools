@@ -61,17 +61,10 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
      * to do in a single hash call. Based on the size figure out the chunks
      * to loop over, if possible. This way we can call Complete with data.
      */
-    rval = Esys_HashSequenceStart(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &null_auth, TPM2_ALG_NULL, &sequence_handle);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_HashSequenceStart, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    rval = Esys_TR_SetAuth(ectx, sequence_handle, &null_auth);
-    if (rval != TPM2_RC_SUCCESS) {
-        LOG_PERR(Esys_TR_SetAuth, rval);
-        return tool_rc_from_tpm(rval);
+    tool_rc rc = tpm2_hash_sequence_start(ectx, &null_auth, TPM2_ALG_NULL,
+            &sequence_handle);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     /* If we know the file size, we decrement the amount read and terminate the
@@ -95,11 +88,9 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         data.size = bytes_read;
 
         /* if data was read, update the sequence */
-        rval = Esys_SequenceUpdate(ectx, sequence_handle, ESYS_TR_PASSWORD,
-                ESYS_TR_NONE, ESYS_TR_NONE, &data);
-        if (rval != TPM2_RC_SUCCESS) {
-            LOG_PERR(Esys_SequenceUpdate, rval);
-            return tool_rc_from_tpm(rval);
+        rc = tpm2_sequence_update(ectx, sequence_handle, &data);
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         if (use_left) {
@@ -124,21 +115,8 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
         data.size = 0;
     }
 
-    ESYS_TR shandle1 = ESYS_TR_NONE;
-    tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr, ctx.auth.session,
-            &shandle1);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
-
-    rval = Esys_EventSequenceComplete(ectx, ctx.pcr, sequence_handle, shandle1,
-            ESYS_TR_PASSWORD, ESYS_TR_NONE, &data, result);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_EventSequenceComplete, rval);
-        return tool_rc_from_tpm(rval);
-    }
-
-    return tool_rc_success;
+    return tpm2_event_sequence_complete(ectx, ctx.pcr, sequence_handle,
+            ctx.auth.session, &data, result);
 }
 
 static tool_rc do_pcrevent_and_output(ESYS_CONTEXT *ectx) {
