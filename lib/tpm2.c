@@ -510,13 +510,13 @@ tool_rc tpm2_sequence_update(ESYS_CONTEXT *esys_context, ESYS_TR sequence_handle
 }
 
 tool_rc tpm2_sequence_complete(ESYS_CONTEXT *esys_context,
-        ESYS_TR sequence_handle, ESYS_TR shandle1, ESYS_TR shandle2,
-        ESYS_TR shandle3, const TPM2B_MAX_BUFFER *buffer,
+        ESYS_TR sequence_handle, const TPM2B_MAX_BUFFER *buffer,
         TPMI_RH_HIERARCHY hierarchy, TPM2B_DIGEST **result,
         TPMT_TK_HASHCHECK **validation) {
 
-    TSS2_RC rval = Esys_SequenceComplete(esys_context, sequence_handle, shandle1,
-            shandle2, shandle3, buffer, hierarchy, result, validation);
+    TSS2_RC rval = Esys_SequenceComplete(esys_context, sequence_handle,
+            ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE, buffer,
+            hierarchy, result, validation);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_SequenceComplete, rval);
         return tool_rc_from_tpm(rval);
