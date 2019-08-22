@@ -140,8 +140,7 @@ tool_rc tpm2_sequence_update(ESYS_CONTEXT *esys_context, ESYS_TR sequence_handle
         const TPM2B_MAX_BUFFER *buffer);
 
 tool_rc tpm2_sequence_complete(ESYS_CONTEXT *esys_context,
-        ESYS_TR sequence_handle, ESYS_TR shandle1, ESYS_TR shandle2,
-        ESYS_TR shandle3, const TPM2B_MAX_BUFFER *buffer,
+        ESYS_TR sequence_handle, const TPM2B_MAX_BUFFER *buffer,
         TPMI_RH_HIERARCHY hierarchy, TPM2B_DIGEST **result,
         TPMT_TK_HASHCHECK **validation);
 
