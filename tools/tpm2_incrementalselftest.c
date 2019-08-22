@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_tool.h"
 
@@ -14,20 +15,18 @@ struct tpm_incrementalselftest_ctx {
 
 static tpm_incrementalselftest_ctx ctx;
 
-static tool_rc tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
+static tool_rc do_tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
 
-    TPML_ALG *totest = NULL;
-    TSS2_RC rval = Esys_IncrementalSelfTest(ectx, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &(ctx.inputalgs), &totest);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Esys_SelfTest, rval);
-        return tool_rc_from_tpm(rval);
+    TPML_ALG *to_do_list = NULL;
+    tool_rc rc = tpm2_incrementalselftest(ectx, &(ctx.inputalgs), &to_do_list);
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     tpm2_tool_output("status: ");
     print_yaml_indent(1);
 
-    if (totest->count == 0) {
+    if (to_do_list->count == 0) {
         tpm2_tool_output("complete\n");
     } else {
         tpm2_tool_output("success\n");
@@ -35,16 +34,16 @@ static tool_rc tpm_incrementalselftest(ESYS_CONTEXT *ectx) {
         tpm2_tool_output("remaining:\n");
 
         uint32_t i;
-        for (i = 0; i < totest->count; i++) {
+        for (i = 0; i < to_do_list->count; i++) {
             print_yaml_indent(1);
             tpm2_tool_output("%s",
-                    tpm2_alg_util_algtostr(totest->algorithms[i],
+                    tpm2_alg_util_algtostr(to_do_list->algorithms[i],
                             tpm2_alg_util_flags_any));
             tpm2_tool_output("\n");
         }
     }
 
-    free(totest);
+    free(to_do_list);
     return tool_rc_success;
 }
 
@@ -82,5 +81,5 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    return tpm_incrementalselftest(ectx);
+    return do_tpm_incrementalselftest(ectx);
 }
