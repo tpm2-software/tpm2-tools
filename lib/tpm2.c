@@ -525,6 +525,27 @@ tool_rc tpm2_sequence_complete(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_event_sequence_complete(ESYS_CONTEXT *ectx, ESYS_TR pcr,
+        ESYS_TR sequence_handle, tpm2_session *session,
+        const TPM2B_MAX_BUFFER *buffer, TPML_DIGEST_VALUES **results) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx, pcr, session,
+            &shandle1);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_EventSequenceComplete(ectx, pcr, sequence_handle, shandle1,
+            ESYS_TR_PASSWORD, ESYS_TR_NONE, buffer, results);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_EventSequenceComplete, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_tr_set_auth(ESYS_CONTEXT *esys_context, ESYS_TR handle,
         TPM2B_AUTH const *auth_value) {
 

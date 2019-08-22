@@ -144,6 +144,10 @@ tool_rc tpm2_sequence_complete(ESYS_CONTEXT *esys_context,
         TPMI_RH_HIERARCHY hierarchy, TPM2B_DIGEST **result,
         TPMT_TK_HASHCHECK **validation);
 
+tool_rc tpm2_event_sequence_complete(ESYS_CONTEXT *ectx, ESYS_TR pcr,
+        ESYS_TR sequence_handle, tpm2_session *session,
+        const TPM2B_MAX_BUFFER *buffer, TPML_DIGEST_VALUES **results);
+
 tool_rc tpm2_tr_set_auth(ESYS_CONTEXT *esys_context, ESYS_TR handle,
         TPM2B_AUTH const *auth_value);
 
