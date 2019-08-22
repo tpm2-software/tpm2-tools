@@ -9,6 +9,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_hierarchy.h"
 #include "tpm2_auth_util.h"
@@ -49,21 +50,7 @@ static tool_rc tpm_pcrevent_file(ESYS_CONTEXT *ectx,
             return tool_rc_general_error;
         }
 
-        ESYS_TR shandle1 = ESYS_TR_NONE;
-        tool_rc rc = tpm2_auth_util_get_shandle(ectx, ctx.pcr, ctx.auth.session,
-                &shandle1);
-        if (rc != tool_rc_success) {
-            return rc;
-        }
-
-        rval = Esys_PCR_Event(ectx, ctx.pcr, shandle1, ESYS_TR_NONE,
-                ESYS_TR_NONE, &buffer, result);
-        if (rval != TSS2_RC_SUCCESS) {
-            LOG_PERR(Esys_PCR_Event, rval);
-            return tool_rc_from_tpm(rval);
-        }
-
-        return tool_rc_success;
+        return tpm2_pcr_event(ectx, ctx.pcr, ctx.auth.session, &buffer, result);
     }
 
     ESYS_TR sequence_handle;
