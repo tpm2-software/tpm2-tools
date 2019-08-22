@@ -66,9 +66,8 @@ static inline tool_rc tpm2_util_nv_max_buffer_size(ESYS_CONTEXT *ectx,
     /* Get the maximum read block size */
     TPMS_CAPABILITY_DATA *cap_data;
     TPMI_YES_NO more_data;
-    tool_rc rc = tpm2_getcap(ectx, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
-            TPM2_CAP_TPM_PROPERTIES, TPM2_PT_NV_BUFFER_MAX, 1, &more_data,
-            &cap_data);
+    tool_rc rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES,
+            TPM2_PT_NV_BUFFER_MAX, 1, &more_data, &cap_data);
     if (rc != tool_rc_success) {
         return rc;
     }
