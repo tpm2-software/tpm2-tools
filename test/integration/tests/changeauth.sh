@@ -42,4 +42,14 @@ tpm2_create -Q -C primary.ctx -p foo -u key.pub -r key.priv
 tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -c key.ctx
 tpm2_changeauth -C primary.ctx -p foo -c key.ctx -r new.priv bar
 
+# Test changing an NV index auth
+tpm2_startauthsession -S session.ctx
+tpm2_policycommandcode -S session.ctx -L policy.nvchange TPM2_CC_NV_ChangeAuth
+tpm2_flushcontext session.ctx
+NVIndex=0x1500015
+tpm2_nvdefine   $NVIndex -a o -s 32 -a "authread|authwrite" -L policy.nvchange
+tpm2_startauthsession --policy-session -S session.ctx
+tpm2_policycommandcode -S session.ctx -L policy.nvchange TPM2_CC_NV_ChangeAuth
+tpm2_changeauth -p session:session.ctx -c $NVIndex newindexauth
+
 exit 0
