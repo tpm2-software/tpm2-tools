@@ -317,4 +317,6 @@ tool_rc tpm2_verifysignature(ESYS_CONTEXT *ectx, ESYS_TR key_handle,
         const TPM2B_DIGEST *digest, const TPMT_SIGNATURE *signature,
         TPMT_TK_VERIFIED **validation);
 
+tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time);
+
 #endif /* LIB_TPM2_H_ */
