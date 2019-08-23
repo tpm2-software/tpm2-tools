@@ -178,7 +178,7 @@ Attempts to perform other operations would fail.
 ```bash
 tpm2_startauthsession -S session.dat
 
-tpm2_policycommandcode -S session.dat -L policy.dat unseal
+tpm2_policycommandcode -S session.dat -L policy.dat TPM2_CC_Unseal
 
 tpm2_flushcontext session.dat
 ```
@@ -198,7 +198,7 @@ tpm2_load -C prim.ctx -u sealkey.pub -r sealkey.priv -n sealkey.name \
 
 tpm2_startauthsession --policy-session -S session.dat
 
-tpm2_policycommandcode -S session.dat -L policy.dat unseal
+tpm2_policycommandcode -S session.dat -L policy.dat TPM2_CC_Unseal
 
 tpm2_unseal -p session:session.dat -c sealkey.ctx
 SEALED-SECRET
