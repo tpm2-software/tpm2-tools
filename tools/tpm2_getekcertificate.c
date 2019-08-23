@@ -281,8 +281,8 @@ static bool on_option(char key, char *value) {
         break;
     case 'X':
         ctx.SSL_NO_VERIFY = 1;
-        LOG_WARN(
-                "TLS communication with the said TPM manufacturer server setup with SSL_NO_VERIFY!");
+        LOG_WARN("TLS communication with the said TPM manufacturer server setup"
+                 " with SSL_NO_VERIFY!");
         break;
     case 'u':
         ctx.ek_path = value;
@@ -355,10 +355,9 @@ bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
         return false;
     }
 
-    if (capability_data->data.tpmProperties.tpmProperty[0].value ==
+    if (capability_data->data.tpmProperties.tpmProperty[0].value &
         TPM_RNG_EPS) {
-        LOG_ERR(
-                "Cannot proceed. For further information please refer to: "
+        LOG_ERR("Cannot proceed. For further information please refer to: "
                 "https://www.intel.com/content/www/us/en/security-center/"
                 "advisory/intel-sa-00086.html. Recovery tools are located here:"
                 "https://github.com/intel/INTEL-SA-00086-Linux-Recovery-Tools");
