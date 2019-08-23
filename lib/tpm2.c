@@ -1309,3 +1309,16 @@ tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time) {
+
+    TSS2_RC rval = Esys_ReadClock(ectx,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            current_time);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_ReadClock, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

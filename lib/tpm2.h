@@ -277,4 +277,6 @@ tool_rc tpm2_quote(ESYS_CONTEXT *esys_context, tpm2_loaded_object *quote_obj,
 tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
         TPM2B_SENSITIVE_DATA **out_data);
 
+tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time);
+
 #endif /* LIB_TPM2_H_ */
