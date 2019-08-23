@@ -112,8 +112,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 static inline bool object_needs_parent(tpm2_loaded_object *obj) {
 
-    return (obj->handle & TPM2_HR_TRANSIENT)
-            || (obj->handle & TPM2_HR_PERSISTENT);
+    TPM2_HC h = obj->handle & TPM2_HR_RANGE_MASK;
+    return (h == TPM2_HR_TRANSIENT) || (h == TPM2_HR_PERSISTENT);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
