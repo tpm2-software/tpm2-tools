@@ -84,6 +84,7 @@ bin_PROGRAMS = \
     tools/tpm2_policyduplicationselect \
     tools/tpm2_policylocality \
     tools/tpm2_quote \
+    tools/tpm2_readclock \
     tools/tpm2_readpublic \
     tools/tpm2_rsadecrypt \
     tools/tpm2_rsaencrypt \
@@ -171,6 +172,7 @@ tools_tpm2_policylocality_SOURCES = tools/tpm2_policylocality.c $(TOOL_SRC)
 tools_tpm2_testparms_SOURCES = tools/tpm2_testparms.c $(TOOL_SRC)
 tools_tpm2_incrementalselftest_SOURCES = tools/tpm2_incrementalselftest.c $(TOOL_SRC)
 tools_tpm2_gettestresult_SOURCES = tools/tpm2_gettestresult.c $(TOOL_SRC)
+tools_tpm2_readclock_SOURCES = tools/tpm2_readclock.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -342,6 +344,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_print.1 \
     man/man1/tpm2_quote.1 \
     man/man1/tpm2_rc_decode.1 \
+    man/man1/tpm2_readclock.1 \
     man/man1/tpm2_readpublic.1 \
     man/man1/tpm2_rsadecrypt.1 \
     man/man1/tpm2_rsaencrypt.1 \
