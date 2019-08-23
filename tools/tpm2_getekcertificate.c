@@ -49,20 +49,48 @@ static unsigned char *hash_ek_public(void) {
         goto err;
     }
 
-    is_success = SHA256_Update(&sha256,
-            ctx.out_public->publicArea.unique.rsa.buffer,
-            ctx.out_public->publicArea.unique.rsa.size);
-    if (!is_success) {
-        LOG_ERR("SHA256_Update failed");
-        goto err;
-    }
+    switch (ctx.out_public->publicArea.type) {
+    case TPM2_ALG_RSA:
+        is_success = SHA256_Update(&sha256,
+                ctx.out_public->publicArea.unique.rsa.buffer,
+                ctx.out_public->publicArea.unique.rsa.size);
+        if (!is_success) {
+            LOG_ERR("SHA256_Update failed");
+            goto err;
+        }
 
-    /* TODO what do these magic bytes line up to? */
-    BYTE buf[3] = { 0x1, 0x00, 0x01 }; //Exponent
+        if (ctx.out_public->publicArea.parameters.rsaDetail.exponent != 0) {
+            LOG_ERR("non-default exponents unsupported");
+            goto err;
+        }
+        BYTE buf[3] = { 0x1, 0x00, 0x01 }; // Exponent
+        is_success = SHA256_Update(&sha256, buf, sizeof(buf));
+        if (!is_success) {
+            LOG_ERR("SHA256_Update failed");
+            goto err;
+        }
+        break;
 
-    is_success = SHA256_Update(&sha256, buf, sizeof(buf));
-    if (!is_success) {
-        LOG_ERR("SHA256_Update failed");
+    case TPM2_ALG_ECC:
+        is_success = SHA256_Update(&sha256,
+                ctx.out_public->publicArea.unique.ecc.x.buffer,
+                ctx.out_public->publicArea.unique.ecc.x.size);
+        if (!is_success) {
+            LOG_ERR("SHA256_Update failed");
+            goto err;
+        }
+
+        is_success = SHA256_Update(&sha256,
+                ctx.out_public->publicArea.unique.ecc.y.buffer,
+                ctx.out_public->publicArea.unique.ecc.y.size);
+        if (!is_success) {
+            LOG_ERR("SHA256_Update failed");
+            goto err;
+        }
+        break;
+
+    default:
+        LOG_ERR("unsupported EK algorithm");
         goto err;
     }
 
