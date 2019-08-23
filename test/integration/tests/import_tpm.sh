@@ -53,7 +53,7 @@ load_new_parent() {
 
 create_load_duplicatee() {
     # Create the key we want to duplicate
-    create_policy dpolicy.dat duplicate
+    create_policy dpolicy.dat TPM2_CC_Duplicate
     tpm2_create -Q -C primary.ctx -g sha256 -G $1 -p foo -r key.prv -u key.pub \
     -L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth"
     # Load the key
@@ -63,7 +63,7 @@ create_load_duplicatee() {
 }
 
 do_duplication() {
-    start_session dpolicy.dat duplicate
+    start_session dpolicy.dat TPM2_CC_Duplicate
     if [ "$2" = "aes" ]
     then
         tpm2_duplicate -Q -C new_parent.ctx -c key.ctx -G aes -o sym.key \
