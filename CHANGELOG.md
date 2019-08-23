@@ -145,6 +145,7 @@
   - Renamed the tool to tpm2_getekcertificate.
   - Removed ek key creation and management logic.
   - Added option for getting ek cert for offline platform via -x.
+  - Support for ECC keys.
   - \--ec-cert is now \--ek-certificate,
   - \--untrusted is now \--allow-unverified,
   - \--output is now \--ek-public,
