@@ -10,6 +10,7 @@
 #include "pcr.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_capability.h"
+#include "tpm2_cc_util.h"
 #include "tpm2_tool.h"
 
 /* convenience macro to convert flags into "1" / "0" strings */
@@ -594,154 +595,26 @@ static void dump_algorithms(TPMS_ALG_PROPERTY alg_properties[], size_t count) {
                 alg_properties[i].algProperties);
 }
 
-static const char *cc_to_str(UINT32 cc) {
-
-    struct {
-        UINT32 cc;
-        const char *name;
-    } commands[] = {
-        { TPM2_CC_NV_UndefineSpaceSpecial, "nv" },
-        { TPM2_CC_EvictControl, "evictcontrol" },
-        { TPM2_CC_HierarchyControl, "hierarchycontrol" },
-        { TPM2_CC_NV_UndefineSpace, "nv" },
-        { TPM2_CC_ChangeEPS, "changeeps" },
-        { TPM2_CC_ChangePPS, "changepps" },
-        { TPM2_CC_Clear, "clear" },
-        { TPM2_CC_ClearControl, "clearcontrol" },
-        { TPM2_CC_ClockSet, "clockset" },
-        { TPM2_CC_HierarchyChangeAuth, "hierarchychangeauth" },
-        { TPM2_CC_NV_DefineSpace, "nv" },
-        { TPM2_CC_PCR_Allocate, "pcr" },
-        { TPM2_CC_PCR_SetAuthPolicy, "pcr" },
-        { TPM2_CC_PP_Commands, "pp" },
-        { TPM2_CC_SetPrimaryPolicy, "setprimarypolicy" },
-        { TPM2_CC_FieldUpgradeStart, "fieldupgradestart" },
-        { TPM2_CC_ClockRateAdjust, "clockrateadjust" },
-        { TPM2_CC_CreatePrimary, "createprimary" },
-        { TPM2_CC_NV_GlobalWriteLock, "nv" },
-        { TPM2_CC_GetCommandAuditDigest, "getcommandauditdigest" },
-        { TPM2_CC_NV_Increment, "nv" },
-        { TPM2_CC_NV_SetBits, "nv" },
-        { TPM2_CC_NV_Extend, "nv" },
-        { TPM2_CC_NV_Write, "nv" },
-        { TPM2_CC_NV_WriteLock, "nv" },
-        { TPM2_CC_DictionaryAttackLockReset, "dictionaryattacklockreset" },
-        { TPM2_CC_DictionaryAttackParameters, "dictionaryattackparameters" },
-        { TPM2_CC_NV_ChangeAuth, "nv" },
-        { TPM2_CC_PCR_Event, "pcr" },
-        { TPM2_CC_PCR_Reset, "pcr" },
-        { TPM2_CC_SequenceComplete, "sequencecomplete" },
-        { TPM2_CC_SetAlgorithmSet, "setalgorithmset" },
-        { TPM2_CC_SetCommandCodeAuditStatus, "setcommandcodeauditstatus" },
-        { TPM2_CC_FieldUpgradeData, "fieldupgradedata" },
-        { TPM2_CC_IncrementalSelfTest, "incrementalselftest" },
-        { TPM2_CC_SelfTest, "selftest" },
-        { TPM2_CC_Startup, "startup" },
-        { TPM2_CC_Shutdown, "shutdown" },
-        { TPM2_CC_StirRandom, "stirrandom" },
-        { TPM2_CC_ActivateCredential, "activatecredential" },
-        { TPM2_CC_Certify, "certify" },
-        { TPM2_CC_PolicyNV, "policynv" },
-        { TPM2_CC_CertifyCreation, "certifycreation" },
-        { TPM2_CC_Duplicate, "duplicate" },
-        { TPM2_CC_GetTime, "gettime" },
-        { TPM2_CC_GetSessionAuditDigest, "getsessionauditdigest" },
-        { TPM2_CC_NV_Read, "nv" },
-        { TPM2_CC_NV_ReadLock, "nv" },
-        { TPM2_CC_ObjectChangeAuth, "objectchangeauth" },
-        { TPM2_CC_PolicySecret, "policysecret" },
-        { TPM2_CC_Rewrap, "rewrap" },
-        { TPM2_CC_Create, "create" },
-        { TPM2_CC_ECDH_ZGen, "ecdh" },
-        { TPM2_CC_HMAC, "hmac" },
-        { TPM2_CC_Import, "import" },
-        { TPM2_CC_Load, "load" },
-        { TPM2_CC_Quote, "quote" },
-        { TPM2_CC_RSA_Decrypt, "rsa" },
-        { TPM2_CC_HMAC_Start, "hmac" },
-        { TPM2_CC_SequenceUpdate, "sequenceupdate" },
-        { TPM2_CC_Sign, "sign" },
-        { TPM2_CC_Unseal, "unseal" },
-        { TPM2_CC_PolicySigned, "policysigned" },
-        { TPM2_CC_ContextLoad, "contextload" },
-        { TPM2_CC_ContextSave, "contextsave" },
-        { TPM2_CC_ECDH_KeyGen, "ecdh" },
-        { TPM2_CC_EncryptDecrypt, "encryptdecrypt" },
-        { TPM2_CC_FlushContext, "flushcontext" },
-        { TPM2_CC_LoadExternal, "loadexternal" },
-        { TPM2_CC_MakeCredential, "makecredential" },
-        { TPM2_CC_NV_ReadPublic, "nv" },
-        { TPM2_CC_PolicyAuthorize, "policyauthorize" },
-        { TPM2_CC_PolicyAuthValue, "policyauthvalue" },
-        { TPM2_CC_PolicyCommandCode, "policycommandcode" },
-        { TPM2_CC_PolicyCounterTimer, "policycountertimer" },
-        { TPM2_CC_PolicyCpHash, "policycphash" },
-        { TPM2_CC_PolicyLocality, "policylocality" },
-        { TPM2_CC_PolicyNameHash, "policynamehash" },
-        { TPM2_CC_PolicyOR, "policyor" },
-        { TPM2_CC_PolicyTicket, "policyticket" },
-        { TPM2_CC_ReadPublic, "readpublic" },
-        { TPM2_CC_RSA_Encrypt, "rsa" },
-        { TPM2_CC_StartAuthSession, "startauthsession" },
-        { TPM2_CC_VerifySignature, "verifysignature" },
-        { TPM2_CC_ECC_Parameters, "ecc" },
-        { TPM2_CC_FirmwareRead, "firmwareread" },
-        { TPM2_CC_GetCapability, "getcapability" },
-        { TPM2_CC_GetRandom, "getrandom" },
-        { TPM2_CC_GetTestResult, "gettestresult" },
-        { TPM2_CC_Hash, "hash" },
-        { TPM2_CC_PCR_Read, "pcr" },
-        { TPM2_CC_PolicyPCR, "policypcr" },
-        { TPM2_CC_PolicyRestart, "policyrestart" },
-        { TPM2_CC_ReadClock, "readclock" },
-        { TPM2_CC_PCR_Extend, "pcr" },
-        { TPM2_CC_PCR_SetAuthValue, "pcr" },
-        { TPM2_CC_NV_Certify, "nv" },
-        { TPM2_CC_EventSequenceComplete, "eventsequencecomplete" },
-        { TPM2_CC_HashSequenceStart, "hashsequencestart" },
-        { TPM2_CC_PolicyPhysicalPresence, "policyphysicalpresence" },
-        { TPM2_CC_PolicyDuplicationSelect, "policyduplicationselect" },
-        { TPM2_CC_PolicyGetDigest, "policygetdigest" },
-        { TPM2_CC_TestParms, "testparms" },
-        { TPM2_CC_Commit, "commit" },
-        { TPM2_CC_PolicyPassword, "policypassword" },
-        { TPM2_CC_ZGen_2Phase, "zgen" },
-        { TPM2_CC_EC_Ephemeral, "ec" },
-        { TPM2_CC_PolicyNvWritten, "policynvwritten" },
-        { TPM2_CC_PolicyTemplate, "policytemplate" },
-        { TPM2_CC_CreateLoaded, "createloaded" },
-        { TPM2_CC_PolicyAuthorizeNV, "policyauthorizenv" },
-        { TPM2_CC_EncryptDecrypt2, "encryptdecrypt2" },
-        { TPM2_CC_AC_GetCapability, "getcapability" },
-        { TPM2_CC_AC_Send, "acsend" },
-        { TPM2_CC_Policy_AC_SendSelect, "policyacsendselect" },
-    };
-
-    if (cc < TPM2_CC_FIRST || cc > TPM2_CC_LAST) {
-        static char buf[256];
-        snprintf(buf, sizeof(buf), "unknown%X", cc);
-        return buf;
-    }
-
-    size_t i;
-    for (i = 0; i < ARRAY_LEN(commands); i++) {
-        if (cc == commands[i].cc) {
-            return commands[i].name;
-        }
-    }
-
-    /* Impossible condition*/
-    return NULL;
-}
-
 /*
  * Pretty print the bit fields from the TPMA_CC (UINT32)
  */
 static bool dump_command_attrs(TPMA_CC tpma_cc) {
-    const char *value = cc_to_str(tpma_cc & TPMA_CC_COMMANDINDEX_MASK);
+    const char *value = tpm2_cc_util_to_str(
+            tpma_cc & TPMA_CC_COMMANDINDEX_MASK);
+    /* not found, make a hex version of it */
     if (!value) {
-        return false;
+        /*
+         * big enough for hex representation of
+         * saturated U32 + 0x prefix and then some.
+         */
+        static char _buf[16];
+        memset(_buf, 0, sizeof(_buf));
+        int rc  = snprintf(_buf, sizeof(_buf), "0x%x", tpma_cc);
+        /* ignore bytes, we don't care if it's truncated and it shouldnt happen */
+        UNUSED(rc);
+        value = _buf;
     }
+
     tpm2_tool_output("%s:\n", value);
     tpm2_tool_output("  value: 0x%X\n", tpma_cc);
     tpm2_tool_output("  commandIndex: 0x%x\n",
