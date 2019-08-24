@@ -220,5 +220,6 @@ AC_OUTPUT
 
 AC_MSG_RESULT([
     $PACKAGE_NAME    $VERSION
+    Man pages:    ${PANDOC:-no}
     Unit tests:   $enable_unit
 ])
