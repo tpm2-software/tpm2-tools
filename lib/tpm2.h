@@ -279,4 +279,6 @@ tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
 
 tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time);
 
+tool_rc tpm2_shutdown(ESYS_CONTEXT *ectx, TPM2_SU shutdown_type);
+
 #endif /* LIB_TPM2_H_ */
