@@ -171,8 +171,10 @@ const char *tpm2_cc_util_to_str(TPM2_CC cc) {
      * an internal buffer state that could be clobbered. Thus keeping it
      * reentrant and thread safe even though the tools never need thread
      * safety.
+     *
+     * DO NOT LOG ERROR as tpm2_getcap can have unknown commands and knows
+     * how to deal with NULL returns.
      */
-    LOG_ERR("Could not convert command-code to got: \"%u\"", cc);
 
     return NULL;
 }
