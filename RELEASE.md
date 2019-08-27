@@ -140,11 +140,11 @@ A lot of this git/gpg information was edited from:
 The steps, in order, required to make a release. Refer to the above for
 details on each step.
 
-1. Update CHANGELOG
-2. Update the version matrix in the README.
-3. Ensure that CI is building against a released version of [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd) and [tpm2-tss](https://github.com/tpm2-software/tpm2-tss) via [docker-prelude.sh](https://github.com/tpm2-software/tpm2-tools/blob/master/.ci/docker-prelude.sh).
-3. Create a signed tag for the release
-4. Build a tarball for the release
-5. Generate a detached signature for the tarball
-6. Create a release on GitHub, upload the tarball and signature
-7. After the release add a commit to master updating the News section of the README to point to the latest release.
+- Update CHANGELOG
+- Update the version matrix in the wiki.
+- Ensure that CI is building against a released version of [tpm2-abrmd](https://github.com/tpm2-software/tpm2-abrmd) and [tpm2-tss](https://github.com/tpm2-software/tpm2-tss) via [docker-prelude.sh](https://github.com/tpm2-software/tpm2-tools/blob/master/.ci/docker-prelude.sh).
+- Create a signed tag for the release
+- Build a tarball for the release
+- Generate a detached signature for the tarball
+- Create a release on GitHub, upload the tarball and signature
+- After the release add a commit to master updating the News section of the README to point to the latest release.
