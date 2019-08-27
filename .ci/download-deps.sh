@@ -23,7 +23,8 @@ function get_deps() {
 
 	if [ ! -d tpm2-abrmd ]; then
 		echo "pwd clone abrmd: `pwd`"
-		git clone --depth=1 https://github.com/tpm2-software/tpm2-abrmd.git
+		git clone --depth=1 \
+		--branch 2.2.0 https://github.com/tpm2-software/tpm2-abrmd.git
 		pushd tpm2-abrmd
 		echo "pwd build abrmd: `pwd`"
 		./bootstrap
