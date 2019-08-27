@@ -140,6 +140,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    if (!ctx.context_arg) {
+        LOG_ERR("Specify options to evict handles or a session context.");
+        return tool_rc_option_error;
+    }
+
     TPM2_HANDLE handle;
     bool result = tpm2_util_string_to_uint32(ctx.context_arg, &handle);
     if (!result) {
