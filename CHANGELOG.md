@@ -547,6 +547,8 @@
     affects all tools.
   - Fix parsing bug in PCR mini-language.
   - Fix misspelling of TPM2_PT_HR constants which effects tpm2_getcap output.
+  - configure option --with-bashcompdir for specifying bash completion
+    directory.
 
 ### 3.2.1-rc0 - 2019-08-05
   * Correct PCR logic to prevent memory corruption bug.

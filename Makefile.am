@@ -27,6 +27,8 @@ LDADD = \
     $(LIB_COMMON) $(TSS2_ESYS_LIBS) $(TSS2_MU_LIBS) $(CRYPTO_LIBS) $(TSS2_TCTILDR_LIBS) \
     $(TSS2_RC_LIBS)
 
+AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completion/completions'
+
 # keep me sorted
 bin_PROGRAMS = \
     tools/misc/tpm2_checkquote \
