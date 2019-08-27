@@ -55,9 +55,12 @@ AS_VAR_COPY([$1], [pkg_cv_][$1])
 AS_VAR_IF([$1], [""], [$5], [$4])dnl
 ])# PKG_CHECK_VAR
 ])
-PKG_CHECK_VAR(bashcompdir, [bash-completion], [completionsdir], ,
-  bashcompdir="${datarootdir}/bash-completion/completions")
-AC_SUBST(bashcompdir)
+
+AC_ARG_WITH([bashcompdir],
+            AS_HELP_STRING([--with-bashcompdir=DIR], [directory for bash completions]), ,
+            [PKG_CHECK_VAR([with_bashcompdir], [bash-completion], [completionsdir], ,
+                           [with_bashcompdir="${datarootdir}/bash-completion/completions"])])
+AC_SUBST(bashcompdir, [$with_bashcompdir])
 
 AC_CANONICAL_HOST
 
