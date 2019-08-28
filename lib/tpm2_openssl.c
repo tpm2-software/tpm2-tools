@@ -71,6 +71,17 @@ int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
 
     return 1;
 }
+
+void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q) {
+    if(p) {
+        *p = r->p;
+    }
+
+    if (q) {
+        *q = r->q;
+    }
+}
+
 #endif
 
 static inline const char *get_openssl_err(void) {
