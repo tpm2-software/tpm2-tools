@@ -47,32 +47,6 @@ const EVP_MD *tpm2_openssl_halg_from_tpmhalg(TPMI_ALG_HASH algorithm) {
     /* no return, not possible */
 }
 
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d) {
-
-    if ((r->n == NULL && n == NULL) || (r->e == NULL && e == NULL)) {
-        return 0;
-    }
-
-    if (n != NULL) {
-        BN_free(r->n);
-        r->n = n;
-    }
-
-    if (e != NULL) {
-        BN_free(r->e);
-        r->e = e;
-    }
-
-    if (d != NULL) {
-        BN_free(r->d);
-        r->d = d;
-    }
-
-    return 1;
-}
-#endif
-
 static inline const char *get_openssl_err(void) {
     return ERR_error_string(ERR_get_error(), NULL);
 }
@@ -249,55 +223,19 @@ out:
 }
 
 HMAC_CTX *tpm2_openssl_hmac_new() {
-    HMAC_CTX *ctx;
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    ctx = malloc(sizeof(*ctx));
-#else
-    ctx = HMAC_CTX_new();
-#endif
-    if (!ctx)
-        return NULL;
-
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    HMAC_CTX_init(ctx);
-#endif
-
-    return ctx;
+    return HMAC_CTX_new();
 }
 
 void tpm2_openssl_hmac_free(HMAC_CTX *ctx) {
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    HMAC_CTX_cleanup(ctx);
-    free(ctx);
-#else
     HMAC_CTX_free(ctx);
-#endif
 }
 
 EVP_CIPHER_CTX *tpm2_openssl_cipher_new(void) {
-    EVP_CIPHER_CTX *ctx;
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    ctx = malloc(sizeof(*ctx));
-#else
-    ctx = EVP_CIPHER_CTX_new();
-#endif
-    if (!ctx)
-        return NULL;
-
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    EVP_CIPHER_CTX_init(ctx);
-#endif
-
-    return ctx;
+    return EVP_CIPHER_CTX_new();
 }
 
 void tpm2_openssl_cipher_free(EVP_CIPHER_CTX *ctx) {
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    EVP_CIPHER_CTX_cleanup(ctx);
-    free(ctx);
-#else
     EVP_CIPHER_CTX_free(ctx);
-#endif
 }
 
 digester tpm2_openssl_halg_to_digester(TPMI_ALG_HASH halg) {
@@ -508,12 +446,7 @@ static bool load_public_RSA_from_key(RSA *k, TPM2B_PUBLIC *pub) {
     const BIGNUM *n; /* modulus */
     const BIGNUM *e; /* public key exponent */
 
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    n = k->n;
-    e = k->e;
-#else
     RSA_get0_key(k, &n, &e, NULL);
-#endif
 
     /*
      * The size of the modulus is the key size in RSA, store this as the
@@ -834,11 +767,7 @@ static bool load_private_RSA_from_key(RSA *k, TPM2B_SENSITIVE *priv) {
 
     const BIGNUM *p; /* the private key exponent */
 
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    p = k->p;
-#else
     RSA_get0_factors(k, &p, NULL);
-#endif
 
     TPMT_SENSITIVE *sa = &priv->sensitiveArea;
 
