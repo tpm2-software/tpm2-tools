@@ -397,103 +397,65 @@ bool tpm2_convert_sig_load(const char *path, tpm2_convert_sig_fmt format,
     }
 }
 
-static UINT8* extract_ecdsa(TPMS_SIGNATURE_ECDSA *ecdsa, UINT16 *size) {
+static UINT8 *extract_ecdsa(TPMS_SIGNATURE_ECDSA *ecdsa, UINT16 *size) {
 
-    /*
-     * This code is a bit of hack for converting from a TPM ECDSA
-     * signature, to an ASN1 encoded one for things like OSSL.
-     *
-     * The problem here, is that it is unclear the proper OSSL
-     * calls to make the SEQUENCE HEADER populate.
-     *
-     * AN ECDSA Signature is an ASN1 sequence of 2 ASNI Integers,
-     * the R and the S portions of the signature.
-     */
-    static const unsigned SEQ_HDR_SIZE = 2;
-
+    /* the DER encoded ECDSA signature */
     unsigned char *buf = NULL;
-    unsigned char *buf_r = NULL;
-    unsigned char *buf_s = NULL;
 
     TPM2B_ECC_PARAMETER *R = &ecdsa->signatureR;
     TPM2B_ECC_PARAMETER *S = &ecdsa->signatureS;
 
-    /*
-     * 1. Calculate the sizes of the ASN1 INTEGERS
-     *    DER encoded.
-     * 2. Allocate an array big enough for them and
-     *    the SEQUENCE header.
-     * 3. Set the header 0x30 and length
-     * 4. Copy in R then S
-     */
-    ASN1_INTEGER *asn1_r = ASN1_INTEGER_new();
-    ASN1_INTEGER *asn1_s = ASN1_INTEGER_new();
-    if (!asn1_r || !asn1_s) {
-        LOG_ERR("oom");
+    ECDSA_SIG *sig = ECDSA_SIG_new();
+    if (sig == NULL) {
+        return NULL;
+    }
+
+    BIGNUM *bn_r = BN_bin2bn(R->buffer, R->size, NULL);
+    if (!bn_r) {
+        goto out;
+    }
+
+    BIGNUM *bn_s = BN_bin2bn(S->buffer, S->size, NULL);
+    if (!bn_s) {
+        BN_free(bn_r);
+        goto out;
+    }
+
+    int rc = ECDSA_SIG_set0(sig, bn_r, bn_s);
+    if (rc != 1) {
+        BN_free(bn_r);
+        BN_free(bn_s);
         goto out;
     }
 
     /*
-     * I wanted to calc the total size with i2d_ASN1_INTEGER
-     * using a NULL output buffer, per the man page this should
-     * work, however the code was dereferencing the pointer.
-     *
-     * I'll just let is alloc the buffers
+     * r and s are now owned by the ecdsa signature no need
+     * to free
      */
-    ASN1_STRING_set(asn1_r, R->buffer, R->size);
-    int size_r = i2d_ASN1_INTEGER(asn1_r, &buf_r);
-    if (size_r < 0) {
-        LOG_ERR("Error converting R to ASN1");
+
+    int len = i2d_ECDSA_SIG(sig, NULL);
+    if (len <= 0) {
         goto out;
     }
 
-    ASN1_STRING_set(asn1_s, S->buffer, S->size);
-    int size_s = i2d_ASN1_INTEGER(asn1_s, &buf_s);
-    if (size_s < 0) {
-        LOG_ERR("Error converting R to ASN1");
-        goto out;
-    }
-
-    /*
-     * If the size doesn't fit in a byte my
-     * encoding hack for ASN1 Sequence won't
-     * work, so fail...loudly.
-     */
-    if (size_s + size_r > 0xFF) {
-        LOG_ERR("Cannot encode ASN1 Sequence, too big!");
-        goto out;
-    }
-
-    buf = malloc(size_s + size_r + SEQ_HDR_SIZE);
+    buf = malloc(len);
     if (!buf) {
-        LOG_ERR("oom");
         goto out;
     }
 
-    unsigned char *p = buf;
+    unsigned char *pp = buf;
+    len = i2d_ECDSA_SIG(sig, &pp);
+    if (len <= 0) {
+        free(buf);
+        buf = NULL;
+        goto out;
+    }
 
-    /* populate header and skip */
-    p[0] = 0x30;
-    p[1] = size_r + size_s;
-    p += 2;
-
-    memcpy(p, buf_r, size_r);
-    p += size_r;
-    memcpy(p, buf_s, size_s);
-
-    *size = size_r + size_s + SEQ_HDR_SIZE;
+    *size = len;
+    /* success */
 
 out:
-    if (asn1_r) {
-        ASN1_INTEGER_free(asn1_r);
-    }
-
-    if (asn1_s) {
-        ASN1_INTEGER_free(asn1_s);
-    }
-
-    free(buf_r);
-    free(buf_s);
+    ECDSA_SIG_free(sig);
 
     return buf;
 }

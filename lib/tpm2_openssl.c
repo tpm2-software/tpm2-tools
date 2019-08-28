@@ -82,6 +82,21 @@ void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q) {
     }
 }
 
+int ECDSA_SIG_set0(ECDSA_SIG *sig, BIGNUM *r, BIGNUM *s) {
+
+    if (!r || !s) {
+        return 0;
+    }
+
+    BN_clear_free(sig->r);
+    BN_clear_free(sig->s);
+
+    sig->r = r;
+    sig->s = s;
+
+    return 1;
+}
+
 #endif
 
 static inline const char *get_openssl_err(void) {
