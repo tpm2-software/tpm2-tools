@@ -16,6 +16,27 @@
 // Identity-related functionality that the TPM normally does, but using OpenSSL
 
 #if defined(LIBRESSL_VERSION_NUMBER)
+
+// The RSA_padding_add_PKCS1_OAEP_mgf1 is from OpenSSL and licensed as follows:
+//**********************************************************************;
+// Copyright 1999-2018 The OpenSSL Project Authors. All Rights Reserved.
+// Licensed under the Apache License 2.0 (the "License"). You may not use
+// this file except in compliance with the License. You can obtain a copy
+// in the file LICENSE in the source distribution or at
+// https://www.openssl.org/source/license.html
+//
+// EME-OAEP as defined in RFC 2437 (PKCS #1 v2.0)
+//
+// See Victor Shoup, "OAEP reconsidered," Nov. 2000, <URL:
+// http://www.shoup.net/papers/oaep.ps.Z> for problems with the security
+// proof for the original OAEP scheme, which EME-OAEP is based on. A new
+// proof can be found in E. Fujisaki, T. Okamoto, D. Pointcheval, J. Stern,
+// "RSA-OEAP is Still Alive!", Dec. 2000, <URL:http://eprint.iacr.org/2000/061/>.
+// The new proof has stronger requirements for the underlying permutation:
+// "partial-one-wayness" instead of one-wayness. For the RSA function, this
+// is an equivalent notion.
+//**********************************************************************;
+
 static int RSA_padding_add_PKCS1_OAEP_mgf1(unsigned char *to, int tlen,
         const unsigned char *from, int flen, const unsigned char *param, int plen,
         const EVP_MD *md, const EVP_MD *mgf1md) {

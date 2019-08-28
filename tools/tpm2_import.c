@@ -1,23 +1,5 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
-//**********************************************************************;
-// Copyright 1999-2018 The OpenSSL Project Authors. All Rights Reserved.
-// Licensed under the Apache License 2.0 (the "License"). You may not use
-// this file except in compliance with the License. You can obtain a copy
-// in the file LICENSE in the source distribution or at
-// https://www.openssl.org/source/license.html
-//
-// EME-OAEP as defined in RFC 2437 (PKCS #1 v2.0)
-//
-// See Victor Shoup, "OAEP reconsidered," Nov. 2000, <URL:
-// http://www.shoup.net/papers/oaep.ps.Z> for problems with the security
-// proof for the original OAEP scheme, which EME-OAEP is based on. A new
-// proof can be found in E. Fujisaki, T. Okamoto, D. Pointcheval, J. Stern,
-// "RSA-OEAP is Still Alive!", Dec. 2000, <URL:http://eprint.iacr.org/2000/061/>.
-// The new proof has stronger requirements for the underlying permutation:
-// "partial-one-wayness" instead of one-wayness. For the RSA function, this
-// is an equivalent notion.
-//**********************************************************************;
 #include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
