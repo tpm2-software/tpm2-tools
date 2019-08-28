@@ -13,6 +13,19 @@
 #include "tpm2_cc_util.h"
 #include "tpm2_tool.h"
 
+/*
+ * Older versions of tpm2-tss misspelled these constants' names.
+ * See https://github.com/tpm2-software/tpm2-tss/issues/1500.
+ */
+#ifndef TPM2_PT_HR_TRANSIENT_MIN
+#define TPM2_PT_HR_TRANSIENT_MIN    ((TPM2_PT) (TPM2_PT_FIXED + 14))
+#define TPM2_PT_HR_PERSISTENT_MIN   ((TPM2_PT) (TPM2_PT_FIXED + 15))
+#define TPM2_PT_HR_NV_INDEX         ((TPM2_PT) (TPM2_PT_VAR + 2))
+#define TPM2_PT_HR_TRANSIENT_AVAIL  ((TPM2_PT) (TPM2_PT_VAR + 7))
+#define TPM2_PT_HR_PERSISTENT       ((TPM2_PT) (TPM2_PT_VAR + 8))
+#define TPM2_PT_HR_PERSISTENT_AVAIL ((TPM2_PT) (TPM2_PT_VAR + 9))
+#endif
+
 /* convenience macro to convert flags into "1" / "0" strings */
 #define prop_str(val) val ? "1" : "0"
 
@@ -340,12 +353,12 @@ static void dump_tpm_properties_fixed(TPMS_TAGGED_PROPERTY properties[],
             tpm2_tool_output("TPM2_PT_INPUT_BUFFER:\n"
                     "  raw: 0x%X\n", value);
             break;
-        case TPM2_PT_TPM2_HR_TRANSIENT_MIN:
-            tpm2_tool_output("TPM2_PT_TPM2_HR_TRANSIENT_MIN:\n"
+        case TPM2_PT_HR_TRANSIENT_MIN:
+            tpm2_tool_output("TPM2_PT_HR_TRANSIENT_MIN:\n"
                     "  raw: 0x%X\n", value);
             break;
-        case TPM2_PT_TPM2_HR_PERSISTENT_MIN:
-            tpm2_tool_output("TPM2_PT_TPM2_HR_PERSISTENT_MIN:\n"
+        case TPM2_PT_HR_PERSISTENT_MIN:
+            tpm2_tool_output("TPM2_PT_HR_PERSISTENT_MIN:\n"
                     "  raw: 0x%X\n", value);
             break;
         case TPM2_PT_HR_LOADED_MIN:
@@ -483,8 +496,8 @@ static void dump_tpm_properties_var(TPMS_TAGGED_PROPERTY properties[],
         case TPM2_PT_STARTUP_CLEAR:
             dump_startup_clear_attrs((TPMA_STARTUP_CLEAR) value);
             break;
-        case TPM2_PT_TPM2_HR_NV_INDEX:
-            tpm2_tool_output("TPM2_PT_TPM2_HR_NV_INDEX: 0x%X\n", value);
+        case TPM2_PT_HR_NV_INDEX:
+            tpm2_tool_output("TPM2_PT_HR_NV_INDEX: 0x%X\n", value);
             break;
         case TPM2_PT_HR_LOADED:
             tpm2_tool_output("TPM2_PT_HR_LOADED: 0x%X\n", value);
@@ -498,14 +511,14 @@ static void dump_tpm_properties_var(TPMS_TAGGED_PROPERTY properties[],
         case TPM2_PT_HR_ACTIVE_AVAIL:
             tpm2_tool_output("TPM2_PT_HR_ACTIVE_AVAIL: 0x%X\n", value);
             break;
-        case TPM2_PT_TPM2_HR_TRANSIENT_AVAIL:
-            tpm2_tool_output("TPM2_PT_TPM2_HR_TRANSIENT_AVAIL: 0x%X\n", value);
+        case TPM2_PT_HR_TRANSIENT_AVAIL:
+            tpm2_tool_output("TPM2_PT_HR_TRANSIENT_AVAIL: 0x%X\n", value);
             break;
-        case TPM2_PT_TPM2_HR_PERSISTENT:
-            tpm2_tool_output("TPM2_PT_TPM2_HR_PERSISTENT: 0x%X\n", value);
+        case TPM2_PT_HR_PERSISTENT:
+            tpm2_tool_output("TPM2_PT_HR_PERSISTENT: 0x%X\n", value);
             break;
-        case TPM2_PT_TPM2_HR_PERSISTENT_AVAIL:
-            tpm2_tool_output("TPM2_PT_TPM2_HR_PERSISTENT_AVAIL: 0x%X\n", value);
+        case TPM2_PT_HR_PERSISTENT_AVAIL:
+            tpm2_tool_output("TPM2_PT_HR_PERSISTENT_AVAIL: 0x%X\n", value);
             break;
         case TPM2_PT_NV_COUNTERS:
             tpm2_tool_output("TPM2_PT_NV_COUNTERS: 0x%X\n", value);
