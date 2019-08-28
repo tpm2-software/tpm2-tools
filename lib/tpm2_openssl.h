@@ -18,6 +18,7 @@
 
 #if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
 int RSA_set0_key(RSA *r, BIGNUM *n, BIGNUM *e, BIGNUM *d);
+void RSA_get0_factors(const RSA *r, const BIGNUM **p, const BIGNUM **q);
 #endif
 
 /**
