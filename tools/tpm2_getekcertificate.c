@@ -324,7 +324,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 #define INTC 0x494E5443
 #define IBM  0x49424D20
-#define TPM_RNG_EPS 0x400
 bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
 
     TPMI_YES_NO more_data;
@@ -356,7 +355,7 @@ bool is_getekcertificate_feasible(ESYS_CONTEXT *ectx) {
     }
 
     if (capability_data->data.tpmProperties.tpmProperty[0].value &
-        TPM_RNG_EPS) {
+        TPMA_PERMANENT_TPMGENERATEDEPS) {
         LOG_ERR("Cannot proceed. For further information please refer to: "
                 "https://www.intel.com/content/www/us/en/security-center/"
                 "advisory/intel-sa-00086.html. Recovery tools are located here:"
