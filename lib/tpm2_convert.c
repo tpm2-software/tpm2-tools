@@ -93,15 +93,10 @@ static bool convert_pubkey_RSA(TPMT_PUBLIC *public,
         goto error;
     }
 
-#if defined(LIB_TPM2_OPENSSL_OPENSSL_PRE11)
-    ssl_rsa_key->e = e;
-    ssl_rsa_key->n = n;
-#else
     if (!RSA_set0_key(ssl_rsa_key, n, e, NULL)) {
         print_ssl_error("Failed to set RSA modulus and exponent components");
         goto error;
     }
-#endif
 
     /* modulus and exponent components are now owned by the RSA struct */
     n = e = NULL;
