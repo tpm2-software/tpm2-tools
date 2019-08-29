@@ -12,16 +12,18 @@ set -e
   # Execute the build and test procedure by running .ci/docker.run
   #
 if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
+  echo "Running non-coverity build"
   # Do normal CI script
   ci_env=$(bash <(curl -s https://codecov.io/env))
-  docker run "$ci_env" --env-file .ci/docker.env \
-    -v "$(pwd):/workspace/tpm2-tools" "tpm2software/tpm2-tss" \
+  docker run $ci_env --env-file .ci/docker.env \
+    -v "$(pwd):/workspace/tpm2-tools" "tpm2software/tpm2-tss:$DOCKER_TAG" \
     /bin/bash -c '/workspace/tpm2-tools/.ci/docker.run'
 
     exit 0
 fi
 
 # branch is coverity_scan
+echo "Running coverity build"
 
 # Do coverity steps
 # we don't run with clang and we only run if COVERITY_RUN is true
@@ -44,7 +46,7 @@ mv cov-analysis-* cov-analysis
 
 # perform the scan
 docker run --env-file .ci/docker.env \
-  -v "$(pwd):/workspace/tpm2-tools" "tpm2software/tpm2-tss" \
+  -v "$(pwd):/workspace/tpm2-tools" "tpm2software/tpm2-tss:$DOCKER_TAG" \
   /bin/bash -c '/workspace/tpm2-tools/.ci/coverity.run'
 
 # upload the results

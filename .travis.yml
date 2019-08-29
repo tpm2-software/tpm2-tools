@@ -7,12 +7,15 @@ compiler:
   - gcc
   - clang
 
+env:
+  - DOCKER_TAG=ubuntu-16.04
+  - DOCKER_TAG=ubuntu-18.04
+
+# only one build should report coverage stats
 matrix:
   include:
-    - compiler: gcc
-      env: ENABLE_COVERAGE=true
-    - compiler: clang
-      env: ENABLE_COVERAGE=false
+  - env: ENABLE_COVERAGE=true DOCKER_TAG=ubuntu-16.04
+    compiler: gcc
 
 script:
   - ./.ci/travis.run
