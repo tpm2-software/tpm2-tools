@@ -41,8 +41,6 @@ if [[ "$CC" == clang* ]]; then
     unset ASAN_SYMBOLIZER_PATH
   fi
 else #GCC
-  export ENABLE_COVERAGE=true
-  echo "Exported ENABLE_COVERAGE=true"
   config_flags="--disable-hardening --enable-code-coverage"
 fi
 
