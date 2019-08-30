@@ -8,7 +8,7 @@ function get_deps() {
 	echo "pwd clone tss: `pwd`"
 	if [ ! -d tpm2-tss ]; then
 		git clone --depth=1 \
-		--branch 2.3.1-rc0 https://github.com/tpm2-software/tpm2-tss.git
+		--branch 2.3.1 https://github.com/tpm2-software/tpm2-tss.git
 		pushd tpm2-tss
 		echo "pwd build tss: `pwd`"
 		./bootstrap
