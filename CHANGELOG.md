@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.0-RC0 - 2019-08-19
+### 4.0-RC1 - 2019-08-26
 
 * tpm2_activatecredential:
   - \--context is now \--credentialedkey-context.
