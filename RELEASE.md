@@ -67,7 +67,8 @@ The steps, in order, required to make a release.
 
 - Update version and date information in [CHANGELOG.md](CHANGELOG.md) **and** commit.
 
-- Create a signed tag for the release. Use the CHANGELOG and version number as the commit message.
+- Create a signed tag for the release. Use the version number as the title line in the tag commit
+  message and use the [CHANGELOG.md](CHANGELOG.md) contents for that release as the body.
   ```bash
   git tag -s <tag-name>
   ```
