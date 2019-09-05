@@ -277,4 +277,8 @@ tool_rc tpm2_quote(ESYS_CONTEXT *esys_context, tpm2_loaded_object *quote_obj,
 tool_rc tpm2_unseal(ESYS_CONTEXT *esys_context, tpm2_loaded_object *sealkey_obj,
         TPM2B_SENSITIVE_DATA **out_data);
 
+tool_rc tpm2_policy_authorize_nv(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *auth_entity_obj, TPM2_HANDLE nv_index,
+    ESYS_TR policy_session);
+
 #endif /* LIB_TPM2_H_ */
