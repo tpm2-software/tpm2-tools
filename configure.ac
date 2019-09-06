@@ -114,7 +114,12 @@ AS_IF([test "x$enable_unit" != xno], [
     AC_CHECK_PROG([XXD], [xxd], found, missing)
     AS_IF([test $XXD = missing],
           [AC_MSG_ERROR([Required executable xxd not found, some system tests will fail!])])
-    enable_unit="$enable_unit (tpm2_abrmd: $tpm2_abrmd, tpm_server: $tpm_server, bash: $BASH_SHELL, python: $PYTHON, xxd: $XXD)"
+
+    AC_CHECK_PROG([SS], [ss], found, missing)
+    AS_IF([test $SS = missing],
+          [AC_MSG_ERROR([Required executable ss not found, some system tests will fail!])])
+
+    enable_unit="$enable_unit (tpm2_abrmd: $tpm2_abrmd, tpm_server: $tpm_server, bash: $BASH_SHELL, python: $PYTHON, xxd: $XXD, ss: $SS)"
 ])
 
 AC_ARG_ENABLE([hardening],
