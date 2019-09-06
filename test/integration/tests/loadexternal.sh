@@ -150,7 +150,7 @@ run_ecc_test() {
 
     # Generate a hash to sign
     echo "data to sign" > data.in.raw
-    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
+    shasum -a 256 data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     data.in.digest
 
     # Load the private key for signing

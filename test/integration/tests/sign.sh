@@ -75,7 +75,7 @@ test_symmetric() {
 
     # test with digest, no validation
 
-    sha256sum $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
+    shasum -a 256 $file_input_data | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     $file_input_digest
 
     tpm2_sign -Q -c $handle_signing_key -g $alg_hash -d -o $file_output_data \
@@ -208,7 +208,7 @@ test_asymmetric() {
 
     head -c30 /dev/urandom > $file_input_data
 
-    sha256sum $file_input_data | awk '{ print "000000 " $1 }' | \
+    shasum -a 256 $file_input_data | awk '{ print "000000 " $1 }' | \
     xxd -r -c 32 > $file_input_digest
 
     tpm2_clear

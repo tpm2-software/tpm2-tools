@@ -69,7 +69,7 @@ run_rsa_import_test() {
     # verify with openssl
     echo "data to sign" > data.in.raw
 
-    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
+    shasum -a 256 data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     data.in.digest
 
     tpm2_sign -Q -c import_rsa_key.ctx -g sha256 -d -f plain \
@@ -102,7 +102,7 @@ run_ecc_import_test() {
 
     # Generate a hash to sign
     echo "data to sign" > data.in.raw
-    sha256sum data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
+    shasum -a 256 data.in.raw | awk '{ print "000000 " $1 }' | xxd -r -c 32 > \
     data.in.digest
 
     tpm2_import -Q -G ecc -g "$name_alg" -i private.ecc.pem -C $1 -u ecc.pub \
