@@ -138,7 +138,7 @@ tpm2_test_original_cwd=""
 tpm2_test_cwd=""
 function switch_to_test_dir() {
     tpm2_test_original_cwd=`pwd`;
-    tpm2_test_cwd=$(mktemp --directory --tmpdir=/tmp tpm2_test_XXXXXX)
+    tpm2_test_cwd=$(mktemp -d ${TMPDIR:-/tmp}/tpm2_test_XXXXXX)
     echo "creating simulator working dir: $tpm2_test_cwd"
     pushd "$tpm2_test_cwd"
     echo "Switched to CWD: $(pwd)"
