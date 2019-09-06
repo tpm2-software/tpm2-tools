@@ -171,7 +171,7 @@ function start_sim() {
         else
             tpm2_sim_port=$TPM2_SIMPORT
         fi
-        tpm2_mssim_tcti_expected_port=$((tpm2_sim_port + 1))
+        tpm2_sim_cmd_port=$((tpm2_sim_port + 1))
         echo "Attempting to start simulator on port: $tpm2_sim_port"
         $TPM2_SIM -port $tpm2_sim_port &
         tpm2_sim_pid=$!
@@ -180,10 +180,10 @@ function start_sim() {
         # Do not rely on whether netstat is present or not and directly fetch
         # data in relevent /proc file
         tpm2_sim_port_inode="$(awk -v port="$(printf ':%04X' "$tpm2_sim_port")" '$2 ~ port { print $10 }' /proc/net/tcp)"
-        tpm2_mssim_tcti_expected_port_inode="$(awk -v port="$(printf ':%04X' "$tpm2_mssim_tcti_expected_port")" '$2 ~ port { print $10 }' /proc/net/tcp)"
+        tpm2_sim_cmd_port_inode="$(awk -v port="$(printf ':%04X' "$tpm2_sim_cmd_port")" '$2 ~ port { print $10 }' /proc/net/tcp)"
 
         if [ -n "$(find /proc/$tpm2_sim_pid/fd -lname "socket:\[$tpm2_sim_port_inode\]")" ] && \
-           [ -n "$(find /proc/$tpm2_sim_pid/fd -lname "socket:\[$tpm2_mssim_tcti_expected_port_inode\]")" ]; then
+           [ -n "$(find /proc/$tpm2_sim_pid/fd -lname "socket:\[$tpm2_sim_cmd_port_inode\]")" ]; then
             echo "Started simulator on port $tpm2_sim_port in dir \"$PWD\""
             TPM2_SIMPORT=$tpm2_sim_port
             # set a possible tools tcti to use mssim
