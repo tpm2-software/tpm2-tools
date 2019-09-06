@@ -153,6 +153,15 @@ tpm2_abrmd_pid=""
 tpm2_tcti_opts=""
 tpm2tools_tcti=""
 
+sock_tool="unknown"
+OS=$(uname)
+
+if [ "$OS" == "Linux" ]; then
+    sock_tool="ss -lntp4"
+elif [ "$OS" == "FreeBSD" ]; then
+    sock_tool="sockstat -l4"
+fi
+
 function start_sim() {
     local max_cnt=10
 
@@ -177,13 +186,12 @@ function start_sim() {
         tpm2_sim_pid=$!
         sleep 1
 
-        # Do not rely on whether netstat is present or not and directly fetch
-        # data in relevent /proc file
-        tpm2_sim_port_inode="$(awk -v port="$(printf ':%04X' "$tpm2_sim_port")" '$2 ~ port { print $10 }' /proc/net/tcp)"
-        tpm2_sim_cmd_port_inode="$(awk -v port="$(printf ':%04X' "$tpm2_sim_cmd_port")" '$2 ~ port { print $10 }' /proc/net/tcp)"
+        ${sock_tool} 2>/dev/null | grep ${TPM2_SIM} | grep ${tpm2_sim_pid} | grep ${tpm2_sim_port}
+        tpm2_sim_port_rc=$?
+        ${sock_tool} 2>/dev/null | grep ${TPM2_SIM} | grep ${tpm2_sim_pid} | grep ${tpm2_sim_cmd_port}
+        tpm2_sim_cmd_port_rc=$?
 
-        if [ -n "$(find /proc/$tpm2_sim_pid/fd -lname "socket:\[$tpm2_sim_port_inode\]")" ] && \
-           [ -n "$(find /proc/$tpm2_sim_pid/fd -lname "socket:\[$tpm2_sim_cmd_port_inode\]")" ]; then
+        if [[ $tpm2_sim_port_rc -eq 0 ]] && [[ $tpm2_sim_cmd_port_rc -eq 0 ]]; then
             echo "Started simulator on port $tpm2_sim_port in dir \"$PWD\""
             TPM2_SIMPORT=$tpm2_sim_port
             # set a possible tools tcti to use mssim
