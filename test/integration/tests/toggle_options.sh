@@ -5,6 +5,12 @@ source helpers.sh
 # We don't need a TPM for this test, so unset the EXIT handler.
 trap - EXIT
 
+# Since this only tests tools options and docs
+# and is not portable skip it on FreeBSD
+if [ "$OS" == "FreeBSD" ]; then
+    exit 0
+fi
+
 srcdir="$(readlink -e "$(dirname "$0")")"
 toolsdir="$(readlink -e "${srcdir}"/../../../tools)"
 mandir="$(readlink -e "${srcdir}"/../../../man)"
