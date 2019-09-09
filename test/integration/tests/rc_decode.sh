@@ -5,6 +5,11 @@ source helpers.sh
 # We don't need a TPM for this test, so unset the EXIT handler.
 trap - EXIT
 
+# Since this only tests rc_decode tool it on FreeBSD
+if [ "$OS" == "FreeBSD" ]; then
+    exit 0
+fi
+
 #
 # codes was generated from the TPM2_RC constants in:
 # https://github.com/tpm2-software/tpm2-tss/blob/master/include/sapi/tss2_tpm2_types.h#L68
