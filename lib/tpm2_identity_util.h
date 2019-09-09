@@ -31,10 +31,11 @@ bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
         TPM2B_MAX_BUFFER *protection_enc_key);
 
 /**
- * Encrypts seed with parent public key for TPM2 credential protection process.
+ * Encrypts a randomly generated seed with parent public key for TPM2
+ * credential protection process.
  *
  * @param protection_seed
- *  The identity structure protection seed that is to be encrypted.
+ *  The identity structure protection seed to generate and populate.
  * @param parent_pub
  *  The public key used for encryption.
  * @param label
@@ -46,7 +47,7 @@ bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
  * @return
  *  True on success, false on failure.
  */
-bool tpm2_identity_util_encrypt_seed_with_public_key(
+bool tpm2_identity_util_share_secret_with_public_key(
         TPM2B_DIGEST *protection_seed, TPM2B_PUBLIC *parent_pub,
         unsigned char *label, int label_len,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed);
