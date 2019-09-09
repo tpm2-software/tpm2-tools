@@ -40,7 +40,7 @@ cleanup "no-shut-down"
 
 getrandom() {
   tpm2_getrandom -o rand.out $1
-  local file_size=`stat --printf="%s" rand.out`
+  local file_size=`ls -l rand.out | awk {'print $5'}`
   loaded_randomness=`cat rand.out | xxd -p -c $file_size`
 }
 

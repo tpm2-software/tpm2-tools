@@ -17,19 +17,19 @@ cleanup "no-shut-down"
 
 # test file output
 tpm2_getrandom -o random.out 32
-s=`stat -c %s random.out`
+s=`ls -l random.out | awk {'print $5'}`
 test $s -eq 32
 
 #test stdout
 tpm2_getrandom --hex 4 > random.out
-s=`stat -c %s random.out`
+s=`ls -l random.out | awk {'print $5'}`
 test $s -eq 8
 
 yaml_verify random.out
 
 # test stdout and -Q
 tpm2_getrandom -Q --hex 4 > random.out
-s=`stat -c %s random.out`
+s=`ls -l random.out | awk {'print $5'}`
 test $s -eq 0
 
 # negative tests

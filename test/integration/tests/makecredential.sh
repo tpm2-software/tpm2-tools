@@ -39,7 +39,7 @@ tpm2_createak -Q -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg \
 -u $output_ak_pub -n $output_ak_pub_name
 
 # Use -c in xxd so there is no line wrapping
-file_size=`stat --printf="%s" $output_ak_pub_name`
+file_size=`ls -l $output_ak_pub_name | awk {'print $5'}`
 Loadkeyname=`cat $output_ak_pub_name | xxd -p -c $file_size`
 
 tpm2_makecredential -Q -e $output_ek_pub -s $file_input_data -n $Loadkeyname \

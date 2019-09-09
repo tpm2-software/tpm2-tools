@@ -39,7 +39,7 @@ with open('ak.out', 'r') as f:
 pyscript`
 
 # Use -c in xxd so there is no line wrapping
-file_size=`stat --printf="%s" ak.name`
+file_size=`ls -l ak.name | awk {'print $5'}`
 loaded_key_name=`cat ak.name | xxd -p -c $file_size`
 
 test "$loaded_key_name_yaml" == "$loaded_key_name"
