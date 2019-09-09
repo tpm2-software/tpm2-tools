@@ -6,6 +6,8 @@
 
 #include <tss2/tss2_mu.h>
 
+#include <openssl/rand.h>
+
 #include "log.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_identity_util.h"
@@ -96,7 +98,7 @@ static TPM2_KEY_BITS get_pub_asym_key_bits(TPM2B_PUBLIC *public) {
     return 0;
 }
 
-static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
+static bool share_secret_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
         TPM2B_PUBLIC *parent_pub, unsigned char *label, int label_len,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
     bool rval = false;
@@ -117,10 +119,20 @@ static bool encrypt_seed_with_tpm2_rsa_public_key(TPM2B_DIGEST *protection_seed,
     TPMI_ALG_HASH parent_name_alg = parent_pub->publicArea.nameAlg;
 
     /*
+     * RSA Secret Sharing uses a randomly generated seed (Part 1, B.10.3).
+     */
+    protection_seed->size = tpm2_alg_util_get_hash_size(parent_name_alg);
+    int return_code = RAND_bytes(protection_seed->buffer, protection_seed->size);
+    if (return_code != 1) {
+        LOG_ERR("Failed to get random bytes");
+        goto error;
+    }
+
+    /*
      * This is the biggest buffer value, so it should always be sufficient.
      */
     unsigned char encoded[TPM2_MAX_DIGEST_BUFFER];
-    int return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded, mod_size,
+    return_code = RSA_padding_add_PKCS1_OAEP_mgf1(encoded, mod_size,
             protection_seed->buffer, protection_seed->size, label, label_len,
             tpm2_openssl_halg_from_tpmhalg(parent_name_alg), NULL);
     if (return_code != 1) {
@@ -204,7 +216,7 @@ bool tpm2_identity_util_calc_outer_integrity_hmac_key_and_dupsensitive_enc_key(
     return true;
 }
 
-bool tpm2_identity_util_encrypt_seed_with_public_key(
+bool tpm2_identity_util_share_secret_with_public_key(
         TPM2B_DIGEST *protection_seed, TPM2B_PUBLIC *parent_pub,
         unsigned char *label, int label_len,
         TPM2B_ENCRYPTED_SECRET *encrypted_protection_seed) {
@@ -213,7 +225,7 @@ bool tpm2_identity_util_encrypt_seed_with_public_key(
 
     switch (alg) {
     case TPM2_ALG_RSA:
-        result = encrypt_seed_with_tpm2_rsa_public_key(protection_seed,
+        result = share_secret_with_tpm2_rsa_public_key(protection_seed,
                 parent_pub, label, label_len, encrypted_protection_seed);
         break;
     case TPM2_ALG_ECC:

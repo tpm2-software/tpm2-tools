@@ -93,12 +93,9 @@ static tool_rc make_external_credential_and_save(void) {
      * Generate and encrypt seed
      */
     TPM2B_DIGEST seed = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-    seed.size = tpm2_alg_util_get_hash_size(name_alg);
-    RAND_bytes(seed.buffer, seed.size);
-
     TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
     unsigned char label[10] = { 'I', 'D', 'E', 'N', 'T', 'I', 'T', 'Y', 0 };
-    bool res = tpm2_identity_util_encrypt_seed_with_public_key(&seed,
+    bool res = tpm2_identity_util_share_secret_with_public_key(&seed,
             &ctx.public, label, 9, &encrypted_seed);
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");

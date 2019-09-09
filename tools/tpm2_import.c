@@ -446,19 +446,13 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
     }
 
     /*
-     * When the parent is an RSA key, seed is randomly generated and encrypted
-     * with parents public key.
-     * When the parent is en ECC key, seed is derived using an ephemeral key
-     * and KDFe, and the encrypted_seed is the public key for the ephemeral key.
+     * Generate and encrypt seed
      */
     TPM2B_DIGEST *seed = &private.sensitiveArea.seedValue;
-    seed->size = tpm2_alg_util_get_hash_size(public.publicArea.nameAlg);
-    RAND_bytes(seed->buffer, seed->size);
-
     TPM2B_ENCRYPTED_SECRET encrypted_seed = TPM2B_EMPTY_INIT;
     unsigned char label[10] = { 'D', 'U', 'P', 'L', 'I', 'C', 'A', 'T', 'E', 0 };
     bool res;
-    res = tpm2_identity_util_encrypt_seed_with_public_key(seed, parent_pub,
+    res = tpm2_identity_util_share_secret_with_public_key(seed, parent_pub,
             label, 10, &encrypted_seed);
     if (!res) {
         LOG_ERR("Failed Seed Encryption\n");
