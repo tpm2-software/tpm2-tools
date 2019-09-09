@@ -14,8 +14,7 @@ declare -A alg_hashes=(
 
 digests=""
 # test a single algorithm based on what is supported
-for alg in `tpm2_getcap pcrs | sed -r -e '1d' -e s/'\s+-\s+(\w+):.*'/'\1'/g`; do
-  alg=`echo $alg | cut -d\( -f 1-1`;
+for alg in `tpm2_getcap pcrs | grep sha |awk {'print $2'} | awk -F: {'print $1'}`; do
 
   hash=${alg_hashes[$alg]}
 
@@ -42,17 +41,6 @@ tpm2_pcrextend 8:$digests 9:$digests
 # Over-length hash should fail
 if tpm2_pcrextend 8:$digests,sha1=${alg_hashes["sha256"]}; then
     echo "tpm2_pcrextend with over-length hash didn't fail!"
-    exit 1
-else
-    true
-fi
-
-oversizedspec="sha1=$(tpm2_pcrread sha1 | tail +2 | cut -d':' -f2 | \
-sed 's% %%g' | sed -z 's%\n%,sha1=%g')"
-
-# Over-length spec should fail
-if tpm2_pcrextend 8:${oversizedspec}; then
-    echo "tpm2_pcrextend with over-length spec didn't fail!"
     exit 1
 else
     true
