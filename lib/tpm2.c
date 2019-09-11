@@ -1542,3 +1542,16 @@ tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time) {
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_shutdown(ESYS_CONTEXT *ectx, TPM2_SU shutdown_type) {
+
+    TSS2_RC rval = Esys_Shutdown(ectx,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            shutdown_type);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_Shutdown, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
