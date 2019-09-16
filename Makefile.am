@@ -14,7 +14,7 @@ include src_vars.mk
 ACLOCAL_AMFLAGS = -I m4 --install
 
 INCLUDE_DIRS = -I$(top_srcdir)/tools -I$(top_srcdir)/lib
-LIB_COMMON := lib/libcommon.a
+LIB_COMMON := lib/libcommon.la
 
 AM_CFLAGS := \
     $(INCLUDE_DIRS) $(EXTRA_CFLAGS) $(TSS2_ESYS_CFLAGS) $(TSS2_MU_CFLAGS) \
@@ -99,10 +99,24 @@ bin_PROGRAMS = \
     tools/tpm2_unseal \
     tools/tpm2_verifysignature
 
+noinst_LTLIBRARIES = $(LIB_COMMON)
+lib_libcommon_la_SOURCES = $(LIB_SRC)
+lib_libcommon_la_CFLAGS = -fPIC $(AM_CFLAGS)
 
-noinst_LIBRARIES = $(LIB_COMMON)
-lib_libcommon_a_SOURCES = $(LIB_SRC)
-lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
+lib_LTLIBRARIES = lib/libtpm2tools.la
+lib_libtpm2tools_la_LIBADD = \
+    $(LIB_COMMON) $(TSS2_ESYS_LIBS) $(TSS2_MU_LIBS) $(CRYPTO_LIBS) $(TSS2_TCTILDR_LIBS) \
+    $(TSS2_RC_LIBS)
+lib_libtpm2tools_la_SOURCES = 
+lib_libtpm2tools_la_LDFLAGS = -export-symbols $(top_srcdir)/lib/libtpm2tools.sym
+
+pkginclude_HEADERS = \
+    lib/object.h \
+    lib/tool_rc.h \
+    lib/tpm2_policy.h \
+    lib/tpm2_session.h \
+    lib/tpm2_util.h
+
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_misc_tpm2_checkquote_SOURCES = tools/misc/tpm2_checkquote.c $(TOOL_SRC)

@@ -3,4 +3,5 @@
 !.gitignore
 !*.c
 !*.h
+!*.sym
 config.h

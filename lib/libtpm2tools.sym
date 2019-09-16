@@ -1,0 +1,9 @@
+tpm2_policy_build_pcr
+tpm2_policy_build_policyauthorize
+tpm2_policy_build_policyor
+tpm2_policy_build_policysecret
+tpm2_session_close
+tpm2_session_data_new
+tpm2_session_get_handle
+tpm2_session_open
+tpm2_session_restore
