@@ -50,7 +50,7 @@ static tpm_encrypt_decrypt_ctx ctx = {
 static tool_rc readpub(ESYS_CONTEXT *ectx, TPM2B_PUBLIC **public) {
 
     return tpm2_readpublic(ectx, ctx.encryption_key.object.tr_handle,
-            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, public, NULL, NULL);
+            public, NULL, NULL);
 }
 
 static bool evaluate_pkcs7_padding_requirements(uint16_t remaining_bytes,

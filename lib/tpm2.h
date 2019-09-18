@@ -24,7 +24,6 @@ tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR nv_index,
         TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name);
 
 tool_rc tpm2_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         TPM2B_PUBLIC **out_public, TPM2B_NAME **name,
         TPM2B_NAME **qualified_name);
 

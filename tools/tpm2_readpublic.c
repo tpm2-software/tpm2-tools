@@ -35,8 +35,7 @@ static tool_rc read_public_and_save(ESYS_CONTEXT *ectx) {
     tool_rc rc = tool_rc_general_error;
 
     tool_rc tmp_rc = tpm2_readpublic(ectx, ctx.context_object.tr_handle,
-            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, &public, &name,
-            &qualified_name);
+            &public, &name, &qualified_name);
     if (tmp_rc != tool_rc_success) {
         return tmp_rc;
     }

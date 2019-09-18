@@ -257,8 +257,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 static tool_rc readpub(ESYS_CONTEXT *ectx, ESYS_TR handle,
         TPM2B_PUBLIC **public) {
 
-    return tpm2_readpublic(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, public, NULL, NULL);
+    return tpm2_readpublic(ectx, handle, public, NULL, NULL);
 }
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {

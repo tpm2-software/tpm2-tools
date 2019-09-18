@@ -68,8 +68,7 @@ static tpm_import_ctx ctx = {
 static tool_rc readpublic(ESYS_CONTEXT *ectx, ESYS_TR handle,
         TPM2B_PUBLIC **public) {
 
-    return tpm2_readpublic(ectx, handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, public, NULL, NULL);
+    return tpm2_readpublic(ectx, handle, public, NULL, NULL);
 }
 
 static bool create_name(TPM2B_PUBLIC *public, TPM2B_NAME *pubname) {
