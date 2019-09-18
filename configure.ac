@@ -119,7 +119,11 @@ AS_IF([test "x$enable_unit" != xno], [
     AS_IF([test $SS = missing],
           [AC_MSG_ERROR([Required executable ss not found, some system tests will fail!])])
 
-    enable_unit="$enable_unit (tpm2_abrmd: $tpm2_abrmd, tpm_server: $tpm_server, bash: $BASH_SHELL, python: $PYTHON, xxd: $XXD, ss: $SS)"
+    AC_CHECK_PROG([SHASUM], [shasum], found, missing)
+    AS_IF([test $SHASUM = missing],
+          [AC_MSG_ERROR([Required executable shasum not found, some system tests will fail!])])
+
+    enable_unit="$enable_unit (tpm2_abrmd: $tpm2_abrmd, tpm_server: $tpm_server, bash: $BASH_SHELL, python: $PYTHON, xxd: $XXD, ss: $SS, shasum: $SHASUM)"
 ])
 
 AC_ARG_ENABLE([hardening],
