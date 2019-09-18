@@ -21,7 +21,6 @@ tool_rc tpm2_tr_serialize(ESYS_CONTEXT *esys_context, ESYS_TR object,
         uint8_t **buffer, size_t *buffer_size);
 
 tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR nv_index,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name);
 
 tool_rc tpm2_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,

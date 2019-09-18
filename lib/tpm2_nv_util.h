@@ -40,8 +40,7 @@ static inline tool_rc tpm2_util_nv_read_public(ESYS_CONTEXT *context,
         return rc;
     }
 
-    rc = tpm2_nv_readpublic(context, tr_object, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, nv_public, NULL);
+    rc = tpm2_nv_readpublic(context, tr_object, nv_public, NULL);
     tool_rc tmp_rc = tpm2_close(context, &tr_object);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
@@ -121,8 +120,7 @@ static inline tool_rc tpm2_util_nv_read(ESYS_CONTEXT *ectx,
     // Don't use tpm2_util_nv_read_public since we need to make use of nv_handle
     // later
     TPM2B_NV_PUBLIC *nv_public = NULL;
-    rc = tpm2_nv_readpublic(ectx, nv_handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &nv_public, NULL);
+    rc = tpm2_nv_readpublic(ectx, nv_handle, &nv_public, NULL);
     if (rc != tool_rc_success) {
         goto out;
     }

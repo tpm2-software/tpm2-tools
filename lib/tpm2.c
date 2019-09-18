@@ -92,11 +92,10 @@ tool_rc tpm2_close(ESYS_CONTEXT *esys_context, ESYS_TR *rsrc_handle) {
 }
 
 tool_rc tpm2_nv_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR nv_index,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         TPM2B_NV_PUBLIC **nv_public, TPM2B_NAME **nv_name) {
 
-    TSS2_RC rval = Esys_NV_ReadPublic(esys_context, nv_index, shandle1, shandle2,
-            shandle3, nv_public, nv_name);
+    TSS2_RC rval = Esys_NV_ReadPublic(esys_context, nv_index,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nv_public, nv_name);
 
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_ReadPublic, rval);

@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -190,6 +191,8 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
          * This copy is also output from the tool for further chaining.
          */
         if (ctx.mode != TPM2_ALG_ECB) {
+            assert(iv_in);
+            assert(iv_out);
             *iv_in = *iv_out;
             free(iv_out);
         }
@@ -213,7 +216,7 @@ static tool_rc encrypt_decrypt(ESYS_CONTEXT *ectx, TPM2B_IV *iv_start) {
      * iv_in here is the copy of final iv_out from the loop above.
      */
     result =
-            (ctx.iv.out) ?
+            (ctx.iv.out && iv_in) ?
                     files_save_bytes_to_file(ctx.iv.out, iv_in->buffer,
                             iv_in->size) :
                     true;
