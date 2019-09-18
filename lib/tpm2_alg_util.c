@@ -820,8 +820,7 @@ static tool_rc get_key_type(ESYS_CONTEXT *ectx, TPMI_DH_OBJECT object_handle,
 
     TPM2B_PUBLIC *out_public;
 
-    tool_rc rc = tpm2_readpublic(ectx, object_handle, ESYS_TR_NONE, ESYS_TR_NONE,
-            ESYS_TR_NONE, &out_public, NULL, NULL);
+    tool_rc rc = tpm2_readpublic(ectx, object_handle, &out_public, NULL, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }

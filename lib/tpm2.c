@@ -15,12 +15,12 @@ static inline UINT16 tpm2_error_get(TSS2_RC rc) {
 }
 
 tool_rc tpm2_readpublic(ESYS_CONTEXT *esys_context, ESYS_TR object_handle,
-        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         TPM2B_PUBLIC **out_public, TPM2B_NAME **name,
         TPM2B_NAME **qualified_name) {
 
-    TSS2_RC rval = Esys_ReadPublic(esys_context, object_handle, shandle1,
-            shandle2, shandle3, out_public, name, qualified_name);
+    TSS2_RC rval = Esys_ReadPublic(esys_context, object_handle,
+            ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE,
+            out_public, name, qualified_name);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_ReadPublic, rval);
         return tool_rc_from_tpm(rval);
