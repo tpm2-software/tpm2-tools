@@ -3,12 +3,15 @@
 
 function get_deps() {
 
+	TSS_VERSION=2.3.1
+	ABRMD_VERSION=master
+
 	echo "pwd starting: `pwd`"
 	pushd "$1"
 	echo "pwd clone tss: `pwd`"
 	if [ ! -d tpm2-tss ]; then
 		git clone --depth=1 \
-		--branch 2.3.1 https://github.com/tpm2-software/tpm2-tss.git
+		--branch "$TSS_VERSION" https://github.com/tpm2-software/tpm2-tss.git
 		pushd tpm2-tss
 		echo "pwd build tss: `pwd`"
 		./bootstrap
@@ -24,7 +27,7 @@ function get_deps() {
 	if [ ! -d tpm2-abrmd ]; then
 		echo "pwd clone abrmd: `pwd`"
 		git clone --depth=1 \
-		--branch master https://github.com/tpm2-software/tpm2-abrmd.git
+		--branch "$ABRMD_VERSION" https://github.com/tpm2-software/tpm2-abrmd.git
 		pushd tpm2-abrmd
 		echo "pwd build abrmd: `pwd`"
 		./bootstrap
