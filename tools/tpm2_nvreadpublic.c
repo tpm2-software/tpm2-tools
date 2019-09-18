@@ -7,6 +7,13 @@
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 
+typedef struct tpm2_nvreadpublic_ctx tpm2_nvreadpublic_ctx;
+struct tpm2_nvreadpublic_ctx {
+    TPMI_RH_NV_INDEX nv_index;
+};
+
+static tpm2_nvreadpublic_ctx ctx;
+
 static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
     char *attrs = tpm2_attr_util_nv_attrtostr(nv_public->nvPublic.attributes);
@@ -46,13 +53,23 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
 
 static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
 
-    TPMS_CAPABILITY_DATA *capability_data;
-    tool_rc rc = tpm2_getcap(context, TPM2_CAP_HANDLES, tpm2_util_hton_32(TPM2_HT_NV_INDEX),
-            TPM2_PT_NV_INDEX_MAX, NULL, &capability_data);
-    if (rc != tool_rc_success) {
-        return rc;
-    }
 
+    TPMS_CAPABILITY_DATA *capability_data = NULL;
+    if (ctx.nv_index == 0) {
+        tool_rc rc = tpm2_getcap(context, TPM2_CAP_HANDLES, tpm2_util_hton_32(TPM2_HT_NV_INDEX),
+                TPM2_PT_NV_INDEX_MAX, NULL, &capability_data);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+    } else {
+        capability_data = calloc(1, sizeof(*capability_data));
+        if (!capability_data) {
+            LOG_ERR("oom");
+            return tool_rc_general_error;
+        }
+        capability_data->data.handles.count = 1;
+        capability_data->data.handles.handle[0] = ctx.nv_index;
+    }
     UINT32 i;
     for (i = 0; i < capability_data->data.handles.count; i++) {
         TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
@@ -75,9 +92,15 @@ static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
     return tool_rc_success;
 }
 
+static bool on_arg(int argc, char **argv) {
+
+    return on_arg_nv_index(argc, argv, &ctx.nv_index);
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
-    *opts = tpm2_options_new(NULL, 0, NULL, NULL, NULL, 0);
+    *opts = tpm2_options_new(NULL, 0, NULL, NULL,
+            on_arg, 0);
 
     return *opts != NULL;
 }
