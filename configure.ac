@@ -93,37 +93,43 @@ AC_DEFUN([AC_PYTHON_MODULE],
 AS_IF([test "x$enable_unit" != xno], [
     PKG_CHECK_MODULES([CMOCKA],[cmocka])
 
-    AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd], found, missing)
+    AC_CHECK_PROG([tpm2_abrmd], [tpm2-abrmd], yes, no)
     AS_IF([test $tpm2_abrmd = missing],
           [AC_MSG_ERROR([Required executable tpm2_abrmd not found, try setting PATH])])
 
-    AC_CHECK_PROG([tpm_server], [tpm_server], found, missing)
+    AC_CHECK_PROG([tpm_server], [tpm_server], yes, no)
     AS_IF([test $tpm_server = missing],
           [AC_MSG_ERROR([Required executable tpm_server not found, try setting PATH])])
 
-    AC_CHECK_PROG([BASH_SHELL], [bash], found, missing)
+    AC_CHECK_PROG([BASH_SHELL], [bash], yes, no)
     AS_IF([test $BASH_SHELL = missing],
           [AC_MSG_ERROR([Required executable bash not found, system tests require a bash shell!])])
 
-    AC_CHECK_PROG([PYTHON], [python], found, missing)
+    AC_CHECK_PROG([PYTHON], [python], yes, no)
     AS_IF([test $PYTHON = missing],
           [AC_MSG_ERROR([Required executable python not found, some system tests will fail!])])
 
     AC_PYTHON_MODULE([yaml])
 
-    AC_CHECK_PROG([XXD], [xxd], found, missing)
+    AC_CHECK_PROG([XXD], [xxd], yes, no)
     AS_IF([test $XXD = missing],
           [AC_MSG_ERROR([Required executable xxd not found, some system tests will fail!])])
 
-    AC_CHECK_PROG([SS], [ss], found, missing)
+    AC_CHECK_PROG([SS], [ss], yes, no)
     AS_IF([test $SS = missing],
           [AC_MSG_ERROR([Required executable ss not found, some system tests will fail!])])
 
-    AC_CHECK_PROG([SHASUM], [shasum], found, missing)
+    AC_CHECK_PROG([SHASUM], [shasum], yes, no)
     AS_IF([test $SHASUM = missing],
           [AC_MSG_ERROR([Required executable shasum not found, some system tests will fail!])])
 
-    enable_unit="$enable_unit (tpm2_abrmd: $tpm2_abrmd, tpm_server: $tpm_server, bash: $BASH_SHELL, python: $PYTHON, xxd: $XXD, ss: $SS, shasum: $SHASUM)"
+    unit_test_tool_report="- tpm2_abrmd: $tpm2_abrmd
+    - tpm_server: $tpm_server
+    - bash: $BASH_SHELL
+    - python: $PYTHON
+    - xxd: $XXD
+    - ss: $SS
+    - shasum: $SHASUM"
 ])
 
 AC_ARG_ENABLE([hardening],
@@ -223,7 +229,8 @@ AC_SUBST([PATH])
 AC_OUTPUT
 
 AC_MSG_RESULT([
-    $PACKAGE_NAME    $VERSION
-    Man pages:    ${PANDOC:-no}
-    Unit tests:   $enable_unit
+    - $PACKAGE_NAME: $VERSION
+    - Man pages: ${PANDOC:-no}
+    - Unit tests: $enable_unit
+    $unit_test_tool_report
 ])
