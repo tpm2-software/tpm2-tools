@@ -1,5 +1,10 @@
 ## Changelog
 
+### next
+
+* tpm2\_nvreadpublic:
+  - Support specifying nv index to read public data from as argument.
+
 ### 4.0 - 2019-09-09
 
 * tpm2_activatecredential:

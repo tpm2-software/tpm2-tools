@@ -130,7 +130,8 @@ tpm2_nvread   $nv_test_index -C o > $large_file_read_name
 
 cmp -s $large_file_read_name $large_file_name
 
-tpm2_nvreadpublic > nv.out
+# test per-index readpublic
+tpm2_nvreadpublic "$nv_test_index" > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
 
 tpm2_nvundefine -Q   $nv_test_index -C o
