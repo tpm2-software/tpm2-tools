@@ -18,7 +18,6 @@ struct tpm_policyauthorizenv_ctx {
 
     TPM2_HANDLE nv_index;
 
-    char *policy_file;
     const char *out_policy_dgst_path;
 
     const char *session_path;
