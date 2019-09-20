@@ -719,6 +719,9 @@ tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path)
 SAVE_TYPE(TPM2B_PUBLIC, public)
 LOAD_TYPE(TPM2B_PUBLIC, public)
 
+SAVE_TYPE(TPMT_PUBLIC, public_area)
+LOAD_TYPE(TPMT_PUBLIC, public_area)
+
 SAVE_TYPE(TPMT_SIGNATURE, signature)
 LOAD_TYPE(TPMT_SIGNATURE, signature)
 
