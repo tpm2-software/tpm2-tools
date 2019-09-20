@@ -142,6 +142,17 @@ tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path)
 bool files_save_public(TPM2B_PUBLIC *public, const char *path);
 
 /**
+ * Serializes a TPMT_PUBLIC to the file path provided.
+ * @param template
+ *  The TPMT_PUBLIC to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_template(TPMT_PUBLIC *template, const char *path);
+
+/**
  * Loads a TPM2B_PUBLIC from disk that was saved with files_save_pubkey()
  * @param path
  *  The path to load from.
