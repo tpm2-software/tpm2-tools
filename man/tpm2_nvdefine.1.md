@@ -34,7 +34,24 @@ to the nv handle range "TPM2_HR_NV_INDEX".
 
     Specifies the attribute values for the nv region used when creating the
     entity. Either the raw bitfield mask or "nice-names" may be used. See
-    section "NV Attributes" for more details.
+    section "NV Attributes" for more details. If not specified, the attributes
+    default to various selections based on the hierarchy the index is defined in.
+
+    For the owner hiearchy the defaults are:
+      - TPMA_NV_OWNERWRITE
+      - TPMA_NV_OWNERREAD
+
+    For the platform hiearchy, the defaults are:
+      - TPMA_NV_PPWRITE
+      - TPMA_NV_PPREAD
+
+    If a policy file is specified, the hiearchy chosen default attributes are bitwise or'd with:
+      - TPMA_NV_POLICYWRITE
+      - TPMA_NV_POLICYREAD
+
+    If a policy file is **NOT** specified, the hiearchy chosen default attributes are bitwise or'd with:
+      - TPMA_NV_AUTHWRITE
+      - TPMA_NV_AUTHREAD
 
   * **-P**, **\--hierarchy-auth**=_AUTH_:
 
