@@ -2,6 +2,9 @@
 
 ### next
 
+* tpm2\_nvdefine:
+  - Support default set of attributes so -a is not mandatory.
+
 * tpm2\_nvreadpublic:
   - Support specifying nv index to read public data from as argument.
 

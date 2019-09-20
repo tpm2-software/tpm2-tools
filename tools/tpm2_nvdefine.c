@@ -133,6 +133,29 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     return *opts != NULL;
 }
 
+static void handle_default_attributes(void) {
+
+    /* attributes set no need for defaults */
+    if (ctx.nv_attribute) {
+        return;
+    }
+
+    ESYS_TR h = ctx.auth_hierarchy.object.tr_handle;
+
+    if (h == ESYS_TR_RH_OWNER) {
+        ctx.nv_attribute |= TPMA_NV_OWNERWRITE | TPMA_NV_OWNERREAD;
+    } else if (h == ESYS_TR_RH_PLATFORM) {
+        ctx.nv_attribute |= TPMA_NV_PPWRITE | TPMA_NV_PPREAD;
+    } /* else it's an nv index for auth */
+
+    /* if it has a policy file, set policy read and write vs auth read and write */
+    if (ctx.policy_file) {
+        ctx.nv_attribute |= TPMA_NV_POLICYWRITE | TPMA_NV_POLICYREAD;
+    } else {
+        ctx.nv_attribute |= TPMA_NV_AUTHWRITE | TPMA_NV_AUTHREAD;
+    }
+}
+
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
@@ -156,6 +179,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     ctx.nv_auth = *auth;
 
     tpm2_session_close(&tmp);
+
+    handle_default_attributes();
 
     return nv_space_define(ectx);
 }
