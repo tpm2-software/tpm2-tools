@@ -38,8 +38,6 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
 
     TPM2B_NV_PUBLIC public_info = TPM2B_EMPTY_INIT;
 
-    public_info.size = sizeof(TPMI_RH_NV_INDEX) + sizeof(TPMI_ALG_HASH)
-            + sizeof(TPMA_NV) + sizeof(UINT16) + sizeof(UINT16);
     public_info.nvPublic.nvIndex = ctx.nv_index;
     public_info.nvPublic.nameAlg = TPM2_ALG_SHA256;
 
