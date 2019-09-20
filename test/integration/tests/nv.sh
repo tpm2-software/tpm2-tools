@@ -17,7 +17,7 @@ cleanup() {
   tpm2_nvundefine -Q   0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
 
   rm -f policy.bin test.bin nv.test_w $large_file_name $large_file_read_name \
-  nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out cap.out
+  nv.readlock foo.dat cmp.dat $file_pcr_value $file_policy nv.out cap.out yaml.out
 
   if [ "$1" != "no-shut-down" ]; then
      shut_down
@@ -30,6 +30,10 @@ start_up
 cleanup "no-shut-down"
 
 tpm2_clear
+
+#Test nvdefine with no options
+tpm2_nvdefine > yaml.out
+tpm2_nvundefine $(yaml_get_kv yaml.out "nv-index")
 
 #Test default values for the hierarchy "-a" parameter
 tpm2_nvdefine -Q   $nv_test_index -s 32 -a "ownerread|policywrite|ownerwrite"

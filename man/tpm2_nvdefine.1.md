@@ -12,7 +12,8 @@
 
 **tpm2_nvdefine**(1) - Define an NV index with given auth value. The index is
 specified as an argument. It can be specified as raw handle or an offset value
-to the nv handle range "TPM2_HR_NV_INDEX".
+to the nv handle range "TPM2_HR_NV_INDEX". If an index isn't specified, the tool
+uses the first free index. The tool outputs the nv index defined on success.
 
 # OPTIONS
 

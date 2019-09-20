@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "files.h"
@@ -8,6 +9,7 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_options.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm_nvdefine_ctx tpm_nvdefine_ctx;
 struct tpm_nvdefine_ctx {
@@ -66,6 +68,8 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
         LOG_INFO("Success to define NV area at index 0x%x.", ctx.nv_index);
         return rc;
     }
+
+    tpm2_tool_output("nv-index: 0x%x\n", ctx.nv_index);
 
     return tool_rc_success;
 }
@@ -156,6 +160,94 @@ static void handle_default_attributes(void) {
     }
 }
 
+static tool_rc handle_no_index_specified(ESYS_CONTEXT *ectx, TPM2_NV_INDEX *chosen) {
+
+    tool_rc rc = tool_rc_general_error;
+
+    TPM2_NV_INDEX max = 0;
+
+    /* get the max NV index for the TPM */
+    TPMS_CAPABILITY_DATA *capabilities = NULL;
+    tool_rc tmp_rc = tpm2_getcap(ectx, TPM2_CAP_TPM_PROPERTIES, TPM2_PT_FIXED,
+            TPM2_MAX_TPM_PROPERTIES, NULL, &capabilities);
+    if (tmp_rc != tool_rc_success) {
+        return tmp_rc;
+    }
+
+    TPMS_TAGGED_PROPERTY *properties = capabilities->data.tpmProperties.tpmProperty;
+    UINT32 count = capabilities->data.tpmProperties.count;
+
+    if (!count) {
+        LOG_ERR("Could not get maximum NV index, try specifying an NV index");
+        goto out;
+    }
+
+    UINT32 i;
+    for (i=0; i < count; i++) {
+        if (properties[i].property == TPM2_PT_NV_INDEX_MAX) {
+            max = TPM2_HR_NV_INDEX | properties[i].value;
+        }
+    }
+
+    if (!max) {
+        LOG_ERR("Could not find max NV indices in capabilities");
+        goto out;
+    }
+
+    /* done getting max NV index */
+    free(capabilities);
+    capabilities = NULL;
+
+    /* now find what NV indexes are in use */
+    tmp_rc = tpm2_getcap(ectx, TPM2_CAP_HANDLES, tpm2_util_hton_32(TPM2_HT_NV_INDEX),
+            TPM2_PT_NV_INDEX_MAX, NULL, &capabilities);
+    if (tmp_rc != tool_rc_success) {
+        goto out;
+    }
+
+    /*
+     * now starting at the first valid index, find one not in use
+     * The TPM interface makes no guarantee that handles are returned in order
+     * so we have to do a linear search every attempt for a free handle :-(
+     */
+    bool found = false;
+    TPM2_NV_INDEX choose;
+    for (choose = TPM2_HR_NV_INDEX; choose < max; choose++) {
+
+        bool in_use = false;
+
+        /* take the index to guess and check against everything in use */
+        for (i = 0; i < capabilities->data.handles.count; i++) {
+            TPMI_RH_NV_INDEX index = capabilities->data.handles.handle[i];
+            if (index == choose) {
+                in_use = true;
+                break;
+            }
+        }
+
+        if (!in_use) {
+            /* it's not in use, use the current value of choose */
+            found = true;
+            break;
+        }
+
+    }
+
+    if (!found) {
+        LOG_ERR("No free NV index found");
+        goto out;
+    }
+
+    *chosen = choose;
+
+    rc = tool_rc_success;
+
+out:
+    free(capabilities);
+
+    return rc;
+}
+
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
@@ -181,6 +273,13 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_session_close(&tmp);
 
     handle_default_attributes();
+
+    if (!ctx.nv_index) {
+        rc = handle_no_index_specified(ectx, &ctx.nv_index);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+    }
 
     return nv_space_define(ectx);
 }
