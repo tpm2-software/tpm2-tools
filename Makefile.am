@@ -76,6 +76,7 @@ bin_PROGRAMS = \
     tools/tpm2_policypcr \
     tools/tpm2_policyauthorize \
     tools/tpm2_policyauthorizenv \
+    tools/tpm2_policynv \
     tools/tpm2_policyor \
     tools/tpm2_policypassword \
     tools/tpm2_policysecret \
@@ -162,6 +163,7 @@ tools_tpm2_startauthsession_SOURCES = tools/tpm2_startauthsession.c $(TOOL_SRC)
 tools_tpm2_policypcr_SOURCES = tools/tpm2_policypcr.c $(TOOL_SRC)
 tools_tpm2_policyauthorize_SOURCES = tools/tpm2_policyauthorize.c $(TOOL_SRC)
 tools_tpm2_policyauthorizenv_SOURCES = tools/tpm2_policyauthorizenv.c $(TOOL_SRC)
+tools_tpm2_policynv_SOURCES = tools/tpm2_policynv.c $(TOOL_SRC)
 tools_tpm2_policyor_SOURCES = tools/tpm2_policyor.c $(TOOL_SRC)
 tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
 tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)

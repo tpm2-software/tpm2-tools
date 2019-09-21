@@ -361,6 +361,39 @@ tool_rc tpm2_policy_authorize_nv(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *auth_entity_obj, TPM2_HANDLE nv_index,
+    ESYS_TR policy_session, const TPM2B_OPERAND *operand_b, UINT16 offset,
+    TPM2_EO operation) {
+
+    ESYS_TR esys_tr_nv_index;
+    TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &esys_tr_nv_index);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    ESYS_TR auth_entity_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+            auth_entity_obj->tr_handle, auth_entity_obj->session,
+            &auth_entity_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get auth entity obj session");
+        return rc;
+    }
+
+    rval = Esys_PolicyNV(esys_context, auth_entity_obj->tr_handle,
+        esys_tr_nv_index, policy_session, auth_entity_obj_session_handle,
+        ESYS_TR_NONE, ESYS_TR_NONE, operand_b, offset, operation);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyNV, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session) {
 
