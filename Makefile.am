@@ -342,6 +342,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policylocality.1 \
     man/man1/tpm2_policyauthorize.1 \
     man/man1/tpm2_policyauthorizenv.1 \
+    man/man1/tpm2_policynv.1 \
     man/man1/tpm2_policyor.1 \
     man/man1/tpm2_policypassword.1 \
     man/man1/tpm2_policysecret.1 \
