@@ -319,4 +319,9 @@ tool_rc tpm2_readclock(ESYS_CONTEXT *ectx, TPMS_TIME_INFO **current_time);
 
 tool_rc tpm2_shutdown(ESYS_CONTEXT *ectx, TPM2_SU shutdown_type);
 
+tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *auth_entity_obj, TPM2_HANDLE nv_index,
+    ESYS_TR policy_session, const TPM2B_OPERAND *operand_b, UINT16 offset,
+    TPM2_EO operation);
+
 #endif /* LIB_TPM2_H_ */
