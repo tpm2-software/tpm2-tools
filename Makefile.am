@@ -340,6 +340,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policypcr.1 \
     man/man1/tpm2_policyrestart.1 \
     man/man1/tpm2_policycommandcode.1 \
+    man/man1/tpm2_policynvwritten.1 \
     man/man1/tpm2_policyduplicationselect.1 \
     man/man1/tpm2_policylocality.1 \
     man/man1/tpm2_policyauthorize.1 \
