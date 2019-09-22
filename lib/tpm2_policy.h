@@ -142,6 +142,21 @@ tool_rc tpm2_policy_build_policycommandcode(ESYS_CONTEXT *ectx,
         tpm2_session *session, uint32_t command_code);
 
 /**
+ * Policy to restrict authorization to written state of the NV Index
+ *
+ * @param ectx
+ *   The Enhanced system api (ESAPI_) context.
+ * @param policy_session
+ *   The policy session into which the policy digest is extended into
+ * @param written_set
+ *   SET/ CLEAR TPMI_YES_NO value of the expected written state of NV index
+ * @return
+ *  A tool_rc indicating status.
+ */
+tool_rc tpm2_policy_build_policynvwritten(ESYS_CONTEXT *ectx,
+        tpm2_session *session, TPMI_YES_NO written_set);
+
+/**
  * Policy to restrict tpm object authorization to specific locality
  *
  * @param ectx
