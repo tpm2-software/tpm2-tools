@@ -453,6 +453,20 @@ tool_rc tpm2_policy_command_code(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_policy_nv_written(ESYS_CONTEXT *esys_context,
+        ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
+        ESYS_TR shandle3, TPMI_YES_NO written_set) {
+
+    TSS2_RC rval = Esys_PolicyNvWritten(esys_context, policy_session, shandle1,
+            shandle2, shandle3, written_set);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyNVWritten, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_policy_locality(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         TPMA_LOCALITY locality) {

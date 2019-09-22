@@ -324,4 +324,8 @@ tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
     ESYS_TR policy_session, const TPM2B_OPERAND *operand_b, UINT16 offset,
     TPM2_EO operation);
 
+tool_rc tpm2_policy_nv_written(ESYS_CONTEXT *esys_context,
+        ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
+        ESYS_TR shandle3, TPMI_YES_NO written_set);
+
 #endif /* LIB_TPM2_H_ */

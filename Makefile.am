@@ -82,6 +82,7 @@ bin_PROGRAMS = \
     tools/tpm2_policysecret \
     tools/tpm2_policyrestart \
     tools/tpm2_policycommandcode \
+    tools/tpm2_policynvwritten \
     tools/tpm2_policyduplicationselect \
     tools/tpm2_policylocality \
     tools/tpm2_quote \
@@ -169,6 +170,7 @@ tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
 tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
 tools_tpm2_policycommandcode_SOURCES = tools/tpm2_policycommandcode.c $(TOOL_SRC)
+tools_tpm2_policynvwritten_SOURCES = tools/tpm2_policynvwritten.c $(TOOL_SRC)
 tools_tpm2_stirrandom_SOURCES = tools/tpm2_stirrandom.c $(TOOL_SRC)
 tools_tpm2_policyduplicationselect_SOURCES = tools/tpm2_policyduplicationselect.c $(TOOL_SRC)
 tools_tpm2_policylocality_SOURCES = tools/tpm2_policylocality.c $(TOOL_SRC)
