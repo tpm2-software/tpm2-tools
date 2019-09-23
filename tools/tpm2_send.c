@@ -194,9 +194,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     result = write_response_to_file(ctx.output, rbuf);
     if (!result) {
         LOG_ERR("Failed writing response to output file.");
+    } else {
+        rc = tool_rc_success;
     }
-
-    rc = tool_rc_success;
 
 out:
     free(command);
