@@ -35,9 +35,10 @@ static bool read_command_from_file(FILE *f, tpm2_command_header **c,
     UINT32 command_size = tpm2_command_header_get_size(header, true);
     UINT32 data_size = tpm2_command_header_get_size(header, false);
 
-    if (command_size < data_size) {
+    if (command_size > TPM2_MAX_SIZE || command_size < data_size) {
         LOG_ERR("Command buffer %"PRIu32" bytes cannot be smaller then the "
-                "encapsulated data %"PRIu32" bytes", command_size, data_size);
+                "encapsulated data %"PRIu32" bytes, and can not be bigger than"
+                " the maximum buffer size", command_size, data_size);
         return false;
     }
 
