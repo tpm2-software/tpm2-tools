@@ -247,6 +247,15 @@ tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
             ESYS_TR_NONE, ESYS_TR_NONE);
 }
 
+tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
+        tpm2_session *session) {
+
+    ESYS_TR policy_session_handle = tpm2_session_get_handle(session);
+
+    return tpm2_policy_authvalue(ectx, policy_session_handle, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE);
+}
+
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj) {
 
