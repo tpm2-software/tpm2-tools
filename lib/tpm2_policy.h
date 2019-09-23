@@ -115,6 +115,19 @@ tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
         tpm2_session *session);
 
 /**
+ * Enables a policy that requires the object's authvalue be provided.
+ * The authvalue can be transmitted as an HMAC
+ * @param ectx
+ *  The Enhanced system api (ESAPI_) context.
+ * @param session
+ *  The policy session which is extended with PolicyAuthValue command code
+ * @return
+ *  tool_rc indicating status.
+ */
+tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
+        tpm2_session *session);
+
+/**
  * Parses the policy digest algorithm for the list of policies specified
  *
  * @param str

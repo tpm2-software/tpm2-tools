@@ -92,6 +92,9 @@ tool_rc tpm2_policy_pcr(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
 tool_rc tpm2_policy_password(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3);
 
+tool_rc tpm2_policy_authvalue(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
+        ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3);
+
 tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session);
 
