@@ -350,6 +350,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policynv.1 \
     man/man1/tpm2_policyor.1 \
     man/man1/tpm2_policypassword.1 \
+    man/man1/tpm2_policyauthvalue.1 \
     man/man1/tpm2_policysecret.1 \
     man/man1/tpm2_print.1 \
     man/man1/tpm2_quote.1 \
