@@ -152,7 +152,7 @@ static alg_parser_rc handle_sym_common(const char *ext, TPMT_SYM_DEF_OBJECT *s) 
  * You cannot change all the variables in this, as they are dependent
  * on names in that routine; this is for simplicity.
  */
-#define do_scheme_halg(advance, alg) \
+#define do_scheme_halg(scheme, advance, alg) \
     do { \
         scheme += advance; \
         s->scheme.scheme = alg; \
@@ -194,15 +194,15 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
 
     if (public->publicArea.type == TPM2_ALG_ECC) {
         if (!strncmp(scheme, "oaep", 4)) {
-            do_scheme_halg(4, TPM2_ALG_OAEP);
+            do_scheme_halg(scheme, 4, TPM2_ALG_OAEP);
         } else if (!strncmp(scheme, "ecdsa", 5)) {
-            do_scheme_halg(5, TPM2_ALG_ECDSA);
+            do_scheme_halg(scheme, 5, TPM2_ALG_ECDSA);
         } else if (!strncmp(scheme, "ecdh", 4)) {
-            do_scheme_halg(4, TPM2_ALG_ECDH);
+            do_scheme_halg(scheme, 4, TPM2_ALG_ECDH);
         } else if (!strncmp(scheme, "ecschnorr", 9)) {
-            do_scheme_halg(9, TPM2_ALG_ECSCHNORR);
+            do_scheme_halg(scheme, 9, TPM2_ALG_ECSCHNORR);
         } else if (!strncmp(scheme, "ecdaa", 5)) {
-            do_scheme_halg(5, TPM2_ALG_ECDAA);
+            do_scheme_halg(scheme, 5, TPM2_ALG_ECDAA);
             /*
              * ECDAA has both a count and hashing algorithm, scheme
              * could either be pointing to a null byte or a number,
@@ -233,9 +233,9 @@ static alg_parser_rc handle_scheme_sign(const char *scheme,
             s->scheme.scheme = TPM2_ALG_NULL;
             found = true;
         } else if (!strncmp("rsapss", scheme, 6)) {
-            do_scheme_halg(6, TPM2_ALG_RSAPSS);
+            do_scheme_halg(scheme, 6, TPM2_ALG_RSAPSS);
         } else if (!strncmp("rsassa", scheme, 6)) {
-            do_scheme_halg(6, TPM2_ALG_RSASSA);
+            do_scheme_halg(scheme, 6, TPM2_ALG_RSASSA);
         }
     }
 
