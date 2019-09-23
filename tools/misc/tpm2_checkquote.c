@@ -256,6 +256,14 @@ static tool_rc init(void) {
             goto err;
         }
 
+        if (pcr_select.count > TPM2_NUM_PCR_BANKS)
+            goto err;
+
+        UINT32 i;
+        for (i = 0; i < pcr_select.count; i++)
+            if (pcr_select.pcrSelections[i].hash == TPM2_ALG_ERROR)
+            goto err;
+
         if (!tpm2_openssl_hash_pcr_banks(ctx.halg, &pcr_select, &pcrs,
                 &ctx.pcr_hash)) {
             LOG_ERR("Failed to hash PCR values related to quote!");
