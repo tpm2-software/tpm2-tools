@@ -14,7 +14,6 @@ struct tpm2_policypassword_ctx {
     //File path for storing the policy digest output
     const char *out_policy_dgst_path;
 
-    TPM2B_DIGEST *policy_digest;
     tpm2_session *session;
 };
 
@@ -81,7 +80,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
-    free(ctx.policy_digest);
     return tpm2_session_close(&ctx.session);
 }
