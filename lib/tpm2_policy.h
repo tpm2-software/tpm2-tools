@@ -128,6 +128,22 @@ tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
         tpm2_session *session);
 
 /**
+ * Enables a policy authorization by virtue of verifying a signature on optional
+ * TPM2 parameters data - nonceTPM, cphashA, policyRef, expiration
+ * @param ectx
+ *  The Enhanced system api (ESAPI) context
+ * @param session
+ *  The policy session which is extended with PolicySigned command code
+ * @param auth_entity_obj
+ *  The loaded TPM2 key object public portion used for signature verification
+ * @param signature
+ *  The signature of the optional TPM2 parameters
+ */
+tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
+        tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
+        TPMT_SIGNATURE *signature);
+
+/**
  * Parses the policy digest algorithm for the list of policies specified
  *
  * @param str

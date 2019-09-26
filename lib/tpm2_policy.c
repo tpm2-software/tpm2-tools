@@ -264,6 +264,16 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
     return tpm2_policy_secret(ectx, auth_entity_obj, policy_session_handle);
 }
 
+tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
+        tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
+        TPMT_SIGNATURE *signature) {
+
+    ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
+
+    return tpm2_policy_signed(ectx, auth_entity_obj, policy_session_handle,
+        signature);
+}
+
 tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx, tpm2_session *session,
         TPM2B_DIGEST **policy_digest) {
 
