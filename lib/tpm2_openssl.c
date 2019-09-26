@@ -13,6 +13,30 @@
 #include "tpm2_alg_util.h"
 #include "tpm2_openssl.h"
 
+/* compatibility function for OpenSSL versions < 1.1.0 */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+static int BN_bn2binpad(const BIGNUM *a, unsigned char *to, int tolen) {
+    int r;
+    int topad;
+    int islen;
+
+    islen = BN_num_bytes(a);
+
+    if (tolen < islen)
+        return -1;
+
+    topad = tolen - islen;
+
+    memset(to, 0x00, topad);
+    r = BN_bn2bin(a, to + topad);
+    if (r == 0) {
+        return -1;
+    }
+
+    return tolen;
+}
+#endif
+
 int tpm2_openssl_halgid_from_tpmhalg(TPMI_ALG_HASH algorithm) {
 
     switch (algorithm) {
@@ -734,27 +758,27 @@ static bool load_public_ECC_from_key(EC_KEY *k, TPM2B_PUBLIC *pub) {
     TPM2B_ECC_PARAMETER *X = &pub->publicArea.unique.ecc.x;
     TPM2B_ECC_PARAMETER *Y = &pub->publicArea.unique.ecc.y;
 
-    unsigned x_size = BN_num_bytes(x);
+    unsigned x_size = (EC_GROUP_get_degree(group) + 7) / 8;
     if (x_size > sizeof(X->buffer)) {
         LOG_ERR("X coordinate is too big. Got %u expected less than or equal to"
                 " %zu", x_size, sizeof(X->buffer));
         goto out;
     }
 
-    unsigned y_size = BN_num_bytes(y);
+    unsigned y_size = (EC_GROUP_get_degree(group) + 7) / 8;
     if (y_size > sizeof(Y->buffer)) {
         LOG_ERR("X coordinate is too big. Got %u expected less than or equal to"
                 " %zu", y_size, sizeof(Y->buffer));
         goto out;
     }
 
-    X->size = BN_bn2bin(x, X->buffer);
+    X->size = BN_bn2binpad(x, X->buffer, x_size);
     if (X->size != x_size) {
         LOG_ERR("Error converting X point BN to binary");
         goto out;
     }
 
-    Y->size = BN_bn2bin(y, Y->buffer);
+    Y->size = BN_bn2binpad(y, Y->buffer, y_size);
     if (Y->size != y_size) {
         LOG_ERR("Error converting Y point BN to binary");
         goto out;
@@ -929,18 +953,18 @@ static bool load_private_ECC_from_key(EC_KEY *k, TPM2B_SENSITIVE *priv) {
 
     TPM2B_ECC_PARAMETER *p = &priv->sensitiveArea.sensitive.ecc;
 
+    const EC_GROUP *group = EC_KEY_get0_group(k);
     const BIGNUM *b = EC_KEY_get0_private_key(k);
 
-    unsigned priv_bytes = BN_num_bytes(b);
+    unsigned priv_bytes = (EC_GROUP_get_degree(group) + 7) / 8;
     if (priv_bytes > sizeof(p->buffer)) {
         LOG_ERR("Expected ECC private portion to be less than or equal to %zu,"
                 " got: %u", sizeof(p->buffer), priv_bytes);
         return false;
     }
 
-    p->size = priv_bytes;
-    int success = BN_bn2bin(b, p->buffer);
-    if (!success) {
+    p->size = BN_bn2binpad(b, p->buffer, priv_bytes);
+    if (p->size != priv_bytes) {
         return false;
     }
 
