@@ -12,6 +12,7 @@ enum tpm2_convert_pubkey_fmt {
     pubkey_format_tss,
     pubkey_format_pem,
     pubkey_format_der,
+    pubkey_format_tpmt,
     pubkey_format_err
 };
 
