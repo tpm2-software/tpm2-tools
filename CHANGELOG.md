@@ -2,6 +2,8 @@
 
 ### next
 
+* tpm2_policysigned: New tool enabling policy command TPM2_PolicySigned.
+
 * misc:
   - support "tpmt" as a public key output format that only saves the TPMT structure.
 
