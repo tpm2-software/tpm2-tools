@@ -24,6 +24,8 @@ tpm2_convert_pubkey_fmt tpm2_convert_pubkey_fmt_from_optarg(const char *label) {
         return pubkey_format_pem;
     } else if (strcasecmp(label, "tss") == 0) {
         return pubkey_format_tss;
+    } else if (strcasecmp(label, "tpmt") == 0) {
+        return pubkey_format_tpmt;
     }
 
     LOG_ERR("Invalid public key output format '%s' specified", label);
@@ -58,6 +60,8 @@ bool tpm2_convert_pubkey_save(TPM2B_PUBLIC *public,
         return tpm2_convert_pubkey_ssl(&public->publicArea, format, path);
     } else if (format == pubkey_format_tss) {
         return files_save_public(public, path);
+    } else if (format == pubkey_format_tpmt) {
+        return files_save_template(&public->publicArea, path);
     }
 
     LOG_ERR("Unsupported public key output format.");
