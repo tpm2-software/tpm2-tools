@@ -7,6 +7,7 @@
 #include "tool_rc.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_tool.h"
 
 #define TPM2_ERROR_TSS2_RC_ERROR_MASK 0xFFFF
 
@@ -331,12 +332,12 @@ tool_rc tpm2_policy_password(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
 
 tool_rc tpm2_policy_signed(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,
-        const TPMT_SIGNATURE *signature) {
+        const TPMT_SIGNATURE *signature, INT32 expiration,
+        TPM2B_TIMEOUT **timeout) {
 
     TSS2_RC rval = Esys_PolicySigned(esys_context, auth_entity_obj->tr_handle,
         policy_session, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, NULL, NULL,
-        NULL, 0, signature, 0, NULL);
-
+        NULL, expiration, signature, timeout, NULL);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySigned, rval);
         return tool_rc_from_tpm(rval);

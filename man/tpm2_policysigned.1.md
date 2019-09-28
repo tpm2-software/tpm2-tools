@@ -46,6 +46,13 @@ The optional TPM2 parameters being cpHashA, nonceTPM, policyRef and expiration.
     if the data came from an external source like OpenSSL. The tool currently
     supports rsassa and ecdsa.
 
+  * **-t**, **\--expiration**=_NATURAL_NUMBER_:
+
+    Set the expiration time of the policy in seconds. In absence of nonceTPM
+    the expiration time is the policy timeout value. If expiration is a negative
+    value an authorization ticket is additionally returned. If expiration value
+    is 0 then the policy does not have a time limit on the authorization.
+
 ## References
 
 [common options](common/options.md) collection of common options that provide

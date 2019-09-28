@@ -24,6 +24,8 @@ struct tpm2_policysigned_ctx {
     const char *context_arg;
     tpm2_loaded_object key_context_object;
 
+    INT32 expiration;
+
     union {
         struct {
             UINT8 halg :1;
@@ -38,6 +40,7 @@ static tpm2_policysigned_ctx ctx;
 
 static bool on_option(char key, char *value) {
 
+    bool result = true;
     switch (key) {
     case 'L':
         ctx.policy_digest_path = value;
@@ -68,6 +71,14 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
+    case 't':
+        result = tpm2_util_string_to_uint32(value, (UINT32 *)&ctx.expiration);
+        if (!result) {
+            LOG_ERR("Failed reading expiration duration from value, got:\"%s\"",
+                    value);
+            return false;
+        }
+        break;
     }
 
     return true;
@@ -82,9 +93,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "signature",      required_argument, NULL, 's' },
         { "format",         required_argument, NULL, 'f' },
         { "key-context",    required_argument, NULL, 'c' },
+        { "expiration",     required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("L:S:g:s:f:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("L:S:g:s:f:c:t:", ARRAY_LEN(topts), topts, on_option,
     NULL, 0);
 
     return *opts != NULL;
@@ -141,14 +153,25 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    TPM2B_TIMEOUT *timeout = NULL;
     rc = tpm2_policy_build_policysigned(ectx, ctx.session,
-        &ctx.key_context_object, &ctx.signature);
+        &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysigned TPM");
-        return rc;
+        goto tpm2_tool_onrun_out;
     }
 
-    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
+    if (timeout->size) {
+        tpm2_tool_output("timeout: ");
+        tpm2_util_hexdump(timeout->buffer, timeout->size);
+        tpm2_tool_output("\n");
+    }
+
+    rc = tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
+
+tpm2_tool_onrun_out:
+    free(timeout);
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
