@@ -52,7 +52,11 @@ TSS2_RC tpm_hash_compute_data(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH halg
         return TSS2_APP_HMAC_RC_FAILED;
     }
 
-    return tpm_hash_file(sapi_context, halg, hierarchy, mem, result, validation);
+    TSS2_RC rc = tpm_hash_file(sapi_context, halg, hierarchy, mem, result, validation);
+
+    fclose(mem);
+
+    return rc;
 }
 
 TSS2_RC tpm_hash_sequence(TSS2_SYS_CONTEXT *sapi_context, TPMI_ALG_HASH hash_alg,
