@@ -415,9 +415,9 @@ bool pcr_read_pcr_values(TSS2_SYS_CONTEXT *sapi_context, TPML_PCR_SELECTION *pcr
         pcr_update_pcr_selections(&pcr_selection_tmp, &pcr_selection_out);
 
         //4. goto step 2 if pcrSelctionIn still has bits set
-    } while (++pcrs->count < sizeof(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp));
+    } while (++pcrs->count < ARRAY_LEN(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp));
 
-    if (pcrs->count >= sizeof(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
+    if (pcrs->count >= ARRAY_LEN(pcrs->pcr_values) && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
         LOG_ERR("too much pcrs to get! try to split into multiple calls...");
         return false;
     }
