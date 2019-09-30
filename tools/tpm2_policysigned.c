@@ -26,6 +26,8 @@ struct tpm2_policysigned_ctx {
 
     INT32 expiration;
 
+    char *policy_ticket_path;
+
     union {
         struct {
             UINT8 halg :1;
@@ -71,6 +73,9 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
+    case 0:
+        ctx.policy_ticket_path = value;
+        break;
     case 't':
         result = tpm2_util_string_to_uint32(value, (UINT32 *)&ctx.expiration);
         if (!result) {
@@ -78,7 +83,6 @@ static bool on_option(char key, char *value) {
                     value);
             return false;
         }
-        break;
     }
 
     return true;
@@ -94,6 +98,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "format",         required_argument, NULL, 'f' },
         { "key-context",    required_argument, NULL, 'c' },
         { "expiration",     required_argument, NULL, 't' },
+        { "ticket",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("L:S:g:s:f:c:t:", ARRAY_LEN(topts), topts, on_option,
@@ -154,8 +159,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     TPM2B_TIMEOUT *timeout = NULL;
+    TPMT_TK_AUTH *policy_ticket = NULL;
     rc = tpm2_policy_build_policysigned(ectx, ctx.session,
-        &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout);
+        &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout,
+        &policy_ticket);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysigned TPM");
         goto tpm2_tool_onrun_out;
@@ -168,9 +175,26 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
+    if (rc != tool_rc_success) {
+        goto tpm2_tool_onrun_out;
+    }
+
+    if (ctx.policy_ticket_path) {
+        if (!policy_ticket->digest.size) {
+            LOG_WARN("Timeout assertion did not produce auth ticket.");
+        } else {
+            retval = files_save_authorization_ticket(policy_ticket,
+            ctx.policy_ticket_path);
+        }
+    }
+    if (!retval) {
+        LOG_ERR("Failed to save auth ticket");
+        rc = tool_rc_general_error;
+    }
 
 tpm2_tool_onrun_out:
     free(timeout);
+    free(policy_ticket);
     return rc;
 }
 

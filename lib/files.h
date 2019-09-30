@@ -208,6 +208,31 @@ bool files_save_ticket(TPMT_TK_VERIFIED *ticket, const char *path);
 bool files_load_ticket(const char *path, TPMT_TK_VERIFIED *ticket);
 
 /**
+ * Serializes a TPMT_TK_AUTH to the file path provided.
+ * @param signature
+ *  The TPMT_SIGNATURE to save to disk.
+ * @param path
+ *  The path to save to.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_save_authorization_ticket(TPMT_TK_AUTH *authorization_ticket,
+    const char *path);
+
+/**
+ * Loads a TPMT_TK_AUTH from disk that was saved with
+ * files_save_authorization_ticket()
+ * @param path
+ *  The path to load from.
+ * @param signature
+ *  The TPMT_TK_AUTH to load.
+ * @return
+ *  true on success, false on error.
+ */
+bool files_load_authorization_ticket(const char *path,
+    TPMT_TK_AUTH *authorization_ticket);
+
+/**
  * Loads a TPM2B_SENSITIVE from disk.
  * @param path
  *  The path to load from.
