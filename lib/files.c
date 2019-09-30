@@ -728,6 +728,9 @@ LOAD_TYPE(TPMT_SIGNATURE, signature)
 SAVE_TYPE(TPMT_TK_VERIFIED, ticket)
 LOAD_TYPE(TPMT_TK_VERIFIED, ticket)
 
+SAVE_TYPE(TPMT_TK_AUTH, authorization_ticket)
+LOAD_TYPE(TPMT_TK_AUTH, authorization_ticket)
+
 SAVE_TYPE(TPM2B_SENSITIVE, sensitive)
 LOAD_TYPE(TPM2B_SENSITIVE, sensitive)
 
