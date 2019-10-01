@@ -142,7 +142,7 @@ tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
 tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         TPMT_SIGNATURE *signature, INT32 expiration, TPM2B_TIMEOUT **timeout,
-        TPMT_TK_AUTH **policy_ticket);
+        TPMT_TK_AUTH **policy_ticket, const char *policy_qualifier_path);
 
 /**
  * Parses the policy digest algorithm for the list of policies specified

@@ -267,12 +267,34 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
 tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         TPMT_SIGNATURE *signature, INT32 expiration, TPM2B_TIMEOUT **timeout,
-        TPMT_TK_AUTH **policy_ticket) {
+        TPMT_TK_AUTH **policy_ticket, const char *policy_qualifier_path) {
+
+    bool result = true;
+    /*
+     * Qualifier data is optional. If not specified default to 0
+     */
+    unsigned long file_size = 0;
+    if (policy_qualifier_path) {
+        result = files_get_file_size_path(policy_qualifier_path, &file_size);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+
+    TPM2B_NONCE policy_qualifier = { .size = (uint16_t) file_size };
+
+    if (file_size != 0) {
+        result = files_load_bytes_from_path(policy_qualifier_path,
+                policy_qualifier.buffer, &policy_qualifier.size);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
 
     return tpm2_policy_signed(ectx, auth_entity_obj, policy_session_handle,
-        signature, expiration, timeout, policy_ticket);
+        signature, expiration, timeout, policy_ticket, &policy_qualifier);
 }
 
 tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx, tpm2_session *session,
