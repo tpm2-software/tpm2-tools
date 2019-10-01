@@ -57,6 +57,11 @@ The optional TPM2 parameters being cpHashA, nonceTPM, policyRef and expiration.
 
     The ticket file to record the authorization ticket structure.
 
+  * **-q**, **\--qualification**=_FILE_:
+
+    The policy qualifier data that the signer can choose to include in the
+    signature.
+
 ## References
 
 [common options](common/options.md) collection of common options that provide

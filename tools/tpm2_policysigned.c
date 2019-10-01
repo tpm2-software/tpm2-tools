@@ -28,6 +28,8 @@ struct tpm2_policysigned_ctx {
 
     char *policy_ticket_path;
 
+    const char *qualifier_data_path;
+
     union {
         struct {
             UINT8 halg :1;
@@ -73,6 +75,9 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.context_arg = value;
         break;
+    case 'q':
+        ctx.qualifier_data_path = value;
+        break;
     case 0:
         ctx.policy_ticket_path = value;
         break;
@@ -98,10 +103,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "format",         required_argument, NULL, 'f' },
         { "key-context",    required_argument, NULL, 'c' },
         { "expiration",     required_argument, NULL, 't' },
+        { "qualification", required_argument,  NULL, 'q' },
         { "ticket",         required_argument, NULL,  0  },
     };
 
-    *opts = tpm2_options_new("L:S:g:s:f:c:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("L:S:g:s:f:c:t:q:", ARRAY_LEN(topts), topts, on_option,
     NULL, 0);
 
     return *opts != NULL;
@@ -162,7 +168,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPMT_TK_AUTH *policy_ticket = NULL;
     rc = tpm2_policy_build_policysigned(ectx, ctx.session,
         &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout,
-        &policy_ticket);
+        &policy_ticket, ctx.qualifier_data_path);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysigned TPM");
         goto tpm2_tool_onrun_out;
