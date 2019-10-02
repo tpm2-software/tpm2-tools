@@ -55,6 +55,9 @@ tool_rc tpm2_sess_set_attributes(ESYS_CONTEXT *esys_context, ESYS_TR session,
 tool_rc tpm2_sess_get_attributes(ESYS_CONTEXT *esys_context, ESYS_TR session,
         TPMA_SESSION *flags);
 
+tool_rc tpm2_sess_get_noncetpm(ESYS_CONTEXT *esys_context,
+    ESYS_TR session_handle, TPM2B_NONCE **nonce_tpm);
+
 tool_rc tpm2_policy_restart(ESYS_CONTEXT *esys_context, ESYS_TR session_handle,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3);
 

@@ -210,6 +210,19 @@ tool_rc tpm2_sess_get_attributes(ESYS_CONTEXT *esys_context, ESYS_TR session,
     return tool_rc_success;
 }
 
+tool_rc tpm2_sess_get_noncetpm(ESYS_CONTEXT *esys_context,
+    ESYS_TR session_handle, TPM2B_NONCE **nonce_tpm) {
+
+    TSS2_RC rval = Esys_TRSess_GetNonceTPM(esys_context, session_handle,
+        nonce_tpm);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_TRSess_GetNonceTPM, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_policy_restart(ESYS_CONTEXT *esys_context, ESYS_TR session_handle,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3) {
 
