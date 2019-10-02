@@ -2,6 +2,9 @@
 
 ### next
 
+* misc:
+  - support "tpmt" as a public key output format that only saves the TPMT structure.
+
 * tpm2\_nvdefine:
   - Support default set of attributes so -a is not mandatory.
   - Support searching for free index if an index isn't specified.
