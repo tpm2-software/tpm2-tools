@@ -1,11 +1,13 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "log.h"
 #include "object.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm2_startauthsession_ctx tpm2_startauthsession_ctx;
 struct tpm2_startauthsession_ctx {
@@ -140,5 +142,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    TPM2B_NONCE *nonce_tpm = NULL;
+    rc = tpm2_session_get_noncetpm(ectx, s, &nonce_tpm);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    if (nonce_tpm->size) {
+         tpm2_tool_output("nonce_tpm:");
+         tpm2_util_hexdump(nonce_tpm->buffer, nonce_tpm->size);
+         tpm2_tool_output("\n");
+     }
+
+    free(nonce_tpm);
     return tpm2_session_close(&s);
 }
