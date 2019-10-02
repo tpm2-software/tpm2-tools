@@ -321,6 +321,14 @@ out:
     return rc;
 }
 
+tool_rc tpm2_session_get_noncetpm(ESYS_CONTEXT *ectx, tpm2_session *s,
+    TPM2B_NONCE **nonce_tpm) {
+
+    ESYS_TR session_handle = tpm2_session_get_handle(s);
+
+    return tpm2_sess_get_noncetpm(ectx, session_handle, nonce_tpm);
+}
+
 tool_rc tpm2_session_close(tpm2_session **s) {
 
     tpm2_session *session = *s;

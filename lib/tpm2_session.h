@@ -53,6 +53,20 @@ void tpm2_session_set_key(tpm2_session_data *data, TPMI_DH_OBJECT key);
 void tpm2_session_set_nonce_caller(tpm2_session_data *data, TPM2B_NONCE *nonce);
 
 /**
+ * Retrieves the session nonce
+ *
+ * @param ectx
+ *  The ESAPI context
+ * @param session
+ *  The session started
+ * @param nonce_tpm
+ *  The nonceTPM for the session
+ *
+ */
+tool_rc tpm2_session_get_noncetpm(ESYS_CONTEXT *ectx, tpm2_session *session,
+    TPM2B_NONCE **nonce_tpm);
+
+/**
  * Sets the bind parameter.
  * @param data
  *  The session data object to modify.
