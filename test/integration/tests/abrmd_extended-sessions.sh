@@ -110,5 +110,18 @@ if tpm2_unseal -p"session:$file_session_file" \
 else
     true
 fi
+tpm2_flushcontext $file_session_file
+
+# Check if session nonce size can be setup correctly
+test=`tpm2_startauthsession -S $file_session_file -s 20 | \
+awk -F ":" '{print $2}' | xxd -r -p | wc -c`
+
+if [ "$test" != "20" ]; then
+    echo "Unexpected sesson nonce size"
+    exit 1
+else
+    true
+fi
+tpm2_flushcontext $file_session_file
 
 exit 0
