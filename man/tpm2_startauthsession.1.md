@@ -46,6 +46,11 @@ This will work with direct TPM access, but note that internally this calls a
 
     The name of the policy session file, required.
 
+  * **-s**, **\--nonce-size**=_NATURAL_NUMBER_:
+
+    The maximum size of the session nonces. This initial value is setup by
+    specifying the size of the nonceCaller when starting the auth session.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying

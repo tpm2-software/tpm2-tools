@@ -2,6 +2,10 @@
 
 ### next
 
+* tpm2_startauthsession:
+  - Added an option, -s or --nonce-size, to specify the maximum session nonce
+  size for the session started with tpm2_startauthsession.
+
 * misc:
   - support "tpmt" as a public key output format that only saves the TPMT structure.
 

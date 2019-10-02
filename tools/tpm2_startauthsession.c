@@ -16,21 +16,25 @@ struct tpm2_startauthsession_ctx {
         TPMI_ALG_HASH halg;
         const char *key_context_arg_str;
         tpm2_loaded_object key_context_object;
+        UINT16 nonce_size;
     } session;
     struct {
         const char *path;
     } output;
 };
 
+#define MIN_NONCECALLER_SIZE 16
 static tpm2_startauthsession_ctx ctx = {
     .session = {
         .type = TPM2_SE_TRIAL,
-        .halg = TPM2_ALG_SHA256
+        .halg = TPM2_ALG_SHA256,
+        .nonce_size = MIN_NONCECALLER_SIZE,
     }
 };
 
 static bool on_option(char key, char *value) {
 
+    bool result = true;
     switch (key) {
     case 0:
         ctx.session.type = TPM2_SE_POLICY;
@@ -49,9 +53,16 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.session.key_context_arg_str = value;
         break;
+    case 's':
+        result = tpm2_util_string_to_uint16(value, &ctx.session.nonce_size);
+        if (!result) {
+            LOG_ERR("Error setting session nonce size, got: \"%s\"", value);
+            return false;
+        }
+        break;
     }
 
-    return true;
+    return result;
 }
 
 bool tpm2_tool_onstart(tpm2_options **opts) {
@@ -61,9 +72,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-context",    required_argument, NULL, 'c'},
         { "hash-algorithm", required_argument, NULL, 'g'},
         { "session",        required_argument, NULL, 'S'},
+        { "nonce-size",     required_argument, NULL, 's'},
     };
 
-    *opts = tpm2_options_new("g:S:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("g:S:c:s:", ARRAY_LEN(topts), topts, on_option,
     NULL, 0);
 
     return *opts != NULL;
@@ -117,6 +129,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tpm2_session_set_path(session_data, ctx.output.path);
 
     tpm2_session_set_authhash(session_data, ctx.session.halg);
+
+    TPM2B_NONCE nonce_caller = { .size = ctx.session.nonce_size };
+    tpm2_session_set_nonce_caller(session_data, &nonce_caller);
 
     /* if it has an encryption key, set it as both the encryption key and bind key */
     if (has_key) {
