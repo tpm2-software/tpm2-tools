@@ -1,5 +1,7 @@
 ## Changelog
-### 3.2.1-rc0 - 2019-08-05
+### 3.2.1-rc1 - 2019-10-02
+ * Fix invalid memcpy when extracting ECDSA plain signatures.
+ * Fix resource leak on FILE * in hashing routine.
  * Correct PCR logic to prevent memory corruption bug.
  * errata handler fix.
  
