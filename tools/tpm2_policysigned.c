@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "files.h"
 #include "log.h"
@@ -24,6 +25,8 @@ struct tpm2_policysigned_ctx {
     const char *context_arg;
     tpm2_loaded_object key_context_object;
 
+    TPM2B_NONCE nonce_tpm;
+
     INT32 expiration;
 
     char *policy_ticket_path;
@@ -40,11 +43,14 @@ struct tpm2_policysigned_ctx {
     } flags;
 };
 
-static tpm2_policysigned_ctx ctx;
+static tpm2_policysigned_ctx ctx = {
+    .nonce_tpm.size = 0,
+};
 
 static bool on_option(char key, char *value) {
 
     bool result = true;
+    char *input_file;
     switch (key) {
     case 'L':
         ctx.policy_digest_path = value;
@@ -81,6 +87,21 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.policy_ticket_path = value;
         break;
+    case 'x':
+        input_file = strcmp("-", value) ? value : NULL;
+        if (input_file) {
+            result = files_get_file_size_path(value,
+            (long unsigned *)&ctx.nonce_tpm.size);
+        }
+        if (input_file && !result) {
+            return false;
+        }
+        result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, input_file,
+                &ctx.nonce_tpm.size, ctx.nonce_tpm.buffer);
+        if (!result) {
+            return false;
+        }
+        break;
     case 't':
         result = tpm2_util_string_to_uint32(value, (UINT32 *)&ctx.expiration);
         if (!result) {
@@ -103,11 +124,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "format",         required_argument, NULL, 'f' },
         { "key-context",    required_argument, NULL, 'c' },
         { "expiration",     required_argument, NULL, 't' },
-        { "qualification", required_argument,  NULL, 'q' },
+        { "qualification",  required_argument, NULL, 'q' },
+        { "nonce-tpm",      required_argument, NULL, 'x' },
         { "ticket",         required_argument, NULL,  0  },
     };
 
-    *opts = tpm2_options_new("L:S:g:s:f:c:t:q:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("L:S:g:s:f:c:t:q:x:", ARRAY_LEN(topts), topts, on_option,
     NULL, 0);
 
     return *opts != NULL;
@@ -168,7 +190,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPMT_TK_AUTH *policy_ticket = NULL;
     rc = tpm2_policy_build_policysigned(ectx, ctx.session,
         &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout,
-        &policy_ticket, ctx.qualifier_data_path);
+        &policy_ticket, ctx.qualifier_data_path, &ctx.nonce_tpm);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysigned TPM");
         goto tpm2_tool_onrun_out;
