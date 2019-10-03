@@ -2,6 +2,8 @@
 
 ### next
 
+* tpm2_startauthsession: Add option to retrieve the session nonceTPM.
+
 * tpm2_policysigned: New tool enabling policy command TPM2_PolicySigned.
 
 * misc:
