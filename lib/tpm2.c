@@ -347,11 +347,11 @@ tool_rc tpm2_policy_signed(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,
         const TPMT_SIGNATURE *signature, INT32 expiration,
         TPM2B_TIMEOUT **timeout, TPMT_TK_AUTH **policy_ticket,
-        TPM2B_NONCE *policy_qualifier) {
+        TPM2B_NONCE *policy_qualifier, TPM2B_NONCE *nonce_tpm) {
 
     TSS2_RC rval = Esys_PolicySigned(esys_context, auth_entity_obj->tr_handle,
-        policy_session, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, NULL, NULL,
-        policy_qualifier, expiration, signature, timeout, policy_ticket);
+        policy_session, ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, nonce_tpm,
+        NULL, policy_qualifier, expiration, signature, timeout, policy_ticket);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySigned, rval);
         return tool_rc_from_tpm(rval);
