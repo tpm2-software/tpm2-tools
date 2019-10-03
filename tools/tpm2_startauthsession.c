@@ -1,11 +1,17 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
+#include "files.h"
 #include "log.h"
 #include "object.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_options.h"
+#include "tpm2_session.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm2_startauthsession_ctx tpm2_startauthsession_ctx;
 struct tpm2_startauthsession_ctx {
@@ -18,13 +24,17 @@ struct tpm2_startauthsession_ctx {
     struct {
         const char *path;
     } output;
+
+    bool is_nonce_tpm;
+    char *nonce_tpm_path;
 };
 
 static tpm2_startauthsession_ctx ctx = {
     .session = {
         .type = TPM2_SE_TRIAL,
-        .halg = TPM2_ALG_SHA256
-    }
+        .halg = TPM2_ALG_SHA256,
+    },
+    .is_nonce_tpm = false,
 };
 
 static bool on_option(char key, char *value) {
@@ -47,6 +57,10 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.session.key_context_arg_str = value;
         break;
+    case 'x':
+        ctx.is_nonce_tpm = true;
+        ctx.nonce_tpm_path = value;
+        break;
     }
 
     return true;
@@ -59,9 +73,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "key-context",    required_argument, NULL, 'c'},
         { "hash-algorithm", required_argument, NULL, 'g'},
         { "session",        required_argument, NULL, 'S'},
+        { "nonce-tpm",      optional_argument, NULL, 'x' },
     };
 
-    *opts = tpm2_options_new("g:S:c:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("g:S:c:x::", ARRAY_LEN(topts), topts, on_option,
     NULL, 0);
 
     return *opts != NULL;
@@ -140,5 +155,40 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    TPM2B_NONCE *nonce_tpm = NULL;
+    rc = tpm2_session_get_noncetpm(ectx, s, &nonce_tpm);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    FILE *out = stdout;
+    if (!ctx.is_nonce_tpm) {
+        goto out;
+    }
+    /*
+     * Either open an output file, or if stdout, do nothing as -Q
+     * was specified.
+     */
+    if (ctx.nonce_tpm_path) {
+        out = fopen(ctx.nonce_tpm_path, "wb+");
+        if (!out) {
+            LOG_ERR("Could not open output file \"%s\", error: %s",
+                    ctx.nonce_tpm_path, strerror(errno));
+            goto out;
+        }
+    } else if (!output_enabled) {
+        goto out;
+    }
+
+    bool result = files_write_bytes(out, nonce_tpm->buffer, nonce_tpm->size);
+    if (!result) {
+        LOG_ERR("Could not write nonce tpm to file");
+    }
+
+out:
+    if (out && out != stdout) {
+        fclose(out);
+    }
+    free(nonce_tpm);
     return tpm2_session_close(&s);
 }
