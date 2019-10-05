@@ -31,6 +31,8 @@ struct tpm2_policysigned_ctx {
 
     char *policy_ticket_path;
 
+    char *policy_timeout_path;
+
     const char *qualifier_data_path;
 
     union {
@@ -87,6 +89,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.policy_ticket_path = value;
         break;
+    case 1:
+        ctx.policy_timeout_path = value;
+        break;
     case 'x':
         input_file = strcmp("-", value) ? value : NULL;
         if (input_file) {
@@ -127,6 +132,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "qualification",  required_argument, NULL, 'q' },
         { "nonce-tpm",      required_argument, NULL, 'x' },
         { "ticket",         required_argument, NULL,  0  },
+        { "timeout",        required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("L:S:g:s:f:c:t:q:x:", ARRAY_LEN(topts), topts, on_option,
@@ -196,20 +202,28 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto tpm2_tool_onrun_out;
     }
 
-    if (timeout->size) {
-        tpm2_tool_output("timeout: ");
-        tpm2_util_hexdump(timeout->buffer, timeout->size);
-        tpm2_tool_output("\n");
-    }
-
     rc = tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
     if (rc != tool_rc_success) {
         goto tpm2_tool_onrun_out;
     }
 
+    if (ctx.policy_timeout_path) {
+        if(!timeout->size) {
+            LOG_WARN("Policy assertion did not produce timeout");
+        } else {
+            retval = files_save_bytes_to_file(ctx.policy_timeout_path,
+            timeout->buffer, timeout->size);
+        }
+    }
+    if (!retval) {
+        LOG_ERR("Failed to save timeout to file.");
+        rc = tool_rc_general_error;
+        goto tpm2_tool_onrun_out;
+    }
+
     if (ctx.policy_ticket_path) {
         if (!policy_ticket->digest.size) {
-            LOG_WARN("Timeout assertion did not produce auth ticket.");
+            LOG_WARN("Policy assertion did not produce auth ticket.");
         } else {
             retval = files_save_authorization_ticket(policy_ticket,
             ctx.policy_ticket_path);
