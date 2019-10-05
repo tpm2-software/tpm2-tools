@@ -57,6 +57,10 @@ The optional TPM2 parameters being cpHashA, nonceTPM, policyRef and expiration.
 
     The ticket file to record the authorization ticket structure.
 
+  * **\--timeout**=_FILE_:
+
+    The file path to record the timeout structure returned.
+
   * **-q**, **\--qualification**=_FILE_:
 
     The policy qualifier data that the signer can choose to include in the
