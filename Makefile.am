@@ -80,6 +80,7 @@ bin_PROGRAMS = \
     tools/tpm2_policyor \
     tools/tpm2_policypassword \
     tools/tpm2_policysigned \
+    tools/tpm2_policyticket \
     tools/tpm2_policyauthvalue \
     tools/tpm2_policysecret \
     tools/tpm2_policyrestart \
@@ -170,6 +171,7 @@ tools_tpm2_policynv_SOURCES = tools/tpm2_policynv.c $(TOOL_SRC)
 tools_tpm2_policyor_SOURCES = tools/tpm2_policyor.c $(TOOL_SRC)
 tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
 tools_tpm2_policysigned_SOURCES = tools/tpm2_policysigned.c $(TOOL_SRC)
+tools_tpm2_policyticket_SOURCES = tools/tpm2_policyticket.c $(TOOL_SRC)
 tools_tpm2_policyauthvalue_SOURCES = tools/tpm2_policyauthvalue.c $(TOOL_SRC)
 tools_tpm2_policysecret_SOURCES = tools/tpm2_policysecret.c $(TOOL_SRC)
 tools_tpm2_policyrestart_SOURCES = tools/tpm2_policyrestart.c $(TOOL_SRC)
@@ -353,6 +355,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policyor.1 \
     man/man1/tpm2_policypassword.1 \
     man/man1/tpm2_policysigned.1 \
+    man/man1/tpm2_policyticket.1 \
     man/man1/tpm2_policyauthvalue.1 \
     man/man1/tpm2_policysecret.1 \
     man/man1/tpm2_print.1 \

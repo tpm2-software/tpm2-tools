@@ -101,6 +101,10 @@ tool_rc tpm2_policy_signed(ESYS_CONTEXT *esys_context,
         TPM2B_TIMEOUT **timeout, TPMT_TK_AUTH **policy_ticket,
         TPM2B_NONCE *policy_qualifier, TPM2B_NONCE *nonce_tpm);
 
+tool_rc tpm2_policy_ticket(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
+    const TPM2B_TIMEOUT *timeout, const TPM2B_NONCE *policyref,
+    const TPM2B_NAME *authname, const TPMT_TK_AUTH *ticket);
+
 tool_rc tpm2_policy_authvalue(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3);
 

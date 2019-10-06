@@ -232,6 +232,15 @@ bool files_save_authorization_ticket(TPMT_TK_AUTH *authorization_ticket,
 bool files_load_authorization_ticket(const char *path,
     TPMT_TK_AUTH *authorization_ticket);
 
+bool files_save_timeout(TPM2B_TIMEOUT *timeout, const char *path);
+bool files_load_timeout(const char *path, TPM2B_TIMEOUT *timeout);
+
+bool files_save_name(TPM2B_NAME *name, const char *path);
+bool files_load_name(const char *path, TPM2B_NAME *name);
+
+bool files_save_nonce(TPM2B_NONCE *nonce, const char *path);
+bool files_load_nonce(const char *path, TPM2B_NONCE *nonce);
+
 /**
  * Loads a TPM2B_SENSITIVE from disk.
  * @param path

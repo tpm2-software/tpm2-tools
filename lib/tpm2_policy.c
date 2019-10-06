@@ -264,6 +264,43 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
     return tpm2_policy_secret(ectx, auth_entity_obj, policy_session_handle);
 }
 
+tool_rc tpm2_policy_build_policyticket(ESYS_CONTEXT *ectx,
+    tpm2_session *policy_session, char *policy_timeout_path,
+    const char *qualifier_data_path, char *policy_ticket_path,
+    const char *auth_name_file) {
+
+    TPM2B_TIMEOUT timeout;
+    bool result = files_load_timeout(policy_timeout_path, &timeout);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    TPM2B_NAME auth_name;
+    result = files_load_name(auth_name_file, &auth_name);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    TPMT_TK_AUTH ticket;
+    result = files_load_authorization_ticket(policy_ticket_path, &ticket);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    TPM2B_NONCE policyref;
+    result = files_load_nonce(qualifier_data_path, &policyref);
+    if (!result) {
+        return tool_rc_general_error;
+    }
+
+    ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
+
+    return tpm2_policy_ticket(ectx, policy_session_handle, &timeout,
+        &policyref, &auth_name, &ticket);
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         TPMT_SIGNATURE *signature, INT32 expiration, TPM2B_TIMEOUT **timeout,

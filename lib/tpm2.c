@@ -360,6 +360,20 @@ tool_rc tpm2_policy_signed(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_policy_ticket(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
+    const TPM2B_TIMEOUT *timeout, const TPM2B_NONCE *policyref,
+    const TPM2B_NAME *authname, const TPMT_TK_AUTH *ticket) {
+
+    TSS2_RC rval = Esys_PolicyTicket(esys_context, policy_session, ESYS_TR_NONE,
+        ESYS_TR_NONE, ESYS_TR_NONE, timeout, NULL, policyref, authname, ticket);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicySigned, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_policy_authvalue(ESYS_CONTEXT *esys_context,
         ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
         ESYS_TR shandle3) {
