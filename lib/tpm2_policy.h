@@ -146,6 +146,30 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         TPM2B_NONCE *nonce_tpm);
 
 /**
+ * PolicyTicket assertion enables proxy authentication for either PolicySecret
+ * or PolicySigned once the specific policy is validated.
+ *
+ * @param ectx
+ *  The Enhanced system api (ESAPI) context
+ * @param session
+ *  The policy session which is being extended
+ * @param policy_timeout_path
+ *  The file containing the timeout data generated PolicySigned/ PolicySecret
+ * @param qualifier_data_path
+ *  The file containing the qualifier data or policyRef
+  * @param policy_ticket_path
+ *  The file containing the auth ticket
+ * @param auth_name_file
+ *  The auth name file containing the name of the auth object
+ *
+ * @return     { description_of_the_return_value }
+ */
+tool_rc tpm2_policy_build_policyticket(ESYS_CONTEXT *ectx,
+    tpm2_session *policy_session, char *policy_timeout_path,
+    const char *qualifier_data_path, char *policy_ticket_path,
+    const char *auth_name_file);
+
+/**
  * Parses the policy digest algorithm for the list of policies specified
  *
  * @param str
