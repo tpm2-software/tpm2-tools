@@ -35,6 +35,12 @@ object use.
 
     File to save the policy digest.
 
+  * **-t**, **\--expiration**=_NATURAL_NUMBER_:
+
+    Set the expiration time of the policy in seconds. In absence of nonceTPM
+    the expiration time is the policy timeout value. If expiration value
+    is 0 then the policy does not have a time limit on the authorization.
+
   * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
     the object specified with **-c**.
 
