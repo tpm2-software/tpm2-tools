@@ -455,13 +455,12 @@ tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,
-        INT32 expiration) {
+        INT32 expiration, TPMT_TK_AUTH **policy_ticket) {
 
     const TPM2B_NONCE *nonce_tpm = NULL;
     const TPM2B_DIGEST *cp_hash_a = NULL;
     const TPM2B_NONCE *policy_ref = NULL;
     TPM2B_TIMEOUT **timeout = NULL;
-    TPMT_TK_AUTH **policy_ticket = NULL;
 
     ESYS_TR auth_entity_obj_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
