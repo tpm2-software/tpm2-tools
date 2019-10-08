@@ -49,6 +49,13 @@ object use.
 
     The file path to record the timeout structure returned.
 
+  * **-x**, **\--nonce-tpm**=_FILE_OR_STDIN_:
+
+    The nonceTPM of the session. The tool compares this against the current
+    session's nonceTPM to ensure the validity of the policy authorization is
+    limited to the current session. This can be specified as a file or can take
+    a stdin input if the option argument value is a hyphen "-".
+
   * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
     the object specified with **-c**.
 
