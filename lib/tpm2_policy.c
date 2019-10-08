@@ -259,12 +259,12 @@ tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         INT32 expiration, TPMT_TK_AUTH **policy_ticket,
-        TPM2B_TIMEOUT **timeout) {
+        TPM2B_TIMEOUT **timeout, TPM2B_NONCE *nonce_tpm) {
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
 
     return tpm2_policy_secret(ectx, auth_entity_obj, policy_session_handle,
-        expiration, policy_ticket, timeout);
+        expiration, policy_ticket, timeout, nonce_tpm);
 }
 
 tool_rc tpm2_policy_build_policyticket(ESYS_CONTEXT *ectx,

@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "files.h"
 #include "log.h"
@@ -29,6 +30,8 @@ struct tpm2_policysecret_ctx {
 
     char *policy_timeout_path;
 
+    TPM2B_NONCE nonce_tpm;
+
     struct {
         UINT8 c :1;
     } flags;
@@ -39,6 +42,7 @@ static tpm2_policysecret_ctx ctx;
 static bool on_option(char key, char *value) {
 
     bool result = true;
+    char *input_file;
 
     switch (key) {
     case 'L':
@@ -62,6 +66,21 @@ static bool on_option(char key, char *value) {
         if (!result) {
             LOG_ERR("Failed reading expiration duration from value, got:\"%s\"",
                     value);
+            return false;
+        }
+        break;
+    case 'x':
+        input_file = strcmp("-", value) ? value : NULL;
+        if (input_file) {
+            result = files_get_file_size_path(value,
+            (long unsigned *)&ctx.nonce_tpm.size);
+        }
+        if (input_file && !result) {
+            return false;
+        }
+        result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, input_file,
+                &ctx.nonce_tpm.size, ctx.nonce_tpm.buffer);
+        if (!result) {
             return false;
         }
         break;
@@ -94,11 +113,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "session",        required_argument, NULL, 'S' },
         { "object-context", required_argument, NULL, 'c' },
         { "expiration",     required_argument, NULL, 't' },
+        { "nonce-tpm",      required_argument, NULL, 'x' },
         { "ticket",         required_argument, NULL,  0  },
         { "timeout",        required_argument, NULL,  1  },
     };
 
-    *opts = tpm2_options_new("L:S:c:t:", ARRAY_LEN(topts), topts, on_option,
+    *opts = tpm2_options_new("L:S:c:t:x:", ARRAY_LEN(topts), topts, on_option,
             on_arg, 0);
 
     return *opts != NULL;
@@ -151,7 +171,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPMT_TK_AUTH *policy_ticket = NULL;
     TPM2B_TIMEOUT *timeout = NULL;
     rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
-            &ctx.auth_entity.object, ctx.expiration, &policy_ticket, &timeout);
+            &ctx.auth_entity.object, ctx.expiration, &policy_ticket, &timeout,
+            &ctx.nonce_tpm);
     tool_rc rc2 = tpm2_session_close(&ctx.auth_entity.object.session);
     if (rc != tool_rc_success) {
         goto tpm2_tool_onrun_out;
