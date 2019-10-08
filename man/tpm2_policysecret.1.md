@@ -41,6 +41,10 @@ object use.
     the expiration time is the policy timeout value. If expiration value
     is 0 then the policy does not have a time limit on the authorization.
 
+  * **\--ticket**=_FILE_:
+
+    The ticket file to record the authorization ticket structure.
+
   * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
     the object specified with **-c**.
 

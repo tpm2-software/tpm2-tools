@@ -86,7 +86,7 @@ tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
  */
 tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
-        INT32 expiration);
+        INT32 expiration, TPMT_TK_AUTH **policy_ticket);
 
 /**
  * Retrieves the policy digest for a session via PolicyGetDigest.
