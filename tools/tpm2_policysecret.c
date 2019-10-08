@@ -27,6 +27,8 @@ struct tpm2_policysecret_ctx {
 
     char *policy_ticket_path;
 
+    char *policy_timeout_path;
+
     struct {
         UINT8 c :1;
     } flags;
@@ -51,6 +53,9 @@ static bool on_option(char key, char *value) {
         break;
     case 0:
         ctx.policy_ticket_path = value;
+        break;
+    case 1:
+        ctx.policy_timeout_path = value;
         break;
     case 't':
         result = tpm2_util_string_to_uint32(value, (UINT32 *)&ctx.expiration);
@@ -90,6 +95,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object-context", required_argument, NULL, 'c' },
         { "expiration",     required_argument, NULL, 't' },
         { "ticket",         required_argument, NULL,  0  },
+        { "timeout",        required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("L:S:c:t:", ARRAY_LEN(topts), topts, on_option,
@@ -143,8 +149,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
      * 3. if the error was closing the policy secret session, return that rc.
      */
     TPMT_TK_AUTH *policy_ticket = NULL;
+    TPM2B_TIMEOUT *timeout = NULL;
     rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
-            &ctx.auth_entity.object, ctx.expiration, &policy_ticket);
+            &ctx.auth_entity.object, ctx.expiration, &policy_ticket, &timeout);
     tool_rc rc2 = tpm2_session_close(&ctx.auth_entity.object.session);
     if (rc != tool_rc_success) {
         goto tpm2_tool_onrun_out;
@@ -166,6 +173,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto tpm2_tool_onrun_out;
     }
 
+    if (ctx.policy_timeout_path) {
+        if(!timeout->size) {
+            LOG_WARN("Policy assertion did not produce timeout");
+        } else {
+            result = files_save_bytes_to_file(ctx.policy_timeout_path,
+            timeout->buffer, timeout->size);
+        }
+    }
+    if (!result) {
+        LOG_ERR("Failed to save timeout to file.");
+        rc = tool_rc_general_error;
+        goto tpm2_tool_onrun_out;
+    }
+
     if (ctx.policy_ticket_path) {
         if (!policy_ticket->digest.size) {
             LOG_WARN("Policy assertion did not produce auth ticket.");
@@ -181,6 +202,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 tpm2_tool_onrun_out:
     free(policy_ticket);
+    free(timeout);
     return rc;
 }
 

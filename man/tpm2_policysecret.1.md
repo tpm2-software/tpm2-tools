@@ -45,6 +45,10 @@ object use.
 
     The ticket file to record the authorization ticket structure.
 
+  * **\--timeout**=_FILE_:
+
+    The file path to record the timeout structure returned.
+
   * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
     the object specified with **-c**.
 
