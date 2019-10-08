@@ -2,6 +2,13 @@
 
 ### next
 
+* tpm2_policysecret: Add tool options for specifying
+  - \--expiration or -t
+  - \--ticket
+  - \--timeout
+  - \--nonce-tpm or -x
+  - \--qualification or -q
+
 * tpm2_policyticket: New tool enabling policy command TPM2_PolicyTicket.
 
 * tpm2_startauthsession: Add option to retrieve the session nonceTPM.
