@@ -347,4 +347,6 @@ tool_rc tpm2_policy_nv_written(ESYS_CONTEXT *esys_context,
         ESYS_TR policy_session, ESYS_TR shandle1, ESYS_TR shandle2,
         ESYS_TR shandle3, TPMI_YES_NO written_set);
 
+uint32_t fix_esys_hierarchy(TPMI_RH_HIERARCHY hierarchy);
+
 #endif /* LIB_TPM2_H_ */

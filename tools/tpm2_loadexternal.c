@@ -49,8 +49,8 @@ static tool_rc load_external(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *pub,
         TPM2B_SENSITIVE *priv, bool has_priv, TPM2B_NAME **name) {
 
     tool_rc rc = tpm2_loadexternal(ectx,
-            has_priv ? priv : NULL, pub, ctx.hierarchy_value,
-            &ctx.handle);
+            has_priv ? priv : NULL, pub,
+            fix_esys_hierarchy(ctx.hierarchy_value), &ctx.handle);
     if (rc != tool_rc_success) {
         return rc;
     }

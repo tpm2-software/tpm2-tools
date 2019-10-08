@@ -8,6 +8,7 @@
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_tool.h"
+#include "config.h"
 
 #define TPM2_ERROR_TSS2_RC_ERROR_MASK 0xFFFF
 
@@ -603,13 +604,44 @@ tool_rc tpm2_evictcontrol(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+/* This function addresses ESAPI change that changes parameter type from
+ * Esys_TR to TPMI_RH_HIERARCHY and breaks backwards compatibility.
+ * To keep the tools parameters consistent after v4.0 release we need to
+ * map the values to appropriate type based on the version of the ESYS API.
+ * Note: the mapping is based on the ESYS version recognized at compile time.
+ * The TSS change can be found here:
+ * https://github.com/tpm2-software/tpm2-tss/pull/1531
+ */
+uint32_t fix_esys_hierarchy(TPMI_RH_HIERARCHY hierarchy)
+{
+#if defined(ESYS_3_0)
+    switch (hierarchy) {
+        case TPM2_RH_NULL:
+            return ESYS_TR_RH_NULL;
+        case TPM2_RH_OWNER:
+            return ESYS_TR_RH_OWNER;
+        case TPM2_RH_ENDORSEMENT:
+            return ESYS_TR_RH_ENDORSEMENT;
+        case TPM2_RH_PLATFORM:
+            return ESYS_TR_RH_PLATFORM;
+        default:
+            return TSS2_ESYS_RC_BAD_VALUE;
+    }
+#elif defined(ESYS_2_3)
+    return hierarchy;
+#else
+    UNUSED(hierarchy);
+    return TSS2_ESYS_RC_BAD_VALUE;
+#endif
+}
+
 tool_rc tpm2_hash(ESYS_CONTEXT *esys_context, ESYS_TR shandle1, ESYS_TR shandle2,
         ESYS_TR shandle3, const TPM2B_MAX_BUFFER *data, TPMI_ALG_HASH hash_alg,
         TPMI_RH_HIERARCHY hierarchy, TPM2B_DIGEST **out_hash,
         TPMT_TK_HASHCHECK **validation) {
 
     TSS2_RC rval = Esys_Hash(esys_context, shandle1, shandle2, shandle3, data,
-            hash_alg, hierarchy, out_hash, validation);
+            hash_alg, fix_esys_hierarchy(hierarchy), out_hash, validation);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_Hash, rval);
         return tool_rc_from_tpm(rval);
@@ -651,7 +683,7 @@ tool_rc tpm2_sequence_complete(ESYS_CONTEXT *esys_context,
 
     TSS2_RC rval = Esys_SequenceComplete(esys_context, sequence_handle,
             ESYS_TR_PASSWORD, ESYS_TR_NONE, ESYS_TR_NONE, buffer,
-            hierarchy, result, validation);
+            fix_esys_hierarchy(hierarchy), result, validation);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_SequenceComplete, rval);
         return tool_rc_from_tpm(rval);
