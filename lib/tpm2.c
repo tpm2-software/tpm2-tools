@@ -456,10 +456,10 @@ tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,
         INT32 expiration, TPMT_TK_AUTH **policy_ticket,
-        TPM2B_TIMEOUT **timeout, TPM2B_NONCE *nonce_tpm) {
+        TPM2B_TIMEOUT **timeout, TPM2B_NONCE *nonce_tpm,
+        TPM2B_NONCE *policy_qualifier) {
 
     const TPM2B_DIGEST *cp_hash_a = NULL;
-    const TPM2B_NONCE *policy_ref = NULL;
 
     ESYS_TR auth_entity_obj_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
@@ -472,7 +472,7 @@ tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
 
     TSS2_RC rval = Esys_PolicySecret(esys_context, auth_entity_obj->tr_handle,
             policy_session, auth_entity_obj_session_handle, ESYS_TR_NONE,
-            ESYS_TR_NONE, nonce_tpm, cp_hash_a, policy_ref, expiration, timeout,
+            ESYS_TR_NONE, nonce_tpm, cp_hash_a, policy_qualifier, expiration, timeout,
             policy_ticket);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_PolicySecret, rval);
