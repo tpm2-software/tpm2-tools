@@ -5,7 +5,8 @@ source helpers.sh
 cleanup() {
     rm -f session.ctx secret.dat private.pem public.pem signature.dat \
     signing_key.ctx policy.signed prim.ctx sealing_key.priv sealing_key.pub \
-    unsealed.dat qual.dat nonce.test time.out tic.ket authobj.name
+    unsealed.dat qual.dat nonce.test time.out tic.ket authobj.name to_sign.bin \
+    temp.bin
 
     tpm2_flushcontext session.ctx 2>/dev/null || true
 
@@ -34,8 +35,8 @@ tpm2_loadexternal -C o -G rsa -u public.pem -c signing_key.ctx \
 -n signing_key.name
 
 # Generate signature with nonceTPM, cpHashA, policyRef and expiration set to 0
-echo $EXPIRYTIME | xxd -r -p | \
-openssl dgst -sha256 -sign private.pem -out signature.dat
+echo $EXPIRYTIME | xxd -r -p > to_sign.bin
+openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_startauthsession -S session.ctx
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
@@ -50,8 +51,9 @@ tpm2_create -u sealing_key.pub -r sealing_key.priv -c sealing_key.ctx \
 # Create a policy ticket for policysigned
 tpm2_startauthsession -S session.ctx --nonce-tpm=nonce.test --policy-session
 
-{ cat nonce.test & echo $EXPIRYTIME | xxd -r -p; } | \
-openssl dgst -sha256 -sign private.pem -out signature.dat
+echo $EXPIRYTIME | xxd -r -p > temp.bin
+cat nonce.test temp.bin > to_sign.bin
+openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
 -c signing_key.ctx -x nonce.test --ticket tic.ket --timeout time.out \
