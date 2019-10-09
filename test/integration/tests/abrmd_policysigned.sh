@@ -5,7 +5,7 @@ source helpers.sh
 cleanup() {
     rm -f session.ctx secret.dat private.pem public.pem signature.dat \
     signing_key.ctx policy.signed prim.ctx sealing_key.priv sealing_key.pub \
-    unsealed.dat qual.dat nonce.test
+    unsealed.dat qual.dat nonce.test to_sign.bin temp.bin
 
     tpm2_flushcontext $session_ctx 2>/dev/null || true
 
@@ -33,8 +33,8 @@ tpm2_loadexternal -C o -G rsa -u public.pem -c signing_key.ctx
 # Test with policy expiration set to zero and no other dependencies
 #
 ## Generate signature with nonceTPM, cpHashA, policyRef and expiration set to 0
-echo $ZEROEXPIRYTIME | xxd -r -p | \
-openssl dgst -sha256 -sign private.pem -out signature.dat
+echo $ZEROEXPIRYTIME | xxd -r -p > to_sign.bin
+openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_startauthsession -S session.ctx
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
@@ -62,8 +62,9 @@ rm -f unsealed.dat
 #
 ## Generate signature with nonceTPM, cpHashA, and expiration set to 0
 dd if=/dev/urandom of=qual.dat bs=1 count=32
-echo $ZEROEXPIRYTIME | xxd -r -p | cat - qual.dat | \
-openssl dgst -sha256 -sign private.pem -out signature.dat
+echo $ZEROEXPIRYTIME | xxd -r -p > temp.bin
+cat temp.bin qual.dat > to_sign.bin
+openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_startauthsession -S session.ctx
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
@@ -106,8 +107,9 @@ tpm2_create -u sealing_key.pub -r sealing_key.priv -c sealing_key.ctx \
 ## Satisfy the policy and unseal secret
 tpm2_startauthsession -S session.ctx --nonce-tpm=nonce.test --policy-session
 
-{ cat nonce.test & echo $ZEROEXPIRYTIME | xxd -r -p; } | \
-openssl dgst -sha256 -sign private.pem -out signature.dat
+echo $ZEROEXPIRYTIME | xxd -r -p > temp.bin
+cat nonce.test temp.bin > to_sign.bin
+openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
 -c signing_key.ctx -x nonce.test
