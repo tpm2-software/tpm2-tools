@@ -15,7 +15,7 @@ For example:
 To add a new test, do:
 
 1. add a script to the integration directory.
-2. source helper.sh in the new script.
+2. source helpers.sh in the new script.
 4. issue the command start_up.
 5. Do whatever test you need to do.
 6. If you set the EXIT handler, call tpm2_shutdown in that handler.

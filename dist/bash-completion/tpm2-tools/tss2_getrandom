@@ -1,0 +1,26 @@
+# bash completion for tss2_getrandom                   -*- shell-script -*-
+
+_tss2_getrandom()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)o | --data)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)n | --numBytes)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --numBytes -n --data -o " -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_getrandom tss2_getrandom
+
+# ex: filetype=sh

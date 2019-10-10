@@ -1,0 +1,26 @@
+# bash completion for tss2_import                   -*- shell-script -*-
+
+_tss2_import()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[p] | --path)
+            return;;
+        -!(-*)[i] | --importData)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --importData -i --path -p" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_import tss2_import
+
+# ex: filetype=sh

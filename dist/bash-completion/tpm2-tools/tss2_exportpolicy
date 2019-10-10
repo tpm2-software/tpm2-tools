@@ -1,0 +1,27 @@
+# bash completion for tss2_exportpolicy                    -*- shell-script -*-
+
+_tss2_exportpolicy()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[o] | --jsonPolicy )
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)[p] | --path)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --jsonPolicy -o
+    --path -p --force -f" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_exportpolicy tss2_exportpolicy
+
+# ex: filetype=sh
