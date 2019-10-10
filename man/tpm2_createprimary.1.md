@@ -73,6 +73,10 @@ future interactions with the created primary.
 
     An optional file output that saves the creation data for certification.
 
+  * **-t**, **\--creation-ticket**=_FILE_:
+
+    An optional file output that saves the creation ticket for certification.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
