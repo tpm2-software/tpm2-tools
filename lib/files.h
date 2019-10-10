@@ -244,6 +244,11 @@ bool files_load_creation_ticket(const char *path,
 bool files_save_creation_ticket(TPMT_TK_CREATION *creation_ticket,
     const char *path);
 
+bool files_load_digest(const char *path, TPM2B_DIGEST *digest);
+
+bool files_save_digest(TPM2B_DIGEST *digest, const char *path);
+
+
 /**
  * Loads a TPM2B_SENSITIVE from disk.
  * @param path
