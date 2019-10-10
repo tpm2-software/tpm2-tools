@@ -396,3 +396,180 @@ function ina() {
 function skip_test() {
 	exit 77
 }
+
+function setup_fapi() {
+    tempdir=`pwd`/$(mktemp -d tss2_fapi.XXXXXX)
+
+    KEYSTORE_USER=keystore_user
+    KEYSTORE_SYSTEM=keystore_system
+    LOG_DIR=log
+    PROFILE_NAME=P_RSA
+
+    mkdir -p $tempdir/$KEYSTORE_USER/policy $tempdir/$KEYSTORE_SYSTEM/policy \
+        $tempdir/$LOG_DIR
+
+cat > $tempdir/fapi_config.json <<EOF
+{
+    "profile_name": "${PROFILE_NAME}",
+    "profile_dir": "$tempdir/",
+    "user_dir": "$tempdir/${KEYSTORE_USER}",
+    "system_dir": "$tempdir/${KEYSTORE_SYSTEM}",
+    "tcti": "${TPM2TOOLS_TCTI}",
+    "system_pcrs" : [],
+    "log_dir" : "$tempdir/${LOG_DIR}",
+}
+EOF
+
+    export TSS2_FAPICONF=$tempdir/fapi_config.json
+    export TEMP_DIR=$tempdir
+
+    PATH=${BUILDDIR}/tools/fapi:$PATH
+
+    setup_profile $tempdir
+    setup_policies $tempdir
+    resetPCR16
+
+}
+
+# Reset PCR 16. Important when using physical TPM
+function resetPCR16(){
+    tpm2_pcrreset 16
+}
+
+function setup_profile() {
+# Setup Profile
+cat > $tempdir/${PROFILE_NAME}.json <<EOF
+{
+    "type": "TPM2_ALG_RSA",
+    "nameAlg":"TPM2_ALG_SHA256",
+    "srk_template": "system,restricted,decrypt",
+    "srk_persistent": 0,
+    "ek_template":  "system,restricted,decrypt",
+    "ecc_signing_scheme": {
+        "scheme":"TPM2_ALG_ECDSA",
+        "details":{
+            "hashAlg":"TPM2_ALG_SHA256"
+        },
+    },
+    "rsa_signing_scheme": {
+        "scheme":"TPM2_ALG_RSAPSS",
+        "details":{
+            "hashAlg":"TPM2_ALG_SHA256"
+        }
+    },
+    "rsa_decrypt_scheme": {
+        "scheme":"TPM2_ALG_OAEP",
+        "details":{
+            "hashAlg":"TPM2_ALG_SHA256"
+        }
+    },
+    "sym_mode":"TPM2_ALG_CFB",
+    "sym_parameters": {
+        "algorithm":"TPM2_ALG_AES",
+        "keyBits":"128",
+        "mode":"TPM2_ALG_CFB"
+    },
+    "sym_block_size": 16,
+    "pcr_selection": [
+        { "hash": "TPM2_ALG_SHA1",
+          "pcrSelect": [ 9, 15, 13 ]
+        },
+        { "hash": "TPM2_ALG_SHA256",
+          "pcrSelect": [ 8, 16, 14 ]
+        }
+    ],
+    "exponent": 0,
+    "keyBits": 2048
+}
+EOF
+}
+
+function setup_policies() {
+    tempdir=$1
+
+# Setup Policy Authorize
+cat > $tempdir/pol_authorize.json <<EOF
+{
+    "description":"Description pol_authorize",
+    "policy":[
+        {
+            "type": "POLICYAUTHORIZE",
+            "keyPath": "/HS/SRK/myPolicySignKey"
+        }
+    ]
+}
+EOF
+
+# Setup Policy Authorize with reference value
+cat > $tempdir/pol_authorize_ref.json <<EOF
+{
+    "description":"Description pol_authorize",
+    "policy":[
+        {
+            "type": "POLICYAUTHORIZE",
+            "keyPath": "/HS/SRK/myPolicySignKey",
+            "policyRef": "f0f1f2f3f4f5f6f7f8f9"
+        }
+    ]
+}
+EOF
+
+# Setup Policy Authorize NV
+cat > $tempdir/pol_authorize_nv.json <<EOF
+{
+    "description":"Description pol_authorize_nv",
+    "policy":[
+        {
+            "type": "POLICYAUTHORIZENV",
+            "nvPath": "/nv/Owner/myNV",
+        }
+  ]
+}
+EOF
+
+# Setup Policy Duplicate
+cat > $tempdir/pol_duplicate.json <<EOF
+{
+    "description":"Description pol_duplicate",
+    "policy":[
+        {
+            "type": "POLICYDUPLICATIONSELECT",
+            "newParentPath": "ext/myNewParent",
+        }
+    ]
+}
+EOF
+
+# Setup Policy PCR
+cat > $tempdir/pol_pcr16_0.json <<EOF
+{
+    "description":"Description pol_16_0",
+    "policy":[
+        {
+            "type":"POLICYPCR",
+            "pcrs":[
+                {
+                    "pcr":16,
+                    "hashAlg":"TPM2_ALG_SHA",
+                    "digest":"0000000000000000000000000000000000000000"
+                }
+            ]
+        }
+    ]
+}
+EOF
+
+# Setup Policy Signed
+cat > $tempdir/pol_signed.json <<EOF
+{
+    "description":"Description pol_signed",
+    "policy":[
+        {
+            "type": "POLICYSIGNED",
+            "keyPEM": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoGL6IrCSAznmIIzBessI\nmW7tPOUy78uWTIaub32KnYHn78KXprrZ3ykp6WDrOQeMjv4AA+14mJbg77apVYXy\nEnkFdOMa1hszSJnp6cJvx7ILngLvFUxzbVki\/ehvgS3nRk67Njal+nMTe8hpe3UK\nQeV\/Ij+F0r6Yz91W+4LPmncAiUesRZLetI2BZsKwHYRMznmpIYpoua1NtS8QpEXR\nMmsUue19eS\/XRAPmmCfnb5BX2Tn06iCpk6wO+RfMo9etcX5cLSAuIYEQYCvV2\/0X\nTfEw607vttBN0Y54LrVOKno1vRXd5sxyRlfB0WL42F4VG5TfcJo5u1Xq7k9m9K57\n8wIDAQAB\n-----END PUBLIC KEY-----\n"
+        }
+    ]
+}
+EOF
+
+}

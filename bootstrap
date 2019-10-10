@@ -25,6 +25,9 @@ echo "Generating file lists: ${VARS_FILE}"
 
   src_listvar "test/integration/tests" "*.sh" "SYSTEM_TESTS"
   printf "ALL_SYSTEM_TESTS = \$(SYSTEM_TESTS)\n"
+
+  src_listvar "test/integration/fapi" "*.sh" "FAPI_TESTS"
+  printf "ALL_FAPI_TESTS = \$(FAPI_TESTS)\n"
 ) > ${VARS_FILE}
 
 mkdir -p m4

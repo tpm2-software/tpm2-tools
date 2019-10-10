@@ -1,0 +1,26 @@
+# bash completion for tss2_nvextend                       -*- shell-script -*-
+
+_tss2_nvextend()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[il] | --data |  --logData)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)[p] | --nvPath )
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --data -i --nvPath -p --logData -l" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_nvextend tss2_nvextend
+
+# ex: filetype=sh

@@ -1,0 +1,26 @@
+# bash completion for tss2_getappdata              -*- shell-script -*-
+
+_tss2_getappdata()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[o] | --appData)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)[p] | --path)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f -p --path --appData -o" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_getappdata tss2_getappdata
+
+# ex: filetype=sh

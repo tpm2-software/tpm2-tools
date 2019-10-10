@@ -1,0 +1,23 @@
+# bash completion for tss2_createkey                      -*- shell-script -*-
+
+_tss2_createkey()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[ptPa] | --path | --type | --policyPath | --authValue)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version -p --path  -t --type
+    -P --policyPath  -a --authValue" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_createkey tss2_createkey
+
+# ex: filetype=sh

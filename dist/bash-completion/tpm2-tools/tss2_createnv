@@ -1,0 +1,23 @@
+# bash completion for tss2_createnv           -*- shell-script -*-
+
+_tss2_createnv()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[stpPa] | --size | --type | --path | --policyPath | --authValue)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version -P --policyPath
+    -p --path -s --size -t --type -a --authValue" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_createnv tss2_createnv
+
+# ex: filetype=sh

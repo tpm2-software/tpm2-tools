@@ -1,0 +1,22 @@
+# bash completion for tss2_nvsetbits                      -*- shell-script -*-
+
+_tss2_nvsetbits()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[ip] | --bitmap | --nvPath)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version -i --bitmap -p --nvPath" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_nvsetbits tss2_nvsetbits
+
+# ex: filetype=sh

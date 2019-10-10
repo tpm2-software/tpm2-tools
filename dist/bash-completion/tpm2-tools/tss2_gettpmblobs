@@ -1,0 +1,26 @@
+# bash completion for tss2_gettpmblobs              -*- shell-script -*-
+
+_tss2_gettpmblobs()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[p] | --path )
+            return;;
+        -!(-*)[url] | --tpm2bPublic | --tpm2bPrivate | --policy)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --path -p --tpm2bPublic -u --tpm2bPrivate -r --policy -l" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_gettpmblobs tss2_gettpmblobs
+
+# ex: filetype=sh
