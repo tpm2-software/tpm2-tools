@@ -238,6 +238,12 @@ bool files_load_creation_data(const char *path,
 bool files_save_creation_data(TPM2B_CREATION_DATA *creation_data,
     const char *path);
 
+bool files_load_creation_ticket(const char *path,
+    TPMT_TK_CREATION *creation_ticket);
+
+bool files_save_creation_ticket(TPMT_TK_CREATION *creation_ticket,
+    const char *path);
+
 /**
  * Loads a TPM2B_SENSITIVE from disk.
  * @param path

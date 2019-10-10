@@ -26,6 +26,7 @@ struct tpm_createprimary_ctx {
     char *unique_file;
     char *key_auth_str;
     char *creation_data_file;
+    char *creation_ticket_file;
 
     char *alg;
     char *halg;
@@ -87,6 +88,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.creation_data_file = value;
         break;
+    case 't':
+        ctx.creation_ticket_file = value;
+        break;
         /* no default */
     }
 
@@ -106,9 +110,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "attributes",     required_argument, NULL, 'a' },
         { "unique-data",    required_argument, NULL, 'u' },
         { "creation-data",  required_argument, NULL,  0  },
+        { "creation-ticket",required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -164,6 +169,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
     if (!result) {
         LOG_ERR("Failed saving creation data.");
+        rc = tool_rc_general_error;
+    }
+
+    if (ctx.creation_ticket_file) {
+        result = files_save_creation_ticket(ctx.objdata.out.creation.ticket,
+            ctx.creation_ticket_file);
+    }
+    if (!result) {
+        LOG_ERR("Failed saving creation ticket.");
         rc = tool_rc_general_error;
     }
 

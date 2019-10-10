@@ -731,6 +731,9 @@ LOAD_TYPE(TPMT_TK_VERIFIED, ticket)
 SAVE_TYPE(TPMT_TK_AUTH, authorization_ticket)
 LOAD_TYPE(TPMT_TK_AUTH, authorization_ticket)
 
+SAVE_TYPE(TPMT_TK_CREATION, creation_ticket)
+LOAD_TYPE(TPMT_TK_CREATION, creation_ticket)
+
 SAVE_TYPE(TPM2B_CREATION_DATA, creation_data)
 LOAD_TYPE(TPM2B_CREATION_DATA, creation_data)
 
