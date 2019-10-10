@@ -1,0 +1,26 @@
+# bash completion for tss2_sign                        -*- shell-script -*-
+
+_tss2_sign()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[dokc] | --digest | --signature | --publicKey | --certificate)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)[ps] | --keyPath | --padding)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --certificate -c --digest -d --keyPath -p --publicKey -k --signature -o --padding -s" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_sign tss2_sign
+
+# ex: filetype=sh

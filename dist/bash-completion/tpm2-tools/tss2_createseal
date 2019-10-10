@@ -1,0 +1,26 @@
+# bash completion for tss2_createseal                      -*- shell-script -*-
+
+_tss2_createseal()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[i] | --data)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)[ptPa] | --path | --type | --policyPath | --authValue)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --authValue -a --path -p --policyPath -P --type -t --data -i" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_createseal tss2_createseal
+
+# ex: filetype=sh

@@ -1,0 +1,22 @@
+# bash completion for tss2_provision                       -*- shell-script -*-
+
+_tss2_provision()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[ESL] | --authValueEh | --authValueSh | --authValueLockout )
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version -E -S -L --authValueEh --authValueSh --authValueLockout" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_provision tss2_provision
+
+# ex: filetype=sh

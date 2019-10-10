@@ -1,0 +1,26 @@
+# bash completion for tss2_nvwrite                        -*- shell-script -*-
+
+_tss2_nvwrite()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[p] | --nvPath)
+            return;;
+        -!(-*)[i] | --data)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath -p --data  -i" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_nvwrite tss2_nvwrite
+
+# ex: filetype=sh

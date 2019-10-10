@@ -1,0 +1,22 @@
+# bash completion for tss2_nvincremend                    -*- shell-script -*-
+
+_tss2_nvincrement()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)p | --nvPath)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --nvPath -p" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_nvincrement tss2_nvincrement
+
+# ex: filetype=sh

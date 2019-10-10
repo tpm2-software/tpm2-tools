@@ -1,0 +1,26 @@
+# bash completion for tss2_exportkey                  -*- shell-script -*-
+
+_tss2_exportkey()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[o] | --exportedData )
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)[pe] | --pathOfKeyToDuplicate | --pathToPublicKeyOfNewParent)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --exportedData -o --force -f --pathOfKeyToDuplicate -p --pathToPublicKeyOfNewParent -e" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_exportkey tss2_exportkey
+
+# ex: filetype=sh

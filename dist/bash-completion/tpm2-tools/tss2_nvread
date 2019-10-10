@@ -1,0 +1,26 @@
+# bash completion for tss2_nvread                         -*- shell-script -*-
+
+_tss2_nvread()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[p] | --nvPath)
+            return;;
+        -!(-*)[ol] | --data | --logData)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --force -f --nvPath -p --data -o --logData -l" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_nvread tss2_nvread
+
+# ex: filetype=sh

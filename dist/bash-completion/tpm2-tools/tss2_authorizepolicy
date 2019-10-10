@@ -1,0 +1,27 @@
+# bash completion for tss2_authorizepolicy       -*- shell-script -*-
+
+_tss2_authorizepolicy()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[r] | --policyRef)
+            _filedir
+            COMPREPLY+=( '-' )
+            return;;
+        -!(-*)[Pp] | --policyPath | --keyPath )
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --policyPath -P
+      --keyPath -p --policyRef -r" -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_authorizepolicy tss2_authorizepolicy
+
+# ex: filetype=sh

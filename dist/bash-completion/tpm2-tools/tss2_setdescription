@@ -1,0 +1,22 @@
+# bash completion for tss2_setdescription -*- shell-script -*-
+
+_tss2_setdescription()
+{
+    local cur prev words cword split
+    _init_completion -s || return
+    case $prev in
+        -!(-*)h | --help)
+            COMPREPLY=( $(compgen -W "man no-man" -- "$cur") )
+            return;;
+        -!(-*)[pi] | --path | --description)
+            return;;
+    esac
+
+    $split && return
+
+    COMPREPLY=( $(compgen -W "-h --help -v --version --path -p --description -i " -- "$cur") )
+    [[ $COMPREPLY == *= ]] && compopt -o nospace
+} &&
+complete -F _tss2_setdescription tss2_setdescription
+
+# ex: filetype=sh
