@@ -69,6 +69,10 @@ future interactions with the created primary.
     An optional file input that contains the unique field of **TPMT_PUBLIC** in
     little-endian format.
 
+  * **\--creation-data**=_FILE_:
+
+    An optional file output that saves the creation data for certification.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
