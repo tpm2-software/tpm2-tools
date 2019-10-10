@@ -2,6 +2,12 @@
 
 ### next
 
+* tpm2_createprimary: Add tool options for specifying output data for use
+  in certification
+  - \--creation-data to save the creation data
+  - \--creation-ticket or -t to save the creation ticket
+  - \--creation-hash or -d to save the creation hash
+
 * tpm2_policysecret: Add tool options for specifying
   - \--expiration or -t
   - \--ticket
