@@ -25,6 +25,7 @@ struct tpm_createprimary_ctx {
     char *context_file;
     char *unique_file;
     char *key_auth_str;
+    char *creation_data_file;
 
     char *alg;
     char *halg;
@@ -83,6 +84,9 @@ static bool on_option(char key, char *value) {
     case 'a':
         ctx.attrs = value;
         break;
+    case 0:
+        ctx.creation_data_file = value;
+        break;
         /* no default */
     }
 
@@ -101,6 +105,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "policy",         required_argument, NULL, 'L' },
         { "attributes",     required_argument, NULL, 'a' },
         { "unique-data",    required_argument, NULL, 'u' },
+        { "creation-data",  required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:", ARRAY_LEN(topts), topts,
@@ -144,10 +149,25 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     tpm2_util_public_to_yaml(ctx.objdata.out.public, NULL);
 
-    return ctx.context_file ?
+    rc = ctx.context_file ?
             files_save_tpm_context_to_path(ectx, ctx.objdata.out.handle,
                     ctx.context_file) :
             tool_rc_success;
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed saving object context.");
+        return rc;
+    }
+
+    if (ctx.creation_data_file) {
+        result = files_save_creation_data(ctx.objdata.out.creation.data,
+            ctx.creation_data_file);
+    }
+    if (!result) {
+        LOG_ERR("Failed saving creation data.");
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

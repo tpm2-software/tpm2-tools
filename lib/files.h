@@ -232,6 +232,12 @@ bool files_save_authorization_ticket(TPMT_TK_AUTH *authorization_ticket,
 bool files_load_authorization_ticket(const char *path,
     TPMT_TK_AUTH *authorization_ticket);
 
+bool files_load_creation_data(const char *path,
+    TPM2B_CREATION_DATA *creation_data);
+
+bool files_save_creation_data(TPM2B_CREATION_DATA *creation_data,
+    const char *path);
+
 /**
  * Loads a TPM2B_SENSITIVE from disk.
  * @param path
