@@ -36,6 +36,7 @@ struct tpm_certifycreation_ctx {
 
     char *certify_info_path;
 
+    const char *policy_qualifier_path;
 };
 
 static tpm_certifycreation_ctx ctx = {
@@ -108,6 +109,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.certify_info_path = value;
         break;
+    case 'q':
+        ctx.policy_qualifier_path = value;
+        break;
         /* no default */
     }
 
@@ -128,9 +132,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' },
       { "signature",            required_argument, NULL, 'o' },
       { "attestation",          required_argument, NULL,  0  },
+      { "qualification",        required_argument, NULL, 'q' },
     };
 
-    *opts = tpm2_options_new("C:P:c:d:t:g:s:f:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:c:d:t:g:s:f:o:q:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -168,7 +173,7 @@ static bool is_input_options_args_valid(void) {
 
 static tool_rc process_certifycreation_input(ESYS_CONTEXT *ectx,
     TPM2B_DIGEST *creation_hash, TPMT_SIG_SCHEME *in_scheme,
-    TPMT_TK_CREATION *creation_ticket) {
+    TPMT_TK_CREATION *creation_ticket, TPM2B_DATA **policy_qualifier) {
 
     /*
      * Load objects and auths
@@ -195,6 +200,7 @@ static tool_rc process_certifycreation_input(ESYS_CONTEXT *ectx,
     bool result = files_load_digest(ctx.creation_hash_path, creation_hash);
     if (!result) {
         LOG_ERR("Failed loading creation hash.");
+        return tool_rc_general_error;
     }
 
     /*
@@ -218,6 +224,33 @@ static tool_rc process_certifycreation_input(ESYS_CONTEXT *ectx,
         return tool_rc_general_error;
     }
 
+    /*
+     * Qualifier data is optional. If not specified default to 0
+     */
+    if (!ctx.policy_qualifier_path) {
+        goto process_certifycreation_input_out;
+    }
+
+    unsigned long file_size = 0;
+    result = files_get_file_size_path(ctx.policy_qualifier_path, &file_size);
+    if (!result || file_size == 0) {
+        return tool_rc_general_error;
+    }
+
+    *policy_qualifier = malloc(file_size + sizeof(uint16_t));
+    if (!*policy_qualifier) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
+
+    result = files_load_bytes_from_path(ctx.policy_qualifier_path,
+            (*policy_qualifier)->buffer, &((*policy_qualifier)->size));
+    if (!result) {
+        LOG_ERR("Failed loading qualifier from path");
+        return tool_rc_general_error;
+    }
+
+process_certifycreation_input_out:
     return tool_rc_success;
 }
 
@@ -253,8 +286,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_DIGEST creation_hash;
     TPMT_SIG_SCHEME in_scheme;
     TPMT_TK_CREATION creation_ticket;
+    TPM2B_DATA *policy_qualifier = NULL;
     tool_rc rc = process_certifycreation_input(ectx, &creation_hash, &in_scheme,
-        &creation_ticket);
+        &creation_ticket, &policy_qualifier);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -264,7 +298,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_ATTEST *certify_info = NULL;
     rc = tpm2_certifycreation(ectx, &ctx.signing_key.object,
         &ctx.certified_key.object, &creation_hash, &in_scheme, &creation_ticket,
-        &certify_info, &signature);
+        &certify_info, &signature, policy_qualifier);
     if (rc != tool_rc_success) {
         goto tpm2_tool_onrun_out;
     }
@@ -275,6 +309,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 tpm2_tool_onrun_out:
     free(signature);
     free(certify_info);
+    free(policy_qualifier);
     return rc;
 }
 
