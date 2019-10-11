@@ -1466,6 +1466,33 @@ tool_rc tpm2_sign(ESYS_CONTEXT *esys_context, tpm2_loaded_object *signingkey_obj
     return tool_rc_success;
 }
 
+tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *certifiedkey_obj,
+    TPM2B_DIGEST *creation_hash, TPMT_SIG_SCHEME *in_scheme,
+    TPMT_TK_CREATION *creation_ticket, TPM2B_ATTEST **certify_info,
+    TPMT_SIGNATURE **signature) {
+
+    ESYS_TR signingkey_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+            signingkey_obj->tr_handle, signingkey_obj->session,
+            &signingkey_obj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    const TPM2B_DATA *qualifying_data = NULL;
+    TSS2_RC rval = Esys_CertifyCreation(esys_context, signingkey_obj->tr_handle,
+        certifiedkey_obj->tr_handle, signingkey_obj_session_handle,
+        ESYS_TR_NONE, ESYS_TR_NONE, qualifying_data, creation_hash, in_scheme,
+        creation_ticket, certify_info, signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_CertifyCreation, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_quote(ESYS_CONTEXT *esys_context, tpm2_loaded_object *quote_obj,
         TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
         TPML_PCR_SELECTION *pcr_select, TPM2B_ATTEST **quoted,

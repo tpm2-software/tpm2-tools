@@ -248,6 +248,9 @@ bool files_load_digest(const char *path, TPM2B_DIGEST *digest);
 
 bool files_save_digest(TPM2B_DIGEST *digest, const char *path);
 
+bool files_load_attestation(const char *path, TPM2B_ATTEST *attestation);
+
+bool files_save_attestation(TPM2B_ATTEST *attestation, const char *path);
 
 /**
  * Loads a TPM2B_SENSITIVE from disk.
