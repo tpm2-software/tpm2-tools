@@ -349,4 +349,10 @@ tool_rc tpm2_policy_nv_written(ESYS_CONTEXT *esys_context,
 
 uint32_t fix_esys_hierarchy(TPMI_RH_HIERARCHY hierarchy);
 
+tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *certifiedkey_obj,
+    TPM2B_DIGEST *creation_hash, TPMT_SIG_SCHEME *in_scheme,
+    TPMT_TK_CREATION *creation_ticket, TPM2B_ATTEST **certify_info,
+    TPMT_SIGNATURE **signature);
+
 #endif /* LIB_TPM2_H_ */
