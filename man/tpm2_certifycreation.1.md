@@ -58,6 +58,11 @@ created with either **TPM2_CreatePrimary** or **TPM2_Create** commands.
 
     The attestation data of the type TPM2_CREATION_INFO signed with signing key.
 
+  * **-q**, **\--qualification**=_FILE_:
+
+    The policy qualifier data that the signer can choose to include in the
+    signature.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
