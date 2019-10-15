@@ -1,5 +1,10 @@
 ## Changelog
 
+### next
+
+* tpm2_checkquote:
+   - Fix YAML output bug.
+
 ### 4.0 - 2019-09-09
 
 * tpm2_activatecredential:
