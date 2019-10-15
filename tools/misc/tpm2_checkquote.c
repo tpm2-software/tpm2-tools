@@ -12,6 +12,7 @@
 #include "tpm2_convert.h"
 #include "tpm2_openssl.h"
 #include "tpm2_options.h"
+#include "tpm2_tool.h"
 
 typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
@@ -77,7 +78,9 @@ static bool verify_signature() {
         goto err;
     }
     TPM2B_PUBLIC_KEY_RSA sig = ctx.signature.signature.rsassa.sig;
+    tpm2_tool_output("sig: ");
     tpm2_util_hexdump(sig.buffer, sig.size);
+    tpm2_tool_output("\n");
 
     // Verify the signature matches message digest
     int openssl_hash =
