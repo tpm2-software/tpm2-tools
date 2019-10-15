@@ -4,6 +4,9 @@
 
 * tpm2_certifycreation: New tool enabling command TPM2_CertifyCreation.
 
+* tpm2_checkquote:
+   - Fix YAML output bug.
+
 * tpm2_createprimary: Add tool options for specifying output data for use
   in certification
   - \--creation-data to save the creation data
