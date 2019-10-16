@@ -18,7 +18,6 @@ typedef struct tpm2_verifysig_ctx tpm2_verifysig_ctx;
 struct tpm2_verifysig_ctx {
     union {
         struct {
-            UINT8 halg :1;
             UINT8 msg :1;
             UINT8 sig :1;
             UINT8 pcr :1;
@@ -46,7 +45,7 @@ struct tpm2_verifysig_ctx {
 
 static tpm2_verifysig_ctx ctx = {
         .format = TPM2_ALG_ERROR,
-        .halg = TPM2_ALG_SHA1,
+        .halg = TPM2_ALG_SHA256,
         .msg_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
         .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
         .quote_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
@@ -212,10 +211,9 @@ out:
 static tool_rc init(void) {
 
     /* check flags for mismatches */
-    if (!(ctx.pubkey_file_path && ctx.flags.sig && ctx.flags.msg
-            && ctx.flags.halg)) {
+    if (!(ctx.pubkey_file_path && ctx.flags.sig && ctx.flags.msg)) {
         LOG_ERR(
-                "--pubkey (-u), --msg (-m), --halg (-g) and --sig (-s) are required");
+                "--pubkey (-u), --msg (-m) and --sig (-s) are required");
         return tool_rc_option_error;
     }
 
@@ -313,7 +311,6 @@ static bool on_option(char key, char *value) {
             LOG_ERR("Unable to convert algorithm, got: \"%s\"", value);
             return false;
         }
-        ctx.flags.halg = 1;
     }
         break;
     case 'm': {
