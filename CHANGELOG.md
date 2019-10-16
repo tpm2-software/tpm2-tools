@@ -6,6 +6,8 @@
 
 * tpm2_checkquote:
    - Fix YAML output bug.
+   - \-g option for specifying hash algorithm is optional and defaults to
+     sha256.
 
 * tpm2_createprimary: Add tool options for specifying output data for use
   in certification
