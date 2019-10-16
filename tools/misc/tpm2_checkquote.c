@@ -215,7 +215,7 @@ static tool_rc init(void) {
     if (!(ctx.pubkey_file_path && ctx.flags.sig && ctx.flags.msg
             && ctx.flags.halg)) {
         LOG_ERR(
-                "--pubkey (-c), --msg (-m), --halg (-g) and --sig (-s) are required");
+                "--pubkey (-u), --msg (-m), --halg (-g) and --sig (-s) are required");
         return tool_rc_option_error;
     }
 
