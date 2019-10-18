@@ -67,7 +67,12 @@ future interactions with the created primary.
   * **-u**, **\--unique-data**=_FILE_:
 
     An optional file input that contains the unique field of **TPMT_PUBLIC** in
-    little-endian format.
+    little-endian format. Primary key creator may place information that causes
+    the primary key generation scheme internal to the TPM to generate
+    statistically unique values. The TPM v2.0 specification calls this field
+    unique and overloads it so that it contains one value when the application
+    provides this structure as input and another value when the applications
+    receives this structure as output (like public portion of the rsa key).
 
   * **\--creation-data**=_FILE_:
 
