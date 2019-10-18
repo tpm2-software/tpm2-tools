@@ -2,6 +2,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "pcr.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_hierarchy.h"
@@ -99,6 +100,12 @@ static bool on_option(char key, char *value) {
     case 'q':
         ctx.outside_info_file = value;
         break;
+    case 'l':
+        if (!pcr_parse_selections(value, &ctx.objdata.in.creation_pcr)) {
+            LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
+            return false;
+        }
+        break;
         /* no default */
     }
 
@@ -121,9 +128,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "creation-ticket",required_argument, NULL, 't' },
         { "creation-hash",  required_argument, NULL, 'd' },
         { "outside-info",   required_argument, NULL, 'q' },
+        { "pcr-list",       required_argument, NULL, 'l' },
     };
 
-    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
