@@ -64,6 +64,14 @@ tpm2_createprimary -Q -c context.out
 # Test that -o does not need to be specified.
 tpm2_createprimary -Q
 
+# Test that creation data has the specified outside info
+dd if=/dev/urandom of=outside.info bs=1 count=32
+
+tpm2_createprimary -C o -c context.out --creation-data creation.data \
+-q outside.info
+
+xxd -p creation.data | tr -d '\n' | grep `xxd -p outside.info | tr -d '\n'`
+
 # Test for session leaks
 BEFORE=$(tpm2_getcap handles-loaded-session; tpm2_getcap handles-saved-session)
 tpm2_createprimary -Q
