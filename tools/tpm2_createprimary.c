@@ -28,6 +28,7 @@ struct tpm_createprimary_ctx {
     char *creation_data_file;
     char *creation_ticket_file;
     char *creation_hash_file;
+    char *outside_info_file;
 
     char *alg;
     char *halg;
@@ -95,6 +96,9 @@ static bool on_option(char key, char *value) {
     case 'd':
         ctx.creation_hash_file = value;
         break;
+    case 'q':
+        ctx.outside_info_file = value;
+        break;
         /* no default */
     }
 
@@ -116,9 +120,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "creation-data",  required_argument, NULL,  0  },
         { "creation-ticket",required_argument, NULL, 't' },
         { "creation-hash",  required_argument, NULL, 'd' },
+        { "outside-info",   required_argument, NULL, 'q' },
     };
 
-    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
@@ -152,6 +157,30 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
+    /*
+     * Outside data is optional. If not specified default to 0
+     */
+    if (!ctx.outside_info_file) {
+        goto skipped_outside_info;
+    }
+
+    unsigned long file_size = 0;
+    result = files_get_file_size_path(ctx.outside_info_file, &file_size);
+    if (!result || file_size == 0) {
+        LOG_ERR("Error reading outside_info file.");
+        return tool_rc_general_error;
+    }
+
+    ctx.objdata.in.outside_info.size = file_size;
+    result = files_load_bytes_from_path(ctx.outside_info_file,
+            ctx.objdata.in.outside_info.buffer,
+            &ctx.objdata.in.outside_info.size);
+    if (!result) {
+        LOG_ERR("Failed loading outside_info from path");
+        return tool_rc_general_error;
+    }
+
+skipped_outside_info:
     rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata);
     if (rc != tool_rc_success) {
         return rc;
