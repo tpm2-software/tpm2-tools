@@ -33,6 +33,7 @@ struct tpm_create_ctx {
         const char *ctx_path;
         char *creation_data_file;
         char *creation_ticket_file;
+        char *creation_hash_file;
         char *alg;
         char *attrs;
         char *name_alg;
@@ -67,7 +68,9 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     ESYS_TR object_handle = ESYS_TR_NONE;
     if (ctx.object.ctx_path &&
         (!ctx.object.creation_data_file &&
-         !ctx.object.creation_ticket_file)) {
+         !ctx.object.creation_ticket_file &&
+         !ctx.object.creation_hash_file)
+       ) {
 
         size_t offset = 0;
         TPM2B_TEMPLATE template = { .size = 0 };
@@ -116,6 +119,17 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         if (!result) {
             LOG_ERR("Failed saving creation ticket.");
             tmp_rc = tool_rc_general_error;
+            goto create_out;
+        }
+
+        if (ctx.object.creation_hash_file && creation_hash->size) {
+            result = files_save_digest(creation_hash,
+                ctx.object.creation_hash_file);
+        }
+        if (!result) {
+            LOG_ERR("Failed saving creation hash.");
+            tmp_rc = tool_rc_general_error;
+            goto create_out;
         }
 
 create_out:
@@ -205,6 +219,9 @@ static bool on_option(char key, char *value) {
     case 't':
         ctx.object.creation_ticket_file = value;
         break;
+    case 'd':
+        ctx.object.creation_hash_file = value;
+        break;
     };
 
     return true;
@@ -226,9 +243,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "key-context",    required_argument, NULL, 'c' },
       { "creation-data",  required_argument, NULL,  0  },
       { "creation-ticket",required_argument, NULL, 't' },
+      { "creation-hash",  required_argument, NULL, 'd' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

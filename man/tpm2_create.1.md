@@ -91,6 +91,10 @@ These options for creating the TPM entity:
 
     An optional file output that saves the creation ticket for certification.
 
+  * **-d**, **\--creation-hash**=_FILE_:
+
+    An optional file output that saves the creation hash for certification.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
