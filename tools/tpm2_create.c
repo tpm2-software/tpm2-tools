@@ -31,6 +31,7 @@ struct tpm_create_ctx {
         char *private_path;
         char *auth_str;
         const char *ctx_path;
+        char *creation_data_file;
         char *alg;
         char *attrs;
         char *name_alg;
@@ -63,7 +64,8 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     TPM2B_PRIVATE *out_private;
 
     ESYS_TR object_handle = ESYS_TR_NONE;
-    if (ctx.object.ctx_path) {
+    if (ctx.object.ctx_path &&
+        !ctx.object.creation_data_file) {
 
         size_t offset = 0;
         TPM2B_TEMPLATE template = { .size = 0 };
@@ -83,9 +85,9 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             return tmp_rc;
         }
     } else {
-        TPM2B_CREATION_DATA *creation_data;
-        TPM2B_DIGEST *creation_hash;
-        TPMT_TK_CREATION *creation_ticket;
+        TPM2B_CREATION_DATA *creation_data = NULL;
+        TPM2B_DIGEST *creation_hash = NULL;
+        TPMT_TK_CREATION *creation_ticket = NULL;
         tool_rc tmp_rc = tpm2_create(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &ctx.object.public, &outside_info,
                 &creation_pcr, &out_private, &out_public, &creation_data,
@@ -93,9 +95,23 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
+
+        bool result = true;
+        if (ctx.object.creation_data_file && creation_data->size) {
+            result = files_save_creation_data(creation_data,
+                ctx.object.creation_data_file);
+        }
+        if (!result) {
+            LOG_ERR("Failed saving creation data.");
+            tmp_rc = tool_rc_general_error;
+        }
+
         free(creation_data);
         free(creation_hash);
         free(creation_ticket);
+        if (tmp_rc != tool_rc_success) {
+            return tmp_rc;
+        }
     }
 
     tpm2_util_public_to_yaml(out_public, NULL);
@@ -170,6 +186,9 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.object.ctx_path = value;
         break;
+    case 0:
+        ctx.object.creation_data_file = value;
+        break;
     };
 
     return true;
@@ -189,6 +208,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "private",        required_argument, NULL, 'r' },
       { "parent-context", required_argument, NULL, 'C' },
       { "key-context",    required_argument, NULL, 'c' },
+      { "creation-data",  required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:", ARRAY_LEN(topts), topts,
