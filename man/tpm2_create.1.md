@@ -83,6 +83,10 @@ These options for creating the TPM entity:
     avoid the normal **tpm2_create**(1) and **tpm2_load**(1) command sequences
     and do it all in one command, atomically.
 
+  * **\--creation-data**=_FILE_:
+
+    An optional file output that saves the creation data for certification.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
