@@ -5,6 +5,7 @@
 
 #include "files.h"
 #include "log.h"
+#include "pcr.h"
 #include "tpm2.h"
 #include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
@@ -42,6 +43,8 @@ struct tpm_create_ctx {
 
     char *outside_info_file;
 
+    TPML_PCR_SELECTION creation_pcr;
+
     struct {
         UINT8 b :1;
         UINT8 i :1;
@@ -56,6 +59,7 @@ struct tpm_create_ctx {
 
 static tpm_create_ctx ctx = {
         .object = { .alg = DEFAULT_KEY_ALG },
+        .creation_pcr = { .count = 0 },
 };
 
 static bool load_outside_info(TPM2B_DATA *outside_info) {
@@ -81,7 +85,6 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_general_error;
 
-    TPML_PCR_SELECTION creation_pcr = { .count = 0 };
     TPM2B_PUBLIC *out_public;
     TPM2B_PRIVATE *out_private;
 
@@ -127,7 +130,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         TPMT_TK_CREATION *creation_ticket = NULL;
         tool_rc tmp_rc = tpm2_create(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &ctx.object.public, &outside_info,
-                &creation_pcr, &out_private, &out_public, &creation_data,
+                &ctx.creation_pcr, &out_private, &out_public, &creation_data,
                 &creation_hash, &creation_ticket);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
@@ -256,6 +259,12 @@ static bool on_option(char key, char *value) {
     case 'q':
         ctx.outside_info_file = value;
         break;
+    case 'l':
+        if (!pcr_parse_selections(value, &ctx.creation_pcr)) {
+            LOG_ERR("Could not parse pcr selections, got: \"%s\"", value);
+            return false;
+        }
+        break;
     };
 
     return true;
@@ -279,9 +288,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "creation-ticket",required_argument, NULL, 't' },
       { "creation-hash",  required_argument, NULL, 'd' },
       { "outside-info",   required_argument, NULL, 'q' },
+      { "pcr-list",       required_argument, NULL, 'l' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
