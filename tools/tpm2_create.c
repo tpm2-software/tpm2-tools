@@ -40,6 +40,8 @@ struct tpm_create_ctx {
         char *policy;
     } object;
 
+    char *outside_info_file;
+
     struct {
         UINT8 b :1;
         UINT8 i :1;
@@ -56,11 +58,29 @@ static tpm_create_ctx ctx = {
         .object = { .alg = DEFAULT_KEY_ALG },
 };
 
+static bool load_outside_info(TPM2B_DATA *outside_info) {
+
+    unsigned long file_size = 0;
+    bool result = files_get_file_size_path(ctx.outside_info_file,
+        &file_size);
+    if (!result || file_size == 0) {
+        LOG_ERR("Error reading outside_info file.");
+        return false;
+    }
+    outside_info->size = file_size;
+    result = files_load_bytes_from_path(ctx.outside_info_file,
+            outside_info->buffer, &outside_info->size);
+    if (!result) {
+        LOG_ERR("Failed loading outside_info from path");
+        return false;
+    }
+    return true;
+}
+
 static tool_rc create(ESYS_CONTEXT *ectx) {
 
     tool_rc rc = tool_rc_general_error;
 
-    TPM2B_DATA outside_info = TPM2B_EMPTY_INIT;
     TPML_PCR_SELECTION creation_pcr = { .count = 0 };
     TPM2B_PUBLIC *out_public;
     TPM2B_PRIVATE *out_private;
@@ -90,6 +110,18 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             return tmp_rc;
         }
     } else {
+        /*
+         * Outside data is optional. If not specified default to 0
+         */
+        bool result = true;
+        TPM2B_DATA outside_info = TPM2B_EMPTY_INIT;
+        if (ctx.outside_info_file) {
+            result = load_outside_info(&outside_info);
+        }
+        if (!result) {
+            return tool_rc_general_error;
+        }
+
         TPM2B_CREATION_DATA *creation_data = NULL;
         TPM2B_DIGEST *creation_hash = NULL;
         TPMT_TK_CREATION *creation_ticket = NULL;
@@ -101,7 +133,6 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             return tmp_rc;
         }
 
-        bool result = true;
         if (ctx.object.creation_data_file && creation_data->size) {
             result = files_save_creation_data(creation_data,
                 ctx.object.creation_data_file);
@@ -222,6 +253,9 @@ static bool on_option(char key, char *value) {
     case 'd':
         ctx.object.creation_hash_file = value;
         break;
+    case 'q':
+        ctx.outside_info_file = value;
+        break;
     };
 
     return true;
@@ -244,9 +278,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "creation-data",  required_argument, NULL,  0  },
       { "creation-ticket",required_argument, NULL, 't' },
       { "creation-hash",  required_argument, NULL, 'd' },
+      { "outside-info",   required_argument, NULL, 'q' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
