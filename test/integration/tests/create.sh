@@ -77,4 +77,22 @@ done
 tpm2_create -C context.out -u key.pub -r key.priv -c key.ctx
 tpm2_readpublic -c key.ctx 2>/dev/null
 
+# Test that creation data has the specified outside info
+tpm2_createprimary -C o -c prim.ctx -Q
+
+dd if=/dev/urandom of=outside.info bs=1 count=32
+tpm2_create -C prim.ctx -u key.pub -r key.priv --creation-data creation.data \
+-q outside.info -Q
+
+xxd -p creation.data | tr -d '\n' | grep `xxd -p outside.info | tr -d '\n'`
+
+# Test that selected pcrs digest is present in the creation data
+tpm2_pcrread sha256:0 -o pcr_data.bin
+
+tpm2_create -C prim.ctx -u key.pub -r key.priv --creation-data creation.data \
+-l sha256:0 -Q
+
+xxd -p creation.data | tr -d '\n' | \
+grep `cat pcr_data.bin | openssl dgst -sha256 -binary | xxd -p | tr -d '\n'`
+
 exit 0
