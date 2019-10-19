@@ -72,6 +72,15 @@ tpm2_createprimary -C o -c context.out --creation-data creation.data \
 
 xxd -p creation.data | tr -d '\n' | grep `xxd -p outside.info | tr -d '\n'`
 
+# Test that selected pcrs digest is present in the creation data
+tpm2_pcrread sha256:0 -o pcr_data.bin
+
+tpm2_createprimary -C o -c context.out --creation-data creation.data \
+-l sha256:0
+
+xxd -p creation.data | tr -d '\n' | \
+grep `cat pcr_data.bin | openssl dgst -sha256 -binary | xxd -p | tr -d '\n'`
+
 # Test for session leaks
 BEFORE=$(tpm2_getcap handles-loaded-session; tpm2_getcap handles-saved-session)
 tpm2_createprimary -Q
