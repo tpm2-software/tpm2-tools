@@ -4,7 +4,8 @@ source helpers.sh
 
 cleanup() {
     rm -f  primary.ctx creation.data creation.digest creation.ticket rsa.pub \
-    rsa.priv signature.bin attestation.bin sslpub.pem qual.dat
+    rsa.priv signature.bin attestation.bin sslpub.pem qual.dat sec_key.pub \
+    sec_key.priv sec_key.ctx
 
     if [ "$1" != "no-shut-down" ]; then
         shut_down
@@ -40,6 +41,21 @@ dd if=/dev/urandom of=qual.dat bs=1 count=32
 tpm2_certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa -q qual.dat
+
+dd if=attestation.bin bs=1 skip=2 | \
+openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin
+
+#
+# Test certification with non primary keys
+#
+tpm2_create -C primary.ctx -u sec_key.pub -r sec_key.priv -t creation.ticket \
+-d creation.digest --creation-data creation.data -Q
+
+tpm2_load -C primary.ctx -u sec_key.pub -r sec_key.priv -c sec_key.ctx -Q
+
+tpm2_certifycreation -C signing_key.ctx -c sec_key.ctx -d creation.digest \
+-t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
+-f plain -s rsassa
 
 dd if=attestation.bin bs=1 skip=2 | \
 openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin
