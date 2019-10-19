@@ -100,6 +100,11 @@ These options for creating the TPM entity:
     An optional file to add unique data to the creation data. Note that it does
     not contribute in creating statistically unique object.
 
+  * **-l**, **\--pcr-list**=_PCR_:
+
+    The list of PCR banks and selected PCRs' ids for each bank to be included in
+    the creation data for certification.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
