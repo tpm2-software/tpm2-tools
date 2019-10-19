@@ -32,6 +32,7 @@ struct tpm_create_ctx {
         char *auth_str;
         const char *ctx_path;
         char *creation_data_file;
+        char *creation_ticket_file;
         char *alg;
         char *attrs;
         char *name_alg;
@@ -65,7 +66,8 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
     ESYS_TR object_handle = ESYS_TR_NONE;
     if (ctx.object.ctx_path &&
-        !ctx.object.creation_data_file) {
+        (!ctx.object.creation_data_file &&
+         !ctx.object.creation_ticket_file)) {
 
         size_t offset = 0;
         TPM2B_TEMPLATE template = { .size = 0 };
@@ -104,8 +106,19 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
         if (!result) {
             LOG_ERR("Failed saving creation data.");
             tmp_rc = tool_rc_general_error;
+            goto create_out;
         }
 
+        if (ctx.object.creation_ticket_file && creation_ticket->digest.size) {
+            result = files_save_creation_ticket(creation_ticket,
+                ctx.object.creation_ticket_file);
+        }
+        if (!result) {
+            LOG_ERR("Failed saving creation ticket.");
+            tmp_rc = tool_rc_general_error;
+        }
+
+create_out:
         free(creation_data);
         free(creation_hash);
         free(creation_ticket);
@@ -189,6 +202,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.object.creation_data_file = value;
         break;
+    case 't':
+        ctx.object.creation_ticket_file = value;
+        break;
     };
 
     return true;
@@ -209,9 +225,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "parent-context", required_argument, NULL, 'C' },
       { "key-context",    required_argument, NULL, 'c' },
       { "creation-data",  required_argument, NULL,  0  },
+      { "creation-ticket",required_argument, NULL, 't' },
     };
 
-    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;
