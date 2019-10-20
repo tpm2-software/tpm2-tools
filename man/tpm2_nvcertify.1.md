@@ -51,6 +51,11 @@ These options control the certification:
 
     Output file name for the signature data.
 
+  * **-q**, **\--qualification**=_FILE_:
+
+    The policy qualifier data that the signer can choose to include in the
+    signature.
+
   * **\--size**=_NATURAL_NUMBER_:
 
     Specifies the size of data to be read in bytes, starting from 0 if
