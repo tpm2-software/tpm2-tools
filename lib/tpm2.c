@@ -1466,6 +1466,48 @@ tool_rc tpm2_sign(ESYS_CONTEXT *esys_context, tpm2_loaded_object *signingkey_obj
     return tool_rc_success;
 }
 
+tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *nvindex_authobj,
+    TPM2_HANDLE nv_index, UINT16 offset, UINT16 size,
+    TPMT_SIG_SCHEME *in_scheme, TPM2B_ATTEST **certify_info,
+    TPMT_SIGNATURE **signature) {
+
+    ESYS_TR signingkey_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+            signingkey_obj->tr_handle, signingkey_obj->session,
+            &signingkey_obj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    ESYS_TR nvindex_authobj_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(esys_context,
+        nvindex_authobj->tr_handle, nvindex_authobj->session,
+        &nvindex_authobj_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    ESYS_TR esys_tr_nv_index;
+    TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &esys_tr_nv_index);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    rval = Esys_NV_Certify(esys_context, signingkey_obj->tr_handle,
+        nvindex_authobj->tr_handle, esys_tr_nv_index,
+        signingkey_obj_session_handle, nvindex_authobj_session_handle,
+        ESYS_TR_NONE, NULL, in_scheme, size, offset, certify_info, signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_NV_Certify, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *certifiedkey_obj,
     TPM2B_DIGEST *creation_hash, TPMT_SIG_SCHEME *in_scheme,
