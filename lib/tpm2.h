@@ -367,6 +367,6 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *nvindex_authobj,
     TPM2_HANDLE nv_index, UINT16 offset, UINT16 size,
     TPMT_SIG_SCHEME *in_scheme, TPM2B_ATTEST **certify_info,
-    TPMT_SIGNATURE **signature);
+    TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier);
 
 #endif /* LIB_TPM2_H_ */

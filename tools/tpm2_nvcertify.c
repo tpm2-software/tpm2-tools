@@ -28,14 +28,16 @@ struct tpm_nvcertify_ctx {
 
     TPMI_ALG_HASH halg;
     TPMI_ALG_SIG_SCHEME sig_scheme;
-    tpm2_convert_sig_fmt sig_format;
 
     UINT16 size;
     UINT16 offset;
 
+    const char *policy_qualifier_path;
+
     //Output
     char *certify_info_path;
     char *signature_path;
+    tpm2_convert_sig_fmt sig_format;
 };
 
 static tpm_nvcertify_ctx ctx = {
@@ -102,6 +104,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.signature_path = value;
         break;
+    case 'q':
+        ctx.policy_qualifier_path = value;
+        break;
     case 0:
         result = tpm2_util_string_to_uint32(value, (uint32_t*)&ctx.size);
         if (!result) {
@@ -138,20 +143,21 @@ static bool on_arg(int argc, char **argv) {
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static const struct option topts[] = {
-        {"signingkey-context", required_argument, NULL, 'C' },
-        {"signingkey-auth",    required_argument, NULL, 'P' },
-        {"nvauthobj-context",  required_argument, NULL, 'c' },
-        {"nvauthobj-auth",     required_argument, NULL, 'p' },
-        { "hash-algorithm",    required_argument, NULL, 'g' },
-        { "scheme",            required_argument, NULL, 's' },
-        { "format",            required_argument, NULL, 'f' },
-        { "signature",         required_argument, NULL, 'o' },
-        { "size",              required_argument, NULL,  0  },
-        { "offset",            required_argument, NULL,  1  },
-        { "attestation",       required_argument, NULL,  2  },
+        { "signingkey-context", required_argument, NULL, 'C' },
+        { "signingkey-auth",    required_argument, NULL, 'P' },
+        { "nvauthobj-context",  required_argument, NULL, 'c' },
+        { "nvauthobj-auth",     required_argument, NULL, 'p' },
+        { "hash-algorithm",     required_argument, NULL, 'g' },
+        { "scheme",             required_argument, NULL, 's' },
+        { "format",             required_argument, NULL, 'f' },
+        { "signature",          required_argument, NULL, 'o' },
+        { "qualification",      required_argument, NULL, 'q' },
+        { "size",               required_argument, NULL,  0  },
+        { "offset",             required_argument, NULL,  1  },
+        { "attestation",        required_argument, NULL,  2  },
     };
 
-    *opts = tpm2_options_new("C:P:c:p:g:s:f:o:", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("C:P:c:p:g:s:f:o:q:", ARRAY_LEN(topts), topts,
         on_option, on_arg, 0);
 
     return *opts != NULL;
@@ -190,6 +196,16 @@ static bool is_input_options_args_valid(ESYS_CONTEXT *ectx) {
     if (ctx.offset + ctx.size > nv_public->nvPublic.dataSize) {
         LOG_ERR("Size to read at offset is bigger than nv index size");
         result = false;
+        goto is_input_options_args_valid_out;
+    }
+
+    if (ctx.policy_qualifier_path) {
+        unsigned long file_size = 0;
+        result = files_get_file_size_path(ctx.policy_qualifier_path,
+            &file_size);
+        if (!result || file_size == 0) {
+            result = false;
+        }
     }
 
 is_input_options_args_valid_out:
@@ -198,7 +214,7 @@ is_input_options_args_valid_out:
 }
 
 static tool_rc process_nvcertify_input(ESYS_CONTEXT *ectx,
-    TPMT_SIG_SCHEME *in_scheme) {
+    TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA **policy_qualifier) {
 
     /*
      * Load signing key and auth
@@ -230,6 +246,25 @@ static tool_rc process_nvcertify_input(ESYS_CONTEXT *ectx,
     if (rc != tool_rc_success) {
         LOG_ERR("bad signature scheme for key type!");
         return rc;
+    }
+
+    /*
+     * Qualifier data is optional. If not specified default to 0
+     */
+    if (ctx.policy_qualifier_path) {
+
+        *policy_qualifier = malloc(UINT16_MAX + sizeof(uint16_t));
+        if (!*policy_qualifier) {
+            LOG_ERR("oom");
+            return tool_rc_general_error;
+        }
+
+        bool result = files_load_bytes_from_path(ctx.policy_qualifier_path,
+                (*policy_qualifier)->buffer, &((*policy_qualifier)->size));
+        if (!result) {
+            LOG_ERR("Failed loading qualifier from path");
+            return tool_rc_general_error;
+        }
     }
 
     return tool_rc_success;
@@ -266,7 +301,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     //Input
     TPMT_SIG_SCHEME in_scheme;
-    tool_rc rc = process_nvcertify_input(ectx, &in_scheme);
+    TPM2B_DATA *policy_qualifier = NULL;
+    tool_rc rc = process_nvcertify_input(ectx, &in_scheme, &policy_qualifier);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -276,7 +312,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_ATTEST *certify_info = NULL;
     rc = tpm2_nvcertify(ectx, &ctx.signing_key.object,
         &ctx.nvindex_authobj.object, ctx.nv_index, ctx.offset, ctx.size,
-        &in_scheme, &certify_info, &signature);
+        &in_scheme, &certify_info, &signature, policy_qualifier);
     if (rc != tool_rc_success) {
         goto tpm2_tool_onrun_out;
     }
@@ -287,6 +323,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 tpm2_tool_onrun_out:
     free(signature);
     free(certify_info);
+    free(policy_qualifier);
     return rc;
 }
 
