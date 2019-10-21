@@ -3,8 +3,7 @@
 source helpers.sh
 
 cleanup() {
-  rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat key.dat evict.log
+  rm -f primary.ctx key.pub key.priv key.ctx key.name
 
   if [ "$1" != "no-shut-down" ]; then
       shut_down
@@ -32,6 +31,23 @@ tpm2_flushcontext -t
 # to be invalidated.
 #
 tpm2_changepps
+
+trap - ERR
+
+tpm2_load -Q -C primary.ctx -u key.pub -r key.priv -n key.name -c key.ctx
+
+#
+# Test with non null platform hierarchy auth
+#
+trap onerror ERR
+
+tpm2_changeauth -c p testpassword
+
+tpm2_createprimary -Q -C p -c primary.ctx -P testpassword
+
+tpm2_create -Q -C primary.ctx -u key.pub -r key.priv
+
+tpm2_changepps -p testpassword
 
 trap - ERR
 
