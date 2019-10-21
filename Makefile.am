@@ -96,6 +96,7 @@ bin_PROGRAMS = \
     tools/tpm2_rsaencrypt \
     tools/tpm2_send \
     tools/tpm2_selftest \
+    tools/tpm2_setclock \
     tools/tpm2_shutdown \
     tools/tpm2_sign \
     tools/tpm2_certifycreation \
@@ -188,6 +189,7 @@ tools_tpm2_testparms_SOURCES = tools/tpm2_testparms.c $(TOOL_SRC)
 tools_tpm2_incrementalselftest_SOURCES = tools/tpm2_incrementalselftest.c $(TOOL_SRC)
 tools_tpm2_gettestresult_SOURCES = tools/tpm2_gettestresult.c $(TOOL_SRC)
 tools_tpm2_readclock_SOURCES = tools/tpm2_readclock.c $(TOOL_SRC)
+tools_tpm2_setclock_SOURCES = tools/tpm2_setclock.c $(TOOL_SRC)
 tools_tpm2_shutdown_SOURCES = tools/tpm2_shutdown.c $(TOOL_SRC)
 
 if UNIT
@@ -372,6 +374,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_rsaencrypt.1 \
     man/man1/tpm2_send.1 \
     man/man1/tpm2_selftest.1 \
+    man/man1/tpm2_setclock.1 \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_certifycreation.1 \
     man/man1/tpm2_startauthsession.1 \
