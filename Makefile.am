@@ -43,6 +43,7 @@ bin_PROGRAMS = \
     tools/tpm2_createak \
     tools/tpm2_createek \
     tools/tpm2_createpolicy \
+    tools/tpm2_setprimarypolicy \
     tools/tpm2_createprimary \
     tools/tpm2_dictionarylockout \
     tools/tpm2_duplicate \
@@ -157,6 +158,7 @@ tools_tpm2_certifycreation_SOURCES = tools/tpm2_certifycreation.c $(TOOL_SRC)
 tools_tpm2_unseal_SOURCES = tools/tpm2_unseal.c $(TOOL_SRC)
 tools_tpm2_dictionarylockout_SOURCES = tools/tpm2_dictionarylockout.c $(TOOL_SRC)
 tools_tpm2_createpolicy_SOURCES = tools/tpm2_createpolicy.c $(TOOL_SRC)
+tools_tpm2_setprimarypolicy_SOURCES = tools/tpm2_setprimarypolicy.c $(TOOL_SRC)
 tools_tpm2_hierarchycontrol_SOURCES = tools/tpm2_hierarchycontrol.c $(TOOL_SRC)
 tools_tpm2_pcrallocate_SOURCES = tools/tpm2_pcrallocate.c $(TOOL_SRC)
 tools_tpm2_pcrextend_SOURCES = tools/tpm2_pcrextend.c $(TOOL_SRC)
@@ -315,6 +317,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_createak.1 \
     man/man1/tpm2_createek.1 \
     man/man1/tpm2_createpolicy.1 \
+    man/man1/tpm2_setprimarypolicy.1 \
     man/man1/tpm2_createprimary.1 \
     man/man1/tpm2_dictionarylockout.1 \
     man/man1/tpm2_duplicate.1 \

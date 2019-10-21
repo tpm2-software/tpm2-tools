@@ -355,4 +355,8 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
     TPMT_TK_CREATION *creation_ticket, TPM2B_ATTEST **certify_info,
     TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier);
 
+tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *hierarchy_object, TPM2B_DIGEST *auth_policy,
+    TPMI_ALG_HASH hash_algorithm);
+
 #endif /* LIB_TPM2_H_ */

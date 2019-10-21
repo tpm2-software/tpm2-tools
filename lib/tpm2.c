@@ -1492,6 +1492,29 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *hierarchy_object, TPM2B_DIGEST *auth_policy,
+    TPMI_ALG_HASH hash_algorithm) {
+
+    ESYS_TR hierarchy_object_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+            hierarchy_object->tr_handle, hierarchy_object->session,
+            &hierarchy_object_session_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_SetPrimaryPolicy(esys_context,
+        hierarchy_object->tr_handle, hierarchy_object_session_handle,
+        ESYS_TR_NONE, ESYS_TR_NONE, auth_policy, hash_algorithm);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_SetPrimaryPolicy, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_quote(ESYS_CONTEXT *esys_context, tpm2_loaded_object *quote_obj,
         TPMT_SIG_SCHEME *in_scheme, TPM2B_DATA *qualifying_data,
         TPML_PCR_SELECTION *pcr_select, TPM2B_ATTEST **quoted,
