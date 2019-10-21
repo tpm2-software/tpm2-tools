@@ -221,6 +221,9 @@ tool_rc tpm2_clear(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_clearcontrol(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy, TPMI_YES_NO disable_clear);
 
+tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
+        TPM2_CLOCK_ADJUST rate_adjust);
+
 tool_rc tpm2_dictionarylockout(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy,
         bool clear_lockout,

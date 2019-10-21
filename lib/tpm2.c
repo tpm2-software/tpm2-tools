@@ -1746,6 +1746,29 @@ tool_rc tpm2_setclock(ESYS_CONTEXT *ectx, tpm2_loaded_object *object, UINT64 new
     return tool_rc_success;
 }
 
+tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
+        TPM2_CLOCK_ADJUST rate_adjust) {
+
+    ESYS_TR shandle1 = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
+            object->tr_handle, object->session, &shandle1);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Couldn't get shandle for lockout hierarchy");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_ClockRateAdjust(ectx,
+            object->tr_handle,
+            shandle1, ESYS_TR_NONE, ESYS_TR_NONE,
+            rate_adjust);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_ClockRateAdjust, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_shutdown(ESYS_CONTEXT *ectx, TPM2_SU shutdown_type) {
 
     TSS2_RC rval = Esys_Shutdown(ectx,

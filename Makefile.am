@@ -40,6 +40,7 @@ bin_PROGRAMS = \
     tools/tpm2_changeeps \
     tools/tpm2_clear \
     tools/tpm2_clearcontrol \
+    tools/tpm2_clockrateadjust \
     tools/tpm2_create \
     tools/tpm2_createak \
     tools/tpm2_createek \
@@ -191,6 +192,7 @@ tools_tpm2_gettestresult_SOURCES = tools/tpm2_gettestresult.c $(TOOL_SRC)
 tools_tpm2_readclock_SOURCES = tools/tpm2_readclock.c $(TOOL_SRC)
 tools_tpm2_setclock_SOURCES = tools/tpm2_setclock.c $(TOOL_SRC)
 tools_tpm2_shutdown_SOURCES = tools/tpm2_shutdown.c $(TOOL_SRC)
+tools_tpm2_clockrateadjust_SOURCES = tools/tpm2_clockrateadjust.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -316,6 +318,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_checkquote.1 \
     man/man1/tpm2_clear.1 \
     man/man1/tpm2_clearcontrol.1 \
+	man/man1/tpm2_clockrateadjust.1 \
     man/man1/tpm2_create.1 \
     man/man1/tpm2_createak.1 \
     man/man1/tpm2_createek.1 \
