@@ -35,6 +35,8 @@
 
 * tpm2\_readclock: Add a new tool for reading the TPM clock.
 
+* tpm2\_setclock: Add a new tool for setting the TPM clock.
+
 ### 4.0 - 2019-09-09
 
 * tpm2_activatecredential:

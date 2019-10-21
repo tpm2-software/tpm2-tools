@@ -139,6 +139,17 @@ bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append);
 bool tpm2_util_string_to_uint32(const char *str, uint32_t *value);
 
 /**
+ * Converts a numerical string into a uint64 value.
+ * @param str
+ *  The numerical string to convert.
+ * @param value
+ *  The value to store the conversion into.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_util_string_to_uint64(const char *str, uint64_t *value);
+
+/**
  * Converts a numerical string into a uint16 value.
  * @param str
  *  The numerical string to convert.

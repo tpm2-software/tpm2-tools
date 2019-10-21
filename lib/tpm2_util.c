@@ -256,6 +256,39 @@ bool tpm2_util_string_to_uint32(const char *str, uint32_t *value) {
     return true;
 }
 
+bool tpm2_util_string_to_uint64(const char *str, uint64_t *value) {
+
+    char *endptr;
+
+    if (str == NULL || *str == '\0') {
+        return false;
+    }
+
+    /* clear errno before the call, should be 0 afterwards */
+    errno = 0;
+    /*
+     * unsigned long long is at least 64 bits, although commonly  just 64 bits even on 64 bit systems
+     * however, ensure that on some weird system it isn't greater than 64 bits since it is allowed by
+     * the standard.
+     */
+    unsigned long long int tmp = strtoull(str, &endptr, 0);
+    if (errno || tmp > UINT64_MAX) {
+        return false;
+    }
+
+    /*
+     * The entire string should be able to be converted or fail
+     * We already checked that str starts with a null byte, so no
+     * need to check that again per the man page.
+     */
+    if (*endptr != '\0') {
+        return false;
+    }
+
+    *value = (uint64_t) tmp;
+    return true;
+}
+
 int tpm2_util_hex_to_byte_structure(const char *input_string, UINT16 *byte_length,
         BYTE *byte_buffer) {
     int str_length; //if the input_string likes "1a2b...", no prefix "0x"
