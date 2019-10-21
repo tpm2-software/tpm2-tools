@@ -12,7 +12,7 @@ if [ "$TRAVIS_BRANCH" != "coverity_scan" ]; then
   #
   # Execute the build and test procedure by running .ci/docker.run
   #
-  docker run --env-file .ci/docker.env \
+  docker run --cap-add=SYS_PTRACE --env-file .ci/docker.env \
     -v `pwd`:/workspace/tpm2-tools tpm2software/tpm2-tss \
     /bin/bash -c '/workspace/tpm2-tools/.ci/docker.run'
 
