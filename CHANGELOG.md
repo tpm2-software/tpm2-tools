@@ -10,6 +10,9 @@
   - \--creation-ticket or -t to save the creation ticket
   - \--creation-hash or -d to save the creation hash
 
+* tpm2\_clockrateadjust: Add a new tool for modifying the period on the TPM
+  clock.
+
 * tpm2_policysecret: Add tool options for specifying
   - \--expiration or -t
   - \--ticket
