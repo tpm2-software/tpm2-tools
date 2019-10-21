@@ -33,6 +33,8 @@
 * tpm2\_nvreadpublic:
   - Support specifying nv index to read public data from as argument.
 
+* tpm2\_readclock: Add a new tool for reading the TPM clock.
+
 ### 4.0 - 2019-09-09
 
 * tpm2_activatecredential:
