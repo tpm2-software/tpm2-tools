@@ -81,8 +81,8 @@ _OBJECT_.
 [authorization formatting](common/authorizations.md) details the methods for
 specifying _AUTH_.
 
-[object attribute specifiers](common/obj-attrs.md) details the options for
-specifying the object attributes _ATTRIBUTES_.
+[object attribute specifiers](common/nv-attrs.md) details the options for
+specifying the nv attributes _ATTRIBUTES_.
 
 [common options](common/options.md) collection of common options that provide
 information many users may expect.

@@ -20,6 +20,7 @@ struct tpm_nvdefine_ctx {
     } auth_hierarchy;
 
     TPMI_RH_NV_INDEX nv_index;
+    bool size_set;
     UINT16 size;
     TPMA_NV nv_attribute;
     TPM2B_AUTH nv_auth;
@@ -33,7 +34,6 @@ static tpm_nvdefine_ctx ctx = {
         .ctx_path = "o",
     },
     .nv_auth = TPM2B_EMPTY_INIT,
-    .size = TPM2_MAX_NV_BUFFER_SIZE,
 };
 
 static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
@@ -86,6 +86,7 @@ static bool on_option(char key, char *value) {
         ctx.auth_hierarchy.auth_str = value;
         break;
     case 's':
+        ctx.size_set = true;
         result = tpm2_util_string_to_uint16(value, &ctx.size);
         if (!result) {
             LOG_ERR("Could not convert size to number, got: \"%s\"", value);
@@ -248,6 +249,41 @@ out:
     return rc;
 }
 
+static tool_rc validate_size(void) {
+
+    switch ((ctx.nv_attribute & TPMA_NV_TPM2_NT_MASK) >> TPMA_NV_TPM2_NT_SHIFT) {
+        case TPM2_NT_ORDINARY:
+            if (!ctx.size_set) {
+                ctx.size = TPM2_MAX_NV_BUFFER_SIZE;
+            }
+            break;
+        case TPM2_NT_COUNTER:
+        case TPM2_NT_BITS:
+        case TPM2_NT_PIN_FAIL:
+        case TPM2_NT_PIN_PASS:
+            if (!ctx.size_set) {
+                ctx.size = 8;
+            } else if (ctx.size != 8) {
+                LOG_ERR("Size is invalid for an NV index type,"
+                        " it must be size of 8");
+                return tool_rc_general_error;
+            }
+            break;
+        case TPM2_NT_EXTEND:
+            if (!ctx.size_set) {
+                // Currently the NV define doesn't allow changing name algorithm, so this OK
+                ctx.size = TPM2_SHA256_DIGEST_SIZE;
+            } else if (ctx.size != TPM2_SHA256_DIGEST_SIZE) {
+                LOG_ERR("Size is invalid for an NV index type: \"extend\","
+                        " it must match the name hash algorithm size of 32");
+                return tool_rc_general_error;
+            }
+            break;
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
@@ -279,6 +315,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         if (rc != tool_rc_success) {
             return rc;
         }
+    }
+
+    rc = validate_size();
+    if (rc != tool_rc_success) {
+        return rc;
     }
 
     return nv_space_define(ectx);
