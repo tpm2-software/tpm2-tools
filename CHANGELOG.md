@@ -2,14 +2,14 @@
 
 ### next
 
-* tpm2_certifycreation: New tool enabling command TPM2_CertifyCreation.
+* tpm2\_certifycreation: New tool enabling command TPM2\_CertifyCreation.
 
-* tpm2_checkquote:
+* tpm2\_checkquote:
    - Fix YAML output bug.
    - \-g option for specifying hash algorithm is optional and defaults to
      sha256.
 
-* tpm2_createprimary: Add tool options for specifying output data for use
+* tpm2\_createprimary: Add tool options for specifying output data for use
   in certification
   - \--creation-data to save the creation data
   - \--creation-ticket or -t to save the creation ticket
@@ -20,18 +20,18 @@
 
 * tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index.
 
-* tpm2_policysecret: Add tool options for specifying
+* tpm2\_policysecret: Add tool options for specifying
   - \--expiration or -t
   - \--ticket
   - \--timeout
   - \--nonce-tpm or -x
   - \--qualification or -q
 
-* tpm2_policyticket: New tool enabling policy command TPM2_PolicyTicket.
+* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
 
-* tpm2_startauthsession: Add option to retrieve the session nonceTPM.
+* tpm2\_startauthsession: Add option to retrieve the session nonceTPM.
 
-* tpm2_policysigned: New tool enabling policy command TPM2_PolicySigned.
+* tpm2\_policysigned: New tool enabling policy command TPM2\_PolicySigned.
 
 * misc:
   - support "tpmt" as a public key output format that only saves the TPMT structure.
