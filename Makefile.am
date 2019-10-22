@@ -37,6 +37,7 @@ bin_PROGRAMS = \
     tools/tpm2_activatecredential \
     tools/tpm2_certify \
     tools/tpm2_changeauth \
+    tools/tpm2_changeeps \
     tools/tpm2_clear \
     tools/tpm2_clearcontrol \
     tools/tpm2_create \
@@ -130,6 +131,7 @@ tools_tpm2_getekcertificate_LDADD = $(LDADD) $(CURL_LIBS)
 tools_tpm2_getekcertificate_SOURCES = tools/tpm2_getekcertificate.c $(TOOL_SRC)
 tools_tpm2_quote_SOURCES = tools/tpm2_quote.c $(TOOL_SRC)
 tools_tpm2_changeauth_SOURCES = tools/tpm2_changeauth.c $(TOOL_SRC)
+tools_tpm2_changeeps_SOURCES = tools/tpm2_changeeps.c $(TOOL_SRC)
 tools_tpm2_createek_SOURCES = tools/tpm2_createek.c $(TOOL_SRC)
 tools_tpm2_createak_SOURCES = tools/tpm2_createak.c $(TOOL_SRC)
 tools_tpm2_hash_SOURCES = tools/tpm2_hash.c $(TOOL_SRC)
@@ -308,6 +310,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_activatecredential.1 \
     man/man1/tpm2_certify.1 \
     man/man1/tpm2_changeauth.1 \
+    man/man1/tpm2_changeeps.1 \
     man/man1/tpm2_checkquote.1 \
     man/man1/tpm2_clear.1 \
     man/man1/tpm2_clearcontrol.1 \
