@@ -178,13 +178,39 @@ static bool written(TPMA_NV *nv, char *arg) {
     return true;
 }
 
+static bool lookup_nt_friendly_name(const char *arg, uint16_t *type) {
+
+    if (!strcmp(arg, "ordinary")) {
+        // Nothing to do
+    } else if (!strcmp(arg, "counter")) {
+        *type = TPM2_NT_COUNTER;
+    } else if (!strcmp(arg, "bits")) {
+        *type = TPM2_NT_BITS;
+    } else if (!strcmp(arg, "extend")) {
+        *type = TPM2_NT_EXTEND;
+    } else if (!strcmp(arg, "pinfail")) {
+        *type = TPM2_NT_PIN_FAIL;
+    } else if (!strcmp(arg, "pinpass")) {
+        *type = TPM2_NT_PIN_PASS;
+    } else {
+        LOG_ERR("Unknown NT type specifier, got: \"%s\"", arg);
+        return false;
+    }
+
+    return true;
+}
+
 static bool nt(TPMA_NV *nv, char *arg) {
 
     uint16_t value;
     bool result = tpm2_util_string_to_uint16(arg, &value);
     if (!result) {
-        LOG_ERR("Could not convert \"%s\", to a number", arg);
-        return false;
+        result = lookup_nt_friendly_name(arg, &value);
+        if (!result) {
+            LOG_ERR("Could not convert NT field, got \"%s\"."
+                    "Expected a number or friendly name", arg);
+            return false;
+        }
     }
 
     /* nt space is 4 bits, so max of 15 */
