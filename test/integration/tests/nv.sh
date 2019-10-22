@@ -176,6 +176,8 @@ if [ $? != 1 ];then
  exit 1
 fi
 
+tpm2_nvundefine -C o $nv_test_index
+
 trap onerror ERR
 
 #
@@ -222,5 +224,14 @@ tpm2_nvundefine   0x1500015 -C 0x40000001 -P "owner"
 # Check nv index can be specified simply as an offset
 tpm2_nvdefine -Q -C o -s 32 -a "ownerread|ownerwrite" 1 -P "owner"
 tpm2_nvundefine   0x01000001 -C o -P "owner"
+
+# Test setbits
+tpm2_nvdefine -C o -P "owner" -a "nt=bits|ownerread|policywrite|ownerwrite|writedefine" $nv_test_index
+tpm2_nvsetbits -C o -P "owner" -i 0xbadc0de $nv_test_index
+check=$(tpm2_nvread -C o -P "owner" $nv_test_index | xxd -p | sed s/'^0*'/0x/)
+if [ "$check" != "0xbadc0de" ]; then
+	echo "Expected setbits read value of 0xbadc0de, got \"$check\""
+	exit 1
+fi
 
 exit 0
