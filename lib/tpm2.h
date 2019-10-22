@@ -281,6 +281,10 @@ tool_rc tpm2_nvreadlock(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_nvwritelock(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
 
+tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
+        UINT64 bits);
+
 tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
 
