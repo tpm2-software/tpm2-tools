@@ -1326,7 +1326,6 @@ tool_rc tpm2_nvreadlock(ESYS_CONTEXT *esys_context,
             esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
             ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS) {
-        LOG_ERR("Failed to lock NVRAM area at index 0x%X", nv_index);
         LOG_PERR(Esys_NV_ReadLock, rval);
         return tool_rc_from_tpm(rval);
     }
