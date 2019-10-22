@@ -144,7 +144,7 @@ tpm2_nvundefine -Q   $nv_test_index -C o
 # Test NV access locked
 #
 tpm2_nvdefine -Q   $nv_test_index -C o -s 32 \
--a "ownerread|policywrite|ownerwrite|read_stclear"
+-a "ownerread|policywrite|ownerwrite|read_stclear|writedefine"
 
 echo "foobar" > nv.readlock
 
@@ -163,6 +163,21 @@ if [ $? != 1 ];then
  exit 1
 fi
 
+trap onerror ERR
+
+# Test that write lock works
+tpm2_nvwritelock -C o $nv_test_index
+
+trap - ERR
+
+tpm2_nvwrite  $nv_test_index -C o -i nv.readlock
+if [ $? != 1 ];then
+ echo "nvwrite didn't fail!"
+ exit 1
+fi
+
+trap onerror ERR
+
 #
 # Test that owner and index passwords work by
 # 1. Setting up the owner password
@@ -172,7 +187,6 @@ fi
 # 3. Using index and owner based auth during write/read operations
 # 4. Testing that auth is needed or a failure occurs.
 #
-trap onerror ERR
 
 tpm2_changeauth -c o owner
 
