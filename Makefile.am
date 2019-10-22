@@ -72,6 +72,7 @@ bin_PROGRAMS = \
     tools/tpm2_nvreadlock \
     tools/tpm2_nvundefine \
     tools/tpm2_nvwrite \
+    tools/tpm2_nvwritelock \
     tools/tpm2_pcrallocate \
     tools/tpm2_pcrevent \
     tools/tpm2_pcrextend \
@@ -199,6 +200,7 @@ tools_tpm2_readclock_SOURCES = tools/tpm2_readclock.c $(TOOL_SRC)
 tools_tpm2_setclock_SOURCES = tools/tpm2_setclock.c $(TOOL_SRC)
 tools_tpm2_shutdown_SOURCES = tools/tpm2_shutdown.c $(TOOL_SRC)
 tools_tpm2_clockrateadjust_SOURCES = tools/tpm2_clockrateadjust.c $(TOOL_SRC)
+tools_tpm2_nvwritelock_SOURCES = tools/tpm2_nvwritelock.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -356,6 +358,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_nvreadlock.1 \
     man/man1/tpm2_nvundefine.1 \
     man/man1/tpm2_nvwrite.1 \
+    man/man1/tpm2_nvwritelock.1 \
     man/man1/tpm2_pcrallocate.1 \
     man/man1/tpm2_pcrevent.1 \
     man/man1/tpm2_pcrextend.1 \
