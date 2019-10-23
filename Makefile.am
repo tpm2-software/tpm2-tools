@@ -66,6 +66,7 @@ bin_PROGRAMS = \
     tools/tpm2_loadexternal \
     tools/tpm2_makecredential \
     tools/tpm2_nvdefine \
+    tools/tpm2_nvextend \
     tools/tpm2_nvincrement \
     tools/tpm2_nvreadpublic \
     tools/tpm2_nvread \
@@ -203,6 +204,7 @@ tools_tpm2_shutdown_SOURCES = tools/tpm2_shutdown.c $(TOOL_SRC)
 tools_tpm2_clockrateadjust_SOURCES = tools/tpm2_clockrateadjust.c $(TOOL_SRC)
 tools_tpm2_nvwritelock_SOURCES = tools/tpm2_nvwritelock.c $(TOOL_SRC)
 tools_tpm2_nvsetbits_SOURCES = tools/tpm2_nvsetbits.c $(TOOL_SRC)
+tools_tpm2_nvextend_SOURCES = tools/tpm2_nvextend.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -354,6 +356,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_loadexternal.1 \
     man/man1/tpm2_makecredential.1 \
     man/man1/tpm2_nvdefine.1 \
+    man/man1/tpm2_nvextend.1 \
     man/man1/tpm2_nvincrement.1 \
     man/man1/tpm2_nvreadpublic.1 \
     man/man1/tpm2_nvread.1 \

@@ -267,4 +267,16 @@ fi
 
 trap onerror ERR
 
+tpm2_nvundefine -C o -P "owner" $nv_test_index
+
+# Test extend
+tpm2_nvdefine -C o -P "owner" -a "nt=extend|ownerread|policywrite|ownerwrite" $nv_test_index
+echo "foo" | tpm2_nvextend -C o -P "owner" -i- $nv_test_index
+check=$(tpm2_nvread -C o -P "owner" $nv_test_index | xxd -p -c 64 | sed s/'^0*'//)
+expected="1c8457de84bb43c18d5e1d75c43e393bdaa7bca8d25967eedd580c912db65e3e"
+if [ "$check" != "$expected" ]; then
+	echo "Expected setbits read value of \"$expected\", got \"$check\""
+	exit 1
+fi
+
 exit 0

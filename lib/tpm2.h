@@ -272,6 +272,10 @@ tool_rc tpm2_nv_definespace(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, const TPM2B_AUTH *auth,
         const TPM2B_NV_PUBLIC *public_info);
 
+tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
+        TPM2B_MAX_NV_BUFFER *data);
+
 tool_rc tpm2_nv_increment(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
 
