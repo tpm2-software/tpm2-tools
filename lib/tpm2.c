@@ -1364,6 +1364,28 @@ tool_rc tpm2_nvwritelock(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_nvglobalwritelock(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *auth_hierarchy_obj) {
+
+    ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+            auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session,
+            &auth_hierarchy_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_NV_GlobalWriteLock(esys_context, auth_hierarchy_obj->tr_handle,
+            auth_hierarchy_obj_session_handle, ESYS_TR_NONE, ESYS_TR_NONE);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_NV_GlobalWriteLock, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
         UINT64 bits) {

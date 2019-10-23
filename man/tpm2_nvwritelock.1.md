@@ -33,6 +33,11 @@ value to the nv handle range "TPM2_HR_NV_INDEX".
 
     Specifies the authorization value for the hierarchy.
 
+  * **\--global**:
+
+    Lock all NV indices with attribute TPMA\_NV\_GLOBALLOCK. This option
+    does not require an NV index or offset as an argument.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 
@@ -65,6 +70,17 @@ tpm2_nvwritelock -C o 1
 
 # fails with "NV access locked"
 tpm2_nvwrite -C o -i nv.writelock 1
+```
+
+## Global Lock
+```bash
+tpm2_nvdefine -C o -s 32 \
+  -a "ownerread|policywrite|ownerwrite|globallock" 1
+
+tpm2_nvwritelock -C o --global
+
+# this command fails with "NV access locked".
+echo foo | tpm2_nvwrite -C o -i- 1
 ```
 
 [returns](common/returns.md)

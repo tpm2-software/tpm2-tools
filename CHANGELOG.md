@@ -18,7 +18,8 @@
 * tpm2\_clockrateadjust: Add a new tool for modifying the period on the TPM
   clock.
 
-* tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index.
+* tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
+    or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
 
 * tpm2\_policysecret: Add tool options for specifying
   - \--expiration or -t
