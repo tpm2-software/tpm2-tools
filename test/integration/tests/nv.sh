@@ -234,4 +234,37 @@ if [ "$check" != "0xbadc0de" ]; then
 	exit 1
 fi
 
+# Test global writelock
+tpm2_nvdefine -C o -P "owner" -s 32 -a "ownerread|ownerwrite|globallock" 42
+tpm2_nvdefine -C o -P "owner" -s 32 -a "ownerread|ownerwrite|globallock" 43
+tpm2_nvdefine -C o -P "owner" -s 32 -a "ownerread|ownerwrite|globallock" 44
+
+echo foo | tpm2_nvwrite -C o -P "owner" -i- 42
+echo foo | tpm2_nvwrite -C o -P "owner" -i- 43
+echo foo | tpm2_nvwrite -C o -P "owner" -i- 44
+
+tpm2_nvwritelock -Co -P owner --global
+
+# These writes should fail now that its in a writelocked state
+trap - ERR
+echo foo | tpm2_nvwrite -C o -P "owner" -i- 42
+if [ $? -eq 0 ]; then
+	echo "Expected tpm2_nvwrite to fail after globalwritelock of index 42"
+	exit 1
+fi
+
+echo foo | tpm2_nvwrite -C o -P "owner" -i- 43
+if [ $? -eq 0 ]; then
+	echo "Expected tpm2_nvwrite to fail after globalwritelock of index 43"
+	exit 1
+fi
+
+echo foo | tpm2_nvwrite -C o -P "owner" -i- 44
+if [ $? -eq 0 ]; then
+	echo "Expected tpm2_nvwrite to fail after globalwritelock of index 44"
+	exit 1
+fi
+
+trap onerror ERR
+
 exit 0

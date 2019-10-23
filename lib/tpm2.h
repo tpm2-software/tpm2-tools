@@ -278,6 +278,9 @@ tool_rc tpm2_nv_increment(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_nvreadlock(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
 
+tool_rc tpm2_nvglobalwritelock(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *auth_hierarchy_obj);
+
 tool_rc tpm2_nvwritelock(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
 
