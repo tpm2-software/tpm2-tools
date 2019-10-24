@@ -14,6 +14,15 @@ struct tpm_nvundefine_ctx {
         tpm2_loaded_object object;
     } auth_hierarchy;
 
+    struct {
+        const char *path;
+        tpm2_session *session;
+    } policy_session;
+
+    struct {
+        bool C;
+    } flags;
+
     TPM2_HANDLE nv_index;
 };
 
@@ -26,10 +35,14 @@ static bool on_option(char key, char *value) {
     switch (key) {
 
     case 'C':
+        ctx.flags.C = true;
         ctx.auth_hierarchy.ctx_path = value;
         break;
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
+        break;
+    case 'S':
+        ctx.policy_session.path = value;
         break;
     }
 
@@ -46,9 +59,10 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "hierarchy", required_argument, NULL, 'C' },
         { "auth",      required_argument, NULL, 'P' },
+        { "session",   required_argument, NULL, 'S' }
     };
 
-    *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
+    *opts = tpm2_options_new("C:P:S:", ARRAY_LEN(topts), topts, on_option, on_arg,
             0);
 
     return *opts != NULL;
@@ -58,7 +72,32 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     UNUSED(flags);
 
-    tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+    /*
+     * Read the public portion of the NV index so we can ascertain if
+     * TPMA_NV_POLICYDELETE is set. This determines which command to use
+     * to undefine the space. Either undefine or undefinespecial.
+     */
+    TPM2B_NV_PUBLIC *nv_public = NULL;
+    tool_rc rc = tpm2_util_nv_read_public(ectx, ctx.nv_index, &nv_public);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to read the public part of NV index 0x%X", ctx.nv_index);
+        return rc;
+    }
+
+    bool has_policy_delete_set = !!(nv_public->nvPublic.attributes & TPMA_NV_POLICY_DELETE);
+
+    Esys_Free(nv_public);
+
+    /*
+     * The default hierarchy is typically owner, however with a policy delete object it's always
+     * the platform.
+     */
+    if (!ctx.flags.C) {
+        ctx.auth_hierarchy.ctx_path  = has_policy_delete_set ? "platform" : "owner";
+    }
+
+    /* now with the default sorted out, load the authorization object */
+    rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
             ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
             TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     if (rc != tool_rc_success) {
@@ -66,10 +105,48 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    /* has policy delete set, so do NV undefine special */
+    if (has_policy_delete_set) {
+
+        if (!ctx.policy_session.path) {
+            LOG_ERR("NV Spaces with attribute TPMA_NV_POLICY_DELETE require a"
+                    " policy session to be specified via \"-S\"");
+            return tool_rc_general_error;
+        }
+
+        rc = tpm2_session_restore(ectx, ctx.policy_session.path, false,
+                &ctx.policy_session.session);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        /*
+         * has to be an admin policy session for undefinespecial.
+         * We can at least check that it is a session.
+         */
+        TPM2_SE type = tpm2_session_get_type(ctx.policy_session.session);
+        if (type != TPM2_SE_POLICY) {
+            LOG_ERR("Expected a policy session when NV index has attribute"
+                    " TPMA_NV_POLICY_DELETE set.");
+            return tool_rc_general_error;
+        }
+
+        return tpm2_nvundefinespecial(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+                ctx.policy_session.session);
+    } else if (ctx.policy_session.path) {
+       LOG_WARN("Option -S is not required on NV indices that don't have"
+               " attribute TPMA_NV_POLICY_DELETE set");
+    }
+
     return tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+
+    /* attempt to close all sessions and report errors */
+    tool_rc rc = tpm2_session_close(&ctx.policy_session.session);
+    rc |= tpm2_session_close(&ctx.auth_hierarchy.object.session);
+
+    return rc;
 }

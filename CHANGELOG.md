@@ -44,6 +44,9 @@
 * tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
     or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
 
+* tpm2\_nvundefine: Add support for deleting NV indices with attribute
+    `TPMA_NV_POLICY_DELETE` set using NV Undefine Special command.
+
 * tpm2\_policysecret: Add tool options for specifying
   - \--expiration or -t
   - \--ticket

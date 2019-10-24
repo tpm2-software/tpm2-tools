@@ -295,6 +295,10 @@ tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
 
+tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
+        tpm2_session *policy_session);
+
 tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nvindex,
         const TPM2B_MAX_NV_BUFFER *data, UINT16 offset);
