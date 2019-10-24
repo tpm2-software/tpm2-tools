@@ -77,11 +77,6 @@ bool is_check_input_options_ok(void) {
         return false;
     }
 
-    if (!ctx.policy_digest_path) {
-        LOG_ERR("Must specify path for the policy-digest with -L.");
-        return false;
-    }
-
     if (!ctx.verifying_pubkey_name_path) {
         LOG_ERR("Must specify name of the public key used for verification -n.");
         return false;
