@@ -57,6 +57,7 @@ bin_PROGRAMS = \
     tools/tpm2_flushcontext \
     tools/tpm2_getekcertificate \
     tools/tpm2_getrandom \
+    tools/tpm2_gettime \
     tools/tpm2_hash \
     tools/tpm2_hierarchycontrol \
     tools/tpm2_hmac \
@@ -205,6 +206,7 @@ tools_tpm2_clockrateadjust_SOURCES = tools/tpm2_clockrateadjust.c $(TOOL_SRC)
 tools_tpm2_nvwritelock_SOURCES = tools/tpm2_nvwritelock.c $(TOOL_SRC)
 tools_tpm2_nvsetbits_SOURCES = tools/tpm2_nvsetbits.c $(TOOL_SRC)
 tools_tpm2_nvextend_SOURCES = tools/tpm2_nvextend.c $(TOOL_SRC)
+tools_tpm2_gettime_SOURCES = tools/tpm2_gettime.c $(TOOL_SRC)
 
 if UNIT
 TESTS = $(check_PROGRAMS)
@@ -347,6 +349,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_getekcertificate.1 \
     man/man1/tpm2_getrandom.1 \
     man/man1/tpm2_gettestresult.1 \
+    man/man1/tpm2_gettime.1 \
     man/man1/tpm2_hierarchycontrol.1 \
     man/man1/tpm2_hash.1 \
     man/man1/tpm2_hmac.1 \
