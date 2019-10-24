@@ -69,6 +69,21 @@ tool_rc tpm2_policy_build_policyor(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, TPML_DIGEST *policy_list);
 
 /**
+ * Evaluates an authorization for specific named objects.
+ *
+ * @param ectx
+ *  The Enhanced system api context
+ * @param session
+ *  The policy session into which the policy digest is extended into
+ * @param name_hash
+ *  The name hash
+ *
+ * @return
+ *   tool_rc indicating status.
+ */
+tool_rc tpm2_policy_build_policynamehash(ESYS_CONTEXT *ectx,
+    tpm2_session *session, const TPM2B_DIGEST *name_hash);
+/**
  * Enables secret (password/hmac) based authorization to a policy.
  *
  * @param ectx
