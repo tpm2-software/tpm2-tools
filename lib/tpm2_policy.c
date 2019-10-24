@@ -244,6 +244,14 @@ tool_rc tpm2_policy_build_policypassword(ESYS_CONTEXT *ectx,
             ESYS_TR_NONE, ESYS_TR_NONE);
 }
 
+tool_rc tpm2_policy_build_policynamehash(ESYS_CONTEXT *ectx,
+    tpm2_session *session, const TPM2B_DIGEST *name_hash) {
+
+    ESYS_TR policy_session_handle = tpm2_session_get_handle(session);
+
+    return tpm2_policy_namehash(ectx, policy_session_handle, name_hash);
+}
+
 tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
         tpm2_session *session) {
 
