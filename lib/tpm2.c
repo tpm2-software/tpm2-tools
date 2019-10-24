@@ -1983,3 +1983,46 @@ tool_rc tpm2_shutdown(ESYS_CONTEXT *ectx, TPM2_SU shutdown_type) {
 
     return tool_rc_success;
 }
+
+tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
+        tpm2_loaded_object *privacy_admin,
+        tpm2_loaded_object *signing_object,
+        const TPM2B_DATA *qualifying_data,
+        const TPMT_SIG_SCHEME *scheme,
+        TPM2B_ATTEST **time_info,
+        TPMT_SIGNATURE **signature) {
+
+    ESYS_TR privacy_admin_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(ectx,
+            privacy_admin->tr_handle, privacy_admin->session, &privacy_admin_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Couldn't get shandle for privacy admin");
+        return rc;
+    }
+
+    ESYS_TR sign_session_handle = ESYS_TR_NONE;
+    rc = tpm2_auth_util_get_shandle(ectx,
+            signing_object->tr_handle, signing_object->session, &sign_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Couldn't get shandle for signing key");
+        return rc;
+    }
+
+    TSS2_RC rval = Esys_GetTime(
+            ectx,
+            privacy_admin->tr_handle,
+            signing_object->tr_handle,
+            privacy_admin_session_handle,
+            sign_session_handle,
+            ESYS_TR_NONE,
+            qualifying_data,
+            scheme,
+            time_info,
+            signature);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_GetTime, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

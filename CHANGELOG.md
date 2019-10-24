@@ -16,6 +16,27 @@
   - \--creation-hash or -d to save the creation hash
 
 * tpm2\_clockrateadjust: Add a new tool for modifying the period on the TPM
+
+* tpm2\_gettime: Add a new tool for retrieving a signed timestamp from a TPM.
+
+* tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
+    or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
+
+* tpm2\_policysecret: Add tool options for specifying
+  - \--expiration or -t
+  - \--ticket
+  - \--timeout
+  - \--nonce-tpm or -x
+  - \--qualification or -q
+
+* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
+
+* tpm2\_startauthsession: Add option to retrieve the session nonceTPM.
+
+* tpm2\_policysigned: New tool enabling policy command TPM2\_PolicySigned.
+
+* misc:
+  - support "tpmt" as a public key output format that only saves the TPMT structure.
   clock.
 
 * tpm2\_nvextend: Add a new tool for extending an NV index similair to a PCR.
