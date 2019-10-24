@@ -445,4 +445,11 @@ bool tpm2_util_handle_from_optarg(const char *value,
 
 bool tpm2_util_get_label(const char *value, TPM2B_DATA *label);
 
+/**
+ * Prints a TPMS_TIME_INFO in a YAML compliant format to stdout.
+ * @param current_time
+ *  The time structure to print
+ */
+void tpm2_util_print_time(const TPMS_TIME_INFO *current_time);
+
 #endif /* STRING_BYTES_H */

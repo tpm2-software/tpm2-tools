@@ -2,6 +2,7 @@
 
 #include <ctype.h>
 #include <dlfcn.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1053,4 +1054,23 @@ bool tpm2_util_get_label(const char *value, TPM2B_DATA *label) {
     label->buffer[label->size++] = '\0';
 
     return true;
+}
+
+void tpm2_util_print_time(const TPMS_TIME_INFO *current_time) {
+
+    tpm2_tool_output("time: %"PRIu64"\n", current_time->time);
+
+    tpm2_tool_output("clock_info:\n");
+
+    tpm2_tool_output("  clock: %"PRIu64"\n",
+            current_time->clockInfo.clock);
+
+    tpm2_tool_output("  reset_count: %"PRIu32"\n",
+            current_time->clockInfo.resetCount);
+
+    tpm2_tool_output("  restart_count: %"PRIu32"\n",
+            current_time->clockInfo.restartCount);
+
+    tpm2_tool_output("  safe: %s\n",
+            current_time->clockInfo.safe ? "yes" : "no");
 }
