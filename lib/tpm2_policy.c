@@ -159,16 +159,13 @@ tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
         const char *policy_qualifier_path,
         const char *verifying_pubkey_name_path, const char *ticket_path) {
 
-    unsigned long file_size = 0;
-
-    bool result = files_get_file_size_path(policy_digest_path, &file_size);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
-    TPM2B_DIGEST approved_policy = { .size = (uint16_t) file_size };
-    result = files_load_bytes_from_path(policy_digest_path,
+    bool result = true;
+    TPM2B_DIGEST approved_policy = { .size = 0 };
+    if (policy_digest_path) {
+        approved_policy.size = UINT16_MAX;
+        result = files_load_bytes_from_path(policy_digest_path,
             approved_policy.buffer, &approved_policy.size);
+    }
     if (!result) {
         return tool_rc_general_error;
     }
@@ -176,7 +173,7 @@ tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
     /*
      * Qualifier data is optional. If not specified default to 0
      */
-    file_size = 0;
+    unsigned long file_size = 0;
     if (policy_qualifier_path) {
         result = files_get_file_size_path(policy_qualifier_path, &file_size);
         if (!result) {
