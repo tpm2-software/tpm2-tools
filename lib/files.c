@@ -754,3 +754,16 @@ LOAD_TYPE(TPM2B_PRIVATE, private)
 
 SAVE_TYPE(TPM2B_ENCRYPTED_SECRET, encrypted_seed)
 LOAD_TYPE(TPM2B_ENCRYPTED_SECRET, encrypted_seed)
+
+tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *attest) {
+
+    size_t offset = 0;
+    TSS2_RC rval = Tss2_MU_TPMS_ATTEST_Unmarshal(quoted->attestationData,
+            quoted->size, &offset, attest);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Tss2_MU_TPM2B_ATTEST_Unmarshal, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}

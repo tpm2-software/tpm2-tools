@@ -141,12 +141,10 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcr_selection) {
         }
 
         // Grab the digest from the quote
-        TPM2B_DIGEST quote_digest = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer);
-        TPM2B_DATA extra_data = TPM2B_TYPE_INIT(TPM2B_DATA, buffer);
-        if (!tpm2_util_get_digest_from_quote(quoted, &quote_digest,
-                &extra_data)) {
-            LOG_ERR("Failed to get digest from quote!");
-            return tool_rc_general_error;
+        TPMS_ATTEST attest;
+        rc = files_tpm2b_attest_to_tpms_attest(quoted, &attest);
+        if (rc != tool_rc_success) {
+            return rc;
         }
 
         // Print out PCR values as output
@@ -167,7 +165,7 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcr_selection) {
         tpm2_tool_output("\n");
 
         // Make sure digest from quote matches calculated PCR digest
-        if (!tpm2_util_verify_digests(&quote_digest, &pcr_digest)) {
+        if (!tpm2_util_verify_digests(&attest.attested.quote.pcrDigest, &pcr_digest)) {
             LOG_ERR("Error validating calculated PCR composite with quote");
             return tool_rc_general_error;
         }
