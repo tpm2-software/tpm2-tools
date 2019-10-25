@@ -31,8 +31,7 @@ struct tpm2_verifysig_ctx {
     TPMI_ALG_HASH halg;
     TPM2B_DIGEST msg_hash;
     TPM2B_DIGEST pcr_hash;
-    TPM2B_DIGEST quote_hash;
-    TPM2B_DATA quote_extra_data;
+    TPMS_ATTEST attest;
     TPM2B_DATA extra_data;
     TPMT_SIGNATURE signature;
     char *msg_file_path;
@@ -48,8 +47,6 @@ static tpm2_verifysig_ctx ctx = {
         .halg = TPM2_ALG_SHA256,
         .msg_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
         .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
-        .quote_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
-        .quote_extra_data = TPM2B_TYPE_INIT(TPM2B_DATA, buffer),
         .extra_data = TPM2B_TYPE_INIT(TPM2B_DATA, buffer),
 };
 
@@ -92,8 +89,8 @@ static bool verify_signature() {
 
     // Ensure nonce is the same as given
     if (ctx.flags.extra) {
-        if (ctx.quote_extra_data.size != ctx.extra_data.size ||
-            memcmp(ctx.quote_extra_data.buffer, ctx.extra_data.buffer,
+        if (ctx.attest.extraData.size != ctx.extra_data.size ||
+            memcmp(ctx.attest.extraData.buffer, ctx.extra_data.buffer,
             ctx.extra_data.size) != 0) {
             LOG_ERR("Error validating nonce from quote");
             goto err;
@@ -102,7 +99,8 @@ static bool verify_signature() {
 
     // Also ensure digest from quote matches PCR digest
     if (ctx.flags.pcr) {
-        if (!tpm2_util_verify_digests(&ctx.quote_hash, &ctx.pcr_hash)) {
+        if (!tpm2_util_verify_digests(&ctx.attest.attested.quote.pcrDigest,
+                &ctx.pcr_hash)) {
             LOG_ERR("Error validating PCR composite against signed message");
             goto err;
         }
@@ -276,10 +274,9 @@ static tool_rc init(void) {
         }
     }
 
-    // Figure out the extra data (nonce) from this message
-    if (!tpm2_util_get_digest_from_quote(msg, &ctx.quote_hash,
-            &ctx.quote_extra_data)) {
-        LOG_ERR("Failed to get digest from quote!");
+    tool_rc tmp_rc = files_tpm2b_attest_to_tpms_attest(msg, &ctx.attest);
+    if (tmp_rc != tool_rc_success) {
+        return_value = tmp_rc;
         goto err;
     }
 

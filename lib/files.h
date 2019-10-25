@@ -469,4 +469,15 @@ bool files_read_64(FILE *out, UINT64 *data);
  */
 bool files_read_bytes(FILE *out, UINT8 data[], size_t size);
 
+/**
+ * Converts a TPM2B_ATTEST to a TPMS_ATTEST using libmu.
+ * @param quoted
+ *  The attestation quote structure.
+ * @param attest
+ *  The TPMS_ATTEST to populate.
+ * @return
+ *  tool_rc_success on success, false otherwise.
+ */
+tool_rc files_tpm2b_attest_to_tpms_attest(TPM2B_ATTEST *quoted, TPMS_ATTEST *attest);
+
 #endif /* FILES_H */
