@@ -32,7 +32,7 @@ grep -q 0x164 commands.cap
 if [ $? != 0 ];then
     echo "WARN: Command EncryptDecrypt is not supported by your device, \
     skipping..."
-    exit 0
+    skip_test
 fi
 
 # Now set the trap handler for ERR since we're past the command code check
