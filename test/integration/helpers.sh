@@ -389,3 +389,10 @@ function ina() {
     }
     echo 1
 }
+
+# Causes a test to skip by exiting with error code 77
+# See the automake manual for the exit codes:
+#   https://www.gnu.org/software/automake/manual/html_node/Scripts_002dbased-Testsuites.html
+function skip_test() {
+	exit 77
+}
