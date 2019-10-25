@@ -201,18 +201,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         }
     }
 
-    TPMS_ATTEST dest;
-    TSS2_RC rval = Tss2_MU_TPMS_ATTEST_Unmarshal(time_info->attestationData,
-            time_info->size, 0, &dest);
-    if (rval != TSS2_RC_SUCCESS) {
-        LOG_PERR(Tss2_MU_TPMS_ATTEST_Unmarshal, rval);
-        rc = tool_rc_from_tpm(rval);
-        goto out;
+    TPMS_ATTEST attest;
+    rc = files_tpm2b_attest_to_tpms_attest(time_info, &attest);
+    if (rc == tool_rc_success) {
+        tpm2_util_print_time(&attest.attested.time.time);
     }
-
-    tpm2_util_print_time(&dest.attested.time.time);
-
-    rc = tool_rc_success;
 
 out:
     Esys_Free(time_info);
