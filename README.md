@@ -7,7 +7,7 @@
 
 ## News
 * Release [4.0](https://github.com/tpm2-software/tpm2-tools/releases/tag/4.0) is now available.
-* A mailing list now exists for support: https://lists.01.org/mailman/listinfo/tpm2
+* A mailing list now exists for support: https://lists.01.org/postorius/lists/tpm2.lists.01.org/
 * CVE-2017-7524 - Where an HMAC authorization uses the tpm to perform the hmac calculation. This results in a disclosure of the password to
 the tpm where the user would not expect it. It appears likely unreachable in the current code base. This has been fixed on releases greater than version 1.1.1.
 
@@ -18,7 +18,7 @@ Instructions for building and installing the tpm2-tools are provided in the [INS
 Instructions for how releases are conducted, including our QA practices, please see the [RELEASE.md](RELEASE.md) file.
 
 ## Support
-Please use the mailing list at https://lists.01.org/mailman/listinfo/tpm2 for general questions. The Issue Tracker on
+Please use the mailing list at https://lists.01.org/postorius/lists/tpm2.lists.01.org/ for general questions. The Issue Tracker on
 github should be reserved for actual feature requests or bugs. For security bugs, please see [CONTRIBUTING.md](CONTRIBUTING.md)
 for information on how to submit those.
 
