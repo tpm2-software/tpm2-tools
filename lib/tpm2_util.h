@@ -91,20 +91,6 @@ int tpm2_util_hex_to_byte_structure(const char *in_str, UINT16 *byte_length,
         BYTE *byte_buffer);
 
 /**
- * Pulls the TPM2B_DIGEST out of a TPM2B_ATTEST quote.
- * @param quoted
- *  The attestation quote structure.
-^ * @param digest
-^ *  The digest from the quote.
-^ * @param extra_data
-^ *  The extra_data from the quote.
- * @return
- *  True on success, false otherwise.
- */
-bool tpm2_util_get_digest_from_quote(TPM2B_ATTEST *quoted, TPM2B_DIGEST *digest,
-        TPM2B_DATA *extra_data);
-
-/**
  * Compares two digests to ensure they are equal (for validation).
  * @param quote_digest
  *  The digest from the quote.
