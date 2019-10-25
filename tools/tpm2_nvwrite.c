@@ -25,7 +25,9 @@ struct tpm_nvwrite_ctx {
     UINT16 offset;
 };
 
-static tpm_nvwrite_ctx ctx;
+static tpm_nvwrite_ctx ctx = {
+    .data_size = TPM2_MAX_NV_BUFFER_SIZE
+};
 
 static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 
@@ -94,7 +96,6 @@ static tool_rc nv_write(ESYS_CONTEXT *ectx) {
 }
 
 static bool on_option(char key, char *value) {
-    bool result = false;
     char *input_file;
     switch (key) {
     case 'C':
@@ -105,22 +106,8 @@ static bool on_option(char key, char *value) {
         break;
     case 'i':
         input_file = strcmp("-", value) ? value : NULL;
-        if (input_file) {
-            result = files_get_file_size_path(value,
-                    (long unsigned *) &ctx.data_size);
-        }
-        if (input_file && !result) {
-            return false;
-        }
-        result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, input_file,
+        return files_load_bytes_from_buffer_or_file_or_stdin(NULL, input_file,
                 &ctx.data_size, ctx.nv_buffer);
-        if (!result) {
-            return false;
-        }
-        if (ctx.data_size > TPM2_MAX_NV_BUFFER_SIZE) {
-            LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE");
-            return false;
-        }
         break;
     case 0:
         if (!tpm2_util_string_to_uint16(value, &ctx.offset)) {

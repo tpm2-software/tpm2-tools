@@ -31,16 +31,7 @@ grep -q "Submitting 8 bytes to TPM"
 tpm2_stirrandom -V < "${goodfile}" 2>&1 1>/dev/null | \
 grep -q "Submitting 42 bytes to TPM"
 
-# Read more than 128 bytes from stdin (pipe)
-dd if=/dev/urandom bs=1 count=256 | tpm2_stirrandom -V 2>&1 1>/dev/null | \
-grep -q "Submitting 128 bytes to TPM"
-
-# Read more than 128 bytes from stdin (file)
-dd if=/dev/urandom bs=1 count=256 | \
-tpm2_stirrandom -V < "${bigfile}" 2>&1 1>/dev/null | \
-grep -q "Submitting 128 bytes to TPM"
-
-# Read a complete file
+# Sending bytes from a file path
 tpm2_stirrandom "${goodfile}" -V 2>&1 1>/dev/null | \
 grep -q "Submitting 42 bytes to TPM"
 

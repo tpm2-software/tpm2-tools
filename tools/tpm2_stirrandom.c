@@ -14,7 +14,9 @@ struct tpm_stirrandom_ctx {
     char *in_file;
 };
 
-static tpm_stirrandom_ctx ctx;
+static tpm_stirrandom_ctx ctx = {
+        .in_data = { .size = MAX_SIZE_TO_READ }
+};
 
 static bool on_args(int argc, char **argv) {
 
@@ -36,8 +38,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 }
 
 static bool load_sensitive(void) {
-
-    ctx.in_data.size = MAX_SIZE_TO_READ;
 
     bool res = files_load_bytes_from_buffer_or_file_or_stdin(NULL, ctx.in_file,
             &ctx.in_data.size, ctx.in_data.buffer);

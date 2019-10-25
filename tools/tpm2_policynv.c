@@ -23,12 +23,14 @@ struct tpm_policynv_ctx {
     const char *session_path;
     tpm2_session *session;
 
-    const TPM2B_OPERAND operand_b;
+    TPM2B_OPERAND operand_b;
     UINT16 offset;
     TPM2_EO operation;
 };
 
-static tpm_policynv_ctx ctx;
+static tpm_policynv_ctx ctx = {
+    .operand_b = { .size = BUFFER_SIZE(TPM2B_OPERAND, buffer) }
+};
 
 static bool on_arg(int argc, char **argv) {
 
@@ -113,13 +115,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, input_file,
-                (UINT16 *)&ctx.operand_b.size,
-                (unsigned char *)&ctx.operand_b.buffer);
+                &ctx.operand_b.size,
+                ctx.operand_b.buffer);
         if (!result) {
-            return false;
-        }
-        if (ctx.operand_b.size > TPM2_MAX_NV_BUFFER_SIZE) {
-            LOG_ERR("File larger than TPM2_MAX_NV_BUFFER_SIZE");
             return false;
         }
         break;

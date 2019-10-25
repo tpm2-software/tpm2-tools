@@ -14,6 +14,8 @@
 #include "tpm2_auth_util.h"
 #include "tpm2_options.h"
 
+#define MAX_INPUT_DATA_SIZE UINT16_MAX
+
 typedef struct tpm_encrypt_decrypt_ctx tpm_encrypt_decrypt_ctx;
 struct tpm_encrypt_decrypt_ctx {
     struct {
@@ -24,10 +26,10 @@ struct tpm_encrypt_decrypt_ctx {
 
     TPMI_YES_NO is_decrypt;
 
-    uint8_t input_data[UINT16_MAX];
+    uint8_t input_data[MAX_INPUT_DATA_SIZE];
     uint16_t input_data_size;
-    char *input_path;
 
+    const char *input_path;
     char *out_file_path;
 
     uint8_t padded_block_len;
@@ -42,7 +44,7 @@ struct tpm_encrypt_decrypt_ctx {
 
 static tpm_encrypt_decrypt_ctx ctx = {
     .mode = TPM2_ALG_NULL,
-    .input_data_size = 0,
+    .input_data_size = MAX_INPUT_DATA_SIZE,
     .padded_block_len = TPM2_MAX_SYM_BLOCK_SIZE,
     .is_padding_option_enabled = false,
 };
@@ -341,20 +343,7 @@ static bool on_args(int argc, char *argv[]) {
         return false;
     }
 
-    bool result;
-    long unsigned int filesize;
     ctx.input_path = argv[0];
-    result = files_get_file_size_path(ctx.input_path, &filesize);
-    if (!result) {
-        LOG_ERR("Input file size could not be retrieved.");
-        return false;
-    }
-    if (filesize > UINT16_MAX) {
-        LOG_ERR("File size bigger than UINT16_MAX");
-        return false;
-    }
-
-    ctx.input_data_size = filesize;
 
     return true;
 }
@@ -386,18 +375,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
-            ctx.input_path, &ctx.input_data_size, ctx.input_data);
-    if (!result) {
-        return tool_rc_general_error;
-    }
-
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.encryption_key.ctx_path,
             ctx.encryption_key.auth_str, &ctx.encryption_key.object, false,
             TPM2_HANDLE_ALL_W_NV);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid object key authorization");
         return rc;
+    }
+
+    bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL,
+            ctx.input_path, &ctx.input_data_size, ctx.input_data);
+    if (!result) {
+        return tool_rc_general_error;
     }
 
     TPM2B_IV iv = { .size = sizeof(iv.buffer), .buffer = { 0 } };
