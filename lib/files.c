@@ -85,12 +85,12 @@ static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
         return false;
     }
 
-    /* max is bounded on UINT16 */
+    /* max is bounded on *size */
     if (file_size > *size) {
         if (path) {
             LOG_ERR(
                     "File \"%s\" size is larger than buffer, got %lu expected "
-                    "less than %u", path, file_size, *size);
+                    "less than or equal to %u", path, file_size, *size);
         }
         return false;
     }
@@ -599,72 +599,51 @@ bool files_read_header(FILE *out, uint32_t *version) {
     return files_read_32(out, version);
 }
 
-bool files_load_bytes_from_buffer_or_file_or_stdin(char *input_buffer,
+bool files_load_bytes_from_buffer_or_file_or_stdin(const char *input_buffer,
         const char *path, UINT16 *size, BYTE *buf) {
-    /*
-     * Read from stdin where in size is not fixed or is unknown
-     * Size however cannot be bigger than UINT16_MAX
-     */
-    bool is_stdin_read_complete = false;
-    if (!input_buffer && !path && !*size) {
-        while (!is_stdin_read_complete) {
-            *size += fread(buf, 1, UINT16_MAX, stdin);
+
+    UINT16 upper_bound = *size;
+    if (!upper_bound) {
+        return true;
+    }
+
+//    printf("Reading file: %s\n", path);
+//    printf("size: %u\n", *size);
+
+    /* Read from stdin */
+    if (!input_buffer && !path) {
+        UINT16 read_bytes = 0;
+        while (1) {
+            read_bytes += fread(buf, 1, upper_bound, stdin);
             if (feof(stdin)) {
-                is_stdin_read_complete = true;
+                *size = read_bytes;
+                return true;
             }
             if (ferror(stdin)) {
                 LOG_ERR("Failed read from stdin.");
                 return false;
             }
-            if (*size >= UINT16_MAX) {
-                LOG_ERR("Stdin input bigger than UINT16_MAX");
-                return false;
-            }
         }
-        return true;
-    }
-
-    UINT16 original_size = *size;
-    bool res;
-    if (input_buffer) {
+        /* read from a buffer */
+    } else if (input_buffer) {
         size_t input_buffer_size = strlen(input_buffer);
         if (path) {
             LOG_ERR("Specify either the input buffer or file path to load data,"
                     " not both");
         }
-        if (input_buffer_size != (size_t) original_size) {
-            LOG_ERR("Unexpected data size. Got %u expected %u", original_size,
+        if (input_buffer_size != (size_t) upper_bound) {
+            LOG_ERR("Unexpected data size. Got %u expected %u", upper_bound,
                     (unsigned )input_buffer_size);
-            res = false;
+            return false;
         } else {
             memcpy(buf, input_buffer, input_buffer_size);
-            res = true;
+            return true;
         }
-    } else {
-        if (path) {
-            res = files_load_bytes_from_path(path, buf, size);
-        } else {
-            /*
-             * Read from stdin where in size is fixed or known
-             * Size however cannot be bigger than UINT16_MAX
-             * Attempt to accurately read the file based on the file size.
-             * This may fail on stdin when it's a pipe.
-             */
-            res = read_bytes_from_file(stdin, buf, size, path);
-            if (!res) {
-                *size = fread(buf, 1, *size, stdin);
-                if (ferror(stdin)) {
-                    LOG_ERR("Error reading data from \"<stdin>\"");
-                    res = false;
-                } else {
-                    res = true;
-                }
-            } else {
-                res = true;
-            }
-        }
+    } else if (path) {
+        return files_load_bytes_from_path(path, buf, size);
     }
-    return res;
+
+    return false;
 }
 
 tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path) {
