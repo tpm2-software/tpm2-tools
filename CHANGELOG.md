@@ -21,6 +21,9 @@
   - \--creation-ticket or -t to save the creation ticket
   - \--creation-hash or -d to save the creation hash
 
+* tpm2\_evictcontrol: Fix bug in automatic persistent handle selection when
+    hierarchy is platform.
+
 * tpm2\_gettime: Add a new tool for retrieving a signed timestamp from a TPM.
 
 * tpm2\_nvcertify: Add a new tool for certifying the contents of an NV index.

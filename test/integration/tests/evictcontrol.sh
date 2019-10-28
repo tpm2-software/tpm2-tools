@@ -4,7 +4,7 @@ source helpers.sh
 
 cleanup() {
   rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-        encrypt.out secret.dat key.dat evict.log
+        encrypt.out secret.dat key.dat evict.log primary.ctx key.ctx
 
   if [ "$1" != "no-shut-down" ]; then
       shut_down
@@ -40,5 +40,13 @@ phandle=$(yaml_get_kv evict.log "persistent-handle")
 tpm2_evictcontrol -Q -C o -c $phandle
 
 yaml_verify evict.log
+
+# verify that platform hierarchy auto selection for persistent handle works
+tpm2_createprimary -C p -c primary.ctx
+tpm2_create -C primary.ctx -c key.ctx
+tpm2_evictcontrol -C p -c key.ctx > evict.log
+
+phandle=$(yaml_get_kv evict.log persistent-handle)
+tpm2_evictcontrol -C p -c $phandle
 
 exit 0

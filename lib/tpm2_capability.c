@@ -135,7 +135,7 @@ tool_rc tpm2_capability_get(ESYS_CONTEXT *ectx, TPM2_CAP capability,
 }
 
 tool_rc tpm2_capability_find_vacant_persistent_handle(ESYS_CONTEXT *ctx,
-        UINT32 *vacant) {
+        bool is_platform, TPMI_DH_PERSISTENT *vacant) {
 
     TPMS_CAPABILITY_DATA *capability_data;
     bool handle_found = false;
@@ -148,17 +148,21 @@ tool_rc tpm2_capability_find_vacant_persistent_handle(ESYS_CONTEXT *ctx,
     UINT32 count = capability_data->data.handles.count;
     if (count == 0) {
         /* There aren't any persistent handles, so use the first */
-        *vacant = TPM2_PERSISTENT_FIRST;
+        *vacant = is_platform ? TPM2_PLATFORM_PERSISTENT : TPM2_PERSISTENT_FIRST;
         handle_found = true;
     } else if (count == TPM2_MAX_CAP_HANDLES) {
         /* All persistent handles are already in use */
         goto out;
     } else if (count < TPM2_MAX_CAP_HANDLES) {
-        /* iterate over used handles to ensure we're selecting
-         the next available handle. */
+        /*
+         * iterate over used handles to ensure we're selecting
+         * the next available handle.
+         *
+         * Platform handles start at a higher hange
+         */
         UINT32 i;
-        for (i = TPM2_PERSISTENT_FIRST; i <= (UINT32) TPM2_PERSISTENT_LAST;
-                ++i) {
+        for (i = is_platform ? TPM2_PLATFORM_PERSISTENT : TPM2_PERSISTENT_FIRST;
+                i <= (UINT32) TPM2_PERSISTENT_LAST; ++i) {
             bool inuse = false;
             UINT32 c;
             for (c = 0; c < count; ++c) {
@@ -166,6 +170,10 @@ tool_rc tpm2_capability_find_vacant_persistent_handle(ESYS_CONTEXT *ctx,
                     inuse = true;
                     break;
                 }
+            }
+
+            if (!is_platform && i >= TPM2_PLATFORM_PERSISTENT) {
+                break;
             }
 
             if (!inuse) {
