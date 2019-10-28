@@ -21,8 +21,11 @@
   - \--creation-ticket or -t to save the creation ticket
   - \--creation-hash or -d to save the creation hash
 
-* tpm2\_evictcontrol: Fix bug in automatic persistent handle selection when
-    hierarchy is platform.
+* tpm2\_evictcontrol:
+    - Fix bug in automatic persistent handle selection when
+      hierarchy is platform.
+    - Fix bug in YAML key action where action was wrong when using ESYS\_TR.
+
 
 * tpm2\_gettime: Add a new tool for retrieving a signed timestamp from a TPM.
 

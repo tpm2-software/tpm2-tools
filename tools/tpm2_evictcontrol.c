@@ -100,8 +100,18 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tool_rc_general_error;
     bool evicted = false;
 
+    /* load up the object/handle to work on */
     tool_rc tmp_rc = tpm2_util_object_load(ectx, ctx.to_persist_key.ctx_path,
             &ctx.to_persist_key.object, TPM2_HANDLE_ALL_W_NV);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+        goto out;
+    }
+
+    /* load up the auth hierarchy */
+    tmp_rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     if (tmp_rc != tool_rc_success) {
         rc = tmp_rc;
         goto out;
@@ -113,17 +123,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.flags.p = 1;
     }
 
-    tmp_rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-            TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
-    if (tmp_rc != tool_rc_success) {
-        rc = tmp_rc;
-        goto out;
-    }
-
     /* If we've been given a handle or context object to persist and not an
      * explicit persistent handle to use, find an available vacant handle in
      * the persistent namespace and use that.
+     *
+     * XXX: We need away to figure out of object is persistent and skip it.
      */
     if (ctx.flags.c && !ctx.flags.p) {
         bool is_platform = ctx.auth_hierarchy.object.handle == TPM2_RH_PLATFORM;
@@ -142,6 +146,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
+    /*
+     * ESAPI is smart enough that if the object is persistent, to ignore the argument
+     * for persistent handle. Thus we can use ESYS_TR output to determine if it's
+     * evicted or not.
+     */
     ESYS_TR out_tr;
     rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
             &ctx.to_persist_key.object, ctx.persist_handle, &out_tr);
@@ -152,8 +161,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * Only Close a TR object if it's still resident in the TPM.
      * When these handles match, evictcontrol flushed it from the TPM.
+     * It's evicted when ESAPI sends back a none handle on evictcontrol.
+     *
+     * XXX: This output is wrong because we can't determine what handle was
+     * evicted on ESYS_TR input.
+     *
+     * See bug: https://github.com/tpm2-software/tpm2-tools/issues/1816
      */
-    evicted = ctx.to_persist_key.object.handle == ctx.persist_handle;
+    evicted = out_tr == ESYS_TR_NONE;
     tpm2_tool_output("persistent-handle: 0x%x\n", ctx.persist_handle);
     tpm2_tool_output("action: %s\n", evicted ? "evicted" : "persisted");
 
