@@ -346,7 +346,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
          * to use and tell them what it is.
          */
         rc = tpm2_capability_find_vacant_persistent_handle(ectx,
-                &ctx.ctx_obj.handle);
+                false, &ctx.ctx_obj.handle);
         if (rc != tool_rc_success) {
             LOG_ERR("handle/-H passed with a value '-' but unable to find a"
                     " vacant persistent handle!");

@@ -28,12 +28,15 @@ tool_rc tpm2_capability_get(ESYS_CONTEXT *context, TPM2_CAP capability,
  * Attempts to find a vacant handle in the persistent handle namespace.
  * @param ctx
  *  Enhanced System API (ESAPI) context
+ *  @param is_platform
+ *   true if the persistent handle should be in the persistent range allocated for
+ *   platform hierarchy, false otherwise.
  * @param vacant
  *  the vacant handle found by the function if True returned
  * @return
  *  tool_rc indicating status.
  */
 tool_rc tpm2_capability_find_vacant_persistent_handle(ESYS_CONTEXT *ctx,
-        UINT32 *vacant);
+        bool is_platform, TPMI_DH_PERSISTENT *vacant);
 
 #endif /* LIB_TPM2_CAPABILITY_H_ */

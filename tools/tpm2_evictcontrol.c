@@ -113,13 +113,22 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.flags.p = 1;
     }
 
+    tmp_rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
+            TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+        goto out;
+    }
+
     /* If we've been given a handle or context object to persist and not an
      * explicit persistent handle to use, find an available vacant handle in
      * the persistent namespace and use that.
      */
     if (ctx.flags.c && !ctx.flags.p) {
+        bool is_platform = ctx.auth_hierarchy.object.handle == TPM2_RH_PLATFORM;
         tmp_rc = tpm2_capability_find_vacant_persistent_handle(ectx,
-                &ctx.persist_handle);
+                is_platform, &ctx.persist_handle);
         if (tmp_rc != tool_rc_success) {
             rc = tmp_rc;
             goto out;
@@ -128,9 +137,6 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         ctx.flags.p = 1;
     }
 
-    rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
-            TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_P);
     if (ctx.flags.o && !ctx.flags.p) {
         LOG_ERR("Cannot specify -o without using a persistent handle");
         goto out;
