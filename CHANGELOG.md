@@ -71,6 +71,9 @@
 
 * tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
 
+* tpm2_policycountertimer: Add a new tool for enabling policy bound to TPM
+  clock or timer values.
+
 * tpm2\_readclock: Add a new tool for reading the TPM clock.
 
 * tpm2\_setclock: Add a new tool for setting the TPM clock.
