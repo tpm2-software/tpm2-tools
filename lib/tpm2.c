@@ -467,6 +467,20 @@ tool_rc tpm2_policy_nv(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_policy_countertimer(ESYS_CONTEXT *esys_context,
+    ESYS_TR policy_session, const TPM2B_OPERAND *operand_b, UINT16 offset,
+    TPM2_EO operation) {
+
+    TSS2_RC rval = Esys_PolicyCounterTimer(esys_context, policy_session,
+        ESYS_TR_NONE, ESYS_TR_NONE, ESYS_TR_NONE, operand_b, offset, operation);
+    if (rval != TSS2_RC_SUCCESS) {
+        LOG_PERR(Esys_PolicyCounterTimer, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,
         INT32 expiration, TPMT_TK_AUTH **policy_ticket,
