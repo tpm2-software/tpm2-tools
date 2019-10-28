@@ -22,6 +22,9 @@
 * tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
     or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
 
+* tpm2\_policynamehash: Add a new tool for specifying policy based on object
+  name.
+
 * tpm2\_policysecret: Add tool options for specifying
   - \--expiration or -t
   - \--ticket
