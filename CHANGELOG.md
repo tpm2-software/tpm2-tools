@@ -9,46 +9,49 @@
    - \-g option for specifying hash algorithm is optional and defaults to
      sha256.
 
+* tpm2_\changeeps: A new tool for changing the Endorsement hierarchy primary seed.
+
+* tpm2_\changepps: A new tool for changing the Platform hierarchy primary seed.
+
+* tpm2\_clockrateadjust: Add a new tool for modifying the period on the TPM.
+
 * tpm2\_createprimary: Add tool options for specifying output data for use
   in certification
   - \--creation-data to save the creation data
   - \--creation-ticket or -t to save the creation ticket
   - \--creation-hash or -d to save the creation hash
 
-* tpm2\_clockrateadjust: Add a new tool for modifying the period on the TPM
-
 * tpm2\_gettime: Add a new tool for retrieving a signed timestamp from a TPM.
 
-* tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
-    or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
+* tpm2\_nvcertify: Add a new tool for certifying the contents of an NV index.
 
-* tpm2\_policynamehash: Add a new tool for specifying policy based on object
-  name.
-
-* tpm2\_policysecret: Add tool options for specifying
-  - \--expiration or -t
-  - \--ticket
-  - \--timeout
-  - \--nonce-tpm or -x
-  - \--qualification or -q
-
-* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
-
-* tpm2\_startauthsession: Add option to retrieve the session nonceTPM.
-
-* tpm2\_policysigned: New tool enabling policy command TPM2\_PolicySigned.
-
-* misc:
-  - support "tpmt" as a public key output format that only saves the TPMT structure.
-  clock.
+* tpm2\_nvdefine:
+  - Support default set of attributes so -a is not mandatory.
+  - Support searching for free index if an index isn't specified.
 
 * tpm2\_nvextend: Add a new tool for extending an NV index similair to a PCR.
 
 * tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
     or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
 
+* tpm2\_nvreadpublic:
+  - Support specifying nv index to read public data from as argument.
+
 * tpm2\_nvundefine: Add support for deleting NV indices with attribute
     `TPMA_NV_POLICY_DELETE` set using NV Undefine Special command.
+
+* tpm2\_policyauthorizenv: New tool enabling signed, revocable policies.
+
+* tpm2\_policyauthvalue: New tool enabling authorization to be bound to the
+    authorization of another object.
+
+* tpm2\_policynamehash: Add a new tool for specifying policy based on object
+  name.
+
+* tpm2\_policynv: Add a new tool for specifying policy based on NV contents.
+
+* tpm2\_nvwritten: Add a new tool for specifying policy based on whether or not
+    an NV index was written to.
 
 * tpm2\_policysecret: Add tool options for specifying
   - \--expiration or -t
@@ -57,25 +60,29 @@
   - \--nonce-tpm or -x
   - \--qualification or -q
 
-* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
-
-* tpm2\_startauthsession: Add option to retrieve the session nonceTPM.
+* tpm2\_policysecret: Add tool options for specifying
+  - \--expiration or -t
+  - \--ticket
+  - \--timeout
+  - \--nonce-tpm or -x
+  - \--qualification or -q
 
 * tpm2\_policysigned: New tool enabling policy command TPM2\_PolicySigned.
 
-* misc:
-  - support "tpmt" as a public key output format that only saves the TPMT structure.
-
-* tpm2\_nvdefine:
-  - Support default set of attributes so -a is not mandatory.
-  - Support searching for free index if an index isn't specified.
-
-* tpm2\_nvreadpublic:
-  - Support specifying nv index to read public data from as argument.
+* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
 
 * tpm2\_readclock: Add a new tool for reading the TPM clock.
 
 * tpm2\_setclock: Add a new tool for setting the TPM clock.
+
+* tpm2\_setprimarypolicy: New tool setting policy on hierarchies.
+
+* tpm2\_shutdown: Add a new tool for issuing a TPM shutdown command.
+
+* tpm2\_startauthsession: Add option to retrieve the session nonceTPM.
+
+* misc:
+  - support "tpmt" as a public key output format that only saves the TPMT structure.
 
 ### 4.0 - 2019-09-09
 
