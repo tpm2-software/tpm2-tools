@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.0.1-rc0 - 2019-10-21
+### 4.0.1 - 2019-10-2r81
 
 * tpm2_checkquote:
    - Fix YAML output bug.
