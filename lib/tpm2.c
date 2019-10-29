@@ -1,6 +1,8 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include <string.h>
 #include <tss2/tss2_mu.h>
+#include <tss2/tss2_sys.h>
 
 #include "log.h"
 #include "object.h"
@@ -2113,6 +2115,18 @@ tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
             signature);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_GetTime, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
+tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
+    TSS2_SYS_CONTEXT **sys_context) {
+
+    TSS2_RC rval = Esys_GetSysContext(esys_context, sys_context);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_GetSysContext, rval);
         return tool_rc_from_tpm(rval);
     }
 
