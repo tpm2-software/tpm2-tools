@@ -415,4 +415,6 @@ tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
         TPM2B_ATTEST **time_info,
         TPMT_SIGNATURE **signature);
 
+tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
+    TSS2_SYS_CONTEXT **sys_context);
 #endif /* LIB_TPM2_H_ */
