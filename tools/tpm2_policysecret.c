@@ -30,7 +30,7 @@ struct tpm2_policysecret_ctx {
 
     char *policy_timeout_path;
 
-    const char *qualifier_data_path;
+    const char *qualifier_data_arg;
 
     TPM2B_NONCE nonce_tpm;
 
@@ -87,7 +87,7 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'q':
-        ctx.qualifier_data_path = value;
+        ctx.qualifier_data_arg = value;
         break;
     }
 
@@ -178,7 +178,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_TIMEOUT *timeout = NULL;
     rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
             &ctx.auth_entity.object, ctx.expiration, &policy_ticket, &timeout,
-            &ctx.nonce_tpm, ctx.qualifier_data_path);
+            &ctx.nonce_tpm, ctx.qualifier_data_arg);
     tool_rc rc2 = tpm2_session_close(&ctx.auth_entity.object.session);
     if (rc != tool_rc_success) {
         goto tpm2_tool_onrun_out;

@@ -156,7 +156,7 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *ectx, tpm2_session *policy_session,
 
 tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, const char *policy_digest_path,
-        const char *policy_qualifier_path,
+        const char *qualifying_data,
         const char *verifying_pubkey_name_path, const char *ticket_path) {
 
     bool result = true;
@@ -173,24 +173,19 @@ tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
     /*
      * Qualifier data is optional. If not specified default to 0
      */
+
+    TPM2B_NONCE policy_qualifier = { .size = 0 };
+
+    if (qualifying_data) {
+        policy_qualifier.size = sizeof(policy_qualifier.buffer);
+        result = tpm2_util_bin_from_hex_or_file(qualifying_data,
+                &policy_qualifier.size, policy_qualifier.buffer);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    }
+
     unsigned long file_size = 0;
-    if (policy_qualifier_path) {
-        result = files_get_file_size_path(policy_qualifier_path, &file_size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    }
-
-    TPM2B_NONCE policy_qualifier = { .size = (uint16_t) file_size };
-
-    if (file_size != 0) {
-        result = files_load_bytes_from_path(policy_qualifier_path,
-                policy_qualifier.buffer, &policy_qualifier.size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    }
-
     result = files_get_file_size_path(verifying_pubkey_name_path, &file_size);
     if (!result) {
         return tool_rc_general_error;
@@ -265,25 +260,17 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         INT32 expiration, TPMT_TK_AUTH **policy_ticket,
         TPM2B_TIMEOUT **timeout, TPM2B_NONCE *nonce_tpm,
-        const char *policy_qualifier_path) {
+        const char *policy_qualifier_data) {
 
     /*
      * Qualifier data is optional. If not specified default to 0
      */
-    unsigned long file_size = 0;
-    bool result = true;
-    if (policy_qualifier_path) {
-        result = files_get_file_size_path(policy_qualifier_path, &file_size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    }
-
-    TPM2B_NONCE policy_qualifier = { .size = (uint16_t) file_size };
-
-    if (file_size != 0) {
-        result = files_load_bytes_from_path(policy_qualifier_path,
-                policy_qualifier.buffer, &policy_qualifier.size);
+    TPM2B_NONCE policy_qualifier = TPM2B_EMPTY_INIT;
+    if (policy_qualifier_data) {
+        policy_qualifier.size = sizeof(policy_qualifier.buffer);
+        bool result = tpm2_util_bin_from_hex_or_file(policy_qualifier_data,
+                &policy_qualifier.size,
+                policy_qualifier.buffer);
         if (!result) {
             return tool_rc_general_error;
         }
@@ -297,7 +284,7 @@ tool_rc tpm2_policy_build_policysecret(ESYS_CONTEXT *ectx,
 
 tool_rc tpm2_policy_build_policyticket(ESYS_CONTEXT *ectx,
     tpm2_session *policy_session, char *policy_timeout_path,
-    const char *qualifier_data_path, char *policy_ticket_path,
+    const char *qualifier_data, char *policy_ticket_path,
     const char *auth_name_path) {
 
     unsigned long file_size = 0;
@@ -328,19 +315,13 @@ tool_rc tpm2_policy_build_policyticket(ESYS_CONTEXT *ectx,
         }
     }
 
-    TPM2B_NONCE policyref = { 0 };
-    if (qualifier_data_path) {
-        result = files_get_file_size_path(qualifier_data_path, &file_size);
+    TPM2B_NONCE policyref = TPM2B_EMPTY_INIT;
+    if (qualifier_data) {
+        policyref.size = sizeof(policyref.buffer);
+        result = tpm2_util_bin_from_hex_or_file(qualifier_data, &policyref.size,
+                policyref.buffer);
         if (!result) {
             return tool_rc_general_error;
-        }
-        policyref.size = (uint16_t) file_size;
-        if (policyref.size) {
-            result = files_load_bytes_from_path(qualifier_data_path,
-                    policyref.buffer, &policyref.size);
-            if (!result) {
-                return tool_rc_general_error;
-            }
         }
     }
 
@@ -362,26 +343,21 @@ tool_rc tpm2_policy_build_policyticket(ESYS_CONTEXT *ectx,
 tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         TPMT_SIGNATURE *signature, INT32 expiration, TPM2B_TIMEOUT **timeout,
-        TPMT_TK_AUTH **policy_ticket, const char *policy_qualifier_path,
+        TPMT_TK_AUTH **policy_ticket, const char *policy_qualifier_data,
         TPM2B_NONCE *nonce_tpm) {
 
     bool result = true;
+
     /*
      * Qualifier data is optional. If not specified default to 0
      */
-    unsigned long file_size = 0;
-    if (policy_qualifier_path) {
-        result = files_get_file_size_path(policy_qualifier_path, &file_size);
-        if (!result) {
-            return tool_rc_general_error;
-        }
-    }
+    TPM2B_NONCE policy_qualifier = TPM2B_EMPTY_INIT;
 
-    TPM2B_NONCE policy_qualifier = { .size = (uint16_t) file_size };
-
-    if (file_size != 0) {
-        result = files_load_bytes_from_path(policy_qualifier_path,
-                policy_qualifier.buffer, &policy_qualifier.size);
+    if (policy_qualifier_data) {
+        policy_qualifier.size = sizeof(policy_qualifier.buffer);
+        result = tpm2_util_bin_from_hex_or_file(policy_qualifier_data,
+                &policy_qualifier.size,
+                policy_qualifier.buffer);
         if (!result) {
             return tool_rc_general_error;
         }

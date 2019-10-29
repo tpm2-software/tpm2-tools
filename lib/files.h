@@ -28,6 +28,22 @@
 bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size);
 
 /**
+ * Like files_load_bytes_from_path() but uses a FILE pointer.
+ * @param f
+ *  The FILE pointer to read from.
+ * @param buf
+ *  The buffer to store the data.
+ * @param size
+ *  On input the max size of the buffer, on success the actual count of bytes read.
+ * @param path
+ *  A possible path for error reporting, can be NULL to silence error reporting.
+ * @return
+ *  True on success, false otherwise.
+ */
+bool file_read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
+        const char *path);
+
+/**
  * Loads data from an input buffer or file path or stdin enforcing an upper bound on size.
  * @param input_buffer
  *   The buffer to read the input data from, NULL means either specified by path or stdin

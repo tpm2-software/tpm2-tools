@@ -44,10 +44,10 @@ those in the quote.
     Optional PCR input file to save the list of PCR values that were included
     in the quote.
 
-  * **-q**, **\--qualification**=_HEX\_STRING_:
+  * **-q**, **\--qualification**=_HEX\_STRING\_OR\_PATH_:
 
-    Qualification data for the quote. This is typically used to add a nonce
-    against replay attacks.
+    Qualification data for the quote. Can either be a hex string or path.
+    This is typically used to add a nonce against replay attacks.
 
 ## References
 

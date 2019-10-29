@@ -21,7 +21,6 @@ struct tpm2_verifysig_ctx {
             UINT8 msg :1;
             UINT8 sig :1;
             UINT8 pcr :1;
-            UINT8 extra :1;
             UINT8 key_context :1;
             UINT8 fmt;
         };
@@ -47,7 +46,6 @@ static tpm2_verifysig_ctx ctx = {
         .halg = TPM2_ALG_SHA256,
         .msg_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
         .pcr_hash = TPM2B_TYPE_INIT(TPM2B_DIGEST, buffer),
-        .extra_data = TPM2B_TYPE_INIT(TPM2B_DATA, buffer),
 };
 
 static bool verify_signature() {
@@ -88,13 +86,11 @@ static bool verify_signature() {
     }
 
     // Ensure nonce is the same as given
-    if (ctx.flags.extra) {
-        if (ctx.attest.extraData.size != ctx.extra_data.size ||
-            memcmp(ctx.attest.extraData.buffer, ctx.extra_data.buffer,
-            ctx.extra_data.size) != 0) {
-            LOG_ERR("Error validating nonce from quote");
-            goto err;
-        }
+    if (ctx.attest.extraData.size != ctx.extra_data.size ||
+        memcmp(ctx.attest.extraData.buffer, ctx.extra_data.buffer,
+        ctx.extra_data.size) != 0) {
+        LOG_ERR("Error validating nonce from quote");
+        goto err;
     }
 
     // Also ensure digest from quote matches PCR digest
@@ -326,14 +322,9 @@ static bool on_option(char key, char *value) {
     }
         break;
     case 'q':
-        ctx.extra_data.size = sizeof(ctx.extra_data) - 2;
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.extra_data.size,
-                ctx.extra_data.buffer) != 0) {
-            LOG_ERR("Could not convert \"%s\" from a hex string to byte array!",
-                    value);
-            return false;
-        }
-        ctx.flags.extra = 1;
+        ctx.extra_data.size = sizeof(ctx.extra_data.buffer);
+        return tpm2_util_bin_from_hex_or_file(value, &ctx.extra_data.size,
+                ctx.extra_data.buffer);
         break;
     case 's':
         ctx.sig_file_path = value;

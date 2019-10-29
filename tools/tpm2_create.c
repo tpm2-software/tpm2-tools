@@ -41,7 +41,7 @@ struct tpm_create_ctx {
         char *policy;
     } object;
 
-    char *outside_info_file;
+    char *outside_info_data;
 
     TPML_PCR_SELECTION creation_pcr;
 
@@ -64,21 +64,10 @@ static tpm_create_ctx ctx = {
 
 static bool load_outside_info(TPM2B_DATA *outside_info) {
 
-    unsigned long file_size = 0;
-    bool result = files_get_file_size_path(ctx.outside_info_file,
-        &file_size);
-    if (!result || file_size == 0) {
-        LOG_ERR("Error reading outside_info file.");
-        return false;
-    }
-    outside_info->size = file_size;
-    result = files_load_bytes_from_path(ctx.outside_info_file,
-            outside_info->buffer, &outside_info->size);
-    if (!result) {
-        LOG_ERR("Failed loading outside_info from path");
-        return false;
-    }
-    return true;
+    outside_info->size = sizeof(outside_info->buffer);
+    return tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
+            &outside_info->size,
+            outside_info->buffer);
 }
 
 static tool_rc create(ESYS_CONTEXT *ectx) {
@@ -118,7 +107,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
          */
         bool result = true;
         TPM2B_DATA outside_info = TPM2B_EMPTY_INIT;
-        if (ctx.outside_info_file) {
+        if (ctx.outside_info_data) {
             result = load_outside_info(&outside_info);
         }
         if (!result) {
@@ -257,7 +246,7 @@ static bool on_option(char key, char *value) {
         ctx.object.creation_hash_file = value;
         break;
     case 'q':
-        ctx.outside_info_file = value;
+        ctx.outside_info_data = value;
         break;
     case 'l':
         if (!pcr_parse_selections(value, &ctx.creation_pcr)) {

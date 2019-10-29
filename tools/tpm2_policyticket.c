@@ -19,7 +19,7 @@ struct tpm2_policyticket_ctx {
 
     char *policy_timeout_path;
 
-    const char *qualifier_data_path;
+    const char *policy_qualifier_data;
 
     char *policy_ticket_path;
 
@@ -41,7 +41,7 @@ static bool on_option(char key, char *value) {
         ctx.auth_name_file = value;
         break;
     case 'q':
-        ctx.qualifier_data_path = value;
+        ctx.policy_qualifier_data = value;
         break;
     case 0:
         ctx.policy_ticket_path = value;
@@ -112,7 +112,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     rc = tpm2_policy_build_policyticket(ectx, ctx.session,
-        ctx.policy_timeout_path, ctx.qualifier_data_path,
+        ctx.policy_timeout_path, ctx.policy_qualifier_data,
         ctx.policy_ticket_path, ctx.auth_name_file);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policyticket TPM");

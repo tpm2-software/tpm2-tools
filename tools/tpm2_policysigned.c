@@ -33,7 +33,7 @@ struct tpm2_policysigned_ctx {
 
     char *policy_timeout_path;
 
-    const char *qualifier_data_path;
+    const char *policy_qualifier_data;
 
     union {
         struct {
@@ -84,7 +84,7 @@ static bool on_option(char key, char *value) {
         ctx.context_arg = value;
         break;
     case 'q':
-        ctx.qualifier_data_path = value;
+        ctx.policy_qualifier_data = value;
         break;
     case 0:
         ctx.policy_ticket_path = value;
@@ -196,7 +196,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPMT_TK_AUTH *policy_ticket = NULL;
     rc = tpm2_policy_build_policysigned(ectx, ctx.session,
         &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout,
-        &policy_ticket, ctx.qualifier_data_path, &ctx.nonce_tpm);
+        &policy_ticket, ctx.policy_qualifier_data, &ctx.nonce_tpm);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysigned TPM");
         goto tpm2_tool_onrun_out;

@@ -196,13 +196,9 @@ static bool on_option(char key, char *value) {
         }
         break;
     case 'q':
-        ctx.qualification_data.size = sizeof(ctx.qualification_data) - 2;
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.qualification_data.size,
-                ctx.qualification_data.buffer) != 0) {
-            LOG_ERR("Could not convert \"%s\" from a hex string to byte array!",
-                    value);
-            return false;
-        }
+        ctx.qualification_data.size = sizeof(ctx.qualification_data.buffer);
+        return tpm2_util_bin_from_hex_or_file(value, &ctx.qualification_data.size,
+                ctx.qualification_data.buffer);
         break;
     case 's':
         ctx.signature_path = value;

@@ -47,10 +47,10 @@ algorithm/banks.
     PCR output file, optional, records the list of PCR values as defined
     by **-l**.
 
-  * **-q**, **\--qualification**=_HEX\_STRING_:
+  * **-q**, **\--qualification**=_HEX\_STRING\_OR\_PATH_:
 
-    Data given as a Hex string to qualify the  quote, optional. This is
-    typically used to add a nonce against replay attacks.
+    Data given as a Hex string or binary file to qualify the quote, optional.
+    This is typically used to add a nonce against replay attacks.
 
   * **-g**, **\--hash-algorithm**:
 

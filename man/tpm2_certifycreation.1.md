@@ -58,10 +58,10 @@ created with either **TPM2_CreatePrimary** or **TPM2_Create** commands.
 
     The attestation data of the type TPM2_CREATION_INFO signed with signing key.
 
-  * **-q**, **\--qualification**=_FILE_:
+  * **-q**, **\--qualification**=_FILE\_OR\_HEX_:
 
-    The policy qualifier data that the signer can choose to include in the
-    signature.
+    Optional, the policy qualifier data that the signer can choose to include in the
+    signature. Can either be a path or hex string.
 
 ## References
 

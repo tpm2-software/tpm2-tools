@@ -86,10 +86,10 @@ future interactions with the created primary.
 
     An optional file output that saves the creation hash for certification.
 
-  * **-q**, **\--outside-info**=_FILE_:
+  * **-q**, **\--outside-info**=_FILE\_OR\_HEX_:
 
-    An optional file to add unique data to the creation data. Note that it does
-    not contribute in creating statistically unique object.
+    An optional file or hex string to add unique data to the creation data.
+    Note that it does not contribute in creating statistically unique object.
 
   * **-l**, **\--pcr-list**=_PCR_:
 

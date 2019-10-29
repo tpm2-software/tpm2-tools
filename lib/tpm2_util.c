@@ -182,6 +182,27 @@ int tpm2_util_hex_to_byte_structure(const char *input_string, UINT16 *byte_lengt
     return 0;
 }
 
+bool tpm2_util_bin_from_hex_or_file(const char *input, UINT16 *len, BYTE *buffer) {
+
+    bool result = false;
+
+    FILE *f = fopen(input, "rb");
+    if (!f) {
+        result = tpm2_util_hex_to_byte_structure(input, len, buffer) == 0;
+        goto out;
+    }
+
+    result = file_read_bytes_from_file(f, buffer, len, input);
+    fclose(f);
+out:
+    if (!result) {
+        LOG_ERR("Could not convert \"%s\". Neither a file path nor hex string.",
+        input);
+    }
+
+    return result;
+}
+
 void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len) {
 
     size_t i;

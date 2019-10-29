@@ -56,10 +56,10 @@ object use.
     limited to the current session. This can be specified as a file or can take
     a stdin input if the option argument value is a hyphen "-".
 
-  * **-q**, **\--qualification**=_FILE_:
+  * **-q**, **\--qualification**=_FILE\_OR\_HEX\_STR_:
 
-    The policy qualifier data that the signer can choose to include in the
-    signature.
+    Optional, the policy qualifier data that the signer can choose to include in the
+    signature. Can be either a hex string or path.
 
   * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
     the object specified with **-c**.

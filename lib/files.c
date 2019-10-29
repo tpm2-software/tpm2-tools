@@ -76,7 +76,7 @@ bool files_get_file_size(FILE *fp, unsigned long *file_size, const char *path) {
     return true;
 }
 
-static bool read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
+bool file_read_bytes_from_file(FILE *f, UINT8 *buf, UINT16 *size,
         const char *path) {
     unsigned long file_size;
     bool result = files_get_file_size(f, &file_size, path);
@@ -119,7 +119,7 @@ bool files_load_bytes_from_path(const char *path, UINT8 *buf, UINT16 *size) {
         return false;
     }
 
-    bool result = read_bytes_from_file(f, buf, size, path);
+    bool result = file_read_bytes_from_file(f, buf, size, path);
 
     fclose(f);
     return result;
