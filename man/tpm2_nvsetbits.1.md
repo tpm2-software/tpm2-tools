@@ -39,6 +39,12 @@ specified as raw handle or an offset value to the NV handle range
     Specifies the bit value as a number to bitwise OR into the current value
     of the NV index.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 

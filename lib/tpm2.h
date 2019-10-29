@@ -299,7 +299,7 @@ tool_rc tpm2_tr_from_tpm_public(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-        UINT64 bits);
+        UINT64 bits, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
