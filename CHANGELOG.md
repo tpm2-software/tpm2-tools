@@ -1,4 +1,8 @@
 ## Changelog
+
+### next
+  * Update to work with newer version of TSS.
+
 ### 3.2.1 - 2019-10-10
  * Fix invalid memcpy when extracting ECDSA plain signatures.
  * Fix resource leak on FILE * in hashing routine.
