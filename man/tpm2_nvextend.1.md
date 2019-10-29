@@ -1,20 +1,20 @@
-% tpm2_nvsetbits(1) tpm2-tools | General Commands Manual
+% tpm2_nvextend(1) tpm2-tools | General Commands Manual
 
 # NAME
 
-**tpm2_nvsetbits**(1) - Bitwise OR bits into a Non-Volatile (NV).
+**tpm2_nvextend**(1) - Extend an Non-Volatile (NV) index like it was a PCR.
 
 # SYNOPSIS
 
-**tpm2_nvsetbits** [*OPTIONS*] [*ARGUMENT*]
+**tpm2_nvextend** [*OPTIONS*] [*ARGUMENT*]
 
 # DESCRIPTION
 
-**tpm2_nvsetbits**(1) - Bitwise OR bits into a Non-Volatile (NV). The
-NV index must be of type "bits" which is specified via the "nt" field
+**tpm2_nvextend**(1) - Extend an Non-Volatile (NV) index like it was a PCR.
+The NV index must be of type "extend" which is specified via the "nt" field
 when creating the NV space with tpm2_nvdefine(1). The index can be
 specified as raw handle or an offset value to the NV handle range
-"TPM2_HR_NV_INDEX".
+"TPM2_HR_NV_INDEX" as an argument.
 
 # OPTIONS
 
@@ -59,12 +59,12 @@ the various known TCTI modules.
 
 ## OR 0xbadc0de into an index of 0's
 ```bash
-tpm2_nvdefine -C o -a "nt=bits|ownerread|policywrite|ownerwrite|writedefine" 1
+tpm2_nvdefine -C o -a "nt=extend|ownerread|policywrite|ownerwrite|writedefine" 1
 
-tpm2_nvsetbits -C o -i 0xbadc0de 1
+echo 'my data' | tpm2_nvextend -C o -i- 1
 
-tpm2_nvread -C o 1 | xxd -p | sed s/'^0*'/0x/
-0xbadc0de
+tpm2_nvread -C o 1 | xxd -p -c32
+db7472e3fe3309b011ec11565bce4ea6668cc8ecdef7e6fdcda5206687af3f43
 ```
 
 [returns](common/returns.md)
