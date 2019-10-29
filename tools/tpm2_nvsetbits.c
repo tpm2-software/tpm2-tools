@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #include <stdlib.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_nv_util.h"
@@ -16,6 +17,8 @@ struct tpm_nvsetbits_ctx {
 
     const char *bit_string;
     TPM2_HANDLE nv_index;
+
+    char *cp_hash_path;
 };
 
 static tpm_nvsetbits_ctx ctx;
@@ -43,6 +46,9 @@ static bool on_option(char key, char *value) {
     case 'i':
         ctx.bit_string = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -54,6 +60,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "hierarchy", required_argument, NULL, 'C' },
         { "auth",      required_argument, NULL, 'P' },
         { "bits",      required_argument, NULL, 'i' },
+        { "cphash",    required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:i:", ARRAY_LEN(topts), topts, on_option,
@@ -87,10 +94,30 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return tpm2_nvsetbits(ectx, &ctx.auth_hierarchy.object, ctx.nv_index, bits);
+    if (!ctx.cp_hash_path) {
+        return tpm2_nvsetbits(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+            bits, NULL);
+    }
+
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = tpm2_nvsetbits(ectx, &ctx.auth_hierarchy.object, ctx.nv_index, bits,
+        &cp_hash);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    if (!ctx.cp_hash_path) {
+        return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    }
+    return tool_rc_success;
 }

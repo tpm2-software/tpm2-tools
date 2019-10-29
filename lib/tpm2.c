@@ -8,6 +8,7 @@
 #include "object.h"
 #include "tool_rc.h"
 #include "tpm2.h"
+#include "tpm2_alg_util.h"
 #include "tpm2_auth_util.h"
 #include "tpm2_openssl.h"
 #include "tpm2_tool.h"
@@ -1443,11 +1444,11 @@ tool_rc tpm2_tr_from_tpm_public(ESYS_CONTEXT *esys_context, TPM2_HANDLE handle, 
 
 tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-        UINT64 bits) {
+        UINT64 bits, TPM2B_DIGEST *cp_hash) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
-            ESYS_TR_NONE, ESYS_TR_NONE, &esys_tr_nv_handle);
+        ESYS_TR_NONE, ESYS_TR_NONE, &esys_tr_nv_handle);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_PERR(Esys_TR_FromTPMPublic, rval);
         return tool_rc_from_tpm(rval);
@@ -1455,11 +1456,57 @@ tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
 
     ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
-            auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session,
-            &auth_hierarchy_obj_session_handle);
+        auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session,
+        &auth_hierarchy_obj_session_handle);
     if (rc != tool_rc_success) {
         LOG_ERR("Failed to get shandle");
         return rc;
+    }
+
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        rval = Tss2_Sys_NV_SetBits_Prepare(sys_context,
+            auth_hierarchy_obj->handle, nv_index, bits);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_NV_SetBits_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, auth_hierarchy_obj->tr_handle,
+            &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvsetbits_free_name1;
+        }
+
+        TPM2B_NAME *name2 = NULL;
+        rc = tpm2_tr_get_name(esys_context, esys_tr_nv_handle, &name2);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvsetbits_free_name1_name2;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(auth_hierarchy_obj->session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
+            tpm2_session_get_authhash(auth_hierarchy_obj->session), cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+tpm2_nvsetbits_free_name1_name2:
+        Esys_Free(name2);
+tpm2_nvsetbits_free_name1:
+        Esys_Free(name1);
+        goto tpm2_nvsetbits_skip_esapi_call;
     }
 
     rval = Esys_NV_SetBits(esys_context, auth_hierarchy_obj->tr_handle,
@@ -1470,7 +1517,8 @@ tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_nvsetbits_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
