@@ -38,6 +38,19 @@
 #include "tpm2_tool.h"
 #include "tpm2_util.h"
 
+/*
+ * Older versions of tpm2-tss misspelled these constants' names.
+ * See https://github.com/tpm2-software/tpm2-tss/issues/1500.
+ */
+#ifndef TPM2_PT_HR_TRANSIENT_MIN
+#define TPM2_PT_HR_TRANSIENT_MIN    ((TPM2_PT) (TPM2_PT_FIXED + 14))
+#define TPM2_PT_HR_PERSISTENT_MIN   ((TPM2_PT) (TPM2_PT_FIXED + 15))
+#define TPM2_PT_HR_NV_INDEX         ((TPM2_PT) (TPM2_PT_VAR + 2))
+#define TPM2_PT_HR_TRANSIENT_AVAIL  ((TPM2_PT) (TPM2_PT_VAR + 7))
+#define TPM2_PT_HR_PERSISTENT       ((TPM2_PT) (TPM2_PT_VAR + 8))
+#define TPM2_PT_HR_PERSISTENT_AVAIL ((TPM2_PT) (TPM2_PT_VAR + 9))
+#endif
+
 typedef struct tpm_listpersistent_context tpm_listpersistent_context;
 struct tpm_listpersistent_context {
     TPMI_ALG_HASH nameAlg;
@@ -143,7 +156,7 @@ int tpm2_tool_onrun(TSS2_SYS_CONTEXT *sapi_context, tpm2_option_flags flags) {
 
     UINT32 property = tpm2_util_endian_swap_32(TPM2_HT_PERSISTENT);
     rval = TSS2_RETRY_EXP(Tss2_Sys_GetCapability(sapi_context, 0, TPM2_CAP_HANDLES,
-                                   property, TPM2_PT_TPM2_HR_PERSISTENT, &moreData,
+                                   property, TPM2_HR_PERSISTENT, &moreData,
                                    &capabilityData, 0));
     if(rval != TPM2_RC_SUCCESS)
     {
