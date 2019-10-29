@@ -417,4 +417,9 @@ tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
 
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);
+
+tool_rc tpm2_sapi_getcphash(TSS2_SYS_CONTEXT *sys_context,
+    const TPM2B_NAME *name1, const TPM2B_NAME *name2, const TPM2B_NAME *name3,
+    TPMI_ALG_HASH halg, TPM2B_DIGEST *cp_hash);
+
 #endif /* LIB_TPM2_H_ */

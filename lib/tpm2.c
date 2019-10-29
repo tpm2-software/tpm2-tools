@@ -9,6 +9,7 @@
 #include "tool_rc.h"
 #include "tpm2.h"
 #include "tpm2_auth_util.h"
+#include "tpm2_openssl.h"
 #include "tpm2_tool.h"
 #include "config.h"
 
@@ -2131,4 +2132,69 @@ tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     }
 
     return tool_rc_success;
+}
+
+tool_rc tpm2_sapi_getcphash(TSS2_SYS_CONTEXT *sys_context,
+    const TPM2B_NAME *name1, const TPM2B_NAME *name2, const TPM2B_NAME *name3,
+    TPMI_ALG_HASH halg, TPM2B_DIGEST *cp_hash) {
+
+    uint8_t command_code[4];
+    TSS2_RC rval = Tss2_Sys_GetCommandCode(sys_context, &command_code[0]);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_GetCommandCode, rval);
+        return tool_rc_general_error;
+    }
+
+    const uint8_t *command_parameters;
+    size_t command_parameters_size;
+    rval = Tss2_Sys_GetCpBuffer(sys_context, &command_parameters_size,
+        &command_parameters);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Tss2_Sys_GetCpBuffer, rval);
+        return tool_rc_general_error;
+    }
+
+    uint16_t to_hash_len = sizeof(command_code) + command_parameters_size;
+    to_hash_len += name1 ? name1->size : 0;
+    to_hash_len += name2 ? name2->size : 0;
+    to_hash_len += name3 ? name3->size : 0;
+
+    uint8_t *to_hash = malloc(to_hash_len);
+    if (!to_hash) {
+        LOG_ERR("oom");
+        return tool_rc_general_error;
+    }
+
+    //Command-Code
+    memcpy(to_hash, command_code, sizeof(command_code));
+    uint16_t offset = sizeof(command_code);
+
+    //Names
+    if (name1) {
+        memcpy(to_hash + offset, name1->name, name1->size);
+        offset += name1->size;
+    }
+    if (name2) {
+        memcpy(to_hash + offset, name2->name, name2->size);
+        offset += name2->size;
+    }
+    if (name3) {
+        memcpy(to_hash + offset, name3->name, name3->size);
+        offset += name3->size;
+    }
+
+    //CpBuffer
+    memcpy(to_hash + offset, command_parameters, command_parameters_size);
+
+    //cpHash
+    tool_rc rc = tool_rc_success;
+    bool result = tpm2_openssl_hash_compute_data(halg, to_hash, to_hash_len,
+        cp_hash);
+    free(to_hash);
+    if (!result) {
+        LOG_ERR("Failed cpHash digest calculation.");
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
