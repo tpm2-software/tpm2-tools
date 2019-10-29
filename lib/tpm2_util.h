@@ -182,6 +182,20 @@ void tpm2_util_hexdump(const BYTE *data, size_t len);
 void tpm2_util_hexdump2(FILE *f, const BYTE *data, size_t len);
 
 /**
+ * Read a hex string converting it to binary or a binary file and
+ * store into a binary buffer.
+ * @param input
+ *  Either a hex string or a file path.
+ * @param len
+ *  The maximum length of the buffer.
+ * @param buffer
+ *  The buffer to read into.
+ * @return
+ *  True on success, False otherwise.
+ */
+bool tpm2_util_bin_from_hex_or_file(const char *input, UINT16 *len, BYTE *buffer);
+
+/**
  * Prints a file as a hex string to stdout if quiet mode
  * is not enabled.
  * ie no -Q option.

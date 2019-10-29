@@ -95,10 +95,10 @@ These options for creating the TPM entity:
 
     An optional file output that saves the creation hash for certification.
 
-  * **-q**, **\--outside-info**=_FILE_:
+  * **-q**, **\--outside-info**=_HEX\_STR\_OR\_FILE_:
 
-    An optional file to add unique data to the creation data. Note that it does
-    not contribute in creating statistically unique object.
+    An optional hex string or path to add unique data to the creation data.
+    Note that it does not contribute in creating statistically unique object.
 
   * **-l**, **\--pcr-list**=_PCR_:
 

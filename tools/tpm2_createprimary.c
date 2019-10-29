@@ -29,7 +29,7 @@ struct tpm_createprimary_ctx {
     char *creation_data_file;
     char *creation_ticket_file;
     char *creation_hash_file;
-    char *outside_info_file;
+    char *outside_info_data;
 
     char *alg;
     char *halg;
@@ -98,7 +98,7 @@ static bool on_option(char key, char *value) {
         ctx.creation_hash_file = value;
         break;
     case 'q':
-        ctx.outside_info_file = value;
+        ctx.outside_info_data = value;
         break;
     case 'l':
         if (!pcr_parse_selections(value, &ctx.objdata.in.creation_pcr)) {
@@ -168,23 +168,15 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /*
      * Outside data is optional. If not specified default to 0
      */
-    if (!ctx.outside_info_file) {
+    if (!ctx.outside_info_data) {
         goto skipped_outside_info;
     }
 
-    unsigned long file_size = 0;
-    result = files_get_file_size_path(ctx.outside_info_file, &file_size);
-    if (!result || file_size == 0) {
-        LOG_ERR("Error reading outside_info file.");
-        return tool_rc_general_error;
-    }
-
-    ctx.objdata.in.outside_info.size = file_size;
-    result = files_load_bytes_from_path(ctx.outside_info_file,
-            ctx.objdata.in.outside_info.buffer,
-            &ctx.objdata.in.outside_info.size);
+    ctx.objdata.in.outside_info.size = sizeof(ctx.objdata.in.outside_info.buffer);
+    result = tpm2_util_bin_from_hex_or_file(ctx.outside_info_data,
+            &ctx.objdata.in.outside_info.size,
+            ctx.objdata.in.outside_info.buffer);
     if (!result) {
-        LOG_ERR("Failed loading outside_info from path");
         return tool_rc_general_error;
     }
 

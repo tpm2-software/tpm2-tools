@@ -38,10 +38,11 @@ in the policy digest.
 
     The policy digest that has to be authorized.
 
-  * **-q**, **\--qualification**=_FILE_:
+  * **-q**, **\--qualification**=_FILE\_OR\_HEX_:
 
     The policy qualifier data signed in conjunction with the input policy digest.
-    This is a unique data that the signer can choose to include in the signature.
+    This is unique data that the signer can choose to include in the signature
+    and can either be a path or hex string.
 
   * **-n**, **\--name**=_FILE_:
 

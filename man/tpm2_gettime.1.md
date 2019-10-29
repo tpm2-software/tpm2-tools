@@ -71,10 +71,10 @@ clock_info:
     If left unspecified, a default signature scheme for the key type will
      be used.
 
-  * **-q**, **\--qualification**=_FILE_:
+  * **-q**, **\--qualification**=_FILE\_OR\_HEX\_STR_:
 
-    The policy qualifier data that the signer can choose to include in the
-    signature.
+    Optional, the policy qualifier data that the signer can choose to include in the
+    signature. Can be either a hex string or path.
 
   * **-o**, **\--signature**=_FILE_:
 

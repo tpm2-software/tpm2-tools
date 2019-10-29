@@ -38,8 +38,9 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
  *   The policy session that has the policy digest to be authorized
  * @param policy_digest_path
  *   The policy digest file that needs to be authorized by signing authority
- * @param policy_qualifier_path
- *   The policy qualifier data that concatenates with approved policies
+ * @param policy_qualifier
+ *   The policy qualifier data that concatenates with approved policies. Can be
+ *   either a path to a file or a hex string.
  * @param verifying_pubkey_name_path
  *   The name of the public key that verifies the signature of the signer
  * @param ticket_path
@@ -49,7 +50,7 @@ tool_rc tpm2_policy_build_pcr(ESYS_CONTEXT *context,
  */
 tool_rc tpm2_policy_build_policyauthorize(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, const char *policy_digest_path,
-        const char *policy_qualifier_path,
+        const char *policy_qualifier,
         const char *verifying_pubkey_name_path, const char *ticket_path);
 
 /**

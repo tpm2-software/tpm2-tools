@@ -124,12 +124,8 @@ static bool on_option(char key, char *value) {
         break;
     case 'q':
         ctx.qualifying_data.size = sizeof(ctx.qualifying_data.buffer);
-        if (tpm2_util_hex_to_byte_structure(value, &ctx.qualifying_data.size,
-                ctx.qualifying_data.buffer) != 0) {
-            LOG_ERR("Could not convert \"%s\" from a hex string to byte array!",
-                    value);
-            return false;
-        }
+        return tpm2_util_bin_from_hex_or_file(value, &ctx.qualifying_data.size,
+                ctx.qualifying_data.buffer);
         break;
     case 2:
         ctx.certify_info_path = value;
