@@ -92,7 +92,7 @@ tool_rc tpm2_policy_build_policynamehash(ESYS_CONTEXT *ectx,
  *  The Enhanced system api context
  * @param session
  *  The policy session into which the policy digest is extended into
- * @param name_hash
+ * @param template_hash
  *  The public template hash
  *
  * @return
@@ -100,6 +100,23 @@ tool_rc tpm2_policy_build_policynamehash(ESYS_CONTEXT *ectx,
  */
 tool_rc tpm2_policy_build_policytemplate(ESYS_CONTEXT *ectx,
     tpm2_session *session, const TPM2B_DIGEST *template_hash);
+
+/**
+ * Evaluates an authorization for object's command parameter digest.
+ *
+ * @param ectx
+ *  The Enhanced system api context
+ * @param session
+ *  The policy session into which the policy digest is extended into
+ * @param cphash
+ *  The command parameter hash
+ *
+ * @return
+ *   tool_rc indicating status.
+ */
+tool_rc tpm2_policy_build_policycphash(ESYS_CONTEXT *ectx,
+    tpm2_session *session, const TPM2B_DIGEST *cphash);
+
 /**
  * Enables secret (password/hmac) based authorization to a policy.
  *

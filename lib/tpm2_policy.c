@@ -256,6 +256,14 @@ tool_rc tpm2_policy_build_policytemplate(ESYS_CONTEXT *ectx,
     return tpm2_policy_template(ectx, policy_session_handle, template_hash);
 }
 
+tool_rc tpm2_policy_build_policycphash(ESYS_CONTEXT *ectx,
+    tpm2_session *session, const TPM2B_DIGEST *cphash) {
+
+    ESYS_TR policy_session_handle = tpm2_session_get_handle(session);
+
+    return tpm2_policy_cphash(ectx, policy_session_handle, cphash);
+}
+
 tool_rc tpm2_policy_build_policyauthvalue(ESYS_CONTEXT *ectx,
         tpm2_session *session) {
 
