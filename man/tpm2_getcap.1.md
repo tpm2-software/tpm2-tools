@@ -14,23 +14,23 @@
 them to the console. It takes a string form of the capability to query as an
 argument to the tool. Currently supported capability groups are:
 
-- **properties-fixed**:
-  Display fixed TPM properties.
-
-- **properties-variable**:
-  Display variable TPM properties.
-
 - **algorithms**:
   Display data about supported algorithms.
 
 - **commands**:
   Display data about supported commands.
 
-- **ecc-curves**:
-  Display data about elliptic curves.
-
 - **pcrs**:
   Display currently allocated PCRs.
+
+- **properties-fixed**:
+  Display fixed TPM properties.
+
+- **properties-variable**:
+  Display variable TPM properties.
+
+- **ecc-curves**:
+  Display data about elliptic curves.
 
 - **handles-transient**:
   Display handles about transient objects.
@@ -80,7 +80,7 @@ argument to the tool. Currently supported capability groups are:
 tpm2_getcap properties-fixed
 ```
 
-## To list the supported capability arguments to **-c**
+## To list the supported capability groups
 ```bash
 tpm2_getcap -l
 ```
