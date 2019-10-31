@@ -94,6 +94,9 @@ tool_rc tpm2_policy_namehash(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
 tool_rc tpm2_policy_template(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
     const TPM2B_DIGEST *template_hash);
 
+tool_rc tpm2_policy_cphash(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
+    const TPM2B_DIGEST *cphash);
+
 tool_rc tpm2_policy_pcr(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
         const TPM2B_DIGEST *pcr_digest, const TPML_PCR_SELECTION *pcrs);
