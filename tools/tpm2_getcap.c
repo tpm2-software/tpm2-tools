@@ -784,10 +784,9 @@ static bool dump_tpm_capability(TPMU_CAPABILITIES *capabilities) {
 
 static bool on_option(char key, char *value) {
 
+    UNUSED(value);
+
     switch (key) {
-    case 'c':
-        options.capability_string = value;
-        break;
     case 'l':
         options.list = true;
     }
@@ -824,7 +823,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
     UNUSED(flags);
 
     if (options.list && options.capability_string) {
-        LOG_ERR("Cannot specify -l with -c.");
+        LOG_ERR("Cannot specify -l with a capability group.");
         return tool_rc_option_error;
     }
 
@@ -834,7 +833,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *context, tpm2_option_flags flags) {
         return tool_rc_success;
     }
 
-    /* List a capability, ie -c <arg> option */
+    /* List a capability, ie <capability group> option */
     TPMS_CAPABILITY_DATA *capability_data = NULL;
 
     bool ret = sanity_check_capability_opts();
