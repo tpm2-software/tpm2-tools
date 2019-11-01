@@ -56,8 +56,7 @@ cat nonce.test temp.bin > to_sign.bin
 openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
--c signing_key.ctx -x nonce.test --ticket tic.ket --timeout time.out \
--t 0xFFFFFE0C
+-c signing_key.ctx -x --ticket tic.ket --timeout time.out -t 0xFFFFFE0C
 
 tpm2_flushcontext session.ctx
 
