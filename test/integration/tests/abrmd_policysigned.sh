@@ -61,7 +61,7 @@ rm -f unsealed.dat
 # Test with policy expiration set to zero and policyref/qualifier data
 #
 ## Generate signature with nonceTPM, cpHashA, and expiration set to 0
-dd if=/dev/urandom of=qual.dat bs=1 count=32
+dd if=/dev/urandom of=qual.dat bs=1 count=32 status=none
 echo $ZEROEXPIRYTIME | xxd -r -p > temp.bin
 cat temp.bin qual.dat > to_sign.bin
 openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
@@ -112,7 +112,7 @@ cat nonce.test temp.bin > to_sign.bin
 openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
--c signing_key.ctx -x nonce.test
+-c signing_key.ctx -x
 
 tpm2_unseal -p session:session.ctx -c sealing_key.ctx -o unsealed.dat
 

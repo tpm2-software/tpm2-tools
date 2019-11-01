@@ -344,7 +344,7 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         TPMT_SIGNATURE *signature, INT32 expiration, TPM2B_TIMEOUT **timeout,
         TPMT_TK_AUTH **policy_ticket, const char *policy_qualifier_data,
-        TPM2B_NONCE *nonce_tpm) {
+        bool is_nonce_tpm) {
 
     bool result = true;
 
@@ -365,9 +365,22 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
 
-    return tpm2_policy_signed(ectx, auth_entity_obj, policy_session_handle,
+    TPM2B_NONCE *nonce_tpm = NULL;
+    tool_rc rc = tool_rc_success;
+    if (is_nonce_tpm) {
+        rc = tpm2_sess_get_noncetpm(ectx, policy_session_handle, &nonce_tpm);
+        if (rc != tool_rc_success) {
+            goto tpm2_policy_build_policysigned_out;
+        }
+    }
+
+    rc = tpm2_policy_signed(ectx, auth_entity_obj, policy_session_handle,
         signature, expiration, timeout, policy_ticket, &policy_qualifier,
         nonce_tpm);
+
+tpm2_policy_build_policysigned_out:
+    Esys_Free(nonce_tpm);
+    return rc;
 }
 
 tool_rc tpm2_policy_get_digest(ESYS_CONTEXT *ectx, tpm2_session *session,
