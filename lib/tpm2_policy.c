@@ -11,6 +11,7 @@
 #include "tpm2_openssl.h"
 #include "tpm2_policy.h"
 #include "tpm2_tool.h"
+#include "tpm2_util.h"
 
 static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
         const char *raw_pcrs_file, TPML_DIGEST *pcr_values) {
@@ -357,7 +358,7 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         tpm2_session *policy_session, tpm2_loaded_object *auth_entity_obj,
         TPMT_SIGNATURE *signature, INT32 expiration, TPM2B_TIMEOUT **timeout,
         TPMT_TK_AUTH **policy_ticket, const char *policy_qualifier_data,
-        bool is_nonce_tpm) {
+        bool is_nonce_tpm, const char *raw_data_path) {
 
     bool result = true;
 
@@ -385,6 +386,46 @@ tool_rc tpm2_policy_build_policysigned(ESYS_CONTEXT *ectx,
         if (rc != tool_rc_success) {
             goto tpm2_policy_build_policysigned_out;
         }
+    }
+
+    /*
+     * TPM-Rev-2.0-Part-3-Commands-01.38.pdf
+     * aHash ≔ HauthAlg(nonceTPM || expiration || cpHashA || policyRef)
+     */
+    if (raw_data_path) {
+        uint16_t raw_data_len = (nonce_tpm ? nonce_tpm->size : 0) +
+            sizeof(INT32) + policy_qualifier.size;
+
+        uint8_t *raw_data = malloc(raw_data_len);
+        if (!raw_data) {
+            LOG_ERR("oom");
+            rc = tool_rc_general_error;
+            goto tpm2_policy_build_policysigned_out;
+        }
+        //nonceTPM
+        uint16_t offset = 0;
+        if (nonce_tpm) {
+            memcpy(raw_data, nonce_tpm->buffer, nonce_tpm->size);
+            offset += nonce_tpm->size;
+        }
+        //expiration
+        UINT32 endswap_data = tpm2_util_endian_swap_32(expiration);
+        memcpy(raw_data + offset, (UINT8 *)&endswap_data, sizeof(INT32));
+        offset += sizeof(INT32);
+        //policyRef
+        memcpy(raw_data + offset, policy_qualifier.buffer,
+            policy_qualifier.size);
+
+        bool result = files_save_bytes_to_file(raw_data_path, raw_data,
+            raw_data_len);
+        free(raw_data);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        /*
+         * We return since we only need to generate the raw signing data
+         */
+        goto tpm2_policy_build_policysigned_out;
     }
 
     rc = tpm2_policy_signed(ectx, auth_entity_obj, policy_session_handle,

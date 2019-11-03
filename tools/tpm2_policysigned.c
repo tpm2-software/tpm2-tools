@@ -33,6 +33,8 @@ struct tpm2_policysigned_ctx {
 
     char *policy_timeout_path;
 
+    const char *raw_data_path;
+
     const char *policy_qualifier_data;
 
     union {
@@ -45,7 +47,11 @@ struct tpm2_policysigned_ctx {
     } flags;
 };
 
-static tpm2_policysigned_ctx ctx;
+static tpm2_policysigned_ctx ctx = {
+    .signature = { .sigAlg = TPM2_ALG_RSASSA,
+                   .signature.rsassa.hash = TPM2_ALG_SHA256,
+                 },
+};
 
 static bool on_option(char key, char *value) {
 
@@ -89,6 +95,9 @@ static bool on_option(char key, char *value) {
     case 1:
         ctx.policy_timeout_path = value;
         break;
+    case 2:
+        ctx.raw_data_path = value;
+        break;
     case 'x':
         ctx.is_nonce_tpm = true;
         break;
@@ -118,6 +127,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "nonce-tpm",      no_argument,       NULL, 'x' },
         { "ticket",         required_argument, NULL,  0  },
         { "timeout",        required_argument, NULL,  1  },
+        { "raw-data",       required_argument, NULL,  2  },
     };
 
     *opts = tpm2_options_new("L:S:g:s:f:c:t:q:x", ARRAY_LEN(topts), topts, on_option,
@@ -128,13 +138,21 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 bool is_input_option_args_valid(void) {
 
-    if (!ctx.session_path) {
-        LOG_ERR("Must specify -S session file.");
-        return false;
+    if (!ctx.context_arg) {
+            LOG_ERR("Must specify verifying key context -c.");
+            return false;
+        }
+
+    if (ctx.raw_data_path) {
+        if (ctx.is_nonce_tpm && !ctx.session_path) {
+            LOG_ERR("Must specify -S session file.");
+            return false;
+        }
+        return true;
     }
 
-    if (!(ctx.context_arg && ctx.flags.sig && ctx.flags.halg)) {
-        LOG_ERR("--key-context, --sig, --hash-algorithm are required");
+    if (!ctx.session_path) {
+        LOG_ERR("Must specify -S session file.");
         return false;
     }
 
@@ -181,9 +199,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPMT_TK_AUTH *policy_ticket = NULL;
     rc = tpm2_policy_build_policysigned(ectx, ctx.session,
         &ctx.key_context_object, &ctx.signature, ctx.expiration, &timeout,
-        &policy_ticket, ctx.policy_qualifier_data, ctx.is_nonce_tpm);
+        &policy_ticket, ctx.policy_qualifier_data, ctx.is_nonce_tpm,
+        ctx.raw_data_path);
     if (rc != tool_rc_success) {
         LOG_ERR("Could not build policysigned TPM");
+        goto tpm2_tool_onrun_out;
+    }
+
+    if (ctx.raw_data_path) {
         goto tpm2_tool_onrun_out;
     }
 
