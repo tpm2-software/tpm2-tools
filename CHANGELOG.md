@@ -88,8 +88,6 @@
 
 * tpm2\_shutdown: Add a new tool for issuing a TPM shutdown command.
 
-* tpm2\_startauthsession: Add option to retrieve the session nonceTPM.
-
 * misc:
   - support "tpmt" as a public key output format that only saves the TPMT structure.
 

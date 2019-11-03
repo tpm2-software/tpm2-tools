@@ -46,11 +46,6 @@ This will work with direct TPM access, but note that internally this calls a
 
     The name of the policy session file, required.
 
-  * **-x**, **\--nonce-tpm**=_FILE_:
-
-    File name to write out the nonceTPM from the session. Optionally it can
-    print the nonceTPM to stdout if no _FILE_ value is given.
-
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
