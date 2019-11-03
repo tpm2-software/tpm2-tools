@@ -154,6 +154,34 @@ bool tpm2_util_string_to_uint64(const char *str, uint64_t *value) {
     return true;
 }
 
+bool tpm2_util_string_to_int32(const char *str, int32_t *value) {
+
+    char *endptr;
+
+    if (str == NULL || *str == '\0') {
+        return false;
+    }
+
+    /* clear errno before the call, should be 0 afterwards */
+    errno = 0;
+    signed long int tmp = strtol(str, &endptr, 0);
+    if (errno || tmp > UINT32_MAX) {
+        return false;
+    }
+
+    /*
+     * The entire string should be able to be converted or fail
+     * We already checked that str starts with a null byte, so no
+     * need to check that again per the man page.
+     */
+    if (*endptr != '\0') {
+        return false;
+    }
+
+    *value = (int32_t) tmp;
+    return true;
+}
+
 int tpm2_util_hex_to_byte_structure(const char *input_string, UINT16 *byte_length,
         BYTE *byte_buffer) {
     int str_length; //if the input_string likes "1a2b...", no prefix "0x"

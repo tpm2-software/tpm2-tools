@@ -114,6 +114,17 @@ bool tpm2_util_verify_digests(TPM2B_DIGEST *quote_digest,
 bool tpm2_util_concat_buffer(TPM2B_MAX_BUFFER *result, TPM2B *append);
 
 /**
+ * Converts a numerical string into a int32_t value.
+ * @param str
+ *  The numerical string to convert.
+ * @param value
+ *  The value to store the conversion into.
+ * @return
+ *  true on success, false otherwise.
+ */
+bool tpm2_util_string_to_int32(const char *str, int32_t *value);
+
+/**
  * Converts a numerical string into a uint32 value.
  * @param str
  *  The numerical string to convert.
