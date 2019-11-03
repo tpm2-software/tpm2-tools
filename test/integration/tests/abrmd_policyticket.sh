@@ -81,7 +81,7 @@ tpm2_create -Q -g sha256 -u sealing_key.pub -r sealing_key.priv -C prim.ctx \
 tpm2_load -C prim.ctx -u sealing_key.pub -r sealing_key.priv -c sealing_key.ctx
 
 tpm2_startauthsession -S session.ctx --policy-session
-tpm2_policysecret -S session.ctx -c o -t 0xFFFFFE0C --timeout time.out \
+tpm2_policysecret -S session.ctx -c o -t -500 --timeout time.out \
 --ticket tic.ket --nonce-tpm
 tpm2_flushcontext session.ctx
 
