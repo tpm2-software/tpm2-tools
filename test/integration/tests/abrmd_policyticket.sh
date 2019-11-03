@@ -43,12 +43,12 @@ tpm2_create -u sealing_key.pub -r sealing_key.priv -c sealing_key.ctx \
 # Create a policy ticket for policysigned
 tpm2_startauthsession -S session.ctx --policy-session
 
-tpm2_policysigned -S session.ctx -c signing_key.ctx -x -t 0xFFFFFE0C \
+tpm2_policysigned -S session.ctx -c signing_key.ctx -x -t -500 \
 --raw-data to_sign.bin
 openssl dgst -sha256 -sign private.pem -out signature.dat to_sign.bin
 
 tpm2_policysigned -S session.ctx -g sha256 -s signature.dat -f rsassa \
--c signing_key.ctx -x --ticket tic.ket --timeout time.out -t 0xFFFFFE0C
+-c signing_key.ctx -x --ticket tic.ket --timeout time.out -t -500
 
 tpm2_flushcontext session.ctx
 

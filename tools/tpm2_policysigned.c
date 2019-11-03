@@ -102,7 +102,7 @@ static bool on_option(char key, char *value) {
         ctx.is_nonce_tpm = true;
         break;
     case 't':
-        result = tpm2_util_string_to_uint32(value, (UINT32 *)&ctx.expiration);
+        result = tpm2_util_string_to_int32(value, &ctx.expiration);
         if (!result) {
             LOG_ERR("Failed reading expiration duration from value, got:\"%s\"",
                     value);
