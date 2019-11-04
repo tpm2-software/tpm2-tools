@@ -88,6 +88,7 @@ bin_PROGRAMS = \
     tools/tpm2_policycountertimer \
     tools/tpm2_policyor \
     tools/tpm2_policynamehash \
+    tools/tpm2_policytemplate \
     tools/tpm2_policypassword \
     tools/tpm2_policysigned \
     tools/tpm2_policyticket \
@@ -189,6 +190,7 @@ tools_tpm2_policynv_SOURCES = tools/tpm2_policynv.c $(TOOL_SRC)
 tools_tpm2_policycountertimer_SOURCES = tools/tpm2_policycountertimer.c $(TOOL_SRC)
 tools_tpm2_policyor_SOURCES = tools/tpm2_policyor.c $(TOOL_SRC)
 tools_tpm2_policynamehash_SOURCES = tools/tpm2_policynamehash.c $(TOOL_SRC)
+tools_tpm2_policytemplate_SOURCES = tools/tpm2_policytemplate.c $(TOOL_SRC)
 tools_tpm2_policypassword_SOURCES = tools/tpm2_policypassword.c $(TOOL_SRC)
 tools_tpm2_policysigned_SOURCES = tools/tpm2_policysigned.c $(TOOL_SRC)
 tools_tpm2_policyticket_SOURCES = tools/tpm2_policyticket.c $(TOOL_SRC)
@@ -389,6 +391,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_policycountertimer.1 \
     man/man1/tpm2_policyor.1 \
     man/man1/tpm2_policynamehash.1 \
+    man/man1/tpm2_policytemplate.1 \
     man/man1/tpm2_policypassword.1 \
     man/man1/tpm2_policysigned.1 \
     man/man1/tpm2_policyticket.1 \
