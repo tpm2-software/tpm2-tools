@@ -26,6 +26,7 @@
       hierarchy is platform.
     - Fix bug in YAML key action where action was wrong when using ESYS\_TR.
 
+* tpm2_getcap: clean up remanenats of -c option in manpages and tool output.
 
 * tpm2\_gettime: Add a new tool for retrieving a signed timestamp from a TPM.
 
