@@ -35,6 +35,7 @@ struct tpm_create_ctx {
         char *creation_data_file;
         char *creation_ticket_file;
         char *creation_hash_file;
+        char *template_data_path;
         char *alg;
         char *attrs;
         char *name_alg;
@@ -164,6 +165,17 @@ create_out:
         }
     }
 
+    if (ctx.object.template_data_path) {
+        bool res = files_save_template(&ctx.object.public.publicArea,
+        ctx.object.template_data_path);
+
+        if (!res) {
+            LOG_ERR("Could not save public template to file.");
+            rc = tool_rc_general_error;
+            goto out;
+        }
+    }
+
     tpm2_util_public_to_yaml(out_public, NULL);
 
     if (ctx.flags.u) {
@@ -239,6 +251,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.object.creation_data_file = value;
         break;
+    case 1:
+        ctx.object.template_data_path = value;
+        break;
     case 't':
         ctx.object.creation_ticket_file = value;
         break;
@@ -274,6 +289,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "parent-context", required_argument, NULL, 'C' },
       { "key-context",    required_argument, NULL, 'c' },
       { "creation-data",  required_argument, NULL,  0  },
+      { "template-data",  required_argument, NULL,  1  },
       { "creation-ticket",required_argument, NULL, 't' },
       { "creation-hash",  required_argument, NULL, 'd' },
       { "outside-info",   required_argument, NULL, 'q' },
