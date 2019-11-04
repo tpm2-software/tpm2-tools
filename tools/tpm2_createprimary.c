@@ -30,6 +30,7 @@ struct tpm_createprimary_ctx {
     char *creation_ticket_file;
     char *creation_hash_file;
     char *outside_info_data;
+    char *template_data_path;
 
     char *alg;
     char *halg;
@@ -91,6 +92,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.creation_data_file = value;
         break;
+    case 1:
+        ctx.template_data_path = value;
+        break;
     case 't':
         ctx.creation_ticket_file = value;
         break;
@@ -125,6 +129,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "attributes",     required_argument, NULL, 'a' },
         { "unique-data",    required_argument, NULL, 'u' },
         { "creation-data",  required_argument, NULL,  0  },
+        { "template-data",  required_argument, NULL,  1  },
         { "creation-ticket",required_argument, NULL, 't' },
         { "creation-hash",  required_argument, NULL, 'd' },
         { "outside-info",   required_argument, NULL, 'q' },
@@ -181,6 +186,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
 skipped_outside_info:
+    if (ctx.template_data_path) {
+        result = files_save_template(&ctx.objdata.in.public.publicArea,
+            ctx.template_data_path);
+        if (!result) {
+            LOG_ERR("Could not save public template to file.");
+            return tool_rc_general_error;
+        }
+    }
     rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata);
     if (rc != tool_rc_success) {
         return rc;
