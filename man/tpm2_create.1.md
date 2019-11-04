@@ -87,6 +87,11 @@ These options for creating the TPM entity:
 
     An optional file output that saves the creation data for certification.
 
+    * **\--template-data**=_FILE_:
+
+    An optional file output that saves the key template data (TPM2B_PUBLIC) to
+    be used in **tpm2_policytemplate**.
+
   * **-t**, **\--creation-ticket**=_FILE_:
 
     An optional file output that saves the creation ticket for certification.
