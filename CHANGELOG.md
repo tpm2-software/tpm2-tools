@@ -91,6 +91,18 @@
   - support "tpmt" as a public key output format that only saves the TPMT structure.
   - Qualifying data or extra data in many tools can be hex array string or binary file.
 
+### 4.0.1 - 2019-10-28
+
+tpm2_checkquote:
+  Fix YAML output bug.
+
+### 3.2.1 - 2019-10-10
+
+* Fix invalid memcpy when extracting ECDSA plain signatures.
+* Fix resource leak on FILE * in hashing routine.
+* Correct PCR logic to prevent memory corruption bug.
+* Errata handler fix.
+
 ### 4.0 - 2019-09-09
 
 * tpm2_activatecredential:
@@ -640,10 +652,6 @@
   - Fix misspelling of TPM2_PT_HR constants which effects tpm2_getcap output.
   - configure option --with-bashcompdir for specifying bash completion
     directory.
-
-### 3.2.1-rc0 - 2019-08-05
-  * Correct PCR logic to prevent memory corruption bug.
-  * errata handler fix.
 
 ### 3.2.0 - 2019-06-19
   * fix configure bug for linking against libmu.
