@@ -38,19 +38,25 @@
 
 * tpm2\_nvextend: Add a new tool for extending an NV index similair to a PCR.
 
-* tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
-    or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
-
 * tpm2\_nvreadpublic:
   - Support specifying nv index to read public data from as argument.
 
+* tpm2\_nvsetbits: Add a new tool for setting the values of PCR with type
+    "bits".
+
 * tpm2\_nvundefine: Add support for deleting NV indices with attribute
     `TPMA_NV_POLICY_DELETE` set using NV Undefine Special command.
+
+* tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
+    or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
 
 * tpm2\_policyauthorizenv: New tool enabling signed, revocable policies.
 
 * tpm2\_policyauthvalue: New tool enabling authorization to be bound to the
     authorization of another object.
+
+* tpm2\_policycountertimer: Add a new tool for enabling policy bound to TPM
+  clock or timer values.
 
 * tpm2\_policynamehash: Add a new tool for specifying policy based on object
   name.
@@ -67,19 +73,11 @@
   - \--nonce-tpm or -x
   - \--qualification or -q
 
-* tpm2\_policysecret: Add tool options for specifying
-  - \--expiration or -t
-  - \--ticket
-  - \--timeout
-  - \--nonce-tpm or -x
-  - \--qualification or -q
-
 * tpm2\_policysigned: New tool enabling policy command TPM2\_PolicySigned.
 
-* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
+* tpm2\_policytemplate: New tool enabling policy command TPM2\_PolicyTemplate.
 
-* tpm2_policycountertimer: Add a new tool for enabling policy bound to TPM
-  clock or timer values.
+* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
 
 * tpm2\_readclock: Add a new tool for reading the TPM clock.
 
@@ -91,6 +89,7 @@
 
 * misc:
   - support "tpmt" as a public key output format that only saves the TPMT structure.
+  - Qualifying data or extra data in many tools can be hex array string or binary file.
 
 ### 4.0 - 2019-09-09
 
