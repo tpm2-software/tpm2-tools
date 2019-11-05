@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 4.1-rc0 2019-11-05
 
 * tpm2\_certifycreation: New tool enabling command TPM2\_CertifyCreation.
 
@@ -15,11 +15,23 @@
 
 * tpm2\_clockrateadjust: Add a new tool for modifying the period on the TPM.
 
+* tpm2\_create: Add tool options for specifying output data for use in
+certification
+  - \--creation-data to save the creation data
+  - \--creation-ticket or -t to save the creation ticket
+  - \--creation-hash or -d to save the creation hash
+  - \--template-data for saving the template data of the key
+  - \--outside-info or -q for specifying unique data to include in creation data.
+  - \--pcr-list or -l  Add option to specify pcr list to add to creation data.
+
 * tpm2\_createprimary: Add tool options for specifying output data for use
   in certification
   - \--creation-data to save the creation data
   - \--creation-ticket or -t to save the creation ticket
   - \--creation-hash or -d to save the creation hash
+  - \--template-data for saving the template data of the key
+  - \--outside-info or -q for specifying unique data to include in creation data.
+  - \--pcr-list or -l  Add option to specify pcr list to add to creation data.
 
 * tpm2\_evictcontrol:
     - Fix bug in automatic persistent handle selection when
@@ -88,8 +100,14 @@
 * tpm2\_shutdown: Add a new tool for issuing a TPM shutdown command.
 
 * misc:
-  - support "tpmt" as a public key output format that only saves the TPMT structure.
-  - Qualifying data or extra data in many tools can be hex array string or binary file.
+  - Support "tpmt" as a public key output format that only saves the TPMT
+  structure.
+  - Qualifying data or extra data in many tools can be hex array string or
+  binary file.
+  - Add support for specifying NV index type when specifying NV attributes.
+  - Support added for tools to run on FreeBSD.
+  - Skip and notify of action that man pages will not install if the package
+  pandoc is missing.
 
 ### 4.0.1 - 2019-10-28
 
