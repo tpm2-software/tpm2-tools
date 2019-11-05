@@ -3,8 +3,8 @@
 
 function get_deps() {
 
-	TSS_VERSION=2.3.1
-	ABRMD_VERSION=master
+	TSS_VERSION="2.3.1"
+	ABRMD_VERSION="2.3.0-rc0"
 
 	echo "pwd starting: `pwd`"
 	pushd "$1"
