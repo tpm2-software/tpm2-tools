@@ -84,7 +84,7 @@ static bool pcr_parse_list(const char *str, size_t len,
 static bool pcr_parse_selection(const char *str, size_t len,
         TPMS_PCR_SELECTION *pcr_select) {
     const char *left_string;
-    char buf[7];
+    char buf[9];
 
     if (str == NULL || len == 0 || strlen(str) == 0)
         return false;
