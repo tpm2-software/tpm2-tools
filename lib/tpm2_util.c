@@ -165,7 +165,7 @@ bool tpm2_util_string_to_int32(const char *str, int32_t *value) {
     /* clear errno before the call, should be 0 afterwards */
     errno = 0;
     signed long int tmp = strtol(str, &endptr, 0);
-    if (errno || tmp > UINT32_MAX) {
+    if (errno || tmp > INT32_MAX) {
         return false;
     }
 
