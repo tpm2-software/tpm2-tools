@@ -640,7 +640,7 @@ static bool dump_command_attrs(TPMA_CC tpma_cc) {
     tpm2_tool_output("  flushed:      %s\n",
             prop_str (tpma_cc & TPMA_CC_FLUSHED));
     tpm2_tool_output("  cHandles:     0x%x\n",
-            tpma_cc & TPMA_CC_CHANDLES_MASK >> TPMA_CC_CHANDLES_SHIFT);
+            (tpma_cc & TPMA_CC_CHANDLES_MASK) >> TPMA_CC_CHANDLES_SHIFT);
     tpm2_tool_output("  rHandle:      %s\n",
             prop_str (tpma_cc & TPMA_CC_RHANDLE));
     tpm2_tool_output("  V:            %s\n", prop_str (tpma_cc & TPMA_CC_V));
