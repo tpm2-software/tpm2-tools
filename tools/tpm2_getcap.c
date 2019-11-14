@@ -645,7 +645,7 @@ static bool dump_command_attrs(TPMA_CC tpma_cc) {
             prop_str (tpma_cc & TPMA_CC_RHANDLE));
     tpm2_tool_output("  V:            %s\n", prop_str (tpma_cc & TPMA_CC_V));
     tpm2_tool_output("  Res:          0x%x\n",
-            tpma_cc & TPMA_CC_RES_MASK >> TPMA_CC_RES_SHIFT);
+            (tpma_cc & TPMA_CC_RES_MASK) >> TPMA_CC_RES_SHIFT);
     return true;
 }
 /*
