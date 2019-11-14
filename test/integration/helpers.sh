@@ -28,6 +28,22 @@ is_alg_supported() {
     fi
 }
 
+# Return 0 if command is supported, return 1 otherwise
+# Error if TPM is simulator and command is unsupported
+is_cmd_supported() {
+    if tpm2_getcap commands | grep -i "$1:" &> /dev/null; then
+        return 0
+    else
+        if is_simulator; then
+            echo "ERROR: $1 is not supported by the TPM simulator."
+            exit 1
+        else
+            echo "SKIP: Testing on a non-simulator TPM. Skipping unsupported command $1"
+            return 1
+        fi
+    fi
+}
+
 function filter_algs_by() {
 
 python << pyscript
