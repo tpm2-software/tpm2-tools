@@ -35,12 +35,23 @@ run_aes_import_test() {
 
     echo "plaintext" > "plain.txt"
 
-    tpm2_encryptdecrypt -c import_key.ctx -o plain.enc plain.txt
+    if is_cmd_supported "EncryptDecrypt"; then
+        tpm2_encryptdecrypt -c import_key.ctx -o plain.enc plain.txt
 
-    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
-    -iv 0 -$2
+        openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
+        -iv 0 -$2
 
-    diff plain.txt plain.dec.ssl
+        diff plain.txt plain.dec.ssl
+    else
+        tpm2_readpublic -c import_key.ctx >out.pub
+        alg=$(yaml_get_kv out.pub "sym-alg" "value")
+        if [ "$alg" != "aes" ]; then
+            echo "Algorithm parsed from tpm2_readpublic is '$alg' but should be \
+                  'aes'"
+            exit 1
+        fi
+        rm out.pub
+    fi
 
     rm import_key.ctx
 }

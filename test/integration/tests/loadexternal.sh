@@ -126,12 +126,24 @@ run_aes_test() {
 
     echo "plaintext" > "plain.txt"
 
-    tpm2_encryptdecrypt -c key.ctx -o plain.enc plain.txt
+    if is_cmd_supported "EncryptDecrypt"; then
+        tpm2_encryptdecrypt -c key.ctx -o plain.enc plain.txt
 
-    openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
-	-iv 0 -aes-$1-cfb
+        openssl enc -in plain.enc -out plain.dec.ssl -d -K `xxd -c 256 -p sym.key` \
+        -iv 0 -aes-$1-cfb
 
-    diff plain.txt plain.dec.ssl
+        diff plain.txt plain.dec.ssl
+    else
+        tpm2_readpublic -c key.ctx >out.pub
+        alg=$(yaml_get_kv out.pub "sym-alg" "value")
+        len=$(yaml_get_kv out.pub "sym-keybits")
+        if [ "$alg$len" != "aes$1" ]; then
+            echo "Algorithm parsed from tpm2_readpublic is '$alg$len' but \
+                  should be 'aes$1'"
+            exit 1
+        fi
+        rm out.pub
+    fi
 
     cleanup "no-shut-down"
 }

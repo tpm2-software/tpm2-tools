@@ -4,7 +4,7 @@ source helpers.sh
 
 cleanup() {
   rm -f primary.ctx decrypt.ctx key.pub key.priv key.name decrypt.out \
-  decrypt2.out encrypt.out encrypt2.out secret.dat commands.cap secret2.dat \
+  decrypt2.out encrypt.out encrypt2.out secret.dat secret2.dat \
   iv.dat iv2.dat key128.ctx plain.dec128.tpm plain.dec256.tpm plain.enc128.tpm \
   plain.enc256.tpm sym128.key key256.ctx plain.dec128.ssl plain.dec256.ssl \
   plain.enc128.ssl plain.enc256.ssl plain.txt sym256.key
@@ -19,24 +19,10 @@ start_up
 
 cleanup "no-shut-down"
 
-# set the error handler for checking tpm2_getcap call
-trap onerror ERR
-
-# Check for encryptdecrypt command code 0x164
-tpm2_getcap commands > commands.cap
-
-# clear the handler for the grep check
-trap - ERR
-
-grep -q 0x164 commands.cap
-if [ $? != 0 ];then
-    echo "WARN: Command EncryptDecrypt is not supported by your device, \
-    skipping..."
+if ! is_cmd_supported "EncryptDecrypt"; then
+    echo "Command EncryptDecrypt is not supported by your device, skipping..."
     skip_test
 fi
-
-# Now set the trap handler for ERR since we're past the command code check
-trap onerror ERR
 
 echo "12345678" > secret.dat
 
