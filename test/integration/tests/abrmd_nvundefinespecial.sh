@@ -5,6 +5,14 @@ source helpers.sh
 cleanup() {
 
     tpm2_flushcontext session.ctx 2>/dev/null || true
+
+    tpm2_startauthsession --policy-session -S session.ctx
+    tpm2_policyauthvalue -S session.ctx
+    tpm2_policycommandcode -S session.ctx TPM2_CC_NV_UndefineSpaceSpecial
+    tpm2_nvundefine -S session.ctx 1 2>/dev/null || true
+
+    tpm2_flushcontext session.ctx 2>/dev/null || true
+
     rm -f policy.dat session.ctx
 
     if [ "${1}" != "no-shutdown" ]; then

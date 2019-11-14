@@ -3,6 +3,8 @@
 source helpers.sh
 
 cleanup() {
+  tpm2_changeauth -c p -p testpassword 2>/dev/null || true
+
   rm -f primary.ctx key.pub key.priv key.ctx key.name
 
   if [ "$1" != "no-shut-down" ]; then
