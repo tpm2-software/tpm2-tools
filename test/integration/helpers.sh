@@ -108,6 +108,64 @@ hash_alg_supported() {
     done
 }
 
+# Get nice names of supported algorithms lengths
+# Does not work with hashes!
+# e.g. calling "populate_alg_lengths rsa" will print:
+# rsa1024
+# rsa2048
+populate_alg_lengths() {
+    #set -x
+    alg="$1"
+    local lengths="1 128 192 224 256 384 512 1024 2048 4096"
+    local populated=""
+    for len in $lengths; do
+        if tpm2_testparms "$alg$len" 2> /dev/null; then
+            if [ -z "$populated" ]; then
+                populated="$alg$len"
+            else
+                populated="$populated\n$alg$len"
+            fi
+        fi
+    done;
+    printf "$populated"
+}
+
+# Get nice name of the algorithm with its weakest supported key size
+# Does not work with hashes!
+# e.g. calling "weakest_alg aes" will print "aes128"
+weakest_alg() {
+    populate_alg_lengths "$1" | head -n1
+}
+
+# Get nice name of the algorithm with its strongest supported key size
+# Does not work with hashes!
+# e.g. calling "strongest_alg aes" will print "aes256"
+strongest_alg() {
+    populate_alg_lengths "$1" | tail -n1
+}
+
+# Get nice names of supported algorithm modes
+# Does not work with hashes!
+# e.g. calling "populate_alg_modes aes128" will print:
+# aes128cfb
+# aes128cbc
+populate_alg_modes() {
+    #set -x
+    alg="$1"
+    local modes="ctr ofb cbc cfb ecb"
+    local populated=""
+    for mode in $modes; do
+        if tpm2_testparms "$alg$mode" 2> /dev/null; then
+            if [ -z "$populated" ]; then
+                populated="$alg$mode"
+            else
+                populated="$populated\n$alg$mode"
+            fi
+        fi
+    done;
+    printf "$populated"
+}
+
 #
 # Verifies that the contexts of a file path provided
 # as the first argument loads as a YAML file.
