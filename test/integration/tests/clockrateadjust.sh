@@ -3,7 +3,14 @@
 source helpers.sh
 
 cleanup() {
+	tpm2_changeauth -c o -p newowner 2>/dev/null || true
+	tpm2_changeauth -c p -p newplatform 2>/dev/null || true
+
 	rm -f clock.yaml
+
+	if [ "$1" != "no-shut-down" ]; then
+		shut_down
+	fi
 }
 trap cleanup EXIT
 
