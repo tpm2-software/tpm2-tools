@@ -14,8 +14,8 @@ cleanup() {
   tpm2_nvundefine -Q   0x1500016 -C 0x40000001 2>/dev/null || true
   tpm2_nvundefine -Q   0x1500015 -C 0x40000001 -P owner 2>/dev/null || true
 
-  rm -f policy.bin test.bin nv.test_inc nv.readlock foo.dat cmp.dat \
-        $file_pcr_value $file_policy nv.out cap.out
+  rm -f policy.bin test.bin nv.readlock foo.dat $file_pcr_value $file_policy \
+        nv.out cap.out
 
   if [ "$1" != "no-shut-down" ]; then
      shut_down
@@ -34,7 +34,7 @@ tpm2_nvdefine -Q   $nv_test_index -C o -s 8 \
 
 tpm2_nvincrement -Q   $nv_test_index -C o
 
-tpm2_nvread -Q   $nv_test_index -C o -s 8
+a=0x$(tpm2_nvread  $nv_test_index -C o -s 8 | xxd -p)
 
 tpm2_nvreadpublic > nv.out
 yaml_get_kv nv.out "$nv_test_index" > /dev/null
@@ -44,13 +44,14 @@ yaml_get_kv nv.out "$nv_test_index" > /dev/null
 # 2. reading back the index
 # 3. comparing the result.
 
-echo -n -e '\x00\x00\x00\x00\x00\x00\x00\x02' > nv.test_inc
-
 tpm2_nvincrement -Q   $nv_test_index -C o
 
-tpm2_nvread   $nv_test_index -C o -s 8 > cmp.dat
+b=0x$(tpm2_nvread  $nv_test_index -C o -s 8 | xxd -p)
 
-cmp nv.test_inc cmp.dat
+if [ $(($a+1)) -ne $(($b)) ]; then
+ echo "Failed to increment: $(($a)) -> $(($b))."
+ exit 1
+fi
 
 tpm2_nvundefine   $nv_test_index -C o
 
@@ -65,17 +66,17 @@ tpm2_nvdefine -Q   0x1500016 -C 0x40000001 -s 8 -L $file_policy \
 
 # Increment with index authorization for now, since tpm2_nvincrement does not
 # support pcr policy.
-echo -n -e '\x00\x00\x00\x00\x00\x00\x00\x03' > nv.test_inc
-
 # Counter is initialised to highest value previously seen (in this case 2) then
 # incremented
 tpm2_nvincrement -Q   0x1500016 -C 0x1500016 \
 -P pcr:$pcr_specification=$file_pcr_value
 
-tpm2_nvread   0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value \
--s 8 > cmp.dat
+c=0x$(tpm2_nvread  0x1500016 -C 0x1500016 -P pcr:$pcr_specification=$file_pcr_value -s 8 | xxd -p)
 
-cmp nv.test_inc cmp.dat
+if [ $(($b+1)) -ne $(($c)) ]; then
+ echo "Failed to increment: $(($b)) -> $(($c))."
+ exit 1
+fi
 
 # this should fail because authread is not allowed
 trap - ERR
