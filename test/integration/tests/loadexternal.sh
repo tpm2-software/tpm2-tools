@@ -189,13 +189,21 @@ run_rsa_passin_test() {
 
 run_tss_test
 
-run_rsa_test 1024
-run_rsa_test 2048
+for len in "1024 2048"; do
+    if is_alg_supported "rsa$len"; then
+        run_rsa_test $len
+    fi
+done
 
-run_aes_test 128
-run_aes_test 256
+for len in "128 256"; do
+    if is_alg_supported "aes$len"; then
+        run_aes_test $len
+    fi
+done
 
-run_ecc_test prime256v1
+if is_alg_supported "ecc256"; then
+    run_ecc_test prime256v1
+fi
 
 #
 # Test loadexternal passin option

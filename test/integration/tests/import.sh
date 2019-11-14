@@ -166,9 +166,13 @@ run_test() {
     tpm2_createprimary -Q -G "$parent_alg" -g "$name_alg" -C o -c parent.ctx
 
     # 128 bit AES is 16 bytes
-    run_aes_import_test parent.ctx aes-128-cfb 16
+    if is_alg_supported aes128; then
+        run_aes_import_test parent.ctx aes-128-cfb 16
+    fi
     # 256 bit AES is 32 bytes
-    run_aes_import_test parent.ctx aes-256-cfb 32
+    if is_alg_supported aes256; then
+        run_aes_import_test parent.ctx aes-256-cfb 32
+    fi
 
     run_rsa_import_test parent.ctx 1024
     run_rsa_import_test parent.ctx 2048
@@ -186,8 +190,10 @@ halgs=`populate_hash_algs 'and alg != "sha1"'`
 echo "halgs: $halgs"
 for pa in "${parent_algs[@]}"; do
   for name in $halgs; do
-    echo "$pa - $name"
-    run_test "$pa" "$name"
+    if is_alg_supported $pa; then
+        echo "$pa - $name"
+        run_test "$pa" "$name"
+    fi
   done;
 done;
 

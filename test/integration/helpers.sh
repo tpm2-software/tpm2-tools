@@ -2,6 +2,32 @@
 
 set -E
 
+# Return 0 if run by a TPM simulator, return 1 otherwise
+is_simulator() {
+    # both simulators mssim and swtpm have their vendor sting set to "SW":
+    # TPM2_PT_VENDOR_STRING_1:
+    #   raw: 0x53572020
+    #   value: "SW"
+    tpm2_getcap properties-fixed \
+    | grep -zP "TPM2_PT_VENDOR_STRING_1:\s*raw: 0x53572020" &>/dev/null
+}
+
+# Return 0 if algorithm is supported, return 1 otherwise
+# Error if TPM is simulator and algorithm is unsupported
+is_alg_supported() {
+    if tpm2_testparms $1 2> /dev/null; then
+        return 0
+    else
+        if is_simulator; then
+            echo "ERROR: $1 is not supported by the TPM simulator."
+            exit 1
+        else
+            echo "SKIP: Testing on a non-simulator TPM. Skipping unsupported algorithm $1"
+            return 1
+        fi
+    fi
+}
+
 function filter_algs_by() {
 
 python << pyscript
