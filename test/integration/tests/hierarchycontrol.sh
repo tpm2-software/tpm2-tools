@@ -12,6 +12,13 @@ trap cleanup EXIT
 
 start_up
 
+if [ "$TPM2TOOLS_TEST_PERSISTENT" = false ]; then
+  echo "Skipping persistent test (requiring a TPM reset)."
+  echo "To execute this test, set TPM2TOOLS_TEST_PERSISTENT=true or configure " \
+       "with --enable-persistent"
+  skip_test
+fi
+
 cleanup "no-shut-down"
 
 # Storage hierarchy

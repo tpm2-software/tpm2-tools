@@ -223,6 +223,7 @@ function recreate_info() {
     a="$a""export TPM2ABRMD_TCTI=\"$TPM2ABRMD_TCTI\"\n"
     a="$a""export TPM2_SIMPORT=\"$TPM2_SIMPORT\"\n"
     a="$a""export TPM2TOOLS_TEST_TCTI=\"$TPM2TOOLS_TEST_TCTI\"\n"
+    a="$a""export TPM2TOOLS_TEST_PERSISTENT=\"$TPM2TOOLS_TEST_PERSISTENT\"\n"
     a="$a""export PATH=\"$PATH\"\n"
     a="$a""TPM2_SIM_NV_CHIP=\"$TPM2_SIM_NV_CHIP\"\n"
     a="$a""TPM2_TOOLS_TEST_FIXTURES=\"$TPM2_TOOLS_TEST_FIXTURES\"\n"

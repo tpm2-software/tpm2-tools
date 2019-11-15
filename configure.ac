@@ -102,6 +102,11 @@ AC_ARG_ENABLE([unit],
             [enable_unit=no])
 AM_CONDITIONAL([UNIT], [test "x$enable_unit" != xno])
 
+AC_ARG_ENABLE([persistent],
+            [AS_HELP_STRING([--disable-persistent],
+                            [disable tests that require resetting the TPM])],,)
+AM_CONDITIONAL([PERSISTENT], [test "x$enable_persistent" != xno])
+
 dnl macro that checks for specific modules in python
 AC_DEFUN([AC_PYTHON_MODULE],
 [AC_MSG_CHECKING([for module $1 in python])

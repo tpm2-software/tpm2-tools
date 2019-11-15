@@ -511,6 +511,14 @@ AM_TESTS_ENVIRONMENT =	\
 	SRCDIR=$(abs_srcdir); export SRCDIR; BUILDDIR=$(abs_builddir); export BUILDDIR; \
 	export TPM2_TOOLS_TEST_FIXTURES;
 
+if PERSISTENT
+    AM_TESTS_ENVIRONMENT +=	\
+        TPM2TOOLS_TEST_PERSISTENT=true; export TPM2TOOLS_TEST_PERSISTENT;
+else
+    AM_TESTS_ENVIRONMENT +=	\
+        TPM2TOOLS_TEST_PERSISTENT=false; export TPM2TOOLS_TEST_PERSISTENT;
+endif
+
 SH_LOG_COMPILER = dbus-run-session bash
 AM_SH_LOG_FLAGS = --
 endif
