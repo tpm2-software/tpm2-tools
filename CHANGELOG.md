@@ -2,6 +2,7 @@
 
 ### next
   * Update to work with newer version of TSS.
+  * Fix algorithm selection parsing for algs like sm3_sha256.
 
 ### 3.2.1 - 2019-10-10
  * Fix invalid memcpy when extracting ECDSA plain signatures.
