@@ -1,5 +1,118 @@
 ## Changelog
 
+### 4.1-rc1 2019-11-18
+
+* tpm2\_certifycreation: New tool enabling command TPM2\_CertifyCreation.
+
+* tpm2\_checkquote:
+   - Fix YAML output bug.
+   - \-g option for specifying hash algorithm is optional and defaults to
+     sha256.
+
+* tpm2_\changeeps: A new tool for changing the Endorsement hierarchy primary seed.
+
+* tpm2_\changepps: A new tool for changing the Platform hierarchy primary seed.
+
+* tpm2\_clockrateadjust: Add a new tool for modifying the period on the TPM.
+
+* tpm2\_create: Add tool options for specifying output data for use in
+certification
+  - \--creation-data to save the creation data
+  - \--creation-ticket or -t to save the creation ticket
+  - \--creation-hash or -d to save the creation hash
+  - \--template-data for saving the template data of the key
+  - \--outside-info or -q for specifying unique data to include in creation data.
+  - \--pcr-list or -l  Add option to specify pcr list to add to creation data.
+
+* tpm2\_createprimary: Add tool options for specifying output data for use
+  in certification
+  - \--creation-data to save the creation data
+  - \--creation-ticket or -t to save the creation ticket
+  - \--creation-hash or -d to save the creation hash
+  - \--template-data for saving the template data of the key
+  - \--outside-info or -q for specifying unique data to include in creation data.
+  - \--pcr-list or -l  Add option to specify pcr list to add to creation data.
+
+* tpm2\_evictcontrol:
+    - Fix bug in automatic persistent handle selection when
+      hierarchy is platform.
+    - Fix bug in YAML key action where action was wrong when using ESYS\_TR.
+
+* tpm2_getcap: clean up remanenats of -c option in manpages and tool output.
+
+* tpm2\_gettime: Add a new tool for retrieving a signed timestamp from a TPM.
+
+* tpm2\_nvcertify: Add a new tool for certifying the contents of an NV index.
+
+* tpm2\_nvdefine:
+  - Support default set of attributes so -a is not mandatory.
+  - Support searching for free index if an index isn't specified.
+
+* tpm2\_nvextend: Add a new tool for extending an NV index similair to a PCR.
+
+* tpm2\_nvreadpublic:
+  - Support specifying nv index to read public data from as argument.
+
+* tpm2\_nvsetbits: Add a new tool for setting the values of PCR with type
+    "bits".
+
+* tpm2\_nvundefine: Add support for deleting NV indices with attribute
+    `TPMA_NV_POLICY_DELETE` set using NV Undefine Special command.
+
+* tpm2\_nvwritelock: Add a new tool for setting a write lock on an NV index
+    or globally locking nv indices with TPMA\_NV\_GLOBALLOCK.
+
+* tpm2\_policyauthorizenv: New tool enabling signed, revocable policies.
+
+* tpm2\_policyauthvalue: New tool enabling authorization to be bound to the
+    authorization of another object.
+
+* tpm2\_policycountertimer: Add a new tool for enabling policy bound to TPM
+  clock or timer values.
+
+* tpm2\_policynamehash: Add a new tool for specifying policy based on object
+  name.
+
+* tpm2\_policynv: Add a new tool for specifying policy based on NV contents.
+
+* tpm2\_nvwritten: Add a new tool for specifying policy based on whether or not
+    an NV index was written to.
+
+* tpm2\_policysecret: Add tool options for specifying
+  - \--expiration or -t
+  - \--ticket
+  - \--timeout
+  - \--nonce-tpm or -x
+  - \--qualification or -q
+
+* tpm2\_policysigned: New tool enabling policy command TPM2\_PolicySigned.
+
+* tpm2\_policytemplate: New tool enabling policy command TPM2\_PolicyTemplate.
+
+* tpm2\_policyticket: New tool enabling policy command TPM2\_PolicyTicket.
+
+* tpm2\_readclock: Add a new tool for reading the TPM clock.
+
+* tpm2\_setclock: Add a new tool for setting the TPM clock.
+
+* tpm2\_setprimarypolicy: New tool setting policy on hierarchies.
+
+* tpm2\_shutdown: Add a new tool for issuing a TPM shutdown command.
+
+* misc:
+  - Support "tpmt" as a public key output format that only saves the TPMT
+  structure.
+  - Qualifying data or extra data in many tools can be hex array string or
+  binary file.
+  - Add support for specifying NV index type when specifying NV attributes.
+  - Support added for tools to run on FreeBSD.
+  - Skip and notify of action that man pages will not install if the package
+  pandoc is missing.
+  - Fix precedence issue with bitwise operator order int tpm2_getcap
+  - travis: bump abrmd version 2.3.0
+  - tpm2_util.c: Fix an issue int variable size was checked against uint
+  - pcr.c: Fix buffer length issue to support all defined hash algorithm
+
 ### 4.1-rc0 2019-11-05
 
 * tpm2\_certifycreation: New tool enabling command TPM2\_CertifyCreation.
