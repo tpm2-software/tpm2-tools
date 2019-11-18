@@ -66,7 +66,7 @@ static int pcr_get_id(const char *arg, UINT32 *pcrId)
 
 static bool pcr_parse_selection(const char *str, size_t len, TPMS_PCR_SELECTION *pcrSel) {
     const char *strLeft;
-    char buf[7];
+    char buf[9];
 
     if (str == NULL || len == 0 || strlen(str) == 0)
         return false;
