@@ -249,8 +249,8 @@ bool tpm2_openssl_hash_pcr_banks(TPMI_ALG_HASH hash_alg,
     for (i = 0; i < pcr_select->count; i++) {
 
         // Loop through all PCRs in this bank
-        UINT8 pcr_id;
-        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8;
+        unsigned int pcr_id;
+        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8u;
                 pcr_id++) {
             if (!tpm2_util_is_pcr_select_bit_set(&pcr_select->pcrSelections[i],
                     pcr_id)) {
