@@ -20,7 +20,7 @@ static bool evaluate_populate_pcr_digests(TPML_PCR_SELECTION *pcr_selections,
     unsigned dgst_cnt = 0;
 
     //Iterating the number of pcr banks selected
-    UINT8 i;
+    UINT32 i;
     for (i = 0; i < pcr_selections->count; i++) {
 
         UINT8 total_indices_for_this_alg = 0;

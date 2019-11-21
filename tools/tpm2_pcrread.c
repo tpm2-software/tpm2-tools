@@ -33,9 +33,9 @@ static bool print_pcr_values(void) {
 
         tpm2_tool_output("%s:\n", alg_name);
 
-        UINT8 pcr_id;
+        unsigned int pcr_id;
         for (pcr_id = 0;
-                pcr_id < ctx.pcr_selections.pcrSelections[i].sizeofSelect * 8;
+                pcr_id < ctx.pcr_selections.pcrSelections[i].sizeofSelect * 8u;
                 pcr_id++) {
             if (!tpm2_util_is_pcr_select_bit_set(
                     &ctx.pcr_selections.pcrSelections[i], pcr_id)) {

@@ -191,8 +191,8 @@ bool pcr_print_pcr_struct(TPML_PCR_SELECTION *pcr_select, tpm2_pcrs *pcrs) {
         tpm2_tool_output("  %s:\n", alg_name);
 
         // Loop through all PCRs in this bank
-        UINT8 pcr_id;
-        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8;
+        unsigned int pcr_id;
+        for (pcr_id = 0; pcr_id < pcr_select->pcrSelections[i].sizeofSelect * 8u;
                 pcr_id++) {
             if (!tpm2_util_is_pcr_select_bit_set(&pcr_select->pcrSelections[i],
                     pcr_id)) {
