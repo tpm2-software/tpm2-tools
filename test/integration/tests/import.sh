@@ -8,7 +8,8 @@ cleanup() {
     import_rsa_key.priv import_rsa_key.ctx import_rsa_key.name private.pem \
     public.pem plain.rsa.enc plain.rsa.dec public.pem data.in.raw \
     data.in.digest data.out.signed ticket.out ecc.pub ecc.priv ecc.name \
-    ecc.ctx private.ecc.pem public.ecc.pem passfile
+    ecc.ctx private.ecc.pem public.ecc.pem passfile aes.key policy.dat \
+    aes.priv aes.pub
 
     if [ "$1" != "no-shut-down" ]; then
           shut_down
@@ -137,6 +138,24 @@ run_rsa_import_passin_test() {
     fi;
 }
 
+run_aes_policy_import_test() {
+
+	dd if=/dev/urandom of=aes.key bs=16 count=1
+	dd if=/dev/urandom of=policy.dat bs=32 count=1
+
+	tpm2_import -C "$1" -G aes -i aes.key -L policy.dat -u aes.pub -r aes.priv
+
+	tpm2_load -C "$1" -u aes.priv -u aes.pub -r aes.priv -c aes.ctx
+
+	trap - ERR
+	echo 'foo' | tpm2_encryptdecrypt -c aes.ctx -o plain.rsa.dec plain.rsa.enc
+	if [ $? -eq 0 ]; then
+		echo "expected tpm2_encryptdecrypt to fail"
+		exit 1
+	fi
+        trap onerror ERR
+}
+
 run_test() {
 
     cleanup "no-shut-down"
@@ -192,5 +211,7 @@ exec 42<> passfile
 run_rsa_import_passin_test "parent.ctx" "private.pem" "fd:42"
 
 run_rsa_import_passin_test "parent.ctx" "private.pem" "stdin" "passfile"
+
+run_aes_policy_import_test "parent.ctx"
 
 exit 0
