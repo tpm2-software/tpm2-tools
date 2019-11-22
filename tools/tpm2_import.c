@@ -233,7 +233,6 @@ static bool on_option(char key, char *value) {
         ctx.input_seed_file = value;
         break;
     case 'L':
-        ctx.import_tpm = true;
         ctx.policy = value;
         break;
     case 0:
@@ -369,14 +368,60 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
         return tmp_rc;
     }
 
-    TPM2B_SENSITIVE private = TPM2B_EMPTY_INIT;
+    TPMA_OBJECT attrs = TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT;
+
     TPM2B_PUBLIC public = {
         .size = 0,
         .publicArea = {
             .nameAlg = TPM2_ALG_SHA256,
-            .objectAttributes = TPMA_OBJECT_USERWITHAUTH | TPMA_OBJECT_DECRYPT | TPMA_OBJECT_SIGN_ENCRYPT
         },
     };
+
+    if (ctx.policy) {
+        public.publicArea.authPolicy.size = sizeof(public.publicArea.authPolicy.buffer);
+        result = files_load_bytes_from_path(ctx.policy,
+            public.publicArea.authPolicy.buffer,
+                &public.publicArea.authPolicy.size);
+        if (!result) {
+            return tool_rc_general_error;
+        }
+    } else {
+        attrs |= TPMA_OBJECT_USERWITHAUTH;
+    }
+
+    TPM2B_SENSITIVE private = TPM2B_EMPTY_INIT;
+
+    if (ctx.key_auth_str) {
+        tpm2_session *tmp;
+        tmp_rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
+        if (tmp_rc != tool_rc_success) {
+            LOG_ERR("Invalid key authorization");
+            return tmp_rc;
+        }
+
+        const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
+        private.sensitiveArea.authValue = *auth;
+
+        tpm2_session_close(&tmp);
+    }
+
+    /*
+     * Set the object attributes if specified, overwriting the defaults, but hooking the errata
+     * fixups.
+     */
+    if (ctx.attrs) {
+        TPMA_OBJECT *obj_attrs = &public.publicArea.objectAttributes;
+        result = tpm2_util_string_to_uint32(ctx.attrs, obj_attrs);
+        if (!result) {
+            LOG_ERR("Invalid object attribute, got\"%s\"", ctx.attrs);
+            return tool_rc_general_error;
+        }
+
+        tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+                &public.publicArea.objectAttributes);
+    } else {
+        public.publicArea.objectAttributes = attrs;
+    }
 
     if (ctx.name_alg) {
         TPMI_ALG_HASH alg = tpm2_alg_util_from_optarg(ctx.name_alg,
@@ -412,36 +457,6 @@ static tool_rc openssl_import(ESYS_CONTEXT *ectx) {
                 tpm2_alg_util_algtostr(parent_pub->publicArea.nameAlg,
                         tpm2_alg_util_flags_hash));
     public.publicArea.nameAlg = parent_pub->publicArea.nameAlg;
-    }
-
-    /*
-     * Set the object attributes if specified, overwriting the defaults, but hooking the errata
-     * fixups.
-     */
-    if (ctx.attrs) {
-        TPMA_OBJECT *obj_attrs = &public.publicArea.objectAttributes;
-        result = tpm2_util_string_to_uint32(ctx.attrs, obj_attrs);
-        if (!result) {
-            LOG_ERR("Invalid object attribute, got\"%s\"", ctx.attrs);
-            return tool_rc_general_error;
-        }
-
-        tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
-                &public.publicArea.objectAttributes);
-    }
-
-    if (ctx.key_auth_str) {
-        tpm2_session *tmp;
-        tmp_rc = tpm2_auth_util_from_optarg(NULL, ctx.key_auth_str, &tmp, true);
-        if (tmp_rc != tool_rc_success) {
-            LOG_ERR("Invalid key authorization");
-            return tmp_rc;
-        }
-
-        const TPM2B_AUTH *auth = tpm2_session_get_auth_value(tmp);
-        private.sensitiveArea.authValue = *auth;
-
-        tpm2_session_close(&tmp);
     }
 
     /*
