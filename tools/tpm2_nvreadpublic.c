@@ -14,7 +14,17 @@ struct tpm2_nvreadpublic_ctx {
 
 static tpm2_nvreadpublic_ctx ctx;
 
-static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
+static tool_rc print_nv_public(ESYS_CONTEXT *context, TPMI_RH_NV_INDEX index, TPM2B_NV_PUBLIC *nv_public) {
+
+    ESYS_TR tr_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_tr_from_tpm_public(context, index,
+            &tr_handle);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    tpm2_tool_output("0x%x:\n", index);
+
 
     char *attrs = tpm2_attr_util_nv_attrtostr(nv_public->nvPublic.attributes);
     if (!attrs) {
@@ -26,6 +36,22 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     if (!alg) {
         LOG_ERR("Could not convert algorithm to string form");
     }
+
+    TPM2B_NAME *name = NULL;
+    rc = tpm2_tr_get_name(context, tr_handle,
+            &name);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    tpm2_tool_output("  name: ");
+    UINT16 i;
+    for (i = 0; i < name->size; i++) {
+        tpm2_tool_output("%02x", name->name[i]);
+    }
+    tpm2_tool_output("\n");
+
+    Esys_Free(name);
 
     tpm2_tool_output("  hash algorithm:\n");
     tpm2_tool_output("    friendly: %s\n", alg);
@@ -49,6 +75,8 @@ static void print_nv_public(TPM2B_NV_PUBLIC *nv_public) {
     }
 
     free(attrs);
+
+    return tool_rc_success;
 }
 
 static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
@@ -74,8 +102,6 @@ static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
     for (i = 0; i < capability_data->data.handles.count; i++) {
         TPMI_RH_NV_INDEX index = capability_data->data.handles.handle[i];
 
-        tpm2_tool_output("0x%x:\n", index);
-
         TPM2B_NV_PUBLIC *nv_public;
         tool_rc rc = tpm2_util_nv_read_public(context, index, &nv_public);
         if (rc != tool_rc_success) {
@@ -83,9 +109,14 @@ static tool_rc nv_readpublic(ESYS_CONTEXT *context) {
             free(capability_data);
             return rc;
         }
-        print_nv_public(nv_public);
+
+        rc = print_nv_public(context, index, nv_public);
         free(nv_public);
         tpm2_tool_output("\n");
+        if (rc != tool_rc_success) {
+            free(capability_data);
+            return rc;
+        }
     }
 
     free(capability_data);
