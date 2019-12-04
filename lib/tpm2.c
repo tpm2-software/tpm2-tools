@@ -1426,6 +1426,18 @@ tool_rc tpm2_nvglobalwritelock(ESYS_CONTEXT *esys_context,
     return tool_rc_success;
 }
 
+tool_rc tpm2_tr_from_tpm_public(ESYS_CONTEXT *esys_context, TPM2_HANDLE handle, ESYS_TR *tr_handle) {
+
+    TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, handle, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, tr_handle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    return tool_rc_success;
+}
+
 tool_rc tpm2_nvsetbits(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
         UINT64 bits) {
