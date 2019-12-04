@@ -90,7 +90,7 @@ struct tpm2_pcr_digest_spec {
  *   <pcr index>:<hash alg id>=<hash value>
  *
  *   Example:
- *   "4:sha=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
+ *   "4:sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15"
  *
  *   Note:
  *   Multiple specifications of PCR and hash are OK. Multiple hashes
