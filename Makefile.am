@@ -407,6 +407,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_send.1 \
     man/man1/tpm2_selftest.1 \
     man/man1/tpm2_setclock.1 \
+    man/man1/tpm2_shutdown.1 \
     man/man1/tpm2_sign.1 \
     man/man1/tpm2_certifycreation.1 \
     man/man1/tpm2_nvcertify.1 \
