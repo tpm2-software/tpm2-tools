@@ -13,8 +13,8 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
         TPMI_RH_HIERARCHY hierarchy, FILE *infilep, BYTE *inbuffer,
         UINT16 inbuffer_len, TPM2B_DIGEST **result,
         TPMT_TK_HASHCHECK **validation) {
-    bool use_left, done;
-    unsigned long left;
+    bool use_left = true, done;
+    unsigned long left = inbuffer_len;
     size_t bytes_read;
     TPM2B_AUTH null_auth = TPM2B_EMPTY_INIT;
     TPMI_DH_OBJECT sequence_handle;
@@ -24,10 +24,6 @@ static tool_rc tpm2_hash_common(ESYS_CONTEXT *ectx, TPMI_ALG_HASH halg,
     if (!!infilep) {
         /* Suppress error reporting with NULL path */
         use_left = files_get_file_size(infilep, &left, NULL);
-    } else {
-        /*  if we're using inbuffer, inbuffer_len is valid*/
-        left = inbuffer_len;
-        use_left = true;
     }
 
     /* if data length is non-zero (valid) and less than 1024, just do it in one
