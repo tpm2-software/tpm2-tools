@@ -23,7 +23,7 @@ static tpm2_policytemplate_ctx ctx;
 
 static bool process_input_template_hash(char *value) {
 
-    ctx.template_hash.size = UINT16_MAX;
+    ctx.template_hash.size = sizeof(ctx.template_hash.buffer);
     bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, value,
             &ctx.template_hash.size, ctx.template_hash.buffer);
     if (!result) {

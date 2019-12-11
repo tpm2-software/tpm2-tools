@@ -23,7 +23,7 @@ static tpm2_policynamehash_ctx ctx;
 
 static bool process_input_name_hash(char *value) {
 
-    ctx.name_hash.size = UINT16_MAX;
+    ctx.name_hash.size = sizeof(ctx.name_hash.buffer);
     bool result = files_load_bytes_from_buffer_or_file_or_stdin(NULL, value,
             &ctx.name_hash.size, ctx.name_hash.buffer);
     if (!result) {
