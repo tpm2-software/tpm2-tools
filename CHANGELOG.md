@@ -6,6 +6,7 @@
 * tpm2\_import: Support object policies when importing raw key material.
 * man:
     - Fix manpage examples that have "sha" instead of "sha1"
+    - tpm2_shutdown manpage was missing, add it to build.
 
 ### 4.1 2019-11-25
 
