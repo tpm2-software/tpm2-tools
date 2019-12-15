@@ -4,6 +4,8 @@
 
 * tpm2\_nvreadpublic: add name hash output.
 * tpm2\_import: Support object policies when importing raw key material.
+* build:
+  - Fix compilation inssue: lib/tpm2_hash.c:17:19: note: 'left' was declared here.
 * man:
     - Fix manpage examples that have "sha" instead of "sha1"
     - tpm2_shutdown manpage was missing, add it to build.
