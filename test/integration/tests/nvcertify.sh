@@ -32,8 +32,8 @@ dd if=/dev/urandom bs=1 count=32 status=none| tpm2_nvwrite 1 -i-
 tpm2_nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
 -o signature.bin --attestation attestation.bin --size 32 1
 
-dd if=attestation.bin bs=1 skip=2 | \
-openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin
+openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin \
+attestation.bin
 
 #
 # Test with qualifier data
@@ -43,8 +43,8 @@ dd if=/dev/urandom of=qual.dat bs=1 count=32
 tpm2_nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
 -o signature.bin --attestation attestation.bin --size 32 -q qual.dat 1
 
-dd if=attestation.bin bs=1 skip=2 | \
-openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin
+openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin \
+attestation.bin
 
 #
 # Test if qualifier data was present in the attestation

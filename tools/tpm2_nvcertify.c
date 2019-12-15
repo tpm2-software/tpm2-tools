@@ -266,7 +266,8 @@ static tool_rc process_nvcertify_output(TPMT_SIGNATURE *signature,
         return tool_rc_general_error;
     }
 
-    result = files_save_attestation(certify_info, ctx.certify_info_path);
+    result = files_save_bytes_to_file(ctx.certify_info_path,
+        certify_info->attestationData, certify_info->size);
     if (!result) {
         LOG_ERR("Failed saving attestation data.");
         return tool_rc_general_error;

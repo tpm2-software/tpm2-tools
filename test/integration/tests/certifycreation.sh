@@ -30,8 +30,8 @@ tpm2_certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa
 
-dd if=attestation.bin bs=1 skip=2 | \
-openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin
+openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin \
+attestation.bin
 
 #
 # Test with qualifier data
@@ -42,8 +42,8 @@ tpm2_certifycreation -C signing_key.ctx -c primary.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa -q qual.dat
 
-dd if=attestation.bin bs=1 skip=2 | \
-openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin
+openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin \
+attestation.bin
 
 #
 # Test certification with non primary keys
@@ -57,7 +57,7 @@ tpm2_certifycreation -C signing_key.ctx -c sec_key.ctx -d creation.digest \
 -t creation.ticket -g sha256 -o signature.bin --attestation attestation.bin \
 -f plain -s rsassa
 
-dd if=attestation.bin bs=1 skip=2 | \
-openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin
+openssl dgst -verify sslpub.pem -keyform pem -sha256 -signature signature.bin \
+attestation.bin
 
 exit 0
