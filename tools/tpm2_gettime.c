@@ -190,7 +190,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if (ctx.certify_info_path) {
         /* save the attestation data */
-        bool result = files_save_attestation(time_info, ctx.certify_info_path);
+        bool result = files_save_bytes_to_file(ctx.certify_info_path,
+            time_info->attestationData, time_info->size);
         if (!result) {
             rc = tool_rc_general_error;
             goto out;
