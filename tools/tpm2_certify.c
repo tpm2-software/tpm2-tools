@@ -140,10 +140,10 @@ out:
 static bool on_option(char key, char *value) {
 
     switch (key) {
-    case 'C':
+    case 'c':
         ctx.certified_key.ctx_path = value;
         break;
-    case 'c':
+    case 'C':
         ctx.signing_key.ctx_path = value;
         break;
     case 'P':
