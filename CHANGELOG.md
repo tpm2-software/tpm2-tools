@@ -2,8 +2,13 @@
 
 ### next
 
+* tpm2\_certify: Fix output of attestation data including size field. Now outputs just bytes.
+* tpm2\_certifycreation: Fix tool to match manpage where the code had the -C and -c options reversed.
+* tpm2\_gettime: Fix output of attestation data including size field. Now outputs just bytes.
+* tpm2\_nvcertify: Fix output of attestation data including size field. Now outputs just bytes.
 * tpm2\_nvreadpublic: add name hash output.
 * tpm2\_import: Support object policies when importing raw key material.
+* Fix overflow in pcrs.h where sizeof() was used instead of ARRAY_LEN().
 * build:
   - Fix compilation inssue: lib/tpm2_hash.c:17:19: note: 'left' was declared here.
 * man:
