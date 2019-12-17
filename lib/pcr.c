@@ -11,6 +11,7 @@
 #include "tpm2.h"
 #include "tpm2_tool.h"
 #include "tpm2_alg_util.h"
+#include "tpm2_util.h"
 
 #define MAX(a,b) ((a>b)?a:b)
 
@@ -430,10 +431,10 @@ tool_rc pcr_read_pcr_values(ESYS_CONTEXT *esys_context,
         free(pcr_selection_out);
 
         //4. goto step 2 if pcrSelctionIn still has bits set
-    } while (++pcrs->count < sizeof(pcrs->pcr_values)
+    } while (++pcrs->count < ARRAY_LEN(pcrs->pcr_values)
             && !pcr_unset_pcr_sections(&pcr_selection_tmp));
 
-    if (pcrs->count >= sizeof(pcrs->pcr_values)
+    if (pcrs->count >= ARRAY_LEN(pcrs->pcr_values)
             && !pcr_unset_pcr_sections(&pcr_selection_tmp)) {
         LOG_ERR("too much pcrs to get! try to split into multiple calls...");
         return tool_rc_general_error;
