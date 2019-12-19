@@ -110,7 +110,7 @@ tpm2_flushcontext session.ctx
 ```
 
 ## Create a sealing object to use the policysigned
-``bash
+```bash
 echo "plaintext" > secret.data
 
 tpm2_createprimary -C o -c prim.ctx
