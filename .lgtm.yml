@@ -3,6 +3,8 @@ extraction:
     prepare:
       packages:
       - autoconf-archive
+      - libcurl4-openssl-dev
+      - libjson-c-dev
       - libssl-dev
     after_prepare:
     - cd "$LGTM_WORKSPACE"
