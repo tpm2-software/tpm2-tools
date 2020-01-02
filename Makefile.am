@@ -32,6 +32,7 @@ AM_DISTCHECK_CONFIGURE_FLAGS = --with-bashcompdir='$$(datarootdir)/bash-completi
 # keep me sorted
 bin_PROGRAMS = \
     tools/misc/tpm2_checkquote \
+    tools/misc/tpm2_eventlog \
     tools/misc/tpm2_print \
     tools/misc/tpm2_rc_decode \
     tools/tpm2_activatecredential \
@@ -125,6 +126,7 @@ lib_libcommon_a_CFLAGS = -fPIC $(AM_CFLAGS)
 TOOL_SRC := tools/tpm2_tool.c tools/tpm2_tool.h
 
 tools_misc_tpm2_checkquote_SOURCES = tools/misc/tpm2_checkquote.c $(TOOL_SRC)
+tools_misc_tpm2_eventlog_SOURCES = tools/misc/tpm2_eventlog.c $(TOOL_SRC)
 tools_misc_tpm2_print_SOURCES = tools/misc/tpm2_print.c $(TOOL_SRC)
 tools_misc_tpm2_rc_decode_SOURCES = tools/misc/tpm2_rc_decode.c $(TOOL_SRC)
 
@@ -229,7 +231,9 @@ check_PROGRAMS = \
     test/unit/test_tpm2_policy \
     test/unit/test_tpm2_util \
     test/unit/test_options \
-    test/unit/test_cc_util
+    test/unit/test_cc_util \
+    test/unit/test_tpm2_eventlog \
+    test/unit/test_tpm2_eventlog_yaml
 
 TESTS += $(ALL_SYSTEM_TESTS)
 
@@ -295,6 +299,12 @@ test_unit_test_options_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 test_unit_test_cc_util_CFLAGS   = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
 test_unit_test_cc_util_LDADD    = $(CMOCKA_LIBS) $(LDADD)
 
+test_unit_test_tpm2_eventlog_CFLAGS = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_eventlog_LDADD = $(CMOCKA_LIBS) $(LDADD)
+
+test_unit_test_tpm2_eventlog_yaml_CFLAGS = $(AM_CFLAGS) $(CMOCKA_CFLAGS)
+test_unit_test_tpm2_eventlog_yaml_LDADD = $(CMOCKA_LIBS) $(LDADD)
+
 AM_TESTS_ENVIRONMENT =	\
 	TPM2_ABRMD=tpm2-abrmd; export TPM2_ABRMD; \
 	TPM2_SIM=tpm_server; export TPM2_SIM; \
@@ -350,6 +360,7 @@ if HAVE_MAN_PAGES
     man/man1/tpm2_duplicate.1 \
     man/man1/tpm2_getcap.1 \
     man/man1/tpm2_encryptdecrypt.1 \
+    man/man1/tpm2_eventlog.1 \
     man/man1/tpm2_evictcontrol.1 \
     man/man1/tpm2_flushcontext.1 \
     man/man1/tpm2_getekcertificate.1 \

@@ -5,6 +5,7 @@
 !README.md
 !get-capability-tpm-prop-fixed.bin
 !ek-template-default.bin
+!event.bin
 !*.sh
 !*.c
 !*.h
