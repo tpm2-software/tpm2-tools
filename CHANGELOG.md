@@ -1,6 +1,6 @@
 ## Changelog
 
-### next
+### 3.2.2-RC0 - 2020-01-8
   * Update to work with newer version of TSS.
   * Fix algorithm selection parsing for algs like sm3_sha256.
 
