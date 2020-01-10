@@ -98,7 +98,7 @@ the various known TCTI modules.
 ```bash
 tpm2_createek -c ek.handle -G rsa -u ek.pub
 tpm2_createak -C ek.handle -c ak.ctx -u ak.pub -n ak.name
-tpm2_evictcontrol -c 0x81010002 -o ak.ctx
+tpm2_evictcontrol -C o -c ak.ctx 0x81010002
 ```
 
 [returns](common/returns.md)
