@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.1.1-RC0 - 2019-12-23
+### 4.1.1-RC1 - 2020-01-13
 
 * tpm2\_certify: Fix output of attestation data including size field. Now outputs just bytes.
 * tpm2\_certifycreation: Fix tool to match manpage where the code had the -C and -c options reversed.
