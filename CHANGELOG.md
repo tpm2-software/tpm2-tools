@@ -8,12 +8,13 @@
 * tpm2\_nvcertify: Fix output of attestation data including size field. Now outputs just bytes.
 * tpm2\_nvreadpublic: add name hash output.
 * tpm2\_import: Support object policies when importing raw key material.
-* Fix overflow in pcrs.h where sizeof() was used instead of ARRAY_LEN().
+* Fix overflow in pcrs.h where sizeof() was used instead of ARRAY\_LEN().
 * build:
-  - Fix compilation inssue: lib/tpm2_hash.c:17:19: note: 'left' was declared here.
+  - Fix compilation inssue: lib/tpm2\_hash.c:17:19: note: 'left' was declared here.
 * man:
     - Fix manpage examples that have "sha" instead of "sha1"
-    - tpm2_shutdown manpage was missing, add it to build.
+    - tpm2\_shutdown manpage was missing, add it to build.
+    - Fix manpage example for tpm2\_createak's tpm2\_evictcontrol example.
 
 ### 4.1 2019-11-25
 
