@@ -2,8 +2,8 @@
 
 # NAME
 
-**tpm2_changeeps**(1) - Replaces the active platform primary seed with a new one
-generated off the TPM2 RNG.
+**tpm2_changeeps**(1) - Replaces the active endorsement primary seed with a new
+one generated off the TPM2 RNG.
 
 # SYNOPSIS
 
@@ -11,9 +11,9 @@ generated off the TPM2 RNG.
 
 # DESCRIPTION
 
-**tpm2_changeeps**(1) - Replaces the active platform primary seed with a new one
-generated off the TPM2 RNG. The Transient and Persistent objects under the
-platform hierarchy are lost whilst retaining the NV objects.
+**tpm2_changeeps**(1) - Replaces the active endorsement primary seed with a new
+one generated off the TPM2 RNG. The Transient and Persistent objects under the
+endorsement hierarchy are lost. This command requires platform auth.
 
 # OPTIONS
 
@@ -30,7 +30,7 @@ the various known TCTI modules.
 
 # EXAMPLES
 
-## Change the platform primary seed where the platform auth is NULL.
+## Change the endorsement primary seed where the platform auth is NULL.
 ```bash
 tpm2_changeeps
 ```
