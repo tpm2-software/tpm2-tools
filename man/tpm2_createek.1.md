@@ -54,7 +54,7 @@ Refer to:
 
     The optional input for a file to save the public portion of endorsement key.
 
-  * **-t**, **\--template**=_FILE_:
+  * **-t**, **\--template**:
 
     The optional manufacturer defined endorsement key template and nonce from
     fixed NV Indices to populate the **TPM2B_PUBLIC** public area.

@@ -281,7 +281,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "public",               required_argument, NULL, 'u' },
         { "format",               required_argument, NULL, 'f' },
         { "ek-context",           required_argument, NULL, 'c' },
-        { "template",             required_argument, NULL, 't' },
+        { "template",             no_argument,       NULL, 't' },
     };
 
     *opts = tpm2_options_new("P:w:p:G:u:f:c:t", ARRAY_LEN(topts), topts,
