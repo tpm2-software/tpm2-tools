@@ -106,7 +106,7 @@ static tool_rc init(ESYS_CONTEXT *context) {
 
     /* check flags for mismatches */
     if (ctx.flags.digest && (ctx.flags.msg || ctx.flags.halg)) {
-        LOG_ERR("Cannot specify --digest (-D) and ( --msg (-m) or --halg (-g) )");
+        LOG_ERR("Cannot specify --digest (-d) and ( --msg (-m) or --halg (-g) )");
         return tool_rc_option_error;
     }
 
