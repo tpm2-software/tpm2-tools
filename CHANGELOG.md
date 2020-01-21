@@ -1,6 +1,6 @@
 ## Changelog
 
-### 4.1.1-RC1 - 2020-01-13
+### 4.1.1 - 2020-01-21
 
 * tpm2\_certify: Fix output of attestation data including size field. Now outputs just bytes.
 * tpm2\_certifycreation: Fix tool to match manpage where the code had the -C and -c options reversed.
@@ -10,7 +10,7 @@
 * tpm2\_import: Support object policies when importing raw key material.
 * Fix overflow in pcrs.h where sizeof() was used instead of ARRAY\_LEN().
 * build:
-  - Fix compilation inssue: lib/tpm2\_hash.c:17:19: note: 'left' was declared here.
+  - Fix compilation issue: lib/tpm2\_hash.c:17:19: note: 'left' was declared here.
 * man:
     - Fix manpage examples that have "sha" instead of "sha1"
     - tpm2\_shutdown manpage was missing, add it to build.
