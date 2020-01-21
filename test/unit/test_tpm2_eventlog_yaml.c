@@ -146,6 +146,11 @@ static void test_yaml_event2_callback(void **state){
     assert_true(yaml_event2_callback(eventhdr, sizeof(buf), &count));
 }
 
+/* link required symbol, but tpm2_tool.c declares it AND main, which
+ * we have a main below for cmocka tests.
+ */
+bool output_enabled = true;
+
 int main(void) {
 
     const struct CMUnitTest tests[] = {
