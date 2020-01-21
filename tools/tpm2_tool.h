@@ -8,8 +8,7 @@
 
 #include "tool_rc.h"
 #include "tpm2_options.h"
-
-extern bool output_enabled;
+#include "tpm2_tool_output.h"
 
 /**
  * An optional interface for tools to specify what options they support.
@@ -49,20 +48,5 @@ tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) __attribute__((weak));
  * Called when the tool is exiting, useful for cleanup.
  */
 void tpm2_tool_onexit(void) __attribute__((weak));
-
-/**
- * prints output to stdout respecting the quiet option.
- * Ie when quiet, don't print.
- * @param fmt
- *  The format specifier, ala printf.
- * @param ...
- *  The varargs, just like printf.
- */
-#define tpm2_tool_output(fmt, ...)                   \
-    do {                                        \
-        if (output_enabled) {                   \
-            printf(fmt, ##__VA_ARGS__);         \
-        }                                       \
-    } while (0)
 
 #endif /* MAIN_H */

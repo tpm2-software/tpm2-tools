@@ -10,6 +10,7 @@
 #include "tpm2_eventlog.h"
 #include "tpm2_eventlog_yaml.h"
 #include "tpm2_tool.h"
+#include "tpm2_tool_output.h"
 
 char const *eventtype_to_string (UINT32 event_type) {
 

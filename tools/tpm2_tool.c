@@ -12,6 +12,7 @@
 #include "tpm2_errata.h"
 #include "tpm2_options.h"
 #include "tpm2_tool.h"
+#include "tpm2_tool_output.h"
 
 #define SUPPORTED_ABI_VERSION \
 { \
@@ -20,8 +21,6 @@
     .tssLevel = 1, \
     .tssVersion = 108, \
 }
-
-bool output_enabled = true;
 
 static void esys_teardown(ESYS_CONTEXT **esys_context) {
 
@@ -102,7 +101,7 @@ int main(int argc, char *argv[]) {
      * to respect quiet from here on out (onrun and onexit).
      */
     if (flags.quiet) {
-        output_enabled = false;
+        tpm2_tool_output_disable();
     }
 
     ESYS_CONTEXT *ectx = NULL;
