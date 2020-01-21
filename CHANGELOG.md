@@ -1,5 +1,9 @@
 ## Changelog
 
+### next
+
+ * tpm2\_eventlog: add a tool for parsing and displaying the event log.
+
 ### 4.1.1 - 2020-01-21
 
 * tpm2\_certify: Fix output of attestation data including size field. Now outputs just bytes.
