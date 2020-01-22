@@ -24,16 +24,20 @@ if at least one of the policy events are true.
 
     File to save the compounded policy digest.
 
-  * **-l**, **\--policy-list**=_POLICY\_FILE_\_LIST:
-
-    The list of files for the policy digests that has to be compounded resulting
-    in individual policies being added to final policy digest that can
-    authenticate the object. The list begins with the policy digest hash alg.
-
   * **-S**, **\--session**=_FILE_:
 
     The policy session file generated via the **-S** option to
     **tpm2_startauthsession**(1).
+
+  * **ARGUMENT** the command line argument specifies the list of files for the
+    policy digests that has to be compounded resulting in individual policies
+    being added to final policy digest that can authenticate the object. The
+    list begins with the policy digest hash alg. Example sha256:policy1,policy2
+
+  * **-l**, **\--policy-list**=_POLICY\_FILE_\_LIST:
+
+    This option is retained for backwards compatibility. Use the argument method
+    instead.
 
 ## References
 
@@ -90,7 +94,7 @@ rm session.ctx
 tpm2_startauthsession -S session.ctx
 
 tpm2_policyor -S session.ctx -L policyOR \
--l sha256:set1.pcr0.policy,set2.pcr0.policy
+sha256:set1.pcr0.policy,set2.pcr0.policy
 
 tpm2_flushcontext session.ctx
 
@@ -114,7 +118,7 @@ tpm2_startauthsession -S session.ctx --policy-session
 tpm2_policypcr -S session.ctx -l sha1:23
 
 tpm2_policyor -S session.ctx -L policyOR \
--l sha256:set1.pcr0.policy,set2.pcr0.policy
+sha256:set1.pcr0.policy,set2.pcr0.policy
 
 unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
 
@@ -140,7 +144,7 @@ tpm2_policypcr -S session.ctx -l sha1:23
 ### This should fail
 ```bash
 tpm2_policyor -S session.ctx -L policyOR \
--l sha256:set1.pcr0.policy,set2.pcr0.policy
+sha256:set1.pcr0.policy,set2.pcr0.policy
 
 tpm2_flushcontext session.ctx
 
@@ -159,7 +163,7 @@ tpm2_startauthsession -S session.ctx --policy-session
 tpm2_policypcr -S session.ctx -l sha1:23
 
 tpm2_policyor -S session.ctx -L policyOR \
--l sha256:set1.pcr0.policy,set2.pcr0.policy
+sha256:set1.pcr0.policy,set2.pcr0.policy
 
 unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
 

@@ -47,16 +47,32 @@ static bool on_option(char key, char *value) {
     return result;
 }
 
+static bool on_arg(int argc, char **argv) {
+
+    if (argc > 1) {
+        LOG_ERR("specify single argument for policy list.");
+        return false;
+    }
+
+    ctx.policy_list = calloc(1, sizeof(TPML_DIGEST));
+    bool result = tpm2_policy_parse_policy_list(argv[0], ctx.policy_list);
+    if (!result) {
+        return false;
+    }
+    return true;
+}
+
 bool tpm2_tool_onstart(tpm2_options **opts) {
 
     static struct option topts[] = {
         { "policy",                 required_argument, NULL, 'L' },
         { "session",                required_argument, NULL, 'S' },
+        //Option retained for backwards compatibility - See issue#1894
         { "policy-list",            required_argument, NULL, 'l' },
     };
 
     *opts = tpm2_options_new("L:S:l:", ARRAY_LEN(topts), topts, on_option,
-    NULL, 0);
+        on_arg, 0);
 
     return *opts != NULL;
 }
