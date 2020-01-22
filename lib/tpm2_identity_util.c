@@ -229,6 +229,7 @@ bool tpm2_identity_util_share_secret_with_public_key(
                 parent_pub, label, label_len, encrypted_protection_seed);
         break;
     case TPM2_ALG_ECC:
+    case TPM2_ALG_SM2:
         result = ecdh_derive_seed_and_encrypted_seed(parent_pub,
                 label, label_len,
                 protection_seed, encrypted_protection_seed);

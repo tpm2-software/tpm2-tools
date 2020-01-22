@@ -537,6 +537,11 @@ static bool set_key_algorithm(TPMI_ALG_PUBLIC alg, TPMT_SYM_DEF_OBJECT * obj) {
     case TPM2_ALG_NULL:
         obj->algorithm = TPM2_ALG_NULL;
         break;
+    case TPM2_ALG_SM4:
+        obj->algorithm = TPM2_ALG_SM4;
+        obj->keyBits.sm4 = 128;
+        obj->mode.sm4 = TPM2_ALG_ECB;
+        break;
     default:
         LOG_ERR("The algorithm type input(0x%x) is not supported!", alg);
         result = false;
