@@ -588,6 +588,7 @@ bool tpm2_policy_parse_policy_list(char *str, TPML_DIGEST *policy_list) {
                 hash = tpm2_alg_util_from_optarg(subtoken,
                         tpm2_alg_util_flags_hash);
                 if (hash == TPM2_ALG_ERROR) {
+                    LOG_ERR("Invalid/ Unspecified policy digest algorithm.");
                     return false;
                 }
             }
