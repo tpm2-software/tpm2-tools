@@ -2,6 +2,10 @@
 
 ### next
 
+ * tpm2_policyor: List of policy files should be specified as an argument
+   instead of -l option. The -l option is still retained for backwards
+   compatibility. See issue#1894.
+
  * tpm2\_eventlog: add a tool for parsing and displaying the event log.
 
 ### 4.1.1 - 2020-01-21

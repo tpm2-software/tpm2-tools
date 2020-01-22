@@ -35,7 +35,7 @@ cat $policy_init $policyor_cc $policy_1 $policy_2 > $concatenated
 openssl dgst -binary -sha256 $concatenated > $test_vector
 
 tpm2_startauthsession -S $session_ctx
-tpm2_policyor -L $o_policy_digest -l sha256:$policy_1,$policy_2 -S $session_ctx
+tpm2_policyor -L $o_policy_digest -S $session_ctx sha256:$policy_1,$policy_2
 tpm2_flushcontext $session_ctx
 
 diff $test_vector $o_policy_digest
