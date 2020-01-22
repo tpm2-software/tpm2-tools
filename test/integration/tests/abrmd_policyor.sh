@@ -13,7 +13,9 @@ concatenated=con.cat
 
 cleanup() {
     rm -f $policy_1 $policy_2 $policy_init $test_vector $policyor_cc \
-    $session_ctx $policy_digest $concatenated
+    $session_ctx $policy_digest $concatenated \
+    set1.pcr0.policy set2.pcr0.policy prim.ctx sealkey.priv sealkey.pub \
+    sealkey.ctx policyOR
 
     tpm2_flushcontext $session_ctx 2>/dev/null || true
 
@@ -39,5 +41,54 @@ tpm2_policyor -L $o_policy_digest -S $session_ctx sha256:$policy_1,$policy_2
 tpm2_flushcontext $session_ctx
 
 diff $test_vector $o_policy_digest
+
+# Test case to compound two PCR policies
+
+tpm2_pcrreset 23
+tpm2_startauthsession -S session.ctx
+tpm2_policypcr -S session.ctx -l sha1:23 -L set1.pcr0.policy
+tpm2_flushcontext session.ctx
+rm session.ctx
+
+tpm2_pcrextend 23:sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
+tpm2_startauthsession -S session.ctx
+tpm2_policypcr -S session.ctx -l sha1:23 -L set2.pcr0.policy
+tpm2_flushcontext session.ctx
+rm session.ctx
+
+tpm2_startauthsession -S session.ctx
+tpm2_policyor -S session.ctx -L policyOR \
+sha256:set1.pcr0.policy,set2.pcr0.policy
+tpm2_flushcontext session.ctx
+rm session.ctx
+
+tpm2_createprimary -C o -c prim.ctx
+tpm2_create -g sha256 -u sealkey.pub -r sealkey.priv -L policyOR -C prim.ctx \
+-i- <<< "secretpass"
+tpm2_load -C prim.ctx -c sealkey.ctx -u sealkey.pub -r sealkey.priv
+
+tpm2_startauthsession -S session.ctx --policy-session
+tpm2_policypcr -S session.ctx -l sha1:23
+tpm2_policyor -S session.ctx -L policyOR \
+sha256:set1.pcr0.policy,set2.pcr0.policy
+unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
+echo $unsealed
+tpm2_flushcontext session.ctx
+rm session.ctx
+
+tpm2_pcrextend 23:sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
+tpm2_startauthsession -S session.ctx --policy-session
+tpm2_policypcr -S session.ctx -l sha1:23
+
+tpm2_pcrreset 23
+
+tpm2_startauthsession -S session.ctx --policy-session
+tpm2_policypcr -S session.ctx -l sha1:23
+tpm2_policyor -S session.ctx -L policyOR \
+sha256:set1.pcr0.policy,set2.pcr0.policy
+unsealed=`tpm2_unseal -p session:session.ctx -c sealkey.ctx`
+echo $unsealed
+tpm2_flushcontext session.ctx
+rm session.ctx
 
 exit 0
