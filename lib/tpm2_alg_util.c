@@ -45,9 +45,11 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
         // Assymetric
         { .name = "rsa", .id = TPM2_ALG_RSA, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
         { .name = "ecc", .id = TPM2_ALG_ECC, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
+        { .name = "sm2", .id = TPM2_ALG_SM2, .flags = tpm2_alg_util_flags_asymmetric|tpm2_alg_util_flags_base },
 
         // Symmetric
         { .name = "aes", .id = TPM2_ALG_AES, .flags = tpm2_alg_util_flags_symmetric },
+        { .name = "sm4", .id = TPM2_ALG_SM4, .flags = tpm2_alg_util_flags_symmetric },
         { .name = "camellia", .id = TPM2_ALG_CAMELLIA, .flags = tpm2_alg_util_flags_symmetric },
 
         // Hash
@@ -79,11 +81,6 @@ static void tpm2_alg_util_for_each_alg(alg_iter iterator, void *userdata) {
         { .name = "oaep", .id = TPM2_ALG_OAEP, .flags = tpm2_alg_util_flags_enc_scheme | tpm2_alg_util_flags_rsa_scheme },
         { .name = "rsaes", .id = TPM2_ALG_RSAES, .flags = tpm2_alg_util_flags_enc_scheme | tpm2_alg_util_flags_rsa_scheme },
         { .name = "ecdh", .id = TPM2_ALG_ECDH, .flags = tpm2_alg_util_flags_enc_scheme },
-
-
-        // XXX are these sigs?
-        { .name = "sm2", .id = TPM2_ALG_SM2, .flags = tpm2_alg_util_flags_sig },
-        { .name = "sm4", .id = TPM2_ALG_SM4, .flags = tpm2_alg_util_flags_sig },
 
         // Key derivation functions
         { .name = "kdf1_sp800_56a", .id = TPM2_ALG_KDF1_SP800_56A, .flags = tpm2_alg_util_flags_kdf },
@@ -344,6 +341,23 @@ static alg_parser_rc handle_ecc(const char *ext, TPM2B_PUBLIC *public) {
     return ext[0] == '\0' ? alg_parser_rc_continue : alg_parser_rc_error;
 }
 
+static alg_parser_rc handle_sm2(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_ECC;
+
+    size_t len = ext ? strlen(ext) : 0;
+    if (len == 0 || ext[0] == '\0') {
+        ext = "256";
+    }
+
+    TPMS_ECC_PARMS *e = &public->publicArea.parameters.eccDetail;
+    e->kdf.scheme = TPM2_ALG_NULL;
+    e->curveID    = TPM2_ECC_SM2_P256;
+
+    /* ecc extension should be consumed at this point */
+    return alg_parser_rc_continue;
+}
+
 static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
 
     public->publicArea.type = TPM2_ALG_SYMCIPHER;
@@ -355,6 +369,22 @@ static alg_parser_rc handle_aes(const char *ext, TPM2B_PUBLIC *public) {
     s->algorithm = TPM2_ALG_AES;
 
     return handle_sym_common(ext, s);
+}
+
+static alg_parser_rc handle_sm4(const char *ext, TPM2B_PUBLIC *public) {
+
+    public->publicArea.type = TPM2_ALG_SYMCIPHER;
+
+    tpm2_errata_fixup(SPEC_116_ERRATA_2_7,
+            &public->publicArea.objectAttributes);
+
+    TPMT_SYM_DEF_OBJECT *s = &public->publicArea.parameters.symDetail.sym;
+
+    s->algorithm   = TPM2_ALG_SM4;
+    s->keyBits.sym = 128;
+    s->mode.sym    = tpm2_alg_util_strtoalg(ext,
+                     tpm2_alg_util_flags_mode | tpm2_alg_util_flags_misc);
+    return alg_parser_rc_done;
 }
 
 static alg_parser_rc handle_camellia(const char *ext, TPM2B_PUBLIC *public) {
@@ -398,6 +428,9 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
     } else if (!strncmp(object, "ecc", 3)) {
         object += 3;
         return handle_ecc(object, public);
+    } else if (!strncmp(object, "sm2", 3)) {
+        object += 3;
+        return handle_sm2(object, public);
     } else if (!strncmp(object, "aes", 3)) {
         object += 3;
         return handle_aes(object, public);
@@ -410,6 +443,9 @@ static alg_parser_rc handle_object(const char *object, TPM2B_PUBLIC *public) {
         return handle_xor(public);
     } else if (!strcmp(object, "keyedhash")) {
         return handle_keyedhash(public);
+    } else if (!strncmp(object, "sm4", 3)) {
+        object += 3;
+        return handle_sm4(object, public);
     }
 
     return alg_parser_rc_error;
@@ -471,6 +507,7 @@ static alg_parser_rc handle_asym_detail(const char *detail,
     switch (public->publicArea.type) {
     case TPM2_ALG_RSA:
     case TPM2_ALG_ECC:
+    case TPM2_ALG_SM2:
 
         if (!detail || detail[0] == '\0') {
             detail = is_restricted || is_rsapps ? "aes128cfb" : "null";

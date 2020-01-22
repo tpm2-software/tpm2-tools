@@ -660,14 +660,14 @@ static const struct {
     { TPM2_ECC_NIST_P224, NID_secp224r1        },
     { TPM2_ECC_NIST_P256, NID_X9_62_prime256v1 },
     { TPM2_ECC_NIST_P384, NID_secp384r1        },
-    { TPM2_ECC_NIST_P521, NID_secp521r1        }
+    { TPM2_ECC_NIST_P521, NID_secp521r1        },
+    { TPM2_ECC_SM2_P256,  NID_sm2              },
     /*
      * XXX
      * See if it's possible to support the other curves, I didn't see the
      * mapping in OSSL:
      *  - TPM2_ECC_BN_P256
      *  - TPM2_ECC_BN_P638
-     *  - TPM2_ECC_SM2_P256
      */
 };
 
@@ -1117,6 +1117,7 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
         rc = load_private_RSA_from_pem(f, path, pass, pub, priv);
         break;
     case TPM2_ALG_AES:
+    case TPM2_ALG_SM4:
         if (pass) {
             LOG_ERR("No password can be used for protecting AES key");
             rc = lprc_error;
@@ -1125,6 +1126,7 @@ tpm2_openssl_load_rc tpm2_openssl_load_private(const char *path,
         }
         break;
     case TPM2_ALG_ECC:
+    case TPM2_ALG_SM2:
         rc = load_private_ECC_from_pem(f, path, pass, pub, priv);
         break;
     default:
