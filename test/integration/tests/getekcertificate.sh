@@ -38,12 +38,10 @@ else
     fi
 fi
 
-tpm2_getekcertificate -u test_ek.pub -x -X -o ECcert.bin \
-https://ekop.intel.com/ekcertservice/
+tpm2_getekcertificate -u test_ek.pub -x -X -o ECcert.bin
 
 # Test that stdoutput is the same
-tpm2_getekcertificate -u test_ek.pub -x https://ekop.intel.com/ekcertservice/ \
--X > ECcert2.bin
+tpm2_getekcertificate -u test_ek.pub -x -X > ECcert2.bin
 
 # stdout file should match -E file.
 cmp ECcert.bin ECcert2.bin
