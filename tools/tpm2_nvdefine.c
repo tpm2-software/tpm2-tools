@@ -65,7 +65,7 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
     tool_rc rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
             &ctx.nv_auth, &public_info);
     if (rc != tool_rc_success) {
-        LOG_INFO("Success to define NV area at index 0x%x.", ctx.nv_index);
+        LOG_ERR("Failed to create NV index 0x%x.", ctx.nv_index);
         return rc;
     }
 
