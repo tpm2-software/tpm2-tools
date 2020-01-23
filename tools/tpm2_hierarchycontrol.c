@@ -32,8 +32,14 @@ static tool_rc hierarchycontrol(ESYS_CONTEXT *ectx) {
         ctx.enable == TPM2_RH_ENDORSEMENT ? "ehEnable" : "phEnableNV",
         ctx.state ? "SET" : "CLEAR");
 
-    return tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object, ctx.enable,
-            ctx.state);
+    tool_rc rc = tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object,
+        ctx.enable, ctx.state);
+
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed hierarchycontrol operation.");
+    }
+
+    return rc;
 }
 
 bool on_arg(int argc, char **argv) {
