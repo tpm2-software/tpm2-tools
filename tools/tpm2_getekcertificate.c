@@ -32,6 +32,7 @@ struct tpm_getekcertificate_ctx {
 
 static tpm_getekcertificate_ctx ctx = {
     .is_tpm2_device_active = true,
+    .ek_server_addr = "https://ekop.intel.com/ekcertservice/",
 };
 
 static unsigned char *hash_ek_public(void) {
