@@ -301,6 +301,9 @@ static alg_parser_rc handle_rsa(const char *ext, TPM2B_PUBLIC *public) {
     } else if (!strncmp(ext, "4096", 4)) {
         r->keyBits = 4096;
         ext += 4;
+    } else if (!strncmp(ext, "3072", 4)) {
+        r->keyBits = 3072;
+        ext += 4;
     } else {
         r->keyBits = 2048;
     }
