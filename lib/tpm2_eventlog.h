@@ -14,11 +14,12 @@ typedef bool (*DIGEST2_CALLBACK)(TCG_DIGEST2 const *digest, size_t size,
 typedef bool (*EVENT2_CALLBACK)(TCG_EVENT_HEADER2 const *event_hdr, size_t size,
                                 void *data);
 typedef bool (*EVENT2DATA_CALLBACK)(TCG_EVENT2 const *event, UINT32 type,
-                                    bool validated, void *data);
+                                    void *data);
 
 bool digest2_accumulator_callback(TCG_DIGEST2 const *digest, size_t size,
                                   void *data);
 
+bool parse_event2body(TCG_EVENT2 const *event, UINT32 type);
 bool foreach_digest2(TCG_DIGEST2 const *event_hdr, size_t count, size_t size,
                      DIGEST2_CALLBACK callback, void *data);
 bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,

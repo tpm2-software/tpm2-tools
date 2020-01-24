@@ -61,6 +61,40 @@ bool foreach_digest2(TCG_DIGEST2 const *digest, size_t count, size_t size,
     return ret;
 }
 
+/*
+ * given the provided event type, parse event to ensure the structure / data
+ * in the buffer doesn't exceed the buffer size
+ */
+bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
+
+    switch (type) {
+    /* TCG PC Client FPF section 9.2.6 */
+    case EV_EFI_VARIABLE_DRIVER_CONFIG:
+    case EV_EFI_VARIABLE_BOOT:
+    case EV_EFI_VARIABLE_AUTHORITY:
+        {
+            UEFI_VARIABLE_DATA *data = (UEFI_VARIABLE_DATA*)event->Event;
+            if (event->EventSize < sizeof(*data)) {
+                LOG_ERR("size is insufficient for UEFI variable data");
+                return false;
+            }
+
+            if (event->EventSize < sizeof(*data) + data->UnicodeNameLength *
+                sizeof(char16_t) + data->VariableDataLength)
+            {
+                LOG_ERR("size is insufficient for UEFI variable data");
+                return false;
+            }
+        }
+        break;
+    }
+
+    return true;
+}
+/*
+ * parse event structure, including header, digests and event buffer ensuring
+ * it all fits within the provided buffer (buf_size).
+ */
 bool parse_event2(TCG_EVENT_HEADER2 const *eventhdr, size_t buf_size,
                   size_t *event_size, size_t *digests_size) {
 
@@ -140,9 +174,14 @@ bool foreach_event2(TCG_EVENT_HEADER2 const *eventhdr_start, size_t size,
             }
         }
 
+        ret = parse_event2body(event, eventhdr->EventType);
+        if (ret != true) {
+            return ret;
+        }
+
         /* event data callback */
         if (event2_cb != NULL) {
-            ret = event2_cb(event, eventhdr->EventType, false, data);
+            ret = event2_cb(event, eventhdr->EventType, data);
             if (ret != true) {
                 return false;
             }
