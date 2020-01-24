@@ -2,6 +2,8 @@
 #ifndef TCG_EFI_EVENT_H
 #define TCG_EFI_EVENT_H 1
 
+#include <uuid/uuid.h>
+#include <uchar.h>
 #include <tss2/tss2_tpm2_types.h>
 
 /*
@@ -63,5 +65,13 @@ typedef struct {
   TCG_DIGEST2 Digests [];
  /* TCG_EVENT2 comes next */
 } PACKED TCG_EVENT_HEADER2;
+
+typedef struct {
+  uuid_t VariableName;
+  UINT64 UnicodeNameLength;
+  UINT64 VariableDataLength;
+  char16_t UnicodeName[];
+  /* INT8 VariableData[] comes next */
+} PACKED UEFI_VARIABLE_DATA;
 
 #endif

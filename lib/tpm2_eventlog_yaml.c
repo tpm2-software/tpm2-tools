@@ -1,6 +1,9 @@
+#include <errno.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <uchar.h>
 
 #include <tss2/tss2_tpm2_types.h>
 
@@ -112,26 +115,103 @@ bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
 
     return true;
 }
-#define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
-bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
+bool yaml_uefi_var_unicodename(UEFI_VARIABLE_DATA *data) {
 
-    (void)type;
+    int ret = 0;
+    char *mbstr = NULL, *tmp = NULL;
+    mbstate_t st = { 0, };
 
-    tpm2_tool_output("  EventSize: %" PRIu32 "\n", event->EventSize);
-
-    if (event->EventSize > 0) {
-        char hexstr[EVENT_BUF_MAX] = { 0, };
-
-        bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
-        tpm2_tool_output("  Event: %s\n", hexstr);
+    mbstr = tmp = calloc(data->UnicodeNameLength + 1, MB_CUR_MAX);
+    if (mbstr == NULL) {
+        LOG_ERR("failed to allocate data: %s\n", strerror(errno));
+        return false;
     }
+
+    for(size_t i = 0; i < data->UnicodeNameLength; ++i, tmp += ret) {
+        ret = c16rtomb(tmp, data->UnicodeName[i], &st);
+        if (ret < 0) {
+            LOG_ERR("c16rtomb failed: %s", strerror(errno));
+            free(mbstr);
+            return false;
+        }
+    }
+    tpm2_tool_output("      UnicodeName: %s\n", mbstr);
+    free(mbstr);
 
     return true;
 }
-bool yaml_event2data_callback(TCG_EVENT2 const *event, UINT32 type,
-                              bool validated, void *data) {
+#define VAR_DATA_HEX_SIZE(data) BYTES_TO_HEX_STRING_SIZE(data->VariableDataLength)
+static bool yaml_uefi_var_data(UEFI_VARIABLE_DATA *data) {
 
-    (void)validated;
+    if (data->VariableDataLength == 0) {
+        return true;
+    }
+
+    char *var_data = calloc (1, VAR_DATA_HEX_SIZE(data));
+    uint8_t *variable_data = (uint8_t*)((uintptr_t)data->UnicodeName +
+                                        data->UnicodeNameLength *
+                                        sizeof(char16_t));
+    if (var_data == NULL) {
+        LOG_ERR("failled to allocate data: %s\n", strerror(errno));
+        return false;
+    }
+    bytes_to_str(variable_data, data->VariableDataLength, var_data,
+                 VAR_DATA_HEX_SIZE(data));
+
+    tpm2_tool_output("      VariableData: %s\n", var_data);
+    free(var_data);
+
+    return true;
+}
+/*
+ * TCG PC Client FPF section 9.2.6
+ * The tpm2_eventlog module validates the event structure but nothing within
+ * the event data buffer so we must do that here.
+ */
+static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data) {
+
+    bool ret;
+    char uuidstr[37] = { 0 };
+
+    tpm2_tool_output("  Event:\n");
+    uuid_unparse_lower(data->VariableName, uuidstr);
+    tpm2_tool_output("    - VariableName: %s\n      UnicodeNameLength: %"
+                     PRIu64 "\n      VariableDataLength: %" PRIu64 "\n",
+                     uuidstr, data->UnicodeNameLength,
+                     data->VariableDataLength);
+
+    ret = yaml_uefi_var_unicodename(data);
+    if (!ret) {
+        return false;
+    }
+
+    return yaml_uefi_var_data(data);
+}
+#define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
+bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
+
+    char hexstr[EVENT_BUF_MAX] = { 0, };
+
+    tpm2_tool_output("  EventSize: %" PRIu32 "\n", event->EventSize);
+
+    if (event->EventSize == 0) {
+        return true;
+    }
+
+    switch (type) {
+    case EV_EFI_VARIABLE_DRIVER_CONFIG:
+    case EV_EFI_VARIABLE_BOOT:
+    case EV_EFI_VARIABLE_AUTHORITY:
+        return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event);
+    default:
+        bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
+        tpm2_tool_output("  Event: %s\n", hexstr);
+        return true;
+    }
+}
+bool yaml_event2data_callback(TCG_EVENT2 const *event, UINT32 type,
+                              void *data) {
+
     (void)data;
 
     return yaml_event2data(event, type);
