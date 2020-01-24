@@ -87,11 +87,10 @@ static bool test_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t si
     return mock_type(bool);
 }
 static bool test_event2_callback(TCG_EVENT2 const *event, UINT32 type,
-                                 bool validated, void *data) {
+                                 void *data) {
 
     (void)event;
     (void)type;
-    (void)validated;
     (void)data;
 
     return mock_type(bool);
@@ -206,6 +205,26 @@ static void test_foreach_event2_digest2_fail(void **state){
                                 test_event2hdr_callback,
                                 foreach_digest2_test_callback, NULL, NULL));
 }
+static void test_foreach_event2_parse_event2body_fail(void **state){
+
+    (void)state;
+
+    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2) + 1] = { 0, };
+    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
+    TCG_DIGEST2 *digest = eventhdr->Digests;
+    TCG_EVENT2 *event = (TCG_EVENT2*)(buf + sizeof(*eventhdr) + TCG_DIGEST2_SHA1_SIZE);
+
+    eventhdr->DigestCount = 1;
+    eventhdr->EventType = EV_EFI_VARIABLE_BOOT;
+    digest->AlgorithmId = TPM2_ALG_SHA1;
+    event->EventSize = 1;
+
+    will_return(test_event2hdr_callback, true);
+    will_return(foreach_digest2_test_callback, true);
+    assert_false(foreach_event2(eventhdr, sizeof(buf),
+                                test_event2hdr_callback,
+                                foreach_digest2_test_callback, NULL, NULL));
+}
 static void test_foreach_event2_event2body_fail(void **state){
 
     (void)state;
@@ -226,6 +245,28 @@ static void test_foreach_event2_event2body_fail(void **state){
                                 foreach_digest2_test_callback,
                                 test_event2_callback, NULL));
 }
+static void test_parse_event2body_uefivar_badsize(void **state){
+
+    (void)state;
+
+    TCG_EVENT2 event = { 0, };
+
+    assert_false(parse_event2body(&event, EV_EFI_VARIABLE_DRIVER_CONFIG));
+}
+#include <inttypes.h>
+static void test_parse_event2body_uefivar_badlength(void **state){
+
+    (void)state;
+
+    char buf[sizeof(TCG_EVENT2) + sizeof(UEFI_VARIABLE_DATA) + sizeof(char16_t)] = { 0, };
+    TCG_EVENT2 *event = (TCG_EVENT2*)buf;
+    event->EventSize = sizeof(UEFI_VARIABLE_DATA) + sizeof(char16_t) - 1;
+    UEFI_VARIABLE_DATA *data = (UEFI_VARIABLE_DATA*)event->Event;
+    data->UnicodeNameLength = 1;
+
+    printf("EventSize: %" PRIu32 "\n", event->EventSize);
+    assert_false(parse_event2body(event, EV_EFI_VARIABLE_DRIVER_CONFIG));
+}
 int main(void) {
 
     const struct CMUnitTest tests[] = {
@@ -245,6 +286,9 @@ int main(void) {
         cmocka_unit_test(test_foreach_event2_event2hdr_fail),
         cmocka_unit_test(test_foreach_event2_event2body_fail),
         cmocka_unit_test(test_foreach_event2_digest2_fail),
+        cmocka_unit_test(test_foreach_event2_parse_event2body_fail),
+        cmocka_unit_test(test_parse_event2body_uefivar_badsize),
+        cmocka_unit_test(test_parse_event2body_uefivar_badlength),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

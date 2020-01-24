@@ -73,17 +73,6 @@ static void test_yaml_event2data(void **state) {
     event->EventSize = 6;
     assert_true(yaml_event2data(event, EV_PREBOOT_CERT));
 }
-static void test_yaml_event2data_callback(void **state){
-
-    (void)state;
-
-    uint8_t buf [sizeof(TCG_EVENT2) + 6];
-    TCG_EVENT2 *event = (TCG_EVENT2*)buf;
-
-    event->EventSize = 6;
-    assert_true(yaml_event2data_callback(event, EV_PREBOOT_CERT, false, NULL));
-}
-
 static void test_yaml_event2hdr_callback(void **state){
 
     (void)state;
@@ -149,7 +138,6 @@ int main(void) {
         cmocka_unit_test(test_yaml_event2hdr_callback_nulldata),
         cmocka_unit_test(test_yaml_digest2_callback),
         cmocka_unit_test(test_yaml_event2data),
-        cmocka_unit_test(test_yaml_event2data_callback),
         cmocka_unit_test(test_yaml_eventlog),
     };
 
