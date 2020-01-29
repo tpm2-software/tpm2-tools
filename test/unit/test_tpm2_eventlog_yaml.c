@@ -54,18 +54,6 @@ static void eventtype_to_string_default(void **state) {
     assert_string_equal(eventtype_to_string(666), "Unknown event type");
 }
 
-static void test_yaml_eventheader2(void **state) {
-
-    (void)state;
-    TCG_EVENT_HEADER2 eventhdr = {
-        .PCRIndex = 1,
-        .EventType = EV_EFI_ACTION,
-        .DigestCount = 100,
-    };
-
-    assert_true(yaml_eventheader2(&eventhdr, sizeof(eventhdr)));
-}
-
 static void test_yaml_digest2_callback_null(void **state) {
 
     (void)state;
@@ -77,75 +65,59 @@ static void test_yaml_digest2_callback(void **state) {
     (void)state;
     uint8_t buf [TCG_DIGEST2_SHA1_SIZE];
     TCG_DIGEST2 *digest = (TCG_DIGEST2*)buf;
-    yaml_digest_cbdata_t cbdata = { 0, };
+    yaml_cbdata_t cbdata = { 0, };
 
     digest->AlgorithmId = TPM2_ALG_SHA1;
     assert_true(yaml_digest2_callback(digest, TPM2_SHA1_DIGEST_SIZE, &cbdata));
 }
-static void test_yaml_event2_nosize(void **state) {
-
-    (void)state;
-    uint8_t buf [sizeof(TCG_EVENT2)];
-    TCG_EVENT2 *event = (TCG_EVENT2*)buf;
-
-    event->EventSize = 6;
-    assert_false(yaml_event2(event, sizeof(*event) - 1));
-}
-static void test_yaml_event2_nobuf(void **state) {
-
-    (void)state;
-    uint8_t buf [sizeof(TCG_EVENT2) + 3];
-    TCG_EVENT2 *event = (TCG_EVENT2*)buf;
-
-    event->EventSize = 6;
-    assert_false(yaml_event2(event, sizeof(*event) + 3));
-}
-static void test_yaml_event2(void **state) {
+static void test_yaml_event2data(void **state) {
 
     (void)state;
     uint8_t buf [sizeof(TCG_EVENT2) + 6];
     TCG_EVENT2 *event = (TCG_EVENT2*)buf;
 
     event->EventSize = 6;
-    assert_true(yaml_event2(event, sizeof(*event) + 6));
+    assert_true(yaml_event2data(event, EV_PREBOOT_CERT));
 }
-static void test_yaml_event2_callback_null(void **state){
+static void test_yaml_event2data_callback(void **state){
 
     (void)state;
 
-    assert_false(yaml_event2_callback(NULL, 0, NULL));
+    uint8_t buf [sizeof(TCG_EVENT2) + 6];
+    TCG_EVENT2 *event = (TCG_EVENT2*)buf;
+
+    event->EventSize = 6;
+    assert_true(yaml_event2data_callback(event, EV_PREBOOT_CERT, false, NULL));
 }
-static void test_yaml_event2_callback_baddigest(void **state){
 
-    (void)state;
-    uint8_t buf [sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE - 1] = { 0, };
-    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
-    TCG_DIGEST2 *digest = (TCG_DIGEST2*)(eventhdr->Digests);
-    size_t count = 0;
-
-    eventhdr->DigestCount = 1;
-    digest->AlgorithmId = TPM2_ALG_SHA1;
-    digest->Digest[0] = 0xef;
-
-    assert_false(yaml_event2_callback(eventhdr, sizeof(buf), &count));
-}
-static void test_yaml_event2_callback(void **state){
+static void test_yaml_event2hdr_callback(void **state){
 
     (void)state;
     uint8_t buf [sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2) + 2] = { 0, };
     TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
     TCG_DIGEST2 *digest = (TCG_DIGEST2*)(eventhdr->Digests);
     TCG_EVENT2 *event = (TCG_EVENT2*)(buf + sizeof(*eventhdr) + TCG_DIGEST2_SHA1_SIZE);
-    size_t count = 0;
+    yaml_cbdata_t data = { 0, };
 
     eventhdr->DigestCount = 1;
     digest->AlgorithmId = TPM2_ALG_SHA1;
     digest->Digest[0] = 0xef;
     event->EventSize = 2;
 
-    assert_true(yaml_event2_callback(eventhdr, sizeof(buf), &count));
+    assert_true(yaml_event2hdr_callback(eventhdr, sizeof(buf), &data));
 }
+static void test_yaml_event2hdr_callback_nulldata(void **state){
 
+    (void)state;
+
+    assert_false(yaml_event2hdr_callback(NULL, 0, NULL));
+}
+static void test_yaml_eventlog(void **state){
+
+    (void)state;
+
+    assert_false(yaml_eventlog(NULL, 0));
+}
 int main(void) {
 
     const struct CMUnitTest tests[] = {
@@ -179,15 +151,13 @@ int main(void) {
         cmocka_unit_test(eventtype_to_string_EV_EFI_HANDOFF_TABLES),
         cmocka_unit_test(eventtype_to_string_EV_EFI_VARIABLE_AUTHORITY),
         cmocka_unit_test(eventtype_to_string_default),
-        cmocka_unit_test(test_yaml_eventheader2),
-        cmocka_unit_test(test_yaml_event2_nosize),
-        cmocka_unit_test(test_yaml_event2_nobuf),
-        cmocka_unit_test(test_yaml_event2),
+        cmocka_unit_test(test_yaml_event2hdr_callback),
+        cmocka_unit_test(test_yaml_event2hdr_callback_nulldata),
         cmocka_unit_test(test_yaml_digest2_callback_null),
         cmocka_unit_test(test_yaml_digest2_callback),
-        cmocka_unit_test(test_yaml_event2_callback_null),
-        cmocka_unit_test(test_yaml_event2_callback_baddigest),
-        cmocka_unit_test(test_yaml_event2_callback),
+        cmocka_unit_test(test_yaml_event2data),
+        cmocka_unit_test(test_yaml_event2data_callback),
+        cmocka_unit_test(test_yaml_eventlog),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
