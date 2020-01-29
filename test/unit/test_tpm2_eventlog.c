@@ -78,13 +78,80 @@ static void test_digest2_accumulator_callback_null(void **state) {
 
     assert_false(digest2_accumulator_callback (NULL, 0, NULL));
 }
-static bool test_event2_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size, void *data) {
+static bool test_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size, void *data) {
 
     (void)eventhdr;
     (void)size;
     (void)data;
 
     return mock_type(bool);
+}
+static bool test_event2_callback(TCG_EVENT2 const *event, UINT32 type,
+                                 bool validated, void *data) {
+
+    (void)event;
+    (void)type;
+    (void)validated;
+    (void)data;
+
+    return mock_type(bool);
+}
+
+static void test_parse_event2_badhdr(void **state){
+
+    (void)state;
+    char buf[sizeof(TCG_EVENT_HEADER2) - 1] = { 0, };
+    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
+    size_t size_event = 0, size_digest = 0;
+
+    assert_false(parse_event2(eventhdr, sizeof(buf), &size_event, &size_digest));
+}
+static void test_parse_event2_baddigest(void **state){
+
+    (void)state;
+    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE - 1] = { 0, };
+    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
+    TCG_DIGEST2 *digest = eventhdr->Digests;
+    size_t size_event = 0, size_digest = 0;
+
+    eventhdr->DigestCount = 1;
+    digest->AlgorithmId = TPM2_ALG_SHA1;
+
+    assert_false(parse_event2(eventhdr, sizeof(buf), &size_event, &size_digest));
+}
+static void test_parse_event2_badeventsize(void **state){
+
+    (void)state;
+    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2) - 1] = { 0, };
+    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
+    TCG_DIGEST2 *digest = eventhdr->Digests;
+    size_t size_event = 0, size_digest = 0;
+
+    eventhdr->DigestCount = 1;
+    digest->AlgorithmId = TPM2_ALG_SHA1;
+
+    assert_false(parse_event2(eventhdr, sizeof(buf), &size_event, &size_digest));
+}
+static void test_parse_event2_badeventbuf(void **state){
+
+    (void)state;
+    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2)] = { 0, };
+    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
+    TCG_DIGEST2 *digest = eventhdr->Digests;
+    TCG_EVENT2 *event = (TCG_EVENT2*)(buf + sizeof(*eventhdr) + TCG_DIGEST2_SHA1_SIZE);
+    size_t size_event = 0, size_digest = 0;
+
+    eventhdr->DigestCount = 1;
+    digest->AlgorithmId = TPM2_ALG_SHA1;
+    event->EventSize = 1;
+
+    assert_false(parse_event2(eventhdr, sizeof(buf), &size_event, &size_digest));
+}
+static void test_foreach_event2_null(void **state){
+
+    (void)state;
+
+    assert_false(foreach_event2(NULL, 0, NULL, NULL, NULL, NULL));
 }
 static void test_foreach_event2(void **state){
 
@@ -98,62 +165,14 @@ static void test_foreach_event2(void **state){
     digest->AlgorithmId = TPM2_ALG_SHA1;
     event->EventSize = 6;
 
+    will_return(test_event2hdr_callback, true);
+    will_return(foreach_digest2_test_callback, true);
     will_return(test_event2_callback, true);
-    assert_true(foreach_event2(eventhdr, sizeof(buf), test_event2_callback, NULL));
+    assert_true(foreach_event2(eventhdr, sizeof(buf), test_event2hdr_callback,
+                               foreach_digest2_test_callback,
+                               test_event2_callback, NULL));
 }
-static void test_foreach_event2_null(void **state){
-
-    (void)state;
-
-    assert_false(foreach_event2(NULL, 0, NULL, NULL));
-}
-static void test_foreach_event2_badhdr(void **state){
-
-    (void)state;
-    char buf[sizeof(TCG_EVENT_HEADER2) - 1] = { 0, };
-    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
-
-    assert_false(foreach_event2(eventhdr, sizeof(buf), test_event2_callback, NULL));
-}
-static void test_foreach_event2_baddigest(void **state){
-
-    (void)state;
-    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE - 1] = { 0, };
-    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
-    TCG_DIGEST2 *digest = eventhdr->Digests;
-
-    eventhdr->DigestCount = 1;
-    digest->AlgorithmId = TPM2_ALG_SHA1;
-
-    assert_false(foreach_event2(eventhdr, sizeof(buf), test_event2_callback, NULL));
-}
-static void test_foreach_event2_badeventsize(void **state){
-
-    (void)state;
-    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2) - 1] = { 0, };
-    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
-    TCG_DIGEST2 *digest = eventhdr->Digests;
-
-    eventhdr->DigestCount = 1;
-    digest->AlgorithmId = TPM2_ALG_SHA1;
-
-    assert_false(foreach_event2(eventhdr, sizeof(buf), test_event2_callback, NULL));
-}
-static void test_foreach_event2_badeventbuf(void **state){
-
-    (void)state;
-    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2)] = { 0, };
-    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
-    TCG_DIGEST2 *digest = eventhdr->Digests;
-    TCG_EVENT2 *event = (TCG_EVENT2*)(buf + sizeof(*eventhdr) + TCG_DIGEST2_SHA1_SIZE);
-
-    eventhdr->DigestCount = 1;
-    digest->AlgorithmId = TPM2_ALG_SHA1;
-    event->EventSize = 1;
-
-    assert_false(foreach_event2(eventhdr, sizeof(buf), test_event2_callback, NULL));
-}
-static void test_foreach_event2_badcallback(void **state){
+static void test_foreach_event2_event2hdr_fail(void **state){
 
     (void)state;
     char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2) + 1] = { 0, };
@@ -165,8 +184,47 @@ static void test_foreach_event2_badcallback(void **state){
     digest->AlgorithmId = TPM2_ALG_SHA1;
     event->EventSize = 1;
 
+    will_return(test_event2hdr_callback, false);
+    assert_false(foreach_event2(eventhdr, sizeof(buf), test_event2hdr_callback,
+                                NULL, NULL, NULL));
+}
+static void test_foreach_event2_digest2_fail(void **state){
+
+    (void)state;
+    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2) + 1] = { 0, };
+    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
+    TCG_DIGEST2 *digest = eventhdr->Digests;
+    TCG_EVENT2 *event = (TCG_EVENT2*)(buf + sizeof(*eventhdr) + TCG_DIGEST2_SHA1_SIZE);
+
+    eventhdr->DigestCount = 1;
+    digest->AlgorithmId = TPM2_ALG_SHA1;
+    event->EventSize = 1;
+
+    will_return(test_event2hdr_callback, true);
+    will_return(foreach_digest2_test_callback, false);
+    assert_false(foreach_event2(eventhdr, sizeof(buf),
+                                test_event2hdr_callback,
+                                foreach_digest2_test_callback, NULL, NULL));
+}
+static void test_foreach_event2_event2body_fail(void **state){
+
+    (void)state;
+    char buf[sizeof(TCG_EVENT_HEADER2) + TCG_DIGEST2_SHA1_SIZE + sizeof(TCG_EVENT2) + 1] = { 0, };
+    TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
+    TCG_DIGEST2 *digest = eventhdr->Digests;
+    TCG_EVENT2 *event = (TCG_EVENT2*)(buf + sizeof(*eventhdr) + TCG_DIGEST2_SHA1_SIZE);
+
+    eventhdr->DigestCount = 1;
+    digest->AlgorithmId = TPM2_ALG_SHA1;
+    event->EventSize = 1;
+
+    will_return(test_event2hdr_callback, true);
+    will_return(foreach_digest2_test_callback, true);
     will_return(test_event2_callback, false);
-    assert_false(foreach_event2(eventhdr, sizeof(buf), test_event2_callback, NULL));
+    assert_false(foreach_event2(eventhdr, sizeof(buf),
+                                test_event2hdr_callback,
+                                foreach_digest2_test_callback,
+                                test_event2_callback, NULL));
 }
 int main(void) {
 
@@ -178,13 +236,15 @@ int main(void) {
         cmocka_unit_test(test_foreach_digest2_cbnull),
         cmocka_unit_test(test_digest2_accumulator_callback),
         cmocka_unit_test(test_digest2_accumulator_callback_null),
-        cmocka_unit_test(test_foreach_event2),
+        cmocka_unit_test(test_parse_event2_badhdr),
+        cmocka_unit_test(test_parse_event2_baddigest),
+        cmocka_unit_test(test_parse_event2_badeventsize),
+        cmocka_unit_test(test_parse_event2_badeventbuf),
         cmocka_unit_test(test_foreach_event2_null),
-        cmocka_unit_test(test_foreach_event2_badhdr),
-        cmocka_unit_test(test_foreach_event2_baddigest),
-        cmocka_unit_test(test_foreach_event2_badeventsize),
-        cmocka_unit_test(test_foreach_event2_badeventbuf),
-        cmocka_unit_test(test_foreach_event2_badcallback),
+        cmocka_unit_test(test_foreach_event2),
+        cmocka_unit_test(test_foreach_event2_event2hdr_fail),
+        cmocka_unit_test(test_foreach_event2_event2body_fail),
+        cmocka_unit_test(test_foreach_event2_digest2_fail),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
