@@ -42,7 +42,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     bool ret = false;
     UINT8 *eventlog;
-    size_t size = 0;
+    unsigned long size = 0;
 
     if (filename == NULL) {
         LOG_ERR("Missing required positional parameter, try -h / --help");
@@ -55,7 +55,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     eventlog = calloc(1, size);
     if (eventlog == NULL){
-        LOG_ERR("failed to allocate %zd bytes: %s", size, strerror(errno));
+        LOG_ERR("failed to allocate %lu bytes: %s", size, strerror(errno));
         return tool_rc_general_error;
     }
 
