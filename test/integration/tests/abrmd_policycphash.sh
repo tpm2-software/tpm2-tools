@@ -96,4 +96,14 @@ trap onerror ERR
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
+# Test tpm2_nvincrement
+tpm2_nvdefine 1 -s 8 -a "nt=counter|ownerread|policywrite" -L authorized.policy
+tpm2_nvincrement 1 --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_nvincrement 1 -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+tpm2_nvundefine 1
+
 exit 0
