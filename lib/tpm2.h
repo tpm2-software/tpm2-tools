@@ -286,7 +286,8 @@ tool_rc tpm2_nvextend(ESYS_CONTEXT *esys_context,
         TPM2B_MAX_NV_BUFFER *data, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_nv_increment(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);
+        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
+        TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_nvreadlock(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index);

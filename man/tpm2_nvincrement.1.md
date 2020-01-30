@@ -32,6 +32,12 @@ handle range "TPM2_HR_NV_INDEX".
 
     Specifies the authorization value for the hierarchy.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 

@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 
+#include "files.h"
 #include "tpm2_nv_util.h"
 #include "tpm2_tool.h"
 
@@ -14,6 +15,8 @@ struct tpm_nvincrement_ctx {
     } auth_hierarchy;
 
     TPM2_HANDLE nv_index;
+
+    char *cp_hash_path;
 };
 static tpm_nvincrement_ctx ctx;
 
@@ -36,6 +39,9 @@ static bool on_option(char key, char *value) {
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -46,6 +52,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "hierarchy", required_argument, NULL, 'C' },
         { "auth",      required_argument, NULL, 'P' },
+        { "cphash",    required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
@@ -66,16 +73,33 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    rc = tpm2_nv_increment(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Failed to increment NV counter at index 0x%X", ctx.nv_index);
+    if (!ctx.cp_hash_path) {
+        rc = tpm2_nv_increment(ectx, &ctx.auth_hierarchy.object, ctx.nv_index, NULL);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Failed to increment NV counter at index 0x%X", ctx.nv_index);
+        }
         return rc;
     }
 
-    return tool_rc_success;
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = tpm2_nv_increment(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+        &cp_hash);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    if (!ctx.cp_hash_path) {
+        return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    }
+    return tool_rc_success;
 }
