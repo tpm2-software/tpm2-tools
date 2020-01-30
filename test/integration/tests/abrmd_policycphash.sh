@@ -76,4 +76,24 @@ trap onerror ERR
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
+# Test tpm2_nvextend
+tpm2_nvdefine 1 -a "nt=extend|ownerread|policywrite" -L authorized.policy
+echo "foo" | tpm2_nvextend -i- 1 --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+echo "foo" | tpm2_nvextend -i- 1 -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+## test the failing scenario
+setup_authorized_policycphash
+trap - ERR
+echo "foo" | tpm2_nvextend -i- 1 -P "session:session.ctx"
+if [ $? == 0 ];then
+  echo "ERROR: nvextend must fail!"
+  exit 1
+fi
+trap onerror ERR
+tpm2_flushcontext session.ctx
+tpm2_nvundefine 1
+
 exit 0
