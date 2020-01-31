@@ -74,4 +74,10 @@ typedef struct {
   /* INT8 VariableData[] comes next */
 } PACKED UEFI_VARIABLE_DATA;
 
+typedef UINT64 UEFI_PHYSICAL_ADDRESS;
+typedef struct {
+    UEFI_PHYSICAL_ADDRESS BlobBase;
+    UINT64 BlobLength;
+} PACKED UEFI_PLATFORM_FIRMWARE_BLOB;
+
 #endif
