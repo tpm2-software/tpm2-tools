@@ -20,5 +20,6 @@ expect_fail tpm2_eventlog foo bar
 expect_fail tpm2_eventlog ${srcdir}/test/integration/fixtures/event-bad.bin
 expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/event.bin
 expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/event-uefivar.bin
+expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/event-uefiaction.bin
 
 exit $?

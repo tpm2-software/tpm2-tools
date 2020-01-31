@@ -195,6 +195,17 @@ bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
                      data->BlobLength);
     return true;
 }
+/* TCG PC Client PFP section 9.4.4 */
+bool yaml_uefi_action(UINT8 const *action, size_t size) {
+
+    /* longest string permitted by spec is 47 chars */
+    char buf[50] = { '\0', };
+
+    memcpy (buf, action, size);
+    tpm2_tool_output("  Event: %s\n", buf);
+
+    return true;
+}
 #define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
 bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
 
@@ -215,6 +226,8 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
     case EV_S_CRTM_CONTENTS:
     case EV_EFI_PLATFORM_FIRMWARE_BLOB:
         return yaml_uefi_platfwblob((UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event);
+    case EV_EFI_ACTION:
+        return yaml_uefi_action(event->Event, event->EventSize);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
         tpm2_tool_output("  Event: %s\n", hexstr);
