@@ -187,6 +187,14 @@ static bool yaml_uefi_var(UEFI_VARIABLE_DATA *data) {
 
     return yaml_uefi_var_data(data);
 }
+/* TCG PC Client FPF section 9.2.5 */
+bool yaml_uefi_platfwblob(UEFI_PLATFORM_FIRMWARE_BLOB *data) {
+
+    tpm2_tool_output("  Event:\n    - BlobBase: 0x%" PRIx64 "\n      "
+                     "BlobLength: 0x%" PRIx64 "\n", data->BlobBase,
+                     data->BlobLength);
+    return true;
+}
 #define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
 bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
 
@@ -203,6 +211,10 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
     case EV_EFI_VARIABLE_BOOT:
     case EV_EFI_VARIABLE_AUTHORITY:
         return yaml_uefi_var((UEFI_VARIABLE_DATA*)event->Event);
+    case EV_POST_CODE:
+    case EV_S_CRTM_CONTENTS:
+    case EV_EFI_PLATFORM_FIRMWARE_BLOB:
+        return yaml_uefi_platfwblob((UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
         tpm2_tool_output("  Event: %s\n", hexstr);

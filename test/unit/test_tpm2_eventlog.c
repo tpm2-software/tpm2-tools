@@ -267,6 +267,16 @@ static void test_parse_event2body_uefivar_badlength(void **state){
     printf("EventSize: %" PRIu32 "\n", event->EventSize);
     assert_false(parse_event2body(event, EV_EFI_VARIABLE_DRIVER_CONFIG));
 }
+static void test_parse_event2body_postcode_badlength(void **state){
+
+    (void)state;
+
+    char buf[sizeof(TCG_EVENT2)] = { 0, };
+    TCG_EVENT2 *event = (TCG_EVENT2*)buf;
+    event->EventSize = sizeof(UEFI_PLATFORM_FIRMWARE_BLOB) - 1;
+
+    assert_false(parse_event2body(event, EV_EFI_PLATFORM_FIRMWARE_BLOB));
+}
 int main(void) {
 
     const struct CMUnitTest tests[] = {
@@ -289,6 +299,7 @@ int main(void) {
         cmocka_unit_test(test_foreach_event2_parse_event2body_fail),
         cmocka_unit_test(test_parse_event2body_uefivar_badsize),
         cmocka_unit_test(test_parse_event2body_uefivar_badlength),
+        cmocka_unit_test(test_parse_event2body_postcode_badlength),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
