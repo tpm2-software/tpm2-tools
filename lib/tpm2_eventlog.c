@@ -87,6 +87,19 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
             }
         }
         break;
+    /* TCG PC Client FPF section 9.2.5 */
+    case EV_POST_CODE:
+    case EV_S_CRTM_CONTENTS:
+    case EV_EFI_PLATFORM_FIRMWARE_BLOB:
+        {
+            UEFI_PLATFORM_FIRMWARE_BLOB *data =
+                (UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event;
+            if (event->EventSize < sizeof(*data)) {
+                LOG_ERR("size is insufficient for UEFI FW blob data");
+                return false;
+            }
+        }
+        break;
     }
 
     return true;
