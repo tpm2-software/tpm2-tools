@@ -31,9 +31,9 @@ tool_rc tpm2_getcap(ESYS_CONTEXT *esys_context,TPM2_CAP capability,
         UINT32 property, UINT32 property_count, TPMI_YES_NO *more_data,
         TPMS_CAPABILITY_DATA **capability_data);
 
-tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context, ESYS_TR auth_handle,
-        ESYS_TR nv_index, ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
-        UINT16 size, UINT16 offset, TPM2B_MAX_NV_BUFFER **data);
+tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index, UINT16 size,
+    UINT16 offset, TPM2B_MAX_NV_BUFFER **data);
 
 tool_rc tpm2_context_save(ESYS_CONTEXT *esys_context, ESYS_TR save_handle,
         TPMS_CONTEXT **context);
