@@ -28,8 +28,7 @@ static tool_rc nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UINT8* data_buffer = NULL;
     UINT16 bytes_written = 0;
     tool_rc rc = tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
-            ctx.offset, ctx.auth_hierarchy.object.handle,
-            ctx.auth_hierarchy.object.session, &data_buffer, &bytes_written);
+            ctx.offset, &ctx.auth_hierarchy.object, &data_buffer, &bytes_written);
     if (rc != tool_rc_success) {
         goto out;
     }

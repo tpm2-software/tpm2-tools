@@ -125,12 +125,30 @@ tool_rc tpm2_getcap(ESYS_CONTEXT *esys_context, TPM2_CAP capability,
     return tool_rc_success;
 }
 
-tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context, ESYS_TR auth_handle,
-        ESYS_TR nv_index, ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
+tool_rc tpm2_nv_read(ESYS_CONTEXT *esys_context,
+    tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
         UINT16 size, UINT16 offset, TPM2B_MAX_NV_BUFFER **data) {
 
-    TSS2_RC rval = Esys_NV_Read(esys_context, auth_handle, nv_index, shandle1,
-            shandle2, shandle3, size, offset, data);
+    ESYS_TR esys_tr_nv_handle;
+    TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
+            ESYS_TR_NONE, ESYS_TR_NONE, &esys_tr_nv_handle);
+    if (rval != TPM2_RC_SUCCESS) {
+        LOG_PERR(Esys_TR_FromTPMPublic, rval);
+        return tool_rc_from_tpm(rval);
+    }
+
+    ESYS_TR auth_hierarchy_obj_session_handle = ESYS_TR_NONE;
+    tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
+            auth_hierarchy_obj->tr_handle, auth_hierarchy_obj->session,
+            &auth_hierarchy_obj_session_handle);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed to get shandle");
+        return rc;
+    }
+
+    rval = Esys_NV_Read(esys_context, auth_hierarchy_obj->tr_handle,
+        esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
+        ESYS_TR_NONE, size, offset, data);
     if (rval != TSS2_RC_SUCCESS) {
         LOG_PERR(Esys_NV_Read, rval);
         return tool_rc_from_tpm(rval);

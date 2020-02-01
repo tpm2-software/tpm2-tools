@@ -20,20 +20,25 @@
 
 typedef struct createek_context createek_context;
 struct createek_context {
+
     struct {
-        struct {
-            char *auth_str;
-            tpm2_session *session;
-        } owner;
-        struct {
-            char *auth_str;
-            tpm2_session *session;
-        } endorse;
-        struct {
-            char *auth_str;
-            tpm2_session *session;
-        } ek;
-    } auth;
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_owner_hierarchy;
+
+    struct {
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_endorse_hierarchy;
+
+    struct {
+        const char *ctx_path;
+        const char *auth_str;
+        tpm2_loaded_object object;
+    } auth_ek;
+
     tpm2_hierarchy_pdata objdata;
     char *out_file_path;
     tpm2_convert_pubkey_fmt format;
@@ -41,9 +46,8 @@ struct createek_context {
         UINT8 f :1;
         UINT8 t :1;
     } flags;
+
     bool find_persistent_handle;
-    const char *context_arg;
-    tpm2_loaded_object ctx_obj;
 };
 
 static createek_context ctx = {
@@ -127,8 +131,8 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
 
     // Read EK template
     UINT16 template_size;
-    tool_rc rc = tpm2_util_nv_read(ectx, template_nv_index, 0, 0, TPM2_RH_OWNER,
-            ctx.auth.endorse.session, &template, &template_size);
+    tool_rc rc = tpm2_util_nv_read(ectx, template_nv_index, 0, 0,
+        &ctx.auth_owner_hierarchy.object, &template, &template_size);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -143,8 +147,8 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
 
     // Read EK nonce
     UINT16 nonce_size;
-    rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0, TPM2_RH_OWNER,
-            ctx.auth.endorse.session, &nonce, &nonce_size);
+    rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0,
+        &ctx.auth_owner_hierarchy.object, &nonce, &nonce_size);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -184,17 +188,17 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
         }
     }
 
-    tool_rc rc = tpm2_hierarchy_create_primary(ectx, ctx.auth.endorse.session,
-            &ctx.objdata);
+    tool_rc rc = tpm2_hierarchy_create_primary(ectx,
+        ctx.auth_endorse_hierarchy.object.session, &ctx.objdata);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    if (ctx.ctx_obj.handle) {
+    if (ctx.auth_ek.object.handle) {
 
         rc = tpm2_ctx_mgmt_evictcontrol(ectx, ESYS_TR_RH_OWNER,
-                ctx.auth.owner.session, ctx.objdata.out.handle,
-                ctx.ctx_obj.handle, NULL);
+                ctx.auth_owner_hierarchy.object.session, ctx.objdata.out.handle,
+                ctx.auth_ek.object.handle, NULL);
         if (rc != tool_rc_success) {
             return rc;
         }
@@ -206,7 +210,7 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
     } else {
         /* If it wasn't persistent, save a context for future tool interactions */
         tool_rc rc = files_save_tpm_context_to_path(ectx,
-                ctx.objdata.out.handle, ctx.context_arg);
+                ctx.objdata.out.handle, ctx.auth_ek.ctx_path);
         if (rc != tool_rc_success) {
             LOG_ERR("Error saving tpm context for handle");
             return rc;
@@ -228,13 +232,13 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'P':
-        ctx.auth.endorse.auth_str = value;
+        ctx.auth_endorse_hierarchy.auth_str = value;
         break;
     case 'w':
-        ctx.auth.owner.auth_str = value;
+        ctx.auth_owner_hierarchy.auth_str = value;
         break;
     case 'p':
-        ctx.auth.ek.auth_str = value;
+        ctx.auth_ek.auth_str = value;
         break;
     case 'G': {
         TPMI_ALG_PUBLIC type = tpm2_alg_util_from_optarg(value,
@@ -261,7 +265,7 @@ static bool on_option(char key, char *value) {
         ctx.flags.f = true;
         break;
     case 'c':
-        ctx.context_arg = value;
+        ctx.auth_ek.ctx_path = value;
         break;
     case 't':
         ctx.flags.t = true;
@@ -325,9 +329,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     tool_rc rc = tool_rc_general_error;
 
     tpm2_session **sessions[] = {
+#if 0
        &ctx.auth.ek.session,
        &ctx.auth.endorse.session,
        &ctx.auth.owner.session,
+#endif
+       &ctx.auth_owner_hierarchy.object.session,
+       &ctx.auth_endorse_hierarchy.object.session,
+       &ctx.auth_ek.object.session,
     };
 
     if (ctx.flags.f && !ctx.out_file_path) {
@@ -335,47 +344,53 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_option_error;
     }
 
-    if (!ctx.context_arg) {
+    if (!ctx.auth_ek.ctx_path) {
         LOG_ERR("Expected option -c");
         return tool_rc_option_error;
     }
 
     bool ret;
-    if (!strcmp(ctx.context_arg, "-")) {
+    if (!strcmp(ctx.auth_ek.ctx_path, "-")) {
         /* If user passes a handle of '-' we try and find a vacant slot for
          * to use and tell them what it is.
          */
         rc = tpm2_capability_find_vacant_persistent_handle(ectx,
-                false, &ctx.ctx_obj.handle);
+                false, &ctx.auth_ek.object.handle);
         if (rc != tool_rc_success) {
             LOG_ERR("handle/-H passed with a value '-' but unable to find a"
                     " vacant persistent handle!");
             goto out;
         }
-        tpm2_tool_output("persistent-handle: 0x%x\n", ctx.ctx_obj.handle);
+        tpm2_tool_output("persistent-handle: 0x%x\n", ctx.auth_ek.object.handle);
     } else {
         /* best attempt to convert what they have us to a handle, if it's not
          * a handle then we assume its a path to a context file */
-        ret = tpm2_util_string_to_uint32(ctx.context_arg, &ctx.ctx_obj.handle);
+        ret = tpm2_util_string_to_uint32(ctx.auth_ek.ctx_path, &ctx.auth_ek.object.handle);
         UNUSED(ret);
     }
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.endorse.auth_str,
-            &ctx.auth.endorse.session, false);
+    rc = tpm2_util_object_load_auth(ectx, "owner",
+        ctx.auth_owner_hierarchy.auth_str, &ctx.auth_owner_hierarchy.object,
+        false, TPM2_HANDLE_FLAGS_O);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid endorse authorization");
-        goto out;
+        LOG_ERR("Invalid owner hierarchy authorization");
+        return rc;
     }
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.owner.auth_str,
-            &ctx.auth.owner.session, false);
+    rc = tpm2_util_object_load_auth(ectx, "endorsement",
+        ctx.auth_endorse_hierarchy.auth_str, &ctx.auth_endorse_hierarchy.object,
+        false, TPM2_HANDLE_FLAGS_E);
     if (rc != tool_rc_success) {
-        LOG_ERR("Invalid owner authorization");
-        goto out;
+        LOG_ERR("Invalid endorsement hierarchy authorization");
+        return rc;
     }
 
-    rc = tpm2_auth_util_from_optarg(ectx, ctx.auth.ek.auth_str,
-            &ctx.auth.ek.session, false);
+    /*
+     * The ek object is created @create_ek_handle and so it isn't loaded here
+     * The ek object attributes are setup to policy reference eh-auth
+     */
+    rc = tpm2_auth_util_from_optarg(ectx, ctx.auth_ek.auth_str,
+            &ctx.auth_ek.object.session, false);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid EK authorization");
         goto out;
