@@ -132,7 +132,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
     // Read EK template
     UINT16 template_size;
     tool_rc rc = tpm2_util_nv_read(ectx, template_nv_index, 0, 0,
-        &ctx.auth_owner_hierarchy.object, &template, &template_size);
+        &ctx.auth_owner_hierarchy.object, &template, &template_size, NULL);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -148,7 +148,7 @@ static tool_rc set_ek_template(ESYS_CONTEXT *ectx, TPM2B_PUBLIC *input_public) {
     // Read EK nonce
     UINT16 nonce_size;
     rc = tpm2_util_nv_read(ectx, nonce_nv_index, 0, 0,
-        &ctx.auth_owner_hierarchy.object, &nonce, &nonce_size);
+        &ctx.auth_owner_hierarchy.object, &nonce, &nonce_size, NULL);
     if (rc != tool_rc_success) {
         goto out;
     }

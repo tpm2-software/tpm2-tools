@@ -87,7 +87,7 @@ tpm2_flushcontext session.ctx
 ## test the failing scenario
 setup_authorized_policycphash
 trap - ERR
-echo "foo" | tpm2_nvextend -i- 1 -P "session:session.ctx"
+echo "food" | tpm2_nvextend -i- 1 -P "session:session.ctx"
 if [ $? == 0 ];then
   echo "ERROR: nvextend must fail!"
   exit 1
@@ -103,6 +103,26 @@ generate_policycphash
 sign_and_verify_policycphash
 setup_authorized_policycphash
 tpm2_nvincrement 1 -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+tpm2_nvundefine 1
+
+# Test tpm2_nvread
+tpm2_nvdefine 1 -s 8 -a "ownerwrite|policyread" -L authorized.policy
+echo "foo" | tpm2_nvwrite 1 -i- -C o
+tpm2_nvread 1 -s 8 --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_nvread 1 -s 8 -P "session:session.ctx" | xxd -p
+## test the failing scenario
+setup_authorized_policycphash
+trap - ERR
+tpm2_nvread 1 -s 7 --offset 1 -P "session:session.ctx"
+if [ $? == 0 ];then
+  echo "ERROR: nvread must fail!"
+  exit 1
+fi
+trap onerror ERR
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 

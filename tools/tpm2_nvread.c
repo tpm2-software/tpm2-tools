@@ -19,17 +19,21 @@ struct tpm_nvread_ctx {
     UINT32 size_to_read;
     UINT32 offset;
     char *output_file;
+
+    char *cp_hash_path;
 };
 
 static tpm_nvread_ctx ctx;
 
-static tool_rc nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
+static tool_rc nv_read(ESYS_CONTEXT *ectx, tpm2_option_flags flags,
+    TPM2B_DIGEST *cp_hash) {
 
     UINT8* data_buffer = NULL;
     UINT16 bytes_written = 0;
     tool_rc rc = tpm2_util_nv_read(ectx, ctx.nv_index, ctx.size_to_read,
-            ctx.offset, &ctx.auth_hierarchy.object, &data_buffer, &bytes_written);
-    if (rc != tool_rc_success) {
+            ctx.offset, &ctx.auth_hierarchy.object, &data_buffer, &bytes_written,
+            cp_hash);
+    if (rc != tool_rc_success || cp_hash != NULL) {
         goto out;
     }
 
@@ -95,6 +99,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
         /* no default */
     }
     return true;
@@ -107,6 +114,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "output",    required_argument, NULL, 'o' },
         { "size",      required_argument, NULL, 's' },
         { "offset",    required_argument, NULL,  0  },
+        { "cphash",    required_argument, NULL,  1  },
         { "auth",      required_argument, NULL, 'P' },
     };
 
@@ -128,7 +136,23 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return nv_read(ectx, flags);
+    if (!ctx.cp_hash_path) {
+        return nv_read(ectx, flags, NULL);
+    }
+
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = nv_read(ectx, flags, &cp_hash);
+    if (rc != tool_rc_success) {
+        LOG_ERR("CpHash calculation failed!");
+        return rc;
+    }
+
+    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
