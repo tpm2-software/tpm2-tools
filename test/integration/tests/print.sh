@@ -7,13 +7,12 @@ ek_handle=0x81010017
 
 ak_name_file=ak.name
 ak_pubkey_file=ak.pub
-ek_pubkey_file=ek.pub
 
 quote_file=quote.bin
 print_file=quote.yaml
 
 cleanup() {
-    rm -f $ak_name_file $ak_pubkey_file $ek_pubkey_file \
+    rm -f $ak_name_file $ak_pubkey_file \
           $quote_file $print_file $ak_ctx
 
     if [ "$1" != "no-shut-down" ]; then
@@ -29,7 +28,7 @@ cleanup "no-shut-down"
 tpm2_clear
 
 # Create signing key
-tpm2_createek -Q -G rsa -c $ek_handle -p $ek_pubkey_file
+tpm2_createek -Q -G rsa -c $ek_handle
 tpm2_createak -Q -G rsa -g sha256 -s rsassa -C $ek_handle -c $ak_ctx\
   -u $ak_pubkey_file -n $ak_name_file
 

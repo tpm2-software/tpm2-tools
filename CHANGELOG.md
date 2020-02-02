@@ -1,6 +1,7 @@
 ## Changelog
 
 ### next
+ * tpm2_createek: Drop the unused -p or --ek-auth option
 
  * tpm2_policyor: List of policy files should be specified as an argument
    instead of -l option. The -l option is still retained for backwards
