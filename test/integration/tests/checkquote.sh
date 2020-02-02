@@ -8,7 +8,6 @@ ek_alg=rsa
 ak_alg=rsa
 digestAlg=sha256
 signAlg=rsassa
-ekpw=ekpass
 akpw=akpass
 ak_ctx=ak.ctx
 
@@ -45,7 +44,7 @@ getrandom() {
 }
 
 # Key generation
-tpm2_createek -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem -p "$ekpw"
+tpm2_createek -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem
 
 tpm2_createak -C $handle_ek -c $ak_ctx -G $ak_alg -g $digestAlg -s $signAlg \
 -u $output_ak_pub_pem -f pem -n $output_ak_pub_name -p "$akpw"

@@ -280,7 +280,6 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "eh-auth",              required_argument, NULL, 'P' },
         { "owner-auth",           required_argument, NULL, 'w' },
-        { "ek-auth",              required_argument, NULL, 'p' },
         { "key-algorithm",        required_argument, NULL, 'G' },
         { "public",               required_argument, NULL, 'u' },
         { "format",               required_argument, NULL, 'f' },
@@ -288,7 +287,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "template",             no_argument,       NULL, 't' },
     };
 
-    *opts = tpm2_options_new("P:w:p:G:u:f:c:t", ARRAY_LEN(topts), topts,
+    *opts = tpm2_options_new("P:w:G:u:f:c:t", ARRAY_LEN(topts), topts,
             on_option, NULL, 0);
 
     return *opts != NULL;

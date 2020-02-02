@@ -12,7 +12,6 @@ digestAlg=sha256
 signAlg=rsassa
 ownerpw=ownerpass
 endorsepw=endorsepass
-ekpw=ekpass
 akpw=akpass
 rand_pcr_value=6ea40aa7267bb71251c1de1c3605a3df759b86b22fa9f62aa298d4197cd88a38
 debug_pcr=16
@@ -65,7 +64,7 @@ tpm2_changeauth -c e "$endorsepw"
 
 # Key generation
 tpm2_createek -Q -c $handle_ek -G $ek_alg -u $output_ek_pub_pem -f pem \
--p "$ekpw" -w "$ownerpw" -P "$endorsepw"
+-w "$ownerpw" -P "$endorsepw"
 tpm2_readpublic -Q -c $handle_ek -o $output_ek_pub
 
 tpm2_createak -Q -C $handle_ek -c $context_ak -G $ak_alg -g $digestAlg \
