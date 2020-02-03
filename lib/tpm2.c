@@ -1900,7 +1900,8 @@ tpm2_nvextend_skip_esapi_call:
 }
 
 tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index) {
+        tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
+        TPM2B_DIGEST *cp_hash) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -1919,6 +1920,52 @@ tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        rval = Tss2_Sys_NV_UndefineSpace_Prepare(sys_context,
+            auth_hierarchy_obj->handle, nv_index);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_NV_UndefineSpace_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, auth_hierarchy_obj->tr_handle,
+            &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvundefine_free_name1;
+        }
+
+        TPM2B_NAME *name2 = NULL;
+        rc = tpm2_tr_get_name(esys_context, esys_tr_nv_handle, &name2);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvundefine_free_name1_name2;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(auth_hierarchy_obj->session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
+            tpm2_session_get_authhash(auth_hierarchy_obj->session), cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+tpm2_nvundefine_free_name1_name2:
+        Esys_Free(name2);
+tpm2_nvundefine_free_name1:
+        Esys_Free(name1);
+        goto tpm2_nvundefine_skip_esapi_call;
+    }
+
     rval = Esys_NV_UndefineSpace(esys_context, auth_hierarchy_obj->tr_handle,
             esys_tr_nv_handle, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
             ESYS_TR_NONE);
@@ -1930,12 +1977,13 @@ tool_rc tpm2_nvundefine(ESYS_CONTEXT *esys_context,
 
     LOG_INFO("Success to release NV area at index 0x%x.", nv_index);
 
-    return tool_rc_success;
+tpm2_nvundefine_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nv_index,
-        tpm2_session *policy_session) {
+        tpm2_session *policy_session, TPM2B_DIGEST *cp_hash) {
 
     ESYS_TR esys_tr_nv_handle;
     TSS2_RC rval = Esys_TR_FromTPMPublic(esys_context, nv_index, ESYS_TR_NONE,
@@ -1956,6 +2004,52 @@ tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context,
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(policy_session);
 
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        rval = Tss2_Sys_NV_UndefineSpaceSpecial_Prepare(sys_context, nv_index,
+            auth_hierarchy_obj->handle);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_NV_UndefineSpaceSpecial_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, esys_tr_nv_handle, &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvundefinespecial_free_name1;
+        }
+
+        TPM2B_NAME *name2 = NULL;
+        rc = tpm2_tr_get_name(esys_context, auth_hierarchy_obj->tr_handle,
+            &name2);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvundefinespecial_free_name1_name2;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(auth_hierarchy_obj->session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
+            tpm2_session_get_authhash(auth_hierarchy_obj->session), cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+tpm2_nvundefinespecial_free_name1_name2:
+        Esys_Free(name2);
+tpm2_nvundefinespecial_free_name1:
+        Esys_Free(name1);
+        goto tpm2_nvundefinespecial_skip_esapi_call;
+    }
+
     rval = Esys_NV_UndefineSpaceSpecial(esys_context,
             esys_tr_nv_handle,
             auth_hierarchy_obj->tr_handle,
@@ -1964,13 +2058,14 @@ tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context,
             ESYS_TR_NONE);
     if (rval != TPM2_RC_SUCCESS) {
         LOG_ERR("Failed to release NV area at index 0x%X", nv_index);
-        LOG_PERR(Esys_NV_UndefineSpace, rval);
+        LOG_PERR(Esys_NV_UndefineSpaceSpecial, rval);
         return tool_rc_from_tpm(rval);
     }
 
     LOG_INFO("Success to release NV area at index 0x%x.", nv_index);
 
-    return tool_rc_success;
+tpm2_nvundefinespecial_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
