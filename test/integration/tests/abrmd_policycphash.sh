@@ -126,4 +126,17 @@ trap onerror ERR
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
+# Test tpm2_nvreadlock
+tpm2_nvdefine 1 -C o -s 32 -a "policyread|policywrite|read_stclear" \
+-L authorized.policy
+tpm2_nvreadlock 1 -C 0x01000001 --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_nvreadlock 1 -C 0x01000001 -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+tpm2_nvundefine 1
+
+
+trap onerror ERR
 exit 0
