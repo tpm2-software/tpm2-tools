@@ -38,6 +38,12 @@ value to the nv handle range "TPM2_HR_NV_INDEX".
     Lock all NV indices with attribute TPMA\_NV\_GLOBALLOCK. This option
     does not require an NV index or offset as an argument.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 
