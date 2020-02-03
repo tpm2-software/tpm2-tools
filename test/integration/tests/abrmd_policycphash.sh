@@ -49,6 +49,11 @@ setup_owner_policy() {
     tpm2_policycphash -S session.ctx --cphash cp.hash
 }
 
+start_policy_cphash() {
+    tpm2_startauthsession -S session.ctx --policy-session -g sha256
+    tpm2_policycphash -S session.ctx --cphash cp.hash
+}
+
 # Define an authorized policy for an object
 openssl genrsa -out signing_key_private.pem 2048
 openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
@@ -169,8 +174,7 @@ setup_owner_policy
 tpm2_nvdefine 1 -C o -s 32 -a "ownerread|ownerwrite" -P "session:session.ctx"
 tpm2_flushcontext session.ctx
 ## attempt failing scenario
-tpm2_startauthsession -S session.ctx --policy-session -g sha256
-tpm2_policycphash -S session.ctx --cphash cp.hash
+start_policy_cphash
 trap - ERR
 tpm2_nvdefine 2 -C o -s 32 -a "ownerread|ownerwrite" -P "session:session.ctx"
 if [ $? == 0 ];then
@@ -180,6 +184,26 @@ fi
 trap onerror ERR
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
+
+# Test tpm2_nvundefine
+tpm2_nvdefine 1
+tpm2_nvundefine 1 --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_nvundefine 1 -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+## attempt failing scenario
+tpm2_nvdefine 2
+start_policy_cphash
+trap - ERR
+tpm2_nvundefine 2 -P "session:session.ctx"
+if [ $? == 0 ];then
+  echo "ERROR: nvundefine must fail!"
+  exit 1
+fi
+trap onerror ERR
+tpm2_flushcontext session.ctx
+tpm2_nvundefine -C p 2
 
 trap onerror ERR
 exit 0

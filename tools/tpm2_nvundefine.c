@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #include <stdlib.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_nv_util.h"
@@ -24,6 +25,8 @@ struct tpm_nvundefine_ctx {
     } flags;
 
     TPM2_HANDLE nv_index;
+
+    char *cp_hash_path;
 };
 
 static tpm_nvundefine_ctx ctx = {
@@ -44,6 +47,9 @@ static bool on_option(char key, char *value) {
     case 'S':
         ctx.policy_session.path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -59,7 +65,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "hierarchy", required_argument, NULL, 'C' },
         { "auth",      required_argument, NULL, 'P' },
-        { "session",   required_argument, NULL, 'S' }
+        { "session",   required_argument, NULL, 'S' },
+        { "cphash",    required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:S:", ARRAY_LEN(topts), topts, on_option, on_arg,
@@ -105,6 +112,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    bool result = true;
+    TPM2B_DIGEST cp_hash = { .size = 0 };
     /* has policy delete set, so do NV undefine special */
     if (has_policy_delete_set) {
 
@@ -131,22 +140,53 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
             return tool_rc_general_error;
         }
 
-        return tpm2_nvundefinespecial(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-                ctx.policy_session.session);
-    } else if (ctx.policy_session.path) {
+        if (!ctx.cp_hash_path) {
+            return tpm2_nvundefinespecial(ectx, &ctx.auth_hierarchy.object,
+                ctx.nv_index, ctx.policy_session.session, NULL);
+        }
+
+        rc = tpm2_nvundefinespecial(ectx, &ctx.auth_hierarchy.object,
+                ctx.nv_index, ctx.policy_session.session, &cp_hash);;
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+        goto nvundefine_out;
+    }
+
+    if (ctx.policy_session.path && !has_policy_delete_set) {
        LOG_WARN("Option -S is not required on NV indices that don't have"
                " attribute TPMA_NV_POLICY_DELETE set");
     }
 
-    return tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
+    if (!ctx.cp_hash_path) {
+        return tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+            NULL);
+    }
+
+    rc = tpm2_nvundefine(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+        &cp_hash);;
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+nvundefine_out:
+    result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
 
     /* attempt to close all sessions and report errors */
-    tool_rc rc = tpm2_session_close(&ctx.policy_session.session);
-    rc |= tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    tool_rc rc = tool_rc_success;
+    if (!ctx.cp_hash_path) {
+        rc = tpm2_session_close(&ctx.policy_session.session);
+        rc |= tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    }
 
     return rc;
 }

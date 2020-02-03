@@ -39,6 +39,12 @@ default value for `-C` is the "owner" hierarchy when `TPMA_NV_POLICY_DELETE` is 
     Specify a policy session to use when the NV index has attribute
     `TPMA_NV_POLICY_DELETE` set.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 
