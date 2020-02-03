@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #include <stdlib.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_nv_util.h"
@@ -17,6 +18,8 @@ struct tpm_nvwritelock_ctx {
     bool global_writelock;
     bool has_nv_argument;
     TPM2_HANDLE nv_index;
+
+    char *cp_hash_path;
 };
 
 static tpm_nvwritelock_ctx ctx;
@@ -47,6 +50,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.global_writelock= true;
         break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -57,7 +63,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "hierarchy", required_argument, NULL, 'C' },
         { "auth",      required_argument, NULL, 'P' },
-        { "global",    no_argument,       NULL,  0  }
+        { "global",    no_argument,       NULL,  0  },
+        { "cphash",    required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
@@ -87,12 +94,32 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return ctx.global_writelock ?
-            tpm2_nvglobalwritelock(ectx, &ctx.auth_hierarchy.object) :
-            tpm2_nvwritelock(ectx, &ctx.auth_hierarchy.object, ctx.nv_index);
+    if (!ctx.cp_hash_path) {
+        return ctx.global_writelock ?
+            tpm2_nvglobalwritelock(ectx, &ctx.auth_hierarchy.object, NULL) :
+            tpm2_nvwritelock(ectx, &ctx.auth_hierarchy.object, ctx.nv_index, NULL);
+    }
+
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = ctx.global_writelock ?
+         tpm2_nvglobalwritelock(ectx, &ctx.auth_hierarchy.object, &cp_hash) :
+         tpm2_nvwritelock(ectx, &ctx.auth_hierarchy.object, ctx.nv_index, &cp_hash);
+    if (rc != tool_rc_success) {
+        return rc;
+    }
+
+    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    if (!ctx.cp_hash_path) {
+        return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    }
+    return tool_rc_success;
 }
