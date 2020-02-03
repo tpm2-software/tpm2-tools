@@ -27,6 +27,8 @@ struct tpm_nvdefine_ctx {
 
     char *policy_file;
     char *index_auth_str;
+
+    char *cp_hash_path;
 };
 
 static tpm_nvdefine_ctx ctx = {
@@ -62,16 +64,32 @@ static tool_rc nv_space_define(ESYS_CONTEXT *ectx) {
 
     public_info.nvPublic.dataSize = ctx.size;
 
-    tool_rc rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
-            &ctx.nv_auth, &public_info);
+    tool_rc rc = tool_rc_success;
+    if (!ctx.cp_hash_path) {
+        rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
+                &ctx.nv_auth, &public_info, NULL);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Failed to create NV index 0x%x.", ctx.nv_index);
+            return rc;
+        }
+        tpm2_tool_output("nv-index: 0x%x\n", ctx.nv_index);
+        goto nvdefine_out;
+    }
+
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = tpm2_nv_definespace(ectx, &ctx.auth_hierarchy.object,
+        &ctx.nv_auth, &public_info, &cp_hash);;
     if (rc != tool_rc_success) {
-        LOG_ERR("Failed to create NV index 0x%x.", ctx.nv_index);
         return rc;
     }
 
-    tpm2_tool_output("nv-index: 0x%x\n", ctx.nv_index);
+    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
 
-    return tool_rc_success;
+nvdefine_out:
+    return rc;
 }
 
 static bool on_option(char key, char *value) {
@@ -111,6 +129,9 @@ static bool on_option(char key, char *value) {
     case 'L':
         ctx.policy_file = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -130,6 +151,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "hierarchy-auth", required_argument, NULL, 'P' },
         { "index-auth",     required_argument, NULL, 'p' },
         { "policy",         required_argument, NULL, 'L' },
+        { "cphash",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:s:a:P:p:L:", ARRAY_LEN(topts), topts, on_option,
@@ -327,5 +349,8 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    if (!ctx.cp_hash_path) {
+        return tpm2_session_close(&ctx.auth_hierarchy.object.session);
+    }
+    return tool_rc_success;
 }
