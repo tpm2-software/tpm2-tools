@@ -70,6 +70,12 @@ These options control the certification:
 
     The attestation data of the type TPM2_CREATION_INFO signed with signing key.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the NV index or offset
     number.
 

@@ -205,5 +205,20 @@ trap onerror ERR
 tpm2_flushcontext session.ctx
 tpm2_nvundefine -C p 2
 
-trap onerror ERR
+#Test tpm2_nvcertify
+tpm2_createprimary -C o -c primary.ctx -Q
+tpm2_create -G rsa -u signing_key.pub -r signing_key.priv -C primary.ctx \
+-c signing_key.ctx -Q
+tpm2_readpublic -c signing_key.ctx -f pem -o sslpub.pem -Q
+tpm2_nvdefine -s 32 -C o -a "ownerread|ownerwrite|authread|authwrite" 1
+dd if=/dev/urandom bs=1 count=32 status=none| tpm2_nvwrite 1 -i-
+tpm2_nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
+-o signature.bin --attestation attestation.bin --size 32 1 -c o --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
+-o signature.bin --attestation attestation.bin --size 32 1 -c o -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+tpm2_nvundefine 1
+
 exit 0
