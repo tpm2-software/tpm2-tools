@@ -65,6 +65,12 @@ specified as follows:
     starting at offset and ending at size of NV index shall not exceed the size
     of the operand specified in the options.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **-i**, **\--input**=_FILE_:
 
     Specifies the input file with data to compare to NV Index contents. In the

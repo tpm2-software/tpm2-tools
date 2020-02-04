@@ -221,4 +221,18 @@ tpm2_nvcertify -C signing_key.ctx -g sha256 -f plain -s rsassa \
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
+#Test tpm2_policynv
+tpm2_nvdefine -C o -a "ownerwrite|ownerread" -s 2 1
+operandA=0x81
+operandB=0x80
+echo $operandA | xxd -r -p | tpm2_nvwrite -C o -i- 1
+tpm2_startauthsession -S policy_session.ctx --policy-session -g sha256
+echo $operandB | xxd -r -p | tpm2_policynv -i- -C o --cphash cp.hash 1 neq -S policy_session.ctx
+generate_policycphash
+setup_owner_policy
+echo $operandB | xxd -r -p | tpm2_policynv -S policy_session.ctx -i- -C o -P "session:session.ctx" 1 neq
+tpm2_flushcontext policy_session.ctx
+tpm2_flushcontext session.ctx
+tpm2_nvundefine 1
+
 exit 0

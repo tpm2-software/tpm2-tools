@@ -26,6 +26,8 @@ struct tpm_policynv_ctx {
     TPM2B_OPERAND operand_b;
     UINT16 offset;
     TPM2_EO operation;
+
+    char *cp_hash_path;
 };
 
 static tpm_policynv_ctx ctx = {
@@ -127,6 +129,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
     default:
         return false;
     }
@@ -143,6 +148,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "session",   required_argument, NULL, 'S' },
         { "input",     required_argument, NULL, 'i' },
         { "offset",    required_argument, NULL,  0  },
+        { "cphash",    required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("C:P:L:S:i:", ARRAY_LEN(topts), topts, on_option,
@@ -153,8 +159,13 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 bool is_input_option_args_valid(void) {
 
-    if (!ctx.session_path) {
+    if (!ctx.session_path && !ctx.cp_hash_path) {
         LOG_ERR("Must specify -S session file.");
+        return false;
+    }
+
+    if (!ctx.cp_hash_path && ctx.policy_digest_path) {
+        LOG_WARN("Cannot output policyhash when calculating cphash.");
         return false;
     }
     return true;
@@ -202,16 +213,55 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(ctx.session);
 
-    rc = tpm2_policy_nv(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
-        policy_session_handle, &ctx.operand_b, ctx.offset, ctx.operation);
-    if (rc != tool_rc_success) {
-        return rc;
+    if (!ctx.cp_hash_path) {
+        rc = tpm2_policy_nv(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+            policy_session_handle, &ctx.operand_b, ctx.offset, ctx.operation,
+            NULL);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        return tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
     }
 
-    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.policy_digest_path);
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = tpm2_policy_nv(ectx, &ctx.auth_hierarchy.object, ctx.nv_index,
+            policy_session_handle, &ctx.operand_b, ctx.offset, ctx.operation,
+            &cp_hash);
+    if (rc != tool_rc_success) {
+        goto cphash_error_out;
+    }
+
+    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    } else {
+        goto cphash_out;
+    }
+
+cphash_error_out:
+    LOG_ERR("Failed cphash calculation operation");
+cphash_out:
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.session);
+
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tool_rc_success;
+
+    if (!ctx.cp_hash_path) {
+        tmp_rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
+        }
+    }
+    tmp_rc = tpm2_session_close(&ctx.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
+    return rc;
 }
