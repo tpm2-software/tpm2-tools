@@ -264,7 +264,6 @@ static void test_parse_event2body_uefivar_badlength(void **state){
     UEFI_VARIABLE_DATA *data = (UEFI_VARIABLE_DATA*)event->Event;
     data->UnicodeNameLength = 1;
 
-    printf("EventSize: %" PRIu32 "\n", event->EventSize);
     assert_false(parse_event2body(event, EV_EFI_VARIABLE_DRIVER_CONFIG));
 }
 static void test_parse_event2body_postcode_badlength(void **state){
@@ -276,6 +275,173 @@ static void test_parse_event2body_postcode_badlength(void **state){
     event->EventSize = sizeof(UEFI_PLATFORM_FIRMWARE_BLOB) - 1;
 
     assert_false(parse_event2body(event, EV_EFI_PLATFORM_FIRMWARE_BLOB));
+}
+static void test_specid_event_nohdr(void **state){
+
+    (void)state;
+
+    TCG_EVENT event = { 0, };
+    TCG_EVENT_HEADER2 *next = NULL;
+
+    assert_false(specid_event(&event, sizeof(event) - 1, &next));
+}
+static void test_specid_event_badeventtype(void **state){
+
+    (void)state;
+
+    TCG_EVENT event = { .eventType = EV_ACTION, };
+    TCG_EVENT_HEADER2 *next = NULL;
+
+    assert_false(specid_event(&event, sizeof(event), &next));
+}
+static void test_specid_event_badpcrindex(void **state){
+
+    (void)state;
+
+    TCG_EVENT event = {
+        .eventType = EV_NO_ACTION,
+        .pcrIndex = 1,
+    };
+    TCG_EVENT_HEADER2 *next = NULL;
+
+    assert_false(specid_event(&event, sizeof(event), &next));
+}
+static void test_specid_event_baddigest(void **state){
+
+    (void)state;
+
+    TCG_EVENT event = {
+        .eventType = EV_NO_ACTION,
+        .digest = { 0x01, },
+    };
+    TCG_EVENT_HEADER2 *next = NULL;
+
+    assert_false(specid_event(&event, sizeof(event), &next));
+
+}
+static void test_specid_event_badeventsize(void **state) {
+
+    (void)state;
+
+    TCG_EVENT *event;
+    TCG_SPECID_EVENT *event_specid;
+    TCG_EVENT_HEADER2 *next = NULL;
+    char buf[sizeof(*event) + sizeof(*event_specid)] = { 0, };
+
+    event = (TCG_EVENT*)buf;
+    event->eventType = EV_NO_ACTION;
+    event->eventDataSize = 1;
+
+    assert_false(specid_event(event, sizeof(buf), &next));
+}
+static void test_specid_event_badsize(void **state){
+
+    (void)state;
+
+    TCG_EVENT *event;
+    TCG_SPECID_EVENT *event_specid;
+    TCG_EVENT_HEADER2 *next = NULL;
+    char buf[sizeof(*event) + 1] = { 0, };
+
+    event = (TCG_EVENT*)buf;
+    event->eventType = EV_NO_ACTION;
+    event->eventDataSize = sizeof(*event_specid);
+    assert_false(specid_event(event, sizeof(buf), &next));
+}
+static void test_specid_event_noalgs(void **state) {
+
+    (void)state;
+
+    TCG_EVENT *event;
+    TCG_SPECID_EVENT *event_specid;
+    TCG_EVENT_HEADER2 *next = NULL;
+    char buf[sizeof(*event) + sizeof(*event_specid)] = { 0, };
+
+    event = (TCG_EVENT*)buf;
+    event->eventType = EV_NO_ACTION;
+    event->eventDataSize = sizeof(*event_specid);
+
+    assert_false(specid_event(event, sizeof(buf), &next));
+}
+static void test_specid_event_nosizeforalgs(void **state) {
+
+    (void)state;
+
+    TCG_EVENT *event;
+    TCG_SPECID_EVENT *event_specid;
+    TCG_EVENT_HEADER2 *next = NULL;
+    char buf[sizeof(*event) + sizeof(*event_specid)] = { 0, };
+
+    event = (TCG_EVENT*)buf;
+    event->eventType = EV_NO_ACTION;
+    event->eventDataSize = sizeof(*event_specid);
+    event_specid = (TCG_SPECID_EVENT*)event->event;
+    event_specid->numberOfAlgorithms = 5;
+
+    assert_false(specid_event(event, sizeof(buf), &next));
+}
+static void test_specid_event_nosizeforvendorstruct(void **state) {
+
+    (void)state;
+
+    TCG_EVENT *event;
+    TCG_SPECID_EVENT *event_specid;
+    TCG_SPECID_ALG *alg;
+    TCG_EVENT_HEADER2 *next = NULL;
+    char buf[sizeof(*event) + sizeof(*event_specid) + sizeof(*alg)] = { 0, };
+
+    event = (TCG_EVENT*)buf;
+    event->eventType = EV_NO_ACTION;
+    event->eventDataSize = sizeof(*event_specid);
+    event_specid = (TCG_SPECID_EVENT*)event->event;
+    event_specid->numberOfAlgorithms = 1;
+
+    assert_false(specid_event(event, sizeof(buf), &next));
+}
+static void test_specid_event_nosizeforvendordata(void **state) {
+
+    (void)state;
+
+    TCG_EVENT *event;
+    TCG_SPECID_EVENT *event_specid;
+    TCG_SPECID_ALG *alg;
+    TCG_VENDOR_INFO *vendor;
+    TCG_EVENT_HEADER2 *next = NULL;
+    char buf[sizeof(*event) + sizeof(*event_specid) + sizeof(*alg) + sizeof(*vendor)] = { 0, };
+
+    event = (TCG_EVENT*)buf;
+    event->eventType = EV_NO_ACTION;
+    event->eventDataSize = sizeof(*event_specid);
+    event_specid = (TCG_SPECID_EVENT*)event->event;
+    event_specid->numberOfAlgorithms = 1;
+    vendor = (TCG_VENDOR_INFO*)((uintptr_t)event_specid->digestSizes + sizeof(*alg) * event_specid->numberOfAlgorithms);
+    vendor->vendorInfoSize = 1;
+    printf("data size: %zu\n", sizeof(buf));
+
+    assert_false(specid_event(event, sizeof(buf), &next));
+}
+static void test_specid_event(void **state) {
+
+    (void)state;
+
+    TCG_EVENT *event;
+    TCG_SPECID_EVENT *event_specid;
+    TCG_SPECID_ALG *alg;
+    TCG_VENDOR_INFO *vendor;
+    TCG_EVENT_HEADER2 *next = NULL;
+    char buf[sizeof(*event) + sizeof(*event_specid) + sizeof(*alg) + sizeof(*vendor) + 5] = { 0, };
+
+    event = (TCG_EVENT*)buf;
+    event->eventType = EV_NO_ACTION;
+    event->eventDataSize = sizeof(*event_specid);
+    event_specid = (TCG_SPECID_EVENT*)event->event;
+    event_specid->numberOfAlgorithms = 1;
+    vendor = (TCG_VENDOR_INFO*)((uintptr_t)event_specid->digestSizes + sizeof(*alg) * event_specid->numberOfAlgorithms);
+    vendor->vendorInfoSize = 5;
+
+    printf("sizeof(buf): %zu\n", sizeof(buf));
+
+    assert_true(specid_event(event, sizeof(buf), &next));
 }
 int main(void) {
 
@@ -300,6 +466,17 @@ int main(void) {
         cmocka_unit_test(test_parse_event2body_uefivar_badsize),
         cmocka_unit_test(test_parse_event2body_uefivar_badlength),
         cmocka_unit_test(test_parse_event2body_postcode_badlength),
+        cmocka_unit_test(test_specid_event_nohdr),
+        cmocka_unit_test(test_specid_event_badeventtype),
+        cmocka_unit_test(test_specid_event_badpcrindex),
+        cmocka_unit_test(test_specid_event_baddigest),
+        cmocka_unit_test(test_specid_event_badeventsize),
+        cmocka_unit_test(test_specid_event_badsize),
+        cmocka_unit_test(test_specid_event_noalgs),
+        cmocka_unit_test(test_specid_event_nosizeforalgs),
+        cmocka_unit_test(test_specid_event_nosizeforvendorstruct),
+        cmocka_unit_test(test_specid_event_nosizeforvendordata),
+        cmocka_unit_test(test_specid_event),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

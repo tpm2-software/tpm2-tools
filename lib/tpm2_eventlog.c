@@ -148,9 +148,12 @@ bool foreach_event2(TCG_EVENT_HEADER2 const *eventhdr_start, size_t size,
                     DIGEST2_CALLBACK digest2_cb,
                     EVENT2DATA_CALLBACK event2_cb, void *data) {
 
-    if (eventhdr_start == NULL || size == 0) {
+    if (eventhdr_start == NULL) {
         LOG_ERR("invalid parameter");
         return false;
+    }
+    if (size == 0) {
+        return true;
     }
 
     TCG_EVENT_HEADER2 const *eventhdr;
@@ -202,4 +205,110 @@ bool foreach_event2(TCG_EVENT_HEADER2 const *eventhdr_start, size_t size,
     }
 
     return true;
+}
+
+bool specid_event(TCG_EVENT const *event, size_t size,
+                  TCG_EVENT_HEADER2 **next) {
+
+    /* enough size for the 1.2 event structure */
+    if (size < sizeof(*event)) {
+        LOG_ERR("insufficient size for SpecID event header");
+        return false;
+    }
+
+    if (event->eventType != EV_NO_ACTION) {
+        LOG_ERR("SpecID eventType must be EV_NO_ACTION");
+        return false;
+    }
+
+    if (event->pcrIndex != 0) {
+        LOG_ERR("bad pcrIndex for EV_NO_ACTION event");
+        return false;
+    }
+
+    for (size_t i = 0; i < sizeof(event->digest); ++i) {
+        if (event->digest[i] != 0) {
+            LOG_ERR("SpecID digest data malformed");
+            return false;
+        }
+    }
+
+    /* eventDataSize must be sufficient to hold the specid event */
+    if (event->eventDataSize < sizeof(TCG_SPECID_EVENT)) {
+        LOG_ERR("invalid eventDataSize in specid event");
+        return false;
+    }
+
+    /* buffer size must be sufficient to hold event and event data */
+    if (size < sizeof(*event) + (sizeof(event->event[0]) *
+                                 event->eventDataSize)) {
+        LOG_ERR("insufficient size for SpecID event data");
+        return false;
+    }
+
+    /* specid event must have 1 or more algorithms */
+    TCG_SPECID_EVENT *event_specid = (TCG_SPECID_EVENT*)event->event;
+    if (event_specid->numberOfAlgorithms == 0) {
+        LOG_ERR("numberOfAlgorithms is invalid, may not be 0");
+        return false;
+    }
+
+    /* buffer size must be sufficient to hold event, specid event & algs */
+    if (size < sizeof(*event) + sizeof(*event_specid) +
+               sizeof(event_specid->digestSizes[0]) *
+               event_specid->numberOfAlgorithms) {
+        LOG_ERR("insufficient size for SpecID algorithms");
+        return false;
+    }
+
+    /* size must be sufficient for event, specid, algs & vendor stuff */
+    if (size < sizeof(*event) + sizeof(*event_specid) +
+               sizeof(event_specid->digestSizes[0]) *
+               event_specid->numberOfAlgorithms + sizeof(TCG_VENDOR_INFO)) {
+        LOG_ERR("insufficient size for VendorStuff");
+        return false;
+    }
+
+    TCG_VENDOR_INFO *vendor = (TCG_VENDOR_INFO*)((uintptr_t)event_specid->digestSizes +
+                                                 sizeof(*event_specid->digestSizes) *
+                                                 event_specid->numberOfAlgorithms);
+    /* size must be sufficient for vendorInfo */
+    if (size < sizeof(*event) + sizeof(*event_specid) +
+               sizeof(event_specid->digestSizes[0]) *
+               event_specid->numberOfAlgorithms + sizeof(*vendor) +
+               vendor->vendorInfoSize) {
+        LOG_ERR("insufficient size for VendorStuff data");
+        return false;
+    }
+    *next = (TCG_EVENT_HEADER2*)((uintptr_t)vendor->vendorInfo + vendor->vendorInfoSize);
+
+    return true;
+}
+
+bool parse_eventlog(BYTE const *eventlog, size_t size,
+                    SPECID_CALLBACK specid_cb,
+                    EVENT2_CALLBACK event2hdr_cb,
+                    DIGEST2_CALLBACK digest2_cb,
+                    EVENT2DATA_CALLBACK event2_cb, void *data)
+{
+
+    TCG_EVENT_HEADER2 *next;
+    TCG_EVENT *event = (TCG_EVENT*)eventlog;
+    bool ret;
+
+    ret = specid_event(event, size, &next);
+    if (!ret) {
+        return false;
+    }
+
+    size -= (uintptr_t)next - (uintptr_t)eventlog;
+
+    if (specid_cb) {
+        ret = specid_cb(event, data);
+        if (!ret) {
+            return false;
+        }
+    }
+
+    return foreach_event2(next, size, event2hdr_cb, digest2_cb, event2_cb, data);
 }

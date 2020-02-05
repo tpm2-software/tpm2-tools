@@ -80,4 +80,34 @@ typedef struct {
     UINT64 BlobLength;
 } PACKED UEFI_PLATFORM_FIRMWARE_BLOB;
 
+typedef struct {
+    UINT32 pcrIndex;
+    UINT32 eventType;
+    BYTE digest[20];
+    UINT32 eventDataSize;
+    BYTE event[];
+} PACKED TCG_EVENT;
+
+typedef struct {
+    UINT16 algorithmId;
+    UINT16 digestSize;
+} PACKED TCG_SPECID_ALG;
+
+typedef struct {
+    UINT8 vendorInfoSize;
+    BYTE vendorInfo[];
+} PACKED TCG_VENDOR_INFO;
+
+typedef struct {
+    BYTE Signature[16];
+    UINT32 platformClass;
+    UINT8 specVersionMinor;
+    UINT8 specVersionMajor;
+    UINT8 specErrata;
+    UINT8 uintnSize;
+    UINT32 numberOfAlgorithms;
+    TCG_SPECID_ALG digestSizes[];
+    /* then TCG_VendorStuff */
+} PACKED TCG_SPECID_EVENT;
+
 #endif
