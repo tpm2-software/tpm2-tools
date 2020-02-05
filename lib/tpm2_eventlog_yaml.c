@@ -266,13 +266,98 @@ bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
 
     return true;
 }
+void yaml_eventhdr(TCG_EVENT const *event, size_t *count) {
+
+    /* digest is 20 bytes, 2 chars / byte */
+    char digest_hex[40] = { '\0', };
+    bytes_to_str(event->digest, sizeof(event->digest), digest_hex, sizeof(digest_hex));
+
+    tpm2_tool_output("- Event[%zu]:\n"
+                     "  pcrIndex: %" PRIu32 "\n"
+                     "  eventType: %s\n"
+                     "  digest: %s\n"
+                     "  eventDataSize: %" PRIu32 "\n", (*count)++, event->pcrIndex,
+                     eventtype_to_string(event->eventType), digest_hex,
+                     event->eventDataSize);
+}
+
+void yaml_specid(TCG_SPECID_EVENT* specid) {
+
+    /* 'Signature' defined as byte buf, spec treats it like string w/o null. */
+    char sig_str[sizeof(specid->Signature) + 1] = { '\0', };
+    memcpy(sig_str, specid->Signature, sizeof(specid->Signature));
+
+    tpm2_tool_output("  SpecID:\n"
+                     "    - Signature: %s\n"
+                     "      platformClass: %" PRIu32 "\n"
+                     "      specVersionMinor: %" PRIu8 "\n"
+                     "      specVersionMajor: %" PRIu8 "\n"
+                     "      specErrata: %" PRIu8 "\n"
+                     "      uintnSize: %" PRIu8 "\n"
+                     "      numberOfAlgorithms: %" PRIu32 "\n"
+                     "      Algorithms:\n",
+                     sig_str,
+                     specid->platformClass, specid->specVersionMinor,
+                     specid->specVersionMajor, specid->specErrata,
+                     specid->uintnSize,
+                     specid->numberOfAlgorithms);
+
+}
+void yaml_specid_algs(TCG_SPECID_ALG const *alg, size_t count) {
+
+    for (size_t i = 0; i < count; ++i, ++alg) {
+        tpm2_tool_output("        - Algorithm[%zu]:\n"
+                         "          algorithmId: %s\n"
+                         "          digestSize: %" PRIu16 "\n",
+                         i,
+                         tpm2_alg_util_algtostr(alg->algorithmId,
+                                                tpm2_alg_util_flags_hash),
+                         alg->digestSize);
+    }
+}
+bool yaml_specid_vendor(TCG_VENDOR_INFO *vendor) {
+
+    char *vendinfo_str;
+
+    tpm2_tool_output("      vendorInfoSize: %" PRIu8 "\n", vendor->vendorInfoSize);
+    if (vendor->vendorInfoSize == 0) {
+        return true;
+    }
+    vendinfo_str = calloc(1, vendor->vendorInfoSize * 2 + 1);
+    if (vendinfo_str == NULL) {
+        LOG_ERR("failed to allocate memory for vendorInfo: %s\n",
+                strerror(errno));
+        return false;
+    }
+    bytes_to_str(vendor->vendorInfo, vendor->vendorInfoSize, vendinfo_str,
+                 vendor->vendorInfoSize * 2 + 1);
+    tpm2_tool_output("      vendorInfo: %s\n", vendinfo_str);
+    return true;
+}
+bool yaml_specid_event(TCG_EVENT const *event, size_t *count) {
+
+    TCG_SPECID_EVENT *specid = (TCG_SPECID_EVENT*)event->event;
+    TCG_SPECID_ALG *alg = (TCG_SPECID_ALG*)specid->digestSizes;
+    TCG_VENDOR_INFO *vendor = (TCG_VENDOR_INFO*)(alg + specid->numberOfAlgorithms);
+
+    yaml_eventhdr(event, count);
+    yaml_specid(specid);
+    yaml_specid_algs(alg, specid->numberOfAlgorithms);
+    return yaml_specid_vendor(vendor);
+}
+bool yaml_specid_callback(TCG_EVENT const *event, void *data) {
+
+    size_t *count = (size_t*)data;
+    return yaml_specid_event(event, count);
+}
 
 bool yaml_eventlog(UINT8 const *eventlog, size_t size) {
 
     size_t count = 0;
 
     tpm2_tool_output("---\n");
-    return foreach_event2((TCG_EVENT_HEADER2*)eventlog, size,
+    return parse_eventlog(eventlog, size,
+                          yaml_specid_callback,
                           yaml_event2hdr_callback,
                           yaml_digest2_callback,
                           yaml_event2data_callback, &count);
