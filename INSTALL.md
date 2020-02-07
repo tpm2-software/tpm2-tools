@@ -200,8 +200,8 @@ $ sudo make install
 * ##### TPM simulator
 ```
 $ mkdir ibmtpm && cd ibmtpm
-$ wget https://downloads.sourceforge.net/project/ibmswtpm2/ibmtpm1332.tar.gz
-$ tar -zxvf ibmtpm1332.tar.gz
+$ wget https://sourceforge.net/projects/ibmswtpm2/files/latest/download -O ibmtpm.tar.gz
+$ tar -zxvf ibmtpm.tar.gz
 $ cd src
 $ make -j5
 ```
