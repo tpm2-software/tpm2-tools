@@ -104,4 +104,18 @@ if [ $? != 0 ]; then
   echo "Failed policysecret integration test for passwordless reference object."
 fi
 
+#
+# Test with policy auth reference instead of plain password
+#
+tpm2_startauthsession -S session.ctx
+tpm2_policyauthvalue -S session.ctx -L policy.authval
+tpm2_flushcontext session.ctx
+tpm2_setprimarypolicy -C o -L policy.authval -g sha256
+tpm2_startauthsession -S session.ctx --policy-session
+tpm2_startauthsession -S policy_session.ctx --policy-session
+tpm2_policyauthvalue -S session.ctx
+tpm2_policysecret -S policy_session.ctx -c o session:session.ctx
+tpm2_flushcontext session.ctx
+tpm2_flushcontext policy_session.ctx
+
 exit 0
