@@ -159,12 +159,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 bool is_input_option_args_valid(void) {
 
-    if (!ctx.session_path && !ctx.cp_hash_path) {
+    if (!ctx.session_path) {
         LOG_ERR("Must specify -S session file.");
         return false;
     }
 
-    if (!ctx.cp_hash_path && ctx.policy_digest_path) {
+    if (ctx.cp_hash_path && ctx.policy_digest_path) {
         LOG_WARN("Cannot output policyhash when calculating cphash.");
         return false;
     }
