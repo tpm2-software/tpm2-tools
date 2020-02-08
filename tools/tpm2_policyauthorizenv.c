@@ -22,6 +22,8 @@ struct tpm_policyauthorizenv_ctx {
 
     const char *session_path;
     tpm2_session *session;
+
+    char *cp_hash_path;
 };
 
 static tpm_policyauthorizenv_ctx ctx;
@@ -52,6 +54,9 @@ static bool on_option(char key, char *value) {
     case 'S':
         ctx.session_path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     default:
         return false;
     }
@@ -66,6 +71,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth",      required_argument, NULL, 'P' },
         { "policy",    required_argument, NULL, 'L' },
         { "session",   required_argument, NULL, 'S' },
+        { "cphash",    required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:L:S:", ARRAY_LEN(topts), topts, on_option,
@@ -80,6 +86,12 @@ bool is_input_option_args_valid(void) {
         LOG_ERR("Must specify -S session file.");
         return false;
     }
+
+    if (ctx.cp_hash_path && ctx.out_policy_dgst_path) {
+        LOG_WARN("Cannot output policyhash when calculating cphash.");
+        return false;
+    }
+
     return true;
 }
 
@@ -102,16 +114,53 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     ESYS_TR policy_session_handle = tpm2_session_get_handle(ctx.session);
 
-    rc = tpm2_policy_authorize_nv(ectx, &ctx.auth_hierarchy.object,
-        ctx.nv_index, policy_session_handle);
-    if (rc != tool_rc_success) {
-        return rc;
+    if (!ctx.cp_hash_path) {
+        rc = tpm2_policy_authorize_nv(ectx, &ctx.auth_hierarchy.object,
+            ctx.nv_index, policy_session_handle, NULL);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        return tpm2_policy_tool_finish(ectx, ctx.session,
+            ctx.out_policy_dgst_path);
     }
 
-    return tpm2_policy_tool_finish(ectx, ctx.session, ctx.out_policy_dgst_path);
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = tpm2_policy_authorize_nv(ectx, &ctx.auth_hierarchy.object,
+        ctx.nv_index, policy_session_handle, &cp_hash);
+    if (rc != tool_rc_success) {
+        goto cphash_error_out;
+    }
+
+    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    } else {
+        goto cphash_out;
+    }
+
+cphash_error_out:
+    LOG_ERR("Failed cphash calculation operation");
+cphash_out:
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    return tpm2_session_close(&ctx.session);
+
+    tool_rc rc = tool_rc_success;
+    tool_rc tmp_rc = tool_rc_success;
+
+    if (!ctx.cp_hash_path) {
+        tmp_rc = tpm2_session_close(&ctx.auth_hierarchy.object.session);
+        if (tmp_rc != tool_rc_success) {
+            rc = tmp_rc;
+        }
+    }
+    tmp_rc = tpm2_session_close(&ctx.session);
+    if (tmp_rc != tool_rc_success) {
+        rc = tmp_rc;
+    }
+
+    return rc;
 }
