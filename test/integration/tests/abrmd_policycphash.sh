@@ -235,4 +235,22 @@ tpm2_flushcontext policy_session.ctx
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
+# Test tpm2_policyauthorizenv
+tpm2_nvdefine -C o 1 -a "ownerread|ownerwrite" -s 34
+tpm2_startauthsession -S session.ctx
+tpm2_policypassword -S session.ctx -L policy.pass
+tpm2_flushcontext session.ctx
+POLICYDIGESTALGORITHM=000b
+echo $POLICYDIGESTALGORITHM | xxd -p -r | cat - policy.pass | \
+tpm2_nvwrite -C o 1 -i-
+tpm2_startauthsession -S policy_session.ctx --policy-session
+tpm2_policyauthorizenv -S policy_session.ctx -C o 1 --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_policypassword -S policy_session.ctx
+tpm2_policyauthorizenv -S policy_session.ctx -C o 1 -P "session:session.ctx"
+tpm2_flushcontext policy_session.ctx
+tpm2_flushcontext session.ctx
+tpm2_nvundefine 1
+
 exit 0
