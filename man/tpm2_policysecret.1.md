@@ -59,6 +59,13 @@ object use.
     Optional, the policy qualifier data that the signer can choose to include in the
     signature. Can be either a hex string or path.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash to be used in
+    an audit or a policycphash.
+
   * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
     the object specified with **-c**.
 

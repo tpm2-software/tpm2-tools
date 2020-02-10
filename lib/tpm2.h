@@ -121,7 +121,7 @@ tool_rc tpm2_policy_secret(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_entity_obj, ESYS_TR policy_session,
         INT32 expiration, TPMT_TK_AUTH **policy_ticket,
         TPM2B_TIMEOUT **timeout, TPM2B_NONCE *nonce_tpm,
-        TPM2B_NONCE *policy_qualifier);
+        TPM2B_NONCE *policy_qualifier, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_policy_getdigest(ESYS_CONTEXT *esys_context, ESYS_TR policy_session,
         ESYS_TR shandle1, ESYS_TR shandle2, ESYS_TR shandle3,
