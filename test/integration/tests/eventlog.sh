@@ -23,5 +23,6 @@ expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/specid-vendordata.
 expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/event.bin
 expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/event-uefivar.bin
 expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/event-uefiaction.bin
+expect_pass tpm2_eventlog ${srcdir}/test/integration/fixtures/event-uefiservices.bin
 
 exit $?

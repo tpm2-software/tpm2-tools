@@ -206,6 +206,28 @@ bool yaml_uefi_action(UINT8 const *action, size_t size) {
 
     return true;
 }
+/* TCG PC Client PFP section 9.2.3 */
+bool yaml_uefi_image_load(UEFI_IMAGE_LOAD_EVENT *data, size_t size) {
+
+    size_t devpath_len = (size - sizeof(*data)) * 2 + 1;
+    char *buf = calloc (1, devpath_len);
+    if (!buf) {
+        LOG_ERR("failed to allocate memory: %s\n", strerror(errno));
+        return false;
+    }
+
+    tpm2_tool_output("  Event:\n    - ImageLocationInMemory: 0x%" PRIx64 "\n"
+                     "      ImageLengthInMemory: %" PRIu64 "\n      "
+                     "ImageLinkTimeAddress: 0x%" PRIx64 "\n      "
+                     "LengthOfDevicePath: %" PRIu64 "\n",
+                     data->ImageLocationInMemory, data->ImageLengthInMemory,
+                     data->ImageLinkTimeAddress, data->LengthOfDevicePath);
+
+    bytes_to_str(data->DevicePath, size - sizeof(*data), buf, devpath_len);
+    tpm2_tool_output("      DevicePath: %s\n", buf);
+
+    return true;
+}
 #define EVENT_BUF_MAX BYTES_TO_HEX_STRING_SIZE(1024)
 bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
 
@@ -228,6 +250,11 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
         return yaml_uefi_platfwblob((UEFI_PLATFORM_FIRMWARE_BLOB*)event->Event);
     case EV_EFI_ACTION:
         return yaml_uefi_action(event->Event, event->EventSize);
+    case EV_EFI_BOOT_SERVICES_APPLICATION:
+    case EV_EFI_BOOT_SERVICES_DRIVER:
+    case EV_EFI_RUNTIME_SERVICES_DRIVER:
+        return yaml_uefi_image_load((UEFI_IMAGE_LOAD_EVENT*)event->Event,
+                                    event->EventSize);
     default:
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
         tpm2_tool_output("  Event: %s\n", hexstr);
