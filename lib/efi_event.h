@@ -110,4 +110,12 @@ typedef struct {
     /* then TCG_VendorStuff */
 } PACKED TCG_SPECID_EVENT;
 
+typedef struct {
+    UEFI_PHYSICAL_ADDRESS ImageLocationInMemory;
+    UINT64 ImageLengthInMemory;
+    UINT64 ImageLinkTimeAddress;
+    UINT64 LengthOfDevicePath;
+    BYTE DevicePath[];
+} PACKED UEFI_IMAGE_LOAD_EVENT;
+
 #endif

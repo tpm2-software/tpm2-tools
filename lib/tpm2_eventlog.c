@@ -100,6 +100,18 @@ bool parse_event2body(TCG_EVENT2 const *event, UINT32 type) {
             }
         }
         break;
+    case EV_EFI_BOOT_SERVICES_APPLICATION:
+    case EV_EFI_BOOT_SERVICES_DRIVER:
+    case EV_EFI_RUNTIME_SERVICES_DRIVER:
+        {
+            UEFI_IMAGE_LOAD_EVENT *data = (UEFI_IMAGE_LOAD_EVENT*)event->Event;
+            if (event->EventSize < sizeof(*data)) {
+                LOG_ERR("size is insufficient for UEFI image load event");
+                return false;
+            }
+            /* what about the device path? */
+        }
+        break;
     }
 
     return true;
