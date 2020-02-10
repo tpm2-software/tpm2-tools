@@ -54,21 +54,15 @@ static void eventtype_to_string_default(void **state) {
     assert_string_equal(eventtype_to_string(666), "Unknown event type");
 }
 
-static void test_yaml_digest2_callback_null(void **state) {
-
-    (void)state;
-
-    assert_false(yaml_digest2_callback(NULL, 0, NULL));
-}
 static void test_yaml_digest2_callback(void **state) {
 
     (void)state;
     uint8_t buf [TCG_DIGEST2_SHA1_SIZE];
     TCG_DIGEST2 *digest = (TCG_DIGEST2*)buf;
-    yaml_cbdata_t cbdata = { 0, };
+    size_t count = 0;
 
     digest->AlgorithmId = TPM2_ALG_SHA1;
-    assert_true(yaml_digest2_callback(digest, TPM2_SHA1_DIGEST_SIZE, &cbdata));
+    assert_true(yaml_digest2_callback(digest, TPM2_SHA1_DIGEST_SIZE, &count));
 }
 static void test_yaml_event2data(void **state) {
 
@@ -97,14 +91,14 @@ static void test_yaml_event2hdr_callback(void **state){
     TCG_EVENT_HEADER2 *eventhdr = (TCG_EVENT_HEADER2*)buf;
     TCG_DIGEST2 *digest = (TCG_DIGEST2*)(eventhdr->Digests);
     TCG_EVENT2 *event = (TCG_EVENT2*)(buf + sizeof(*eventhdr) + TCG_DIGEST2_SHA1_SIZE);
-    yaml_cbdata_t data = { 0, };
+    size_t count = 0;
 
     eventhdr->DigestCount = 1;
     digest->AlgorithmId = TPM2_ALG_SHA1;
     digest->Digest[0] = 0xef;
     event->EventSize = 2;
 
-    assert_true(yaml_event2hdr_callback(eventhdr, sizeof(buf), &data));
+    assert_true(yaml_event2hdr_callback(eventhdr, sizeof(buf), &count));
 }
 static void test_yaml_event2hdr_callback_nulldata(void **state){
 
@@ -153,7 +147,6 @@ int main(void) {
         cmocka_unit_test(eventtype_to_string_default),
         cmocka_unit_test(test_yaml_event2hdr_callback),
         cmocka_unit_test(test_yaml_event2hdr_callback_nulldata),
-        cmocka_unit_test(test_yaml_digest2_callback_null),
         cmocka_unit_test(test_yaml_digest2_callback),
         cmocka_unit_test(test_yaml_event2data),
         cmocka_unit_test(test_yaml_event2data_callback),

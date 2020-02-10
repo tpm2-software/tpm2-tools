@@ -8,11 +8,6 @@
 #include "efi_event.h"
 #include "tpm2_eventlog.h"
 
-typedef struct {
-    size_t event_count;
-    size_t digest_count;
-} yaml_cbdata_t;
-
 char const *eventtype_to_string (UINT32 event_type);
 void yaml_event2hdr(TCG_EVENT_HEADER2 const *event_hdr, size_t size);
 bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size);
