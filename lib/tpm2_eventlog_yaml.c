@@ -90,10 +90,10 @@ void yaml_event2hdr(TCG_EVENT_HEADER2 const *eventhdr, size_t size) {
 
     (void)size;
 
-    tpm2_tool_output("    PCRIndex: %d\n", eventhdr->PCRIndex);
-    tpm2_tool_output("    EventType: %s\n",
+    tpm2_tool_output("  PCRIndex: %d\n", eventhdr->PCRIndex);
+    tpm2_tool_output("  EventType: %s\n",
            eventtype_to_string(eventhdr->EventType));
-    tpm2_tool_output("    DigestCount: %d\n", eventhdr->DigestCount);
+    tpm2_tool_output("  DigestCount: %d\n", eventhdr->DigestCount);
 
     return;
 }
@@ -104,11 +104,11 @@ bool yaml_digest2(TCG_DIGEST2 const *digest, size_t size) {
 
     char hexstr[DIGEST_HEX_STRING_MAX] = { 0, };
 
-    tpm2_tool_output("        AlgorithmId: %s\n",
+    tpm2_tool_output("    - AlgorithmId: %s\n",
            tpm2_alg_util_algtostr(digest->AlgorithmId,
                                   tpm2_alg_util_flags_hash));
     bytes_to_str(digest->Digest, size, hexstr, sizeof(hexstr));
-    tpm2_tool_output("        Digest: %s\n", hexstr);
+    tpm2_tool_output("      Digest: %s\n", hexstr);
 
     return true;
 }
@@ -117,13 +117,13 @@ bool yaml_event2data(TCG_EVENT2 const *event, UINT32 type) {
 
     (void)type;
 
-    tpm2_tool_output("    EventSize: %" PRIu32 "\n", event->EventSize);
+    tpm2_tool_output("  EventSize: %" PRIu32 "\n", event->EventSize);
 
     if (event->EventSize > 0) {
         char hexstr[EVENT_BUF_MAX] = { 0, };
 
         bytes_to_str(event->Event, event->EventSize, hexstr, sizeof(hexstr));
-        tpm2_tool_output("    Event: %s\n", hexstr);
+        tpm2_tool_output("  Event: %s\n", hexstr);
     }
 
     return true;
@@ -139,45 +139,36 @@ bool yaml_event2data_callback(TCG_EVENT2 const *event, UINT32 type,
 bool yaml_digest2_callback(TCG_DIGEST2 const *digest, size_t size,
                             void *data_in) {
 
-    yaml_cbdata_t *data = (yaml_cbdata_t*)data_in;
-
-    if (data == NULL) {
-        LOG_ERR("callback requires user data");
-        return false;
-    }
-    tpm2_tool_output("      - Digest[%zu]:\n", data->digest_count++);
-
+    (void)data_in;
     return yaml_digest2(digest, size);
 }
 
 bool yaml_event2hdr_callback(TCG_EVENT_HEADER2 const *eventhdr, size_t size,
                              void *data_in) {
 
-    yaml_cbdata_t *data = (yaml_cbdata_t*)data_in;
+    size_t *count = (size_t*)data_in;
 
-    if (data == NULL) {
+    if (count == NULL) {
         LOG_ERR("callback requires user data");
         return false;
     }
-    /* reset digest_count */
-    data->digest_count = 0;
 
-    tpm2_tool_output("- Event[%zu]:\n", data->event_count++);
+    tpm2_tool_output("- Event[%zu]:\n", *count++);
 
     yaml_event2hdr(eventhdr, size);
 
-    tpm2_tool_output("    Digests:\n");
+    tpm2_tool_output("  Digests:\n");
 
     return true;
 }
 
 bool yaml_eventlog(UINT8 const *eventlog, size_t size) {
 
-    yaml_cbdata_t data = { 0, };
+    size_t count = 0;
 
     tpm2_tool_output("---\n");
     return foreach_event2((TCG_EVENT_HEADER2*)eventlog, size,
                           yaml_event2hdr_callback,
                           yaml_digest2_callback,
-                          yaml_event2data_callback, &data);
+                          yaml_event2data_callback, &count);
 }
