@@ -18,8 +18,7 @@ struct tpm2_policysecret_ctx {
     } auth_entity;
 
     //File path for storing the policy digest output
-    const char *out_policy_dgst_path;
-    TPM2B_DIGEST *policy_digest;
+    const char *policy_digest_path;
     //File path for the session context data
     const char *extended_session_path;
     tpm2_session *extended_session;
@@ -37,6 +36,8 @@ struct tpm2_policysecret_ctx {
     struct {
         UINT8 c :1;
     } flags;
+
+    char *cp_hash_path;
 };
 
 static tpm2_policysecret_ctx ctx;
@@ -47,7 +48,7 @@ static bool on_option(char key, char *value) {
 
     switch (key) {
     case 'L':
-        ctx.out_policy_dgst_path = value;
+        ctx.policy_digest_path = value;
         break;
     case 'S':
         ctx.extended_session_path = value;
@@ -75,6 +76,9 @@ static bool on_option(char key, char *value) {
         break;
     case 'q':
         ctx.qualifier_data_arg = value;
+        break;
+    case 2:
+        ctx.cp_hash_path = value;
         break;
     }
 
@@ -109,6 +113,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "ticket",         required_argument, NULL,  0  },
         { "timeout",        required_argument, NULL,  1  },
         { "qualification",  required_argument, NULL, 'q' },
+        { "cphash",         required_argument, NULL,  2  },
     };
 
     *opts = tpm2_options_new("L:S:c:t:q:x", ARRAY_LEN(topts), topts, on_option,
@@ -126,6 +131,11 @@ bool is_input_option_args_valid(void) {
 
     if (!ctx.flags.c) {
         LOG_ERR("Must specify -c handle-id/ context file path.");
+        return false;
+    }
+
+    if (ctx.cp_hash_path && ctx.policy_digest_path) {
+        LOG_WARN("Cannot output policyhash when calculating cphash.");
         return false;
     }
 
@@ -147,6 +157,9 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    /*
+     * The auth string of the referenced object is strictly for a password session
+     */
     rc = tpm2_util_object_load_auth(ectx, ctx.auth_entity.ctx_path,
             ctx.auth_entity.auth_str, &ctx.auth_entity.object, false,
             TPM2_HANDLE_ALL_W_NV);
@@ -154,74 +167,89 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    /*
-     * Build a policysecret using the pwd session. If the event of
-     * a failure:
-     * 1. always close the pwd session.
-     * 2. log the policy secret failure and return tool_rc_general_error.
-     * 3. if the error was closing the policy secret session, return that rc.
-     */
-    TPMT_TK_AUTH *policy_ticket = NULL;
-    TPM2B_TIMEOUT *timeout = NULL;
-    rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
-            &ctx.auth_entity.object, ctx.expiration, &policy_ticket, &timeout,
-            ctx.is_nonce_tpm, ctx.qualifier_data_arg);
-    tool_rc rc2 = tpm2_session_close(&ctx.auth_entity.object.session);
-    if (rc != tool_rc_success) {
-        goto tpm2_tool_onrun_out;
-    }
-    if (rc2 != tool_rc_success) {
-        rc = rc2;
-        goto tpm2_tool_onrun_out;
-    }
-
-    rc = tpm2_session_close(&ctx.auth_entity.object.session);
-    if (rc != tool_rc_success) {
-        LOG_ERR("Could not build policysecret");
-        goto tpm2_tool_onrun_out;
-    }
-
-    rc = tpm2_policy_tool_finish(ectx, ctx.extended_session,
-            ctx.out_policy_dgst_path);
-    if (rc != tool_rc_success) {
-        goto tpm2_tool_onrun_out;
-    }
-
-    if (ctx.policy_timeout_path) {
-        if(!timeout->size) {
-            LOG_WARN("Policy assertion did not produce timeout");
-        } else {
-            result = files_save_bytes_to_file(ctx.policy_timeout_path,
-            timeout->buffer, timeout->size);
+    if (!ctx.cp_hash_path) {
+        /*
+         * Build a policysecret using the pwd session. If the event of
+         * a failure:
+         * 1. always close the pwd session.
+         * 2. log the policy secret failure and return tool_rc_general_error.
+         * 3. if the error was closing the policy secret session, return that rc.
+         */
+        TPMT_TK_AUTH *policy_ticket = NULL;
+        TPM2B_TIMEOUT *timeout = NULL;
+        rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
+                &ctx.auth_entity.object, ctx.expiration, &policy_ticket, &timeout,
+                ctx.is_nonce_tpm, ctx.qualifier_data_arg, NULL);
+        tool_rc rc2 = tpm2_session_close(&ctx.auth_entity.object.session);
+        if (rc != tool_rc_success) {
+            goto tpm2_tool_onrun_out;
         }
-    }
-    if (!result) {
-        LOG_ERR("Failed to save timeout to file.");
-        rc = tool_rc_general_error;
-        goto tpm2_tool_onrun_out;
-    }
-
-    if (ctx.policy_ticket_path) {
-        if (!policy_ticket->digest.size) {
-            LOG_WARN("Policy assertion did not produce auth ticket.");
-        } else {
-            result = files_save_authorization_ticket(policy_ticket,
-            ctx.policy_ticket_path);
+        if (rc2 != tool_rc_success) {
+            rc = rc2;
+            goto tpm2_tool_onrun_out;
         }
-    }
-    if (!result) {
-        LOG_ERR("Failed to save auth ticket");
-        rc = tool_rc_general_error;
-    }
+
+        rc = tpm2_policy_tool_finish(ectx, ctx.extended_session,
+                ctx.policy_digest_path);
+        if (rc != tool_rc_success) {
+            goto tpm2_tool_onrun_out;
+        }
+
+        if (ctx.policy_timeout_path) {
+            if(!timeout->size) {
+                LOG_WARN("Policy assertion did not produce timeout");
+            } else {
+                result = files_save_bytes_to_file(ctx.policy_timeout_path,
+                timeout->buffer, timeout->size);
+            }
+        }
+        if (!result) {
+            LOG_ERR("Failed to save timeout to file.");
+            rc = tool_rc_general_error;
+            goto tpm2_tool_onrun_out;
+        }
+
+        if (ctx.policy_ticket_path) {
+            if (!policy_ticket->digest.size) {
+                LOG_WARN("Policy assertion did not produce auth ticket.");
+            } else {
+                result = files_save_authorization_ticket(policy_ticket,
+                ctx.policy_ticket_path);
+            }
+        }
+        if (!result) {
+            LOG_ERR("Failed to save auth ticket");
+            rc = tool_rc_general_error;
+        }
 
 tpm2_tool_onrun_out:
-    free(policy_ticket);
-    free(timeout);
+        free(policy_ticket);
+        free(timeout);
+        if (rc != tool_rc_success) {
+            LOG_ERR("Could not build policysecret");
+        }
+        return rc;
+    }
+
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    rc = tpm2_policy_build_policysecret(ectx, ctx.extended_session,
+        &ctx.auth_entity.object, ctx.expiration, NULL, NULL, ctx.is_nonce_tpm,
+        ctx.qualifier_data_arg, &cp_hash);
+    if (rc != tool_rc_success) {
+        LOG_ERR("Failed cphash calculation operation");
+        return rc;
+    }
+
+    result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        LOG_ERR("Failed saving command parameter hash for policysecret");
+        rc = tool_rc_general_error;
+    }
+
     return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
     UNUSED(ectx);
-    free(ctx.policy_digest);
     return tpm2_session_close(&ctx.extended_session);
 }

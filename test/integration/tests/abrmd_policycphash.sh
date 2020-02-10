@@ -253,4 +253,20 @@ tpm2_flushcontext policy_session.ctx
 tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
+# Test tpm2_policysecret
+tpm2_startauthsession -S policy_session.ctx --policy-session -g sha256
+tpm2_policysecret -S policy_session.ctx -c o --cphash cp.hash
+tpm2_startauthsession -S session.ctx -g sha256
+tpm2_policyauthvalue -S session.ctx -L policy.authval
+tpm2_policycphash -S session.ctx --cphash cp.hash -L policy.authval_cphash
+tpm2_flushcontext session.ctx
+tpm2_setprimarypolicy -C o -L policy.authval_cphash -g sha256
+tpm2_startauthsession -S session.ctx --policy-session -g sha256
+tpm2_policyauthvalue -S session.ctx
+tpm2_policycphash -S session.ctx --cphash cp.hash
+## Changing the policysecret authhandle parameter fro "o" to "p" should fail
+tpm2_policysecret -S policy_session.ctx -c o session:session.ctx
+tpm2_flushcontext session.ctx
+tpm2_flushcontext policy_session.ctx
+
 exit 0
