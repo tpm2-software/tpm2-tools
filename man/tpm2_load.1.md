@@ -50,6 +50,12 @@ It also saves a context file for future interactions with the object.
 
     The file name of the saved object context, required.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying

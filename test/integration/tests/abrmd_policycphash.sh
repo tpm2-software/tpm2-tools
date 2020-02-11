@@ -297,4 +297,27 @@ fi
 trap onerror ERR
 tpm2_flushcontext session.ctx
 
+# Test tpm2_load
+create_authorized_policy
+tpm2_createprimary -C o -c prim.ctx -G rsa -L authorized.policy
+tpm2_create -C prim.ctx -G rsa -u key.pub -r key.priv
+tpm2_create -C prim.ctx -G rsa -u key_2.pub -r key_2.priv
+tpm2_load -C prim.ctx -u key.pub -r key.priv --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_load -C prim.ctx -u key.pub -r key.priv -c key.ctx -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+## Attempt loading another key that was not recorded in policycphash
+setup_authorized_policycphash
+trap - ERR
+tpm2_load -C prim.ctx -u key_2.pub -r key_2.priv -c key_2.ctx \
+-P "session:session.ctx"
+if [ $? == 0 ];then
+  echo "ERROR: tpm2_load must fail!"
+  exit 1
+fi
+trap onerror ERR
+tpm2_flushcontext session.ctx
+
 exit 0
