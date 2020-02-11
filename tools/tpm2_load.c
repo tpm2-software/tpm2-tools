@@ -26,6 +26,7 @@ struct tpm_load_ctx {
 
     const char *namepath;
     const char *contextpath;
+    char *cp_hash_path;
 };
 
 static tpm_load_ctx ctx;
@@ -51,6 +52,9 @@ static bool on_option(char key, char *value) {
     case 'c':
         ctx.contextpath = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -65,6 +69,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "name",           required_argument, NULL, 'n' },
       { "key-context",    required_argument, NULL, 'c' },
       { "parent-context", required_argument, NULL, 'C' },
+      { "cphash",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("P:u:r:n:C:c:", ARRAY_LEN(topts), topts, on_option,
@@ -91,8 +96,13 @@ static tool_rc check_opts(void) {
         rc = tool_rc_option_error;
     }
 
-    if (!ctx.contextpath) {
+    if (!ctx.contextpath && !ctx.cp_hash_path) {
         LOG_ERR("Expected option -c");
+        rc = tool_rc_option_error;
+    }
+
+    if (ctx.contextpath && ctx.cp_hash_path) {
+        LOG_ERR("Cannot output contextpath when calculating cp_hash");
         rc = tool_rc_option_error;
     }
 
@@ -156,13 +166,29 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    if (!ctx.cp_hash_path) {
+        rc = tpm2_load(ectx, &ctx.parent.object, &ctx.object.private,
+            &ctx.object.public, &ctx.object.handle, NULL);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        return finish(ectx);
+    }
+
+    TPM2B_DIGEST cp_hash = { .size = 0 };
     rc = tpm2_load(ectx, &ctx.parent.object, &ctx.object.private,
-            &ctx.object.public, &ctx.object.handle);
+            &ctx.object.public, &ctx.object.handle, &cp_hash);
     if (rc != tool_rc_success) {
         return rc;
     }
 
-    return finish(ectx);
+    bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+    if (!result) {
+        rc = tool_rc_general_error;
+    }
+
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

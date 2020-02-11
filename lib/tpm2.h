@@ -223,7 +223,7 @@ tool_rc tpm2_rsa_encrypt(ESYS_CONTEXT *ectx, tpm2_loaded_object *keyobj,
 
 tool_rc tpm2_load(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parentobj,
         const TPM2B_PRIVATE *in_private, const TPM2B_PUBLIC *in_public,
-        ESYS_TR *object_handle);
+        ESYS_TR *object_handle, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_clear(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy);
