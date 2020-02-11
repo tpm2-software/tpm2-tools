@@ -54,6 +54,8 @@ struct tpm_create_ctx {
         UINT8 r :1;
         UINT8 G :1;
     } flags;
+
+    char *cp_hash_path;
 };
 
 #define DEFAULT_KEY_ALG "rsa2048"
@@ -79,6 +81,7 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
     TPM2B_PRIVATE *out_private;
 
     ESYS_TR object_handle = ESYS_TR_NONE;
+    TPM2B_DIGEST cp_hash = { .size = 0 };
     if (ctx.object.ctx_path &&
         (!ctx.object.creation_data_file &&
          !ctx.object.creation_ticket_file &&
@@ -96,9 +99,23 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
 
         template.size = offset;
 
+        if (ctx.cp_hash_path) {
+            tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
+                &ctx.object.sensitive, &template, &object_handle, &out_private,
+                &out_public, &cp_hash);
+            if (tmp_rc == tool_rc_success) {
+                bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+                if (!result) {
+                    LOG_ERR("Failed to save cp hash");
+                    tmp_rc = tool_rc_general_error;
+                }
+            }
+            return tmp_rc;
+        }
+
         tmp_rc = tpm2_create_loaded(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &template, &object_handle, &out_private,
-                &out_public);
+                &out_public, NULL);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
@@ -115,13 +132,28 @@ static tool_rc create(ESYS_CONTEXT *ectx) {
             return tool_rc_general_error;
         }
 
+        tool_rc tmp_rc = tool_rc_success;
+        if (ctx.cp_hash_path) {
+            tmp_rc = tpm2_create(ectx, &ctx.parent.object,
+                &ctx.object.sensitive, &ctx.object.public, &outside_info,
+                &ctx.creation_pcr, &out_private, &out_public, NULL, NULL, NULL,
+                &cp_hash);
+            if (tmp_rc == tool_rc_success) {
+                result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+                if (!result) {
+                    LOG_ERR("Failed to save cp hash");
+                    tmp_rc = tool_rc_general_error;
+                }
+            }
+            return tmp_rc;
+        }
         TPM2B_CREATION_DATA *creation_data = NULL;
         TPM2B_DIGEST *creation_hash = NULL;
         TPMT_TK_CREATION *creation_ticket = NULL;
-        tool_rc tmp_rc = tpm2_create(ectx, &ctx.parent.object,
+        tmp_rc = tpm2_create(ectx, &ctx.parent.object,
                 &ctx.object.sensitive, &ctx.object.public, &outside_info,
                 &ctx.creation_pcr, &out_private, &out_public, &creation_data,
-                &creation_hash, &creation_ticket);
+                &creation_hash, &creation_ticket, NULL);
         if (tmp_rc != tool_rc_success) {
             return tmp_rc;
         }
@@ -269,6 +301,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 2:
+        ctx.cp_hash_path = value;
+        break;
     };
 
     return true;
@@ -294,6 +329,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "creation-hash",  required_argument, NULL, 'd' },
       { "outside-info",   required_argument, NULL, 'q' },
       { "pcr-list",       required_argument, NULL, 'l' },
+      { "cphash",         required_argument, NULL,  2  },
     };
 
     *opts = tpm2_options_new("P:p:g:G:a:i:L:u:r:C:c:t:d:q:l:", ARRAY_LEN(topts), topts,
@@ -320,6 +356,13 @@ static tool_rc check_options(void) {
 
     if (ctx.flags.i && ctx.flags.G) {
         LOG_ERR("Cannot specify -G and -i together.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.cp_hash_path && (ctx.object.public_path || ctx.object.private_path
+        || ctx.object.creation_data_file || ctx.object.creation_hash_file ||
+        ctx.object.creation_ticket_file || ctx.object.ctx_path)) {
+        LOG_ERR("CpHash Error: Cannot specify pub, priv, creation - data, hash, ticket");
         return tool_rc_option_error;
     }
 
