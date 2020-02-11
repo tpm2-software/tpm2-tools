@@ -54,17 +54,20 @@ start_policy_cphash() {
     tpm2_policycphash -S session.ctx --cphash cp.hash
 }
 
-# Define an authorized policy for an object
-openssl genrsa -out signing_key_private.pem 2048
-openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
-tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -c signing_key.ctx \
--n signing_key.name
-tpm2_startauthsession -S session.ctx -g sha256
-tpm2_policyauthorize -S session.ctx -L authorized.policy -n signing_key.name
-tpm2_flushcontext session.ctx
-
+create_authorized_policy() {
+  tpm2_clear
+  # Define an authorized policy for an object
+  openssl genrsa -out signing_key_private.pem 2048
+  openssl rsa -in signing_key_private.pem -out signing_key_public.pem -pubout
+  tpm2_loadexternal -G rsa -C o -u signing_key_public.pem -c signing_key.ctx \
+  -n signing_key.name
+  tpm2_startauthsession -S session.ctx -g sha256
+  tpm2_policyauthorize -S session.ctx -L authorized.policy -n signing_key.name
+  tpm2_flushcontext session.ctx
+}
 
 # Restrict the value that can be set through tpm2_nvsetbits.
+create_authorized_policy
 tpm2_nvdefine 1 -a "policywrite|authwrite|ownerread|nt=bits" -L authorized.policy
 ## Create policycphash
 tpm2_nvsetbits 1 -i 1 --cphash cp.hash
@@ -88,6 +91,7 @@ tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
 # Test tpm2_nvextend
+create_authorized_policy
 tpm2_nvdefine 1 -a "nt=extend|ownerread|policywrite" -L authorized.policy
 echo "foo" | tpm2_nvextend -i- 1 --cphash cp.hash
 generate_policycphash
@@ -108,6 +112,7 @@ tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
 # Test tpm2_nvincrement
+create_authorized_policy
 tpm2_nvdefine 1 -s 8 -a "nt=counter|ownerread|policywrite" -L authorized.policy
 tpm2_nvincrement 1 --cphash cp.hash
 generate_policycphash
@@ -118,6 +123,7 @@ tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
 # Test tpm2_nvread
+create_authorized_policy
 tpm2_nvdefine 1 -s 8 -a "ownerwrite|policyread" -L authorized.policy
 echo "foo" | tpm2_nvwrite 1 -i- -C o
 tpm2_nvread 1 -s 8 --cphash cp.hash
@@ -138,6 +144,7 @@ tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
 # Test tpm2_nvreadlock
+create_authorized_policy
 tpm2_nvdefine 1 -C o -s 32 -a "policyread|policywrite|read_stclear" \
 -L authorized.policy
 tpm2_nvreadlock 1 -C 0x01000001 --cphash cp.hash
@@ -149,6 +156,7 @@ tpm2_flushcontext session.ctx
 tpm2_nvundefine 1
 
 # Test tpm2_nvwritelock
+create_authorized_policy
 tpm2_nvdefine 1 -C o -s 32 -a "policyread|policywrite|writedefine" \
 -L authorized.policy
 tpm2_nvwritelock 1 -C 0x01000001 --cphash cp.hash
@@ -268,5 +276,25 @@ tpm2_policycphash -S session.ctx --cphash cp.hash
 tpm2_policysecret -S policy_session.ctx -c o session:session.ctx
 tpm2_flushcontext session.ctx
 tpm2_flushcontext policy_session.ctx
+
+# Test tpm2_create
+create_authorized_policy
+tpm2_createprimary -C o -c prim.ctx -G rsa -L authorized.policy
+tpm2_create -C prim.ctx -G rsa --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_create -C prim.ctx -G rsa -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+## Attempt creating a key type that was not recorded in policycphash
+setup_authorized_policycphash
+trap - ERR
+tpm2_create -C prim.ctx -G aes -P "session:session.ctx"
+if [ $? == 0 ];then
+  echo "ERROR: tpm2_create must fail!"
+  exit 1
+fi
+trap onerror ERR
+tpm2_flushcontext session.ctx
 
 exit 0
