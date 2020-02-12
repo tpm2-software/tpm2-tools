@@ -34,6 +34,8 @@ struct tpm_activatecred_ctx {
         UINT8 i :1;
         UINT8 o :1;
     } flags;
+
+    char *cp_hash_path;
 };
 
 static tpm_activatecred_ctx ctx;
@@ -111,9 +113,25 @@ static tool_rc activate_credential_and_output(ESYS_CONTEXT *ectx) {
 
     TPM2B_DIGEST *cert_info_data;
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        rc = tpm2_activatecredential(ectx, &ctx.credentialed_key.object,
+            &ctx.credential_key.object, &ctx.credential_blob, &ctx.secret,
+            &cert_info_data, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
     rc = tpm2_activatecredential(ectx, &ctx.credentialed_key.object,
             &ctx.credential_key.object, &ctx.credential_blob, &ctx.secret,
-            &cert_info_data);
+            &cert_info_data, NULL);
     if (rc != tool_rc_success) {
         goto out_all;
     }
@@ -159,6 +177,9 @@ static bool on_option(char key, char *value) {
         ctx.output_file = value;
         ctx.flags.o = 1;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -173,6 +194,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
          {"credentialkey-auth",      required_argument, NULL, 'P'},
          {"credential-blob",         required_argument, NULL, 'i'},
          {"certinfo-data",           required_argument, NULL, 'o'},
+         {"cphash",                  required_argument, NULL,  0 },
     };
 
     *opts = tpm2_options_new("c:C:p:P:i:o:", ARRAY_LEN(topts), topts, on_option,

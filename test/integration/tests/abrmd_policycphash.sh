@@ -320,4 +320,29 @@ fi
 trap onerror ERR
 tpm2_flushcontext session.ctx
 
+# Test tpm2_activatecredential
+create_authorized_policy
+tpm2_createprimary -C o -c prim.ctx -G rsa
+tpm2_readpublic -c prim.ctx -o prim.pub
+tpm2_create -C prim.ctx -u key.pub -r key.priv -c key.ctx -L authorized.policy
+tpm2_readpublic -c key.ctx -n key.name
+echo "plaintext" > plain.txt
+tpm2_makecredential -e prim.pub  -s plain.txt -n `xxd -p -c 34 key.name` \
+-o cred.secret
+tpm2_activatecredential -c key.ctx -C prim.ctx -i cred.secret -o act_cred.secret \
+--cphash cp.hash
+tpm2_startauthsession -S session.ctx -g sha256
+tpm2_policycphash -S session.ctx -L policy.cphash --cphash cp.hash
+tpm2_policycommandcode -S session.ctx TPM2_CC_ActivateCredential -L policy.cphash
+tpm2_flushcontext session.ctx
+sign_and_verify_policycphash
+tpm2_startauthsession -S session.ctx --policy-session -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_policycommandcode -S session.ctx TPM2_CC_ActivateCredential
+tpm2_policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
+-t verification.tkt
+tpm2_activatecredential -c key.ctx -C prim.ctx -i cred.secret -o act_cred.secret \
+-p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
