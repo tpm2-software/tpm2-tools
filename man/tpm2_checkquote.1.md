@@ -69,8 +69,8 @@ the various known TCTI modules.
 ```bash
 tpm2_createek -c 0x81010009 -G rsa -u ekpub.pem -f pem
 
-tpm2_createak -C 0x81010009 -k 0x8101000a -G rsa -s rsassa -D sha256 \
--p akpub.pem -f pem -n ak.name
+tpm2_createak -C 0x81010009 -c 0x8101000a -G rsa -s rsassa -g sha256 \
+-u akpub.pem -f pem -n ak.name
 
 tpm2_quote -c 0x8101000a -l sha256:15,16,22 -q abc123 -m quote.out -s sig.out \
 -o pcrs.out -g sha256
