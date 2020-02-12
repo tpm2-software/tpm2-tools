@@ -345,4 +345,16 @@ tpm2_activatecredential -c key.ctx -C prim.ctx -i cred.secret -o act_cred.secret
 -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_unseal
+create_authorized_policy
+tpm2_createprimary -C o -c prim.ctx
+echo "plaintext" | \
+tpm2_create -C prim.ctx -c key.ctx -u key.pub -r key.priv -L authorized.policy -i-
+tpm2_unseal -c key.ctx --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_unseal -c key.ctx -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
