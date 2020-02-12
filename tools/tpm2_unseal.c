@@ -16,6 +16,8 @@ struct tpm_unseal_ctx {
     } sealkey;
 
     char *output_file_path;
+
+    char *cp_hash_path;
 };
 
 static tpm_unseal_ctx ctx;
@@ -24,7 +26,22 @@ tool_rc unseal_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_SENSITIVE_DATA *output_data = NULL;
 
-    tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &output_data);
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &output_data,
+            &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
+    tool_rc rc = tpm2_unseal(ectx, &ctx.sealkey.object, &output_data, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -84,6 +101,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.output_file_path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
         /* no default */
     }
 
@@ -96,6 +116,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth",             required_argument, NULL, 'p' },
       { "output",           required_argument, NULL, 'o' },
       { "object-context",   required_argument, NULL, 'c' },
+      { "cphash",            required_argument, NULL, 0  },
     };
 
     *opts = tpm2_options_new("p:o:c:", ARRAY_LEN(topts), topts, on_option, NULL,
