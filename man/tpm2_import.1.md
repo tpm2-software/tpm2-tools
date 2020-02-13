@@ -98,6 +98,12 @@ These options control the key importation process:
     the -passin option of OSSL and is known to support the pass, file, env, fd
     and plain password formats of openssl. (see *man(1) openssl*) for more.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
