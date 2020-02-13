@@ -279,7 +279,8 @@ tool_rc tpm2_hmac_sequencecomplete(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_import(ESYS_CONTEXT *esys_context, tpm2_loaded_object *parent_obj,
         const TPM2B_DATA *encryption_key, const TPM2B_PUBLIC *object_public,
         const TPM2B_PRIVATE *duplicate, const TPM2B_ENCRYPTED_SECRET *in_sym_seed,
-        const TPMT_SYM_DEF_OBJECT *symmetric_alg, TPM2B_PRIVATE **out_private);
+        const TPMT_SYM_DEF_OBJECT *symmetric_alg, TPM2B_PRIVATE **out_private,
+        TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_nv_definespace(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, const TPM2B_AUTH *auth,

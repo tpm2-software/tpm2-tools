@@ -423,4 +423,29 @@ fi
 trap onerror ERR
 tpm2_flushcontext session.ctx
 
+# Test tpm2_import
+create_authorized_policy
+tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctx
+tpm2_create -C primary.ctx -g sha256 -G rsa -r new_parent.prv \
+-u new_parent.pub -c new_parent.ctx -L authorized.policy \
+-a "restricted|sensitivedataorigin|decrypt|userwithauth"
+tpm2_startauthsession -S session.ctx
+tpm2_policycommandcode -S session.ctx -L dpolicy.dat TPM2_CC_Duplicate
+tpm2_flushcontext session.ctx
+tpm2_create -C primary.ctx -g sha256 -G rsa -p foo -r dupkey.prv -u dupkey.pub \
+-L dpolicy.dat -a "sensitivedataorigin|decrypt|userwithauth" -c dupkey.ctx
+tpm2_startauthsession --policy-session -S session.ctx
+tpm2_policycommandcode -S session.ctx TPM2_CC_Duplicate
+tpm2_duplicate -C new_parent.ctx -c dupkey.ctx -G null -p "session:session.ctx" \
+-r duplicated.prv -s dup.seed
+tpm2_flushcontext session.ctx
+tpm2_import -C new_parent.ctx -u dupkey.pub -i duplicated.prv -r imported_dup.prv \
+-s dup.seed --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_import -C new_parent.ctx -u dupkey.pub -i duplicated.prv -r imported_dup.prv \
+-s dup.seed -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
