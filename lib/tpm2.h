@@ -244,10 +244,10 @@ tool_rc tpm2_dictionarylockout(ESYS_CONTEXT *esys_context,
         UINT32 lockout_recovery_time);
 
 tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *duplicable_key, ESYS_TR new_parent_handle,
+        tpm2_loaded_object *duplicable_key, tpm2_loaded_object *new_parent_handle,
         const TPM2B_DATA *in_key, const TPMT_SYM_DEF_OBJECT *sym_alg,
         TPM2B_DATA **out_key, TPM2B_PRIVATE **duplicate,
-        TPM2B_ENCRYPTED_SECRET **encrypted_seed);
+        TPM2B_ENCRYPTED_SECRET **encrypted_seed, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *encryption_key_obj, TPMI_YES_NO decrypt,
