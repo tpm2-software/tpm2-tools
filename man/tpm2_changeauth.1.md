@@ -39,6 +39,12 @@ see section "Authorization Formatting".
     The output file which contains the new sensitive portion of the object whose
     auth was being changed.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the _AUTH_ to be set for
     the object specified with **-c**.
 

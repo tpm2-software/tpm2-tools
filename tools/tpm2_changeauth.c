@@ -24,6 +24,8 @@ struct changeauth_ctx {
         tpm2_session *new;
         const char *out_path;
     } object;
+
+    char *cp_hash_path;
 };
 
 static changeauth_ctx ctx;
@@ -31,12 +33,42 @@ static changeauth_ctx ctx;
 static tool_rc hierarchy_change_auth(ESYS_CONTEXT *ectx,
         const TPM2B_AUTH *new_auth) {
 
-    return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, new_auth);
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, new_auth,
+            &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
+    return tpm2_hierarchy_change_auth(ectx, &ctx.object.obj, new_auth, NULL);
 }
 
 static tool_rc nv_change_auth(ESYS_CONTEXT *ectx, const TPM2B_AUTH *new_auth) {
 
-    return tpm2_nv_change_auth(ectx, &ctx.object.obj, new_auth);
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_nv_change_auth(ectx, &ctx.object.obj, new_auth,
+            &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
+    return tpm2_nv_change_auth(ectx, &ctx.object.obj, new_auth, NULL);
 }
 
 static tool_rc object_change_auth(ESYS_CONTEXT *ectx,
@@ -48,8 +80,24 @@ static tool_rc object_change_auth(ESYS_CONTEXT *ectx,
     }
 
     TPM2B_PRIVATE *out_private = NULL;
+
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
+            new_auth, &out_private, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
     tool_rc rc = tpm2_object_change_auth(ectx, &ctx.parent.obj, &ctx.object.obj,
-            new_auth, &out_private);
+            new_auth, &out_private, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -78,6 +126,9 @@ static bool on_option(char key, char *value) {
     case 'r':
         ctx.object.out_path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
         /*no default */
     }
 
@@ -103,6 +154,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "object-context", required_argument, NULL, 'c' },
         { "parent-context", required_argument, NULL, 'C' },
         { "private",        required_argument, NULL, 'r' },
+         {"cphash",         required_argument, NULL,  0  },
     };
     *opts = tpm2_options_new("p:c:C:r:", ARRAY_LEN(topts), topts,
                              on_option, on_arg, 0);
