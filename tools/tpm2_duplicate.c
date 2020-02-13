@@ -41,6 +41,7 @@ struct tpm_duplicate_ctx {
         UINT16 s :1;
     } flags;
 
+    char *cp_hash_path;
 };
 
 static tpm_duplicate_ctx ctx = {
@@ -51,9 +52,25 @@ static tool_rc do_duplicate(ESYS_CONTEXT *ectx, TPM2B_DATA *in_key,
         TPMT_SYM_DEF_OBJECT *sym_alg, TPM2B_DATA **out_key,
         TPM2B_PRIVATE **duplicate, TPM2B_ENCRYPTED_SECRET **encrypted_seed) {
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_duplicate(ectx, &ctx.duplicable_key.object,
+            &ctx.new_parent_key.object, in_key, sym_alg, out_key, duplicate,
+            encrypted_seed, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
     return tpm2_duplicate(ectx, &ctx.duplicable_key.object,
-            ctx.new_parent_key.object.tr_handle, in_key, sym_alg, out_key,
-            duplicate, encrypted_seed);
+            &ctx.new_parent_key.object, in_key, sym_alg, out_key, duplicate,
+            encrypted_seed, NULL);
 }
 
 static bool on_option(char key, char *value) {
@@ -93,6 +110,9 @@ static bool on_option(char key, char *value) {
         ctx.enc_seed_out = value;
         ctx.flags.s = 1;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     default:
         LOG_ERR("Invalid option");
         return false;
@@ -112,6 +132,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "encrypted-seed",    required_argument, NULL, 's'},
       { "parent-context",    required_argument, NULL, 'C'},
       { "key-context",       required_argument, NULL, 'c'},
+      { "cphash",            required_argument, NULL,  0 },
     };
 
     *opts = tpm2_options_new("p:G:i:C:o:s:r:c:", ARRAY_LEN(topts), topts,
@@ -252,7 +273,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     rc = do_duplicate(ectx, ctx.flags.i ? &in_key : NULL, &sym_alg,
             ctx.flags.o ? &out_key : NULL, &duplicate, &out_sym_seed);
-    if (rc != tool_rc_success) {
+    if (rc != tool_rc_success || ctx.cp_hash_path) {
         return rc;
     }
 

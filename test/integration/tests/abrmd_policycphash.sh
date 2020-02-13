@@ -378,4 +378,49 @@ fi
 trap onerror ERR
 tpm2_flushcontext session.ctx
 
+#Test tpm2_duplicate
+create_authorized_policy
+tpm2_createprimary -C o -g sha256 -G rsa -c primary.ctx
+tpm2_create -C primary.ctx -g sha256 -G rsa -r duplicable_key.prv \
+-u duplicable_key.pub -a "sensitivedataorigin|sign|decrypt|encryptedduplication" \
+-L authorized.policy
+tpm2_load -C primary.ctx -r duplicable_key.prv -u duplicable_key.pub \
+-c duplicable_key.ctx
+tpm2_create -C primary.ctx -g sha256 -G rsa -r new_parent.prv \
+-u new_parent.pub -a "decrypt|fixedparent|fixedtpm|restricted|\
+sensitivedataorigin"
+tpm2_loadexternal -C o -u new_parent.pub -c new_parent.ctx
+dd if=/dev/urandom of=sym_key_in.bin bs=1 count=16 status=none
+tpm2_duplicate -C new_parent.ctx -c duplicable_key.ctx -G aes \
+-i sym_key_in.bin -r dupprv.bin -s dupseed.dat --cphash cp.hash
+tpm2_startauthsession -S session.ctx -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_policycommandcode -S session.ctx -L policy.cphash TPM2_CC_Duplicate
+tpm2_flushcontext session.ctx
+sign_and_verify_policycphash
+tpm2_startauthsession --policy-session -S session.ctx -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_policycommandcode -S session.ctx TPM2_CC_Duplicate
+tpm2_policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
+-t verification.tkt
+tpm2_duplicate -C new_parent.ctx -c duplicable_key.ctx -G aes \
+-i sym_key_in.bin -r dupprv.bin -s dupseed.dat -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+## attempt failing scenario
+dd if=/dev/urandom of=sym_key_in.bin bs=1 count=16 status=none
+tpm2_startauthsession --policy-session -S session.ctx -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_policycommandcode -S session.ctx TPM2_CC_Duplicate
+tpm2_policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
+-t verification.tkt
+trap - ERR
+tpm2_duplicate -C new_parent.ctx -c duplicable_key.ctx -G aes \
+-i sym_key_in.bin -r dupprv.bin -s dupseed.dat -p "session:session.ctx"
+if [ $? == 0 ];then
+  echo "ERROR: tpm2_duplicate must fail!"
+  exit 1
+fi
+trap onerror ERR
+tpm2_flushcontext session.ctx
+
 exit 0
