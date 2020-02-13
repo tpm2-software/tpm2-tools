@@ -357,4 +357,25 @@ setup_authorized_policycphash
 tpm2_unseal -c key.ctx -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_changeauth
+tpm2_clear
+tpm2_changeauth -c o ownerpassword --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_changeauth -c o ownerpassword -p session:session.ctx
+tpm2_flushcontext session.ctx
+## Negative test
+tpm2_clear
+tpm2_changeauth -c o ownerpassword --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+trap - ERR
+tpm2_changeauth -c o wrongownerpassword -p session:session.ctx
+if [ $? == 0 ];then
+  echo "ERROR: tpm2_load must fail!"
+  exit 1
+fi
+trap onerror ERR
+tpm2_flushcontext session.ctx
+
 exit 0
