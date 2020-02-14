@@ -282,13 +282,6 @@ static tool_rc check_options(void) {
 
     /* Check the tpm import specific options */
     if (ctx.import_tpm) {
-
-        if (!ctx.policy) {
-            LOG_ERR("Expected imported key policy to be specified via \"-L\","
-                    " missing option.");
-            rc = tool_rc_option_error;
-        }
-
         if (!ctx.input_seed_file) {
             LOG_ERR("Expected SymSeed to be specified via \"-s\","
                     " missing option.");
@@ -598,12 +591,16 @@ static tool_rc tpm_import(ESYS_CONTEXT *ectx) {
         return tool_rc_general_error;
     }
 
-public.publicArea.authPolicy.size = sizeof(public.publicArea.authPolicy.buffer);
-    result = files_load_bytes_from_path(ctx.policy,
+    if (ctx.policy) {
+        public.publicArea.authPolicy.size =
+            sizeof(public.publicArea.authPolicy.buffer);
+        result = files_load_bytes_from_path(ctx.policy,
         public.publicArea.authPolicy.buffer,
-            &public.publicArea.authPolicy.size);
-    if (!result) {
-        return tool_rc_general_error;
+        &public.publicArea.authPolicy.size);
+        if (!result) {
+            LOG_ERR("Failed to copy over the auth policy to the public data");
+            return tool_rc_general_error;
+        }
     }
 
     rc = tpm2_import(ectx, &ctx.parent.object, &enc_key, &public, &duplicate,

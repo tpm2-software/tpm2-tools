@@ -79,10 +79,10 @@ do_import_load() {
     if [ "$2" = "aes" ]
     then
         tpm2_import -Q -C new_parent.ctx -k sym.key -u dup.pub -i dup.dup \
-        -r dup.prv -s dup.seed -L dpolicy.dat
+        -r dup.prv -s dup.seed
     else
         tpm2_import -Q -C new_parent.ctx -u dup.pub -i dup.dup -r dup.prv \
-        -s dup.seed -L dpolicy.dat
+        -s dup.seed
     fi
     tpm2_load -Q -C new_parent.ctx -r dup.prv -u dup.pub -c dup.ctx
 }
