@@ -448,4 +448,28 @@ tpm2_import -C new_parent.ctx -u dupkey.pub -i duplicated.prv -r imported_dup.pr
 -s dup.seed -P "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_rsadecrypt
+create_authorized_policy
+tpm2_createprimary -C o -c prim.ctx
+tpm2_create -C prim.ctx -c key.ctx -u key.pub -r key.priv -L authorized.policy \
+-G rsa
+echo "plaintext" > plain.txt
+tpm2_rsaencrypt -c key.ctx -o enc.out plain.txt
+tpm2_rsadecrypt -c key.ctx -s rsaes enc.out --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_rsadecrypt -c key.ctx -s rsaes enc.out -o dec.out -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+# Attempt failing case
+dd if=/dev/urandom of=rand.om bs=1 count=256 status=none
+setup_authorized_policycphash
+trap - ERR
+tpm2_rsadecrypt -c key.ctx -s rsaes rand.om -o dec.out -p "session:session.ctx"
+if [ $? == 0 ];then
+  echo "ERROR: tpm2_rsadecrypt must fail!"
+  exit 1
+fi
+trap onerror ERR
+tpm2_flushcontext session.ctx
 exit 0

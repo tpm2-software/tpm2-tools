@@ -50,6 +50,12 @@ The key referenced by key-context is **required** to be:
     be zero, this is handled internally to the tool. No other embedded 0 bytes
     can exist or the TPM will truncate your label.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the file containing data to
     be decrypted.
 
