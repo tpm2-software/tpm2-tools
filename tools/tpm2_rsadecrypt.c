@@ -21,6 +21,8 @@ struct tpm_rsadecrypt_ctx {
     char *input_path;
     char *output_file_path;
     TPMT_RSA_DECRYPT scheme;
+
+    char *cp_hash_path;
 };
 
 static tpm_rsadecrypt_ctx ctx = {
@@ -31,8 +33,24 @@ static tool_rc rsa_decrypt_and_save(ESYS_CONTEXT *ectx) {
 
     TPM2B_PUBLIC_KEY_RSA *message = NULL;
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_rsa_decrypt(ectx, &ctx.key.object, &ctx.cipher_text,
+            &ctx.scheme, &ctx.label, &message, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+
+        return rc;
+    }
+
     tool_rc rc = tpm2_rsa_decrypt(ectx, &ctx.key.object, &ctx.cipher_text,
-            &ctx.scheme, &ctx.label, &message);
+            &ctx.scheme, &ctx.label, &message, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -75,6 +93,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     case 'l':
         return tpm2_util_get_label(value, &ctx.label);
     }
@@ -100,7 +121,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "output",      required_argument, NULL, 'o' },
       { "key-context", required_argument, NULL, 'c' },
       { "scheme",      required_argument, NULL, 's' },
-      { "label",       required_argument, NULL, 'l'},
+      { "label",       required_argument, NULL, 'l' },
+      { "cphash",      required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("p:o:c:s:l:", ARRAY_LEN(topts), topts, on_option,
@@ -113,6 +135,11 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
 
     if (!ctx.key.ctx_path) {
         LOG_ERR("Expected argument -c.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.output_file_path && ctx.cp_hash_path) {
+        LOG_ERR("Cannout decrypt when calculating cphash");
         return tool_rc_option_error;
     }
 
