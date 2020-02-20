@@ -37,6 +37,8 @@ struct tpm_gettime_ctx {
 
     const char *certify_info_path;
     const char *output_path;
+
+    char *cp_hash_path;
 };
 
 static tpm_gettime_ctx ctx = {
@@ -49,6 +51,11 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
 
     if (!ctx.signing_key.ctx_path) {
         LOG_ERR("Expected option \"-c\"");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.cp_hash_path && (ctx.output_path || ctx.certify_info_path)) {
+        LOG_ERR("Ignoring output options due to cpHash calculation");
         return tool_rc_option_error;
     }
 
@@ -130,6 +137,9 @@ static bool on_option(char key, char *value) {
     case 2:
         ctx.certify_info_path = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
         /* no default */
     }
 
@@ -148,6 +158,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "format",               required_argument, NULL, 'f' },
       { "qualification",        required_argument, NULL, 'q' },
       { "attestation",          required_argument, NULL,  2  },
+      { "cphash",               required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("p:g:o:c:f:s:P:q:", ARRAY_LEN(topts), topts,
@@ -168,13 +179,31 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     TPM2B_ATTEST *time_info = NULL;
     TPMT_SIGNATURE *signature = NULL;
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_gettime(ectx, &ctx.privacy_admin.object,
+        &ctx.signing_key.object, &ctx.qualifying_data, &ctx.in_scheme,
+        &time_info, &signature, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+
+        return rc;
+    }
+
     rc = tpm2_gettime(ectx,
             &ctx.privacy_admin.object,
             &ctx.signing_key.object,
             &ctx.qualifying_data,
             &ctx.in_scheme,
             &time_info,
-            &signature);
+            &signature,
+            NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
