@@ -32,6 +32,8 @@ struct tpm_quote_ctx {
     TPML_PCR_SELECTION pcr_selections;
     TPMS_CAPABILITY_DATA cap_data;
     tpm2_pcrs pcrs;
+
+    char *cp_hash_path;
 };
 
 static tpm_quote_ctx ctx = {
@@ -104,8 +106,24 @@ static tool_rc quote(ESYS_CONTEXT *ectx, TPML_PCR_SELECTION *pcr_selection) {
         return rc;
     }
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        rc = tpm2_quote(ectx, &ctx.key.object, &in_scheme,
+        &ctx.qualification_data, pcr_selection, &quoted, &signature, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+
+        return rc;
+    }
+
     rc = tpm2_quote(ectx, &ctx.key.object, &in_scheme, &ctx.qualification_data,
-            pcr_selection, &quoted, &signature);
+            pcr_selection, &quoted, &signature, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
@@ -226,6 +244,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -242,7 +263,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "message",        required_argument, NULL, 'm' },
         { "pcr",            required_argument, NULL, 'o' },
         { "format",         required_argument, NULL, 'f' },
-        { "hash-algorithm", required_argument, NULL, 'g' }
+        { "hash-algorithm", required_argument, NULL, 'g' },
+        { "cphash",         required_argument, NULL,  0  }
     };
 
     *opts = tpm2_options_new("c:p:l:q:s:m:o:f:g:", ARRAY_LEN(topts), topts,
@@ -258,6 +280,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     /* TODO this whole file needs to be re-done, especially the option validation */
     if (!ctx.pcr_selections.count) {
         LOG_ERR("Expected -l to be specified.");
+        return tool_rc_option_error;
+    }
+
+    if (ctx.cp_hash_path && (ctx.signature_path || ctx.message_path)) {
+        LOG_ERR("Cannot produce output when calculating cpHash");
         return tool_rc_option_error;
     }
 
