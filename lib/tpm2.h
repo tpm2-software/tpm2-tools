@@ -427,7 +427,8 @@ tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
         const TPM2B_DATA *qualifying_data,
         const TPMT_SIG_SCHEME *scheme,
         TPM2B_ATTEST **time_info,
-        TPMT_SIGNATURE **signature);
+        TPMT_SIGNATURE **signature,
+        TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_getsapicontext(ESYS_CONTEXT *esys_context,
     TSS2_SYS_CONTEXT **sys_context);

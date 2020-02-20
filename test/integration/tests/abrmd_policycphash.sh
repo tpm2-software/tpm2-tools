@@ -522,4 +522,17 @@ tpm2_quote -Q -c key.ctx -l 0x0004:16,17,18+0x000b:16,17,18 \
 -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_gettime
+create_authorized_policy
+tpm2_createprimary -C e -c primary.ctx
+tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx \
+-c rsa.ctx -L authorized.policy
+tpm2_gettime -c rsa.ctx -q "cafebabe" --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_gettime -c rsa.ctx -q "cafebabe" -o attest.sig --attestation attest.data \
+-p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0

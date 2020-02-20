@@ -89,6 +89,12 @@ clock_info:
 
     The attestation data of the type TPMS_ATTEST signed with signing key.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the file data for sign.
 
 ## References
