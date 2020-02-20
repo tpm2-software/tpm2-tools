@@ -37,6 +37,8 @@ struct tpm_certify_ctx {
 
     TPMI_ALG_HASH halg;
     tpm2_convert_sig_fmt sig_fmt;
+
+    char *cp_hash_path;
 };
 
 static tpm_certify_ctx ctx = {
@@ -110,9 +112,26 @@ static tool_rc certify_and_save_data(ESYS_CONTEXT *ectx) {
     TPM2B_ATTEST *certify_info;
     TPMT_SIGNATURE *signature;
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_certify(ectx, &ctx.certified_key.object,
+        &ctx.signing_key.object, &qualifying_data, &scheme, &certify_info,
+        &signature, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+
+        return rc;
+    }
+
     tmp_rc = tpm2_certify(ectx, &ctx.certified_key.object,
             &ctx.signing_key.object, &qualifying_data, &scheme, &certify_info,
-            &signature);
+            &signature, NULL);
     if (tmp_rc != tool_rc_success) {
         return tmp_rc;
     }
@@ -168,6 +187,9 @@ static bool on_option(char key, char *value) {
         ctx.file_path.sig = value;
         ctx.flags.s = 1;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     case 'f':
         ctx.flags.f = 1;
         ctx.sig_fmt = tpm2_convert_sig_fmt_from_optarg(value);
@@ -191,6 +213,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "attestation",          required_argument, NULL, 'o' },
       { "signature",            required_argument, NULL, 's' },
       { "format",               required_argument, NULL, 'f' },
+      { "cphash",               required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("P:p:g:o:s:c:C:f:", ARRAY_LEN(topts), topts,
@@ -204,6 +227,11 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     if ((!ctx.certified_key.ctx_path) && (!ctx.signing_key.ctx_path)
             && (ctx.flags.g) && (ctx.flags.o) && (ctx.flags.s)) {
+        return tool_rc_option_error;
+    }
+
+    if (ctx.cp_hash_path && (ctx.file_path.attest || ctx.file_path.sig)) {
+        LOG_ERR("Cannot specify output options when calculating cpHash");
         return tool_rc_option_error;
     }
 
