@@ -1803,7 +1803,7 @@ tool_rc tpm2_encryptdecrypt(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_hierarchycontrol(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy, TPMI_RH_ENABLES enable,
-        TPMI_YES_NO state) {
+        TPMI_YES_NO state, TPM2B_DIGEST *cp_hash) {
 
     ESYS_TR shandle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
@@ -1813,6 +1813,45 @@ tool_rc tpm2_hierarchycontrol(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_HierarchyControl_Prepare(sys_context,
+        auth_hierarchy->handle, enable, state);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_HierarchyControl_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, auth_hierarchy->tr_handle,
+            &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_hierarchycontrol_free_name1;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(auth_hierarchy->session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, NULL, NULL,
+            tpm2_session_get_authhash(auth_hierarchy->session), cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+tpm2_hierarchycontrol_free_name1:
+        Esys_Free(name1);
+        goto tpm2_hierarchycontrol_skip_esapi_call;
+    }
+
+
     TSS2_RC rval = Esys_HierarchyControl(esys_context, auth_hierarchy->tr_handle,
             shandle, ESYS_TR_NONE, ESYS_TR_NONE, enable, state);
     if (rval != TPM2_RC_SUCCESS && rval != TPM2_RC_INITIALIZE) {
@@ -1820,7 +1859,8 @@ tool_rc tpm2_hierarchycontrol(ESYS_CONTEXT *esys_context,
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_hierarchycontrol_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_hmac(ESYS_CONTEXT *esys_context, tpm2_loaded_object *hmac_key_obj,

@@ -557,4 +557,14 @@ setup_owner_policy
 tpm2_createprimary -C o -q "cafebabe" -P "session:session.ctx" -c prim.ctx
 tpm2_flushcontext session.ctx
 
+# Test tpm2_hierarchycontrol
+tpm2_clear
+tpm2_hierarchycontrol -C p shEnable clear --cphash cp.hash
+generate_policycphash
+tpm2_setprimarypolicy -C p -L policy.cphash -g sha256
+tpm2_startauthsession -S session.ctx --policy-session -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_hierarchycontrol -C p shEnable clear -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0

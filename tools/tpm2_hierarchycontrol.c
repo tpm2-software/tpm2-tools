@@ -5,6 +5,8 @@
 #include <tpm2.h>
 #include "tpm2_tool.h"
 
+#include "files.h"
+
 typedef struct hierarchycontrol_ctx hierarchycontrol_ctx;
 struct hierarchycontrol_ctx {
     struct {
@@ -15,6 +17,8 @@ struct hierarchycontrol_ctx {
 
     TPMI_RH_ENABLES enable;
     TPMI_YES_NO state;
+
+    char *cp_hash_path;
 };
 
 static hierarchycontrol_ctx ctx = {
@@ -22,6 +26,20 @@ static hierarchycontrol_ctx ctx = {
 };
 
 static tool_rc hierarchycontrol(ESYS_CONTEXT *ectx) {
+
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object,
+        ctx.enable, ctx.state, &cp_hash);
+        if (rc == tool_rc_success) {
+            bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+            if (!result) {
+                LOG_ERR("Failed to save cp hash");
+                rc = tool_rc_general_error;
+            }
+        }
+        return rc;
+    }
 
     LOG_INFO ("Using hierarchy %s to \'%s\' TPMA_STARTUP_CLEAR bit (%s)",
         ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_OWNER ? "TPM2_RH_OWNER" :
@@ -33,7 +51,7 @@ static tool_rc hierarchycontrol(ESYS_CONTEXT *ectx) {
         ctx.state ? "SET" : "CLEAR");
 
     tool_rc rc = tpm2_hierarchycontrol(ectx, &ctx.auth_hierarchy.object,
-        ctx.enable, ctx.state);
+        ctx.enable, ctx.state, NULL);
 
     if (rc != tool_rc_success) {
         LOG_ERR("Failed hierarchycontrol operation.");
@@ -87,6 +105,9 @@ static bool on_option(char key, char *value) {
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -97,6 +118,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "hierarchy",      required_argument, NULL, 'C' },
         { "hierarchy-auth", required_argument, NULL, 'P' },
+        { "cphash",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
@@ -110,7 +132,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, true,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
             TPM2_HANDLE_FLAGS_P | TPM2_HANDLE_FLAGS_O | TPM2_HANDLE_FLAGS_E);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
@@ -184,4 +206,10 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     return hierarchycontrol(ectx);
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
+    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }
