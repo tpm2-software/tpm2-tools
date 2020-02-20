@@ -2890,7 +2890,8 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *signingkey_obj, tpm2_loaded_object *certifiedkey_obj,
     TPM2B_DIGEST *creation_hash, TPMT_SIG_SCHEME *in_scheme,
     TPMT_TK_CREATION *creation_ticket, TPM2B_ATTEST **certify_info,
-    TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier) {
+    TPMT_SIGNATURE **signature, TPM2B_DATA *policy_qualifier,
+    TPM2B_DIGEST *cp_hash) {
 
     ESYS_TR signingkey_obj_session_handle = ESYS_TR_NONE;
     tool_rc rc = tpm2_auth_util_get_shandle(esys_context,
@@ -2898,6 +2899,52 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
             &signingkey_obj_session_handle);
     if (rc != tool_rc_success) {
         return rc;
+    }
+
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        TSS2_RC rval = Tss2_Sys_CertifyCreation_Prepare(sys_context,
+        signingkey_obj->handle, certifiedkey_obj->handle, policy_qualifier,
+        creation_hash, in_scheme, creation_ticket);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_CertifyCreation_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, signingkey_obj->tr_handle, &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_certifycreation_free_name1;
+        }
+
+        TPM2B_NAME *name2 = NULL;
+        rc = tpm2_tr_get_name(esys_context, certifiedkey_obj->tr_handle, &name2);
+        if (rc != tool_rc_success) {
+            goto tpm2_certifycreation_free_name1_name2;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(signingkey_obj->session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
+            tpm2_session_get_authhash(signingkey_obj->session), cp_hash);
+
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+tpm2_certifycreation_free_name1_name2:
+        Esys_Free(name2);
+tpm2_certifycreation_free_name1:
+        Esys_Free(name1);
+        goto tpm2_certifycreation_skip_esapi_call;
     }
 
     TSS2_RC rval = Esys_CertifyCreation(esys_context, signingkey_obj->tr_handle,
@@ -2909,7 +2956,8 @@ tool_rc tpm2_certifycreation(ESYS_CONTEXT *esys_context,
         return tool_rc_from_tpm(rval);
     }
 
-    return tool_rc_success;
+tpm2_certifycreation_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,

@@ -493,4 +493,20 @@ tpm2_certify -c prim.ctx -C key.ctx -g sha256 -o attest.out -s sig.out \
 -p "session:session.ctx" -P primarypass
 tpm2_flushcontext session.ctx
 
+# Test tpm2_certifycreation
+create_authorized_policy
+tpm2_createprimary -C o -c prim.ctx --creation-data create.dat \
+-d create.dig -t create.ticket
+tpm2_create -G rsa -u rsa.pub -r rsa.priv -C prim.ctx -c signingkey.ctx \
+-L authorized.policy
+tpm2_certifycreation -C signingkey.ctx -c prim.ctx -d create.dig \
+-t create.ticket -g sha256 -f plain -s rsassa --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_certifycreation -C signingkey.ctx -c prim.ctx -d create.dig \
+-t create.ticket -g sha256 -o sig.nature --attestation attestat.ion -f plain \
+-s rsassa -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
