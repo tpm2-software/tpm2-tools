@@ -549,4 +549,12 @@ tpm2_sign -c rsa.ctx -g sha256 message.dat -o signature.dat \
 -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_createprimary
+tpm2_clear
+tpm2_createprimary -C o -q "cafebabe" --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_createprimary -C o -q "cafebabe" -P "session:session.ctx" -c prim.ctx
+tpm2_flushcontext session.ctx
+
 exit 0

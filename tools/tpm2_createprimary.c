@@ -36,6 +36,8 @@ struct tpm_createprimary_ctx {
     char *halg;
     char *attrs;
     char *policy;
+
+    char *cp_hash_path;
 };
 
 static tpm_createprimary_ctx ctx = {
@@ -110,6 +112,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 2:
+        ctx.cp_hash_path = value;
+        break;
         /* no default */
     }
 
@@ -134,6 +139,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "creation-hash",  required_argument, NULL, 'd' },
         { "outside-info",   required_argument, NULL, 'q' },
         { "pcr-list",       required_argument, NULL, 'l' },
+        { "cphash",         required_argument, NULL,  2  },
     };
 
     *opts = tpm2_options_new("C:P:p:g:G:c:L:a:u:t:d:q:l:", ARRAY_LEN(topts), topts,
@@ -144,6 +150,12 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
 tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
+
+    if (ctx.cp_hash_path && (ctx.creation_data_file || ctx.creation_hash_file ||
+    ctx.creation_ticket_file || ctx.context_file)) {
+        LOG_ERR("Cannot generate outputs when calculating cpHash");
+        return tool_rc_option_error;
+    }
 
     tool_rc rc = tpm2_auth_util_from_optarg(ectx, ctx.parent.auth_str,
             &ctx.parent.session, false);
@@ -194,7 +206,23 @@ skipped_outside_info:
             return tool_rc_general_error;
         }
     }
-    rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata);
+
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session,
+        &ctx.objdata, &cp_hash);
+        if (rc == tool_rc_success) {
+            bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+            if (!result) {
+                LOG_ERR("Failed to save cp hash");
+                rc = tool_rc_general_error;
+            }
+        }
+        return rc;
+    }
+
+    rc = tpm2_hierarchy_create_primary(ectx, ctx.parent.session, &ctx.objdata,
+    NULL);
     if (rc != tool_rc_success) {
         return rc;
     }

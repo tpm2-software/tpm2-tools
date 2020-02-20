@@ -189,7 +189,7 @@ static tool_rc create_ek_handle(ESYS_CONTEXT *ectx) {
     }
 
     tool_rc rc = tpm2_hierarchy_create_primary(ectx,
-        ctx.auth_endorse_hierarchy.object.session, &ctx.objdata);
+        ctx.auth_endorse_hierarchy.object.session, &ctx.objdata, NULL);
     if (rc != tool_rc_success) {
         return rc;
     }
