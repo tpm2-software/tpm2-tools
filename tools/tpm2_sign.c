@@ -36,6 +36,8 @@ struct tpm_sign_ctx {
         UINT8 t :1;
         UINT8 o :1;
     } flags;
+
+    char *cp_hash_path;
 };
 
 static tpm_sign_ctx ctx = {
@@ -48,8 +50,24 @@ static tool_rc sign_and_save(ESYS_CONTEXT *ectx) {
     TPMT_SIGNATURE *signature;
     bool result;
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest,
+            &ctx.in_scheme, &ctx.validation, &signature, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+
+        return rc;
+    }
+
     tool_rc rc = tpm2_sign(ectx, &ctx.signing_key.object, ctx.digest,
-            &ctx.in_scheme, &ctx.validation, &signature);
+            &ctx.in_scheme, &ctx.validation, &signature, NULL);
     if (rc != tool_rc_success) {
         goto out;
     }
@@ -72,12 +90,17 @@ static tool_rc init(ESYS_CONTEXT *ectx) {
 
     bool option_fail = false;
 
+    if (ctx.cp_hash_path && ctx.output_path) {
+        LOG_ERR("Cannout output signature when calculating cpHash");
+        return tool_rc_option_error;
+    }
+
     if (!ctx.signing_key.ctx_path) {
         LOG_ERR("Expected option c");
         option_fail = true;
     }
 
-    if (!ctx.flags.o) {
+    if (!ctx.flags.o && !ctx.cp_hash_path) {
         LOG_ERR("Expected option o");
         option_fail = true;
     }
@@ -186,6 +209,9 @@ static bool on_option(char key, char *value) {
         ctx.output_path = value;
         ctx.flags.o = 1;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     case 'f':
         ctx.sig_format = tpm2_convert_sig_fmt_from_optarg(value);
 
@@ -220,7 +246,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "signature",            required_argument, NULL, 'o' },
       { "ticket",               required_argument, NULL, 't' },
       { "key-context",          required_argument, NULL, 'c' },
-      { "format",               required_argument, NULL, 'f' }
+      { "format",               required_argument, NULL, 'f' },
+      { "cphash",               required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("p:g:dt:o:c:f:s:", ARRAY_LEN(topts), topts,

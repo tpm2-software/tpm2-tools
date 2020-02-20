@@ -535,4 +535,18 @@ tpm2_gettime -c rsa.ctx -q "cafebabe" -o attest.sig --attestation attest.data \
 -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_sign
+create_authorized_policy
+tpm2_createprimary -C e -c primary.ctx
+tpm2_create -G rsa -u rsa.pub -r rsa.priv -C primary.ctx -c rsa.ctx \
+-L authorized.policy
+echo "my message" > message.dat
+tpm2_sign -c rsa.ctx -g sha256 message.dat --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_sign -c rsa.ctx -g sha256 message.dat -o signature.dat \
+-p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
