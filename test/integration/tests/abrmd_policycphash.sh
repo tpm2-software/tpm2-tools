@@ -472,4 +472,25 @@ if [ $? == 0 ];then
 fi
 trap onerror ERR
 tpm2_flushcontext session.ctx
+
+# Test tpm2_certify
+create_authorized_policy
+tpm2_createprimary -C o -G rsa -g sha256 -c prim.ctx -p primarypass
+tpm2_create -C prim.ctx -c key.ctx -G rsa  -u key.pub -r key.priv \
+-L authorized.policy -P primarypass
+tpm2_certify -c prim.ctx -C key.ctx -g sha256 --cphash cp.hash
+tpm2_startauthsession -S session.ctx -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_policycommandcode -S session.ctx -L policy.cphash TPM2_CC_Certify
+tpm2_flushcontext session.ctx
+sign_and_verify_policycphash
+tpm2_startauthsession --policy-session -S session.ctx -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_policycommandcode -S session.ctx TPM2_CC_Certify
+tpm2_policyauthorize -S session.ctx -i policy.cphash -n signing_key.name \
+-t verification.tkt
+tpm2_certify -c prim.ctx -C key.ctx -g sha256 -o attest.out -s sig.out \
+-p "session:session.ctx" -P primarypass
+tpm2_flushcontext session.ctx
+
 exit 0
