@@ -509,4 +509,17 @@ tpm2_certifycreation -C signingkey.ctx -c prim.ctx -d create.dig \
 -s rsassa -P "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_quote
+create_authorized_policy
+tpm2_createprimary -C e -c primary.ctx
+tpm2_create -C primary.ctx -u key.pub -r key.priv -c key.ctx \
+-L authorized.policy
+tpm2_quote -Q -c key.ctx -l 0x0004:16,17,18+0x000b:16,17,18 --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_quote -Q -c key.ctx -l 0x0004:16,17,18+0x000b:16,17,18 \
+-p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
