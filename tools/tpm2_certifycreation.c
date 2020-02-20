@@ -37,6 +37,8 @@ struct tpm_certifycreation_ctx {
     char *certify_info_path;
 
     const char *policy_qualifier_data;
+
+    char *cp_hash_path;
 };
 
 static tpm_certifycreation_ctx ctx = {
@@ -109,6 +111,9 @@ static bool on_option(char key, char *value) {
     case 0:
         ctx.certify_info_path = value;
         break;
+    case 1:
+        ctx.cp_hash_path = value;
+        break;
     case 'q':
         ctx.policy_qualifier_data = value;
         break;
@@ -133,6 +138,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "signature",            required_argument, NULL, 'o' },
       { "attestation",          required_argument, NULL,  0  },
       { "qualification",        required_argument, NULL, 'q' },
+      { "cphash",               required_argument, NULL,  1  },
     };
 
     *opts = tpm2_options_new("C:P:c:d:t:g:s:f:o:q:", ARRAY_LEN(topts), topts,
@@ -142,6 +148,11 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 }
 
 static bool is_input_options_args_valid(void) {
+
+    if (ctx.cp_hash_path && (ctx.certify_info_path || ctx.signature_path)) {
+        LOG_ERR("Cannot generate outputs when calculating cpHash.");
+        return false;
+    }
 
     if (!ctx.signing_key.ctx_path) {
         LOG_ERR("Must specify the signing key '-C'.");
@@ -158,12 +169,12 @@ static bool is_input_options_args_valid(void) {
         return false;
     }
 
-    if (!ctx.signature_path) {
+    if (!ctx.signature_path && !ctx.cp_hash_path) {
         LOG_ERR("Must specify the file path to save signature '-o'");
         return false;
     }
 
-    if (!ctx.certify_info_path) {
+    if (!ctx.certify_info_path && !ctx.cp_hash_path) {
         LOG_ERR("Must specify file path to save attestation '--attestation'");
         return false;
     }
@@ -281,9 +292,25 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     //ESAPI call
     TPMT_SIGNATURE *signature = NULL;
     TPM2B_ATTEST *certify_info = NULL;
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        rc = tpm2_certifycreation(ectx, &ctx.signing_key.object,
+        &ctx.certified_key.object, &creation_hash, &in_scheme, &creation_ticket,
+        &certify_info, &signature, &policy_qualifier, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
     rc = tpm2_certifycreation(ectx, &ctx.signing_key.object,
         &ctx.certified_key.object, &creation_hash, &in_scheme, &creation_ticket,
-        &certify_info, &signature, &policy_qualifier);
+        &certify_info, &signature, &policy_qualifier, NULL);
     if (rc != tool_rc_success) {
         goto tpm2_tool_onrun_out;
     }

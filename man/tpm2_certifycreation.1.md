@@ -63,6 +63,12 @@ created with either **TPM2_CreatePrimary** or **TPM2_Create** commands.
     Optional, the policy qualifier data that the signer can choose to include in the
     signature. Can either be a path or hex string.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
