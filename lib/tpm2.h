@@ -420,7 +420,7 @@ tool_rc tpm2_nvcertify(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_setprimarypolicy(ESYS_CONTEXT *esys_context,
     tpm2_loaded_object *hierarchy_object, TPM2B_DIGEST *auth_policy,
-    TPMI_ALG_HASH hash_algorithm);
+    TPMI_ALG_HASH hash_algorithm, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_gettime(ESYS_CONTEXT *ectx,
         tpm2_loaded_object *privacy_admin,

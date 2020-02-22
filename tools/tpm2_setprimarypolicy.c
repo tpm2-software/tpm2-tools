@@ -21,6 +21,8 @@ struct tpm_setprimarypolicy_ctx {
     const char *policy_path;
 
     TPMI_ALG_HASH hash_algorithm;
+
+    char *cp_hash_path;
 };
 
 static tpm_setprimarypolicy_ctx ctx = {
@@ -55,6 +57,9 @@ static bool on_option(char key, char *value) {
     case 'g':
         result = set_digest_algorithm(value);
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return result;
@@ -67,6 +72,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth",           required_argument, NULL, 'P' },
         { "policy",         required_argument, NULL, 'L' },
         { "hash-algorithm", required_argument, NULL, 'g' },
+        { "cphash",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:L:g:", ARRAY_LEN(topts), topts,
@@ -89,6 +95,10 @@ static bool is_input_options_args_valid(void) {
         if (!result || file_size == 0) {
             result = false;
         }
+    }
+
+    if (ctx.cp_hash_path) {
+        LOG_WARN("Calculating cpHash. Exiting without setting primary policy.");
     }
 
     return result;
@@ -149,9 +159,23 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     }
 
     //ESAPI call
-    rc = tpm2_setprimarypolicy(ectx, &ctx.hierarchy.object, auth_policy,
-        ctx.hash_algorithm);
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        rc = tpm2_setprimarypolicy(ectx, &ctx.hierarchy.object, auth_policy,
+        ctx.hash_algorithm, &cp_hash);
+        if (rc != tool_rc_success) {
+            goto out;
+        }
 
+        result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        goto out;
+    }
+    rc = tpm2_setprimarypolicy(ectx, &ctx.hierarchy.object, auth_policy,
+        ctx.hash_algorithm, NULL);
+out:
     free(auth_policy);
     return rc;
 }
