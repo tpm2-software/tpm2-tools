@@ -567,4 +567,17 @@ tpm2_policycphash -S session.ctx --cphash cp.hash
 tpm2_hierarchycontrol -C p shEnable clear -P "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_setprimarypolicy
+tpm2_startauthsession -S session.ctx
+tpm2_policyauthvalue -S session.ctx -L policy.authvalue
+tpm2_flushcontext session.ctx
+create_authorized_policy
+tpm2_setprimarypolicy -C o -L authorized.policy -g sha256
+tpm2_setprimarypolicy -C o -L policy.authvalue -g sha256 --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_setprimarypolicy -C o -L policy.authvalue -g sha256 -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
