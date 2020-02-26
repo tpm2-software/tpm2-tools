@@ -687,7 +687,7 @@ tool_rc files_save_ESYS_TR(ESYS_CONTEXT *ectx, ESYS_TR handle, const char *path)
         size_t offset = 0; \
         TSS2_RC rc = Tss2_MU_##type##_Unmarshal(buffer, size, &offset, name); \
         if (rc != TSS2_RC_SUCCESS) { \
-            LOG_ERR("Error serializing "str(name)" structure: 0x%x", rc); \
+            LOG_ERR("Error deserializing "str(name)" structure: 0x%x", rc); \
             LOG_ERR("The input file needs to be a valid "xstr(type)" data structure"); \
             return false; \
         } \
