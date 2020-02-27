@@ -238,11 +238,12 @@ tool_rc tpm2_clearcontrol(ESYS_CONTEXT *esys_context,
 tool_rc tpm2_clockrateadjust(ESYS_CONTEXT *ectx, tpm2_loaded_object *object,
         TPM2_CLOCK_ADJUST rate_adjust);
 
-tool_rc tpm2_dictionarylockout(ESYS_CONTEXT *esys_context,
-        tpm2_loaded_object *auth_hierarchy,
-        bool clear_lockout,
-        bool setup_parameters, UINT32 max_tries, UINT32 recovery_time,
-        UINT32 lockout_recovery_time);
+tool_rc tpm2_dictionarylockout_reset(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *auth_hierarchy);
+
+tool_rc tpm2_dictionarylockout_setup(ESYS_CONTEXT *esys_context,
+        tpm2_loaded_object *auth_hierarchy, UINT32 max_tries,
+        UINT32 recovery_time, UINT32 lockout_recovery_time);
 
 tool_rc tpm2_duplicate(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *duplicable_key, tpm2_loaded_object *new_parent_handle,

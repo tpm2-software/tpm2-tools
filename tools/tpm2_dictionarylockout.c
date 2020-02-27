@@ -107,9 +107,20 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
-    return tpm2_dictionarylockout(ectx, &ctx.auth_hierarchy.object,
-            ctx.clear_lockout, ctx.setup_parameters, ctx.max_tries,
-            ctx.recovery_time, ctx.lockout_recovery_time);
+    /*
+     * If setup params and clear lockout are both required, clear lockout should
+     * precede parameters setup.
+     */
+    if (ctx.clear_lockout) {
+        return tpm2_dictionarylockout_reset(ectx, &ctx.auth_hierarchy.object);
+    }
+
+    if (ctx.setup_parameters) {
+        return tpm2_dictionarylockout_setup(ectx, &ctx.auth_hierarchy.object,
+        ctx.max_tries, ctx.recovery_time, ctx.lockout_recovery_time);
+    }
+
+    return tool_rc_success;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
