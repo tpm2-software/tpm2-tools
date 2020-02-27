@@ -590,4 +590,15 @@ tpm2_policycphash -S session.ctx --cphash cp.hash
 tpm2_clearcontrol -C l s -P "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_dictionarylockout
+tpm2_clearcontrol -C p c
+tpm2_clear
+tpm2_dictionarylockout -s -n 5 -t 6 -l 7 --cphash cp.hash
+generate_policycphash
+tpm2_setprimarypolicy -C l -L policy.cphash -g sha256
+tpm2_startauthsession -S session.ctx --policy-session -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_dictionarylockout -s -n 5 -t 6 -l 7 --cphash cp.hash -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
