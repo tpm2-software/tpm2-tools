@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_options.h"
@@ -19,6 +20,7 @@ struct dictionarylockout_ctx {
     UINT32 lockout_recovery_time;
     bool clear_lockout;
     bool setup_parameters;
+    char *cp_hash_path;
 };
 
 static dictionarylockout_ctx ctx = {
@@ -67,6 +69,9 @@ static bool on_option(char key, char *value) {
             return false;
         }
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -81,6 +86,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
         { "auth",                  required_argument, NULL, 'p' },
         { "clear-lockout",         no_argument,       NULL, 'c' },
         { "setup-parameters",      no_argument,       NULL, 's' },
+        { "cphash",                required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("n:t:l:p:cs", ARRAY_LEN(topts), topts, on_option,
@@ -107,20 +113,50 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return rc;
     }
 
+    TPM2B_DIGEST cp_hash = { .size = 0 };
+    if (ctx.cp_hash_path && ctx.clear_lockout) {
+        LOG_WARN("Calculating cpHash. Exiting without resetting dictionary lockout");
+        tool_rc rc = tpm2_dictionarylockout_reset(ectx,
+        &ctx.auth_hierarchy.object, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+        goto out;
+    }
+
+    if (ctx.cp_hash_path && ctx.setup_parameters) {
+        LOG_WARN("Calculating cpHash. Exiting without setting dictionary lockout");
+        tool_rc rc = tpm2_dictionarylockout_setup(ectx,
+        &ctx.auth_hierarchy.object, ctx.max_tries, ctx.recovery_time,
+        ctx.lockout_recovery_time, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+        goto out;
+    }
+
     /*
      * If setup params and clear lockout are both required, clear lockout should
      * precede parameters setup.
      */
     if (ctx.clear_lockout) {
-        return tpm2_dictionarylockout_reset(ectx, &ctx.auth_hierarchy.object);
+        return tpm2_dictionarylockout_reset(ectx, &ctx.auth_hierarchy.object,
+        NULL);
     }
 
     if (ctx.setup_parameters) {
         return tpm2_dictionarylockout_setup(ectx, &ctx.auth_hierarchy.object,
-        ctx.max_tries, ctx.recovery_time, ctx.lockout_recovery_time);
+        ctx.max_tries, ctx.recovery_time, ctx.lockout_recovery_time, NULL);
     }
 
-    return tool_rc_success;
+out:
+    if (ctx.cp_hash_path) {
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+    }
+    return rc;
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {

@@ -45,6 +45,12 @@ clear dictionary-attack-lockout state.
 
     The authorization value for the lockout handle.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
 ## References
 
 [authorization formatting](common/authorizations.md) details the methods for
