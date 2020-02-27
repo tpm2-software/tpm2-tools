@@ -580,6 +580,16 @@ setup_authorized_policycphash
 tpm2_setprimarypolicy -C o -L policy.authvalue -g sha256 -P "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test tpm2_clear
+tpm2_clear
+tpm2_clear -c l --cphash cp.hash
+generate_policycphash
+tpm2_setprimarypolicy -C l -L policy.cphash -g sha256
+tpm2_startauthsession -S session.ctx --policy-session -g sha256
+tpm2_policycphash -S session.ctx --cphash cp.hash
+tpm2_clear -c l "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 # Test tpm2_clearcontrol
 tpm2_clear
 tpm2_clearcontrol -C l s --cphash cp.hash

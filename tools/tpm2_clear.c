@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 
+#include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_tool.h"
@@ -12,6 +13,7 @@ struct clear_ctx {
         tpm2_loaded_object object;
     } auth_hierarchy;
 
+    char *cp_hash_path;
 };
 
 static clear_ctx ctx = {
@@ -23,6 +25,9 @@ static bool on_option(char key, char *value) {
     switch (key) {
     case 'c':
         ctx.auth_hierarchy.ctx_path = value;
+        break;
+    case 0:
+        ctx.cp_hash_path = value;
         break;
     }
 
@@ -50,6 +55,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "auth-hierarchy",     no_argument,       NULL, 'c' },
+        { "cphash",             required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("c:", ARRAY_LEN(topts), topts, on_option, on_arg,
@@ -63,14 +69,29 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, true,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
             TPM2_HANDLE_FLAGS_L | TPM2_HANDLE_FLAGS_P);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid lockout authorization");
         return rc;
     }
 
-    return tpm2_clear(ectx, &ctx.auth_hierarchy.object);
+    if (ctx.cp_hash_path) {
+        LOG_WARN("Generating cpHash. Exiting without executing clear.");
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_clear(ectx, &ctx.auth_hierarchy.object, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
+    return tpm2_clear(ectx, &ctx.auth_hierarchy.object, NULL);
 }
 
 tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
