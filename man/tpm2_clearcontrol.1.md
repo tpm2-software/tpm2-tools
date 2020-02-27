@@ -35,6 +35,12 @@ tpm2_clear command.
     The authorization value of the hierarchy specified with **-C**.
     This tool only respects the *Password* and *HMAC* options.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT**  ** Specify an integer 0|1 or string c|s to clear or set the
     disableClear attribute.
 
