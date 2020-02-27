@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_tool.h"
@@ -15,6 +16,8 @@ struct clearcontrol_ctx {
     } auth_hierarchy;
 
     TPMI_YES_NO disable_clear;
+
+    char *cp_hash_path;
 };
 
 static clearcontrol_ctx ctx = {
@@ -29,8 +32,23 @@ static tool_rc clearcontrol(ESYS_CONTEXT *ectx) {
              ctx.auth_hierarchy.object.tr_handle == ESYS_TR_RH_PLATFORM ?
                 "TPM2_RH_PLATFORM" : "TPM2_RH_LOCKOUT");
 
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        tool_rc rc = tpm2_clearcontrol(ectx, &ctx.auth_hierarchy.object,
+        ctx.disable_clear, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
     return tpm2_clearcontrol(ectx, &ctx.auth_hierarchy.object,
-            ctx.disable_clear);
+    ctx.disable_clear, NULL);
 }
 
 bool on_arg(int argc, char **argv) {
@@ -81,6 +99,9 @@ static bool on_option(char key, char *value) {
     case 'P':
         ctx.auth_hierarchy.auth_str = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     }
 
     return true;
@@ -91,6 +112,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
     const struct option topts[] = {
         { "hierarchy",      required_argument, NULL, 'C' },
         { "auth",           required_argument, NULL, 'P' },
+        { "cphash",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:", ARRAY_LEN(topts), topts, on_option, on_arg,
@@ -104,7 +126,7 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
     UNUSED(flags);
 
     tool_rc rc = tpm2_util_object_load_auth(ectx, ctx.auth_hierarchy.ctx_path,
-            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, true,
+            ctx.auth_hierarchy.auth_str, &ctx.auth_hierarchy.object, false,
             TPM2_HANDLE_FLAGS_P | TPM2_HANDLE_FLAGS_L);
     if (rc != tool_rc_success) {
         LOG_ERR("Invalid authorization");
@@ -118,5 +140,14 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         return tool_rc_general_error;
     }
 
+    if (ctx.cp_hash_path) {
+        LOG_WARN("Calculating cpHash. Exiting without configuring disableClear");
+    }
+
     return clearcontrol(ectx);
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+    return tpm2_session_close(&ctx.auth_hierarchy.object.session);
 }
