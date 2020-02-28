@@ -49,6 +49,12 @@ be evicted from it's permenent handle location.
     raw persistent handle should be verified that the object it points to is
     as expected.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
   * **ARGUMENT** the command line argument specifies the persistent handle to
     save the transient object to.
 

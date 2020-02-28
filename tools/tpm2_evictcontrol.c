@@ -30,6 +30,7 @@ struct tpm_evictcontrol_ctx {
         UINT8 c :1;
         UINT8 o :1;
     } flags;
+    char *cp_hash_path;
 };
 
 static tpm_evictcontrol_ctx ctx = {
@@ -52,6 +53,9 @@ static bool on_option(char key, char *value) {
     case 'o':
         ctx.output_arg = value;
         ctx.flags.o = 1;
+        break;
+    case 0:
+        ctx.cp_hash_path = value;
         break;
     }
 
@@ -85,6 +89,7 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
       { "auth",           required_argument, NULL, 'P' },
       { "object-context", required_argument, NULL, 'c' },
       { "output",         required_argument, NULL, 'o' },
+      { "cphash",         required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("C:P:c:o:", ARRAY_LEN(topts), topts, on_option,
@@ -146,14 +151,29 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
         goto out;
     }
 
+    ESYS_TR out_tr;
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        LOG_WARN("Calculating cpHash. Exiting without evicting objects.");
+        tool_rc rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
+        &ctx.to_persist_key.object, ctx.persist_handle, &out_tr, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
     /*
      * ESAPI is smart enough that if the object is persistent, to ignore the argument
      * for persistent handle. Thus we can use ESYS_TR output to determine if it's
      * evicted or not.
      */
-    ESYS_TR out_tr;
     rc = tpm2_evictcontrol(ectx, &ctx.auth_hierarchy.object,
-            &ctx.to_persist_key.object, ctx.persist_handle, &out_tr);
+            &ctx.to_persist_key.object, ctx.persist_handle, &out_tr, NULL);
     if (rc != tool_rc_success) {
         goto out;
     }
