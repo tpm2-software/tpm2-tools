@@ -601,4 +601,13 @@ tpm2_policycphash -S session.ctx --cphash cp.hash
 tpm2_dictionarylockout -s -n 5 -t 6 -l 7 --cphash cp.hash -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test evictcontrol
+tpm2_clear
+tpm2_createprimary -C o -c prim.ctx
+tpm2_evictcontrol -C o -c prim.ctx 0x81010001 --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_evictcontrol -C o -c prim.ctx 0x81010001 -P "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
