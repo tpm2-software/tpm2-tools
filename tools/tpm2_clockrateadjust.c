@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #include <string.h>
 
+#include "files.h"
 #include "log.h"
 #include "tpm2.h"
 #include "tpm2_tool.h"
@@ -12,6 +13,7 @@ struct tpm2_setclock_ctx {
     const char *auth_hierarchy;
     tpm2_loaded_object object;
     const char *auth_value;
+    char *cp_hash_path;
 };
 
 static tpm2_setclock_ctx ctx = {
@@ -64,6 +66,9 @@ static bool on_option(char key, char *value) {
     case 'p':
         ctx.auth_value = value;
         break;
+    case 0:
+        ctx.cp_hash_path = value;
+        break;
     /* no default */
     }
 
@@ -74,7 +79,8 @@ bool tpm2_tool_onstart(tpm2_options **opts) {
 
     const struct option topts[] = {
         { "hierarchy", required_argument, NULL, 'c' },
-        { "auth",      required_argument, NULL, 'p' }
+        { "auth",      required_argument, NULL, 'p' },
+        { "cphash",    required_argument, NULL,  0  },
     };
 
     *opts = tpm2_options_new("c:p:", ARRAY_LEN(topts), topts, on_option,
@@ -96,5 +102,25 @@ tool_rc tpm2_tool_onrun(ESYS_CONTEXT *ectx, tpm2_option_flags flags) {
 
     LOG_INFO("adjust value: %d", ctx.adjust);
 
-    return tpm2_clockrateadjust(ectx, &ctx.object, ctx.adjust);
+    if (ctx.cp_hash_path) {
+        TPM2B_DIGEST cp_hash = { .size = 0 };
+        LOG_WARN("Calculating cpHash. Exiting without setting clock.");
+        rc = tpm2_clockrateadjust(ectx, &ctx.object, ctx.adjust, &cp_hash);
+        if (rc != tool_rc_success) {
+            return rc;
+        }
+        bool result = files_save_digest(&cp_hash, ctx.cp_hash_path);
+        if (!result) {
+            rc = tool_rc_general_error;
+        }
+        return rc;
+    }
+
+    return tpm2_clockrateadjust(ectx, &ctx.object, ctx.adjust, NULL);
+}
+
+tool_rc tpm2_tool_onstop(ESYS_CONTEXT *ectx) {
+    UNUSED(ectx);
+
+    return tpm2_session_close(&ctx.object.session);
 }

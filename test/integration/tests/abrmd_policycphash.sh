@@ -619,4 +619,12 @@ setup_owner_policy
 tpm2_setclock -c o $clockset -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test clockrateadjust
+tpm2_clear
+tpm2_clockrateadjust s --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_clockrateadjust s -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
