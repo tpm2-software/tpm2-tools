@@ -38,6 +38,12 @@ be a string of 1 to 3 characters of *all* 's' or 'f'.
     Specifies the authorization value for the hierarchy specified by option
     **-c**.
 
+  * **\--cphash**=_FILE_
+
+    File path to record the hash of the command parameters. This is commonly
+    termed as cpHash. NOTE: When this option is selected, The tool will not
+    actually execute the command, it simply returns a cpHash.
+
 ## References
 
 [context object format](common/ctxobj.md) details the methods for specifying
