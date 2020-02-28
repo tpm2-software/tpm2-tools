@@ -610,4 +610,13 @@ setup_owner_policy
 tpm2_evictcontrol -C o -c prim.ctx 0x81010001 -P "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test clockset
+tpm2_clear
+let clockset=`tpm2_readclock | grep clock | grep -v info | awk '{print $2}'`+100000
+tpm2_setclock -c o $clockset --cphash cp.hash
+generate_policycphash
+setup_owner_policy
+tpm2_setclock -c o $clockset -p "session:session.ctx"
+tpm2_flushcontext session.ctx
+
 exit 0
