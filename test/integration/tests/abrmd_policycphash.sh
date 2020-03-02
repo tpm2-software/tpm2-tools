@@ -637,4 +637,15 @@ setup_owner_policy
 tpm2_clockrateadjust s -p "session:session.ctx"
 tpm2_flushcontext session.ctx
 
+# Test nvwrite
+ create_authorized_policy
+ tpm2_nvdefine 1 -s 8 -a "ownerread|authwrite|policywrite" -L authorized.policy
+ echo "foo" | tpm2_nvwrite 1 -i- --cphash cp.hash
+ xxd -p cp.hash
+ generate_policycphash
+ sign_and_verify_policycphash
+ setup_authorized_policycphash
+ echo "foo" | tpm2_nvwrite 1 -i- -P "session:session.ctx"
+ tpm2_flushcontext session.ctx
+
 exit 0
