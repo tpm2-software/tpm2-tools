@@ -2944,7 +2944,7 @@ tpm2_nvundefinespecial_skip_esapi_call:
 
 tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nvindex,
-        const TPM2B_MAX_NV_BUFFER *data, UINT16 offset) {
+        const TPM2B_MAX_NV_BUFFER *data, UINT16 offset, TPM2B_DIGEST *cp_hash) {
 
     // Convert TPM2_HANDLE ctx.nv_index to an ESYS_TR
     ESYS_TR esys_tr_nv_index;
@@ -2964,6 +2964,50 @@ tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
         return rc;
     }
 
+    if (cp_hash) {
+        /*
+         * Need sys_context to be able to calculate CpHash
+         */
+        TSS2_SYS_CONTEXT *sys_context = NULL;
+        rc = tpm2_getsapicontext(esys_context, &sys_context);
+        if(rc != tool_rc_success) {
+            LOG_ERR("Failed to acquire SAPI context.");
+            return rc;
+        }
+
+        rval = Tss2_Sys_NV_Write_Prepare(sys_context, auth_hierarchy_obj->handle,
+            nvindex, data, offset);
+        if (rval != TPM2_RC_SUCCESS) {
+            LOG_PERR(Tss2_Sys_NV_Write_Prepare, rval);
+            return tool_rc_general_error;
+        }
+
+        TPM2B_NAME *name1 = NULL;
+        rc = tpm2_tr_get_name(esys_context, auth_hierarchy_obj->tr_handle, &name1);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvwrite_free_name1;
+        }
+
+        TPM2B_NAME *name2 = NULL;
+        rc = tpm2_tr_get_name(esys_context, esys_tr_nv_index, &name2);
+        if (rc != tool_rc_success) {
+            goto tpm2_nvwrite_free_name1_name2;
+        }
+
+        cp_hash->size = tpm2_alg_util_get_hash_size(
+            tpm2_session_get_authhash(auth_hierarchy_obj->session));
+        rc = tpm2_sapi_getcphash(sys_context, name1, name2, NULL,
+            tpm2_session_get_authhash(auth_hierarchy_obj->session), cp_hash);
+        /*
+         * Exit here without making the ESYS call since we just need the cpHash
+         */
+tpm2_nvwrite_free_name1_name2:
+        Esys_Free(name2);
+tpm2_nvwrite_free_name1:
+        Esys_Free(name1);
+        goto tpm2_nvwrite_skip_esapi_call;
+    }
+
     rval = Esys_NV_Write(esys_context, auth_hierarchy_obj->tr_handle,
             esys_tr_nv_index, auth_hierarchy_obj_session_handle, ESYS_TR_NONE,
             ESYS_TR_NONE, data, offset);
@@ -2975,7 +3019,9 @@ tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
 
     LOG_INFO("Success to write NV area at index 0x%x offset 0x%x.", nvindex,
             offset);
-    return tool_rc_success;
+
+tpm2_nvwrite_skip_esapi_call:
+    return rc;
 }
 
 tool_rc tpm2_pcr_allocate(ESYS_CONTEXT *esys_context,

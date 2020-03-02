@@ -326,7 +326,7 @@ tool_rc tpm2_nvundefinespecial(ESYS_CONTEXT *esys_context,
 
 tool_rc tpm2_nvwrite(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj, TPM2_HANDLE nvindex,
-        const TPM2B_MAX_NV_BUFFER *data, UINT16 offset);
+        const TPM2B_MAX_NV_BUFFER *data, UINT16 offset, TPM2B_DIGEST *cp_hash);
 
 tool_rc tpm2_pcr_allocate(ESYS_CONTEXT *esys_context,
         tpm2_loaded_object *auth_hierarchy_obj,
