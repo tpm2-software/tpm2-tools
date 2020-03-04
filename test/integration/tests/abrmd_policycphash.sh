@@ -648,4 +648,19 @@ tpm2_flushcontext session.ctx
  echo "foo" | tpm2_nvwrite 1 -i- -P "session:session.ctx"
  tpm2_flushcontext session.ctx
 
+ # Test encryptdecrypt
+create_authorized_policy
+tpm2_createprimary -Q -C e -g sha1 -G rsa -c primary.ctx
+tpm2_create -Q -g sha256 -G aes -u key.pub -r key.priv -C primary.ctx \
+-c decrypt.ctx -L authorized.policy
+
+dd if=/dev/urandom of=iv.dat bs=16 count=1
+echo "plaintext" > secret.dat
+cat secret.dat | tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat --cphash cp.hash
+generate_policycphash
+sign_and_verify_policycphash
+setup_authorized_policycphash
+tpm2_encryptdecrypt -c decrypt.ctx --iv iv.dat:iv2.dat \
+-p "session:session.ctx" > secret2.dat
+
 exit 0
